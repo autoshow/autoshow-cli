@@ -166,11 +166,7 @@ npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks accounts/fireworks/models/llama-v3p1-8b-instruct
    ```
-4. **LLAMA 3 2 3B** (`accounts/fireworks/models/llama-v3p2-3b-instruct`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks accounts/fireworks/models/llama-v3p2-3b-instruct
-   ```
-5. **QWEN 2 5 72B** (`accounts/fireworks/models/qwen2p5-72b-instruct`)
+4. **QWEN 2 5 72B** (`accounts/fireworks/models/qwen2p5-72b-instruct`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks accounts/fireworks/models/qwen2p5-72b-instruct
    ```

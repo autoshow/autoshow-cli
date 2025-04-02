@@ -1,4 +1,4 @@
-// test/cli/e2e.test.ts
+// test/cli/all-models.test.ts
 
 import test from 'node:test'
 import { strictEqual, ok } from 'node:assert/strict'
@@ -9,25 +9,6 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  'npm run as -- --rss "https://ajcwebdev.substack.com/feed" --whisper tiny',
-  'npm run as -- --rss "https://ajcwebdev.substack.com/feed" --info',
-  'npm run as -- --channel "https://www.youtube.com/@ajcwebdev" --info',
-  'npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk"',
-  'npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --whisper tiny',
-  'npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info',
-  'npm run as -- --urls "content/examples/example-urls.md" --whisper tiny',
-  'npm run as -- --urls "content/examples/example-urls.md" --info',
-  'npm run as -- --file "content/examples/audio.mp3"',
-  'npm run as -- --file "content/examples/audio.mp3" --whisper tiny',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt titles summary',
-  'npm run as -- --file "content/examples/audio.mp3" --chatgpt',
-  'npm run as -- --file "content/examples/audio.mp3" --claude',
-  'npm run as -- --file "content/examples/audio.mp3" --gemini',
-  'npm run as -- --file "content/examples/audio.mp3" --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --fireworks',
-  'npm run as -- --file "content/examples/audio.mp3" --together',
-  'npm run as -- --file "content/examples/audio.mp3" --deepgram',
-  'npm run as -- --file "content/examples/audio.mp3" --assembly',
   'npm run as -- --file "content/examples/audio.mp3" --assembly best',
   'npm run as -- --file "content/examples/audio.mp3" --assembly nano',
   'npm run as -- --file "content/examples/audio.mp3" --deepgram nova-2',
@@ -59,27 +40,6 @@ const cliCommands = [
   'npm run as -- --file "content/examples/audio.mp3" --together google/gemma-2-9b-it',
   'npm run as -- --file "content/examples/audio.mp3" --together Qwen/Qwen2.5-72B-Instruct-Turbo',
   'npm run as -- --file "content/examples/audio.mp3" --together Qwen/Qwen2.5-7B-Instruct-Turbo',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt titles --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt summary --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt shortSummary --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt longSummary --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt bulletPoints --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt quotes --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt chapterTitlesAndQuotes --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt x --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt facebook --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt linkedin --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt chapterTitles --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt shortChapters --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt mediumChapters --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt longChapters --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt takeaways --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt questions --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt faq --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt blog --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt rapSong --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt rockSong --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt countrySong --whisper tiny --deepseek'
 ]
 
 test('CLI end-to-end tests', { concurrency: 1 }, async (t) => {
