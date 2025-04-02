@@ -68,6 +68,5 @@
     "dist",                                       // Exclude 'dist' directory
     "coverage",                                   // Exclude 'coverage' directory
     "**/*.spec.ts",                               // Exclude test specification files
-    "**/*.test.ts"                                // Exclude test files
   ]
 }

@@ -126,10 +126,8 @@ Example commands for all available CLI options can be found in [`docs/examples.m
 
 - Root-Level Files
   - `tsconfig.json`: TypeScript configuration file specifying compiler options.
-  - `railway.json`: Configuration for Railway deployment.
   - `package.json`: Contains project dependencies, scripts, and metadata.
   - `.env.example`: Example environment variables file for configuration.
-  - `.dockerignore`: Specifies files/folders ignored by Docker during builds.
 
 - Database Schema (`prisma`)
   - `prisma/schema.prisma`: Defines the Prisma ORM schema for database structure and models.
@@ -143,8 +141,6 @@ Example commands for all available CLI options can be found in [`docs/examples.m
 - Main Entry Points (`src`)
   - `commander.ts`: CLI setup using Commander.js.
   - `commander-utils.ts`: Helper functions for CLI usage.
-  - `db.ts`: Initializes the database connection via Prisma.
-  - `fastify.ts`: Sets up and configures the Fastify web server.
 
 ### Process Commands and Process Steps
 
@@ -154,20 +150,14 @@ Example commands for all available CLI options can be found in [`docs/examples.m
   - `urls.ts`: Processes videos listed in a URL file.
   - `playlist.ts`: Processes YouTube playlists.
   - `channel.ts`: Processes all videos from YouTube channels.
-  - `channel-utils.ts`: Helpers specific to YouTube channel processing.
   - `rss.ts`: Processes podcast RSS feeds.
-  - `rss-utils.ts`: Helpers for RSS feed processing.
 
 - Process Steps (`src/process-steps`)
   - `01-generate-markdown.ts`: Creates initial markdown file with metadata.
-  - `01-generate-markdown-utils.ts`: Utility functions for the markdown generation step.
   - `02-download-audio.ts`: Downloads audio from YouTube videos.
-  - `02-download-audio-utils.ts`: Utility functions for the audio download step.
   - `03-run-transcription.ts`: Manages transcription processes.
-  - `03-run-transcription-utils.ts`: Utility functions for the transcription step.
   - `04-select-prompt.ts`: Defines prompts for summarization and chapter creation.
   - `05-run-llm.ts`: Runs language model processes based on prompts.
-  - `05-run-llm-utils.ts`: Utility functions for running language models.
 
 ### Transcription and LLM Services
 
@@ -190,7 +180,6 @@ Example commands for all available CLI options can be found in [`docs/examples.m
   - `create-clips.ts`: Utility to create video/audio clips.
   - `logging.ts`: Reusable logging utilities using Chalk for colorized output.
   - `types.ts`: Commonly used TypeScript types.
-  - `dash-documents.ts`: Helpers or scripts related to Dash payments.
   - `node-utils.ts`: Node.js-specific utilities.
 
 - Embeddings Utilities (`src/utils/embeddings`)
@@ -204,36 +193,6 @@ Example commands for all available CLI options can be found in [`docs/examples.m
   - `combined-generator.ts`: Combines multiple image generators.
   - `utils.ts`: Common image-related helper functions.
   - `index.ts`: Centralized exports for image utilities.
-
-### Astro Web Frontend
-
-- Web Frontend Configuration Files (`web` Module):
-  - `astro.config.ts`: Configuration for Astro web application.
-  - `package.json`: Dependencies and scripts for web frontend.
-  - `tsconfig.json`: TypeScript configuration for web module.
-- Web Source Files (`web/src`):
-  - `env.d.ts`: Type declarations for environment variables.
-  - `site.config.ts`: Site-specific configuration settings.
-  - `types.ts`: Shared TypeScript types.
-  - `styles/global.css`: Global CSS styles.
-- Pages (`web/src/pages`):
-  - `index.astro`: Homepage.
-  - `404.astro`: 404 error page.
-  - `show-notes/[id].astro`: Dynamic pages for individual show notes.
-- Layouts (`web/src/layouts`):
-  - `Base.astro`: Base layout used across pages.
-- Components (`web/src/components`):
-  - `BaseHead.astro`: Common HTML head elements.
-- App Components (`web/src/components/app`):
-  - `App.tsx`
-  - `Form.tsx`
-  - `ShowNote.tsx`
-  - `ShowNotes.tsx`
-- Grouped Components (`web/src/components/app/groups`):
-  - `LLMService.tsx`
-  - `ProcessType.tsx`
-  - `Prompts.tsx`
-  - `TranscriptionService.tsx`
 
 ## Contributors
 

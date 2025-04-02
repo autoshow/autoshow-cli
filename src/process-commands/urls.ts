@@ -1,7 +1,7 @@
 // src/process-commands/urls.ts
 
 import { processVideo } from './video.ts'
-import { saveInfo } from '../process-steps/01-generate-markdown-utils.ts'
+import { saveInfo } from '../process-steps/01-generate-markdown.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
 import { readFile } from '../utils/node-utils.ts'
 
