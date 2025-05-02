@@ -9,27 +9,27 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  'npm run as -- --file "content/examples/audio.mp3" --prompt titles --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt summary --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt shortSummary --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt longSummary --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt bulletPoints --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt quotes --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt chapterTitlesAndQuotes --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt x --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt facebook --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt linkedin --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt chapterTitles --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt shortChapters --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt mediumChapters --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt longChapters --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt takeaways --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt questions --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt faq --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt blog --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt rapSong --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt rockSong --whisper tiny --deepseek',
-  'npm run as -- --file "content/examples/audio.mp3" --prompt countrySong --whisper tiny --deepseek'
+  'npm run as -- --file "content/examples/audio.mp3" --prompt titles --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt summary --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt shortSummary --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt longSummary --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt bulletPoints --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt quotes --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt chapterTitlesAndQuotes --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt x --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt facebook --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt linkedin --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt chapterTitles --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt shortChapters --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt mediumChapters --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt longChapters --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt takeaways --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt questions --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt faq --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt blog --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt rapSong --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt rockSong --whisper tiny --chatgpt',
+  'npm run as -- --file "content/examples/audio.mp3" --prompt countrySong --whisper tiny --chatgpt'
 ]
 
 test('CLI end-to-end tests', { concurrency: 1 }, async (t) => {

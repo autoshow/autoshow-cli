@@ -4,16 +4,8 @@ import { processVideo } from './video.ts'
 import { saveInfo } from '../process-steps/01-generate-markdown.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
 import { execFilePromise } from '../utils/node-utils.ts'
+import type { ProcessingOptions } from '../utils/types.ts'
 
-import type { ProcessingOptions } from '../../shared/types.ts'
-
-/**
- * Validates channel processing options for consistency and correct values.
- * Logs the current channel processing action based on provided options.
- * 
- * @param options - Configuration options to validate
- * @throws Will exit the process if validation fails
- */
 export function validateChannelOptions(options: ProcessingOptions) {
   if (options.last !== undefined) {
     if (!Number.isInteger(options.last) || options.last < 1) {
@@ -43,13 +35,6 @@ export function validateChannelOptions(options: ProcessingOptions) {
   }
 }
 
-/**
- * Logs the processing status and video counts for channel downloads.
- * 
- * @param total - Total number of videos found.
- * @param processing - Number of videos to process.
- * @param options - Configuration options.
- */
 export function logChannelProcessingStatus(
   total: number,
   processing: number,
@@ -67,14 +52,6 @@ export function logChannelProcessingStatus(
   }
 }
 
-/**
- * Fetches, sorts, and selects which videos to process based on provided options, 
- * including retrieving details for each video via yt-dlp.
- * 
- * @param stdout - The raw output from yt-dlp containing the video URLs
- * @param options - Configuration options for processing
- * @returns A promise resolving to an object containing all fetched videos and the subset of videos selected to process
- */
 export async function selectVideos(
   stdout: string,
   options: ProcessingOptions
@@ -140,21 +117,6 @@ export async function selectVideos(
   return { allVideos, videosToProcess }
 }
 
-/**
- * Processes an entire YouTube channel:
- * 1. Validates top-level flags.
- * 2. Fetches all video URLs via yt-dlp.
- * 3. Uses {@link selectVideos} to gather metadata and filter videos.
- * 4. Logs processing info or saves it if `--info` is specified.
- * 5. Iterates over each video and calls {@link processVideo}.
- * 
- * @param options - Configuration options for processing
- * @param channelUrl - URL of the YouTube channel to process
- * @param llmServices - Optional language model service
- * @param transcriptServices - Optional transcription service
- * @throws Will terminate the process if the channel cannot be processed
- * @returns Promise that resolves when all videos have been processed or info is saved
- */
 export async function processChannel(
   options: ProcessingOptions,
   channelUrl: string,

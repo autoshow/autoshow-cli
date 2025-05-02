@@ -4,24 +4,8 @@ import { processVideo } from './video.ts'
 import { saveInfo } from '../process-steps/01-generate-markdown.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
 import { readFile } from '../utils/node-utils.ts'
+import type { ProcessingOptions } from '../utils/types.ts'
 
-import type { ProcessingOptions } from '../../shared/types.ts'
-
-/**
- * Processes multiple YouTube videos from a file containing URLs by:
- * 1. Reading and parsing URLs from the input file.
- * 2. Optionally extracting metadata for all videos.
- * 3. Processing each video sequentially with error handling.
- *
- * The function continues processing remaining URLs even if individual videos fail.
- *
- * @param options - Configuration options for processing.
- * @param filePath - Path to the file containing video URLs (one per line).
- * @param llmServices - Optional language model service for transcript processing.
- * @param transcriptServices - Optional transcription service for audio conversion.
- * @throws Will terminate the process with exit code 1 if the file cannot be read or contains no valid URLs.
- * @returns Promise that resolves when all videos have been processed or JSON info has been saved.
- */
 export async function processURLs(
   options: ProcessingOptions,
   filePath: string,

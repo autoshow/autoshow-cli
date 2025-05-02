@@ -2,9 +2,8 @@
 
 import { l, err } from '../utils/logging.ts'
 import { readFile, unlink, execPromise, existsSync } from '../utils/node-utils.ts'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../../shared/constants.ts'
-
-import type { ProcessingOptions, WhisperOutput } from '../../shared/types.ts'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../utils/constants.ts'
+import type { ProcessingOptions, WhisperOutput } from '../utils/types.ts'
 
 export function formatTimestamp(timestamp: string) {
   const [timeWithoutMs] = timestamp.split(',') as [string]
@@ -30,12 +29,6 @@ export function formatWhisperTranscript(jsonData: WhisperOutput) {
     .join('\n')
 }
 
-/**
- * Checks if whisper.cpp directory exists and, if missing, clones and compiles it.
- * Also checks if the chosen model file is present and, if missing, downloads it.
- * @param whisperModel - The requested Whisper model name (e.g. "tiny", "base", "turbo", etc.)
- * @param modelGGMLName - The corresponding GGML model filename (e.g. "ggml-base.bin")
- */
 export async function checkWhisperDirAndModel(
   whisperModel: string,
   modelGGMLName: string
@@ -95,12 +88,6 @@ export async function checkWhisperDirAndModel(
   }
 }
 
-/**
- * Main function to handle transcription using local Whisper.cpp.
- * @param {ProcessingOptions} options - Processing options that determine how transcription is run.
- * @param {string} finalPath - The base filename (without extension) for input and output files.
- * @returns {Promise<TranscriptionResult>}
- */
 export async function callWhisper(
   options: ProcessingOptions,
   finalPath: string

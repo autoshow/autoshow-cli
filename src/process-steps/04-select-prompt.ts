@@ -3,21 +3,34 @@
 import { sections } from '../prompts/sections.ts'
 import { err, l, logInitialFunctionCall } from '../utils/logging.ts'
 import { readFile } from '../utils/node-utils.ts'
-import { PROMPT_CHOICES } from '../../shared/constants.ts'
+import type { ProcessingOptions } from '../utils/types.ts'
 
-import type { ProcessingOptions } from '../../shared/types.ts'
+export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
+  { name: 'Titles', value: 'titles' },
+  { name: 'Summary', value: 'summary' },
+  { name: 'Short Summary', value: 'shortSummary' },
+  { name: 'Long Summary', value: 'longSummary' },
+  { name: 'Bullet Point Summary', value: 'bulletPoints' },
+  { name: 'Chapter Titles', value: 'chapterTitles' },
+  { name: 'Short Chapters', value: 'shortChapters' },
+  { name: 'Medium Chapters', value: 'mediumChapters' },
+  { name: 'Long Chapters', value: 'longChapters' },
+  { name: 'Key Takeaways', value: 'takeaways' },
+  { name: 'Questions', value: 'questions' },
+  { name: 'FAQ', value: 'faq' },
+  { name: 'Blog', value: 'blog' },
+  { name: 'Rap Song', value: 'rapSong' },
+  { name: 'Rock Song', value: 'rockSong' },
+  { name: 'Country Song', value: 'countrySong' },
+  { name: 'Quotes', value: 'quotes' },
+  { name: 'Chapter Titles and Quotes', value: 'chapterTitlesAndQuotes' },
+  { name: 'Social Post (X)', value: 'x' },
+  { name: 'Social Post (Facebook)', value: 'facebook' },
+  { name: 'Social Post (LinkedIn)', value: 'linkedin' },
+]
 
 const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
 
-/**
- * Generates a prompt by combining instructions and examples based on requested sections
- * or uses a custom prompt if provided. If a custom prompt file path is provided,
- * it will be read from a markdown file and returned directly.
- * 
- * @param {ProcessingOptions} options - The processing options containing customPrompt and prompt
- * @returns {Promise<string>} The generated prompt text
- * @throws {Error} If the file cannot be read or is invalid
- */
 export async function selectPrompts(options: ProcessingOptions) {
   l.step(`\nStep 4 - Select Prompts\n`)
   logInitialFunctionCall('selectPrompts', { options })

@@ -11,9 +11,6 @@ This project supports multiple LLM service providers, each with various models. 
 - [OpenAI ChatGPT](#openai-chatgpt)
 - [Anthropic Claude](#anthropic-claude)
 - [Google Gemini](#google-gemini)
-- [DeepSeek](#deepseek)
-- [Fireworks AI](#fireworks-ai)
-- [Together AI](#together-ai)
 
 ## Environment Variables
 
@@ -22,17 +19,6 @@ Create a `.env` file (or set them in your environment) for any service(s) you pl
 - `OPENAI_API_KEY`
 - `ANTHROPIC_API_KEY`
 - `GEMINI_API_KEY`
-- `DEEPSEEK_API_KEY`
-- `FIREWORKS_API_KEY`
-- `TOGETHER_API_KEY`
-
-## Run Only LLM Step
-
-You can run only the LLM step (for example, after doing transcription separately):
-
-```bash
-npm run as -- --runLLM "content/examples/audio-prompt.md" --chatgpt
-```
 
 ## Get LLM Cost
 
@@ -127,87 +113,4 @@ npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini
 5. **Gemini 2.0 Flash** (`gemini-2.0-flash`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-2.0-flash
-   ```
-
-## DeepSeek
-
-If you have set your `DEEPSEEK_API_KEY`:
-
-```bash
-npm run as -- --video "https://www.youtube.com/watch?v=abc123" --deepseek
-```
-
-1. **DeepSeek Chat** (`deepseek-chat`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --deepseek deepseek-chat
-   ```
-2. **DeepSeek Reasoner** (`deepseek-reasoner`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --deepseek deepseek-reasoner
-   ```
-
-## Fireworks AI
-
-If you have set your `FIREWORKS_API_KEY`:
-
-```bash
-npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks
-```
-
-1. **LLAMA 3 1 405B** (`accounts/fireworks/models/llama-v3p1-405b-instruct`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks accounts/fireworks/models/llama-v3p1-405b-instruct
-   ```
-2. **LLAMA 3 1 70B** (`accounts/fireworks/models/llama-v3p1-70b-instruct`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks accounts/fireworks/models/llama-v3p1-70b-instruct
-   ```
-3. **LLAMA 3 1 8B** (`accounts/fireworks/models/llama-v3p1-8b-instruct`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks accounts/fireworks/models/llama-v3p1-8b-instruct
-   ```
-4. **QWEN 2 5 72B** (`accounts/fireworks/models/qwen2p5-72b-instruct`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --fireworks accounts/fireworks/models/qwen2p5-72b-instruct
-   ```
-
-## Together AI
-
-If you have set your `TOGETHER_API_KEY`:
-
-```bash
-npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together
-```
-
-1. **LLAMA 3 2 3B** (`meta-llama/Llama-3.2-3B-Instruct-Turbo`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together meta-llama/Llama-3.2-3B-Instruct-Turbo
-   ```
-2. **LLAMA 3 1 405B** (`meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-   ```
-3. **LLAMA 3 1 70B** (`meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
-   ```
-4. **LLAMA 3 1 8B** (`meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-   ```
-5. **Gemma 2 27B** (`google/gemma-2-27b-it`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together google/gemma-2-27b-it
-   ```
-6. **Gemma 2 9B** (`google/gemma-2-9b-it`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together google/gemma-2-9b-it
-   ```
-7. **QWEN 2 5 72B** (`Qwen/Qwen2.5-72B-Instruct-Turbo`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together Qwen/Qwen2.5-72B-Instruct-Turbo
-   ```
-8. **QWEN 2 5 7B** (`Qwen/Qwen2.5-7B-Instruct-Turbo`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --together Qwen/Qwen2.5-7B-Instruct-Turbo
    ```

@@ -4,24 +4,8 @@ import { processVideo } from './video.ts'
 import { saveInfo } from '../process-steps/01-generate-markdown.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
 import { execFilePromise } from '../utils/node-utils.ts'
+import type { ProcessingOptions } from '../utils/types.ts'
 
-import type { ProcessingOptions } from '../../shared/types.ts'
-
-/**
- * Processes an entire YouTube playlist by:
- * 1. Fetching all video URLs from the playlist using yt-dlp.
- * 2. Optionally extracting metadata for all videos.
- * 3. Processing each video sequentially with error handling for individual videos.
- *
- * The function continues processing remaining videos even if individual videos fail.
- *
- * @param options - Configuration options for processing.
- * @param playlistUrl - URL of the YouTube playlist to process.
- * @param llmServices - Optional language model service for transcript processing.
- * @param transcriptServices - Optional transcription service for audio conversion.
- * @throws Will terminate the process with exit code 1 if the playlist itself cannot be processed.
- * @returns Promise that resolves when all videos have been processed.
- */
 export async function processPlaylist(
   options: ProcessingOptions,
   playlistUrl: string,

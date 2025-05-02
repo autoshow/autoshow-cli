@@ -1,18 +1,7 @@
-#!/usr/bin/env node
-
 // src/utils/create-clips.ts
-
-/**
- * Usage:
- *    tsx src/utils/create-clips.ts <markdown_file> <video_file>
- *
- * Example:
- *    tsx src/utils/create-clips.ts content/2021-05-10-thoughts-on-lambda-school-layoffs-chatgpt-shownotes.md content/2021-05-10-thoughts-on-lambda-school-layoffs.wav
- */
 
 import { exec, readFileSync, existsSync, mkdirSync, basename, extname } from '../utils/node-utils.ts'
 
-// Check for correct number of arguments
 if (process.argv.length !== 4) {
   console.error(`Usage: ${process.argv[1]} <markdown_file> <video_file>`)
   process.exit(1)
@@ -55,11 +44,6 @@ if (!existsSync(directoryPath)) {
   mkdirSync(directoryPath, { recursive: true })
 }
 
-/**
- * Executes a shell command and returns the stdout and stderr as an object
- * @param {string} cmd The shell command to execute
- * @returns {Promise<{ stdout: string, stderr: string }>}
- */
 function execPromise(cmd: string): Promise<{ stdout: string, stderr: string }> {
   return new Promise((resolve, reject) => {
     exec(cmd, (error, stdout, stderr) => {
@@ -72,11 +56,6 @@ function execPromise(cmd: string): Promise<{ stdout: string, stderr: string }> {
   })
 }
 
-/**
- * Gets total duration of the video in seconds using ffprobe
- * @param {string} video Path to the video file
- * @returns {Promise<number>}
- */
 async function getTotalDurationSeconds(video: string): Promise<number> {
   try {
     const ffprobeCmd = `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${video}"`
@@ -95,11 +74,6 @@ async function getTotalDurationSeconds(video: string): Promise<number> {
 
 const totalDurationSeconds = await getTotalDurationSeconds(videoFile)
 
-/**
- * Converts a timestamp string (hh:mm:ss or mm:ss) into total seconds
- * @param {string} timeStr The timestamp to convert
- * @returns {number} The total seconds
- */
 function timestampToSeconds(timeStr: string): number {
   const parts = timeStr.split(':')
   let h: string = '0', m: string = '0', s: string = '0'
@@ -117,11 +91,6 @@ function timestampToSeconds(timeStr: string): number {
   return (parseInt(h, 10) * 3600) + (parseInt(m, 10) * 60) + parseInt(s, 10)
 }
 
-/**
- * Sanitizes a title string for use in a filename
- * @param {string} str The title string
- * @returns {string} The sanitized filename
- */
 function sanitizeTitle(str: string): string {
   let s = str.toLowerCase()
   s = s.replace(/[^a-z0-9]+/g, '-')

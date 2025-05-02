@@ -6,25 +6,8 @@ import { runTranscription } from '../process-steps/03-run-transcription.ts'
 import { selectPrompts } from '../process-steps/04-select-prompt.ts'
 import { runLLM } from '../process-steps/05-run-llm.ts'
 import { err, logInitialFunctionCall } from '../utils/logging.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
 
-import type { ProcessingOptions, ShowNoteMetadata } from '../../shared/types.ts'
-
-/**
- * Processes a single video by executing a series of operations:
- * 1. Validates required system dependencies
- * 2. Generates markdown with video metadata
- * 3. Downloads and extracts audio
- * 4. Transcribes the audio content
- * 5. Processes the transcript with a language model (if specified)
- * 6. Cleans up temporary files (unless disabled)
- * 
- * @param options - Configuration options for processing
- * @param url - The URL of the video to process
- * @param llmServices - Optional language model service to use for processing the transcript
- * @param transcriptServices - Optional transcription service to use for converting audio to text
- * @throws Will throw an error if any processing step fails
- * @returns Promise that resolves with { frontMatter, prompt, llmOutput, transcript }
- */
 export async function processVideo(
   options: ProcessingOptions,
   url: string,

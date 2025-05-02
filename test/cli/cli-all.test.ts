@@ -28,53 +28,38 @@ const commands = [
     newName: '02-ALL-04-gemini-shownotes.md'
   },
   {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --deepseek',
-    expectedFile: 'audio-deepseek-shownotes.md',
-    newName: '02-ALL-05-deepseek-shownotes.md'
-  },
-  {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --fireworks',
-    expectedFile: 'audio-fireworks-shownotes.md',
-    newName: '02-ALL-06-fireworks-shownotes.md'
-  },
-  {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --together',
-    expectedFile: 'audio-together-shownotes.md',
-    newName: '02-ALL-07-together-shownotes.md'
-  },
-  {
     cmd: 'npm run as -- --file "content/examples/audio.mp3" --deepgram',
     expectedFile: 'audio-prompt.md',
-    newName: '02-ALL-08-deepgram-prompt.md'
+    newName: '02-ALL-05-deepgram-prompt.md'
   },
   {
     cmd: 'npm run as -- --file "content/examples/audio.mp3" --assembly',
     expectedFile: 'audio-prompt.md',
-    newName: '02-ALL-09-assembly-prompt.md'
+    newName: '02-ALL-06-assembly-prompt.md'
   },
   {
-    cmd: 'npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --whisper tiny',
+    cmd: 'npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"',
     expectedFiles: [
-      { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-10-playlist-default.md' },
-      { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-11-playlist-default.md' }
+      { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-07-playlist-default.md' },
+      { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-08-playlist-default.md' }
     ]
   },
   {
-    cmd: 'npm run as -- --urls "content/examples/example-urls.md" --whisper tiny',
+    cmd: 'npm run as -- --urls "content/examples/example-urls.md"',
     expectedFiles: [
-      { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-12-urls-whisper-tiny.md' },
-      { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-13-urls-whisper-tiny.md' }
+      { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-09-urls-default.md' },
+      { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-10-urls-default.md' }
     ]
   },
   {
     cmd: 'npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info',
     expectedFile: 'fsjam_info.json',
-    newName: '02-ALL-14-fsjam-info.json',
+    newName: '02-ALL-11-fsjam-info.json',
   },
   {
     cmd: 'npm run as -- --urls "content/examples/example-urls.md" --info',
     expectedFile: 'urls_info.json',
-    newName: '02-ALL-15-urls-info.json',
+    newName: '02-ALL-12-urls-info.json',
   },
 ]
 

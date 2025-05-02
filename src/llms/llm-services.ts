@@ -5,22 +5,12 @@ import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { err } from '../utils/logging.ts'
 import { env } from '../utils/node-utils.ts'
-import { LLM_SERVICES_CONFIG } from '../../shared/constants.ts'
+import { LLM_SERVICES_CONFIG } from '../utils/constants.ts'
 
 export type ChatGPTModelValue = (typeof LLM_SERVICES_CONFIG.chatgpt.models)[number]['modelId']
 export type ClaudeModelValue = (typeof LLM_SERVICES_CONFIG.claude.models)[number]['modelId']
-export type DeepSeekModelValue = (typeof LLM_SERVICES_CONFIG.deepseek.models)[number]['modelId']
-export type FireworksModelValue = (typeof LLM_SERVICES_CONFIG.fireworks.models)[number]['modelId']
 export type GeminiModelValue = (typeof LLM_SERVICES_CONFIG.gemini.models)[number]['modelId']
-export type TogetherModelValue = (typeof LLM_SERVICES_CONFIG.together.models)[number]['modelId']
 
-/**
- * Main function to call ChatGPT API.
- * @param {string} prompt
- * @param {string} transcript
- * @param {string} modelValue - e.g. "gpt-4o-mini"
- * @returns {Promise<{ content: string, usage?: { stopReason: string, input?: number, output?: number, total?: number } }>}
- */
 export async function callChatGPT(
   prompt: string,
   transcript: string,
@@ -57,15 +47,6 @@ export async function callChatGPT(
   }
 }
 
-/**
- * Calls the Anthropic Claude API and returns generated text.
- *
- * @param prompt - The prompt or instructions to process.
- * @param transcript - The transcript text to be appended to the prompt.
- * @param modelValue - The string key identifying which Claude model to use (e.g. "claude-3-haiku-20240307").
- * @returns The generated text from Claude.
- * @throws If the `ANTHROPIC_API_KEY` is missing or no valid content is generated.
- */
 export async function callClaude(
   prompt: string,
   transcript: string,
@@ -104,128 +85,10 @@ export async function callClaude(
   }
 }
 
-/**
- * Calls the DeepSeek API via an OpenAI-compatible endpoint and returns generated text.
- *
- * @param prompt - The prompt or instructions to process.
- * @param transcript - The transcript text to be appended to the prompt.
- * @param modelValue - The string key identifying which DeepSeek model to use (e.g. "deepseek-chat").
- * @returns The generated text from DeepSeek.
- * @throws If the `DEEPSEEK_API_KEY` is missing or no valid response is returned.
- */
-export async function callDeepSeek(
-  prompt: string,
-  transcript: string,
-  modelValue: DeepSeekModelValue
-) {
-  if (!env['DEEPSEEK_API_KEY']) {
-    throw new Error('Missing DEEPSEEK_API_KEY environment variable.')
-  }
-  const openai = new OpenAI({
-    apiKey: env['DEEPSEEK_API_KEY'],
-    baseURL: 'https://api.deepseek.com'
-  })
-  const combinedPrompt = `${prompt}\n${transcript}`
-  try {
-    const res = await openai.chat.completions.create({
-      model: modelValue,
-      messages: [{ role: 'user', content: combinedPrompt }]
-    })
-    const firstChoice = res.choices?.[0]
-    if (!firstChoice?.message?.content) {
-      throw new Error('No valid response from DeepSeek.')
-    }
-    return {
-      content: firstChoice.message.content,
-      usage: {
-        stopReason: firstChoice.finish_reason ?? 'unknown',
-        input: res.usage?.prompt_tokens,
-        output: res.usage?.completion_tokens,
-        total: res.usage?.total_tokens
-      }
-    }
-  } catch (error) {
-    err(`Error in callDeepSeek: ${(error as Error).message}`)
-    throw error
-  }
-}
-
-/**
- * Calls the Fireworks AI API and returns generated text.
- *
- * @param prompt - The prompt or instructions to process.
- * @param transcript - The transcript text to be appended to the prompt.
- * @param modelValue - The string key identifying which Fireworks model to use (e.g. "accounts/fireworks/models/llama-v3p1-8b-instruct").
- * @returns The generated text from Fireworks AI.
- * @throws If the `FIREWORKS_API_KEY` is missing or no valid response content is found.
- */
-export async function callFireworks(
-  prompt: string,
-  transcript: string,
-  modelValue: FireworksModelValue
-) {
-  if (!env['FIREWORKS_API_KEY']) {
-    throw new Error('Missing FIREWORKS_API_KEY environment variable.')
-  }
-  const combinedPrompt = `${prompt}\n${transcript}`
-  const requestBody = {
-    model: modelValue,
-    messages: [{ role: 'user', content: combinedPrompt }]
-  }
-  try {
-    const res = await fetch('https://api.fireworks.ai/inference/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env['FIREWORKS_API_KEY']}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    })
-    if (!res.ok) {
-      const errorText = await res.text()
-      throw new Error(`Fireworks API error: ${res.status} ${res.statusText} - ${errorText}`)
-    }
-    const data = await res.json()
-    const content = data.choices?.[0]?.message?.content
-    if (!content) {
-      throw new Error('No content generated by the Fireworks API.')
-    }
-    return {
-      content,
-      usage: {
-        stopReason: data.choices?.[0]?.finish_reason ?? 'unknown',
-        input: data.usage?.prompt_tokens,
-        output: data.usage?.completion_tokens,
-        total: data.usage?.total_tokens
-      }
-    }
-  } catch (error) {
-    err(`Error in callFireworks: ${(error as Error).message}`)
-    throw error
-  }
-}
-
-/**
- * Simple utility function to introduce a delay.
- *
- * @param ms - Milliseconds to pause execution
- * @returns A Promise that resolves after the specified delay
- */
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/**
- * Calls the Google Gemini API and returns generated text.
- *
- * Attempts multiple retries (exponential backoff) to handle transient network errors.
- *
- * @param prompt - The prompt or instructions to process.
- * @param transcript - The transcript text to be appended to the prompt.
- * @param modelValue - The string key identifying which Gemini model to use (e.g. "gemini-1.5-flash").
- * @returns The generated text from Gemini.
- * @throws If the `GEMINI_API_KEY` is missing or all API call retries fail.
- */
 export async function callGemini(
   prompt: string,
   transcript: string,
@@ -271,61 +134,4 @@ export async function callGemini(
     }
   }
   throw new Error('Exhausted all Gemini API call retries without success.')
-}
-
-/**
- * Calls the Together AI API and returns generated text.
- *
- * @param prompt - The prompt or instructions to process.
- * @param transcript - The transcript text to be appended to the prompt.
- * @param modelValue - The string key identifying which Together AI model to use (e.g. "meta-llama/Llama-3.2-3B-Instruct-Turbo").
- * @returns The generated text from Together AI.
- * @throws If the `TOGETHER_API_KEY` is missing or no valid response content is found.
- */
-export async function callTogether(
-  prompt: string,
-  transcript: string,
-  modelValue: TogetherModelValue
-) {
-  if (!env['TOGETHER_API_KEY']) {
-    throw new Error('Missing TOGETHER_API_KEY environment variable.')
-  }
-  const combinedPrompt = `${prompt}\n${transcript}`
-  const requestBody = {
-    model: modelValue,
-    max_tokens: 4000,
-    messages: [{ role: 'user', content: combinedPrompt }]
-  }
-  try {
-    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env['TOGETHER_API_KEY']}`
-      },
-      body: JSON.stringify(requestBody)
-    })
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Together AI API error: ${response.status} ${response.statusText} - ${errorText}`)
-    }
-    const data = await response.json()
-    const content = data.choices?.[0]?.message?.content
-    if (!content) {
-      throw new Error('No content generated by the Together AI API.')
-    }
-    return {
-      content,
-      usage: {
-        stopReason: data.choices?.[0]?.finish_reason ?? 'unknown',
-        input: data.usage?.prompt_tokens,
-        output: data.usage?.completion_tokens,
-        total: data.usage?.total_tokens
-      }
-    }
-  } catch (error) {
-    err(`Error in callTogether: ${(error as Error).message}`)
-    throw error
-  }
 }

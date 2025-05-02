@@ -7,15 +7,8 @@ import { selectPrompts } from '../process-steps/04-select-prompt.ts'
 import { runLLM } from '../process-steps/05-run-llm.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
 import { parser } from '../utils/node-utils.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
 
-import type { ProcessingOptions, ShowNoteMetadata } from '../../shared/types.ts'
-
-/**
- * Validates RSS flags (e.g., --last, --skip, --order, --date, --lastDays) without requiring feed data.
- * 
- * @param options - The command-line options provided by the user
- * @throws Exits the process if any flag is invalid
- */
 export function validateRSSOptions(options: ProcessingOptions) {
   if (options.last !== undefined) {
     if (!Number.isInteger(options.last) || options.last < 1) {
@@ -74,16 +67,6 @@ export function validateRSSOptions(options: ProcessingOptions) {
   }
 }
 
-/**
- * Filters RSS feed items based on user-supplied options (e.g., item URLs, date ranges, etc.).
- * 
- * @param options - Configuration options to filter the feed items
- * @param feedItemsArray - Parsed array of RSS feed items (raw JSON from XML parser)
- * @param channelTitle - Title of the RSS channel (optional)
- * @param channelLink - URL to the RSS channel (optional)
- * @param channelImage - A fallback channel image URL (optional)
- * @returns Filtered RSS items based on the provided options
- */
 export async function filterRSSItems(
   options: ProcessingOptions,
   feedItemsArray?: any,
@@ -151,17 +134,6 @@ export async function filterRSSItems(
   return itemsToProcess
 }
 
-/**
- * A helper function that validates RSS action input and processes it if valid.
- * Separately validates flags with {@link validateRSSOptions} and leaves feed-item filtering to {@link filterRSSItems}.
- *
- * @param options - The ProcessingOptions containing RSS feed details
- * @param handler - The function to handle each RSS feed
- * @param llmServices - The optional LLM service for processing
- * @param transcriptServices - The chosen transcription service
- * @throws An error if no valid RSS URLs are provided
- * @returns A promise that resolves when all RSS feeds have been processed
- */
 export async function validateRSSAction(
   options: ProcessingOptions,
   handler: (options: ProcessingOptions, rssUrl: string, llmServices?: string, transcriptServices?: string) => Promise<void>,
@@ -225,13 +197,6 @@ export async function validateRSSAction(
   }
 }
 
-/**
- * Logs the processing status and item counts for RSS feeds.
- * 
- * @param total - Total number of RSS items found.
- * @param processing - Number of RSS items to process.
- * @param options - Configuration options.
- */
 export function logRSSProcessingStatus(
   total: number,
   processing: number,
@@ -249,13 +214,6 @@ export function logRSSProcessingStatus(
   }
 }
 
-/**
- * Retries a given RSS fetch with an exponential backoff of 7 attempts (1s initial delay).
- * 
- * @param {() => Promise<Response>} fn - The function to execute for the RSS fetch
- * @returns {Promise<Response>} Resolves with the Response object if successful
- * @throws {Error} If fetch fails after all attempts
- */
 export async function retryRSSFetch(
   fn: () => Promise<Response>
 ) {
@@ -284,14 +242,6 @@ export async function retryRSSFetch(
   throw new Error('RSS fetch failed after maximum retries.')
 }
 
-/**
- * Fetches and parses an RSS feed (URL or local file path), then applies filtering via {@link filterRSSItems}.
- * 
- * @param rssUrl - URL or local file path of the RSS feed to parse
- * @param options - Configuration options
- * @returns A promise that resolves to an object with filtered RSS items and the channel title
- * @throws Will exit the process on network or parsing errors
- */
 export async function selectRSSItemsToProcess(
   rssUrl: string,
   options: ProcessingOptions
@@ -378,16 +328,6 @@ export async function selectRSSItemsToProcess(
   }
 }
 
-/**
- * Main function to process items from an RSS feed by generating markdown, downloading audio,
- * transcribing, selecting a prompt, and possibly running an LLM.
- * 
- * @param options - The ProcessingOptions containing RSS feed details and filters
- * @param rssUrl - The URL of the RSS feed to process
- * @param llmServices - Optional LLM services for advanced processing
- * @param transcriptServices - The chosen transcription service for audio content
- * @returns A promise that resolves when the feed has been fully processed
- */
 export async function processRSS(
   options: ProcessingOptions,
   rssUrl: string,

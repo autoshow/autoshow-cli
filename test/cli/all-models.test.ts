@@ -14,7 +14,6 @@ const cliCommands = [
   'npm run as -- --file "content/examples/audio.mp3" --deepgram nova-2',
   'npm run as -- --file "content/examples/audio.mp3" --deepgram base',
   'npm run as -- --file "content/examples/audio.mp3" --deepgram enhanced',
-  'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4.5-preview',
   'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4o',
   'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4o-mini',
   'npm run as -- --file "content/examples/audio.mp3" --chatgpt o1-mini',
@@ -26,20 +25,6 @@ const cliCommands = [
   'npm run as -- --file "content/examples/audio.mp3" --gemini gemini-1.5-flash',
   'npm run as -- --file "content/examples/audio.mp3" --gemini gemini-2.0-flash-lite',
   'npm run as -- --file "content/examples/audio.mp3" --gemini gemini-2.0-flash',
-  'npm run as -- --file "content/examples/audio.mp3" --deepseek deepseek-chat',
-  'npm run as -- --file "content/examples/audio.mp3" --deepseek deepseek-reasoner',
-  'npm run as -- --file "content/examples/audio.mp3" --fireworks accounts/fireworks/models/llama-v3p1-405b-instruct',
-  'npm run as -- --file "content/examples/audio.mp3" --fireworks accounts/fireworks/models/llama-v3p1-70b-instruct',
-  'npm run as -- --file "content/examples/audio.mp3" --fireworks accounts/fireworks/models/llama-v3p1-8b-instruct',
-  'npm run as -- --file "content/examples/audio.mp3" --fireworks accounts/fireworks/models/qwen2p5-72b-instruct',
-  'npm run as -- --file "content/examples/audio.mp3" --together meta-llama/Llama-3.2-3B-Instruct-Turbo',
-  'npm run as -- --file "content/examples/audio.mp3" --together meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo',
-  'npm run as -- --file "content/examples/audio.mp3" --together meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
-  'npm run as -- --file "content/examples/audio.mp3" --together meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
-  'npm run as -- --file "content/examples/audio.mp3" --together google/gemma-2-27b-it',
-  'npm run as -- --file "content/examples/audio.mp3" --together google/gemma-2-9b-it',
-  'npm run as -- --file "content/examples/audio.mp3" --together Qwen/Qwen2.5-72B-Instruct-Turbo',
-  'npm run as -- --file "content/examples/audio.mp3" --together Qwen/Qwen2.5-7B-Instruct-Turbo',
 ]
 
 test('CLI end-to-end tests', { concurrency: 1 }, async (t) => {

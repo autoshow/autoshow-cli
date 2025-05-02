@@ -11,13 +11,8 @@
   - [AutoShow Pipeline](#autoshow-pipeline)
 - [Setup](#setup)
 - [Run AutoShow Node Scripts](#run-autoshow-node-scripts)
-- [Project Structure](#project-structure)
-  - [Root Level Configuration](#root-level-configuration)
-  - [Node CLI and Server Backend](#node-cli-and-server-backend)
-  - [Process Commands and Process Steps](#process-commands-and-process-steps)
-  - [Transcription and LLM Services](#transcription-and-llm-services)
-  - [Utility Files](#utility-files)
-  - [Astro Web Frontend](#astro-web-frontend)
+  - [Process Options](#process-options)
+  - [Transcription and LLM Options](#transcription-and-llm-options)
 - [Contributors](#contributors)
 
 ## Project Overview
@@ -52,7 +47,7 @@ AutoShow can generate diverse content formats including:
 
 - Support for multiple input types (YouTube links, RSS feeds, local video and audio files)
 - Integration with various:
-  - LLMs (ChatGPT, Claude, Gemini, Deepseek, Fireworks, Together)
+  - LLMs (ChatGPT, Claude, Gemini)
   - Transcription services (Whisper.cpp, Deepgram, Assembly)
 - Customizable prompts for generating titles, summaries, chapter titles/descriptions, key takeaways, and questions to test comprehension
 - Markdown output with metadata and formatted content
@@ -76,6 +71,10 @@ npm run setup
 ```
 
 ## Run AutoShow Node Scripts
+
+Example commands for all available CLI options can be found in [`docs`](/docs/README.md).
+
+### Process Options
 
 Run on a single YouTube video.
 
@@ -107,92 +106,22 @@ Run on a podcast RSS feed.
 npm run as -- --rss "https://ajcwebdev.substack.com/feed"
 ```
 
-Use 3rd party LLM providers.
+### Transcription and LLM Options
+
+Use 3rd party LLM services.
 
 ```bash
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepseek
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --fireworks
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --together
 ```
 
-Example commands for all available CLI options can be found in [`docs/examples.md`](/docs/examples.md).
+Use 3rd party transcription services.
 
-## Project Structure
-
-### Root Level Configuration
-
-- Root-Level Files
-  - `tsconfig.json`: TypeScript configuration file specifying compiler options.
-  - `package.json`: Contains project dependencies, scripts, and metadata.
-  - `.env.example`: Example environment variables file for configuration.
-
-- Database Schema (`prisma`)
-  - `prisma/schema.prisma`: Defines the Prisma ORM schema for database structure and models.
-  - `prisma/migrations/20250303081347_shownotes/migration.sql`: SQL script detailing schema migrations for Prisma.
-
-- Shared Resources (`shared`)
-  - `shared/constants.ts`: Globally shared constants across multiple modules.
-
-### Node CLI and Server Backend
-
-- Main Entry Points (`src`)
-  - `commander.ts`: CLI setup using Commander.js.
-  - `commander-utils.ts`: Helper functions for CLI usage.
-
-### Process Commands and Process Steps
-
-- Process Commands (`src/process-commands`)
-  - `file.ts`: Processes local audio/video files.
-  - `video.ts`: Processes single YouTube videos.
-  - `urls.ts`: Processes videos listed in a URL file.
-  - `playlist.ts`: Processes YouTube playlists.
-  - `channel.ts`: Processes all videos from YouTube channels.
-  - `rss.ts`: Processes podcast RSS feeds.
-
-- Process Steps (`src/process-steps`)
-  - `01-generate-markdown.ts`: Creates initial markdown file with metadata.
-  - `02-download-audio.ts`: Downloads audio from YouTube videos.
-  - `03-run-transcription.ts`: Manages transcription processes.
-  - `04-select-prompt.ts`: Defines prompts for summarization and chapter creation.
-  - `05-run-llm.ts`: Runs language model processes based on prompts.
-
-### Transcription and LLM Services
-
-- Transcription Services (`src/transcription`)
-  - `whisper.ts`: Implements transcription with Whisper.cpp.
-  - `deepgram.ts`: Integration with Deepgram API for transcription.
-  - `assembly.ts`: Integration with AssemblyAI API for transcription.
-
-- Language Models (`src/llms`)
-  - `chatgpt.ts`: Integration with OpenAI's GPT models.
-  - `claude.ts`: Integration with Anthropic's Claude models.
-  - `gemini.ts`: Integration with Google's Gemini models.
-  - `fireworks.ts`: Integration with Fireworks open-source models.
-  - `together.ts`: Integration with Together open-source models.
-  - `deepseek.ts`: Integration with DeepSeek AI models.
-
-### Utility Files
-
-- Utility Files (`src/utils`)
-  - `create-clips.ts`: Utility to create video/audio clips.
-  - `logging.ts`: Reusable logging utilities using Chalk for colorized output.
-  - `types.ts`: Commonly used TypeScript types.
-  - `node-utils.ts`: Node.js-specific utilities.
-
-- Embeddings Utilities (`src/utils/embeddings`)
-  - `create-embed.ts`: Functions for creating embeddings.
-  - `query-embed.ts`: Functions for querying embeddings.
-
-- Image Generation Utilities (`src/utils/images`)
-  - `black-forest-labs-generator.ts`: Integration for image generation with Black Forest Labs.
-  - `dalle-generator.ts`: Integration for OpenAI's DALL·E image generation.
-  - `stability-ai-generator.ts`: Integration for Stability AI image generation.
-  - `combined-generator.ts`: Combines multiple image generators.
-  - `utils.ts`: Common image-related helper functions.
-  - `index.ts`: Centralized exports for image utilities.
+```bash
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram
+```
 
 ## Contributors
 

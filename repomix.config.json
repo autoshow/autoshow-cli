@@ -1,42 +1,39 @@
 {
   "output": {
     "instructionFilePath": ".github/repomix-instruction.md",
-    "filePath": "new-llm.md",
-    "style": "markdown",
+    "filePath": "new-llm.xml",
+    "style": "xml",
     "parsableStyle": false,
     "fileSummary": true,
     "directoryStructure": true,
     "removeComments": true,
     "removeEmptyLines": true,
     "compress": false,
-    "topFilesLength": 5,
+    "topFilesLength": 20,
     "showLineNumbers": false,
     "copyToClipboard": false,
     "git": {
-      "sortByChanges": true,
-      "sortByChangesMaxCommits": 100
+      "sortByChanges": false
     }
   },
-  "include": [],
+  "include": ["**/*"],
   "ignore": {
     "useGitignore": true,
     "useDefaultPatterns": true,
     "customPatterns": [
-      ".github/",
+      ".github/repomix-instruction.md",
+      "src/prompts/sections.ts",
       "content/",
-      "docs/",
-      "prisma",
+      "docs",
       "test/",
       "whisper.cpp",
       ".env",
-      ".env.example",
       ".gitignore",
       "LICENSE",
       "new-llm.md",
       "new-*.md",
       "new*.md",
       "package-lock.json",
-      "README.md",
       "repomix.config.json",
       "tsconfig.json"
     ]
