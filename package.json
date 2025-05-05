@@ -14,10 +14,9 @@
   "scripts": {
     "repo": "repomix && code new-llm.xml",
     "tsx:base": "tsx --env-file=.env --no-warnings",
-    "node:base": "node --no-warnings --experimental-transform-types --es-module-specifier-resolution=node",
     "setup": "./.github/setup.sh",
     "check": "npx tsc",
-    "as": "npm run node:base -- src/commander.ts",
+    "as": "npm run tsx:base -- src/commander.ts",
     "v": "npm run as -- --video",
     "v3": "npm run as -- --whisper large-v3-turbo --video",
     "f": "npm run as -- --file",
