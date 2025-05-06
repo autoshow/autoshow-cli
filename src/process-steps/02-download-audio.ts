@@ -4,6 +4,7 @@ import { fileTypeFromBuffer } from 'file-type'
 import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
 import { execPromise, readFile, access, rename, execFilePromise, unlink } from '../utils/node-utils.ts'
 import type { ProcessingOptions } from '../utils/types.ts'
+import ora from 'ora'
 
 export async function saveAudio(id: string, ensureFolders?: boolean) {
   if (ensureFolders) {
@@ -63,8 +64,9 @@ export async function downloadAudio(
   input: string,
   filename: string
 ) {
-  l.step(`\nStep 2 - Download Audio\n`)
   logInitialFunctionCall('downloadAudio', { options, input, filename })
+
+  const spinner = ora('Step 2 - Download Audio').start()
 
   const finalPath = `content/${filename}`
   const outputPath = `${finalPath}.wav`
@@ -74,7 +76,7 @@ export async function downloadAudio(
     await access(outputPath)
     const renamedPath = `${finalPath}-renamed.wav`
     await rename(outputPath, renamedPath)
-    l.dim(`    - Existing file found at ${outputPath}. Renamed to ${renamedPath}`)
+    spinner.info(`Existing file found at ${outputPath}. Renamed to ${renamedPath}`)
   } catch {
     // If we reach here, the file doesn't exist. Proceed as normal.
   }
@@ -94,7 +96,9 @@ export async function downloadAudio(
           input,
         ]
       )
+      spinner.succeed('Audio downloaded successfully.')
     } catch (error) {
+      spinner.fail('Audio download failed.')
       err(`Error downloading audio: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
