@@ -7,13 +7,14 @@ import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
 import { execPromise } from '../utils/node-utils.ts'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../utils/constants.ts'
 import type { ProcessingOptions, TranscriptionResult } from '../utils/types.ts'
+import ora from 'ora'
 
 export async function runTranscription(
   options: ProcessingOptions,
   finalPath: string,
   transcriptServices?: string
 ) {
-  l.step(`\nStep 3 - Run Transcription\n`)
+  const spinner = ora('Step 3 - Run Transcription').start()
   logInitialFunctionCall('runTranscription', { options, finalPath, transcriptServices })
 
   let finalTranscript = ''
@@ -26,7 +27,7 @@ export async function runTranscription(
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callDeepgram(options, finalPath)
         )
-        l.dim('\n  Deepgram transcription completed successfully.\n')
+
         finalTranscript = result.transcript
         finalModelId = result.modelId
         finalCostPerMinuteCents = result.costPerMinuteCents
@@ -37,7 +38,7 @@ export async function runTranscription(
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callAssembly(options, finalPath)
         )
-        l.dim('\n  AssemblyAI transcription completed successfully.\n')
+
         finalTranscript = result.transcript
         finalModelId = result.modelId
         finalCostPerMinuteCents = result.costPerMinuteCents
@@ -48,7 +49,7 @@ export async function runTranscription(
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisper(options, finalPath)
         )
-        l.dim('\n  Whisper transcription completed successfully.\n')
+
         finalTranscript = result.transcript
         finalModelId = result.modelId
         finalCostPerMinuteCents = result.costPerMinuteCents
@@ -58,6 +59,8 @@ export async function runTranscription(
       default:
         throw new Error(`Unknown transcription service: ${transcriptServices}`)
     }
+
+    spinner.succeed('Transcription completed successfully.')
 
     const transcriptionCost = await logTranscriptionCost({
       modelId: finalModelId,
