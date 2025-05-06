@@ -98,6 +98,7 @@ export async function downloadAudio(
       )
       spinner.succeed('Audio downloaded successfully.')
     } catch (error) {
+      spinner.fail('Audio download failed.')
       err(`Error downloading audio: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
