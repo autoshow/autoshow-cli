@@ -46,7 +46,8 @@
     "commander": "13.1.0",
     "fast-xml-parser": "5.0.8",
     "file-type": "20.4.0",
-    "openai": "4.86.1"
+    "openai": "4.86.1",
+    "ora": "^8.2.0"
   },
   "devDependencies": {
     "@types/node": "22.13.7",
