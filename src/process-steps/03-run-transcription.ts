@@ -75,6 +75,7 @@ export async function runTranscription(
       costPerMinuteCents: finalCostPerMinuteCents
     }
   } catch (error) {
+    spinner.fail('Transcription failed.')
     err(`Error during runTranscription: ${(error as Error).message}`)
     throw error
   }
