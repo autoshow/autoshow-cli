@@ -1,0 +1,16 @@
+https://softwareengineeringdaily.com/feed/
+https://changelog.com/jsparty/feed
+https://feed.syntax.fm/rss
+https://anchor.fm/s/f9191780/podcast/rss
+https://feeds.fireside.fm/podrocket/rss
+https://feeds.transistor.fm/fsjam-podcast
+https://www.spreaker.com/show/6102072/episodes/feed
+https://www.spreaker.com/show/6102064/episodes/feed
+https://shoptalkshow.com/feed/podcast/default-podcast/
+https://anchor.fm/s/dd6922b4/podcast/rss
+https://feeds.simplecast.com/sOJAMohP
+https://feeds.transistor.fm/svelte-radio
+https://anchor.fm/s/e329dea0/podcast/rss
+https://changelog.com/podcast/feed
+https://feeds.simplecast.com/hq7M2S7s
+https://seradio.libsyn.com/rss
