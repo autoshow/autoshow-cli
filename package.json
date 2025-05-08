@@ -1,14 +1,15 @@
 {
   "name": "autoshow-cli",
   "author": "Anthony Campolo",
-  "description": "An example workflow for automatically generating customizable show notes for audio and video files.",
+  "description": "Automated generation of show notes and content for audio and video files.",
   "keywords": [
     "ChatGPT",
     "Claude",
     "Gemini",
     "Whisper.cpp",
     "Deepgram",
-    "AssemblyAI"
+    "AssemblyAI",
+    "Commander.js"
   ],
   "type": "module",
   "scripts": {
@@ -38,16 +39,20 @@
     "test:e2e": "npm run test:base -- test/cli/e2e.test.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "1.3.5",
     "@anthropic-ai/sdk": "0.39.0",
     "@deepgram/sdk": "3.11.1",
     "@google/generative-ai": "0.22.0",
+    "ai": "4.2.9",
     "assemblyai": "4.9.0",
     "chalk": "5.4.1",
     "commander": "13.1.0",
     "fast-xml-parser": "5.0.8",
     "file-type": "20.4.0",
     "openai": "4.86.1",
-    "ora": "^8.2.0"
+    "ora": "^8.2.0",
+    "react": "19.1.0",
+    "zod": "3.24.2"
   },
   "devDependencies": {
     "@types/node": "22.13.7",
