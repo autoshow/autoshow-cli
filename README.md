@@ -1,18 +1,18 @@
 <div align="center">
-  <h1>AutoShow</h1>
-  <img alt="autoshow logo" src="https://ajc.pics/autoshow/autoshow-cover-01.webp" width="300" />
+  <h1>AutoShow CLI</h1>
+  <img alt="autoshow logo" src="https://ajc.pics/autoshow/autoshow-cover-01.webp" width="300" />
 </div>
 
 ## Outline
 
 - [Project Overview](#project-overview)
-  - [Prompts and Content Formats](#prompts-and-content-formats)
-  - [Key Features](#key-features)
-  - [AutoShow Pipeline](#autoshow-pipeline)
+  - [Prompts and Content Formats](#prompts-and-content-formats)
+  - [Key Features](#key-features)
+  - [AutoShow Pipeline](#autoshow-pipeline)
 - [Setup](#setup)
-- [Run AutoShow Node Scripts](#run-autoshow-node-scripts)
-  - [Process Options](#process-options)
-  - [Transcription and LLM Options](#transcription-and-llm-options)
+- [Core AutoShow Commands](#core-autoshow-commands)
+  - [Process Options](#process-options)
+  - [Transcription and LLM Options](#transcription-and-llm-options)
 - [Contributors](#contributors)
 
 ## Project Overview
@@ -51,12 +51,11 @@ AutoShow can generate diverse content formats including:
   - Transcription services (Whisper.cpp, Deepgram, Assembly)
 - Customizable prompts for generating titles, summaries, chapter titles/descriptions, key takeaways, and questions to test comprehension
 - Markdown output with metadata and formatted content
+- Workflow management for processing content from `./workflows` subdirectory.
 
 ### AutoShow Pipeline
 
-The AutoShow workflow includes the following steps that feed sequentially into each other:
-
-1. The user provides a content input (video URL, playlist, RSS feed, or local file) and front matter is created based on the content's metadata.
+1. The user provides a content input (video URL, playlist, RSS feed, or local file) or triggers a workflow. Front matter is created based on the content's metadata.
 2. The audio is downloaded (if necessary).
 3. Transcription is performed using the selected transcription service.
 4. A customizable prompt is inserted containing instructions for the show notes or other content forms.
@@ -64,13 +63,13 @@ The AutoShow workflow includes the following steps that feed sequentially into e
 
 ## Setup
 
-`scripts/setup.sh` checks to ensure a `.env` file exists, Node dependencies are installed, and the `whisper.cpp` repository is cloned and built. Run the script with the `setup` script in `package.json`.
+The `setup.sh` script checks for a `.env` file, installs Node dependencies, and builds `whisper.cpp`:
 
 ```bash
 npm run setup
 ```
 
-## Run AutoShow Node Scripts
+## Core AutoShow Commands
 
 Example commands for all available CLI options can be found in [`docs`](/docs/README.md).
 
@@ -88,16 +87,16 @@ Run on a YouTube playlist.
 npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"
 ```
 
-Run on a list of arbitrary URLs.
+Run on a list of arbitrary URLs from a file.
 
 ```bash
-npm run as -- --urls "content/examples/example-urls.md"
+npm run as -- --urls "./content/examples/example-urls.md"
 ```
 
 Run on a local audio or video file.
 
 ```bash
-npm run as -- --file "content/examples/audio.mp3"
+npm run as -- --file "./content/examples/audio.mp3"
 ```
 
 Run on a podcast RSS feed.
@@ -106,21 +105,50 @@ Run on a podcast RSS feed.
 npm run as -- --rss "https://ajcwebdev.substack.com/feed"
 ```
 
-### Transcription and LLM Options
+For more granular control (e.g., specific RSS items, date filtering, order, skip, last), use options like `--item <url>`, `--date <YYYY-MM-DD>`, `--order newest|oldest`, `--last <num>`, `--lastDays <num>`.
 
-Use 3rd party LLM services.
+Use `--info` to fetch metadata without full processing for URLs, playlists, channels, or RSS feeds.
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini
+npm run as -- --urls "./content/examples/example-urls.md" --info
 ```
 
-Use 3rd party transcription services.
+### Transcription and LLM Options
+
+Specify transcription service (default is Whisper `base`):
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly best --speakerLabels
+```
+
+Specify LLM service:
+
+```bash
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-4o-mini
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-3-5-haiku-latest
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-1.5-flash
+```
+
+Customize prompts:
+
+```bash
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --prompt summary shortChapters --chatgpt
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --customPrompt ./my-custom-prompt.md --chatgpt
+```
+
+Estimate costs:
+
+```bash
+npm run as -- --transcriptCost "./content/examples/audio.wav" --whisper base
+npm run as -- --llmCost "./content/some-transcript-file.txt" --chatgpt gpt-4o-mini
+```
+
+For a full list of options, run:
+
+```bash
+npm run as -- --help
 ```
 
 ## Contributors

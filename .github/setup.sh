@@ -95,10 +95,10 @@ if [ -d "whisper.cpp" ]; then
 else
   echo "Cloning whisper.cpp..."
   git clone https://github.com/ggerganov/whisper.cpp.git &>/dev/null
-  echo "Downloading whisper models (tiny, base, large-v3-turbo)..."
+  echo "Downloading whisper models (tiny, base)..."
   bash ./whisper.cpp/models/download-ggml-model.sh tiny &>/dev/null
   bash ./whisper.cpp/models/download-ggml-model.sh base &>/dev/null
-  bash ./whisper.cpp/models/download-ggml-model.sh large-v3-turbo &>/dev/null
+  # bash ./whisper.cpp/models/download-ggml-model.sh large-v3-turbo &>/dev/null
   echo "Compiling whisper.cpp..."
   cmake -B whisper.cpp/build -S whisper.cpp &>/dev/null
   cmake --build whisper.cpp/build --config Release &>/dev/null
