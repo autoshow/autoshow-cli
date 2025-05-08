@@ -13,7 +13,7 @@
   ],
   "type": "module",
   "scripts": {
-    "repo": "repomix && code new-llm.xml",
+    "repo": "bash .github/repomix.sh",
     "tsx:base": "tsx --env-file=.env --no-warnings",
     "setup": "./.github/setup.sh",
     "check": "npx tsc",
