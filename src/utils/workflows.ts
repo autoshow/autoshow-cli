@@ -2,7 +2,7 @@
 
 import { l, err, logSeparator, logInitialFunctionCall } from './logging.ts'
 import { execPromise, mkdirSync, existsSync } from './node-utils.ts'
-import { processRSS, validateRSSAction } from '../process-commands/rss.ts'
+import { processRSS } from '../process-commands/rss.ts'
 import type { ProcessingOptions } from './types.ts'
 
 export async function logOperation(
@@ -92,7 +92,7 @@ export async function prepareShownotes(dirName: string, dateParam: string | unde
     rssOptions.date = [dateParam]
   }
   try {
-    await validateRSSAction(rssOptions, processRSS, rssOptions.llmServices, rssOptions.transcriptServices)
+    await processRSS(rssOptions, rssOptions.llmServices, rssOptions.transcriptServices)
   } catch (e) {
     err(`Error during RSS processing for shownotes: ${(e as Error).message}`)
     throw e
@@ -115,7 +115,7 @@ export async function prepareInfo(dirName: string, sourceDir: string): Promise<v
     rss: [`./content/feeds/${feedFile}`],
   }
   try {
-    await validateRSSAction(rssOptions, processRSS)
+    await processRSS(rssOptions)
   } catch (e) {
     err(`Error during RSS processing for info: ${(e as Error).message}`)
     throw e

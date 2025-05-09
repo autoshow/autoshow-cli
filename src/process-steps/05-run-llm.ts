@@ -5,7 +5,7 @@ import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
 import { writeFile } from '../utils/node-utils.ts'
 import { callChatGPT, callClaude, callGemini } from '../llms/llm-services.ts'
 import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '../llms/llm-services.ts'
-import type { ProcessingOptions, ShowNoteMetadata, LLMResult } from '../utils/types.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
 
 export const LLM_SERVICES_CONFIG = {
   skip: {
@@ -89,7 +89,7 @@ export async function runLLM(
         ? optionValue
         : defaultModelId
 
-      let showNotesData: LLMResult
+      let showNotesData
 
       switch (llmServices) {
         case 'chatgpt':

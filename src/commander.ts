@@ -6,22 +6,13 @@ import { processPlaylist } from './process-commands/playlist.ts'
 import { processChannel } from './process-commands/channel.ts'
 import { processURLs } from './process-commands/urls.ts'
 import { processFile } from './process-commands/file.ts'
-import { processRSS, validateRSSAction } from './process-commands/rss.ts'
-import { selectPrompts } from './process-steps/04-select-prompt.ts'
+import { processRSS } from './process-commands/rss.ts'
 import { LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
 import { handleMetaWorkflow } from './utils/workflows.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from './utils/logging.ts'
 import { argv, exit, fileURLToPath } from './utils/node-utils.ts'
 import type { ProcessingOptions } from './utils/types.ts'
 import path from 'node:path'
-
-export const ENV_VARS_MAP = {
-  openaiApiKey: 'OPENAI_API_KEY',
-  anthropicApiKey: 'ANTHROPIC_API_KEY',
-  deepgramApiKey: 'DEEPGRAM_API_KEY',
-  assemblyApiKey: 'ASSEMBLY_API_KEY',
-  geminiApiKey: 'GEMINI_API_KEY',
-}
 
 export const COMMAND_CONFIG = {
   video: {
@@ -75,7 +66,6 @@ export function validateCommandInput(options: ProcessingOptions): {
   transcriptServices?: string
 } {
   logCommandValidation('start', { options: Object.keys(options).filter(k => options[k]) })
-  
   const actionKeys = Object.keys(COMMAND_CONFIG) as Array<keyof typeof COMMAND_CONFIG>
   const selectedActions = actionKeys.filter(key => {
     const value = options[key]
@@ -84,20 +74,15 @@ export function validateCommandInput(options: ProcessingOptions): {
            value !== '' &&
            (typeof value !== 'boolean' || value === true)
   })
-  
   logCommandValidation('actions', { selectedActions })
-  
   if (selectedActions.length > 1) {
     err(`Error: Multiple input options provided (${selectedActions.join(', ')}). Please specify only one.`)
     exit(1)
   }
-  
   const action = selectedActions[0]
-  
   const llmKeys = Object.values(LLM_SERVICES_CONFIG)
     .map(service => service.value)
     .filter(value => value !== null) as string[]
-    
   const selectedLLMs = llmKeys.filter(key => {
     const value = options[key as keyof ProcessingOptions]
     return value !== undefined &&
@@ -105,48 +90,24 @@ export function validateCommandInput(options: ProcessingOptions): {
            value !== '' &&
            (typeof value !== 'boolean' || value === true)
   })
-  
   logCommandValidation('llms', { selectedLLMs })
-  
   if (selectedLLMs.length > 1) {
     err(`Error: Multiple LLM options provided (${selectedLLMs.join(', ')}). Please specify only one.`)
     exit(1)
   }
-  
   const llmServices = selectedLLMs[0]
-  
   let transcriptServices: string | undefined
   if (options.deepgram) transcriptServices = 'deepgram'
   else if (options.assembly) transcriptServices = 'assembly'
   else if (options.whisper) transcriptServices = 'whisper'
-  
-  const needsTranscription = !options.info &&
-                             !options.printPrompt &&
-                             !options['metaDir'] &&
-                             action !== undefined
-                             
+  const needsTranscription = !options.info && !options['metaDir'] && action !== undefined
   if (needsTranscription && !transcriptServices) {
     l.warn("Defaulting to Whisper for transcription as no service was specified.")
     options.whisper = true
     transcriptServices = 'whisper'
   }
-  
   logCommandValidation('result', { action, llmServices, transcriptServices })
-  
   return { action, llmServices, transcriptServices }
-}
-
-export async function handleEarlyExitCases(options: ProcessingOptions): Promise<boolean> {
-  l.dim('[handleEarlyExitCases] Checking for early exit conditions')
-  
-  if (options.printPrompt) {
-    l.dim(`[handleEarlyExitCases] Processing print prompt: ${options.printPrompt}`)
-    const prompt = await selectPrompts({ ...options, printPrompt: options.printPrompt })
-    console.log(prompt)
-    return true
-  }
-  
-  return false
 }
 
 export async function processCommand(
@@ -154,41 +115,23 @@ export async function processCommand(
 ): Promise<void> {
   l.dim('[processCommand] Starting command processing')
   
-  Object.entries(ENV_VARS_MAP).forEach(([key, envKey]) => {
-    const value = (options as Record<string, string | undefined>)[key]
-    if (value) {
-      process.env[envKey] = value
-      l.dim(`[processCommand] Setting env var ${envKey} from option ${key}`)
-    }
-  })
-  
-  const earlyExit = await handleEarlyExitCases(options)
-  if (earlyExit) {
-    l.dim('[processCommand] Early exit condition met')
-    exit(0)
-  }
-  
   const workflowHandled = await handleMetaWorkflow(options)
   if (workflowHandled) {
     l.dim('[processCommand] Meta workflow handled')
     exit(0)
   }
-  
   const { action, llmServices, transcriptServices } = validateCommandInput(options)
-  
   if (!action) {
-    if (!options['metaDir'] && !options.printPrompt) {
+    if (!options['metaDir']) {
       err('Error: No action specified (e.g., --video, --rss, --metaDir). Use --help for options.')
       program.help()
     }
     exit(1)
   }
-  
   l.dim(`[processCommand] Processing action: ${action} with LLM: ${llmServices || 'none'} and transcription: ${transcriptServices || 'none'}`)
-  
   try {
     if (action === 'rss') {
-      await validateRSSAction(options, COMMAND_CONFIG[action].handler, llmServices, transcriptServices)
+      await COMMAND_CONFIG[action].handler(options, llmServices, transcriptServices)
     } else {
       const input = options[action]
       if (!input || typeof input !== 'string') {
@@ -196,7 +139,6 @@ export async function processCommand(
       }
       await COMMAND_CONFIG[action].handler(options, input, llmServices, transcriptServices)
     }
-    
     logSeparator({ type: 'completion', descriptor: action })
     exit(0)
   } catch (error) {
@@ -208,7 +150,6 @@ export async function processCommand(
 const program = new Command()
 program
   .name('autoshow-cli')
-  .version('0.0.3')
   .description('Automate processing of audio/video content and manage meta-workflows.')
   .usage('[options]')
   .option('--video <url>', 'Process a single YouTube video')
@@ -232,14 +173,8 @@ program
   .option('--claude [model]', 'Use Anthropic Claude for processing with optional model specification')
   .option('--gemini [model]', 'Use Google Gemini for processing with optional model specification')
   .option('--prompt <sections...>', 'Specify prompt sections to include (e.g., summary longChapters)')
-  .option('--printPrompt <sections...>', 'Print the prompt sections without processing and exit')
   .option('--customPrompt <filePath>', 'Use a custom prompt from a markdown file')
   .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
-  .option('--openaiApiKey <key>', 'Specify OpenAI API key (overrides .env variable)')
-  .option('--anthropicApiKey <key>', 'Specify Anthropic API key (overrides .env variable)')
-  .option('--deepgramApiKey <key>', 'Specify Deepgram API key (overrides .env variable)')
-  .option('--assemblyApiKey <key>', 'Specify AssemblyAI API key (overrides .env variable)')
-  .option('--geminiApiKey <key>', 'Specify Gemini API key (overrides .env variable)')
   .option('--metaDir <dirName>', 'The meta-workflow directory name (e.g., "01-ai") located inside current directory')
   .option('--metaSrcDir <sourceDir>', 'The meta-workflow source data directory (e.g., "autoshow-daily", "mk-auto"), relative to current directory')
   .option('--metaDate <dateParam>', 'The date for the meta-workflow shownotes (YYYY-MM-DD); can be appended to npm script')
