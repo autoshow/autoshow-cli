@@ -7,13 +7,12 @@ import { processChannel } from './process-commands/channel.ts'
 import { processURLs } from './process-commands/urls.ts'
 import { processFile } from './process-commands/file.ts'
 import { processRSS, validateRSSAction } from './process-commands/rss.ts'
-import { estimateTranscriptCost } from './process-steps/03-run-transcription.ts'
 import { selectPrompts } from './process-steps/04-select-prompt.ts'
-import { logLLMCost, LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
+import { LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
 import { handleMetaWorkflow } from './utils/workflows.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from './utils/logging.ts'
-import { argv, exit, fileURLToPath, readFile } from './utils/node-utils.ts'
-import type { ProcessingOptions, HandlerFunction } from './utils/types.ts'
+import { argv, exit, fileURLToPath } from './utils/node-utils.ts'
+import type { ProcessingOptions } from './utils/types.ts'
 import path from 'node:path'
 
 export const ENV_VARS_MAP = {
@@ -24,200 +23,185 @@ export const ENV_VARS_MAP = {
   geminiApiKey: 'GEMINI_API_KEY',
 }
 
-export const PROCESS_HANDLERS = {
-  video: processVideo,
-  playlist: processPlaylist,
-  channel: processChannel,
-  urls: processURLs,
-  file: processFile,
-  rss: processRSS,
-}
-
-export const ACTION_OPTIONS = [
-  {
-    name: 'video',
+export const COMMAND_CONFIG = {
+  video: {
     description: 'Single YouTube Video',
     message: 'Enter the YouTube video URL:',
     validate: (input: string): boolean | string => input ? true : 'Please enter a valid URL.',
+    handler: processVideo,
   },
-  {
-    name: 'playlist',
+  playlist: {
     description: 'YouTube Playlist',
     message: 'Enter the YouTube playlist URL:',
     validate: (input: string): boolean | string => input ? true : 'Please enter a valid URL.',
+    handler: processPlaylist,
   },
-  {
-    name: 'channel',
+  channel: {
     description: 'YouTube Channel',
     message: 'Enter the YouTube channel URL:',
     validate: (input: string): boolean | string => input ? true : 'Please enter a valid URL.',
+    handler: processChannel,
   },
-  {
-    name: 'urls',
+  urls: {
     description: 'List of URLs from File',
     message: 'Enter the file path containing URLs:',
     validate: (input: string): boolean | string => input ? true : 'Please enter a valid file path.',
+    handler: processURLs,
   },
-  {
-    name: 'file',
+  file: {
     description: 'Local Audio/Video File',
     message: 'Enter the local audio/video file path:',
     validate: (input: string): boolean | string => input ? true : 'Please enter a valid file path.',
+    handler: processFile,
   },
-  {
-    name: 'rss',
+  rss: {
     description: 'Podcast RSS Feed',
     message: 'Enter the podcast RSS feed URL:',
     validate: (input: string): boolean | string => input ? true : 'Please enter a valid URL.',
-  },
-]
-
-export async function estimateLLMCost(
-  options: ProcessingOptions,
-  llmService: string
-): Promise<number> {
-  const filePath = options.llmCost
-  if (!filePath) {
-    throw new Error('No file path provided to estimate LLM cost.')
-  }
-  l.dim(`\nEstimating LLM cost for '${llmService}' with file: ${filePath}`)
-  try {
-    l.dim('[estimateLLMCost] reading file for cost estimate...')
-    const content = await readFile(filePath, 'utf8')
-    l.dim('[estimateLLMCost] file content length:', content.length)
-    const tokenCount = approximateTokens(content)
-    l.dim('[estimateLLMCost] approximate token count:', tokenCount)
-    let userModel = typeof options[llmService] === 'string'
-      ? options[llmService] as string
-      : undefined
-    const serviceConfig = LLM_SERVICES_CONFIG[llmService as keyof typeof LLM_SERVICES_CONFIG]
-    if (userModel === undefined || userModel === 'true' || userModel.trim() === '') {
-      userModel = serviceConfig?.models[0]?.modelId
-    }
-    l.dim('[estimateLLMCost] determined userModel:', userModel)
-    const name = userModel || llmService
-    const costInfo = logLLMCost({
-      name,
-      stopReason: 'n/a',
-      tokenUsage: {
-        input: tokenCount,
-        output: 4000,
-        total: tokenCount + 4000
-      }
-    })
-    l.dim('[estimateLLMCost] final cost estimate (totalCost):', costInfo.totalCost)
-    return costInfo.totalCost ?? 0
-  } catch (error) {
-    err(`Error estimating LLM cost: ${(error as Error).message}`)
-    throw error
+    handler: processRSS,
   }
 }
 
-function approximateTokens(text: string): number {
-  const words = text.trim().split(/\s+/)
-  return Math.max(1, words.length)
+export function logCommandValidation(stage: string, detail: Record<string, unknown>): void {
+  l.dim(`[CommandValidation:${stage}]`)
+  Object.entries(detail).forEach(([key, value]) =>
+    l.dim(`  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
+  )
 }
 
-export function validateOption(
-  optionKeys: string[],
-  options: ProcessingOptions,
-  errorMessage: string
-): string | undefined {
-  const selectedOptions = optionKeys.filter((opt) => {
-    const value = options[opt as keyof ProcessingOptions]
-    if (Array.isArray(value)) {
-      return value.length > 0
-    }
-    return value !== undefined && value !== null && value !== false && value !== ''
-  })
-  if (selectedOptions.length > 1) {
-    err(`Error: Multiple ${errorMessage} provided (${selectedOptions.join(', ')}). Please specify only one.`)
-    exit(1)
-  }
-  return selectedOptions[0] as string | undefined
-}
-
-export function validateInputCLI(options: ProcessingOptions): {
-  action?: 'video' | 'playlist' | 'channel' | 'urls' | 'file' | 'rss',
+export function validateCommandInput(options: ProcessingOptions): {
+  action?: keyof typeof COMMAND_CONFIG,
   llmServices?: string,
   transcriptServices?: string
 } {
-  const actionValues = ACTION_OPTIONS.map((opt) => opt.name)
-  const selectedAction = validateOption(actionValues, options, 'input option')
-  const action = selectedAction as 'video' | 'playlist' | 'channel' | 'urls' | 'file' | 'rss' | undefined
-  const llmServices = validateLLM(options)
-  const transcriptServices = validateTranscription(options)
+  logCommandValidation('start', { options: Object.keys(options).filter(k => options[k]) })
+  
+  const actionKeys = Object.keys(COMMAND_CONFIG) as Array<keyof typeof COMMAND_CONFIG>
+  const selectedActions = actionKeys.filter(key => {
+    const value = options[key]
+    return value !== undefined &&
+           value !== null &&
+           value !== '' &&
+           (typeof value !== 'boolean' || value === true)
+  })
+  
+  logCommandValidation('actions', { selectedActions })
+  
+  if (selectedActions.length > 1) {
+    err(`Error: Multiple input options provided (${selectedActions.join(', ')}). Please specify only one.`)
+    exit(1)
+  }
+  
+  const action = selectedActions[0]
+  
+  const llmKeys = Object.values(LLM_SERVICES_CONFIG)
+    .map(service => service.value)
+    .filter(value => value !== null) as string[]
+    
+  const selectedLLMs = llmKeys.filter(key => {
+    const value = options[key as keyof ProcessingOptions]
+    return value !== undefined &&
+           value !== null &&
+           value !== '' &&
+           (typeof value !== 'boolean' || value === true)
+  })
+  
+  logCommandValidation('llms', { selectedLLMs })
+  
+  if (selectedLLMs.length > 1) {
+    err(`Error: Multiple LLM options provided (${selectedLLMs.join(', ')}). Please specify only one.`)
+    exit(1)
+  }
+  
+  const llmServices = selectedLLMs[0]
+  
+  let transcriptServices: string | undefined
+  if (options.deepgram) transcriptServices = 'deepgram'
+  else if (options.assembly) transcriptServices = 'assembly'
+  else if (options.whisper) transcriptServices = 'whisper'
+  
+  const needsTranscription = !options.info &&
+                             !options.printPrompt &&
+                             !options['metaDir'] &&
+                             action !== undefined
+                             
+  if (needsTranscription && !transcriptServices) {
+    l.warn("Defaulting to Whisper for transcription as no service was specified.")
+    options.whisper = true
+    transcriptServices = 'whisper'
+  }
+  
+  logCommandValidation('result', { action, llmServices, transcriptServices })
+  
   return { action, llmServices, transcriptServices }
 }
 
-export function validateLLM(options: ProcessingOptions): string | undefined {
-  const llmKeys = Object.values(LLM_SERVICES_CONFIG)
-    .map((service) => service.value)
-    .filter((v) => v !== null) as string[]
-  const llmKey = validateOption(llmKeys, options, 'LLM option')
-  return llmKey
-}
-
-export function validateTranscription(options: ProcessingOptions): string | undefined {
-  if (options.deepgram) return 'deepgram'
-  if (options.assembly) return 'assembly'
-  if (options.whisper) return 'whisper'
-  const hasAnyTranscriptionFlag = options.deepgram || options.assembly || options.whisper
-  const needsTranscriptionForCoreAction = !options.info && !options.printPrompt && !options.llmCost && !options.transcriptCost && !options['metaDir'] && (options.video || options.playlist || options.channel || options.urls || options.file || options.rss)
-  if(needsTranscriptionForCoreAction && !hasAnyTranscriptionFlag ) {
-    l.warn("Defaulting to Whisper for transcription for core action as no service was specified.")
-    options.whisper = true
-    return 'whisper'
-  }
-  return undefined
-}
-
-export async function processAction(
-  action: 'video' | 'playlist' | 'channel' | 'urls' | 'file' | 'rss',
-  options: ProcessingOptions,
-  llmServices?: string,
-  transcriptServices?: string
-): Promise<void> {
-  const handler = PROCESS_HANDLERS[action] as HandlerFunction
-  if (action === 'rss') {
-    await validateRSSAction(options, handler, llmServices, transcriptServices)
-    return
-  }
-  const input = options[action]
-  if (!input || typeof input !== 'string') {
-    throw new Error(`No valid input provided for ${action} processing`)
-  }
-  await handler(options, input, llmServices, transcriptServices)
-}
-
-export async function handleEarlyExitIfNeeded(options: ProcessingOptions): Promise<void> {
+export async function handleEarlyExitCases(options: ProcessingOptions): Promise<boolean> {
+  l.dim('[handleEarlyExitCases] Checking for early exit conditions')
+  
   if (options.printPrompt) {
+    l.dim(`[handleEarlyExitCases] Processing print prompt: ${options.printPrompt}`)
     const prompt = await selectPrompts({ ...options, printPrompt: options.printPrompt })
     console.log(prompt)
+    return true
+  }
+  
+  return false
+}
+
+export async function processCommand(
+  options: ProcessingOptions
+): Promise<void> {
+  l.dim('[processCommand] Starting command processing')
+  
+  Object.entries(ENV_VARS_MAP).forEach(([key, envKey]) => {
+    const value = (options as Record<string, string | undefined>)[key]
+    if (value) {
+      process.env[envKey] = value
+      l.dim(`[processCommand] Setting env var ${envKey} from option ${key}`)
+    }
+  })
+  
+  const earlyExit = await handleEarlyExitCases(options)
+  if (earlyExit) {
+    l.dim('[processCommand] Early exit condition met')
     exit(0)
   }
-  if (options.transcriptCost) {
-    let transcriptServiceForCost = validateTranscription(options)
-    if (!transcriptServiceForCost) {
-      if(options.whisper === true || typeof options.whisper === 'string') transcriptServiceForCost = 'whisper'
-      else if(options.deepgram === true || typeof options.deepgram === 'string') transcriptServiceForCost = 'deepgram'
-      else if(options.assembly === true || typeof options.assembly === 'string') transcriptServiceForCost = 'assembly'
-      else {
-        err('Please specify which transcription service to use for cost estimation (e.g., --deepgram, --assembly, --whisper).')
-        exit(1)
+  
+  const workflowHandled = await handleMetaWorkflow(options)
+  if (workflowHandled) {
+    l.dim('[processCommand] Meta workflow handled')
+    exit(0)
+  }
+  
+  const { action, llmServices, transcriptServices } = validateCommandInput(options)
+  
+  if (!action) {
+    if (!options['metaDir'] && !options.printPrompt) {
+      err('Error: No action specified (e.g., --video, --rss, --metaDir). Use --help for options.')
+      program.help()
+    }
+    exit(1)
+  }
+  
+  l.dim(`[processCommand] Processing action: ${action} with LLM: ${llmServices || 'none'} and transcription: ${transcriptServices || 'none'}`)
+  
+  try {
+    if (action === 'rss') {
+      await validateRSSAction(options, COMMAND_CONFIG[action].handler, llmServices, transcriptServices)
+    } else {
+      const input = options[action]
+      if (!input || typeof input !== 'string') {
+        throw new Error(`No valid input provided for ${action} processing`)
       }
+      await COMMAND_CONFIG[action].handler(options, input, llmServices, transcriptServices)
     }
-    await estimateTranscriptCost(options, transcriptServiceForCost)
+    
+    logSeparator({ type: 'completion', descriptor: action })
     exit(0)
-  }
-  if (options.llmCost) {
-    const llmService = validateLLM(options)
-    if (!llmService) {
-      err('Please specify which LLM service to use for cost estimation (e.g., --chatgpt, --claude, etc.).')
-      exit(1)
-    }
-    await estimateLLMCost(options, llmService)
-    exit(0)
+  } catch (error) {
+    err(`Error processing ${action}: ${(error as Error).message}`)
+    exit(1)
   }
 }
 
@@ -244,8 +228,6 @@ program
   .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-2)')
   .option('--assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., best, nano)')
   .option('--speakerLabels', 'Use speaker labels for AssemblyAI or Deepgram transcription')
-  .option('--transcriptCost <filePath>', 'Estimate transcription cost for the given audio/video file path')
-  .option('--llmCost <filePath>', 'Estimate LLM cost for the given text file (prompt + transcript)')
   .option('--chatgpt [model]', 'Use OpenAI ChatGPT for processing with optional model specification')
   .option('--claude [model]', 'Use Anthropic Claude for processing with optional model specification')
   .option('--gemini [model]', 'Use Google Gemini for processing with optional model specification')
@@ -265,36 +247,8 @@ program
   .option('--metaShownotes', 'Run the meta-workflow for shownotes generation')
 
 program.action(async (options: ProcessingOptions & { metaDate?: string | string[] }) => {
-  Object.entries(ENV_VARS_MAP).forEach(([key, envKey]) => {
-    const value = (options as Record<string, string | undefined>)[key]
-    if (value) process.env[envKey] = value
-  })
-  
   logInitialFunctionCall('autoshowCLI', options)
-  await handleEarlyExitIfNeeded(options)
-  
-  const workflowHandled = await handleMetaWorkflow(options)
-  if (workflowHandled) {
-    exit(0)
-  }
-  
-  const { action, llmServices, transcriptServices } = validateInputCLI(options)
-  if (!action) {
-    if(!options['metaDir'] && !options.printPrompt && !options.transcriptCost && !options.llmCost) {
-      err('Error: No action specified (e.g., --video, --rss, --metaDir). Use --help for options.')
-      program.help()
-    }
-    exit(1)
-  }
-  
-  try {
-    await processAction(action, options, llmServices, transcriptServices)
-    logSeparator({ type: 'completion', descriptor: action })
-    exit(0)
-  } catch (error) {
-    err(`Error processing ${action}: ${(error as Error).message}`)
-    exit(1)
-  }
+  await processCommand(options)
 })
 
 program.on('command:*', () => {
