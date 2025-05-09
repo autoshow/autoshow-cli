@@ -383,7 +383,7 @@ export async function processRSS(
         } else {
           throw new Error(`showLink is undefined for item: ${item.title}`)
         }
-        const { transcript, transcriptionCost, modelId: transcriptionModel } = await runTranscription(options, finalPath, transcriptServices)
+        const { transcript, modelId: transcriptionModel } = await runTranscription(options, finalPath, transcriptServices)
         const selectedPrompts = await selectPrompts(options)
         const llmOutput = await runLLM(
           options,
@@ -394,8 +394,7 @@ export async function processRSS(
           metadata as ShowNoteMetadata,
           llmServices,
           transcriptServices,
-          transcriptionModel,
-          transcriptionCost
+          transcriptionModel
         )
         if (!options.saveAudio) {
           await saveAudio(finalPath)
