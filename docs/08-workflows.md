@@ -17,5 +17,5 @@ Get info and generate shownotes for Web category feeds:
 
 ```bash
 npm run as -- --metaDir "02-web" --metaSrcDir "workflows" --metaInfo
-npm run as -- --metaDir "02-web" --metaSrcDir "workflows" --metaShownotes --metaDate "2025-05-06"
+npm run as -- --metaDir "02-web" --metaSrcDir "workflows" --metaShownotes --metaDate "2025-04-28"
 ```
