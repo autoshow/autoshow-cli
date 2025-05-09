@@ -2,7 +2,7 @@
 
 import { l, err } from '../utils/logging.ts'
 import { readFile, unlink, execPromise, existsSync } from '../utils/node-utils.ts'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../utils/constants.ts'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
 import type { ProcessingOptions, WhisperOutput } from '../utils/types.ts'
 
 export function formatTimestamp(timestamp: string) {

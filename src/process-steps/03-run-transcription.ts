@@ -5,9 +5,49 @@ import { callDeepgram } from '../transcription/deepgram.ts'
 import { callAssembly } from '../transcription/assembly.ts'
 import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
 import { execPromise } from '../utils/node-utils.ts'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../utils/constants.ts'
 import type { ProcessingOptions, TranscriptionResult } from '../utils/types.ts'
 import ora from 'ora'
+
+export const TRANSCRIPTION_SERVICES_CONFIG = {
+  whisper: {
+    serviceName: 'Whisper.cpp',
+    value: 'whisper',
+    label: 'Whisper.cpp',
+    models: [
+      { modelId: 'tiny', costPerMinuteCents: 0 },
+      { modelId: 'tiny.en', costPerMinuteCents: 0 },
+      { modelId: 'base', costPerMinuteCents: 0 },
+      { modelId: 'base.en', costPerMinuteCents: 0 },
+      { modelId: 'small', costPerMinuteCents: 0 },
+      { modelId: 'small.en', costPerMinuteCents: 0 },
+      { modelId: 'medium', costPerMinuteCents: 0 },
+      { modelId: 'medium.en', costPerMinuteCents: 0 },
+      { modelId: 'large-v1', costPerMinuteCents: 0 },
+      { modelId: 'large-v2', costPerMinuteCents: 0 },
+      { modelId: 'large-v3-turbo', costPerMinuteCents: 0 },
+      { modelId: 'turbo', costPerMinuteCents: 0 },
+    ]
+  },
+  deepgram: {
+    serviceName: 'Deepgram',
+    value: 'deepgram',
+    label: 'Deepgram',
+    models: [
+      { modelId: 'nova-2', costPerMinuteCents: 0.43 },
+      { modelId: 'base', costPerMinuteCents: 1.25 },
+      { modelId: 'enhanced', costPerMinuteCents: 1.45 },
+    ]
+  },
+  assembly: {
+    serviceName: 'AssemblyAI',
+    value: 'assembly',
+    label: 'AssemblyAI',
+    models: [
+      { modelId: 'best', costPerMinuteCents: 0.62 },
+      { modelId: 'nano', costPerMinuteCents: 0.2 },
+    ]
+  },
+} as const
 
 export async function runTranscription(
   options: ProcessingOptions,
