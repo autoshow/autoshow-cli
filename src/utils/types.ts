@@ -66,57 +66,8 @@ export type ProcessingOptions = {
   last?: number
   date?: string[]
   lastDays?: number
-  openaiApiKey?: string
-  anthropicApiKey?: string
-  geminiApiKey?: string
-  deepgramApiKey?: string
-  assemblyApiKey?: string
   [key: string]: any
 }
-
-export type WhisperOutput = {
-  systeminfo: string
-  model: {
-    type: string
-    multilingual: boolean
-    vocab: number
-    audio: {
-      ctx: number
-      state: number
-      head: number
-      layer: number
-    }
-    text: {
-      ctx: number
-      state: number
-      head: number
-      layer: number
-    }
-    mels: number
-    ftype: number
-  }
-  params: {
-    model: string
-    language: string
-    translate: boolean
-  }
-  result: {
-    language: string
-  }
-  transcription: Array<{
-    timestamps: {
-      from: string
-      to: string
-    }
-    offsets: {
-      from: number
-      to: number
-    }
-    text: string
-  }>
-}
-
-export type HandlerFunction = (options: ProcessingOptions, input: string, llmServices?: string, transcriptServices?: string) => Promise<void>
 
 export interface VideoInfo {
   uploadDate: string
@@ -130,16 +81,4 @@ export interface TranscriptionResult {
   transcript: string
   modelId: string
   costPerMinuteCents: number
-}
-
-export type LLMUsage = {
-  stopReason: string
-  input?: number
-  output?: number
-  total?: number
-}
-
-export type LLMResult = {
-  content: string
-  usage?: LLMUsage
 }
