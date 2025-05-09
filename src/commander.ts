@@ -147,7 +147,7 @@ async function prepareShownotes(dirName: string, dateParam: string | undefined, 
 
   const rssOptions: ProcessingOptions = {
     rss: [`./content/feeds/${feedFile}`],
-    whisper: 'base',
+    whisper: 'large-v3-turbo',
   }
   if (dateParam) {
     rssOptions.date = [dateParam]
