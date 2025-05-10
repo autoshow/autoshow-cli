@@ -100,6 +100,8 @@ export function validateCommandInput(options: ProcessingOptions): {
   if (options.deepgram) transcriptServices = 'deepgram'
   else if (options.assembly) transcriptServices = 'assembly'
   else if (options.whisper) transcriptServices = 'whisper'
+  else if (options.groqWhisper) transcriptServices = 'groqWhisper'
+  
   const needsTranscription = !options.info && !options['metaDir'] && action !== undefined
   if (needsTranscription && !transcriptServices) {
     l.warn("Defaulting to Whisper for transcription as no service was specified.")
@@ -168,6 +170,7 @@ program
   .option('--whisper [model]', 'Use Whisper.cpp for transcription with optional model specification (e.g., base, large-v3-turbo)')
   .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-2)')
   .option('--assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., best, nano)')
+  .option('--groq-whisper [model]', 'Use Groq Whisper for transcription with optional model specification (e.g., whisper-large-v3-turbo, distil-whisper-large-v3-en, whisper-large-v3)')
   .option('--speakerLabels', 'Use speaker labels for AssemblyAI or Deepgram transcription')
   .option('--chatgpt [model]', 'Use OpenAI ChatGPT for processing with optional model specification')
   .option('--claude [model]', 'Use Anthropic Claude for processing with optional model specification')
