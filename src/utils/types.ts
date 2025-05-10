@@ -50,6 +50,7 @@ export type ProcessingOptions = {
   whisper?: boolean | string
   deepgram?: boolean | string
   assembly?: boolean | string
+  groqWhisper?: boolean | string
   speakerLabels?: boolean
   transcriptCost?: string
   llmCost?: string

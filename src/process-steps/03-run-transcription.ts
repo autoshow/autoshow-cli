@@ -3,6 +3,7 @@
 import { callWhisper } from '../transcription/whisper.ts'
 import { callDeepgram } from '../transcription/deepgram.ts'
 import { callAssembly } from '../transcription/assembly.ts'
+import { callGroqWhisper } from '../transcription/groq-whisper.ts'
 import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
 import { execPromise } from '../utils/node-utils.ts'
 import type { ProcessingOptions, TranscriptionResult } from '../utils/types.ts'
@@ -47,164 +48,173 @@ export const TRANSCRIPTION_SERVICES_CONFIG = {
       { modelId: 'nano', costPerMinuteCents: 0.2 },
     ]
   },
+  groqWhisper: {
+    serviceName: 'Groq Whisper',
+    value: 'groqWhisper',
+    label: 'Groq Whisper',
+    models: [
+      { modelId: 'whisper-large-v3-turbo', costPerMinuteCents: 0.0667 },
+      { modelId: 'distil-whisper-large-v3-en', costPerMinuteCents: 0.0333 },
+      { modelId: 'whisper-large-v3', costPerMinuteCents: 0.185 },
+    ]
+  },
 } as const
 
 export async function runTranscription(
-  options: ProcessingOptions,
-  finalPath: string,
-  transcriptServicesInput?: string
+  options: ProcessingOptions,
+  finalPath: string,
+  transcriptServicesInput?: string
 ): Promise<TranscriptionResult> {
-  const spinner = ora('Step 3 - Run Transcription').start()
-  logInitialFunctionCall('runTranscription', { options, finalPath, transcriptServicesInput })
-
-  let serviceToUse = transcriptServicesInput
-  if (!serviceToUse) {
-    if (options.whisper) {
-      serviceToUse = 'whisper'
-    } else if (options.deepgram) {
-      serviceToUse = 'deepgram'
-    } else if (options.assembly) {
-      serviceToUse = 'assembly'
-    } else {
-      l.warn('No specific transcription service flag found in options, and no service explicitly passed. Defaulting to whisper.')
-      serviceToUse = 'whisper'
-      if(options.whisper === undefined) options.whisper = true // ensure whisper call has its option
-    }
-  }
-  l.dim(`Transcription service to use: ${serviceToUse}`)
-
-  let finalTranscript = ''
-  let finalModelId = ''
-  let finalCostPerMinuteCents = 0
-
-  try {
-    switch (serviceToUse) {
-      case 'deepgram': {
-        const result = await retryTranscriptionCall<TranscriptionResult>(
-          () => callDeepgram(options, finalPath)
-        )
-        finalTranscript = result.transcript
-        finalModelId = result.modelId
-        finalCostPerMinuteCents = result.costPerMinuteCents
-        break
-      }
-      case 'assembly': {
-        const result = await retryTranscriptionCall<TranscriptionResult>(
-          () => callAssembly(options, finalPath)
-        )
-        finalTranscript = result.transcript
-        finalModelId = result.modelId
-        finalCostPerMinuteCents = result.costPerMinuteCents
-        break
-      }
-      case 'whisper': {
-        const result = await retryTranscriptionCall<TranscriptionResult>(
-          () => callWhisper(options, finalPath)
-        )
-        finalTranscript = result.transcript
-        finalModelId = result.modelId
-        finalCostPerMinuteCents = result.costPerMinuteCents
-        break
-      }
-      default:
-        spinner.fail(`Transcription failed: Unknown service resolved to '${serviceToUse}'`)
-        throw new Error(`Unknown transcription service: ${serviceToUse}`)
-    }
-    spinner.succeed('Transcription completed successfully.')
-//     const transcriptionCost = await logTranscriptionCost({
-//       modelId: finalModelId,
-//       costPerMinuteCents: finalCostPerMinuteCents,
-//       filePath: `${finalPath}.wav`
-//     })
-    return {
-      transcript: finalTranscript,
-      modelId: finalModelId,
-      costPerMinuteCents: finalCostPerMinuteCents
-    }
-  } catch (error) {
-    spinner.fail('Transcription failed.')
-    err(`Error during runTranscription: ${(error as Error).message}`)
-    throw error
-  }
+  const spinner = ora('Step 3 - Run Transcription').start()
+  logInitialFunctionCall('runTranscription', { options, finalPath, transcriptServicesInput })
+  let serviceToUse = transcriptServicesInput
+  if (!serviceToUse) {
+    if (options.whisper) {
+      serviceToUse = 'whisper'
+    } else if (options.deepgram) {
+      serviceToUse = 'deepgram'
+    } else if (options.assembly) {
+      serviceToUse = 'assembly'
+    } else if (options.groqWhisper) {
+      serviceToUse = 'groqWhisper'
+    } else {
+      l.warn('No specific transcription service flag found in options, and no service explicitly passed. Defaulting to whisper.')
+      serviceToUse = 'whisper'
+      if(options.whisper === undefined) options.whisper = true
+    }
+  }
+  l.dim(`Transcription service to use: ${serviceToUse}`)
+  let finalTranscript = ''
+  let finalModelId = ''
+  let finalCostPerMinuteCents = 0
+  try {
+    switch (serviceToUse) {
+      case 'deepgram': {
+        const result = await retryTranscriptionCall<TranscriptionResult>(
+          () => callDeepgram(options, finalPath)
+        )
+        finalTranscript = result.transcript
+        finalModelId = result.modelId
+        finalCostPerMinuteCents = result.costPerMinuteCents
+        break
+      }
+      case 'assembly': {
+        const result = await retryTranscriptionCall<TranscriptionResult>(
+          () => callAssembly(options, finalPath)
+        )
+        finalTranscript = result.transcript
+        finalModelId = result.modelId
+        finalCostPerMinuteCents = result.costPerMinuteCents
+        break
+      }
+      case 'whisper': {
+        const result = await retryTranscriptionCall<TranscriptionResult>(
+          () => callWhisper(options, finalPath)
+        )
+        finalTranscript = result.transcript
+        finalModelId = result.modelId
+        finalCostPerMinuteCents = result.costPerMinuteCents
+        break
+      }
+      case 'groqWhisper': {
+        const result = await retryTranscriptionCall<TranscriptionResult>(
+          () => callGroqWhisper(options, finalPath)
+        )
+        finalTranscript = result.transcript
+        finalModelId = result.modelId
+        finalCostPerMinuteCents = result.costPerMinuteCents
+        break
+      }
+      default:
+        spinner.fail(`Transcription failed: Unknown service resolved to '${serviceToUse}'`)
+        throw new Error(`Unknown transcription service: ${serviceToUse}`)
+    }
+    spinner.succeed('Transcription completed successfully.')
+    return {
+      transcript: finalTranscript,
+      modelId: finalModelId,
+      costPerMinuteCents: finalCostPerMinuteCents
+    }
+  } catch (error) {
+    spinner.fail('Transcription failed.')
+    err(`Error during runTranscription: ${(error as Error).message}`)
+    throw error
+  }
 }
 
 export async function retryTranscriptionCall<T>(
-  fn: () => Promise<T>
+  fn: () => Promise<T>
 ): Promise<T> {
-  const maxRetries = 7
-  let attempt = 0
-  while (attempt < maxRetries) {
-    try {
-      attempt++
-      const result = await fn()
-      l.dim(`  Transcription call completed successfully on attempt ${attempt}.`)
-      return result
-    } catch (error) {
-      err(`  Attempt ${attempt} failed: ${(error as Error).message}`)
-      if (attempt >= maxRetries) {
-        err(`  Max retries (${maxRetries}) reached. Aborting transcription.`)
-        throw error
-      }
-      const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`  Retrying in ${delayMs / 1000} seconds...`)
-      await new Promise((resolve) => setTimeout(resolve, delayMs))
-    }
-  }
-  throw new Error('Transcription call failed after maximum retries.')
+  const maxRetries = 7
+  let attempt = 0
+  while (attempt < maxRetries) {
+    try {
+      attempt++
+      const result = await fn()
+      l.dim(`  Transcription call completed successfully on attempt ${attempt}.`)
+      return result
+    } catch (error) {
+      err(`  Attempt ${attempt} failed: ${(error as Error).message}`)
+      if (attempt >= maxRetries) {
+        err(`  Max retries (${maxRetries}) reached. Aborting transcription.`)
+        throw error
+      }
+      const delayMs = 1000 * 2 ** (attempt - 1)
+      l.dim(`  Retrying in ${delayMs / 1000} seconds...`)
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+    }
+  }
+  throw new Error('Transcription call failed after maximum retries.')
 }
 
 export async function logTranscriptionCost(info: {
-  modelId: string
-  costPerMinuteCents: number
-  filePath: string
+  modelId: string
+  costPerMinuteCents: number
+  filePath: string
 }): Promise<number> {
-  const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${info.filePath}"`
-  const { stdout } = await execPromise(cmd)
-  const seconds = parseFloat(stdout.trim())
-  if (isNaN(seconds)) {
-    throw new Error(`Could not parse audio duration for file: ${info.filePath}`)
-  }
-  const minutes = seconds / 60
-  const cost = info.costPerMinuteCents * minutes
-  l.dim(
-    `  - Estimated Transcription Cost for ${info.modelId}:\n` +
-    `    - Audio Length: ${minutes.toFixed(2)} minutes\n` +
-    `    - Cost: ¢${cost.toFixed(5)}`
-  )
-  return cost
+  const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${info.filePath}"`
+  const { stdout } = await execPromise(cmd)
+  const seconds = parseFloat(stdout.trim())
+  if (isNaN(seconds)) {
+    throw new Error(`Could not parse audio duration for file: ${info.filePath}`)
+  }
+  const minutes = seconds / 60
+  const cost = info.costPerMinuteCents * minutes
+  l.dim(
+    `  - Estimated Transcription Cost for ${info.modelId}:\n` +
+    `    - Audio Length: ${minutes.toFixed(2)} minutes\n` +
+    `    - Cost: ¢${cost.toFixed(5)}`
+  )
+  return cost
 }
 
 export async function estimateTranscriptCost(
-  options: ProcessingOptions,
-  transcriptServices: string
+  options: ProcessingOptions,
+  transcriptServices: string
 ): Promise<number> {
-  const filePath = options.transcriptCost
-  if (!filePath) throw new Error('No file path provided to estimate transcription cost.')
-  if (!['whisper', 'deepgram', 'assembly'].includes(transcriptServices)) {
-    throw new Error(`Unsupported transcription service: ${transcriptServices}`)
-  }
-
-  const serviceKey = transcriptServices as 'whisper' | 'deepgram' | 'assembly'
-  const config = TRANSCRIPTION_SERVICES_CONFIG[serviceKey]
-  
-  let modelInput = typeof options[serviceKey] === 'string' ? options[serviceKey] as string : undefined
-  if (options[serviceKey] === true || !modelInput) {
-    modelInput = config.models[0]?.modelId 
-    if (serviceKey === 'deepgram' && !modelInput) modelInput = 'nova-2'
-    if (serviceKey === 'assembly' && !modelInput) modelInput = 'best'
-    if (serviceKey === 'whisper' && !modelInput) modelInput = 'base'
-  }
-  if (!modelInput) throw new Error(`Could not determine default model for service: ${transcriptServices}`)
-
-  const normalizedModelId = modelInput.toLowerCase()
-  const model = config.models.find(m => m.modelId.toLowerCase() === normalizedModelId)
-  
-  if (!model) throw new Error(`Model not found for: ${modelInput} in service ${transcriptServices}`)
-  
-  const cost = await logTranscriptionCost({
-    modelId: model.modelId,
-    costPerMinuteCents: model.costPerMinuteCents,
-    filePath
-  })
-  return cost
+  const filePath = options.transcriptCost
+  if (!filePath) throw new Error('No file path provided to estimate transcription cost.')
+  if (!['whisper', 'deepgram', 'assembly', 'groqWhisper'].includes(transcriptServices)) {
+    throw new Error(`Unsupported transcription service: ${transcriptServices}`)
+  }
+  const serviceKey = transcriptServices as 'whisper' | 'deepgram' | 'assembly' | 'groqWhisper'
+  const config = TRANSCRIPTION_SERVICES_CONFIG[serviceKey]
+  let modelInput = typeof options[serviceKey] === 'string' ? options[serviceKey] as string : undefined
+  if (options[serviceKey] === true || !modelInput) {
+    modelInput = config.models[0]?.modelId
+    if (serviceKey === 'deepgram' && !modelInput) modelInput = 'nova-2'
+    if (serviceKey === 'assembly' && !modelInput) modelInput = 'best'
+    if (serviceKey === 'whisper' && !modelInput) modelInput = 'base'
+    if (serviceKey === 'groqWhisper' && !modelInput) modelInput = 'whisper-large-v3-turbo'
+  }
+  if (!modelInput) throw new Error(`Could not determine default model for service: ${transcriptServices}`)
+  const normalizedModelId = modelInput.toLowerCase()
+  const model = config.models.find(m => m.modelId.toLowerCase() === normalizedModelId)
+  if (!model) throw new Error(`Model not found for: ${modelInput} in service ${transcriptServices}`)
+  const cost = await logTranscriptionCost({
+    modelId: model.modelId,
+    costPerMinuteCents: model.costPerMinuteCents,
+    filePath
+  })
+  return cost
 }
