@@ -78,29 +78,38 @@ async function copyBackToDaily(dirName: string, subfolder: string, sourceDir: st
   await logCopy(`./content/${subfolder}`, `./${sourceDir}/${dirName}`, 'copyBackToDaily', `${subfolder} copied to ./${sourceDir}/${dirName}`)
 }
 
-export async function prepareShownotes(dirName: string, dateParam: string | undefined, sourceDir: string): Promise<void> {
-  logInitialFunctionCall('prepareShownotes', { dirName, dateParam, sourceDir })
+export async function prepareShownotes(dirName: string, dateParams: string[] | undefined, sourceDir: string): Promise<void> {
+  logInitialFunctionCall('prepareShownotes', { dirName, dateParams, sourceDir })
   const subfolder = `${dirName}-shownotes`
   const feedFile = `${dirName}-feeds.md`
+  
+  l.dim(`Preparing to process shownotes for ${dirName} with dates: ${dateParams ? dateParams.join(', ') : 'latest available'}`)
+  
   await copyFeeds(sourceDir)
   await logMkdir(`./content/${subfolder}`, 'createDirectoryForShownotes')
+  
   const rssOptions: ProcessingOptions = {
     rss: [`./content/feeds/${feedFile}`],
     whisper: 'large-v3-turbo',
   }
-  if (dateParam) {
-    rssOptions.date = [dateParam]
+  
+  if (dateParams && dateParams.length > 0) {
+    l.dim(`Setting date parameters: ${dateParams.join(', ')}`)
+    rssOptions.date = dateParams
   }
+  
   try {
     await processRSS(rssOptions, rssOptions.llmServices, rssOptions.transcriptServices)
   } catch (e) {
     err(`Error during RSS processing for shownotes: ${(e as Error).message}`)
     throw e
   }
+  
   await logFindMove('.md', './content', `./content/${subfolder}`, 'moveGeneratedMdToSubfolder')
   await logMoveMd(subfolder, dirName, sourceDir, 'moveShownotesToSource')
   await logRemove('./content/feeds', 'cleanupShownotes', 'feeds folder from ./content')
   await logRemove(`./content/${subfolder}`, 'cleanupShownotes', `${subfolder} from ./content`)
+  
   l.final(`prepareShownotes completed for ${dirName}`)
 }
 
@@ -128,32 +137,49 @@ export async function prepareInfo(dirName: string, sourceDir: string): Promise<v
   l.final(`prepareInfo completed for ${dirName}`)
 }
 
-export async function handleMetaWorkflow(options: ProcessingOptions & { metaDate?: string | string[] }): Promise<boolean> {
+export async function handleMetaWorkflow(options: ProcessingOptions): Promise<boolean> {
+  l.dim(`handleMetaWorkflow called with options: ${JSON.stringify({
+    metaDir: options['metaDir'],
+    metaSrcDir: options['metaSrcDir'],
+    metaInfo: options['metaInfo'],
+    metaShownotes: options['metaShownotes'],
+    metaDate: options['metaDate']
+  }, null, 2)}`)
+  
   if (options['metaDir']) {
     if (!options['metaSrcDir']) {
       err('Error: --metaSrcDir is required when --metaDir is specified.')
       process.exit(1)
     }
+    
     if (options['metaInfo'] && options['metaShownotes']) {
       err('Error: Both --metaInfo and --metaShownotes were provided. Choose one.')
       process.exit(1)
     }
+    
     if (!options['metaInfo'] && !options['metaShownotes']) {
       err('Error: Neither --metaInfo nor --metaShownotes was provided for the meta-workflow.')
       process.exit(1)
     }
-    let metaDateToUse: string | undefined = undefined
-    if (options.metaDate) {
-      metaDateToUse = Array.isArray(options.metaDate) ? options.metaDate[0] : options.metaDate
-    }
+    
     try {
       if (options['metaInfo']) {
         l.final(`Starting meta-workflow: Info for ${options['metaDir']} from ${options['metaSrcDir']}`)
         await prepareInfo(options['metaDir'], options['metaSrcDir'])
         logSeparator({ type: 'completion', descriptor: `Meta-Workflow Info for ${options['metaDir']}` })
       } else if (options['metaShownotes']) {
-        l.final(`Starting meta-workflow: Shownotes for ${options['metaDir']} from ${options['metaSrcDir']} (Date: ${metaDateToUse || 'latest available'})`)
-        await prepareShownotes(options['metaDir'], metaDateToUse, options['metaSrcDir'])
+        const metaDates = options['metaDate'] 
+          ? (Array.isArray(options['metaDate']) 
+              ? options['metaDate'] 
+              : [options['metaDate']])
+          : undefined
+          
+        const dateInfoString = metaDates 
+          ? `Dates: ${metaDates.join(', ')}` 
+          : 'Date: latest available'
+          
+        l.final(`Starting meta-workflow: Shownotes for ${options['metaDir']} from ${options['metaSrcDir']} (${dateInfoString})`)
+        await prepareShownotes(options['metaDir'], metaDates, options['metaSrcDir'])
         logSeparator({ type: 'completion', descriptor: `Meta-Workflow Shownotes for ${options['metaDir']}` })
       }
       return true
@@ -162,5 +188,7 @@ export async function handleMetaWorkflow(options: ProcessingOptions & { metaDate
       process.exit(1)
     }
   }
+  
+  l.dim('No metaDir specified, skipping meta-workflow')
   return false
 }
