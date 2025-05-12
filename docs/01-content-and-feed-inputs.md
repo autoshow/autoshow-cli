@@ -132,6 +132,9 @@ Run on a podcast RSS feed and generate JSON info file with markdown metadata of 
 
 ```bash
 npm run as -- --rss "https://ajcwebdev.substack.com/feed" --info
+
+# Combine all metadata from multiple feeds into a single JSON file
+npm run as -- --rss "https://ajcwebdev.substack.com/feed" "https://feeds.transistor.fm/fsjam-podcast" --info combined
 ```
 
 Process multiple RSS feeds:

@@ -1,4 +1,4 @@
-// shared/types.ts
+// src/utils/types.ts
 
 export interface ShowNote {
   id?: number
@@ -24,7 +24,6 @@ export interface ShowNote {
   finalCost?: number
   content?: string
 }
-
 export type ShowNoteMetadata = {
   showLink?: string
   channel?: string
@@ -36,7 +35,6 @@ export type ShowNoteMetadata = {
   walletAddress?: string
   mnemonic?: string
 }
-
 export type ProcessingOptions = {
   video?: string
   playlist?: string
@@ -45,7 +43,7 @@ export type ProcessingOptions = {
   file?: string
   rss?: string | string[]
   item?: string[]
-  info?: boolean
+  info?: boolean | string
   saveAudio?: boolean
   whisper?: boolean | string
   deepgram?: boolean | string
@@ -67,9 +65,13 @@ export type ProcessingOptions = {
   last?: number
   date?: string[]
   lastDays?: number
+  metaDir?: string
+  metaSrcDir?: string
+  metaDate?: string[]
+  metaInfo?: boolean
+  metaShownotes?: boolean
   [key: string]: any
 }
-
 export interface VideoInfo {
   uploadDate: string
   url: string
@@ -77,7 +79,6 @@ export interface VideoInfo {
   timestamp: number
   isLive: boolean
 }
-
 export interface TranscriptionResult {
   transcript: string
   modelId: string

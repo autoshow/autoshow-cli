@@ -10,10 +10,8 @@ import { processRSS } from './process-commands/rss.ts'
 import { LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
 import { handleMetaWorkflow } from './utils/workflows.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from './utils/logging.ts'
-import { argv, exit, fileURLToPath } from './utils/node-utils.ts'
+import { argv, exit, fileURLToPath, basename } from './utils/node-utils.ts'
 import type { ProcessingOptions } from './utils/types.ts'
-import path from 'node:path'
-
 export const COMMAND_CONFIG = {
   video: {
     description: 'Single YouTube Video',
@@ -52,14 +50,12 @@ export const COMMAND_CONFIG = {
     handler: processRSS,
   }
 }
-
 export function logCommandValidation(stage: string, detail: Record<string, unknown>): void {
   l.dim(`[CommandValidation:${stage}]`)
   Object.entries(detail).forEach(([key, value]) =>
     l.dim(`  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
   )
 }
-
 export function validateCommandInput(options: ProcessingOptions): {
   action?: keyof typeof COMMAND_CONFIG,
   llmServices?: string,
@@ -101,7 +97,6 @@ export function validateCommandInput(options: ProcessingOptions): {
   else if (options.assembly) transcriptServices = 'assembly'
   else if (options.whisper) transcriptServices = 'whisper'
   else if (options.groqWhisper) transcriptServices = 'groqWhisper'
-  
   const needsTranscription = !options.info && !options['metaDir'] && action !== undefined
   if (needsTranscription && !transcriptServices) {
     l.warn("Defaulting to Whisper for transcription as no service was specified.")
@@ -111,12 +106,10 @@ export function validateCommandInput(options: ProcessingOptions): {
   logCommandValidation('result', { action, llmServices, transcriptServices })
   return { action, llmServices, transcriptServices }
 }
-
 export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
   l.dim('[processCommand] Starting command processing')
-  
   const workflowHandled = await handleMetaWorkflow(options)
   if (workflowHandled) {
     l.dim('[processCommand] Meta workflow handled')
@@ -148,7 +141,6 @@ export async function processCommand(
     exit(1)
   }
 }
-
 const program = new Command()
 program
   .name('autoshow-cli')
@@ -166,7 +158,7 @@ program
   .option('--last <number>', 'Number of most recent items to process (overrides --order and --skip)', parseInt)
   .option('--date <dates...>', 'Process items from these dates (YYYY-MM-DD) for RSS processing')
   .option('--lastDays <number>', 'Number of days to look back for items for RSS processing', parseInt)
-  .option('--info', 'Skip processing and write metadata to JSON objects (supports --urls, --rss, --playlist, --channel)')
+  .option('--info [type]', 'Skip processing and write metadata to JSON objects. Use "combined" to merge multiple RSS feeds.', false)
   .option('--whisper [model]', 'Use Whisper.cpp for transcription with optional model specification (e.g., base, large-v3-turbo)')
   .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-2)')
   .option('--assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., best, nano)')
@@ -180,21 +172,18 @@ program
   .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
   .option('--metaDir <dirName>', 'The meta-workflow directory name (e.g., "01-ai") located inside current directory')
   .option('--metaSrcDir <sourceDir>', 'The meta-workflow source data directory (e.g., "autoshow-daily", "mk-auto"), relative to current directory')
-  .option('--metaDate <dateParam>', 'The date for the meta-workflow shownotes (YYYY-MM-DD); can be appended to npm script')
+  .option('--metaDate <dates...>', 'The dates for the meta-workflow shownotes (YYYY-MM-DD format), allows multiple dates')
   .option('--metaInfo', 'Run the meta-workflow for information gathering')
   .option('--metaShownotes', 'Run the meta-workflow for shownotes generation')
-
 program.action(async (options: ProcessingOptions & { metaDate?: string | string[] }) => {
   logInitialFunctionCall('autoshowCLI', options)
   await processCommand(options)
 })
-
 program.on('command:*', () => {
   err(`Error: Invalid command '${program.args.join(' ')}'. Use --help to see available commands.`)
   exit(1)
 })
-
 const thisFilePath = fileURLToPath(import.meta.url)
-if (argv[1] === thisFilePath || path.basename(argv[1] ?? '') === 'commander.ts') {
+if (argv[1] === thisFilePath || basename(argv[1] ?? '') === 'commander.ts') {
   program.parseAsync(argv)
 }
