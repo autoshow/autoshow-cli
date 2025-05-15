@@ -8,7 +8,7 @@ Get info and generate shownotes for AI category feeds (replace `YYYY-MM-DD` with
 
 ```bash
 npm run as -- --metaDir "01-ai" --metaSrcDir "workflows" --metaInfo
-npm run as -- --metaDir "01-ai" --metaSrcDir "workflows" --metaShownotes --metaDate "2025-05-07"
+npm run as -- --metaDir "01-ai" --metaSrcDir "workflows" --metaShownotes --metaDate "2025-05-13"
 ```
 
 ### Web
@@ -17,5 +17,5 @@ Get info and generate shownotes for Web category feeds:
 
 ```bash
 npm run as -- --metaDir "02-web" --metaSrcDir "workflows" --metaInfo
-npm run as -- --metaDir "02-web" --metaSrcDir "workflows" --metaShownotes --metaDate "2025-04-28"
+npm run as -- --metaDir "02-web" --metaSrcDir "workflows" --metaShownotes --metaDate "2025-05-13"
 ```

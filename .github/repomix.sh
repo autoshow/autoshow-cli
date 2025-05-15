@@ -7,18 +7,16 @@ INCLUDE_PATHS=(
 )
 
 IGNORE_PATHS=(
-  ".github"
-  "docs"
-  "src/prompts/sections.ts"
-  "test"
-  "LICENSE"
-  "tsconfig.json"
+  ".gitignore"
+  "new-*.md"
+  "repomix.sh"
+  "TODO.md"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")
 IGNORE_STRING=$(IFS=,; echo "${IGNORE_PATHS[*]}")
 
-INSTRUCTION_FILE=".github/repomix-instruction.md"
+INSTRUCTION_FILE="repomix-instruction.md"
 TEMP_DIR=""
 
 if [ ! -f "$INSTRUCTION_FILE" ]; then
@@ -42,21 +40,28 @@ EOF
   echo "Created temporary instruction file: $INSTRUCTION_FILE"
 fi
 
+OUTPUT_FILE="new-llm-1.md"
+COUNTER=2
+
+while [ -f "$OUTPUT_FILE" ]; do
+  OUTPUT_FILE="new-llm-$COUNTER.md"
+  COUNTER=$((COUNTER + 1))
+done
+
 repomix \
   --instruction-file-path "$INSTRUCTION_FILE" \
-  --output "new-llm.md" \
-  --style markdown \
-  --remove-comments \
-  --remove-empty-lines \
-  --no-git-sort-by-changes \
-  --top-files-len 20 \
-  --token-count-encoding "o200k_base" \
   --include "$INCLUDE_STRING" \
-  --ignore "$IGNORE_STRING"
+  --ignore "$IGNORE_STRING" \
+  --style markdown \
+  --output "$OUTPUT_FILE" \
+  --token-count-encoding "o200k_base" \
+  --top-files-len 30 \
+  --no-git-sort-by-changes \
+  --no-file-summary
 
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
-  echo "Successfully created new-llm.md"
+  echo "Successfully created $OUTPUT_FILE"
 else
   echo "Error running repomix command"
 fi

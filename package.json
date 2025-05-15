@@ -16,7 +16,7 @@
     "repo": "bash .github/repomix.sh",
     "tsx:base": "tsx --env-file=.env --no-warnings",
     "setup": "./.github/setup.sh",
-    "check": "npx tsc",
+    "check": "npx tsc --noEmit",
     "as": "npm run tsx:base -- src/commander.ts",
     "v": "npm run as -- --video",
     "v3": "npm run as -- --whisper large-v3-turbo --video",
