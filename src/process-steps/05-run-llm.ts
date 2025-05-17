@@ -8,6 +8,38 @@ import { callChatGPT, callClaude, callGemini } from '../llms/llm-services.ts'
 import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '../llms/llm-services.ts'
 import type { ProcessingOptions, ShowNoteMetadata, LLMResult } from '../utils/types.ts'
 
+interface KeyMoment {
+  timestamp: string
+  content: string
+}
+
+function extractKeyMoments(content: string): KeyMoment[] {
+  const keyMoments: KeyMoment[] = []
+  // Regex to match key moments in the format:
+  // ### 1. 00:12:45 - 00:13:45
+  // **Why it matters:** Explanation text
+  // 
+  // **Transcript:**
+  // [Transcript text]
+  const momentRegex = /### \d+\. (\d{2}:\d{2}:\d{2}) - (\d{2}:\d{2}:\d{2})\n\*\*Why it matters:\*\* ([^\n]+)(?:\n\n\*\*Transcript:\*\*\n([\s\S]*?)(?=\n\n### \d+\.|$))/g
+  
+  let match: RegExpExecArray | null
+  while ((match = momentRegex.exec(content)) !== null) {
+    // match[0] is the full match, which we don't need
+    const startTime = match[1] as string
+    const endTime = match[2] as string
+    const whyItMatters = match[3] as string
+    const transcript = (match[4] || '').trim()
+    
+    keyMoments.push({
+      timestamp: startTime,
+      content: `### ${startTime} - ${endTime}\n\n**Why it matters:** ${whyItMatters}\n\n**Transcript:**\n${transcript || 'Transcript not available'}`
+    })
+  }
+  
+  return keyMoments
+}
+
 export async function runLLM(
   options: ProcessingOptions,
   finalPath: string,
@@ -86,6 +118,28 @@ export async function runLLM(
       const outputFilename = `${finalPath}-${llmServices}-shownotes.md`
       await writeFile(outputFilename, `${frontMatter}\n${showNotes}\n\n## Transcript\n\n${transcript}`)
       l.dim(`\n  LLM processing completed, combined front matter + LLM output + transcript written to:\n    - ${outputFilename}`)
+      
+      // Handle key moments extraction if this is a keyMoments prompt
+      if (options.prompt?.includes('keyMoments')) {
+        l.dim('  Extracting key moments from the LLM output...')
+        const keyMoments = extractKeyMoments(showNotes)
+        
+        if (keyMoments.length > 0) {
+          l.dim(`  Extracted ${keyMoments.length} key moments from the transcript`)
+          
+          for (const [index, moment] of keyMoments.entries()) {
+            const momentTime = moment.timestamp.replace(/[:.]/g, '-')
+            const momentFilename = `${finalPath}_keyMoment_${index + 1}_${momentTime}.md`
+            const momentContent = `${frontMatter}\n\n## Key Moment ${index + 1}\n\n${moment.content}`
+            
+            await writeFile(momentFilename, momentContent)
+            l.dim(`  Key moment ${index + 1} saved to:\n    - ${momentFilename}`)
+          }
+        } else {
+          l.dim('  No key moments could be extracted from the LLM output')
+        }
+      }
+      
       showNotesResult = showNotes
     } else {
       l.dim('  No LLM selected, skipping processing...')
@@ -250,7 +304,7 @@ export function logLLMCost(info: {
 
 export async function retryLLMCall<T>(
   fn: () => Promise<T>
-) {
+): Promise<T> {
   const maxRetries = 7
   let attempt = 0
 

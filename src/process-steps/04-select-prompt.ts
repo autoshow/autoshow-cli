@@ -16,6 +16,7 @@ export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
   { name: 'Medium Chapters', value: 'mediumChapters' },
   { name: 'Long Chapters', value: 'longChapters' },
   { name: 'Key Takeaways', value: 'takeaways' },
+  { name: 'Key Moments', value: 'keyMoments' },
   { name: 'Questions', value: 'questions' },
   { name: 'FAQ', value: 'faq' },
   { name: 'Blog', value: 'blog' },

@@ -56,9 +56,11 @@ export type ProcessingOptions = {
   chatgpt?: string
   claude?: string
   gemini?: string
-  prompt?: string[]
+  prompt?: Array<'titles' | 'summary' | 'shortSummary' | 'longSummary' | 'bulletPoints' | 'chapterTitles' | 'shortChapters' | 'mediumChapters' | 'longChapters' | 'takeaways' | 'keyMoments' | 'questions' | 'faq' | 'blog' | 'rapSong' | 'rockSong' | 'countrySong' | 'quotes' | 'chapterTitlesAndQuotes' | 'x' | 'facebook' | 'linkedin'>
   printPrompt?: string[]
   customPrompt?: string
+  keyMomentsCount?: number
+  keyMomentDuration?: number
   llmServices?: string
   transcriptServices?: string
   skip?: number

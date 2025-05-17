@@ -55,6 +55,19 @@ npm run as -- --rss "https://ajcwebdev.substack.com/feed" --prompt mediumChapter
 npm run as -- --rss "https://ajcwebdev.substack.com/feed" --prompt longChapters
 ```
 
+### Key Moments and Educational Content
+
+```bash
+# Extract key moments from the content with timestamps and explanations:
+npm run as -- --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments
+
+# Configure the number of key moments (default: 3):
+npm run as -- --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 5
+
+# Set the duration of each key moment segment in seconds (default: 60):
+npm run as -- --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentDuration 90
+```
+
 ### Takeaways, Questions, Quotes, and FAQ
 
 ```bash
@@ -101,6 +114,20 @@ npm run as -- --rss "https://ajcwebdev.substack.com/feed" --prompt rockSong
 # Write a heartfelt, storytelling country song based on the transcript:
 npm run as -- --rss "https://ajcwebdev.substack.com/feed" --prompt countrySong
 ```
+
+## Key Moments Output
+
+When using the `keyMoments` prompt, the output will include:
+
+1. A main markdown file with all key moments
+2. Individual markdown files for each key moment, named with the format:
+   `{original-filename}_keyMoment_{number}_{timestamp}.md`
+
+Each key moment file includes:
+- The original front matter
+- The key moment's timestamp
+- Why the moment is significant
+- The transcript of that segment
 
 ## Print Select Prompts without Process Commands
 

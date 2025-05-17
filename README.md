@@ -37,6 +37,7 @@ AutoShow can generate diverse content formats including:
   - Rock songs
   - Country songs
 - **Educational and Informative Content:**
+  - Key moments
   - Key takeaways
   - Comprehension questions
   - Frequently asked questions (FAQs)

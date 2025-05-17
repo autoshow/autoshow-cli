@@ -2,7 +2,8 @@
 
 import { fileTypeFromBuffer } from 'file-type'
 import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
-import { execPromise, readFile, access, rename, execFilePromise, unlink } from '../utils/node-utils.ts'
+import { execPromise, readFile, execFilePromise, unlink } from '../utils/node-utils.ts'
+import { existsSync } from 'fs'
 import type { ProcessingOptions } from '../utils/types.ts'
 import ora from 'ora'
 
@@ -71,15 +72,13 @@ export async function downloadAudio(
   const finalPath = `content/${filename}`
   const outputPath = `${finalPath}.wav`
 
-  // Edge case fix: If a WAV file already exists with the same name, rename it to avoid a hang during conversion
-  try {
-    await access(outputPath)
-    const renamedPath = `${finalPath}-renamed.wav`
-    await rename(outputPath, renamedPath)
-    spinner.info(`Existing file found at ${outputPath}. Renamed to ${renamedPath}`)
-  } catch {
-    // If we reach here, the file doesn't exist. Proceed as normal.
+  // Check if the audio file already exists
+  if (existsSync(outputPath)) {
+    spinner.succeed(`Using existing audio file at ${outputPath}`)
+    return outputPath
   }
+  
+  spinner.info(`No existing audio file found at ${outputPath}. Proceeding with download...`)
 
   if (options.video || options.playlist || options.urls || options.rss || options.channel) {
     try {
@@ -108,7 +107,10 @@ export async function downloadAudio(
       'mp4', 'mkv', 'avi', 'mov', 'webm',
     ])
     try {
-      await access(input)
+      // Check if the file exists and is accessible
+      if (!existsSync(input)) {
+        throw new Error(`File not found or not accessible: ${input}`)
+      }
       l.dim(`\n  File ${input} is accessible. Attempting to read file data for type detection...\n`)
 
       const buffer = await readFile(input)

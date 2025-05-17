@@ -165,6 +165,36 @@ export const sections = {
     3. Backend technologies like Node.js and cloud services have made it easier to build scalable, high-performance web applications, but require careful consideration of security and data management practices.\n`,
   },
 
+  keyMoments: {
+    instruction: `- Identify the most compelling segments from the transcript (3 by default).
+  - Each segment should be 60 seconds by default, but you can specify a different duration.
+  - Look for particularly insightful explanations, key turning points, or any segments that stand out as especially valuable or engaging.
+  - For each key moment, include:
+    - Exact start and end timestamps in HH:MM:SS format
+    - A brief explanation (1-2 sentences) of what makes this segment valuable
+    - The transcript text for that segment
+  - Each key moment should be a continuous segment that best represents an important part of the content.`,
+    example: `## Key Moments
+
+### 1. 00:12:45 - 00:13:45
+**Why it matters:** This segment stands out for its clear and concise explanation of the core concept, making complex ideas accessible to the audience.
+
+**Transcript:**
+[The actual transcript text for this segment would go here, with timestamps for each line.]
+
+### 2. 00:24:30 - 00:25:30
+**Why it matters:** The speaker provides a compelling real-world example that perfectly illustrates the main theme.
+
+**Transcript:**
+[The actual transcript text for this segment would go here, with timestamps for each line.]
+
+### 3. 00:38:15 - 00:39:15
+**Why it matters:** This segment contains a powerful insight that changes the perspective on the topic.
+
+**Transcript:**
+[The actual transcript text for this segment would go here, with timestamps for each line.]`,
+  },
+
   questions: {
     instruction: `- Include a list of 10 questions to check the listeners' comprehension of the material.
   - Ensure questions cover all major sections of the content.
