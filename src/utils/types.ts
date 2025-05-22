@@ -1,4 +1,4 @@
-// shared/types.ts
+// src/utils/types.ts
 
 export interface ShowNote {
   id?: number
@@ -24,7 +24,6 @@ export interface ShowNote {
   finalCost?: number
   content?: string
 }
-
 export type ShowNoteMetadata = {
   showLink?: string
   channel?: string
@@ -36,7 +35,6 @@ export type ShowNoteMetadata = {
   walletAddress?: string
   mnemonic?: string
 }
-
 export type ProcessingOptions = {
   video?: string
   playlist?: string
@@ -45,11 +43,12 @@ export type ProcessingOptions = {
   file?: string
   rss?: string | string[]
   item?: string[]
-  info?: boolean
+  info?: boolean | string
   saveAudio?: boolean
   whisper?: boolean | string
   deepgram?: boolean | string
   assembly?: boolean | string
+  groqWhisper?: boolean | string
   speakerLabels?: boolean
   transcriptCost?: string
   llmCost?: string
@@ -66,58 +65,13 @@ export type ProcessingOptions = {
   last?: number
   date?: string[]
   lastDays?: number
-  openaiApiKey?: string
-  anthropicApiKey?: string
-  geminiApiKey?: string
-  deepgramApiKey?: string
-  assemblyApiKey?: string
+  metaDir?: string
+  metaSrcDir?: string
+  metaDate?: string[]
+  metaInfo?: boolean
+  metaShownotes?: boolean
   [key: string]: any
 }
-
-export type WhisperOutput = {
-  systeminfo: string
-  model: {
-    type: string
-    multilingual: boolean
-    vocab: number
-    audio: {
-      ctx: number
-      state: number
-      head: number
-      layer: number
-    }
-    text: {
-      ctx: number
-      state: number
-      head: number
-      layer: number
-    }
-    mels: number
-    ftype: number
-  }
-  params: {
-    model: string
-    language: string
-    translate: boolean
-  }
-  result: {
-    language: string
-  }
-  transcription: Array<{
-    timestamps: {
-      from: string
-      to: string
-    }
-    offsets: {
-      from: number
-      to: number
-    }
-    text: string
-  }>
-}
-
-export type HandlerFunction = (options: ProcessingOptions, input: string, llmServices?: string, transcriptServices?: string) => Promise<void>
-
 export interface VideoInfo {
   uploadDate: string
   url: string
@@ -125,21 +79,8 @@ export interface VideoInfo {
   timestamp: number
   isLive: boolean
 }
-
 export interface TranscriptionResult {
   transcript: string
   modelId: string
   costPerMinuteCents: number
-}
-
-export type LLMUsage = {
-  stopReason: string
-  input?: number
-  output?: number
-  total?: number
-}
-
-export type LLMResult = {
-  content: string
-  usage?: LLMUsage
 }

@@ -2,7 +2,7 @@
 
 import { l, err } from '../utils/logging.ts'
 import { readFile, env } from '../utils/node-utils.ts'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../utils/constants.ts'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
 import type { ProcessingOptions } from '../utils/types.ts'
 
 export interface DeepgramWord {

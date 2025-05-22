@@ -1,7 +1,7 @@
 // src/process-commands/channel.ts
 
 import { processVideo } from './video.ts'
-import { saveInfo } from '../process-steps/01-generate-markdown.ts'
+import { saveInfo } from '../utils/save-info.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
 import { execFilePromise } from '../utils/node-utils.ts'
 import type { ProcessingOptions } from '../utils/types.ts'

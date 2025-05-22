@@ -2,22 +2,39 @@
 
 import { l, err } from '../utils/logging.ts'
 import { readFile, unlink, execPromise, existsSync } from '../utils/node-utils.ts'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../utils/constants.ts'
-import type { ProcessingOptions, WhisperOutput } from '../utils/types.ts'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
+import type { ProcessingOptions } from '../utils/types.ts'
 
 export function formatTimestamp(timestamp: string) {
   const [timeWithoutMs] = timestamp.split(',') as [string]
   return timeWithoutMs
 }
 
-export function formatWhisperTranscript(jsonData: WhisperOutput) {
+interface WhisperTranscriptItem {
+  text: string
+  timestamps: {
+    from: string
+    to: string
+  }
+}
+
+interface WhisperJsonData {
+  transcription: WhisperTranscriptItem[]
+}
+
+interface TranscriptChunk {
+  timestamp: string
+  text: string
+}
+
+export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
   const transcripts = jsonData.transcription
-  const chunks = []
+  const chunks: TranscriptChunk[] = []
 
   for (let i = 0; i < transcripts.length; i += 35) {
     const chunk = transcripts.slice(i, i + 35)
     const firstChunk = chunk[0]!
-    const combinedText = chunk.map(item => item.text).join('')
+    const combinedText = chunk.map((item: WhisperTranscriptItem) => item.text).join('')
     chunks.push({
       timestamp: formatTimestamp(firstChunk.timestamps.from),
       text: combinedText
@@ -25,7 +42,7 @@ export function formatWhisperTranscript(jsonData: WhisperOutput) {
   }
 
   return chunks
-    .map(chunk => `[${chunk.timestamp}] ${chunk.text}`)
+    .map((chunk: TranscriptChunk) => `[${chunk.timestamp}] ${chunk.text}`)
     .join('\n')
 }
 
@@ -132,7 +149,7 @@ export async function callWhisper(
 
     l.dim(`\n  Transcript JSON file successfully created, reading file for txt conversion:\n    - ${finalPath}.json\n`)
     const jsonContent = await readFile(`${finalPath}.json`, 'utf8')
-    const parsedJson = JSON.parse(jsonContent) as WhisperOutput
+    const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)
     await unlink(`${finalPath}.json`)
 

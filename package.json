@@ -13,10 +13,10 @@
   ],
   "type": "module",
   "scripts": {
-    "repo": "repomix && code new-llm.xml",
+    "repo": "bash .github/repomix.sh",
     "tsx:base": "tsx --env-file=.env --no-warnings",
     "setup": "./.github/setup.sh",
-    "check": "npx tsc",
+    "check": "npx tsc --noEmit",
     "as": "npm run tsx:base -- src/commander.ts",
     "v": "npm run as -- --video",
     "v3": "npm run as -- --whisper large-v3-turbo --video",
@@ -56,6 +56,7 @@
   },
   "devDependencies": {
     "@types/node": "22.13.7",
+    "repomix": "0.3.4",
     "tsx": "4.19.3",
     "typescript": "5.8.2"
   }

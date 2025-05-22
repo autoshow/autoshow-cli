@@ -120,6 +120,7 @@ Specify transcription service (default is Whisper `base`):
 ```bash
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly best --speakerLabels
 ```
 
@@ -136,13 +137,6 @@ Customize prompts:
 ```bash
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --prompt summary shortChapters --chatgpt
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --customPrompt ./my-custom-prompt.md --chatgpt
-```
-
-Estimate costs:
-
-```bash
-npm run as -- --transcriptCost "./content/examples/audio.wav" --whisper base
-npm run as -- --llmCost "./content/some-transcript-file.txt" --chatgpt gpt-4o-mini
 ```
 
 For a full list of options, run:
