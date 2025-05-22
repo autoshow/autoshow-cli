@@ -7,6 +7,11 @@ INCLUDE_PATHS=(
 )
 
 IGNORE_PATHS=(
+  ".github"
+  "docs"
+  "test"
+  "src/prompts/sections.ts"
+  "whisper.cpp"
   ".gitignore"
   "new-*.md"
   "repomix.sh"

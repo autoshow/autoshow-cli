@@ -8,18 +8,12 @@ import { join } from 'node:path'
 
 /*
   LLM_SERVICES_CONFIG.chatgpt.models:
-    - gpt-4.5-preview
     - gpt-4o
     - gpt-4o-mini
     - o1-mini
 */
 
 const commands = [
-  // {
-  //   cmd: 'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4.5-preview',
-  //   expectedFile: 'audio-chatgpt-shownotes.md',
-  //   newName: '03-CHATGPT-01-chatgpt-gpt-4.5-preview.md'
-  // },
   {
     cmd: 'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4o',
     expectedFile: 'audio-chatgpt-shownotes.md',

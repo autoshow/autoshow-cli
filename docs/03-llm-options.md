@@ -40,27 +40,23 @@ If you have set your `OPENAI_API_KEY`:
 npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt
 ```
 
-1. **GPT 4.5 PREVIEW** (`gpt-4.5-preview`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt gpt-4.5-preview
-   ```
-2. **GPT 4o** (`gpt-4o`)
+1. **GPT 4o** (`gpt-4o`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt gpt-4o
    ```
-3. **GPT 4o MINI** (`gpt-4o-mini`)
+2. **GPT 4o MINI** (`gpt-4o-mini`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt gpt-4o-mini
    ```
-4. **GPT o1** (`o1`)
+3. **GPT o1** (`o1`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt o1
    ```
-5. **GPT o3 MINI** (`o3-mini`)
+4. **GPT o3 MINI** (`o3-mini`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt o3-mini
    ```
-6. **GPT o1 MINI** (`o1-mini`)
+5. **GPT o1 MINI** (`o1-mini`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt o1-mini
    ```
@@ -80,10 +76,6 @@ npm run as -- --video "https://www.youtube.com/watch?v=abc123" --claude
 2. **Claude 3.5 Haiku** (`claude-3-5-haiku-latest`)
    ```bash
    npm run as -- --video "https://www.youtube.com/watch?v=abc123" --claude claude-3-5-haiku-latest
-   ```
-3. **Claude 3 Opus** (`claude-3-opus-latest`)
-   ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --claude claude-3-opus-latest
    ```
 
 ## Google Gemini

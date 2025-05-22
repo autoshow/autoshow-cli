@@ -30,7 +30,6 @@ const cliCommands = [
   'npm run as -- --file "content/examples/audio.mp3" --deepgram nova-2',
   'npm run as -- --file "content/examples/audio.mp3" --deepgram base',
   'npm run as -- --file "content/examples/audio.mp3" --deepgram enhanced',
-  'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4.5-preview',
   'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4o',
   'npm run as -- --file "content/examples/audio.mp3" --chatgpt gpt-4o-mini',
   'npm run as -- --file "content/examples/audio.mp3" --chatgpt o1-mini',

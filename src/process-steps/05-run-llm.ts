@@ -20,7 +20,6 @@ export const LLM_SERVICES_CONFIG = {
     label: 'ChatGPT',
     apiKeyPropName: 'openaiApiKey',
     models: [
-      { modelName: 'GPT 4.5 PREVIEW', modelId: 'gpt-4.5-preview', inputCostPer1M: 75.00, outputCostPer1M: 150.00, inputCostPer1MCents: 7500, outputCostPer1MCents: 15000 },
       { modelName: 'GPT 4o', modelId: 'gpt-4o', inputCostPer1M: 2.50, outputCostPer1M: 10.00, inputCostPer1MCents: 250, outputCostPer1MCents: 1000 },
       { modelName: 'GPT 4o MINI', modelId: 'gpt-4o-mini', inputCostPer1M: 0.15, outputCostPer1M: 0.60, inputCostPer1MCents: 15, outputCostPer1MCents: 60 },
       { modelName: 'GPT o1 MINI', modelId: 'o1-mini', inputCostPer1M: 1.10, outputCostPer1M: 4.40, inputCostPer1MCents: 110, outputCostPer1MCents: 440 }
@@ -34,7 +33,6 @@ export const LLM_SERVICES_CONFIG = {
     models: [
       { modelName: 'Claude 3.7 Sonnet', modelId: 'claude-3-7-sonnet-latest', inputCostPer1M: 3.00, outputCostPer1M: 15.00, inputCostPer1MCents: 300, outputCostPer1MCents: 1500 },
       { modelName: 'Claude 3.5 Haiku', modelId: 'claude-3-5-haiku-latest', inputCostPer1M: 0.80, outputCostPer1M: 4.00, inputCostPer1MCents: 80, outputCostPer1MCents: 400 },
-      { modelName: 'Claude 3 Opus', modelId: 'claude-3-opus-latest', inputCostPer1M: 15.00, outputCostPer1M: 75.00, inputCostPer1MCents: 1500, outputCostPer1MCents: 7500 },
     ]
   },
   gemini: {
