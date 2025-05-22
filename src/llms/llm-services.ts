@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { err } from '../utils/logging.ts'
 import { env } from '../utils/node-utils.ts'
-import { LLM_SERVICES_CONFIG } from '../utils/constants.ts'
+import { LLM_SERVICES_CONFIG } from '../process-steps/05-run-llm.ts'
 
 export type ChatGPTModelValue = (typeof LLM_SERVICES_CONFIG.chatgpt.models)[number]['modelId']
 export type ClaudeModelValue = (typeof LLM_SERVICES_CONFIG.claude.models)[number]['modelId']

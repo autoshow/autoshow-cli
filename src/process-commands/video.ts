@@ -24,7 +24,7 @@ export async function processVideo(
     await downloadAudio(options, url, filename)
 
     // Step 3 - Transcribe audio and read transcript
-    const { transcript, transcriptionCost, modelId: transcriptionModel } = await runTranscription(options, finalPath, transcriptServices)
+    const { transcript, modelId: transcriptionModel } = await runTranscription(options, finalPath, transcriptServices)
 
     // Step 4 - Selecting prompt
     const selectedPrompts = await selectPrompts(options)
@@ -39,8 +39,7 @@ export async function processVideo(
       metadata as ShowNoteMetadata,
       llmServices,
       transcriptServices,
-      transcriptionModel,
-      transcriptionCost
+      transcriptionModel
     )
 
     // Step 6 - Cleanup
