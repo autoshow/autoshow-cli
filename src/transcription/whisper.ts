@@ -46,53 +46,22 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
     .join('\n')
 }
 
-export async function checkWhisperDirAndModel(
-  whisperModel: string,
-  modelGGMLName: string
-) {
+export async function checkWhisperModel(whisperModel: string) {
   if (whisperModel === 'turbo') whisperModel = 'large-v3-turbo'
 
-  const whisperDir = './whisper.cpp'
-  const whisperCliPath = `${whisperDir}/build/bin/whisper-cli`
-  const modelPath = `${whisperDir}/models/${modelGGMLName}`
+  const whisperCliPath = './bin/whisper-cli'
+  const modelPath = `./models/ggml-${whisperModel}.bin`
 
-  if (!existsSync(whisperDir)) {
-    l.dim(`\n  No whisper.cpp repo found, cloning and compiling...\n`)
-    try {
-      await execPromise(
-        `git clone https://github.com/ggerganov/whisper.cpp.git && ` +
-        `cmake -B ${whisperDir}/build -S ${whisperDir} && ` +
-        `cmake --build ${whisperDir}/build --config Release`
-      )
-      l.dim(`\n    - whisper.cpp clone and compilation complete.\n`)
-    } catch (error) {
-      err(`Error cloning/building whisper.cpp: ${(error as Error).message}`)
-      throw error
-    }
-  } else {
-    l.dim(`\n  Whisper.cpp repo is already available at:\n    - ${whisperDir}\n`)
-    if (!existsSync(whisperCliPath)) {
-      l.dim(`\n  No whisper-cli binary found, rebuilding...\n`)
-      try {
-        await execPromise(
-          `cmake -B ${whisperDir}/build -S ${whisperDir} && ` +
-          `cmake --build ${whisperDir}/build --config Release`
-        )
-        l.dim(`\n    - whisper.cpp build completed.\n`)
-      } catch (error) {
-        err(`Error rebuilding whisper.cpp: ${(error as Error).message}`)
-        throw error
-      }
-    } else {
-      l.dim(`  Found whisper-cli at:\n    - ${whisperCliPath}\n`)
-    }
+  if (!existsSync(whisperCliPath)) {
+    err('whisper-cli binary not found. Please run setup script: npm run setup')
+    throw new Error('whisper-cli binary not found')
   }
 
   if (!existsSync(modelPath)) {
     l.dim(`\n  Model not found locally, attempting download...\n    - ${whisperModel}\n`)
     try {
       await execPromise(
-        `bash ${whisperDir}/models/download-ggml-model.sh ${whisperModel}`,
+        `bash ./models/download-ggml-model.sh ${whisperModel}`,
         { maxBuffer: 10000 * 1024 }
       )
       l.dim('    - Model download completed.\n')
@@ -125,15 +94,13 @@ export async function callWhisper(
 
     const { modelId, costPerMinuteCents } = chosenModel
 
-    const modelGGMLName = `ggml-${modelId}.bin`
+    await checkWhisperModel(modelId)
 
-    await checkWhisperDirAndModel(modelId, modelGGMLName)
-
-    l.dim(`  Invoking whisper.cpp on file:\n    - ${finalPath}.wav`)
+    l.dim(`  Invoking whisper-cli on file:\n    - ${finalPath}.wav`)
     try {
       await execPromise(
-        `./whisper.cpp/build/bin/whisper-cli --no-gpu ` +
-        `-m "whisper.cpp/models/${modelGGMLName}" ` +
+        `./bin/whisper-cli --no-gpu ` +
+        `-m "./models/ggml-${modelId}.bin" ` +
         `-f "${finalPath}.wav" ` +
         `-of "${finalPath}" ` +
         `-ml 1 ` +
@@ -143,7 +110,7 @@ export async function callWhisper(
         { maxBuffer: 10000 * 1024 }
       )
     } catch (whisperError) {
-      err(`Error running whisper.cpp: ${(whisperError as Error).message}`)
+      err(`Error running whisper-cli: ${(whisperError as Error).message}`)
       throw whisperError
     }
 
