@@ -1,18 +1,24 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
+  ".github/setup.sh"
   "**/*"
   "src"
   "package.json"
 )
 
 IGNORE_PATHS=(
-  ".github"
+  ".github/workflows/review.yml"
+  ".github/ai-review.ts"
+  ".github/FUNDING.yml"
+  ".github/repomix.sh"
+  "content"
   "docs"
   "test"
   "src/prompts/sections.ts"
   "whisper.cpp"
   ".gitignore"
+  "LICENSE"
   "new-*.md"
   "repomix.sh"
   "TODO.md"
