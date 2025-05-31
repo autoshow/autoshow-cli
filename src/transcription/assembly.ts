@@ -69,14 +69,14 @@ export async function callAssembly(
     const { speakerLabels } = options
     const audioFilePath = `${finalPath}.wav`
 
-    const defaultAssemblyModel = TRANSCRIPTION_SERVICES_CONFIG.assembly.models.find(m => m.modelId === 'best')?.modelId || 'best'
+    const defaultAssemblyModel = TRANSCRIPTION_SERVICES_CONFIG.assembly.models.find(m => m.modelId === 'universal')?.modelId || 'universal'
     const assemblyModel = typeof options.assembly === 'string'
       ? options.assembly
       : defaultAssemblyModel
 
     const modelInfo = 
       TRANSCRIPTION_SERVICES_CONFIG.assembly.models.find(m => m.modelId.toLowerCase() === assemblyModel.toLowerCase())
-      || TRANSCRIPTION_SERVICES_CONFIG.assembly.models.find(m => m.modelId === 'best')
+      || TRANSCRIPTION_SERVICES_CONFIG.assembly.models.find(m => m.modelId === 'universal')
 
     if (!modelInfo) {
       throw new Error(`Model information for model ${assemblyModel} is not available.`)

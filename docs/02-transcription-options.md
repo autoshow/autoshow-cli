@@ -38,8 +38,7 @@ npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram
 Select model:
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram base
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram enhanced
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-3
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
 ```
 
@@ -61,8 +60,9 @@ npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly
 Select model:
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly NANO
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly BEST
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly nano
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly slam-1
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal
 ```
 
 Include speaker labels and number of speakers:
