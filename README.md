@@ -121,7 +121,7 @@ Specify transcription service (default is Whisper `base`):
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
 npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly best --speakerLabels
+npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal --speakerLabels
 ```
 
 Specify LLM service:
