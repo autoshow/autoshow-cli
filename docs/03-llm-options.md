@@ -37,28 +37,28 @@ No LLM model will be called, and no LLM-based output file is generated.
 If you have set your `OPENAI_API_KEY`:
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt
+npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --chatgpt
 ```
 
 1. **GPT 4o** (`gpt-4o`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt gpt-4o
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --chatgpt gpt-4o
    ```
 2. **GPT 4o MINI** (`gpt-4o-mini`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt gpt-4o-mini
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --chatgpt gpt-4o-mini
    ```
 3. **GPT o1** (`o1`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt o1
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --chatgpt o1
    ```
 4. **GPT o3 MINI** (`o3-mini`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt o3-mini
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --chatgpt o3-mini
    ```
 5. **GPT o1 MINI** (`o1-mini`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt o1-mini
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --chatgpt o1-mini
    ```
 
 ## Anthropic Claude
@@ -66,16 +66,16 @@ npm run as -- --video "https://www.youtube.com/watch?v=abc123" --chatgpt
 If you have set your `ANTHROPIC_API_KEY`:
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=abc123" --claude
+npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --claude
 ```
 
 1. **Claude 3.7 Sonnet** (`claude-3-7-sonnet-latest`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --claude claude-3-7-sonnet-latest
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --claude claude-3-7-sonnet-latest
    ```
 2. **Claude 3.5 Haiku** (`claude-3-5-haiku-latest`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --claude claude-3-5-haiku-latest
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --claude claude-3-5-haiku-latest
    ```
 
 ## Google Gemini
@@ -83,26 +83,26 @@ npm run as -- --video "https://www.youtube.com/watch?v=abc123" --claude
 If you have set your `GEMINI_API_KEY`:
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini
+npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --gemini
 ```
 
 1. **Gemini 1.5 Pro** (`gemini-1.5-pro`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-1.5-pro
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-1.5-pro
    ```
 2. **Gemini 1.5 Flash-8B** (`gemini-1.5-flash-8b`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-1.5-flash-8b
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-1.5-flash-8b
    ```
 3. **Gemini 1.5 Flash** (`gemini-1.5-flash`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-1.5-flash
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-1.5-flash
    ```
 4. **Gemini 2.0 Flash-Lite** (`gemini-2.0-flash-lite`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-2.0-flash-lite
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-2.0-flash-lite
    ```
 5. **Gemini 2.0 Flash** (`gemini-2.0-flash`)
    ```bash
-   npm run as -- --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-2.0-flash
+   npm run as -- text --video "https://www.youtube.com/watch?v=abc123" --gemini gemini-2.0-flash
    ```
