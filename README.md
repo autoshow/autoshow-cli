@@ -78,31 +78,31 @@ Example commands for all available CLI options can be found in [`docs`](/docs/RE
 Run on a single YouTube video.
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk"
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"
 ```
 
 Run on a YouTube playlist.
 
 ```bash
-npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"
+npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"
 ```
 
 Run on a list of arbitrary URLs from a file.
 
 ```bash
-npm run as -- --urls "./content/examples/example-urls.md"
+npm run as -- text --urls "./content/examples/example-urls.md"
 ```
 
 Run on a local audio or video file.
 
 ```bash
-npm run as -- --file "./content/examples/audio.mp3"
+npm run as -- text --file "./content/examples/audio.mp3"
 ```
 
 Run on a podcast RSS feed.
 
 ```bash
-npm run as -- --rss "https://ajcwebdev.substack.com/feed"
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed"
 ```
 
 For more granular control (e.g., specific RSS items, date filtering, order, skip, last), use options like `--item <url>`, `--date <YYYY-MM-DD>`, `--order newest|oldest`, `--last <num>`, `--lastDays <num>`.
@@ -110,7 +110,7 @@ For more granular control (e.g., specific RSS items, date filtering, order, skip
 Use `--info` to fetch metadata without full processing for URLs, playlists, channels, or RSS feeds.
 
 ```bash
-npm run as -- --urls "./content/examples/example-urls.md" --info
+npm run as -- text --urls "./content/examples/example-urls.md" --info
 ```
 
 ### Transcription and LLM Options
@@ -118,25 +118,25 @@ npm run as -- --urls "./content/examples/example-urls.md" --info
 Specify transcription service (default is Whisper `base`):
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal --speakerLabels
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal --speakerLabels
 ```
 
 Specify LLM service:
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-4o-mini
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-3-5-haiku-latest
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-1.5-flash
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-4o-mini
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-3-5-haiku-latest
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-1.5-flash
 ```
 
 Customize prompts:
 
 ```bash
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --prompt summary shortChapters --chatgpt
-npm run as -- --video "https://www.youtube.com/watch?v=MORMZXEaONk" --customPrompt ./my-custom-prompt.md --chatgpt
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --prompt summary shortChapters --chatgpt
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --customPrompt ./my-custom-prompt.md --chatgpt
 ```
 
 For a full list of options, run:
