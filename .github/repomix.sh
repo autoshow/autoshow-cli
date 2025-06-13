@@ -44,8 +44,10 @@ I'm going to ask you to refactor my code, write a new feature, or fix a bug.
 - Aside from the instructions above and given below, you will not make any changes to the code files. You will only add or remove code specific to the requested refactor, feature, or bug fix.
 - Only respond with code files if there are changes (either additions or subtractions), do not respond with code files that are identical to the code files I gave you.
 - Always use ESM, async/await, try catch, and the latest version of Node.js (22 as of now). Avoid for and while loops in favor of map functions. Avoid if-else statements unless very minimal and when no other appropriate solutions exist.
+- Do not use dynamic imports, all imports should be declared at the top of the file.
 - Do not use semi-colons.
 - Always write `.ts` files with TypeScript. Infer types whenever possible, when types must be declared keep them minimal and inlined instead of named. Always include return types.
+- Treat environment variables from `process` as if they come from an index signature, so it must be accessed like `process.env['OPENAI_API_KEY']` instead of `process.env.OPENAI_API_KEY`.
 EOF
 
   echo "Created temporary instruction file: $INSTRUCTION_FILE"
