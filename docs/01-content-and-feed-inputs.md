@@ -12,7 +12,7 @@
 If you want to keep the downloaded audio file for debugging or reprocessing purposes, use `--saveAudio`. This prevents the CLI from deleting WAV files after finishing its run.
 
 ```bash
-npm run as -- \
+npm run as -- text \
   --video "https://www.youtube.com/watch?v=MORMZXEaONk" \
   --saveAudio
 ```

@@ -45,7 +45,7 @@ npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepg
 Include Deepgram API key directly in CLI command instead of in `.env` file:
 
 ```bash
-npm run as -- \
+npm run as -- text \
   --video "https://www.youtube.com/watch?v=MORMZXEaONk" \
   --deepgram \
   --deepgramApiKey ""
@@ -68,7 +68,7 @@ npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assem
 Include speaker labels and number of speakers:
 
 ```bash
-npm run as -- \
+npm run as -- text \
   --video "https://ajc.pics/audio/fsjam-short.mp3" \
   --assembly \
   --speakerLabels
@@ -77,7 +77,7 @@ npm run as -- \
 Include Assembly API key directly in CLI command instead of in `.env` file:
 
 ```bash
-npm run as -- \
+npm run as -- text \
   --video "https://www.youtube.com/watch?v=MORMZXEaONk" \
   --assembly \
   --assemblyApiKey ""
