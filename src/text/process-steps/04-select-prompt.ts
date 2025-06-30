@@ -62,7 +62,7 @@ export async function selectPrompts(options: ProcessingOptions) {
     let instruction = sections[section].instruction
     
     if (section === 'keyMoments') {
-      const count = options.keyMomentsCount || 3
+      const count = options.keyMomentsCount || DEFAULT_KEY_MOMENTS_COUNT
       const duration = options.keyMomentDuration || 60
       l.dim(`Configuring keyMoments with count: ${count}, duration: ${duration}s`)
       instruction = instruction
