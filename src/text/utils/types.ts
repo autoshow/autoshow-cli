@@ -1,5 +1,3 @@
-// src/utils/types.ts
-
 export interface ShowNote {
   id?: number
   showLink?: string
@@ -70,6 +68,8 @@ export type ProcessingOptions = {
   metaDate?: string[]
   metaInfo?: boolean
   metaShownotes?: boolean
+  keyMomentsCount?: number
+  keyMomentDuration?: number
   [key: string]: any
 }
 export interface VideoInfo {
