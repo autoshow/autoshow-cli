@@ -1,5 +1,3 @@
-// src/commander.ts
-
 import { Command } from 'commander'
 import { processVideo } from './text/process-commands/video.ts'
 import { processPlaylist } from './text/process-commands/playlist.ts'
@@ -179,8 +177,16 @@ const textCommand = new Command('text')
   .option('--prompt <sections...>', 'Specify prompt sections to include (e.g., summary longChapters)')
   .option('--customPrompt <filePath>', 'Use a custom prompt from a markdown file')
   .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
+  .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
+  .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)
   .action(async (options: ProcessingOptions) => {
     logInitialFunctionCall('textCommand', options)
+    if (options.keyMomentsCount !== undefined) {
+      l.dim(`Key moments count configured: ${options.keyMomentsCount}`)
+    }
+    if (options.keyMomentDuration !== undefined) {
+      l.dim(`Key moment duration configured: ${options.keyMomentDuration} seconds`)
+    }
     await processCommand(options)
   })
 

@@ -74,6 +74,30 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt faq
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt chapterTitlesAndQuotes
 ```
 
+Extract key moments from the content with timestamps and explanations:
+
+```bash
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --chatgpt
+```
+
+Configure the number of key moments (default: 3):
+
+```bash
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 5 --chatgpt
+```
+
+Set the duration of each key moment segment in seconds (default: 60):
+
+```bash
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentDuration 90 --chatgpt
+```
+
+Combine multiple configurations:
+
+```bash
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 2 --keyMomentDuration 60 --claude
+```
+
 ### Social Media Content, Blog Posts, and Songs
 
 ```bash
