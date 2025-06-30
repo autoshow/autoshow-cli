@@ -2,9 +2,11 @@ node_modules
 .DS_Store
 .env
 .idea
+bin
 build
 out
 dist
+models
 /content
 whisper.cpp
 embeddings.db

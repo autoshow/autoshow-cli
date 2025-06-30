@@ -8,56 +8,56 @@ import { join } from 'node:path'
 
 const commands = [
   {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --prompt titles summary',
+    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --prompt titles summary',
     expectedFile: 'audio-prompt.md',
     newName: '02-ALL-01-file-multiple-prompts.md'
   },
   {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --chatgpt',
+    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --chatgpt',
     expectedFile: 'audio-chatgpt-shownotes.md',
     newName: '02-ALL-02-chatgpt-default.md'
   },
   {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --claude',
+    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --claude',
     expectedFile: 'audio-claude-shownotes.md',
     newName: '02-ALL-03-claude-default.md'
   },
   {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --gemini',
+    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --gemini',
     expectedFile: 'audio-gemini-shownotes.md',
     newName: '02-ALL-04-gemini-shownotes.md'
   },
   {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --deepgram',
+    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --deepgram',
     expectedFile: 'audio-prompt.md',
     newName: '02-ALL-05-deepgram-prompt.md'
   },
   {
-    cmd: 'npm run as -- --file "content/examples/audio.mp3" --assembly',
+    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --assembly',
     expectedFile: 'audio-prompt.md',
     newName: '02-ALL-06-assembly-prompt.md'
   },
   {
-    cmd: 'npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"',
+    cmd: 'npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"',
     expectedFiles: [
       { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-07-playlist-default.md' },
       { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-08-playlist-default.md' }
     ]
   },
   {
-    cmd: 'npm run as -- --urls "content/examples/example-urls.md"',
+    cmd: 'npm run as -- text --urls "content/examples/example-urls.md"',
     expectedFiles: [
       { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-09-urls-default.md' },
       { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-10-urls-default.md' }
     ]
   },
   {
-    cmd: 'npm run as -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info',
+    cmd: 'npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info',
     expectedFile: 'fsjam_info.json',
     newName: '02-ALL-11-fsjam-info.json',
   },
   {
-    cmd: 'npm run as -- --urls "content/examples/example-urls.md" --info',
+    cmd: 'npm run as -- text --urls "content/examples/example-urls.md" --info',
     expectedFile: 'urls_info.json',
     newName: '02-ALL-12-urls-info.json',
   },

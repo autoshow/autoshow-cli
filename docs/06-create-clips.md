@@ -3,7 +3,7 @@
 If your show note chapters are formatted correctly with three headers `###`, and you've saved the audio file, you can run this command to automatically create multiple audio files corresponding to the timestamps for each clip.
 
 ```bash
-npm run as -- --rss "https://ajcwebdev.substack.com/feed" --saveAudio --chatgpt
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --saveAudio --chatgpt
 ```
 
 ```bash

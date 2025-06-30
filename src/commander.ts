@@ -1,17 +1,18 @@
 // src/commander.ts
 
 import { Command } from 'commander'
-import { processVideo } from './process-commands/video.ts'
-import { processPlaylist } from './process-commands/playlist.ts'
-import { processChannel } from './process-commands/channel.ts'
-import { processURLs } from './process-commands/urls.ts'
-import { processFile } from './process-commands/file.ts'
-import { processRSS } from './process-commands/rss.ts'
-import { LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
-import { handleMetaWorkflow } from './utils/workflows.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from './utils/logging.ts'
-import { argv, exit, fileURLToPath, basename } from './utils/node-utils.ts'
-import type { ProcessingOptions } from './utils/types.ts'
+import { processVideo } from './text/process-commands/video.ts'
+import { processPlaylist } from './text/process-commands/playlist.ts'
+import { processChannel } from './text/process-commands/channel.ts'
+import { processURLs } from './text/process-commands/urls.ts'
+import { processFile } from './text/process-commands/file.ts'
+import { processRSS } from './text/process-commands/rss.ts'
+import { LLM_SERVICES_CONFIG } from './text/process-steps/05-run-llm.ts'
+import { handleMetaWorkflow } from './text/utils/workflows.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from './text/utils/logging.ts'
+import { argv, exit, fileURLToPath, basename } from './text/utils/node-utils.ts'
+import type { ProcessingOptions } from './text/utils/types.ts'
+
 export const COMMAND_CONFIG = {
   video: {
     description: 'Single YouTube Video',
@@ -50,12 +51,14 @@ export const COMMAND_CONFIG = {
     handler: processRSS,
   }
 }
+
 export function logCommandValidation(stage: string, detail: Record<string, unknown>): void {
   l.dim(`[CommandValidation:${stage}]`)
   Object.entries(detail).forEach(([key, value]) =>
     l.dim(`  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
   )
 }
+
 export function validateCommandInput(options: ProcessingOptions): {
   action?: keyof typeof COMMAND_CONFIG,
   llmServices?: string,
@@ -106,6 +109,7 @@ export function validateCommandInput(options: ProcessingOptions): {
   logCommandValidation('result', { action, llmServices, transcriptServices })
   return { action, llmServices, transcriptServices }
 }
+
 export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
@@ -119,7 +123,7 @@ export async function processCommand(
   if (!action) {
     if (!options['metaDir']) {
       err('Error: No action specified (e.g., --video, --rss, --metaDir). Use --help for options.')
-      program.help()
+      process.exit(1)
     }
     exit(1)
   }
@@ -141,11 +145,16 @@ export async function processCommand(
     exit(1)
   }
 }
+
 const program = new Command()
+
 program
   .name('autoshow-cli')
   .description('Automate processing of audio/video content and manage meta-workflows.')
-  .usage('[options]')
+  .version('1.0.0')
+
+const textCommand = new Command('text')
+  .description('Process audio/video content into text-based outputs')
   .option('--video <url>', 'Process a single YouTube video')
   .option('--playlist <playlistUrl>', 'Process all videos in a YouTube playlist')
   .option('--channel <channelUrl>', 'Process all videos in a YouTube channel')
@@ -160,8 +169,8 @@ program
   .option('--lastDays <number>', 'Number of days to look back for items for RSS processing', parseInt)
   .option('--info [type]', 'Skip processing and write metadata to JSON objects. Use "combined" to merge multiple RSS feeds.', false)
   .option('--whisper [model]', 'Use Whisper.cpp for transcription with optional model specification (e.g., base, large-v3-turbo)')
-  .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-2)')
-  .option('--assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., best, nano)')
+  .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-3)')
+  .option('--assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., universal, nano)')
   .option('--groq-whisper [model]', 'Use Groq Whisper for transcription with optional model specification (e.g., whisper-large-v3-turbo, distil-whisper-large-v3-en, whisper-large-v3)')
   .option('--speakerLabels', 'Use speaker labels for AssemblyAI or Deepgram transcription')
   .option('--chatgpt [model]', 'Use OpenAI ChatGPT for processing with optional model specification')
@@ -170,19 +179,32 @@ program
   .option('--prompt <sections...>', 'Specify prompt sections to include (e.g., summary longChapters)')
   .option('--customPrompt <filePath>', 'Use a custom prompt from a markdown file')
   .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
+  .action(async (options: ProcessingOptions) => {
+    logInitialFunctionCall('textCommand', options)
+    await processCommand(options)
+  })
+
+program.addCommand(textCommand)
+
+program
   .option('--metaDir <dirName>', 'The meta-workflow directory name (e.g., "01-ai") located inside current directory')
   .option('--metaSrcDir <sourceDir>', 'The meta-workflow source data directory (e.g., "autoshow-daily", "mk-auto"), relative to current directory')
   .option('--metaDate <dates...>', 'The dates for the meta-workflow shownotes (YYYY-MM-DD format), allows multiple dates')
   .option('--metaInfo', 'Run the meta-workflow for information gathering')
   .option('--metaShownotes', 'Run the meta-workflow for shownotes generation')
-program.action(async (options: ProcessingOptions & { metaDate?: string | string[] }) => {
-  logInitialFunctionCall('autoshowCLI', options)
-  await processCommand(options)
-})
+  .action(async (options: ProcessingOptions & { metaDate?: string | string[] }) => {
+    logInitialFunctionCall('autoshowCLI', options)
+    const workflowHandled = await handleMetaWorkflow(options)
+    if (!workflowHandled) {
+      program.help()
+    }
+  })
+
 program.on('command:*', () => {
   err(`Error: Invalid command '${program.args.join(' ')}'. Use --help to see available commands.`)
   exit(1)
 })
+
 const thisFilePath = fileURLToPath(import.meta.url)
 if (argv[1] === thisFilePath || basename(argv[1] ?? '') === 'commander.ts') {
   program.parseAsync(argv)

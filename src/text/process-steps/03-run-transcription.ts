@@ -8,6 +8,7 @@ import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
 import { execPromise } from '../utils/node-utils.ts'
 import type { ProcessingOptions, TranscriptionResult } from '../utils/types.ts'
 import ora from 'ora'
+import type { Ora } from 'ora'
 
 export const TRANSCRIPTION_SERVICES_CONFIG = {
   whisper: {
@@ -34,9 +35,8 @@ export const TRANSCRIPTION_SERVICES_CONFIG = {
     value: 'deepgram',
     label: 'Deepgram',
     models: [
+      { modelId: 'nova-3', costPerMinuteCents: 0.43 },
       { modelId: 'nova-2', costPerMinuteCents: 0.43 },
-      { modelId: 'base', costPerMinuteCents: 1.25 },
-      { modelId: 'enhanced', costPerMinuteCents: 1.45 },
     ]
   },
   assembly: {
@@ -44,7 +44,8 @@ export const TRANSCRIPTION_SERVICES_CONFIG = {
     value: 'assembly',
     label: 'AssemblyAI',
     models: [
-      { modelId: 'best', costPerMinuteCents: 0.62 },
+      { modelId: 'universal', costPerMinuteCents: 0.62 },
+      { modelId: 'slam-1', costPerMinuteCents: 0.62 },
       { modelId: 'nano', costPerMinuteCents: 0.2 },
     ]
   },
@@ -109,7 +110,8 @@ export async function runTranscription(
       }
       case 'whisper': {
         const result = await retryTranscriptionCall<TranscriptionResult>(
-          () => callWhisper(options, finalPath)
+          () => callWhisper(options, finalPath, spinner),
+          spinner
         )
         finalTranscript = result.transcript
         finalModelId = result.modelId
@@ -143,7 +145,8 @@ export async function runTranscription(
 }
 
 export async function retryTranscriptionCall<T>(
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
+  spinner?: Ora
 ): Promise<T> {
   const maxRetries = 7
   let attempt = 0
@@ -161,6 +164,9 @@ export async function retryTranscriptionCall<T>(
       }
       const delayMs = 1000 * 2 ** (attempt - 1)
       l.dim(`  Retrying in ${delayMs / 1000} seconds...`)
+      if (spinner) {
+        spinner.text = `Step 3 - Run Transcription (retrying in ${delayMs / 1000}s...)`
+      }
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
@@ -203,7 +209,7 @@ export async function estimateTranscriptCost(
   if (options[serviceKey] === true || !modelInput) {
     modelInput = config.models[0]?.modelId
     if (serviceKey === 'deepgram' && !modelInput) modelInput = 'nova-2'
-    if (serviceKey === 'assembly' && !modelInput) modelInput = 'best'
+    if (serviceKey === 'assembly' && !modelInput) modelInput = 'universal'
     if (serviceKey === 'whisper' && !modelInput) modelInput = 'base'
     if (serviceKey === 'groqWhisper' && !modelInput) modelInput = 'whisper-large-v3-turbo'
   }
