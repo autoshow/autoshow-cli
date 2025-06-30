@@ -3,6 +3,12 @@ import { err, l, logInitialFunctionCall } from '../utils/logging.ts'
 import { readFile } from '../utils/node-utils.ts'
 import type { ProcessingOptions } from '../utils/types.ts'
 
+// Default number of key moments to extract if not specified.
+const DEFAULT_KEY_MOMENTS_COUNT = 3
+
+// Default duration in seconds for each key moment if not specified.
+const DEFAULT_KEY_MOMENTS_DURATION = 60
+
 export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
   { name: 'Titles', value: 'titles' },
   { name: 'Summary', value: 'summary' },
@@ -52,7 +58,7 @@ export async function selectPrompts(options: ProcessingOptions) {
   const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters']
 
   const validSections = prompt.filter(
-    (section): section is keyof typeof sections => 
+    (section): section is keyof typeof sections =>
       validPromptValues.has(section) && Object.hasOwn(sections, section)
   )
 
@@ -60,16 +66,16 @@ export async function selectPrompts(options: ProcessingOptions) {
 
   validSections.forEach((section) => {
     let instruction = sections[section].instruction
-    
+
     if (section === 'keyMoments') {
       const count = options.keyMomentsCount || DEFAULT_KEY_MOMENTS_COUNT
-      const duration = options.keyMomentDuration || 60
+      const duration = options.keyMomentDuration || DEFAULT_KEY_MOMENTS_DURATION
       l.dim(`Configuring keyMoments with count: ${count}, duration: ${duration}s`)
       instruction = instruction
         .replace('{COUNT}', count.toString())
         .replace('{DURATION}', duration.toString())
     }
-    
+
     text += instruction + "\n"
   })
 
