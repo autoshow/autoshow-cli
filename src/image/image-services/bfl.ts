@@ -1,9 +1,9 @@
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
-import { l } from '../../text/utils/logging.ts'
+import { l } from '../../logging.ts'
 import { generateUniqueFilename, isApiError } from '../image-utils.ts'
-import { env } from '../../text/utils/node-utils.ts'
-import type { ImageGenerationResult, BlackForestLabsOptions } from '../../text/utils/types.ts'
+import { env } from '../../node-utils.ts'
+import type { ImageGenerationResult, BlackForestLabsOptions } from '@/types.ts'
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 

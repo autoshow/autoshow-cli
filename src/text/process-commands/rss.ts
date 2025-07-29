@@ -6,9 +6,9 @@ import { runTranscription } from '../process-steps/03-run-transcription.ts'
 import { selectPrompts } from '../process-steps/04-select-prompt.ts'
 import { runLLM } from '../process-steps/05-run-llm.ts'
 import { saveInfo } from '../utils/save-info.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
-import { parser } from '../utils/node-utils.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '../../logging.ts'
+import { parser } from '../../node-utils.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
 function validateRSSOptions(options: ProcessingOptions) {
   if (options.last !== undefined) {
     if (!Number.isInteger(options.last) || options.last < 1) {

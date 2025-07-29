@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import removeMd from 'remove-markdown'
-import { l, err } from '../text/utils/logging.ts'
+import { l, err } from '../logging.ts'
 import { 
   fs, path, spawnSync, existsSync, basename, extname, join
-} from '../text/utils/node-utils.ts'
+} from '../node-utils.ts'
 import { synthesizeWithElevenLabs, processScriptWithElevenLabs } from './tts-services/elevenlabs.ts'
 import { synthesizeWithOpenAI, processScriptWithOpenAI } from './tts-services/openai.ts'
 import { synthesizeWithCoqui, processScriptWithCoqui } from './tts-services/coqui.ts'

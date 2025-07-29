@@ -1,33 +1,38 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  ".github/setup.sh"
-  "**/*"
-  "src"
+  ".github"
+  "content"
+  "input"
+  # "**/*"
+  "src/*.ts"
+  "src/image"
+  "src/text"
+  "src/tts"
+  "src/commander.ts"
+  "workflows"
+  ".env.example"
+  ".tts-config.json"
   "package.json"
+  "tsconfig.json"
+  "README.md"
 )
 
 IGNORE_PATHS=(
   ".github/workflows/review.yml"
   ".github/ai-review.ts"
   ".github/FUNDING.yml"
-  ".github/repomix.sh"
   "content"
   "docs"
+  "output"
   "python_env"
   "test"
-  "src/prompts/sections.ts"
+  "src/text/prompts/sections.ts"
   "whisper.cpp"
   ".gitignore"
   "LICENSE"
   "new-*.md"
-  "repomix.sh"
   "TODO.md"
-  "src/text/prompts/sections.ts"
-  "src/text/process-commands/rss.ts"
-  "src/tts/tts-utils.ts"
-  "src/text/process-commands/channel.ts"
-  "src/tts/tts-services"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")
@@ -74,7 +79,7 @@ repomix \
   --style markdown \
   --output "$OUTPUT_FILE" \
   --token-count-encoding "o200k_base" \
-  --top-files-len 30 \
+  --top-files-len 50 \
   --no-git-sort-by-changes \
   --no-file-summary
 

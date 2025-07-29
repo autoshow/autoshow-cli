@@ -5,8 +5,8 @@ import { downloadAudio, saveAudio } from '../process-steps/02-download-audio.ts'
 import { runTranscription } from '../process-steps/03-run-transcription.ts'
 import { selectPrompts } from '../process-steps/04-select-prompt.ts'
 import { runLLM } from '../process-steps/05-run-llm.ts'
-import { err, logInitialFunctionCall } from '../utils/logging.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
+import { err, logInitialFunctionCall } from '../../logging.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
 
 export async function processVideo(
   options: ProcessingOptions,

@@ -1,9 +1,9 @@
 // src/process-steps/02-download-audio.ts
 
 import { fileTypeFromBuffer } from 'file-type'
-import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
-import { execPromise, readFile, access, rename, execFilePromise, unlink } from '../utils/node-utils.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import { l, err, logInitialFunctionCall } from '../../logging.ts'
+import { execPromise, readFile, access, rename, execFilePromise, unlink } from '../../node-utils.ts'
+import type { ProcessingOptions } from '@/types.ts'
 import ora from 'ora'
 
 export async function saveAudio(id: string, ensureFolders?: boolean) {
