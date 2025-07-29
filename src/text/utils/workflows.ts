@@ -1,9 +1,9 @@
 // src/utils/workflows.ts
 
-import { l, err, logSeparator, logInitialFunctionCall } from './logging.ts'
-import { execPromise, mkdirSync, existsSync } from './node-utils.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '../../logging.ts'
+import { execPromise, mkdirSync, existsSync } from '../../node-utils.ts'
 import { processRSS } from '../process-commands/rss.ts'
-import type { ProcessingOptions } from './types.ts'
+import type { ProcessingOptions } from '@/types.ts'
 
 export async function logOperation(
   command: string,

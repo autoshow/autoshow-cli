@@ -2,9 +2,9 @@
 
 import { processVideo } from './video.ts'
 import { saveInfo } from '../utils/save-info.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '../utils/logging.ts'
-import { execFilePromise } from '../utils/node-utils.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '../../logging.ts'
+import { execFilePromise } from '../../node-utils.ts'
+import type { ProcessingOptions } from '@/types.ts'
 
 export async function processPlaylist(
   options: ProcessingOptions,

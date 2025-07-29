@@ -1,7 +1,7 @@
 import { sections } from '../prompts/sections.ts'
-import { err, l, logInitialFunctionCall } from '../utils/logging.ts'
-import { readFile } from '../utils/node-utils.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import { err, l, logInitialFunctionCall } from '../../logging.ts'
+import { readFile } from '../../node-utils.ts'
+import type { ProcessingOptions } from '@/types.ts'
 
 // Default number of key moments to extract if not specified.
 const DEFAULT_KEY_MOMENTS_COUNT = 3

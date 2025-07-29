@@ -1,7 +1,7 @@
-import { l, err } from '../../text/utils/logging.ts'
+import { l, err } from '../../logging.ts'
 import { 
   ensureDir, fs, path, spawnSync, readFileSync, existsSync, mkdirSync
-} from '../../text/utils/node-utils.ts'
+} from '../../node-utils.ts'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
 } from '../tts-utils.ts'

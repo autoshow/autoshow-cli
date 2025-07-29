@@ -1,8 +1,8 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { l } from '../../text/utils/logging.ts'
+import { l } from '../../logging.ts'
 import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError } from '../image-utils.ts'
-import { env } from '../../text/utils/node-utils.ts'
-import type { ImageGenerationResult, NovaCanvasPayload } from '../../text/utils/types.ts'
+import { env } from '../../node-utils.ts'
+import type { ImageGenerationResult, NovaCanvasPayload } from '@/types.ts'
 
 const bedrockRuntimeClient = new BedrockRuntimeClient({ 
   region: env['AWS_REGION'] || 'us-east-1',

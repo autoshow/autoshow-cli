@@ -1,8 +1,8 @@
 // src/utils/save-info.ts
 
-import { l, err } from './logging.ts'
-import { writeFile, execFilePromise } from './node-utils.ts'
-import type { ShowNoteMetadata, VideoInfo } from './types.ts'
+import { l, err } from '../../logging.ts'
+import { writeFile, execFilePromise } from '../../node-utils.ts'
+import type { ShowNoteMetadata, VideoInfo } from '@/types.ts'
 
 export function sanitizeTitle(title: string) {
   return title

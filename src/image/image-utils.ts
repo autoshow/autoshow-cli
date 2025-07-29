@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { l, err } from '../text/utils/logging.ts'
-import type { ApiError } from '../text/utils/types.ts'
+import { l, err } from '../logging.ts'
+import type { ApiError } from '@/types.ts'
 
 export function generateUniqueFilename(prefix: string, extension: string = 'png'): string {
   const timestamp = generateTimestamp()

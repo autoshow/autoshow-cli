@@ -1,8 +1,8 @@
 import { Command } from 'commander'
-import { l, err } from '../text/utils/logging.ts'
+import { l, err } from '../logging.ts'
 import { 
   existsSync, mkdirSync
-} from '../text/utils/node-utils.ts'
+} from '../node-utils.ts'
 import { downloadModel, detectEngine, listModels, processFileWithEngine, processScriptWithEngine } from './tts-utils.ts'
 
 const OUTDIR = 'output'

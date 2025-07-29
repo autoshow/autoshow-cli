@@ -1,9 +1,9 @@
 // src/transcription/assembly.ts
 
-import { l, err } from '../utils/logging.ts'
-import { readFile, env } from '../utils/node-utils.ts'
+import { l, err } from '../../logging.ts'
+import { readFile, env } from '../../node-utils.ts'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import type { ProcessingOptions } from '@/types.ts'
 
 const BASE_URL = 'https://api.assemblyai.com/v2'
 

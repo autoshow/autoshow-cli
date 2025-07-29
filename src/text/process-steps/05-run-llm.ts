@@ -1,11 +1,11 @@
 // src/process-steps/05-run-llm.ts
 
 import chalk from 'chalk'
-import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
-import { writeFile } from '../utils/node-utils.ts'
+import { l, err, logInitialFunctionCall } from '../../logging.ts'
+import { writeFile } from '../../node-utils.ts'
 import { callChatGPT, callClaude, callGemini } from '../llms/llm-services.ts'
 import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '../llms/llm-services.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
 
 export const LLM_SERVICES_CONFIG = {
   skip: {

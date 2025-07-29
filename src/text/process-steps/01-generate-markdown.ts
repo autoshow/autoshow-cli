@@ -1,9 +1,9 @@
 // src/process-steps/01-generate-markdown.ts
 
-import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
-import { execFilePromise, basename, extname } from '../utils/node-utils.ts'
+import { l, err, logInitialFunctionCall } from '../../logging.ts'
+import { execFilePromise, basename, extname } from '../../node-utils.ts'
 import { sanitizeTitle } from '../utils/save-info.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
 
 export function buildFrontMatter(metadata: {
   showLink: string
