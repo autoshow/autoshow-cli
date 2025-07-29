@@ -4,7 +4,7 @@ import {
 } from '../../node-utils.ts'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
-} from '../tts-utils.ts'
+} from '../tts-utils'
 import { PollyClient, SynthesizeSpeechCommand } from '@aws-sdk/client-polly'
 import type { OutputFormat, VoiceId, Engine, LanguageCode } from '@aws-sdk/client-polly'
 

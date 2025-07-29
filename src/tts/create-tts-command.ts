@@ -3,18 +3,16 @@ import { l, err } from '../logging.ts'
 import { 
   existsSync, mkdirSync
 } from '../node-utils.ts'
-import { downloadModel, detectEngine, listModels, processFileWithEngine, processScriptWithEngine } from './tts-utils.ts'
+import { downloadModel, detectEngine, listModels, processFileWithEngine, processScriptWithEngine } from './tts-utils'
 
 const OUTDIR = 'output'
 
 const sharedOptions = (cmd: Command): Command => cmd
   .option('--coqui', 'Use Coqui TTS engine (default)')
   .option('--elevenlabs', 'Use ElevenLabs engine')
-  .option('--openai-tts', 'Use OpenAI TTS engine')
   .option('--polly', 'Use AWS Polly engine')
-  .option('--openai-model <model>', 'OpenAI model: tts-1, tts-1-hd, gpt-4o-mini-tts (default: tts-1)')
   .option('--coqui-model <model>', 'Coqui model name or path (default: tacotron2-DDC, use "xtts" for XTTS v2)')
-  .option('--voice <name>', 'Voice ID (elevenlabs) or voice name (openai/polly)')
+  .option('--voice <name>', 'Voice ID (elevenlabs) or voice name (polly)')
   .option('--speaker <name>', 'Speaker name for Coqui TTS')
   .option('--voice-clone <path>', 'Path to voice sample for cloning (coqui XTTS)')
   .option('--language <code>', 'Language code for multi-lingual models (coqui/polly)')
@@ -22,8 +20,7 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--polly-sample-rate <rate>', 'Polly sample rate: 8000, 16000, 22050, 24000 (default: 24000)')
   .option('--polly-engine <engine>', 'Polly engine: standard, neural (auto-selected based on voice)')
   .option('--output <dir>', 'Output directory', OUTDIR)
-  .option('--output-format <format>', 'Output format: mp3, opus, aac, flac, wav, pcm (openai)', 'mp3')
-  .option('--speed <number>', 'Speed 0.25-4.0 (openai/coqui)', parseFloat)
+  .option('--speed <number>', 'Speed 0.25-4.0 (coqui)', parseFloat)
 
 const handleAction = async (action: string, runner: () => Promise<void>): Promise<void> => {
   try {
@@ -47,8 +44,7 @@ export const createTtsCommand = (): Command => {
     }))
 
   sharedOptions(tts.command('file').description('Generate speech from a markdown file')
-    .argument('<filePath>', 'Path to the markdown file')
-    .option('--instructions <text>', 'Voice instructions (openai gpt-4o-mini-tts only)'))
+    .argument('<filePath>', 'Path to the markdown file'))
     .action(async (filePath, options) => handleAction('file', async () => {
       l.dim(`Generating speech from ${filePath}`)
       if (!existsSync(filePath)) err(`File not found: ${filePath}`)

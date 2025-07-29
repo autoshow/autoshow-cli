@@ -4,7 +4,7 @@ import {
 } from '../../node-utils.ts'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
-} from '../tts-utils.ts'
+} from '../tts-utils'
 
 export interface VoiceSettings {
   stability: number
