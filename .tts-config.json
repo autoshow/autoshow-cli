@@ -1,0 +1,1 @@
+{"python":"python_env/bin/python","venv":"python_env","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"}}
