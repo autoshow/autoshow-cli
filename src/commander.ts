@@ -6,6 +6,7 @@ import { processURLs } from './text/process-commands/urls.ts'
 import { processFile } from './text/process-commands/file.ts'
 import { processRSS } from './text/process-commands/rss.ts'
 import { createTtsCommand } from './tts/create-tts-command.ts'
+import { createImageCommand } from './image/create-image-command.ts'
 import { LLM_SERVICES_CONFIG } from './text/process-steps/05-run-llm.ts'
 import { handleMetaWorkflow } from './text/utils/workflows.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from './text/utils/logging.ts'
@@ -149,7 +150,7 @@ const program = new Command()
 
 program
   .name('autoshow-cli')
-  .description('Automate processing of audio/video content, manage meta-workflows, and generate text-to-speech.')
+  .description('Automate processing of audio/video content, manage meta-workflows, generate text-to-speech, and create AI images.')
   .version('1.0.0')
 
 const textCommand = new Command('text')
@@ -193,6 +194,7 @@ const textCommand = new Command('text')
 
 program.addCommand(textCommand)
 program.addCommand(createTtsCommand())
+program.addCommand(createImageCommand())
 
 program
   .option('--metaDir <dirName>', 'The meta-workflow directory name (e.g., "01-ai") located inside current directory')

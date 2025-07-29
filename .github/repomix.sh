@@ -14,6 +14,7 @@ IGNORE_PATHS=(
   ".github/repomix.sh"
   "content"
   "docs"
+  "python_env"
   "test"
   "src/prompts/sections.ts"
   "whisper.cpp"
@@ -22,6 +23,11 @@ IGNORE_PATHS=(
   "new-*.md"
   "repomix.sh"
   "TODO.md"
+  "src/text/prompts/sections.ts"
+  "src/text/process-commands/rss.ts"
+  "src/tts/tts-utils.ts"
+  "src/text/process-commands/channel.ts"
+  "src/tts/tts-services"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

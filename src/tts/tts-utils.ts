@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import removeMd from 'remove-markdown'
 import { l, err } from '../text/utils/logging.ts'
 import { 
-  fs, path, spawnSync, existsSync, basename, extname, join, mkdirSync
+  fs, path, spawnSync, existsSync, basename, extname, join
 } from '../text/utils/node-utils.ts'
 import { synthesizeWithElevenLabs, processScriptWithElevenLabs } from './tts-services/elevenlabs.ts'
 import { synthesizeWithOpenAI, processScriptWithOpenAI } from './tts-services/openai.ts'
@@ -203,12 +203,6 @@ export const stripMarkdown = (file: string): string => {
   l.dim(`plain text length=${plain.length}`)
   if (!plain) err('No narratable text after stripping Markdown')
   return plain
-}
-
-const ensureDir = async (dir: string) => {
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
-  }
 }
 
 const synthesizers = {

@@ -1,7 +1,7 @@
 {
   "name": "autoshow-cli",
   "author": "Anthony Campolo",
-  "description": "Automated generation of show notes and content for audio and video files with text-to-speech capabilities.",
+  "description": "Automated generation of show notes and content for audio and video files with text-to-speech and AI image generation capabilities.",
   "keywords": [
     "ChatGPT",
     "Claude",
@@ -12,7 +12,10 @@
     "Commander.js",
     "Coqui",
     "ElevenLabs",
-    "Polly"
+    "Polly",
+    "DALL-E",
+    "BlackForestLabs",
+    "Nova"
   ],
   "type": "module",
   "scripts": {
@@ -34,6 +37,7 @@
     "c": "npm run as -- text --channel",
     "c3": "npm run as -- text --whisper large-v3-turbo --channel",
     "tts": "npm run as -- tts",
+    "image": "npm run as -- image",
     "test:base": "tsx --test --env-file=.env --test-reporter=spec --test-reporter-destination=spec.log --test-concurrency=1",
     "test:local": "npm run test:base -- test/cli/cli-local.test.ts",
     "test:all": "npm run test:base -- test/cli/cli-all.test.ts",
@@ -45,6 +49,7 @@
   "dependencies": {
     "@ai-sdk/openai": "1.3.5",
     "@anthropic-ai/sdk": "0.39.0",
+    "@aws-sdk/client-bedrock-runtime": "3.826.0",
     "@aws-sdk/client-polly": "3.828.0",
     "@deepgram/sdk": "3.11.1",
     "@google/generative-ai": "0.22.0",
