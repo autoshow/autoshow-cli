@@ -1,8 +1,8 @@
 import { OpenAI } from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { err } from '../../logging.ts'
-import { env } from '../../node-utils.ts'
+import { err } from '@/logging'
+import { env } from '@/node-utils'
 import { LLM_SERVICES_CONFIG } from '../process-steps/05-run-llm.ts'
 
 export type ChatGPTModelValue = (typeof LLM_SERVICES_CONFIG.chatgpt.models)[number]['modelId']

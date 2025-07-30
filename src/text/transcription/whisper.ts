@@ -1,7 +1,7 @@
-import { l, err } from '../../logging.ts'
-import { readFile, unlink, spawn, existsSync, execPromise } from '../../node-utils.ts'
+import { l, err } from '@/logging'
+import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import type { ProcessingOptions } from '@/types'
 import type { Ora } from 'ora'
 
 export function formatTimestamp(timestamp: string) {

@@ -1,18 +1,19 @@
-import { l, err } from '../../../logging.ts'
-import { execFilePromise } from '../../../node-utils.ts'
-import type { ProcessingOptions, VideoInfo } from '@/types.ts'
+import { l, err } from '@/logging'
+import { execFilePromise } from '@/node-utils'
+import type { ProcessingOptions, VideoInfo } from '@/types'
 
 export async function selectVideos(
   stdout: string,
   options: ProcessingOptions
 ): Promise<{ allVideos: VideoInfo[], videosToProcess: VideoInfo[] }> {
-  l.dim('[selectVideos] Starting video selection process')
+  const p = '[text/process-commands/channel/selector]'
+  l.dim(`${p} Starting video selection process`)
   const videoUrls = stdout.trim().split('\n').filter(Boolean)
   l.opts(`\nFetching detailed information for ${videoUrls.length} videos...`)
 
   const videoDetailsPromises = videoUrls.map(async (url) => {
     try {
-      l.dim(`[selectVideos] Fetching details for: ${url}`)
+      l.dim(`${p} Fetching details for: ${url}`)
       const { stdout } = await execFilePromise('yt-dlp', [
         '--print', '%(upload_date)s|%(timestamp)s|%(is_live)s|%(webpage_url)s',
         '--no-warnings',
@@ -38,7 +39,7 @@ export async function selectVideos(
         isLive: isLive === 'True'
       }
     } catch (error) {
-      err(`[selectVideos] Error getting details for video ${url}: ${error instanceof Error ? error.message : String(error)}`)
+      err(`${p} Error getting details for video ${url}: ${error instanceof Error ? error.message : String(error)}`)
       return null
     }
   })
@@ -62,37 +63,37 @@ export async function selectVideos(
   let videosToProcess
   if (options.last) {
     videosToProcess = allVideos.slice(0, options.last)
-    l.dim(`[selectVideos] Applied --last filter: ${videosToProcess.length} videos selected`)
+    l.dim(`${p} Applied --last filter: ${videosToProcess.length} videos selected`)
   } else if (options.days) {
     const now = new Date()
     const cutoff = new Date(now.getTime() - options.days * 24 * 60 * 60 * 1000)
     videosToProcess = allVideos.filter((video) => {
       return video.date >= cutoff
     })
-    l.dim(`[selectVideos] Filtered videos by days: ${videosToProcess.length} videos from the last ${options.days} days`)
+    l.dim(`${p} Filtered videos by days: ${videosToProcess.length} videos from the last ${options.days} days`)
   } else if (options.date && options.date.length > 0) {
     const selectedDates = new Set(options.date)
-    l.dim(`[selectVideos] Filtering videos by dates: ${Array.from(selectedDates).join(', ')}`)
+    l.dim(`${p} Filtering videos by dates: ${Array.from(selectedDates).join(', ')}`)
     
     videosToProcess = allVideos.filter((video) => {
       const videoDateString = video.date.toISOString().substring(0, 10)
       const isSelected = selectedDates.has(videoDateString)
       if (isSelected) {
-        l.dim(`[selectVideos] Video matches date filter: ${video.url} (${videoDateString})`)
+        l.dim(`${p} Video matches date filter: ${video.url} (${videoDateString})`)
       }
       return isSelected
     })
-    l.dim(`[selectVideos] Filtered videos by dates: ${videosToProcess.length} videos from specified dates`)
+    l.dim(`${p} Filtered videos by dates: ${videosToProcess.length} videos from specified dates`)
     
     if (videosToProcess.length === 0) {
-      l.warn(`[selectVideos] No videos found for the specified dates: ${options.date.join(', ')}`)
+      l.warn(`${p} No videos found for the specified dates: ${options.date.join(', ')}`)
       const availableDates = allVideos.map(v => v.date.toISOString().substring(0, 10)).slice(0, 10)
-      l.dim(`[selectVideos] Available dates in channel (first 10): ${availableDates.join(', ')}`)
+      l.dim(`${p} Available dates in channel (first 10): ${availableDates.join(', ')}`)
     }
   } else {
     videosToProcess = allVideos
   }
 
-  l.dim(`[selectVideos] Final selection: ${videosToProcess.length} videos to process`)
+  l.dim(`${p} Final selection: ${videosToProcess.length} videos to process`)
   return { allVideos, videosToProcess }
 }

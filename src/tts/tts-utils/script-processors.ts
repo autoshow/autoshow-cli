@@ -1,4 +1,4 @@
-import { l, err } from '../../logging.ts'
+import { l, err } from '@/logging'
 import { processScriptWithElevenLabs } from '../tts-services/elevenlabs.ts'
 import { processScriptWithCoqui } from '../tts-services/coqui.ts'
 import { processScriptWithPolly } from '../tts-services/polly.ts'

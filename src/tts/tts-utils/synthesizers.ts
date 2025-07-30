@@ -1,5 +1,5 @@
-import { l, err } from '../../logging.ts'
-import { basename, extname, join } from '../../node-utils.ts'
+import { l, err } from '@/logging'
+import { basename, extname, join } from '@/node-utils'
 import { synthesizeWithElevenLabs } from '../tts-services/elevenlabs.ts'
 import { synthesizeWithCoqui } from '../tts-services/coqui.ts'
 import { synthesizeWithPolly } from '../tts-services/polly.ts'

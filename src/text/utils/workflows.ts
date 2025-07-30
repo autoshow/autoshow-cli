@@ -1,7 +1,7 @@
-import { l, err, logSeparator, logInitialFunctionCall } from '../../logging.ts'
-import { execPromise, mkdirSync, existsSync } from '../../node-utils.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { execPromise, mkdirSync, existsSync } from '@/node-utils'
 import { processRSS } from '../process-commands/rss'
-import type { ProcessingOptions } from '@/types.ts'
+import type { ProcessingOptions } from '@/types'
 
 export async function logOperation(
   command: string,

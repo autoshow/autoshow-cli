@@ -1,5 +1,5 @@
-import { l } from '../../logging.ts'
-import { fs, path } from '../../node-utils.ts'
+import { l } from '@/logging'
+import { fs, path } from '@/node-utils'
 
 export const SAMPLE_RATE = 24000
 export const CHANNELS = 1

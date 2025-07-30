@@ -7,9 +7,9 @@ import { processFile } from './process-commands/file.ts'
 import { processRSS } from './process-commands/rss'
 import { LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
 import { handleMetaWorkflow } from './utils/workflows.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '../logging.ts'
-import { exit } from '../node-utils.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { exit } from '@/node-utils'
+import type { ProcessingOptions } from '@/types'
 
 export const COMMAND_CONFIG = {
   video: {

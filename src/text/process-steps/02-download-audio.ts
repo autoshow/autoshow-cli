@@ -1,25 +1,26 @@
 import { fileTypeFromBuffer } from 'file-type'
-import { l, err, logInitialFunctionCall } from '../../logging.ts'
-import { execPromise, readFile, access, rename, execFilePromise, unlink } from '../../node-utils.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l, err, logInitialFunctionCall } from '@/logging'
+import { execPromise, readFile, access, rename, execFilePromise, unlink } from '@/node-utils'
+import type { ProcessingOptions } from '@/types'
 import ora from 'ora'
 
 export async function saveAudio(id: string, ensureFolders?: boolean) {
+  const p = '[text/process-steps/02-download-audio]'
   if (ensureFolders) {
-    l.dim('\nSkipping cleanup to preserve or ensure metadata directories.\n')
+    l.dim(`${p} Skipping cleanup to preserve or ensure metadata directories.`)
     return
   }
 
   const extensions = ['.wav']
-  l.dim(`  Temporary files deleted:`)
+  l.dim(`${p} Temporary files deleted:`)
 
   for (const ext of extensions) {
     try {
       await unlink(`${id}${ext}`)
-      l.dim(`    - ${id}${ext}`)
+      l.dim(`${p}   - ${id}${ext}`)
     } catch (error) {
       if (error instanceof Error && (error as Error).message !== 'ENOENT') {
-        err(`Error deleting file ${id}${ext}: ${(error as Error).message}`)
+        err(`${p} Error deleting file ${id}${ext}: ${(error as Error).message}`)
       }
     }
   }
@@ -29,25 +30,24 @@ export async function executeWithRetry(
   command: string,
   args: string[],
 ) {
+  const p = '[text/process-steps/02-download-audio]'
   const maxRetries = 7
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const { stderr } = await execFilePromise(command, args)
       if (stderr) {
-        err(`yt-dlp warnings: ${stderr}`)
+        err(`${p} yt-dlp warnings: ${stderr}`)
       }
       return
     } catch (error) {
       if (attempt === maxRetries) {
-        err(`Failed after ${maxRetries} attempts`)
+        err(`${p} Failed after ${maxRetries} attempts`)
         throw error
       }
 
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(
-        `Retry ${attempt} of ${maxRetries} failed. Waiting ${delayMs} ms before next attempt...`
-      )
+      l.dim(`${p} Retry ${attempt} of ${maxRetries} failed. Waiting ${delayMs} ms before next attempt...`)
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
@@ -58,6 +58,7 @@ export async function downloadAudio(
   input: string,
   filename: string
 ) {
+  const p = '[text/process-steps/02-download-audio]'
   logInitialFunctionCall('downloadAudio', { options, input, filename })
 
   const spinner = ora('Step 2 - Download Audio').start()
@@ -91,7 +92,7 @@ export async function downloadAudio(
       spinner.succeed('Audio downloaded successfully.')
     } catch (error) {
       spinner.fail('Audio download failed.')
-      err(`Error downloading audio: ${error instanceof Error ? error.message : String(error)}`)
+      err(`${p} Error downloading audio: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
   } else if (options.file) {
@@ -101,33 +102,33 @@ export async function downloadAudio(
     ])
     try {
       await access(input)
-      l.dim(`\n  File ${input} is accessible. Attempting to read file data for type detection...\n`)
+      l.dim(`${p} File ${input} is accessible. Attempting to read file data for type detection...`)
 
       const buffer = await readFile(input)
-      l.dim(`    - Successfully read file: ${buffer.length} bytes`)
+      l.dim(`${p}   - Successfully read file: ${buffer.length} bytes`)
 
       const fileType = await fileTypeFromBuffer(buffer)
-      l.dim(`    - File type detection result: ${fileType?.ext ?? 'unknown'}`)
+      l.dim(`${p}   - File type detection result: ${fileType?.ext ?? 'unknown'}`)
 
       if (!fileType || !supportedFormats.has(fileType.ext)) {
         throw new Error(
           fileType ? `Unsupported file type: ${fileType.ext}` : 'Unable to determine file type'
         )
       }
-      l.dim(`    - Running ffmpeg command for ${input} -> ${outputPath}\n`)
+      l.dim(`${p}   - Running ffmpeg command for ${input} -> ${outputPath}`)
       await execPromise(
         `ffmpeg -i "${input}" -ar 16000 -ac 1 -c:a pcm_s16le "${outputPath}"`,
         { maxBuffer: 10000 * 1024 }
       )
-      l.dim(`  File converted to WAV format successfully:\n    - ${outputPath}`)
+      l.dim(`${p} File converted to WAV format successfully:\n    - ${outputPath}`)
     } catch (error) {
-      err(`Error processing local file: ${error instanceof Error ? error.message : String(error)}`)
+      err(`${p} Error processing local file: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
   } else {
     throw new Error('Invalid option provided for audio download/processing.')
   }
 
-  l.dim(`\n  downloadAudio returning:\n    - outputPath: ${outputPath}\n`)
+  l.dim(`${p} downloadAudio returning:\n    - outputPath: ${outputPath}`)
   return outputPath
 }

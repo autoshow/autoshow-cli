@@ -4,9 +4,9 @@ import { saveAudio } from '../process-steps/02-download-audio.ts'
 import { runTranscription } from '../process-steps/03-run-transcription.ts'
 import { selectPrompts } from '../process-steps/04-select-prompt.ts'
 import { runLLM } from '../process-steps/05-run-llm.ts'
-import { err, logInitialFunctionCall } from '../../logging.ts'
+import { err, logInitialFunctionCall } from '@/logging'
 
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
 export async function processFile(
   options: ProcessingOptions,
@@ -14,6 +14,7 @@ export async function processFile(
   llmServices?: string,
   transcriptServices?: string
 ) {
+  const p = '[text/process-commands/file]'
   logInitialFunctionCall('processFile', { filePath, llmServices, transcriptServices })
 
   try {
@@ -44,7 +45,7 @@ export async function processFile(
       transcript,
     }
   } catch (error) {
-    err(`Error processing file: ${(error as Error).message}`)
+    err(`${p} Error processing file: ${(error as Error).message}`)
     process.exit(1)
   }
 }

@@ -1,7 +1,7 @@
-import { l, err } from '../../logging.ts'
-import { readFile, env } from '../../node-utils.ts'
+import { l, err } from '@/logging'
+import { readFile, env } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import type { ProcessingOptions } from '@/types'
 
 export async function callGroqWhisper(
   options: ProcessingOptions,

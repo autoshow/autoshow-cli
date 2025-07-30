@@ -1,30 +1,31 @@
-import { l, err } from '../../../logging.ts'
-import { parser } from '../../../node-utils.ts'
+import { l, err } from '@/logging'
+import { parser } from '@/node-utils'
 import { filterRSSItems } from './filters.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
 export async function retryRSSFetch(
   fn: () => Promise<Response>
 ): Promise<Response> {
-  l.dim('[retryRSSFetch] Starting RSS fetch with retry logic')
+  const p = '[text/process-commands/rss/fetch]'
+  l.dim(`${p} Starting RSS fetch with retry logic`)
   const maxRetries = 7
   let attempt = 0
   
   while (attempt < maxRetries) {
     try {
       attempt++
-      l.dim(`[retryRSSFetch] Attempt ${attempt} - Fetching RSS...\n`)
+      l.dim(`${p} Attempt ${attempt} - Fetching RSS...\n`)
       const response = await fn()
-      l.dim(`[retryRSSFetch] RSS fetch succeeded on attempt ${attempt}`)
+      l.dim(`${p} RSS fetch succeeded on attempt ${attempt}`)
       return response
     } catch (error) {
-      err(`[retryRSSFetch] Attempt ${attempt} failed: ${(error as Error).message}`)
+      err(`${p} Attempt ${attempt} failed: ${(error as Error).message}`)
       if (attempt >= maxRetries) {
-        err(`[retryRSSFetch] Max retries (${maxRetries}) reached. Aborting RSS fetch.`)
+        err(`${p} Max retries (${maxRetries}) reached. Aborting RSS fetch.`)
         throw error
       }
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`[retryRSSFetch] Retrying in ${delayMs / 1000} seconds...`)
+      l.dim(`${p} Retrying in ${delayMs / 1000} seconds...`)
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
@@ -35,12 +36,13 @@ export async function selectRSSItemsToProcess(
   rssUrl: string,
   options: ProcessingOptions
 ): Promise<{ items: ShowNoteMetadata[], channelTitle: string }> {
-  l.dim(`[selectRSSItemsToProcess] Processing RSS URL: ${rssUrl}`)
+  const p = '[text/process-commands/rss/fetch]'
+  l.dim(`${p} Processing RSS URL: ${rssUrl}`)
   
   try {
     const fsPromises = await import('node:fs/promises')
     await fsPromises.access(rssUrl)
-    l.dim('[selectRSSItemsToProcess] Reading RSS from local file')
+    l.dim(`${p} Reading RSS from local file`)
     const text = await fsPromises.readFile(rssUrl, 'utf8')
     const feed = parser.parse(text)
     const {
@@ -61,17 +63,17 @@ export async function selectRSSItemsToProcess(
       channelLink,
       channelImageObject?.url
     )
-    l.dim(`[selectRSSItemsToProcess] Local file processed: ${itemsToProcess.length} items`)
+    l.dim(`${p} Local file processed: ${itemsToProcess.length} items`)
     return { items: itemsToProcess, channelTitle: channelTitle || '' }
   } catch {
-    l.dim('[selectRSSItemsToProcess] Local file not found, attempting remote fetch')
+    l.dim(`${p} Local file not found, attempting remote fetch`)
   }
   
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 10000)
   
   try {
-    l.dim('[selectRSSItemsToProcess] Fetching RSS from remote URL')
+    l.dim(`${p} Fetching RSS from remote URL`)
     const response = await retryRSSFetch(
       () => fetch(rssUrl, {
         method: 'GET',
@@ -106,7 +108,7 @@ export async function selectRSSItemsToProcess(
       channelLink,
       channelImageObject?.url
     )
-    l.dim(`[selectRSSItemsToProcess] Remote feed processed: ${itemsToProcess.length} items`)
+    l.dim(`${p} Remote feed processed: ${itemsToProcess.length} items`)
     return { items: itemsToProcess, channelTitle: channelTitle || '' }
   } catch (error) {
     if ((error as Error).name === 'AbortError') {

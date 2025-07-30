@@ -1,12 +1,13 @@
-import { l } from '../../../logging.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l } from '@/logging'
+import type { ProcessingOptions } from '@/types'
 
 export function logRSSProcessingStatus(
   total: number,
   processing: number,
   options: ProcessingOptions
 ): void {
-  l.dim('[logRSSProcessingStatus] Logging RSS processing status')
+  const p = '[text/process-commands/rss/logging]'
+  l.dim(`${p} Logging RSS processing status`)
   
   if (options.item && options.item.length > 0) {
     l.dim(`\n  - Found ${total} items in the RSS feed.`)
@@ -22,5 +23,5 @@ export function logRSSProcessingStatus(
     l.dim(`  - Processing ${processing} item(s).\n`)
   }
   
-  l.dim(`[logRSSProcessingStatus] Status logged for ${processing}/${total} items`)
+  l.dim(`${p} Status logged for ${processing}/${total} items`)
 }

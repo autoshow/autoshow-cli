@@ -1,12 +1,13 @@
-import { l } from '../../../logging.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l } from '@/logging'
+import type { ProcessingOptions } from '@/types'
 
 export function logChannelProcessingStatus(
   total: number,
   processing: number,
   options: ProcessingOptions
 ): void {
-  l.dim('[logChannelProcessingStatus] Logging channel processing status')
+  const p = '[text/process-commands/channel/logging]'
+  l.dim(`${p} Logging channel processing status`)
   
   if (options.last) {
     l.dim(`\n  - Found ${total} videos in the channel.`)
@@ -22,5 +23,5 @@ export function logChannelProcessingStatus(
     l.dim(`  - Processing all ${processing} videos.\n`)
   }
   
-  l.dim(`[logChannelProcessingStatus] Status logged for ${processing}/${total} videos`)
+  l.dim(`${p} Status logged for ${processing}/${total} videos`)
 }

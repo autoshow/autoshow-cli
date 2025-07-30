@@ -3,9 +3,9 @@ import { createTtsCommand } from './tts/create-tts-command.ts'
 import { createImageCommand } from './image/create-image-command.ts'
 import { createTextCommand } from './text/create-text-command.ts'
 import { handleMetaWorkflow } from './text/utils/workflows.ts'
-import { l, err, logInitialFunctionCall } from './logging.ts'
-import { argv, exit, fileURLToPath, basename } from './node-utils.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l, err, logInitialFunctionCall } from '@/logging'
+import { argv, exit, fileURLToPath, basename } from '@/node-utils'
+import type { ProcessingOptions } from '@/types'
 
 const program = new Command()
 
