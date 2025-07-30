@@ -19,3 +19,15 @@ Get info and generate shownotes for Web category feeds:
 npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaInfo
 npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-28"
 ```
+
+npm run as -- --metaDir "01-ai" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-26" && npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-26" && npm run as -- --metaDir "01-ai" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-25" && npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-25"
+
+npm run as -- --metaDir "01-ai" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-24"
+npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-24"
+npm run as -- --metaDir "01-ai" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-23"
+npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-23"
+
+npm run as -- --metaDir "01-ai" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-22"
+npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-22"
+npm run as -- --metaDir "01-ai" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-21"
+npm run as -- --metaDir "02-web" --metaSrcDir "src/text/workflows" --metaShownotes --metaDate "2025-07-21"

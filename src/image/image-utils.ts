@@ -3,20 +3,22 @@ import { join, dirname } from 'node:path'
 import { l, err } from '@/logging'
 import type { ApiError } from '@/types'
 
+const p = '[image/image-utils]'
+
 export function generateUniqueFilename(prefix: string, extension: string = 'png'): string {
   const timestamp = generateTimestamp()
   const randomString = Math.random().toString(36).substring(2, 8)
   const makeFilename = (extra = '') => join('./output', `${prefix}-${timestamp}-${randomString}${extra}.${extension}`)
   const filepath = makeFilename()
   const finalPath = existsSync(filepath) ? makeFilename(`-${Math.random().toString(36).substring(2, 8)}`) : filepath
-  l.dim(`Generated ${existsSync(filepath) ? 'unique ' : ''}filename: ${finalPath.split('/').pop()}`)
+  l.dim(`${p} Generated ${existsSync(filepath) ? 'unique ' : ''}filename: ${finalPath.split('/').pop()}`)
   return finalPath
 }
 
 export const generateTimestamp = (): string => new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
 
 export function encodeImage(imagePath: string): string {
-  l.dim(`Encoding image: ${imagePath}`)
+  l.dim(`${p} Encoding image: ${imagePath}`)
   if (!existsSync(imagePath)) {
     throw new Error(`Image file not found: ${imagePath}`)
   }
@@ -30,7 +32,7 @@ export function saveImage(base64Data: string, outputPath: string): void {
   }
   const fullPath = outputPath.startsWith('/') ? outputPath : join(dir, outputPath)
   writeFileSync(fullPath, Buffer.from(base64Data, 'base64'))
-  l.dim(`Image saved to: ${fullPath}`)
+  l.dim(`${p} Image saved to: ${fullPath}`)
 }
 
 export function parseResolution(value: string): { width: number; height: number } {
@@ -44,7 +46,7 @@ export function parseResolution(value: string): { width: number; height: number 
 const parseOption = (value: string, defaultValue: number, parser: (v: string) => number): number => {
   const parsed = parser(value)
   if (isNaN(parsed)) {
-    l.warn(`Invalid number "${value}", using default: ${defaultValue}`)
+    l.warn(`${p} Invalid number "${value}", using default: ${defaultValue}`)
     return defaultValue
   }
   return parsed
@@ -58,10 +60,10 @@ export const isApiError = (error: unknown): error is ApiError =>
 
 export const handleError = (error: any): void => {
   if (!isApiError(error)) {
-    err(`Unknown error: ${String(error)}`)
+    err(`${p} Unknown error: ${String(error)}`)
   }
   
-  l.dim(`Error details: ${JSON.stringify({ 
+  l.dim(`${p} Error details: ${JSON.stringify({ 
     name: error.name, 
     message: error.message, 
     code: error.$metadata?.httpStatusCode || error.code 
@@ -79,5 +81,5 @@ export const handleError = (error: any): void => {
     error.name === key || error.message?.includes(key)
   )
   
-  err(matched ? matched[1] : `Error: ${error.message}`)
+  err(`${p} ${matched ? matched[1] : `Error: ${error.message}`}`)
 }

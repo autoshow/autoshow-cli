@@ -9,11 +9,12 @@ export async function generateImageWithDallE(
   prompt: string, 
   outputPath?: string
 ): Promise<ImageGenerationResult> {
+  const p = '[image/image-services/dalle]'
   const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   const uniqueOutputPath = outputPath || generateUniqueFilename('dalle', 'png')
   
-  l.dim(`[${requestId}] Starting DALL-E | Prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}" | Path: ${uniqueOutputPath}`)
+  l.dim(`${p} [${requestId}] Starting DALL-E | Prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}" | Path: ${uniqueOutputPath}`)
   
   try {
     if (!env['OPENAI_API_KEY']) {
@@ -38,7 +39,7 @@ export async function generateImageWithDallE(
       throw new Error(`Network error: ${isApiError(error) ? error.message : 'Unknown'}`) 
     })
     
-    l.dim(`[${requestId}] Response: ${response.status}`)
+    l.dim(`${p} [${requestId}] Response: ${response.status}`)
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: `${response.status}: ${response.statusText}` }))
@@ -52,7 +53,7 @@ export async function generateImageWithDallE(
       throw new Error('Invalid response format')
     }
     
-    l.dim(`[${requestId}] Image received (${imageData.length} chars)`)
+    l.dim(`${p} [${requestId}] Image received (${imageData.length} chars)`)
     
     await mkdir(dirname(uniqueOutputPath), { recursive: true }).catch(err => {
       if (isApiError(err) && err.code !== 'EEXIST') throw err
@@ -61,7 +62,7 @@ export async function generateImageWithDallE(
     await writeFile(uniqueOutputPath, Buffer.from(imageData, 'base64'))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`[${requestId}] ✓ Success in ${duration}s - ${uniqueOutputPath}`)
+    l.success(`${p} [${requestId}] ✓ Success in ${duration}s - ${uniqueOutputPath}`)
     
     return { 
       success: true, 
@@ -70,7 +71,7 @@ export async function generateImageWithDallE(
     }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.dim(`[${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
+    l.dim(`${p} [${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
     return { 
       success: false, 
       error: isApiError(error) ? error.message : 'Unknown error',

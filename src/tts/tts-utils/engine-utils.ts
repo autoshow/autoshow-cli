@@ -1,12 +1,14 @@
 import { l } from '@/logging'
 
+const p = '[tts/tts-utils/engine-utils]'
+
 export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly'
 
 export const detectEngine = (options: any): TtsEngine => {
-  l.dim('Detecting TTS engine from options')
+  l.dim(`${p} Detecting TTS engine from options`)
   const engines = ['elevenlabs', 'polly', 'coqui'].find(e => 
     options[e]
   ) || 'coqui'
-  l.dim(`Using ${engines} engine${engines === 'coqui' ? ' (default)' : ''}`)
+  l.dim(`${p} Using ${engines} engine${engines === 'coqui' ? ' (default)' : ''}`)
   return engines as TtsEngine
 }

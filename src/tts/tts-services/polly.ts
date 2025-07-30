@@ -8,6 +8,8 @@ import {
 import { PollyClient, SynthesizeSpeechCommand } from '@aws-sdk/client-polly'
 import type { OutputFormat, VoiceId, Engine, LanguageCode } from '@aws-sdk/client-polly'
 
+const p = '[tts/tts-services/polly]'
+
 const VOICE_TYPES = {
   neural: ['Ivy', 'Joanna', 'Kendra', 'Kimberly', 'Salli', 'Joey', 'Justin', 'Kevin', 'Matthew', 'Ruth', 'Stephen', 'Amy', 'Brian', 'Emma', 'Olivia', 'Aria', 'Ayanda', 'Gabrielle', 'Liam', 'Mia', 'Seoyeon', 'Danielle', 'Gregory', 'Takumi', 'Kazuha', 'Tomoko', 'Camila', 'Lupe', 'Pedro', 'Adriano', 'Remi', 'Lea', 'Vicki', 'Bianca', 'Lucia', 'Kajal'],
   generative: ['Olivia', 'Kajal', 'Amy', 'Danielle', 'Joanna', 'Matthew', 'Ruth', 'Stephen', 'Ayanda', 'Lea', 'Remi', 'Lucia', 'Sergio', 'Mia', 'Andres', 'Lupe', 'Pedro', 'Vicki', 'Daniel', 'Bianca'],
@@ -36,9 +38,9 @@ export async function synthesizeWithPolly(
     languageCode?: LanguageCode
   } = {}
 ): Promise<string | undefined> {
-  l.dim(`Starting Polly synthesis (${text.length} chars)`)
+  l.dim(`${p} Starting Polly synthesis (${text.length} chars)`)
   if (!process.env['AWS_ACCESS_KEY_ID'] || !process.env['AWS_SECRET_ACCESS_KEY']) 
-    err('AWS credentials not found. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY')
+    err(`${p} AWS credentials not found. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY`)
   
   const voice = options.voice || 'Joanna'
   const format = options.format || 'mp3'
@@ -46,7 +48,7 @@ export async function synthesizeWithPolly(
   const engineType = detectEngineType(voice, engine)
   const cost = (text.length / 1_000_000) * PRICING[engineType]
   
-  l.dim(`Voice: ${voice}, Format: ${format}, Engine: ${engine} ($${cost.toFixed(6)})`)
+  l.dim(`${p} Voice: ${voice}, Format: ${format}, Engine: ${engine} ($${cost.toFixed(6)})`)
   
   try {
     const response = await getPollyClient().send(new SynthesizeSpeechCommand({
@@ -59,16 +61,16 @@ export async function synthesizeWithPolly(
       ...(options.languageCode && { LanguageCode: options.languageCode })
     }))
     
-    if (!response.AudioStream) err('No audio stream received from Polly')
+    if (!response.AudioStream) err(`${p} No audio stream received from Polly`)
     await ensureDir(path.dirname(outputPath))
     await fs.writeFile(outputPath, Buffer.from(await response.AudioStream!.transformToByteArray()))
-    l.dim(`Saved to ${outputPath}`)
-    l.dim(`Cost: $${cost.toFixed(6)}`)
+    l.dim(`${p} Saved to ${outputPath}`)
+    l.dim(`${p} Cost: $${cost.toFixed(6)}`)
     return outputPath
   } catch (error: any) {
-    err(error.name === 'CredentialsProviderError' ? 'AWS credentials error. Check your keys' :
+    err(`${p} ${error.name === 'CredentialsProviderError' ? 'AWS credentials error. Check your keys' :
         error.name === 'InvalidParameterValueException' ? `Invalid parameter: ${error.message}` :
-        `Polly error: ${error.message || error}`)
+        `Polly error: ${error.message || error}`}`)
     return undefined
   }
 }
@@ -85,7 +87,7 @@ export async function processScriptWithPolly(
   } = {}
 ): Promise<void> {
   try {
-    l.dim(`Reading Polly script: ${scriptFile}`)
+    l.dim(`${p} Reading Polly script: ${scriptFile}`)
     const script = JSON.parse(await fs.readFile(scriptFile, 'utf8'))
     await ensureDir(outDir)
     await ensureSilenceFile(outDir)
@@ -95,13 +97,13 @@ export async function processScriptWithPolly(
       SEAMUS: (process.env['POLLY_VOICE_SEAMUS'] as VoiceId) || 'Brian'
     }
     
-    l.dim(`Processing ${script.length} lines with Polly`)
+    l.dim(`${p} Processing ${script.length} lines with Polly`)
     const format = options.format || 'mp3'
     let totalCost = 0
     
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
-      l.dim(`Line ${idx + 1}/${script.length} (${speaker})`)
+      l.dim(`${p} Line ${idx + 1}/${script.length} (${speaker})`)
       const base = `${String(idx).padStart(3, '0')}_${speaker}`
       const audioOut = path.join(outDir, `${base}.${format}`)
       const pcmOut = path.join(outDir, `${base}.pcm`)
@@ -115,25 +117,25 @@ export async function processScriptWithPolly(
       
       if (format === 'mp3') {
         const result = spawnSync('ffmpeg', ['-i', audioOut, '-f', 's16le', '-ar', '24000', '-ac', '1', pcmOut], { stdio: 'pipe' })
-        if (result.status !== 0) l.dim(`Failed to convert: ${result.stderr?.toString()}`)
+        if (result.status !== 0) l.dim(`${p} Failed to convert: ${result.stderr?.toString()}`)
       } else if (format === 'pcm') {
         await fs.copyFile(audioOut, pcmOut)
       }
       
-      l.dim(`Saved ${audioOut}`)
+      l.dim(`${p} Saved ${audioOut}`)
       if (idx < script.length - 1) await new Promise(resolve => setTimeout(resolve, 100))
     }))
     
-    l.dim(`Total cost: $${totalCost.toFixed(6)}`)
+    l.dim(`${p} Total cost: $${totalCost.toFixed(6)}`)
     if (format !== 'ogg_vorbis') {
-      l.dim('Merging Polly audio files')
+      l.dim(`${p} Merging Polly audio files`)
       await mergeAudioFiles(outDir)
       await convertPcmToWav(outDir)
-      l.dim(`Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
+      l.dim(`${p} Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
     } else {
-      l.dim(`Individual files saved to ${outDir}`)
+      l.dim(`${p} Individual files saved to ${outDir}`)
     }
   } catch (error) {
-    err(`Error processing Polly script: ${error}`)
+    err(`${p} Error processing Polly script: ${error}`)
   }
 }
