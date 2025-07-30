@@ -1,5 +1,3 @@
-// src/utils/embeddings/create-embed.ts
-
 // import { PrismaClient } from '@prisma/client'
 // import {
 //   env, fileURLToPath, readdir, readFile, join, dirname, isAbsolute, resolve, relative, writeFileSync

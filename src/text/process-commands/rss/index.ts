@@ -1,0 +1,72 @@
+import { validateRSSOptions } from './validation.ts'
+import { getLLMService, getTranscriptService } from './services.ts'
+import { processRSSFeeds } from './processor.ts'
+import { l, err, logInitialFunctionCall } from '../../../logging.ts'
+import type { ProcessingOptions } from '@/types.ts'
+
+export async function processRSS(
+  options: ProcessingOptions,
+  llmServicesParam?: string,
+  transcriptServicesParam?: string
+): Promise<void> {
+  logInitialFunctionCall('processRSS', { llmServicesParam, transcriptServicesParam, options })
+  l.dim('[processRSS] Starting RSS processing')
+  
+  const llmServices = llmServicesParam || getLLMService(options)
+  const transcriptServices = transcriptServicesParam || getTranscriptService(options)
+  l.dim(`[processRSS] Using LLM: ${llmServices || 'none'}, Transcription: ${transcriptServices || 'none'}`)
+  
+  if (options.item && !Array.isArray(options.item)) {
+    options.item = [options.item]
+    l.dim(`[processRSS] Converted item to array: ${options.item.length} items`)
+  }
+  
+  if (typeof options.rss === 'string') {
+    options.rss = [options.rss]
+    l.dim(`[processRSS] Converted rss to array: ${options.rss.length} URLs`)
+  }
+  
+  const expandedRssUrls: string[] = []
+  const fsPromises = await import('node:fs/promises')
+  const path = await import('node:path')
+  
+  for (const rssUrl of options.rss || []) {
+    l.dim(`[processRSS] Expanding URL: ${rssUrl}`)
+    try {
+      await fsPromises.access(rssUrl)
+      const ext = path.extname(rssUrl).toLowerCase()
+      if (ext === '.md') {
+        l.dim(`[processRSS] Processing markdown file: ${rssUrl}`)
+        const content = await fsPromises.readFile(rssUrl, 'utf8')
+        const lines = content
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('#'))
+        if (lines.length === 0) {
+          err(`Error: No RSS URLs found in the .md file: ${rssUrl}`)
+          process.exit(1)
+        }
+        l.dim(`[processRSS] Found ${lines.length} URLs in markdown file`)
+        expandedRssUrls.push(...lines)
+      } else {
+        expandedRssUrls.push(rssUrl)
+      }
+    } catch {
+      l.dim(`[processRSS] URL not a local file, treating as remote: ${rssUrl}`)
+      expandedRssUrls.push(rssUrl)
+    }
+  }
+  
+  options.rss = expandedRssUrls
+  validateRSSOptions(options)
+  
+  const rssUrls = options.rss
+  if (!rssUrls || rssUrls.length === 0) {
+    l.dim(`[processRSS] No valid RSS URLs found`)
+    throw new Error(`No valid RSS URLs provided for processing`)
+  }
+  
+  l.dim(`[processRSS] Processing ${rssUrls.length} RSS URLs`)
+  await processRSSFeeds(options, rssUrls, llmServices, transcriptServices)
+  l.dim('[processRSS] RSS processing completed successfully')
+}

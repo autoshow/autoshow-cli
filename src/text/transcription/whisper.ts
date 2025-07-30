@@ -1,5 +1,3 @@
-// src/transcription/whisper.ts
-
 import { l, err } from '../../logging.ts'
 import { readFile, unlink, spawn, existsSync, execPromise } from '../../node-utils.ts'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'

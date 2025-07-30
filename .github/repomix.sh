@@ -28,6 +28,7 @@ IGNORE_PATHS=(
   "output"
   "python_env"
   "test"
+  "src/text/workflows"
   "src/text/prompts/sections.ts"
   "whisper.cpp"
   ".gitignore"

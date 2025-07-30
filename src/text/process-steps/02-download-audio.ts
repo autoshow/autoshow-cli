@@ -1,5 +1,3 @@
-// src/process-steps/02-download-audio.ts
-
 import { fileTypeFromBuffer } from 'file-type'
 import { l, err, logInitialFunctionCall } from '../../logging.ts'
 import { execPromise, readFile, access, rename, execFilePromise, unlink } from '../../node-utils.ts'
@@ -35,21 +33,17 @@ export async function executeWithRetry(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Attempt to execute the command
       const { stderr } = await execFilePromise(command, args)
-      // Log any warnings from yt-dlp
       if (stderr) {
         err(`yt-dlp warnings: ${stderr}`)
       }
       return
     } catch (error) {
-      // If the last attempt fails, throw the error
       if (attempt === maxRetries) {
         err(`Failed after ${maxRetries} attempts`)
         throw error
       }
 
-      // Exponential backoff: Wait before trying again
       const delayMs = 1000 * 2 ** (attempt - 1)
       l.dim(
         `Retry ${attempt} of ${maxRetries} failed. Waiting ${delayMs} ms before next attempt...`
@@ -71,14 +65,12 @@ export async function downloadAudio(
   const finalPath = `content/${filename}`
   const outputPath = `${finalPath}.wav`
 
-  // Edge case fix: If a WAV file already exists with the same name, rename it to avoid a hang during conversion
   try {
     await access(outputPath)
     const renamedPath = `${finalPath}-renamed.wav`
     await rename(outputPath, renamedPath)
     spinner.info(`Existing file found at ${outputPath}. Renamed to ${renamedPath}`)
   } catch {
-    // If we reach here, the file doesn't exist. Proceed as normal.
   }
 
   if (options.video || options.playlist || options.urls || options.rss || options.channel) {

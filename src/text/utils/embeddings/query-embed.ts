@@ -1,5 +1,3 @@
-// src/utils/embeddings/query-embed.ts
-
 // import { PrismaClient } from '@prisma/client'
 // import {
 //   env, fileURLToPath, readFileSync, join, dirname, isAbsolute, resolve

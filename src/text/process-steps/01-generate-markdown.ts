@@ -1,5 +1,3 @@
-// src/process-steps/01-generate-markdown.ts
-
 import { l, err, logInitialFunctionCall } from '../../logging.ts'
 import { execFilePromise, basename, extname } from '../../node-utils.ts'
 import { sanitizeTitle } from '../utils/save-info.ts'

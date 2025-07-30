@@ -1,12 +1,10 @@
-// src/process-commands/file.ts
-
 import { generateMarkdown } from '../process-steps/01-generate-markdown.ts'
 import { downloadAudio } from '../process-steps/02-download-audio.ts'
 import { saveAudio } from '../process-steps/02-download-audio.ts'
 import { runTranscription } from '../process-steps/03-run-transcription.ts'
 import { selectPrompts } from '../process-steps/04-select-prompt.ts'
 import { runLLM } from '../process-steps/05-run-llm.ts'
-import { l, err, logInitialFunctionCall } from '../../logging.ts'
+import { err, logInitialFunctionCall } from '../../logging.ts'
 
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
 
@@ -19,19 +17,10 @@ export async function processFile(
   logInitialFunctionCall('processFile', { filePath, llmServices, transcriptServices })
 
   try {
-    // Step 1 - Generate markdown
     const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, filePath)
-
-    // Step 2 - Convert to WAV
     await downloadAudio(options, filePath, filename)
-
-    // Step 3 - Transcribe audio, returning transcript and cost
     const { transcript, modelId: transcriptionModel } = await runTranscription(options, finalPath, transcriptServices)
-
-    // Step 4 - Selecting prompt
     const selectedPrompts = await selectPrompts(options)
-
-    // Step 5 - Run LLM with transcription details
     const llmOutput = await runLLM(
       options,
       finalPath,
@@ -44,12 +33,9 @@ export async function processFile(
       transcriptionModel
     )
 
-    // Step 6 - Cleanup
     if (!options.saveAudio) {
       await saveAudio(finalPath)
     }
-
-    l.dim('\n  processFile command completed successfully.')
 
     return {
       frontMatter,

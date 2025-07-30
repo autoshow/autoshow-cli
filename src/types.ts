@@ -58,11 +58,10 @@ export type ProcessingOptions = {
   customPrompt?: string
   llmServices?: string
   transcriptServices?: string
-  skip?: number
   order?: string
   last?: number
   date?: string[]
-  lastDays?: number
+  days?: number
   metaDir?: string
   metaSrcDir?: string
   metaDate?: string[]

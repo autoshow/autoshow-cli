@@ -1,5 +1,3 @@
-// src/process-steps/03-run-transcription.ts
-
 import { callWhisper } from '../transcription/whisper.ts'
 import { callDeepgram } from '../transcription/deepgram.ts'
 import { callAssembly } from '../transcription/assembly.ts'

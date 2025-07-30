@@ -1,10 +1,10 @@
 import { Command } from 'commander'
 import { processVideo } from './process-commands/video.ts'
 import { processPlaylist } from './process-commands/playlist.ts'
-import { processChannel } from './process-commands/channel.ts'
+import { processChannel } from './process-commands/channel'
 import { processURLs } from './process-commands/urls.ts'
 import { processFile } from './process-commands/file.ts'
-import { processRSS } from './process-commands/rss.ts'
+import { processRSS } from './process-commands/rss'
 import { LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
 import { handleMetaWorkflow } from './utils/workflows.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '../logging.ts'
@@ -184,11 +184,10 @@ export const createTextCommand = (): Command => {
     .option('--file <filePath>', 'Process a local audio or video file')
     .option('--rss <rssURLs...>', 'Process one or more podcast RSS feeds')
     .option('--item <itemUrls...>', 'Process specific items in the RSS feed by providing their audio URLs')
-    .option('--order <order>', 'Specify the order for RSS feed processing (newest or oldest)')
-    .option('--skip <number>', 'Number of items to skip when processing RSS feed', parseInt)
-    .option('--last <number>', 'Number of most recent items to process (overrides --order and --skip)', parseInt)
-    .option('--date <dates...>', 'Process items from these dates (YYYY-MM-DD) for RSS processing')
-    .option('--lastDays <number>', 'Number of days to look back for items for RSS processing', parseInt)
+    .option('--order <order>', 'Specify the order for RSS feed and channel processing (newest or oldest)')
+    .option('--last <number>', 'Number of most recent items to process (overrides --order)', parseInt)
+    .option('--date <dates...>', 'Process items from these dates (YYYY-MM-DD) for RSS and channel processing')
+    .option('--days <number>', 'Number of days to look back for items for RSS and channel processing', parseInt)
     .option('--info [type]', 'Skip processing and write metadata to JSON objects. Use "combined" to merge multiple RSS feeds.', false)
     .option('--whisper [model]', 'Use Whisper.cpp for transcription with optional model specification (e.g., base, large-v3-turbo)')
     .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-3)')
