@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import removeMd from 'remove-markdown'
-import { l, err } from '../../logging.ts'
+import { l, err } from '@/logging'
 
 export const stripMarkdown = (file: string): string => {
   l.dim(`Stripping markdown from ${file}`)

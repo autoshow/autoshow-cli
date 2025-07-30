@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
-import { l, err } from '../../logging.ts'
-import { path, spawnSync, existsSync } from '../../node-utils.ts'
+import { l, err } from '@/logging'
+import { path, spawnSync, existsSync } from '@/node-utils'
 
 export const listModels = async (): Promise<void> => {
   l.dim('Fetching available Coqui TTS models')

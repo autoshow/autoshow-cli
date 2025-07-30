@@ -1,9 +1,9 @@
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
-import { l } from '../../logging.ts'
+import { l } from '@/logging'
 import { generateUniqueFilename, isApiError } from '../image-utils.ts'
-import { env } from '../../node-utils.ts'
-import type { ImageGenerationResult } from '@/types.ts'
+import { env } from '@/node-utils'
+import type { ImageGenerationResult } from '@/types'
 
 export async function generateImageWithDallE(
   prompt: string, 

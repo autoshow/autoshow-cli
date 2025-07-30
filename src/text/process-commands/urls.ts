@@ -1,8 +1,8 @@
 import { processVideo } from './video.ts'
 import { saveInfo } from '../utils/save-info.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '../../logging.ts'
-import { readFile } from '../../node-utils.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { readFile } from '@/node-utils'
+import type { ProcessingOptions } from '@/types'
 
 export async function processURLs(
   options: ProcessingOptions,
@@ -10,6 +10,7 @@ export async function processURLs(
   llmServices?: string,
   transcriptServices?: string
 ) {
+  const p = '[text/process-commands/urls]'
   logInitialFunctionCall('processURLs', { llmServices, transcriptServices })
 
   try {
@@ -20,7 +21,7 @@ export async function processURLs(
       .filter((line) => line && !line.startsWith('#'))
 
     if (urls.length === 0) {
-      err('Error: No URLs found in the file.')
+      err(`${p} Error: No URLs found in the file.`)
       process.exit(1)
     }
 
@@ -41,11 +42,11 @@ export async function processURLs(
       try {
         await processVideo(options, url, llmServices, transcriptServices)
       } catch (error) {
-        err(`Error processing URL ${url}: ${(error as Error).message}`)
+        err(`${p} Error processing URL ${url}: ${(error as Error).message}`)
       }
     }
   } catch (error) {
-    err(`Error reading or processing file ${filePath}: ${(error as Error).message}`)
+    err(`${p} Error reading or processing file ${filePath}: ${(error as Error).message}`)
     process.exit(1)
   }
 }

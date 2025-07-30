@@ -1,8 +1,9 @@
-import { l, err } from '../../../logging.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l, err } from '@/logging'
+import type { ProcessingOptions } from '@/types'
 
 export function validateChannelOptions(options: ProcessingOptions): void {
-  l.dim('[validateChannelOptions] Starting channel options validation')
+  const p = '[text/process-commands/channel/validation]'
+  l.dim(`${p} Starting channel options validation`)
   
   if (options.last !== undefined) {
     if (!Number.isInteger(options.last) || options.last < 1) {
@@ -13,7 +14,7 @@ export function validateChannelOptions(options: ProcessingOptions): void {
       err('Error: The --last option cannot be used with --order.')
       process.exit(1)
     }
-    l.dim(`[validateChannelOptions] Last option validated: ${options.last}`)
+    l.dim(`${p} Last option validated: ${options.last}`)
   }
 
   if (options.order !== undefined && !['newest', 'oldest'].includes(options.order)) {
@@ -34,7 +35,7 @@ export function validateChannelOptions(options: ProcessingOptions): void {
       err('Error: The --days option cannot be used with --last, --order, or --date.')
       process.exit(1)
     }
-    l.dim(`[validateChannelOptions] Days option validated: ${options.days}`)
+    l.dim(`${p} Days option validated: ${options.days}`)
   }
 
   if (options.date && options.date.length > 0) {
@@ -52,7 +53,7 @@ export function validateChannelOptions(options: ProcessingOptions): void {
       err('Error: The --date option cannot be used with --last or --order.')
       process.exit(1)
     }
-    l.dim(`[validateChannelOptions] Date filtering enabled for ${options.date.length} dates: ${options.date.join(', ')}`)
+    l.dim(`${p} Date filtering enabled for ${options.date.length} dates: ${options.date.join(', ')}`)
   }
 
   if (options.last) {
@@ -63,5 +64,5 @@ export function validateChannelOptions(options: ProcessingOptions): void {
     l.dim(`\nProcessing videos from specific dates: ${options.date.join(', ')}`)
   }
   
-  l.dim('[validateChannelOptions] Channel validation completed successfully')
+  l.dim(`${p} Channel validation completed successfully`)
 }

@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err } from '../logging.ts'
+import { l, err } from '@/logging'
 import { handleError } from './image-utils.ts'
 import { generateImageWithDallE } from './image-services/dalle.ts'
 import { generateImageWithBlackForestLabs } from './image-services/bfl.ts'

@@ -1,4 +1,4 @@
-import { l } from '../../logging.ts'
+import { l } from '@/logging'
 
 export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly'
 

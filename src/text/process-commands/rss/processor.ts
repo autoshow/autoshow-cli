@@ -4,10 +4,10 @@ import { runTranscription } from '../../process-steps/03-run-transcription.ts'
 import { selectPrompts } from '../../process-steps/04-select-prompt.ts'
 import { runLLM } from '../../process-steps/05-run-llm.ts'
 import { saveInfo } from '../../utils/save-info.ts'
-import { l, err, logSeparator } from '../../../logging.ts'
+import { l, err, logSeparator } from '@/logging'
 import { selectRSSItemsToProcess } from './fetch.ts'
-import { logRSSProcessingStatus } from './logging.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
+import { logRSSProcessingStatus } from './rss-logging.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
 export async function processRSSFeeds(
   options: ProcessingOptions,
@@ -15,11 +15,12 @@ export async function processRSSFeeds(
   llmServices?: string,
   transcriptServices?: string
 ): Promise<void> {
-  l.dim(`[processRSSFeeds] Starting RSS feeds processing for ${expandedRssUrls.length} URLs`)
+  const p = '[text/process-commands/rss/processor]'
+  l.dim(`${p} Starting RSS feeds processing for ${expandedRssUrls.length} URLs`)
   let allItemsForCombined: ShowNoteMetadata[] = []
   
   for (const rssUrl of expandedRssUrls) {
-    l.dim(`[processRSSFeeds] Processing RSS URL: ${rssUrl}`)
+    l.dim(`${p} Processing RSS URL: ${rssUrl}`)
     
     if (options.item && options.item.length > 0) {
       l.dim('\nProcessing specific items:')
@@ -32,11 +33,11 @@ export async function processRSSFeeds(
     
     try {
       const { items, channelTitle } = await selectRSSItemsToProcess(rssUrl, options)
-      l.dim(`[processRSSFeeds] Selected ${items.length} items from ${channelTitle}`)
+      l.dim(`${p} Selected ${items.length} items from ${channelTitle}`)
       
       if (options.info) {
         if (typeof options.info === 'string' && options.info === 'combined') {
-          l.dim(`[processRSSFeeds] Collecting items from feed: ${channelTitle || rssUrl} for combined output`)
+          l.dim(`${p} Collecting items from feed: ${channelTitle || rssUrl} for combined output`)
           allItemsForCombined = [...allItemsForCombined, ...items]
           continue
         }
@@ -49,7 +50,7 @@ export async function processRSSFeeds(
       }
       
       if (items.length === 0) {
-        l.dim('[processRSSFeeds] No items found matching the provided criteria for this feed. Skipping...')
+        l.dim(`${p} No items found matching the provided criteria for this feed. Skipping...`)
         continue
       }
       
@@ -67,7 +68,7 @@ export async function processRSSFeeds(
         l.opts(`  - llmServices: ${llmServices}\n  - transcriptServices: ${transcriptServices}\n`)
         
         try {
-          l.dim(`[processRSSFeeds] Processing item ${index + 1}/${items.length}: ${item.title}`)
+          l.dim(`${p} Processing item ${index + 1}/${items.length}: ${item.title}`)
           const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, item)
           if (item.showLink) {
             await downloadAudio(options, item.showLink, filename)
@@ -96,9 +97,9 @@ export async function processRSSFeeds(
             llmOutput: llmOutput || '',
             transcript,
           })
-          l.dim(`[processRSSFeeds] Successfully processed item: ${item.title}`)
+          l.dim(`${p} Successfully processed item: ${item.title}`)
         } catch (error) {
-          err(`[processRSSFeeds] Error processing item ${item.title}: ${(error as Error).message}`)
+          err(`${p} Error processing item ${item.title}: ${(error as Error).message}`)
           results.push({
             frontMatter: '',
             prompt: '',
@@ -108,22 +109,22 @@ export async function processRSSFeeds(
         }
       }
     } catch (error) {
-      err(`[processRSSFeeds] Error processing RSS feed ${rssUrl}: ${(error as Error).message}`)
+      err(`${p} Error processing RSS feed ${rssUrl}: ${(error as Error).message}`)
       throw error
     }
   }
   
   if (options.info === 'combined' && allItemsForCombined.length > 0) {
-    l.dim(`[processRSSFeeds] Processing combined info for ${allItemsForCombined.length} items from ${expandedRssUrls.length} RSS feeds`)
+    l.dim(`${p} Processing combined info for ${allItemsForCombined.length} items from ${expandedRssUrls.length} RSS feeds`)
     allItemsForCombined.sort((a, b) => {
       const dateA = new Date(a.publishDate || '1970-01-01')
       const dateB = new Date(b.publishDate || '1970-01-01')
       return dateB.getTime() - dateA.getTime()
     })
-    l.dim(`[processRSSFeeds] Sorted ${allItemsForCombined.length} items by publish date (newest first)`)
+    l.dim(`${p} Sorted ${allItemsForCombined.length} items by publish date (newest first)`)
     await saveAudio('', true)
     await saveInfo('combined', allItemsForCombined, 'combined-feeds')
   }
   
-  l.dim('[processRSSFeeds] RSS feeds processing completed')
+  l.dim(`${p} RSS feeds processing completed`)
 }

@@ -1,7 +1,7 @@
-import { l, err, logInitialFunctionCall } from '../../logging.ts'
-import { execFilePromise, basename, extname } from '../../node-utils.ts'
+import { l, err, logInitialFunctionCall } from '@/logging'
+import { execFilePromise, basename, extname } from '@/node-utils'
 import { sanitizeTitle } from '../utils/save-info.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
 export function buildFrontMatter(metadata: {
   showLink: string
@@ -29,6 +29,7 @@ export async function generateMarkdown(
   options: ProcessingOptions,
   input: string | ShowNoteMetadata
 ) {
+  const p = '[text/process-steps/01-generate-markdown]'
   l.step(`\nStep 1 - Generate Markdown\n`)
   logInitialFunctionCall('generateMarkdown', { options, input })
   const { filename, metadata } = await (async () => {
@@ -38,7 +39,7 @@ export async function generateMarkdown(
       case !!options.urls:
       case !!options.channel:
         try {
-          l.dim('  Extracting metadata with yt-dlp. Parsing output...')
+          l.dim(`${p} Extracting metadata with yt-dlp. Parsing output...`)
           const { stdout } = await execFilePromise('yt-dlp', [
             '--restrict-filenames',
             '--print', '%(webpage_url)s',
@@ -71,11 +72,11 @@ export async function generateMarkdown(
             }
           }
         } catch (error) {
-          err(`Error extracting metadata for ${input}: ${error instanceof Error ? error.message : String(error)}`)
+          err(`${p} Error extracting metadata for ${input}: ${error instanceof Error ? error.message : String(error)}`)
           throw error
         }
       case !!options.file:
-        l.dim('\n  Generating markdown for a local file...')
+        l.dim(`${p} Generating markdown for a local file...`)
         const originalFilename = basename(input as string)
         const filenameWithoutExt = originalFilename.replace(extname(originalFilename), '')
         const localFilename = sanitizeTitle(filenameWithoutExt)
@@ -92,7 +93,7 @@ export async function generateMarkdown(
           }
         }
       case !!options.rss:
-        l.dim('\n  Generating markdown for an RSS item...\n')
+        l.dim(`${p} Generating markdown for an RSS item...`)
         const item = input as ShowNoteMetadata
         const {
           publishDate,
@@ -130,7 +131,7 @@ export async function generateMarkdown(
     coverImage: metadata.coverImage || ''
   })
   const frontMatterContent = frontMatter.join('\n')
-  l.dim(`\n  generateMarkdown returning:\n\n    - finalPath: ${finalPath}\n    - filename: ${filename}\n`)
-  l.dim(`frontMatterContent:\n\n${frontMatterContent}\n`)
+  l.dim(`${p} generateMarkdown returning:\n\n    - finalPath: ${finalPath}\n    - filename: ${filename}\n`)
+  l.dim(`${p} frontMatterContent:\n\n${frontMatterContent}\n`)
   return { frontMatter: frontMatterContent, finalPath, filename, metadata }
 }

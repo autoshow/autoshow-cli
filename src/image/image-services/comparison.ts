@@ -1,6 +1,6 @@
-import { l } from '../../logging.ts'
+import { l } from '@/logging'
 import { isApiError } from '../image-utils.ts'
-import { env } from '../../node-utils.ts'
+import { env } from '@/node-utils'
 import { generateImageWithDallE } from './dalle.ts'
 import { generateImageWithBlackForestLabs } from './bfl.ts'
 import { generateImageWithNova } from './nova.ts'

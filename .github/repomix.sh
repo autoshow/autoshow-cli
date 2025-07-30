@@ -50,17 +50,24 @@ if [ ! -f "$INSTRUCTION_FILE" ]; then
   cat > "$INSTRUCTION_FILE" << 'EOF'
 I'm going to ask you to refactor my code, write a new feature, or fix a bug.
 
-- Any time you are refactoring, building a new feature, or fixing a bug, add a few logging functions to track what is happening and help debug when the application fails.
-- In your responses when you respond with code, you will respond with the entire code files with no comments.
-- Include one or two sentences before the code file explaining what has been changed, do not write the explanation as comments in the code file.
-- Do not include any comments in the code at all.
-- Aside from the instructions above and given below, you will not make any changes to the code files. You will only add or remove code specific to the requested refactor, feature, or bug fix.
-- Only respond with code files if there are changes (either additions or subtractions), do not respond with code files that are identical to the code files I gave you.
-- Always use ESM, async/await, try catch, and the latest version of Node.js (22 as of now). Avoid for and while loops in favor of map functions. Avoid if-else statements unless very minimal and when no other appropriate solutions exist.
-- Do not use dynamic imports, all imports should be declared at the top of the file.
-- Do not use semi-colons.
-- Always write `.ts` files with TypeScript. Infer types whenever possible, when types must be declared keep them minimal and inlined instead of named. Always include return types.
-- Treat environment variables from `process` as if they come from an index signature, so it must be accessed like `process.env['OPENAI_API_KEY']` instead of `process.env.OPENAI_API_KEY`.
+- How to respond
+  - In your responses when you respond with code, you will respond with the entire code files with no comments.
+  - Include one or two sentences before the code file explaining what has been changed, do not write the explanation as comments in the code file.
+  - Do not include any comments in the code at all.
+  - Only respond with code files if there are changes (either additions or subtractions), do not respond with code files that are identical to the code files I gave you.
+  - Aside from the instructions above and given below, you will not make any changes to the code files. You will only add or remove code specific to the requested refactor, feature, or bug fix.
+- Do not respond with code in your first response, in your first response you will provide a complete and comprehensive list of the following:
+  - The new files with their file paths and file names and file extensions that will be created
+  - The existing files and their paths, names, and extensions that will be modified
+  - The existing files and their paths, names, and extensions that will be deleted
+- Logging
+  - Any time you are refactoring, building a new feature, or fixing a bug, add a few logging functions to track what is happening and help debug when the application fails.
+  - All logging should have a prefix variable called p which includes the path minus src and the file extension, so src/services/calculate-cost.ts would become [services/calculate-cost].
+- JavaScript, TypeScript, Node, and Tailwind coding guidelines
+  - Always use ESM, async/await, try catch, and the latest version of Node.js (22 as of now). Avoid for and while loops in favor of map functions. Avoid if-else statements unless very minimal and when no other appropriate solutions exist.
+  - Do not use semi-colons.
+  - Always write `.ts` files with TypeScript. Infer types whenever possible, when types must be declared keep them minimal and inlined instead of named. Always include return types.
+- All Tailwind styles should be saved as variables in src/styles and imported as a namespace import called s.
 EOF
 
   echo "Created temporary instruction file: $INSTRUCTION_FILE"

@@ -1,8 +1,8 @@
 import { processVideo } from './video.ts'
 import { saveInfo } from '../utils/save-info.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '../../logging.ts'
-import { execFilePromise } from '../../node-utils.ts'
-import type { ProcessingOptions } from '@/types.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { execFilePromise } from '@/node-utils'
+import type { ProcessingOptions } from '@/types'
 
 export async function processPlaylist(
   options: ProcessingOptions,
@@ -10,6 +10,7 @@ export async function processPlaylist(
   llmServices?: string,
   transcriptServices?: string
 ) {
+  const p = '[text/process-commands/playlist]'
   logInitialFunctionCall('processPlaylist', { llmServices, transcriptServices })
 
   try {
@@ -21,7 +22,7 @@ export async function processPlaylist(
     ])
 
     if (stderr) {
-      err(`yt-dlp warnings: ${stderr}`)
+      err(`${p} yt-dlp warnings: ${stderr}`)
     }
 
     const playlistData: { title: string, entries: Array<{ id: string }> } = JSON.parse(stdout)
@@ -31,7 +32,7 @@ export async function processPlaylist(
     const urls: string[] = entries.map((entry) => `https://www.youtube.com/watch?v=${entry.id}`)
 
     if (urls.length === 0) {
-      err('Error: No videos found in the playlist.')
+      err(`${p} Error: No videos found in the playlist.`)
       process.exit(1)
     }
 
@@ -52,11 +53,11 @@ export async function processPlaylist(
       try {
         await processVideo(options, url, llmServices, transcriptServices)
       } catch (error) {
-        err(`Error processing video ${url}: ${(error as Error).message}`)
+        err(`${p} Error processing video ${url}: ${(error as Error).message}`)
       }
     }
   } catch (error) {
-    err(`Error processing playlist: ${(error as Error).message}`)
+    err(`${p} Error processing playlist: ${(error as Error).message}`)
     process.exit(1)
   }
 }
