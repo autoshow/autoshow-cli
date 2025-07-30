@@ -1,5 +1,3 @@
-// src/process-steps/05-run-llm.ts
-
 import chalk from 'chalk'
 import { l, err, logInitialFunctionCall } from '../../logging.ts'
 import { writeFile } from '../../node-utils.ts'

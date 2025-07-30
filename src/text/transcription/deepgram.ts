@@ -1,5 +1,3 @@
-// src/transcription/deepgram.ts
-
 import { l, err } from '../../logging.ts'
 import { readFile, env } from '../../node-utils.ts'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
@@ -18,12 +16,10 @@ export function formatDeepgramTranscript(
   words: DeepgramWord[],
   speakerLabels: boolean
 ): string {
-  // If no speaker labels requested, return a plain text transcript
   if (!speakerLabels) {
     return words.map(w => w.word).join(' ')
   }
 
-  // Otherwise, group words by speaker
   let transcript = ''
   let currentSpeaker = words.length > 0 && words[0] ? words[0].speaker ?? undefined : undefined
   let speakerWords: string[] = []
@@ -37,7 +33,6 @@ export function formatDeepgramTranscript(
     speakerWords.push(w.word)
   }
 
-  // Add the final speaker block
   if (speakerWords.length > 0) {
     transcript += `Speaker ${currentSpeaker}: ${speakerWords.join(' ')}`
   }

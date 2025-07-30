@@ -1,5 +1,3 @@
-// src/utils/create-clips.ts
-
 import { exec, readFileSync, existsSync, mkdirSync, basename, extname } from '../../node-utils.ts'
 
 if (process.argv.length !== 4) {

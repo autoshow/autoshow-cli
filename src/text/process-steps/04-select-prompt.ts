@@ -3,10 +3,7 @@ import { err, l, logInitialFunctionCall } from '../../logging.ts'
 import { readFile } from '../../node-utils.ts'
 import type { ProcessingOptions } from '@/types.ts'
 
-// Default number of key moments to extract if not specified.
 const DEFAULT_KEY_MOMENTS_COUNT = 3
-
-// Default duration in seconds for each key moment if not specified.
 const DEFAULT_KEY_MOMENTS_DURATION = 60
 
 export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [

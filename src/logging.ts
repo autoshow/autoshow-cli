@@ -1,5 +1,3 @@
-// src/utils/logging.ts
-
 import chalk from 'chalk'
 
 export function logInitialFunctionCall(functionName: string, details: Record<string, unknown>): void {

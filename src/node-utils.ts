@@ -1,5 +1,3 @@
-// src/utils/node-utils.ts
-
 import { promisify } from 'node:util'
 import { argv, env, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
