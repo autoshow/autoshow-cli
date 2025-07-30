@@ -11,10 +11,11 @@ const bedrockRuntimeClient = new BedrockRuntimeClient({
 })
 
 export async function generateImageWithNova(prompt: string, options: any): Promise<ImageGenerationResult> {
+  const p = '[image/image-services/nova]'
   const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   
-  l.dim(`[${requestId}] Starting Nova Canvas | Prompt: "${prompt}"`)
+  l.dim(`${p} [${requestId}] Starting Nova Canvas | Prompt: "${prompt}"`)
   
   try {
     const { width, height } = parseResolution(options.resolution || '1024x1024')
@@ -27,7 +28,7 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       numberOfImages: parseIntOption(options.count || '1', 1)
     }
     
-    l.dim(`[${requestId}] Config: ${JSON.stringify(config)}`)
+    l.dim(`${p} [${requestId}] Config: ${JSON.stringify(config)}`)
     
     const payload: NovaCanvasPayload = {
       taskType: 'TEXT_IMAGE',
@@ -38,7 +39,7 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       imageGenerationConfig: config
     }
     
-    l.dim(`[${requestId}] Invoking model...`)
+    l.dim(`${p} [${requestId}] Invoking model...`)
     
     const response = await bedrockRuntimeClient.send(new InvokeModelCommand({
       modelId: 'amazon.nova-canvas-v1:0',
@@ -51,11 +52,11 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       if (!result.error.includes('Some of')) {
         throw new Error(result.error)
       }
-      l.warn(`[${requestId}] WARNING: Some images blocked by filters`)
+      l.warn(`${p} [${requestId}] WARNING: Some images blocked by filters`)
     }
     
     const images = result.images || []
-    l.dim(`[${requestId}] Generated ${images.length} images`)
+    l.dim(`${p} [${requestId}] Generated ${images.length} images`)
     
     const timestamp = generateTimestamp()
     const outputPaths = images.map((image: string, index: number) => {
@@ -67,12 +68,12 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
     })
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`[${requestId}] ✓ Generated ${images.length} image(s) in ${duration}s`)
+    l.success(`${p} [${requestId}] ✓ Generated ${images.length} image(s) in ${duration}s`)
     
     return { success: true, path: outputPaths[0] ?? '', seed: config.seed }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.dim(`[${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
+    l.dim(`${p} [${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',

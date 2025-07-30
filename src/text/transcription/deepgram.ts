@@ -44,8 +44,9 @@ export async function callDeepgram(
   options: ProcessingOptions,
   finalPath: string
 ) {
-  l.dim('\n  callDeepgram called with arguments:')
-  l.dim(`    - finalPath: ${finalPath}`)
+  const p = '[text/transcription/deepgram]'
+  l.dim(`${p} callDeepgram called with arguments:`)
+  l.dim(`${p}   - finalPath: ${finalPath}`)
 
   if (!env['DEEPGRAM_API_KEY']) {
     throw new Error('DEEPGRAM_API_KEY environment variable is not set. Please set it to your Deepgram API key.')
@@ -105,7 +106,7 @@ export async function callDeepgram(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`Error processing the transcription: ${(error as Error).message}`)
+    err(`${p} Error processing the transcription: ${(error as Error).message}`)
     throw error
   }
 }

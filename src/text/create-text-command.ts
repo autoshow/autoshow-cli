@@ -51,9 +51,10 @@ export const COMMAND_CONFIG = {
 }
 
 export function logCommandValidation(stage: string, detail: Record<string, unknown>): void {
-  l.dim(`[CommandValidation:${stage}]`)
+  const p = '[text/create-text-command]'
+  l.dim(`${p}[CommandValidation:${stage}]`)
   Object.entries(detail).forEach(([key, value]) =>
-    l.dim(`  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
+    l.dim(`${p}  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
   )
 }
 
@@ -62,7 +63,8 @@ export function validateCommandInput(options: ProcessingOptions): {
   llmServices?: string,
   transcriptServices?: string
 } {
-  l.dim('[validateCommandInput] Starting command input validation')
+  const p = '[text/create-text-command]'
+  l.dim(`${p} Starting command input validation`)
   logCommandValidation('start', { options: Object.keys(options).filter(k => options[k]) })
   
   const actionKeys = Object.keys(COMMAND_CONFIG) as Array<keyof typeof COMMAND_CONFIG>
@@ -74,7 +76,7 @@ export function validateCommandInput(options: ProcessingOptions): {
            (typeof value !== 'boolean' || value === true)
   })
   
-  l.dim(`[validateCommandInput] Found ${selectedActions.length} selected actions: ${selectedActions.join(', ')}`)
+  l.dim(`${p} Found ${selectedActions.length} selected actions: ${selectedActions.join(', ')}`)
   logCommandValidation('actions', { selectedActions })
   
   if (selectedActions.length > 1) {
@@ -83,7 +85,7 @@ export function validateCommandInput(options: ProcessingOptions): {
   }
   
   const action = selectedActions[0]
-  l.dim(`[validateCommandInput] Selected action: ${action || 'none'}`)
+  l.dim(`${p} Selected action: ${action || 'none'}`)
   
   const llmKeys = Object.values(LLM_SERVICES_CONFIG)
     .map(service => service.value)
@@ -96,7 +98,7 @@ export function validateCommandInput(options: ProcessingOptions): {
            (typeof value !== 'boolean' || value === true)
   })
   
-  l.dim(`[validateCommandInput] Found ${selectedLLMs.length} selected LLMs: ${selectedLLMs.join(', ')}`)
+  l.dim(`${p} Found ${selectedLLMs.length} selected LLMs: ${selectedLLMs.join(', ')}`)
   logCommandValidation('llms', { selectedLLMs })
   
   if (selectedLLMs.length > 1) {
@@ -112,7 +114,7 @@ export function validateCommandInput(options: ProcessingOptions): {
   else if (options.whisper) transcriptServices = 'whisper'
   else if (options.groqWhisper) transcriptServices = 'groqWhisper'
   
-  l.dim(`[validateCommandInput] Selected transcription service: ${transcriptServices || 'none'}`)
+  l.dim(`${p} Selected transcription service: ${transcriptServices || 'none'}`)
   
   const needsTranscription = !options.info && !options['metaDir'] && action !== undefined
   if (needsTranscription && !transcriptServices) {
@@ -128,19 +130,20 @@ export function validateCommandInput(options: ProcessingOptions): {
 export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
-  l.dim('[processCommand] Starting command processing')
+  const p = '[text/create-text-command]'
+  l.dim(`${p} Starting command processing`)
   
   const workflowHandled = await handleMetaWorkflow(options)
   if (workflowHandled) {
-    l.dim('[processCommand] Meta workflow handled')
+    l.dim(`${p} Meta workflow handled`)
     exit(0)
   }
   
-  l.dim('[processCommand] No meta workflow, proceeding with command validation')
+  l.dim(`${p} No meta workflow, proceeding with command validation`)
   const { action, llmServices, transcriptServices } = validateCommandInput(options)
   
   if (!action) {
-    l.dim('[processCommand] No action found, checking for metaDir option')
+    l.dim(`${p} No action found, checking for metaDir option`)
     if (!options['metaDir']) {
       err('Error: No action specified (e.g., --video, --rss, --metaDir). Use --help for options.')
       process.exit(1)
@@ -148,22 +151,22 @@ export async function processCommand(
     exit(1)
   }
   
-  l.dim(`[processCommand] Processing action: ${action} with LLM: ${llmServices || 'none'} and transcription: ${transcriptServices || 'none'}`)
+  l.dim(`${p} Processing action: ${action} with LLM: ${llmServices || 'none'} and transcription: ${transcriptServices || 'none'}`)
   
   try {
     if (action === 'rss') {
-      l.dim('[processCommand] Calling RSS handler')
+      l.dim(`${p} Calling RSS handler`)
       await COMMAND_CONFIG[action].handler(options, llmServices, transcriptServices)
     } else {
       const input = options[action]
       if (!input || typeof input !== 'string') {
         throw new Error(`No valid input provided for ${action} processing`)
       }
-      l.dim(`[processCommand] Calling ${action} handler with input: ${input}`)
+      l.dim(`${p} Calling ${action} handler with input: ${input}`)
       await COMMAND_CONFIG[action].handler(options, input, llmServices, transcriptServices)
     }
     
-    l.dim(`[processCommand] Successfully completed ${action} processing`)
+    l.dim(`${p} Successfully completed ${action} processing`)
     logSeparator({ type: 'completion', descriptor: action })
     exit(0)
   } catch (error) {
@@ -173,7 +176,8 @@ export async function processCommand(
 }
 
 export const createTextCommand = (): Command => {
-  l.dim('[createTextCommand] Creating text command with all options')
+  const p = '[text/create-text-command]'
+  l.dim(`${p} Creating text command with all options`)
   
   const textCommand = new Command('text')
     .description('Process audio/video content into text-based outputs')
@@ -205,14 +209,14 @@ export const createTextCommand = (): Command => {
     .action(async (options: ProcessingOptions) => {
       logInitialFunctionCall('textCommand', options)
       if (options.keyMomentsCount !== undefined) {
-        l.dim(`Key moments count configured: ${options.keyMomentsCount}`)
+        l.dim(`${p} Key moments count configured: ${options.keyMomentsCount}`)
       }
       if (options.keyMomentDuration !== undefined) {
-        l.dim(`Key moment duration configured: ${options.keyMomentDuration} seconds`)
+        l.dim(`${p} Key moment duration configured: ${options.keyMomentDuration} seconds`)
       }
       await processCommand(options)
     })
 
-  l.dim('[createTextCommand] Text command created successfully')
+  l.dim(`${p} Text command created successfully`)
   return textCommand
 }

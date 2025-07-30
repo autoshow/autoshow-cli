@@ -12,11 +12,12 @@ export async function generateImageWithBlackForestLabs(
   outputPath?: string, 
   options: BlackForestLabsOptions = {}
 ): Promise<ImageGenerationResult> {
+  const p = '[image/image-services/bfl]'
   const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   const uniqueOutputPath = outputPath || generateUniqueFilename('blackforest', 'jpg')
   
-  l.dim(`[${requestId}] Starting BFL generation | Prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}" | Path: ${uniqueOutputPath} | Options: ${JSON.stringify(options)}`)
+  l.dim(`${p} [${requestId}] Starting BFL generation | Prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}" | Path: ${uniqueOutputPath} | Options: ${JSON.stringify(options)}`)
   
   try {
     if (!env['BFL_API_KEY']) {
@@ -33,7 +34,7 @@ export async function generateImageWithBlackForestLabs(
       ...options
     }
     
-    l.dim(`[${requestId}] Final config: ${JSON.stringify(config)}`)
+    l.dim(`${p} [${requestId}] Final config: ${JSON.stringify(config)}`)
     
     const submitResponse = await fetch('https://api.bfl.ml/v1/flux-pro-1.1', {
       method: 'POST',
@@ -43,7 +44,7 @@ export async function generateImageWithBlackForestLabs(
       throw new Error(`Network error: ${isApiError(error) ? error.message : 'Unknown'}`) 
     })
     
-    l.dim(`[${requestId}] Submit response: ${submitResponse.status}`)
+    l.dim(`${p} [${requestId}] Submit response: ${submitResponse.status}`)
     
     if (!submitResponse.ok) {
       const errorData = await submitResponse.json().catch(() => ({ error: `${submitResponse.status}: ${submitResponse.statusText}` }))
@@ -59,7 +60,7 @@ export async function generateImageWithBlackForestLabs(
       throw new Error('Invalid response: missing task ID')
     }
     
-    l.dim(`[${requestId}] Task ${taskId} submitted, polling...`)
+    l.dim(`${p} [${requestId}] Task ${taskId} submitted, polling...`)
     
     let timeoutId: NodeJS.Timeout | undefined
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -76,7 +77,7 @@ export async function generateImageWithBlackForestLabs(
           
           if (!status) continue
           
-          l.dim(`[${requestId}] Status: ${status.status}, Progress: ${status.progress} (attempt ${i + 1})`)
+          l.dim(`${p} [${requestId}] Status: ${status.status}, Progress: ${status.progress} (attempt ${i + 1})`)
           
           if (status.status === 'Ready' && status.result?.sample) {
             if (timeoutId) clearTimeout(timeoutId)
@@ -93,7 +94,7 @@ export async function generateImageWithBlackForestLabs(
       timeoutPromise
     ])
     
-    l.dim(`[${requestId}] Downloading image...`)
+    l.dim(`${p} [${requestId}] Downloading image...`)
     
     const imageBuffer = await fetch(imageUrl).then(r => {
       if (!r.ok) throw new Error(`Download failed: ${r.status}`)
@@ -107,12 +108,12 @@ export async function generateImageWithBlackForestLabs(
     await writeFile(uniqueOutputPath, Buffer.from(imageBuffer))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`[${requestId}] ✓ Success in ${duration}s - ${uniqueOutputPath}`)
+    l.success(`${p} [${requestId}] ✓ Success in ${duration}s - ${uniqueOutputPath}`)
     
     return { success: true, path: uniqueOutputPath, taskId, imageUrl, seed: config.seed }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.dim(`[${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
+    l.dim(`${p} [${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
     return { 
       success: false, 
       error: isApiError(error) ? error.message : 'Unknown error',

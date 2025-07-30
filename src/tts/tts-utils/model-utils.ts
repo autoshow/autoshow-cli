@@ -2,18 +2,20 @@ import { readFileSync } from 'node:fs'
 import { l, err } from '@/logging'
 import { path, spawnSync, existsSync } from '@/node-utils'
 
+const p = '[tts/tts-utils/model-utils]'
+
 export const listModels = async (): Promise<void> => {
-  l.dim('Fetching available Coqui TTS models')
+  l.dim(`${p} Fetching available Coqui TTS models`)
   
   const configPath = path.join(process.cwd(), '.tts-config.json')
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
     (existsSync(path.join(process.cwd(), 'python_env/bin/python')) ? path.join(process.cwd(), 'python_env/bin/python') : 'python3')
   
-  l.dim(`Using Python: ${pythonPath}`)
+  l.dim(`${p} Using Python: ${pythonPath}`)
   
   const pythonScriptPath = path.join(path.dirname(import.meta.url.replace('file://', '')), '../tts-services/coqui-list.py')
-  l.dim(`Using Python script: ${pythonScriptPath}`)
+  l.dim(`${p} Using Python script: ${pythonScriptPath}`)
   
   const result = spawnSync(pythonPath, [pythonScriptPath], { 
     encoding: 'utf-8',
@@ -22,26 +24,26 @@ export const listModels = async (): Promise<void> => {
   })
   
   if (result.error) {
-    err(`Failed to execute Python: ${result.error.message}`)
+    err(`${p} Failed to execute Python: ${result.error.message}`)
   }
   
   if (result.status !== 0) {
-    l.dim(`stderr: ${result.stderr}`)
-    err(`Failed to list models: ${result.stderr || 'Unknown error'}`)
+    l.dim(`${p} stderr: ${result.stderr}`)
+    err(`${p} Failed to list models: ${result.stderr || 'Unknown error'}`)
   }
   
   const output = result.stdout
   
   if (output.includes('ERROR:')) {
     const errorMatch = output.match(/ERROR: (.+)/)
-    err(`Error loading TTS: ${errorMatch ? errorMatch[1] : 'Unknown error'}`)
+    err(`${p} Error loading TTS: ${errorMatch ? errorMatch[1] : 'Unknown error'}`)
   }
   
   const startIdx = output.indexOf('MODELS_START:')
   const endIdx = output.indexOf('MODELS_END')
   
   if (startIdx === -1 || endIdx === -1) {
-    l.dim('Attempting alternative method using CLI')
+    l.dim(`${p} Attempting alternative method using CLI`)
     
     const cliResult = spawnSync(pythonPath, ['-m', 'TTS', '--list_models'], {
       encoding: 'utf-8',
@@ -60,7 +62,7 @@ export const listModels = async (): Promise<void> => {
         )
       
       if (lines.length > 0) {
-        l.dim('Available Coqui TTS models:')
+        l.dim(`${p} Available Coqui TTS models:`)
         
         const modelsByCategory = lines.reduce((acc, model) => {
           const trimmedModel = model.trim()
@@ -83,20 +85,20 @@ export const listModels = async (): Promise<void> => {
             })
           })
         
-        l.dim('Use a model with: npm run as -- tts file input.md --coqui-model "model_name"')
-        l.dim('Example: npm run as -- tts file input.md --coqui-model "tts_models/en/ljspeech/tacotron2-DDC"')
+        l.dim(`${p} Use a model with: npm run as -- tts file input.md --coqui-model "model_name"`)
+        l.dim(`${p} Example: npm run as -- tts file input.md --coqui-model "tts_models/en/ljspeech/tacotron2-DDC"`)
         return
       }
     }
     
-    err('Failed to parse model list. Coqui TTS may not be properly installed.')
+    err(`${p} Failed to parse model list. Coqui TTS may not be properly installed.`)
   }
   
   const modelsSection = output.substring(startIdx, endIdx)
   const modelCountMatch = modelsSection.match(/MODELS_START:(\d+)/)
   const modelCount = parseInt(modelCountMatch?.[1] ?? '0')
   
-  l.dim(`Found ${modelCount} models`)
+  l.dim(`${p} Found ${modelCount} models`)
   
   const lines = modelsSection.split('\n')
     .slice(1)
@@ -104,10 +106,10 @@ export const listModels = async (): Promise<void> => {
     .map(line => line.trim())
   
   if (lines.length === 0) {
-    err('No models found. Coqui TTS may not be properly installed or initialized.')
+    err(`${p} No models found. Coqui TTS may not be properly installed or initialized.`)
   }
   
-  l.dim('Available Coqui TTS models:')
+  l.dim(`${p} Available Coqui TTS models:`)
   
   const modelsByCategory = lines.reduce((acc, model) => {
     const parts = model.split('/')
@@ -132,11 +134,11 @@ export const listModels = async (): Promise<void> => {
       })
     })
   
-  l.dim('Use a model with: npm run as -- tts file input.md --coqui-model "model_name"')
-  l.dim('Example: npm run as -- tts file input.md --coqui-model "tts_models/en/ljspeech/tacotron2-DDC"')
+  l.dim(`${p} Use a model with: npm run as -- tts file input.md --coqui-model "model_name"`)
+  l.dim(`${p} Example: npm run as -- tts file input.md --coqui-model "tts_models/en/ljspeech/tacotron2-DDC"`)
 }
 
 export const downloadModel = async (_modelId: string): Promise<boolean> => {
-  l.dim('Model download not applicable for current TTS engines')
+  l.dim(`${p} Model download not applicable for current TTS engines`)
   return true
 }

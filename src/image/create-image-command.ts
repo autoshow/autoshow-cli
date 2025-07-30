@@ -13,6 +13,7 @@ const serviceGenerators = {
 } as const
 
 export const createImageCommand = (): Command => {
+  const p = '[image/create-image-command]'
   const image = new Command('image').description('AI image generation operations')
 
   image
@@ -32,12 +33,12 @@ export const createImageCommand = (): Command => {
     .option('--count <number>', 'number of images 1-5 (nova only)', '1')
     .action(async (options) => {
       try {
-        l.dim(`Starting ${options.service} generation action`)
-        l.dim(`Generating image with prompt: "${options.prompt}"`)
+        l.dim(`${p} Starting ${options.service} generation action`)
+        l.dim(`${p} Generating image with prompt: "${options.prompt}"`)
         
         const generator = serviceGenerators[options.service as keyof typeof serviceGenerators]
         if (!generator) {
-          err(`Unknown service: ${options.service}. Use dalle, bfl, or nova.`)
+          err(`${p} Unknown service: ${options.service}. Use dalle, bfl, or nova.`)
         }
         
         const result = await (options.service === 'bfl' 
@@ -52,13 +53,13 @@ export const createImageCommand = (): Command => {
           : generator(options.prompt, options.output))
         
         if (!result) {
-          err('Failed to generate image: result is undefined')
+          err(`${p} Failed to generate image: result is undefined`)
         }
         
         if (result.success) {
-          l.success(`Image saved to: ${result.path}`)
+          l.success(`${p} Image saved to: ${result.path}`)
         } else {
-          err(`Failed to generate image: ${result.error}`)
+          err(`${p} Failed to generate image: ${result.error}`)
         }
       } catch (error) {
         handleError(error)
@@ -70,16 +71,16 @@ export const createImageCommand = (): Command => {
     .description('Compare image generation across all services')
     .action(async (prompt) => {
       try {
-        l.dim('Starting image comparison action')
-        l.dim(`Comparing services with prompt: "${prompt}"`)
+        l.dim(`${p} Starting image comparison action`)
+        l.dim(`${p} Comparing services with prompt: "${prompt}"`)
         const result = await generateComparisonImages(prompt)
-        l.success('Comparison completed')
+        l.success(`${p} Comparison completed`)
         
         const services = { dalle: 'DALL-E', blackForest: 'Black Forest Labs', nova: 'AWS Nova Canvas' }
         Object.entries(services).forEach(([key, name]) => {
           const res = result[key]
           if (res?.success) {
-            l.success(`${name}: ${res.path}`)
+            l.success(`${p} ${name}: ${res.path}`)
           }
         })
       } catch (error) {

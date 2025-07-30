@@ -14,7 +14,8 @@ program
   .description('Automate processing of audio/video content, manage meta-workflows, generate text-to-speech, and create AI images.')
   .version('1.0.0')
 
-l.dim('[commander] Adding commands to program')
+const p = '[commander]'
+l.dim(`${p} Adding commands to program`)
 program.addCommand(createTextCommand())
 program.addCommand(createTtsCommand())
 program.addCommand(createImageCommand())
@@ -27,10 +28,10 @@ program
   .option('--metaShownotes', 'Run the meta-workflow for shownotes generation')
   .action(async (options: ProcessingOptions & { metaDate?: string | string[] }) => {
     logInitialFunctionCall('autoshowCLI', options)
-    l.dim('[commander] Attempting to handle meta workflow')
+    l.dim(`${p} Attempting to handle meta workflow`)
     const workflowHandled = await handleMetaWorkflow(options)
     if (!workflowHandled) {
-      l.dim('[commander] No meta workflow handled, showing help')
+      l.dim(`${p} No meta workflow handled, showing help`)
       program.help()
     }
   })
@@ -42,6 +43,6 @@ program.on('command:*', () => {
 
 const thisFilePath = fileURLToPath(import.meta.url)
 if (argv[1] === thisFilePath || basename(argv[1] ?? '') === 'commander.ts') {
-  l.dim('[commander] Parsing command line arguments')
+  l.dim(`${p} Parsing command line arguments`)
   program.parseAsync(argv)
 }

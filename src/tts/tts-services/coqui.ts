@@ -6,24 +6,26 @@ import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
 } from '../tts-utils'
 
+const p = '[tts/tts-services/coqui]'
+
 const getCoquiConfig = () => {
-  l.dim('Loading Coqui configuration')
+  l.dim(`${p} Loading Coqui configuration`)
   const configPath = path.join(process.cwd(), '.tts-config.json')
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
     (existsSync(path.join(process.cwd(), 'python_env/bin/python')) ? path.join(process.cwd(), 'python_env/bin/python') : 'python3')
-  l.dim(`Using Python: ${pythonPath}`)
+  l.dim(`${p} Using Python: ${pythonPath}`)
   return { python: pythonPath, ...config.coqui }
 }
 
 const verifyCoquiEnvironment = (pythonPath: string) => {
-  l.dim(`Checking Coqui at: ${pythonPath}`)
+  l.dim(`${p} Checking Coqui at: ${pythonPath}`)
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
-  if (versionResult.error || versionResult.status !== 0) err(`Python not accessible at ${pythonPath}. Run: npm run setup`)
-  l.dim(`Python: ${versionResult.stdout.trim()}`)
+  if (versionResult.error || versionResult.status !== 0) err(`${p} Python not accessible at ${pythonPath}. Run: npm run setup`)
+  l.dim(`${p} Python: ${versionResult.stdout.trim()}`)
   const checkResult = spawnSync(pythonPath, ['-c', 'import TTS'], { encoding: 'utf-8', stdio: 'pipe' })
-  if (checkResult.status !== 0) err('Coqui TTS not installed. Run: npm run setup')
-  l.dim('Coqui TTS available')
+  if (checkResult.status !== 0) err(`${p} Coqui TTS not installed. Run: npm run setup`)
+  l.dim(`${p} Coqui TTS available`)
 }
 
 export async function synthesizeWithCoqui(
@@ -39,16 +41,16 @@ export async function synthesizeWithCoqui(
     capacitronStyle?: string
   } = {}
 ): Promise<string> {
-  l.dim(`Starting Coqui synthesis (${text.length} chars)`)
+  l.dim(`${p} Starting Coqui synthesis (${text.length} chars)`)
   const config = getCoquiConfig()
   verifyCoquiEnvironment(config.python)
   
   const modelName = options.model || config.default_model || 'tts_models/en/ljspeech/tacotron2-DDC'
   const isXtts = modelName.includes('xtts')
-  l.dim(`Model: ${modelName}${isXtts && options.speakerWav ? ', voice cloning' : ''}`)
+  l.dim(`${p} Model: ${modelName}${isXtts && options.speakerWav ? ', voice cloning' : ''}`)
   
   const pythonScriptPath = path.join(path.dirname(import.meta.url.replace('file://', '')), 'coqui-python.py')
-  l.dim(`Using Python script: ${pythonScriptPath}`)
+  l.dim(`${p} Using Python script: ${pythonScriptPath}`)
   
   await ensureDir(path.dirname(outputPath))
   
@@ -64,7 +66,7 @@ export async function synthesizeWithCoqui(
     speaker_wav: options.speakerWav,
   }
   
-  l.dim(`Config data: ${JSON.stringify({ model: configData.model, outputPath: configData.output, hasText: !!configData.text })}`)
+  l.dim(`${p} Config data: ${JSON.stringify({ model: configData.model, outputPath: configData.output, hasText: !!configData.text })}`)
   
   const result = spawnSync(config.python, [pythonScriptPath, JSON.stringify(configData)], { 
     stdio: ['pipe', 'pipe', 'pipe'], 
@@ -74,17 +76,17 @@ export async function synthesizeWithCoqui(
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: npm run setup' : `Python error: ${result.error.message}`)
+    err(`${p} ${errorWithCode.code === 'ENOENT' ? 'Python not found. Run: npm run setup' : `Python error: ${result.error.message}`}`)
   }
-  if (result.stdout) result.stdout.split('\n').filter(line => line.trim()).forEach(line => l.dim(line))
+  if (result.stdout) result.stdout.split('\n').filter(line => line.trim()).forEach(line => l.dim(`${p} ${line}`))
   if (result.status !== 0) {
     const stderr = result.stderr || ''
-    err(stderr.includes('ModuleNotFoundError') ? 'Coqui TTS not installed. Run: npm run setup' :
+    err(`${p} ${stderr.includes('ModuleNotFoundError') ? 'Coqui TTS not installed. Run: npm run setup' :
         stderr.includes('torch') ? 'PyTorch not installed. Run: npm run setup' :
-        `Coqui TTS failed: ${stderr}`)
+        `Coqui TTS failed: ${stderr}`}`)
   }
-  if (!existsSync(outputPath)) err('Output file missing after synthesis')
-  l.dim(`Audio saved to ${outputPath}`)
+  if (!existsSync(outputPath)) err(`${p} Output file missing after synthesis`)
+  l.dim(`${p} Audio saved to ${outputPath}`)
   return outputPath
 }
 
@@ -98,7 +100,7 @@ export async function processScriptWithCoqui(
   } = {}
 ): Promise<void> {
   try {
-    l.dim(`Reading Coqui script: ${scriptFile}`)
+    l.dim(`${p} Reading Coqui script: ${scriptFile}`)
     const script = JSON.parse(await fs.readFile(scriptFile, 'utf8'))
     
     if (!existsSync(outDir)) {
@@ -110,10 +112,10 @@ export async function processScriptWithCoqui(
     const voiceSamples = Object.fromEntries(['DUCO', 'SEAMUS'].map(s => [s, process.env[`COQUI_VOICE_${s}`] || '']))
     const speakers = Object.fromEntries(['DUCO', 'SEAMUS'].map(s => [s, process.env[`COQUI_SPEAKER_${s}`] || '']))
     
-    l.dim(`Processing ${script.length} lines with Coqui`)
+    l.dim(`${p} Processing ${script.length} lines with Coqui`)
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
-      l.dim(`Line ${idx + 1}/${script.length} (${speaker})`)
+      l.dim(`${p} Line ${idx + 1}/${script.length} (${speaker})`)
       const base = `${String(idx).padStart(3, '0')}_${speaker}`
       const wavOut = path.join(outDir, `${base}.wav`)
       const pcmOut = path.join(outDir, `${base}.pcm`)
@@ -126,15 +128,15 @@ export async function processScriptWithCoqui(
       
       const wavData = await fs.readFile(wavOut)
       await fs.writeFile(pcmOut, wavData.slice(44))
-      l.dim(`Saved ${wavOut}`)
+      l.dim(`${p} Saved ${wavOut}`)
       if (idx < script.length - 1) await new Promise(resolve => setTimeout(resolve, 500))
     }))
     
-    l.dim('Merging Coqui audio files')
+    l.dim(`${p} Merging Coqui audio files`)
     await mergeAudioFiles(outDir)
     await convertPcmToWav(outDir)
-    l.dim(`Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
+    l.dim(`${p} Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
   } catch (error) {
-    err(`Error processing Coqui script: ${error}`)
+    err(`${p} Error processing Coqui script: ${error}`)
   }
 }
