@@ -1,9 +1,7 @@
-// src/utils/workflows.ts
-
-import { l, err, logSeparator, logInitialFunctionCall } from './logging.ts'
-import { execPromise, mkdirSync, existsSync } from './node-utils.ts'
-import { processRSS } from '../process-commands/rss.ts'
-import type { ProcessingOptions } from './types.ts'
+import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { execPromise, mkdirSync, existsSync } from '@/node-utils'
+import { processRSS } from '../process-commands/rss'
+import type { ProcessingOptions } from '@/types'
 
 export async function logOperation(
   command: string,
@@ -11,20 +9,21 @@ export async function logOperation(
   logFn: any,
   description: string
 ): Promise<void> {
+  const p = '[text/utils/workflows]'
   console.log('')
-  logFn(`[${operationName}] Starting ${operationName}: ${description}`)
-  logFn(`[${operationName}] Executing command: ${command}`)
+  logFn(`${p}[${operationName}] Starting ${operationName}: ${description}`)
+  logFn(`${p}[${operationName}] Executing command: ${command}`)
   try {
     const { stdout, stderr } = await execPromise(command)
-    logFn(`[${operationName}] stdout:`)
+    logFn(`${p}[${operationName}] stdout:`)
     console.log(stdout)
     if (stderr) {
-      l.warn(`[${operationName}] stderr:`)
+      l.warn(`${p}[${operationName}] stderr:`)
       console.warn(stderr)
     }
-    logFn(`[${operationName}] Successfully finished ${operationName}: ${description}`)
+    logFn(`${p}[${operationName}] Successfully finished ${operationName}: ${description}`)
   } catch (error: any) {
-    err(`[${operationName}] Error during ${operationName}: ${error.message}`)
+    err(`${p}[${operationName}] Error during ${operationName}: ${error.message}`)
     throw error
   }
 }
@@ -34,17 +33,18 @@ export async function logCopy(source: string, destination: string, operationName
 }
 
 export async function logMkdir(targetPath: string, operationName: string): Promise<void> {
+  const p = '[text/utils/workflows]'
   console.log('')
-  l(`[${operationName}] Starting ${operationName}: Creating directory ${targetPath}`)
+  l(`${p}[${operationName}] Starting ${operationName}: Creating directory ${targetPath}`)
   try {
     if (!existsSync(targetPath)) {
       mkdirSync(targetPath, { recursive: true })
-      l(`[${operationName}] Successfully created directory: ${targetPath}`)
+      l(`${p}[${operationName}] Successfully created directory: ${targetPath}`)
     } else {
-      l(`[${operationName}] Directory already exists: ${targetPath}`)
+      l(`${p}[${operationName}] Directory already exists: ${targetPath}`)
     }
   } catch (error: any) {
-    err(`[${operationName}] Error creating directory ${targetPath}: ${error.message}`)
+    err(`${p}[${operationName}] Error creating directory ${targetPath}: ${error.message}`)
     throw error
   }
 }
@@ -79,11 +79,12 @@ async function copyBackToDaily(dirName: string, subfolder: string, sourceDir: st
 }
 
 export async function prepareShownotes(dirName: string, dateParams: string[] | undefined, sourceDir: string): Promise<void> {
+  const p = '[text/utils/workflows]'
   logInitialFunctionCall('prepareShownotes', { dirName, dateParams, sourceDir })
   const subfolder = `${dirName}-shownotes`
   const feedFile = `${dirName}-feeds.md`
   
-  l.dim(`Preparing to process shownotes for ${dirName} with dates: ${dateParams ? dateParams.join(', ') : 'latest available'}`)
+  l.dim(`${p} Preparing to process shownotes for ${dirName} with dates: ${dateParams ? dateParams.join(', ') : 'latest available'}`)
   
   await copyFeeds(sourceDir)
   await logMkdir(`./content/${subfolder}`, 'createDirectoryForShownotes')
@@ -94,14 +95,14 @@ export async function prepareShownotes(dirName: string, dateParams: string[] | u
   }
   
   if (dateParams && dateParams.length > 0) {
-    l.dim(`Setting date parameters: ${dateParams.join(', ')}`)
+    l.dim(`${p} Setting date parameters: ${dateParams.join(', ')}`)
     rssOptions.date = dateParams
   }
   
   try {
     await processRSS(rssOptions, rssOptions.llmServices, rssOptions.transcriptServices)
   } catch (e) {
-    err(`Error during RSS processing for shownotes: ${(e as Error).message}`)
+    err(`${p} Error during RSS processing for shownotes: ${(e as Error).message}`)
     throw e
   }
   
@@ -110,10 +111,11 @@ export async function prepareShownotes(dirName: string, dateParams: string[] | u
   await logRemove('./content/feeds', 'cleanupShownotes', 'feeds folder from ./content')
   await logRemove(`./content/${subfolder}`, 'cleanupShownotes', `${subfolder} from ./content`)
   
-  l.final(`prepareShownotes completed for ${dirName}`)
+  l.final(`${p} prepareShownotes completed for ${dirName}`)
 }
 
 export async function prepareInfo(dirName: string, sourceDir: string): Promise<void> {
+  const p = '[text/utils/workflows]'
   logInitialFunctionCall('prepareInfo', { dirName, sourceDir })
   const subfolder = `${dirName}-info`
   const feedFile = `${dirName}-feeds.md`
@@ -126,7 +128,7 @@ export async function prepareInfo(dirName: string, sourceDir: string): Promise<v
   try {
     await processRSS(rssOptions)
   } catch (e) {
-    err(`Error during RSS processing for info: ${(e as Error).message}`)
+    err(`${p} Error during RSS processing for info: ${(e as Error).message}`)
     throw e
   }
   await logFindMove('.json', './content', `./content/${subfolder}`, 'moveGeneratedJsonToSubfolder')
@@ -134,11 +136,12 @@ export async function prepareInfo(dirName: string, sourceDir: string): Promise<v
   await copyBackToDaily(dirName, subfolder, sourceDir)
   await logRemove('./content/feeds', 'cleanupInfo', 'feeds folder from ./content')
   await logRemove(`./content/${subfolder}`, 'cleanupInfo', `${subfolder} from ./content`)
-  l.final(`prepareInfo completed for ${dirName}`)
+  l.final(`${p} prepareInfo completed for ${dirName}`)
 }
 
 export async function handleMetaWorkflow(options: ProcessingOptions): Promise<boolean> {
-  l.dim(`handleMetaWorkflow called with options: ${JSON.stringify({
+  const p = '[text/utils/workflows]'
+  l.dim(`${p} handleMetaWorkflow called with options: ${JSON.stringify({
     metaDir: options['metaDir'],
     metaSrcDir: options['metaSrcDir'],
     metaInfo: options['metaInfo'],
@@ -164,7 +167,7 @@ export async function handleMetaWorkflow(options: ProcessingOptions): Promise<bo
     
     try {
       if (options['metaInfo']) {
-        l.final(`Starting meta-workflow: Info for ${options['metaDir']} from ${options['metaSrcDir']}`)
+        l.final(`${p} Starting meta-workflow: Info for ${options['metaDir']} from ${options['metaSrcDir']}`)
         await prepareInfo(options['metaDir'], options['metaSrcDir'])
         logSeparator({ type: 'completion', descriptor: `Meta-Workflow Info for ${options['metaDir']}` })
       } else if (options['metaShownotes']) {
@@ -178,17 +181,17 @@ export async function handleMetaWorkflow(options: ProcessingOptions): Promise<bo
           ? `Dates: ${metaDates.join(', ')}` 
           : 'Date: latest available'
           
-        l.final(`Starting meta-workflow: Shownotes for ${options['metaDir']} from ${options['metaSrcDir']} (${dateInfoString})`)
+        l.final(`${p} Starting meta-workflow: Shownotes for ${options['metaDir']} from ${options['metaSrcDir']} (${dateInfoString})`)
         await prepareShownotes(options['metaDir'], metaDates, options['metaSrcDir'])
         logSeparator({ type: 'completion', descriptor: `Meta-Workflow Shownotes for ${options['metaDir']}` })
       }
       return true
     } catch (error) {
-      err(`Error in meta-workflow for ${options['metaDir']}: ${(error as Error).message}`)
+      err(`${p} Error in meta-workflow for ${options['metaDir']}: ${(error as Error).message}`)
       process.exit(1)
     }
   }
   
-  l.dim('No metaDir specified, skipping meta-workflow')
+  l.dim(`${p} No metaDir specified, skipping meta-workflow`)
   return false
 }

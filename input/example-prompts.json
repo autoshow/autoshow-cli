@@ -1,0 +1,34 @@
+{
+  "prompts": [
+    {
+      "promptNumber": 1,
+      "title": "INT. BRIDGE – U.S.S. ACAMPO (Cold Open)",
+      "description": "The bridge of the U.S.S. Acampo during a crisis.",
+      "characters": ["CAPT PEACHES", "DUCO"],
+      "panels": [
+        {
+          "panelNumber": 1,
+          "visualDescription": "The bridge rattles violently during a crisis.",
+          "dialogue": [
+            {
+              "character": "CAPT PEACHES",
+              "line": "This isn't turbulence—this is resistance to progress."
+            }
+          ],
+          "characters": ["CAPT PEACHES"]
+        },
+        {
+          "panelNumber": 2,
+          "visualDescription": "DUCO at console, hair disheveled, gripping console edge.",
+          "dialogue": [
+            {
+              "character": "DUCO",
+              "line": "We're trapped in the gravity well of a neutron star, sir. The ship's screaming because it's literally being crushed."
+            }
+          ],
+          "characters": ["DUCO"]
+        }
+      ]
+    }
+  ]
+}

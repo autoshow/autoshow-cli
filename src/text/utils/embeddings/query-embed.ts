@@ -1,9 +1,7 @@
-// src/utils/embeddings/query-embed.ts
-
 // import { PrismaClient } from '@prisma/client'
 // import {
 //   env, fileURLToPath, readFileSync, join, dirname, isAbsolute, resolve
-// } from '../node-utils.ts'
+// } from '@/node-utils'
 
 // export async function queryEmbeddings(question: string, customDir?: string): Promise<void> {
 //   if (!question) {

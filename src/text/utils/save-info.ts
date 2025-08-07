@@ -1,8 +1,6 @@
-// src/utils/save-info.ts
-
-import { l, err } from './logging.ts'
-import { writeFile, execFilePromise } from './node-utils.ts'
-import type { ShowNoteMetadata, VideoInfo } from './types.ts'
+import { l, err } from '@/logging'
+import { writeFile, execFilePromise } from '@/node-utils'
+import type { ShowNoteMetadata, VideoInfo } from '@/types'
 
 export function sanitizeTitle(title: string) {
   return title
@@ -19,7 +17,8 @@ export async function saveInfo(
   data: string[] | VideoInfo[] | ShowNoteMetadata[],
   title?: string
 ) {
-  l.dim(`saveInfo called with type: ${type}, data length: ${data.length}, title: ${title || 'none'}`)
+  const p = '[text/utils/save-info]'
+  l.dim(`${p} saveInfo called with type: ${type}, data length: ${data.length}, title: ${title || 'none'}`)
   
   if (type === 'combined') {
     const items = data as ShowNoteMetadata[]
@@ -36,7 +35,7 @@ export async function saveInfo(
     const sanitizedTitle = sanitizeTitle(title || '')
     const jsonFilePath = `content/${sanitizedTitle}_info.json`
     await writeFile(jsonFilePath, jsonContent)
-    l.dim(`RSS feed information saved to: ${jsonFilePath}`)
+    l.dim(`${p} RSS feed information saved to: ${jsonFilePath}`)
     return
   }
   
@@ -58,7 +57,7 @@ export async function saveInfo(
     successLogFunction = l.wait
   }
   
-  l.dim(`Processing ${urls.length} URLs for metadata extraction`)
+  l.dim(`${p} Processing ${urls.length} URLs for metadata extraction`)
   
   const metadataList = await Promise.all(
     urls.map(async (url) => {
@@ -90,7 +89,7 @@ export async function saveInfo(
         } as ShowNoteMetadata
       } catch (error) {
         err(
-          `Error extracting metadata for ${url}: ${
+          `${p} Error extracting metadata for ${url}: ${
             error instanceof Error ? error.message : String(error)
           }`
         )
@@ -103,7 +102,7 @@ export async function saveInfo(
     (metadata): metadata is ShowNoteMetadata => metadata !== null
   )
   
-  l.dim(`Successfully extracted metadata for ${validMetadata.length} of ${urls.length} URLs`)
+  l.dim(`${p} Successfully extracted metadata for ${validMetadata.length} of ${urls.length} URLs`)
   
   const jsonContent = JSON.stringify(validMetadata, null, 2)
   await writeFile(outputFilePath, jsonContent)

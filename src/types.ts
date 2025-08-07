@@ -58,11 +58,10 @@ export type ProcessingOptions = {
   customPrompt?: string
   llmServices?: string
   transcriptServices?: string
-  skip?: number
   order?: string
   last?: number
   date?: string[]
-  lastDays?: number
+  days?: number
   metaDir?: string
   metaSrcDir?: string
   metaDate?: string[]
@@ -83,4 +82,48 @@ export interface TranscriptionResult {
   transcript: string
   modelId: string
   costPerMinuteCents: number
+}
+
+export interface ApiError {
+  message: string
+  stack?: string
+  code?: string
+  name?: string
+  $metadata?: { httpStatusCode?: number }
+}
+
+export interface BlackForestLabsOptions {
+  width?: number
+  height?: number
+  prompt_upsampling?: boolean
+  seed?: number
+  safety_tolerance?: number
+  output_format?: string
+}
+
+export interface ImageGenerationResult {
+  success: boolean
+  path?: string
+  error?: string
+  details?: string
+  taskId?: string
+  imageUrl?: string
+  seed?: number
+  prompt_used?: string
+}
+
+export interface NovaCanvasPayload {
+  taskType: string
+  textToImageParams?: {
+    text: string
+    negativeText?: string
+  }
+  imageGenerationConfig?: {
+    width: number
+    height: number
+    quality?: string
+    cfgScale?: number
+    seed?: number
+    numberOfImages: number
+  }
 }

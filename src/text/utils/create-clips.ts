@@ -1,6 +1,4 @@
-// src/utils/create-clips.ts
-
-import { exec, readFileSync, existsSync, mkdirSync, basename, extname } from '../utils/node-utils.ts'
+import { exec, readFileSync, existsSync, mkdirSync, basename, extname } from '@/node-utils'
 
 if (process.argv.length !== 4) {
   console.error(`Usage: ${process.argv[1]} <markdown_file> <video_file>`)

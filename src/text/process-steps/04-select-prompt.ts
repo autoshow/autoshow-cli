@@ -1,12 +1,9 @@
 import { sections } from '../prompts/sections.ts'
-import { err, l, logInitialFunctionCall } from '../utils/logging.ts'
-import { readFile } from '../utils/node-utils.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import { err, l, logInitialFunctionCall } from '@/logging'
+import { readFile } from '@/node-utils'
+import type { ProcessingOptions } from '@/types'
 
-// Default number of key moments to extract if not specified.
 const DEFAULT_KEY_MOMENTS_COUNT = 3
-
-// Default duration in seconds for each key moment if not specified.
 const DEFAULT_KEY_MOMENTS_DURATION = 60
 
 export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
@@ -37,6 +34,7 @@ export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
 const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
 
 export async function selectPrompts(options: ProcessingOptions) {
+  const p = '[text/process-steps/04-select-prompt]'
   l.step(`\nStep 4 - Select Prompts\n`)
   logInitialFunctionCall('selectPrompts', { options })
 
@@ -45,7 +43,7 @@ export async function selectPrompts(options: ProcessingOptions) {
     try {
       customPrompt = (await readFile(options.customPrompt, 'utf8')).trim()
     } catch (error) {
-      err(`Error reading custom prompt file: ${(error as Error).message}`)
+      err(`${p} Error reading custom prompt file: ${(error as Error).message}`)
     }
   }
 
@@ -62,7 +60,7 @@ export async function selectPrompts(options: ProcessingOptions) {
       validPromptValues.has(section) && Object.hasOwn(sections, section)
   )
 
-  l.dim(`${JSON.stringify(validSections, null, 2)}`)
+  l.dim(`${p} ${JSON.stringify(validSections, null, 2)}`)
 
   validSections.forEach((section) => {
     let instruction = sections[section].instruction
@@ -70,7 +68,7 @@ export async function selectPrompts(options: ProcessingOptions) {
     if (section === 'keyMoments') {
       const count = options.keyMomentsCount || DEFAULT_KEY_MOMENTS_COUNT
       const duration = options.keyMomentDuration || DEFAULT_KEY_MOMENTS_DURATION
-      l.dim(`Configuring keyMoments with count: ${count}, duration: ${duration}s`)
+      l.dim(`${p} Configuring keyMoments with count: ${count}, duration: ${duration}s`)
       instruction = instruction
         .replace('{COUNT}', count.toString())
         .replace('{DURATION}', duration.toString())
