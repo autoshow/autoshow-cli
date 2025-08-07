@@ -1,9 +1,7 @@
-// src/utils/embeddings/create-embed.ts
-
 // import { PrismaClient } from '@prisma/client'
 // import {
 //   env, fileURLToPath, readdir, readFile, join, dirname, isAbsolute, resolve, relative, writeFileSync
-// } from '../node-utils.ts'
+// } from '@/node-utils'
 
 // async function getAllMarkdownFiles(dir: string): Promise<string[]> {
 //   const dirEntries = await readdir(dir, { withFileTypes: true })

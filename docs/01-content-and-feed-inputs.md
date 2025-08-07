@@ -81,6 +81,24 @@ Process a certain number of the most recent videos, for example the last three v
 npm run as -- text --channel "https://www.youtube.com/@ajcwebdev" --last 1
 ```
 
+Download episodes from a specific number of previous days, for example to download episodes from the last 7 days:
+
+```bash
+npm run as -- text --channel "https://www.youtube.com/@ajcwebdev" --days 7
+```
+
+Download episodes from a specific date:
+
+```bash
+npm run as -- text --channel "https://www.youtube.com/@ajcwebdev" --date 2025-05-09
+```
+
+Download episodes from multiple dates:
+
+```bash
+npm run as -- text --channel "https://www.youtube.com/@ajcwebdev" --date 2025-07-01 2025-07-10
+```
+
 Run on a YouTube channel and generate JSON info file with markdown metadata of each video:
 
 ```bash
@@ -152,7 +170,7 @@ npm run as -- text --rss "content/examples/example-rss-feeds.md" --last 2
 Download episodes from a specific number of previous days, for example to download episodes from the last 7 days:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --lastDays 7
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --days 7
 ```
 
 Download episodes from a specific date:

@@ -105,7 +105,7 @@ Run on a podcast RSS feed.
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed"
 ```
 
-For more granular control (e.g., specific RSS items, date filtering, order, skip, last), use options like `--item <url>`, `--date <YYYY-MM-DD>`, `--order newest|oldest`, `--last <num>`, `--lastDays <num>`.
+For more granular control (e.g., specific RSS items, date filtering, order, skip, last), use options like `--item <url>`, `--date <YYYY-MM-DD>`, `--order newest|oldest`, `--last <num>`, `--days <num>`.
 
 Use `--info` to fetch metadata without full processing for URLs, playlists, channels, or RSS feeds.
 

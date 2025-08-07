@@ -1,9 +1,7 @@
-// src/transcription/whisper.ts
-
-import { l, err } from '../utils/logging.ts'
-import { readFile, unlink, spawn, existsSync, execPromise } from '../utils/node-utils.ts'
+import { l, err } from '@/logging'
+import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import type { ProcessingOptions } from '@/types'
 import type { Ora } from 'ora'
 
 export function formatTimestamp(timestamp: string) {
@@ -48,6 +46,7 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
 }
 
 export async function checkWhisperModel(whisperModel: string) {
+  const p = '[text/transcription/whisper]'
   if (whisperModel === 'turbo') whisperModel = 'large-v3-turbo'
 
   const whisperCliPath = './bin/whisper-cli'
@@ -59,19 +58,21 @@ export async function checkWhisperModel(whisperModel: string) {
   }
 
   if (!existsSync(modelPath)) {
-    l.dim(`\n  Model not found locally, attempting download...\n    - ${whisperModel}\n`)
+    l.dim(`${p} Model not found locally, attempting download...`)
+    l.dim(`${p}   - ${whisperModel}`)
     try {
       await execPromise(
         `bash ./models/download-ggml-model.sh ${whisperModel}`,
         { maxBuffer: 10000 * 1024 }
       )
-      l.dim('    - Model download completed.\n')
+      l.dim(`${p} Model download completed.`)
     } catch (error) {
-      err(`Error downloading model: ${(error as Error).message}`)
+      err(`${p} Error downloading model: ${(error as Error).message}`)
       throw error
     }
   } else {
-    l.dim(`  Model "${whisperModel}" is already available at:\n    - ${modelPath}\n`)
+    l.dim(`${p} Model "${whisperModel}" is already available at:`)
+    l.dim(`${p}   - ${modelPath}`)
   }
 }
 
@@ -118,8 +119,9 @@ export async function callWhisper(
   finalPath: string,
   spinner?: Ora
 ) {
-  l.opts('\n  callWhisper called with arguments:')
-  l.opts(`    - finalPath: ${finalPath}`)
+  const p = '[text/transcription/whisper]'
+  l.opts(`${p} callWhisper called with arguments:`)
+  l.opts(`${p}   - finalPath: ${finalPath}`)
 
   try {
     const whisperModel = typeof options.whisper === 'string'
@@ -136,7 +138,8 @@ export async function callWhisper(
 
     await checkWhisperModel(modelId)
 
-    l.dim(`  Invoking whisper-cli on file:\n    - ${finalPath}.wav`)
+    l.dim(`${p} Invoking whisper-cli on file:`)
+    l.dim(`${p}   - ${finalPath}.wav`)
     
     const args = [
       '--no-gpu',
@@ -160,11 +163,12 @@ export async function callWhisper(
         )
       }
     } catch (whisperError) {
-      err(`Error running whisper-cli: ${(whisperError as Error).message}`)
+      err(`${p} Error running whisper-cli: ${(whisperError as Error).message}`)
       throw whisperError
     }
 
-    l.dim(`\n  Transcript JSON file successfully created, reading file for txt conversion:\n    - ${finalPath}.json\n`)
+    l.dim(`${p} Transcript JSON file successfully created, reading file for txt conversion:`)
+    l.dim(`${p}   - ${finalPath}.json`)
     const jsonContent = await readFile(`${finalPath}.json`, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)
@@ -176,7 +180,7 @@ export async function callWhisper(
       costPerMinuteCents
     }
   } catch (error) {
-    err('Error in callWhisper:', (error as Error).message)
+    err(`${p} Error in callWhisper: ${(error as Error).message}`)
     process.exit(1)
   }
 }

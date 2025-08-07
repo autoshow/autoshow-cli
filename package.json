@@ -1,7 +1,7 @@
 {
   "name": "autoshow-cli",
   "author": "Anthony Campolo",
-  "description": "Automated generation of show notes and content for audio and video files.",
+  "description": "Automated generation of show notes and content for audio and video files with text-to-speech and AI image generation capabilities.",
   "keywords": [
     "ChatGPT",
     "Claude",
@@ -9,7 +9,13 @@
     "Whisper.cpp",
     "Deepgram",
     "AssemblyAI",
-    "Commander.js"
+    "Commander.js",
+    "Coqui",
+    "ElevenLabs",
+    "Polly",
+    "DALL-E",
+    "BlackForestLabs",
+    "Nova"
   ],
   "type": "module",
   "scripts": {
@@ -30,6 +36,8 @@
     "u3": "npm run as -- text --whisper large-v3-turbo --urls",
     "c": "npm run as -- text --channel",
     "c3": "npm run as -- text --whisper large-v3-turbo --channel",
+    "tts": "npm run as -- tts",
+    "image": "npm run as -- image",
     "test:base": "tsx --test --env-file=.env --test-reporter=spec --test-reporter-destination=spec.log --test-concurrency=1",
     "test:local": "npm run test:base -- test/cli/cli-local.test.ts",
     "test:all": "npm run test:base -- test/cli/cli-all.test.ts",
@@ -41,21 +49,26 @@
   "dependencies": {
     "@ai-sdk/openai": "1.3.5",
     "@anthropic-ai/sdk": "0.39.0",
+    "@aws-sdk/client-bedrock-runtime": "3.826.0",
+    "@aws-sdk/client-polly": "3.828.0",
     "@deepgram/sdk": "3.11.1",
     "@google/generative-ai": "0.22.0",
     "ai": "4.2.9",
     "assemblyai": "4.9.0",
     "chalk": "5.4.1",
     "commander": "13.1.0",
+    "elevenlabs": "1.59.0",
     "fast-xml-parser": "5.0.8",
     "file-type": "20.4.0",
     "openai": "4.86.1",
     "ora": "^8.2.0",
     "react": "19.1.0",
+    "remove-markdown": "0.6.2",
     "zod": "3.24.2"
   },
   "devDependencies": {
     "@types/node": "22.13.7",
+    "@types/remove-markdown": "0.3.4",
     "repomix": "0.3.4",
     "tsx": "4.19.3",
     "typescript": "5.8.2"

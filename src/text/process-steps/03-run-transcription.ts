@@ -1,12 +1,10 @@
-// src/process-steps/03-run-transcription.ts
-
 import { callWhisper } from '../transcription/whisper.ts'
 import { callDeepgram } from '../transcription/deepgram.ts'
 import { callAssembly } from '../transcription/assembly.ts'
 import { callGroqWhisper } from '../transcription/groq-whisper.ts'
-import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
-import { execPromise } from '../utils/node-utils.ts'
-import type { ProcessingOptions, TranscriptionResult } from '../utils/types.ts'
+import { l, err, logInitialFunctionCall } from '@/logging'
+import { execPromise } from '@/node-utils'
+import type { ProcessingOptions, TranscriptionResult } from '@/types'
 import ora from 'ora'
 import type { Ora } from 'ora'
 
@@ -66,6 +64,7 @@ export async function runTranscription(
   finalPath: string,
   transcriptServicesInput?: string
 ): Promise<TranscriptionResult> {
+  const p = '[text/process-steps/03-run-transcription]'
   const spinner = ora('Step 3 - Run Transcription').start()
   logInitialFunctionCall('runTranscription', { options, finalPath, transcriptServicesInput })
   let serviceToUse = transcriptServicesInput
@@ -79,12 +78,12 @@ export async function runTranscription(
     } else if (options.groqWhisper) {
       serviceToUse = 'groqWhisper'
     } else {
-      l.warn('No specific transcription service flag found in options, and no service explicitly passed. Defaulting to whisper.')
+      l.warn(`${p} No specific transcription service flag found in options, and no service explicitly passed. Defaulting to whisper.`)
       serviceToUse = 'whisper'
       if(options.whisper === undefined) options.whisper = true
     }
   }
-  l.dim(`Transcription service to use: ${serviceToUse}`)
+  l.dim(`${p} Transcription service to use: ${serviceToUse}`)
   let finalTranscript = ''
   let finalModelId = ''
   let finalCostPerMinuteCents = 0
@@ -139,7 +138,7 @@ export async function runTranscription(
     }
   } catch (error) {
     spinner.fail('Transcription failed.')
-    err(`Error during runTranscription: ${(error as Error).message}`)
+    err(`${p} Error during runTranscription: ${(error as Error).message}`)
     throw error
   }
 }
@@ -148,22 +147,23 @@ export async function retryTranscriptionCall<T>(
   fn: () => Promise<T>,
   spinner?: Ora
 ): Promise<T> {
+  const p = '[text/process-steps/03-run-transcription]'
   const maxRetries = 7
   let attempt = 0
   while (attempt < maxRetries) {
     try {
       attempt++
       const result = await fn()
-      l.dim(`  Transcription call completed successfully on attempt ${attempt}.`)
+      l.dim(`${p} Transcription call completed successfully on attempt ${attempt}.`)
       return result
     } catch (error) {
-      err(`  Attempt ${attempt} failed: ${(error as Error).message}`)
+      err(`${p} Attempt ${attempt} failed: ${(error as Error).message}`)
       if (attempt >= maxRetries) {
-        err(`  Max retries (${maxRetries}) reached. Aborting transcription.`)
+        err(`${p} Max retries (${maxRetries}) reached. Aborting transcription.`)
         throw error
       }
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`  Retrying in ${delayMs / 1000} seconds...`)
+      l.dim(`${p} Retrying in ${delayMs / 1000} seconds...`)
       if (spinner) {
         spinner.text = `Step 3 - Run Transcription (retrying in ${delayMs / 1000}s...)`
       }
@@ -178,6 +178,7 @@ export async function logTranscriptionCost(info: {
   costPerMinuteCents: number
   filePath: string
 }): Promise<number> {
+  const p = '[text/process-steps/03-run-transcription]'
   const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${info.filePath}"`
   const { stdout } = await execPromise(cmd)
   const seconds = parseFloat(stdout.trim())
@@ -187,7 +188,7 @@ export async function logTranscriptionCost(info: {
   const minutes = seconds / 60
   const cost = info.costPerMinuteCents * minutes
   l.dim(
-    `  - Estimated Transcription Cost for ${info.modelId}:\n` +
+    `${p} - Estimated Transcription Cost for ${info.modelId}:\n` +
     `    - Audio Length: ${minutes.toFixed(2)} minutes\n` +
     `    - Cost: ¢${cost.toFixed(5)}`
   )

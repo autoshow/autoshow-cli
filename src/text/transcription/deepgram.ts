@@ -1,9 +1,7 @@
-// src/transcription/deepgram.ts
-
-import { l, err } from '../utils/logging.ts'
-import { readFile, env } from '../utils/node-utils.ts'
+import { l, err } from '@/logging'
+import { readFile, env } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import type { ProcessingOptions } from '@/types'
 
 export interface DeepgramWord {
   word: string
@@ -18,12 +16,10 @@ export function formatDeepgramTranscript(
   words: DeepgramWord[],
   speakerLabels: boolean
 ): string {
-  // If no speaker labels requested, return a plain text transcript
   if (!speakerLabels) {
     return words.map(w => w.word).join(' ')
   }
 
-  // Otherwise, group words by speaker
   let transcript = ''
   let currentSpeaker = words.length > 0 && words[0] ? words[0].speaker ?? undefined : undefined
   let speakerWords: string[] = []
@@ -37,7 +33,6 @@ export function formatDeepgramTranscript(
     speakerWords.push(w.word)
   }
 
-  // Add the final speaker block
   if (speakerWords.length > 0) {
     transcript += `Speaker ${currentSpeaker}: ${speakerWords.join(' ')}`
   }
@@ -49,8 +44,9 @@ export async function callDeepgram(
   options: ProcessingOptions,
   finalPath: string
 ) {
-  l.dim('\n  callDeepgram called with arguments:')
-  l.dim(`    - finalPath: ${finalPath}`)
+  const p = '[text/transcription/deepgram]'
+  l.dim(`${p} callDeepgram called with arguments:`)
+  l.dim(`${p}   - finalPath: ${finalPath}`)
 
   if (!env['DEEPGRAM_API_KEY']) {
     throw new Error('DEEPGRAM_API_KEY environment variable is not set. Please set it to your Deepgram API key.')
@@ -110,7 +106,7 @@ export async function callDeepgram(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`Error processing the transcription: ${(error as Error).message}`)
+    err(`${p} Error processing the transcription: ${(error as Error).message}`)
     throw error
   }
 }

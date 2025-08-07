@@ -1,9 +1,7 @@
-// src/transcription/assembly.ts
-
-import { l, err } from '../utils/logging.ts'
-import { readFile, env } from '../utils/node-utils.ts'
+import { l, err } from '@/logging'
+import { readFile, env } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
-import type { ProcessingOptions } from '../utils/types.ts'
+import type { ProcessingOptions } from '@/types'
 
 const BASE_URL = 'https://api.assemblyai.com/v2'
 
@@ -53,8 +51,9 @@ export async function callAssembly(
   options: ProcessingOptions,
   finalPath: string
 ) {
-  l.dim('\n  callAssembly called with arguments:')
-  l.dim(`    - finalPath: ${finalPath}`)
+  const p = '[text/transcription/assembly]'
+  l.dim(`${p} callAssembly called with arguments:`)
+  l.dim(`${p}   - finalPath: ${finalPath}`)
 
   if (!env['ASSEMBLY_API_KEY']) {
     throw new Error('ASSEMBLY_API_KEY environment variable is not set. Please set it to your AssemblyAI API key.')
@@ -145,7 +144,7 @@ export async function callAssembly(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`Error processing the transcription: ${(error as Error).message}`)
+    err(`${p} Error processing the transcription: ${(error as Error).message}`)
     throw error
   }
 }

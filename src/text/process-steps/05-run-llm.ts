@@ -1,11 +1,9 @@
-// src/process-steps/05-run-llm.ts
-
 import chalk from 'chalk'
-import { l, err, logInitialFunctionCall } from '../utils/logging.ts'
-import { writeFile } from '../utils/node-utils.ts'
+import { l, err, logInitialFunctionCall } from '@/logging'
+import { writeFile } from '@/node-utils'
 import { callChatGPT, callClaude, callGemini } from '../llms/llm-services.ts'
 import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '../llms/llm-services.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '../utils/types.ts'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
 export const LLM_SERVICES_CONFIG = {
   skip: {
@@ -62,6 +60,7 @@ export async function runLLM(
   transcriptionModel?: string,
   transcriptionCost?: number
 ) {
+  const p = '[text/process-steps/05-run-llm]'
   l.step(`\nStep 5 - Run Language Model\n`)
   logInitialFunctionCall('runLLM', { llmServices, metadata })
 
@@ -74,7 +73,7 @@ export async function runLLM(
     let userModel = ''
 
     if (llmServices) {
-      l.dim(`\n  Preparing to process with '${llmServices}' Language Model...\n`)
+      l.dim(`${p} Preparing to process with '${llmServices}' Language Model...`)
 
       const config = LLM_SERVICES_CONFIG[llmServices as keyof typeof LLM_SERVICES_CONFIG]
       if (!config) {
@@ -127,12 +126,12 @@ export async function runLLM(
 
       const outputFilename = `${finalPath}-${llmServices}-shownotes.md`
       await writeFile(outputFilename, `${frontMatter}\n${showNotes}\n\n## Transcript\n\n${transcript}`)
-      l.dim(`\n  LLM processing completed, combined front matter + LLM output + transcript written to:\n    - ${outputFilename}`)
+      l.dim(`${p} LLM processing completed, combined front matter + LLM output + transcript written to:\n    - ${outputFilename}`)
       showNotesResult = showNotes
     } else {
-      l.dim('  No LLM selected, skipping processing...')
+      l.dim(`${p} No LLM selected, skipping processing...`)
       const noLLMFile = `${finalPath}-prompt.md`
-      l.dim(`\n  Writing front matter + prompt + transcript to file:\n    - ${noLLMFile}`)
+      l.dim(`${p} Writing front matter + prompt + transcript to file:\n    - ${noLLMFile}`)
       await writeFile(noLLMFile, `${frontMatter}\n${prompt}\n## Transcript\n\n${transcript}`)
     }
 
@@ -159,10 +158,10 @@ export async function runLLM(
       transcriptionCost,
       finalCost
     }
-    l.dim(JSON.stringify(finalShowNote, null, 2))
+    l.dim(`${p} ${JSON.stringify(finalShowNote, null, 2)}`)
     return showNotesResult
   } catch (error) {
-    err(`Error running Language Model: ${(error as Error).message}`)
+    err(`${p} Error running Language Model: ${(error as Error).message}`)
     throw error
   }
 }
@@ -193,6 +192,7 @@ export function logLLMCost(info: {
   outputCost?: number
   totalCost?: number
 } {
+  const p = '[text/process-steps/05-run-llm]'
   const { name, stopReason, tokenUsage } = info
   const { input, output, total } = tokenUsage
 
@@ -227,7 +227,7 @@ export function logLLMCost(info: {
 
   const displayName = modelName ?? name
 
-  l.dim(`  - ${stopReason ? `${stopReason} Reason` : 'Status'}: ${stopReason}\n  - Model: ${displayName}`)
+  l.dim(`${p} - ${stopReason ? `${stopReason} Reason` : 'Status'}: ${stopReason}\n  - Model: ${displayName}`)
 
   const tokenLines: string[] = []
   if (input) tokenLines.push(`${input} input tokens`)
@@ -235,7 +235,7 @@ export function logLLMCost(info: {
   if (total) tokenLines.push(`${total} total tokens`)
 
   if (tokenLines.length > 0) {
-    l.dim(`  - Token Usage:\n    - ${tokenLines.join('\n    - ')}`)
+    l.dim(`${p} - Token Usage:\n    - ${tokenLines.join('\n    - ')}`)
   }
 
   let inputCost: number | undefined
@@ -284,7 +284,7 @@ export function logLLMCost(info: {
   }
 
   if (costLines.length > 0) {
-    l.dim(`  - Cost Breakdown:\n    - ${costLines.join('\n    - ')}`)
+    l.dim(`${p} - Cost Breakdown:\n    - ${costLines.join('\n    - ')}`)
   }
 
   return { inputCost, outputCost, totalCost }
@@ -293,24 +293,25 @@ export function logLLMCost(info: {
 export async function retryLLMCall<T>(
   fn: () => Promise<T>
 ) {
+  const p = '[text/process-steps/05-run-llm]'
   const maxRetries = 7
   let attempt = 0
 
   while (attempt < maxRetries) {
     try {
       attempt++
-      l.dim(`  Attempt ${attempt} - Processing LLM call...\n`)
+      l.dim(`${p} Attempt ${attempt} - Processing LLM call...`)
       const result = await fn()
-      l.dim(`\n  LLM call completed successfully on attempt ${attempt}.`)
+      l.dim(`${p} LLM call completed successfully on attempt ${attempt}.`)
       return result
     } catch (error) {
-      err(`  Attempt ${attempt} failed: ${(error as Error).message}`)
+      err(`${p} Attempt ${attempt} failed: ${(error as Error).message}`)
       if (attempt >= maxRetries) {
-        err(`  Max retries (${maxRetries}) reached. Aborting LLM processing.`)
+        err(`${p} Max retries (${maxRetries}) reached. Aborting LLM processing.`)
         throw error
       }
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`  Retrying in ${delayMs / 1000} seconds...`)
+      l.dim(`${p} Retrying in ${delayMs / 1000} seconds...`)
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
