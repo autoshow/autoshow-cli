@@ -1,40 +1,21 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  ".github"
-  "content"
-  "docs/01-content-and-feed-inputs.md"
+  "*"
+  ".github/**/*.sh"
+  # "docs"
   "input"
-  # "**/*"
   "src/*.ts"
-  "src/image"
-  "src/text"
+  # "src/image"
+  # "src/text"
   "src/tts"
-  "src/commander.ts"
-  "workflows"
-  ".env.example"
-  ".tts-config.json"
-  "package.json"
-  "tsconfig.json"
-  "README.md"
+  "docs/tts"
+  "docs/tts.md"
+  # "test"
 )
 
 IGNORE_PATHS=(
-  ".github/workflows/review.yml"
-  ".github/ai-review.ts"
-  ".github/FUNDING.yml"
-  "content"
-  # "docs"
-  "output"
-  "python_env"
-  "test"
-  "src/text/workflows"
-  "src/text/prompts/sections.ts"
-  "whisper.cpp"
-  ".gitignore"
-  "LICENSE"
-  "new-*.md"
-  "TODO.md"
+  ""
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")
