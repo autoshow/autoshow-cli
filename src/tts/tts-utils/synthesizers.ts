@@ -3,6 +3,7 @@ import { basename, extname, join } from '@/node-utils'
 import { synthesizeWithElevenLabs } from '../tts-services/elevenlabs.ts'
 import { synthesizeWithCoqui } from '../tts-services/coqui.ts'
 import { synthesizeWithPolly } from '../tts-services/polly.ts'
+import { synthesizeWithKitten } from '../tts-services/kitten.ts'
 import { stripMarkdown } from './text-utils.ts'
 import type { TtsEngine } from './engine-utils.ts'
 
@@ -21,6 +22,10 @@ const synthesizers = {
     l.dim(`${p} Processing with Polly synthesizer`)
     return synthesizeWithPolly(plain, join(opts.outDir, basename(opts.filePath, extname(opts.filePath)) + '.' + (opts.pollyFormat || 'mp3')), 
       { voice: opts.voice, format: opts.pollyFormat || 'mp3', sampleRate: opts.pollySampleRate, engine: opts.pollyEngine, languageCode: opts.language })
+  },
+  kitten: async (plain: string, out: string, opts: any) => {
+    l.dim(`${p} Processing with Kitten synthesizer`)
+    return synthesizeWithKitten(plain, out, { model: opts.kittenModel, voice: opts.voice, speed: opts.speed })
   }
 }
 

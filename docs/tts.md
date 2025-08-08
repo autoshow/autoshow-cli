@@ -9,6 +9,7 @@ The Audio & AI Studio Toolkit supports 4 different TTS engines, each with unique
 | Engine | Speed | Quality | Voice Control | Special Features | Documentation |
 |--------|-------|---------|---------------|------------------|---------------|
 | **[Coqui](tts/coqui.md)** | Fast | Excellent | Voice cloning | 1100+ languages, XTTS v2 (default) | [→ Guide](tts/coqui.md) |
+| **[Kitten](tts/kitten.md)** | Very Fast | Good | 8 voices | Ultra-lightweight (25MB), CPU-only | [→ Guide](tts/kitten.md) |
 | **[ElevenLabs](tts/elevenlabs.md)** | Fast | Excellent | Voice cloning | Professional quality | [→ Guide](tts/elevenlabs.md) |
 | **[AWS Polly](tts/polly.md)** | Fast | Very Good | 100+ voices | 30+ languages, neural voices | [→ Guide](tts/polly.md) |
 
@@ -28,6 +29,7 @@ npm run as -- tts file input/sample.md
 
 # Using specific engines
 npm run as -- tts file input/sample.md --coqui --output output/coqui
+npm run as -- tts file input/sample.md --kitten --output output/kitten
 npm run as -- tts file input/sample.md --elevenlabs --output output/elevenlabs
 npm run as -- tts file input/sample.md --polly --output output/polly
 ```
@@ -56,12 +58,16 @@ Example commands:
 
 ```bash
 npm run as -- tts script input/script.json
+npm run as -- tts script input/script.json --kitten
 npm run as -- tts script input/script.json --elevenlabs
 npm run as -- tts script input/script.json --coqui
 npm run as -- tts script input/script.json --polly
 
 # Using Coqui with voice cloning
 npm run as -- tts script input/script.json --coqui --coqui-model xtts
+
+# Using Kitten TTS (lightweight, CPU-only)
+npm run as -- tts script input/script.json --kitten
 
 # Using AWS Polly with multiple voices
 npm run as -- tts script input/script.json --polly
@@ -71,13 +77,16 @@ npm run as -- tts script input/script.json --polly
 
 ```bash
 # Using Coqui XTTS with voice cloning
-npm run as -- tts file book-chapter.md --coqui --coqui-model xtts --voice-clone narrator.wav
+npm run as -- tts file input/story.md --coqui --coqui-model xtts --voice-clone narrator.wav
+
+# Using Kitten TTS for lightweight deployment
+npm run as -- tts file input/story.md --kitten --voice expr-voice-5-m
 
 # Using ElevenLabs for professional quality
-npm run as -- tts file book-chapter.md --elevenlabs
+npm run as -- tts file input/story.md --elevenlabs
 
 # Using AWS Polly with neural voice
-npm run as -- tts file book-chapter.md --polly --voice Matthew --polly-engine neural
+npm run as -- tts file input/story.md --polly --voice Matthew --polly-engine neural
 ```
 
 ### Voice cloning workflow
@@ -98,4 +107,11 @@ npm run as -- tts file spanish.md --coqui --coqui-model xtts --language es
 
 # Generate Spanish speech with AWS Polly
 npm run as -- tts file spanish.md --polly --voice Lupe --language es-US
+```
+
+### Lightweight deployment
+
+```bash
+# Use Kitten TTS for edge devices or offline usage
+npm run as -- tts file input/sample.md --kitten --voice expr-voice-2-f
 ```
