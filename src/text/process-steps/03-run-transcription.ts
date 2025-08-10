@@ -1,7 +1,9 @@
+// File: src/text/process-steps/03-run-transcription.ts
 import { callWhisper } from '../transcription/whisper.ts'
 import { callDeepgram } from '../transcription/deepgram.ts'
 import { callAssembly } from '../transcription/assembly.ts'
 import { callGroqWhisper } from '../transcription/groq-whisper.ts'
+import { callWhisperCoreml } from '../transcription/whisper-coreml.ts'
 import { l, err, logInitialFunctionCall } from '@/logging'
 import { execPromise } from '@/node-utils'
 import type { ProcessingOptions, TranscriptionResult } from '@/types'
@@ -13,6 +15,25 @@ export const TRANSCRIPTION_SERVICES_CONFIG = {
     serviceName: 'Whisper.cpp',
     value: 'whisper',
     label: 'Whisper.cpp',
+    models: [
+      { modelId: 'tiny', costPerMinuteCents: 0 },
+      { modelId: 'tiny.en', costPerMinuteCents: 0 },
+      { modelId: 'base', costPerMinuteCents: 0 },
+      { modelId: 'base.en', costPerMinuteCents: 0 },
+      { modelId: 'small', costPerMinuteCents: 0 },
+      { modelId: 'small.en', costPerMinuteCents: 0 },
+      { modelId: 'medium', costPerMinuteCents: 0 },
+      { modelId: 'medium.en', costPerMinuteCents: 0 },
+      { modelId: 'large-v1', costPerMinuteCents: 0 },
+      { modelId: 'large-v2', costPerMinuteCents: 0 },
+      { modelId: 'large-v3-turbo', costPerMinuteCents: 0 },
+      { modelId: 'turbo', costPerMinuteCents: 0 },
+    ]
+  },
+  whisperCoreml: {
+    serviceName: 'Whisper.cpp CoreML',
+    value: 'whisperCoreml',
+    label: 'Whisper CoreML',
     models: [
       { modelId: 'tiny', costPerMinuteCents: 0 },
       { modelId: 'tiny.en', costPerMinuteCents: 0 },
@@ -69,7 +90,9 @@ export async function runTranscription(
   logInitialFunctionCall('runTranscription', { options, finalPath, transcriptServicesInput })
   let serviceToUse = transcriptServicesInput
   if (!serviceToUse) {
-    if (options.whisper) {
+    if (options.whisperCoreml) {
+      serviceToUse = 'whisperCoreml'
+    } else if (options.whisper) {
       serviceToUse = 'whisper'
     } else if (options.deepgram) {
       serviceToUse = 'deepgram'
@@ -78,9 +101,9 @@ export async function runTranscription(
     } else if (options.groqWhisper) {
       serviceToUse = 'groqWhisper'
     } else {
-      l.warn(`${p} No specific transcription service flag found in options, and no service explicitly passed. Defaulting to whisper.`)
+      l.warn(`${p} No transcription service specified. Defaulting to whisper.`)
       serviceToUse = 'whisper'
-      if(options.whisper === undefined) options.whisper = true
+      if (options.whisper === undefined) options.whisper = true
     }
   }
   l.dim(`${p} Transcription service to use: ${serviceToUse}`)
@@ -110,6 +133,16 @@ export async function runTranscription(
       case 'whisper': {
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisper(options, finalPath, spinner),
+          spinner
+        )
+        finalTranscript = result.transcript
+        finalModelId = result.modelId
+        finalCostPerMinuteCents = result.costPerMinuteCents
+        break
+      }
+      case 'whisperCoreml': {
+        const result = await retryTranscriptionCall<TranscriptionResult>(
+          () => callWhisperCoreml(options, finalPath, spinner),
           spinner
         )
         finalTranscript = result.transcript
@@ -201,17 +234,17 @@ export async function estimateTranscriptCost(
 ): Promise<number> {
   const filePath = options.transcriptCost
   if (!filePath) throw new Error('No file path provided to estimate transcription cost.')
-  if (!['whisper', 'deepgram', 'assembly', 'groqWhisper'].includes(transcriptServices)) {
+  if (!['whisper', 'whisperCoreml', 'deepgram', 'assembly', 'groqWhisper'].includes(transcriptServices)) {
     throw new Error(`Unsupported transcription service: ${transcriptServices}`)
   }
-  const serviceKey = transcriptServices as 'whisper' | 'deepgram' | 'assembly' | 'groqWhisper'
+  const serviceKey = transcriptServices as 'whisper' | 'whisperCoreml' | 'deepgram' | 'assembly' | 'groqWhisper'
   const config = TRANSCRIPTION_SERVICES_CONFIG[serviceKey]
   let modelInput = typeof options[serviceKey] === 'string' ? options[serviceKey] as string : undefined
   if (options[serviceKey] === true || !modelInput) {
     modelInput = config.models[0]?.modelId
     if (serviceKey === 'deepgram' && !modelInput) modelInput = 'nova-2'
     if (serviceKey === 'assembly' && !modelInput) modelInput = 'universal'
-    if (serviceKey === 'whisper' && !modelInput) modelInput = 'base'
+    if ((serviceKey === 'whisper' || serviceKey === 'whisperCoreml') && !modelInput) modelInput = 'base'
     if (serviceKey === 'groqWhisper' && !modelInput) modelInput = 'whisper-large-v3-turbo'
   }
   if (!modelInput) throw new Error(`Could not determine default model for service: ${transcriptServices}`)
