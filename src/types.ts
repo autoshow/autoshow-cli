@@ -1,3 +1,4 @@
+// File: src/types.ts
 export interface ShowNote {
   id?: number
   showLink?: string
@@ -44,6 +45,7 @@ export type ProcessingOptions = {
   info?: boolean | string
   saveAudio?: boolean
   whisper?: boolean | string
+  whisperCoreml?: boolean | string
   deepgram?: boolean | string
   assembly?: boolean | string
   groqWhisper?: boolean | string

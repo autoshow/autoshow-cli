@@ -7,15 +7,17 @@ INCLUDE_PATHS=(
   "input"
   "src/*.ts"
   # "src/image"
-  # "src/text"
-  "src/tts"
-  "docs/tts"
-  "docs/tts.md"
+  "src/text"
+  # "src/tts"
+  # "docs/tts"
+  # "docs/tts.md"
   # "test"
+  "models/generate-coreml-model.sh"
+  "models/convert-whisper-to-coreml.py"
 )
 
 IGNORE_PATHS=(
-  ""
+  "src/text/prompts/sections.ts"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

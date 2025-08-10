@@ -40,7 +40,7 @@ quiet_brew_install() {
   fi
 }
 
-command_exists() { 
+command_exists() {
   command -v "$1" &>/dev/null
 }
 
@@ -99,6 +99,15 @@ else
 fi
 
 echo ""
+echo "==> Setting up CoreML-accelerated whisper..."
+if [ -f "$SETUP_DIR/coreml.sh" ]; then
+  bash "$SETUP_DIR/coreml.sh"
+else
+  echo "ERROR: CoreML setup script not found at $SETUP_DIR/coreml.sh"
+  exit 1
+fi
+
+echo ""
 echo "==> Setting up text-to-speech tools..."
 if [ -f "$SETUP_DIR/tts.sh" ]; then
   bash "$SETUP_DIR/tts.sh"
@@ -113,6 +122,7 @@ echo "Setup completed successfully!"
 echo "======================================================"
 echo "Whisper binaries are in: ./bin/"
 echo "Whisper models are in: ./models/"
+echo "CoreML Python env is in: ./models/coreml_env/"
 echo "Python TTS environment is in: ./python_env/"
 echo ""
 echo "You can now run your CLI commands:"
