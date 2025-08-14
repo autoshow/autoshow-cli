@@ -6,7 +6,6 @@ import { processURLs } from './process-commands/urls.ts'
 import { processFile } from './process-commands/file.ts'
 import { processRSS } from './process-commands/rss'
 import { LLM_SERVICES_CONFIG } from './process-steps/05-run-llm.ts'
-import { handleMetaWorkflow } from './utils/workflows.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
@@ -117,7 +116,7 @@ export function validateCommandInput(options: ProcessingOptions): {
   
   l.dim(`${p} Selected transcription service: ${transcriptServices || 'none'}`)
   
-  const needsTranscription = !options.info && !options['feed'] && action !== undefined
+  const needsTranscription = !options.info && !options.feed && action !== undefined
   if (needsTranscription && !transcriptServices) {
     l.warn("Defaulting to Whisper for transcription as no service was specified.")
     options.whisper = true
@@ -134,22 +133,28 @@ export async function processCommand(
   const p = '[text/create-text-command]'
   l.dim(`${p} Starting command processing`)
   
-  const workflowHandled = await handleMetaWorkflow(options)
-  if (workflowHandled) {
-    l.dim(`${p} Meta workflow handled`)
+  if (options.rss && Array.isArray(options.rss) && options.rss.length === 0) {
+    options.rss = undefined
+    l.dim(`${p} Cleared empty RSS array`)
+  }
+  
+  const { action, llmServices, transcriptServices } = validateCommandInput(options)
+  
+  if (!action && !options.feed) {
+    err('Error: No action specified (e.g., --video, --rss, --feed). Use --help for options.')
+    process.exit(1)
+  }
+  
+  if (options.feed && !action) {
+    l.dim(`${p} Processing workflow with --feed option via RSS handler`)
+    await processRSS(options, llmServices, transcriptServices)
     exit(0)
   }
   
-  l.dim(`${p} No meta workflow, proceeding with command validation`)
-  const { action, llmServices, transcriptServices } = validateCommandInput(options)
-  
-  if (!action) {
-    l.dim(`${p} No action found, checking for feed option`)
-    if (!options['feed']) {
-      err('Error: No action specified (e.g., --video, --rss, --feed). Use --help for options.')
-      process.exit(1)
-    }
-    exit(1)
+  if (action === 'rss' && options.feed) {
+    l.dim(`${p} Processing RSS with workflow feed`)
+    await COMMAND_CONFIG.rss.handler(options, llmServices, transcriptServices)
+    exit(0)
   }
   
   l.dim(`${p} Processing action: ${action} with LLM: ${llmServices || 'none'} and transcription: ${transcriptServices || 'none'}`)
@@ -159,6 +164,9 @@ export async function processCommand(
       l.dim(`${p} Calling RSS handler`)
       await COMMAND_CONFIG[action].handler(options, llmServices, transcriptServices)
     } else {
+      if (!action) {
+        throw new Error('No action specified for processing')
+      }
       const input = options[action]
       if (!input || typeof input !== 'string') {
         throw new Error(`No valid input provided for ${action} processing`)
@@ -187,7 +195,9 @@ export const createTextCommand = (): Command => {
     .option('--channel <channelUrl>', 'Process all videos in a YouTube channel')
     .option('--urls <filePath>', 'Process YouTube videos from a list of URLs in a file')
     .option('--file <filePath>', 'Process a local audio or video file')
-    .option('--rss <rssURLs...>', 'Process one or more podcast RSS feeds')
+    .option('--rss [rssURLs...]', 'Process one or more podcast RSS feeds (optional when using --feed)')
+    .option('--feed <feedFile>', 'Process workflow feed file (e.g., "01-ai-feeds.md") from output/workflows/feeds')
+    .option('--metaInfo', 'Additionally run workflow for information gathering')
     .option('--item <itemUrls...>', 'Process specific items in the RSS feed by providing their audio URLs')
     .option('--order <order>', 'Specify the order for RSS feed and channel processing (newest or oldest)')
     .option('--last <number>', 'Number of most recent items to process (overrides --order)', parseInt)

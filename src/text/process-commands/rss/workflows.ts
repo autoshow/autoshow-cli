@@ -1,6 +1,6 @@
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { execPromise, mkdirSync, existsSync, basename } from '@/node-utils'
-import { processRSS } from '../process-commands/rss'
+import { processRSS } from './index.ts'
 import type { ProcessingOptions } from '@/types'
 
 const WORKFLOWS_DIR = 'output/workflows'
@@ -11,7 +11,7 @@ export async function logOperation(
   logFn: any,
   description: string
 ): Promise<void> {
-  const p = '[text/utils/workflows]'
+  const p = '[text/process-commands/rss/workflows]'
   console.log('')
   logFn(`${p}[${operationName}] Starting ${operationName}: ${description}`)
   logFn(`${p}[${operationName}] Executing command: ${command}`)
@@ -35,7 +35,7 @@ export async function logCopy(source: string, destination: string, operationName
 }
 
 export async function logMkdir(targetPath: string, operationName: string): Promise<void> {
-  const p = '[text/utils/workflows]'
+  const p = '[text/process-commands/rss/workflows]'
   console.log('')
   l(`${p}[${operationName}] Starting ${operationName}: Creating directory ${targetPath}`)
   try {
@@ -80,8 +80,8 @@ async function copyBackToDaily(dirName: string, subfolder: string): Promise<void
   await logCopy(`./content/${subfolder}`, `./${WORKFLOWS_DIR}/${dirName}`, 'copyBackToDaily', `${subfolder} copied to ./${WORKFLOWS_DIR}/${dirName}`)
 }
 
-function extractDirectoryName(feedFilename: string): string {
-  const p = '[text/utils/workflows]'
+export function extractDirectoryName(feedFilename: string): string {
+  const p = '[text/process-commands/rss/workflows]'
   l.dim(`${p} Extracting directory name from feed filename: ${feedFilename}`)
   
   const baseName = basename(feedFilename)
@@ -96,8 +96,8 @@ function extractDirectoryName(feedFilename: string): string {
   return dirName
 }
 
-async function ensureWorkflowDirectories(dirName: string): Promise<void> {
-  const p = '[text/utils/workflows]'
+export async function ensureWorkflowDirectories(dirName: string): Promise<void> {
+  const p = '[text/process-commands/rss/workflows]'
   l.dim(`${p} Ensuring workflow directories for: ${dirName}`)
   
   const directories = [
@@ -111,8 +111,8 @@ async function ensureWorkflowDirectories(dirName: string): Promise<void> {
   }
 }
 
-function validateFeedsFile(feedFilename: string): boolean {
-  const p = '[text/utils/workflows]'
+export function validateFeedsFile(feedFilename: string): boolean {
+  const p = '[text/process-commands/rss/workflows]'
   const feedsDir = `./${WORKFLOWS_DIR}/feeds`
   const feedFile = `${feedsDir}/${feedFilename}`
   
@@ -134,25 +134,42 @@ function validateFeedsFile(feedFilename: string): boolean {
   return true
 }
 
-export async function prepareShownotes(dirName: string, feedFilename: string, dateParams: string[] | undefined): Promise<void> {
-  const p = '[text/utils/workflows]'
-  logInitialFunctionCall('prepareShownotes', { dirName, feedFilename, dateParams })
+export async function prepareShownotes(dirName: string, feedFilename: string, options: ProcessingOptions): Promise<void> {
+  const p = '[text/process-commands/rss/workflows]'
+  logInitialFunctionCall('prepareShownotes', { dirName, feedFilename, options })
   const subfolder = `${dirName}-shownotes`
   
-  l.dim(`${p} Preparing to process shownotes for ${dirName} with dates: ${dateParams ? dateParams.join(', ') : 'latest available'}`)
+  const filterInfo = []
+  if (options.date && options.date.length > 0) {
+    filterInfo.push(`dates: ${options.date.join(', ')}`)
+  }
+  if (options.days !== undefined) {
+    filterInfo.push(`last ${options.days} days`)
+  }
+  if (options.last !== undefined) {
+    filterInfo.push(`last ${options.last} items`)
+  }
+  const filterString = filterInfo.length > 0 ? filterInfo.join(', ') : 'latest available'
+  
+  l.dim(`${p} Preparing to process shownotes for ${dirName} with ${filterString}`)
   
   await copyFeeds()
   await logMkdir(`./content/${subfolder}`, 'createDirectoryForShownotes')
   
   const rssOptions: ProcessingOptions = {
+    ...options,
     rss: [`./content/feeds/${feedFilename}`],
-    whisperCoreml: 'large-v3-turbo',
+    whisperCoreml: options.whisperCoreml || 'large-v3-turbo',
+    feed: undefined,
+    metaInfo: undefined
   }
   
-  if (dateParams && dateParams.length > 0) {
-    l.dim(`${p} Setting date parameters: ${dateParams.join(', ')}`)
-    rssOptions.date = dateParams
-  }
+  l.dim(`${p} Processing RSS with options: ${JSON.stringify({
+    date: rssOptions.date,
+    days: rssOptions.days,
+    last: rssOptions.last,
+    order: rssOptions.order
+  }, null, 2)}`)
   
   try {
     await processRSS(rssOptions, rssOptions.llmServices, rssOptions.transcriptServices)
@@ -170,7 +187,7 @@ export async function prepareShownotes(dirName: string, feedFilename: string, da
 }
 
 export async function prepareInfo(dirName: string, feedFilename: string): Promise<void> {
-  const p = '[text/utils/workflows]'
+  const p = '[text/process-commands/rss/workflows]'
   logInitialFunctionCall('prepareInfo', { dirName, feedFilename })
   const subfolder = `${dirName}-info`
   
@@ -198,74 +215,61 @@ export async function prepareInfo(dirName: string, feedFilename: string): Promis
   l.final(`${p} prepareInfo completed for ${dirName}`)
 }
 
-export async function handleMetaWorkflow(options: ProcessingOptions): Promise<boolean> {
-  const p = '[text/utils/workflows]'
-  l.dim(`${p} handleMetaWorkflow called with options: ${JSON.stringify({
-    feed: options['feed'],
-    metaInfo: options['metaInfo'],
-    metaShownotes: options['metaShownotes'],
-    metaDate: options['metaDate']
-  }, null, 2)}`)
+export async function handleWorkflow(options: ProcessingOptions): Promise<boolean> {
+  const p = '[text/process-commands/rss/workflows]'
+  const feedFilename = options.feed
   
-  if (options['feed']) {
-    if (!options['metaShownotes']) {
-      err('Error: --metaShownotes is required for the meta-workflow.')
-      process.exit(1)
-    }
-    
-    const feedFilename = options['feed']
-    const dirName = extractDirectoryName(feedFilename)
-    
-    l.dim(`${p} Validating feed file: ${feedFilename}`)
-    
-    if (!validateFeedsFile(feedFilename)) {
-      console.log('')
-      err(`Error: Required feed file not found.`)
-      console.log('')
-      l.warn('To get started, run these commands:')
-      console.log('')
-      console.log(`  mkdir -p ${WORKFLOWS_DIR}/feeds`)
-      console.log(`  echo 'https://feeds.megaphone.fm/MLN2155636147' > ${WORKFLOWS_DIR}/feeds/${feedFilename}`)
-      console.log('')
-      l.dim(`${p} Then run your command again.`)
-      process.exit(1)
-    }
-    
-    l.dim(`${p} Ensuring workflow directories exist`)
-    await ensureWorkflowDirectories(dirName)
-    
-    try {
-      const metaDates = options['metaDate'] 
-        ? (Array.isArray(options['metaDate']) 
-            ? options['metaDate'] 
-            : [options['metaDate']])
-        : undefined
-      
-      if (options['metaInfo']) {
-        l.final(`${p} Running meta-workflow with both Info and Shownotes for ${dirName} from ${WORKFLOWS_DIR}`)
-        l.dim(`${p} Step 1/2: Generating info files`)
-        await prepareInfo(dirName, feedFilename)
-        logSeparator({ type: 'completion', descriptor: `Meta-Workflow Info for ${dirName}` })
-        l.dim(`${p} Step 2/2: Generating shownotes`)
-      } else {
-        l.final(`${p} Running meta-workflow: Shownotes only for ${dirName} from ${WORKFLOWS_DIR}`)
-      }
-      
-      const dateInfoString = metaDates 
-        ? `Dates: ${metaDates.join(', ')}` 
-        : 'Date: latest available'
-      
-      l.dim(`${p} Processing shownotes (${dateInfoString})`)
-      await prepareShownotes(dirName, feedFilename, metaDates)
-      logSeparator({ type: 'completion', descriptor: `Meta-Workflow Shownotes for ${dirName}` })
-      
-      return true
-    } catch (error) {
-      err(`${p} Error in meta-workflow for ${dirName}: ${(error as Error).message}`)
-      process.exit(1)
-    }
+  if (!feedFilename) {
+    l.dim(`${p} No feed specified, not a workflow`)
+    return false
   }
   
-  l.dim(`${p} No feed specified, skipping meta-workflow`)
-  return false
+  l.dim(`${p} handleWorkflow called with options: ${JSON.stringify({
+    feed: feedFilename,
+    metaInfo: options.metaInfo,
+    date: options.date,
+    days: options.days,
+    last: options.last,
+    order: options.order
+  }, null, 2)}`)
+  
+  const dirName = extractDirectoryName(feedFilename)
+  
+  l.dim(`${p} Validating feed file: ${feedFilename}`)
+  
+  if (!validateFeedsFile(feedFilename)) {
+    console.log('')
+    err(`Error: Required feed file not found.`)
+    console.log('')
+    l.warn('To get started, run these commands:')
+    console.log('')
+    console.log(`  mkdir -p ${WORKFLOWS_DIR}/feeds`)
+    console.log(`  echo 'https://feeds.megaphone.fm/MLN2155636147' > ${WORKFLOWS_DIR}/feeds/${feedFilename}`)
+    console.log('')
+    l.dim(`${p} Then run your command again.`)
+    process.exit(1)
+  }
+  
+  l.dim(`${p} Ensuring workflow directories exist`)
+  await ensureWorkflowDirectories(dirName)
+  
+  try {
+    if (options.metaInfo) {
+      l.final(`${p} Running workflow with both Info and Shownotes for ${dirName} from ${WORKFLOWS_DIR}`)
+      l.dim(`${p} Step 1/2: Generating info files`)
+      await prepareInfo(dirName, feedFilename)
+      logSeparator({ type: 'completion', descriptor: `Workflow Info for ${dirName}` })
+      l.dim(`${p} Step 2/2: Generating shownotes`)
+    } else {
+      l.final(`${p} Running workflow: Shownotes only for ${dirName} from ${WORKFLOWS_DIR}`)
+    }
+    
+    await prepareShownotes(dirName, feedFilename, options)
+    logSeparator({ type: 'completion', descriptor: `Workflow Shownotes for ${dirName}` })
+    
+    return true
+  } catch (error) {
+    err(`${p} Error in workflow for ${dirName}: ${(error as Error).message}`)
+    process.exit(1)
+  }
 }
