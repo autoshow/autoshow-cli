@@ -1,4 +1,3 @@
-// File: src/types.ts
 export interface ShowNote {
   id?: number
   showLink?: string
@@ -64,8 +63,7 @@ export type ProcessingOptions = {
   last?: number
   date?: string[]
   days?: number
-  metaDir?: string
-  metaSrcDir?: string
+  feed?: string
   metaDate?: string[]
   metaInfo?: boolean
   metaShownotes?: boolean
