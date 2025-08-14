@@ -21,11 +21,10 @@ program.addCommand(createTtsCommand())
 program.addCommand(createImageCommand())
 
 program
-  .option('--metaDir <dirName>', 'The meta-workflow directory name (e.g., "01-ai") located inside current directory')
-  .option('--metaSrcDir <sourceDir>', 'The meta-workflow source data directory (e.g., "autoshow-daily", "mk-auto"), relative to current directory')
+  .option('--feed <feedFile>', 'The feed file name (e.g., "01-ai-feeds.md") located inside output/workflows/feeds')
   .option('--metaDate <dates...>', 'The dates for the meta-workflow shownotes (YYYY-MM-DD format), allows multiple dates')
-  .option('--metaInfo', 'Run the meta-workflow for information gathering')
-  .option('--metaShownotes', 'Run the meta-workflow for shownotes generation')
+  .option('--metaInfo', 'Additionally run the meta-workflow for information gathering (use with --metaShownotes)')
+  .option('--metaShownotes', 'Run the meta-workflow for shownotes generation (required for meta-workflow)')
   .action(async (options: ProcessingOptions & { metaDate?: string | string[] }) => {
     logInitialFunctionCall('autoshowCLI', options)
     l.dim(`${p} Attempting to handle meta workflow`)

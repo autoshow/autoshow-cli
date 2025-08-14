@@ -1,4 +1,3 @@
-// File: src/text/create-text-command.ts
 import { Command } from 'commander'
 import { processVideo } from './process-commands/video.ts'
 import { processPlaylist } from './process-commands/playlist.ts'
@@ -118,7 +117,7 @@ export function validateCommandInput(options: ProcessingOptions): {
   
   l.dim(`${p} Selected transcription service: ${transcriptServices || 'none'}`)
   
-  const needsTranscription = !options.info && !options['metaDir'] && action !== undefined
+  const needsTranscription = !options.info && !options['feed'] && action !== undefined
   if (needsTranscription && !transcriptServices) {
     l.warn("Defaulting to Whisper for transcription as no service was specified.")
     options.whisper = true
@@ -145,9 +144,9 @@ export async function processCommand(
   const { action, llmServices, transcriptServices } = validateCommandInput(options)
   
   if (!action) {
-    l.dim(`${p} No action found, checking for metaDir option`)
-    if (!options['metaDir']) {
-      err('Error: No action specified (e.g., --video, --rss, --metaDir). Use --help for options.')
+    l.dim(`${p} No action found, checking for feed option`)
+    if (!options['feed']) {
+      err('Error: No action specified (e.g., --video, --rss, --feed). Use --help for options.')
       process.exit(1)
     }
     exit(1)

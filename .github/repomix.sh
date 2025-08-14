@@ -2,18 +2,26 @@
 
 INCLUDE_PATHS=(
   "*"
-  ".github/**/*.sh"
+  "docs/08-workflows.md"
+  # ".github/**/*.sh"
   # "docs"
-  "input"
+  # "input"
   "src/*.ts"
   # "src/image"
-  "src/text"
+  # "src/text"
   # "src/tts"
   # "docs/tts"
   # "docs/tts.md"
   # "test"
-  "models/generate-coreml-model.sh"
-  "models/convert-whisper-to-coreml.py"
+  # "models/generate-coreml-model.sh"
+  # "models/convert-whisper-to-coreml.py"
+  # "src/text/llms"
+  "src/text/process-commands/rss"
+  "src/text/process-steps"
+  # "src/text/transcription"
+  "src/text/utils/save-info.ts"
+  "src/text/utils/workflows.ts"
+  "src/text/create-text-command.ts"
 )
 
 IGNORE_PATHS=(
