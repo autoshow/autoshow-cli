@@ -66,7 +66,6 @@ export type ProcessingOptions = {
   feed?: string
   metaDate?: string[]
   metaInfo?: boolean
-  metaShownotes?: boolean
   keyMomentsCount?: number
   keyMomentDuration?: number
   [key: string]: any

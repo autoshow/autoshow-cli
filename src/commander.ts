@@ -2,10 +2,8 @@ import { Command } from 'commander'
 import { createTtsCommand } from './tts/create-tts-command.ts'
 import { createImageCommand } from './image/create-image-command.ts'
 import { createTextCommand } from './text/create-text-command.ts'
-import { handleMetaWorkflow } from './text/utils/workflows.ts'
-import { l, err, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import { argv, exit, fileURLToPath, basename } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
 
 const program = new Command()
 
@@ -19,21 +17,6 @@ l.dim(`${p} Adding commands to program`)
 program.addCommand(createTextCommand())
 program.addCommand(createTtsCommand())
 program.addCommand(createImageCommand())
-
-program
-  .option('--feed <feedFile>', 'The feed file name (e.g., "01-ai-feeds.md") located inside output/workflows/feeds')
-  .option('--metaDate <dates...>', 'The dates for the meta-workflow shownotes (YYYY-MM-DD format), allows multiple dates')
-  .option('--metaInfo', 'Additionally run the meta-workflow for information gathering (use with --metaShownotes)')
-  .option('--metaShownotes', 'Run the meta-workflow for shownotes generation (required for meta-workflow)')
-  .action(async (options: ProcessingOptions & { metaDate?: string | string[] }) => {
-    logInitialFunctionCall('autoshowCLI', options)
-    l.dim(`${p} Attempting to handle meta workflow`)
-    const workflowHandled = await handleMetaWorkflow(options)
-    if (!workflowHandled) {
-      l.dim(`${p} No meta workflow handled, showing help`)
-      program.help()
-    }
-  })
 
 program.on('command:*', () => {
   err(`Error: Invalid command '${program.args.join(' ')}'. Use --help to see available commands.`)
