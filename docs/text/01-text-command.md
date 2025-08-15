@@ -1,4 +1,4 @@
-# Content and Feed Inputs
+# Text Command - Content and Feed Inputs
 
 ## Outline
 
@@ -192,4 +192,32 @@ npm run as -- \
   --rss "https://ajcwebdev.substack.com/feed" \
   "https://feeds.transistor.fm/fsjam-podcast" \
   --date 2021-05-10 2022-05-10
+```
+
+### Workflow Commands
+
+These commands automate processing for content organized within the `output/workflows` subdirectory.
+
+Generate shownotes for AI category feeds (replace `YYYY-MM-DD` with the desired date, or omit for default behavior):
+
+```bash
+npm run as -- text --rss --feed "01-ai-feeds.md" --date 2025-08-09 2025-08-10
+```
+
+Generate shownotes and info files for AI category feeds:
+
+```bash
+npm run as -- text --rss --feed "01-ai-feeds.md" --date 2025-08-09 2025-08-10 --metaInfo
+```
+
+Generate shownotes for Web category feeds:
+
+```bash
+npm run as -- text --rss --feed "02-web-feeds.md" --date 2025-08-09 2025-08-10
+```
+
+Generate shownotes and info files for Web category feeds:
+
+```bash
+npm run as -- text --rss --feed "02-web-feeds.md" --date 2025-08-09 2025-08-10 --metaInfo
 ```
