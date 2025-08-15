@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, env } from '@/node-utils'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
+import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions } from '@/types'
 
 const BASE_URL = 'https://api.assemblyai.com/v2'
@@ -91,7 +91,7 @@ export async function callAssembly(
         'Authorization': env['ASSEMBLY_API_KEY'],
         'Content-Type': 'application/octet-stream',
       },
-      body: fileBuffer
+      body: fileBuffer as unknown as BodyInit
     })
 
     if (!uploadResponse.ok) {

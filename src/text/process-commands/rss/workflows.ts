@@ -1,72 +1,11 @@
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
-import { execPromise, mkdirSync, existsSync, basename } from '@/node-utils'
+import { basename } from '@/node-utils'
 import { processRSS } from './index.ts'
+import { logCopy, logMkdir, logFindMove, logRemove, logMoveMd } from './rss-logging.ts'
+import { ensureWorkflowDirectories, validateFeedsFile } from './rss-validation.ts'
 import type { ProcessingOptions } from '@/types'
 
 const WORKFLOWS_DIR = 'output/workflows'
-
-export async function logOperation(
-  command: string,
-  operationName: string,
-  logFn: any,
-  description: string
-): Promise<void> {
-  const p = '[text/process-commands/rss/workflows]'
-  console.log('')
-  logFn(`${p}[${operationName}] Starting ${operationName}: ${description}`)
-  logFn(`${p}[${operationName}] Executing command: ${command}`)
-  try {
-    const { stdout, stderr } = await execPromise(command)
-    logFn(`${p}[${operationName}] stdout:`)
-    console.log(stdout)
-    if (stderr) {
-      l.warn(`${p}[${operationName}] stderr:`)
-      console.warn(stderr)
-    }
-    logFn(`${p}[${operationName}] Successfully finished ${operationName}: ${description}`)
-  } catch (error: any) {
-    err(`${p}[${operationName}] Error during ${operationName}: ${error.message}`)
-    throw error
-  }
-}
-
-export async function logCopy(source: string, destination: string, operationName: string, successMessage: string): Promise<void> {
-  await logOperation(`cp -R "${source}" "${destination}"`, operationName, l, successMessage)
-}
-
-export async function logMkdir(targetPath: string, operationName: string): Promise<void> {
-  const p = '[text/process-commands/rss/workflows]'
-  console.log('')
-  l(`${p}[${operationName}] Starting ${operationName}: Creating directory ${targetPath}`)
-  try {
-    if (!existsSync(targetPath)) {
-      mkdirSync(targetPath, { recursive: true })
-      l(`${p}[${operationName}] Successfully created directory: ${targetPath}`)
-    } else {
-      l(`${p}[${operationName}] Directory already exists: ${targetPath}`)
-    }
-  } catch (error: any) {
-    err(`${p}[${operationName}] Error creating directory ${targetPath}: ${error.message}`)
-    throw error
-  }
-}
-
-export async function logFindMove(extension: string, sourceFolder: string, destFolder: string, operationName: string): Promise<void> {
-  const command = `find "${sourceFolder}" -maxdepth 1 -type f -name '*${extension}' -exec mv {} "${destFolder}/" \\;`
-  await logOperation(command, operationName, l, `Moving *${extension} files from ${sourceFolder} to ${destFolder}`)
-}
-
-export async function logRemove(targetPath: string, operationName: string, extraDescription: string): Promise<void> {
-  await logOperation(`rm -rf "${targetPath}"`, operationName, l, `Removing ${extraDescription} (${targetPath})`)
-}
-
-export async function logMoveMd(subfolder: string, dirName: string, operationName: string): Promise<void> {
-  const sourcePath = `./content/${subfolder}`
-  const destPath = `./${WORKFLOWS_DIR}/${dirName}/${subfolder}/`
-  await logMkdir(destPath, `${operationName} (ensure_dest)`)
-  const command = `find "${sourcePath}" -maxdepth 1 -type f -name '*.md' -exec mv {} "${destPath}" \\;`
-  await logOperation(command, operationName, l, `Moving .md files from ${sourcePath} to ${destPath}`)
-}
 
 async function copyFeeds(): Promise<void> {
   await logCopy(`./${WORKFLOWS_DIR}/feeds`, './content', 'copyFeeds', 'feeds folder copied to ./content')
@@ -94,44 +33,6 @@ export function extractDirectoryName(feedFilename: string): string {
   
   l.dim(`${p} Extracted directory name: ${dirName}`)
   return dirName
-}
-
-export async function ensureWorkflowDirectories(dirName: string): Promise<void> {
-  const p = '[text/process-commands/rss/workflows]'
-  l.dim(`${p} Ensuring workflow directories for: ${dirName}`)
-  
-  const directories = [
-    `${WORKFLOWS_DIR}/${dirName}`,
-    `${WORKFLOWS_DIR}/${dirName}/${dirName}-info`,
-    `${WORKFLOWS_DIR}/${dirName}/${dirName}-shownotes`
-  ]
-  
-  for (const dir of directories) {
-    await logMkdir(dir, 'ensureWorkflowDirectories')
-  }
-}
-
-export function validateFeedsFile(feedFilename: string): boolean {
-  const p = '[text/process-commands/rss/workflows]'
-  const feedsDir = `./${WORKFLOWS_DIR}/feeds`
-  const feedFile = `${feedsDir}/${feedFilename}`
-  
-  l.dim(`${p} Checking for feeds directory at: ${feedsDir}`)
-  
-  if (!existsSync(feedsDir)) {
-    l.warn(`${p} Feeds directory not found at ${feedsDir}`)
-    return false
-  }
-  
-  l.dim(`${p} Checking for feed file at: ${feedFile}`)
-  
-  if (!existsSync(feedFile)) {
-    l.warn(`${p} Feed file not found at ${feedFile}`)
-    return false
-  }
-  
-  l.dim(`${p} Feed file validation successful`)
-  return true
 }
 
 export async function prepareShownotes(dirName: string, feedFilename: string, options: ProcessingOptions): Promise<void> {

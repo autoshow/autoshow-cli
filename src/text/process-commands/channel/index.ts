@@ -1,6 +1,6 @@
 import { processVideo } from '../video.ts'
 import { saveInfo } from '../../utils/save-info.ts'
-import { validateChannelOptions } from './validation.ts'
+import { validateChannelOptions } from './channel-validation.ts'
 import { logChannelProcessingStatus } from './channel-logging.ts'
 import { selectVideos } from './selector.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
