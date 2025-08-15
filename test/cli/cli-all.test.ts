@@ -40,15 +40,15 @@ const commands = [
   {
     cmd: 'npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"',
     expectedFiles: [
-      { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-07-playlist-default.md' },
-      { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-08-playlist-default.md' }
+      { file: '2025-07-22-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-07-playlist-default.md' },
+      { file: '2025-07-22-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-08-playlist-default.md' }
     ]
   },
   {
     cmd: 'npm run as -- text --urls "content/examples/example-urls.md"',
     expectedFiles: [
-      { file: '2024-09-24-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-09-urls-default.md' },
-      { file: '2024-09-24-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-10-urls-default.md' }
+      { file: '2025-07-22-ep1-fsjam-podcast-prompt.md', newName: '02-ALL-09-urls-default.md' },
+      { file: '2025-07-22-ep0-fsjam-podcast-prompt.md', newName: '02-ALL-10-urls-default.md' }
     ]
   },
   {

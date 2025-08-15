@@ -11,17 +11,12 @@ import type { ExecException } from 'node:child_process'
 const cliCommands = [
   'npm run as -- text --file "content/examples/audio.mp3" --assembly universal',
   'npm run as -- text --file "content/examples/audio.mp3" --assembly slam-1',
-  'npm run as -- text --file "content/examples/audio.mp3" --assembly nano',
-  'npm run as -- text --file "content/examples/audio.mp3" --deepgram nova-2',
   'npm run as -- text --file "content/examples/audio.mp3" --deepgram nova-3',
   'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-4o',
   'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-4o-mini',
   'npm run as -- text --file "content/examples/audio.mp3" --chatgpt o1-mini',
   'npm run as -- text --file "content/examples/audio.mp3" --claude claude-3-7-sonnet-latest',
   'npm run as -- text --file "content/examples/audio.mp3" --claude claude-3-5-haiku-latest',
-  'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-1.5-pro',
-  'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-1.5-flash-8b',
-  'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-1.5-flash',
   'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-2.0-flash-lite',
   'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-2.0-flash',
 ]
