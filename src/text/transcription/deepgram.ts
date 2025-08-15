@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, env } from '@/node-utils'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
+import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions } from '@/types'
 
 export interface DeepgramWord {
@@ -83,7 +83,7 @@ export async function callDeepgram(
         'Authorization': `Token ${env['DEEPGRAM_API_KEY']}`,
         'Content-Type': 'audio/wav'
       },
-      body: audioBuffer
+      body: audioBuffer as unknown as BodyInit
     })
 
     if (!response.ok) {
