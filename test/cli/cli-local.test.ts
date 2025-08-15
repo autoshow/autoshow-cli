@@ -19,7 +19,7 @@ const commands = [
   },
   {
     cmd: 'npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"',
-    expectedFile: '2024-09-24-ep0-fsjam-podcast-prompt.md',
+    expectedFile: '2025-07-22-ep0-fsjam-podcast-prompt.md',
     newName: '01-LOCAL-03-video-default.md'
   },
   {
