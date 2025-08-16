@@ -68,6 +68,8 @@ export type ProcessingOptions = {
   metaInfo?: boolean
   keyMomentsCount?: number
   keyMomentDuration?: number
+  save?: 's3' | 'r2' | 'b2'
+  s3BucketPrefix?: string
   [key: string]: any
 }
 export interface VideoInfo {

@@ -3,6 +3,7 @@ import { writeFile } from '@/node-utils'
 import { callChatGPT, callClaude, callGemini } from '../llms/llm-services.ts'
 import { LLM_SERVICES_CONFIG } from '../llms/llm-models.ts'
 import { formatCost, logLLMCost } from '../utils/cost.ts'
+import { uploadAllOutputFiles } from '../utils/s3-upload.ts'
 import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '../llms/llm-services.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
@@ -91,6 +92,11 @@ export async function runLLM(
       const noLLMFile = `${finalPath}-prompt.md`
       l.dim(`${p} Writing front matter + prompt + transcript to file:\n    - ${noLLMFile}`)
       await writeFile(noLLMFile, `${frontMatter}\n${prompt}\n## Transcript\n\n${transcript}`)
+    }
+
+    if (options.save) {
+      l.dim(`${p} Uploading output files to cloud storage (${options.save})`)
+      await uploadAllOutputFiles(finalPath, options)
     }
 
     const finalCost = (transcriptionCost || 0) + llmCost
