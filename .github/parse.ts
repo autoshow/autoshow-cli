@@ -9,6 +9,30 @@ interface FileData {
   content: string
 }
 
+function extractFilePath(headerLine: string): string | null {
+  if (!headerLine.startsWith('## ')) return null
+  
+  const headerContent = headerLine.substring(3).trim()
+  console.log(`${p} Processing header: ${headerContent}`)
+  
+  const patterns = [
+    /^File:\s*(.+)$/,
+    /^New file:\s*(.+)$/i,
+    /^Modified file:\s*(.+)$/i
+  ]
+  
+  const matchedPattern = patterns.find(pattern => pattern.test(headerContent))
+  if (matchedPattern) {
+    const match = headerContent.match(matchedPattern)
+    const extractedPath = match?.[1]?.trim()
+    console.log(`${p} Extracted path from pattern: ${extractedPath}`)
+    return extractedPath || null
+  }
+  
+  console.log(`${p} Using direct path format: ${headerContent}`)
+  return headerContent
+}
+
 async function parseMarkdown(content: string): Promise<FileData[]> {
   console.log(`${p} Starting markdown parsing`)
   
@@ -28,10 +52,15 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
         files.push(currentFile)
       }
       
-      const filePath = line.substring(3).trim()
-      console.log(`${p} Found file path: ${filePath}`)
-      currentFile = { path: filePath, content: '' }
-      codeBlockContent = []
+      const filePath = extractFilePath(line)
+      if (filePath) {
+        console.log(`${p} Found file path: ${filePath}`)
+        currentFile = { path: filePath, content: '' }
+        codeBlockContent = []
+      } else {
+        console.log(`${p} Could not extract file path from: ${line}`)
+        currentFile = null
+      }
     } else if (line.startsWith('```') && currentFile) {
       if (!inCodeBlock) {
         inCodeBlock = true
