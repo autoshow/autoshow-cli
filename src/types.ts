@@ -125,3 +125,17 @@ export interface NovaCanvasPayload {
     numberOfImages: number
   }
 }
+export interface VectorizeVector {
+  id: string
+  values: number[]
+  metadata?: Record<string, any>
+}
+export interface VectorizeMatch {
+  id: string
+  score: number
+  metadata?: Record<string, any>
+}
+export interface EmbeddingOptions {
+  create?: boolean | string
+  query?: string
+}

@@ -1,10 +1,11 @@
 import { Command } from 'commander'
 import { processRSS } from './process-commands/rss'
 import { COMMAND_CONFIG, validateCommandInput } from './utils/text-validation.ts'
+import { processEmbedCommand } from './embeddings/embed-command.ts'
+import { cloudflareCommand } from './embeddings/cloudflare.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
-
+import type { ProcessingOptions, EmbeddingOptions } from '@/types'
 export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
@@ -61,7 +62,6 @@ export async function processCommand(
     exit(1)
   }
 }
-
 export const createTextCommand = (): Command => {
   const p = '[text/create-text-command]'
   l.dim(`${p} Creating text command with all options`)
@@ -118,7 +118,26 @@ export const createTextCommand = (): Command => {
       }
       await processCommand(options)
     })
-
-  l.dim(`${p} Text command created successfully`)
+  
+  const embedCommand = new Command('embed')
+    .description('Create or query vector embeddings using Cloudflare Vectorize')
+    .option('--create [directory]', 'Create embeddings from markdown files in directory (default: content)')
+    .option('--query <question>', 'Query embeddings with a question')
+    .action(async (options: EmbeddingOptions) => {
+      logInitialFunctionCall('embedCommand', options as Record<string, unknown>)
+      l.dim(`${p} Embed command initiated`)
+      try {
+        await processEmbedCommand(options)
+        l.success('Embed command completed successfully')
+      } catch (error) {
+        err(`Embed command failed: ${(error as Error).message}`)
+        exit(1)
+      }
+    })
+  
+  textCommand.addCommand(embedCommand)
+  textCommand.addCommand(cloudflareCommand)
+  
+  l.dim(`${p} Text command created successfully with embed and cloudflare subcommands`)
   return textCommand
 }
