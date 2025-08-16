@@ -139,3 +139,16 @@ export interface EmbeddingOptions {
   create?: boolean | string
   query?: string
 }
+export interface UploadMetadata {
+  metadata: ShowNoteMetadata
+  transcriptionService?: string
+  transcriptionModel?: string
+  transcriptionCostCents: number
+  audioDuration: number
+  llmService?: string
+  llmModel?: string
+  llmCostCents: number
+  promptSections: string[]
+  transcript: string
+  llmOutput: string
+}
