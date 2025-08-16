@@ -8,7 +8,6 @@ import { l, err, logSeparator } from '@/logging'
 import { selectRSSItemsToProcess } from './fetch.ts'
 import { logRSSProcessingStatus } from './rss-logging.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
-
 export async function processRSSFeeds(
   options: ProcessingOptions,
   expandedRssUrls: string[],
@@ -75,8 +74,9 @@ export async function processRSSFeeds(
           } else {
             throw new Error(`showLink is undefined for item: ${item.title}`)
           }
-          const { transcript, modelId: transcriptionModel } = await runTranscription(options, finalPath, transcriptServices)
+          const { transcript, modelId: transcriptionModel, costPerMinuteCents, audioDuration } = await runTranscription(options, finalPath, transcriptServices)
           const selectedPrompts = await selectPrompts(options)
+          const transcriptionCost = costPerMinuteCents * ((audioDuration || 0) / 60) / 100
           const llmOutput = await runLLM(
             options,
             finalPath,
@@ -86,7 +86,9 @@ export async function processRSSFeeds(
             metadata as ShowNoteMetadata,
             llmServices,
             transcriptServices,
-            transcriptionModel
+            transcriptionModel,
+            transcriptionCost,
+            audioDuration
           )
           if (!options.saveAudio) {
             await saveAudio(finalPath)

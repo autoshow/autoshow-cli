@@ -28,9 +28,7 @@ Add the `--save s3` option to any text processing command to automatically uploa
 
 ```bash
 # Process a video and save to S3
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" \
-  --chatgpt \
-  --save s3
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --save s3
 
 # Process an RSS feed and save to S3
 npm run as -- text --rss "https://feeds.transistor.fm/fsjam-podcast" \
@@ -38,9 +36,7 @@ npm run as -- text --rss "https://feeds.transistor.fm/fsjam-podcast" \
   --save s3
 
 # Process a local file and save to S3
-npm run as -- text --file "content/audio.mp3" \
-  --claude \
-  --save s3
+npm run as -- text --file "content/examples/audio.mp3" --claude --save s3
 ```
 
 ## Automatic Bucket Management

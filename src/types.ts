@@ -83,8 +83,8 @@ export interface TranscriptionResult {
   transcript: string
   modelId: string
   costPerMinuteCents: number
+  audioDuration?: number
 }
-
 export interface ApiError {
   message: string
   stack?: string
@@ -92,7 +92,6 @@ export interface ApiError {
   name?: string
   $metadata?: { httpStatusCode?: number }
 }
-
 export interface BlackForestLabsOptions {
   width?: number
   height?: number
@@ -101,7 +100,6 @@ export interface BlackForestLabsOptions {
   safety_tolerance?: number
   output_format?: string
 }
-
 export interface ImageGenerationResult {
   success: boolean
   path?: string
@@ -112,7 +110,6 @@ export interface ImageGenerationResult {
   seed?: number
   prompt_used?: string
 }
-
 export interface NovaCanvasPayload {
   taskType: string
   textToImageParams?: {
