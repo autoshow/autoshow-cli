@@ -22,10 +22,10 @@ export async function uploadToS3(
   sessionId?: string
 ): Promise<string | null> {
   const p = '[text/utils/s3-upload]'
-  l.dim(`${p} Starting S3 upload for file: ${filePath}`)
+  l.dim(`${p} Starting ${options.save} upload for file: ${filePath}`)
   
-  if (!options.save || options.save !== 's3') {
-    l.dim(`${p} S3 upload not enabled or different service selected`)
+  if (!options.save || (options.save !== 's3' && options.save !== 'r2')) {
+    l.dim(`${p} Upload not enabled or different service selected`)
     return null
   }
   
@@ -34,9 +34,25 @@ export async function uploadToS3(
     return null
   }
   
+  if (options.save === 'r2') {
+    const r2Check = checkR2Configuration()
+    if (!r2Check.isValid) {
+      err(`${p} R2 configuration error: ${r2Check.error}`)
+      l.warn(`${p} To use R2, you need to:`)
+      l.warn(`${p} 1. Create R2 API tokens at https://dash.cloudflare.com/?to=/:account/r2/api-tokens`)
+      l.warn(`${p} 2. Configure AWS CLI with R2 credentials:`)
+      l.warn(`${p}    aws configure --profile r2`)
+      l.warn(`${p} 3. Set environment variables:`)
+      l.warn(`${p}    export AWS_PROFILE=r2`)
+      l.warn(`${p}    export CLOUDFLARE_ACCOUNT_ID=your-32-char-hex-account-id`)
+      l.warn(`${p} Your account ID can be found in the Cloudflare dashboard or R2 overview page`)
+      return null
+    }
+  }
+  
   const bucketName = await getOrCreateBucket(options)
   if (!bucketName) {
-    err(`${p} Failed to get or create S3 bucket`)
+    err(`${p} Failed to get or create ${options.save} bucket`)
     return null
   }
   
@@ -45,21 +61,21 @@ export async function uploadToS3(
   const s3Key = `${uniqueId}/${fileName}`
   
   try {
-    l.dim(`${p} Uploading ${filePath} to s3://${bucketName}/${s3Key}`)
+    l.dim(`${p} Uploading ${filePath} to ${options.save}://${bucketName}/${s3Key}`)
     
-    const uploadCommand = `aws s3 cp "${filePath}" "s3://${bucketName}/${s3Key}"`
+    const uploadCommand = buildUploadCommand(filePath, bucketName, s3Key, options)
     const { stderr } = await execPromise(uploadCommand)
     
     if (stderr && !stderr.includes('upload:')) {
-      err(`${p} S3 upload warning: ${stderr}`)
+      err(`${p} ${options.save} upload warning: ${stderr}`)
     }
     
-    const s3Url = `https://${bucketName}.s3.amazonaws.com/${s3Key}`
-    l.success(`${p} Successfully uploaded to S3: ${s3Url}`)
+    const publicUrl = getPublicUrl(options, bucketName, s3Key)
+    l.success(`${p} Successfully uploaded to ${options.save}: ${publicUrl}`)
     
-    return s3Url
+    return publicUrl
   } catch (error) {
-    err(`${p} Failed to upload to S3: ${(error as Error).message}`)
+    err(`${p} Failed to upload to ${options.save}: ${(error as Error).message}`)
     return null
   }
 }
@@ -111,23 +127,23 @@ async function uploadJsonMetadata(
     
     const bucketName = await getOrCreateBucket(options)
     if (!bucketName) {
-      err(`${p} Failed to get or create S3 bucket`)
+      err(`${p} Failed to get or create ${options.save} bucket`)
       return null
     }
     
     const s3Key = `${sessionId}/${jsonFileName}`
     
-    l.dim(`${p} Uploading JSON to s3://${bucketName}/${s3Key}`)
+    l.dim(`${p} Uploading JSON to ${options.save}://${bucketName}/${s3Key}`)
     
-    const uploadCommand = `aws s3 cp "${jsonFilePath}" "s3://${bucketName}/${s3Key}"`
+    const uploadCommand = buildUploadCommand(jsonFilePath, bucketName, s3Key, options)
     const { stderr } = await execPromise(uploadCommand)
     
     if (stderr && !stderr.includes('upload:')) {
-      err(`${p} S3 upload warning: ${stderr}`)
+      err(`${p} ${options.save} upload warning: ${stderr}`)
     }
     
-    const s3Url = `https://${bucketName}.s3.amazonaws.com/${s3Key}`
-    l.success(`${p} Successfully uploaded JSON metadata to S3: ${s3Url}`)
+    const publicUrl = getPublicUrl(options, bucketName, s3Key)
+    l.success(`${p} Successfully uploaded JSON metadata to ${options.save}: ${publicUrl}`)
     
     if (!existsSync(jsonFilePath)) {
       l.dim(`${p} JSON file already cleaned up`)
@@ -137,25 +153,76 @@ async function uploadJsonMetadata(
       l.dim(`${p} Cleaned up temporary JSON file: ${jsonFilePath}`)
     }
     
-    return s3Url
+    return publicUrl
   } catch (error) {
     err(`${p} Failed to create or upload JSON metadata: ${(error as Error).message}`)
     return null
   }
 }
 
+function isValidCloudflareAccountId(accountId: string): boolean {
+  const hexPattern = /^[a-f0-9]{32}$/i
+  return hexPattern.test(accountId)
+}
+
+function checkR2Configuration(): { isValid: boolean; error?: string } {
+  const cloudflareAccountId = process.env['CLOUDFLARE_ACCOUNT_ID']
+  
+  if (!cloudflareAccountId) {
+    return { 
+      isValid: false, 
+      error: 'CLOUDFLARE_ACCOUNT_ID environment variable is not set' 
+    }
+  }
+  
+  if (!isValidCloudflareAccountId(cloudflareAccountId)) {
+    return {
+      isValid: false,
+      error: `Invalid CLOUDFLARE_ACCOUNT_ID format. Expected a 32-character hex string, got: ${cloudflareAccountId}`
+    }
+  }
+  
+  return { isValid: true }
+}
+
+function buildUploadCommand(
+  filePath: string,
+  bucketName: string,
+  s3Key: string,
+  options: ProcessingOptions
+): string {
+  if (options.save === 'r2') {
+    const profile = process.env['AWS_PROFILE'] || 'r2'
+    return `aws s3 cp "${filePath}" "s3://${bucketName}/${s3Key}" --profile ${profile}${getEndpointFlag(options)}`
+  }
+  return `aws s3 cp "${filePath}" "s3://${bucketName}/${s3Key}"`
+}
+
+function buildBucketCommand(
+  command: string,
+  bucketName: string,
+  options: ProcessingOptions,
+  additionalArgs?: string
+): string {
+  if (options.save === 'r2') {
+    const profile = process.env['AWS_PROFILE'] || 'r2'
+    return `aws s3api ${command} --bucket "${bucketName}" --profile ${profile}${getEndpointFlag(options)}${additionalArgs || ''}`
+  }
+  return `aws s3api ${command} --bucket "${bucketName}"${additionalArgs || ''}`
+}
+
 async function getOrCreateBucket(options: ProcessingOptions): Promise<string | null> {
   const p = '[text/utils/s3-upload]'
   
   const basePrefix = options.s3BucketPrefix || 'autoshow'
-  const accountId = await getAccountId()
-  const region = process.env['AWS_REGION'] || 'us-east-1'
+  const accountId = await getAccountId(options)
+  const region = getRegion(options)
   const bucketName = `${basePrefix}-${accountId}-${region}`.toLowerCase()
   
   l.dim(`${p} Checking if bucket exists: ${bucketName}`)
   
   try {
-    const checkCommand = `aws s3api head-bucket --bucket "${bucketName}" 2>/dev/null`
+    const checkCommand = buildBucketCommand('head-bucket', bucketName, options) + ' 2>/dev/null'
     await execPromise(checkCommand)
     l.dim(`${p} Bucket exists: ${bucketName}`)
     return bucketName
@@ -163,26 +230,45 @@ async function getOrCreateBucket(options: ProcessingOptions): Promise<string | n
     l.dim(`${p} Bucket does not exist, creating: ${bucketName}`)
     
     try {
-      let createCommand = `aws s3api create-bucket --bucket "${bucketName}"`
-      if (region !== 'us-east-1') {
-        createCommand += ` --region "${region}" --create-bucket-configuration LocationConstraint="${region}"`
+      let createArgs = ''
+      if (options.save === 's3' && region !== 'us-east-1') {
+        createArgs = ` --region "${region}" --create-bucket-configuration LocationConstraint="${region}"`
+      } else if (options.save === 'r2') {
+        createArgs = ' --create-bucket-configuration LocationConstraint="auto"'
       }
       
+      const createCommand = buildBucketCommand('create-bucket', bucketName, options, createArgs)
       await execPromise(createCommand)
       l.dim(`${p} Successfully created bucket: ${bucketName}`)
       
-      await configureBucketDefaults(bucketName)
+      await configureBucketDefaults(bucketName, options)
       
       return bucketName
     } catch (error) {
       err(`${p} Failed to create bucket: ${(error as Error).message}`)
+      if (options.save === 'r2' && (error as Error).message.includes('Invalid endpoint')) {
+        err(`${p} The endpoint URL appears to be invalid. Please check your CLOUDFLARE_ACCOUNT_ID.`)
+        err(`${p} It should be a 32-character hex string like: c6494d4164a5eb0cd3848193bd552d68`)
+      }
       return null
     }
   }
 }
 
-async function getAccountId(): Promise<string> {
+async function getAccountId(options: ProcessingOptions): Promise<string> {
   const p = '[text/utils/s3-upload]'
+  
+  if (options.save === 'r2') {
+    const cloudflareAccountId = process.env['CLOUDFLARE_ACCOUNT_ID']
+    if (cloudflareAccountId && isValidCloudflareAccountId(cloudflareAccountId)) {
+      l.dim(`${p} Using Cloudflare account ID: ${cloudflareAccountId}`)
+      return cloudflareAccountId
+    } else if (cloudflareAccountId) {
+      err(`${p} Invalid CLOUDFLARE_ACCOUNT_ID format: ${cloudflareAccountId}`)
+      err(`${p} Expected a 32-character hex string (e.g., c6494d4164a5eb0cd3848193bd552d68)`)
+      return 'invalid-account-id'
+    }
+  }
   
   try {
     const { stdout } = await execPromise('aws sts get-caller-identity --query Account --output text')
@@ -190,21 +276,61 @@ async function getAccountId(): Promise<string> {
     l.dim(`${p} Retrieved AWS account ID: ${accountId}`)
     return accountId
   } catch (error) {
-    err(`${p} Failed to get AWS account ID: ${(error as Error).message}`)
+    err(`${p} Failed to get account ID: ${(error as Error).message}`)
     return 'unknown'
   }
 }
 
-async function configureBucketDefaults(bucketName: string): Promise<void> {
+function getRegion(options: ProcessingOptions): string {
+  if (options.save === 'r2') {
+    return 'auto'
+  }
+  return process.env['AWS_REGION'] || 'us-east-1'
+}
+
+function getEndpointFlag(options: ProcessingOptions): string {
+  if (options.save === 'r2') {
+    const accountId = process.env['CLOUDFLARE_ACCOUNT_ID']
+    if (!accountId) {
+      err('[text/utils/s3-upload] CLOUDFLARE_ACCOUNT_ID is required for R2')
+      return ''
+    }
+    if (!isValidCloudflareAccountId(accountId)) {
+      err(`[text/utils/s3-upload] Invalid CLOUDFLARE_ACCOUNT_ID format: ${accountId}`)
+      return ''
+    }
+    return ` --endpoint-url "https://${accountId}.r2.cloudflarestorage.com"`
+  }
+  return ''
+}
+
+function getPublicUrl(options: ProcessingOptions, bucketName: string, s3Key: string): string {
+  if (options.save === 'r2') {
+    const accountId = process.env['CLOUDFLARE_ACCOUNT_ID'] || 'unknown'
+    return `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${s3Key}`
+  }
+  return `https://${bucketName}.s3.amazonaws.com/${s3Key}`
+}
+
+async function configureBucketDefaults(bucketName: string, options: ProcessingOptions): Promise<void> {
   const p = '[text/utils/s3-upload]'
   l.dim(`${p} Configuring bucket defaults for: ${bucketName}`)
   
   try {
-    await execPromise(`aws s3api put-bucket-versioning --bucket "${bucketName}" --versioning-configuration Status=Enabled`)
+    const versioningCommand = buildBucketCommand('put-bucket-versioning', bucketName, options, ' --versioning-configuration Status=Enabled')
+    await execPromise(versioningCommand)
     l.dim(`${p} Enabled versioning for bucket`)
     
-    await execPromise(`aws s3api put-public-access-block --bucket "${bucketName}" --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"`)
-    l.dim(`${p} Configured public access block for bucket`)
+    if (options.save === 's3') {
+      const publicAccessCommand = buildBucketCommand(
+        'put-public-access-block',
+        bucketName,
+        options,
+        ' --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"'
+      )
+      await execPromise(publicAccessCommand)
+      l.dim(`${p} Configured public access block for bucket`)
+    }
     
     const lifecyclePolicy = {
       Rules: [{
@@ -214,7 +340,13 @@ async function configureBucketDefaults(bucketName: string): Promise<void> {
       }]
     }
     const lifecycleJson = JSON.stringify(lifecyclePolicy).replace(/"/g, '\\"')
-    await execPromise(`aws s3api put-bucket-lifecycle-configuration --bucket "${bucketName}" --lifecycle-configuration "${lifecycleJson}"`)
+    const lifecycleCommand = buildBucketCommand(
+      'put-bucket-lifecycle-configuration',
+      bucketName,
+      options,
+      ` --lifecycle-configuration "${lifecycleJson}"`
+    )
+    await execPromise(lifecycleCommand)
     l.dim(`${p} Configured lifecycle policy for bucket`)
     
   } catch (error) {
@@ -229,8 +361,19 @@ export async function uploadAllOutputFiles(
 ): Promise<void> {
   const p = '[text/utils/s3-upload]'
   
-  if (!options.save || options.save !== 's3') {
+  if (!options.save || (options.save !== 's3' && options.save !== 'r2')) {
     return
+  }
+  
+  if (options.save === 'r2') {
+    const r2Check = checkR2Configuration()
+    if (!r2Check.isValid) {
+      err(`${p} R2 configuration error: ${r2Check.error}`)
+      l.warn(`${p} Your Cloudflare account ID should be a 32-character hex string`)
+      l.warn(`${p} Example: c6494d4164a5eb0cd3848193bd552d68`)
+      l.warn(`${p} You can find it in the Cloudflare dashboard URL or R2 overview page`)
+      return
+    }
   }
   
   const sessionId = Date.now().toString()
