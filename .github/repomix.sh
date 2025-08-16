@@ -8,6 +8,7 @@ INCLUDE_PATHS=(
   # "models/convert-whisper-to-coreml.py"
   "src/*"
   "src/text"
+  "src/config"
   "docs/text/01-text-command.md"
   "docs/save"
   "src/save"

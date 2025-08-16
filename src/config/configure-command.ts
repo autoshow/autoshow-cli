@@ -4,6 +4,7 @@ import { configureR2Interactive } from './services/configure-r2'
 import { configureB2Interactive } from './services/configure-b2'
 import { checkAllConfigs } from './check-all-configs'
 import { readEnvFile } from './utils/env-writer'
+import { createInterface } from 'readline'
 import type { ConfigureOptions } from '@/types'
 
 export async function configureCommand(options: ConfigureOptions): Promise<void> {
@@ -23,6 +24,7 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
     return
   }
   
+  l.dim(`${p} Reading current environment configuration`)
   const currentEnv = await readEnvFile()
   const hasS3 = !!(currentEnv['AWS_ACCESS_KEY_ID'] && currentEnv['AWS_SECRET_ACCESS_KEY'])
   const hasR2 = !!(currentEnv['CLOUDFLARE_ACCOUNT_ID'] && currentEnv['AWS_PROFILE'])
@@ -34,6 +36,7 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
   l.info(`B2: ${hasB2 ? '✓ Configured' : '✗ Not configured'}\n`)
   
   if (options.service) {
+    l.dim(`${p} Configuring specific service: ${options.service}`)
     await configureSpecificService(options.service)
     return
   }
@@ -44,20 +47,25 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
   l.info('3. Backblaze B2')
   l.info('4. All services')
   l.info('5. Exit\n')
+  l.dim('You can skip individual services during configuration by typing "skip"\n')
   
   const choice = await promptForInput('Enter your choice (1-5): ')
   
   switch (choice) {
     case '1':
+      l.dim(`${p} User selected S3 configuration`)
       await configureSpecificService('s3')
       break
     case '2':
+      l.dim(`${p} User selected R2 configuration`)
       await configureSpecificService('r2')
       break
     case '3':
+      l.dim(`${p} User selected B2 configuration`)
       await configureSpecificService('b2')
       break
     case '4':
+      l.dim(`${p} User selected all services configuration`)
       await configureSpecificService('all')
       break
     case '5':
@@ -65,70 +73,117 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
       break
     default:
       err(`${p} Invalid choice: ${choice}`)
+      l.warn('Please run the command again and select a valid option (1-5)')
       break
   }
 }
 
 async function configureSpecificService(service: 's3' | 'r2' | 'b2' | 'all'): Promise<void> {
   const p = '[config/configure-command]'
-  l.dim(`${p} Configuring service: ${service}`)
+  l.dim(`${p} Starting configuration for service: ${service}`)
   
   if (service === 'all') {
-    const results = await Promise.allSettled([
-      configureS3Interactive(),
-      configureR2Interactive(),
-      configureB2Interactive()
-    ])
+    l.info('Configuring all services. You can skip individual services by typing "skip" when prompted.\n')
     
-    const successful = results.filter(result => 
-      result.status === 'fulfilled' && result.value === true
-    ).length
+    const results: Array<{ service: string; success: boolean }> = []
+    
+    try {
+      l.dim(`${p} Starting S3 configuration`)
+      const s3Success = await configureS3Interactive()
+      results.push({ service: 'S3', success: s3Success })
+    } catch (error) {
+      err(`${p} Error during S3 configuration: ${(error as Error).message}`)
+      results.push({ service: 'S3', success: false })
+    }
+    
+    try {
+      l.dim(`${p} Starting R2 configuration`)
+      const r2Success = await configureR2Interactive()
+      results.push({ service: 'R2', success: r2Success })
+    } catch (error) {
+      err(`${p} Error during R2 configuration: ${(error as Error).message}`)
+      results.push({ service: 'R2', success: false })
+    }
+    
+    try {
+      l.dim(`${p} Starting B2 configuration`)
+      const b2Success = await configureB2Interactive()
+      results.push({ service: 'B2', success: b2Success })
+    } catch (error) {
+      err(`${p} Error during B2 configuration: ${(error as Error).message}`)
+      results.push({ service: 'B2', success: false })
+    }
+    
+    const successful = results.filter(result => result.success)
+    const skipped = results.filter(result => !result.success)
     
     l.final(`\n=== Configuration Summary ===`)
-    l.final(`Successfully configured ${successful}/3 services`)
+    l.final(`Successfully configured: ${successful.length}/3 services`)
     
-    if (successful > 0) {
+    if (successful.length > 0) {
+      l.success(`Configured services: ${successful.map(r => r.service).join(', ')}`)
+    }
+    
+    if (skipped.length > 0) {
+      l.warn(`Skipped/Failed services: ${skipped.map(r => r.service).join(', ')}`)
+    }
+    
+    if (successful.length > 0) {
       l.success('\nConfiguration completed! You can now use the --save option with text commands.')
       l.info('Examples:')
-      l.info('• npm run as -- text --video "URL" --save s3')
-      l.info('• npm run as -- text --rss "FEED" --save r2')
-      l.info('• npm run as -- text --file "PATH" --save b2\n')
+      if (successful.some(r => r.service === 'S3')) {
+        l.info('• npm run as -- text --video "URL" --save s3')
+      }
+      if (successful.some(r => r.service === 'R2')) {
+        l.info('• npm run as -- text --rss "FEED" --save r2')
+      }
+      if (successful.some(r => r.service === 'B2')) {
+        l.info('• npm run as -- text --file "PATH" --save b2')
+      }
+      l.info('')
     }
     return
   }
   
   let success = false
   
-  switch (service) {
-    case 's3':
-      success = await configureS3Interactive()
-      break
-    case 'r2':
-      success = await configureR2Interactive()
-      break
-    case 'b2':
-      success = await configureB2Interactive()
-      break
-  }
-  
-  if (success) {
-    l.success(`${service.toUpperCase()} configuration completed successfully!`)
-    l.info(`You can now use --save ${service} with text commands.\n`)
-  } else {
-    err(`${p} Failed to configure ${service.toUpperCase()}`)
+  try {
+    switch (service) {
+      case 's3':
+        l.dim(`${p} Configuring S3`)
+        success = await configureS3Interactive()
+        break
+      case 'r2':
+        l.dim(`${p} Configuring R2`)
+        success = await configureR2Interactive()
+        break
+      case 'b2':
+        l.dim(`${p} Configuring B2`)
+        success = await configureB2Interactive()
+        break
+    }
+    
+    if (success) {
+      l.success(`${service.toUpperCase()} configuration completed successfully!`)
+      l.info(`You can now use --save ${service} with text commands.\n`)
+    } else {
+      l.warn(`${service.toUpperCase()} configuration was skipped or failed.`)
+    }
+  } catch (error) {
+    err(`${p} Error configuring ${service.toUpperCase()}: ${(error as Error).message}`)
   }
 }
 
 async function promptForInput(message: string): Promise<string> {
-  const { stdin, stdout } = process
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
   
   return new Promise((resolve) => {
-    stdin.setRawMode(false)
-    stdin.setEncoding('utf8')
-    stdout.write(message)
-    
-    stdin.once('data', (data) => {
-      resolve(data.toString().trim())
+    rl.question(message, (answer) => {
+      rl.close()
+      resolve(answer.trim())
     })
   })
 }

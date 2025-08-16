@@ -1,6 +1,7 @@
 import { l, err } from '@/logging'
 import { updateEnvVariable } from '../utils/env-writer'
 import { testR2Credentials } from '../utils/credential-tester'
+import { createInterface } from 'readline'
 
 export async function configureR2Interactive(): Promise<boolean> {
   const p = '[config/services/configure-r2]'
@@ -13,31 +14,47 @@ export async function configureR2Interactive(): Promise<boolean> {
   l.info('• AWS CLI must be installed')
   l.info('• Create API tokens at: https://dash.cloudflare.com/?to=/:account/r2/api-tokens\n')
   
+  l.dim('Type "skip" to skip R2 configuration or press Enter to leave empty\n')
+  
   const accountId = await promptForInput('Enter your Cloudflare Account ID: ')
-  if (!accountId) {
-    err(`${p} Cloudflare Account ID is required`)
+  if (accountId.toLowerCase() === 'skip' || !accountId.trim()) {
+    l.info('Skipping R2 configuration')
     return false
   }
   
   if (!/^[a-f0-9]{32}$/i.test(accountId)) {
     err(`${p} Invalid Cloudflare Account ID format (must be 32-character hex string)`)
+    l.warn('Example: c6494d4164a5eb0cd3848193bd552d68')
+    l.warn('Find your Account ID in the Cloudflare dashboard URL or R2 overview page')
+    
+    const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
+    if (retry) {
+      return await configureR2Interactive()
+    }
     return false
   }
   
   const accessKeyId = await promptForInput('Enter your R2 Access Key ID: ')
-  if (!accessKeyId) {
-    err(`${p} R2 Access Key ID is required`)
+  if (accessKeyId.toLowerCase() === 'skip' || !accessKeyId.trim()) {
+    l.info('Skipping R2 configuration')
     return false
   }
   
   if (accessKeyId.length !== 32) {
-    err(`${p} Invalid R2 Access Key ID format (must be 32 characters)`)
+    err(`${p} Invalid R2 Access Key ID format (must be exactly 32 characters)`)
+    l.warn('R2 Access Key IDs are different from AWS Access Key IDs')
+    l.warn('Create R2-specific API tokens at the Cloudflare dashboard')
+    
+    const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
+    if (retry) {
+      return await configureR2Interactive()
+    }
     return false
   }
   
   const secretAccessKey = await promptForInput('Enter your R2 Secret Access Key: ')
-  if (!secretAccessKey) {
-    err(`${p} R2 Secret Access Key is required`)
+  if (secretAccessKey.toLowerCase() === 'skip' || !secretAccessKey.trim()) {
+    l.info('Skipping R2 configuration')
     return false
   }
   
@@ -46,6 +63,16 @@ export async function configureR2Interactive(): Promise<boolean> {
   
   if (!testResult.valid) {
     err(`${p} R2 credential validation failed: ${testResult.error}`)
+    l.warn('\nTroubleshooting R2 Issues:')
+    l.warn('• Ensure you created R2-specific API tokens (not AWS credentials)')
+    l.warn('• Verify the Account ID is correct (32-character hex string)')
+    l.warn('• Check that the API tokens have Admin Read & Write permissions')
+    l.warn('• Try regenerating the API tokens if they appear invalid')
+    
+    const retry = await promptForConfirmation('Would you like to try again with different credentials? (y/n): ')
+    if (retry) {
+      return await configureR2Interactive()
+    }
     return false
   }
   
@@ -84,12 +111,15 @@ export async function configureR2Interactive(): Promise<boolean> {
 }
 
 async function promptForInput(message: string): Promise<string> {
-  const { stdin, stdout } = process
-  stdout.write(message)
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
   
   return new Promise((resolve) => {
-    stdin.once('data', (data) => {
-      resolve(data.toString().trim())
+    rl.question(message, (answer) => {
+      rl.close()
+      resolve(answer.trim())
     })
   })
 }

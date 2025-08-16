@@ -85,8 +85,8 @@ S3 Setup Requirements:
 • AWS Region (optional, defaults to us-east-1)
 • AWS CLI must be installed
 
-Enter your AWS Access Key ID: AKIA2K7L4QXEXAMPLE
-Enter your AWS Secret Access Key: lk0X8bQ9example...
+Enter your AWS Access Key ID: AKIA2K7...
+Enter your AWS Secret Access Key: lk0X8example...
 Enter your AWS Region (default: us-east-1): us-west-2
 
 Testing S3 credentials...
@@ -119,7 +119,7 @@ Next steps:
 
 **Environment Variables Set:**
 ```bash
-AWS_ACCESS_KEY_ID=AKIA2K7L4QXEXAMPLE
+AWS_ACCESS_KEY_ID=AKIA2K7L4QXEX...
 AWS_SECRET_ACCESS_KEY=lk0X8bQ9...
 AWS_REGION=us-west-2
 ```
@@ -164,7 +164,7 @@ aws configure --profile r2
 
 **Environment Variables Set:**
 ```bash
-B2_APPLICATION_KEY_ID=005d2f4eee1e3540000000002
+B2_APPLICATION_KEY_ID=005d2f4eee1e35400...
 B2_APPLICATION_KEY=K005fXQ6ym9...
 B2_REGION=us-west-004
 ```

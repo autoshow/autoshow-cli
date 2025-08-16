@@ -1,6 +1,7 @@
 import { l, err } from '@/logging'
 import { updateEnvVariable } from '../utils/env-writer'
 import { testB2Credentials } from '../utils/credential-tester'
+import { createInterface } from 'readline'
 
 export async function configureB2Interactive(): Promise<boolean> {
   const p = '[config/services/configure-b2]'
@@ -16,20 +17,30 @@ export async function configureB2Interactive(): Promise<boolean> {
   l.warn('IMPORTANT: Do not use your Master Application Key!')
   l.warn('You must create a restricted Application Key with specific capabilities.\n')
   
+  l.dim('Type "skip" to skip B2 configuration or press Enter to leave empty\n')
+  
   const keyId = await promptForInput('Enter your B2 Application Key ID: ')
-  if (!keyId) {
-    err(`${p} B2 Application Key ID is required`)
+  if (keyId.toLowerCase() === 'skip' || !keyId.trim()) {
+    l.info('Skipping B2 configuration')
     return false
   }
   
   if (keyId.length < 12) {
     err(`${p} Invalid B2 Application Key ID format (must be at least 12 characters)`)
+    l.warn('B2 Application Key IDs are typically around 25 characters long')
+    l.warn('Example: 005d2f4eee1e3540000000002')
+    l.warn('Make sure you are not using the Master Application Key')
+    
+    const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
+    if (retry) {
+      return await configureB2Interactive()
+    }
     return false
   }
   
   const applicationKey = await promptForInput('Enter your B2 Application Key: ')
-  if (!applicationKey) {
-    err(`${p} B2 Application Key is required`)
+  if (applicationKey.toLowerCase() === 'skip' || !applicationKey.trim()) {
+    l.info('Skipping B2 configuration')
     return false
   }
   
@@ -38,6 +49,12 @@ export async function configureB2Interactive(): Promise<boolean> {
   const validRegions = ['us-west-004', 'us-east-005', 'eu-central-003']
   if (!validRegions.includes(region)) {
     err(`${p} Invalid B2 region. Valid options: ${validRegions.join(', ')}`)
+    l.warn('Most common region is us-west-004 (California)')
+    
+    const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
+    if (retry) {
+      return await configureB2Interactive()
+    }
     return false
   }
   
@@ -51,6 +68,20 @@ export async function configureB2Interactive(): Promise<boolean> {
     l.warn('• Key must have listBuckets, writeFiles, readFiles capabilities')
     l.warn('• Check if the key has been revoked or expired')
     l.warn('• Verify the key is not restricted to specific buckets (unless intended)')
+    l.warn('• Create a new Application Key at: https://secure.backblaze.com/app_keys.htm')
+    
+    if (testResult.error?.includes('invalid or expired')) {
+      l.warn('\nYour current B2 key appears to be invalid. You need to:')
+      l.warn('1. Go to https://secure.backblaze.com/app_keys.htm')
+      l.warn('2. Delete the old application key')
+      l.warn('3. Create a new Application Key with proper capabilities')
+      l.warn('4. Use the new credentials')
+    }
+    
+    const retry = await promptForConfirmation('Would you like to try again with different credentials? (y/n): ')
+    if (retry) {
+      return await configureB2Interactive()
+    }
     return false
   }
   
@@ -85,12 +116,15 @@ export async function configureB2Interactive(): Promise<boolean> {
 }
 
 async function promptForInput(message: string): Promise<string> {
-  const { stdin, stdout } = process
-  stdout.write(message)
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
   
   return new Promise((resolve) => {
-    stdin.once('data', (data) => {
-      resolve(data.toString().trim())
+    rl.question(message, (answer) => {
+      rl.close()
+      resolve(answer.trim())
     })
   })
 }
