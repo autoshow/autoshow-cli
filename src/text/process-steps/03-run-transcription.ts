@@ -3,12 +3,11 @@ import { callDeepgram } from '../transcription/deepgram.ts'
 import { callAssembly } from '../transcription/assembly.ts'
 import { callGroqWhisper } from '../transcription/groq-whisper.ts'
 import { callWhisperCoreml } from '../transcription/whisper-coreml.ts'
-import { logTranscriptionCost, estimateTranscriptCost } from '../utils/cost.ts'
+import { logTranscriptionCost, estimateTranscriptCost, getAudioDuration } from '../utils/cost.ts'
 import { l, err, logInitialFunctionCall } from '@/logging'
 import type { ProcessingOptions, TranscriptionResult } from '@/types'
 import ora from 'ora'
 import type { Ora } from 'ora'
-
 export async function runTranscription(
   options: ProcessingOptions,
   finalPath: string,
@@ -36,6 +35,12 @@ export async function runTranscription(
     }
   }
   l.dim(`${p} Transcription service to use: ${serviceToUse}`)
+  
+  const audioFilePath = `${finalPath}.wav`
+  l.dim(`${p} Getting audio duration for: ${audioFilePath}`)
+  const audioDuration = await getAudioDuration(audioFilePath)
+  l.dim(`${p} Audio duration: ${audioDuration} seconds`)
+  
   let finalTranscript = ''
   let finalModelId = ''
   let finalCostPerMinuteCents = 0
@@ -96,7 +101,8 @@ export async function runTranscription(
     return {
       transcript: finalTranscript,
       modelId: finalModelId,
-      costPerMinuteCents: finalCostPerMinuteCents
+      costPerMinuteCents: finalCostPerMinuteCents,
+      audioDuration
     }
   } catch (error) {
     spinner.fail('Transcription failed.')
@@ -104,7 +110,6 @@ export async function runTranscription(
     throw error
   }
 }
-
 export async function retryTranscriptionCall<T>(
   fn: () => Promise<T>,
   spinner?: Ora
@@ -134,5 +139,4 @@ export async function retryTranscriptionCall<T>(
   }
   throw new Error('Transcription call failed after maximum retries.')
 }
-
 export { logTranscriptionCost, estimateTranscriptCost }

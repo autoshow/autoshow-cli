@@ -4,19 +4,24 @@ import { execPromise } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../transcription/transcription-models'
 import { LLM_SERVICES_CONFIG } from '../llms/llm-models'
 import type { ProcessingOptions } from '@/types'
-
+export async function getAudioDuration(filePath: string): Promise<number> {
+  const p = '[text/utils/cost]'
+  const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${filePath}"`
+  const { stdout } = await execPromise(cmd)
+  const seconds = parseFloat(stdout.trim())
+  if (isNaN(seconds)) {
+    throw new Error(`Could not parse audio duration for file: ${filePath}`)
+  }
+  l.dim(`${p} Audio duration for ${filePath}: ${seconds.toFixed(2)} seconds`)
+  return seconds
+}
 export async function logTranscriptionCost(info: {
   modelId: string
   costPerMinuteCents: number
   filePath: string
 }): Promise<number> {
   const p = '[text/utils/cost]'
-  const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${info.filePath}"`
-  const { stdout } = await execPromise(cmd)
-  const seconds = parseFloat(stdout.trim())
-  if (isNaN(seconds)) {
-    throw new Error(`Could not parse audio duration for file: ${info.filePath}`)
-  }
+  const seconds = await getAudioDuration(info.filePath)
   const minutes = seconds / 60
   const cost = info.costPerMinuteCents * minutes
   l.dim(
@@ -26,7 +31,6 @@ export async function logTranscriptionCost(info: {
   )
   return cost
 }
-
 export async function estimateTranscriptCost(
   options: ProcessingOptions,
   transcriptServices: string
@@ -59,7 +63,6 @@ export async function estimateTranscriptCost(
   })
   return cost
 }
-
 export function formatCost(cost: number | undefined): string {
   if (cost === undefined) return 'N/A'
   if (cost === 0) return '0¢'
@@ -72,7 +75,6 @@ export function formatCost(cost: number | undefined): string {
   }
   return `$${cost.toFixed(2)}`
 }
-
 export function logLLMCost(info: {
   name: string
   stopReason: string
@@ -89,7 +91,6 @@ export function logLLMCost(info: {
   const p = '[text/utils/cost]'
   const { name, stopReason, tokenUsage } = info
   const { input, output, total } = tokenUsage
-
   let modelConfig: {
     modelId: string
     modelName: string
@@ -110,7 +111,6 @@ export function logLLMCost(info: {
     }
     if (modelConfig) break
   }
-
   const {
     modelName,
     inputCostPer1M,
@@ -118,35 +118,27 @@ export function logLLMCost(info: {
     inputCostPer1MCents,
     outputCostPer1MCents
   } = modelConfig ?? {}
-
   const displayName = modelName ?? name
-
   l.dim(`${p} - ${stopReason ? `${stopReason} Reason` : 'Status'}: ${stopReason}\n  - Model: ${displayName}`)
-
   const tokenLines: string[] = []
   if (input) tokenLines.push(`${input} input tokens`)
   if (output) tokenLines.push(`${output} output tokens`)
   if (total) tokenLines.push(`${total} total tokens`)
-
   if (tokenLines.length > 0) {
     l.dim(`${p} - Token Usage:\n    - ${tokenLines.join('\n    - ')}`)
   }
-
   let inputCost: number | undefined
   let outputCost: number | undefined
   let totalCost: number | undefined
-
   if (!modelConfig) {
     console.warn(`Warning: Could not find cost configuration for model: ${modelName}`)
   } else {
     const inCost = (typeof inputCostPer1MCents === 'number')
       ? inputCostPer1MCents / 100
       : (inputCostPer1M || 0)
-
     const outCost = (typeof outputCostPer1MCents === 'number')
       ? outputCostPer1MCents / 100
       : (outputCostPer1M || 0)
-
     if (inCost < 0.0000001 && outCost < 0.0000001) {
       inputCost = 0
       outputCost = 0
@@ -165,7 +157,6 @@ export function logLLMCost(info: {
       }
     }
   }
-
   const costLines: string[] = []
   if (inputCost !== undefined) {
     costLines.push(`Input cost: ${formatCost(inputCost)}`)
@@ -176,12 +167,9 @@ export function logLLMCost(info: {
   if (totalCost !== undefined) {
     costLines.push(`Total cost: ${chalk.bold(formatCost(totalCost))}`)
   }
-
   if (costLines.length > 0) {
     l.dim(`${p} - Cost Breakdown:\n    - ${costLines.join('\n    - ')}`)
   }
-
   l.dim(`${p} Calculated costs - Input: ${inputCost}, Output: ${outputCost}, Total: ${totalCost}`)
-
   return { inputCost, outputCost, totalCost }
 }

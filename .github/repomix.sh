@@ -9,6 +9,7 @@ INCLUDE_PATHS=(
   "src/*"
   "src/text"
   "docs/text/01-text-command.md"
+  "docs/text/08-save-to-bucket.md"
   # "test/cli"
   # "src/image"
   # "src/tts"
@@ -20,8 +21,8 @@ IGNORE_PATHS=(
   "src/text/prompts/creative-entertainment"
   "src/text/prompts/marketing-social-media"
   "src/text/utils/embeddings"
-  "src/text/llms"
-  "src/text/transcription"
+  # "src/text/llms"
+  # "src/text/transcription"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

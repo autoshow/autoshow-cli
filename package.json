@@ -20,6 +20,7 @@
   "type": "module",
   "scripts": {
     "repo": "bash .github/repomix.sh",
+    "parse": "tsx .github/parse.ts",
     "tsx:base": "tsx --env-file=.env --no-warnings",
     "setup": "./.github/setup.sh",
     "check": "npx tsc --noEmit",
