@@ -130,9 +130,7 @@ npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4Kh
   --chatgpt gpt-4o-mini \
   --save r2
 
-# Save to B2 (ensure B2 credentials are set)
-export B2_APPLICATION_KEY_ID=004b49da91f6000000000001
-export B2_APPLICATION_KEY=K004abcdefghijklmnopqrstuvwxyz1234567890
+# Save to B2
 npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" \
   --whisper large-v3-turbo \
   --chatgpt gpt-4o-mini \
@@ -161,8 +159,6 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" \
   --s3-bucket-prefix "cloudflare-archives"
 
 # B2 with custom bucket prefix
-export B2_APPLICATION_KEY_ID=004b49da91f6000000000001
-export B2_APPLICATION_KEY=K004abcdefghijklmnopqrstuvwxyz1234567890
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" \
   --last 5 \
   --deepgram \
@@ -191,8 +187,6 @@ npm run as -- text --channel "https://www.youtube.com/@ajcwebdev" \
   --save r2
 
 # Save to B2
-export B2_APPLICATION_KEY_ID=004b49da91f6000000000001
-export B2_APPLICATION_KEY=K004abcdefghijklmnopqrstuvwxyz1234567890
 npm run as -- text --channel "https://www.youtube.com/@ajcwebdev" \
   --date 2025-01-01 2025-01-15 \
   --whisper large-v3-turbo \

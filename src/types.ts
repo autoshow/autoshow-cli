@@ -152,3 +152,26 @@ export interface UploadMetadata {
   transcript: string
   llmOutput: string
 }
+export interface ConfigureOptions {
+  service?: 's3' | 'r2' | 'b2' | 'all'
+  reset?: boolean
+  test?: boolean
+  [key: string]: any
+}
+export interface ServiceConfigurationStatus {
+  configured: boolean
+  tested: boolean
+  working: boolean
+  settings: Record<string, string>
+  issues: string[]
+}
+export interface CredentialValidationResult {
+  valid: boolean
+  error?: string
+  details?: Record<string, any>
+}
+export interface EnvVariable {
+  key: string
+  value: string
+  description?: string
+}
