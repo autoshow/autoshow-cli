@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, env } from '@/node-utils'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/03-run-transcription.ts'
+import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions } from '@/types'
 
 export async function callGroqWhisper(
@@ -34,7 +34,9 @@ export async function callGroqWhisper(
     const audioBuffer = await readFile(audioFilePath)
     
     const formData = new FormData()
-    formData.append('file', new Blob([audioBuffer]), 'audio.wav')
+    // convert Node Buffer to Uint8Array for Blob compatibility
+    const audioUint8 = new Uint8Array(audioBuffer)
+    formData.append('file', new Blob([audioUint8]), 'audio.wav')
     formData.append('model', modelId)
     formData.append('response_format', 'verbose_json')
     formData.append('timestamp_granularities[]', 'segment')

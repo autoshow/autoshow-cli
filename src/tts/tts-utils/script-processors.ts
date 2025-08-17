@@ -2,6 +2,7 @@ import { l, err } from '@/logging'
 import { processScriptWithElevenLabs } from '../tts-services/elevenlabs.ts'
 import { processScriptWithCoqui } from '../tts-services/coqui.ts'
 import { processScriptWithPolly } from '../tts-services/polly.ts'
+import { processScriptWithKitten } from '../tts-services/kitten.ts'
 import type { TtsEngine } from './engine-utils.ts'
 
 const p = '[tts/tts-utils/script-processors]'
@@ -15,6 +16,10 @@ const scriptProcessors = {
   polly: async (s: string, o: string, opts: any) => {
     l.dim(`${p} Processing script with Polly`)
     return processScriptWithPolly(s, o, { voice: opts.voice, format: opts.pollyFormat, sampleRate: opts.pollySampleRate, engine: opts.pollyEngine, languageCode: opts.language })
+  },
+  kitten: async (s: string, o: string, opts: any) => {
+    l.dim(`${p} Processing script with Kitten`)
+    return processScriptWithKitten(s, o, { model: opts.kittenModel, speed: opts.speed })
   }
 }
 

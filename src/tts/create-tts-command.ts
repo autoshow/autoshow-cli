@@ -12,8 +12,10 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--coqui', 'Use Coqui TTS engine (default)')
   .option('--elevenlabs', 'Use ElevenLabs engine')
   .option('--polly', 'Use AWS Polly engine')
+  .option('--kitten', 'Use Kitten TTS engine (lightweight, CPU-only)')
   .option('--coqui-model <model>', 'Coqui model name or path (default: tacotron2-DDC, use "xtts" for XTTS v2)')
-  .option('--voice <name>', 'Voice ID (elevenlabs) or voice name (polly)')
+  .option('--kitten-model <model>', 'Kitten model name (default: KittenML/kitten-tts-nano-0.1)')
+  .option('--voice <name>', 'Voice ID (elevenlabs) or voice name (polly/kitten)')
   .option('--speaker <name>', 'Speaker name for Coqui TTS')
   .option('--voice-clone <path>', 'Path to voice sample for cloning (coqui XTTS)')
   .option('--language <code>', 'Language code for multi-lingual models (coqui/polly)')
@@ -21,7 +23,7 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--polly-sample-rate <rate>', 'Polly sample rate: 8000, 16000, 22050, 24000 (default: 24000)')
   .option('--polly-engine <engine>', 'Polly engine: standard, neural (auto-selected based on voice)')
   .option('--output <dir>', 'Output directory', OUTDIR)
-  .option('--speed <number>', 'Speed 0.25-4.0 (coqui)', parseFloat)
+  .option('--speed <number>', 'Speed 0.25-4.0 (coqui/kitten)', parseFloat)
 
 const handleAction = async (action: string, runner: () => Promise<void>): Promise<void> => {
   try {

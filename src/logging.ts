@@ -13,6 +13,14 @@ export function logInitialFunctionCall(functionName: string, details: Record<str
   l.opts('')
 }
 
+export function logCommandValidation(stage: string, detail: Record<string, unknown>): void {
+  const p = '[logging]'
+  l.dim(`${p}[CommandValidation:${stage}]`)
+  Object.entries(detail).forEach(([key, value]) =>
+    l.dim(`${p}  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
+  )
+}
+
 export function logSeparator(params:
   | { type: 'channel' | 'playlist' | 'urls', index: number, total: number, descriptor: string  }
   | { type: 'rss', index: number, total: number, descriptor: string  }

@@ -44,6 +44,7 @@ export type ProcessingOptions = {
   info?: boolean | string
   saveAudio?: boolean
   whisper?: boolean | string
+  whisperCoreml?: boolean | string
   deepgram?: boolean | string
   assembly?: boolean | string
   groqWhisper?: boolean | string
@@ -62,13 +63,13 @@ export type ProcessingOptions = {
   last?: number
   date?: string[]
   days?: number
-  metaDir?: string
-  metaSrcDir?: string
+  feed?: string
   metaDate?: string[]
   metaInfo?: boolean
-  metaShownotes?: boolean
   keyMomentsCount?: number
   keyMomentDuration?: number
+  save?: 's3' | 'r2' | 'b2'
+  s3BucketPrefix?: string
   [key: string]: any
 }
 export interface VideoInfo {
@@ -82,8 +83,8 @@ export interface TranscriptionResult {
   transcript: string
   modelId: string
   costPerMinuteCents: number
+  audioDuration?: number
 }
-
 export interface ApiError {
   message: string
   stack?: string
@@ -91,7 +92,6 @@ export interface ApiError {
   name?: string
   $metadata?: { httpStatusCode?: number }
 }
-
 export interface BlackForestLabsOptions {
   width?: number
   height?: number
@@ -100,7 +100,6 @@ export interface BlackForestLabsOptions {
   safety_tolerance?: number
   output_format?: string
 }
-
 export interface ImageGenerationResult {
   success: boolean
   path?: string
@@ -111,7 +110,6 @@ export interface ImageGenerationResult {
   seed?: number
   prompt_used?: string
 }
-
 export interface NovaCanvasPayload {
   taskType: string
   textToImageParams?: {
@@ -126,4 +124,18 @@ export interface NovaCanvasPayload {
     seed?: number
     numberOfImages: number
   }
+}
+export interface VectorizeVector {
+  id: string
+  values: number[]
+  metadata?: Record<string, any>
+}
+export interface VectorizeMatch {
+  id: string
+  score: number
+  metadata?: Record<string, any>
+}
+export interface EmbeddingOptions {
+  create?: boolean | string
+  query?: string
 }

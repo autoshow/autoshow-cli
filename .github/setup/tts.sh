@@ -49,10 +49,15 @@ pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu ||
 pip install TTS || pip install "TTS==0.22.0" || pip install git+https://github.com/coqui-ai/TTS.git
 pip install sentencepiece || pip install --only-binary :all: sentencepiece
 
+echo "Installing Kitten TTS (lightweight CPU-only)..."
+pip install https://github.com/KittenML/KittenTTS/releases/download/0.1/kittentts-0.1.0-py3-none-any.whl || {
+  echo "Warning: Kitten TTS installation failed, continuing with other engines"
+}
+
 echo "Verifying TTS installations..."
 "$VENV/bin/python" - <<'PY'
 import importlib,sys
-for name,mod in {'Coqui':'TTS.api'}.items():
+for name,mod in {'Coqui':'TTS.api', 'Kitten':'kittentts'}.items():
     try: importlib.import_module(mod.split('.')[0]); print(f"✓ {name}")
     except Exception as e: print(f"⚠ {name}: {e}", file=sys.stderr)
 PY
@@ -62,9 +67,18 @@ echo "Downloading default Coqui model..."
 from TTS.api import TTS; TTS('tts_models/en/ljspeech/tacotron2-DDC', progress_bar=True)
 PY
 
+echo "Testing Kitten TTS model..."
+"$VENV/bin/python" - <<'PY' || true
+try:
+    from kittentts import KittenTTS
+    KittenTTS("KittenML/kitten-tts-nano-0.1")
+    print("✓ Kitten TTS model loaded")
+except: pass
+PY
+
 echo "Creating TTS configuration file..."
 cat >.tts-config.json <<EOF
-{"python":"$VENV/bin/python","venv":"$VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"}}
+{"python":"$VENV/bin/python","venv":"$VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}
 EOF
 
 echo "TTS setup completed successfully!"
