@@ -1,10 +1,29 @@
 import { l, err } from '@/logging'
-import { updateEnvVariable } from '../utils/env-writer'
-import { testS3Credentials } from '../utils/credential-tester'
+import { updateEnvVariable } from '../env-writer'
+import { testAwsCredentials } from './test-aws-credentials'
 import { createInterface } from 'readline'
 
-export async function configureS3Interactive(): Promise<boolean> {
-  const p = '[config/services/configure-s3]'
+async function promptForInput(message: string): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
+  
+  return new Promise((resolve) => {
+    rl.question(message, (answer) => {
+      rl.close()
+      resolve(answer.trim())
+    })
+  })
+}
+
+async function promptForConfirmation(message: string): Promise<boolean> {
+  const response = await promptForInput(message)
+  return ['y', 'yes', 'true', '1'].includes(response.toLowerCase())
+}
+
+export async function configureAwsInteractive(): Promise<boolean> {
+  const p = '[config/aws/configure-aws]'
   l.step('\n=== Amazon S3 Configuration ===\n')
   
   l.info('S3 Setup Requirements:')
@@ -25,7 +44,7 @@ export async function configureS3Interactive(): Promise<boolean> {
     err(`${p} Invalid AWS Access Key ID format (should start with AKIA and be 20 characters)`)
     const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
     if (retry) {
-      return await configureS3Interactive()
+      return await configureAwsInteractive()
     }
     return false
   }
@@ -40,7 +59,7 @@ export async function configureS3Interactive(): Promise<boolean> {
     err(`${p} Invalid AWS Secret Access Key format (should be 40 characters)`)
     const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
     if (retry) {
-      return await configureS3Interactive()
+      return await configureAwsInteractive()
     }
     return false
   }
@@ -53,7 +72,7 @@ export async function configureS3Interactive(): Promise<boolean> {
   delete process.env['AWS_PROFILE']
   
   try {
-    const testResult = await testS3Credentials(accessKeyId, secretAccessKey, region)
+    const testResult = await testAwsCredentials(accessKeyId, secretAccessKey, region)
     
     if (!testResult.valid) {
       err(`${p} S3 credential validation failed: ${testResult.error}`)
@@ -65,7 +84,7 @@ export async function configureS3Interactive(): Promise<boolean> {
       
       const retry = await promptForConfirmation('Would you like to try again with different credentials? (y/n): ')
       if (retry) {
-        return await configureS3Interactive()
+        return await configureAwsInteractive()
       }
       return false
     }
@@ -103,23 +122,4 @@ export async function configureS3Interactive(): Promise<boolean> {
       l.dim(`${p} Restored AWS_PROFILE to: ${originalProfile}`)
     }
   }
-}
-
-async function promptForInput(message: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
-  
-  return new Promise((resolve) => {
-    rl.question(message, (answer) => {
-      rl.close()
-      resolve(answer.trim())
-    })
-  })
-}
-
-async function promptForConfirmation(message: string): Promise<boolean> {
-  const response = await promptForInput(message)
-  return ['y', 'yes', 'true', '1'].includes(response.toLowerCase())
 }

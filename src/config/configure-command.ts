@@ -1,10 +1,117 @@
 import { l, err, logInitialFunctionCall } from '@/logging'
-import { configureS3Interactive } from './services/configure-s3'
-import { configureR2Interactive } from './services/configure-r2'
+import { configureAwsInteractive } from './aws/configure-aws'
+import { configureCloudflareInteractive } from './cloudflare/configure-cloudflare'
 import { checkAllConfigs } from './check-all-configs'
-import { readEnvFile } from './utils/env-writer'
+import { readEnvFile } from './env-writer'
 import { createInterface } from 'readline'
 import type { ConfigureOptions } from '@/types'
+
+async function promptForInput(message: string): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
+  
+  return new Promise((resolve) => {
+    rl.question(message, (answer) => {
+      rl.close()
+      resolve(answer.trim())
+    })
+  })
+}
+
+async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<void> {
+  const p = '[config/configure-command]'
+  l.dim(`${p} Starting configuration for service: ${service}`)
+  
+  if (service === 'all') {
+    l.info('Configuring all services. You can skip individual services by typing "skip" when prompted.\n')
+    
+    const results: Array<{ service: string; success: boolean }> = []
+    
+    try {
+      l.dim(`${p} Starting AWS S3 configuration`)
+      const awsSuccess = await configureAwsInteractive()
+      results.push({ service: 'S3', success: awsSuccess })
+    } catch (error) {
+      err(`${p} Error during AWS S3 configuration: ${(error as Error).message}`)
+      results.push({ service: 'S3', success: false })
+    }
+    
+    try {
+      l.dim(`${p} Starting Cloudflare R2/Vectorize configuration`)
+      const cloudflareSuccess = await configureCloudflareInteractive()
+      results.push({ service: 'R2 & Vectorize', success: cloudflareSuccess })
+    } catch (error) {
+      err(`${p} Error during Cloudflare R2/Vectorize configuration: ${(error as Error).message}`)
+      results.push({ service: 'R2 & Vectorize', success: false })
+    }
+    
+    const successful = results.filter(result => result.success)
+    const skipped = results.filter(result => !result.success)
+    
+    l.final(`\n=== Configuration Summary ===`)
+    l.final(`Successfully configured: ${successful.length}/2 services`)
+    
+    if (successful.length > 0) {
+      l.success(`Configured services: ${successful.map(r => r.service).join(', ')}`)
+    }
+    
+    if (skipped.length > 0) {
+      l.warn(`Skipped/Failed services: ${skipped.map(r => r.service).join(', ')}`)
+    }
+    
+    if (successful.length > 0) {
+      l.success('\nConfiguration completed! You can now use cloud storage and AI services.')
+      l.info('Examples:')
+      if (successful.some(r => r.service === 'S3')) {
+        l.info('• npm run as -- text --video "URL" --save s3')
+      }
+      if (successful.some(r => r.service.includes('R2'))) {
+        l.info('• npm run as -- text --rss "FEED" --save r2')
+        l.info('• npm run as -- text embed --create')
+        l.info('• npm run as -- text embed --query "your question"')
+      }
+      l.info('')
+    }
+    return
+  }
+  
+  let success = false
+  
+  try {
+    switch (service) {
+      case 's3':
+        l.dim(`${p} Configuring AWS S3`)
+        success = await configureAwsInteractive()
+        break
+      case 'r2':
+        l.dim(`${p} Configuring Cloudflare R2/Vectorize`)
+        success = await configureCloudflareInteractive()
+        break
+    }
+    
+    if (success) {
+      const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
+      l.success(`${serviceName} configuration completed successfully!`)
+      
+      if (service === 'r2') {
+        l.info('You can now use:')
+        l.info(`• --save r2 with text commands`)
+        l.info(`• text embed commands for Vectorize embeddings`)
+      } else {
+        l.info(`You can now use --save ${service} with text commands.`)
+      }
+      l.info('')
+    } else {
+      const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
+      l.warn(`${serviceName} configuration was skipped or failed.`)
+    }
+  } catch (error) {
+    const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
+    err(`${p} Error configuring ${serviceName}: ${(error as Error).message}`)
+  }
+}
 
 export async function configureCommand(options: ConfigureOptions): Promise<void> {
   const p = '[config/configure-command]'
@@ -68,111 +175,4 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
       l.warn('Please run the command again and select a valid option (1-4)')
       break
   }
-}
-
-async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<void> {
-  const p = '[config/configure-command]'
-  l.dim(`${p} Starting configuration for service: ${service}`)
-  
-  if (service === 'all') {
-    l.info('Configuring all services. You can skip individual services by typing "skip" when prompted.\n')
-    
-    const results: Array<{ service: string; success: boolean }> = []
-    
-    try {
-      l.dim(`${p} Starting S3 configuration`)
-      const s3Success = await configureS3Interactive()
-      results.push({ service: 'S3', success: s3Success })
-    } catch (error) {
-      err(`${p} Error during S3 configuration: ${(error as Error).message}`)
-      results.push({ service: 'S3', success: false })
-    }
-    
-    try {
-      l.dim(`${p} Starting R2/Vectorize configuration`)
-      const r2Success = await configureR2Interactive()
-      results.push({ service: 'R2 & Vectorize', success: r2Success })
-    } catch (error) {
-      err(`${p} Error during R2/Vectorize configuration: ${(error as Error).message}`)
-      results.push({ service: 'R2 & Vectorize', success: false })
-    }
-    
-    const successful = results.filter(result => result.success)
-    const skipped = results.filter(result => !result.success)
-    
-    l.final(`\n=== Configuration Summary ===`)
-    l.final(`Successfully configured: ${successful.length}/2 services`)
-    
-    if (successful.length > 0) {
-      l.success(`Configured services: ${successful.map(r => r.service).join(', ')}`)
-    }
-    
-    if (skipped.length > 0) {
-      l.warn(`Skipped/Failed services: ${skipped.map(r => r.service).join(', ')}`)
-    }
-    
-    if (successful.length > 0) {
-      l.success('\nConfiguration completed! You can now use cloud storage and AI services.')
-      l.info('Examples:')
-      if (successful.some(r => r.service === 'S3')) {
-        l.info('• npm run as -- text --video "URL" --save s3')
-      }
-      if (successful.some(r => r.service.includes('R2'))) {
-        l.info('• npm run as -- text --rss "FEED" --save r2')
-        l.info('• npm run as -- text embed --create')
-        l.info('• npm run as -- text embed --query "your question"')
-      }
-      l.info('')
-    }
-    return
-  }
-  
-  let success = false
-  
-  try {
-    switch (service) {
-      case 's3':
-        l.dim(`${p} Configuring S3`)
-        success = await configureS3Interactive()
-        break
-      case 'r2':
-        l.dim(`${p} Configuring R2/Vectorize`)
-        success = await configureR2Interactive()
-        break
-    }
-    
-    if (success) {
-      const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
-      l.success(`${serviceName} configuration completed successfully!`)
-      
-      if (service === 'r2') {
-        l.info('You can now use:')
-        l.info(`• --save r2 with text commands`)
-        l.info(`• text embed commands for Vectorize embeddings`)
-      } else {
-        l.info(`You can now use --save ${service} with text commands.`)
-      }
-      l.info('')
-    } else {
-      const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
-      l.warn(`${serviceName} configuration was skipped or failed.`)
-    }
-  } catch (error) {
-    const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
-    err(`${p} Error configuring ${serviceName}: ${(error as Error).message}`)
-  }
-}
-
-async function promptForInput(message: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
-  
-  return new Promise((resolve) => {
-    rl.question(message, (answer) => {
-      rl.close()
-      resolve(answer.trim())
-    })
-  })
 }

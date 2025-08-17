@@ -56,6 +56,7 @@
     "ai": "4.2.9",
     "assemblyai": "4.9.0",
     "chalk": "5.4.1",
+    "cloudflare": "4.5.0",
     "commander": "13.1.0",
     "elevenlabs": "1.59.0",
     "fast-xml-parser": "5.0.8",

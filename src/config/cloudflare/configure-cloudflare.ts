@@ -1,84 +1,30 @@
 import { l, err } from '@/logging'
-import { updateEnvVariable } from '../utils/env-writer'
-import { testR2Credentials } from '../utils/credential-tester'
-import { R2Client } from '@/save/services/r2-client'
+import { updateEnvVariable } from '../env-writer'
+import { testCloudflareCredentials } from './test-cloudflare-credentials'
+import { createBucket, healthCheck } from '@/save/cloudflare/client'
 import { createInterface } from 'readline'
 
-async function testVectorizeAPI(accountId: string, apiToken: string): Promise<boolean> {
-  const p = '[config/services/configure-r2]'
+async function promptForInput(message: string): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
   
-  try {
-    l.dim(`${p} Testing Vectorize API access`)
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes`,
-      {
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    if (response.ok) {
-      const data = await response.json()
-      l.dim(`${p} Vectorize API test successful, found ${data.result?.length || 0} indexes`)
-      return true
-    } else if (response.status === 403) {
-      err(`${p} Vectorize API access denied - insufficient permissions`)
-      return false
-    } else {
-      err(`${p} Vectorize API test failed with status: ${response.status}`)
-      return false
-    }
-  } catch (error) {
-    err(`${p} Error testing Vectorize API: ${(error as Error).message}`)
-    return false
-  }
+  return new Promise((resolve) => {
+    rl.question(message, (answer) => {
+      rl.close()
+      resolve(answer.trim())
+    })
+  })
 }
 
-async function testWorkersAI(accountId: string, apiToken: string): Promise<boolean> {
-  const p = '[config/services/configure-r2]'
-  
-  try {
-    l.dim(`${p} Testing Workers AI access with bge-m3 model`)
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/baai/bge-m3`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: 'test embedding'
-        })
-      }
-    )
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.result?.data?.[0]) {
-        l.dim(`${p} Workers AI test successful with bge-m3 model`)
-        return true
-      } else {
-        err(`${p} Workers AI returned unsuccessful response`)
-        return false
-      }
-    } else if (response.status === 403) {
-      err(`${p} Workers AI access denied - insufficient permissions`)
-      return false
-    } else {
-      err(`${p} Workers AI test failed with status: ${response.status}`)
-      return false
-    }
-  } catch (error) {
-    err(`${p} Error testing Workers AI: ${(error as Error).message}`)
-    return false
-  }
+async function promptForConfirmation(message: string): Promise<boolean> {
+  const response = await promptForInput(message)
+  return ['y', 'yes', 'true', '1'].includes(response.toLowerCase())
 }
 
-export async function configureR2Interactive(): Promise<boolean> {
-  const p = '[config/services/configure-r2]'
+export async function configureCloudflareInteractive(): Promise<boolean> {
+  const p = '[config/cloudflare/configure-cloudflare]'
   l.step('\n=== Cloudflare R2 & Vectorize Configuration ===\n')
   
   l.info('R2 & Vectorize Setup Requirements:')
@@ -103,7 +49,7 @@ export async function configureR2Interactive(): Promise<boolean> {
     
     const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
     if (retry) {
-      return await configureR2Interactive()
+      return await configureCloudflareInteractive()
     }
     return false
   }
@@ -118,7 +64,7 @@ export async function configureR2Interactive(): Promise<boolean> {
     err(`${p} Invalid email format`)
     const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
     if (retry) {
-      return await configureR2Interactive()
+      return await configureCloudflareInteractive()
     }
     return false
   }
@@ -135,17 +81,17 @@ export async function configureR2Interactive(): Promise<boolean> {
     
     const retry = await promptForConfirmation('Would you like to try again? (y/n): ')
     if (retry) {
-      return await configureR2Interactive()
+      return await configureCloudflareInteractive()
     }
     return false
   }
   
-  l.info('\nTesting R2 credentials and creating unified API token...')
-  const testResult = await testR2Credentials(accountId, email, globalApiKey)
+  l.info('\nTesting Cloudflare credentials and creating unified API token...')
+  const testResult = await testCloudflareCredentials(accountId, email, globalApiKey)
   
   if (!testResult.valid) {
-    err(`${p} R2 credential validation failed: ${testResult.error}`)
-    l.warn('\nTroubleshooting R2/Vectorize Issues:')
+    err(`${p} Cloudflare credential validation failed: ${testResult.error}`)
+    l.warn('\nTroubleshooting Cloudflare Issues:')
     l.warn('• Ensure your Account ID is correct (32-character hex string)')
     l.warn('• Verify your email matches your Cloudflare account')
     l.warn('• Check that your Global API Key is valid')
@@ -154,12 +100,12 @@ export async function configureR2Interactive(): Promise<boolean> {
     
     const retry = await promptForConfirmation('Would you like to try again with different credentials? (y/n): ')
     if (retry) {
-      return await configureR2Interactive()
+      return await configureCloudflareInteractive()
     }
     return false
   }
   
-  l.success('R2 credentials validated successfully!')
+  l.success('Cloudflare credentials validated successfully!')
   l.info(`Account ID: ${accountId}`)
   l.info(`Email: ${email}`)
   
@@ -177,23 +123,23 @@ export async function configureR2Interactive(): Promise<boolean> {
   l.info('\nVerifying unified API token capabilities...')
   l.dim(`${p} Using token created during credential testing`)
   
-  const vectorizeTest = await testVectorizeAPI(accountId, unifiedToken)
-  const workersAITest = await testWorkersAI(accountId, unifiedToken)
+  const vectorizeWorking = testResult.details?.['vectorizeWorking'] === 'true'
+  const workersAIWorking = testResult.details?.['workersAIWorking'] === 'true'
   
-  if (vectorizeTest && workersAITest) {
+  if (vectorizeWorking && workersAIWorking) {
     l.success('All services (R2, Vectorize, Workers AI) are accessible!')
     l.info('Unified token supports embeddings and AI inference')
-  } else if (vectorizeTest) {
+  } else if (vectorizeWorking) {
     l.warn('Vectorize works but Workers AI access failed - embeddings may not work')
-  } else if (workersAITest) {
+  } else if (workersAIWorking) {
     l.warn('Workers AI works but Vectorize access failed - vector storage may not work')
   } else {
     l.warn('Both Vectorize and Workers AI tests failed - token may have limited functionality')
   }
   
-  const saveCredentials = await promptForConfirmation('Save R2/Vectorize/Workers AI credentials to .env file? (y/n): ')
+  const saveCredentials = await promptForConfirmation('Save Cloudflare credentials to .env file? (y/n): ')
   if (!saveCredentials) {
-    l.info('R2/Vectorize/Workers AI credentials not saved')
+    l.info('Cloudflare credentials not saved')
     return false
   }
   
@@ -204,18 +150,17 @@ export async function configureR2Interactive(): Promise<boolean> {
   ])
   
   if (success.every(Boolean)) {
-    l.success('R2/Vectorize/Workers AI configuration saved successfully!')
+    l.success('Cloudflare configuration saved successfully!')
     
     l.info('\nRunning final health check...')
     
-    const client = new R2Client(accountId)
     const defaultBucketName = `autoshow-${accountId}-auto`.toLowerCase()
     
     l.info(`Creating default bucket: ${defaultBucketName}`)
-    const bucketCreated = await client.createBucket(defaultBucketName)
+    const bucketCreated = await createBucket(accountId, defaultBucketName)
     
     if (bucketCreated) {
-      const healthCheckPassed = await client.healthCheck(defaultBucketName)
+      const healthCheckPassed = await healthCheck(accountId, defaultBucketName)
       if (healthCheckPassed) {
         l.success('✓ Default bucket created and health check passed!')
       } else {
@@ -233,26 +178,7 @@ export async function configureR2Interactive(): Promise<boolean> {
     l.info('• See docs/save/03-r2.md for more details\n')
     return true
   } else {
-    err(`${p} Failed to save R2/Vectorize/Workers AI configuration to .env file`)
+    err(`${p} Failed to save Cloudflare configuration to .env file`)
     return false
   }
-}
-
-async function promptForInput(message: string): Promise<string> {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
-  
-  return new Promise((resolve) => {
-    rl.question(message, (answer) => {
-      rl.close()
-      resolve(answer.trim())
-    })
-  })
-}
-
-async function promptForConfirmation(message: string): Promise<boolean> {
-  const response = await promptForInput(message)
-  return ['y', 'yes', 'true', '1'].includes(response.toLowerCase())
 }

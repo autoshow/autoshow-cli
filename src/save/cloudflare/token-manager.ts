@@ -4,7 +4,7 @@ import type { CloudflareApiToken } from '@/types'
 let cachedApiToken: string | null = null
 
 export async function getR2ApiToken(): Promise<string | null> {
-  const p = '[save/services/r2-token-manager]'
+  const p = '[save/cloudflare/token-manager]'
   
   const existingR2Token = process.env['CLOUDFLARE_R2_API_TOKEN']
   if (existingR2Token) {
@@ -37,7 +37,7 @@ export async function getR2ApiToken(): Promise<string | null> {
 }
 
 async function createApiTokenWithR2Permissions(accountId: string, email: string, globalApiKey: string): Promise<string | null> {
-  const p = '[save/services/r2-token-manager]'
+  const p = '[save/cloudflare/token-manager]'
   
   try {
     l.dim(`${p} Fetching available permission groups`)
@@ -118,7 +118,7 @@ async function createApiTokenWithR2Permissions(accountId: string, email: string,
     
     l.dim(`${p} Successfully created API token with ID: ${tokenData.result.id}`)
     
-    const { updateEnvVariable } = await import('../../config/utils/env-writer')
+    const { updateEnvVariable } = await import('../../config/env-writer')
     await updateEnvVariable('CLOUDFLARE_R2_API_TOKEN', tokenData.result.value)
     
     return tokenData.result.value
@@ -129,7 +129,7 @@ async function createApiTokenWithR2Permissions(accountId: string, email: string,
 }
 
 export function clearCachedToken(): void {
-  const p = '[save/services/r2-token-manager]'
+  const p = '[save/cloudflare/token-manager]'
   l.dim(`${p} Clearing cached R2 token`)
   cachedApiToken = null
 }
