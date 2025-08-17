@@ -3,6 +3,94 @@ import { execPromise } from '@/node-utils'
 import { R2Client } from '@/save/services/r2-client'
 import type { CredentialValidationResult } from '@/types'
 
+async function testVectorizeCapabilities(accountId: string, apiToken: string): Promise<{ working: boolean; details: Record<string, string> }> {
+  const p = '[config/utils/credential-tester]'
+  const details: Record<string, string> = {}
+  
+  try {
+    l.dim(`${p} Testing Vectorize API capabilities`)
+    
+    const indexListResponse = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes`,
+      {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    
+    if (indexListResponse.ok) {
+      const indexData = await indexListResponse.json()
+      const indexCount = indexData.result?.length || 0
+      details['vectorizeIndexes'] = indexCount.toString()
+      l.dim(`${p} Vectorize API accessible, found ${indexCount} indexes`)
+      return { working: true, details }
+    } else if (indexListResponse.status === 403) {
+      details['vectorizeAccess'] = 'denied'
+      l.dim(`${p} Vectorize API access denied - insufficient permissions`)
+      return { working: false, details }
+    } else {
+      details['vectorizeError'] = `HTTP ${indexListResponse.status}`
+      l.dim(`${p} Vectorize API test failed with status: ${indexListResponse.status}`)
+      return { working: false, details }
+    }
+  } catch (error) {
+    details['vectorizeError'] = (error as Error).message
+    l.dim(`${p} Vectorize API test error: ${(error as Error).message}`)
+    return { working: false, details }
+  }
+}
+
+async function testWorkersAICapabilities(accountId: string, apiToken: string): Promise<{ working: boolean; details: Record<string, string> }> {
+  const p = '[config/utils/credential-tester]'
+  const details: Record<string, string> = {}
+  
+  try {
+    l.dim(`${p} Testing Workers AI capabilities with bge-m3 model`)
+    
+    const aiResponse = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/baai/bge-m3`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: 'test embedding'
+        })
+      }
+    )
+    
+    if (aiResponse.ok) {
+      const aiData = await aiResponse.json()
+      if (aiData.success && aiData.result?.data?.[0]) {
+        details['workersAI'] = 'working'
+        details['embeddingModel'] = '@cf/baai/bge-m3'
+        l.dim(`${p} Workers AI test successful with bge-m3 model`)
+        return { working: true, details }
+      } else {
+        details['workersAI'] = 'invalid_response'
+        l.dim(`${p} Workers AI returned unsuccessful response`)
+        return { working: false, details }
+      }
+    } else if (aiResponse.status === 403) {
+      details['workersAI'] = 'access_denied'
+      l.dim(`${p} Workers AI access denied - insufficient permissions`)
+      return { working: false, details }
+    } else {
+      details['workersAIError'] = `HTTP ${aiResponse.status}`
+      l.dim(`${p} Workers AI test failed with status: ${aiResponse.status}`)
+      return { working: false, details }
+    }
+  } catch (error) {
+    details['workersAIError'] = (error as Error).message
+    l.dim(`${p} Workers AI test error: ${(error as Error).message}`)
+    return { working: false, details }
+  }
+}
+
 export async function testS3Credentials(accessKeyId: string, secretAccessKey: string, region = 'us-east-1'): Promise<CredentialValidationResult> {
   const p = '[config/utils/credential-tester]'
   l.dim(`${p} Testing S3 credentials for access key: ${accessKeyId.slice(0, 8)}***`)
@@ -77,12 +165,19 @@ export async function testR2Credentials(accountId: string, email: string, global
     }
   }
   
+  const originalEnvValues = {
+    accountId: process.env['CLOUDFLARE_ACCOUNT_ID'],
+    email: process.env['CLOUDFLARE_EMAIL'], 
+    globalApiKey: process.env['CLOUDFLARE_GLOBAL_API_KEY'],
+    r2ApiToken: process.env['CLOUDFLARE_R2_API_TOKEN']
+  }
+  
   try {
     process.env['CLOUDFLARE_ACCOUNT_ID'] = accountId
     process.env['CLOUDFLARE_EMAIL'] = email
     process.env['CLOUDFLARE_GLOBAL_API_KEY'] = globalApiKey
     
-    l.dim(`${p} Creating R2 API token for testing`)
+    l.dim(`${p} Creating unified R2/Vectorize/Workers AI API token for testing`)
     const permResponse = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/permission_groups`,
       {
@@ -104,27 +199,35 @@ export async function testR2Credentials(accountId: string, email: string, global
     }
     
     const permData = await permResponse.json()
-    const r2Permissions = permData.result.filter((perm: any) => 
+    const allPermissions = permData.result.filter((perm: any) => 
       perm.name === 'Workers R2 Storage:Read' ||
       perm.name === 'Workers R2 Storage:Write' ||
-      perm.name.includes('R2')
+      perm.name === 'Vectorize Read' ||
+      perm.name === 'Vectorize Write' ||
+      perm.name === 'Workers AI Read' ||
+      perm.name === 'Workers AI Write' ||
+      perm.name.includes('R2') ||
+      perm.name.includes('Vectorize') ||
+      perm.name.includes('Workers AI') ||
+      perm.name.includes('Workers Scripts') ||
+      perm.name.includes('Analytics')
     )
     
-    if (r2Permissions.length === 0) {
+    if (allPermissions.length === 0) {
       return { 
         valid: false, 
-        error: 'R2 permissions not available for this account' 
+        error: 'R2, Vectorize, and Workers AI permissions not available for this account' 
       }
     }
     
-    l.dim(`${p} Found ${r2Permissions.length} R2 permission groups`)
+    l.dim(`${p} Found ${allPermissions.length} relevant permission groups`)
     
     const tokenBody = {
-      name: `autoshow-r2-test-${Date.now()}`,
+      name: `autoshow-unified-test-${Date.now()}`,
       policies: [
         {
           effect: 'allow',
-          permission_groups: r2Permissions.map((perm: any) => ({
+          permission_groups: allPermissions.map((perm: any) => ({
             id: perm.id,
             meta: {}
           })),
@@ -153,7 +256,7 @@ export async function testR2Credentials(accountId: string, email: string, global
       l.dim(`${p} Failed to create test token: ${errorText}`)
       return { 
         valid: false, 
-        error: 'Failed to create R2 API token' 
+        error: 'Failed to create unified R2/Vectorize/Workers AI API token' 
       }
     }
     
@@ -163,32 +266,45 @@ export async function testR2Credentials(accountId: string, email: string, global
       l.dim(`${p} Test token created successfully`)
       
       process.env['CLOUDFLARE_R2_API_TOKEN'] = tokenData.result.value
+      process.env['CLOUDFLARE_API_TOKEN'] = tokenData.result.value
       
       const client = new R2Client(accountId)
       const buckets = await client.listBuckets()
-      l.dim(`${p} Successfully listed ${buckets.length} buckets`)
+      l.dim(`${p} Successfully listed ${buckets.length} R2 buckets`)
       
       const testBucketName = `autoshow-test-${Date.now()}`
       l.dim(`${p} Creating test bucket: ${testBucketName}`)
       const bucketCreated = await client.createBucket(testBucketName)
       
       if (bucketCreated) {
-        l.dim(`${p} Running health check on test bucket`)
+        l.dim(`${p} Running R2 health check on test bucket`)
         const healthCheckPassed = await client.healthCheck(testBucketName)
         
         if (healthCheckPassed) {
-          l.dim(`${p} All R2 operations successful, saving token`)
+          l.dim(`${p} Testing Vectorize capabilities`)
+          const vectorizeTest = await testVectorizeCapabilities(accountId, tokenData.result.value)
+          
+          l.dim(`${p} Testing Workers AI capabilities`)
+          const workersAITest = await testWorkersAICapabilities(accountId, tokenData.result.value)
+          
+          l.dim(`${p} All tests successful, saving unified token`)
           const { updateEnvVariable } = await import('../utils/env-writer')
-          await updateEnvVariable('CLOUDFLARE_R2_API_TOKEN', tokenData.result.value)
+          await updateEnvVariable('CLOUDFLARE_API_TOKEN', tokenData.result.value)
+          
+          l.dim(`${p} Keeping unified token in process environment for immediate use`)
           
           return { 
             valid: true, 
             details: { 
               accountId, 
               email,
-              apiToken: 'Created and tested',
+              apiToken: 'Created and tested for R2/Vectorize/Workers AI',
               testBucket: testBucketName,
-              bucketCount: buckets.length.toString()
+              bucketCount: buckets.length.toString(),
+              vectorizeWorking: vectorizeTest.working.toString(),
+              workersAIWorking: workersAITest.working.toString(),
+              ...vectorizeTest.details,
+              ...workersAITest.details
             } 
           }
         } else {
@@ -211,16 +327,37 @@ export async function testR2Credentials(accountId: string, email: string, global
     }
   } catch (error) {
     const errorMessage = (error as Error).message
-    l.dim(`${p} R2 credential test failed: ${errorMessage}`)
+    l.dim(`${p} R2/Vectorize/Workers AI credential test failed: ${errorMessage}`)
     
     return { 
       valid: false, 
-      error: `R2 credential test failed: ${errorMessage}` 
+      error: `R2/Vectorize/Workers AI credential test failed: ${errorMessage}` 
     }
   } finally {
-    delete process.env['CLOUDFLARE_ACCOUNT_ID']
-    delete process.env['CLOUDFLARE_EMAIL']
-    delete process.env['CLOUDFLARE_GLOBAL_API_KEY']
-    delete process.env['CLOUDFLARE_R2_API_TOKEN']
+    l.dim(`${p} Cleaning up temporary environment variables`)
+    
+    if (originalEnvValues.accountId) {
+      process.env['CLOUDFLARE_ACCOUNT_ID'] = originalEnvValues.accountId
+    } else {
+      delete process.env['CLOUDFLARE_ACCOUNT_ID']
+    }
+    
+    if (originalEnvValues.email) {
+      process.env['CLOUDFLARE_EMAIL'] = originalEnvValues.email  
+    } else {
+      delete process.env['CLOUDFLARE_EMAIL']
+    }
+    
+    if (originalEnvValues.globalApiKey) {
+      process.env['CLOUDFLARE_GLOBAL_API_KEY'] = originalEnvValues.globalApiKey
+    } else {
+      delete process.env['CLOUDFLARE_GLOBAL_API_KEY']
+    }
+    
+    if (originalEnvValues.r2ApiToken) {
+      process.env['CLOUDFLARE_R2_API_TOKEN'] = originalEnvValues.r2ApiToken
+    } else {
+      delete process.env['CLOUDFLARE_R2_API_TOKEN']
+    }
   }
 }

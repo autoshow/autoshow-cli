@@ -1,16 +1,12 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  "*"
-  "src/*"
-  "src/config"
-  "src/save"
-  "src/text/embeddings"
-  "src/text/process-steps/05-run-llm.ts"
-  "src/text/utils"
-  "src/text/create-text-command.ts"
   "docs/save"
   "docs/text/05-create-embeddings.md"
+  "src/text/process-steps/05-run-llm.ts"
+  "src/text/create-text-command.ts"
+  "src/text/embeddings"
+  "src/config"
 )
 
 IGNORE_PATHS=(

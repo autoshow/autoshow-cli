@@ -1,6 +1,6 @@
 import { env } from '@/node-utils'
 import { l, err } from '@/logging'
-import { checkIndexExists } from '../utils/vectorize-setup.ts'
+import { checkIndexExists } from './vectorize-setup.ts'
 import type { VectorizeMatch } from '@/types'
 
 async function embedText(text: string, accountId: string, apiToken: string): Promise<number[]> {

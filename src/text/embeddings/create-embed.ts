@@ -1,6 +1,6 @@
 import { env, readdir, readFile, join, isAbsolute, resolve, relative } from '@/node-utils'
 import { l, err } from '@/logging'
-import { ensureVectorizeIndex } from '../utils/vectorize-setup.ts'
+import { ensureVectorizeIndex } from './vectorize-setup.ts'
 import type { VectorizeVector } from '@/types'
 
 const MAX_METADATA_BYTES = 10240
