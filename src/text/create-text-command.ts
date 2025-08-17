@@ -2,7 +2,6 @@ import { Command } from 'commander'
 import { processRSS } from './process-commands/rss'
 import { COMMAND_CONFIG, validateCommandInput } from './utils/text-validation.ts'
 import { processEmbedCommand } from './embeddings/embed-command.ts'
-import { cloudflareCommand } from './embeddings/cloudflare.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
 import type { ProcessingOptions, EmbeddingOptions } from '@/types'
@@ -136,8 +135,7 @@ export const createTextCommand = (): Command => {
     })
   
   textCommand.addCommand(embedCommand)
-  textCommand.addCommand(cloudflareCommand)
   
-  l.dim(`${p} Text command created successfully with embed and cloudflare subcommands`)
+  l.dim(`${p} Text command created successfully with embed subcommand`)
   return textCommand
 }

@@ -10,6 +10,36 @@ function maskCredential(credential: string | undefined, showLength: number = 4):
   return credential.slice(0, showLength) + '*'.repeat(credential.length - showLength)
 }
 
+async function testVectorizeAPI(accountId: string, apiToken: string): Promise<{ working: boolean; indexCount: number }> {
+  const p = '[config/check-all-configs]'
+  
+  try {
+    l.dim(`${p} Testing Vectorize API access`)
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes`,
+      {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    
+    if (response.ok) {
+      const data = await response.json()
+      const indexCount = data.result?.length || 0
+      l.dim(`${p} Vectorize API working, found ${indexCount} indexes`)
+      return { working: true, indexCount }
+    } else {
+      l.dim(`${p} Vectorize API test failed with status: ${response.status}`)
+      return { working: false, indexCount: 0 }
+    }
+  } catch (error) {
+    l.dim(`${p} Vectorize API test error: ${(error as Error).message}`)
+    return { working: false, indexCount: 0 }
+  }
+}
+
 export async function checkAllConfigs(): Promise<void> {
   const p = '[config/check-all-configs]'
   l.dim(`${p} Starting comprehensive configuration check`)
@@ -20,7 +50,7 @@ export async function checkAllConfigs(): Promise<void> {
   const s3Status = await checkS3ConfigStatus()
   configurations.push(s3Status)
   
-  l.dim(`${p} Checking R2 configuration`)
+  l.dim(`${p} Checking R2/Vectorize configuration`)
   const r2Status = await checkR2ConfigStatus()
   configurations.push(r2Status)
   
@@ -58,7 +88,7 @@ async function checkS3ConfigStatus(): Promise<ConfigStatus> {
 async function checkR2ConfigStatus(): Promise<ConfigStatus> {
   const p = '[config/check-all-configs]'
   const status: ConfigStatus = {
-    service: 'Cloudflare R2',
+    service: 'Cloudflare R2 & Vectorize',
     configured: false,
     tested: false,
     issues: [],
@@ -68,12 +98,12 @@ async function checkR2ConfigStatus(): Promise<ConfigStatus> {
   const cloudflareAccountId = process.env['CLOUDFLARE_ACCOUNT_ID']
   const email = process.env['CLOUDFLARE_EMAIL']
   const globalApiKey = process.env['CLOUDFLARE_GLOBAL_API_KEY']
-  const r2ApiToken = process.env['CLOUDFLARE_R2_API_TOKEN']
+  const apiToken = process.env['CLOUDFLARE_API_TOKEN']
   
   status.details['Account ID'] = maskCredential(cloudflareAccountId, 8)
   status.details['Email'] = email ? email.replace(/^(.{3}).*(@.*)$/, '$1***$2') : 'Not set'
   status.details['Global API Key'] = globalApiKey ? '***' : 'Not set'
-  status.details['R2 API Token'] = r2ApiToken ? '***' : 'Not set'
+  status.details['Unified API Token'] = apiToken ? '***' : 'Not set'
   
   try {
     const r2Check = checkR2Configuration()
@@ -87,12 +117,32 @@ async function checkR2ConfigStatus(): Promise<ConfigStatus> {
       try {
         const client = new R2Client(cloudflareAccountId)
         const buckets = await client.listBuckets()
-        status.tested = true
-        status.details['Buckets'] = buckets.length.toString()
-        l.dim(`${p} R2 credentials test successful, found ${buckets.length} buckets`)
+        status.details['R2 Buckets'] = buckets.length.toString()
+        l.dim(`${p} R2 test successful, found ${buckets.length} buckets`)
+        
+        if (apiToken) {
+          l.dim(`${p} Testing Vectorize API`)
+          const vectorizeTest = await testVectorizeAPI(cloudflareAccountId, apiToken)
+          status.details['Vectorize Working'] = vectorizeTest.working ? 'Yes' : 'No'
+          status.details['Vectorize Indexes'] = vectorizeTest.indexCount.toString()
+          
+          if (vectorizeTest.working) {
+            status.tested = true
+            l.dim(`${p} Both R2 and Vectorize working correctly`)
+          } else {
+            status.issues.push('Vectorize API not accessible - check token permissions')
+          }
+        } else {
+          status.issues.push('No unified API token found - Vectorize functionality unavailable')
+        }
+        
+        if (!status.tested && buckets.length >= 0) {
+          status.tested = true
+        }
+        
       } catch (error) {
         const errorMessage = (error as Error).message
-        l.dim(`${p} R2 credentials test failed: ${errorMessage}`)
+        l.dim(`${p} R2/Vectorize test failed: ${errorMessage}`)
         
         if (errorMessage.includes('Failed to get R2 token')) {
           status.issues.push('Failed to create or use R2 API token - check your credentials')
@@ -170,16 +220,14 @@ function displaySetupGuidance(configurations: ConfigStatus[]): void {
         l.dim('  3. Ensure your credentials have S3 permissions')
         break
         
-      case 'Cloudflare R2':
+      case 'Cloudflare R2 & Vectorize':
         l.dim('  1. Get your Cloudflare Account ID from the dashboard')
         l.dim('  2. Get your Global API Key at:')
         l.dim('     https://dash.cloudflare.com/profile/api-tokens')
-        l.dim('  3. Set environment variables:')
-        l.dim('     export CLOUDFLARE_ACCOUNT_ID=your-32-char-hex-account-id')
-        l.dim('     export CLOUDFLARE_EMAIL=your-cloudflare-email')
-        l.dim('     export CLOUDFLARE_GLOBAL_API_KEY=your-global-api-key')
-        l.dim('  4. Run configuration to generate R2 API token:')
+        l.dim('  3. Run interactive configuration:')
         l.dim('     npm run as -- config configure --service r2')
+        l.dim('  4. This will set up both R2 storage and Vectorize embeddings')
+        l.dim('  5. A unified API token will be created automatically')
         break
     }
     l.dim('')

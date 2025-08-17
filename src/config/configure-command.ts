@@ -9,7 +9,7 @@ import type { ConfigureOptions } from '@/types'
 export async function configureCommand(options: ConfigureOptions): Promise<void> {
   const p = '[config/configure-command]'
   logInitialFunctionCall('configureCommand', options as Record<string, unknown>)
-  l.step('\n🔧 AutoShow Cloud Storage Configuration\n')
+  l.step('\n🔧 AutoShow Cloud Storage & AI Services Configuration\n')
   
   if (options.test) {
     l.info('Running configuration test...\n')
@@ -26,11 +26,11 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
   l.dim(`${p} Reading current environment configuration`)
   const currentEnv = await readEnvFile()
   const hasS3 = !!(currentEnv['AWS_ACCESS_KEY_ID'] && currentEnv['AWS_SECRET_ACCESS_KEY'])
-  const hasR2 = !!(currentEnv['CLOUDFLARE_ACCOUNT_ID'] && currentEnv['AWS_PROFILE'])
+  const hasR2 = !!(currentEnv['CLOUDFLARE_ACCOUNT_ID'] && currentEnv['CLOUDFLARE_API_TOKEN'])
   
   l.info('Current Configuration Status:')
   l.info(`S3: ${hasS3 ? '✓ Configured' : '✗ Not configured'}`)
-  l.info(`R2: ${hasR2 ? '✓ Configured' : '✗ Not configured'}\n`)
+  l.info(`R2 & Vectorize: ${hasR2 ? '✓ Configured' : '✗ Not configured'}\n`)
   
   if (options.service) {
     l.dim(`${p} Configuring specific service: ${options.service}`)
@@ -40,7 +40,7 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
   
   l.info('Choose services to configure:')
   l.info('1. Amazon S3')
-  l.info('2. Cloudflare R2')
+  l.info('2. Cloudflare R2 & Vectorize (unified setup)')
   l.info('3. All services')
   l.info('4. Exit\n')
   l.dim('You can skip individual services during configuration by typing "skip"\n')
@@ -53,7 +53,7 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
       await configureSpecificService('s3')
       break
     case '2':
-      l.dim(`${p} User selected R2 configuration`)
+      l.dim(`${p} User selected R2/Vectorize configuration`)
       await configureSpecificService('r2')
       break
     case '3':
@@ -89,12 +89,12 @@ async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<v
     }
     
     try {
-      l.dim(`${p} Starting R2 configuration`)
+      l.dim(`${p} Starting R2/Vectorize configuration`)
       const r2Success = await configureR2Interactive()
-      results.push({ service: 'R2', success: r2Success })
+      results.push({ service: 'R2 & Vectorize', success: r2Success })
     } catch (error) {
-      err(`${p} Error during R2 configuration: ${(error as Error).message}`)
-      results.push({ service: 'R2', success: false })
+      err(`${p} Error during R2/Vectorize configuration: ${(error as Error).message}`)
+      results.push({ service: 'R2 & Vectorize', success: false })
     }
     
     const successful = results.filter(result => result.success)
@@ -112,13 +112,15 @@ async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<v
     }
     
     if (successful.length > 0) {
-      l.success('\nConfiguration completed! You can now use the --save option with text commands.')
+      l.success('\nConfiguration completed! You can now use cloud storage and AI services.')
       l.info('Examples:')
       if (successful.some(r => r.service === 'S3')) {
         l.info('• npm run as -- text --video "URL" --save s3')
       }
-      if (successful.some(r => r.service === 'R2')) {
+      if (successful.some(r => r.service.includes('R2'))) {
         l.info('• npm run as -- text --rss "FEED" --save r2')
+        l.info('• npm run as -- text embed --create')
+        l.info('• npm run as -- text embed --query "your question"')
       }
       l.info('')
     }
@@ -134,19 +136,30 @@ async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<v
         success = await configureS3Interactive()
         break
       case 'r2':
-        l.dim(`${p} Configuring R2`)
+        l.dim(`${p} Configuring R2/Vectorize`)
         success = await configureR2Interactive()
         break
     }
     
     if (success) {
-      l.success(`${service.toUpperCase()} configuration completed successfully!`)
-      l.info(`You can now use --save ${service} with text commands.\n`)
+      const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
+      l.success(`${serviceName} configuration completed successfully!`)
+      
+      if (service === 'r2') {
+        l.info('You can now use:')
+        l.info(`• --save r2 with text commands`)
+        l.info(`• text embed commands for Vectorize embeddings`)
+      } else {
+        l.info(`You can now use --save ${service} with text commands.`)
+      }
+      l.info('')
     } else {
-      l.warn(`${service.toUpperCase()} configuration was skipped or failed.`)
+      const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
+      l.warn(`${serviceName} configuration was skipped or failed.`)
     }
   } catch (error) {
-    err(`${p} Error configuring ${service.toUpperCase()}: ${(error as Error).message}`)
+    const serviceName = service === 'r2' ? 'R2/Vectorize' : service.toUpperCase()
+    err(`${p} Error configuring ${serviceName}: ${(error as Error).message}`)
   }
 }
 
