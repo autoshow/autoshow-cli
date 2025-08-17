@@ -1,8 +1,7 @@
 import { l } from '@/logging'
-import { R2Client } from './r2-client'
 
 export function checkR2Configuration(): { isValid: boolean; error?: string } {
-  const p = '[save/services/r2]'
+  const p = '[save/cloudflare/config]'
   const cloudflareAccountId = process.env['CLOUDFLARE_ACCOUNT_ID']
   const email = process.env['CLOUDFLARE_EMAIL']
   const globalApiKey = process.env['CLOUDFLARE_GLOBAL_API_KEY']
@@ -47,16 +46,4 @@ export function checkR2Configuration(): { isValid: boolean; error?: string } {
 function isValidCloudflareAccountId(accountId: string): boolean {
   const hexPattern = /^[a-f0-9]{32}$/i
   return hexPattern.test(accountId)
-}
-
-export function getR2Client(): R2Client | null {
-  const p = '[save/services/r2]'
-  const accountId = process.env['CLOUDFLARE_ACCOUNT_ID']
-  
-  if (!accountId) {
-    l.dim(`${p} Cannot create R2 client without account ID`)
-    return null
-  }
-  
-  return new R2Client(accountId)
 }

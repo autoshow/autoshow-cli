@@ -1,10 +1,9 @@
 import { l } from '@/logging'
-import { execPromise } from '@/node-utils'
-import { R2Client } from '@/save/services/r2-client'
+import { listBuckets, createBucket, healthCheck } from '@/save/cloudflare/client'
 import type { CredentialValidationResult } from '@/types'
 
 async function testVectorizeCapabilities(accountId: string, apiToken: string): Promise<{ working: boolean; details: Record<string, string> }> {
-  const p = '[config/utils/credential-tester]'
+  const p = '[config/cloudflare/test-cloudflare-credentials]'
   const details: Record<string, string> = {}
   
   try {
@@ -43,7 +42,7 @@ async function testVectorizeCapabilities(accountId: string, apiToken: string): P
 }
 
 async function testWorkersAICapabilities(accountId: string, apiToken: string): Promise<{ working: boolean; details: Record<string, string> }> {
-  const p = '[config/utils/credential-tester]'
+  const p = '[config/cloudflare/test-cloudflare-credentials]'
   const details: Record<string, string> = {}
   
   try {
@@ -91,58 +90,9 @@ async function testWorkersAICapabilities(accountId: string, apiToken: string): P
   }
 }
 
-export async function testS3Credentials(accessKeyId: string, secretAccessKey: string, region = 'us-east-1'): Promise<CredentialValidationResult> {
-  const p = '[config/utils/credential-tester]'
-  l.dim(`${p} Testing S3 credentials for access key: ${accessKeyId.slice(0, 8)}***`)
-  
-  try {
-    const command = `AWS_ACCESS_KEY_ID="${accessKeyId}" AWS_SECRET_ACCESS_KEY="${secretAccessKey}" AWS_REGION="${region}" aws sts get-caller-identity --query Account --output text`
-    const { stdout } = await execPromise(command)
-    const accountId = stdout.trim()
-    
-    if (accountId && accountId.length > 0 && !accountId.includes('error')) {
-      l.dim(`${p} S3 credentials valid for account: ${accountId}`)
-      return { 
-        valid: true, 
-        details: { accountId, region } 
-      }
-    } else {
-      return { 
-        valid: false, 
-        error: 'Invalid response from AWS API' 
-      }
-    }
-  } catch (error) {
-    const errorMessage = (error as Error).message
-    l.dim(`${p} S3 credential test failed: ${errorMessage}`)
-    
-    if (errorMessage.includes('InvalidUserID.NotFound') || errorMessage.includes('does not exist')) {
-      return { 
-        valid: false, 
-        error: 'Access key ID not found or invalid' 
-      }
-    } else if (errorMessage.includes('SignatureDoesNotMatch')) {
-      return { 
-        valid: false, 
-        error: 'Secret access key is incorrect' 
-      }
-    } else if (errorMessage.includes('TokenRefreshRequired')) {
-      return { 
-        valid: false, 
-        error: 'Credentials have expired' 
-      }
-    } else {
-      return { 
-        valid: false, 
-        error: `Credential test failed: ${errorMessage}` 
-      }
-    }
-  }
-}
-
-export async function testR2Credentials(accountId: string, email: string, globalApiKey: string): Promise<CredentialValidationResult> {
-  const p = '[config/utils/credential-tester]'
-  l.dim(`${p} Testing R2 credentials for account: ${accountId.slice(0, 8)}***`)
+export async function testCloudflareCredentials(accountId: string, email: string, globalApiKey: string): Promise<CredentialValidationResult> {
+  const p = '[config/cloudflare/test-cloudflare-credentials]'
+  l.dim(`${p} Testing Cloudflare credentials for account: ${accountId.slice(0, 8)}***`)
   
   if (!/^[a-f0-9]{32}$/i.test(accountId)) {
     return { 
@@ -268,17 +218,16 @@ export async function testR2Credentials(accountId: string, email: string, global
       process.env['CLOUDFLARE_R2_API_TOKEN'] = tokenData.result.value
       process.env['CLOUDFLARE_API_TOKEN'] = tokenData.result.value
       
-      const client = new R2Client(accountId)
-      const buckets = await client.listBuckets()
+      const buckets = await listBuckets(accountId)
       l.dim(`${p} Successfully listed ${buckets.length} R2 buckets`)
       
       const testBucketName = `autoshow-test-${Date.now()}`
       l.dim(`${p} Creating test bucket: ${testBucketName}`)
-      const bucketCreated = await client.createBucket(testBucketName)
+      const bucketCreated = await createBucket(accountId, testBucketName)
       
       if (bucketCreated) {
         l.dim(`${p} Running R2 health check on test bucket`)
-        const healthCheckPassed = await client.healthCheck(testBucketName)
+        const healthCheckPassed = await healthCheck(accountId, testBucketName)
         
         if (healthCheckPassed) {
           l.dim(`${p} Testing Vectorize capabilities`)
@@ -288,7 +237,7 @@ export async function testR2Credentials(accountId: string, email: string, global
           const workersAITest = await testWorkersAICapabilities(accountId, tokenData.result.value)
           
           l.dim(`${p} All tests successful, saving unified token`)
-          const { updateEnvVariable } = await import('../utils/env-writer')
+          const { updateEnvVariable } = await import('../env-writer')
           await updateEnvVariable('CLOUDFLARE_API_TOKEN', tokenData.result.value)
           
           l.dim(`${p} Keeping unified token in process environment for immediate use`)
@@ -327,11 +276,11 @@ export async function testR2Credentials(accountId: string, email: string, global
     }
   } catch (error) {
     const errorMessage = (error as Error).message
-    l.dim(`${p} R2/Vectorize/Workers AI credential test failed: ${errorMessage}`)
+    l.dim(`${p} Cloudflare credential test failed: ${errorMessage}`)
     
     return { 
       valid: false, 
-      error: `R2/Vectorize/Workers AI credential test failed: ${errorMessage}` 
+      error: `Cloudflare credential test failed: ${errorMessage}` 
     }
   } finally {
     l.dim(`${p} Cleaning up temporary environment variables`)
