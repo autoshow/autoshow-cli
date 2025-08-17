@@ -2,14 +2,7 @@ import { l } from '@/logging'
 import { checkS3Config } from './check-s3-config'
 import { checkR2Configuration } from '@/save/services/r2'
 import { R2Client } from '@/save/services/r2-client'
-
-interface ConfigStatus {
-  service: string
-  configured: boolean
-  tested: boolean
-  issues: string[]
-  details: Record<string, string>
-}
+import type { ConfigStatus } from '@/types'
 
 function maskCredential(credential: string | undefined, showLength: number = 4): string {
   if (!credential) return 'Not set'

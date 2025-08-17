@@ -1,29 +1,12 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/types'
 import type { Ora } from 'ora'
 
 export function formatTimestamp(timestamp: string) {
   const [timeWithoutMs] = timestamp.split(',') as [string]
   return timeWithoutMs
-}
-
-interface WhisperTranscriptItem {
-  text: string
-  timestamps: {
-    from: string
-    to: string
-  }
-}
-
-interface WhisperJsonData {
-  transcription: WhisperTranscriptItem[]
-}
-
-interface TranscriptChunk {
-  timestamp: string
-  text: string
 }
 
 export function formatWhisperTranscript(jsonData: WhisperJsonData): string {

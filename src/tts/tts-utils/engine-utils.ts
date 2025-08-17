@@ -1,8 +1,7 @@
 import { l } from '@/logging'
+import type { TtsEngine } from '@/types'
 
 const p = '[tts/tts-utils/engine-utils]'
-
-export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly' | 'kitten'
 
 export const detectEngine = (options: any): TtsEngine => {
   l.dim(`${p} Detecting TTS engine from options`)

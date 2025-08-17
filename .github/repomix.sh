@@ -1,24 +1,22 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  ".github/parse.ts"
-  "src/*"
-  "src/text/llms"
-  "src/text/utils"
-  "src/text/transcription"
-  "src/text/create-text-command.ts"
-  "src/tts"
-  "src/config/check-all-configs.ts"
-  "src/config/check-s3-config.ts"
-  "src/save/services/r2-token-manager.ts"
   "*"
+  "src/*"
+  "src/config"
+  "src/save"
+  "src/text/embeddings"
+  "src/text/process-steps/05-run-llm.ts"
+  "src/text/utils"
+  "src/text/create-text-command.ts"
+  "docs/save"
+  "docs/text/05-create-embeddings.md"
 )
 
 IGNORE_PATHS=(
   "README.md"
   "WARP.md"
   "new-llm-*.md"
-  "src/text/embeddings"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

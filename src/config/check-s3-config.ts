@@ -1,12 +1,6 @@
 import { l } from '@/logging'
 import { execPromise } from '@/node-utils'
-
-interface S3ConfigResult {
-  configured: boolean
-  tested: boolean
-  issues: string[]
-  details: Record<string, string>
-}
+import type { S3ConfigResult } from '@/types'
 
 function maskCredential(credential: string | undefined, showLength: number = 4): string {
   if (!credential) return 'Not set'
