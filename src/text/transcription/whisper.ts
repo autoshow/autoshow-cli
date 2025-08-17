@@ -58,25 +58,24 @@ export async function checkWhisperModel(whisperModel: string) {
   }
 
   if (!existsSync(modelPath)) {
-    l.dim(`${p} Model not found locally, attempting download...`)
-    l.dim(`${p}   - ${whisperModel}`)
+    l.dim(`${p} Downloading model: ${whisperModel}`)
     try {
       await execPromise(
         `bash ./models/download-ggml-model.sh ${whisperModel}`,
         { maxBuffer: 10000 * 1024 }
       )
-      l.dim(`${p} Model download completed.`)
+      l.dim(`${p} Model download completed`)
     } catch (error) {
       err(`${p} Error downloading model: ${(error as Error).message}`)
       throw error
     }
   } else {
-    l.dim(`${p} Model "${whisperModel}" is already available at:`)
-    l.dim(`${p}   - ${modelPath}`)
+    l.dim(`${p} Model ${whisperModel} already available`)
   }
 }
 
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
+  const p = '[text/transcription/whisper]'
   return new Promise((resolve, reject) => {
     const whisperProcess = spawn(command, args)
     let lastProgress = -1
@@ -102,13 +101,16 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
 
     whisperProcess.on('close', (code) => {
       if (code === 0) {
+        l.dim(`${p} whisper-cli completed successfully`)
         resolve()
       } else {
+        l.dim(`${p} whisper-cli exited with code ${code}`)
         reject(new Error(`whisper-cli exited with code ${code}`))
       }
     })
 
     whisperProcess.on('error', (error) => {
+      l.dim(`${p} whisper-cli process error: ${error.message}`)
       reject(error)
     })
   })
@@ -120,8 +122,7 @@ export async function callWhisper(
   spinner?: Ora
 ) {
   const p = '[text/transcription/whisper]'
-  l.opts(`${p} callWhisper called with arguments:`)
-  l.opts(`${p}   - finalPath: ${finalPath}`)
+  l.opts(`${p} callWhisper called`)
 
   try {
     const whisperModel = typeof options.whisper === 'string'
@@ -138,8 +139,7 @@ export async function callWhisper(
 
     await checkWhisperModel(modelId)
 
-    l.dim(`${p} Invoking whisper-cli on file:`)
-    l.dim(`${p}   - ${finalPath}.wav`)
+    l.dim(`${p} Running whisper-cli on ${finalPath}.wav`)
     
     const args = [
       '--no-gpu',
@@ -167,8 +167,7 @@ export async function callWhisper(
       throw whisperError
     }
 
-    l.dim(`${p} Transcript JSON file successfully created, reading file for txt conversion:`)
-    l.dim(`${p}   - ${finalPath}.json`)
+    l.dim(`${p} Reading transcript from ${finalPath}.json`)
     const jsonContent = await readFile(`${finalPath}.json`, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)

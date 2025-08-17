@@ -1,4 +1,3 @@
-// src/text/transcription/whisper-coreml.ts
 import { l, err } from '@/logging'
 import { readFile, unlink, existsSync, execPromise, spawn } from '@/node-utils'
 import { formatWhisperTranscript, checkWhisperModel } from './whisper.ts'
@@ -6,6 +5,7 @@ import type { ProcessingOptions } from '@/types'
 import type { Ora } from 'ora'
 
 async function runWithProgress(command: string, args: string[], spinner?: Ora): Promise<void> {
+  const p = '[text/transcription/whisper-coreml]'
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args)
     let last = -1
@@ -14,18 +14,29 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
       out.split('\n').forEach(line => {
         const m = line.match(/whisper_print_progress_callback:\s*progress\s*=\s*(\d+)%/)
         if (m) {
-          const p = parseInt(m[1]!)
-          if (p !== last) {
-            last = p
-            if (spinner) spinner.text = `Step 3 - Run Transcription (${p}%)`
+          const progress = parseInt(m[1]!)
+          if (progress !== last) {
+            last = progress
+            if (spinner) spinner.text = `Step 3 - Run Transcription (${progress}%)`
           }
         }
       })
     }
     proc.stdout.on('data', onData)
     proc.stderr.on('data', onData)
-    proc.on('close', code => code === 0 ? resolve() : reject(new Error(`whisper-cli-coreml exited with code ${code}`)))
-    proc.on('error', e => reject(e))
+    proc.on('close', code => {
+      if (code === 0) {
+        l.dim(`${p} whisper-cli-coreml completed successfully`)
+        resolve()
+      } else {
+        l.dim(`${p} whisper-cli-coreml exited with code ${code}`)
+        reject(new Error(`whisper-cli-coreml exited with code ${code}`))
+      }
+    })
+    proc.on('error', e => {
+      l.dim(`${p} whisper-cli-coreml process error: ${e.message}`)
+      reject(e)
+    })
   })
 }
 
@@ -37,8 +48,9 @@ async function ensureCoreMLEnv(): Promise<void> {
   }
   try {
     await execPromise(`${py} -c "import torch,coremltools,numpy,transformers,sentencepiece,huggingface_hub,ane_transformers,safetensors,whisper"`, { maxBuffer: 10000 * 1024 })
+    l.dim(`${p} CoreML environment verified`)
   } catch (e: any) {
-    err(`${p} CoreML conversion dependencies missing in models/coreml_env: ${e.message}`)
+    err(`${p} CoreML conversion dependencies missing: ${e.message}`)
     throw new Error('CoreML conversion dependencies not installed. Run npm run setup')
   }
 }
@@ -49,8 +61,7 @@ async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
   const p = '[text/transcription/whisper-coreml]'
   if (!existsSync(pkg)) return
   try {
-    l.dim(`${p} Compiling mlpackage to mlmodelc:`)
-    l.dim(`${p}   - ${pkg}`)
+    l.dim(`${p} Compiling mlpackage to mlmodelc`)
     const compiledDir = `./models/tmp-compile-${modelId}`
     await execPromise(`mkdir -p "${compiledDir}"`)
     try {
@@ -78,8 +89,7 @@ async function ensureCoreMLEncoder(modelId: string): Promise<void> {
     await compileMlpackageToMlmodelc(modelId)
     if (existsSync(encPath)) return
   }
-  l.dim(`${p} CoreML encoder missing, attempting generation:`)
-  l.dim(`${p}   - ./models/generate-coreml-model.sh ${modelId}`)
+  l.dim(`${p} Generating CoreML encoder for ${modelId}`)
   try {
     await execPromise(`bash ./models/generate-coreml-model.sh ${modelId}`, { maxBuffer: 10000 * 1024 })
   } catch (e: any) {
@@ -102,8 +112,7 @@ export async function callWhisperCoreml(
   spinner?: Ora
 ) {
   const p = '[text/transcription/whisper-coreml]'
-  l.opts(`${p} callWhisperCoreml called with arguments:`)
-  l.opts(`${p}   - finalPath: ${finalPath}`)
+  l.opts(`${p} callWhisperCoreml called`)
   try {
     const whisperModel = typeof options['whisperCoreml'] === 'string'
       ? options['whisperCoreml']
@@ -113,8 +122,7 @@ export async function callWhisperCoreml(
     await checkWhisperModel(whisperModel)
     await ensureCoreMLEnv()
     await ensureCoreMLEncoder(whisperModel)
-    l.dim(`${p} Invoking whisper-cli-coreml on file:`)
-    l.dim(`${p}   - ${finalPath}.wav`)
+    l.dim(`${p} Running whisper-cli-coreml on ${finalPath}.wav`)
     const args = [
       '-m', `./models/ggml-${whisperModel}.bin`,
       '-f', `${finalPath}.wav`,
@@ -135,8 +143,7 @@ export async function callWhisperCoreml(
       err(`${p} Error running whisper-cli-coreml: ${(cliErr as Error).message}`)
       throw cliErr
     }
-    l.dim(`${p} Transcript JSON file successfully created, reading file for txt conversion:`)
-    l.dim(`${p}   - ${finalPath}.json`)
+    l.dim(`${p} Reading transcript from ${finalPath}.json`)
     const jsonContent = await readFile(`${finalPath}.json`, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)

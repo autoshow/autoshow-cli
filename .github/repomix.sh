@@ -1,15 +1,24 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  "*"
+  ".github/parse.ts"
   "src/*"
-  "docs/tts"
+  "src/text/llms"
+  "src/text/utils"
+  "src/text/transcription"
+  "src/text/create-text-command.ts"
   "src/tts"
+  "src/config/check-all-configs.ts"
+  "src/config/check-s3-config.ts"
+  "src/save/services/r2-token-manager.ts"
+  "*"
 )
 
 IGNORE_PATHS=(
   "README.md"
   "WARP.md"
+  "new-llm-*.md"
+  "src/text/embeddings"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")
@@ -65,7 +74,8 @@ repomix \
   --token-count-encoding "o200k_base" \
   --top-files-len 50 \
   --no-git-sort-by-changes \
-  --no-file-summary
+  --no-file-summary \
+  --no-gitignore
 
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
