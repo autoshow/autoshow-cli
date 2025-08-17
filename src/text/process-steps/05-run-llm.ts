@@ -3,9 +3,9 @@ import { writeFile } from '@/node-utils'
 import { callChatGPT, callClaude, callGemini } from '../llms/llm-services.ts'
 import { LLM_SERVICES_CONFIG } from '../llms/llm-models.ts'
 import { formatCost, logLLMCost } from '../utils/cost.ts'
-import { uploadAllOutputFiles } from '../utils/s3-upload.ts'
+import { uploadAllOutputFiles } from '@/save'
 import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '../llms/llm-services.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
+import type { ProcessingOptions, ShowNoteMetadata, UploadMetadata } from '@/types'
 export async function runLLM(
   options: ProcessingOptions,
   finalPath: string,
@@ -86,7 +86,7 @@ export async function runLLM(
       const transcriptionCostCents = Math.round((transcriptionCost || 0) * 100)
       const llmCostCents = Math.round(llmCost * 100)
       
-      const uploadMetadata = {
+      const uploadMetadata: UploadMetadata = {
         metadata,
         transcriptionService: transcriptionServices,
         transcriptionModel,

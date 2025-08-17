@@ -40,11 +40,11 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
   const files: FileData[] = []
   let currentFile: FileData | null = null
   let inCodeBlock = false
+  let awaitingDescription = false
   let codeBlockContent: string[] = []
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
-    if (!line) continue
     
     if (line.startsWith('## ') && !inCodeBlock) {
       if (currentFile && codeBlockContent.length > 0) {
@@ -57,11 +57,17 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
         console.log(`${p} Found file path: ${filePath}`)
         currentFile = { path: filePath, content: '' }
         codeBlockContent = []
+        awaitingDescription = true
+        console.log(`${p} Awaiting description line for ${filePath}`)
       } else {
         console.log(`${p} Could not extract file path from: ${line}`)
         currentFile = null
+        awaitingDescription = false
       }
-    } else if (line.startsWith('```') && currentFile) {
+    } else if (awaitingDescription && line.trim() && !line.startsWith('```')) {
+      console.log(`${p} Skipping description line: ${line.trim()}`)
+      awaitingDescription = false
+    } else if (line.startsWith('```') && currentFile && !awaitingDescription) {
       if (!inCodeBlock) {
         inCodeBlock = true
         console.log(`${p} Entering code block for ${currentFile.path}`)
@@ -71,6 +77,8 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
       }
     } else if (inCodeBlock && currentFile) {
       codeBlockContent.push(line)
+    } else if (awaitingDescription && !line.trim()) {
+      console.log(`${p} Skipping empty line while awaiting description`)
     }
   }
   

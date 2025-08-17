@@ -68,7 +68,7 @@ export type ProcessingOptions = {
   metaInfo?: boolean
   keyMomentsCount?: number
   keyMomentDuration?: number
-  save?: 's3' | 'r2' | 'b2'
+  save?: 's3' | 'r2'
   s3BucketPrefix?: string
   [key: string]: any
 }
@@ -138,4 +138,45 @@ export interface VectorizeMatch {
 export interface EmbeddingOptions {
   create?: boolean | string
   query?: string
+}
+export interface UploadMetadata {
+  metadata: ShowNoteMetadata
+  transcriptionService?: string
+  transcriptionModel?: string
+  transcriptionCostCents: number
+  audioDuration: number
+  llmService?: string
+  llmModel?: string
+  llmCostCents: number
+  promptSections: string[]
+  transcript: string
+  llmOutput: string
+}
+export interface ConfigureOptions {
+  service?: 's3' | 'r2' | 'all'
+  reset?: boolean
+  test?: boolean
+  [key: string]: any
+}
+export interface ServiceConfigurationStatus {
+  configured: boolean
+  tested: boolean
+  working: boolean
+  settings: Record<string, string>
+  issues: string[]
+}
+export interface CredentialValidationResult {
+  valid: boolean
+  error?: string
+  details?: Record<string, any>
+}
+export interface EnvVariable {
+  key: string
+  value: string
+  description?: string
+}
+export interface R2Token {
+  accessKeyId: string
+  secretAccessKey: string
+  expiresAt: number
 }
