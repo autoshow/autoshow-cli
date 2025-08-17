@@ -27,6 +27,11 @@ const commands = [
     expectedFile: '2021-05-10-thoughts-on-lambda-school-layoffs-prompt.md',
     newName: '01-LOCAL-04-rss-default.md',
   },
+  {
+    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --whisper-coreml tiny',
+    expectedFile: 'audio-prompt.md',
+    newName: '01-LOCAL-05-file-whisper-coreml-tiny.md'
+  },
 ]
 
 test('AutoShow Command Tests', async (t) => {

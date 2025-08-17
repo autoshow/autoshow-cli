@@ -1,117 +1,59 @@
 # Text-to-Speech (TTS) Command
 
-Generate natural-sounding speech from text using multiple TTS engines.
+Generate speech from text using multiple TTS engines.
 
-## Overview
+## Commands
 
-The Audio & AI Studio Toolkit supports 4 different TTS engines, each with unique strengths:
-
-| Engine | Speed | Quality | Voice Control | Special Features | Documentation |
-|--------|-------|---------|---------------|------------------|---------------|
-| **[Coqui](tts/coqui.md)** | Fast | Excellent | Voice cloning | 1100+ languages, XTTS v2 (default) | [→ Guide](tts/coqui.md) |
-| **[Kitten](tts/kitten.md)** | Very Fast | Good | 8 voices | Ultra-lightweight (25MB), CPU-only | [→ Guide](tts/kitten.md) |
-| **[ElevenLabs](tts/elevenlabs.md)** | Fast | Excellent | Voice cloning | Professional quality | [→ Guide](tts/elevenlabs.md) |
-| **[AWS Polly](tts/polly.md)** | Fast | Very Good | 100+ voices | 30+ languages, neural voices | [→ Guide](tts/polly.md) |
-
-### Output
-
-Generated audio files are saved to the `output/` directory:
-- Single files: `output/sample-tts.wav`
-- Scripts: `output/script-title/segment-001.wav`
-
-## Basic Usage
-
-### Generate Single Speaker Speech
-
+### Single File
 ```bash
-# Using default Coqui engine
 npm run as -- tts file input/sample.md
-
-# Using specific engines
-npm run as -- tts file input/sample.md --coqui --output output/coqui
-npm run as -- tts file input/sample.md --kitten --output output/kitten
-npm run as -- tts file input/sample.md --elevenlabs --output output/elevenlabs
-npm run as -- tts file input/sample.md --polly --output output/polly
+npm run as -- tts file input/sample.md --coqui
+npm run as -- tts file input/sample.md --kitten
+npm run as -- tts file input/sample.md --elevenlabs
+npm run as -- tts file input/sample.md --polly
 ```
 
-### Process Script Files for Multi-Character Dialogue
-
-Script files are JSON files that define multiple text segments with different speakers:
-
-```json
-{
-  "title": "Sample Dialogue",
-  "segments": [
-    {
-      "speaker": "narrator",
-      "text": "Once upon a time..."
-    },
-    {
-      "speaker": "character1",
-      "text": "Hello there!"
-    }
-  ]
-}
-```
-
-Example commands:
-
+### Script Files
 ```bash
 npm run as -- tts script input/script.json
 npm run as -- tts script input/script.json --kitten
 npm run as -- tts script input/script.json --elevenlabs
 npm run as -- tts script input/script.json --coqui
 npm run as -- tts script input/script.json --polly
-
-# Using Coqui with voice cloning
-npm run as -- tts script input/script.json --coqui --coqui-model xtts
-
-# Using Kitten TTS (lightweight, CPU-only)
-npm run as -- tts script input/script.json --kitten
-
-# Using AWS Polly with multiple voices
-npm run as -- tts script input/script.json --polly
 ```
 
-### High-quality audiobook narration
-
+### List Models
 ```bash
-# Using Coqui XTTS with voice cloning
-npm run as -- tts file input/story.md --coqui --coqui-model xtts --voice-clone narrator.wav
-
-# Using Kitten TTS for lightweight deployment
-npm run as -- tts file input/story.md --kitten --voice expr-voice-5-m
-
-# Using ElevenLabs for professional quality
-npm run as -- tts file input/story.md --elevenlabs
-
-# Using AWS Polly with neural voice
-npm run as -- tts file input/story.md --polly --voice Matthew --polly-engine neural
+npm run as -- tts list
 ```
 
-### Voice cloning workflow
+## Options
 
-```bash
-# Clone with Coqui XTTS
-npm run as -- tts file script.md --coqui --coqui-model xtts --voice-clone speaker-sample.mp3
+- `--coqui` - Use Coqui TTS engine (default)
+- `--kitten` - Use Kitten TTS engine
+- `--elevenlabs` - Use ElevenLabs engine
+- `--polly` - Use AWS Polly engine
+- `--output <dir>` - Output directory (default: output/)
+- `--voice <name>` - Voice ID or name
+- `--speaker <name>` - Speaker name (Coqui)
+- `--voice-clone <path>` - Voice sample for cloning (Coqui XTTS)
+- `--language <code>` - Language code
+- `--speed <number>` - Speed 0.25-4.0 (Coqui/Kitten)
+- `--coqui-model <model>` - Coqui model name
+- `--kitten-model <model>` - Kitten model name
+- `--polly-format <format>` - Output format (mp3, ogg_vorbis, pcm)
+- `--polly-sample-rate <rate>` - Sample rate (8000, 16000, 22050, 24000)
+- `--polly-engine <engine>` - Engine type (standard, neural, generative, long-form)
 
-# Clone with ElevenLabs
-npm run as -- tts script input/script.json --elevenlabs
-```
-
-### Multi-lingual content
-
-```bash
-# Generate Spanish speech with Coqui
-npm run as -- tts file spanish.md --coqui --coqui-model xtts --language es
-
-# Generate Spanish speech with AWS Polly
-npm run as -- tts file spanish.md --polly --voice Lupe --language es-US
-```
-
-### Lightweight deployment
-
-```bash
-# Use Kitten TTS for edge devices or offline usage
-npm run as -- tts file input/sample.md --kitten --voice expr-voice-2-f
+## Script Format
+```json
+{
+  "title": "Sample",
+  "segments": [
+    {
+      "speaker": "narrator",
+      "text": "Text content here"
+    }
+  ]
+}
 ```

@@ -96,7 +96,7 @@ export const createTextCommand = (): Command => {
     .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
     .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
     .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)
-    .option('--save <service>', 'Save output to cloud storage (s3, r2, or b2)')
+    .option('--save <service>', 'Save output to cloud storage (s3 or r2)')
     .option('--s3-bucket-prefix <prefix>', 'Custom prefix for S3 bucket name (default: autoshow)')
     .action(async (options: ProcessingOptions) => {
       logInitialFunctionCall('textCommand', options)
@@ -108,8 +108,8 @@ export const createTextCommand = (): Command => {
       }
       if (options.save) {
         l.dim(`${p} Save to cloud storage configured: ${options.save}`)
-        if (options.save !== 's3' && options.save !== 'r2' && options.save !== 'b2') {
-          err(`Invalid save option: ${options.save}. Must be 's3', 'r2', or 'b2'`)
+        if (options.save !== 's3' && options.save !== 'r2') {
+          err(`Invalid save option: ${options.save}. Must be 's3' or 'r2'`)
           exit(1)
         }
       }

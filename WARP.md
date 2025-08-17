@@ -54,6 +54,18 @@ npm run f3 -- "FILE_PATH"                   # With large-v3-turbo model
 # RSS processing shortcuts
 npm run r -- "RSS_URL"                      # Basic RSS processing
 npm run r3 -- "RSS_URL"                     # With large-v3-turbo model
+
+# Playlist processing shortcuts
+npm run p -- "PLAYLIST_URL"                 # Basic playlist processing
+npm run p3 -- "PLAYLIST_URL"                # With large-v3-turbo model
+
+# URLs file processing shortcuts
+npm run u -- "URLS_FILE_PATH"               # Basic URLs file processing
+npm run u3 -- "URLS_FILE_PATH"              # With large-v3-turbo model
+
+# Channel processing shortcuts
+npm run c -- "CHANNEL_URL"                  # Basic channel processing
+npm run c3 -- "CHANNEL_URL"                 # With large-v3-turbo model
 ```
 
 ### Development and Testing
@@ -70,6 +82,15 @@ npm run test:cli        # All CLI tests
 
 # Generate repository snapshot
 npm run repo
+```
+
+### TTS and Image Commands
+```bash
+# Text-to-speech shortcuts
+npm run tts                                 # TTS command (equivalent to npm run as -- tts)
+
+# Image generation shortcuts
+npm run image                               # Image command (equivalent to npm run as -- image)
 ```
 
 ## Architecture Overview

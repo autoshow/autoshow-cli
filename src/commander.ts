@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { createTtsCommand } from './tts/create-tts-command.ts'
 import { createImageCommand } from './image/create-image-command.ts'
 import { createTextCommand } from './text/create-text-command.ts'
+import { createConfigCommand } from './config/create-config-command.ts'
 import { l, err } from '@/logging'
 import { argv, exit, fileURLToPath, basename } from '@/node-utils'
 
@@ -17,6 +18,7 @@ l.dim(`${p} Adding commands to program`)
 program.addCommand(createTextCommand())
 program.addCommand(createTtsCommand())
 program.addCommand(createImageCommand())
+program.addCommand(createConfigCommand())
 
 program.on('command:*', () => {
   err(`Error: Invalid command '${program.args.join(' ')}'. Use --help to see available commands.`)

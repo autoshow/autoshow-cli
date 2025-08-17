@@ -2,30 +2,14 @@
 
 INCLUDE_PATHS=(
   "*"
-  # ".github/**/*.sh"
-  # "input"
-  # "models/generate-coreml-model.sh"
-  # "models/convert-whisper-to-coreml.py"
   "src/*"
-  "src/text"
-  "docs/text/01-text-command.md"
-  "docs/text/05-create-embeddings.md"
-  "docs/text/08-save-to-bucket.md"
-  # "test/cli"
-  # "src/image"
-  # "src/tts"
-  # "test"
+  "docs/tts"
+  "src/tts"
 )
 
 IGNORE_PATHS=(
-  "src/text/prompts/content-structure-summaries"
-  "src/text/prompts/creative-entertainment"
-  "src/text/prompts/marketing-social-media"
-  "src/text/process-commands/rss"
-  "src/text/process-commands/channel"
-  # "src/text/utils/embeddings"
-  "src/text/llms"
-  "src/text/transcription"
+  "README.md"
+  "WARP.md"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")
