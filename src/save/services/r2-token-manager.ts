@@ -1,10 +1,5 @@
 import { l, err } from '@/logging'
-
-interface CloudflareApiToken {
-  value: string
-  id: string
-  name: string
-}
+import type { CloudflareApiToken } from '@/types'
 
 let cachedApiToken: string | null = null
 

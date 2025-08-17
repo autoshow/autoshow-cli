@@ -5,7 +5,7 @@ import { synthesizeWithCoqui } from '../tts-services/coqui.ts'
 import { synthesizeWithPolly } from '../tts-services/polly.ts'
 import { synthesizeWithKitten } from '../tts-services/kitten.ts'
 import { stripMarkdown } from './text-utils.ts'
-import type { TtsEngine } from './engine-utils.ts'
+import type { TtsEngine } from '@/types'
 
 const p = '[tts/tts-utils/synthesizers]'
 

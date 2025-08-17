@@ -1,23 +1,7 @@
 import { env } from '@/node-utils'
 import { l, err } from '@/logging'
-interface VectorizeIndexConfig {
-  name: string
-  description: string
-  config: {
-    dimensions: number
-    metric: string
-  }
-}
-interface VectorizeIndexInfo {
-  name: string
-  description: string
-  config: {
-    dimensions: number
-    metric: string
-  }
-  created_on: string
-  modified_on: string
-}
+import type { VectorizeIndexConfig, VectorizeIndexInfo } from '@/types'
+
 export async function checkIndexExists(indexName: string): Promise<boolean> {
   const p = '[text/utils/vectorize-setup]'
   

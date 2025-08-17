@@ -1,3 +1,5 @@
+import { LLM_SERVICES_CONFIG } from './text/llms/llm-models'
+
 export interface ShowNote {
   id?: number
   showLink?: string
@@ -180,3 +182,88 @@ export interface R2Token {
   secretAccessKey: string
   expiresAt: number
 }
+
+export interface FileData {
+  path: string
+  content: string
+}
+
+export interface ConfigStatus {
+  service: string
+  configured: boolean
+  tested: boolean
+  issues: string[]
+  details: Record<string, string>
+}
+
+export interface S3ConfigResult {
+  configured: boolean
+  tested: boolean
+  issues: string[]
+  details: Record<string, string>
+}
+
+export interface CloudflareApiToken {
+  value: string
+  id: string
+  name: string
+}
+
+export interface DeepgramWord {
+  word: string
+  start: number
+  end: number
+  confidence: number
+  speaker?: number
+  speaker_confidence?: number
+}
+
+export interface WhisperTranscriptItem {
+  text: string
+  timestamps: {
+    from: string
+    to: string
+  }
+}
+
+export interface WhisperJsonData {
+  transcription: WhisperTranscriptItem[]
+}
+
+export interface TranscriptChunk {
+  timestamp: string
+  text: string
+}
+
+export interface VectorizeIndexConfig {
+  name: string
+  description: string
+  config: {
+    dimensions: number
+    metric: string
+  }
+}
+
+export interface VectorizeIndexInfo {
+  name: string
+  description: string
+  config: {
+    dimensions: number
+    metric: string
+  }
+  created_on: string
+  modified_on: string
+}
+
+export interface VoiceSettings {
+  stability: number
+  similarity_boost: number
+  style: number
+  use_speaker_boost: boolean
+}
+
+export type ChatGPTModelValue = (typeof LLM_SERVICES_CONFIG.chatgpt.models)[number]['modelId']
+export type ClaudeModelValue = (typeof LLM_SERVICES_CONFIG.claude.models)[number]['modelId']
+export type GeminiModelValue = (typeof LLM_SERVICES_CONFIG.gemini.models)[number]['modelId']
+
+export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly' | 'kitten'

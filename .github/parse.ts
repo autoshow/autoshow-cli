@@ -1,13 +1,9 @@
 import { Command } from 'commander'
 import { promises as fs } from 'fs'
 import { dirname } from 'path'
+import type { FileData } from '../src/types'
 
 const p = '[parse]'
-
-interface FileData {
-  path: string
-  content: string
-}
 
 function extractFilePath(headerLine: string): string | null {
   if (!headerLine.startsWith('## ')) return null

@@ -5,15 +5,9 @@ import {
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
 } from '../tts-utils'
+import type { VoiceSettings } from '@/types'
 
 const p = '[tts/tts-services/elevenlabs]'
-
-export interface VoiceSettings {
-  stability: number
-  similarity_boost: number
-  style: number
-  use_speaker_boost: boolean
-}
 
 export const DEFAULT_SETTINGS: VoiceSettings = {
   stability: 0.5,

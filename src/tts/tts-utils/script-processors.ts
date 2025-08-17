@@ -3,7 +3,7 @@ import { processScriptWithElevenLabs } from '../tts-services/elevenlabs.ts'
 import { processScriptWithCoqui } from '../tts-services/coqui.ts'
 import { processScriptWithPolly } from '../tts-services/polly.ts'
 import { processScriptWithKitten } from '../tts-services/kitten.ts'
-import type { TtsEngine } from './engine-utils.ts'
+import type { TtsEngine } from '@/types'
 
 const p = '[tts/tts-utils/script-processors]'
 
