@@ -5,9 +5,7 @@ import { runTranscription } from '../process-steps/03-run-transcription.ts'
 import { selectPrompts } from '../process-steps/04-select-prompt.ts'
 import { runLLM } from '../process-steps/05-run-llm.ts'
 import { err, logInitialFunctionCall } from '@/logging'
-
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
-
 export async function processFile(
   options: ProcessingOptions,
   filePath: string,
@@ -16,12 +14,12 @@ export async function processFile(
 ) {
   const p = '[text/process-commands/file]'
   logInitialFunctionCall('processFile', { filePath, llmServices, transcriptServices })
-
   try {
     const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, filePath)
     await downloadAudio(options, filePath, filename)
-    const { transcript, modelId: transcriptionModel } = await runTranscription(options, finalPath, transcriptServices)
+    const { transcript, modelId: transcriptionModel, costPerMinuteCents, audioDuration } = await runTranscription(options, finalPath, transcriptServices)
     const selectedPrompts = await selectPrompts(options)
+    const transcriptionCost = costPerMinuteCents * ((audioDuration || 0) / 60) / 100
     const llmOutput = await runLLM(
       options,
       finalPath,
@@ -31,13 +29,13 @@ export async function processFile(
       metadata as ShowNoteMetadata,
       llmServices,
       transcriptServices,
-      transcriptionModel
+      transcriptionModel,
+      transcriptionCost,
+      audioDuration
     )
-
     if (!options.saveAudio) {
       await saveAudio(finalPath)
     }
-
     return {
       frontMatter,
       prompt: selectedPrompts,

@@ -1,4 +1,4 @@
-import { sections } from '../prompts/sections.ts'
+import { sections } from '../prompts'
 import { err, l, logInitialFunctionCall } from '@/logging'
 import { readFile } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
@@ -34,35 +34,41 @@ export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
 const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
 
 export async function selectPrompts(options: ProcessingOptions) {
-  const p = '[text/process-steps/04-select-prompt]'
+  const p = '[process-steps/04-select-prompt]'
   l.step(`\nStep 4 - Select Prompts\n`)
   logInitialFunctionCall('selectPrompts', { options })
+  l.dim(`${p} Starting prompt selection`)
 
   let customPrompt = ''
   if (options.customPrompt) {
+    l.dim(`${p} Loading custom prompt from: ${options.customPrompt}`)
     try {
       customPrompt = (await readFile(options.customPrompt, 'utf8')).trim()
+      l.dim(`${p} Custom prompt loaded successfully`)
     } catch (error) {
       err(`${p} Error reading custom prompt file: ${(error as Error).message}`)
     }
   }
 
   if (customPrompt) {
+    l.dim(`${p} Using custom prompt`)
     return customPrompt
   }
 
   let text = "This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.\n\n"
 
   const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters']
+  l.dim(`${p} Selected prompts: ${prompt.join(', ')}`)
 
   const validSections = prompt.filter(
     (section): section is keyof typeof sections =>
       validPromptValues.has(section) && Object.hasOwn(sections, section)
   )
 
-  l.dim(`${p} ${JSON.stringify(validSections, null, 2)}`)
+  l.dim(`${p} Valid sections found: ${JSON.stringify(validSections, null, 2)}`)
 
   validSections.forEach((section) => {
+    l.dim(`${p} Processing section: ${section}`)
     let instruction = sections[section].instruction
 
     if (section === 'keyMoments') {
@@ -82,5 +88,6 @@ export async function selectPrompts(options: ProcessingOptions) {
     text += `    ${sections[section].example}\n`
   })
 
+  l.dim(`${p} Prompt selection completed`)
   return text
 }

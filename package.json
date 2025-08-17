@@ -20,6 +20,7 @@
   "type": "module",
   "scripts": {
     "repo": "bash .github/repomix.sh",
+    "parse": "tsx .github/parse.ts",
     "tsx:base": "tsx --env-file=.env --no-warnings",
     "setup": "./.github/setup.sh",
     "check": "npx tsc --noEmit",
@@ -39,12 +40,11 @@
     "tts": "npm run as -- tts",
     "image": "npm run as -- image",
     "test:base": "tsx --test --env-file=.env --test-reporter=spec --test-reporter-destination=spec.log --test-concurrency=1",
-    "test:local": "npm run test:base -- test/cli/cli-local.test.ts",
-    "test:all": "npm run test:base -- test/cli/cli-all.test.ts",
-    "test:prompts": "npm run test:base -- test/cli/all-prompts.test.ts",
-    "test:models": "npm run test:base -- test/cli/all-models.test.ts",
-    "test:cli": "npm run test:base -- test/cli/*.test.ts",
-    "test:e2e": "npm run test:base -- test/cli/e2e.test.ts"
+    "test:local": "npm run test:base -- test/local.test.ts",
+    "test:services": "npm run test:base -- test/services.test.ts",
+    "test:prompts": "npm run test:base -- test/prompts.test.ts",
+    "test:models": "npm run test:base -- test/models.test.ts",
+    "test:cli": "npm run test:base -- test/*.test.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "1.3.5",

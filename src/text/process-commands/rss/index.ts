@@ -1,6 +1,6 @@
-import { validateRSSOptions } from './validation.ts'
-import { getLLMService, getTranscriptService } from './services.ts'
+import { validateRSSOptions, getLLMService, getTranscriptService } from './rss-validation.ts'
 import { processRSSFeeds } from './processor.ts'
+import { handleWorkflow } from './workflows.ts'
 import { l, err, logInitialFunctionCall } from '@/logging'
 import type { ProcessingOptions } from '@/types'
 
@@ -11,6 +11,21 @@ export async function processRSS(
 ): Promise<void> {
   const p = '[text/process-commands/rss/index]'
   logInitialFunctionCall('processRSS', { llmServicesParam, transcriptServicesParam, options })
+  
+  if (options.feed) {
+    l.dim(`${p} Feed option detected, handling as workflow`)
+    const workflowHandled = await handleWorkflow(options)
+    if (workflowHandled) {
+      l.dim(`${p} Workflow completed successfully`)
+      return
+    }
+  }
+  
+  if (!options.rss || (Array.isArray(options.rss) && options.rss.length === 0)) {
+    err(`${p} No RSS URLs provided for processing`)
+    process.exit(1)
+  }
+  
   l.dim(`${p} Starting RSS processing`)
   
   const llmServices = llmServicesParam || getLLMService(options)
