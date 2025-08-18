@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import { execPromise, mkdirSync, existsSync } from '@/node-utils'
+import { execPromise, existsSync, ensureDir, join } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
 
 export function logRSSProcessingStatus(
@@ -62,7 +62,7 @@ export async function logMkdir(targetPath: string, operationName: string): Promi
   l(`${p}[${operationName}] Starting ${operationName}: Creating directory ${targetPath}`)
   try {
     if (!existsSync(targetPath)) {
-      mkdirSync(targetPath, { recursive: true })
+      await ensureDir(targetPath)
       l(`${p}[${operationName}] Successfully created directory: ${targetPath}`)
     } else {
       l(`${p}[${operationName}] Directory already exists: ${targetPath}`)
@@ -83,9 +83,9 @@ export async function logRemove(targetPath: string, operationName: string, extra
 }
 
 export async function logMoveMd(subfolder: string, dirName: string, operationName: string): Promise<void> {
-  const sourcePath = `./content/${subfolder}`
-  const destPath = `./output/workflows/${dirName}/${subfolder}/`
+  const sourcePath = join('output', subfolder)
+  const destPath = join('output', 'workflows', dirName, subfolder)
   await logMkdir(destPath, `${operationName} (ensure_dest)`)
-  const command = `find "${sourcePath}" -maxdepth 1 -type f -name '*.md' -exec mv {} "${destPath}" \\;`
+  const command = `find "${sourcePath}" -maxdepth 1 -type f -name '*.md' -exec mv {} "${destPath}/" \\;`
   await logOperation(command, operationName, l, `Moving .md files from ${sourcePath} to ${destPath}`)
 }

@@ -5,11 +5,17 @@ import { processEmbedCommand } from '../embeddings/embed-command.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
 import type { ProcessingOptions, EmbeddingOptions } from '@/types'
+
 export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
   const p = '[text/create-text-command]'
   l.dim(`${p} Starting command processing`)
+  
+  if (!options.inputDir) {
+    options.inputDir = 'input'
+    l.dim(`${p} Set default input directory: ${options.inputDir}`)
+  }
   
   if (options.rss && Array.isArray(options.rss) && options.rss.length === 0) {
     options.rss = undefined
@@ -61,12 +67,15 @@ export async function processCommand(
     exit(1)
   }
 }
+
 export const createTextCommand = (): Command => {
   const p = '[text/create-text-command]'
   l.dim(`${p} Creating text command with all options`)
   
   const textCommand = new Command('text')
     .description('Process audio/video content into text-based outputs')
+    .option('--input-dir <directory>', 'Input directory for files (default: input)')
+    .option('--output-dir <subdirectory>', 'Output subdirectory within output/ (optional)')
     .option('--video <url>', 'Process a single YouTube video')
     .option('--playlist <playlistUrl>', 'Process all videos in a YouTube playlist')
     .option('--channel <channelUrl>', 'Process all videos in a YouTube channel')
@@ -115,12 +124,18 @@ export const createTextCommand = (): Command => {
       if (options.s3BucketPrefix) {
         l.dim(`${p} S3 bucket prefix configured: ${options.s3BucketPrefix}`)
       }
+      if (options.inputDir) {
+        l.dim(`${p} Input directory configured: ${options.inputDir}`)
+      }
+      if (options.outputDir) {
+        l.dim(`${p} Output subdirectory configured: ${options.outputDir}`)
+      }
       await processCommand(options)
     })
   
   const embedCommand = new Command('embed')
     .description('Create or query vector embeddings using Cloudflare Vectorize')
-    .option('--create [directory]', 'Create embeddings from markdown files in directory (default: content)')
+    .option('--create [directory]', 'Create embeddings from markdown files in directory (default: input)')
     .option('--query <question>', 'Query embeddings with a question')
     .action(async (options: EmbeddingOptions) => {
       logInitialFunctionCall('embedCommand', options as Record<string, unknown>)

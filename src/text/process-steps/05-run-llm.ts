@@ -1,10 +1,11 @@
 import { l, err, logInitialFunctionCall } from '@/logging'
-import { writeFile } from '@/node-utils'
+import { writeFile, ensureDir } from '@/node-utils'
 import { callChatGPT, callClaude, callGemini } from '../llms/llm-services.ts'
 import { LLM_SERVICES_CONFIG } from '../llms/llm-models.ts'
 import { formatCost, logLLMCost } from '../utils/cost.ts'
 import { uploadAllOutputFiles } from '@/save'
 import type { ProcessingOptions, ShowNoteMetadata, UploadMetadata, ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '@/types'
+
 export async function runLLM(
   options: ProcessingOptions,
   finalPath: string,
@@ -21,6 +22,11 @@ export async function runLLM(
   const p = '[text/process-steps/05-run-llm]'
   l.step(`\nStep 5 - Run Language Model\n`)
   logInitialFunctionCall('runLLM', { llmServices, metadata })
+  
+  l.dim(`${p} Ensuring output directory exists for: ${finalPath}`)
+  const outputDir = finalPath.substring(0, finalPath.lastIndexOf('/'))
+  await ensureDir(outputDir)
+  
   metadata.walletAddress = options['walletAddress'] || metadata.walletAddress
   metadata.mnemonic = options['mnemonic'] || metadata.mnemonic
   try {
@@ -131,6 +137,7 @@ export async function runLLM(
     throw error
   }
 }
+
 export async function retryLLMCall<T>(
   fn: () => Promise<T>
 ) {

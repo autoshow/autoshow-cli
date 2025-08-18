@@ -72,6 +72,8 @@ export type ProcessingOptions = {
   keyMomentDuration?: number
   save?: 's3' | 'r2'
   s3BucketPrefix?: string
+  inputDir?: string
+  outputDir?: string
   [key: string]: any
 }
 export interface VideoInfo {

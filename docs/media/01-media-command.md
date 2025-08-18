@@ -36,7 +36,7 @@ You can also include URLs in sentences like this: https://www.youtube.com/watch?
 
 ### Output
 
-Downloaded files are saved to the `content` directory with the format:
+Downloaded files are saved to the `output` directory with the format:
 - `YYYY-MM-DD-title.mp3`
 
 ## convert - Convert Local Audio/Video Files
@@ -80,7 +80,7 @@ npm run as -- media convert --files "input/videos" --verbose
 ### Output Structure
 
 ```
-content/
+output/
 ├── downloaded-video-1.mp3
 ├── downloaded-video-2.mp3
 ├── converted-local-file-1.mp3

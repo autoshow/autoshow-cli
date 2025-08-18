@@ -31,7 +31,7 @@ const cliCommands = [
 ]
 
 test('CLI prompt tests', { concurrency: 1 }, async (t) => {
-  const outputDirectory = resolve(process.cwd(), 'content')
+  const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
   for (const commandObj of cliCommands) {

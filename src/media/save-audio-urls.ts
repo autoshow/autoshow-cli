@@ -28,7 +28,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
     l.opts(`Found ${urls.length} URLs to process:`)
     urls.forEach(url => l.dim(`  - ${url}`))
     
-    const outputDir = 'content'
+    const outputDir = 'output'
     await ensureDir(outputDir)
     
     const ytDlpArgs = [
