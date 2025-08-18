@@ -30,6 +30,20 @@ export interface RunwayGenerateOptions {
   duration?: 5 | 10
 }
 
+export type WanModel = 'vace-1.3b' | 'vace-14b' | 't2v-1.3b' | 't2v-14b'
+
+export interface WanGenerateOptions {
+  model?: WanModel
+  outputPath?: string
+  resolution?: { width: number; height: number }
+  numFrames?: number
+  guidanceScale?: number
+  negativePrompt?: string
+  image?: string
+  mask?: string
+  referenceImages?: string[]
+}
+
 export interface VideoGenerationResult {
   success: boolean
   path?: string

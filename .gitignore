@@ -24,3 +24,5 @@ whisper-cpp-temp
 whisper-coreml-temp
 input
 eng.traineddata
+wan_env
+=*

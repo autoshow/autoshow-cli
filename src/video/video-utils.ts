@@ -31,7 +31,8 @@ export const handleError = (error: any): void => {
     'ValidationException': `Validation error: ${error.message}`,
     'insufficient permissions': `Insufficient permissions: ${error.message}\n\nPlease ensure your API key has the necessary permissions`,
     'RUNWAYML_API_SECRET': 'Missing Runway API key. Please set RUNWAYML_API_SECRET in your .env file',
-    'GEMINI_API_KEY': 'Missing Gemini API key. Please set GEMINI_API_KEY in your .env file'
+    'GEMINI_API_KEY': 'Missing Gemini API key. Please set GEMINI_API_KEY in your .env file',
+    'Wan2.1 not configured': 'Wan2.1 models not installed. Please run: bash .github/setup/video/wan.sh'
   }
   
   const matched = Object.entries(errorMap).find(([key]) => 
@@ -55,6 +56,11 @@ export function validateVideoModel(model: string): boolean {
 
 export function validateRunwayModel(model: string): boolean {
   const validModels = ['gen4_turbo', 'gen3a_turbo']
+  return validModels.includes(model)
+}
+
+export function validateWanModel(model: string): boolean {
+  const validModels = ['vace-1.3b', 'vace-14b', 't2v-1.3b', 't2v-14b']
   return validModels.includes(model)
 }
 
