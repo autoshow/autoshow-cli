@@ -5,13 +5,15 @@ import { generateImageWithDallE } from './image-services/dalle.ts'
 import { generateImageWithBlackForestLabs } from './image-services/bfl.ts'
 import { generateImageWithNova } from './image-services/nova.ts'
 import { generateImageWithStableDiffusionCpp } from './image-services/sdcpp.ts'
+import { generateImageWithRunway } from './image-services/runway.ts'
 import { generateComparisonImages } from './image-services/comparison.ts'
 
 const serviceGenerators = {
   dalle: generateImageWithDallE,
   bfl: generateImageWithBlackForestLabs,
   nova: generateImageWithNova,
-  sdcpp: generateImageWithStableDiffusionCpp
+  sdcpp: generateImageWithStableDiffusionCpp,
+  runway: generateImageWithRunway
 } as const
 
 export const createImageCommand = (): Command => {
@@ -22,10 +24,10 @@ export const createImageCommand = (): Command => {
     .command('generate')
     .description('Generate images using AI services')
     .requiredOption('-p, --prompt <text>', 'text prompt for image generation')
-    .option('-s, --service <service>', 'service to use (dalle|bfl|nova|sdcpp)', 'dalle')
+    .option('-s, --service <service>', 'service to use (dalle|bfl|nova|sdcpp|runway)', 'dalle')
     .option('-o, --output <path>', 'output path')
-    .option('-w, --width <width>', 'image width (bfl/nova/sdcpp only)')
-    .option('-h, --height <height>', 'image height (bfl/nova/sdcpp only)')
+    .option('-w, --width <width>', 'image width (bfl/nova/sdcpp/runway only)')
+    .option('-h, --height <height>', 'image height (bfl/nova/sdcpp/runway only)')
     .option('--seed <seed>', 'random seed for reproducibility')
     .option('--safety <tolerance>', 'safety tolerance 0-5 (bfl only)', '2')
     .option('-n, --negative <text>', 'negative prompt (nova/sdcpp only)')
@@ -40,11 +42,15 @@ export const createImageCommand = (): Command => {
     .option('--reference-image <path>', 'reference image for flux-kontext (sdcpp only)')
     .option('--flash-attention', 'use flash attention (sdcpp only)')
     .option('--quantization <type>', 'weight quantization (sdcpp only)', 'f16')
+    .option('--style <style>', 'artistic style (runway only)')
+    .option('--runway-model <model>', 'Runway text-to-image model (if available)')
     .action(async (options) => {
       try {
+        l.dim(`${p} Starting generation with service: ${options.service}`)
+        
         const generator = serviceGenerators[options.service as keyof typeof serviceGenerators]
         if (!generator) {
-          err(`${p} Unknown service: ${options.service}. Use dalle, bfl, nova, or sdcpp.`)
+          err(`${p} Unknown service: ${options.service}. Use dalle, bfl, nova, sdcpp, or runway.`)
         }
         
         const result = await (options.service === 'bfl' 
@@ -71,6 +77,13 @@ export const createImageCommand = (): Command => {
               flashAttention: options.flashAttention,
               quantization: options.quantization
             })
+          : options.service === 'runway'
+          ? generator(options.prompt, options.output, {
+              ...(options.runwayModel && { model: options.runwayModel }),
+              width: options.width ? parseInt(options.width) : undefined,
+              height: options.height ? parseInt(options.height) : undefined,
+              style: options.style
+            })
           : generator(options.prompt, options.output))
         
         if (!result) {
@@ -95,7 +108,7 @@ export const createImageCommand = (): Command => {
         const result = await generateComparisonImages(prompt)
         l.success(`${p} Comparison completed`)
         
-        const services = { dalle: 'DALL-E', blackForest: 'Black Forest Labs', nova: 'AWS Nova Canvas' }
+        const services = { dalle: 'DALL-E', blackForest: 'Black Forest Labs', nova: 'AWS Nova Canvas', runway: 'Runway' }
         Object.entries(services).forEach(([key, name]) => {
           const res = result[key]
           if (res?.success) {

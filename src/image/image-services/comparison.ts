@@ -4,6 +4,7 @@ import { env } from '@/node-utils'
 import { generateImageWithDallE } from './dalle.ts'
 import { generateImageWithBlackForestLabs } from './bfl.ts'
 import { generateImageWithNova } from './nova.ts'
+import { generateImageWithRunway } from './runway.ts'
 
 export async function generateComparisonImages(prompt: string): Promise<any> {
   const p = '[image/image-services/comparison]'
@@ -22,6 +23,10 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
     
     if (env['AWS_ACCESS_KEY_ID'] && env['AWS_SECRET_ACCESS_KEY']) {
       promises.push(generateImageWithNova(prompt, { resolution: '1024x1024', quality: 'standard' }))
+    }
+    
+    if (env['RUNWAYML_API_SECRET']) {
+      promises.push(generateImageWithRunway(prompt, undefined))
     }
     
     if (!promises.length) {
@@ -57,6 +62,15 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       comparison.nova = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.nova) {
         l.warn(`${p} [${requestId}] Nova Canvas failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+      }
+      resultIndex++
+    }
+    
+    if (env['RUNWAYML_API_SECRET']) {
+      const result = results[resultIndex]
+      comparison.runway = result && result.status === 'fulfilled' ? result.value : null
+      if (!comparison.runway) {
+        l.warn(`${p} [${requestId}] Runway failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
       }
     }
     
