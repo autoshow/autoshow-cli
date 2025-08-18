@@ -3,7 +3,7 @@ import { l, err } from '@/logging'
 import { ensureVectorizeIndex } from '../vectorize-setup.ts'
 import { getAllMarkdownFiles, truncateContentSafely } from './file-utils.ts'
 import { uploadToVectorize, validateMetadataSize } from './upload-vectorize.ts'
-import type { VectorizeVector } from '@/types'
+import type { VectorizeVector } from '@/embeddings/embed-types'
 
 export async function createEmbeddingVector(text: string, accountId: string, apiToken: string): Promise<number[]> {
   const p = '[embeddings/create/create-embed]'

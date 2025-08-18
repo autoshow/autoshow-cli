@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import type { ExtractOptions, ModelKey } from '@/types'
+import type { ExtractOptions, ModelKey } from '@/extract/extract-types'
 
 const p = '[extract/extract-services/zerox]'
 

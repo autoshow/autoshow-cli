@@ -1,6 +1,6 @@
 import { err } from '@/logging'
 import { readFile, writeFile, existsSync } from '@/node-utils'
-import type { EnvVariable } from '@/types'
+import type { EnvVariable } from '@/config/config-types'
 
 export async function readEnvFile(): Promise<Record<string, string>> {
   const p = '[config/env-writer]'

@@ -2,7 +2,7 @@ import { processVideo } from './video.ts'
 import { saveInfo } from '../utils/save-info.ts'
 import { l, err, logSeparator } from '@/logging'
 import { readFile } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processURLs(
   options: ProcessingOptions,

@@ -3,7 +3,7 @@ import { l, err } from '@/logging'
 import { generateMusicWithLyria } from './music-services/lyria'
 import { generateMusicWithSageMaker, checkSageMakerAvailability } from './music-services/sagemaker-musicgen'
 import { handleError, parseWeightedPrompts, validateMusicConfig } from './music-utils'
-import type { MusicGenerationOptions, MusicService, SageMakerMusicConfig, SageMakerMusicGenModel } from '@/types'
+import type { MusicGenerationOptions, MusicService, SageMakerMusicConfig, SageMakerMusicGenModel } from '@/music/music-types'
 
 export const createMusicCommand = (): Command => {
   const p = '[music/create-music-command]'

@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { execFilePromise } from '@/node-utils'
-import type { ProcessingOptions, VideoInfo } from '@/types'
+import type { ProcessingOptions, VideoInfo } from '@/text/text-types'
 
 export async function selectVideos(
   stdout: string,

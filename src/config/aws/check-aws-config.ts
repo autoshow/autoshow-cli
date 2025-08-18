@@ -1,6 +1,6 @@
 import { l } from '@/logging'
 import { execPromise } from '@/node-utils'
-import type { ConfigStatus } from '@/types'
+import type { ConfigStatus } from '@/config/config-types'
 
 function maskCredential(credential: string | undefined, showLength: number = 4): string {
   if (!credential) return 'Not set'

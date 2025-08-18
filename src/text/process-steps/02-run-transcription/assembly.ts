@@ -1,7 +1,7 @@
 import { err } from '@/logging'
 import { readFile, env } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 const BASE_URL = 'https://api.assemblyai.com/v2'
 

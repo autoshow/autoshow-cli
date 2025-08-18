@@ -2,7 +2,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 import { l } from '@/logging'
 import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError } from '../image-utils.ts'
 import { env } from '@/node-utils'
-import type { ImageGenerationResult, NovaCanvasPayload } from '@/types'
+import type { ImageGenerationResult, NovaCanvasPayload } from '../image-types'
 
 const bedrockRuntimeClient = new BedrockRuntimeClient({ 
   region: env['AWS_REGION'] || 'us-east-1',
@@ -35,6 +35,7 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       imageGenerationConfig: config
     }
     
+    l.dim(`${p} [${requestId}] Invoking Nova Canvas model`)
     const response = await bedrockRuntimeClient.send(new InvokeModelCommand({
       modelId: 'amazon.nova-canvas-v1:0',
       body: JSON.stringify(payload)

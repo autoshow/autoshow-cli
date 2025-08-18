@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { writeFile, execFilePromise, ensureDir, join } from '@/node-utils'
-import type { ShowNoteMetadata, VideoInfo, ProcessingOptions } from '@/types'
+import type { ShowNoteMetadata, VideoInfo, ProcessingOptions } from '@/text/text-types'
 
 export function sanitizeTitle(title: string) {
   return title

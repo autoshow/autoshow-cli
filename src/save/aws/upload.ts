@@ -4,7 +4,8 @@ import { getOrCreateAwsBucket } from './bucket'
 import { buildUploadCommand } from './command'
 import { getAwsPublicUrl } from './utils'
 import { uploadAwsJsonMetadata } from './metadata'
-import type { ProcessingOptions, UploadMetadata } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
+import type { UploadMetadata } from '@/save/save-types'
 
 export async function uploadToAws(
   filePath: string,

@@ -5,7 +5,8 @@ import { getCloudflarePublicUrl } from './utils'
 import { checkR2Configuration } from './config'
 import { putObject } from './client'
 import { getCloudflareAccountId } from './utils'
-import type { ProcessingOptions, UploadMetadata } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
+import type { UploadMetadata } from '@/save/save-types'
 
 export async function uploadCloudflareJsonMetadata(
   baseFilePath: string,

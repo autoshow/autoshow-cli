@@ -1,7 +1,7 @@
 import { err } from '@/logging'
 import { parser } from '@/node-utils'
 import { filterRSSItems } from './filters.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function retryRSSFetch(
   fn: () => Promise<Response>

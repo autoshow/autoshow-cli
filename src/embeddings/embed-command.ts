@@ -1,7 +1,7 @@
 import { createEmbeds } from './create/create-embed.ts'
 import { queryEmbeddings } from './query/query-embed.ts'
 import { err } from '@/logging'
-import type { EmbeddingOptions } from '@/types'
+import type { EmbeddingOptions } from '@/embeddings/embed-types'
 
 export async function processEmbedCommand(options: EmbeddingOptions): Promise<void> {
   const p = '[embeddings/embed-command]'

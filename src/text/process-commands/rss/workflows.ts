@@ -3,7 +3,7 @@ import { basename } from '@/node-utils'
 import { processRSS } from './index.ts'
 import { logCopy, logMkdir, logFindMove, logRemove, logMoveMd } from './rss-logging.ts'
 import { ensureWorkflowDirectories, validateFeedsFile } from './rss-validation.ts'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 const WORKFLOWS_DIR = 'output/workflows'
 

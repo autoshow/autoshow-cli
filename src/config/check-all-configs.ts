@@ -1,7 +1,7 @@
 import { l } from '@/logging'
 import { checkAwsConfig } from './aws/check-aws-config'
 import { checkCloudflareConfig } from './cloudflare/check-cloudflare-config'
-import type { ConfigStatus } from '@/types'
+import type { ConfigStatus } from '@/config/config-types'
 
 function displayConfigurationSummary(configurations: ConfigStatus[]): void {
   l.step('Configuration Summary:')

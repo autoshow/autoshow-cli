@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { l, err, logInitialFunctionCall } from '@/logging'
-import type { ExtractOptions } from '@/types'
+import type { ExtractOptions } from '@/extract/extract-types'
 
 export const createExtractCommand = (): Command => {
   const extract = new Command('extract')

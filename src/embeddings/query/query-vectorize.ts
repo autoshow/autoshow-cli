@@ -1,5 +1,5 @@
 import { l } from '@/logging'
-import type { VectorizeMatch } from '@/types'
+import type { VectorizeMatch } from '@/embeddings/embed-types'
 
 export async function queryVectorize(
   queryVector: number[],

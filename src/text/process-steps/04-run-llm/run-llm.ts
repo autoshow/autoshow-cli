@@ -4,7 +4,8 @@ import { callChatGPT, callClaude, callGemini } from './llm-services.ts'
 import { LLM_SERVICES_CONFIG } from './llm-models.ts'
 import { formatCost, logLLMCost } from '../../utils/cost.ts'
 import { uploadAllOutputFiles } from '@/save'
-import type { ProcessingOptions, ShowNoteMetadata, UploadMetadata, ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '@/types'
+import type { UploadMetadata } from '@/save/save-types.ts'
+import type { ProcessingOptions, ShowNoteMetadata, ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '@/text/text-types'
 
 export async function runLLM(
   options: ProcessingOptions,

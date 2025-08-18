@@ -1,8 +1,8 @@
 import { writeFile } from 'fs/promises'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../music-utils.ts'
-import { env, execSync } from '@/node-utils'
-import type { MusicGenerationOptions, MusicGenerationResult } from '@/types'
+import { env } from '@/node-utils'
+import type { MusicGenerationOptions, MusicGenerationResult } from '@/music/music-types.ts'
 
 const p = '[music/music-services/lyria]'
 
@@ -38,8 +38,6 @@ export async function generateMusicWithLyria(
       l.dim(`${p} [${requestId}] Generated placeholder audio file for testing`)
       return fallbackResult
     }
-    
-    const duration = ((Date.now() - startTime) / 1000).toFixed(1)
     
     return {
       success: false,

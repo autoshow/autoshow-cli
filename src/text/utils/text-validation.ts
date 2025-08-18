@@ -7,7 +7,7 @@ import { processRSS } from '../process-commands/rss'
 import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models.ts'
 import { l, err } from '@/logging'
 import { exit } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export const COMMAND_CONFIG = {
   video: {

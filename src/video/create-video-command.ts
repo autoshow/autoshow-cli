@@ -3,7 +3,7 @@ import { l, err } from '@/logging'
 import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel } from './video-utils.ts'
 import { generateVideoWithVeo } from './video-services/veo.ts'
 import { generateVideoWithRunway } from './video-services/runway.ts'
-import type { VeoModel, RunwayModel, VeoGenerateOptions, RunwayGenerateOptions } from '@/types'
+import type { VeoModel, RunwayModel, VeoGenerateOptions, RunwayGenerateOptions } from '@/video/video-types.ts'
 
 export const createVideoCommand = (): Command => {
   const p = '[video/create-video-command]'

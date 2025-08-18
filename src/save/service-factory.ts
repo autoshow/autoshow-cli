@@ -1,5 +1,6 @@
 import { err } from '@/logging'
-import type { ProcessingOptions, UploadMetadata } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
+import type { UploadMetadata } from '@/save/save-types'
 
 export interface CloudStorageService {
   uploadFile(filePath: string, options: ProcessingOptions, sessionId?: string): Promise<string | null>

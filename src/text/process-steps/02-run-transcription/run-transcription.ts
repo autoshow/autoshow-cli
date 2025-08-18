@@ -5,7 +5,7 @@ import { callGroqWhisper } from './groq-whisper.ts'
 import { callWhisperCoreml } from './whisper-coreml.ts'
 import { logTranscriptionCost, estimateTranscriptCost, getAudioDuration } from '../../utils/cost.ts'
 import { l, err } from '@/logging'
-import type { ProcessingOptions, TranscriptionResult } from '@/types'
+import type { ProcessingOptions, TranscriptionResult } from '@/text/text-types'
 import ora from 'ora'
 import type { Ora } from 'ora'
 

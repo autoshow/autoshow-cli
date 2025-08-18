@@ -2,7 +2,7 @@ import { l, err } from '@/logging'
 import { execPromise } from '@/node-utils'
 import { buildBucketCommand } from './command'
 import { getAwsAccountId, getAwsRegion } from './utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function getOrCreateAwsBucket(options: ProcessingOptions): Promise<string | null> {
   const p = '[save/aws/bucket]'

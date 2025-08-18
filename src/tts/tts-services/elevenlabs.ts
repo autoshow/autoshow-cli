@@ -5,7 +5,7 @@ import {
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
 } from '../tts-utils'
-import type { VoiceSettings } from '@/types'
+import type { VoiceSettings } from '../tts-types'
 
 const p = '[tts/tts-services/elevenlabs]'
 

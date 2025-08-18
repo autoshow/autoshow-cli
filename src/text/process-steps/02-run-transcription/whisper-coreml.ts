@@ -1,7 +1,7 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, existsSync, execPromise, spawn } from '@/node-utils'
 import { formatWhisperTranscript, checkWhisperModel } from './whisper.ts'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
 async function runWithProgress(command: string, args: string[], spinner?: Ora): Promise<void> {

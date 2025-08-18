@@ -1,6 +1,6 @@
 import { l } from '@/logging'
 import { execPromise } from '@/node-utils'
-import type { CredentialValidationResult } from '@/types'
+import type { CredentialValidationResult } from '@/config/config-types'
 
 export async function testAwsCredentials(accessKeyId: string, secretAccessKey: string, region = 'us-east-1'): Promise<CredentialValidationResult> {
   const p = '[config/aws/test-aws-credentials]'

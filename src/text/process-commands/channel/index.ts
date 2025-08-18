@@ -5,7 +5,7 @@ import { logChannelProcessingStatus } from './channel-logging.ts'
 import { selectVideos } from './selector.ts'
 import { err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { execFilePromise } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processChannel(
   options: ProcessingOptions,

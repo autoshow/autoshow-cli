@@ -1,7 +1,7 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
-import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/types'
+import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
 
 export function formatTimestamp(timestamp: string) {

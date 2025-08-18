@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import type { VectorizeVector } from '@/types'
+import type { VectorizeVector } from '@/embeddings/embed-types'
 
 const MAX_METADATA_BYTES = 10240
 

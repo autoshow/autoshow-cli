@@ -3,13 +3,8 @@
 INCLUDE_PATHS=(
   "*"
   "src/*"
-  # ".github/setup"
-  # "src/video"
-  # "docs/video"
-  # "src/tts"
-  # "docs/tts"
+  ".github"
   "src/image"
-  "docs/image"
 )
 
 IGNORE_PATHS=(

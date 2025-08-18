@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export function validateChannelOptions(options: ProcessingOptions): void {
   if (options.last !== undefined) {

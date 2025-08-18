@@ -2,7 +2,7 @@ import { l, err } from '@/logging'
 import { checkR2Configuration } from './config'
 import { headBucket, createBucket, putBucketVersioning, putBucketLifecycle } from './client'
 import { getCloudflareAccountId, getCloudflareRegion } from './utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function getOrCreateCloudflareBucket(options: ProcessingOptions): Promise<string | null> {
   const p = '[save/cloudflare/bucket]'
