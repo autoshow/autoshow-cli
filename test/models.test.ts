@@ -7,22 +7,22 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { universal: 'npm run as -- text --file "content/examples/audio.mp3" --assembly universal' },
-  { 'slam-1': 'npm run as -- text --file "content/examples/audio.mp3" --assembly slam-1' },
-  { 'nova-3': 'npm run as -- text --file "content/examples/audio.mp3" --deepgram nova-3' },
-  { 'gpt-5': 'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-5' },
-  { 'gpt-5-mini': 'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-5-mini' },
-  { 'gpt-5-nano': 'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-5-nano' },
-  { 'gpt-4.1-nano': 'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-4.1-nano' },
-  { 'gpt-4.1': 'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-4.1' },
-  { 'gpt-4.1-mini': 'npm run as -- text --file "content/examples/audio.mp3" --chatgpt gpt-4.1-mini' },
-  { 'claude-3-7-sonnet-20250219': 'npm run as -- text --file "content/examples/audio.mp3" --claude claude-3-7-sonnet-20250219' },
-  { 'claude-opus-4-20250514': 'npm run as -- text --file "content/examples/audio.mp3" --claude claude-opus-4-20250514' },
-  { 'claude-sonnet-4-20250514': 'npm run as -- text --file "content/examples/audio.mp3" --claude claude-sonnet-4-20250514' },
-  { 'claude-opus-4-1-20250805': 'npm run as -- text --file "content/examples/audio.mp3" --claude claude-opus-4-1-20250805' },
-  { 'gemini-2.5-pro': 'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-2.5-pro' },
-  { 'gemini-2.5-flash': 'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-2.5-flash' },
-  { 'gemini-2.5-flash-lite-preview-06-17': 'npm run as -- text --file "content/examples/audio.mp3" --gemini gemini-2.5-flash-lite-preview-06-17' },
+  { universal: 'npm run as -- text --file "input/examples/audio.mp3" --assembly universal' },
+  { 'slam-1': 'npm run as -- text --file "input/examples/audio.mp3" --assembly slam-1' },
+  { 'nova-3': 'npm run as -- text --file "input/examples/audio.mp3" --deepgram nova-3' },
+  { 'gpt-5': 'npm run as -- text --file "input/examples/audio.mp3" --chatgpt gpt-5' },
+  { 'gpt-5-mini': 'npm run as -- text --file "input/examples/audio.mp3" --chatgpt gpt-5-mini' },
+  { 'gpt-5-nano': 'npm run as -- text --file "input/examples/audio.mp3" --chatgpt gpt-5-nano' },
+  { 'gpt-4.1-nano': 'npm run as -- text --file "input/examples/audio.mp3" --chatgpt gpt-4.1-nano' },
+  { 'gpt-4.1': 'npm run as -- text --file "input/examples/audio.mp3" --chatgpt gpt-4.1' },
+  { 'gpt-4.1-mini': 'npm run as -- text --file "input/examples/audio.mp3" --chatgpt gpt-4.1-mini' },
+  { 'claude-3-7-sonnet-20250219': 'npm run as -- text --file "input/examples/audio.mp3" --claude claude-3-7-sonnet-20250219' },
+  { 'claude-opus-4-20250514': 'npm run as -- text --file "input/examples/audio.mp3" --claude claude-opus-4-20250514' },
+  { 'claude-sonnet-4-20250514': 'npm run as -- text --file "input/examples/audio.mp3" --claude claude-sonnet-4-20250514' },
+  { 'claude-opus-4-1-20250805': 'npm run as -- text --file "input/examples/audio.mp3" --claude claude-opus-4-1-20250805' },
+  { 'gemini-2.5-pro': 'npm run as -- text --file "input/examples/audio.mp3" --gemini gemini-2.5-pro' },
+  { 'gemini-2.5-flash': 'npm run as -- text --file "input/examples/audio.mp3" --gemini gemini-2.5-flash' },
+  { 'gemini-2.5-flash-lite-preview-06-17': 'npm run as -- text --file "input/examples/audio.mp3" --gemini gemini-2.5-flash-lite-preview-06-17' },
 ]
 
 test('CLI model tests', { concurrency: 1 }, async (t) => {

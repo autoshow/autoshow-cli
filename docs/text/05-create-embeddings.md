@@ -16,7 +16,7 @@ npm run as -- config configure --service r2
 npm run as -- text embed --create
 
 # Create embeddings from a specific directory
-npm run as -- text embed --create "content/embed"
+npm run as -- text embed --create "input/embed"
 
 # Create embeddings from a custom path
 npm run as -- text embed --create "/path/to/markdown/files"
