@@ -83,7 +83,9 @@ else
   exit 1
 fi
 
-if [ -f "$SETUP_DIR/image-setup.sh" ]; then
+if [ -d "$SETUP_DIR/image" ] && [ -f "$SETUP_DIR/image/main.sh" ]; then
+  bash "$SETUP_DIR/image/main.sh"
+elif [ -f "$SETUP_DIR/image-setup.sh" ]; then
   bash "$SETUP_DIR/image-setup.sh"
 else
   echo "ERROR: Image setup script not found"

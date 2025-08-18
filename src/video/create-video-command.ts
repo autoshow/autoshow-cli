@@ -13,7 +13,7 @@ export const createVideoCommand = (): Command => {
     .command('generate')
     .description('Generate videos using AI services')
     .requiredOption('-p, --prompt <text>', 'text prompt for video generation')
-    .option('-m, --model <model>', 'model to use (veo models: veo-3.0-generate-preview|veo-3.0-fast-generate-preview|veo-2.0-generate-001, runway models: gen4_turbo|gen3a_turbo)', 'veo-3.0-generate-preview')
+    .option('-m, --model <model>', 'model to use (veo models: veo-3.0-generate-preview|veo-3.0-fast-generate-preview|veo-2.0-generate-001, runway models: gen4_turbo|gen3a_turbo)', 'veo-3.0-fast-generate-preview')
     .option('-o, --output <path>', 'output path for generated video')
     .option('-i, --image <path>', 'reference image for image-to-video generation')
     .option('-a, --aspect-ratio <ratio>', 'aspect ratio (16:9|9:16)', '16:9')

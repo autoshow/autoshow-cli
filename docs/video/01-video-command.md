@@ -9,7 +9,7 @@ npm run as -- video generate --prompt "A dancing panda in space"
 
 npm run as -- video generate --prompt "Sunset over mountains" --output my-video.mp4
 
-npm run as -- video generate --prompt "Ocean waves" --model veo-3.0-fast-generate-preview
+npm run as -- video generate --prompt "Ocean waves" --model veo-3.0-generate-preview
 
 npm run as -- video generate --prompt "Camera slowly zooms in" --image input/photo.jpg
 
@@ -19,7 +19,7 @@ npm run as -- video generate --prompt "Smooth camera movement" --image input/pho
 ## Available Models
 
 ### Google Veo Models
-- `veo-3.0-generate-preview` - Default model with native audio generation (8 seconds, 720p)
+- `veo-3.0-generate-preview` - Newest model with native audio generation (8 seconds, 720p)
 - `veo-3.0-fast-generate-preview` - Faster generation with audio support (8 seconds, 720p)
 - `veo-2.0-generate-001` - Stable version with portrait mode support (5-8 seconds, 720p)
 
@@ -32,7 +32,7 @@ npm run as -- video generate --prompt "Smooth camera movement" --image input/pho
 | Option | Description | Default | Example |
 |--------|-------------|---------|---------|
 | `-p, --prompt <text>` | Text description for video | Required | `"A cat playing piano"` |
-| `-m, --model <model>` | Model to use | `veo-3.0-generate-preview` | See models above |
+| `-m, --model <model>` | Model to use | `veo-3.0-fast-generate-preview` | See models above |
 | `-o, --output <path>` | Output file path | Auto-generated | `output/my-video.mp4` |
 | `-i, --image <path>` | Reference image for animation | None | `input/photo.jpg` |
 | `-a, --aspect-ratio <ratio>` | Video aspect ratio | `16:9` | `16:9` or `9:16` |

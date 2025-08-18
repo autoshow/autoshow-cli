@@ -111,7 +111,7 @@ export async function generateVideoWithVeo(
       throw new Error('GEMINI_API_KEY environment variable is missing')
     }
     
-    const model = options.model || 'veo-3.0-generate-preview'
+    const model = options.model || 'veo-3.0-fast-generate-preview'
     const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
     
     l.opts(`${p} [${requestId}] Generating video with model: ${model}`)

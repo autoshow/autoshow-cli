@@ -7,7 +7,7 @@ Create AI-generated images using multiple services including DALL-E 3, Black For
 - **DALL-E 3**: OpenAI's latest image generation model
 - **Black Forest Labs (BFL)**: High-quality Flux models
 - **AWS Nova Canvas**: Amazon's image generation service
-- **stable-diffusion.cpp**: Local generation with SD1.5, SD3.5, and FLUX.1-Kontext
+- **stable-diffusion.cpp**: Local generation with SD1.5 and SD3.5
 - **Runway**: Professional image generation (requires account with text-to-image access)
 
 ## Basic Usage
@@ -105,15 +105,6 @@ npm run as -- image generate --prompt "A lovely cat holding a sign says 'SD3.5'"
 
 # SD 3.5 automatically uses optimized settings (1024x1024, cfg-scale 4.5)
 npm run as -- image generate --prompt "Futuristic city" --service sdcpp --model sd3.5
-```
-
-#### FLUX.1-Kontext
-```bash
-# Text-guided image editing with FLUX Kontext
-npm run as -- image generate --prompt "Change the text to 'Hello World'" --service sdcpp --model flux-kontext --reference-image input.png
-
-# Style transfer
-npm run as -- image generate --prompt "Make it cyberpunk style" --service sdcpp --model flux-kontext --reference-image photo.jpg
 ```
 
 #### LoRA Support
