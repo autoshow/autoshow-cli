@@ -7,10 +7,10 @@ Generate speech from text using multiple TTS engines.
 ### Single File
 ```bash
 npm run as -- tts file input/sample.md
-npm run as -- tts file input/sample.md --coqui
-npm run as -- tts file input/sample.md --kitten
-npm run as -- tts file input/sample.md --elevenlabs
-npm run as -- tts file input/sample.md --polly
+npm run as -- tts file input/sample.md --coqui --output output/coqui
+npm run as -- tts file input/sample.md --kitten --output output/kitten
+npm run as -- tts file input/sample.md --elevenlabs --output output/elevenlabs
+npm run as -- tts file input/sample.md --polly --output output/polly
 ```
 
 ### Script Files
