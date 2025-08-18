@@ -10,6 +10,13 @@ export interface MusicGenerationOptions {
   extendStride?: number
   melodyPath?: string
   continuationPath?: string
+  steps?: number
+  cfgScale?: number
+  sigmaMin?: number
+  sigmaMax?: number
+  samplerType?: string
+  seed?: number
+  batchSize?: number
 }
 
 export interface MusicGenerationResult {
@@ -17,6 +24,8 @@ export interface MusicGenerationResult {
   path?: string
   error?: string
 }
+
+export type MusicService = 'audiocraft' | 'stable-audio'
 
 export type MusicModel = 
   | 'facebook/musicgen-small'
@@ -29,3 +38,4 @@ export type MusicModel =
   | 'facebook/musicgen-stereo-large'
   | 'facebook/musicgen-stereo-melody'
   | 'facebook/musicgen-stereo-melody-large'
+  | 'stabilityai/stable-audio-open-1.0'
