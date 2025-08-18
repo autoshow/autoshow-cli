@@ -5,7 +5,7 @@ import { processURLs } from '../process-commands/urls.ts'
 import { processFile } from '../process-commands/file.ts'
 import { processRSS } from '../process-commands/rss'
 import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models.ts'
-import { l, err, logCommandValidation } from '@/logging'
+import { l, err } from '@/logging'
 import { exit } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
 
@@ -53,10 +53,6 @@ export function validateCommandInput(options: ProcessingOptions): {
   llmServices?: string,
   transcriptServices?: string
 } {
-  const p = '[text/utils/text-validation]'
-  l.dim(`${p} Starting command input validation`)
-  logCommandValidation('start', { options: Object.keys(options).filter(k => options[k]) })
-  
   const actionKeys = Object.keys(COMMAND_CONFIG) as Array<keyof typeof COMMAND_CONFIG>
   const selectedActions = actionKeys.filter(key => {
     const value = options[key]
@@ -66,16 +62,12 @@ export function validateCommandInput(options: ProcessingOptions): {
            (typeof value !== 'boolean' || value === true)
   })
   
-  l.dim(`${p} Found ${selectedActions.length} selected actions: ${selectedActions.join(', ')}`)
-  logCommandValidation('actions', { selectedActions })
-  
   if (selectedActions.length > 1) {
     err(`Error: Multiple input options provided (${selectedActions.join(', ')}). Please specify only one.`)
     exit(1)
   }
   
   const action = selectedActions[0]
-  l.dim(`${p} Selected action: ${action || 'none'}`)
   
   const llmKeys = Object.values(LLM_SERVICES_CONFIG)
     .map(service => service.value)
@@ -87,9 +79,6 @@ export function validateCommandInput(options: ProcessingOptions): {
            value !== '' &&
            (typeof value !== 'boolean' || value === true)
   })
-  
-  l.dim(`${p} Found ${selectedLLMs.length} selected LLMs: ${selectedLLMs.join(', ')}`)
-  logCommandValidation('llms', { selectedLLMs })
   
   if (selectedLLMs.length > 1) {
     err(`Error: Multiple LLM options provided (${selectedLLMs.join(', ')}). Please specify only one.`)
@@ -105,8 +94,6 @@ export function validateCommandInput(options: ProcessingOptions): {
   else if (options.whisper) transcriptServices = 'whisper'
   else if (options.groqWhisper) transcriptServices = 'groqWhisper'
   
-  l.dim(`${p} Selected transcription service: ${transcriptServices || 'none'}`)
-  
   const needsTranscription = !options.info && !options.feed && action !== undefined
   if (needsTranscription && !transcriptServices) {
     l.warn("Defaulting to Whisper for transcription as no service was specified.")
@@ -114,6 +101,5 @@ export function validateCommandInput(options: ProcessingOptions): {
     transcriptServices = 'whisper'
   }
   
-  logCommandValidation('result', { action, llmServices, transcriptServices })
   return { action, llmServices, transcriptServices }
 }

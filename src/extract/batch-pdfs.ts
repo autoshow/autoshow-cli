@@ -20,8 +20,6 @@ export const batchExtractPdfs = async (
   options: ExtractOptions
 ): Promise<BatchExtractResult> => {
   const requestId = Math.random().toString(36).substring(2, 10)
-  l.dim(`${p}[${requestId}] Starting batch PDF extraction from: ${directory}`)
-  l.dim(`${p}[${requestId}] Service: ${options.service || 'zerox'}`)
   
   try {
     const isDir = await isDirectory(directory)
@@ -36,7 +34,7 @@ export const batchExtractPdfs = async (
       throw new Error(`No PDF files found in directory: ${directory}`)
     }
     
-    l.dim(`${p}[${requestId}] Found ${pdfFiles.length} PDF files to process`)
+    l.opts(`${p}[${requestId}] Processing ${pdfFiles.length} PDF files with ${options.service || 'zerox'}`)
     
     const outputDir = options.output || directory
     await ensureDir(outputDir)
@@ -49,7 +47,7 @@ export const batchExtractPdfs = async (
       const pdfPath = path.join(directory, pdfFile)
       const outputPath = path.join(outputDir, `${path.basename(pdfFile, '.pdf')}_extracted.txt`)
       
-      l.opts(`${p}[${requestId}] Processing file ${successCount + failedFiles.length + 1}/${pdfFiles.length}: ${pdfFile}`)
+      l.opts(`${p}[${requestId}] Processing ${successCount + failedFiles.length + 1}/${pdfFiles.length}: ${pdfFile}`)
       
       const result = await extractPdf(pdfPath, {
         ...options,
@@ -61,19 +59,17 @@ export const batchExtractPdfs = async (
         if (result.totalCost) {
           totalCost += result.totalCost
         }
-        l.dim(`${p}[${requestId}] ✓ ${pdfFile} processed successfully`)
       } else {
         failedFiles.push(pdfFile)
-        l.dim(`${p}[${requestId}] ✗ ${pdfFile} failed: ${result.error}`)
+        l.warn(`${p}[${requestId}] Failed: ${pdfFile} - ${result.error}`)
       }
       
       if (successCount + failedFiles.length < pdfFiles.length) {
-        l.dim(`${p}[${requestId}] Waiting 3 seconds before next file`)
         await sleep(3000)
       }
     }
     
-    l.success(`${p}[${requestId}] Batch processing complete: ${successCount}/${pdfFiles.length} successful`)
+    l.success(`${p}[${requestId}] Batch complete: ${successCount}/${pdfFiles.length} successful`)
     
     const result: BatchExtractResult = {
       success: failedFiles.length === 0,
@@ -82,6 +78,7 @@ export const batchExtractPdfs = async (
     
     if ((options.service === 'zerox' || options.service === 'textract') && totalCost > 0) {
       result.totalCost = totalCost
+      l.opts(`${p}[${requestId}] Total cost: $${totalCost.toFixed(4)}`)
     }
     
     if (failedFiles.length > 0) {

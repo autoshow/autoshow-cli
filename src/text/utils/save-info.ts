@@ -13,12 +13,10 @@ export function sanitizeTitle(title: string) {
 }
 
 export function constructOutputPath(filename: string, options?: ProcessingOptions): string {
-  const p = '[text/utils/save-info]'
   const baseOutput = 'output'
   const outputPath = options?.outputDir 
     ? join(baseOutput, options.outputDir, filename)
     : join(baseOutput, filename)
-  l.dim(`${p} Constructed output path: ${outputPath}`)
   return outputPath
 }
 
@@ -28,7 +26,6 @@ export async function saveInfo(
   title?: string
 ) {
   const p = '[text/utils/save-info]'
-  l.dim(`${p} saveInfo called with type: ${type}, data length: ${data.length}, title: ${title || 'none'}`)
   
   await ensureDir('output')
   
@@ -47,7 +44,7 @@ export async function saveInfo(
     const sanitizedTitle = sanitizeTitle(title || '')
     const jsonFilePath = constructOutputPath(`${sanitizedTitle}_info.json`)
     await writeFile(jsonFilePath, jsonContent)
-    l.dim(`${p} RSS feed information saved to: ${jsonFilePath}`)
+    l.success(`RSS feed information saved to: ${jsonFilePath}`)
     return
   }
   
@@ -68,8 +65,6 @@ export async function saveInfo(
     outputFilePath = constructOutputPath('urls_info.json')
     successLogFunction = l.wait
   }
-  
-  l.dim(`${p} Processing ${urls.length} URLs for metadata extraction`)
   
   const metadataList = await Promise.all(
     urls.map(async (url) => {
@@ -113,8 +108,6 @@ export async function saveInfo(
   const validMetadata = metadataList.filter(
     (metadata): metadata is ShowNoteMetadata => metadata !== null
   )
-  
-  l.dim(`${p} Successfully extracted metadata for ${validMetadata.length} of ${urls.length} URLs`)
   
   const jsonContent = JSON.stringify(validMetadata, null, 2)
   await writeFile(outputFilePath, jsonContent)

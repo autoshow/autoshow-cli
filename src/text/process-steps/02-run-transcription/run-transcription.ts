@@ -4,18 +4,19 @@ import { callAssembly } from './assembly.ts'
 import { callGroqWhisper } from './groq-whisper.ts'
 import { callWhisperCoreml } from './whisper-coreml.ts'
 import { logTranscriptionCost, estimateTranscriptCost, getAudioDuration } from '../../utils/cost.ts'
-import { l, err, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import type { ProcessingOptions, TranscriptionResult } from '@/types'
 import ora from 'ora'
 import type { Ora } from 'ora'
+
 export async function runTranscription(
   options: ProcessingOptions,
   finalPath: string,
   transcriptServicesInput?: string
 ): Promise<TranscriptionResult> {
   const p = '[text/process-steps/03-run-transcription]'
-  const spinner = ora('Step 3 - Run Transcription').start()
-  logInitialFunctionCall('runTranscription', { options, finalPath, transcriptServicesInput })
+  const spinner = ora('Step 2 - Run Transcription').start()
+
   let serviceToUse = transcriptServicesInput
   if (!serviceToUse) {
     if (options.whisperCoreml) {
@@ -34,16 +35,17 @@ export async function runTranscription(
       if (options.whisper === undefined) options.whisper = true
     }
   }
-  l.dim(`${p} Transcription service to use: ${serviceToUse}`)
+
+  l.dim(`${p} Using transcription service: ${serviceToUse}`)
   
   const audioFilePath = `${finalPath}.wav`
-  l.dim(`${p} Getting audio duration for: ${audioFilePath}`)
   const audioDuration = await getAudioDuration(audioFilePath)
   l.dim(`${p} Audio duration: ${audioDuration} seconds`)
   
   let finalTranscript = ''
   let finalModelId = ''
   let finalCostPerMinuteCents = 0
+
   try {
     switch (serviceToUse) {
       case 'deepgram': {
@@ -97,6 +99,7 @@ export async function runTranscription(
         spinner.fail(`Transcription failed: Unknown service resolved to '${serviceToUse}'`)
         throw new Error(`Unknown transcription service: ${serviceToUse}`)
     }
+
     spinner.succeed('Transcription completed successfully.')
     return {
       transcript: finalTranscript,
@@ -110,6 +113,7 @@ export async function runTranscription(
     throw error
   }
 }
+
 export async function retryTranscriptionCall<T>(
   fn: () => Promise<T>,
   spinner?: Ora
@@ -117,11 +121,11 @@ export async function retryTranscriptionCall<T>(
   const p = '[text/process-steps/03-run-transcription]'
   const maxRetries = 7
   let attempt = 0
+
   while (attempt < maxRetries) {
     try {
       attempt++
       const result = await fn()
-      l.dim(`${p} Transcription call completed successfully on attempt ${attempt}.`)
       return result
     } catch (error) {
       err(`${p} Attempt ${attempt} failed: ${(error as Error).message}`)
@@ -132,11 +136,12 @@ export async function retryTranscriptionCall<T>(
       const delayMs = 1000 * 2 ** (attempt - 1)
       l.dim(`${p} Retrying in ${delayMs / 1000} seconds...`)
       if (spinner) {
-        spinner.text = `Step 3 - Run Transcription (retrying in ${delayMs / 1000}s...)`
+        spinner.text = `Step 2 - Run Transcription (retrying in ${delayMs / 1000}s...)`
       }
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
   throw new Error('Transcription call failed after maximum retries.')
 }
+
 export { logTranscriptionCost, estimateTranscriptCost }

@@ -3,8 +3,9 @@ import { downloadAudio, saveAudio } from '../process-steps/01-process-content/do
 import { runTranscription } from '../process-steps/02-run-transcription/run-transcription.ts'
 import { selectPrompts } from '../process-steps/03-select-prompts/select-prompt.ts'
 import { runLLM } from '../process-steps/04-run-llm/run-llm.ts'
-import { err, logInitialFunctionCall } from '@/logging'
+import { err } from '@/logging'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
+
 export async function processVideo(
   options: ProcessingOptions,
   url: string,
@@ -12,7 +13,6 @@ export async function processVideo(
   transcriptServices?: string
 ) {
   const p = '[text/process-commands/video]'
-  logInitialFunctionCall('processVideo', { url, llmServices, transcriptServices })
   try {
     const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, url)
     await downloadAudio(options, url, filename)

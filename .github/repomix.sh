@@ -2,11 +2,7 @@
 
 INCLUDE_PATHS=(
   "*"
-  "src/*"
-  "src/config"
-  # "src/embeddings"
-  "src/save"
-  # "src/text"
+  "src"
 )
 
 IGNORE_PATHS=(

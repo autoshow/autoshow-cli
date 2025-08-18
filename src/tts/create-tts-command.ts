@@ -27,7 +27,6 @@ const sharedOptions = (cmd: Command): Command => cmd
 
 const handleAction = async (action: string, runner: () => Promise<void>): Promise<void> => {
   try {
-    l.dim(`${p} Starting TTS ${action} action`)
     await runner()
   } catch (error) {
     err(`${p} Error ${action === 'list' ? 'listing models' : action === 'download' ? 'downloading models' : 'generating speech'}: ${error}`)
@@ -43,13 +42,12 @@ export const createTtsCommand = (): Command => {
   tts.command('download').description('Download TTS models')
     .argument('<models...>', 'Model IDs to download')
     .action(async (models: string[]) => handleAction('download', async () => {
-      await Promise.all(models.map(async m => { l.dim(`${p} Downloading model: ${m}`); await downloadModel(m) }))
+      await Promise.all(models.map(async m => { await downloadModel(m) }))
     }))
 
   sharedOptions(tts.command('file').description('Generate speech from a markdown file')
     .argument('<filePath>', 'Path to the markdown file'))
     .action(async (filePath, options) => handleAction('file', async () => {
-      l.dim(`${p} Generating speech from ${filePath}`)
       if (!existsSync(filePath)) err(`${p} File not found: ${filePath}`)
       
       const outputDir = options.output || OUTDIR
@@ -58,13 +56,12 @@ export const createTtsCommand = (): Command => {
       }
       
       await processFileWithEngine(detectEngine(options), filePath, outputDir, options)
-      l.dim(`${p} Speech saved to ${outputDir} 🔊`)
+      l.success(`${p} Speech saved to ${outputDir} 🔊`)
     }))
 
   sharedOptions(tts.command('script').description('Generate speech from a JSON script file')
     .argument('<scriptPath>', 'Path to the JSON script file'))
     .action(async (scriptPath, options) => handleAction('script', async () => {
-      l.dim(`${p} Processing script from ${scriptPath}`)
       if (!existsSync(scriptPath)) err(`${p} Script file not found: ${scriptPath}`)
       await processScriptWithEngine(detectEngine(options), scriptPath, options.output || OUTDIR, options)
     }))

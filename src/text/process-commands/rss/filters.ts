@@ -9,8 +9,6 @@ export async function filterRSSItems(
   channelImage?: string
 ): Promise<ShowNoteMetadata[]> {
   const p = '[text/process-commands/rss/filters]'
-  l.dim(`${p} Starting RSS item filtering`)
-  l.dim(`${p} Input: ${feedItemsArray?.length || 0} items`)
   
   const defaultDate = new Date().toISOString().substring(0, 10)
   const unfilteredItems: ShowNoteMetadata[] = (feedItemsArray || [])
@@ -38,17 +36,12 @@ export async function filterRSSItems(
       }
     })
   
-  l.dim(`${p} Filtered to ${unfilteredItems.length} audio/video items`)
-  
   let itemsToProcess = []
   if (options.item && options.item.length > 0) {
-    l.dim(`${p} Applying item URL filter`)
     itemsToProcess = unfilteredItems.filter((it) =>
       options.item!.includes(it.showLink || '')
     )
-    l.dim(`${p} Item filter result: ${itemsToProcess.length} items`)
   } else if (options.days !== undefined) {
-    l.dim(`${p} Applying days filter: ${options.days} days`)
     const now = new Date()
     const cutoff = new Date(now.getTime() - options.days * 24 * 60 * 60 * 1000)
     itemsToProcess = unfilteredItems.filter((it) => {
@@ -56,27 +49,24 @@ export async function filterRSSItems(
       const itDate = new Date(it.publishDate)
       return itDate >= cutoff
     })
-    l.dim(`${p} Days filter result: ${itemsToProcess.length} items`)
   } else if (options.date && options.date.length > 0) {
-    l.dim(`${p} Applying date filter: ${options.date.join(', ')}`)
     const selectedDates = new Set(options.date)
     itemsToProcess = unfilteredItems.filter((it) =>
       it.publishDate && selectedDates.has(it.publishDate)
     )
-    l.dim(`${p} Date filter result: ${itemsToProcess.length} items`)
   } else if (options.last) {
-    l.dim(`${p} Applying last filter: ${options.last} items`)
     itemsToProcess = unfilteredItems.slice(0, options.last)
-    l.dim(`${p} Last filter result: ${itemsToProcess.length} items`)
   } else {
     const sortedItems =
       options.order === 'oldest'
         ? unfilteredItems.slice().reverse()
         : unfilteredItems
     itemsToProcess = sortedItems
-    l.dim(`${p} No specific filter, using all ${itemsToProcess.length} items`)
   }
   
-  l.dim(`${p} Final filtered items: ${itemsToProcess.length}`)
+  if (itemsToProcess.length === 0 && unfilteredItems.length > 0) {
+    l.warn(`${p} No items matched the filter criteria`)
+  }
+  
   return itemsToProcess
 }

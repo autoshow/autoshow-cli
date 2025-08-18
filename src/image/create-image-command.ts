@@ -33,9 +33,6 @@ export const createImageCommand = (): Command => {
     .option('--count <number>', 'number of images 1-5 (nova only)', '1')
     .action(async (options) => {
       try {
-        l.dim(`${p} Starting ${options.service} generation action`)
-        l.dim(`${p} Generating image with prompt: "${options.prompt}"`)
-        
         const generator = serviceGenerators[options.service as keyof typeof serviceGenerators]
         if (!generator) {
           err(`${p} Unknown service: ${options.service}. Use dalle, bfl, or nova.`)
@@ -71,8 +68,6 @@ export const createImageCommand = (): Command => {
     .description('Compare image generation across all services')
     .action(async (prompt) => {
       try {
-        l.dim(`${p} Starting image comparison action`)
-        l.dim(`${p} Comparing services with prompt: "${prompt}"`)
         const result = await generateComparisonImages(prompt)
         l.success(`${p} Comparison completed`)
         

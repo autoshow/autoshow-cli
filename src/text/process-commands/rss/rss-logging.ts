@@ -7,9 +7,6 @@ export function logRSSProcessingStatus(
   processing: number,
   options: ProcessingOptions
 ): void {
-  const p = '[text/process-commands/rss/rss-logging]'
-  l.dim(`${p} Logging RSS processing status`)
-  
   if (options.item && options.item.length > 0) {
     l.dim(`\n  - Found ${total} items in the RSS feed.`)
     l.dim(`  - Processing ${processing} specified items.`)
@@ -23,8 +20,6 @@ export function logRSSProcessingStatus(
     l.dim(`\n  - Found ${total} item(s) in the RSS feed.`)
     l.dim(`  - Processing ${processing} item(s).\n`)
   }
-  
-  l.dim(`${p} Status logged for ${processing}/${total} items`)
 }
 
 export async function logOperation(
@@ -36,7 +31,6 @@ export async function logOperation(
   const p = '[text/process-commands/rss/rss-logging]'
   console.log('')
   logFn(`${p}[${operationName}] Starting ${operationName}: ${description}`)
-  logFn(`${p}[${operationName}] Executing command: ${command}`)
   try {
     const { stdout, stderr } = await execPromise(command)
     logFn(`${p}[${operationName}] stdout:`)
@@ -45,7 +39,6 @@ export async function logOperation(
       l.warn(`${p}[${operationName}] stderr:`)
       console.warn(stderr)
     }
-    logFn(`${p}[${operationName}] Successfully finished ${operationName}: ${description}`)
   } catch (error: any) {
     err(`${p}[${operationName}] Error during ${operationName}: ${error.message}`)
     throw error
@@ -59,13 +52,9 @@ export async function logCopy(source: string, destination: string, operationName
 export async function logMkdir(targetPath: string, operationName: string): Promise<void> {
   const p = '[text/process-commands/rss/rss-logging]'
   console.log('')
-  l(`${p}[${operationName}] Starting ${operationName}: Creating directory ${targetPath}`)
   try {
     if (!existsSync(targetPath)) {
       await ensureDir(targetPath)
-      l(`${p}[${operationName}] Successfully created directory: ${targetPath}`)
-    } else {
-      l(`${p}[${operationName}] Directory already exists: ${targetPath}`)
     }
   } catch (error: any) {
     err(`${p}[${operationName}] Error creating directory ${targetPath}: ${error.message}`)

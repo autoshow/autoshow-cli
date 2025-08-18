@@ -6,7 +6,7 @@ import { queryVectorize } from './query-vectorize.ts'
 import { callChatCompletion } from './chat-completion.ts'
 
 export async function queryEmbeddings(question: string): Promise<void> {
-  const p = '[text/embeddings/query-embed]'
+  const p = '[embeddings/query/query-embed]'
   l.step(`\nQuerying Embeddings\n`)
   
   if (!question) {
@@ -24,20 +24,15 @@ export async function queryEmbeddings(question: string): Promise<void> {
   }
   
   const indexName = env['VECTORIZE_INDEX_NAME'] || 'autoshow-embeddings'
-  l.dim(`${p} Using Vectorize index: ${indexName}`)
-  l.dim(`${p} Using Workers AI models: bge-m3 for embeddings, gpt-oss-120b for generation`)
   
   try {
-    l.dim(`${p} Checking if Vectorize index exists`)
     const indexExists = await checkIndexExists(indexName)
     if (!indexExists) {
       throw new Error(`Vectorize index '${indexName}' does not exist. Please create embeddings first using: npm run as -- text embed --create`)
     }
     
-    l.dim(`${p} Creating embedding for query: "${question}"`)
     const queryEmbedding = await embedText(question, cloudflareAccountId, cloudflareApiToken)
     
-    l.dim(`${p} Searching for similar vectors...`)
     const matches = await queryVectorize(
       queryEmbedding,
       cloudflareAccountId,
@@ -67,9 +62,6 @@ export async function queryEmbeddings(question: string): Promise<void> {
       const content = match.metadata?.['input'] || ''
       combinedContent += `\n\n---\n**File: ${filename}**\n${content}\n`
     })
-    
-    l.dim(`${p} Generated context length: ${combinedContent.length} characters`)
-    l.dim(`${p} Generating answer using context...`)
     
     try {
       const answer = await callChatCompletion(question, combinedContent, cloudflareAccountId, cloudflareApiToken)

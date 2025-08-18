@@ -3,9 +3,6 @@ import { l, err, logInitialFunctionCall } from '@/logging'
 import type { ExtractOptions } from '@/types'
 
 export const createExtractCommand = (): Command => {
-  const p = '[extract/create-extract-command]'
-  l.dim(`${p} Creating extract command with pdf and batch subcommands`)
-
   const extract = new Command('extract')
     .description('Extract text from PDF files using AI-powered OCR or local extraction')
 
@@ -21,10 +18,6 @@ export const createExtractCommand = (): Command => {
       logInitialFunctionCall('extractPdfCommand', { pdfFile, ...options })
       
       try {
-        l.dim(`${p} Starting PDF extraction action`)
-        l.opts(`Processing PDF file: ${pdfFile}`)
-        l.opts(`Using service: ${options.service}`)
-        
         const validServices = ['zerox', 'unpdf', 'textract']
         if (options.service && !validServices.includes(options.service)) {
           err(`Invalid service: ${options.service}. Available services: ${validServices.join(', ')}`)
@@ -58,10 +51,6 @@ export const createExtractCommand = (): Command => {
       logInitialFunctionCall('extractBatchCommand', { directory, ...options })
       
       try {
-        l.dim(`${p} Starting batch PDF extraction action`)
-        l.opts(`Processing PDFs from directory: ${directory}`)
-        l.opts(`Using service: ${options.service}`)
-        
         const validServices = ['zerox', 'unpdf', 'textract']
         if (options.service && !validServices.includes(options.service)) {
           err(`Invalid service: ${options.service}. Available services: ${validServices.join(', ')}`)
@@ -86,6 +75,5 @@ export const createExtractCommand = (): Command => {
       }
     })
 
-  l.dim(`${p} Extract command created successfully`)
   return extract
 }

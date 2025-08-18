@@ -6,9 +6,6 @@ export function logChannelProcessingStatus(
   processing: number,
   options: ProcessingOptions
 ): void {
-  const p = '[text/process-commands/channel/logging]'
-  l.dim(`${p} Logging channel processing status`)
-  
   if (options.last) {
     l.dim(`\n  - Found ${total} videos in the channel.`)
     l.dim(`  - Processing the last ${processing} videos.`)
@@ -22,6 +19,4 @@ export function logChannelProcessingStatus(
     l.dim(`\n  - Found ${total} videos in the channel.`)
     l.dim(`  - Processing all ${processing} videos.\n`)
   }
-  
-  l.dim(`${p} Status logged for ${processing}/${total} videos`)
 }

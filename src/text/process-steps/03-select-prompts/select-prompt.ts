@@ -1,5 +1,5 @@
 import { sections } from './index'
-import { err, l, logInitialFunctionCall } from '@/logging'
+import { err, l } from '@/logging'
 import { readFile } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
 
@@ -35,23 +35,19 @@ const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
 
 export async function selectPrompts(options: ProcessingOptions) {
   const p = '[process-steps/04-select-prompt]'
-  l.step(`\nStep 4 - Select Prompts\n`)
-  logInitialFunctionCall('selectPrompts', { options })
-  l.dim(`${p} Starting prompt selection`)
+  l.step(`\nStep 3 - Select Prompts\n`)
 
   let customPrompt = ''
   if (options.customPrompt) {
     l.dim(`${p} Loading custom prompt from: ${options.customPrompt}`)
     try {
       customPrompt = (await readFile(options.customPrompt, 'utf8')).trim()
-      l.dim(`${p} Custom prompt loaded successfully`)
     } catch (error) {
       err(`${p} Error reading custom prompt file: ${(error as Error).message}`)
     }
   }
 
   if (customPrompt) {
-    l.dim(`${p} Using custom prompt`)
     return customPrompt
   }
 
@@ -65,10 +61,7 @@ export async function selectPrompts(options: ProcessingOptions) {
       validPromptValues.has(section) && Object.hasOwn(sections, section)
   )
 
-  l.dim(`${p} Valid sections found: ${JSON.stringify(validSections, null, 2)}`)
-
   validSections.forEach((section) => {
-    l.dim(`${p} Processing section: ${section}`)
     let instruction = sections[section].instruction
 
     if (section === 'keyMoments') {
@@ -88,6 +81,5 @@ export async function selectPrompts(options: ProcessingOptions) {
     text += `    ${sections[section].example}\n`
   })
 
-  l.dim(`${p} Prompt selection completed`)
   return text
 }
