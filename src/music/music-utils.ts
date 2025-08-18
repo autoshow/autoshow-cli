@@ -29,7 +29,11 @@ export const handleError = (error: any): void => {
     'Invalid API key': 'Invalid Gemini API key. Please check your GEMINI_API_KEY',
     'rate limit': `Rate limit exceeded: ${error.message}`,
     'ValidationException': `Validation error: ${error.message}`,
-    'insufficient permissions': `Insufficient permissions: ${error.message}\n\nPlease ensure your API key has the necessary permissions`
+    'insufficient permissions': `Insufficient permissions: ${error.message}\n\nPlease ensure your API key has the necessary permissions`,
+    'AccessDeniedException': `AWS Access Denied: ${error.message}\n\nPlease check your AWS credentials and permissions`,
+    'EndpointNotFound': `SageMaker endpoint not found: ${error.message}\n\nEnsure the endpoint is deployed and InService`,
+    'AWS credentials': `AWS credentials error: ${error.message}\n\nPlease configure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY`,
+    'S3 bucket': `S3 bucket error: ${error.message}\n\nPlease check your S3 bucket configuration and permissions`
   }
   
   const matched = Object.entries(errorMap).find(([key]) => 
@@ -43,6 +47,7 @@ export function ensureOutputDirectory(outputPath: string): void {
   const dir = dirname(outputPath)
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
+    l.dim(`${p} Created output directory: ${dir}`)
   }
 }
 
@@ -164,4 +169,26 @@ export function convertPcmToWav(pcmData: Buffer): Buffer {
   wavHeader.writeUInt32LE(pcmData.length, 40)
   
   return Buffer.concat([wavHeader, pcmData])
+}
+
+export function validateSageMakerConfig(config: any): boolean {
+  const p = '[music/music-utils/validateSageMakerConfig]'
+  
+  if (!config.endpointName) {
+    l.warn(`${p} SageMaker endpoint name is required`)
+    return false
+  }
+  
+  if (!config.s3BucketName) {
+    l.warn(`${p} S3 bucket name is required for SageMaker`)
+    return false
+  }
+  
+  const validModels = ['musicgen-small', 'musicgen-medium', 'musicgen-large']
+  if (config.model && !validModels.includes(config.model)) {
+    l.warn(`${p} Invalid SageMaker model: ${config.model}. Valid options: ${validModels.join(', ')}`)
+    return false
+  }
+  
+  return true
 }
