@@ -1,6 +1,6 @@
 import { fileTypeFromBuffer } from 'file-type'
 import { l, err, logInitialFunctionCall } from '@/logging'
-import { execPromise, readFile, access, rename, execFilePromise, unlink } from '@/node-utils'
+import { execPromise, readFile, access, rename, execFilePromise, unlink, ensureDir } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
 import ora from 'ora'
 
@@ -63,8 +63,15 @@ export async function downloadAudio(
 
   const spinner = ora('Step 2 - Download Audio').start()
 
-  const finalPath = `content/${filename}`
+  const baseOutput = 'output'
+  const finalPath = options.outputDir 
+    ? `${baseOutput}/${options.outputDir}/${filename}`
+    : `${baseOutput}/${filename}`
   const outputPath = `${finalPath}.wav`
+
+  l.dim(`${p} Ensuring output directory exists for: ${finalPath}`)
+  const outputDir = finalPath.substring(0, finalPath.lastIndexOf('/'))
+  await ensureDir(outputDir)
 
   try {
     await access(outputPath)

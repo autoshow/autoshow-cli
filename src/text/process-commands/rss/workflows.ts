@@ -8,7 +8,7 @@ import type { ProcessingOptions } from '@/types'
 const WORKFLOWS_DIR = 'output/workflows'
 
 async function copyFeeds(): Promise<void> {
-  await logCopy(`./${WORKFLOWS_DIR}/feeds`, './content', 'copyFeeds', 'feeds folder copied to ./content')
+  await logCopy(`./${WORKFLOWS_DIR}/feeds`, './output', 'copyFeeds', 'feeds folder copied to ./output')
 }
 
 async function removeDailySubfolder(dirName: string, subfolder: string): Promise<void> {
@@ -16,7 +16,7 @@ async function removeDailySubfolder(dirName: string, subfolder: string): Promise
 }
 
 async function copyBackToDaily(dirName: string, subfolder: string): Promise<void> {
-  await logCopy(`./content/${subfolder}`, `./${WORKFLOWS_DIR}/${dirName}`, 'copyBackToDaily', `${subfolder} copied to ./${WORKFLOWS_DIR}/${dirName}`)
+  await logCopy(`./output/${subfolder}`, `./${WORKFLOWS_DIR}/${dirName}`, 'copyBackToDaily', `${subfolder} copied to ./${WORKFLOWS_DIR}/${dirName}`)
 }
 
 export function extractDirectoryName(feedFilename: string): string {
@@ -55,11 +55,11 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
   l.dim(`${p} Preparing to process shownotes for ${dirName} with ${filterString}`)
   
   await copyFeeds()
-  await logMkdir(`./content/${subfolder}`, 'createDirectoryForShownotes')
+  await logMkdir(`./output/${subfolder}`, 'createDirectoryForShownotes')
   
   const rssOptions: ProcessingOptions = {
     ...options,
-    rss: [`./content/feeds/${feedFilename}`],
+    rss: [`./output/feeds/${feedFilename}`],
     whisperCoreml: options.whisperCoreml || 'large-v3-turbo',
     feed: undefined,
     metaInfo: undefined
@@ -79,10 +79,10 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
     throw e
   }
   
-  await logFindMove('.md', './content', `./content/${subfolder}`, 'moveGeneratedMdToSubfolder')
+  await logFindMove('.md', './output', `./output/${subfolder}`, 'moveGeneratedMdToSubfolder')
   await logMoveMd(subfolder, dirName, 'moveShownotesToSource')
-  await logRemove('./content/feeds', 'cleanupShownotes', 'feeds folder from ./content')
-  await logRemove(`./content/${subfolder}`, 'cleanupShownotes', `${subfolder} from ./content`)
+  await logRemove('./output/feeds', 'cleanupShownotes', 'feeds folder from ./output')
+  await logRemove(`./output/${subfolder}`, 'cleanupShownotes', `${subfolder} from ./output`)
   
   l.final(`${p} prepareShownotes completed for ${dirName}`)
 }
@@ -93,11 +93,11 @@ export async function prepareInfo(dirName: string, feedFilename: string): Promis
   const subfolder = `${dirName}-info`
   
   await copyFeeds()
-  await logMkdir(`./content/${subfolder}`, 'createDirectoryForInfo')
+  await logMkdir(`./output/${subfolder}`, 'createDirectoryForInfo')
   
   const rssOptions: ProcessingOptions = {
     info: true,
-    rss: [`./content/feeds/${feedFilename}`],
+    rss: [`./output/feeds/${feedFilename}`],
   }
   
   try {
@@ -107,11 +107,11 @@ export async function prepareInfo(dirName: string, feedFilename: string): Promis
     throw e
   }
   
-  await logFindMove('.json', './content', `./content/${subfolder}`, 'moveGeneratedJsonToSubfolder')
+  await logFindMove('.json', './output', `./output/${subfolder}`, 'moveGeneratedJsonToSubfolder')
   await removeDailySubfolder(dirName, subfolder)
   await copyBackToDaily(dirName, subfolder)
-  await logRemove('./content/feeds', 'cleanupInfo', 'feeds folder from ./content')
-  await logRemove(`./content/${subfolder}`, 'cleanupInfo', `${subfolder} from ./content'`)
+  await logRemove('./output/feeds', 'cleanupInfo', 'feeds folder from ./output')
+  await logRemove(`./output/${subfolder}`, 'cleanupInfo', `${subfolder} from ./output`)
   
   l.final(`${p} prepareInfo completed for ${dirName}`)
 }

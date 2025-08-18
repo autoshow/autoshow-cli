@@ -12,7 +12,7 @@ npm run as -- config configure --service r2
 ## Creating Embeddings
 
 ```bash
-# Create embeddings from the default 'content' directory
+# Create embeddings from the default 'input' directory
 npm run as -- text embed --create
 
 # Create embeddings from a specific directory
@@ -53,7 +53,7 @@ npm run as -- config configure --service r2
 npm run as -- text --playlist "URL"
 
 # 3. Create embeddings
-npm run as -- text embed --create "content"
+npm run as -- text embed --create "input/embed"
 
 # 4. Query the knowledge base
 npm run as -- text embed --query "What are the key topics discussed?"

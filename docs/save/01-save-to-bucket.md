@@ -19,7 +19,7 @@ npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --save 
 
 npm run as -- text --rss "https://feeds.transistor.fm/fsjam-podcast" --last 3 --save r2
 
-npm run as -- text --file "input/examples/audio.mp3" --claude --save s3
+npm run as -- text --file "input/audio.mp3" --claude --save s3
 ```
 
 ## Custom Bucket Prefix

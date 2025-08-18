@@ -64,7 +64,7 @@ export async function queryEmbeddings(question: string): Promise<void> {
     let combinedContent = ''
     matches.forEach(match => {
       const filename = match.metadata?.['filename'] || 'Unknown'
-      const content = match.metadata?.['content'] || ''
+      const content = match.metadata?.['input'] || ''
       combinedContent += `\n\n---\n**File: ${filename}**\n${content}\n`
     })
     

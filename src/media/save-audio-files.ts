@@ -29,7 +29,7 @@ export async function convertLocalAudioFiles(
   const p = '[media/save-audio-files]'
   l.dim(`${p} Starting local media conversion for input: ${input}`)
   
-  const targetDir = outputDir || 'content'
+  const targetDir = outputDir || 'output'
   l.dim(`${p} Target output directory: ${targetDir}`)
   
   const isInputDirectory = await isDirectory(input)

@@ -8,6 +8,7 @@ import { l, err, logSeparator } from '@/logging'
 import { selectRSSItemsToProcess } from './fetch.ts'
 import { logRSSProcessingStatus } from './rss-logging.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
+
 export async function processRSSFeeds(
   options: ProcessingOptions,
   expandedRssUrls: string[],

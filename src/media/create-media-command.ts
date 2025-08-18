@@ -38,7 +38,7 @@ export const createMediaCommand = (): Command => {
     .command('convert')
     .description('Convert local audio/video files to optimized MP3 format')
     .option('--files <source>', 'Source directory or file containing media files')
-    .option('--output <directory>', 'Output directory (default: content)')
+    .option('--output <directory>', 'Output directory (default: output)')
     .option('--verbose', 'Display detailed output from external tools')
     .action(async (options) => {
       logInitialFunctionCall('mediaConvert', options)

@@ -62,7 +62,7 @@ export async function createEmbeds(customDir?: string): Promise<void> {
   
   const baseDir = customDir
     ? (isAbsolute(customDir) ? customDir : resolve(process.cwd(), customDir))
-    : resolve(process.cwd(), 'content')
+    : resolve(process.cwd(), 'input')
   
   l.dim(`${p} Base directory: ${baseDir}`)
   

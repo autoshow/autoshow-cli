@@ -8,12 +8,12 @@ import { join } from 'node:path'
 
 const commands = [
   {
-    cmd: 'npm run as -- text --file "input/examples/audio.mp3"',
+    cmd: 'npm run as -- text --file "input/audio.mp3"',
     expectedFile: 'audio-prompt.md',
     newName: '01-LOCAL-01-file-default.md'
   },
   {
-    cmd: 'npm run as -- text --file "input/examples/audio.mp3" --whisper tiny',
+    cmd: 'npm run as -- text --file "input/audio.mp3" --whisper tiny',
     expectedFile: 'audio-prompt.md',
     newName: '01-LOCAL-02-file-whisper-tiny.md'
   },
@@ -28,7 +28,7 @@ const commands = [
     newName: '01-LOCAL-04-rss-default.md',
   },
   {
-    cmd: 'npm run as -- text --file "input/examples/audio.mp3" --whisper-coreml tiny',
+    cmd: 'npm run as -- text --file "input/audio.mp3" --whisper-coreml tiny',
     expectedFile: 'audio-prompt.md',
     newName: '01-LOCAL-05-file-whisper-coreml-tiny.md'
   },
@@ -42,16 +42,16 @@ test('AutoShow Command Tests', async (t) => {
 
       if (Array.isArray(command.expectedFile)) {
         for (const { file, newName } of command.expectedFile) {
-          const filePath = join('content', file)
+          const filePath = join('output', file)
           strictEqual(existsSync(filePath), true, `Expected file ${file} was not created`)
-          const newPath = join('content', newName)
+          const newPath = join('output', newName)
           renameSync(filePath, newPath)
           strictEqual(existsSync(newPath), true, `File was not renamed to ${newName}`)
         }
       } else {
-        const filePath = join('content', command.expectedFile as string)
+        const filePath = join('output', command.expectedFile as string)
         strictEqual(existsSync(filePath), true, `Expected file ${command.expectedFile} was not created`)
-        const newPath = join('content', command.newName as string)
+        const newPath = join('output', command.newName as string)
         renameSync(filePath, newPath)
         strictEqual(existsSync(newPath), true, `File was not renamed to ${command.newName}`)
       }

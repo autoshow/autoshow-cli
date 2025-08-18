@@ -22,3 +22,4 @@ output
 src/text/workflows
 whisper-cpp-temp
 whisper-coreml-temp
+input

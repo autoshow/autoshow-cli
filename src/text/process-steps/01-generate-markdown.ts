@@ -1,6 +1,6 @@
 import { l, err, logInitialFunctionCall } from '@/logging'
 import { execFilePromise, basename, extname } from '@/node-utils'
-import { sanitizeTitle } from '../utils/save-info.ts'
+import { sanitizeTitle, constructOutputPath } from '../utils/save-info.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
 export function buildFrontMatter(metadata: {
@@ -120,7 +120,7 @@ export async function generateMarkdown(
         throw new Error('Invalid option provided for markdown generation.')
     }
   })()
-  const finalPath = `content/${filename}`
+  const finalPath = constructOutputPath(filename, options)
   const frontMatter = buildFrontMatter({
     showLink: metadata.showLink || '',
     channel: metadata.channel || '',
