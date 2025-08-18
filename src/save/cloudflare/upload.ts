@@ -13,7 +13,6 @@ export async function uploadToCloudflare(
   sessionId?: string
 ): Promise<string | null> {
   const p = '[save/cloudflare/upload]'
-  l.dim(`${p} Starting R2 upload for file: ${filePath}`)
   
   if (!existsSync(filePath)) {
     err(`${p} File not found: ${filePath}`)
@@ -37,8 +36,6 @@ export async function uploadToCloudflare(
   const s3Key = `${uniqueId}/${fileName}`
   
   try {
-    l.dim(`${p} Uploading ${filePath} to R2://${bucketName}/${s3Key}`)
-    
     const accountId = await getCloudflareAccountId()
     const fileContent = readFileSync(filePath)
     const uploaded = await putObject(accountId, bucketName, s3Key, fileContent)
@@ -65,8 +62,6 @@ export async function uploadAllCloudflareOutputFiles(
 ): Promise<void> {
   const p = '[save/cloudflare/upload]'
   
-  l.dim(`${p} Starting R2 upload process`)
-  
   const r2Check = checkR2Configuration()
   if (!r2Check.isValid) {
     err(`${p} R2 configuration error: ${r2Check.error}`)
@@ -74,7 +69,6 @@ export async function uploadAllCloudflareOutputFiles(
   }
   
   const sessionId = Date.now().toString()
-  l.dim(`${p} Using session ID for uploads: ${sessionId}`)
   
   const possibleFiles = [
     `${baseFilePath}-chatgpt-shownotes.md`,
@@ -83,19 +77,13 @@ export async function uploadAllCloudflareOutputFiles(
     `${baseFilePath}-prompt.md`
   ]
   
-  l.dim(`${p} Checking for output files to upload`)
-  
   const uploadPromises = possibleFiles
     .filter(file => existsSync(file))
-    .map(file => {
-      l.dim(`${p} Found file to upload: ${file}`)
-      return uploadToCloudflare(file, options, sessionId)
-    })
+    .map(file => uploadToCloudflare(file, options, sessionId))
   
   await Promise.all(uploadPromises)
   
   if (metadata) {
-    l.dim(`${p} Uploading JSON metadata`)
     await uploadCloudflareJsonMetadata(baseFilePath, options, metadata, sessionId)
   }
 }

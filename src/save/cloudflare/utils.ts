@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { err } from '@/logging'
 
 export function isValidCloudflareAccountId(accountId: string): boolean {
   const hexPattern = /^[a-f0-9]{32}$/i
@@ -10,7 +10,6 @@ export async function getCloudflareAccountId(): Promise<string> {
   
   const cloudflareAccountId = process.env['CLOUDFLARE_ACCOUNT_ID']
   if (cloudflareAccountId && isValidCloudflareAccountId(cloudflareAccountId)) {
-    l.dim(`${p} Using Cloudflare account ID: ${cloudflareAccountId}`)
     return cloudflareAccountId
   } else if (cloudflareAccountId) {
     err(`${p} Invalid CLOUDFLARE_ACCOUNT_ID format: ${cloudflareAccountId}`)
@@ -27,9 +26,6 @@ export function getCloudflareRegion(): string {
 }
 
 export function getCloudflarePublicUrl(bucketName: string, s3Key: string): string {
-  const p = '[save/cloudflare/utils]'
-  l.dim(`${p} Generating R2 public URL`)
-  
   const accountId = process.env['CLOUDFLARE_ACCOUNT_ID'] || 'unknown'
   return `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${s3Key}`
 }

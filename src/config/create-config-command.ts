@@ -1,13 +1,10 @@
 import { Command } from 'commander'
 import { checkAllConfigs } from './check-all-configs'
 import { configureCommand } from './configure-command'
-import { l, logInitialFunctionCall } from '@/logging'
+import { logInitialFunctionCall } from '@/logging'
 import type { ConfigureOptions } from '@/types'
 
 export const createConfigCommand = (): Command => {
-  const p = '[config/create-config-command]'
-  l.dim(`${p} Creating config command`)
-  
   const configCommand = new Command('config')
     .description('Check cloud storage configurations and credentials')
     .action(async () => {
@@ -27,6 +24,5 @@ export const createConfigCommand = (): Command => {
   
   configCommand.addCommand(configureSubCommand)
   
-  l.dim(`${p} Config command created successfully`)
   return configCommand
 }

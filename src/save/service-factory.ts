@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { err } from '@/logging'
 import type { ProcessingOptions, UploadMetadata } from '@/types'
 
 export interface CloudStorageService {
@@ -56,16 +56,13 @@ export function createStorageService(options: ProcessingOptions): CloudStorageSe
   const p = '[save/service-factory]'
   
   if (!options.save || !['s3', 'r2'].includes(options.save)) {
-    l.dim(`${p} No cloud storage service specified`)
     return null
   }
   
   switch (options.save) {
     case 's3':
-      l.dim(`${p} Creating AWS S3 storage service`)
       return new AwsStorageService()
     case 'r2':
-      l.dim(`${p} Creating Cloudflare R2 storage service`)
       return new CloudflareStorageService()
     default:
       err(`${p} Unknown storage service: ${options.save}`)
@@ -78,12 +75,8 @@ export async function uploadToStorage(
   options: ProcessingOptions,
   sessionId?: string
 ): Promise<string | null> {
-  const p = '[save/service-factory]'
-  l.dim(`${p} Uploading file to storage service: ${options.save}`)
-  
   const service = createStorageService(options)
   if (!service) {
-    l.dim(`${p} No storage service available`)
     return null
   }
   
@@ -95,12 +88,8 @@ export async function uploadAllOutputFiles(
   options: ProcessingOptions,
   metadata?: UploadMetadata
 ): Promise<void> {
-  const p = '[save/service-factory]'
-  l.dim(`${p} Uploading all output files to storage service: ${options.save}`)
-  
   const service = createStorageService(options)
   if (!service) {
-    l.dim(`${p} No storage service available`)
     return
   }
   
@@ -109,7 +98,6 @@ export async function uploadAllOutputFiles(
 
 export async function getOrCreateBucket(options: ProcessingOptions): Promise<string | null> {
   const p = '[save/service-factory]'
-  l.dim(`${p} Getting or creating bucket for storage service: ${options.save}`)
   
   const service = createStorageService(options)
   if (!service) {
@@ -127,7 +115,6 @@ export async function uploadJsonMetadata(
   sessionId: string
 ): Promise<string | null> {
   const p = '[save/service-factory]'
-  l.dim(`${p} Uploading JSON metadata to storage service: ${options.save}`)
   
   const service = createStorageService(options)
   if (!service) {

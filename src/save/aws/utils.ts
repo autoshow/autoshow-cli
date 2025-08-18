@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { err } from '@/logging'
 import { execPromise } from '@/node-utils'
 
 export async function getAwsAccountId(): Promise<string> {
@@ -8,7 +8,6 @@ export async function getAwsAccountId(): Promise<string> {
     const command = 'aws sts get-caller-identity --query Account --output text'
     const { stdout } = await execPromise(command)
     const accountId = stdout.trim()
-    l.dim(`${p} Retrieved AWS account ID: ${accountId}`)
     return accountId
   } catch (error) {
     err(`${p} Failed to get AWS account ID: ${(error as Error).message}`)
@@ -25,8 +24,5 @@ export function getAwsEndpoint(): string {
 }
 
 export function getAwsPublicUrl(bucketName: string, s3Key: string): string {
-  const p = '[save/aws/utils]'
-  l.dim(`${p} Generating S3 public URL`)
-  
   return `https://${bucketName}.s3.amazonaws.com/${s3Key}`
 }

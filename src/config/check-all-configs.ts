@@ -4,9 +4,6 @@ import { checkCloudflareConfig } from './cloudflare/check-cloudflare-config'
 import type { ConfigStatus } from '@/types'
 
 function displayConfigurationSummary(configurations: ConfigStatus[]): void {
-  const p = '[config/check-all-configs]'
-  l.dim(`${p} Displaying configuration summary`)
-  
   l.step('Configuration Summary:')
   l.dim('═'.repeat(80))
   
@@ -36,9 +33,6 @@ function displayConfigurationSummary(configurations: ConfigStatus[]): void {
 }
 
 function displaySetupGuidance(configurations: ConfigStatus[]): void {
-  const p = '[config/check-all-configs]'
-  l.dim(`${p} Displaying setup guidance`)
-  
   const problematicServices = configurations.filter(config => !config.configured || config.issues.length > 0)
   
   if (problematicServices.length === 0) {
@@ -80,22 +74,14 @@ function displaySetupGuidance(configurations: ConfigStatus[]): void {
 }
 
 export async function checkAllConfigs(): Promise<void> {
-  const p = '[config/check-all-configs]'
-  l.dim(`${p} Starting comprehensive configuration check`)
-  
   const configurations: ConfigStatus[] = []
   
-  l.dim(`${p} Checking AWS S3 configuration`)
   const awsStatus = await checkAwsConfig()
   configurations.push(awsStatus)
   
-  l.dim(`${p} Checking Cloudflare R2/Vectorize configuration`)
   const cloudflareStatus = await checkCloudflareConfig()
   configurations.push(cloudflareStatus)
   
-  l.dim(`${p} Displaying configuration summary`)
   displayConfigurationSummary(configurations)
-  
-  l.dim(`${p} Providing setup guidance`)
   displaySetupGuidance(configurations)
 }
