@@ -5,28 +5,72 @@ import type { FileData } from '../src/types'
 
 const p = '[parse]'
 
-function extractFilePath(headerLine: string): string | null {
-  if (!headerLine.startsWith('## ')) return null
+function extractFilePath(line: string): string | null {
+  if (!line.trim()) return null
   
-  const headerContent = headerLine.substring(3).trim()
-  console.log(`${p} Processing header: ${headerContent}`)
+  let cleanLine = line.trim()
   
-  const patterns = [
-    /^File:\s*(.+)$/,
-    /^New file:\s*(.+)$/i,
-    /^Modified file:\s*(.+)$/i
-  ]
-  
-  const matchedPattern = patterns.find(pattern => pattern.test(headerContent))
-  if (matchedPattern) {
-    const match = headerContent.match(matchedPattern)
-    const extractedPath = match?.[1]?.trim()
-    console.log(`${p} Extracted path from pattern: ${extractedPath}`)
-    return extractedPath || null
+  if (cleanLine.startsWith('## ')) {
+    cleanLine = cleanLine.substring(3).trim()
   }
   
-  console.log(`${p} Using direct path format: ${headerContent}`)
-  return headerContent
+  if (cleanLine.startsWith('**') && cleanLine.endsWith('**')) {
+    cleanLine = cleanLine.substring(2, cleanLine.length - 2).trim()
+  }
+  
+  const prefixPatterns = [
+    /^File:\s*(.+)$/i,
+    /^New file:\s*(.+)$/i,
+    /^Modified file:\s*(.+)$/i,
+    /^Updated file:\s*(.+)$/i,
+    /^Create file:\s*(.+)$/i,
+    /^Add file:\s*(.+)$/i,
+    /^Delete file:\s*(.+)$/i,
+    /^Move file:\s*(.+)$/i,
+    /^Rename file:\s*(.+)$/i,
+    /^Path:\s*(.+)$/i,
+    /^Location:\s*(.+)$/i
+  ]
+  
+  for (const pattern of prefixPatterns) {
+    const match = cleanLine.match(pattern)
+    if (match) {
+      const extractedPath = match[1]?.trim()
+      if (extractedPath && isValidFilePath(extractedPath)) {
+        console.log(`${p} Extracted path from prefix pattern: ${extractedPath}`)
+        return extractedPath
+      }
+    }
+  }
+  
+  if (isValidFilePath(cleanLine)) {
+    console.log(`${p} Using direct path format: ${cleanLine}`)
+    return cleanLine
+  }
+  
+  return null
+}
+
+function isValidFilePath(path: string): boolean {
+  if (!path || typeof path !== 'string') return false
+  
+  if (!path.includes('/')) return false
+  
+  const validExtensions = ['.ts', '.js', '.tsx', '.jsx', '.md', '.json', '.css', '.scss', '.html', '.vue', '.py', '.go', '.rs', '.java', '.cpp', '.c', '.h', '.php', '.rb', '.swift', '.kt', '.dart', '.yml', '.yaml', '.xml', '.toml', '.ini', '.env', '.gitignore', '.dockerignore', '.txt']
+  const hasValidExtension = validExtensions.some(ext => path.toLowerCase().endsWith(ext))
+  
+  if (!hasValidExtension) return false
+  
+  const commonHeaders = ['overview', 'usage', 'examples', 'setup', 'configuration', 'installation', 'getting started', 'api', 'reference', 'guide', 'tutorial', 'documentation', 'readme', 'changelog', 'license', 'contributing']
+  const pathLower = path.toLowerCase()
+  const isCommonHeader = commonHeaders.some(header => pathLower.includes(header) && !pathLower.includes('/'))
+  
+  if (isCommonHeader) return false
+  
+  const pathParts = path.split('/')
+
+  
+  return true
 }
 
 async function parseMarkdown(content: string): Promise<FileData[]> {
@@ -36,34 +80,24 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
   const files: FileData[] = []
   let currentFile: FileData | null = null
   let inCodeBlock = false
-  let awaitingDescription = false
   let codeBlockContent: string[] = []
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     
-    if (line.startsWith('## ') && !inCodeBlock) {
+    const filePath = extractFilePath(line)
+    if (filePath && !inCodeBlock) {
       if (currentFile && codeBlockContent.length > 0) {
         currentFile.content = codeBlockContent.join('\n').trim()
         files.push(currentFile)
+        console.log(`${p} Added file: ${currentFile.path} (${currentFile.content.length} chars)`)
       }
       
-      const filePath = extractFilePath(line)
-      if (filePath) {
-        console.log(`${p} Found file path: ${filePath}`)
-        currentFile = { path: filePath, content: '' }
-        codeBlockContent = []
-        awaitingDescription = true
-        console.log(`${p} Awaiting description line for ${filePath}`)
-      } else {
-        console.log(`${p} Could not extract file path from: ${line}`)
-        currentFile = null
-        awaitingDescription = false
-      }
-    } else if (awaitingDescription && line.trim() && !line.startsWith('```')) {
-      console.log(`${p} Skipping description line: ${line.trim()}`)
-      awaitingDescription = false
-    } else if (line.startsWith('```') && currentFile && !awaitingDescription) {
+      console.log(`${p} Found file path: ${filePath}`)
+      currentFile = { path: filePath, content: '' }
+      codeBlockContent = []
+    }
+    else if (line.startsWith('```') && currentFile) {
       if (!inCodeBlock) {
         inCodeBlock = true
         console.log(`${p} Entering code block for ${currentFile.path}`)
@@ -73,17 +107,17 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
       }
     } else if (inCodeBlock && currentFile) {
       codeBlockContent.push(line)
-    } else if (awaitingDescription && !line.trim()) {
-      console.log(`${p} Skipping empty line while awaiting description`)
     }
   }
   
   if (currentFile && codeBlockContent.length > 0) {
     currentFile.content = codeBlockContent.join('\n').trim()
     files.push(currentFile)
+    console.log(`${p} Added final file: ${currentFile.path} (${currentFile.content.length} chars)`)
   }
   
   console.log(`${p} Parsed ${files.length} files from markdown`)
+  files.forEach(file => console.log(`${p} File: ${file.path} (${file.content.length} chars)`))
   return files
 }
 
@@ -134,6 +168,11 @@ async function writeFile(filePath: string, content: string): Promise<void> {
 
 async function processFiles(files: FileData[]): Promise<void> {
   console.log(`${p} Processing ${files.length} files`)
+  
+  if (files.length === 0) {
+    console.log(`${p} No files to process`)
+    return
+  }
   
   const deletePromises = files.map(file => deleteFile(file.path))
   await Promise.all(deletePromises)

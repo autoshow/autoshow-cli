@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import { writeFile, existsSync, readFileSync, execPromise } from '@/node-utils'
+import { writeFile, readFileSync, execPromise } from '@/node-utils'
 import { getOrCreateCloudflareBucket } from './bucket'
 import { getCloudflarePublicUrl } from './utils'
 import { checkR2Configuration } from './config'
@@ -80,11 +80,11 @@ export async function uploadCloudflareJsonMetadata(
     const publicUrl = getCloudflarePublicUrl(bucketName, s3Key)
     l.success(`${p} Successfully uploaded JSON metadata to R2: ${publicUrl}`)
     
-    if (!existsSync(jsonFilePath)) {
-      l.dim(`${p} JSON file already cleaned up`)
-    } else {
+    try {
       await execPromise(`rm "${jsonFilePath}"`)
       l.dim(`${p} Cleaned up temporary JSON file: ${jsonFilePath}`)
+    } catch (cleanupError) {
+      l.warn(`${p} Failed to cleanup temporary file: ${(cleanupError as Error).message}`)
     }
     
     return publicUrl

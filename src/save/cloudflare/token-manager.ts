@@ -1,19 +1,19 @@
 import { l, err } from '@/logging'
-import type { CloudflareApiToken } from '@/types'
+import { createCloudflareClient } from '@/save/cloudflare/client'
 
 let cachedApiToken: string | null = null
 
 export async function getR2ApiToken(): Promise<string | null> {
   const p = '[save/cloudflare/token-manager]'
   
-  const existingR2Token = process.env['CLOUDFLARE_R2_API_TOKEN']
-  if (existingR2Token) {
-    l.dim(`${p} Using existing R2 API token from environment`)
-    return existingR2Token
+  const existingToken = process.env['CLOUDFLARE_R2_API_TOKEN'] || process.env['CLOUDFLARE_API_TOKEN']
+  if (existingToken) {
+    l.dim(`${p} Using existing API token from environment`)
+    return existingToken
   }
   
   if (cachedApiToken) {
-    l.dim(`${p} Using cached R2 API token`)
+    l.dim(`${p} Using cached API token`)
     return cachedApiToken
   }
   
@@ -26,8 +26,8 @@ export async function getR2ApiToken(): Promise<string | null> {
     return null
   }
   
-  l.dim(`${p} Creating new R2 API token with permissions`)
-  const apiToken = await createApiTokenWithR2Permissions(accountId, email, globalApiKey)
+  l.dim(`${p} Creating new API token with R2 permissions`)
+  const apiToken = await createApiTokenWithPermissions(accountId)
   if (!apiToken) {
     return null
   }
@@ -36,49 +36,45 @@ export async function getR2ApiToken(): Promise<string | null> {
   return cachedApiToken
 }
 
-async function createApiTokenWithR2Permissions(accountId: string, email: string, globalApiKey: string): Promise<string | null> {
+async function createApiTokenWithPermissions(accountId: string): Promise<string | null> {
   const p = '[save/cloudflare/token-manager]'
   
   try {
+    const client = createCloudflareClient()
+    
     l.dim(`${p} Fetching available permission groups`)
-    const permResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/permission_groups`,
-      {
-        headers: {
-          'X-Auth-Email': email,
-          'X-Auth-Key': globalApiKey,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
+    const permResponse = await client.accounts.tokens.permissionGroups.list({
+      account_id: accountId
+    })
     
-    if (!permResponse.ok) {
-      const errorText = await permResponse.text()
-      err(`${p} Failed to fetch permission groups: ${errorText}`)
-      return null
-    }
+    const permissionGroups = Array.isArray(permResponse) ? permResponse : (permResponse as any)?.result || []
     
-    const permData = await permResponse.json()
-    
-    const r2Permissions = permData.result.filter((perm: any) => 
+    const allPermissions = permissionGroups.filter((perm: any) => 
       perm.name === 'Workers R2 Storage:Read' ||
       perm.name === 'Workers R2 Storage:Write' ||
-      perm.name.includes('R2')
+      perm.name === 'Vectorize Read' ||
+      perm.name === 'Vectorize Write' ||
+      perm.name === 'Workers AI Read' ||
+      perm.name === 'Workers AI Write' ||
+      perm.name.includes('R2') ||
+      perm.name.includes('Vectorize') ||
+      perm.name.includes('Workers AI')
     )
     
-    if (r2Permissions.length === 0) {
-      err(`${p} Could not find R2 permissions in account`)
+    if (allPermissions.length === 0) {
+      err(`${p} Could not find required permissions in account`)
       return null
     }
     
-    l.dim(`${p} Found ${r2Permissions.length} R2 permission groups`)
+    l.dim(`${p} Found ${allPermissions.length} relevant permission groups`)
     
-    const tokenBody = {
-      name: `autoshow-r2-${Date.now()}`,
+    const tokenResponse = await client.accounts.tokens.create({
+      account_id: accountId,
+      name: `autoshow-unified-${Date.now()}`,
       policies: [
         {
           effect: 'allow',
-          permission_groups: r2Permissions.map((perm: any) => ({
+          permission_groups: allPermissions.map((perm: any) => ({
             id: perm.id,
             meta: {}
           })),
@@ -87,41 +83,19 @@ async function createApiTokenWithR2Permissions(accountId: string, email: string,
           }
         }
       ]
-    }
+    })
     
-    l.dim(`${p} Creating API token with R2 permissions`)
-    const createResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Auth-Email': email,
-          'X-Auth-Key': globalApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(tokenBody)
-      }
-    )
-    
-    if (!createResponse.ok) {
-      const errorText = await createResponse.text()
-      err(`${p} Failed to create API token: ${errorText}`)
-      return null
-    }
-    
-    const tokenData = await createResponse.json() as { result: CloudflareApiToken }
-    
-    if (!tokenData.result?.value) {
+    if (!tokenResponse?.value) {
       err(`${p} API token created but value not returned`)
       return null
     }
     
-    l.dim(`${p} Successfully created API token with ID: ${tokenData.result.id}`)
+    l.dim(`${p} Successfully created API token`)
     
     const { updateEnvVariable } = await import('../../config/env-writer')
-    await updateEnvVariable('CLOUDFLARE_R2_API_TOKEN', tokenData.result.value)
+    await updateEnvVariable('CLOUDFLARE_API_TOKEN', tokenResponse.value)
     
-    return tokenData.result.value
+    return tokenResponse.value
   } catch (error) {
     err(`${p} Error creating API token: ${(error as Error).message}`)
     return null
@@ -130,6 +104,6 @@ async function createApiTokenWithR2Permissions(accountId: string, email: string,
 
 export function clearCachedToken(): void {
   const p = '[save/cloudflare/token-manager]'
-  l.dim(`${p} Clearing cached R2 token`)
+  l.dim(`${p} Clearing cached token`)
   cachedApiToken = null
 }

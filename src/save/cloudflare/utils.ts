@@ -26,23 +26,6 @@ export function getCloudflareRegion(): string {
   return 'auto'
 }
 
-export function getCloudflareEndpoint(): string {
-  const p = '[save/cloudflare/utils]'
-  const accountId = process.env['CLOUDFLARE_ACCOUNT_ID']
-  
-  if (!accountId) {
-    err(`${p} CLOUDFLARE_ACCOUNT_ID is required for R2`)
-    return ''
-  }
-  
-  if (!isValidCloudflareAccountId(accountId)) {
-    err(`${p} Invalid CLOUDFLARE_ACCOUNT_ID format: ${accountId}`)
-    return ''
-  }
-  
-  return ` --endpoint-url "https://${accountId}.r2.cloudflarestorage.com"`
-}
-
 export function getCloudflarePublicUrl(bucketName: string, s3Key: string): string {
   const p = '[save/cloudflare/utils]'
   l.dim(`${p} Generating R2 public URL`)

@@ -1,14 +1,7 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  "*"
-  "src/*"
-  "src/text/process-steps/05-run-llm.ts"
-  "src/text/embeddings"
-  "src/save"
-  "src/config"
-  "docs/save"
-  "docs/text/05-create-embeddings.md"
+  ""
 )
 
 IGNORE_PATHS=(
@@ -70,8 +63,8 @@ repomix \
   --token-count-encoding "o200k_base" \
   --top-files-len 50 \
   --no-git-sort-by-changes \
-  --no-file-summary \
-  --no-gitignore
+  # --no-gitignore \
+  --no-file-summary
 
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
