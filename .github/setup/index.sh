@@ -83,4 +83,11 @@ else
   exit 1
 fi
 
+if [ -f "$SETUP_DIR/image-setup.sh" ]; then
+  bash "$SETUP_DIR/image-setup.sh"
+else
+  echo "ERROR: Image setup script not found"
+  exit 1
+fi
+
 echo "Setup completed successfully!"

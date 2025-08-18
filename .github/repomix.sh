@@ -2,7 +2,13 @@
 
 INCLUDE_PATHS=(
   "*"
-  "src"
+  "src/*"
+  ".github/setup"
+  "src/extract"
+  "src/image"
+  "src/text/process-steps/02-run-transcription"
+  "src/text/create-text-command.ts"
+  "src/tts"
 )
 
 IGNORE_PATHS=(
