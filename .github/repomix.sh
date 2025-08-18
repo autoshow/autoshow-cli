@@ -4,11 +4,8 @@ INCLUDE_PATHS=(
   "*"
   "src/*"
   ".github"
-  "src/image"
-  "src/tts"
-  "docs/image"
-  "docs/tts"
-  # "src/src/text/process-steps/02-run-transcription"
+  # "src/video"
+  # "docs/video"
 )
 
 IGNORE_PATHS=(
