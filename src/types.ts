@@ -348,6 +348,16 @@ export interface VeoGenerateOptions extends VeoGenerateConfig {
   outputPath?: string
 }
 
+export type RunwayModel = 'gen4_turbo' | 'gen3a_turbo'
+
+export interface RunwayGenerateOptions {
+  model?: RunwayModel
+  image?: string
+  outputPath?: string
+  aspectRatio?: '16:9' | '9:16'
+  duration?: 5 | 10
+}
+
 export interface VideoGenerationResult {
   success: boolean
   path?: string
