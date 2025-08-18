@@ -1,4 +1,4 @@
-import { LLM_SERVICES_CONFIG } from './text/llms/llm-models'
+import { LLM_SERVICES_CONFIG } from './text/process-steps/04-run-llm/llm-models'
 
 export interface ShowNote {
   id?: number

@@ -1,6 +1,6 @@
 import { l, err, logInitialFunctionCall } from '@/logging'
 import { execFilePromise, basename, extname } from '@/node-utils'
-import { sanitizeTitle, constructOutputPath } from '../utils/save-info.ts'
+import { sanitizeTitle, constructOutputPath } from '../../utils/save-info.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
 
 export function buildFrontMatter(metadata: {

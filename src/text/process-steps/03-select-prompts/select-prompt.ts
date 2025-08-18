@@ -1,4 +1,4 @@
-import { sections } from '../prompts'
+import { sections } from './index'
 import { err, l, logInitialFunctionCall } from '@/logging'
 import { readFile } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
