@@ -61,6 +61,7 @@
     "@aws-sdk/client-textract": "3.864.0",
     "@deepgram/sdk": "3.11.1",
     "@google/generative-ai": "0.22.0",
+    "@runwayml/sdk": "2.8.1",
     "ai": "4.2.9",
     "assemblyai": "4.9.0",
     "chalk": "5.4.1",

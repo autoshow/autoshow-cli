@@ -25,11 +25,13 @@ export const handleError = (error: any): void => {
   }
   
   const errorMap = {
-    'quota exceeded': 'API quota exceeded. Please check your Gemini API limits',
-    'Invalid API key': 'Invalid Gemini API key. Please check your GEMINI_API_KEY',
+    'quota exceeded': 'API quota exceeded. Please check your API limits',
+    'Invalid API key': 'Invalid API key. Please check your API key',
     'rate limit': `Rate limit exceeded: ${error.message}`,
     'ValidationException': `Validation error: ${error.message}`,
-    'insufficient permissions': `Insufficient permissions: ${error.message}\n\nPlease ensure your API key has the necessary permissions`
+    'insufficient permissions': `Insufficient permissions: ${error.message}\n\nPlease ensure your API key has the necessary permissions`,
+    'RUNWAYML_API_SECRET': 'Missing Runway API key. Please set RUNWAYML_API_SECRET in your .env file',
+    'GEMINI_API_KEY': 'Missing Gemini API key. Please set GEMINI_API_KEY in your .env file'
   }
   
   const matched = Object.entries(errorMap).find(([key]) => 
@@ -48,6 +50,11 @@ export function ensureOutputDirectory(outputPath: string): void {
 
 export function validateVideoModel(model: string): boolean {
   const validModels = ['veo-3.0-generate-preview', 'veo-3.0-fast-generate-preview', 'veo-2.0-generate-001']
+  return validModels.includes(model)
+}
+
+export function validateRunwayModel(model: string): boolean {
+  const validModels = ['gen4_turbo', 'gen3a_turbo']
   return validModels.includes(model)
 }
 
