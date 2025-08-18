@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import { createTtsCommand } from './tts/create-tts-command.ts'
 import { createImageCommand } from './image/create-image-command.ts'
+import { createVideoCommand } from './video/create-video-command.ts'
 import { createTextCommand } from './text/create-text-command.ts'
 import { createConfigCommand } from './config/create-config-command.ts'
 import { createMediaCommand } from './media/create-media-command.ts'
@@ -12,7 +13,7 @@ const program = new Command()
 
 program
   .name('autoshow-cli')
-  .description('Automate processing of audio/video content, manage meta-workflows, generate text-to-speech, create AI images, handle media operations, and extract text from PDFs.')
+  .description('Automate processing of audio/video content, manage meta-workflows, generate text-to-speech, create AI images and videos, handle media operations, and extract text from PDFs.')
   .version('1.0.0')
 
 const p = '[commander]'
@@ -20,6 +21,7 @@ l.dim(`${p} Adding commands to program`)
 program.addCommand(createTextCommand())
 program.addCommand(createTtsCommand())
 program.addCommand(createImageCommand())
+program.addCommand(createVideoCommand())
 program.addCommand(createConfigCommand())
 program.addCommand(createMediaCommand())
 program.addCommand(createExtractCommand())
