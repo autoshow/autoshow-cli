@@ -86,6 +86,17 @@ check_hf_auth() {
   if [ -n "${HF_TOKEN:-}" ]; then
     echo "✓ Hugging Face token found in HF_TOKEN"
     echo "  Token starts with: ${HF_TOKEN:0:8}..."
+    
+    echo "  Verifying token validity..."
+    local whoami_response=$(curl -s -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami 2>/dev/null || echo "{}")
+    if echo "$whoami_response" | grep -q '"name"'; then
+      local username=$(echo "$whoami_response" | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+      echo "  ✓ Token is valid for user: $username"
+    else
+      echo "  ⚠ Token may be invalid or expired. Please check your token."
+      echo "    Get a new token from: https://huggingface.co/settings/tokens"
+    fi
+    
     return 0
   elif [ -n "${HUGGING_FACE_HUB_TOKEN:-}" ]; then
     export HF_TOKEN="$HUGGING_FACE_HUB_TOKEN"
@@ -101,6 +112,42 @@ check_hf_auth() {
   else
     return 1
   fi
+}
+
+check_model_access() {
+  local repo="$1"
+  local model_name="$2"
+  local p="[setup/image-setup]"
+  
+  if [ -z "${HF_TOKEN:-}" ]; then
+    return 1
+  fi
+  
+  echo "  Checking access to $model_name..."
+  
+  local api_url="https://huggingface.co/api/models/$repo"
+  local response=$(curl -s -H "Authorization: Bearer $HF_TOKEN" "$api_url" 2>/dev/null || echo "{}")
+  
+  if echo "$response" | grep -q '"gated"'; then
+    if echo "$response" | grep -q '"gated":true'; then
+      echo "    ⚠ $model_name is a gated model"
+      
+      if echo "$response" | grep -q '"gate_status":"granted"'; then
+        echo "    ✓ You have been granted access to $model_name"
+        return 0
+      elif echo "$response" | grep -q '"gate_status":"pending"'; then
+        echo "    ⏳ Your access request for $model_name is pending approval"
+        return 1
+      else
+        echo "    ❌ You need to request access to $model_name"
+        echo "       Visit: https://huggingface.co/$repo"
+        echo "       Click 'Agree and access repository' to accept the license"
+        return 1
+      fi
+    fi
+  fi
+  
+  return 0
 }
 
 validate_file() {
@@ -158,17 +205,27 @@ download_with_auth() {
     fi
     
     local success=false
-    if command -v wget &>/dev/null; then
+    local http_code=""
+    
+    if command -v curl &>/dev/null; then
+      if [ -n "$auth_header" ]; then
+        http_code=$(curl -w "%{http_code}" -L --progress-bar -H "$auth_header" -o "$temp_file" "$url" 2>/dev/null || echo "000")
+      else
+        http_code=$(curl -w "%{http_code}" -L --progress-bar -o "$temp_file" "$url" 2>/dev/null || echo "000")
+      fi
+      
+      if [ "$http_code" = "200" ] || [ "$http_code" = "206" ]; then
+        success=true
+      elif [ "$http_code" = "401" ] || [ "$http_code" = "403" ]; then
+        rm -f "$temp_file"
+        echo "  ⚠ Access denied (HTTP $http_code)."
+        return 1
+      fi
+    elif command -v wget &>/dev/null; then
       if [ -n "$auth_header" ]; then
         wget --quiet --show-progress --header="$auth_header" -O "$temp_file" "$url" && success=true
       else
         wget --quiet --show-progress -O "$temp_file" "$url" && success=true
-      fi
-    elif command -v curl &>/dev/null; then
-      if [ -n "$auth_header" ]; then
-        curl -L --progress-bar -H "$auth_header" -o "$temp_file" "$url" && success=true
-      else
-        curl -L --progress-bar -o "$temp_file" "$url" && success=true
       fi
     else
       echo "ERROR: wget or curl required"
@@ -209,13 +266,21 @@ download_with_hf_cli() {
   fi
   
   echo "Downloading $name using huggingface-cli..."
-  huggingface-cli download "$repo" "$filename" --local-dir "$MODELS_DIR" --local-dir-use-symlinks False || {
-    echo "ERROR: Failed to download $name"
-    return 1
-  }
   
-  if [ -f "$MODELS_DIR/$filename" ] && [ "$MODELS_DIR/$filename" != "$output" ]; then
-    mv "$MODELS_DIR/$filename" "$output"
+  local temp_dir="$MODELS_DIR/.tmp_download"
+  mkdir -p "$temp_dir"
+  
+  if huggingface-cli download "$repo" "$filename" --local-dir "$temp_dir" --local-dir-use-symlinks False 2>&1 | grep -q "401\|403\|Access denied"; then
+    echo "  ⚠ Access denied. You need to accept the license agreement."
+    echo "    Visit: https://huggingface.co/$repo"
+    echo "    Click 'Agree and access repository' to accept the license"
+    rm -rf "$temp_dir"
+    return 1
+  fi
+  
+  if [ -f "$temp_dir/$filename" ]; then
+    mv "$temp_dir/$filename" "$output"
+    rm -rf "$temp_dir"
   fi
   
   if validate_file "$output" "$min_size" "$min_size"; then
@@ -263,40 +328,86 @@ download_with_auth \
 
 if [ "$HAS_HF_AUTH" = true ]; then
   echo ""
-  echo "Attempting to download SD3.5 models..."
+  echo "Checking access to gated models..."
   
-  if command -v huggingface-cli &>/dev/null; then
-    download_with_hf_cli \
-      "stabilityai/stable-diffusion-3-medium" \
-      "sd3_medium_incl_clips_t5xxlfp16.safetensors" \
-      "$MODELS_DIR/sd3_medium_incl_clips_t5xxlfp16.safetensors" \
-      "SD3 Medium" \
-      $((5400 * 1048576)) || {
-        echo "Trying individual SD3.5 components..."
+  SD3_ACCESS=false
+  FLUX_ACCESS=false
+  
+  if check_model_access "stabilityai/stable-diffusion-3-medium" "SD3 Medium"; then
+    SD3_ACCESS=true
+  fi
+  
+  if check_model_access "black-forest-labs/FLUX.1-dev" "FLUX.1-dev"; then
+    FLUX_ACCESS=true
+  fi
+  
+  if [ "$SD3_ACCESS" = true ]; then
+    echo ""
+    echo "Attempting to download SD3.5 models..."
+    
+    SD3_SUCCESS=false
+    if command -v huggingface-cli &>/dev/null; then
+      download_with_hf_cli \
+        "stabilityai/stable-diffusion-3-medium" \
+        "sd3_medium_incl_clips_t5xxlfp16.safetensors" \
+        "$MODELS_DIR/sd3_medium_incl_clips_t5xxlfp16.safetensors" \
+        "SD3 Medium" \
+        $((5400 * 1048576)) && SD3_SUCCESS=true
+    else
+      download_with_auth \
+        "https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/sd3_medium_incl_clips_t5xxlfp16.safetensors" \
+        "$MODELS_DIR/sd3_medium_incl_clips_t5xxlfp16.safetensors" \
+        "SD3 Medium" \
+        true \
+        $((5400 * 1048576)) && SD3_SUCCESS=true
+    fi
+    
+    if [ "$SD3_SUCCESS" = false ]; then
+      echo ""
+      echo "Trying alternative SD3.5 Large..."
+      
+      if command -v huggingface-cli &>/dev/null; then
+        download_with_hf_cli \
+          "stabilityai/stable-diffusion-3.5-large" \
+          "sd3.5_large.safetensors" \
+          "$MODELS_DIR/sd3.5_large.safetensors" \
+          "SD3.5 Large" \
+          $((6500 * 1048576))
+      else
         download_with_auth \
           "https://huggingface.co/stabilityai/stable-diffusion-3.5-large/resolve/main/sd3.5_large.safetensors" \
           "$MODELS_DIR/sd3.5_large.safetensors" \
           "SD3.5 Large" \
           true \
-          $((6500 * 1048576)) || echo "Warning: SD3.5 download requires repository access"
-      }
+          $((6500 * 1048576))
+      fi
+    fi
   else
-    download_with_auth \
-      "https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/sd3_medium_incl_clips_t5xxlfp16.safetensors" \
-      "$MODELS_DIR/sd3_medium_incl_clips_t5xxlfp16.safetensors" \
-      "SD3 Medium" \
-      true \
-      $((5400 * 1048576)) || echo "Warning: SD3 download requires authentication and repository access"
+    echo ""
+    echo "ℹ Skipping SD3.5 models (access not granted yet)"
+    echo "  To use SD3.5 models:"
+    echo "  1. Visit https://huggingface.co/stabilityai/stable-diffusion-3-medium"
+    echo "  2. Click 'Agree and access repository'"
+    echo "  3. Run setup again"
   fi
   
   echo ""
   echo "Downloading text encoders..."
+  
   download_with_auth \
-    "https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/resolve/main/text_encoders/clip_l.safetensors" \
+    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors" \
     "$MODELS_DIR/clip_l.safetensors" \
     "CLIP-L" \
     false \
-    $((240 * 1048576)) || echo "Warning: CLIP-L download failed"
+    $((230 * 1048576)) || {
+      echo "Trying alternative CLIP-L source..."
+      download_with_auth \
+        "https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/resolve/main/text_encoders/clip_l.safetensors" \
+        "$MODELS_DIR/clip_l.safetensors" \
+        "CLIP-L" \
+        false \
+        $((230 * 1048576)) || echo "Warning: CLIP-L download failed"
+    }
   
   download_with_auth \
     "https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/resolve/main/text_encoders/clip_g.safetensors" \
@@ -310,16 +421,50 @@ if [ "$HAS_HF_AUTH" = true ]; then
     "$MODELS_DIR/t5xxl_fp16.safetensors" \
     "T5XXL" \
     false \
-    $((9000 * 1048576)) || echo "Warning: T5XXL download failed"
+    $((9000 * 1048576)) || {
+      echo "Trying alternative T5XXL source..."
+      download_with_auth \
+        "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors" \
+        "$MODELS_DIR/t5xxl_fp16.safetensors" \
+        "T5XXL" \
+        false \
+        $((9000 * 1048576)) || echo "Warning: T5XXL download failed"
+    }
   
-  echo ""
-  echo "Downloading FLUX VAE..."
-  download_with_auth \
-    "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors" \
-    "$MODELS_DIR/ae.safetensors" \
-    "FLUX VAE" \
-    true \
-    $((100 * 1048576)) || echo "Warning: FLUX VAE download failed - authentication may be required"
+  if [ "$FLUX_ACCESS" = true ]; then
+    echo ""
+    echo "Downloading FLUX VAE..."
+    
+    VAE_SUCCESS=false
+    if command -v huggingface-cli &>/dev/null; then
+      download_with_hf_cli \
+        "black-forest-labs/FLUX.1-dev" \
+        "ae.safetensors" \
+        "$MODELS_DIR/ae.safetensors" \
+        "FLUX VAE" \
+        $((100 * 1048576)) && VAE_SUCCESS=true
+    fi
+    
+    if [ "$VAE_SUCCESS" = false ]; then
+      download_with_auth \
+        "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors" \
+        "$MODELS_DIR/ae.safetensors" \
+        "FLUX VAE" \
+        true \
+        $((100 * 1048576))
+    fi
+  else
+    echo ""
+    echo "ℹ Skipping FLUX VAE (access not granted yet)"
+    echo "  To use FLUX models:"
+    echo "  1. Visit https://huggingface.co/black-forest-labs/FLUX.1-dev"
+    echo "  2. Click 'Agree and access repository'"
+    echo "  3. Wait for approval (may take 1-2 days)"
+    echo "  4. Run setup again"
+    echo ""
+    echo "  Alternative (no auth required): FLUX.1-schnell VAE"
+    echo "  Download manually from: https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors"
+  fi
   
   echo ""
   echo "Downloading FLUX Kontext (quantized)..."
@@ -373,6 +518,8 @@ check_model "v1-5-pruned-emaonly.safetensors" "SD 1.5" 1600
 check_model "sd3_medium_incl_clips_t5xxlfp16.safetensors" "SD3 Medium" 5400
 check_model "flux1-kontext-dev-q8_0.gguf" "FLUX Kontext" 12000
 check_model "ae.safetensors" "FLUX VAE" 100
+check_model "clip_l.safetensors" "CLIP-L" 230
+check_model "t5xxl_fp16.safetensors" "T5XXL" 9000
 
 if [ -n "$ISSUES" ]; then
   echo ""
@@ -392,8 +539,18 @@ if [ -x "$BIN_DIR/sd" ] && [ -f "$MODELS_DIR/v1-5-pruned-emaonly.safetensors" ];
   fi
   
   if [ -f "$MODELS_DIR/flux1-kontext-dev-q8_0.gguf" ]; then
-    echo "✓ FLUX Kontext model ready"
+    if [ -f "$MODELS_DIR/ae.safetensors" ] && [ -f "$MODELS_DIR/clip_l.safetensors" ]; then
+      echo "✓ FLUX Kontext model ready"
+    else
+      echo "⚠ FLUX Kontext model found but missing dependencies (VAE/CLIP)"
+    fi
   fi
+  
+  echo ""
+  echo "Next steps if models are missing:"
+  echo "1. Visit the model pages and click 'Agree and access repository'"
+  echo "2. Wait for approval (instant for SD3, 1-2 days for FLUX)"
+  echo "3. Run setup again: npm run setup"
 else
   echo "ERROR: Setup verification failed"
   exit 1
