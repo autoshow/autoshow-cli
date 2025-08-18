@@ -1,310 +1,397 @@
 # Music Generation Command
 
-Generate AI-composed music using Meta's AudioCraft MusicGen models. Create original music from text descriptions, condition on melodies, or continue existing audio.
+Generate AI-composed music using Meta's AudioCraft MusicGen models or Stability AI's Stable Audio diffusion models. Create original music from text descriptions, condition on melodies, or continue existing audio.
 
 ## Overview
 
-The music command leverages Meta's MusicGen models to generate high-quality music from text prompts. MusicGen is a single-stage auto-regressive Transformer model that generates music at 32kHz, offering various model sizes and capabilities including melody conditioning and stereo generation.
+The music command provides two powerful generation services:
+
+1. **AudioCraft** - Meta's MusicGen models using auto-regressive Transformer architecture
+2. **Stable Audio** - Stability AI's latent diffusion models for high-quality stereo music
+
+Both services generate music from text prompts but use fundamentally different approaches and offer unique capabilities.
 
 ## Installation
 
-The music generation feature is installed automatically during setup:
+The music generation features are installed automatically during setup:
 
 ```bash
 npm run setup
 ```
 
 This will:
-- Install AudioCraft and dependencies
-- Download the default `facebook/musicgen-small` model
+- Install AudioCraft and Stable Audio Tools
+- Download default models for both services
 - Configure the Python environment
 
 ## Basic Usage
 
-### Generate Music from Text
+### Generate Music with AudioCraft (Default)
 ```bash
-# Simple generation with default settings
+# Simple generation with default AudioCraft
 npm run as -- music generate --prompt "upbeat electronic dance music with heavy bass"
 
+# Explicitly specify AudioCraft service
+npm run as -- music generate --prompt "calm piano melody" --service audiocraft
+
 # Specify output file
-npm run as -- music generate --prompt "calm piano melody" --output my-piano-piece.wav
+npm run as -- music generate --prompt "jazz fusion" --output my-jazz-piece.wav
 
 # Longer duration (up to 30 seconds)
 npm run as -- music generate --prompt "epic orchestral soundtrack" --duration 30
 ```
 
-### Using Different Models
+### Generate Music with Stable Audio
 ```bash
-# Fast generation with small model (default)
-npm run as -- music generate --prompt "jazz fusion" --model facebook/musicgen-small
+# Use Stable Audio for generation
+npm run as -- music generate --prompt "ambient electronic music" --service stable-audio
 
-# Better quality with medium model
-npm run as -- music generate --prompt "classical symphony" --model facebook/musicgen-medium
+# With custom parameters
+npm run as -- music generate \
+  --prompt "cinematic orchestral piece with strings and brass" \
+  --service stable-audio \
+  --duration 20 \
+  --steps 150 \
+  --cfg-scale 9
 
-# Highest quality with large model (requires more memory)
-npm run as -- music generate --prompt "prog rock anthem" --model facebook/musicgen-large
-
-# Stereo generation
-npm run as -- music generate --prompt "ambient soundscape" --model facebook/musicgen-stereo-medium
+# Reproducible generation with seed
+npm run as -- music generate \
+  --prompt "lo-fi hip hop beat" \
+  --service stable-audio \
+  --seed 42
 ```
 
-### Melody Conditioning
-Generate music that follows a provided melody:
+## Service Comparison
+
+| Feature | AudioCraft | Stable Audio |
+|---------|------------|--------------|
+| **Architecture** | Auto-regressive Transformer | Latent Diffusion |
+| **Quality** | Good to excellent (model-dependent) | Consistently high |
+| **Speed** | Fast to slow (model-dependent) | Moderate (step-dependent) |
+| **Max Duration** | 30 seconds | 45+ seconds |
+| **Sample Rate** | 32kHz | 44.1kHz |
+| **Melody Conditioning** | ✅ Yes | ❌ No |
+| **Audio Continuation** | ✅ Yes | ❌ No |
+| **Stereo Models** | ✅ Yes | ✅ Yes (default) |
+| **Reproducibility** | Limited | ✅ Full (with seed) |
+| **VRAM Usage** | 2-12GB | 4-8GB |
+
+## AudioCraft Models and Usage
+
+### Available Models
 ```bash
-# Provide a melody file (requires melody-capable model)
+# List AudioCraft models
+npm run as -- music list --service audiocraft
+```
+
+### Model Sizes
+| Model | Parameters | Features | Use Case |
+|-------|------------|----------|----------|
+| `facebook/musicgen-small` | 300M | Text-to-music | Fast generation, lower quality |
+| `facebook/musicgen-medium` | 1.5B | Text-to-music | Balanced speed and quality |
+| `facebook/musicgen-large` | 3.3B | Text-to-music | Best quality, slower |
+| `facebook/musicgen-melody` | 1.5B | Text + melody | Follow provided melodies |
+| `facebook/musicgen-stereo-*` | Various | Stereo output | Stereo generation |
+
+### AudioCraft-Specific Features
+
+#### Melody Conditioning
+```bash
+# Generate music following a melody (AudioCraft only)
 npm run as -- music generate \
   --prompt "jazz arrangement" \
   --melody input/melody.wav \
-  --model facebook/musicgen-melody
-
-# With large melody model for best quality
-npm run as -- music generate \
-  --prompt "orchestral version" \
-  --melody input/theme.mp3 \
-  --model facebook/musicgen-melody-large
+  --model facebook/musicgen-melody \
+  --service audiocraft
 ```
 
-### Audio Continuation
-Continue generating music from an existing audio file:
+#### Audio Continuation
 ```bash
-# Continue from where an audio file ends
+# Continue from existing audio (AudioCraft only)
 npm run as -- music generate \
   --prompt "energetic rock solo" \
   --continuation input/intro.wav \
-  --duration 15
+  --duration 15 \
+  --service audiocraft
 ```
 
-## Available Models
-
-### List All Models
+#### AudioCraft Parameters
 ```bash
-npm run as -- music list
+npm run as -- music generate \
+  --prompt "experimental jazz" \
+  --service audiocraft \
+  --temperature 1.5 \      # Creativity (0.0-2.0)
+  --top-k 250 \            # Token choices
+  --top-p 0.9 \            # Nucleus sampling
+  --cfg-coef 3.0           # Prompt adherence
 ```
 
-### Model Comparison
+## Stable Audio Models and Usage
 
-| Model | Size | Parameters | Features | Use Case |
-|-------|------|------------|----------|----------|
-| `facebook/musicgen-small` | Small | 300M | Text-to-music | Fast generation, lower quality |
-| `facebook/musicgen-medium` | Medium | 1.5B | Text-to-music | Balanced speed and quality |
-| `facebook/musicgen-large` | Large | 3.3B | Text-to-music | Best quality, slower |
-| `facebook/musicgen-melody` | Medium | 1.5B | Text + melody conditioning | Follow provided melodies |
-| `facebook/musicgen-melody-large` | Large | 3.3B | Text + melody conditioning | Best melody following |
-| `facebook/musicgen-stereo-small` | Small | 300M | Stereo output | Fast stereo generation |
-| `facebook/musicgen-stereo-medium` | Medium | 1.5B | Stereo output | Balanced stereo quality |
-| `facebook/musicgen-stereo-large` | Large | 3.3B | Stereo output | Best stereo quality |
-| `facebook/musicgen-stereo-melody` | Medium | 1.5B | Stereo + melody | Stereo with melody control |
-| `facebook/musicgen-stereo-melody-large` | Large | 3.3B | Stereo + melody | Best stereo melody following |
-
-### Download Models
-Models are downloaded automatically on first use, or you can pre-download:
+### Available Models
 ```bash
-# Download a specific model
-npm run as -- music download facebook/musicgen-medium
-
-# Download large model for best quality
-npm run as -- music download facebook/musicgen-large
+# List Stable Audio models
+npm run as -- music list --service stable-audio
 ```
 
-## Generation Parameters
+Currently available:
+- `stabilityai/stable-audio-open-1.0` - High-quality 44.1kHz stereo generation
 
-### Temperature (Creativity Control)
-Controls randomness in generation. Higher = more creative, lower = more predictable.
+### Stable Audio-Specific Parameters
+
+#### Diffusion Steps
+More steps = higher quality but slower generation
 ```bash
-# Very creative/experimental (high temperature)
-npm run as -- music generate --prompt "experimental jazz" --temperature 1.5
+# Quick draft (faster, lower quality)
+npm run as -- music generate \
+  --prompt "techno beat" \
+  --service stable-audio \
+  --steps 50
 
-# More predictable/conservative (low temperature)
-npm run as -- music generate --prompt "classical waltz" --temperature 0.6
-
-# Default is 1.0
+# High quality (slower)
+npm run as -- music generate \
+  --prompt "classical symphony" \
+  --service stable-audio \
+  --steps 200
 ```
 
-### Top-K Sampling
-Limits the number of token choices at each step.
+#### CFG Scale (Classifier-Free Guidance)
+Controls how closely the model follows the prompt
 ```bash
-# More focused generation (lower k)
-npm run as -- music generate --prompt "minimal techno" --top-k 50
+# More creative/varied (lower CFG)
+npm run as -- music generate \
+  --prompt "experimental ambient" \
+  --service stable-audio \
+  --cfg-scale 4
 
-# More variety (higher k)
-npm run as -- music generate --prompt "world music fusion" --top-k 500
-
-# Default is 250
+# Stricter prompt adherence (higher CFG)
+npm run as -- music generate \
+  --prompt "drum and bass at 174 bpm" \
+  --service stable-audio \
+  --cfg-scale 12
 ```
 
-### Top-P (Nucleus Sampling)
-Cumulative probability threshold for token selection.
+#### Sampler Types
+Different sampling algorithms for the diffusion process
 ```bash
-# Enable nucleus sampling
-npm run as -- music generate --prompt "indie rock" --top-p 0.9
-
-# Default is 0.0 (disabled)
+# Available samplers: dpmpp-3m-sde (default), dpmpp-2m-sde, k-heun, k-dpm-2, k-dpm-fast
+npm run as -- music generate \
+  --prompt "jazz fusion" \
+  --service stable-audio \
+  --sampler-type k-heun
 ```
 
-### Classifier-Free Guidance
-Controls how closely the model follows the prompt.
+#### Sigma Range
+Controls the noise schedule for diffusion
 ```bash
-# Stronger prompt adherence
-npm run as -- music generate --prompt "death metal" --cfg-coef 5.0
-
-# More creative interpretation
-npm run as -- music generate --prompt "folk ballad" --cfg-coef 1.5
-
-# Default is 3.0
-```
-
-### Other Parameters
-```bash
-# Disable sampling (use greedy decoding)
-npm run as -- music generate --prompt "techno beat" --no-sampling
-
-# Use two-step classifier-free guidance
-npm run as -- music generate --prompt "symphony" --two-step-cfg
-
-# Adjust continuation stride
-npm run as -- music generate --prompt "jazz" --extend-stride 20
+# Custom sigma range for different characteristics
+npm run as -- music generate \
+  --prompt "orchestral piece" \
+  --service stable-audio \
+  --sigma-min 0.1 \
+  --sigma-max 700
 ```
 
 ## Advanced Examples
 
-### Complex Prompts
+### Creating Variations with Different Services
 ```bash
-# Detailed musical description
+# Version 1: AudioCraft (fast, auto-regressive)
 npm run as -- music generate \
-  --prompt "80s synthwave with analog synthesizers, driving bassline, retro drums, and nostalgic melodies" \
-  --duration 20 \
-  --model facebook/musicgen-medium
+  --prompt "cinematic trailer music with epic drums and brass" \
+  --service audiocraft \
+  --model facebook/musicgen-medium \
+  --output trailer-audiocraft.wav
 
-# Specific instrumentation
+# Version 2: Stable Audio (high quality, diffusion)
 npm run as -- music generate \
-  --prompt "acoustic guitar fingerpicking with violin accompaniment in the style of Celtic folk music" \
-  --temperature 0.8
-
-# Mood and tempo
-npm run as -- music generate \
-  --prompt "uplifting and energetic drum and bass at 174 bpm with liquid funk influences" \
-  --duration 25
+  --prompt "cinematic trailer music with epic drums and brass" \
+  --service stable-audio \
+  --steps 150 \
+  --cfg-scale 8 \
+  --output trailer-stable.wav
 ```
 
-### Creating Variations
-Generate multiple variations of the same prompt:
+### Service-Specific Workflows
+
+#### AudioCraft Workflow: Melody Development
 ```bash
-# Variation 1: Creative
+# 1. Generate initial melody
 npm run as -- music generate \
-  --prompt "cinematic trailer music" \
-  --temperature 1.3 \
-  --output trailer-v1.wav
-
-# Variation 2: Balanced
-npm run as -- music generate \
-  --prompt "cinematic trailer music" \
-  --temperature 1.0 \
-  --output trailer-v2.wav
-
-# Variation 3: Conservative
-npm run as -- music generate \
-  --prompt "cinematic trailer music" \
-  --temperature 0.7 \
-  --output trailer-v3.wav
-```
-
-### Production Workflow
-```bash
-# 1. Generate initial idea
-npm run as -- music generate \
-  --prompt "chill lofi hip hop beat" \
+  --prompt "simple piano melody" \
+  --service audiocraft \
+  --model facebook/musicgen-small \
   --duration 8 \
-  --output lofi-intro.wav
+  --output melody-base.wav
 
-# 2. Continue the piece
+# 2. Create orchestral arrangement from melody
 npm run as -- music generate \
-  --prompt "add jazz piano solo" \
-  --continuation lofi-intro.wav \
-  --duration 16 \
-  --output lofi-extended.wav
+  --prompt "full orchestral arrangement" \
+  --melody melody-base.wav \
+  --model facebook/musicgen-melody-large \
+  --service audiocraft \
+  --output melody-orchestrated.wav
 
-# 3. Create variation with melody
+# 3. Extend the piece
 npm run as -- music generate \
-  --prompt "same style but more upbeat" \
-  --melody lofi-intro.wav \
-  --model facebook/musicgen-melody \
-  --output lofi-variation.wav
+  --prompt "dramatic crescendo finale" \
+  --continuation melody-orchestrated.wav \
+  --service audiocraft \
+  --duration 15 \
+  --output melody-complete.wav
+```
+
+#### Stable Audio Workflow: Consistent Album Generation
+```bash
+# Generate consistent tracks using seeds
+SEED=12345
+
+# Track 1: Opening
+npm run as -- music generate \
+  --prompt "ambient electronic album opener with soft pads" \
+  --service stable-audio \
+  --seed $SEED \
+  --duration 30 \
+  --output album-track1.wav
+
+# Track 2: Building energy
+npm run as -- music generate \
+  --prompt "electronic track with building energy and arpeggios" \
+  --service stable-audio \
+  --seed $((SEED + 1)) \
+  --duration 30 \
+  --output album-track2.wav
+
+# Track 3: Peak
+npm run as -- music generate \
+  --prompt "energetic electronic dance track with driving beat" \
+  --service stable-audio \
+  --seed $((SEED + 2)) \
+  --duration 30 \
+  --output album-track3.wav
+```
+
+### Batch Generation Script
+```bash
+#!/bin/bash
+# Generate multiple variations for comparison
+
+PROMPT="lo-fi hip hop beat with vinyl crackle"
+
+# AudioCraft variations
+for model in small medium large; do
+  npm run as -- music generate \
+    --prompt "$PROMPT" \
+    --service audiocraft \
+    --model facebook/musicgen-$model \
+    --output lofi-audiocraft-$model.wav
+done
+
+# Stable Audio variations
+for steps in 50 100 150; do
+  npm run as -- music generate \
+    --prompt "$PROMPT" \
+    --service stable-audio \
+    --steps $steps \
+    --output lofi-stable-steps$steps.wav
+done
 ```
 
 ## Prompt Engineering Tips
 
-### Effective Prompt Structure
-1. **Genre/Style**: Start with the main genre
-2. **Instruments**: Specify key instruments
-3. **Mood/Emotion**: Describe the feeling
-4. **Tempo/Energy**: Indicate pace and energy level
-5. **Additional Details**: Add specific characteristics
+### Universal Tips (Both Services)
+1. **Be Specific**: Include genre, instruments, mood, and tempo
+2. **Use Musical Terms**: BPM, key signatures, time signatures
+3. **Describe Structure**: Intro, verse, chorus, bridge, outro
+4. **Reference Styles**: "in the style of", "inspired by"
 
-### Good Prompt Examples
+### AudioCraft-Optimized Prompts
+AudioCraft responds well to:
+- Direct instrument mentions: "acoustic guitar fingerpicking"
+- Energy descriptions: "high-energy", "mellow", "aggressive"
+- Era references: "1980s synthwave", "baroque period"
+
+Examples:
 - ✅ "Funky disco with slap bass, wah-wah guitar, and four-on-the-floor drums"
 - ✅ "Melancholic solo piano piece in the style of Erik Satie"
-- ✅ "High-energy dubstep with heavy sub-bass drops and syncopated rhythms"
-- ✅ "Medieval lute music with Renaissance polyphony"
 
-### Prompt Styles That Work Well
-- **Specific genres**: "deep house", "bebop jazz", "death metal"
-- **Era descriptions**: "1970s funk", "90s grunge", "baroque period"
-- **Mood descriptors**: "uplifting", "dark and mysterious", "playful"
-- **Instrumentation**: "string quartet", "solo piano", "full orchestra"
-- **Production styles**: "lo-fi", "heavily compressed", "analog warmth"
+### Stable Audio-Optimized Prompts
+Stable Audio excels with:
+- Production descriptions: "professionally mixed", "vintage analog warmth"
+- Atmospheric details: "spacious reverb", "tight compression"
+- Sonic textures: "crisp highs", "warm mids", "deep sub-bass"
+
+Examples:
+- ✅ "Professional electronic music production with layered synthesizers, sidechained compression, and crystal-clear mix"
+- ✅ "Cinematic orchestral piece with lush strings, soaring brass, and thunderous timpani, mixed for film"
 
 ## Memory Requirements
 
-| Model | VRAM Required | System RAM | Generation Speed |
-|-------|---------------|------------|------------------|
-| Small (300M) | ~2 GB | 4 GB | Fast (~5 sec for 8 sec audio) |
-| Medium (1.5B) | ~6 GB | 8 GB | Medium (~15 sec for 8 sec audio) |
-| Large (3.3B) | ~12 GB | 16 GB | Slow (~30 sec for 8 sec audio) |
+### AudioCraft
+| Model Size | VRAM | System RAM | Speed |
+|------------|------|------------|-------|
+| Small (300M) | ~2GB | 4GB | Fast |
+| Medium (1.5B) | ~6GB | 8GB | Medium |
+| Large (3.3B) | ~12GB | 16GB | Slow |
 
-**Note**: CPU-only generation is possible but significantly slower. Models automatically run on CPU if no GPU is available.
+### Stable Audio
+| Configuration | VRAM | System RAM | Speed |
+|---------------|------|------------|-------|
+| Low Steps (50) | ~4GB | 8GB | Fast |
+| Default (100) | ~6GB | 8GB | Medium |
+| High Steps (200) | ~6GB | 8GB | Slow |
 
 ## Troubleshooting
 
-### Out of Memory Errors
+### Service Selection Issues
 ```bash
-# Use smaller model
-npm run as -- music generate --prompt "..." --model facebook/musicgen-small
+# If service not recognized
+npm run as -- music generate --prompt "..." --service audiocraft  # Explicit
+npm run as -- music generate --prompt "..."                        # Uses default (audiocraft)
 
-# Reduce duration
-npm run as -- music generate --prompt "..." --duration 5
-
-# Clear GPU memory and retry
-# On macOS: Restart the terminal
-# On Linux: nvidia-smi and kill processes using GPU
+# Check available services
+npm run as -- music list --service all
 ```
 
-### Model Download Issues
+### AudioCraft-Specific Issues
 ```bash
-# Manually download a model
-npm run as -- music download facebook/musicgen-medium
+# Out of memory with large models
+--model facebook/musicgen-small  # Use smaller model
 
-# Check available disk space (models are 1-15 GB each)
-df -h models/audiocraft
-
-# Clear cache and re-download
-rm -rf models/audiocraft/facebook_musicgen-medium
-npm run as -- music download facebook/musicgen-medium
+# Melody conditioning not working
+--model facebook/musicgen-melody  # Must use melody-capable model
 ```
 
-### Audio Quality Issues
+### Stable Audio-Specific Issues
 ```bash
-# Increase classifier-free guidance for better prompt adherence
---cfg-coef 4.0
+# Generation too slow
+--steps 50  # Reduce steps
 
-# Use a larger model
---model facebook/musicgen-large
+# Results too random
+--cfg-scale 10  # Increase CFG scale
+--seed 42       # Use seed for consistency
 
-# Adjust temperature for more/less variation
---temperature 0.8
+# Quality issues
+--steps 150     # Increase steps
+--cfg-scale 7   # Adjust CFG scale
 ```
 
-### Configuration File
-The `.music-config.json` file is created automatically:
+### Installation Issues
+```bash
+# Reinstall specific service
+rm -rf python_env
+npm run setup
+
+# Check Python environment
+python_env/bin/python -c "import audiocraft; import stable_audio_tools"
+
+# Verify configuration
+cat .music-config.json
+```
+
+## Configuration
+
+The `.music-config.json` file stores settings for both services:
 ```json
 {
   "python": "python_env/bin/python",
@@ -312,6 +399,55 @@ The `.music-config.json` file is created automatically:
   "audiocraft": {
     "default_model": "facebook/musicgen-small",
     "cache_dir": "models/audiocraft"
+  },
+  "stable_audio": {
+    "default_model": "stabilityai/stable-audio-open-1.0",
+    "cache_dir": "models/stable-audio"
   }
 }
 ```
+
+## Model Management
+
+### Download Models
+```bash
+# Download AudioCraft model
+npm run as -- music download facebook/musicgen-large
+
+# Download Stable Audio model  
+npm run as -- music download stabilityai/stable-audio-open-1.0
+```
+
+### List Available Models
+```bash
+# List all models
+npm run as -- music list
+
+# List service-specific models
+npm run as -- music list --service audiocraft
+npm run as -- music list --service stable-audio
+```
+
+## Best Practices
+
+1. **Choose the Right Service**:
+   - Use AudioCraft for: Quick generation, melody conditioning, audio continuation
+   - Use Stable Audio for: High-quality stereo, reproducible results, longer pieces
+
+2. **Optimize for Speed**:
+   - AudioCraft: Use smaller models (`musicgen-small`)
+   - Stable Audio: Reduce steps (50-75)
+
+3. **Optimize for Quality**:
+   - AudioCraft: Use larger models (`musicgen-large`)
+   - Stable Audio: Increase steps (150-200)
+
+4. **Experiment with Parameters**:
+   - Start with defaults
+   - Adjust one parameter at a time
+   - Save successful configurations
+
+5. **Prompt Iteration**:
+   - Start simple, add details gradually
+   - Test prompts with fast settings first
+   - Refine based on results
