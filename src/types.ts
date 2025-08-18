@@ -333,3 +333,26 @@ export type ClaudeModelValue = (typeof LLM_SERVICES_CONFIG.claude.models)[number
 export type GeminiModelValue = (typeof LLM_SERVICES_CONFIG.gemini.models)[number]['modelId']
 
 export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly' | 'kitten'
+
+export type VeoModel = 'veo-3.0-generate-preview' | 'veo-3.0-fast-generate-preview' | 'veo-2.0-generate-001'
+
+export interface VeoGenerateConfig {
+  aspectRatio?: '16:9' | '9:16'
+  negativePrompt?: string
+  personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow'
+}
+
+export interface VeoGenerateOptions extends VeoGenerateConfig {
+  model?: VeoModel
+  image?: string
+  outputPath?: string
+}
+
+export interface VideoGenerationResult {
+  success: boolean
+  path?: string
+  error?: string
+  details?: string
+  operationName?: string
+  duration?: number
+}
