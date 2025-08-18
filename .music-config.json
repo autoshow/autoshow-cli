@@ -1,0 +1,1 @@
+{"python":"python_env/bin/python","venv":"python_env","audiocraft":{"default_model":"facebook/musicgen-small","cache_dir":"models/audiocraft"}}
