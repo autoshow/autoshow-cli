@@ -1,7 +1,14 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  ""
+  "*"
+  "src/*"
+  ".github/setup/index.sh"
+  "docs/text"
+  "src/text/create-text-command.ts"
+  "src/text/utils"
+  "src/text/process-steps"
+  "src/text/process-commands"
 )
 
 IGNORE_PATHS=(
@@ -63,8 +70,8 @@ repomix \
   --token-count-encoding "o200k_base" \
   --top-files-len 50 \
   --no-git-sort-by-changes \
-  # --no-gitignore \
   --no-file-summary
+  # --no-gitignore \
 
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then

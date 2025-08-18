@@ -8,12 +8,12 @@ import { join } from 'node:path'
 
 const commands = [
   {
-    cmd: 'npm run as -- text --file "content/examples/audio.mp3"',
+    cmd: 'npm run as -- text --file "input/examples/audio.mp3"',
     expectedFile: 'audio-prompt.md',
     newName: '01-LOCAL-01-file-default.md'
   },
   {
-    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --whisper tiny',
+    cmd: 'npm run as -- text --file "input/examples/audio.mp3" --whisper tiny',
     expectedFile: 'audio-prompt.md',
     newName: '01-LOCAL-02-file-whisper-tiny.md'
   },
@@ -28,7 +28,7 @@ const commands = [
     newName: '01-LOCAL-04-rss-default.md',
   },
   {
-    cmd: 'npm run as -- text --file "content/examples/audio.mp3" --whisper-coreml tiny',
+    cmd: 'npm run as -- text --file "input/examples/audio.mp3" --whisper-coreml tiny',
     expectedFile: 'audio-prompt.md',
     newName: '01-LOCAL-05-file-whisper-coreml-tiny.md'
   },

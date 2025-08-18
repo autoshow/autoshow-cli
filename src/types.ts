@@ -262,6 +262,23 @@ export interface VoiceSettings {
   use_speaker_boost: boolean
 }
 
+export interface MediaFileOptions {
+  input: string
+  output?: string
+  verbose?: boolean
+}
+
+export interface MediaDownloadOptions {
+  urls: string
+  verbose?: boolean
+}
+
+export interface MediaConvertOptions {
+  files: string
+  output?: string
+  verbose?: boolean
+}
+
 export type ChatGPTModelValue = (typeof LLM_SERVICES_CONFIG.chatgpt.models)[number]['modelId']
 export type ClaudeModelValue = (typeof LLM_SERVICES_CONFIG.claude.models)[number]['modelId']
 export type GeminiModelValue = (typeof LLM_SERVICES_CONFIG.gemini.models)[number]['modelId']

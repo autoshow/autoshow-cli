@@ -50,10 +50,10 @@ export function formatName(name: string): string {
 
 ### Basic Usage
 ```bash
-npm run parse changes.md
+npm run parse new-llm-1.md
 ```
 
 ### Dry Run
 ```bash
-npm run parse changes.md -- --dry-run
+npm run parse new-llm-1.md -- --dry-run
 ```

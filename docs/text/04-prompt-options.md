@@ -135,5 +135,5 @@ npm run as -- --printPrompt summary longChapters
 ## Write a Custom Prompt
 
 ```bash
-npm run as -- text --file "content/examples/audio.mp3" --customPrompt "content/examples/custom-prompt.md" --chatgpt
+npm run as -- text --file "input/examples/audio.mp3" --customPrompt "input/examples/custom-prompt.md" --chatgpt
 ```
