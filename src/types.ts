@@ -414,3 +414,25 @@ export interface MusicGenerationResult {
   sessionId?: string
   duration?: number
 }
+
+export type MusicService = 'lyria' | 'sagemaker'
+
+export type SageMakerMusicGenModel = 'musicgen-small' | 'musicgen-medium' | 'musicgen-large'
+
+export interface SageMakerMusicConfig {
+  endpointName?: string
+  model?: SageMakerMusicGenModel
+  s3BucketName?: string
+  guidance?: number
+  maxNewTokens?: number
+  doSample?: boolean
+  temperature?: number
+}
+
+export interface SageMakerAsyncInferenceResult {
+  OutputLocation: string
+  ResponseMetadata?: {
+    RequestId: string
+    HTTPStatusCode: number
+  }
+}
