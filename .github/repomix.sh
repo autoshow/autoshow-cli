@@ -3,13 +3,9 @@
 INCLUDE_PATHS=(
   "*"
   "src/*"
-  ".github"
-  "src/image"
-  "docs/image"
-  # "src/music"
-  # "docs/music"
-  # "src/config"
-  # "docs/save/04-configure.md"
+  # ".github"
+  "src/music"
+  "docs/music"
 )
 
 IGNORE_PATHS=(
