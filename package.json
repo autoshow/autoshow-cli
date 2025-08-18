@@ -51,6 +51,7 @@
     "@anthropic-ai/sdk": "0.39.0",
     "@aws-sdk/client-bedrock-runtime": "3.826.0",
     "@aws-sdk/client-polly": "3.828.0",
+    "@aws-sdk/client-textract": "3.864.0",
     "@deepgram/sdk": "3.11.1",
     "@google/generative-ai": "0.22.0",
     "ai": "4.2.9",
@@ -65,6 +66,8 @@
     "ora": "^8.2.0",
     "react": "19.1.0",
     "remove-markdown": "0.6.2",
+    "unpdf": "1.1.0",
+    "zerox": "1.1.20",
     "zod": "3.24.2"
   },
   "devDependencies": {
