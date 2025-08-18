@@ -1,8 +1,8 @@
 import chalk from 'chalk'
 import { l } from '@/logging'
 import { execPromise } from '@/node-utils'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../transcription/transcription-models'
-import { LLM_SERVICES_CONFIG } from '../llms/llm-models'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/02-run-transcription/transcription-models'
+import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models'
 import type { ProcessingOptions } from '@/types'
 export async function getAudioDuration(filePath: string): Promise<number> {
   const p = '[text/utils/cost]'

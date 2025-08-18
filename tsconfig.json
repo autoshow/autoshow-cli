@@ -28,7 +28,7 @@
     "allowUnreachableCode": false,
     "skipLibCheck": true,
     "incremental": true,
-    "outDir": "./dist",
+    "outDir": "./bin",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
