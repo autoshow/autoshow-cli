@@ -5,7 +5,10 @@ INCLUDE_PATHS=(
   "src/*"
   ".github/setup/index.sh"
   "docs/text"
-  "src/text"
+  "src/text/*"
+  "src/media/*"
+  "src/config/*"
+  "src/tts/*"
 )
 
 IGNORE_PATHS=(
