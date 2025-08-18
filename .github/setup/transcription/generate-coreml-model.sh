@@ -22,10 +22,10 @@ TMP_DIR="models/tmp-coreml-${MODEL}"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 set +e
-$PY .github/setup/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true
+$PY .github/setup/transcription/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true
 RC=$?
 if [ $RC -ne 0 ]; then
-  $PY .github/setup/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true --output-dir "$TMP_DIR"
+  $PY .github/setup/transcription/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true --output-dir "$TMP_DIR"
   RC=$?
 fi
 set -e

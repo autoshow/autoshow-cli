@@ -3,12 +3,14 @@
 INCLUDE_PATHS=(
   "*"
   "src/*"
-  # ".github"
-  "src/music"
-  "docs/music"
+  ".github"
+  # "src/image"
+  # "src/tts"
+  # "src/src/text/process-steps/02-run-transcription"
 )
 
 IGNORE_PATHS=(
+  ".github/parse.ts"
   "README.md"
   "WARP.md"
   "new-llm-*.md"
