@@ -129,6 +129,20 @@ export interface NovaCanvasPayload {
     numberOfImages: number
   }
 }
+export interface StableDiffusionCppOptions {
+  model?: 'sd1.5' | 'sd3.5' | 'flux-kontext' | 'sd3-medium'
+  width?: number
+  height?: number
+  steps?: number
+  seed?: number
+  cfgScale?: number
+  negativePrompt?: string
+  samplingMethod?: string
+  lora?: boolean
+  referenceImage?: string
+  flashAttention?: boolean
+  quantization?: 'f32' | 'f16' | 'q8_0' | 'q5_0' | 'q5_1' | 'q4_0' | 'q4_1'
+}
 export interface VectorizeVector {
   id: string
   values: number[]

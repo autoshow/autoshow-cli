@@ -1,12 +1,13 @@
 # Image Generation Command
 
-Create AI-generated images using multiple services including DALL-E 3, Black Forest Labs, and AWS Nova Canvas.
+Create AI-generated images using multiple services including DALL-E 3, Black Forest Labs, AWS Nova Canvas, and stable-diffusion.cpp.
 
 ## Supported Services
 
 - **DALL-E 3**: OpenAI's latest image generation model
 - **Black Forest Labs (BFL)**: High-quality Flux models
 - **AWS Nova Canvas**: Amazon's image generation service
+- **stable-diffusion.cpp**: Local generation with SD1.5, SD3.5, and FLUX.1-Kontext
 
 ## Basic Usage
 
@@ -20,6 +21,9 @@ npm run as -- image generate --prompt "A majestic dragon" --service bfl
 
 # Generate with AWS Nova Canvas
 npm run as -- image generate --prompt "Space station interior" --service nova
+
+# Generate with stable-diffusion.cpp
+npm run as -- image generate --prompt "A beautiful sunset" --service sdcpp
 ```
 
 ### DALL-E 3 Options
@@ -58,6 +62,59 @@ npm run as -- image generate --prompt "Sunset beach" --service nova --count 3
 npm run as -- image generate --prompt "Forest path" --service nova --negative "dark, scary"
 ```
 
+### stable-diffusion.cpp Options
+
+#### SD 1.5 (Default)
+```bash
+# Basic generation with SD 1.5
+npm run as -- image generate --prompt "A lovely cat" --service sdcpp
+
+# With custom parameters
+npm run as -- image generate --prompt "Mountain landscape" --service sdcpp --width 768 --height 512 --steps 30
+
+# With negative prompt
+npm run as -- image generate --prompt "Portrait" --service sdcpp --negative "blurry, low quality"
+```
+
+#### SD 3.5 Large
+```bash
+# High-quality generation with SD 3.5
+npm run as -- image generate --prompt "A lovely cat holding a sign says 'SD3.5'" --service sdcpp --model sd3.5
+
+# SD 3.5 automatically uses optimized settings (1024x1024, cfg-scale 4.5)
+npm run as -- image generate --prompt "Futuristic city" --service sdcpp --model sd3.5
+```
+
+#### FLUX.1-Kontext
+```bash
+# Text-guided image editing with FLUX Kontext
+npm run as -- image generate --prompt "Change the text to 'Hello World'" --service sdcpp --model flux-kontext --reference-image input.png
+
+# Style transfer
+npm run as -- image generate --prompt "Make it cyberpunk style" --service sdcpp --model flux-kontext --reference-image photo.jpg
+```
+
+#### LoRA Support
+```bash
+# Using LCM-LoRA for faster generation (4 steps instead of 20)
+npm run as -- image generate --prompt "A lovely cat<lora:lcm-lora-sdv1-5:1>" --service sdcpp --lora --steps 4 --cfg-scale 1.0
+
+# Custom LoRA models (place in models/sd directory)
+npm run as -- image generate --prompt "Fantasy art<lora:custom-style:0.8>" --service sdcpp --lora
+```
+
+#### Advanced Options
+```bash
+# Flash attention for lower memory usage
+npm run as -- image generate --prompt "Complex scene" --service sdcpp --flash-attention
+
+# Different quantization levels (f32, f16, q8_0, q5_0, q5_1, q4_0, q4_1)
+npm run as -- image generate --prompt "Portrait" --service sdcpp --quantization q8_0
+
+# Different sampling methods
+npm run as -- image generate --prompt "Landscape" --service sdcpp --sampling-method "dpm++2m"
+```
+
 ### Service Comparison
 Generate the same prompt across all services:
 ```bash
@@ -79,59 +136,3 @@ AWS_ACCESS_KEY_ID=your_aws_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret
 AWS_REGION=us-east-1
 ```
-
-## Output Structure
-
-Images are saved to the `output/` directory:
-```
-output/
-├── dalle-mountain-landscape.png
-├── bfl-dragon.jpg
-├── nova-space-station.png
-└── comparisons/
-    └── sunset-comparison/
-        ├── dalle-sunset.png
-        ├── bfl-sunset.jpg
-        └── nova-sunset.png
-```
-
-## Service-Specific Options
-
-### DALL-E 3
-- **Sizes**: 1024x1024, 1792x1024, 1024x1792
-- **Quality**: standard, hd
-- **Style**: vivid, natural
-
-### Black Forest Labs
-- **Models**: flux-pro-1.1, flux-pro, flux-dev
-- **Width/Height**: 256-1440 pixels
-- **Safety tolerance**: 0-6
-- **Prompt upsampling**: true/false
-
-### AWS Nova Canvas
-- **Resolutions**: 512x512, 1024x1024, 2048x2048
-- **Quality**: standard, premium
-- **CFG Scale**: 1.0-15.0 (creative control)
-- **Negative prompts**: Specify what to avoid
-
-## Tips and Best Practices
-
-1. **Prompt Engineering**
-   - Be specific and descriptive
-   - Include style, mood, and lighting details
-   - Mention camera angles for dynamic shots
-
-2. **Service Selection**
-   - DALL-E: Best for creative, artistic images
-   - BFL: High quality, good for realistic images
-   - Nova: Good balance of quality and cost
-
-3. **Quality vs Speed**
-   - Use standard quality for drafts
-   - Use premium/HD for final outputs
-   - Generate multiple variations to choose from
-
-4. **Cost Optimization**
-   - Start with lower resolutions for concepts
-   - Use service comparison to find best value
-   - Save seeds for reproducible results
