@@ -143,6 +143,12 @@ export interface StableDiffusionCppOptions {
   flashAttention?: boolean
   quantization?: 'f32' | 'f16' | 'q8_0' | 'q5_0' | 'q5_1' | 'q4_0' | 'q4_1'
 }
+export interface RunwayImageOptions {
+  model?: string
+  width?: number
+  height?: number
+  style?: string
+}
 export interface VectorizeVector {
   id: string
   values: number[]
@@ -348,7 +354,7 @@ export interface VeoGenerateOptions extends VeoGenerateConfig {
   outputPath?: string
 }
 
-export type RunwayModel = 'gen4_turbo' | 'gen3a_turbo'
+export type RunwayModel = 'gen4_image' | 'gen4_image_turbo'
 
 export interface RunwayGenerateOptions {
   model?: RunwayModel
