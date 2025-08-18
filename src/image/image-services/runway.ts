@@ -3,7 +3,7 @@ import RunwayML from '@runwayml/sdk'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError } from '../image-utils.ts'
 import { env } from '@/node-utils'
-import type { ImageGenerationResult, RunwayImageOptions } from '@/types'
+import type { ImageGenerationResult, RunwayImageOptions } from '../image-types'
 
 const p = '[image/image-services/runway]'
 

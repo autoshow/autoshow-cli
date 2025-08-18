@@ -1,7 +1,7 @@
 import { fileTypeFromBuffer } from 'file-type'
 import { l, err } from '@/logging'
 import { execPromise, readFile, access, rename, execFilePromise, unlink, ensureDir } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 import ora from 'ora'
 
 export async function saveAudio(id: string, ensureFolders?: boolean) {

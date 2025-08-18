@@ -3,7 +3,7 @@ import { dirname } from 'path'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError } from '../image-utils.ts'
 import { env } from '@/node-utils'
-import type { ImageGenerationResult } from '@/types'
+import type { ImageGenerationResult } from '../image-types'
 
 export async function generateImageWithDallE(
   prompt: string, 
@@ -19,6 +19,7 @@ export async function generateImageWithDallE(
       throw new Error('OPENAI_API_KEY environment variable is missing')
     }
     
+    l.dim(`${p} [${requestId}] Sending request to OpenAI API`)
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 
@@ -49,6 +50,7 @@ export async function generateImageWithDallE(
       throw new Error('Invalid response format')
     }
     
+    l.dim(`${p} [${requestId}] Image data received, saving to file`)
     await mkdir(dirname(uniqueOutputPath), { recursive: true }).catch(err => {
       if (isApiError(err) && err.code !== 'EEXIST') throw err
     })

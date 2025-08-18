@@ -1,6 +1,6 @@
 import { env } from '@/node-utils'
 import { l, err } from '@/logging'
-import type { VectorizeIndexConfig, VectorizeIndexInfo } from '@/types'
+import type { VectorizeIndexConfig, VectorizeIndexInfo } from '@/embeddings/embed-types'
 
 export async function checkIndexExists(indexName: string): Promise<boolean> {
   const p = '[embeddings/vectorize-setup]'

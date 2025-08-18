@@ -1,7 +1,7 @@
 import { l, err } from '@/logging'
 import { fs, path, execSync, ensureDir } from '@/node-utils'
 import { sleep } from '@/node-utils'
-import type { ExtractResult, ExtractOptions, ExtractService, SinglePageExtractResult } from '@/types'
+import type { ExtractResult, ExtractOptions, ExtractService, SinglePageExtractResult } from '@/extract/extract-types'
 import { extractWithZerox } from './extract-services/zerox'
 import { extractWithUnpdf } from './extract-services/unpdf'
 import { extractWithTextract } from './extract-services/textract'

@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { fs } from '@/node-utils'
-import type { ExtractOptions } from '@/types'
+import type { ExtractOptions } from '@/extract/extract-types'
 
 const p = '[extract/extract-services/unpdf]'
 

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, statSync } from 'fs'
 import { join, dirname } from 'path'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError } from '../image-utils.ts'
-import type { ImageGenerationResult, StableDiffusionCppOptions } from '@/types'
+import type { ImageGenerationResult, StableDiffusionCppOptions } from '../image-types'
 
 const MODELS_DIR = 'models/sd'
 const BIN_PATH = 'bin/sd'

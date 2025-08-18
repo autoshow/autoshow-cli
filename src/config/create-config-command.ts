@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import { checkAllConfigs } from './check-all-configs'
 import { configureCommand } from './configure-command'
 import { logInitialFunctionCall } from '@/logging'
-import type { ConfigureOptions } from '@/types'
+import type { ConfigureOptions } from '@/config/config-types'
 
 export const createConfigCommand = (): Command => {
   const configCommand = new Command('config')

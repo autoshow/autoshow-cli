@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { l, err } from '@/logging'
-import type { ApiError, WeightedPrompt, MusicGenerationConfig, MusicScale, MusicGenerationMode } from '@/types'
+import type { ApiError, WeightedPrompt, MusicGenerationConfig, MusicScale, MusicGenerationMode } from '@/music/music-types'
 
 const p = '[music/music-utils]'
 

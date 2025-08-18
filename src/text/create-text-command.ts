@@ -4,7 +4,8 @@ import { COMMAND_CONFIG, validateCommandInput } from './utils/text-validation.ts
 import { processEmbedCommand } from '../embeddings/embed-command.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
-import type { ProcessingOptions, EmbeddingOptions } from '@/types'
+import type { EmbeddingOptions } from "@/embeddings/embed-types.ts"
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processCommand(
   options: ProcessingOptions

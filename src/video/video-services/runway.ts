@@ -3,7 +3,7 @@ import RunwayML, { TaskFailedError } from '@runwayml/sdk'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils.ts'
 import { env, readFileSync, existsSync } from '@/node-utils'
-import type { VideoGenerationResult, RunwayGenerateOptions } from '@/types'
+import type { VideoGenerationResult, RunwayGenerateOptions } from '@/video/video-types.ts'
 
 const p = '[video/video-services/runway]'
 
@@ -96,7 +96,7 @@ export async function generateVideoWithRunway(
       }
     }
     
-    if (!promptImage && model !== 'gen3a_turbo' && model !== 'gen4_turbo') {
+    if (!promptImage && (model as string) !== 'gen3a_turbo' && (model as string) !== 'gen4_turbo') {
       throw new Error(`Model ${model} requires an input image. Use --image option or choose a text-to-image model.`)
     }
     

@@ -1,5 +1,5 @@
 import { l } from '@/logging'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export function logChannelProcessingStatus(
   total: number,

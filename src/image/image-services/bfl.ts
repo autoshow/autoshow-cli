@@ -3,7 +3,7 @@ import { dirname } from 'path'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError } from '../image-utils.ts'
 import { env } from '@/node-utils'
-import type { ImageGenerationResult, BlackForestLabsOptions } from '@/types'
+import type { ImageGenerationResult, BlackForestLabsOptions } from '../image-types'
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -32,6 +32,7 @@ export async function generateImageWithBlackForestLabs(
       ...options
     }
     
+    l.dim(`${p} [${requestId}] Submitting generation request`)
     const submitResponse = await fetch('https://api.bfl.ml/v1/flux-pro-1.1', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Key': env['BFL_API_KEY'] },
@@ -54,6 +55,8 @@ export async function generateImageWithBlackForestLabs(
       throw new Error('Invalid response: missing task ID')
     }
     
+    l.dim(`${p} [${requestId}] Task ID received: ${taskId}`)
+    
     let timeoutId: NodeJS.Timeout | undefined
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => reject(new Error('Generation timed out after 5 minutes')), 300000)
@@ -68,6 +71,8 @@ export async function generateImageWithBlackForestLabs(
           }).then(r => r.ok ? r.json() : null).catch(() => null) as any
           
           if (!status) continue
+          
+          l.dim(`${p} [${requestId}] Status check ${i + 1}: ${status.status}`)
           
           if (status.status === 'Ready' && status.result?.sample) {
             if (timeoutId) clearTimeout(timeoutId)
@@ -84,6 +89,7 @@ export async function generateImageWithBlackForestLabs(
       timeoutPromise
     ])
     
+    l.dim(`${p} [${requestId}] Downloading image from URL`)
     const imageBuffer = await fetch(imageUrl).then(r => {
       if (!r.ok) throw new Error(`Download failed: ${r.status}`)
       return r.arrayBuffer()

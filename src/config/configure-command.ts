@@ -4,7 +4,7 @@ import { configureCloudflareInteractive } from './cloudflare/configure-cloudflar
 import { checkAllConfigs } from './check-all-configs'
 import { readEnvFile } from './env-writer'
 import { createInterface } from 'readline'
-import type { ConfigureOptions } from '@/types'
+import type { ConfigureOptions } from '@/config/config-types'
 
 async function promptForInput(message: string): Promise<string> {
   const rl = createInterface({

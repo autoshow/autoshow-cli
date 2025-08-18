@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { err } from '@/logging'
 import { env } from '@/node-utils'
-import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '@/types'
+import type { ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '@/text/text-types'
 
 export async function callChatGPT(
   prompt: string,

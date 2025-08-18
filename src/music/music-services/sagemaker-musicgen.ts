@@ -1,7 +1,7 @@
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../music-utils'
 import { env, execPromise } from '@/node-utils'
-import type { MusicGenerationOptions, MusicGenerationResult, SageMakerMusicConfig, SageMakerAsyncInferenceResult } from '@/types'
+import type { MusicGenerationOptions, MusicGenerationResult, SageMakerMusicConfig, SageMakerAsyncInferenceResult } from '@/music/music-types'
 
 const p = '[music/music-services/sagemaker-musicgen]'
 

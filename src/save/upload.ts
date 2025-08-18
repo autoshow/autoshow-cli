@@ -1,5 +1,6 @@
 import { uploadToStorage, uploadAllOutputFiles as factoryUploadAllOutputFiles } from './service-factory'
-import type { ProcessingOptions, UploadMetadata } from '@/types'
+import type { UploadMetadata } from '@/save/save-types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function uploadToS3(
   filePath: string,

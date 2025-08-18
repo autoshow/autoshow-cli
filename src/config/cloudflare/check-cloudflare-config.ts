@@ -1,7 +1,7 @@
 import { l, err } from '@/logging'
 import { checkR2Configuration } from '@/save/cloudflare/config'
 import { listBuckets } from '@/save/cloudflare/client'
-import type { ConfigStatus } from '@/types'
+import type { ConfigStatus } from '@/config/config-types'
 
 function maskCredential(credential: string | undefined, showLength: number = 4): string {
   if (!credential) return 'Not set'

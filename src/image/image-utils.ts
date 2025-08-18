@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { l, err } from '@/logging'
-import type { ApiError } from '@/types'
+import type { ApiError } from '@/image/image-types'
 
 const p = '[image/image-utils]'
 
@@ -11,6 +11,7 @@ export function generateUniqueFilename(prefix: string, extension: string = 'png'
   const makeFilename = (extra = '') => join('./output', `${prefix}-${timestamp}-${randomString}${extra}.${extension}`)
   const filepath = makeFilename()
   const finalPath = existsSync(filepath) ? makeFilename(`-${Math.random().toString(36).substring(2, 8)}`) : filepath
+  l.dim(`${p} Generated unique filename: ${finalPath}`)
   return finalPath
 }
 
@@ -30,6 +31,7 @@ export function saveImage(base64Data: string, outputPath: string): void {
   }
   const fullPath = outputPath.startsWith('/') ? outputPath : join(dir, outputPath)
   writeFileSync(fullPath, Buffer.from(base64Data, 'base64'))
+  l.dim(`${p} Image saved to: ${fullPath}`)
 }
 
 export function parseResolution(value: string): { width: number; height: number } {

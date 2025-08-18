@@ -2,7 +2,7 @@ import { validateRSSOptions, getLLMService, getTranscriptService } from './rss-v
 import { processRSSFeeds } from './processor.ts'
 import { handleWorkflow } from './workflows.ts'
 import { err, logInitialFunctionCall } from '@/logging'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processRSS(
   options: ProcessingOptions,

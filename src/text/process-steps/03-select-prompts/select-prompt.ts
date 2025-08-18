@@ -1,7 +1,7 @@
 import { sections } from './index'
 import { err, l } from '@/logging'
 import { readFile } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 const DEFAULT_KEY_MOMENTS_COUNT = 3
 const DEFAULT_KEY_MOMENTS_DURATION = 60

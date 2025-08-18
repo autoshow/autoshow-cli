@@ -1,7 +1,11 @@
 import { Command } from 'commander'
 import { promises as fs } from 'fs'
 import { dirname } from 'path'
-import type { FileData } from '../src/types'
+
+export interface FileData {
+  path: string
+  content: string
+}
 
 const p = '[parse]'
 

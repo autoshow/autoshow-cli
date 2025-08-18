@@ -1,4 +1,4 @@
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export function buildUploadCommand(
   filePath: string,

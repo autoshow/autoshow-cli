@@ -4,7 +4,7 @@ import { runTranscription } from '../process-steps/02-run-transcription/run-tran
 import { selectPrompts } from '../process-steps/03-select-prompts/select-prompt.ts'
 import { runLLM } from '../process-steps/04-run-llm/run-llm.ts'
 import { err } from '@/logging'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function processVideo(
   options: ProcessingOptions,

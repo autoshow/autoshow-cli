@@ -6,7 +6,7 @@ import { generateImageWithBlackForestLabs } from './image-services/bfl.ts'
 import { generateImageWithNova } from './image-services/nova.ts'
 import { generateImageWithStableDiffusionCpp } from './image-services/sdcpp.ts'
 import { generateImageWithRunway } from './image-services/runway.ts'
-import { generateComparisonImages } from './image-services/comparison.ts'
+import { generateComparisonImages } from './comparison.ts'
 
 const serviceGenerators = {
   dalle: generateImageWithDallE,

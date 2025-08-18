@@ -2,7 +2,7 @@ import { writeFile } from 'fs/promises'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils.ts'
 import { env, readFileSync, existsSync } from '@/node-utils'
-import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig } from '@/types'
+import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig } from '@/video/video-types.ts'
 
 const p = '[video/video-services/veo]'
 

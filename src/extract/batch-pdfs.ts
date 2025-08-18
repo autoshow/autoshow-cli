@@ -2,7 +2,7 @@ import { l, err } from '@/logging'
 import { fs, path, ensureDir } from '@/node-utils'
 import { sleep } from '@/node-utils'
 import { extractPdf } from './extract-pdf'
-import type { BatchExtractResult, ExtractOptions } from '@/types'
+import type { BatchExtractResult, ExtractOptions } from '@/extract/extract-types'
 
 const p = '[extract/batch-pdfs]'
 

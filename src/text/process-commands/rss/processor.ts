@@ -7,7 +7,7 @@ import { saveInfo } from '../../utils/save-info.ts'
 import { l, err, logSeparator } from '@/logging'
 import { selectRSSItemsToProcess } from './fetch.ts'
 import { logRSSProcessingStatus } from './rss-logging.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function processRSSFeeds(
   options: ProcessingOptions,

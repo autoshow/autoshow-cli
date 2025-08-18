@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { execPromise, existsSync, ensureDir, join } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export function logRSSProcessingStatus(
   total: number,

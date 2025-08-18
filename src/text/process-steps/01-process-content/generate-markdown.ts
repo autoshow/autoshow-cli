@@ -1,7 +1,7 @@
 import { l, err } from '@/logging'
 import { execFilePromise, basename, extname } from '@/node-utils'
 import { sanitizeTitle, constructOutputPath } from '../../utils/save-info.ts'
-import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
+import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export function buildFrontMatter(metadata: {
   showLink: string

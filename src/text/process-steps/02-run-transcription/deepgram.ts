@@ -1,7 +1,7 @@
 import { err } from '@/logging'
 import { readFile, env } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
-import type { ProcessingOptions, DeepgramWord } from '@/types'
+import type { ProcessingOptions, DeepgramWord } from '@/text/text-types'
 
 export function formatDeepgramTranscript(
   words: DeepgramWord[],

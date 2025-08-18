@@ -3,7 +3,7 @@ import { l } from '@/logging'
 import { execPromise } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/02-run-transcription/transcription-models'
 import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function getAudioDuration(filePath: string): Promise<number> {
   const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${filePath}"`

@@ -1,5 +1,6 @@
 import { uploadJsonMetadata as factoryUploadJsonMetadata } from './service-factory'
-import type { ProcessingOptions, UploadMetadata } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
+import type { UploadMetadata } from '@/save/save-types'
 
 export async function uploadJsonMetadata(
   baseFilePath: string,
