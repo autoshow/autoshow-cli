@@ -1,4 +1,4 @@
-import { l, err, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import { execFilePromise, basename, extname } from '@/node-utils'
 import { sanitizeTitle, constructOutputPath } from '../../utils/save-info.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/types'
@@ -30,8 +30,8 @@ export async function generateMarkdown(
   input: string | ShowNoteMetadata
 ) {
   const p = '[text/process-steps/01-generate-markdown]'
-  l.step(`\nStep 1 - Generate Markdown\n`)
-  logInitialFunctionCall('generateMarkdown', { options, input })
+  l.step(`\nStep 1 - Process Content\n`)
+
   const { filename, metadata } = await (async () => {
     switch (true) {
       case !!options.video:
@@ -39,7 +39,6 @@ export async function generateMarkdown(
       case !!options.urls:
       case !!options.channel:
         try {
-          l.dim(`${p} Extracting metadata with yt-dlp. Parsing output...`)
           const { stdout } = await execFilePromise('yt-dlp', [
             '--restrict-filenames',
             '--print', '%(webpage_url)s',
@@ -76,7 +75,6 @@ export async function generateMarkdown(
           throw error
         }
       case !!options.file:
-        l.dim(`${p} Generating markdown for a local file...`)
         const originalFilename = basename(input as string)
         const filenameWithoutExt = originalFilename.replace(extname(originalFilename), '')
         const localFilename = sanitizeTitle(filenameWithoutExt)
@@ -93,7 +91,6 @@ export async function generateMarkdown(
           }
         }
       case !!options.rss:
-        l.dim(`${p} Generating markdown for an RSS item...`)
         const item = input as ShowNoteMetadata
         const {
           publishDate,
@@ -120,6 +117,7 @@ export async function generateMarkdown(
         throw new Error('Invalid option provided for markdown generation.')
     }
   })()
+
   const finalPath = constructOutputPath(filename, options)
   const frontMatter = buildFrontMatter({
     showLink: metadata.showLink || '',
@@ -131,7 +129,6 @@ export async function generateMarkdown(
     coverImage: metadata.coverImage || ''
   })
   const frontMatterContent = frontMatter.join('\n')
-  l.dim(`${p} generateMarkdown returning:\n\n    - finalPath: ${finalPath}\n    - filename: ${filename}\n`)
-  l.dim(`${p} frontMatterContent:\n\n${frontMatterContent}\n`)
+
   return { frontMatter: frontMatterContent, finalPath, filename, metadata }
 }

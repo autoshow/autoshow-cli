@@ -21,7 +21,6 @@ async function copyBackToDaily(dirName: string, subfolder: string): Promise<void
 
 export function extractDirectoryName(feedFilename: string): string {
   const p = '[text/process-commands/rss/workflows]'
-  l.dim(`${p} Extracting directory name from feed filename: ${feedFilename}`)
   
   const baseName = basename(feedFilename)
   const dirName = baseName.replace(/-feeds\.md$/i, '')
@@ -31,7 +30,6 @@ export function extractDirectoryName(feedFilename: string): string {
     throw new Error('Feed filename must end with "-feeds.md"')
   }
   
-  l.dim(`${p} Extracted directory name: ${dirName}`)
   return dirName
 }
 
@@ -52,7 +50,7 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
   }
   const filterString = filterInfo.length > 0 ? filterInfo.join(', ') : 'latest available'
   
-  l.dim(`${p} Preparing to process shownotes for ${dirName} with ${filterString}`)
+  l.dim(`${p} Processing shownotes for ${dirName} with ${filterString}`)
   
   await copyFeeds()
   await logMkdir(`./output/${subfolder}`, 'createDirectoryForShownotes')
@@ -64,13 +62,6 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
     feed: undefined,
     metaInfo: undefined
   }
-  
-  l.dim(`${p} Processing RSS with options: ${JSON.stringify({
-    date: rssOptions.date,
-    days: rssOptions.days,
-    last: rssOptions.last,
-    order: rssOptions.order
-  }, null, 2)}`)
   
   try {
     await processRSS(rssOptions, rssOptions.llmServices, rssOptions.transcriptServices)
@@ -121,22 +112,10 @@ export async function handleWorkflow(options: ProcessingOptions): Promise<boolea
   const feedFilename = options.feed
   
   if (!feedFilename) {
-    l.dim(`${p} No feed specified, not a workflow`)
     return false
   }
   
-  l.dim(`${p} handleWorkflow called with options: ${JSON.stringify({
-    feed: feedFilename,
-    metaInfo: options.metaInfo,
-    date: options.date,
-    days: options.days,
-    last: options.last,
-    order: options.order
-  }, null, 2)}`)
-  
   const dirName = extractDirectoryName(feedFilename)
-  
-  l.dim(`${p} Validating feed file: ${feedFilename}`)
   
   if (!validateFeedsFile(feedFilename)) {
     console.log('')
@@ -147,20 +126,16 @@ export async function handleWorkflow(options: ProcessingOptions): Promise<boolea
     console.log(`  mkdir -p ${WORKFLOWS_DIR}/feeds`)
     console.log(`  echo 'https://feeds.megaphone.fm/MLN2155636147' > ${WORKFLOWS_DIR}/feeds/${feedFilename}`)
     console.log('')
-    l.dim(`${p} Then run your command again.`)
     process.exit(1)
   }
   
-  l.dim(`${p} Ensuring workflow directories exist`)
   await ensureWorkflowDirectories(dirName)
   
   try {
     if (options.metaInfo) {
       l.final(`${p} Running workflow with both Info and Shownotes for ${dirName} from ${WORKFLOWS_DIR}`)
-      l.dim(`${p} Step 1/2: Generating info files`)
       await prepareInfo(dirName, feedFilename)
       logSeparator({ type: 'completion', descriptor: `Workflow Info for ${dirName}` })
-      l.dim(`${p} Step 2/2: Generating shownotes`)
     } else {
       l.final(`${p} Running workflow: Shownotes only for ${dirName} from ${WORKFLOWS_DIR}`)
     }

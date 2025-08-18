@@ -9,45 +9,38 @@ import { extractWithTextract } from './extract-services/textract'
 const p = '[extract/extract-pdf]'
 
 const splitPdfIntoPages = async (pdfPath: string, requestId: string): Promise<string[]> => {
-  l.dim(`${p}[${requestId}] Splitting PDF into individual pages`)
-  
   const tempDir = path.join('output', 'temp', requestId, 'pages')
   await ensureDir(tempDir)
   
   try {
     execSync('gm version', { stdio: 'ignore' })
   } catch (error) {
-    l.dim(`${p}[${requestId}] GraphicsMagick not found, will process as single file`)
     return [pdfPath]
   }
   
   try {
     const identifyOutput = execSync(`gm identify -format "%p " "${pdfPath}"`, { encoding: 'utf-8' })
     const pageCount = identifyOutput.trim().split(' ').filter(p => p).length
-    l.dim(`${p}[${requestId}] PDF has ${pageCount} page(s)`)
     
     if (pageCount === 1) {
-      l.dim(`${p}[${requestId}] Single page PDF, no splitting needed`)
       return [pdfPath]
     }
+    
+    l.opts(`${p}[${requestId}] Splitting ${pageCount} pages`)
     
     const pagePaths: string[] = []
     
     for (let i = 0; i < pageCount; i++) {
       const pageFile = path.join(tempDir, `page_${String(i + 1).padStart(3, '0')}.pdf`)
       const pageRange = `[${i}]`
-      
-      l.dim(`${p}[${requestId}] Extracting page ${i + 1}/${pageCount}`)
       execSync(`gm convert "${pdfPath}${pageRange}" "${pageFile}"`, { stdio: 'ignore' })
-      
       pagePaths.push(pageFile)
     }
     
-    l.dim(`${p}[${requestId}] Successfully split PDF into ${pagePaths.length} pages`)
     return pagePaths
     
   } catch (error) {
-    l.dim(`${p}[${requestId}] Error splitting PDF, processing as single file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    l.warn(`${p}[${requestId}] Error splitting PDF, processing as single file`)
     return [pdfPath]
   }
 }
@@ -59,16 +52,12 @@ const extractSinglePage = async (
   requestId: string,
   service: ExtractService
 ): Promise<SinglePageExtractResult> => {
-  l.dim(`${p}[${requestId}] Processing page ${pageNumber}`)
-  
   try {
     const { text, totalCost } = service === 'zerox' 
       ? await extractWithZerox(pagePath, options, requestId, pageNumber)
       : service === 'unpdf'
       ? await extractWithUnpdf(pagePath, options, requestId, pageNumber)
       : await extractWithTextract(pagePath, options, requestId, pageNumber)
-    
-    l.dim(`${p}[${requestId}] Page ${pageNumber} extracted: ${text.length} characters`)
     
     const result: SinglePageExtractResult = {
       text,
@@ -81,7 +70,7 @@ const extractSinglePage = async (
     
     return result
   } catch (error) {
-    l.dim(`${p}[${requestId}] Error extracting page ${pageNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Error extracting page ${pageNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     throw error
   }
 }
@@ -90,9 +79,8 @@ const cleanupTempFiles = async (requestId: string): Promise<void> => {
   const tempDir = path.join('output', 'temp', requestId)
   try {
     await fs.rm(tempDir, { recursive: true, force: true })
-    l.dim(`${p}[${requestId}] Cleaned up temp directory`)
   } catch (error) {
-    l.dim(`${p}[${requestId}] Error cleaning up temp directory: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    l.warn(`${p}[${requestId}] Failed to cleanup temp files`)
   }
 }
 
@@ -112,10 +100,6 @@ export const extractPdf = async (
   const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   
-  l.dim(`${p}[${requestId}] Starting PDF extraction`)
-  l.dim(`${p}[${requestId}] PDF path: ${pdfPath}`)
-  l.dim(`${p}[${requestId}] Options: ${JSON.stringify(options)}`)
-  
   try {
     const pdfExists = await isFile(pdfPath)
     
@@ -124,14 +108,13 @@ export const extractPdf = async (
     }
     
     const service = (options.service || 'zerox') as ExtractService
-    l.dim(`${p}[${requestId}] Using extraction service: ${service}`)
+    l.opts(`${p}[${requestId}] Extracting with ${service}`)
     
     let finalText = ''
     let totalCost = 0
     let pageResults: SinglePageExtractResult[] = []
     
     if (service === 'unpdf') {
-      l.dim(`${p}[${requestId}] Processing entire PDF with unpdf (no page splitting)`)
       const { text, totalCost: cost } = await extractWithUnpdf(pdfPath, options, requestId)
       finalText = text
       if (cost) totalCost = cost
@@ -143,7 +126,9 @@ export const extractPdf = async (
         const pagePath = pagePaths[i]!
         const pageNumber = i + 1
         
-        l.opts(`${p}[${requestId}] Processing page ${pageNumber}/${pagePaths.length}`)
+        if (pagePaths.length > 1) {
+          l.opts(`${p}[${requestId}] Processing page ${pageNumber}/${pagePaths.length}`)
+        }
         
         const result = await extractSinglePage(
           pagePath,
@@ -160,7 +145,6 @@ export const extractPdf = async (
         }
         
         if (i < pagePaths.length - 1 && service === 'zerox') {
-          l.dim(`${p}[${requestId}] Waiting 2 seconds before next page (rate limiting)`)
           await sleep(2000)
         }
       }
@@ -184,9 +168,7 @@ export const extractPdf = async (
     await cleanupTempFiles(requestId)
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`${p}[${requestId}] Success in ${duration}s - ${outputPath}`)
-    l.opts(`${p}[${requestId}] Total characters extracted: ${finalText.length}`)
-    l.opts(`${p}[${requestId}] Pages processed: ${pageResults.length}`)
+    l.success(`${p}[${requestId}] Extracted ${finalText.length} characters in ${duration}s`)
     
     const result: ExtractResult = {
       success: true,
@@ -202,7 +184,7 @@ export const extractPdf = async (
     await cleanupTempFiles(requestId)
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    err(`${p}[${requestId}] Failed in ${duration}s - ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Failed in ${duration}s: ${error instanceof Error ? error.message : 'Unknown error'}`)
     
     return {
       success: false,

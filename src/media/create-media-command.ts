@@ -7,9 +7,6 @@ export const AUDIO_FMT = 'mp3'
 export const AUDIO_Q = '0'
 
 export const createMediaCommand = (): Command => {
-  const p = '[media/create-media-command]'
-  l.dim(`${p} Creating media command with download and convert subcommands`)
-
   const media = new Command('media')
     .description('Media file operations for downloading and converting audio/video content')
 
@@ -26,7 +23,6 @@ export const createMediaCommand = (): Command => {
           err('Error: --urls option is required for download command')
         }
         
-        l.dim(`${p} Starting audio download from URLs file: ${options.urls}`)
         await downloadAudioFromUrls(options.urls, options.verbose || false)
         l.success('Audio download completed successfully')
       } catch (error) {
@@ -48,7 +44,6 @@ export const createMediaCommand = (): Command => {
           err('Error: --files option is required for convert command')
         }
         
-        l.dim(`${p} Starting media conversion from source: ${options.files}`)
         await convertLocalAudioFiles(options.files, options.output, options.verbose || false)
         l.success('Media conversion completed successfully')
       } catch (error) {
@@ -56,6 +51,5 @@ export const createMediaCommand = (): Command => {
       }
     })
 
-  l.dim(`${p} Media command created successfully`)
   return media
 }

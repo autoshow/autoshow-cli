@@ -8,10 +8,8 @@ export async function queryVectorize(
   indexName: string,
   topK: number = 5
 ): Promise<VectorizeMatch[]> {
-  const p = '[text/embeddings/query-vectorize]'
+  const p = '[embeddings/query/query-vectorize]'
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes/${indexName}/query`
-  
-  l.dim(`${p} Querying Vectorize index: ${indexName} with topK: ${topK}`)
   
   const response = await fetch(url, {
     method: 'POST',
@@ -47,7 +45,6 @@ export async function queryVectorize(
   }
   
   const matches = data.result?.matches || []
-  l.dim(`${p} Found ${matches.length} matches from Vectorize`)
   
   return matches
 }

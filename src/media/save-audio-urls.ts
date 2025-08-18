@@ -5,7 +5,6 @@ import { AUDIO_FMT, AUDIO_Q } from './create-media-command.ts'
 
 export async function downloadAudioFromUrls(markdownFile: string, verbose = false): Promise<void> {
   const p = '[media/save-audio-urls]'
-  l.dim(`${p} Starting audio download from URLs in file: ${markdownFile}`)
   
   if (!markdownFile.toLowerCase().endsWith('.md')) {
     err(`Input file "${markdownFile}" is not a markdown file (.md extension required)`)
@@ -25,8 +24,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
       err(`No URLs found in markdown file: ${markdownFile}`)
     }
     
-    l.opts(`Found ${urls.length} URLs to process:`)
-    urls.forEach(url => l.dim(`  - ${url}`))
+    l.opts(`${p} Processing ${urls.length} URLs with yt-dlp`)
     
     const outputDir = 'output'
     await ensureDir(outputDir)
@@ -44,18 +42,13 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
       ...urls
     ]
     
-    l.dim(`${p} Executing yt-dlp with arguments:`)
-    l.dim(`${p} yt-dlp ${ytDlpArgs.join(' ')}`)
-    
     await new Promise<void>((resolve, reject) => {
       const ytDlpProcess = spawn('yt-dlp', ytDlpArgs, { 
         stdio: verbose ? 'inherit' : 'ignore' 
       })
       
       ytDlpProcess.on('close', (code) => {
-        l.dim(`${p} yt-dlp process exited with code: ${code}`)
         if (code === 0) {
-          l.dim(`${p} All URLs processed successfully`)
           resolve()
         } else {
           reject(new Error(`yt-dlp process failed with exit code ${code}`))
@@ -67,7 +60,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
       })
     })
     
-    l.final('Audio download from URLs completed successfully')
+    l.success(`${p} Successfully downloaded ${urls.length} audio files`)
   } catch (error) {
     err(`Error reading markdown file: ${(error as Error).message}`)
   }

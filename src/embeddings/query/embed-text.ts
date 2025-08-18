@@ -1,11 +1,9 @@
 import { l } from '@/logging'
 
 export async function embedText(text: string, accountId: string, apiToken: string): Promise<number[]> {
-  const p = '[text/embeddings/embed-text]'
+  const p = '[embeddings/query/embed-text]'
   
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/baai/bge-m3`
-  
-  l.dim(`${p} Creating embedding for query text using bge-m3`)
   
   const response = await fetch(url, {
     method: 'POST',
@@ -40,8 +38,6 @@ export async function embedText(text: string, accountId: string, apiToken: strin
     success?: boolean,
     errors?: Array<{ message: string }>
   }
-  
-  l.dim(`${p} Embedding API response received`)
   
   if (!json.success || !json.result?.data?.[0]) {
     const errorMsg = json.errors?.[0]?.message || 'Unknown embedding error'

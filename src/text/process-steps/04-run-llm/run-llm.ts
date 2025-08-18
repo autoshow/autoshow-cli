@@ -1,4 +1,4 @@
-import { l, err, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import { writeFile, ensureDir } from '@/node-utils'
 import { callChatGPT, callClaude, callGemini } from './llm-services.ts'
 import { LLM_SERVICES_CONFIG } from './llm-models.ts'
@@ -20,10 +20,8 @@ export async function runLLM(
   audioDuration?: number
 ) {
   const p = '[text/process-steps/05-run-llm]'
-  l.step(`\nStep 5 - Run Language Model\n`)
-  logInitialFunctionCall('runLLM', { llmServices, metadata })
+  l.step(`\nStep 4 - Run Language Model\n`)
   
-  l.dim(`${p} Ensuring output directory exists for: ${finalPath}`)
   const outputDir = finalPath.substring(0, finalPath.lastIndexOf('/'))
   await ensureDir(outputDir)
   
@@ -35,7 +33,6 @@ export async function runLLM(
     let userModel = ''
     let promptSections = options.prompt || ['summary', 'longChapters']
     if (llmServices) {
-      l.dim(`${p} Preparing to process with '${llmServices}' Language Model...`)
       const config = LLM_SERVICES_CONFIG[llmServices as keyof typeof LLM_SERVICES_CONFIG]
       if (!config) {
         throw new Error(`Unknown LLM service: ${llmServices}`)
@@ -107,30 +104,6 @@ export async function runLLM(
       
       await uploadAllOutputFiles(finalPath, options, uploadMetadata)
     }
-    const finalCost = (transcriptionCost || 0) + llmCost
-    const finalShowNote = {
-      showLink: metadata.showLink ?? '',
-      channel: metadata.channel ?? '',
-      channelURL: metadata.channelURL ?? '',
-      title: metadata.title,
-      description: metadata.description ?? '',
-      publishDate: metadata.publishDate,
-      coverImage: metadata.coverImage ?? '',
-      frontmatter: frontMatter,
-      prompt,
-      transcript,
-      llmOutput: showNotesResult,
-      walletAddress: metadata.walletAddress ?? '',
-      mnemonic: metadata.mnemonic ?? '',
-      llmService: llmServices ?? '',
-      llmModel: userModel,
-      llmCost,
-      transcriptionService: transcriptionServices ?? '',
-      transcriptionModel: transcriptionModel ?? '',
-      transcriptionCost,
-      finalCost
-    }
-    l.dim(`${p} ${JSON.stringify(finalShowNote, null, 2)}`)
     return showNotesResult
   } catch (error) {
     err(`${p} Error running Language Model: ${(error as Error).message}`)
@@ -147,9 +120,7 @@ export async function retryLLMCall<T>(
   while (attempt < maxRetries) {
     try {
       attempt++
-      l.dim(`${p} Attempt ${attempt} - Processing LLM call...`)
       const result = await fn()
-      l.dim(`${p} LLM call completed successfully on attempt ${attempt}.`)
       return result
     } catch (error) {
       err(`${p} Attempt ${attempt} failed: ${(error as Error).message}`)

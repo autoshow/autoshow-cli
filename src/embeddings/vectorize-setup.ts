@@ -3,7 +3,7 @@ import { l, err } from '@/logging'
 import type { VectorizeIndexConfig, VectorizeIndexInfo } from '@/types'
 
 export async function checkIndexExists(indexName: string): Promise<boolean> {
-  const p = '[text/utils/vectorize-setup]'
+  const p = '[embeddings/vectorize-setup]'
   
   const accountId = env['CLOUDFLARE_ACCOUNT_ID']
   const apiToken = env['CLOUDFLARE_API_TOKEN']
@@ -13,7 +13,6 @@ export async function checkIndexExists(indexName: string): Promise<boolean> {
   }
   
   try {
-    l.dim(`${p} Checking if index '${indexName}' exists`)
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes/${indexName}`,
       {
@@ -25,11 +24,8 @@ export async function checkIndexExists(indexName: string): Promise<boolean> {
     )
     
     if (response.status === 404) {
-      l.dim(`${p} Index '${indexName}' does not exist`)
       return false
     } else if (response.ok) {
-      const data = await response.json() as { result: VectorizeIndexInfo }
-      l.dim(`${p} Index '${indexName}' exists with ${data.result.config.dimensions} dimensions`)
       return true
     } else {
       const errorText = await response.text()
@@ -40,8 +36,9 @@ export async function checkIndexExists(indexName: string): Promise<boolean> {
     throw error
   }
 }
+
 export async function createVectorizeIndex(indexName: string, dimensions: number = 1024): Promise<void> {
-  const p = '[text/utils/vectorize-setup]'
+  const p = '[embeddings/vectorize-setup]'
   
   const accountId = env['CLOUDFLARE_ACCOUNT_ID']
   const apiToken = env['CLOUDFLARE_API_TOKEN']
@@ -60,7 +57,6 @@ export async function createVectorizeIndex(indexName: string, dimensions: number
   }
   
   try {
-    l.dim(`${p} Creating index '${indexName}' with ${dimensions} dimensions`)
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes`,
       {
@@ -89,9 +85,7 @@ export async function createVectorizeIndex(indexName: string, dimensions: number
     
     const data = await response.json() as { result: VectorizeIndexInfo }
     l.success(`Index '${data.result.name}' created successfully`)
-    l.dim(`${p} Index configuration: ${data.result.config.dimensions}D, ${data.result.config.metric} metric`)
     
-    l.dim(`${p} Waiting for index to initialize...`)
     await new Promise(resolve => setTimeout(resolve, 3000))
     
   } catch (error) {
@@ -99,17 +93,15 @@ export async function createVectorizeIndex(indexName: string, dimensions: number
     throw error
   }
 }
+
 export async function ensureVectorizeIndex(indexName: string, dimensions: number = 1024): Promise<void> {
-  const p = '[text/utils/vectorize-setup]'
+  const p = '[embeddings/vectorize-setup]'
   
   try {
     const exists = await checkIndexExists(indexName)
     
     if (!exists) {
-      l.dim(`${p} Index does not exist, creating new index`)
       await createVectorizeIndex(indexName, dimensions)
-    } else {
-      l.dim(`${p} Index '${indexName}' already exists and is ready`)
     }
   } catch (error) {
     err(`${p} Error ensuring index exists: ${error}`)

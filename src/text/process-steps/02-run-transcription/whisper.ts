@@ -52,13 +52,10 @@ export async function checkWhisperModel(whisperModel: string) {
       err(`${p} Error downloading model: ${(error as Error).message}`)
       throw error
     }
-  } else {
-    l.dim(`${p} Model ${whisperModel} already available`)
   }
 }
 
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
-  const p = '[text/transcription/whisper]'
   return new Promise((resolve, reject) => {
     const whisperProcess = spawn(command, args)
     let lastProgress = -1
@@ -84,16 +81,13 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
 
     whisperProcess.on('close', (code) => {
       if (code === 0) {
-        l.dim(`${p} whisper-cli completed successfully`)
         resolve()
       } else {
-        l.dim(`${p} whisper-cli exited with code ${code}`)
         reject(new Error(`whisper-cli exited with code ${code}`))
       }
     })
 
     whisperProcess.on('error', (error) => {
-      l.dim(`${p} whisper-cli process error: ${error.message}`)
       reject(error)
     })
   })
@@ -105,7 +99,6 @@ export async function callWhisper(
   spinner?: Ora
 ) {
   const p = '[text/transcription/whisper]'
-  l.opts(`${p} callWhisper called`)
 
   try {
     const whisperModel = typeof options.whisper === 'string'
@@ -121,8 +114,6 @@ export async function callWhisper(
     const { modelId, costPerMinuteCents } = chosenModel
 
     await checkWhisperModel(modelId)
-
-    l.dim(`${p} Running whisper-cli on ${finalPath}.wav`)
     
     const args = [
       '--no-gpu',
@@ -150,7 +141,6 @@ export async function callWhisper(
       throw whisperError
     }
 
-    l.dim(`${p} Reading transcript from ${finalPath}.json`)
     const jsonContent = await readFile(`${finalPath}.json`, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)

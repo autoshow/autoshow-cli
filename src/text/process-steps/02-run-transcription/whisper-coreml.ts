@@ -5,7 +5,6 @@ import type { ProcessingOptions } from '@/types'
 import type { Ora } from 'ora'
 
 async function runWithProgress(command: string, args: string[], spinner?: Ora): Promise<void> {
-  const p = '[text/transcription/whisper-coreml]'
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args)
     let last = -1
@@ -26,15 +25,12 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
     proc.stderr.on('data', onData)
     proc.on('close', code => {
       if (code === 0) {
-        l.dim(`${p} whisper-cli-coreml completed successfully`)
         resolve()
       } else {
-        l.dim(`${p} whisper-cli-coreml exited with code ${code}`)
         reject(new Error(`whisper-cli-coreml exited with code ${code}`))
       }
     })
     proc.on('error', e => {
-      l.dim(`${p} whisper-cli-coreml process error: ${e.message}`)
       reject(e)
     })
   })
@@ -48,7 +44,6 @@ async function ensureCoreMLEnv(): Promise<void> {
   }
   try {
     await execPromise(`${py} -c "import torch,coremltools,numpy,transformers,sentencepiece,huggingface_hub,ane_transformers,safetensors,whisper"`, { maxBuffer: 10000 * 1024 })
-    l.dim(`${p} CoreML environment verified`)
   } catch (e: any) {
     err(`${p} CoreML conversion dependencies missing: ${e.message}`)
     throw new Error('CoreML conversion dependencies not installed. Run npm run setup')
@@ -61,7 +56,6 @@ async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
   const p = '[text/transcription/whisper-coreml]'
   if (!existsSync(pkg)) return
   try {
-    l.dim(`${p} Compiling mlpackage to mlmodelc`)
     const compiledDir = `./models/tmp-compile-${modelId}`
     await execPromise(`mkdir -p "${compiledDir}"`)
     try {
@@ -73,7 +67,6 @@ async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
     const cand = stdout.trim()
     if (!cand) throw new Error('Compiled .mlmodelc not found')
     await execPromise(`rm -rf "${out}" && mv "${cand}" "${out}" && rm -rf "${compiledDir}"`)
-    l.dim(`${p} Created ${out}`)
   } catch (e: any) {
     err(`${p} Error compiling mlpackage: ${e.message}`)
     throw e
@@ -112,7 +105,6 @@ export async function callWhisperCoreml(
   spinner?: Ora
 ) {
   const p = '[text/transcription/whisper-coreml]'
-  l.opts(`${p} callWhisperCoreml called`)
   try {
     const whisperModel = typeof options['whisperCoreml'] === 'string'
       ? options['whisperCoreml']
@@ -122,7 +114,7 @@ export async function callWhisperCoreml(
     await checkWhisperModel(whisperModel)
     await ensureCoreMLEnv()
     await ensureCoreMLEncoder(whisperModel)
-    l.dim(`${p} Running whisper-cli-coreml on ${finalPath}.wav`)
+
     const args = [
       '-m', `./models/ggml-${whisperModel}.bin`,
       '-f', `${finalPath}.wav`,
@@ -143,7 +135,7 @@ export async function callWhisperCoreml(
       err(`${p} Error running whisper-cli-coreml: ${(cliErr as Error).message}`)
       throw cliErr
     }
-    l.dim(`${p} Reading transcript from ${finalPath}.json`)
+
     const jsonContent = await readFile(`${finalPath}.json`, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)

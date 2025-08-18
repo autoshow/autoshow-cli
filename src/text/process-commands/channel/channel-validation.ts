@@ -2,9 +2,6 @@ import { l, err } from '@/logging'
 import type { ProcessingOptions } from '@/types'
 
 export function validateChannelOptions(options: ProcessingOptions): void {
-  const p = '[text/process-commands/channel/channel-validation]'
-  l.dim(`${p} Starting channel options validation`)
-  
   if (options.last !== undefined) {
     if (!Number.isInteger(options.last) || options.last < 1) {
       err('Error: The --last option must be a positive integer.')
@@ -14,7 +11,6 @@ export function validateChannelOptions(options: ProcessingOptions): void {
       err('Error: The --last option cannot be used with --order.')
       process.exit(1)
     }
-    l.dim(`${p} Last option validated: ${options.last}`)
   }
 
   if (options.order !== undefined && !['newest', 'oldest'].includes(options.order)) {
@@ -35,7 +31,6 @@ export function validateChannelOptions(options: ProcessingOptions): void {
       err('Error: The --days option cannot be used with --last, --order, or --date.')
       process.exit(1)
     }
-    l.dim(`${p} Days option validated: ${options.days}`)
   }
 
   if (options.date && options.date.length > 0) {
@@ -53,7 +48,6 @@ export function validateChannelOptions(options: ProcessingOptions): void {
       err('Error: The --date option cannot be used with --last or --order.')
       process.exit(1)
     }
-    l.dim(`${p} Date filtering enabled for ${options.date.length} dates: ${options.date.join(', ')}`)
   }
 
   if (options.last) {
@@ -63,6 +57,4 @@ export function validateChannelOptions(options: ProcessingOptions): void {
   } else if (options.date && options.date.length > 0) {
     l.dim(`\nProcessing videos from specific dates: ${options.date.join(', ')}`)
   }
-  
-  l.dim(`${p} Channel validation completed successfully`)
 }

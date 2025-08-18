@@ -10,16 +10,13 @@ export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
   const p = '[text/create-text-command]'
-  l.dim(`${p} Starting command processing`)
   
   if (!options.inputDir) {
     options.inputDir = 'input'
-    l.dim(`${p} Set default input directory: ${options.inputDir}`)
   }
   
   if (options.rss && Array.isArray(options.rss) && options.rss.length === 0) {
     options.rss = undefined
-    l.dim(`${p} Cleared empty RSS array`)
   }
   
   const { action, llmServices, transcriptServices } = validateCommandInput(options)
@@ -45,7 +42,6 @@ export async function processCommand(
   
   try {
     if (action === 'rss') {
-      l.dim(`${p} Calling RSS handler`)
       await COMMAND_CONFIG[action].handler(options, llmServices, transcriptServices)
     } else {
       if (!action) {
@@ -55,11 +51,9 @@ export async function processCommand(
       if (!input || typeof input !== 'string') {
         throw new Error(`No valid input provided for ${action} processing`)
       }
-      l.dim(`${p} Calling ${action} handler with input: ${input}`)
       await COMMAND_CONFIG[action].handler(options, input, llmServices, transcriptServices)
     }
     
-    l.dim(`${p} Successfully completed ${action} processing`)
     logSeparator({ type: 'completion', descriptor: action })
     exit(0)
   } catch (error) {
@@ -69,9 +63,6 @@ export async function processCommand(
 }
 
 export const createTextCommand = (): Command => {
-  const p = '[text/create-text-command]'
-  l.dim(`${p} Creating text command with all options`)
-  
   const textCommand = new Command('text')
     .description('Process audio/video content into text-based outputs')
     .option('--input-dir <directory>', 'Input directory for files (default: input)')
@@ -108,27 +99,11 @@ export const createTextCommand = (): Command => {
     .option('--s3-bucket-prefix <prefix>', 'Custom prefix for S3 bucket name (default: autoshow)')
     .action(async (options: ProcessingOptions) => {
       logInitialFunctionCall('textCommand', options)
-      if (options.keyMomentsCount !== undefined) {
-        l.dim(`${p} Key moments count configured: ${options.keyMomentsCount}`)
-      }
-      if (options.keyMomentDuration !== undefined) {
-        l.dim(`${p} Key moment duration configured: ${options.keyMomentDuration} seconds`)
-      }
       if (options.save) {
-        l.dim(`${p} Save to cloud storage configured: ${options.save}`)
         if (options.save !== 's3' && options.save !== 'r2') {
           err(`Invalid save option: ${options.save}. Must be 's3' or 'r2'`)
           exit(1)
         }
-      }
-      if (options.s3BucketPrefix) {
-        l.dim(`${p} S3 bucket prefix configured: ${options.s3BucketPrefix}`)
-      }
-      if (options.inputDir) {
-        l.dim(`${p} Input directory configured: ${options.inputDir}`)
-      }
-      if (options.outputDir) {
-        l.dim(`${p} Output subdirectory configured: ${options.outputDir}`)
       }
       await processCommand(options)
     })
@@ -139,7 +114,6 @@ export const createTextCommand = (): Command => {
     .option('--query <question>', 'Query embeddings with a question')
     .action(async (options: EmbeddingOptions) => {
       logInitialFunctionCall('embedCommand', options as Record<string, unknown>)
-      l.dim(`${p} Embed command initiated`)
       try {
         await processEmbedCommand(options)
         l.success('Embed command completed successfully')
@@ -151,6 +125,5 @@ export const createTextCommand = (): Command => {
   
   textCommand.addCommand(embedCommand)
   
-  l.dim(`${p} Text command created successfully with embed subcommand`)
   return textCommand
 }

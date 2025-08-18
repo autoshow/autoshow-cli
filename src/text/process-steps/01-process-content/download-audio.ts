@@ -1,5 +1,5 @@
 import { fileTypeFromBuffer } from 'file-type'
-import { l, err, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import { execPromise, readFile, access, rename, execFilePromise, unlink, ensureDir } from '@/node-utils'
 import type { ProcessingOptions } from '@/types'
 import ora from 'ora'
@@ -7,17 +7,14 @@ import ora from 'ora'
 export async function saveAudio(id: string, ensureFolders?: boolean) {
   const p = '[text/process-steps/02-download-audio]'
   if (ensureFolders) {
-    l.dim(`${p} Skipping cleanup to preserve or ensure metadata directories.`)
     return
   }
 
   const extensions = ['.wav']
-  l.dim(`${p} Temporary files deleted:`)
 
   for (const ext of extensions) {
     try {
       await unlink(`${id}${ext}`)
-      l.dim(`${p}   - ${id}${ext}`)
     } catch (error) {
       if (error instanceof Error && (error as Error).message !== 'ENOENT') {
         err(`${p} Error deleting file ${id}${ext}: ${(error as Error).message}`)
@@ -47,7 +44,7 @@ export async function executeWithRetry(
       }
 
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`${p} Retry ${attempt} of ${maxRetries} failed. Waiting ${delayMs} ms before next attempt...`)
+      l.dim(`${p} Retry ${attempt} failed, waiting ${delayMs}ms...`)
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
@@ -59,9 +56,8 @@ export async function downloadAudio(
   filename: string
 ) {
   const p = '[text/process-steps/02-download-audio]'
-  logInitialFunctionCall('downloadAudio', { options, input, filename })
 
-  const spinner = ora('Step 2 - Download Audio').start()
+  const spinner = ora('Download Audio').start()
 
   const baseOutput = 'output'
   const finalPath = options.outputDir 
@@ -69,7 +65,6 @@ export async function downloadAudio(
     : `${baseOutput}/${filename}`
   const outputPath = `${finalPath}.wav`
 
-  l.dim(`${p} Ensuring output directory exists for: ${finalPath}`)
   const outputDir = finalPath.substring(0, finalPath.lastIndexOf('/'))
   await ensureDir(outputDir)
 
@@ -109,26 +104,22 @@ export async function downloadAudio(
     ])
     try {
       await access(input)
-      l.dim(`${p} File ${input} is accessible. Attempting to read file data for type detection...`)
 
       const buffer = await readFile(input)
-      l.dim(`${p}   - Successfully read file: ${buffer.length} bytes`)
-
       const fileType = await fileTypeFromBuffer(buffer)
-      l.dim(`${p}   - File type detection result: ${fileType?.ext ?? 'unknown'}`)
 
       if (!fileType || !supportedFormats.has(fileType.ext)) {
         throw new Error(
           fileType ? `Unsupported file type: ${fileType.ext}` : 'Unable to determine file type'
         )
       }
-      l.dim(`${p}   - Running ffmpeg command for ${input} -> ${outputPath}`)
       await execPromise(
         `ffmpeg -i "${input}" -ar 16000 -ac 1 -c:a pcm_s16le "${outputPath}"`,
         { maxBuffer: 10000 * 1024 }
       )
-      l.dim(`${p} File converted to WAV format successfully:\n    - ${outputPath}`)
+      spinner.succeed('File converted successfully.')
     } catch (error) {
+      spinner.fail('File conversion failed.')
       err(`${p} Error processing local file: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
@@ -136,6 +127,5 @@ export async function downloadAudio(
     throw new Error('Invalid option provided for audio download/processing.')
   }
 
-  l.dim(`${p} downloadAudio returning:\n    - outputPath: ${outputPath}`)
   return outputPath
 }

@@ -6,8 +6,8 @@ const p = '[extract/extract-services/textract]'
 
 const processTextractResponse = async (
   response: any,
-  pageNum: number,
-  requestId: string
+  _pageNum: number,
+  _requestId: string
 ): Promise<string> => {
   const lines: string[] = []
   
@@ -19,10 +19,7 @@ const processTextractResponse = async (
     })
   }
   
-  const pageText = lines.join('\n')
-  l.dim(`${p}[${requestId}] Page ${pageNum} extracted ${lines.length} lines, ${pageText.length} characters`)
-  
-  return pageText
+  return lines.join('\n')
 }
 
 export const extractWithTextract = async (
@@ -32,7 +29,6 @@ export const extractWithTextract = async (
   pageNumber?: number
 ): Promise<{ text: string, totalCost?: number }> => {
   const pageInfo = pageNumber ? ` (page ${pageNumber})` : ''
-  l.dim(`${p}[${requestId}] Using AWS Textract service for extraction${pageInfo}`)
   
   const accessKeyId = process.env['AWS_ACCESS_KEY_ID']
   const secretAccessKey = process.env['AWS_SECRET_ACCESS_KEY']
@@ -40,10 +36,6 @@ export const extractWithTextract = async (
   
   if (!accessKeyId || !secretAccessKey) {
     throw new Error('AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables are required for Textract')
-  }
-  
-  if (pageNumber === 1) {
-    l.dim(`${p}[${requestId}] Initializing Textract client for region: ${region}`)
   }
   
   try {
@@ -57,7 +49,6 @@ export const extractWithTextract = async (
       }
     })
     
-    l.dim(`${p}[${requestId}] Checking for GraphicsMagick installation`)
     try {
       execSync('gm version', { stdio: 'ignore' })
     } catch (error) {
@@ -68,24 +59,20 @@ export const extractWithTextract = async (
     await ensureDir(tempDir)
     
     try {
-      l.dim(`${p}[${requestId}] Converting PDF${pageInfo} to PNG image`)
       const pngPath = path.join(tempDir, `page_${pageNumber || 1}.png`)
       const convertCommand = `gm convert -density 300 "${pdfPath}" "${pngPath}"`
       execSync(convertCommand, { stdio: 'ignore' })
-      l.dim(`${p}[${requestId}] PDF${pageInfo} converted to PNG`)
       
       const imageBuffer = await fs.readFile(pngPath)
       const imageSizeMB = imageBuffer.length / (1024 * 1024)
-      l.dim(`${p}[${requestId}] Image${pageInfo} size: ${imageSizeMB.toFixed(2)} MB`)
       
       let finalBuffer = imageBuffer
       
       if (imageBuffer.length > 5 * 1024 * 1024) {
-        l.dim(`${p}[${requestId}] Warning: Image${pageInfo} exceeds 5MB, resizing`)
+        l.warn(`${p}[${requestId}] Image${pageInfo} exceeds 5MB (${imageSizeMB.toFixed(2)} MB), resizing`)
         const resizedPath = path.join(tempDir, `resized_page_${pageNumber || 1}.png`)
         execSync(`gm convert "${pngPath}" -resize 2000x2000> "${resizedPath}"`, { stdio: 'ignore' })
         finalBuffer = await fs.readFile(resizedPath)
-        l.dim(`${p}[${requestId}] Resized${pageInfo} to ${(finalBuffer.length / (1024 * 1024)).toFixed(2)} MB`)
       }
       
       const command = new DetectDocumentTextCommand({
@@ -98,15 +85,12 @@ export const extractWithTextract = async (
       const text = await processTextractResponse(response, pageNumber || 1, requestId)
       
       const totalCost = 0.0015
-      l.dim(`${p}[${requestId}] Cost${pageInfo}: $${totalCost.toFixed(4)}`)
-      
-      l.dim(`${p}[${requestId}] Total text extracted${pageInfo}: ${text.length} characters`)
+      l.opts(`${p}[${requestId}] Cost${pageInfo}: $${totalCost.toFixed(4)}`)
       
       await fs.rm(tempDir, { recursive: true, force: true })
       
       return { text, totalCost }
     } catch (error: any) {
-      l.dim(`${p}[${requestId}] Error occurred${pageInfo}, cleaning up temp directory`)
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {})
       
       if (error.name === 'UnsupportedDocumentException') {

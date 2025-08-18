@@ -71,7 +71,6 @@ export const extractWithZerox = async (
   pageNumber?: number
 ): Promise<{ text: string, totalCost?: number }> => {
   const pageInfo = pageNumber ? ` (page ${pageNumber})` : ''
-  l.dim(`${p}[${requestId}] Using Zerox service for extraction${pageInfo}`)
   
   const selectedModelKey = (options.model || 'gpt-4.1-mini') as ModelKey
   
@@ -83,12 +82,9 @@ export const extractWithZerox = async (
   const credentials = getCredentials(selectedModel.provider)
   
   if (pageNumber === 1 || !pageNumber) {
-    l.opts(`${p}[${requestId}] Zerox model: ${selectedModel.name}`)
-    l.opts(`${p}[${requestId}] Model provider: ${selectedModel.provider}`)
-    l.opts(`${p}[${requestId}] Pricing - Input: $${selectedModel.pricing.input}/1M tokens, Output: $${selectedModel.pricing.output}/1M tokens`)
+    l.opts(`${p}[${requestId}] Using ${selectedModel.name} (${selectedModel.provider})`)
+    l.opts(`${p}[${requestId}] Pricing: Input $${selectedModel.pricing.input}/1M tokens, Output $${selectedModel.pricing.output}/1M tokens`)
   }
-  
-  l.dim(`${p}[${requestId}] Processing${pageInfo} with Zerox API`)
   
   try {
     const { zerox } = await import('zerox')
@@ -108,21 +104,16 @@ export const extractWithZerox = async (
       trimEdges: true
     })
     
-    l.dim(`${p}[${requestId}] Zerox processing complete${pageInfo}`)
-    
     if (result.summary?.ocr) {
-      l.dim(`${p}[${requestId}] OCR${pageInfo} - successful: ${result.summary.ocr.successful}, failed: ${result.summary.ocr.failed}`)
+      l.opts(`${p}[${requestId}] OCR${pageInfo}: ${result.summary.ocr.successful} successful, ${result.summary.ocr.failed} failed`)
     }
     
-    l.dim(`${p}[${requestId}] Tokens${pageInfo} - Input: ${result.inputTokens}, Output: ${result.outputTokens}`)
-    
     const totalCost = calculateCost(result.inputTokens, result.outputTokens, selectedModel.pricing)
-    l.dim(`${p}[${requestId}] Cost${pageInfo}: $${totalCost.toFixed(4)}`)
+    l.opts(`${p}[${requestId}] Tokens${pageInfo}: ${result.inputTokens} input, ${result.outputTokens} output`)
+    l.opts(`${p}[${requestId}] Cost${pageInfo}: $${totalCost.toFixed(4)}`)
     
     const pageContents = result.pages.map((page: any) => page.content)
     const text = pageContents.join('\n\n')
-    
-    l.dim(`${p}[${requestId}] Extracted${pageInfo}: ${text.length} characters`)
     
     return { text, totalCost }
   } catch (error) {
