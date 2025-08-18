@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { processRSS } from './process-commands/rss'
 import { COMMAND_CONFIG, validateCommandInput } from './utils/text-validation.ts'
-import { processEmbedCommand } from './embeddings/embed-command.ts'
+import { processEmbedCommand } from '../embeddings/embed-command.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
 import type { ProcessingOptions, EmbeddingOptions } from '@/types'

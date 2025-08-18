@@ -1,77 +1,12 @@
-import { env, readdir, readFile, join, isAbsolute, resolve, relative } from '@/node-utils'
+import { env, readFile, isAbsolute, resolve, relative } from '@/node-utils'
 import { l, err } from '@/logging'
-import { ensureVectorizeIndex } from './vectorize-setup.ts'
+import { ensureVectorizeIndex } from '../vectorize-setup.ts'
+import { getAllMarkdownFiles, truncateContentSafely } from './file-utils.ts'
+import { uploadToVectorize, validateMetadataSize } from './upload-vectorize.ts'
 import type { VectorizeVector } from '@/types'
 
-const MAX_METADATA_BYTES = 10240
-const SAFE_CONTENT_CHARS = 8000
-
-async function getAllMarkdownFiles(dir: string): Promise<string[]> {
-  const p = '[text/embeddings/create-embed]'
-  l.dim(`${p} Scanning directory: ${dir}`)
-  
-  const dirEntries = await readdir(dir, { withFileTypes: true })
-  const mdFiles: string[] = []
-
-  await Promise.all(
-    dirEntries.map(async (entry) => {
-      const fullPath = join(dir, entry.name)
-      if (entry.isDirectory()) {
-        const nestedFiles = await getAllMarkdownFiles(fullPath)
-        mdFiles.push(...nestedFiles)
-      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
-        mdFiles.push(fullPath)
-      }
-    })
-  )
-
-  l.dim(`${p} Found ${mdFiles.length} markdown files`)
-  return mdFiles
-}
-
-function validateMetadataSize(metadata: Record<string, any>, vectorId: string): boolean {
-  const p = '[text/embeddings/create-embed]'
-  
-  const metadataJson = JSON.stringify(metadata)
-  const metadataBytes = new TextEncoder().encode(metadataJson).length
-  
-  l.dim(`${p} Vector ${vectorId} metadata size: ${metadataBytes} bytes`)
-  
-  if (metadataBytes > MAX_METADATA_BYTES) {
-    err(`${p} Metadata for vector ${vectorId} exceeds ${MAX_METADATA_BYTES} bytes: ${metadataBytes} bytes`)
-    return false
-  }
-  
-  return true
-}
-
-function truncateContentSafely(content: string, filename: string): string {
-  const p = '[text/embeddings/create-embed]'
-  
-  if (content.length <= SAFE_CONTENT_CHARS) {
-    return content
-  }
-  
-  l.dim(`${p} Truncating content for ${filename}: ${content.length} → ${SAFE_CONTENT_CHARS} characters`)
-  
-  let truncated = content.substring(0, SAFE_CONTENT_CHARS)
-  
-  const lastPeriod = truncated.lastIndexOf('.')
-  const lastNewline = truncated.lastIndexOf('\n')
-  const lastSpace = truncated.lastIndexOf(' ')
-  
-  const bestCutoff = Math.max(lastPeriod, lastNewline, lastSpace)
-  
-  if (bestCutoff > SAFE_CONTENT_CHARS * 0.8) {
-    truncated = truncated.substring(0, bestCutoff + 1)
-    l.dim(`${p} Found natural break point at position ${bestCutoff}`)
-  }
-  
-  return truncated
-}
-
-async function createEmbeddingVector(text: string, accountId: string, apiToken: string): Promise<number[]> {
-  const p = '[text/embeddings/create-embed]'
+export async function createEmbeddingVector(text: string, accountId: string, apiToken: string): Promise<number[]> {
+  const p = '[text/embeddings/create-embedding]'
   
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/baai/bge-m3`
   
@@ -121,68 +56,6 @@ async function createEmbeddingVector(text: string, accountId: string, apiToken: 
   return json.result.data[0]
 }
 
-async function uploadToVectorize(vectors: VectorizeVector[], accountId: string, apiToken: string, indexName: string): Promise<void> {
-  const p = '[text/embeddings/create-embed]'
-  
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes/${indexName}/upsert`
-  
-  l.dim(`${p} Uploading ${vectors.length} vectors to Vectorize index: ${indexName}`)
-  
-  for (const vector of vectors) {
-    if (!validateMetadataSize(vector.metadata || {}, vector.id)) {
-      throw new Error(`Vector ${vector.id} metadata exceeds size limit. Consider reducing content size or implementing chunking.`)
-    }
-  }
-  
-  const ndjsonContent = vectors.map(v => JSON.stringify(v)).join('\n')
-  
-  l.dim(`${p} Upload payload size: ${new TextEncoder().encode(ndjsonContent).length} bytes`)
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiToken}`,
-      'Content-Type': 'application/x-ndjson'
-    },
-    body: ndjsonContent
-  })
-  
-  if (!response.ok) {
-    const errorText = await response.text()
-    let errorData
-    try {
-      errorData = JSON.parse(errorText)
-      if (errorData.errors?.[0]?.message) {
-        const errorMsg = errorData.errors[0].message
-        if (errorMsg.includes('oversized metadata')) {
-          throw new Error(`Vectorize metadata size error: ${errorMsg}\n\nThis usually means the content is too large. Try processing smaller files or implementing document chunking.`)
-        }
-        throw new Error(`Vectorize upload error: ${errorMsg}`)
-      }
-    } catch (e) {
-      if (e instanceof Error && e.message.includes('Vectorize metadata size error')) {
-        throw e
-      }
-      l.dim(`${p} Failed to parse error response`)
-    }
-    throw new Error(`Vectorize upload API error: ${response.status} - ${errorText}`)
-  }
-  
-  const responseData = await response.json() as { 
-    result?: { mutationId?: string },
-    success?: boolean 
-  }
-  
-  if (responseData.result?.mutationId) {
-    l.dim(`${p} Upload completed with mutation ID: ${responseData.result.mutationId}`)
-  }
-  
-  l.success(`Successfully uploaded ${vectors.length} vectors to Vectorize`)
-  
-  l.dim(`${p} Waiting for vectors to be indexed...`)
-  await new Promise(resolve => setTimeout(resolve, 5000))
-}
-
 export async function createEmbeds(customDir?: string): Promise<void> {
   const p = '[text/embeddings/create-embed]'
   l.step(`\nCreating Embeddings from Markdown Files\n`)
@@ -206,8 +79,8 @@ export async function createEmbeds(customDir?: string): Promise<void> {
   const indexName = env['VECTORIZE_INDEX_NAME'] || 'autoshow-embeddings'
   l.dim(`${p} Using Vectorize index: ${indexName}`)
   l.dim(`${p} Using Workers AI model: @cf/baai/bge-m3 (1024 dimensions)`)
-  l.dim(`${p} Content truncation limit: ${SAFE_CONTENT_CHARS} characters`)
-  l.dim(`${p} Metadata size limit: ${MAX_METADATA_BYTES} bytes`)
+  l.dim(`${p} Content truncation limit: 8000 characters`)
+  l.dim(`${p} Metadata size limit: 10240 bytes`)
   
   try {
     l.dim(`${p} Ensuring Vectorize index exists`)

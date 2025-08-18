@@ -1,5 +1,5 @@
-import { createEmbeds } from './create-embed.ts'
-import { queryEmbeddings } from './query-embed.ts'
+import { createEmbeds } from './create/create-embed.ts'
+import { queryEmbeddings } from './query/query-embed.ts'
 import { l, err } from '@/logging'
 import type { EmbeddingOptions } from '@/types'
 export async function processEmbedCommand(options: EmbeddingOptions): Promise<void> {

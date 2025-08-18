@@ -1,5 +1,43 @@
+import Cloudflare from 'cloudflare'
 import { l, err } from '@/logging'
 import { getR2ApiToken } from './token-manager'
+
+let cachedClient: Cloudflare | null = null
+
+export function createCloudflareClient(): Cloudflare {
+  const p = '[utils/cloudflare-client]'
+  
+  if (cachedClient) {
+    return cachedClient
+  }
+  
+  const accountId = process.env['CLOUDFLARE_ACCOUNT_ID']
+  const apiToken = process.env['CLOUDFLARE_API_TOKEN'] || process.env['CLOUDFLARE_R2_API_TOKEN']
+  
+  if (!accountId) {
+    throw new Error('CLOUDFLARE_ACCOUNT_ID environment variable is required')
+  }
+  
+  if (!apiToken) {
+    throw new Error('CLOUDFLARE_API_TOKEN or CLOUDFLARE_R2_API_TOKEN environment variable is required')
+  }
+  
+  l.dim(`${p} Creating Cloudflare SDK client`)
+  
+  cachedClient = new Cloudflare({
+    apiToken
+  })
+  
+  return cachedClient
+}
+
+export function getCloudflareAccountId(): string {
+  const accountId = process.env['CLOUDFLARE_ACCOUNT_ID']
+  if (!accountId) {
+    throw new Error('CLOUDFLARE_ACCOUNT_ID environment variable is required')
+  }
+  return accountId
+}
 
 async function getHeaders(): Promise<Record<string, string> | null> {
   const token = await getR2ApiToken()
@@ -18,36 +56,26 @@ export async function createBucket(accountId: string, bucketName: string): Promi
   l.dim(`${p} Creating bucket: ${bucketName}`)
   
   try {
-    const headers = await getHeaders()
-    if (!headers) {
-      throw new Error('Failed to get authorization headers')
-    }
+    const client = createCloudflareClient()
     
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets`
-    const response = await fetch(baseUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        name: bucketName,
-        locationHint: 'auto'
-      })
+    const result = await client.r2.buckets.create({
+      account_id: accountId,
+      name: bucketName
     })
     
-    if (response.ok) {
+    if (result) {
       l.dim(`${p} Successfully created bucket: ${bucketName}`)
       return true
     }
     
-    const errorData = await response.json()
-    if (errorData.errors?.[0]?.code === 10006) {
+    return false
+  } catch (error: any) {
+    if (error.status === 400 && error.message?.includes('already exists')) {
       l.dim(`${p} Bucket already exists: ${bucketName}`)
       return true
     }
     
-    err(`${p} Failed to create bucket: ${JSON.stringify(errorData)}`)
-    return false
-  } catch (error) {
-    err(`${p} Failed to create bucket: ${(error as Error).message}`)
+    err(`${p} Failed to create bucket: ${error.message}`)
     return false
   }
 }
@@ -57,32 +85,25 @@ export async function headBucket(accountId: string, bucketName: string): Promise
   l.dim(`${p} Checking if bucket exists: ${bucketName}`)
   
   try {
-    const headers = await getHeaders()
-    if (!headers) {
-      throw new Error('Failed to get authorization headers')
-    }
+    const client = createCloudflareClient()
     
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets`
-    const response = await fetch(`${baseUrl}/${bucketName}`, {
-      method: 'GET',
-      headers
+    const result = await client.r2.buckets.get(bucketName, {
+      account_id: accountId
     })
     
-    if (response.ok) {
+    if (result) {
       l.dim(`${p} Bucket exists: ${bucketName}`)
       return true
     }
     
-    if (response.status === 404) {
+    return false
+  } catch (error: any) {
+    if (error.status === 404) {
       l.dim(`${p} Bucket does not exist: ${bucketName}`)
       return false
     }
     
-    const errorData = await response.json()
-    err(`${p} Error checking bucket: ${JSON.stringify(errorData)}`)
-    return false
-  } catch (error) {
-    l.dim(`${p} Error checking bucket: ${(error as Error).message}`)
+    l.dim(`${p} Error checking bucket: ${error.message}`)
     return false
   }
 }
@@ -97,45 +118,29 @@ export async function putObject(accountId: string, bucketName: string, key: stri
       throw new Error('Failed to get authorization headers')
     }
     
-    const base64Body = Buffer.isBuffer(body) 
-      ? body.toString('base64')
-      : Buffer.from(body).toString('base64')
+    const bodyBuffer = Buffer.isBuffer(body) ? body : Buffer.from(body)
     
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets`
-    const uploadUrl = `${baseUrl}/${bucketName}/upload`
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        key,
-        body: base64Body,
-        contentType: 'application/octet-stream'
-      })
-    })
-    
-    if (!response.ok) {
-      const alternativeUrl = `${baseUrl}/${bucketName}/objects/${key}`
-      const altResponse = await fetch(alternativeUrl, {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucketName}/objects/${key}`,
+      {
         method: 'PUT',
         headers: {
           ...headers,
-          'Content-Type': 'application/octet-stream'
+          'Content-Type': 'application/octet-stream',
+          'Content-Length': bodyBuffer.length.toString()
         },
-        body: body
-      })
-      
-      if (altResponse.ok) {
-        l.dim(`${p} Successfully uploaded object via alternative method: ${bucketName}/${key}`)
-        return true
+        body: bodyBuffer
       }
-      
-      const errorData = await altResponse.text()
-      err(`${p} Failed to upload object: ${errorData}`)
-      return false
+    )
+    
+    if (response.ok) {
+      l.dim(`${p} Successfully uploaded object: ${bucketName}/${key}`)
+      return true
     }
     
-    l.dim(`${p} Successfully uploaded object: ${bucketName}/${key}`)
-    return true
+    const errorText = await response.text()
+    err(`${p} Failed to upload object: ${errorText}`)
+    return false
   } catch (error) {
     err(`${p} Failed to upload object: ${(error as Error).message}`)
     return false
@@ -152,16 +157,17 @@ export async function getObject(accountId: string, bucketName: string, key: stri
       throw new Error('Failed to get authorization headers')
     }
     
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets`
-    const objectUrl = `${baseUrl}/${bucketName}/objects/${key}`
-    const response = await fetch(objectUrl, {
-      method: 'GET',
-      headers
-    })
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucketName}/objects/${key}`,
+      {
+        method: 'GET',
+        headers
+      }
+    )
     
     if (!response.ok) {
-      const errorData = await response.text()
-      err(`${p} Failed to get object: ${errorData}`)
+      const errorText = await response.text()
+      err(`${p} Failed to get object: ${errorText}`)
       return null
     }
     
@@ -184,16 +190,17 @@ export async function deleteObject(accountId: string, bucketName: string, key: s
       throw new Error('Failed to get authorization headers')
     }
     
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets`
-    const objectUrl = `${baseUrl}/${bucketName}/objects/${key}`
-    const response = await fetch(objectUrl, {
-      method: 'DELETE',
-      headers
-    })
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucketName}/objects/${key}`,
+      {
+        method: 'DELETE',
+        headers
+      }
+    )
     
     if (!response.ok) {
-      const errorData = await response.text()
-      err(`${p} Failed to delete object: ${errorData}`)
+      const errorText = await response.text()
+      err(`${p} Failed to delete object: ${errorText}`)
       return false
     }
     
@@ -222,25 +229,13 @@ export async function listBuckets(accountId: string): Promise<string[]> {
   l.dim(`${p} Listing buckets`)
   
   try {
-    const headers = await getHeaders()
-    if (!headers) {
-      throw new Error('Failed to get authorization headers')
-    }
+    const client = createCloudflareClient()
     
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets`
-    const response = await fetch(baseUrl, {
-      method: 'GET',
-      headers
+    const response = await client.r2.buckets.list({
+      account_id: accountId
     })
     
-    if (!response.ok) {
-      const errorData = await response.text()
-      err(`${p} Failed to list buckets: ${errorData}`)
-      return []
-    }
-    
-    const data = await response.json()
-    const buckets = data.result?.buckets || []
+    const buckets = response?.buckets || []
     
     l.dim(`${p} Found ${buckets.length} buckets`)
     return buckets.map((b: any) => b.name)

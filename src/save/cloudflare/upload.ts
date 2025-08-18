@@ -23,13 +23,6 @@ export async function uploadToCloudflare(
   const r2Check = checkR2Configuration()
   if (!r2Check.isValid) {
     err(`${p} R2 configuration error: ${r2Check.error}`)
-    l.warn(`${p} To use R2, you need to:`)
-    l.warn(`${p} 1. Set environment variables:`)
-    l.warn(`${p}    export CLOUDFLARE_ACCOUNT_ID=your-32-char-hex-account-id`)
-    l.warn(`${p}    export CLOUDFLARE_EMAIL=your-cloudflare-email`)
-    l.warn(`${p}    export CLOUDFLARE_GLOBAL_API_KEY=your-global-api-key`)
-    l.warn(`${p} Your account ID can be found in the Cloudflare dashboard`)
-    l.warn(`${p} Your global API key can be found in My Profile > API Tokens`)
     return null
   }
   
@@ -77,9 +70,6 @@ export async function uploadAllCloudflareOutputFiles(
   const r2Check = checkR2Configuration()
   if (!r2Check.isValid) {
     err(`${p} R2 configuration error: ${r2Check.error}`)
-    l.warn(`${p} Your Cloudflare account ID should be a 32-character hex string`)
-    l.warn(`${p} Example: c6494d4164a5eb0cd3848193bd552d68`)
-    l.warn(`${p} You can find it in the Cloudflare dashboard URL or R2 overview page`)
     return
   }
   
@@ -95,12 +85,14 @@ export async function uploadAllCloudflareOutputFiles(
   
   l.dim(`${p} Checking for output files to upload`)
   
-  for (const file of possibleFiles) {
-    if (existsSync(file)) {
+  const uploadPromises = possibleFiles
+    .filter(file => existsSync(file))
+    .map(file => {
       l.dim(`${p} Found file to upload: ${file}`)
-      await uploadToCloudflare(file, options, sessionId)
-    }
-  }
+      return uploadToCloudflare(file, options, sessionId)
+    })
+  
+  await Promise.all(uploadPromises)
   
   if (metadata) {
     l.dim(`${p} Uploading JSON metadata`)
