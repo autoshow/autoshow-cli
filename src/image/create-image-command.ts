@@ -4,7 +4,7 @@ import { handleError } from './image-utils.ts'
 import { generateImageWithDallE } from './image-services/dalle.ts'
 import { generateImageWithBlackForestLabs } from './image-services/bfl.ts'
 import { generateImageWithNova } from './image-services/nova.ts'
-import { generateImageWithStableDiffusionCpp } from './image-services/sdcpp.ts'
+import { generateImageWithStableDiffusionCpp } from './image-services/sdcpp'
 import { generateImageWithRunway } from './image-services/runway.ts'
 import { generateComparisonImages } from './comparison.ts'
 
@@ -35,13 +35,13 @@ export const createImageCommand = (): Command => {
     .option('-q, --quality <quality>', 'image quality (nova only)', 'standard')
     .option('-c, --cfg-scale <number>', 'CFG scale 1.1-10 (nova/sdcpp only)', '6.5')
     .option('--count <number>', 'number of images 1-5 (nova only)', '1')
-    .option('--model <model>', 'model type for sdcpp (sd1.5|sd3.5|flux-kontext)', 'sd1.5')
+    .option('--model <model>', 'model type for sdcpp (sd1.5|sd3.5)', 'sd1.5')
     .option('--steps <number>', 'number of sampling steps (sdcpp only)', '20')
     .option('--sampling-method <method>', 'sampling method (sdcpp only)', 'euler')
     .option('--lora', 'enable LoRA support (sdcpp only)')
-    .option('--reference-image <path>', 'reference image for flux-kontext (sdcpp only)')
     .option('--flash-attention', 'use flash attention (sdcpp only)')
     .option('--quantization <type>', 'weight quantization (sdcpp only)', 'f16')
+    .option('--cpu-only', 'disable Metal acceleration, use CPU only (sdcpp on macOS)')
     .option('--style <style>', 'artistic style (runway only)')
     .option('--runway-model <model>', 'Runway text-to-image model (if available)')
     .action(async (options) => {
@@ -73,9 +73,9 @@ export const createImageCommand = (): Command => {
               negativePrompt: options.negative,
               samplingMethod: options.samplingMethod,
               lora: options.lora,
-              referenceImage: options.referenceImage,
               flashAttention: options.flashAttention,
-              quantization: options.quantization
+              quantization: options.quantization,
+              cpuOnly: options.cpuOnly
             })
           : options.service === 'runway'
           ? generator(options.prompt, options.output, {

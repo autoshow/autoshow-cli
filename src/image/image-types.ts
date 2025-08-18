@@ -43,7 +43,7 @@ export interface NovaCanvasPayload {
 }
 
 export interface StableDiffusionCppOptions {
-  model?: 'sd1.5' | 'sd3.5' | 'flux-kontext' | 'sd3-medium'
+  model?: 'sd1.5' | 'sd3.5' | 'sd3-medium'
   width?: number
   height?: number
   steps?: number
@@ -52,9 +52,9 @@ export interface StableDiffusionCppOptions {
   negativePrompt?: string
   samplingMethod?: string
   lora?: boolean
-  referenceImage?: string
   flashAttention?: boolean
   quantization?: 'f32' | 'f16' | 'q8_0' | 'q5_0' | 'q5_1' | 'q4_0' | 'q4_1'
+  cpuOnly?: boolean
 }
 
 export interface RunwayImageOptions {
