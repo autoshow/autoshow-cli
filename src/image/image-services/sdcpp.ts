@@ -14,9 +14,9 @@ const MODEL_HASHES: Record<string, { hash?: string; minSizeMB: number; maxSizeMB
   'sd3.5_large.safetensors': { minSizeMB: 6500, maxSizeMB: 7000 },
   'flux1-kontext-dev-q8_0.gguf': { minSizeMB: 12000, maxSizeMB: 13000 },
   'ae.safetensors': { minSizeMB: 100, maxSizeMB: 200 },
-  'clip_l.safetensors': { minSizeMB: 240, maxSizeMB: 250 },
+  'clip_l.safetensors': { minSizeMB: 230, maxSizeMB: 250 },
   'clip_g.safetensors': { minSizeMB: 690, maxSizeMB: 710 },
-  't5xxl_fp16.safetensors': { minSizeMB: 9000, maxSizeMB: 9200 }
+  't5xxl_fp16.safetensors': { minSizeMB: 9000, maxSizeMB: 9400 }
 }
 
 function ensureModelExists(modelPath: string): boolean {
@@ -70,14 +70,14 @@ function validateFile(filePath: string, minSizeMB?: number): { valid: boolean; s
 
 function getDownloadUrl(filename: string): string {
   const urls: Record<string, string> = {
-    'ae.safetensors': 'https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/ae.safetensors',
-    'sd3_medium_incl_clips_t5xxlfp16.safetensors': 'https://huggingface.co/stabilityai/stable-diffusion-3-medium/blob/main/sd3_medium_incl_clips_t5xxlfp16.safetensors',
-    'sd3.5_large.safetensors': 'https://huggingface.co/stabilityai/stable-diffusion-3.5-large/blob/main/sd3.5_large.safetensors',
-    'clip_l.safetensors': 'https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/blob/main/text_encoders/clip_l.safetensors',
-    'clip_g.safetensors': 'https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/blob/main/text_encoders/clip_g.safetensors',
-    't5xxl_fp16.safetensors': 'https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/blob/main/text_encoders/t5xxl_fp16.safetensors',
-    'flux1-kontext-dev-q8_0.gguf': 'https://huggingface.co/QuantStack/FLUX.1-Kontext-dev-GGUF/blob/main/flux1-kontext-dev-Q8_0.gguf',
-    'v1-5-pruned-emaonly.safetensors': 'https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.safetensors'
+    'ae.safetensors': 'https://huggingface.co/black-forest-labs/FLUX.1-dev (requires access approval)',
+    'sd3_medium_incl_clips_t5xxlfp16.safetensors': 'https://huggingface.co/stabilityai/stable-diffusion-3-medium (requires access approval)',
+    'sd3.5_large.safetensors': 'https://huggingface.co/stabilityai/stable-diffusion-3.5-large (requires access approval)',
+    'clip_l.safetensors': 'https://huggingface.co/comfyanonymous/flux_text_encoders',
+    'clip_g.safetensors': 'https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8',
+    't5xxl_fp16.safetensors': 'https://huggingface.co/comfyanonymous/flux_text_encoders',
+    'flux1-kontext-dev-q8_0.gguf': 'https://huggingface.co/QuantStack/FLUX.1-Kontext-dev-GGUF',
+    'v1-5-pruned-emaonly.safetensors': 'https://huggingface.co/runwayml/stable-diffusion-v1-5'
   }
   return urls[filename] || 'Unknown source'
 }
@@ -189,7 +189,7 @@ export async function generateImageWithStableDiffusionCpp(
       const hasSD35Large = ensureModelExists('sd3.5_large.safetensors')
       
       if (!hasSD3Medium && !hasSD35Large) {
-        throw new Error('No SD3 model found. Download sd3_medium_incl_clips_t5xxlfp16.safetensors or sd3.5_large.safetensors')
+        throw new Error('No SD3 model found. These are gated models requiring access approval:\n1. Visit https://huggingface.co/stabilityai/stable-diffusion-3-medium\n2. Request access and accept license\n3. Wait for approval then run setup again')
       }
       
       if (hasSD3Medium) {
@@ -222,7 +222,11 @@ export async function generateImageWithStableDiffusionCpp(
       for (const model of requiredModels) {
         const validation = validateFile(model.file)
         if (!validation.valid) {
-          failedModels.push(`\n  • ${model.desc}: ${validation.error}`)
+          if (model.file === 'ae.safetensors') {
+            failedModels.push(`\n  • ${model.desc}: ${validation.error}\n    Note: FLUX VAE is a gated model requiring access approval from Black Forest Labs`)
+          } else {
+            failedModels.push(`\n  • ${model.desc}: ${validation.error}`)
+          }
         } else {
           l.dim(`${p} [${requestId}] ✓ ${model.file} validated (${validation.size.toFixed(2)} MB)`)
         }
@@ -271,7 +275,10 @@ export async function generateImageWithStableDiffusionCpp(
       errorLines.forEach(line => l.warn(`${p} [${requestId}] ${line.trim()}`))
       
       if (result.includes('init model loader from file failed')) {
-        throw new Error(`Model file cannot be loaded. The file may be corrupted or incompatible.\nTry deleting and re-downloading from: ${getDownloadUrl(modelType === 'sd3-medium' ? 'sd3_medium_incl_clips_t5xxlfp16.safetensors' : 'sd3.5_large.safetensors')}`)
+        if (modelType === 'sd3.5' || modelType === 'sd3-medium') {
+          throw new Error(`SD3 model file cannot be loaded. This is a gated model requiring access approval:\n1. Visit https://huggingface.co/stabilityai/stable-diffusion-3-medium\n2. Request access and accept license\n3. Wait for approval then download the model manually`)
+        }
+        throw new Error(`Model file cannot be loaded. The file may be corrupted or incompatible.\nTry deleting and re-downloading from: ${getDownloadUrl('v1-5-pruned-emaonly.safetensors')}`)
       }
       
       if (result.includes('tensor') && result.includes('not in model file')) {
