@@ -12,16 +12,11 @@ export async function getOrCreateAwsBucket(options: ProcessingOptions): Promise<
   const region = getAwsRegion()
   const bucketName = `${basePrefix}-${accountId}-${region}`.toLowerCase()
   
-  l.dim(`${p} Checking if S3 bucket exists: ${bucketName}`)
-  
   try {
     const checkCommand = buildBucketCommand('head-bucket', bucketName, options) + ' 2>/dev/null'
     await execPromise(checkCommand)
-    l.dim(`${p} S3 bucket exists: ${bucketName}`)
     return bucketName
   } catch {
-    l.dim(`${p} S3 bucket does not exist, creating: ${bucketName}`)
-    
     try {
       let createArgs = ''
       if (region !== 'us-east-1') {
@@ -30,7 +25,7 @@ export async function getOrCreateAwsBucket(options: ProcessingOptions): Promise<
       
       const createCommand = buildBucketCommand('create-bucket', bucketName, options, createArgs)
       await execPromise(createCommand)
-      l.dim(`${p} Successfully created S3 bucket: ${bucketName}`)
+      l.success(`${p} Created S3 bucket: ${bucketName}`)
       
       await configureAwsBucketDefaults(bucketName, options)
       
@@ -44,12 +39,10 @@ export async function getOrCreateAwsBucket(options: ProcessingOptions): Promise<
 
 async function configureAwsBucketDefaults(bucketName: string, options: ProcessingOptions): Promise<void> {
   const p = '[save/aws/bucket]'
-  l.dim(`${p} Configuring S3 bucket defaults for: ${bucketName}`)
   
   try {
     const versioningCommand = buildBucketCommand('put-bucket-versioning', bucketName, options, ' --versioning-configuration Status=Enabled')
     await execPromise(versioningCommand)
-    l.dim(`${p} Enabled versioning for S3 bucket`)
     
     const publicAccessCommand = buildBucketCommand(
       'put-public-access-block',
@@ -58,7 +51,6 @@ async function configureAwsBucketDefaults(bucketName: string, options: Processin
       ' --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"'
     )
     await execPromise(publicAccessCommand)
-    l.dim(`${p} Configured public access block for S3 bucket`)
     
     const lifecyclePolicy = {
       Rules: [{
@@ -75,7 +67,6 @@ async function configureAwsBucketDefaults(bucketName: string, options: Processin
       ` --lifecycle-configuration "${lifecycleJson}"`
     )
     await execPromise(lifecycleCommand)
-    l.dim(`${p} Configured lifecycle policy for S3 bucket`)
     
   } catch (error) {
     l.warn(`${p} Failed to configure some S3 bucket defaults: ${(error as Error).message}`)

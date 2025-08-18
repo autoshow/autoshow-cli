@@ -1,17 +1,8 @@
-import { l } from '@/logging'
-
 export function checkR2Configuration(): { isValid: boolean; error?: string } {
-  const p = '[save/cloudflare/config]'
   const cloudflareAccountId = process.env['CLOUDFLARE_ACCOUNT_ID']
   const email = process.env['CLOUDFLARE_EMAIL']
   const globalApiKey = process.env['CLOUDFLARE_GLOBAL_API_KEY']
   const r2ApiToken = process.env['CLOUDFLARE_R2_API_TOKEN']
-  
-  l.dim(`${p} Checking R2 configuration`)
-  l.dim(`${p} Account ID: ${cloudflareAccountId ? cloudflareAccountId.slice(0, 8) + '*'.repeat(24) : 'Not set'}`)
-  l.dim(`${p} Email: ${email ? email.replace(/^(.{3}).*(@.*)$/, '$1***$2') : 'Not set'}`)
-  l.dim(`${p} Global API Key: ${globalApiKey ? '***' : 'Not set'}`)
-  l.dim(`${p} R2 API Token: ${r2ApiToken ? '***' : 'Not set'}`)
   
   if (!cloudflareAccountId) {
     return { 
@@ -28,7 +19,6 @@ export function checkR2Configuration(): { isValid: boolean; error?: string } {
   }
   
   if (r2ApiToken) {
-    l.dim(`${p} Using existing R2 API token`)
     return { isValid: true }
   }
   
@@ -39,7 +29,6 @@ export function checkR2Configuration(): { isValid: boolean; error?: string } {
     }
   }
   
-  l.dim(`${p} R2 configuration is valid`)
   return { isValid: true }
 }
 

@@ -13,7 +13,6 @@ async function testVectorizeAPI(accountId: string, apiToken: string): Promise<{ 
   const p = '[config/cloudflare/check-cloudflare-config]'
   
   try {
-    l.dim(`${p} Testing Vectorize API access`)
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes`,
       {
@@ -27,21 +26,19 @@ async function testVectorizeAPI(accountId: string, apiToken: string): Promise<{ 
     if (response.ok) {
       const data = await response.json()
       const indexCount = data.result?.length || 0
-      l.dim(`${p} Vectorize API working, found ${indexCount} indexes`)
       return { working: true, indexCount }
     } else {
-      l.dim(`${p} Vectorize API test failed with status: ${response.status}`)
+      l.warn(`${p} Vectorize API test failed with status: ${response.status}`)
       return { working: false, indexCount: 0 }
     }
   } catch (error) {
-    l.dim(`${p} Vectorize API test error: ${(error as Error).message}`)
+    l.warn(`${p} Vectorize API test error: ${(error as Error).message}`)
     return { working: false, indexCount: 0 }
   }
 }
 
 export async function checkCloudflareConfig(): Promise<ConfigStatus> {
   const p = '[config/cloudflare/check-cloudflare-config]'
-  l.dim(`${p} Checking Cloudflare R2/Vectorize configuration`)
   
   const status: ConfigStatus = {
     service: 'Cloudflare R2 & Vectorize',
@@ -69,21 +66,17 @@ export async function checkCloudflareConfig(): Promise<ConfigStatus> {
     }
     
     if (status.configured && cloudflareAccountId) {
-      l.dim(`${p} Testing R2 credentials`)
       try {
         const buckets = await listBuckets(cloudflareAccountId)
         status.details['R2 Buckets'] = buckets.length.toString()
-        l.dim(`${p} R2 test successful, found ${buckets.length} buckets`)
         
         if (apiToken) {
-          l.dim(`${p} Testing Vectorize API`)
           const vectorizeTest = await testVectorizeAPI(cloudflareAccountId, apiToken)
           status.details['Vectorize Working'] = vectorizeTest.working ? 'Yes' : 'No'
           status.details['Vectorize Indexes'] = vectorizeTest.indexCount.toString()
           
           if (vectorizeTest.working) {
             status.tested = true
-            l.dim(`${p} Both R2 and Vectorize working correctly`)
           } else {
             status.issues.push('Vectorize API not accessible - check token permissions')
           }
@@ -97,7 +90,7 @@ export async function checkCloudflareConfig(): Promise<ConfigStatus> {
         
       } catch (error) {
         const errorMessage = (error as Error).message
-        l.dim(`${p} R2/Vectorize test failed: ${errorMessage}`)
+        l.warn(`${p} R2/Vectorize test failed: ${errorMessage}`)
         
         if (errorMessage.includes('Failed to get R2 token')) {
           status.issues.push('Failed to create or use R2 API token - check your credentials')
@@ -115,6 +108,5 @@ export async function checkCloudflareConfig(): Promise<ConfigStatus> {
     status.issues.push(`Configuration check failed: ${(error as Error).message}`)
   }
   
-  l.dim(`${p} Cloudflare configuration check completed`)
   return status
 }

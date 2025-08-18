@@ -12,7 +12,6 @@ export async function uploadToAws(
   sessionId?: string
 ): Promise<string | null> {
   const p = '[save/aws/upload]'
-  l.dim(`${p} Starting S3 upload for file: ${filePath}`)
   
   if (!existsSync(filePath)) {
     err(`${p} File not found: ${filePath}`)
@@ -30,8 +29,6 @@ export async function uploadToAws(
   const s3Key = `${uniqueId}/${fileName}`
   
   try {
-    l.dim(`${p} Uploading ${filePath} to S3://${bucketName}/${s3Key}`)
-    
     const uploadCommand = buildUploadCommand(filePath, bucketName, s3Key, options)
     const { stderr } = await execPromise(uploadCommand)
     
@@ -54,12 +51,7 @@ export async function uploadAllAwsOutputFiles(
   options: ProcessingOptions,
   metadata?: UploadMetadata
 ): Promise<void> {
-  const p = '[save/aws/upload]'
-  
-  l.dim(`${p} Starting S3 upload process`)
-  
   const sessionId = Date.now().toString()
-  l.dim(`${p} Using session ID for uploads: ${sessionId}`)
   
   const possibleFiles = [
     `${baseFilePath}-chatgpt-shownotes.md`,
@@ -68,17 +60,13 @@ export async function uploadAllAwsOutputFiles(
     `${baseFilePath}-prompt.md`
   ]
   
-  l.dim(`${p} Checking for output files to upload`)
-  
   for (const file of possibleFiles) {
     if (existsSync(file)) {
-      l.dim(`${p} Found file to upload: ${file}`)
       await uploadToAws(file, options, sessionId)
     }
   }
   
   if (metadata) {
-    l.dim(`${p} Uploading JSON metadata`)
     await uploadAwsJsonMetadata(baseFilePath, options, metadata, sessionId)
   }
 }

@@ -1,98 +1,11 @@
 import { l } from '@/logging'
 import { listBuckets, createBucket, healthCheck } from '@/save/cloudflare/client'
 import type { CredentialValidationResult } from '@/types'
-
-async function testVectorizeCapabilities(accountId: string, apiToken: string): Promise<{ working: boolean; details: Record<string, string> }> {
-  const p = '[config/cloudflare/test-cloudflare-credentials]'
-  const details: Record<string, string> = {}
-  
-  try {
-    l.dim(`${p} Testing Vectorize API capabilities`)
-    
-    const indexListResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes`,
-      {
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    if (indexListResponse.ok) {
-      const indexData = await indexListResponse.json()
-      const indexCount = indexData.result?.length || 0
-      details['vectorizeIndexes'] = indexCount.toString()
-      l.dim(`${p} Vectorize API accessible, found ${indexCount} indexes`)
-      return { working: true, details }
-    } else if (indexListResponse.status === 403) {
-      details['vectorizeAccess'] = 'denied'
-      l.dim(`${p} Vectorize API access denied - insufficient permissions`)
-      return { working: false, details }
-    } else {
-      details['vectorizeError'] = `HTTP ${indexListResponse.status}`
-      l.dim(`${p} Vectorize API test failed with status: ${indexListResponse.status}`)
-      return { working: false, details }
-    }
-  } catch (error) {
-    details['vectorizeError'] = (error as Error).message
-    l.dim(`${p} Vectorize API test error: ${(error as Error).message}`)
-    return { working: false, details }
-  }
-}
-
-async function testWorkersAICapabilities(accountId: string, apiToken: string): Promise<{ working: boolean; details: Record<string, string> }> {
-  const p = '[config/cloudflare/test-cloudflare-credentials]'
-  const details: Record<string, string> = {}
-  
-  try {
-    l.dim(`${p} Testing Workers AI capabilities with bge-m3 model`)
-    
-    const aiResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/baai/bge-m3`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: 'test embedding'
-        })
-      }
-    )
-    
-    if (aiResponse.ok) {
-      const aiData = await aiResponse.json()
-      if (aiData.success && aiData.result?.data?.[0]) {
-        details['workersAI'] = 'working'
-        details['embeddingModel'] = '@cf/baai/bge-m3'
-        l.dim(`${p} Workers AI test successful with bge-m3 model`)
-        return { working: true, details }
-      } else {
-        details['workersAI'] = 'invalid_response'
-        l.dim(`${p} Workers AI returned unsuccessful response`)
-        return { working: false, details }
-      }
-    } else if (aiResponse.status === 403) {
-      details['workersAI'] = 'access_denied'
-      l.dim(`${p} Workers AI access denied - insufficient permissions`)
-      return { working: false, details }
-    } else {
-      details['workersAIError'] = `HTTP ${aiResponse.status}`
-      l.dim(`${p} Workers AI test failed with status: ${aiResponse.status}`)
-      return { working: false, details }
-    }
-  } catch (error) {
-    details['workersAIError'] = (error as Error).message
-    l.dim(`${p} Workers AI test error: ${(error as Error).message}`)
-    return { working: false, details }
-  }
-}
+import { testWorkersAICapabilities } from "./test-workers-ai"
+import { testVectorizeCapabilities } from "./test-vectorize"
 
 export async function testCloudflareCredentials(accountId: string, email: string, globalApiKey: string): Promise<CredentialValidationResult> {
   const p = '[config/cloudflare/test-cloudflare-credentials]'
-  l.dim(`${p} Testing Cloudflare credentials for account: ${accountId.slice(0, 8)}***`)
   
   if (!/^[a-f0-9]{32}$/i.test(accountId)) {
     return { 
@@ -127,7 +40,6 @@ export async function testCloudflareCredentials(accountId: string, email: string
     process.env['CLOUDFLARE_EMAIL'] = email
     process.env['CLOUDFLARE_GLOBAL_API_KEY'] = globalApiKey
     
-    l.dim(`${p} Creating unified R2/Vectorize/Workers AI API token for testing`)
     const permResponse = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/permission_groups`,
       {
@@ -141,7 +53,7 @@ export async function testCloudflareCredentials(accountId: string, email: string
     
     if (!permResponse.ok) {
       const errorText = await permResponse.text()
-      l.dim(`${p} Failed to fetch permission groups: ${errorText}`)
+      l.warn(`${p} Failed to fetch permission groups: ${errorText}`)
       return { 
         valid: false, 
         error: 'Invalid email or Global API Key' 
@@ -169,8 +81,6 @@ export async function testCloudflareCredentials(accountId: string, email: string
         error: 'R2, Vectorize, and Workers AI permissions not available for this account' 
       }
     }
-    
-    l.dim(`${p} Found ${allPermissions.length} relevant permission groups`)
     
     const tokenBody = {
       name: `autoshow-unified-test-${Date.now()}`,
@@ -203,7 +113,7 @@ export async function testCloudflareCredentials(accountId: string, email: string
     
     if (!createResponse.ok) {
       const errorText = await createResponse.text()
-      l.dim(`${p} Failed to create test token: ${errorText}`)
+      l.warn(`${p} Failed to create test token: ${errorText}`)
       return { 
         valid: false, 
         error: 'Failed to create unified R2/Vectorize/Workers AI API token' 
@@ -213,34 +123,23 @@ export async function testCloudflareCredentials(accountId: string, email: string
     const tokenData = await createResponse.json()
     
     if (tokenData.result?.value) {
-      l.dim(`${p} Test token created successfully`)
-      
       process.env['CLOUDFLARE_R2_API_TOKEN'] = tokenData.result.value
       process.env['CLOUDFLARE_API_TOKEN'] = tokenData.result.value
       
       const buckets = await listBuckets(accountId)
-      l.dim(`${p} Successfully listed ${buckets.length} R2 buckets`)
       
       const testBucketName = `autoshow-test-${Date.now()}`
-      l.dim(`${p} Creating test bucket: ${testBucketName}`)
       const bucketCreated = await createBucket(accountId, testBucketName)
       
       if (bucketCreated) {
-        l.dim(`${p} Running R2 health check on test bucket`)
         const healthCheckPassed = await healthCheck(accountId, testBucketName)
         
         if (healthCheckPassed) {
-          l.dim(`${p} Testing Vectorize capabilities`)
           const vectorizeTest = await testVectorizeCapabilities(accountId, tokenData.result.value)
-          
-          l.dim(`${p} Testing Workers AI capabilities`)
           const workersAITest = await testWorkersAICapabilities(accountId, tokenData.result.value)
           
-          l.dim(`${p} All tests successful, saving unified token`)
           const { updateEnvVariable } = await import('../env-writer')
           await updateEnvVariable('CLOUDFLARE_API_TOKEN', tokenData.result.value)
-          
-          l.dim(`${p} Keeping unified token in process environment for immediate use`)
           
           return { 
             valid: true, 
@@ -276,15 +175,13 @@ export async function testCloudflareCredentials(accountId: string, email: string
     }
   } catch (error) {
     const errorMessage = (error as Error).message
-    l.dim(`${p} Cloudflare credential test failed: ${errorMessage}`)
+    l.warn(`${p} Cloudflare credential test failed: ${errorMessage}`)
     
     return { 
       valid: false, 
       error: `Cloudflare credential test failed: ${errorMessage}` 
     }
   } finally {
-    l.dim(`${p} Cleaning up temporary environment variables`)
-    
     if (originalEnvValues.accountId) {
       process.env['CLOUDFLARE_ACCOUNT_ID'] = originalEnvValues.accountId
     } else {

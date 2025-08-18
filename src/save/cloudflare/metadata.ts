@@ -46,11 +46,8 @@ export async function uploadCloudflareJsonMetadata(
     : `${baseFileName}-metadata.json`
   const jsonFilePath = `${baseFilePath}-metadata.json`
   
-  l.dim(`${p} Creating JSON metadata file: ${jsonFilePath}`)
-  
   try {
     await writeFile(jsonFilePath, JSON.stringify(jsonData, null, 2))
-    l.dim(`${p} JSON metadata file created successfully`)
     
     const bucketName = await getOrCreateCloudflareBucket(options)
     if (!bucketName) {
@@ -59,8 +56,6 @@ export async function uploadCloudflareJsonMetadata(
     }
     
     const s3Key = `${sessionId}/${jsonFileName}`
-    
-    l.dim(`${p} Uploading JSON to R2://${bucketName}/${s3Key}`)
     
     const r2Check = checkR2Configuration()
     if (!r2Check.isValid) {
@@ -82,7 +77,6 @@ export async function uploadCloudflareJsonMetadata(
     
     try {
       await execPromise(`rm "${jsonFilePath}"`)
-      l.dim(`${p} Cleaned up temporary JSON file: ${jsonFilePath}`)
     } catch (cleanupError) {
       l.warn(`${p} Failed to cleanup temporary file: ${(cleanupError as Error).message}`)
     }

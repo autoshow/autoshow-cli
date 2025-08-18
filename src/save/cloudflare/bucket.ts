@@ -12,8 +12,6 @@ export async function getOrCreateCloudflareBucket(options: ProcessingOptions): P
   const region = getCloudflareRegion()
   const bucketName = `${basePrefix}-${accountId}-${region}`.toLowerCase()
   
-  l.dim(`${p} Checking if R2 bucket exists: ${bucketName}`)
-  
   const r2Check = checkR2Configuration()
   if (!r2Check.isValid) {
     err(`${p} R2 configuration error: ${r2Check.error}`)
@@ -23,11 +21,9 @@ export async function getOrCreateCloudflareBucket(options: ProcessingOptions): P
   try {
     const exists = await headBucket(accountId, bucketName)
     if (exists) {
-      l.dim(`${p} R2 bucket exists: ${bucketName}`)
       return bucketName
     }
     
-    l.dim(`${p} R2 bucket does not exist, creating: ${bucketName}`)
     const created = await createBucket(accountId, bucketName)
     
     if (!created) {
@@ -35,7 +31,7 @@ export async function getOrCreateCloudflareBucket(options: ProcessingOptions): P
       return null
     }
     
-    l.dim(`${p} Successfully created R2 bucket: ${bucketName}`)
+    l.success(`${p} Created R2 bucket: ${bucketName}`)
     await configureCloudflareBucketDefaults(accountId, bucketName)
     return bucketName
   } catch (error) {
@@ -46,14 +42,10 @@ export async function getOrCreateCloudflareBucket(options: ProcessingOptions): P
 
 async function configureCloudflareBucketDefaults(accountId: string, bucketName: string): Promise<void> {
   const p = '[save/cloudflare/bucket]'
-  l.dim(`${p} Configuring R2 bucket defaults for: ${bucketName}`)
   
   try {
     await putBucketVersioning(accountId, bucketName, true)
-    l.dim(`${p} Enabled versioning for R2 bucket`)
-    
     await putBucketLifecycle(accountId, bucketName, 90)
-    l.dim(`${p} Configured lifecycle policy for R2 bucket`)
   } catch (error) {
     l.warn(`${p} Failed to configure some R2 bucket defaults: ${(error as Error).message}`)
   }

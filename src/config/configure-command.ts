@@ -22,7 +22,6 @@ async function promptForInput(message: string): Promise<string> {
 
 async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<void> {
   const p = '[config/configure-command]'
-  l.dim(`${p} Starting configuration for service: ${service}`)
   
   if (service === 'all') {
     l.info('Configuring all services. You can skip individual services by typing "skip" when prompted.\n')
@@ -30,7 +29,6 @@ async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<v
     const results: Array<{ service: string; success: boolean }> = []
     
     try {
-      l.dim(`${p} Starting AWS S3 configuration`)
       const awsSuccess = await configureAwsInteractive()
       results.push({ service: 'S3', success: awsSuccess })
     } catch (error) {
@@ -39,7 +37,6 @@ async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<v
     }
     
     try {
-      l.dim(`${p} Starting Cloudflare R2/Vectorize configuration`)
       const cloudflareSuccess = await configureCloudflareInteractive()
       results.push({ service: 'R2 & Vectorize', success: cloudflareSuccess })
     } catch (error) {
@@ -82,11 +79,9 @@ async function configureSpecificService(service: 's3' | 'r2' | 'all'): Promise<v
   try {
     switch (service) {
       case 's3':
-        l.dim(`${p} Configuring AWS S3`)
         success = await configureAwsInteractive()
         break
       case 'r2':
-        l.dim(`${p} Configuring Cloudflare R2/Vectorize`)
         success = await configureCloudflareInteractive()
         break
     }
@@ -130,7 +125,6 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
     return
   }
   
-  l.dim(`${p} Reading current environment configuration`)
   const currentEnv = await readEnvFile()
   const hasS3 = !!(currentEnv['AWS_ACCESS_KEY_ID'] && currentEnv['AWS_SECRET_ACCESS_KEY'])
   const hasR2 = !!(currentEnv['CLOUDFLARE_ACCOUNT_ID'] && currentEnv['CLOUDFLARE_API_TOKEN'])
@@ -140,7 +134,6 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
   l.info(`R2 & Vectorize: ${hasR2 ? '✓ Configured' : '✗ Not configured'}\n`)
   
   if (options.service) {
-    l.dim(`${p} Configuring specific service: ${options.service}`)
     await configureSpecificService(options.service)
     return
   }
@@ -156,15 +149,12 @@ export async function configureCommand(options: ConfigureOptions): Promise<void>
   
   switch (choice) {
     case '1':
-      l.dim(`${p} User selected S3 configuration`)
       await configureSpecificService('s3')
       break
     case '2':
-      l.dim(`${p} User selected R2/Vectorize configuration`)
       await configureSpecificService('r2')
       break
     case '3':
-      l.dim(`${p} User selected all services configuration`)
       await configureSpecificService('all')
       break
     case '4':

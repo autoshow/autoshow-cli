@@ -67,7 +67,6 @@ export async function configureAwsInteractive(): Promise<boolean> {
   const region = await promptForInput('Enter your AWS Region (default: us-east-1): ') || 'us-east-1'
   
   l.info('\nTesting S3 credentials...')
-  l.dim(`${p} Temporarily clearing AWS_PROFILE for credential test`)
   const originalProfile = process.env['AWS_PROFILE']
   delete process.env['AWS_PROFILE']
   
@@ -119,7 +118,6 @@ export async function configureAwsInteractive(): Promise<boolean> {
   } finally {
     if (originalProfile) {
       process.env['AWS_PROFILE'] = originalProfile
-      l.dim(`${p} Restored AWS_PROFILE to: ${originalProfile}`)
     }
   }
 }

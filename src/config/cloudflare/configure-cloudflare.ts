@@ -92,10 +92,6 @@ export async function configureCloudflareInteractive(): Promise<boolean> {
   if (!testResult.valid) {
     err(`${p} Cloudflare credential validation failed: ${testResult.error}`)
     l.warn('\nTroubleshooting Cloudflare Issues:')
-    l.warn('• Ensure your Account ID is correct (32-character hex string)')
-    l.warn('• Verify your email matches your Cloudflare account')
-    l.warn('• Check that your Global API Key is valid')
-    l.warn('• Ensure R2, Vectorize, and Workers AI are enabled on your Cloudflare account')
     l.warn('• Your Global API Key can be found at: https://dash.cloudflare.com/profile/api-tokens')
     
     const retry = await promptForConfirmation('Would you like to try again with different credentials? (y/n): ')
@@ -121,7 +117,6 @@ export async function configureCloudflareInteractive(): Promise<boolean> {
   }
   
   l.info('\nVerifying unified API token capabilities...')
-  l.dim(`${p} Using token created during credential testing`)
   
   const vectorizeWorking = testResult.details?.['vectorizeWorking'] === 'true'
   const workersAIWorking = testResult.details?.['workersAIWorking'] === 'true'
@@ -171,10 +166,6 @@ export async function configureCloudflareInteractive(): Promise<boolean> {
     }
     
     l.info('\nNext steps:')
-    l.info('• Use --save r2 in text commands to upload to R2')
-    l.info('• Use text embed commands to create and query Vectorize embeddings')
-    l.info('• Customize bucket names with --s3-bucket-prefix')
-    l.info('• A unified API token has been automatically generated and saved')
     l.info('• See docs/save/03-r2.md for more details\n')
     return true
   } else {

@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { err } from '@/logging'
 import { createCloudflareClient } from '@/save/cloudflare/client'
 
 let cachedApiToken: string | null = null
@@ -8,12 +8,10 @@ export async function getR2ApiToken(): Promise<string | null> {
   
   const existingToken = process.env['CLOUDFLARE_R2_API_TOKEN'] || process.env['CLOUDFLARE_API_TOKEN']
   if (existingToken) {
-    l.dim(`${p} Using existing API token from environment`)
     return existingToken
   }
   
   if (cachedApiToken) {
-    l.dim(`${p} Using cached API token`)
     return cachedApiToken
   }
   
@@ -26,7 +24,6 @@ export async function getR2ApiToken(): Promise<string | null> {
     return null
   }
   
-  l.dim(`${p} Creating new API token with R2 permissions`)
   const apiToken = await createApiTokenWithPermissions(accountId)
   if (!apiToken) {
     return null
@@ -42,7 +39,6 @@ async function createApiTokenWithPermissions(accountId: string): Promise<string 
   try {
     const client = createCloudflareClient()
     
-    l.dim(`${p} Fetching available permission groups`)
     const permResponse = await client.accounts.tokens.permissionGroups.list({
       account_id: accountId
     })
@@ -66,8 +62,6 @@ async function createApiTokenWithPermissions(accountId: string): Promise<string 
       return null
     }
     
-    l.dim(`${p} Found ${allPermissions.length} relevant permission groups`)
-    
     const tokenResponse = await client.accounts.tokens.create({
       account_id: accountId,
       name: `autoshow-unified-${Date.now()}`,
@@ -90,8 +84,6 @@ async function createApiTokenWithPermissions(accountId: string): Promise<string 
       return null
     }
     
-    l.dim(`${p} Successfully created API token`)
-    
     const { updateEnvVariable } = await import('../../config/env-writer')
     await updateEnvVariable('CLOUDFLARE_API_TOKEN', tokenResponse.value)
     
@@ -103,7 +95,5 @@ async function createApiTokenWithPermissions(accountId: string): Promise<string 
 }
 
 export function clearCachedToken(): void {
-  const p = '[save/cloudflare/token-manager]'
-  l.dim(`${p} Clearing cached token`)
   cachedApiToken = null
 }

@@ -44,11 +44,8 @@ export async function uploadAwsJsonMetadata(
     : `${baseFileName}-metadata.json`
   const jsonFilePath = `${baseFilePath}-metadata.json`
   
-  l.dim(`${p} Creating JSON metadata file: ${jsonFilePath}`)
-  
   try {
     await writeFile(jsonFilePath, JSON.stringify(jsonData, null, 2))
-    l.dim(`${p} JSON metadata file created successfully`)
     
     const bucketName = await getOrCreateAwsBucket(options)
     if (!bucketName) {
@@ -57,8 +54,6 @@ export async function uploadAwsJsonMetadata(
     }
     
     const s3Key = `${sessionId}/${jsonFileName}`
-    
-    l.dim(`${p} Uploading JSON to S3://${bucketName}/${s3Key}`)
     
     const uploadCommand = buildUploadCommand(jsonFilePath, bucketName, s3Key, options)
     const { stderr } = await execPromise(uploadCommand)
@@ -74,7 +69,6 @@ export async function uploadAwsJsonMetadata(
       l.dim(`${p} JSON file already cleaned up`)
     } else {
       await execPromise(`rm "${jsonFilePath}"`)
-      l.dim(`${p} Cleaned up temporary JSON file: ${jsonFilePath}`)
     }
     
     return publicUrl

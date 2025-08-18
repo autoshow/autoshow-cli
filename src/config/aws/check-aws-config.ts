@@ -10,7 +10,6 @@ function maskCredential(credential: string | undefined, showLength: number = 4):
 
 export async function checkAwsConfig(): Promise<ConfigStatus> {
   const p = '[config/aws/check-aws-config]'
-  l.dim(`${p} Checking AWS S3 configuration`)
   
   const status: ConfigStatus = {
     service: 'Amazon S3',
@@ -31,11 +30,9 @@ export async function checkAwsConfig(): Promise<ConfigStatus> {
   status.details['Profile'] = awsProfile || 'Default'
   
   if (awsAccessKeyId && awsSecretAccessKey) {
-    l.dim(`${p} Environment credentials found, testing those first`)
     status.configured = true
     
     try {
-      l.dim(`${p} Testing environment AWS credentials`)
       const envTestCommand = `AWS_PROFILE="" aws sts get-caller-identity --query Account --output text`
       const { stdout } = await execPromise(envTestCommand)
       const accountId = stdout.trim()
@@ -44,24 +41,20 @@ export async function checkAwsConfig(): Promise<ConfigStatus> {
         status.tested = true
         status.details['Account ID'] = accountId
         status.details['Credential Source'] = 'Environment variables'
-        l.dim(`${p} Environment AWS credentials test successful, account: ${accountId}`)
         return status
       }
     } catch (error) {
       const errorMessage = (error as Error).message
-      l.dim(`${p} Environment credentials test failed: ${errorMessage}`)
+      l.warn(`${p} Environment credentials test failed: ${errorMessage}`)
       status.issues.push(`Environment credentials test failed: ${errorMessage}`)
     }
   }
   
   if (awsProfile) {
-    l.dim(`${p} AWS_PROFILE is set to '${awsProfile}'`)
-    
     if (awsProfile === 'r2') {
       status.issues.push('AWS_PROFILE is set to "r2" which contains R2 credentials, not AWS S3 credentials')
       status.issues.push('For S3 operations, either unset AWS_PROFILE or set it to an AWS profile')
       
-      l.dim(`${p} Attempting to test default AWS profile instead`)
       try {
         const defaultTestCommand = `AWS_PROFILE=default aws sts get-caller-identity --query Account --output text`
         const { stdout } = await execPromise(defaultTestCommand)
@@ -72,19 +65,16 @@ export async function checkAwsConfig(): Promise<ConfigStatus> {
           status.tested = true
           status.details['Account ID'] = accountId
           status.details['Credential Source'] = 'Default AWS profile (tested separately)'
-          l.dim(`${p} Default AWS profile test successful, account: ${accountId}`)
           status.issues.push('Default AWS profile works - consider unsetting AWS_PROFILE for S3 operations')
           return status
         }
       } catch (error) {
-        l.dim(`${p} Default profile test also failed: ${(error as Error).message}`)
         status.issues.push(`Default AWS profile also unavailable: ${(error as Error).message}`)
       }
     } else {
       status.configured = true
       
       try {
-        l.dim(`${p} Testing AWS credentials with profile: ${awsProfile}`)
         const profileTestCommand = `aws sts get-caller-identity --query Account --output text --profile ${awsProfile}`
         const { stdout } = await execPromise(profileTestCommand)
         const accountId = stdout.trim()
@@ -93,12 +83,11 @@ export async function checkAwsConfig(): Promise<ConfigStatus> {
           status.tested = true
           status.details['Account ID'] = accountId
           status.details['Credential Source'] = `Profile: ${awsProfile}`
-          l.dim(`${p} AWS profile credentials test successful, account: ${accountId}`)
           return status
         }
       } catch (error) {
         const errorMessage = (error as Error).message
-        l.dim(`${p} Profile credentials test failed: ${errorMessage}`)
+        l.warn(`${p} Profile credentials test failed: ${errorMessage}`)
         status.issues.push(`Profile "${awsProfile}" test failed: ${errorMessage}`)
       }
     }
@@ -109,6 +98,5 @@ export async function checkAwsConfig(): Promise<ConfigStatus> {
     status.issues.push('Run "aws configure" or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY')
   }
   
-  l.dim(`${p} AWS S3 configuration check completed`)
   return status
 }
