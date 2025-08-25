@@ -1,9 +1,9 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  "*"
-  "src/*"
-  ".github"
+  # "*"
+  "docs"
+  # ".github"
   # "src/video"
   # "docs/video"
 )
