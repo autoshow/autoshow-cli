@@ -12,7 +12,7 @@ fi
 WHISPER_DIR="whisper-cpp-temp-coreml"
 BIN_DIR="bin"
 MODELS_DIR="models"
-VENV_DIR="$MODELS_DIR/coreml_env"
+VENV_DIR="pyenv/coreml"
 find_py() {
   for pth in python3.{11..9} python3 /usr/local/bin/python3.{11..9} /opt/homebrew/bin/python3.{11..9} python; do
     if command -v "$pth" &>/dev/null; then

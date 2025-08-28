@@ -6,10 +6,11 @@ import type { MusicGenerationOptions, MusicGenerationResult } from '../music-typ
 const p = '[music/music-services/audiocraft]'
 
 const getAudioCraftConfig = () => {
-  const configPath = path.join(process.cwd(), '.music-config.json')
+  const configPath = path.join(process.cwd(), 'config', '.music-config.json')
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['MUSIC_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'python_env/bin/python')) ? path.join(process.cwd(), 'python_env/bin/python') : 'python3')
+    (existsSync(path.join(process.cwd(), 'pyenv/tts/bin/python')) ? path.join(process.cwd(), 'pyenv/tts/bin/python') : 'python3')
+  l.dim(`${p} Using Python path: ${pythonPath}`)
   return { python: pythonPath, ...config.audiocraft }
 }
 

@@ -2,29 +2,11 @@ import { writeFile } from 'fs/promises'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils.ts'
 import { env, readFileSync, existsSync } from '@/node-utils'
-import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig } from '@/video/video-types.ts'
+import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig, VeoApiOperation } from '@/video/video-types.ts'
 
 const p = '[video/video-services/veo]'
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
-
-interface VeoApiOperation {
-  name: string
-  done: boolean
-  response?: {
-    generateVideoResponse?: {
-      generatedSamples?: Array<{
-        video?: {
-          uri?: string
-        }
-      }>
-    }
-  }
-  error?: {
-    message: string
-    code: number
-  }
-}
 
 async function pollOperation(operationName: string, apiKey: string): Promise<VeoApiOperation> {
   const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'

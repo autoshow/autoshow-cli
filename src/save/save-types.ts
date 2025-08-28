@@ -1,4 +1,4 @@
-import type { ShowNoteMetadata } from '@/text/text-types'
+import type { ShowNoteMetadata, ProcessingOptions } from '@/text/text-types'
 
 export interface UploadMetadata {
   metadata: ShowNoteMetadata
@@ -18,4 +18,11 @@ export interface R2Token {
   accessKeyId: string
   secretAccessKey: string
   expiresAt: number
+}
+
+export interface CloudStorageService {
+  uploadFile(filePath: string, options: ProcessingOptions, sessionId?: string): Promise<string | null>
+  uploadAllFiles(baseFilePath: string, options: ProcessingOptions, metadata?: UploadMetadata): Promise<void>
+  getOrCreateBucket(options: ProcessingOptions): Promise<string | null>
+  uploadJsonMetadata(baseFilePath: string, options: ProcessingOptions, metadata: UploadMetadata, sessionId: string): Promise<string | null>
 }

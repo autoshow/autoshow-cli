@@ -1,1 +1,0 @@
-{"python": "python_env/bin/python", "venv": "python_env", "audiocraft": {"default_model": "facebook/musicgen-small", "cache_dir": "models/audiocraft"}, "stable_audio": {"default_model": "stabilityai/stable-audio-open-1.0", "cache_dir": "models/stable-audio"}}

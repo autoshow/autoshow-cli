@@ -1,11 +1,17 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  # "*"
-  "docs"
-  # ".github"
-  # "src/video"
-  # "docs/video"
+  "*"
+  "src/*"
+  ".github/setup"
+  # "src/text"
+  "src/text/text-types.ts"
+  "src/text/create-text-command.ts"
+  "src/text/utils"
+  "src/text/process-steps/02-run-transcription"
+  "src/text/process-commands/file.ts"
+  "src/text/process-commands/video.ts"
+  "docs/text"
 )
 
 IGNORE_PATHS=(

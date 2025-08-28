@@ -35,6 +35,10 @@ ensure_homebrew() {
   fi
 }
 echo "$p Starting AutoShow CLI setup"
+mkdir -p config
+echo "$p Created config directory"
+mkdir -p pyenv
+echo "$p Created pyenv directory for Python environments"
 if [ ! -f ".env" ] && [ -f ".env.example" ]; then
   cp .env.example .env
 fi
@@ -81,8 +85,8 @@ echo "$p Building stable-diffusion.cpp package"
 bash "$SETUP_DIR/image/sdcpp.sh"
 echo "$p Downloading SD 1.5 models"
 bash "$SETUP_DIR/image/sd1_5.sh"
-# echo "$p Downloading SD 3.5 models and encoders"
-# bash "$SETUP_DIR/image/sd3_5.sh"
+echo "$p Downloading SD 3.5 models and encoders"
+bash "$SETUP_DIR/image/sd3_5.sh"
 echo "$p Setting up Wan2.1 video models"
 bash "$SETUP_DIR/video/wan.sh"
 echo "$p Setup completed successfully"

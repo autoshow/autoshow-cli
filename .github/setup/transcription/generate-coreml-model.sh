@@ -6,7 +6,7 @@ if [ -d "$OUT" ]; then
   echo "CoreML encoder already exists: $OUT"
   exit 0
 fi
-PY="models/coreml_env/bin/python"
+PY="pyenv/coreml/bin/python"
 if [ ! -x "$PY" ]; then
   PY="python3"
 fi

@@ -63,3 +63,15 @@ export interface RunwayImageOptions {
   height?: number
   style?: string
 }
+
+export interface ModelConfig {
+  hash?: string
+  minSizeMB: number
+  maxSizeMB: number
+}
+
+export interface ValidationResult {
+  valid: boolean
+  size: number
+  error?: string
+}

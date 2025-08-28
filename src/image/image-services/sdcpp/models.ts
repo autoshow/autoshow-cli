@@ -1,8 +1,4 @@
-export interface ModelConfig {
-  hash?: string
-  minSizeMB: number
-  maxSizeMB: number
-}
+import type { ModelConfig } from '@/image/image-types'
 
 export const MODELS_DIR = 'models/sd'
 export const BIN_PATH = 'bin/sd'

@@ -1,13 +1,6 @@
 import { err } from '@/logging'
 import type { ProcessingOptions } from '@/text/text-types'
-import type { UploadMetadata } from '@/save/save-types'
-
-export interface CloudStorageService {
-  uploadFile(filePath: string, options: ProcessingOptions, sessionId?: string): Promise<string | null>
-  uploadAllFiles(baseFilePath: string, options: ProcessingOptions, metadata?: UploadMetadata): Promise<void>
-  getOrCreateBucket(options: ProcessingOptions): Promise<string | null>
-  uploadJsonMetadata(baseFilePath: string, options: ProcessingOptions, metadata: UploadMetadata, sessionId: string): Promise<string | null>
-}
+import type { UploadMetadata, CloudStorageService } from '@/save/save-types'
 
 class AwsStorageService implements CloudStorageService {
   async uploadFile(filePath: string, options: ProcessingOptions, sessionId?: string): Promise<string | null> {

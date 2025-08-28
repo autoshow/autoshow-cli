@@ -13,5 +13,4 @@ export {
   getModelRequirements,
   getModelDescription 
 } from './models'
-export type { ValidationResult } from './validation'
-export type { ModelConfig, ModelType } from './models'
+export type { ModelType } from './models'
