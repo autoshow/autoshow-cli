@@ -5,10 +5,11 @@ import { path, spawnSync, existsSync } from '@/node-utils'
 const p = '[tts/tts-utils/model-utils]'
 
 export const listModels = async (): Promise<void> => {
-  const configPath = path.join(process.cwd(), 'config', '.tts-config.json')
+  const configPath = path.join(process.cwd(), 'build/config', '.tts-config.json')
+  l.dim(`${p} Loading config from: ${configPath}`)
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'pyenv/tts/bin/python')) ? path.join(process.cwd(), 'pyenv/tts/bin/python') : 'python3')
+    (existsSync(path.join(process.cwd(), 'build/pyenv/tts/bin/python')) ? path.join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   
   l.dim(`${p} Using Python path: ${pythonPath}`)
   
@@ -41,6 +42,7 @@ export const listModels = async (): Promise<void> => {
   const endIdx = output.indexOf('MODELS_END')
   
   if (startIdx === -1 || endIdx === -1) {
+    l.dim(`${p} Failed to parse model list, trying CLI fallback`)
     const cliResult = spawnSync(pythonPath, ['-m', 'TTS', '--list_models'], {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],

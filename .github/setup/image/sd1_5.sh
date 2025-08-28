@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 p='[setup/image/sd1_5]'
-MODELS_DIR="models/sd"
+MODELS_DIR="build/models/sd"
 mkdir -p "$MODELS_DIR"
 validate_file() {
   local f="$1"

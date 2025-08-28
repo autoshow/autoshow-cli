@@ -30,10 +30,12 @@ export async function generateImageWithStableDiffusionCpp(
   const uniqueOutputPath = outputPath || generateUniqueFilename('sdcpp', 'png')
   
   try {
+    l.dim(`${p} [${requestId}] Validating binary exists at: ${BIN_PATH}`)
     validateBinaryExists()
     
     const modelType = options.model || ModelTypes.SD15
     l.dim(`${p} [${requestId}] Using model type: ${modelType}`)
+    l.dim(`${p} [${requestId}] Using models directory: ${MODELS_DIR}`)
     
     const metalCheck = checkMetalCompatibility(modelType)
     if (!metalCheck.compatible) {
@@ -80,9 +82,12 @@ export async function generateImageWithStableDiffusionCpp(
 }
 
 function validateBinaryExists(): void {
+  const p = '[image/image-services/sdcpp/generator]'
   if (!existsSync(BIN_PATH)) {
+    l.warn(`${p} Binary not found at: ${BIN_PATH}`)
     throw new Error('stable-diffusion.cpp not installed. Run: npm run setup')
   }
+  l.dim(`${p} Binary validated at: ${BIN_PATH}`)
 }
 
 function validateModels(
@@ -94,8 +99,10 @@ function validateModels(
   const p = '[image/image-services/sdcpp/generator]'
   
   if (modelType === ModelTypes.SD35 || modelType === ModelTypes.SD3_MEDIUM) {
+    l.dim(`${p} [${requestId}] Validating SD3 models in: ${MODELS_DIR}`)
     validateSD3Models(MODELS_DIR)
   } else if (!ensureModelExists('v1-5-pruned-emaonly.safetensors', MODELS_DIR)) {
+    l.warn(`${p} [${requestId}] SD 1.5 model not found in: ${MODELS_DIR}`)
     throw new Error('SD 1.5 model not found')
   } else {
     const validation = validateFile('v1-5-pruned-emaonly.safetensors', MODELS_DIR)
@@ -106,15 +113,16 @@ function validateModels(
   }
   
   if (options.lora && prompt.includes('<lora:')) {
+    l.dim(`${p} [${requestId}] Validating LoRA model for prompt`)
     validateLoraModel(prompt, MODELS_DIR)
   }
 }
 
 function executeCommand(args: string[], cpuOnly?: boolean): string {
+  const p = '[image/image-services/sdcpp/generator]'
   const env = { ...process.env }
   
   if (cpuOnly && process.platform === 'darwin') {
-    const p = '[image/image-services/sdcpp/generator]'
     l.dim(`${p} Setting GGML_METAL=0 to disable Metal acceleration`)
     env['GGML_METAL'] = '0'
   }
@@ -147,5 +155,6 @@ function validateOutput(
     throw new Error(errorMessage)
   }
   
+  l.dim(`${p} [${requestId}] Output validation successful: ${outputPath}`)
   return { success: true }
 }

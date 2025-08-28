@@ -13,7 +13,7 @@ find_py() {
   return 1
 }
 PY=$(find_py) || { echo "$p WARNING: Python 3.9-3.11 not found. TTS features unavailable"; exit 0; }
-VENV="pyenv/tts"
+VENV="build/pyenv/tts"
 if [[ -d $VENV ]]; then
   rm -rf "$VENV"
 fi
@@ -23,9 +23,9 @@ echo "$p Installing shared TTS packages"
 pip install --upgrade pip >/dev/null 2>&1
 pip install "numpy<2" soundfile librosa scipy >/dev/null 2>&1 || true
 pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1 || pip install torch torchaudio >/dev/null 2>&1 || true
-mkdir -p config
-if [ ! -f "config/.tts-config.json" ]; then
-  cat >config/.tts-config.json <<EOF
+mkdir -p build/config
+if [ ! -f "build/config/.tts-config.json" ]; then
+  cat >build/config/.tts-config.json <<EOF
 {"python":"$VENV/bin/python","venv":"$VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}
 EOF
 fi

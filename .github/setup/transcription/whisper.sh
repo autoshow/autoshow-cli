@@ -2,7 +2,7 @@
 set -euo pipefail
 p='[setup/transcription/whisper]'
 WHISPER_DIR="whisper-cpp-temp"
-BIN_DIR="bin"
+BIN_DIR="build/bin"
 mkdir -p "$BIN_DIR"
 rm -rf "$WHISPER_DIR"
 git clone https://github.com/ggerganov/whisper.cpp.git "$WHISPER_DIR" >/dev/null 2>&1

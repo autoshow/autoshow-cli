@@ -170,8 +170,8 @@ if __name__ == "__main__":
         encoder = whisper.encoder
         decoder = whisper.decoder
     encoder = convert_encoder(hparams, encoder, quantize=args.quantize)
-    encoder.save(f"models/coreml-encoder-{args.model}.mlpackage")
+    encoder.save(f"build/models/coreml-encoder-{args.model}.mlpackage")
     if args.encoder_only is False:
         decoder = convert_decoder(hparams, decoder, quantize=args.quantize)
-        decoder.save(f"models/coreml-decoder-{args.model}.mlpackage")
+        decoder.save(f"build/models/coreml-decoder-{args.model}.mlpackage")
     print("done converting")

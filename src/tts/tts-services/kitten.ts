@@ -9,10 +9,11 @@ import {
 const p = '[tts/tts-services/kitten]'
 
 const getKittenConfig = () => {
-  const configPath = path.join(process.cwd(), 'config', '.tts-config.json')
+  const configPath = path.join(process.cwd(), 'build/config', '.tts-config.json')
+  l.dim(`${p} Loading config from: ${configPath}`)
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['KITTEN_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'pyenv/tts/bin/python')) ? path.join(process.cwd(), 'pyenv/tts/bin/python') : 'python3')
+    (existsSync(path.join(process.cwd(), 'build/pyenv/tts/bin/python')) ? path.join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   l.dim(`${p} Using Python path: ${pythonPath}`)
   return { python: pythonPath, ...config.kitten }
 }
@@ -38,6 +39,7 @@ export async function synthesizeWithKitten(
   
   const modelName = options.model || config.default_model || 'KittenML/kitten-tts-nano-0.1'
   const voiceName = options.voice || config.default_voice || 'expr-voice-2-f'
+  l.dim(`${p} Using model: ${modelName}, voice: ${voiceName}`)
   
   const pythonScriptPath = path.join(path.dirname(import.meta.url.replace('file://', '')), 'kitten-python.py')
   

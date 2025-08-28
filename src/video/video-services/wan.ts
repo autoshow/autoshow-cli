@@ -7,7 +7,8 @@ import type { VideoGenerationResult, WanGenerateOptions, WanConfig } from '@/vid
 const p = '[video/video-services/wan]'
 
 function loadWanConfig(): WanConfig | null {
-  const configPath = 'config/.wan-config.json'
+  const configPath = 'build/config/.wan-config.json'
+  l.dim(`${p} Loading config from: ${configPath}`)
   if (!existsSync(configPath)) {
     l.warn(`${p} Wan config not found at ${configPath}`)
     return null
@@ -64,6 +65,7 @@ export async function generateVideoWithWan(
       throw new Error(`Model ${model} not found in config. Available models: ${Object.keys(config.available_models).join(', ')}`)
     }
     
+    l.dim(`${p} [${requestId}] Checking model path: ${modelPath}`)
     if (!existsSync(modelPath)) {
       throw new Error(`Model path does not exist: ${modelPath}. Please download the model first.`)
     }
@@ -93,6 +95,7 @@ export async function generateVideoWithWan(
     }
     
     const scriptPath = `${config.models_dir}/wan_wrapper.py`
+    l.dim(`${p} [${requestId}] Using wrapper script: ${scriptPath}`)
     if (!existsSync(scriptPath)) {
       throw new Error('Wan wrapper script not found. Please re-run: bash .github/setup/video/wan.sh')
     }

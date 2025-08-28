@@ -2,18 +2,18 @@
 set -euo pipefail
 p='[setup/tts/coqui]'
 
-if [ ! -x "pyenv/tts/bin/pip" ]; then
+if [ ! -x "build/pyenv/tts/bin/pip" ]; then
   echo "$p Skipping Coqui setup, shared env missing"
   exit 0
 fi
 
-pip() { "pyenv/tts/bin/pip" "$@"; }
+pip() { "build/pyenv/tts/bin/pip" "$@"; }
 
 echo "$p Installing Coqui TTS"
 pip install TTS >/dev/null 2>&1 || pip install "TTS==0.22.0" >/dev/null 2>&1 || pip install git+https://github.com/coqui-ai/TTS.git >/dev/null 2>&1 || true
 pip install sentencepiece >/dev/null 2>&1 || pip install --only-binary :all: sentencepiece >/dev/null 2>&1 || true
 
-pyenv/tts/bin/python - <<'PY' || true
+build/pyenv/tts/bin/python - <<'PY' || true
 try:
     from TTS.api import TTS
     TTS('tts_models/en/ljspeech/tacotron2-DDC', progress_bar=False)

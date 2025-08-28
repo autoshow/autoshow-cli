@@ -6,10 +6,11 @@ import type { MusicGenerationOptions, MusicGenerationResult } from '../music-typ
 const p = '[music/music-services/audiocraft]'
 
 const getAudioCraftConfig = () => {
-  const configPath = path.join(process.cwd(), 'config', '.music-config.json')
+  const configPath = path.join(process.cwd(), 'build/config', '.music-config.json')
+  l.dim(`${p} Loading config from: ${configPath}`)
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['MUSIC_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'pyenv/tts/bin/python')) ? path.join(process.cwd(), 'pyenv/tts/bin/python') : 'python3')
+    (existsSync(path.join(process.cwd(), 'build/pyenv/tts/bin/python')) ? path.join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   l.dim(`${p} Using Python path: ${pythonPath}`)
   return { python: pythonPath, ...config.audiocraft }
 }
@@ -22,7 +23,8 @@ const verifyAudioCraftEnvironment = (pythonPath: string) => {
 }
 
 const downloadModelIfNeeded = async (modelName: string, pythonPath: string): Promise<void> => {
-  const cacheDir = getAudioCraftConfig().cache_dir || 'models/audiocraft'
+  const cacheDir = getAudioCraftConfig().cache_dir || 'build/models/audiocraft'
+  l.dim(`${p} Using cache directory: ${cacheDir}`)
   const checkScript = `
 import os
 os.environ['AUDIOCRAFT_CACHE_DIR'] = '${cacheDir}'
@@ -63,6 +65,7 @@ export async function generateMusicWithAudioCraft(
   verifyAudioCraftEnvironment(config.python)
   
   const modelName = options.model || config.default_model || 'facebook/musicgen-small'
+  l.dim(`${p} Using model: ${modelName}`)
   
   await downloadModelIfNeeded(modelName, config.python)
   
@@ -75,7 +78,7 @@ export async function generateMusicWithAudioCraft(
     model: modelName,
     prompt,
     output: uniqueOutputPath,
-    cache_dir: config.cache_dir || 'models/audiocraft',
+    cache_dir: config.cache_dir || 'build/models/audiocraft',
     duration: options.duration || 8,
     temperature: options.temperature || 1.0,
     top_k: options.topK || 250,
@@ -124,6 +127,7 @@ export async function generateMusicWithAudioCraft(
 export async function listAvailableModels(): Promise<string[]> {
   const config = getAudioCraftConfig()
   const pythonPath = config.python || 'python3'
+  l.dim(`${p} Listing models using Python: ${pythonPath}`)
   
   const listScript = `
 models = [

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 p='[setup/image/sdcpp]'
-BIN_DIR="bin"
+BIN_DIR="build/bin"
 REPO_URL="https://github.com/leejet/stable-diffusion.cpp.git"
 SD_CPP_DIR=".tmp-sd-cpp"
 mkdir -p "$BIN_DIR"
