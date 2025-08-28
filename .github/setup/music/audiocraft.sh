@@ -15,8 +15,9 @@ pip install setuptools wheel >/dev/null 2>&1
 pip install audiocraft >/dev/null 2>&1 || pip install git+https://github.com/facebookresearch/audiocraft >/dev/null 2>&1 || true
 pip install xformers >/dev/null 2>&1 || true
 
-echo "$p Downloading default MusicGen model (facebook/musicgen-small)"
-build/pyenv/tts/bin/python - <<'PY' || true
+if [ "${NO_MODELS:-false}" != "true" ]; then
+  echo "$p Downloading default MusicGen model (facebook/musicgen-small)"
+  build/pyenv/tts/bin/python - <<'PY' || true
 try:
     from audiocraft.models import MusicGen
     import os
@@ -27,6 +28,7 @@ try:
 except Exception as e:
     print(f"ERR: {e}")
 PY
+fi
 
 mkdir -p build/config
 if [ ! -f "build/config/.music-config.json" ]; then

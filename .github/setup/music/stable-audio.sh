@@ -18,8 +18,9 @@ pip install wandb >/dev/null 2>&1
 pip install safetensors >/dev/null 2>&1
 pip install gradio >/dev/null 2>&1 || true
 
-echo "$p Downloading default Stable Audio Open 1.0 model"
-build/pyenv/tts/bin/python - <<'PY' || true
+if [ "${NO_MODELS:-false}" != "true" ]; then
+  echo "$p Downloading default Stable Audio Open 1.0 model"
+  build/pyenv/tts/bin/python - <<'PY' || true
 try:
     import os
     import torch
@@ -40,6 +41,7 @@ try:
 except Exception as e:
     print(f"ERR: {e}")
 PY
+fi
 
 mkdir -p build/config
 if [ ! -f "build/config/.music-config.json" ]; then
