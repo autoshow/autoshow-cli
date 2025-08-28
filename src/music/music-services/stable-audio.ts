@@ -6,10 +6,11 @@ import type { MusicGenerationOptions, MusicGenerationResult } from '../music-typ
 const p = '[music/music-services/stable-audio]'
 
 const getStableAudioConfig = () => {
-  const configPath = path.join(process.cwd(), 'config', '.music-config.json')
+  const configPath = path.join(process.cwd(), 'build/config', '.music-config.json')
+  l.dim(`${p} Loading config from: ${configPath}`)
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['MUSIC_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'pyenv/tts/bin/python')) ? path.join(process.cwd(), 'pyenv/tts/bin/python') : 'python3')
+    (existsSync(path.join(process.cwd(), 'build/pyenv/tts/bin/python')) ? path.join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   l.dim(`${p} Using Python path: ${pythonPath}`)
   return { python: pythonPath, ...config.stable_audio }
 }
@@ -22,7 +23,8 @@ const verifyStableAudioEnvironment = (pythonPath: string) => {
 }
 
 const downloadModelIfNeeded = async (modelName: string, pythonPath: string): Promise<void> => {
-  const cacheDir = getStableAudioConfig().cache_dir || 'models/stable-audio'
+  const cacheDir = getStableAudioConfig().cache_dir || 'build/models/stable-audio'
+  l.dim(`${p} Using cache directory: ${cacheDir}`)
   const checkScript = `
 import os
 os.environ['HF_HOME'] = '${cacheDir}'
@@ -63,6 +65,7 @@ export async function generateMusicWithStableAudio(
   verifyStableAudioEnvironment(config.python)
   
   const modelName = options.model || config.default_model || 'stabilityai/stable-audio-open-1.0'
+  l.dim(`${p} Using model: ${modelName}`)
   
   await downloadModelIfNeeded(modelName, config.python)
   
@@ -75,7 +78,7 @@ export async function generateMusicWithStableAudio(
     model: modelName,
     prompt,
     output: uniqueOutputPath,
-    cache_dir: config.cache_dir || 'models/stable-audio',
+    cache_dir: config.cache_dir || 'build/models/stable-audio',
     duration: options.duration || 8,
     steps: options.steps || 100,
     cfg_scale: options.cfgScale || 7.0,

@@ -2,8 +2,8 @@
 set -euo pipefail
 p='[setup/video/wan]'
 
-MODELS_DIR="models/wan"
-VENV_DIR="pyenv/wan"
+MODELS_DIR="build/models/wan"
+VENV_DIR="build/pyenv/wan"
 WAN_TEMP_DIR="wan2.1-temp"
 mkdir -p "$MODELS_DIR"
 
@@ -86,8 +86,8 @@ download_diffusers_model() {
 echo "$p Downloading T2V-1.3B model (Diffusers version)"
 download_diffusers_model "T2V-1.3B-Diffusers" "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
 
-mkdir -p config
-cat >config/.wan-config.json <<EOF
+mkdir -p build/config
+cat >build/config/.wan-config.json <<EOF
 {
   "python": "$VENV_DIR/bin/python",
   "venv": "$VENV_DIR",

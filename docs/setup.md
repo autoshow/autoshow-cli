@@ -22,9 +22,9 @@ The `npm run setup` command executes `.github/setup/index.sh` which performs a c
 ### 1. Environment Initialization
 
 **Directory Structure**
-- Creates `config` directory for all configuration files
-- Creates `pyenv` directory for all Python virtual environments
-- All Python environments are centralized under `pyenv/` for better organization
+- Creates `build/config` directory for all configuration files
+- Creates `build/pyenv` directory for all Python virtual environments
+- All Python environments are centralized under `build/pyenv/` for better organization
 
 **Configuration Files**
 - Creates `.env` from `.env.example` if missing
@@ -49,44 +49,44 @@ Installs the following if not present:
 #### Whisper CPU (`whisper.sh`)
 - Clones `ggerganov/whisper.cpp` to temporary directory
 - Builds static `whisper-cli` binary
-- Copies binary to `bin/whisper-cli`
+- Copies binary to `build/bin/whisper-cli`
 - Adjusts dylib paths for macOS compatibility
 - Removes temporary repository
 
 #### Whisper Metal (`whisper-metal.sh`)
 - Builds with `-DGGML_METAL=ON` for GPU acceleration
-- Creates `bin/whisper-cli-metal`
-- Downloads `ggml-base.bin` model (~140MB) to `models/`
+- Creates `build/bin/whisper-cli-metal`
+- Downloads `ggml-base.bin` model (~140MB) to `build/models/`
 - Cleans up temporary build directory
 
 #### Whisper CoreML (`whisper-coreml.sh`)
 - Builds with `-DWHISPER_COREML=ON` for Apple Neural Engine
-- Creates Python venv at `pyenv/coreml`
+- Creates Python venv at `build/pyenv/coreml`
 - Installs specialized packages:
   - `numpy<2`, `torch==2.5.0` (CPU)
   - `coremltools>=7,<8`
   - `transformers`, `ane-transformers`
   - `openai-whisper`
 - Attempts CoreML encoder conversion
-- Creates `bin/whisper-cli-coreml`
+- Creates `build/bin/whisper-cli-coreml`
 
 ### 4. Text-to-Speech (TTS)
 
 #### Shared Environment (`tts-env.sh`)
-- Creates `pyenv/tts/` fresh on each run
+- Creates `build/pyenv/tts/` fresh on each run
 - Requires Python 3.9-3.11
 - Base packages: `numpy<2`, `soundfile`, `librosa`, `scipy`, `torch`, `torchaudio`
-- Creates `config/.tts-config.json` with default configurations
+- Creates `build/config/.tts-config.json` with default configurations
 - This environment is shared between TTS and Music generation
 
 #### KittenTTS (`kitten.sh`)
-- Uses shared `pyenv/tts/` environment
+- Uses shared `build/pyenv/tts/` environment
 - Installs from GitHub release wheel
 - Verifies model loading capability
 - Ultra-lightweight TTS engine
 
 #### Coqui TTS (`coqui.sh`)
-- Uses shared `pyenv/tts/` environment
+- Uses shared `build/pyenv/tts/` environment
 - Installs `TTS==0.22.0` with Git fallback
 - Pre-downloads `tts_models/en/ljspeech/tacotron2-DDC` model
 - Supports voice cloning and multiple languages
@@ -94,18 +94,18 @@ Installs the following if not present:
 ### 5. Music Generation
 
 #### AudioCraft (`audiocraft.sh`)
-- Uses shared `pyenv/tts/` environment
+- Uses shared `build/pyenv/tts/` environment
 - Installs `torch==2.1.0` (CPU), `audiocraft`, `xformers`
-- Downloads `facebook/musicgen-small` to `models/audiocraft/`
-- Creates/updates `config/.music-config.json` with AudioCraft settings
+- Downloads `facebook/musicgen-small` to `build/models/audiocraft/`
+- Creates/updates `build/config/.music-config.json` with AudioCraft settings
 
 #### Stable Audio (`stable-audio.sh`)
-- Uses shared `pyenv/tts/` environment
+- Uses shared `build/pyenv/tts/` environment
 - Upgrades shared environment to `torch==2.5.0`
 - Installs `stable-audio-tools`, `einops`, `wandb`, `safetensors`, `gradio`
 - Downloads model config for `stabilityai/stable-audio-open-1.0`
 - Model weights download on first use
-- Updates `config/.music-config.json` with Stable Audio settings
+- Updates `build/config/.music-config.json` with Stable Audio settings
 
 ### 6. Image Generation
 
@@ -115,7 +115,7 @@ Installs the following if not present:
   - Metal support on macOS
   - CUDA support if available
   - CPU fallback
-- Copies `sd` binary to `bin/sd`
+- Copies `sd` binary to `build/bin/sd`
 - Removes temporary repository
 
 #### SD 1.5 Models (`sd1_5.sh`)
@@ -131,7 +131,7 @@ Downloads with 3 retry attempts and size validation:
 ### 7. Video Generation (Beta)
 
 #### Wan2.1 (`wan.sh`)
-- Creates dedicated `pyenv/wan` Python environment
+- Creates dedicated `build/pyenv/wan` Python environment
 - Installs comprehensive dependencies:
   - `torch`, `torchvision`, `torchaudio` (CPU)
   - `transformers`, `accelerate`, `safetensors`
@@ -141,49 +141,50 @@ Downloads with 3 retry attempts and size validation:
 - Installs requirements if found
 - Removes temporary repository after extracting requirements
 - Downloads `Wan-AI/Wan2.1-T2V-1.3B-Diffusers` model
-- Copies dedicated wrapper script from `.github/setup/video/wan_wrapper.py` to `models/wan/`
-- Creates `config/.wan-config.json` configuration
+- Copies dedicated wrapper script from `.github/setup/video/wan_wrapper.py` to `build/models/wan/`
+- Creates `build/config/.wan-config.json` configuration
 
 ## Directory Structure After Setup
 
 ```
 autoshow-cli/
-├── config/
-│   ├── .tts-config.json
-│   ├── .music-config.json
-│   └── .wan-config.json
-├── bin/
-│   ├── whisper-cli
-│   ├── whisper-cli-metal
-│   ├── whisper-cli-coreml
-│   ├── sd
-│   └── *.dylib (macOS library files)
-├── models/
-│   ├── ggml-base.bin
-│   ├── sd/
-│   │   ├── v1-5-pruned-emaonly.safetensors
-│   │   └── lcm-lora-sdv1-5.safetensors
-│   ├── audiocraft/
-│   │   └── facebook/musicgen-small/
-│   ├── stable-audio/
-│   │   └── model_config.json
-│   └── wan/
-│       ├── T2V-1.3B-Diffusers/
-│       └── wan_wrapper.py
-├── pyenv/
-│   ├── tts/ (shared TTS/music environment)
-│   ├── coreml/ (CoreML conversion environment)
-│   └── wan/ (video generation environment)
+├── build/
+│   ├── config/
+│   │   ├── .tts-config.json
+│   │   ├── .music-config.json
+│   │   └── .wan-config.json
+│   ├── bin/
+│   │   ├── whisper-cli
+│   │   ├── whisper-cli-metal
+│   │   ├── whisper-cli-coreml
+│   │   ├── sd
+│   │   └── *.dylib (macOS library files)
+│   ├── models/
+│   │   ├── ggml-base.bin
+│   │   ├── sd/
+│   │   │   ├── v1-5-pruned-emaonly.safetensors
+│   │   │   └── lcm-lora-sdv1-5.safetensors
+│   │   ├── audiocraft/
+│   │   │   └── facebook/musicgen-small/
+│   │   ├── stable-audio/
+│   │   │   └── model_config.json
+│   │   └── wan/
+│   │       ├── T2V-1.3B-Diffusers/
+│   │       └── wan_wrapper.py
+│   └── pyenv/
+│       ├── tts/ (shared TTS/music environment)
+│       ├── coreml/ (CoreML conversion environment)
+│       └── wan/ (video generation environment)
 └── .env
 ```
 
 ## Configuration Files Created
 
-### `config/.tts-config.json`
+### `build/config/.tts-config.json`
 ```json
 {
-  "python": "pyenv/tts/bin/python",
-  "venv": "pyenv/tts",
+  "python": "build/pyenv/tts/bin/python",
+  "venv": "build/pyenv/tts",
   "coqui": {
     "default_model": "tts_models/en/ljspeech/tacotron2-DDC",
     "xtts_model": "tts_models/multilingual/multi-dataset/xtts_v2"
@@ -195,32 +196,32 @@ autoshow-cli/
 }
 ```
 
-### `config/.music-config.json`
+### `build/config/.music-config.json`
 ```json
 {
-  "python": "pyenv/tts/bin/python",
-  "venv": "pyenv/tts",
+  "python": "build/pyenv/tts/bin/python",
+  "venv": "build/pyenv/tts",
   "audiocraft": {
     "default_model": "facebook/musicgen-small",
-    "cache_dir": "models/audiocraft"
+    "cache_dir": "build/models/audiocraft"
   },
   "stable_audio": {
     "default_model": "stabilityai/stable-audio-open-1.0",
-    "cache_dir": "models/stable-audio"
+    "cache_dir": "build/models/stable-audio"
   }
 }
 ```
 
-### `config/.wan-config.json`
+### `build/config/.wan-config.json`
 ```json
 {
-  "python": "pyenv/wan/bin/python",
-  "venv": "pyenv/wan",
-  "models_dir": "models/wan",
+  "python": "build/pyenv/wan/bin/python",
+  "venv": "build/pyenv/wan",
+  "models_dir": "build/models/wan",
   "default_model": "t2v-1.3b",
   "available_models": {
-    "t2v-1.3b": "models/wan/T2V-1.3B-Diffusers",
-    "t2v-14b": "models/wan/T2V-14B-Diffusers"
+    "t2v-1.3b": "build/models/wan/T2V-1.3B-Diffusers",
+    "t2v-14b": "build/models/wan/T2V-14B-Diffusers"
   }
 }
 ```
@@ -238,9 +239,9 @@ autoshow-cli/
 - Optimal: 32GB for large model operations
 
 ### Python Virtual Environments
-- `pyenv/tts/`: ~2-3GB (shared TTS/music)
-- `pyenv/coreml/`: ~1-2GB (CoreML conversion)
-- `pyenv/wan/`: ~2-3GB (video generation)
+- `build/pyenv/tts/`: ~2-3GB (shared TTS/music)
+- `build/pyenv/coreml/`: ~1-2GB (CoreML conversion)
+- `build/pyenv/wan/`: ~2-3GB (video generation)
 
 ## Error Recovery
 
@@ -258,19 +259,19 @@ Components are modular - if one fails, others may still complete successfully.
 
 ## Python Environment Organization
 
-The setup creates a centralized `pyenv/` directory structure:
+The setup creates a centralized `build/pyenv/` directory structure:
 
-### Shared TTS/Music Environment (`pyenv/tts/`)
+### Shared TTS/Music Environment (`build/pyenv/tts/`)
 - Used by: Coqui TTS, Kitten TTS, AudioCraft, Stable Audio
 - Rationale: These tools share many dependencies (torch, numpy, audio libraries)
 - Benefits: Reduced disk usage, single environment to maintain
 
-### CoreML Environment (`pyenv/coreml/`)
+### CoreML Environment (`build/pyenv/coreml/`)
 - Used by: Whisper CoreML conversion
 - Rationale: Requires specific versions of coremltools and transformers
 - Benefits: Isolated from other environments to prevent conflicts
 
-### Wan Video Environment (`pyenv/wan/`)
+### Wan Video Environment (`build/pyenv/wan/`)
 - Used by: Wan2.1 video generation
 - Rationale: Requires specific diffusers and video processing libraries
 - Benefits: Dedicated environment for complex video generation dependencies

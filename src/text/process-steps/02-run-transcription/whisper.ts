@@ -32,19 +32,22 @@ export async function checkWhisperModel(whisperModel: string) {
   const p = '[text/process-steps/02-run-transcription/whisper]'
   if (whisperModel === 'turbo') whisperModel = 'large-v3-turbo'
 
-  const whisperCliPath = './bin/whisper-cli'
-  const modelPath = `./models/ggml-${whisperModel}.bin`
+  const whisperCliPath = './build/bin/whisper-cli'
+  const modelPath = `./build/models/ggml-${whisperModel}.bin`
 
+  l.dim(`${p} Checking for whisper-cli at: ${whisperCliPath}`)
   if (!existsSync(whisperCliPath)) {
+    l.warn(`${p} whisper-cli binary not found at: ${whisperCliPath}`)
     err('whisper-cli binary not found. Please run setup script: npm run setup')
     throw new Error('whisper-cli binary not found')
   }
 
+  l.dim(`${p} Checking for model at: ${modelPath}`)
   if (!existsSync(modelPath)) {
     l.dim(`${p} Downloading model: ${whisperModel}`)
     try {
       await execPromise(
-        `bash ./.github/setup/transcription/download-ggml-model.sh ${whisperModel} ./models`,
+        `bash ./.github/setup/transcription/download-ggml-model.sh ${whisperModel} ./build/models`,
         { maxBuffer: 10000 * 1024 }
       )
       l.dim(`${p} Model download completed`)
@@ -53,10 +56,13 @@ export async function checkWhisperModel(whisperModel: string) {
       throw error
     }
   }
+  l.dim(`${p} Model validated at: ${modelPath}`)
 }
 
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
+  const p = '[text/process-steps/02-run-transcription/whisper]'
   return new Promise((resolve, reject) => {
+    l.dim(`${p} Starting whisper process: ${command} ${args.join(' ')}`)
     const whisperProcess = spawn(command, args)
     let lastProgress = -1
     
@@ -81,13 +87,16 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
 
     whisperProcess.on('close', (code) => {
       if (code === 0) {
+        l.dim(`${p} Whisper process completed successfully`)
         resolve()
       } else {
+        l.warn(`${p} Whisper process exited with code ${code}`)
         reject(new Error(`whisper-cli exited with code ${code}`))
       }
     })
 
     whisperProcess.on('error', (error) => {
+      l.warn(`${p} Whisper process error: ${error.message}`)
       reject(error)
     })
   })
@@ -113,11 +122,12 @@ export async function callWhisper(
 
     const { modelId, costPerMinuteCents } = chosenModel
 
+    l.dim(`${p} Using whisper model: ${modelId}`)
     await checkWhisperModel(modelId)
     
     const args = [
       '--no-gpu',
-      '-m', `./models/ggml-${modelId}.bin`,
+      '-m', `./build/models/ggml-${modelId}.bin`,
       '-f', `${finalPath}.wav`,
       '-of', finalPath,
       '-ml', '1',
@@ -127,12 +137,14 @@ export async function callWhisper(
       '--print-progress'
     ]
     
+    l.dim(`${p} Whisper command args: ${args.join(' ')}`)
+    
     try {
       if (spinner) {
-        await runWhisperWithProgress('./bin/whisper-cli', args, spinner)
+        await runWhisperWithProgress('./build/bin/whisper-cli', args, spinner)
       } else {
         await execPromise(
-          `./bin/whisper-cli ${args.join(' ')}`,
+          `./build/bin/whisper-cli ${args.join(' ')}`,
           { maxBuffer: 10000 * 1024 }
         )
       }
@@ -141,11 +153,14 @@ export async function callWhisper(
       throw whisperError
     }
 
-    const jsonContent = await readFile(`${finalPath}.json`, 'utf8')
+    const jsonPath = `${finalPath}.json`
+    l.dim(`${p} Reading transcription result from: ${jsonPath}`)
+    const jsonContent = await readFile(jsonPath, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)
-    await unlink(`${finalPath}.json`)
+    await unlink(jsonPath)
 
+    l.dim(`${p} Transcription completed successfully`)
     return {
       transcript: txtContent,
       modelId,

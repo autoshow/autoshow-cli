@@ -1,12 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 MODEL="${1:-base}"
-OUT="models/ggml-${MODEL}-encoder.mlmodelc"
+OUT="build/models/ggml-${MODEL}-encoder.mlmodelc"
 if [ -d "$OUT" ]; then
   echo "CoreML encoder already exists: $OUT"
   exit 0
 fi
-PY="pyenv/coreml/bin/python"
+PY="build/pyenv/coreml/bin/python"
 if [ ! -x "$PY" ]; then
   PY="python3"
 fi
@@ -18,7 +18,7 @@ CONV_MODEL="$MODEL"
 if [[ "$MODEL" == "large" || "$MODEL" == "large-v1" || "$MODEL" == "large-v2" || "$MODEL" == "large-v3" ]]; then
   CONV_MODEL="large-v3"
 fi
-TMP_DIR="models/tmp-coreml-${MODEL}"
+TMP_DIR="build/models/tmp-coreml-${MODEL}"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 set +e
@@ -40,7 +40,7 @@ if [ -d "$TMP_DIR" ]; then
   fi
 fi
 if [ -z "$MLCAND" ]; then
-  PKG_DEFAULT="models/coreml-encoder-${CONV_MODEL}.mlpackage"
+  PKG_DEFAULT="build/models/coreml-encoder-${CONV_MODEL}.mlpackage"
   if [ -d "$PKG_DEFAULT" ]; then
     MLCAND="$PKG_DEFAULT"
   fi

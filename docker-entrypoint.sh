@@ -5,7 +5,7 @@ p='[docker-entrypoint]'
 
 echo "$p Starting autoshow-cli container"
 echo "$p Node version: $(node --version)"
-echo "$p Python version: $(/app/pyenv/tts/bin/python --version)"
+echo "$p Python version: $(/app/build/pyenv/tts/bin/python --version)"
 echo "$p Working directory: $(pwd)"
 
 if [ ! -f .env ] && [ -f .env.example ]; then
@@ -65,9 +65,9 @@ fi
 
 echo "$p Checking whisper models availability"
 for model in tiny base small; do
-    if [ ! -f "/app/models/ggml-${model}.bin" ]; then
+    if [ ! -f "/app/build/models/ggml-${model}.bin" ]; then
         echo "$p Downloading whisper model: ${model}"
-        cd /app/models && wget -q "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${model}.bin" && cd /app
+        cd /app/build/models && wget -q "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${model}.bin" && cd /app
     fi
 done
 

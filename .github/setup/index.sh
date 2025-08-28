@@ -35,10 +35,10 @@ ensure_homebrew() {
   fi
 }
 echo "$p Starting AutoShow CLI setup"
-mkdir -p config
-echo "$p Created config directory"
-mkdir -p pyenv
-echo "$p Created pyenv directory for Python environments"
+mkdir -p build/config
+echo "$p Created build/config directory"
+mkdir -p build/pyenv
+echo "$p Created build/pyenv directory for Python environments"
 if [ ! -f ".env" ] && [ -f ".env.example" ]; then
   cp .env.example .env
 fi

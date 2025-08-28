@@ -2,10 +2,10 @@ node_modules
 .DS_Store
 .env
 .idea
-bin
-build
-out
-dist
+build/bin
+build/config/*.json
+build/models
+build/pyenv
 models
 /content
 whisper.cpp
@@ -17,7 +17,6 @@ spec.log
 setup-*.log
 setup.log
 TODO.md
-pyenv
 output
 src/text/workflows
 whisper-cpp-temp
@@ -26,4 +25,3 @@ input
 eng.traineddata
 =*
 wan2.1-repo
-config/*.json

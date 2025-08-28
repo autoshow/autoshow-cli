@@ -10,8 +10,8 @@ if [ "$IS_MAC" != true ]; then
   exit 0
 fi
 WHISPER_DIR="whisper-cpp-temp-metal"
-BIN_DIR="bin"
-MODELS_DIR="models"
+BIN_DIR="build/bin"
+MODELS_DIR="build/models"
 mkdir -p "$BIN_DIR" "$MODELS_DIR"
 rm -rf "$WHISPER_DIR"
 git clone https://github.com/ggerganov/whisper.cpp.git "$WHISPER_DIR" >/dev/null 2>&1

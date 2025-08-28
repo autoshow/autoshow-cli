@@ -1,7 +1,7 @@
 import type { ModelConfig } from '@/image/image-types'
 
-export const MODELS_DIR = 'models/sd'
-export const BIN_PATH = 'bin/sd'
+export const MODELS_DIR = 'build/models/sd'
+export const BIN_PATH = 'build/bin/sd'
 
 export const MODEL_HASHES: Record<string, ModelConfig> = {
   'v1-5-pruned-emaonly.safetensors': { 
