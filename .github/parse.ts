@@ -52,52 +52,44 @@ function extractFilePath(line: string): string | null {
     return cleanLine
   }
   
-  console.log(`${p} Rejected potential path: ${cleanLine}`)
   return null
 }
 
 function isValidFilePath(path: string): boolean {
   if (!path || typeof path !== 'string') {
-    console.log(`${p} Path validation failed: empty or non-string`)
     return false
   }
   
   if (!path.includes('/')) {
-    console.log(`${p} Path validation failed: no forward slashes`)
     return false
   }
   
   const shellCommands = ['echo', 'cat', 'ls', 'cd', 'mkdir', 'rm', 'cp', 'mv', 'touch', 'grep', 'find', 'awk', 'sed', 'curl', 'wget', 'npm', 'yarn', 'node', 'git', 'docker', 'sudo']
   const firstWord = path.split(/\s+/)[0]?.toLowerCase()
   if (shellCommands.includes(firstWord)) {
-    console.log(`${p} Path validation failed: starts with shell command "${firstWord}"`)
     return false
   }
   
   if (path.includes('http://') || path.includes('https://')) {
-    console.log(`${p} Path validation failed: contains URL`)
     return false
   }
   
   const shellOperators = ['>', '>>', '|', '&&', '||', ';', '`', '$', '$(', '${']
   if (shellOperators.some(op => path.includes(op))) {
-    console.log(`${p} Path validation failed: contains shell operators`)
     return false
   }
   
   if (path.includes(' ') && !path.startsWith('"') && !path.startsWith("'")) {
     const words = path.split(/\s+/)
     if (words.length > 3) {
-      console.log(`${p} Path validation failed: too many unquoted words (${words.length})`)
       return false
     }
   }
   
-  const validExtensions = ['.ts', '.js', '.tsx', '.jsx', '.md', '.json', '.css', '.scss', '.html', '.vue', '.py', '.go', '.rs', '.java', '.cpp', '.c', '.h', '.php', '.rb', '.swift', '.kt', '.dart', '.yml', '.yaml', '.xml', '.toml', '.ini', '.env', '.gitignore', '.dockerignore', '.txt']
+  const validExtensions = ['.ts', '.js', '.tsx', '.jsx', '.md', '.json', '.css', '.scss', '.html', '.vue', '.py', '.go', '.rs', '.java', '.cpp', '.c', '.h', '.php', '.rb', '.swift', '.kt', '.dart', '.yml', '.yaml', '.xml', '.toml', '.ini', '.env', '.gitignore', '.dockerignore', '.txt', '.sh']
   const hasValidExtension = validExtensions.some(ext => path.toLowerCase().endsWith(ext))
   
   if (!hasValidExtension) {
-    console.log(`${p} Path validation failed: no valid file extension`)
     return false
   }
   
@@ -106,16 +98,13 @@ function isValidFilePath(path: string): boolean {
   const isCommonHeader = commonHeaders.some(header => pathLower.includes(header) && !pathLower.includes('/'))
   
   if (isCommonHeader) {
-    console.log(`${p} Path validation failed: appears to be a common header`)
     return false
   }
   
   if (path.startsWith('/') || path.includes('..') || path.includes('//')) {
-    console.log(`${p} Path validation failed: absolute path or contains .. or //`)
     return false
   }
   
-  console.log(`${p} Path validation passed: ${path}`)
   return true
 }
 
@@ -131,19 +120,7 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     
-    const filePath = extractFilePath(line)
-    if (filePath && !inCodeBlock) {
-      if (currentFile && codeBlockContent.length > 0) {
-        currentFile.content = codeBlockContent.join('\n').trim()
-        files.push(currentFile)
-        console.log(`${p} Added file: ${currentFile.path} (${currentFile.content.length} chars)`)
-      }
-      
-      console.log(`${p} Found file path: ${filePath}`)
-      currentFile = { path: filePath, content: '' }
-      codeBlockContent = []
-    }
-    else if (line.startsWith('```') && currentFile) {
+    if (line.startsWith('```') && currentFile) {
       if (!inCodeBlock) {
         inCodeBlock = true
         console.log(`${p} Entering code block for ${currentFile.path}`)
@@ -153,6 +130,19 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
       }
     } else if (inCodeBlock && currentFile) {
       codeBlockContent.push(line)
+    } else if (!inCodeBlock) {
+      const filePath = extractFilePath(line)
+      if (filePath) {
+        if (currentFile && codeBlockContent.length > 0) {
+          currentFile.content = codeBlockContent.join('\n').trim()
+          files.push(currentFile)
+          console.log(`${p} Added file: ${currentFile.path} (${currentFile.content.length} chars)`)
+        }
+        
+        console.log(`${p} Found file path: ${filePath}`)
+        currentFile = { path: filePath, content: '' }
+        codeBlockContent = []
+      }
     }
   }
   

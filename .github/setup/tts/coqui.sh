@@ -13,7 +13,8 @@ echo "$p Installing Coqui TTS"
 pip install TTS >/dev/null 2>&1 || pip install "TTS==0.22.0" >/dev/null 2>&1 || pip install git+https://github.com/coqui-ai/TTS.git >/dev/null 2>&1 || true
 pip install sentencepiece >/dev/null 2>&1 || pip install --only-binary :all: sentencepiece >/dev/null 2>&1 || true
 
-build/pyenv/tts/bin/python - <<'PY' || true
+if [ "${NO_MODELS:-false}" != "true" ]; then
+  build/pyenv/tts/bin/python - <<'PY' || true
 try:
     from TTS.api import TTS
     TTS('tts_models/en/ljspeech/tacotron2-DDC', progress_bar=False)
@@ -21,5 +22,6 @@ try:
 except Exception as e:
     print(f"ERR:{e}")
 PY
+fi
 
 echo "$p Done"
