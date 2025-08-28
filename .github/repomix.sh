@@ -1,15 +1,22 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
+  ".github/setup/index.sh"
+  # "docs/setup.md"
   "*"
   "src/*"
-  ".github/setup"
-  "docs/setup.md"
-  "docs/parse.md"
+  "test"
+  "src/text"
+  "docs/text"
+  "src/image"
+  "docs/image"
 )
 
 IGNORE_PATHS=(
-  # ".github/parse.ts"
+  "src/text/process-steps/03-select-prompts/content-structure-summaries"
+  "src/text/process-steps/03-select-prompts/creative-entertainment"
+  "src/text/process-steps/03-select-prompts/marketing-social-media"
+  ".github/parse.ts"
   "README.md"
   "WARP.md"
   "new-llm-*.md"

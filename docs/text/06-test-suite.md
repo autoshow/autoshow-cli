@@ -1,8 +1,8 @@
 # CLI Test Suite
 
 ```bash
-npm run test:local
-npm run test:services
-npm run test:prompts
-npm run test:models
+npm run test:text:local
+npm run test:text:services
+npm run test:text:prompts
+npm run test:text:models
 ```
