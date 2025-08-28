@@ -5,12 +5,16 @@ import { path, spawnSync, existsSync } from '@/node-utils'
 const p = '[tts/tts-utils/model-utils]'
 
 export const listModels = async (): Promise<void> => {
-  const configPath = path.join(process.cwd(), '.tts-config.json')
+  const configPath = path.join(process.cwd(), 'config', '.tts-config.json')
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'python_env/bin/python')) ? path.join(process.cwd(), 'python_env/bin/python') : 'python3')
+    (existsSync(path.join(process.cwd(), 'pyenv/tts/bin/python')) ? path.join(process.cwd(), 'pyenv/tts/bin/python') : 'python3')
+  
+  l.dim(`${p} Using Python path: ${pythonPath}`)
   
   const pythonScriptPath = path.join(path.dirname(import.meta.url.replace('file://', '')), '../tts-services/coqui-list.py')
+  
+  l.dim(`${p} Listing available TTS models`)
   
   const result = spawnSync(pythonPath, [pythonScriptPath], { 
     encoding: 'utf-8',

@@ -2,12 +2,7 @@ import { existsSync, statSync } from 'fs'
 import { join } from 'path'
 import { l } from '@/logging'
 import { MODEL_HASHES, getDownloadUrl } from './models'
-
-export interface ValidationResult {
-  valid: boolean
-  size: number
-  error?: string
-}
+import type { ValidationResult } from '@/image/image-types'
 
 export function ensureModelExists(modelPath: string, modelsDir: string): boolean {
   const fullPath = join(modelsDir, modelPath)

@@ -37,8 +37,9 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
 }
 
 async function ensureCoreMLEnv(): Promise<void> {
-  const p = '[text/transcription/whisper-coreml]'
-  const py = './models/coreml_env/bin/python'
+  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
+  const py = './pyenv/coreml/bin/python'
+  l.dim(`${p} Checking CoreML environment at ${py}`)
   if (!existsSync(py)) {
     throw new Error('CoreML conversion environment is missing. Run npm run setup')
   }
@@ -53,8 +54,9 @@ async function ensureCoreMLEnv(): Promise<void> {
 async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
   const pkg = `./models/coreml-encoder-${modelId}.mlpackage`
   const out = `./models/ggml-${modelId}-encoder.mlmodelc`
-  const p = '[text/transcription/whisper-coreml]'
+  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   if (!existsSync(pkg)) return
+  l.dim(`${p} Compiling mlpackage to mlmodelc for ${modelId}`)
   try {
     const compiledDir = `./models/tmp-compile-${modelId}`
     await execPromise(`mkdir -p "${compiledDir}"`)
@@ -76,7 +78,7 @@ async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
 async function ensureCoreMLEncoder(modelId: string): Promise<void> {
   const encPath = `./models/ggml-${modelId}-encoder.mlmodelc`
   if (existsSync(encPath)) return
-  const p = '[text/transcription/whisper-coreml]'
+  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   const pkg = `./models/coreml-encoder-${modelId}.mlpackage`
   if (existsSync(pkg)) {
     await compileMlpackageToMlmodelc(modelId)
@@ -84,7 +86,7 @@ async function ensureCoreMLEncoder(modelId: string): Promise<void> {
   }
   l.dim(`${p} Generating CoreML encoder for ${modelId}`)
   try {
-    await execPromise(`bash ./models/generate-coreml-model.sh ${modelId}`, { maxBuffer: 10000 * 1024 })
+    await execPromise(`bash ./.github/setup/transcription/generate-coreml-model.sh ${modelId}`, { maxBuffer: 10000 * 1024 })
   } catch (e: any) {
     err(`${p} Error generating CoreML model: ${e.message}`)
     throw e
@@ -104,7 +106,7 @@ export async function callWhisperCoreml(
   finalPath: string,
   spinner?: Ora
 ) {
-  const p = '[text/transcription/whisper-coreml]'
+  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   try {
     const whisperModel = typeof options['whisperCoreml'] === 'string'
       ? options['whisperCoreml']

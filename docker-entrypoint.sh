@@ -5,7 +5,7 @@ p='[docker-entrypoint]'
 
 echo "$p Starting autoshow-cli container"
 echo "$p Node version: $(node --version)"
-echo "$p Python version: $(/app/python_env/bin/python --version)"
+echo "$p Python version: $(/app/pyenv/tts/bin/python --version)"
 echo "$p Working directory: $(pwd)"
 
 if [ ! -f .env ] && [ -f .env.example ]; then

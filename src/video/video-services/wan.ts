@@ -2,21 +2,12 @@ import { spawn } from 'child_process'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils.ts'
 import { existsSync, readFileSync } from '@/node-utils'
-import type { VideoGenerationResult, WanGenerateOptions } from '@/video/video-types.ts'
+import type { VideoGenerationResult, WanGenerateOptions, WanConfig } from '@/video/video-types.ts'
 
 const p = '[video/video-services/wan]'
 
-interface WanConfig {
-  python: string
-  venv: string
-  models_dir: string
-  repo_dir?: string
-  default_model: string
-  available_models: Record<string, string>
-}
-
 function loadWanConfig(): WanConfig | null {
-  const configPath = 'models/wan/.wan-config.json'
+  const configPath = 'config/.wan-config.json'
   if (!existsSync(configPath)) {
     l.warn(`${p} Wan config not found at ${configPath}`)
     return null
@@ -24,7 +15,9 @@ function loadWanConfig(): WanConfig | null {
   
   try {
     const configContent = readFileSync(configPath, 'utf-8')
-    return JSON.parse(configContent) as WanConfig
+    const config = JSON.parse(configContent) as WanConfig
+    l.dim(`${p} Loaded Wan config from ${configPath}`)
+    return config
   } catch (error) {
     l.warn(`${p} Failed to parse Wan config: ${isApiError(error) ? error.message : 'Unknown error'}`)
     return null
@@ -33,7 +26,13 @@ function loadWanConfig(): WanConfig | null {
 
 function mapWanModelToPath(model: string, config: WanConfig): string | null {
   const modelKey = model.toLowerCase().replace('wan-', '')
-  return config.available_models[modelKey] || null
+  const modelPath = config.available_models[modelKey] || null
+  if (modelPath) {
+    l.dim(`${p} Mapped model ${model} to path: ${modelPath}`)
+  } else {
+    l.warn(`${p} No mapping found for model: ${model}`)
+  }
+  return modelPath
 }
 
 function getResolutionForModel(model: string): { width: number; height: number } {
@@ -52,6 +51,7 @@ export async function generateVideoWithWan(
   const uniqueOutputPath = options.outputPath || generateUniqueFilename('wan', 'mp4')
   
   try {
+    l.dim(`${p} [${requestId}] Loading Wan configuration`)
     const config = loadWanConfig()
     if (!config) {
       throw new Error('Wan2.1 not configured. Please run: bash .github/setup/video/wan.sh')
@@ -97,7 +97,8 @@ export async function generateVideoWithWan(
       throw new Error('Wan wrapper script not found. Please re-run: bash .github/setup/video/wan.sh')
     }
     
-    l.dim(`${p} [${requestId}] Starting Python process...`)
+    l.dim(`${p} [${requestId}] Starting Python process with script: ${scriptPath}`)
+    l.dim(`${p} [${requestId}] Python config: ${JSON.stringify(pythonConfig, null, 2)}`)
     
     return new Promise((resolve) => {
       const pythonProcess = spawn(config.python, [scriptPath, JSON.stringify(pythonConfig)], {

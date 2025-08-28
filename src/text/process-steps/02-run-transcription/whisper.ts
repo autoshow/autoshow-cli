@@ -29,7 +29,7 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
 }
 
 export async function checkWhisperModel(whisperModel: string) {
-  const p = '[text/transcription/whisper]'
+  const p = '[text/process-steps/02-run-transcription/whisper]'
   if (whisperModel === 'turbo') whisperModel = 'large-v3-turbo'
 
   const whisperCliPath = './bin/whisper-cli'
@@ -44,7 +44,7 @@ export async function checkWhisperModel(whisperModel: string) {
     l.dim(`${p} Downloading model: ${whisperModel}`)
     try {
       await execPromise(
-        `bash ./models/download-ggml-model.sh ${whisperModel}`,
+        `bash ./.github/setup/transcription/download-ggml-model.sh ${whisperModel} ./models`,
         { maxBuffer: 10000 * 1024 }
       )
       l.dim(`${p} Model download completed`)
@@ -98,7 +98,7 @@ export async function callWhisper(
   finalPath: string,
   spinner?: Ora
 ) {
-  const p = '[text/transcription/whisper]'
+  const p = '[text/process-steps/02-run-transcription/whisper]'
 
   try {
     const whisperModel = typeof options.whisper === 'string'

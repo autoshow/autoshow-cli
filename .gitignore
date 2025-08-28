@@ -17,13 +17,13 @@ spec.log
 setup-*.log
 setup.log
 TODO.md
-python_env
+pyenv
 output
 src/text/workflows
 whisper-cpp-temp
 whisper-coreml-temp
 input
 eng.traineddata
-wan_env
 =*
 wan2.1-repo
+config/*.json

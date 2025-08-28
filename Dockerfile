@@ -43,25 +43,26 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
     && update-alternatives --set python3 /usr/bin/python3.11
 
-RUN python3 -m venv /app/python_env \
-    && /app/python_env/bin/pip install --upgrade pip setuptools wheel
+RUN mkdir -p /app/pyenv/tts
+RUN python3 -m venv /app/pyenv/tts \
+    && /app/pyenv/tts/bin/pip install --upgrade pip setuptools wheel
 
-RUN /app/python_env/bin/pip install --no-cache-dir \
+RUN /app/pyenv/tts/bin/pip install --no-cache-dir \
     "numpy<2" \
     cffi \
     pycparser
 
-RUN /app/python_env/bin/pip install --no-cache-dir \
+RUN /app/pyenv/tts/bin/pip install --no-cache-dir \
     SoundFile \
     scipy
 
-RUN /app/python_env/bin/pip install --no-cache-dir \
+RUN /app/pyenv/tts/bin/pip install --no-cache-dir \
     torch==2.5.0 --index-url https://download.pytorch.org/whl/cpu
 
-RUN /app/python_env/bin/pip install --no-cache-dir \
+RUN /app/pyenv/tts/bin/pip install --no-cache-dir \
     torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-RUN /app/python_env/bin/pip install --no-cache-dir \
+RUN /app/pyenv/tts/bin/pip install --no-cache-dir \
     librosa \
     sentencepiece \
     transformers \
@@ -69,15 +70,17 @@ RUN /app/python_env/bin/pip install --no-cache-dir \
     safetensors \
     protobuf
 
-RUN /app/python_env/bin/pip install --no-cache-dir \
-    TTS==0.22.0 || /app/python_env/bin/pip install --no-cache-dir git+https://github.com/coqui-ai/TTS.git
+RUN /app/pyenv/tts/bin/pip install --no-cache-dir \
+    TTS==0.22.0 || /app/pyenv/tts/bin/pip install --no-cache-dir git+https://github.com/coqui-ai/TTS.git
 
-RUN /app/python_env/bin/pip install --no-cache-dir \
+RUN /app/pyenv/tts/bin/pip install --no-cache-dir \
     https://github.com/KittenML/KittenTTS/releases/download/0.1/kittentts-0.1.0-py3-none-any.whl || true
 
-RUN ARCH=$(uname -m) && \
+RUN mkdir -p /app/pyenv/coreml && \
+    ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
-        /app/python_env/bin/pip install --no-cache-dir \
+        python3 -m venv /app/pyenv/coreml && \
+        /app/pyenv/coreml/bin/pip install --no-cache-dir \
             "coremltools>=7,<8" \
             ane-transformers \
             openai-whisper; \
@@ -96,7 +99,7 @@ RUN git clone https://github.com/ggerganov/whisper.cpp.git /tmp/whisper-cpp \
     && cp build/ggml/src/*.a /app/bin/ 2>/dev/null || true \
     && rm -rf /tmp/whisper-cpp
 
-RUN mkdir -p /app/models /app/output /app/input
+RUN mkdir -p /app/models /app/output /app/input /app/config
 
 COPY package*.json ./
 RUN apt-get update && apt-get install -y apt-utils && npm ci --omit=dev || npm install --omit=dev
@@ -113,20 +116,20 @@ RUN mkdir -p models && \
     wget -q --show-progress https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin && \
     cd ..
 
-RUN echo '{"python":"/app/python_env/bin/python","venv":"/app/python_env","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}' > /app/.tts-config.json
+RUN echo '{"python":"/app/pyenv/tts/bin/python","venv":"/app/pyenv/tts","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}' > /app/config/.tts-config.json
 
-RUN /app/python_env/bin/python -c "from TTS.api import TTS; print('TTS import successful')" || echo "TTS import check failed, will download models on first use"
+RUN /app/pyenv/tts/bin/python -c "from TTS.api import TTS; print('TTS import successful')" || echo "TTS import check failed, will download models on first use"
 
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-ENV PATH="/app/bin:/app/python_env/bin:${PATH}"
-ENV TTS_PYTHON_PATH=/app/python_env/bin/python
-ENV COQUI_PYTHON_PATH=/app/python_env/bin/python
-ENV KITTEN_PYTHON_PATH=/app/python_env/bin/python
-ENV PYTHONPATH=/app/python_env/lib/python3.11/site-packages:${PYTHONPATH}
+ENV PATH="/app/bin:/app/pyenv/tts/bin:${PATH}"
+ENV TTS_PYTHON_PATH=/app/pyenv/tts/bin/python
+ENV COQUI_PYTHON_PATH=/app/pyenv/tts/bin/python
+ENV KITTEN_PYTHON_PATH=/app/pyenv/tts/bin/python
+ENV PYTHONPATH=/app/pyenv/tts/lib/python3.11/site-packages:${PYTHONPATH}
 
-VOLUME ["/app/input", "/app/output", "/app/models"]
+VOLUME ["/app/input", "/app/output", "/app/models", "/app/config"]
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["--help"]

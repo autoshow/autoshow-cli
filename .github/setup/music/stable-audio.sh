@@ -2,12 +2,12 @@
 set -euo pipefail
 p='[setup/music/stable-audio]'
 
-if [ ! -x "python_env/bin/pip" ]; then
+if [ ! -x "pyenv/tts/bin/pip" ]; then
   echo "$p Skipping Stable Audio setup, shared env missing"
   exit 0
 fi
 
-pip() { "python_env/bin/pip" "$@"; }
+pip() { "pyenv/tts/bin/pip" "$@"; }
 
 echo "$p Installing Stable Audio Tools and dependencies"
 pip install --upgrade torch==2.5.0 --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1 || pip install torch==2.5.0 >/dev/null 2>&1 || true
@@ -19,7 +19,7 @@ pip install safetensors >/dev/null 2>&1
 pip install gradio >/dev/null 2>&1 || true
 
 echo "$p Downloading default Stable Audio Open 1.0 model"
-python_env/bin/python - <<'PY' || true
+pyenv/tts/bin/python - <<'PY' || true
 try:
     import os
     import torch
@@ -41,16 +41,17 @@ except Exception as e:
     print(f"ERR: {e}")
 PY
 
-if [ ! -f ".music-config.json" ]; then
-  cat >.music-config.json <<EOF
-{"python":"python_env/bin/python","venv":"python_env","audiocraft":{"default_model":"facebook/musicgen-small","cache_dir":"models/audiocraft"},"stable_audio":{"default_model":"stabilityai/stable-audio-open-1.0","cache_dir":"models/stable-audio"}}
+mkdir -p config
+if [ ! -f "config/.music-config.json" ]; then
+  cat >config/.music-config.json <<EOF
+{"python":"pyenv/tts/bin/python","venv":"pyenv/tts","audiocraft":{"default_model":"facebook/musicgen-small","cache_dir":"models/audiocraft"},"stable_audio":{"default_model":"stabilityai/stable-audio-open-1.0","cache_dir":"models/stable-audio"}}
 EOF
 else
-  python_env/bin/python - <<'PY' || true
+  pyenv/tts/bin/python - <<'PY' || true
 import json
 import os
 
-config_path = '.music-config.json'
+config_path = 'config/.music-config.json'
 with open(config_path, 'r') as f:
     config = json.load(f)
 

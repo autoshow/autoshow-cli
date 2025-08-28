@@ -9,10 +9,11 @@ import {
 const p = '[tts/tts-services/coqui]'
 
 const getCoquiConfig = () => {
-  const configPath = path.join(process.cwd(), '.tts-config.json')
+  const configPath = path.join(process.cwd(), 'config', '.tts-config.json')
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'python_env/bin/python')) ? path.join(process.cwd(), 'python_env/bin/python') : 'python3')
+    (existsSync(path.join(process.cwd(), 'pyenv/tts/bin/python')) ? path.join(process.cwd(), 'pyenv/tts/bin/python') : 'python3')
+  l.dim(`${p} Using Python path: ${pythonPath}`)
   return { python: pythonPath, ...config.coqui }
 }
 
@@ -56,6 +57,8 @@ export async function synthesizeWithCoqui(
     output: outputPath,
     speaker_wav: options.speakerWav,
   }
+  
+  l.dim(`${p} Generating speech with model: ${modelName}`)
   
   const result = spawnSync(config.python, [pythonScriptPath, JSON.stringify(configData)], { 
     stdio: ['pipe', 'pipe', 'pipe'], 

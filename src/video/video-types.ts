@@ -20,6 +20,24 @@ export interface VeoGenerateOptions extends VeoGenerateConfig {
   outputPath?: string
 }
 
+export interface VeoApiOperation {
+  name: string
+  done: boolean
+  response?: {
+    generateVideoResponse?: {
+      generatedSamples?: Array<{
+        video?: {
+          uri?: string
+        }
+      }>
+    }
+  }
+  error?: {
+    message: string
+    code: number
+  }
+}
+
 export type RunwayModel = 'gen4_image' | 'gen4_image_turbo'
 
 export interface RunwayGenerateOptions {
@@ -42,6 +60,14 @@ export interface WanGenerateOptions {
   image?: string
   mask?: string
   referenceImages?: string[]
+}
+
+export interface WanConfig {
+  python: string
+  venv: string
+  models_dir: string
+  default_model: string
+  available_models: Record<string, string>
 }
 
 export interface VideoGenerationResult {
