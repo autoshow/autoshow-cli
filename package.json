@@ -54,6 +54,7 @@
     "docker:image": "npm run docker:run -- image",
     "docker:extract": "npm run docker:run -- extract",
     "test:base": "tsx --test --env-file=.env --test-reporter=spec --test-reporter-destination=spec.log --test-concurrency=1",
+    "test:docker": "npm run test:base -- test/docker/docker-local.test.ts",
     "test:local": "npm run test:base -- test/image/image-local.test.ts test/music/music-local.test.ts test/text/local.test.ts test/tts/tts-local.test.ts",
     "test:services": "npm run test:base -- test/tts/tts-services.test.ts test/text/services.test.ts test/image/image-services.test.ts",
     "test:text:local": "npm run test:base -- test/text/local.test.ts",

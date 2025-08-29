@@ -1,15 +1,13 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  ".github/setup/index.sh"
-  # "docs/setup.md"
   "*"
   "src/*"
-  "test"
-  "src/tts"
-  "docs/tts"
-  "src/image"
-  "docs/image"
+  "docs/music"
+  "src/music"
+  ".github/setup/music"
+  ".github/setup/index.sh"
+  "docs/docker.md"
 )
 
 IGNORE_PATHS=(

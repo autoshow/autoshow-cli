@@ -1,6 +1,7 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, existsSync, execPromise, spawn } from '@/node-utils'
 import { formatWhisperTranscript, checkWhisperModel } from './whisper.ts'
+import { callWhisper } from './whisper.ts'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
@@ -39,6 +40,34 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
       reject(e)
     })
   })
+}
+
+async function checkCoreMLAvailability(): Promise<boolean> {
+  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
+  const configPath = './build/config/.coreml-config.json'
+  
+  try {
+    if (existsSync(configPath)) {
+      const config = JSON.parse(await readFile(configPath, 'utf8'))
+      if (config.available === false) {
+        l.dim(`${p} CoreML unavailable: ${config.reason || 'unknown reason'}`)
+        return false
+      }
+    }
+    
+    const py = './build/pyenv/coreml/bin/python'
+    if (!existsSync(py)) {
+      l.dim(`${p} CoreML Python environment not found at: ${py}`)
+      return false
+    }
+    
+    await execPromise(`${py} -c "import torch,coremltools,numpy,transformers,sentencepiece,huggingface_hub,ane_transformers,safetensors,whisper"`, { maxBuffer: 10000 * 1024 })
+    l.dim(`${p} CoreML environment validated successfully`)
+    return true
+  } catch (e: any) {
+    l.dim(`${p} CoreML environment check failed: ${e.message}`)
+    return false
+  }
 }
 
 async function ensureCoreMLEnv(): Promise<void> {
@@ -121,14 +150,25 @@ export async function callWhisperCoreml(
   spinner?: Ora
 ) {
   const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
+  
+  const whisperModel = typeof options['whisperCoreml'] === 'string'
+    ? options['whisperCoreml']
+    : options['whisperCoreml'] === true
+      ? 'base'
+      : (() => { throw new Error('Invalid whisperCoreml option') })()
+  
+  l.dim(`${p} Attempting to use whisper CoreML model: ${whisperModel}`)
+  
+  const coremlAvailable = await checkCoreMLAvailability()
+  if (!coremlAvailable) {
+    l.warn(`${p} CoreML environment not available, falling back to regular whisper`)
+    if (spinner) {
+      spinner.text = 'Step 2 - Run Transcription (fallback to whisper)'
+    }
+    return await callWhisper(options, finalPath, spinner)
+  }
+  
   try {
-    const whisperModel = typeof options['whisperCoreml'] === 'string'
-      ? options['whisperCoreml']
-      : options['whisperCoreml'] === true
-        ? 'base'
-        : (() => { throw new Error('Invalid whisperCoreml option') })()
-    
-    l.dim(`${p} Using whisper CoreML model: ${whisperModel}`)
     await checkWhisperModel(whisperModel)
     await ensureCoreMLEnv()
     await ensureCoreMLEncoder(whisperModel)
@@ -171,7 +211,11 @@ export async function callWhisperCoreml(
       costPerMinuteCents: 0
     }
   } catch (error) {
-    err(`${p} Error in callWhisperCoreml: ${(error as Error).message}`)
-    throw error
+    err(`${p} CoreML transcription failed: ${(error as Error).message}`)
+    l.warn(`${p} Falling back to regular whisper due to CoreML error`)
+    if (spinner) {
+      spinner.text = 'Step 2 - Run Transcription (fallback to whisper)'
+    }
+    return await callWhisper(options, finalPath, spinner)
   }
 }

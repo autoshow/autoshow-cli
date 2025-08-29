@@ -63,6 +63,52 @@ if [ -n "$GROQ_API_KEY" ]; then
     sed -i "s/^GROQ_API_KEY=.*/GROQ_API_KEY=$GROQ_API_KEY/" .env
 fi
 
+if [ -n "$HF_TOKEN" ]; then
+    echo "$p Setting HF_TOKEN from environment for music model access"
+    sed -i "s/^HF_TOKEN=.*/HF_TOKEN=$HF_TOKEN/" .env
+fi
+
+if [ -n "$HUGGING_FACE_HUB_TOKEN" ]; then
+    echo "$p Setting HUGGING_FACE_HUB_TOKEN from environment"
+    sed -i "s/^HUGGING_FACE_HUB_TOKEN=.*/HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN/" .env
+fi
+
+echo "$p Validating dependencies"
+
+if ! command -v yt-dlp &> /dev/null; then
+    echo "$p Critical: yt-dlp not found in PATH, attempting to fix"
+    if [ -f "/usr/local/bin/yt-dlp" ]; then
+        echo "$p Found yt-dlp at /usr/local/bin/yt-dlp, updating PATH"
+        export PATH="/usr/local/bin:$PATH"
+        ln -sf /usr/local/bin/yt-dlp /usr/bin/yt-dlp 2>/dev/null || true
+    else
+        echo "$p Downloading yt-dlp as fallback"
+        curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+        chmod +x /usr/local/bin/yt-dlp
+        ln -sf /usr/local/bin/yt-dlp /usr/bin/yt-dlp
+    fi
+    
+    if command -v yt-dlp &> /dev/null; then
+        echo "$p yt-dlp now available at: $(which yt-dlp)"
+    else
+        echo "$p Warning: yt-dlp still not available, video processing will fail"
+    fi
+else
+    echo "$p yt-dlp found: $(which yt-dlp)"
+fi
+
+if [ ! -f "/app/build/bin/whisper-cli" ]; then
+    echo "$p Warning: whisper-cli not found, transcription may fail"
+else
+    echo "$p whisper-cli found: /app/build/bin/whisper-cli"
+fi
+
+if [ ! -f "/app/build/bin/sd" ]; then
+    echo "$p Warning: stable-diffusion.cpp not found, image generation may fail"
+else
+    echo "$p stable-diffusion.cpp found: /app/build/bin/sd"
+fi
+
 echo "$p Checking whisper models availability"
 for model in tiny base small; do
     if [ ! -f "/app/build/models/ggml-${model}.bin" ]; then
@@ -71,13 +117,29 @@ for model in tiny base small; do
     fi
 done
 
+echo "$p Ensuring music model directories exist"
+mkdir -p /app/build/models/audiocraft /app/build/models/stable-audio
+
+echo "$p Checking CoreML availability"
+if [ -f "/app/build/config/.coreml-config.json" ]; then
+    COREML_STATUS=$(cat /app/build/config/.coreml-config.json | grep -o '"available":[^,}]*' | cut -d: -f2 | tr -d ' "')
+    if [ "$COREML_STATUS" = "true" ]; then
+        echo "$p CoreML environment available"
+    else
+        echo "$p CoreML environment not available, will fallback to regular whisper"
+    fi
+else
+    echo "$p CoreML config not found, assuming unavailable"
+    echo '{"available": false, "reason": "config not found"}' > /app/build/config/.coreml-config.json
+fi
+
 if [ "$1" = "bash" ] || [ "$1" = "sh" ]; then
     echo "$p Starting shell"
     exec "$@"
 elif [ "$1" = "--help" ] || [ -z "$1" ]; then
     echo "$p Running autoshow-cli help"
-    exec npx tsx --env-file=.env --no-warnings src/commander.ts --help
+    exec npx tsx --env-file=./.env --no-warnings src/commander.ts --help
 else
     echo "$p Running autoshow-cli with arguments: $@"
-    exec npx tsx --env-file=.env --no-warnings src/commander.ts "$@"
+    exec npx tsx --env-file=./.env --no-warnings src/commander.ts "$@"
 fi
