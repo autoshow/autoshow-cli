@@ -14,7 +14,7 @@ export async function runTranscription(
   finalPath: string,
   transcriptServicesInput?: string
 ): Promise<TranscriptionResult> {
-  const p = '[text/process-steps/03-run-transcription]'
+  const p = '[text/process-steps/02-run-transcription/run-transcription]'
   const spinner = ora('Step 2 - Run Transcription').start()
 
   let serviceToUse = transcriptServicesInput
@@ -39,8 +39,15 @@ export async function runTranscription(
   l.dim(`${p} Using transcription service: ${serviceToUse}`)
   
   const audioFilePath = `${finalPath}.wav`
-  const audioDuration = await getAudioDuration(audioFilePath)
-  l.dim(`${p} Audio duration: ${audioDuration} seconds`)
+  let audioDuration: number
+  
+  try {
+    audioDuration = await getAudioDuration(audioFilePath)
+    l.dim(`${p} Audio duration: ${audioDuration} seconds`)
+  } catch (error) {
+    err(`${p} Error getting audio duration: ${(error as Error).message}`)
+    audioDuration = 0
+  }
   
   let finalTranscript = ''
   let finalModelId = ''
@@ -50,7 +57,8 @@ export async function runTranscription(
     switch (serviceToUse) {
       case 'deepgram': {
         const result = await retryTranscriptionCall<TranscriptionResult>(
-          () => callDeepgram(options, finalPath)
+          () => callDeepgram(options, finalPath),
+          spinner
         )
         finalTranscript = result.transcript
         finalModelId = result.modelId
@@ -59,7 +67,8 @@ export async function runTranscription(
       }
       case 'assembly': {
         const result = await retryTranscriptionCall<TranscriptionResult>(
-          () => callAssembly(options, finalPath)
+          () => callAssembly(options, finalPath),
+          spinner
         )
         finalTranscript = result.transcript
         finalModelId = result.modelId
@@ -88,7 +97,8 @@ export async function runTranscription(
       }
       case 'groqWhisper': {
         const result = await retryTranscriptionCall<TranscriptionResult>(
-          () => callGroqWhisper(options, finalPath)
+          () => callGroqWhisper(options, finalPath),
+          spinner
         )
         finalTranscript = result.transcript
         finalModelId = result.modelId
@@ -110,6 +120,27 @@ export async function runTranscription(
   } catch (error) {
     spinner.fail('Transcription failed.')
     err(`${p} Error during runTranscription: ${(error as Error).message}`)
+    
+    if (serviceToUse === 'whisperCoreml') {
+      l.warn(`${p} Attempting automatic fallback from whisperCoreml to whisper`)
+      try {
+        const fallbackResult = await retryTranscriptionCall<TranscriptionResult>(
+          () => callWhisper(options, finalPath, ora('Step 2 - Run Transcription (fallback)').start()),
+          undefined
+        )
+        l.success(`${p} Fallback transcription completed successfully`)
+        return {
+          transcript: fallbackResult.transcript,
+          modelId: fallbackResult.modelId,
+          costPerMinuteCents: fallbackResult.costPerMinuteCents,
+          audioDuration
+        }
+      } catch (fallbackError) {
+        err(`${p} Fallback transcription also failed: ${(fallbackError as Error).message}`)
+        throw error
+      }
+    }
+    
     throw error
   }
 }
@@ -118,7 +149,7 @@ export async function retryTranscriptionCall<T>(
   fn: () => Promise<T>,
   spinner?: Ora
 ): Promise<T> {
-  const p = '[text/process-steps/03-run-transcription]'
+  const p = '[text/process-steps/02-run-transcription/run-transcription]'
   const maxRetries = 7
   let attempt = 0
 
@@ -128,11 +159,24 @@ export async function retryTranscriptionCall<T>(
       const result = await fn()
       return result
     } catch (error) {
-      err(`${p} Attempt ${attempt} failed: ${(error as Error).message}`)
+      const errorMessage = (error as Error).message
+      err(`${p} Attempt ${attempt} failed: ${errorMessage}`)
+      
+      if (errorMessage.includes('CoreML') && errorMessage.includes('missing')) {
+        l.warn(`${p} CoreML environment issue detected, will not retry CoreML`)
+        throw error
+      }
+      
+      if (errorMessage.includes('yt-dlp') && errorMessage.includes('ENOENT')) {
+        l.warn(`${p} yt-dlp not found, this is a system issue`)
+        throw error
+      }
+      
       if (attempt >= maxRetries) {
         err(`${p} Max retries (${maxRetries}) reached. Aborting transcription.`)
         throw error
       }
+      
       const delayMs = 1000 * 2 ** (attempt - 1)
       l.dim(`${p} Retrying in ${delayMs / 1000} seconds...`)
       if (spinner) {

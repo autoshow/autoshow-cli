@@ -32,7 +32,9 @@ docker run --rm -it \
 
 - `/app/input` - Place your media files, PDFs, and markdown files here
 - `/app/output` - Generated content will be saved here
-- `/app/models` - Whisper models and TTS models are stored here
+- `/app/models` - Whisper models, TTS models, and music models are stored here
+  - `/app/models/audiocraft` - AudioCraft MusicGen models cache
+  - `/app/models/stable-audio` - Stable Audio models cache
 
 ## Environment Variables
 
@@ -56,7 +58,20 @@ docker run --rm -it \
   -v $(pwd)/models:/app/models \
   -e OPENAI_API_KEY=your_key \
   -e DEEPGRAM_API_KEY=your_key \
+  -e HF_TOKEN=your_huggingface_token \
   autoshow-cli [command]
+```
+
+### Music Generation Variables
+
+For accessing gated music models:
+
+```bash
+docker run --rm -it \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/models:/app/models \
+  -e HF_TOKEN=your_huggingface_token \
+  autoshow-cli music generate --prompt "upbeat electronic music"
 ```
 
 ## Common Commands
@@ -109,6 +124,69 @@ docker run --rm -it \
   -v $(pwd)/output:/app/output \
   --env-file .env \
   autoshow-cli tts script input/script.json
+```
+
+### Music Generation
+
+#### AudioCraft MusicGen
+
+Generate music with AudioCraft (default):
+```bash
+docker run --rm -it \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/models:/app/models \
+  autoshow-cli music generate --prompt "upbeat electronic dance music with heavy bass"
+```
+
+With specific model and parameters:
+```bash
+docker run --rm -it \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/models:/app/models \
+  autoshow-cli music generate \
+    --prompt "calm piano melody" \
+    --service audiocraft \
+    --model facebook/musicgen-medium \
+    --duration 15 \
+    --temperature 1.2
+```
+
+#### Stable Audio
+
+Generate music with Stable Audio:
+```bash
+docker run --rm -it \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/models:/app/models \
+  -e HF_TOKEN=your_token \
+  autoshow-cli music generate \
+    --prompt "ambient electronic music" \
+    --service stable-audio \
+    --duration 20 \
+    --steps 150 \
+    --cfg-scale 9
+```
+
+#### Music Generation with Melody Conditioning (AudioCraft only)
+
+```bash
+docker run --rm -it \
+  -v $(pwd)/input:/app/input \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/models:/app/models \
+  autoshow-cli music generate \
+    --prompt "jazz arrangement" \
+    --service audiocraft \
+    --model facebook/musicgen-melody \
+    --melody input/melody.wav
+```
+
+#### List Available Models
+
+```bash
+docker run --rm -it \
+  -v $(pwd)/models:/app/models \
+  autoshow-cli music list
 ```
 
 ### Image Generation
@@ -180,4 +258,39 @@ npm run docker:text -- --video "https://www.youtube.com/watch?v=MORMZXEaONk"
 npm run docker:tts -- file input/sample.md
 npm run docker:image -- generate -p "prompt"
 npm run docker:extract -- pdf input/document.pdf
+
+# Music generation shortcuts
+npm run docker:run -- music generate --prompt "electronic music"
+npm run docker:run -- music generate --prompt "jazz" --service stable-audio
+npm run docker:run -- music list
+```
+
+## Troubleshooting
+
+### Container Resource Requirements
+
+Minimum recommended resources:
+
+| Operation | RAM | Storage |
+|-----------|-----|---------|
+| Text processing | 2GB | 1GB |
+| TTS generation | 4GB | 2GB |
+| Music (AudioCraft small) | 4GB | 3GB |
+| Music (AudioCraft large) | 16GB | 8GB |
+| Music (Stable Audio) | 8GB | 5GB |
+| Image generation | 2GB | 1GB |
+
+### Volume Permissions
+
+If you encounter permission issues:
+
+```bash
+# Fix ownership (Linux/macOS)
+sudo chown -R $(id -u):$(id -g) ./models ./output
+
+# Or run with user mapping
+docker run --rm -it --user $(id -u):$(id -g) \
+  -v $(pwd)/models:/app/models \
+  -v $(pwd)/output:/app/output \
+  autoshow-cli music generate --prompt "test"
 ```
