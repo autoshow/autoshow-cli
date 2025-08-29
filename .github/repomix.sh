@@ -6,8 +6,8 @@ INCLUDE_PATHS=(
   "*"
   "src/*"
   "test"
-  "src/text"
-  "docs/text"
+  "src/tts"
+  "docs/tts"
   "src/image"
   "docs/image"
 )
