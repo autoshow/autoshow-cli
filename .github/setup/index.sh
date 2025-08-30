@@ -47,12 +47,12 @@ is_base_setup_complete() {
     return 1
   fi
 
-  if [ ! -d "build/pyenv/wan" ] || [ ! -x "build/pyenv/wan/bin/python" ]; then
-    echo "$check_p Missing or incomplete Wan Python environment"
+  if [ ! -d "build/pyenv/hunyuan" ] || [ ! -x "build/pyenv/hunyuan/bin/python" ]; then
+    echo "$check_p Missing or incomplete HunyuanVideo Python environment"
     return 1
   fi
 
-  if [ ! -f "build/config/.tts-config.json" ] || [ ! -f "build/config/.music-config.json" ] || [ ! -f "build/config/.wan-config.json" ]; then
+  if [ ! -f "build/config/.tts-config.json" ] || [ ! -f "build/config/.music-config.json" ] || [ ! -f "build/config/.hunyuan-config.json" ]; then
     echo "$check_p Missing core configuration files"
     return 1
   fi
@@ -201,7 +201,7 @@ if [ "$BASE_SETUP_NEEDED" = true ]; then
   bash "$SETUP_DIR/image/sdcpp.sh"
 
   echo "$p Setting up video generation environment"
-  bash "$SETUP_DIR/video/wan.sh"
+  bash "$SETUP_DIR/video/hunyuan.sh"
 
   echo "$p Base setup completed"
 else
