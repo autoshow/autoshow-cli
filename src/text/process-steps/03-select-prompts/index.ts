@@ -16,10 +16,22 @@ import { questions } from './content-structure-summaries/questions'
 import { x } from './marketing-social-media/x'
 import { facebook } from './marketing-social-media/facebook'
 import { linkedin } from './marketing-social-media/linkedin'
+import { instagram } from './marketing-social-media/instagram'
+import { tiktok } from './marketing-social-media/tiktok'
+import { youtubeDescription } from './marketing-social-media/youtube-description'
+import { emailNewsletter } from './marketing-social-media/email-newsletter'
+import { seoArticle } from './marketing-social-media/seo-article'
+import { contentStrategy } from './marketing-social-media/content-strategy'
 import { blog } from './marketing-social-media/blog'
 import { rapSong } from './creative-entertainment/rap-song'
 import { rockSong } from './creative-entertainment/rock-song'
 import { countrySong } from './creative-entertainment/country-song'
+import { popSong } from './creative-entertainment/pop-song'
+import { jazzSong } from './creative-entertainment/jazz-song'
+import { folkSong } from './creative-entertainment/folk-song'
+import { shortStory } from './creative-entertainment/short-story'
+import { screenplay } from './creative-entertainment/screenplay'
+import { poetryCollection } from './creative-entertainment/poetry-collection'
 
 export const sections = {
   titles,
@@ -32,6 +44,12 @@ export const sections = {
   x,
   facebook,
   linkedin,
+  instagram,
+  tiktok,
+  youtubeDescription,
+  emailNewsletter,
+  seoArticle,
+  contentStrategy,
   chapterTitles,
   shortChapters,
   mediumChapters,
@@ -43,5 +61,11 @@ export const sections = {
   rapSong,
   rockSong,
   countrySong,
+  popSong,
+  jazzSong,
+  folkSong,
+  shortStory,
+  screenplay,
+  poetryCollection,
   keyMoments,
 }
