@@ -48,26 +48,34 @@ export interface RunwayGenerateOptions {
   duration?: 5 | 10
 }
 
-export type WanModel = 'vace-1.3b' | 'vace-14b' | 't2v-1.3b' | 't2v-14b'
+export type HunyuanModel = 'hunyuan-720p' | 'hunyuan-540p' | 'hunyuan-fp8'
 
-export interface WanGenerateOptions {
-  model?: WanModel
+export interface HunyuanGenerateOptions {
+  model?: HunyuanModel
   outputPath?: string
   resolution?: { width: number; height: number }
+  aspectRatio?: '16:9' | '9:16' | '4:3' | '3:4' | '1:1'
   numFrames?: number
   guidanceScale?: number
+  flowShift?: number
   negativePrompt?: string
+  numInferenceSteps?: number
+  seed?: number
+  useFp8?: boolean
+  useCpuOffload?: boolean
   image?: string
-  mask?: string
-  referenceImages?: string[]
 }
 
-export interface WanConfig {
+export interface HunyuanConfig {
   python: string
   venv: string
   models_dir: string
   default_model: string
   available_models: Record<string, string>
+  resolutions: {
+    '720p': Record<string, [number, number]>
+    '540p': Record<string, [number, number]>
+  }
 }
 
 export interface VideoGenerationResult {

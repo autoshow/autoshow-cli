@@ -1,10 +1,10 @@
 import { Command } from 'commander'
 import { l, err } from '@/logging'
-import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel, validateWanModel } from './video-utils.ts'
+import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel, validateHunyuanModel } from './video-utils.ts'
 import { generateVideoWithVeo } from './video-services/veo.ts'
 import { generateVideoWithRunway } from './video-services/runway.ts'
-import { generateVideoWithWan } from './video-services/wan.ts'
-import type { VeoModel, RunwayModel, WanModel, VeoGenerateOptions, RunwayGenerateOptions, WanGenerateOptions } from '@/video/video-types.ts'
+import { generateVideoWithHunyuan } from './video-services/hunyuan.ts'
+import type { VeoModel, RunwayModel, HunyuanModel, VeoGenerateOptions, RunwayGenerateOptions, HunyuanGenerateOptions } from '@/video/video-types.ts'
 
 export const createVideoCommand = (): Command => {
   const p = '[video/create-video-command]'
@@ -14,15 +14,20 @@ export const createVideoCommand = (): Command => {
     .command('generate')
     .description('Generate videos using AI services')
     .requiredOption('-p, --prompt <text>', 'text prompt for video generation')
-    .option('-m, --model <model>', 'model to use (wan: t2v-1.3b|t2v-14b|vace-1.3b|vace-14b, veo: veo-3.0-generate-preview|veo-3.0-fast-generate-preview|veo-2.0-generate-001, runway: gen4_turbo|gen3a_turbo)', 't2v-1.3b')
+    .option('-m, --model <model>', 'model to use (hunyuan: hunyuan-720p|hunyuan-540p|hunyuan-fp8, veo: veo-3.0-generate-preview|veo-3.0-fast-generate-preview|veo-2.0-generate-001, runway: gen4_turbo|gen3a_turbo)', 'hunyuan-720p')
     .option('-o, --output <path>', 'output path for generated video')
     .option('-i, --image <path>', 'reference image for image-to-video generation')
-    .option('-a, --aspect-ratio <ratio>', 'aspect ratio (16:9|9:16)', '16:9')
+    .option('-a, --aspect-ratio <ratio>', 'aspect ratio (16:9|9:16|4:3|3:4|1:1)', '16:9')
     .option('-n, --negative <text>', 'negative prompt to exclude elements')
     .option('--person <mode>', 'person generation mode (allow_all|allow_adult|dont_allow) (Veo only)')
     .option('-d, --duration <seconds>', 'video duration in seconds (5|10) (Runway only)', '5')
-    .option('--frames <number>', 'number of frames to generate (Wan only)', '81')
-    .option('--guidance <scale>', 'guidance scale for generation (Wan only)')
+    .option('--frames <number>', 'number of frames to generate (HunyuanVideo default: 129)', '129')
+    .option('--guidance <scale>', 'guidance scale for generation (HunyuanVideo default: 6.0)')
+    .option('--flow-shift <value>', 'flow shift value (HunyuanVideo default: 7.0)')
+    .option('--seed <number>', 'random seed for reproducible generation')
+    .option('--steps <number>', 'number of inference steps (HunyuanVideo default: 50)', '50')
+    .option('--use-fp8', 'use FP8 quantization for reduced memory usage (HunyuanVideo only)')
+    .option('--no-cpu-offload', 'disable CPU offload (HunyuanVideo only)')
     .action(async (options) => {
       try {
         l.opts(`${p} Starting video generation`)
@@ -30,37 +35,38 @@ export const createVideoCommand = (): Command => {
         
         const isVeoModel = validateVideoModel(options.model)
         const isRunwayModel = validateRunwayModel(options.model)
-        const isWanModel = validateWanModel(options.model)
+        const isHunyuanModel = validateHunyuanModel(options.model)
         
-        if (!isVeoModel && !isRunwayModel && !isWanModel) {
+        if (!isVeoModel && !isRunwayModel && !isHunyuanModel) {
           err(`${p} Invalid model: ${options.model}. Use 'npm run as -- video list-models' to see available models`)
         }
         
         const aspectRatio = parseAspectRatio(options.aspectRatio)
         
-        if (isWanModel) {
-          l.dim(`${p} Using Wan2.1 model: ${options.model}`)
+        if (isHunyuanModel) {
+          l.dim(`${p} Using HunyuanVideo model: ${options.model}`)
           
-          const wanOptions: WanGenerateOptions = {
-            model: options.model as WanModel,
+          const hunyuanOptions: HunyuanGenerateOptions = {
+            model: options.model as HunyuanModel,
             outputPath: options.output,
             image: options.image,
+            aspectRatio: aspectRatio,
             negativePrompt: options.negative,
-            numFrames: options.frames ? parseInt(options.frames) : 81,
-            guidanceScale: options.guidance ? parseFloat(options.guidance) : undefined
-          }
-          
-          if (aspectRatio === '9:16') {
-            wanOptions.resolution = { width: 480, height: 832 }
-          } else if (options.model.includes('14b')) {
-            wanOptions.resolution = { width: 1280, height: 720 }
+            numFrames: options.frames ? parseInt(options.frames) : 129,
+            guidanceScale: options.guidance ? parseFloat(options.guidance) : 6.0,
+            flowShift: options.flowShift ? parseFloat(options.flowShift) : 7.0,
+            seed: options.seed ? parseInt(options.seed) : undefined,
+            numInferenceSteps: options.steps ? parseInt(options.steps) : 50,
+            useFp8: options.useFp8 || options.model.includes('fp8'),
+            useCpuOffload: options.cpuOffload !== false
           }
           
           if (options.image) {
-            l.dim(`${p} Using image-to-video mode with reference image: ${options.image}`)
+            l.warn(`${p} Note: HunyuanVideo text-to-video model does not use image input. Image will be ignored.`)
+            l.dim(`${p} Image-to-video models are coming soon in future updates.`)
           }
           
-          const result = await generateVideoWithWan(options.prompt, wanOptions)
+          const result = await generateVideoWithHunyuan(options.prompt, hunyuanOptions)
           
           if (!result) {
             err(`${p} Failed to generate video: result is undefined`)
@@ -75,16 +81,22 @@ export const createVideoCommand = (): Command => {
             err(`${p} Failed to generate video: ${result.error}`)
           }
         } else if (isVeoModel) {
-          if (options.model !== 'veo-2.0-generate-001' && aspectRatio === '9:16') {
+          let veoAspectRatio: '16:9' | '9:16' | undefined = aspectRatio as any
+          if (options.model !== 'veo-2.0-generate-001' && veoAspectRatio === '9:16') {
             l.warn(`${p} Portrait mode (9:16) is only supported by veo-2.0-generate-001. Using 16:9 instead.`)
-            options.aspectRatio = '16:9'
+            veoAspectRatio = '16:9'
+          }
+
+          if (veoAspectRatio !== '16:9' && veoAspectRatio !== '9:16') {
+            l.warn(`${p} Unsupported aspect ratio for Veo model: ${veoAspectRatio}. Defaulting to 16:9.`)
+            veoAspectRatio = '16:9'
           }
           
           const veoOptions: VeoGenerateOptions = {
             model: options.model as VeoModel,
             outputPath: options.output,
             image: options.image,
-            aspectRatio: aspectRatio,
+            aspectRatio: veoAspectRatio,
             negativePrompt: options.negative,
             personGeneration: options.person
           }
@@ -112,12 +124,18 @@ export const createVideoCommand = (): Command => {
           if (duration !== 5 && duration !== 10) {
             err(`${p} Invalid duration: ${options.duration}. Must be 5 or 10 seconds`)
           }
+
+          let runwayAspectRatio: '16:9' | '9:16' | undefined = aspectRatio as any
+          if (runwayAspectRatio !== '16:9' && runwayAspectRatio !== '9:16') {
+            l.warn(`${p} Unsupported aspect ratio for Runway model: ${runwayAspectRatio}. Defaulting to 16:9.`)
+            runwayAspectRatio = '16:9'
+          }
           
           const runwayOptions: RunwayGenerateOptions = {
             model: options.model as RunwayModel,
             outputPath: options.output,
             image: options.image,
-            aspectRatio: aspectRatio,
+            aspectRatio: runwayAspectRatio,
             duration: duration as 5 | 10
           }
           
@@ -154,11 +172,10 @@ export const createVideoCommand = (): Command => {
     .action(() => {
       l.opts(`${p} Available video generation models:`)
       l.dim(`${p} `)
-      l.dim(`${p} Wan2.1 models (Open-source):`)
-      l.dim(`${p}   • t2v-1.3b - Text-to-Video 1.3B (Default, 480p, 5 seconds, consumer GPU friendly)`)
-      l.dim(`${p}   • t2v-14b - Text-to-Video 14B (480p/720p, 5 seconds, high quality)`)
-      l.dim(`${p}   • vace-1.3b - VACE 1.3B for video creation/editing (480p, 5 seconds)`)
-      l.dim(`${p}   • vace-14b - VACE 14B for video creation/editing (480p/720p, 5 seconds)`)
+      l.dim(`${p} HunyuanVideo models (Open-source, 13B+ parameters):`)
+      l.dim(`${p}   • hunyuan-720p - Default model (1280x720, 129 frames, 60GB VRAM)`)
+      l.dim(`${p}   • hunyuan-540p - Lower resolution (960x544, 129 frames, 45GB VRAM)`)
+      l.dim(`${p}   • hunyuan-fp8 - FP8 quantized version (saves ~10GB memory)`)
       l.dim(`${p} `)
       l.dim(`${p} Google Veo models:`)
       l.dim(`${p}   • veo-3.0-generate-preview - Veo 3 with audio generation (8 seconds, 720p)`)

@@ -2,45 +2,80 @@
 set -euo pipefail
 p='[setup/video/models]'
 
-MODELS_DIR="build/models/wan"
-VENV_DIR="build/pyenv/wan"
+MODELS_DIR="build/models/hunyuan"
+VENV_DIR="build/pyenv/hunyuan"
 
 if [ ! -x "$VENV_DIR/bin/pip" ]; then
   echo "$p ERROR: Video generation environment not found. Run base setup first."
   exit 1
 fi
 
-echo "$p Downloading video generation models"
+echo "$p Checking for HunyuanVideo models"
 
-download_diffusers_model() {
-  local model_name="$1"
-  local model_id="$2"
-  local model_dir="$MODELS_DIR/$model_name"
-  
-  if [ -d "$model_dir" ]; then
-    echo "$p Model $model_name already exists"
-    return 0
-  fi
-  
-  echo "$p Downloading $model_name from Hugging Face (Diffusers version)"
-  
-  if command -v huggingface-cli &>/dev/null; then
-    huggingface-cli download "$model_id" --local-dir "$model_dir" --local-dir-use-symlinks False >/dev/null 2>&1 || {
-      echo "$p WARNING: Failed to download $model_name"
-      return 1
-    }
-  else
-    "$VENV_DIR/bin/huggingface-cli" download "$model_id" --local-dir "$model_dir" --local-dir-use-symlinks False >/dev/null 2>&1 || {
-      echo "$p WARNING: Failed to download $model_name"
-      return 1
-    }
-  fi
-  
-  echo "$p Downloaded $model_name successfully"
-  return 0
-}
+TARGET_DIR="$MODELS_DIR/hunyuan-video-t2v-720p"
+mkdir -p "$TARGET_DIR/transformers"
 
-echo "$p Downloading T2V-1.3B model (Diffusers version)"
-download_diffusers_model "T2V-1.3B-Diffusers" "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+TRANSFORMER_FILE="$TARGET_DIR/transformers/mp_rank_00_model_states.pt"
 
-echo "$p Video generation models setup complete"
+if [ -f "$TRANSFORMER_FILE" ]; then
+  FILE_SIZE=$(du -h "$TRANSFORMER_FILE" | cut -f1)
+  echo "$p HunyuanVideo transformer model already exists ($FILE_SIZE)"
+  echo "$p Setup complete"
+  exit 0
+fi
+
+if command -v huggingface-cli &>/dev/null; then
+  HF_CLI="huggingface-cli"
+elif [ -x "$VENV_DIR/bin/huggingface-cli" ]; then
+  HF_CLI="$VENV_DIR/bin/huggingface-cli"
+else
+  echo "$p ERROR: huggingface-cli not found"
+  exit 1
+fi
+
+echo "$p Downloading HunyuanVideo models (30GB+, this will take time)"
+echo "$p Using: $HF_CLI"
+
+echo "$p Downloading transformer model (largest component ~30GB)"
+$HF_CLI download tencent/HunyuanVideo \
+  hunyuan-video-t2v-720p/transformers/mp_rank_00_model_states.pt \
+  --local-dir "$MODELS_DIR" \
+  --local-dir-use-symlinks False
+
+echo "$p Downloading VAE model"
+$HF_CLI download tencent/HunyuanVideo \
+  --include "hunyuan-video-t2v-720p/vae/*" \
+  --local-dir "$MODELS_DIR" \
+  --local-dir-use-symlinks False
+
+echo "$p Downloading text encoder"
+$HF_CLI download tencent/HunyuanVideo \
+  --include "hunyuan-video-t2v-720p/text_encoder/*" \
+  --include "hunyuan-video-t2v-720p/text_encoder_2/*" \
+  --local-dir "$MODELS_DIR" \
+  --local-dir-use-symlinks False
+
+echo "$p Downloading config files"
+$HF_CLI download tencent/HunyuanVideo \
+  --include "hunyuan-video-t2v-720p/*.json" \
+  --include "hunyuan-video-t2v-720p/*.yaml" \
+  --local-dir "$MODELS_DIR" \
+  --local-dir-use-symlinks False
+
+if [ -f "$TRANSFORMER_FILE" ]; then
+  FILE_SIZE=$(du -h "$TRANSFORMER_FILE" | cut -f1)
+  echo "$p Successfully downloaded transformer model ($FILE_SIZE)"
+else
+  echo "$p ERROR: Transformer model failed to download"
+  exit 1
+fi
+
+if [ -d "$TARGET_DIR/vae" ] && [ -d "$TARGET_DIR/text_encoder" ]; then
+  echo "$p All components downloaded successfully"
+  TOTAL_SIZE=$(du -sh "$TARGET_DIR" | cut -f1)
+  echo "$p Total model size: $TOTAL_SIZE"
+else
+  echo "$p WARNING: Some components may be missing"
+fi
+
+echo "$p HunyuanVideo models ready for use"
