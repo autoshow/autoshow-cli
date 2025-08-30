@@ -3,17 +3,15 @@
 INCLUDE_PATHS=(
   "*"
   "src/*"
-  "docs/music"
-  "src/music"
-  ".github/setup/music"
-  ".github/setup/index.sh"
-  "docs/docker.md"
+  "src/text"
+  "docs/text"
+  "test/text/prompts.test.ts"
 )
 
 IGNORE_PATHS=(
-  "src/text/process-steps/03-select-prompts/content-structure-summaries"
-  "src/text/process-steps/03-select-prompts/creative-entertainment"
-  "src/text/process-steps/03-select-prompts/marketing-social-media"
+  # "src/text/process-steps/03-select-prompts/content-structure-summaries"
+  # "src/text/process-steps/03-select-prompts/creative-entertainment"
+  # "src/text/process-steps/03-select-prompts/marketing-social-media"
   ".github/parse.ts"
   "README.md"
   "WARP.md"
