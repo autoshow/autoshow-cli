@@ -23,6 +23,7 @@ export type ProcessingOptions = {
   saveAudio?: boolean
   whisper?: boolean | string
   whisperCoreml?: boolean | string
+  whisperDiarization?: boolean | string
   deepgram?: boolean | string
   assembly?: boolean | string
   groqWhisper?: boolean | string

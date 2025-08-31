@@ -88,7 +88,8 @@ export function validateCommandInput(options: ProcessingOptions): {
   const llmServices = selectedLLMs[0]
   let transcriptServices: string | undefined
   
-  if (options.whisperCoreml) transcriptServices = 'whisperCoreml'
+  if (options.whisperDiarization) transcriptServices = 'whisperDiarization'
+  else if (options.whisperCoreml) transcriptServices = 'whisperCoreml'
   else if (options.deepgram) transcriptServices = 'deepgram'
   else if (options.assembly) transcriptServices = 'assembly'
   else if (options.whisper) transcriptServices = 'whisper'

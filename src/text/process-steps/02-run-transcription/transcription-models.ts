@@ -37,6 +37,24 @@ export const TRANSCRIPTION_SERVICES_CONFIG = {
       { modelId: 'turbo', costPerMinuteCents: 0 },
     ]
   },
+  whisperDiarization: {
+    serviceName: 'Whisper Diarization',
+    value: 'whisperDiarization',
+    label: 'Whisper + Speaker Diarization',
+    models: [
+      { modelId: 'tiny', costPerMinuteCents: 0 },
+      { modelId: 'tiny.en', costPerMinuteCents: 0 },
+      { modelId: 'base', costPerMinuteCents: 0 },
+      { modelId: 'base.en', costPerMinuteCents: 0 },
+      { modelId: 'small', costPerMinuteCents: 0 },
+      { modelId: 'small.en', costPerMinuteCents: 0 },
+      { modelId: 'medium', costPerMinuteCents: 0 },
+      { modelId: 'medium.en', costPerMinuteCents: 0 },
+      { modelId: 'large-v1', costPerMinuteCents: 0 },
+      { modelId: 'large-v2', costPerMinuteCents: 0 },
+      { modelId: 'large-v3', costPerMinuteCents: 0 },
+    ]
+  },
   deepgram: {
     serviceName: 'Deepgram',
     value: 'deepgram',
