@@ -42,7 +42,7 @@ Select model:
 
 ```bash
 npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization medium.en
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization large-v2
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization large-v3-turbo
 npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization base.en
 ```
 

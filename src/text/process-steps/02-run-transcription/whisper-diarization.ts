@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import { readFile, execPromise, existsSync } from '@/node-utils'
+import { execPromise, existsSync } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions } from '@/text/text-types'
 
@@ -113,37 +113,45 @@ function formatWhisperDiarizationTranscript(output: string): string {
     
     if (trimmedLine.includes('[') && trimmedLine.includes(']')) {
       const timestampMatch = trimmedLine.match(/\[([^\]]+)\]/)
-      const speakerMatches = trimmedLine.match(/Speaker (\d+):/g)
       
-      if (speakerMatches && speakerMatches.length > 1) {
-        duplicateFixCount++
-        const speakerMatch = trimmedLine.match(/Speaker (\d+):/)
-        const textMatch = trimmedLine.match(/Speaker \d+:\s*(?:Speaker \d+:\s*)?(.+)$/)
+      if (timestampMatch) {
+        const timestamp = timestampMatch[1]
+        const afterTimestamp = trimmedLine.substring(trimmedLine.indexOf(']') + 1).trim()
         
-        if (timestampMatch && speakerMatch && textMatch) {
-          const timestamp = timestampMatch[1]
-          const speaker = speakerMatch[1]
-          const text = textMatch[1]?.trim()
-          if (text) {
-            formattedTranscript += `[${timestamp}] Speaker ${speaker}: ${text}\n`
-            l.dim(`${p} Fixed duplicate speaker label in line`)
+        const speakerMatches = [...afterTimestamp.matchAll(/Speaker (\d+):/g)]
+        
+        if (speakerMatches.length > 1) {
+          duplicateFixCount++
+          const lastSpeakerMatch = speakerMatches[speakerMatches.length - 1]
+          if (lastSpeakerMatch && lastSpeakerMatch[1]) {
+            const speaker = lastSpeakerMatch[1]
+            const lastSpeakerIndex = afterTimestamp.lastIndexOf(`Speaker ${speaker}:`)
+            const text = afterTimestamp.substring(lastSpeakerIndex + `Speaker ${speaker}:`.length).trim()
+            
+            if (text) {
+              formattedTranscript += `[${timestamp}] Speaker ${speaker}: ${text}\n`
+              l.dim(`${p} Fixed duplicate speaker label, extracted: "${text.substring(0, 50)}..."`)
+            }
           }
-        }
-      } else {
-        const textMatch = trimmedLine.match(/(?:Speaker \d+: |.*\] )(.+)$/)
-        
-        if (timestampMatch && textMatch) {
-          const timestamp = timestampMatch[1]
-          const text = textMatch[1]?.trim()
-          const speaker = speakerMatches ? trimmedLine.match(/Speaker (\d+):/)?.[1] : '1'
-          if (text) {
-            formattedTranscript += `[${timestamp}] Speaker ${speaker || '1'}: ${text}\n`
+        } else if (speakerMatches.length === 1) {
+          const firstMatch = speakerMatches[0]
+          if (firstMatch && firstMatch[1]) {
+            const speaker = firstMatch[1]
+            const speakerIndex = afterTimestamp.indexOf(`Speaker ${speaker}:`)
+            const text = afterTimestamp.substring(speakerIndex + `Speaker ${speaker}:`.length).trim()
+            
+            if (text) {
+              formattedTranscript += `[${timestamp}] Speaker ${speaker}: ${text}\n`
+            }
           }
         } else {
-          formattedTranscript += trimmedLine + '\n'
+          const text = afterTimestamp.trim()
+          if (text) {
+            formattedTranscript += `[${timestamp}] Speaker 1: ${text}\n`
+          }
         }
       }
-    } else if (!trimmedLine.match(/^\s*$/)) {
+    } else if (!trimmedLine.match(/^\s*$/) && !trimmedLine.includes('Speaker')) {
       formattedTranscript += trimmedLine + '\n'
     }
   }
