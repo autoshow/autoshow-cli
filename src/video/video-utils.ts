@@ -34,7 +34,9 @@ export const handleError = (error: any): void => {
     'GEMINI_API_KEY': 'Missing Gemini API key. Please set GEMINI_API_KEY in your .env file',
     'HunyuanVideo not configured': 'HunyuanVideo models not installed. Please run: bash .github/setup/video/hunyuan.sh',
     'CUDA out of memory': 'GPU memory insufficient. Try using --use-fp8 or hunyuan-540p model',
-    'Model path does not exist': 'HunyuanVideo model not downloaded. Run: bash .github/setup/video/models.sh'
+    'Model path does not exist': 'HunyuanVideo model not downloaded. Run: bash .github/setup/video/models.sh',
+    'CogVideoX not configured': 'CogVideoX not installed. Please run: bash .github/setup/video/cogvideo.sh',
+    'No module named': 'Missing Python dependencies. Re-run the setup script'
   }
   
   const matched = Object.entries(errorMap).find(([key]) => 
@@ -63,6 +65,11 @@ export function validateRunwayModel(model: string): boolean {
 
 export function validateHunyuanModel(model: string): boolean {
   const validModels = ['hunyuan-720p', 'hunyuan-540p', 'hunyuan-fp8']
+  return validModels.includes(model)
+}
+
+export function validateCogVideoModel(model: string): boolean {
+  const validModels = ['cogvideo-2b', 'cogvideo-5b', 'cogvideo-5b-i2v']
   return validModels.includes(model)
 }
 

@@ -202,6 +202,7 @@ if [ "$BASE_SETUP_NEEDED" = true ]; then
 
   echo "$p Setting up video generation environment"
   bash "$SETUP_DIR/video/hunyuan.sh"
+  bash "$SETUP_DIR/video/wan.sh"
 
   echo "$p Base setup completed"
 else
@@ -219,6 +220,7 @@ case "$SETUP_MODE" in
     bash "$SETUP_DIR/tts/models.sh"
     bash "$SETUP_DIR/music/models.sh"
     bash "$SETUP_DIR/video/models.sh"
+    bash "$SETUP_DIR/video/wan.sh"
     echo "$p Complete setup with all models finished"
     ;;
   image)
@@ -245,6 +247,7 @@ case "$SETUP_MODE" in
   video)
     echo "$p Downloading video generation models"
     bash "$SETUP_DIR/video/models.sh"
+    bash "$SETUP_DIR/video/wan.sh"
     echo "$p Video generation setup completed"
     ;;
   base)
