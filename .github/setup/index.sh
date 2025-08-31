@@ -182,6 +182,7 @@ if [ "$BASE_SETUP_NEEDED" = true ]; then
   bash "$SETUP_DIR/transcription/whisper.sh"
   bash "$SETUP_DIR/transcription/whisper-metal.sh"
   bash "$SETUP_DIR/transcription/whisper-coreml.sh"
+  bash "$SETUP_DIR/transcription/whisper-diarization.sh"
 
   echo "$p Setting up TTS environment and tools"
   bash "$SETUP_DIR/tts/tts-env.sh"

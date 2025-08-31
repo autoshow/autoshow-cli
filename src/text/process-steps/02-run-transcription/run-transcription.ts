@@ -3,6 +3,7 @@ import { callDeepgram } from './deepgram.ts'
 import { callAssembly } from './assembly.ts'
 import { callGroqWhisper } from './groq-whisper.ts'
 import { callWhisperCoreml } from './whisper-coreml.ts'
+import { callWhisperDiarization } from './whisper-diarization.ts'
 import { logTranscriptionCost, estimateTranscriptCost, getAudioDuration } from '../../utils/cost.ts'
 import { l, err } from '@/logging'
 import type { ProcessingOptions, TranscriptionResult } from '@/text/text-types'
@@ -19,7 +20,9 @@ export async function runTranscription(
 
   let serviceToUse = transcriptServicesInput
   if (!serviceToUse) {
-    if (options.whisperCoreml) {
+    if (options.whisperDiarization) {
+      serviceToUse = 'whisperDiarization'
+    } else if (options.whisperCoreml) {
       serviceToUse = 'whisperCoreml'
     } else if (options.whisper) {
       serviceToUse = 'whisper'
@@ -55,6 +58,16 @@ export async function runTranscription(
 
   try {
     switch (serviceToUse) {
+      case 'whisperDiarization': {
+        const result = await retryTranscriptionCall<TranscriptionResult>(
+          () => callWhisperDiarization(options, finalPath),
+          spinner
+        )
+        finalTranscript = result.transcript
+        finalModelId = result.modelId
+        finalCostPerMinuteCents = result.costPerMinuteCents
+        break
+      }
       case 'deepgram': {
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callDeepgram(options, finalPath),
@@ -124,8 +137,9 @@ export async function runTranscription(
     if (serviceToUse === 'whisperCoreml') {
       l.warn(`${p} Attempting automatic fallback from whisperCoreml to whisper`)
       try {
+        const fallbackOptions = { ...options, whisper: true }
         const fallbackResult = await retryTranscriptionCall<TranscriptionResult>(
-          () => callWhisper(options, finalPath, ora('Step 2 - Run Transcription (fallback)').start()),
+          () => callWhisper(fallbackOptions, finalPath, ora('Step 2 - Run Transcription (fallback)').start()),
           undefined
         )
         l.success(`${p} Fallback transcription completed successfully`)
@@ -150,7 +164,7 @@ export async function retryTranscriptionCall<T>(
   spinner?: Ora
 ): Promise<T> {
   const p = '[text/process-steps/02-run-transcription/run-transcription]'
-  const maxRetries = 7
+  const maxRetries = 3
   let attempt = 0
 
   while (attempt < maxRetries) {
@@ -164,6 +178,16 @@ export async function retryTranscriptionCall<T>(
       
       if (errorMessage.includes('CoreML') && errorMessage.includes('missing')) {
         l.warn(`${p} CoreML environment issue detected, will not retry CoreML`)
+        throw error
+      }
+      
+      if (errorMessage.includes('whisper-diarization') && errorMessage.includes('missing')) {
+        l.warn(`${p} Whisper-diarization environment issue detected, will not retry`)
+        throw error
+      }
+      
+      if (errorMessage.includes('ctc_forced_aligner') || errorMessage.includes('ModuleNotFoundError')) {
+        l.warn(`${p} Missing required dependencies for whisper-diarization, will not retry`)
         throw error
       }
       
