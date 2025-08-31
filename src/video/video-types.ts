@@ -78,6 +78,27 @@ export interface HunyuanConfig {
   }
 }
 
+export type CogVideoModel = 'cogvideo-2b' | 'cogvideo-5b' | 'cogvideo-5b-i2v'
+
+export interface CogVideoGenerateOptions {
+  model?: CogVideoModel
+  outputPath?: string
+  numFrames?: number
+  guidanceScale?: number
+  negativePrompt?: string
+  numInferenceSteps?: number
+  seed?: number
+  image?: string
+}
+
+export interface CogVideoConfig {
+  python: string
+  venv: string
+  models_dir: string
+  default_model: string
+  available_models: Record<string, string>
+}
+
 export interface VideoGenerationResult {
   success: boolean
   path?: string
