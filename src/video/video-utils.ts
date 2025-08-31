@@ -31,12 +31,7 @@ export const handleError = (error: any): void => {
     'ValidationException': `Validation error: ${error.message}`,
     'insufficient permissions': `Insufficient permissions: ${error.message}\n\nPlease ensure your API key has the necessary permissions`,
     'RUNWAYML_API_SECRET': 'Missing Runway API key. Please set RUNWAYML_API_SECRET in your .env file',
-    'GEMINI_API_KEY': 'Missing Gemini API key. Please set GEMINI_API_KEY in your .env file',
-    'HunyuanVideo not configured': 'HunyuanVideo models not installed. Please run: bash .github/setup/video/hunyuan.sh',
-    'CUDA out of memory': 'GPU memory insufficient. Try using --use-fp8 or hunyuan-540p model',
-    'Model path does not exist': 'HunyuanVideo model not downloaded. Run: bash .github/setup/video/models.sh',
-    'CogVideoX not configured': 'CogVideoX not installed. Please run: bash .github/setup/video/cogvideo.sh',
-    'No module named': 'Missing Python dependencies. Re-run the setup script'
+    'GEMINI_API_KEY': 'Missing Gemini API key. Please set GEMINI_API_KEY in your .env file'
   }
   
   const matched = Object.entries(errorMap).find(([key]) => 
@@ -63,20 +58,10 @@ export function validateRunwayModel(model: string): boolean {
   return validModels.includes(model)
 }
 
-export function validateHunyuanModel(model: string): boolean {
-  const validModels = ['hunyuan-720p', 'hunyuan-540p', 'hunyuan-fp8']
-  return validModels.includes(model)
-}
-
-export function validateCogVideoModel(model: string): boolean {
-  const validModels = ['cogvideo-2b', 'cogvideo-5b', 'cogvideo-5b-i2v']
-  return validModels.includes(model)
-}
-
-export function parseAspectRatio(value: string): '16:9' | '9:16' | '4:3' | '3:4' | '1:1' | undefined {
-  const validRatios = ['16:9', '9:16', '4:3', '3:4', '1:1']
+export function parseAspectRatio(value: string): '16:9' | '9:16' | undefined {
+  const validRatios = ['16:9', '9:16']
   if (validRatios.includes(value)) {
-    return value as '16:9' | '9:16' | '4:3' | '3:4' | '1:1'
+    return value as '16:9' | '9:16'
   }
   l.warn(`${p} Invalid aspect ratio "${value}". Using default 16:9`)
   return '16:9'

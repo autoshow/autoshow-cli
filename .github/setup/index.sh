@@ -47,12 +47,7 @@ is_base_setup_complete() {
     return 1
   fi
 
-  if [ ! -d "build/pyenv/hunyuan" ] || [ ! -x "build/pyenv/hunyuan/bin/python" ]; then
-    echo "$check_p Missing or incomplete HunyuanVideo Python environment"
-    return 1
-  fi
-
-  if [ ! -f "build/config/.tts-config.json" ] || [ ! -f "build/config/.music-config.json" ] || [ ! -f "build/config/.hunyuan-config.json" ]; then
+  if [ ! -f "build/config/.tts-config.json" ] || [ ! -f "build/config/.music-config.json" ]; then
     echo "$check_p Missing core configuration files"
     return 1
   fi
@@ -98,7 +93,7 @@ case "${1:-}" in
     echo "$p   --music: Base setup + music generation models"
     echo "$p   --transcription: Base setup + transcription models"
     echo "$p   --tts: Base setup + TTS models"
-    echo "$p   --video: Base setup + video generation models"
+    echo "$p   --video: Base setup + video generation models (cloud-based only)"
     exit 1
     ;;
 esac
@@ -200,10 +195,6 @@ if [ "$BASE_SETUP_NEEDED" = true ]; then
   echo "$p Setting up image generation tools"
   bash "$SETUP_DIR/image/sdcpp.sh"
 
-  echo "$p Setting up video generation environment"
-  bash "$SETUP_DIR/video/hunyuan.sh"
-  bash "$SETUP_DIR/video/wan.sh"
-
   echo "$p Base setup completed"
 else
   echo "$p Skipping base setup (already complete)"
@@ -219,8 +210,6 @@ case "$SETUP_MODE" in
     bash "$SETUP_DIR/transcription/models.sh"
     bash "$SETUP_DIR/tts/models.sh"
     bash "$SETUP_DIR/music/models.sh"
-    bash "$SETUP_DIR/video/models.sh"
-    bash "$SETUP_DIR/video/wan.sh"
     echo "$p Complete setup with all models finished"
     ;;
   image)
@@ -245,10 +234,11 @@ case "$SETUP_MODE" in
     echo "$p TTS setup completed"
     ;;
   video)
-    echo "$p Downloading video generation models"
-    bash "$SETUP_DIR/video/models.sh"
-    bash "$SETUP_DIR/video/wan.sh"
-    echo "$p Video generation setup completed"
+    echo "$p Video generation uses cloud-based models only"
+    echo "$p Make sure you have API keys set in .env:"
+    echo "$p   - GEMINI_API_KEY for Google Veo"
+    echo "$p   - RUNWAYML_API_SECRET for Runway"
+    echo "$p Video setup completed"
     ;;
   base)
     echo "$p Base setup completed (no models downloaded)"
