@@ -174,21 +174,26 @@ export async function callWhisperDiarization(
   const p = '[text/process-steps/02-run-transcription/whisper-diarization]'
   
   try {
-    const whisperDiarizationModel = typeof options.whisperDiarization === 'string'
+    const requestedModel = typeof options.whisperDiarization === 'string'
       ? options.whisperDiarization
       : 'medium.en'
     
-    const modelInfo = TRANSCRIPTION_SERVICES_CONFIG.whisperDiarization.models.find(
-      m => m.modelId === whisperDiarizationModel
-    ) || TRANSCRIPTION_SERVICES_CONFIG.whisperDiarization.models.find(
-      m => m.modelId === 'medium.en'
+    const configuredModel = TRANSCRIPTION_SERVICES_CONFIG.whisperDiarization.models.find(
+      m => m.modelId === requestedModel
     )
     
-    if (!modelInfo) {
-      throw new Error(`Model information for ${whisperDiarizationModel} not available`)
-    }
+    let modelId: string
+    let costPerMinuteCents: number
     
-    const { modelId, costPerMinuteCents } = modelInfo
+    if (configuredModel) {
+      modelId = configuredModel.modelId
+      costPerMinuteCents = configuredModel.costPerMinuteCents
+      l.dim(`${p} Using configured model: ${modelId}`)
+    } else {
+      modelId = requestedModel
+      costPerMinuteCents = 0
+      l.warn(`${p} Model ${requestedModel} not in predefined list, using it anyway with cost 0`)
+    }
     
     await ensureWhisperDiarizationEnv()
     
