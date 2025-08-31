@@ -48,57 +48,6 @@ export interface RunwayGenerateOptions {
   duration?: 5 | 10
 }
 
-export type HunyuanModel = 'hunyuan-720p' | 'hunyuan-540p' | 'hunyuan-fp8'
-
-export interface HunyuanGenerateOptions {
-  model?: HunyuanModel
-  outputPath?: string
-  resolution?: { width: number; height: number }
-  aspectRatio?: '16:9' | '9:16' | '4:3' | '3:4' | '1:1'
-  numFrames?: number
-  guidanceScale?: number
-  flowShift?: number
-  negativePrompt?: string
-  numInferenceSteps?: number
-  seed?: number
-  useFp8?: boolean
-  useCpuOffload?: boolean
-  image?: string
-}
-
-export interface HunyuanConfig {
-  python: string
-  venv: string
-  models_dir: string
-  default_model: string
-  available_models: Record<string, string>
-  resolutions: {
-    '720p': Record<string, [number, number]>
-    '540p': Record<string, [number, number]>
-  }
-}
-
-export type CogVideoModel = 'cogvideo-2b' | 'cogvideo-5b' | 'cogvideo-5b-i2v'
-
-export interface CogVideoGenerateOptions {
-  model?: CogVideoModel
-  outputPath?: string
-  numFrames?: number
-  guidanceScale?: number
-  negativePrompt?: string
-  numInferenceSteps?: number
-  seed?: number
-  image?: string
-}
-
-export interface CogVideoConfig {
-  python: string
-  venv: string
-  models_dir: string
-  default_model: string
-  available_models: Record<string, string>
-}
-
 export interface VideoGenerationResult {
   success: boolean
   path?: string
