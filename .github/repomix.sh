@@ -6,20 +6,8 @@ INCLUDE_PATHS=(
   ".github/setup"
   "docs/setup.md"
   "docs/image/01-image-command.md"
-  "docs/music/01-music-command.md"
-  "docs/text/01-text-command.md"
-  "docs/text/02-transcription-options.md"
-  "docs/tts/01-tts-command.md"
-  "src/image/image-services/sdcpp"
-  "src/music/music-services"
-  "src/tts/tts-services/coqui-list.py"
-  "src/tts/tts-services/coqui-python.py"
-  "src/tts/tts-services/coqui.ts"
-  "src/tts/tts-services/kitten-python.py"
-  "src/tts/tts-services/kitten.ts"
-  "src/text/process-steps/02-run-transcription/whisper.ts"
-  "src/text/process-steps/02-run-transcription/whisper-diarization.ts"
-  "src/text/process-steps/02-run-transcription/whisper-coreml.ts"
+  "docs/image/05-sdcpp-options.md"
+  "src/image"
 )
 
 IGNORE_PATHS=(

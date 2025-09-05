@@ -22,6 +22,12 @@ case "${1:-}" in
   --image)
     SETUP_MODE="image"
     ;;
+  --sd1)
+    SETUP_MODE="sd1"
+    ;;
+  --sd3)
+    SETUP_MODE="sd3"
+    ;;
   --music)
     SETUP_MODE="music"
     ;;
@@ -45,9 +51,11 @@ case "${1:-}" in
     ;;
   *)
     echo "$p ERROR: Invalid argument '$1'"
-    echo "$p Usage: $0 [--image|--music|--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
+    echo "$p Usage: $0 [--image|--sd1|--sd3|--music|--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
     echo "$p   (no args): Base setup only (npm dependencies and directories)"
-    echo "$p   --image: Setup image generation environment and download models"
+    echo "$p   --image: Setup image generation environment and download all models (SD 1.5 + SD 3.5)"
+    echo "$p   --sd1: Setup Stable Diffusion 1.5 models only"
+    echo "$p   --sd3: Setup Stable Diffusion 3.5 models only"
     echo "$p   --music: Setup music generation environment and download models"
     echo "$p   --transcription: Setup all transcription environments and download models"
     echo "$p   --whisper: Setup whisper-metal (default whisper.cpp with Metal support)"
@@ -131,6 +139,38 @@ case "$SETUP_MODE" in
     bash "$SETUP_DIR/image/sd3_5.sh"
     
     echo "$p Image generation setup completed"
+    ;;
+    
+  sd1)
+    echo "$p Setting up Stable Diffusion 1.5 models only"
+    
+    echo "$p Installing required Homebrew packages for image generation"
+    quiet_brew_install "cmake"
+    quiet_brew_install "pkg-config"
+    
+    echo "$p Setting up stable-diffusion.cpp"
+    bash "$SETUP_DIR/image/sdcpp.sh"
+    
+    echo "$p Downloading Stable Diffusion 1.5 models"
+    bash "$SETUP_DIR/image/sd1_5.sh"
+    
+    echo "$p Stable Diffusion 1.5 setup completed"
+    ;;
+    
+  sd3)
+    echo "$p Setting up Stable Diffusion 3.5 models only"
+    
+    echo "$p Installing required Homebrew packages for image generation"
+    quiet_brew_install "cmake"
+    quiet_brew_install "pkg-config"
+    
+    echo "$p Setting up stable-diffusion.cpp"
+    bash "$SETUP_DIR/image/sdcpp.sh"
+    
+    echo "$p Downloading Stable Diffusion 3.5 models"
+    bash "$SETUP_DIR/image/sd3_5.sh"
+    
+    echo "$p Stable Diffusion 3.5 setup completed"
     ;;
     
   music)
@@ -272,7 +312,7 @@ case "$SETUP_MODE" in
     
   base)
     echo "$p Base setup completed (npm dependencies and directories only)"
-    echo "$p Run with --image, --music, --transcription, --whisper, --whisper-coreml, --whisper-diarization, or --tts to set up specific features"
+    echo "$p Run with --image, --sd1, --sd3, --music, --transcription, --whisper, --whisper-coreml, --whisper-diarization, or --tts to set up specific features"
     ;;
 esac
 

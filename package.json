@@ -32,6 +32,8 @@
     "setup:tts": "./.github/setup/index.sh --tts",
     "setup:music": "./.github/setup/index.sh --music",
     "setup:image": "./.github/setup/index.sh --image",
+    "setup:sd1": "./.github/setup/index.sh --sd1",
+    "setup:sd3": "./.github/setup/index.sh --sd3",
     "setup:video": "./.github/setup/index.sh --video",
     "check": "npx tsc --noEmit",
     "as": "npm run tsx:base -- src/commander.ts",
