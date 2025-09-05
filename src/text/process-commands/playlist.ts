@@ -1,8 +1,8 @@
 import { processVideo } from './video.ts'
 import { saveInfo } from '../utils/save-info.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { l, err, logSeparator } from '@/logging'
 import { execFilePromise } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processPlaylist(
   options: ProcessingOptions,
@@ -11,7 +11,6 @@ export async function processPlaylist(
   transcriptServices?: string
 ) {
   const p = '[text/process-commands/playlist]'
-  logInitialFunctionCall('processPlaylist', { llmServices, transcriptServices })
 
   try {
     const { stdout, stderr } = await execFilePromise('yt-dlp', [

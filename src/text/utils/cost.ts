@@ -1,49 +1,49 @@
 import chalk from 'chalk'
 import { l } from '@/logging'
 import { execPromise } from '@/node-utils'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../transcription/transcription-models'
-import { LLM_SERVICES_CONFIG } from '../llms/llm-models'
-import type { ProcessingOptions } from '@/types'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/02-run-transcription/transcription-models'
+import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models'
+import type { ProcessingOptions } from '@/text/text-types'
+
 export async function getAudioDuration(filePath: string): Promise<number> {
-  const p = '[text/utils/cost]'
   const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${filePath}"`
   const { stdout } = await execPromise(cmd)
   const seconds = parseFloat(stdout.trim())
   if (isNaN(seconds)) {
     throw new Error(`Could not parse audio duration for file: ${filePath}`)
   }
-  l.dim(`${p} Audio duration for ${filePath}: ${seconds.toFixed(2)} seconds`)
   return seconds
 }
+
 export async function logTranscriptionCost(info: {
   modelId: string
   costPerMinuteCents: number
   filePath: string
 }): Promise<number> {
-  const p = '[text/utils/cost]'
   const seconds = await getAudioDuration(info.filePath)
   const minutes = seconds / 60
   const cost = info.costPerMinuteCents * minutes
   l.dim(
-    `${p} - Estimated Transcription Cost for ${info.modelId}:\n` +
-    `    - Audio Length: ${minutes.toFixed(2)} minutes\n` +
-    `    - Cost: ¢${cost.toFixed(5)}`
+    `Transcription Cost - Model: ${info.modelId}, Duration: ${minutes.toFixed(2)} min, Cost: ¢${cost.toFixed(5)}`
   )
   return cost
 }
+
 export async function estimateTranscriptCost(
   options: ProcessingOptions,
   transcriptServices: string
 ): Promise<number> {
-  const p = '[text/utils/cost]'
   const filePath = options.transcriptCost
   if (!filePath) throw new Error('No file path provided to estimate transcription cost.')
+  
   if (!['whisper', 'whisperCoreml', 'deepgram', 'assembly', 'groqWhisper'].includes(transcriptServices)) {
     throw new Error(`Unsupported transcription service: ${transcriptServices}`)
   }
+  
   const serviceKey = transcriptServices as 'whisper' | 'whisperCoreml' | 'deepgram' | 'assembly' | 'groqWhisper'
   const config = TRANSCRIPTION_SERVICES_CONFIG[serviceKey]
   let modelInput = typeof options[serviceKey] === 'string' ? options[serviceKey] as string : undefined
+  
   if (options[serviceKey] === true || !modelInput) {
     modelInput = config.models[0]?.modelId
     if (serviceKey === 'deepgram' && !modelInput) modelInput = 'nova-2'
@@ -51,11 +51,13 @@ export async function estimateTranscriptCost(
     if ((serviceKey === 'whisper' || serviceKey === 'whisperCoreml') && !modelInput) modelInput = 'base'
     if (serviceKey === 'groqWhisper' && !modelInput) modelInput = 'whisper-large-v3-turbo'
   }
+  
   if (!modelInput) throw new Error(`Could not determine default model for service: ${transcriptServices}`)
+  
   const normalizedModelId = modelInput.toLowerCase()
   const model = config.models.find(m => m.modelId.toLowerCase() === normalizedModelId)
   if (!model) throw new Error(`Model not found for: ${modelInput} in service ${transcriptServices}`)
-  l.dim(`${p} Estimating cost for model: ${model.modelId}`)
+  
   const cost = await logTranscriptionCost({
     modelId: model.modelId,
     costPerMinuteCents: model.costPerMinuteCents,
@@ -63,6 +65,7 @@ export async function estimateTranscriptCost(
   })
   return cost
 }
+
 export function formatCost(cost: number | undefined): string {
   if (cost === undefined) return 'N/A'
   if (cost === 0) return '0¢'
@@ -75,6 +78,7 @@ export function formatCost(cost: number | undefined): string {
   }
   return `$${cost.toFixed(2)}`
 }
+
 export function logLLMCost(info: {
   name: string
   stopReason: string
@@ -88,9 +92,9 @@ export function logLLMCost(info: {
   outputCost?: number
   totalCost?: number
 } {
-  const p = '[text/utils/cost]'
   const { name, stopReason, tokenUsage } = info
   const { input, output, total } = tokenUsage
+  
   let modelConfig: {
     modelId: string
     modelName: string
@@ -99,6 +103,7 @@ export function logLLMCost(info: {
     inputCostPer1MCents?: number
     outputCostPer1MCents?: number
   } | undefined
+  
   for (const service of Object.values(LLM_SERVICES_CONFIG)) {
     for (const model of service.models) {
       if (
@@ -111,6 +116,7 @@ export function logLLMCost(info: {
     }
     if (modelConfig) break
   }
+  
   const {
     modelName,
     inputCostPer1M,
@@ -118,18 +124,18 @@ export function logLLMCost(info: {
     inputCostPer1MCents,
     outputCostPer1MCents
   } = modelConfig ?? {}
+  
   const displayName = modelName ?? name
-  l.dim(`${p} - ${stopReason ? `${stopReason} Reason` : 'Status'}: ${stopReason}\n  - Model: ${displayName}`)
+  
   const tokenLines: string[] = []
   if (input) tokenLines.push(`${input} input tokens`)
   if (output) tokenLines.push(`${output} output tokens`)
   if (total) tokenLines.push(`${total} total tokens`)
-  if (tokenLines.length > 0) {
-    l.dim(`${p} - Token Usage:\n    - ${tokenLines.join('\n    - ')}`)
-  }
+  
   let inputCost: number | undefined
   let outputCost: number | undefined
   let totalCost: number | undefined
+  
   if (!modelConfig) {
     console.warn(`Warning: Could not find cost configuration for model: ${modelName}`)
   } else {
@@ -139,6 +145,7 @@ export function logLLMCost(info: {
     const outCost = (typeof outputCostPer1MCents === 'number')
       ? outputCostPer1MCents / 100
       : (outputCostPer1M || 0)
+    
     if (inCost < 0.0000001 && outCost < 0.0000001) {
       inputCost = 0
       outputCost = 0
@@ -157,19 +164,19 @@ export function logLLMCost(info: {
       }
     }
   }
+  
   const costLines: string[] = []
   if (inputCost !== undefined) {
-    costLines.push(`Input cost: ${formatCost(inputCost)}`)
+    costLines.push(`Input: ${formatCost(inputCost)}`)
   }
   if (outputCost !== undefined) {
-    costLines.push(`Output cost: ${formatCost(outputCost)}`)
+    costLines.push(`Output: ${formatCost(outputCost)}`)
   }
   if (totalCost !== undefined) {
-    costLines.push(`Total cost: ${chalk.bold(formatCost(totalCost))}`)
+    costLines.push(`Total: ${chalk.bold(formatCost(totalCost))}`)
   }
-  if (costLines.length > 0) {
-    l.dim(`${p} - Cost Breakdown:\n    - ${costLines.join('\n    - ')}`)
-  }
-  l.dim(`${p} Calculated costs - Input: ${inputCost}, Output: ${outputCost}, Total: ${totalCost}`)
+  
+  l.dim(`LLM Cost - Model: ${displayName}, Status: ${stopReason}, Tokens: [${tokenLines.join(', ')}], Cost: [${costLines.join(', ')}]`)
+  
   return { inputCost, outputCost, totalCost }
 }

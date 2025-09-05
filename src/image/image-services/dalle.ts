@@ -3,7 +3,7 @@ import { dirname } from 'path'
 import { l } from '@/logging'
 import { generateUniqueFilename, isApiError } from '../image-utils.ts'
 import { env } from '@/node-utils'
-import type { ImageGenerationResult } from '@/types'
+import type { ImageGenerationResult } from '../image-types'
 
 export async function generateImageWithDallE(
   prompt: string, 
@@ -14,13 +14,12 @@ export async function generateImageWithDallE(
   const startTime = Date.now()
   const uniqueOutputPath = outputPath || generateUniqueFilename('dalle', 'png')
   
-  l.dim(`${p} [${requestId}] Starting DALL-E | Prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}" | Path: ${uniqueOutputPath}`)
-  
   try {
     if (!env['OPENAI_API_KEY']) {
       throw new Error('OPENAI_API_KEY environment variable is missing')
     }
     
+    l.dim(`${p} [${requestId}] Sending request to OpenAI API`)
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 
@@ -39,8 +38,6 @@ export async function generateImageWithDallE(
       throw new Error(`Network error: ${isApiError(error) ? error.message : 'Unknown'}`) 
     })
     
-    l.dim(`${p} [${requestId}] Response: ${response.status}`)
-    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: `${response.status}: ${response.statusText}` }))
       throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`)
@@ -53,8 +50,7 @@ export async function generateImageWithDallE(
       throw new Error('Invalid response format')
     }
     
-    l.dim(`${p} [${requestId}] Image received (${imageData.length} chars)`)
-    
+    l.dim(`${p} [${requestId}] Image data received, saving to file`)
     await mkdir(dirname(uniqueOutputPath), { recursive: true }).catch(err => {
       if (isApiError(err) && err.code !== 'EEXIST') throw err
     })
@@ -62,7 +58,7 @@ export async function generateImageWithDallE(
     await writeFile(uniqueOutputPath, Buffer.from(imageData, 'base64'))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`${p} [${requestId}] ✓ Success in ${duration}s - ${uniqueOutputPath}`)
+    l.success(`${p} [${requestId}] Generated in ${duration}s: ${uniqueOutputPath}`)
     
     return { 
       success: true, 
@@ -71,7 +67,7 @@ export async function generateImageWithDallE(
     }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.dim(`${p} [${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
+    l.warn(`${p} [${requestId}] Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
     return { 
       success: false, 
       error: isApiError(error) ? error.message : 'Unknown error',

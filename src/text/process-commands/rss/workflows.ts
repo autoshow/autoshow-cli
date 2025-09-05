@@ -3,12 +3,12 @@ import { basename } from '@/node-utils'
 import { processRSS } from './index.ts'
 import { logCopy, logMkdir, logFindMove, logRemove, logMoveMd } from './rss-logging.ts'
 import { ensureWorkflowDirectories, validateFeedsFile } from './rss-validation.ts'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 const WORKFLOWS_DIR = 'output/workflows'
 
 async function copyFeeds(): Promise<void> {
-  await logCopy(`./${WORKFLOWS_DIR}/feeds`, './content', 'copyFeeds', 'feeds folder copied to ./content')
+  await logCopy(`./${WORKFLOWS_DIR}/feeds`, './output', 'copyFeeds', 'feeds folder copied to ./output')
 }
 
 async function removeDailySubfolder(dirName: string, subfolder: string): Promise<void> {
@@ -16,12 +16,11 @@ async function removeDailySubfolder(dirName: string, subfolder: string): Promise
 }
 
 async function copyBackToDaily(dirName: string, subfolder: string): Promise<void> {
-  await logCopy(`./content/${subfolder}`, `./${WORKFLOWS_DIR}/${dirName}`, 'copyBackToDaily', `${subfolder} copied to ./${WORKFLOWS_DIR}/${dirName}`)
+  await logCopy(`./output/${subfolder}`, `./${WORKFLOWS_DIR}/${dirName}`, 'copyBackToDaily', `${subfolder} copied to ./${WORKFLOWS_DIR}/${dirName}`)
 }
 
 export function extractDirectoryName(feedFilename: string): string {
   const p = '[text/process-commands/rss/workflows]'
-  l.dim(`${p} Extracting directory name from feed filename: ${feedFilename}`)
   
   const baseName = basename(feedFilename)
   const dirName = baseName.replace(/-feeds\.md$/i, '')
@@ -31,7 +30,6 @@ export function extractDirectoryName(feedFilename: string): string {
     throw new Error('Feed filename must end with "-feeds.md"')
   }
   
-  l.dim(`${p} Extracted directory name: ${dirName}`)
   return dirName
 }
 
@@ -52,25 +50,18 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
   }
   const filterString = filterInfo.length > 0 ? filterInfo.join(', ') : 'latest available'
   
-  l.dim(`${p} Preparing to process shownotes for ${dirName} with ${filterString}`)
+  l.dim(`${p} Processing shownotes for ${dirName} with ${filterString}`)
   
   await copyFeeds()
-  await logMkdir(`./content/${subfolder}`, 'createDirectoryForShownotes')
+  await logMkdir(`./output/${subfolder}`, 'createDirectoryForShownotes')
   
   const rssOptions: ProcessingOptions = {
     ...options,
-    rss: [`./content/feeds/${feedFilename}`],
+    rss: [`./output/feeds/${feedFilename}`],
     whisperCoreml: options.whisperCoreml || 'large-v3-turbo',
     feed: undefined,
     metaInfo: undefined
   }
-  
-  l.dim(`${p} Processing RSS with options: ${JSON.stringify({
-    date: rssOptions.date,
-    days: rssOptions.days,
-    last: rssOptions.last,
-    order: rssOptions.order
-  }, null, 2)}`)
   
   try {
     await processRSS(rssOptions, rssOptions.llmServices, rssOptions.transcriptServices)
@@ -79,10 +70,10 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
     throw e
   }
   
-  await logFindMove('.md', './content', `./content/${subfolder}`, 'moveGeneratedMdToSubfolder')
+  await logFindMove('.md', './output', `./output/${subfolder}`, 'moveGeneratedMdToSubfolder')
   await logMoveMd(subfolder, dirName, 'moveShownotesToSource')
-  await logRemove('./content/feeds', 'cleanupShownotes', 'feeds folder from ./content')
-  await logRemove(`./content/${subfolder}`, 'cleanupShownotes', `${subfolder} from ./content`)
+  await logRemove('./output/feeds', 'cleanupShownotes', 'feeds folder from ./output')
+  await logRemove(`./output/${subfolder}`, 'cleanupShownotes', `${subfolder} from ./output`)
   
   l.final(`${p} prepareShownotes completed for ${dirName}`)
 }
@@ -93,11 +84,11 @@ export async function prepareInfo(dirName: string, feedFilename: string): Promis
   const subfolder = `${dirName}-info`
   
   await copyFeeds()
-  await logMkdir(`./content/${subfolder}`, 'createDirectoryForInfo')
+  await logMkdir(`./output/${subfolder}`, 'createDirectoryForInfo')
   
   const rssOptions: ProcessingOptions = {
     info: true,
-    rss: [`./content/feeds/${feedFilename}`],
+    rss: [`./output/feeds/${feedFilename}`],
   }
   
   try {
@@ -107,11 +98,11 @@ export async function prepareInfo(dirName: string, feedFilename: string): Promis
     throw e
   }
   
-  await logFindMove('.json', './content', `./content/${subfolder}`, 'moveGeneratedJsonToSubfolder')
+  await logFindMove('.json', './output', `./output/${subfolder}`, 'moveGeneratedJsonToSubfolder')
   await removeDailySubfolder(dirName, subfolder)
   await copyBackToDaily(dirName, subfolder)
-  await logRemove('./content/feeds', 'cleanupInfo', 'feeds folder from ./content')
-  await logRemove(`./content/${subfolder}`, 'cleanupInfo', `${subfolder} from ./content'`)
+  await logRemove('./output/feeds', 'cleanupInfo', 'feeds folder from ./output')
+  await logRemove(`./output/${subfolder}`, 'cleanupInfo', `${subfolder} from ./output`)
   
   l.final(`${p} prepareInfo completed for ${dirName}`)
 }
@@ -121,22 +112,10 @@ export async function handleWorkflow(options: ProcessingOptions): Promise<boolea
   const feedFilename = options.feed
   
   if (!feedFilename) {
-    l.dim(`${p} No feed specified, not a workflow`)
     return false
   }
   
-  l.dim(`${p} handleWorkflow called with options: ${JSON.stringify({
-    feed: feedFilename,
-    metaInfo: options.metaInfo,
-    date: options.date,
-    days: options.days,
-    last: options.last,
-    order: options.order
-  }, null, 2)}`)
-  
   const dirName = extractDirectoryName(feedFilename)
-  
-  l.dim(`${p} Validating feed file: ${feedFilename}`)
   
   if (!validateFeedsFile(feedFilename)) {
     console.log('')
@@ -147,20 +126,16 @@ export async function handleWorkflow(options: ProcessingOptions): Promise<boolea
     console.log(`  mkdir -p ${WORKFLOWS_DIR}/feeds`)
     console.log(`  echo 'https://feeds.megaphone.fm/MLN2155636147' > ${WORKFLOWS_DIR}/feeds/${feedFilename}`)
     console.log('')
-    l.dim(`${p} Then run your command again.`)
     process.exit(1)
   }
   
-  l.dim(`${p} Ensuring workflow directories exist`)
   await ensureWorkflowDirectories(dirName)
   
   try {
     if (options.metaInfo) {
       l.final(`${p} Running workflow with both Info and Shownotes for ${dirName} from ${WORKFLOWS_DIR}`)
-      l.dim(`${p} Step 1/2: Generating info files`)
       await prepareInfo(dirName, feedFilename)
       logSeparator({ type: 'completion', descriptor: `Workflow Info for ${dirName}` })
-      l.dim(`${p} Step 2/2: Generating shownotes`)
     } else {
       l.final(`${p} Running workflow: Shownotes only for ${dirName} from ${WORKFLOWS_DIR}`)
     }

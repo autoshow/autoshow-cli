@@ -38,7 +38,6 @@ export async function synthesizeWithPolly(
     languageCode?: LanguageCode
   } = {}
 ): Promise<string | undefined> {
-  l.dim(`${p} Starting Polly synthesis (${text.length} chars)`)
   if (!process.env['AWS_ACCESS_KEY_ID'] || !process.env['AWS_SECRET_ACCESS_KEY']) 
     err(`${p} AWS credentials not found. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY`)
   
@@ -47,8 +46,6 @@ export async function synthesizeWithPolly(
   const engine = options.engine || (VOICE_TYPES.neural.includes(voice) ? 'neural' : 'standard')
   const engineType = detectEngineType(voice, engine)
   const cost = (text.length / 1_000_000) * PRICING[engineType]
-  
-  l.dim(`${p} Voice: ${voice}, Format: ${format}, Engine: ${engine} ($${cost.toFixed(6)})`)
   
   try {
     const response = await getPollyClient().send(new SynthesizeSpeechCommand({
@@ -64,7 +61,6 @@ export async function synthesizeWithPolly(
     if (!response.AudioStream) err(`${p} No audio stream received from Polly`)
     await ensureDir(path.dirname(outputPath))
     await fs.writeFile(outputPath, Buffer.from(await response.AudioStream!.transformToByteArray()))
-    l.dim(`${p} Saved to ${outputPath}`)
     l.dim(`${p} Cost: $${cost.toFixed(6)}`)
     return outputPath
   } catch (error: any) {
@@ -87,7 +83,6 @@ export async function processScriptWithPolly(
   } = {}
 ): Promise<void> {
   try {
-    l.dim(`${p} Reading Polly script: ${scriptFile}`)
     const script = JSON.parse(await fs.readFile(scriptFile, 'utf8'))
     await ensureDir(outDir)
     await ensureSilenceFile(outDir)
@@ -97,13 +92,12 @@ export async function processScriptWithPolly(
       SEAMUS: (process.env['POLLY_VOICE_SEAMUS'] as VoiceId) || 'Brian'
     }
     
-    l.dim(`${p} Processing ${script.length} lines with Polly`)
+    l.opts(`${p} Processing ${script.length} lines with Polly`)
     const format = options.format || 'mp3'
     let totalCost = 0
     
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
-      l.dim(`${p} Line ${idx + 1}/${script.length} (${speaker})`)
       const base = `${String(idx).padStart(3, '0')}_${speaker}`
       const audioOut = path.join(outDir, `${base}.${format}`)
       const pcmOut = path.join(outDir, `${base}.pcm`)
@@ -122,18 +116,14 @@ export async function processScriptWithPolly(
         await fs.copyFile(audioOut, pcmOut)
       }
       
-      l.dim(`${p} Saved ${audioOut}`)
       if (idx < script.length - 1) await new Promise(resolve => setTimeout(resolve, 100))
     }))
     
-    l.dim(`${p} Total cost: $${totalCost.toFixed(6)}`)
+    l.opts(`${p} Total cost: $${totalCost.toFixed(6)}`)
     if (format !== 'ogg_vorbis') {
-      l.dim(`${p} Merging Polly audio files`)
       await mergeAudioFiles(outDir)
       await convertPcmToWav(outDir)
-      l.dim(`${p} Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
-    } else {
-      l.dim(`${p} Individual files saved to ${outDir}`)
+      l.success(`${p} Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
     }
   } catch (error) {
     err(`${p} Error processing Polly script: ${error}`)

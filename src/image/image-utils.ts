@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { l, err } from '@/logging'
-import type { ApiError } from '@/types'
+import type { ApiError } from '@/image/image-types'
 
 const p = '[image/image-utils]'
 
@@ -11,14 +11,13 @@ export function generateUniqueFilename(prefix: string, extension: string = 'png'
   const makeFilename = (extra = '') => join('./output', `${prefix}-${timestamp}-${randomString}${extra}.${extension}`)
   const filepath = makeFilename()
   const finalPath = existsSync(filepath) ? makeFilename(`-${Math.random().toString(36).substring(2, 8)}`) : filepath
-  l.dim(`${p} Generated ${existsSync(filepath) ? 'unique ' : ''}filename: ${finalPath.split('/').pop()}`)
+  l.dim(`${p} Generated unique filename: ${finalPath}`)
   return finalPath
 }
 
 export const generateTimestamp = (): string => new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
 
 export function encodeImage(imagePath: string): string {
-  l.dim(`${p} Encoding image: ${imagePath}`)
   if (!existsSync(imagePath)) {
     throw new Error(`Image file not found: ${imagePath}`)
   }
@@ -62,12 +61,6 @@ export const handleError = (error: any): void => {
   if (!isApiError(error)) {
     err(`${p} Unknown error: ${String(error)}`)
   }
-  
-  l.dim(`${p} Error details: ${JSON.stringify({ 
-    name: error.name, 
-    message: error.message, 
-    code: error.$metadata?.httpStatusCode || error.code 
-  })}`)
   
   const errorMap = {
     'content filters': 'Content blocked by AI safety policy',
