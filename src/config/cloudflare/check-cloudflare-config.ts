@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
-import { checkR2Configuration } from '@/save/cloudflare/config'
-import { listBuckets } from '@/save/cloudflare/client'
+import { checkR2Configuration } from '../../save/save-services/cloudflare/config'
+import { listBuckets } from '../../save/save-services/cloudflare/client'
 import type { ConfigStatus } from '@/config/config-types'
 
 function maskCredential(credential: string | undefined, showLength: number = 4): string {
