@@ -1,8 +1,8 @@
-import { uploadAllOutputFiles } from './upload'
-import { getOrCreateBucket } from './bucket'
-import { uploadJsonMetadata } from './metadata'
-import { uploadToS3 } from './upload'
-import { createStorageService, uploadToStorage } from './service-factory'
+import { uploadAllOutputFiles } from './save-utils/upload'
+import { getOrCreateBucket } from './save-utils/bucket'
+import { uploadJsonMetadata } from './save-utils/metadata'
+import { uploadToS3 } from './save-utils/upload'
+import { createStorageService, uploadToStorage } from './save-utils/service-factory'
 
 export { 
   uploadAllOutputFiles,

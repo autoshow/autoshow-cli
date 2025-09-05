@@ -9,6 +9,8 @@ npm run as -- music generate --prompt "upbeat electronic dance music"
 
 npm run as -- music generate --prompt "calm piano melody" --service audiocraft
 
+npm run as -- music generate --prompt "calm piano melody" --service audiocraft --model facebook/musicgen-stereo-large
+
 npm run as -- music generate --prompt "ambient electronic" --service stable-audio
 
 npm run as -- music generate --prompt "jazz fusion" --duration 30

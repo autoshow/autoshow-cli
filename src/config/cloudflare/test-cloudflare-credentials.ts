@@ -1,5 +1,5 @@
 import { l } from '@/logging'
-import { listBuckets, createBucket, healthCheck } from '@/save/cloudflare/client'
+import { listBuckets, createBucket, healthCheck } from '../../save/save-services/cloudflare/client'
 import type { CredentialValidationResult } from '@/config/config-types'
 import { testWorkersAICapabilities } from "./test-workers-ai"
 import { testVectorizeCapabilities } from "./test-vectorize"

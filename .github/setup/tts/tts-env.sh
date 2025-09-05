@@ -6,7 +6,7 @@ find_py() {
     if command -v "$pth" &>/dev/null; then
       v=$("$pth" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
       case "$v" in
-        3.9|3.10|3.11) echo "$pth"; return 0 ;;
+        3.9|3.10|3.11|3.12) echo "$pth"; return 0 ;;
       esac
     fi
   done
