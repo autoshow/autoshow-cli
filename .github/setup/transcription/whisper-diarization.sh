@@ -12,19 +12,7 @@ BIN_DIR="build/bin"
 MODELS_DIR="build/models"
 SCRIPT_DIR=".github/setup/transcription"
 
-find_py() {
-  for pth in python3.{11..9} python3 /usr/local/bin/python3.{11..9} /opt/homebrew/bin/python3.{11..9} python; do
-    if command -v "$pth" &>/dev/null; then
-      v=$("$pth" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
-      case "$v" in
-        3.9|3.10|3.11|3.12) echo "$pth"; return 0 ;;
-      esac
-    fi
-  done
-  return 1
-}
-
-PY=$(find_py) || { echo "$p ERROR: Python 3.9-3.11 required"; exit 1; }
+PY="python3"
 
 mkdir -p "$BIN_DIR" "$MODELS_DIR"
 
@@ -71,11 +59,11 @@ fi
 
 echo "$p Installing PyTorch (compatible versions)"
 if [ "$IS_MAC" = true ]; then
-  "$PIP" install "torch==2.1.2" >/dev/null 2>&1
-  "$PIP" install "torchaudio==2.1.2" >/dev/null 2>&1
+  "$PIP" install "torch==2.2.0" >/dev/null 2>&1
+  "$PIP" install "torchaudio==2.2.0" >/dev/null 2>&1
 else
-  "$PIP" install "torch==2.1.2" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
-  "$PIP" install "torchaudio==2.1.2" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
+  "$PIP" install "torch==2.2.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
+  "$PIP" install "torchaudio==2.2.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
 fi
 
 echo "$p Installing audio processing dependencies"
@@ -157,7 +145,6 @@ for module in optional_modules:
         mod = __import__(module)
         print(f"✓ {module}")
         
-        # Check for specific compatibility issues
         if module == "ctc_forced_aligner":
             try:
                 from ctc_forced_aligner import load_alignment_model
