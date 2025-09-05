@@ -2,35 +2,110 @@ import { Command } from 'commander'
 import { promises as fs } from 'fs'
 import { dirname } from 'path'
 
-const p = '[parse]'
-
-interface FileData {
+export interface FileData {
   path: string
   content: string
 }
 
-function extractFilePath(headerLine: string): string | null {
-  if (!headerLine.startsWith('## ')) return null
+const p = '[parse]'
+
+function extractFilePath(line: string): string | null {
+  if (!line.trim()) return null
   
-  const headerContent = headerLine.substring(3).trim()
-  console.log(`${p} Processing header: ${headerContent}`)
+  let cleanLine = line.trim()
   
-  const patterns = [
-    /^File:\s*(.+)$/,
-    /^New file:\s*(.+)$/i,
-    /^Modified file:\s*(.+)$/i
-  ]
-  
-  const matchedPattern = patterns.find(pattern => pattern.test(headerContent))
-  if (matchedPattern) {
-    const match = headerContent.match(matchedPattern)
-    const extractedPath = match?.[1]?.trim()
-    console.log(`${p} Extracted path from pattern: ${extractedPath}`)
-    return extractedPath || null
+  if (cleanLine.startsWith('## ')) {
+    cleanLine = cleanLine.substring(3).trim()
   }
   
-  console.log(`${p} Using direct path format: ${headerContent}`)
-  return headerContent
+  if (cleanLine.startsWith('**') && cleanLine.endsWith('**')) {
+    cleanLine = cleanLine.substring(2, cleanLine.length - 2).trim()
+  }
+  
+  const prefixPatterns = [
+    /^File:\s*(.+)$/i,
+    /^New file:\s*(.+)$/i,
+    /^Modified file:\s*(.+)$/i,
+    /^Updated file:\s*(.+)$/i,
+    /^Create file:\s*(.+)$/i,
+    /^Add file:\s*(.+)$/i,
+    /^Delete file:\s*(.+)$/i,
+    /^Move file:\s*(.+)$/i,
+    /^Rename file:\s*(.+)$/i,
+    /^Path:\s*(.+)$/i,
+    /^Location:\s*(.+)$/i
+  ]
+  
+  for (const pattern of prefixPatterns) {
+    const match = cleanLine.match(pattern)
+    if (match) {
+      const extractedPath = match[1]?.trim()
+      if (extractedPath && isValidFilePath(extractedPath)) {
+        console.log(`${p} Extracted path from prefix pattern: ${extractedPath}`)
+        return extractedPath
+      }
+    }
+  }
+  
+  if (isValidFilePath(cleanLine)) {
+    console.log(`${p} Using direct path format: ${cleanLine}`)
+    return cleanLine
+  }
+  
+  return null
+}
+
+function isValidFilePath(path: string): boolean {
+  if (!path || typeof path !== 'string') {
+    return false
+  }
+  
+  if (!path.includes('/')) {
+    return false
+  }
+  
+  const shellCommands = ['echo', 'cat', 'ls', 'cd', 'mkdir', 'rm', 'cp', 'mv', 'touch', 'grep', 'find', 'awk', 'sed', 'curl', 'wget', 'npm', 'yarn', 'node', 'git', 'docker', 'sudo']
+  const firstWord = path.split(/\s+/)[0]?.toLowerCase()
+  if (shellCommands.includes(firstWord)) {
+    return false
+  }
+  
+  if (path.includes('http://') || path.includes('https://')) {
+    return false
+  }
+  
+  const shellOperators = ['>', '>>', '|', '&&', '||', ';', '`', '$', '$(', '${']
+  if (shellOperators.some(op => path.includes(op))) {
+    return false
+  }
+  
+  if (path.includes(' ') && !path.startsWith('"') && !path.startsWith("'")) {
+    const words = path.split(/\s+/)
+    if (words.length > 3) {
+      return false
+    }
+  }
+  
+  const validExtensions = ['.ts', '.js', '.tsx', '.jsx', '.md', '.json', '.css', '.scss', '.html', '.vue', '.py', '.go', '.rs', '.java', '.cpp', '.c', '.h', '.php', '.rb', '.swift', '.kt', '.dart', '.yml', '.yaml', '.xml', '.toml', '.ini', '.env', '.gitignore', '.dockerignore', '.txt', '.sh']
+  const hasValidExtension = validExtensions.some(ext => path.toLowerCase().endsWith(ext))
+  
+  if (!hasValidExtension) {
+    return false
+  }
+  
+  const commonHeaders = ['overview', 'usage', 'examples', 'setup', 'configuration', 'installation', 'getting started', 'api', 'reference', 'guide', 'tutorial', 'documentation', 'readme', 'changelog', 'license', 'contributing']
+  const pathLower = path.toLowerCase()
+  const isCommonHeader = commonHeaders.some(header => pathLower.includes(header) && !pathLower.includes('/'))
+  
+  if (isCommonHeader) {
+    return false
+  }
+  
+  if (path.startsWith('/') || path.includes('..') || path.includes('//')) {
+    return false
+  }
+  
+  return true
 }
 
 async function parseMarkdown(content: string): Promise<FileData[]> {
@@ -44,24 +119,8 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
-    if (!line) continue
     
-    if (line.startsWith('## ') && !inCodeBlock) {
-      if (currentFile && codeBlockContent.length > 0) {
-        currentFile.content = codeBlockContent.join('\n').trim()
-        files.push(currentFile)
-      }
-      
-      const filePath = extractFilePath(line)
-      if (filePath) {
-        console.log(`${p} Found file path: ${filePath}`)
-        currentFile = { path: filePath, content: '' }
-        codeBlockContent = []
-      } else {
-        console.log(`${p} Could not extract file path from: ${line}`)
-        currentFile = null
-      }
-    } else if (line.startsWith('```') && currentFile) {
+    if (line.startsWith('```') && currentFile) {
       if (!inCodeBlock) {
         inCodeBlock = true
         console.log(`${p} Entering code block for ${currentFile.path}`)
@@ -71,15 +130,30 @@ async function parseMarkdown(content: string): Promise<FileData[]> {
       }
     } else if (inCodeBlock && currentFile) {
       codeBlockContent.push(line)
+    } else if (!inCodeBlock) {
+      const filePath = extractFilePath(line)
+      if (filePath) {
+        if (currentFile && codeBlockContent.length > 0) {
+          currentFile.content = codeBlockContent.join('\n').trim()
+          files.push(currentFile)
+          console.log(`${p} Added file: ${currentFile.path} (${currentFile.content.length} chars)`)
+        }
+        
+        console.log(`${p} Found file path: ${filePath}`)
+        currentFile = { path: filePath, content: '' }
+        codeBlockContent = []
+      }
     }
   }
   
   if (currentFile && codeBlockContent.length > 0) {
     currentFile.content = codeBlockContent.join('\n').trim()
     files.push(currentFile)
+    console.log(`${p} Added final file: ${currentFile.path} (${currentFile.content.length} chars)`)
   }
   
   console.log(`${p} Parsed ${files.length} files from markdown`)
+  files.forEach(file => console.log(`${p} File: ${file.path} (${file.content.length} chars)`))
   return files
 }
 
@@ -130,6 +204,11 @@ async function writeFile(filePath: string, content: string): Promise<void> {
 
 async function processFiles(files: FileData[]): Promise<void> {
   console.log(`${p} Processing ${files.length} files`)
+  
+  if (files.length === 0) {
+    console.log(`${p} No files to process`)
+    return
+  }
   
   const deletePromises = files.map(file => deleteFile(file.path))
   await Promise.all(deletePromises)

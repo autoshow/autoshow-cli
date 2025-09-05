@@ -2,7 +2,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 import { l } from '@/logging'
 import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError } from '../image-utils.ts'
 import { env } from '@/node-utils'
-import type { ImageGenerationResult, NovaCanvasPayload } from '@/types'
+import type { ImageGenerationResult, NovaCanvasPayload } from '../image-types'
 
 const bedrockRuntimeClient = new BedrockRuntimeClient({ 
   region: env['AWS_REGION'] || 'us-east-1',
@@ -15,8 +15,6 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
   const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   
-  l.dim(`${p} [${requestId}] Starting Nova Canvas | Prompt: "${prompt}"`)
-  
   try {
     const { width, height } = parseResolution(options.resolution || '1024x1024')
     const config = {
@@ -28,8 +26,6 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       numberOfImages: parseIntOption(options.count || '1', 1)
     }
     
-    l.dim(`${p} [${requestId}] Config: ${JSON.stringify(config)}`)
-    
     const payload: NovaCanvasPayload = {
       taskType: 'TEXT_IMAGE',
       textToImageParams: {
@@ -39,8 +35,7 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       imageGenerationConfig: config
     }
     
-    l.dim(`${p} [${requestId}] Invoking model...`)
-    
+    l.dim(`${p} [${requestId}] Invoking Nova Canvas model`)
     const response = await bedrockRuntimeClient.send(new InvokeModelCommand({
       modelId: 'amazon.nova-canvas-v1:0',
       body: JSON.stringify(payload)
@@ -52,11 +47,10 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       if (!result.error.includes('Some of')) {
         throw new Error(result.error)
       }
-      l.warn(`${p} [${requestId}] WARNING: Some images blocked by filters`)
+      l.warn(`${p} [${requestId}] Some images blocked by content filters`)
     }
     
     const images = result.images || []
-    l.dim(`${p} [${requestId}] Generated ${images.length} images`)
     
     const timestamp = generateTimestamp()
     const outputPaths = images.map((image: string, index: number) => {
@@ -68,12 +62,12 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
     })
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`${p} [${requestId}] ✓ Generated ${images.length} image(s) in ${duration}s`)
+    l.success(`${p} [${requestId}] Generated ${images.length} image(s) in ${duration}s`)
     
     return { success: true, path: outputPaths[0] ?? '', seed: config.seed }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.dim(`${p} [${requestId}] ✗ Failed in ${duration}s - ${isApiError(error) ? error.message : 'Unknown'}`)
+    l.warn(`${p} [${requestId}] Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',

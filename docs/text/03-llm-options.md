@@ -25,9 +25,9 @@ Create a `.env` file (or set them in your environment) for any service(s) you pl
 If you just want to calculate the estimated cost of input/output tokens for a given provider:
 
 ```bash
-npm run as -- --llmCost "content/examples/audio-prompt.md" --chatgpt
-npm run as -- --llmCost "content/examples/audio-prompt.md" --claude
-npm run as -- --llmCost "content/examples/audio-prompt.md" --gemini
+npm run as -- --llmCost "input/audio-prompt.md" --chatgpt
+npm run as -- --llmCost "input/audio-prompt.md" --claude
+npm run as -- --llmCost "input/audio-prompt.md" --gemini
 ```
 
 No LLM model will be called, and no LLM-based output file is generated.

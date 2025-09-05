@@ -1,8 +1,8 @@
 import { processVideo } from './video.ts'
 import { saveInfo } from '../utils/save-info.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { l, err, logSeparator } from '@/logging'
 import { readFile } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processURLs(
   options: ProcessingOptions,
@@ -11,7 +11,6 @@ export async function processURLs(
   transcriptServices?: string
 ) {
   const p = '[text/process-commands/urls]'
-  logInitialFunctionCall('processURLs', { llmServices, transcriptServices })
 
   try {
     const content = await readFile(filePath, 'utf8')

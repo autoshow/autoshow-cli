@@ -1,15 +1,12 @@
 import { l, err } from '@/logging'
-import { execPromise, mkdirSync, existsSync } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import { execPromise, existsSync, ensureDir, join } from '@/node-utils'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export function logRSSProcessingStatus(
   total: number,
   processing: number,
   options: ProcessingOptions
 ): void {
-  const p = '[text/process-commands/rss/rss-logging]'
-  l.dim(`${p} Logging RSS processing status`)
-  
   if (options.item && options.item.length > 0) {
     l.dim(`\n  - Found ${total} items in the RSS feed.`)
     l.dim(`  - Processing ${processing} specified items.`)
@@ -23,8 +20,6 @@ export function logRSSProcessingStatus(
     l.dim(`\n  - Found ${total} item(s) in the RSS feed.`)
     l.dim(`  - Processing ${processing} item(s).\n`)
   }
-  
-  l.dim(`${p} Status logged for ${processing}/${total} items`)
 }
 
 export async function logOperation(
@@ -36,7 +31,6 @@ export async function logOperation(
   const p = '[text/process-commands/rss/rss-logging]'
   console.log('')
   logFn(`${p}[${operationName}] Starting ${operationName}: ${description}`)
-  logFn(`${p}[${operationName}] Executing command: ${command}`)
   try {
     const { stdout, stderr } = await execPromise(command)
     logFn(`${p}[${operationName}] stdout:`)
@@ -45,7 +39,6 @@ export async function logOperation(
       l.warn(`${p}[${operationName}] stderr:`)
       console.warn(stderr)
     }
-    logFn(`${p}[${operationName}] Successfully finished ${operationName}: ${description}`)
   } catch (error: any) {
     err(`${p}[${operationName}] Error during ${operationName}: ${error.message}`)
     throw error
@@ -59,13 +52,9 @@ export async function logCopy(source: string, destination: string, operationName
 export async function logMkdir(targetPath: string, operationName: string): Promise<void> {
   const p = '[text/process-commands/rss/rss-logging]'
   console.log('')
-  l(`${p}[${operationName}] Starting ${operationName}: Creating directory ${targetPath}`)
   try {
     if (!existsSync(targetPath)) {
-      mkdirSync(targetPath, { recursive: true })
-      l(`${p}[${operationName}] Successfully created directory: ${targetPath}`)
-    } else {
-      l(`${p}[${operationName}] Directory already exists: ${targetPath}`)
+      await ensureDir(targetPath)
     }
   } catch (error: any) {
     err(`${p}[${operationName}] Error creating directory ${targetPath}: ${error.message}`)
@@ -83,9 +72,9 @@ export async function logRemove(targetPath: string, operationName: string, extra
 }
 
 export async function logMoveMd(subfolder: string, dirName: string, operationName: string): Promise<void> {
-  const sourcePath = `./content/${subfolder}`
-  const destPath = `./output/workflows/${dirName}/${subfolder}/`
+  const sourcePath = join('output', subfolder)
+  const destPath = join('output', 'workflows', dirName, subfolder)
   await logMkdir(destPath, `${operationName} (ensure_dest)`)
-  const command = `find "${sourcePath}" -maxdepth 1 -type f -name '*.md' -exec mv {} "${destPath}" \\;`
+  const command = `find "${sourcePath}" -maxdepth 1 -type f -name '*.md' -exec mv {} "${destPath}/" \\;`
   await logOperation(command, operationName, l, `Moving .md files from ${sourcePath} to ${destPath}`)
 }

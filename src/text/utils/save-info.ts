@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
-import { writeFile, execFilePromise } from '@/node-utils'
-import type { ShowNoteMetadata, VideoInfo } from '@/types'
+import { writeFile, execFilePromise, ensureDir, join } from '@/node-utils'
+import type { ShowNoteMetadata, VideoInfo, ProcessingOptions } from '@/text/text-types'
 
 export function sanitizeTitle(title: string) {
   return title
@@ -12,18 +12,27 @@ export function sanitizeTitle(title: string) {
     .slice(0, 200)
 }
 
+export function constructOutputPath(filename: string, options?: ProcessingOptions): string {
+  const baseOutput = 'output'
+  const outputPath = options?.outputDir 
+    ? join(baseOutput, options.outputDir, filename)
+    : join(baseOutput, filename)
+  return outputPath
+}
+
 export async function saveInfo(
   type: 'playlist' | 'urls' | 'channel' | 'rss' | 'combined',
   data: string[] | VideoInfo[] | ShowNoteMetadata[],
   title?: string
 ) {
   const p = '[text/utils/save-info]'
-  l.dim(`${p} saveInfo called with type: ${type}, data length: ${data.length}, title: ${title || 'none'}`)
+  
+  await ensureDir('output')
   
   if (type === 'combined') {
     const items = data as ShowNoteMetadata[]
     const jsonContent = JSON.stringify(items, null, 2)
-    const jsonFilePath = `content/combined-feeds-info.json`
+    const jsonFilePath = constructOutputPath('combined-feeds-info.json')
     await writeFile(jsonFilePath, jsonContent)
     l.success(`Combined RSS feeds information (${items.length} items) saved to: ${jsonFilePath}`)
     return
@@ -33,9 +42,9 @@ export async function saveInfo(
     const items = data as ShowNoteMetadata[]
     const jsonContent = JSON.stringify(items, null, 2)
     const sanitizedTitle = sanitizeTitle(title || '')
-    const jsonFilePath = `content/${sanitizedTitle}_info.json`
+    const jsonFilePath = constructOutputPath(`${sanitizedTitle}_info.json`)
     await writeFile(jsonFilePath, jsonContent)
-    l.dim(`${p} RSS feed information saved to: ${jsonFilePath}`)
+    l.success(`RSS feed information saved to: ${jsonFilePath}`)
     return
   }
   
@@ -46,18 +55,16 @@ export async function saveInfo(
   if (type === 'channel') {
     const videosToProcess = data as VideoInfo[]
     urls = videosToProcess.map((video) => video.url)
-    outputFilePath = 'content/channel_info.json'
+    outputFilePath = constructOutputPath('channel_info.json')
   } else if (type === 'playlist') {
     urls = data as string[]
     const sanitizedTitle = sanitizeTitle(title || 'playlist')
-    outputFilePath = `content/${sanitizedTitle}_info.json`
+    outputFilePath = constructOutputPath(`${sanitizedTitle}_info.json`)
   } else if (type === 'urls') {
     urls = data as string[]
-    outputFilePath = `content/urls_info.json`
+    outputFilePath = constructOutputPath('urls_info.json')
     successLogFunction = l.wait
   }
-  
-  l.dim(`${p} Processing ${urls.length} URLs for metadata extraction`)
   
   const metadataList = await Promise.all(
     urls.map(async (url) => {
@@ -101,8 +108,6 @@ export async function saveInfo(
   const validMetadata = metadataList.filter(
     (metadata): metadata is ShowNoteMetadata => metadata !== null
   )
-  
-  l.dim(`${p} Successfully extracted metadata for ${validMetadata.length} of ${urls.length} URLs`)
   
   const jsonContent = JSON.stringify(validMetadata, null, 2)
   await writeFile(outputFilePath, jsonContent)

@@ -1,20 +1,23 @@
 import { Command } from 'commander'
 import { processRSS } from './process-commands/rss'
 import { COMMAND_CONFIG, validateCommandInput } from './utils/text-validation.ts'
-import { processEmbedCommand } from './embeddings/embed-command.ts'
-import { cloudflareCommand } from './embeddings/cloudflare.ts'
+import { processEmbedCommand } from '../embeddings/embed-command.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
-import type { ProcessingOptions, EmbeddingOptions } from '@/types'
+import type { EmbeddingOptions } from "@/embeddings/embed-types.ts"
+import type { ProcessingOptions } from '@/text/text-types'
+
 export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
   const p = '[text/create-text-command]'
-  l.dim(`${p} Starting command processing`)
+  
+  if (!options.inputDir) {
+    options.inputDir = 'input'
+  }
   
   if (options.rss && Array.isArray(options.rss) && options.rss.length === 0) {
     options.rss = undefined
-    l.dim(`${p} Cleared empty RSS array`)
   }
   
   const { action, llmServices, transcriptServices } = validateCommandInput(options)
@@ -40,7 +43,6 @@ export async function processCommand(
   
   try {
     if (action === 'rss') {
-      l.dim(`${p} Calling RSS handler`)
       await COMMAND_CONFIG[action].handler(options, llmServices, transcriptServices)
     } else {
       if (!action) {
@@ -50,11 +52,9 @@ export async function processCommand(
       if (!input || typeof input !== 'string') {
         throw new Error(`No valid input provided for ${action} processing`)
       }
-      l.dim(`${p} Calling ${action} handler with input: ${input}`)
       await COMMAND_CONFIG[action].handler(options, input, llmServices, transcriptServices)
     }
     
-    l.dim(`${p} Successfully completed ${action} processing`)
     logSeparator({ type: 'completion', descriptor: action })
     exit(0)
   } catch (error) {
@@ -62,12 +62,12 @@ export async function processCommand(
     exit(1)
   }
 }
+
 export const createTextCommand = (): Command => {
-  const p = '[text/create-text-command]'
-  l.dim(`${p} Creating text command with all options`)
-  
   const textCommand = new Command('text')
     .description('Process audio/video content into text-based outputs')
+    .option('--input-dir <directory>', 'Input directory for files (default: input)')
+    .option('--output-dir <subdirectory>', 'Output subdirectory within output/ (optional)')
     .option('--video <url>', 'Process a single YouTube video')
     .option('--playlist <playlistUrl>', 'Process all videos in a YouTube playlist')
     .option('--channel <channelUrl>', 'Process all videos in a YouTube channel')
@@ -83,6 +83,7 @@ export const createTextCommand = (): Command => {
     .option('--days <number>', 'Number of days to look back for items for RSS and channel processing', parseInt)
     .option('--info [type]', 'Skip processing and write metadata to JSON objects. Use "combined" to merge multiple RSS feeds.', false)
     .option('--whisper-coreml [model]', 'Use Whisper.cpp (CoreML) for transcription with optional model specification (e.g., base, base.en, large-v3-turbo)')
+    .option('--whisper-diarization [model]', 'Use Whisper with speaker diarization for transcription with optional model specification (e.g., medium.en, large-v2)')
     .option('--whisper [model]', 'Use Whisper.cpp for transcription with optional model specification (e.g., base, large-v3-turbo)')
     .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-3)')
     .option('--assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., universal, nano)')
@@ -96,36 +97,25 @@ export const createTextCommand = (): Command => {
     .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
     .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
     .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)
-    .option('--save <service>', 'Save output to cloud storage (s3, r2, or b2)')
+    .option('--save <service>', 'Save output to cloud storage (s3 or r2)')
     .option('--s3-bucket-prefix <prefix>', 'Custom prefix for S3 bucket name (default: autoshow)')
     .action(async (options: ProcessingOptions) => {
       logInitialFunctionCall('textCommand', options)
-      if (options.keyMomentsCount !== undefined) {
-        l.dim(`${p} Key moments count configured: ${options.keyMomentsCount}`)
-      }
-      if (options.keyMomentDuration !== undefined) {
-        l.dim(`${p} Key moment duration configured: ${options.keyMomentDuration} seconds`)
-      }
       if (options.save) {
-        l.dim(`${p} Save to cloud storage configured: ${options.save}`)
-        if (options.save !== 's3' && options.save !== 'r2' && options.save !== 'b2') {
-          err(`Invalid save option: ${options.save}. Must be 's3', 'r2', or 'b2'`)
+        if (options.save !== 's3' && options.save !== 'r2') {
+          err(`Invalid save option: ${options.save}. Must be 's3' or 'r2'`)
           exit(1)
         }
-      }
-      if (options.s3BucketPrefix) {
-        l.dim(`${p} S3 bucket prefix configured: ${options.s3BucketPrefix}`)
       }
       await processCommand(options)
     })
   
   const embedCommand = new Command('embed')
     .description('Create or query vector embeddings using Cloudflare Vectorize')
-    .option('--create [directory]', 'Create embeddings from markdown files in directory (default: content)')
+    .option('--create [directory]', 'Create embeddings from markdown files in directory (default: input)')
     .option('--query <question>', 'Query embeddings with a question')
     .action(async (options: EmbeddingOptions) => {
       logInitialFunctionCall('embedCommand', options as Record<string, unknown>)
-      l.dim(`${p} Embed command initiated`)
       try {
         await processEmbedCommand(options)
         l.success('Embed command completed successfully')
@@ -136,8 +126,6 @@ export const createTextCommand = (): Command => {
     })
   
   textCommand.addCommand(embedCommand)
-  textCommand.addCommand(cloudflareCommand)
   
-  l.dim(`${p} Text command created successfully with embed and cloudflare subcommands`)
   return textCommand
 }

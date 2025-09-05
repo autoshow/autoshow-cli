@@ -19,10 +19,10 @@ npm run as -- text \
 
 ## file - Process Single Audio or Video File
 
-Run on `audio.mp3` on the `content` directory:
+Run on `audio.mp3` on the `input` directory:
 
 ```bash
-npm run as -- text --file "content/examples/audio.mp3"
+npm run as -- text --file "input/audio.mp3"
 ```
 
 ## video - Process Single Video URLs
@@ -38,13 +38,13 @@ npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"
 Run on an arbitrary list of URLs in `example-urls.md`.
 
 ```bash
-npm run as -- text --urls "content/examples/example-urls.md"
+npm run as -- text --urls "input/example-urls.md"
 ```
 
 Run on URLs file and generate JSON info file with markdown metadata of each video:
 
 ```bash
-npm run as -- --info --urls "content/examples/example-urls.md"
+npm run as -- --info --urls "input/example-urls.md"
 ```
 
 ## playlist - Process Multiple Videos in YouTube Playlist
@@ -110,7 +110,7 @@ npm run as -- text --channel "https://www.youtube.com/@ajcwebdev" --info
 Process local XML file containing an RSS feed:
 
 ```bash
-npm run as -- text --rss "content/feed.xml"
+npm run as -- text --rss "input/feed.xml"
 ```
 
 Process RSS feed from newest to oldest (default behavior):
@@ -164,7 +164,7 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" "https://feeds.tr
 Process multiple RSS feeds listed in a `.md` file:
 
 ```bash
-npm run as -- text --rss "content/examples/example-rss-feeds.md" --last 2
+npm run as -- text --rss "input/example-rss-feeds.md" --last 2
 ```
 
 Download episodes from a specific number of previous days, for example to download episodes from the last 7 days:

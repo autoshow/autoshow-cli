@@ -90,13 +90,13 @@ npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4Kh
 Run on a list of arbitrary URLs from a file.
 
 ```bash
-npm run as -- text --urls "./content/examples/example-urls.md"
+npm run as -- text --urls "./input/example-urls.md"
 ```
 
 Run on a local audio or video file.
 
 ```bash
-npm run as -- text --file "./content/examples/audio.mp3"
+npm run as -- text --file "./input/audio.mp3"
 ```
 
 Run on a podcast RSS feed.
@@ -110,7 +110,7 @@ For more granular control (e.g., specific RSS items, date filtering, order, skip
 Use `--info` to fetch metadata without full processing for URLs, playlists, channels, or RSS feeds.
 
 ```bash
-npm run as -- text --urls "./content/examples/example-urls.md" --info
+npm run as -- text --urls "./input/example-urls.md" --info
 ```
 
 ### Transcription and LLM Options

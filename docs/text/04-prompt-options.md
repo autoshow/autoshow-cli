@@ -6,7 +6,8 @@
 - [Prompt Categories](#prompt-categories)
   - [Summaries, Chapters, and Titles](#summaries-chapters-and-titles)
   - [Takeaways, Questions, Quotes, and FAQ](#takeaways-questions-quotes-and-faq)
-  - [Social Media Content, Blog Posts, and Songs](#social-media-content-blog-posts-and-songs)
+  - [Social Media Content and Marketing](#social-media-content-and-marketing)
+  - [Creative Entertainment Content](#creative-entertainment-content)
 - [Print Select Prompts without Process Commands](#print-select-prompts-without-process-commands)
 - [Write a Custom Prompt](#write-a-custom-prompt)
 
@@ -98,7 +99,7 @@ Combine multiple configurations:
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 2 --keyMomentDuration 60 --claude
 ```
 
-### Social Media Content, Blog Posts, and Songs
+### Social Media Content and Marketing
 
 ```bash
 # Write a concise and engaging social media post optimized for X (Twitter):
@@ -110,12 +111,34 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt facebook
 # Write a professional and insightful LinkedIn post:
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt linkedin
 
+# Write an engaging Instagram post with hashtags and emojis:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt instagram
+
+# Write a TikTok caption with trending hashtags and engagement hooks:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt tiktok
+
+# Create an SEO-optimized YouTube video description with timestamps:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt youtubeDescription
+
+# Transform content into a professional email newsletter format:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt emailNewsletter
+
+# Create an SEO-optimized article with keyword strategy:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt seoArticle
+
+# Generate a 90-day content calendar and strategy:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt contentStrategy
+
 # Generate a list of chapter titles with timestamps:
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt chapterTitles
 
 # Generate a blog outline and a first draft blog post (750+ words):
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt blog
+```
 
+### Creative Entertainment Content
+
+```bash
 # Write an Eminem-inspired rap song based on the transcript:
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rapSong
 
@@ -124,6 +147,24 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rockSong
 
 # Write a heartfelt, storytelling country song based on the transcript:
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt countrySong
+
+# Write a catchy, radio-friendly pop song based on the transcript:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt popSong
+
+# Write a sophisticated jazz song with complex emotions:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt jazzSong
+
+# Write an authentic folk song with social commentary:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt folkSong
+
+# Transform content into a compelling short story:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortStory
+
+# Convert content into screenplay format:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt screenplay
+
+# Create a themed poetry collection with various forms:
+npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt poetryCollection
 ```
 
 ## Print Select Prompts without Process Commands
@@ -135,5 +176,5 @@ npm run as -- --printPrompt summary longChapters
 ## Write a Custom Prompt
 
 ```bash
-npm run as -- text --file "content/examples/audio.mp3" --customPrompt "content/examples/custom-prompt.md" --chatgpt
+npm run as -- text --file "input/audio.mp3" --customPrompt "input/custom-prompt.md" --chatgpt
 ```

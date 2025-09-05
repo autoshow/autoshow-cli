@@ -3,9 +3,9 @@ import { saveInfo } from '../../utils/save-info.ts'
 import { validateChannelOptions } from './channel-validation.ts'
 import { logChannelProcessingStatus } from './channel-logging.ts'
 import { selectVideos } from './selector.ts'
-import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { execFilePromise } from '@/node-utils'
-import type { ProcessingOptions } from '@/types'
+import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processChannel(
   options: ProcessingOptions,
@@ -15,12 +15,10 @@ export async function processChannel(
 ): Promise<void> {
   const p = '[text/process-commands/channel/index]'
   logInitialFunctionCall('processChannel', { llmServices, transcriptServices })
-  l.dim(`${p} Starting channel processing for: ${channelUrl}`)
   
   try {
     validateChannelOptions(options)
 
-    l.dim(`${p} Fetching channel video list`)
     const { stdout, stderr } = await execFilePromise('yt-dlp', [
       '--flat-playlist',
       '--print', '%(url)s',
@@ -36,12 +34,10 @@ export async function processChannel(
     logChannelProcessingStatus(allVideos.length, videosToProcess.length, options)
 
     if (options.info) {
-      l.dim(`${p} Info mode - saving video metadata`)
       await saveInfo('channel', videosToProcess, '')
       return
     }
 
-    l.dim(`${p} Processing ${videosToProcess.length} videos`)
     for (const [index, video] of videosToProcess.entries()) {
       const url = video.url
       logSeparator({
@@ -52,15 +48,11 @@ export async function processChannel(
       })
 
       try {
-        l.dim(`${p} Processing video ${index + 1}/${videosToProcess.length}: ${url}`)
         await processVideo(options, url, llmServices, transcriptServices)
-        l.dim(`${p} Successfully processed video: ${url}`)
       } catch (error) {
         err(`${p} Error processing video ${url}: ${(error as Error).message}`)
       }
     }
-    
-    l.dim(`${p} Channel processing completed successfully`)
   } catch (error) {
     err(`${p} Error processing channel: ${(error as Error).message}`)
     process.exit(1)

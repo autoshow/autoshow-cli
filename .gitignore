@@ -3,9 +3,10 @@ node_modules
 .env
 .idea
 bin
-build
-out
-dist
+build/bin
+build/config/*.json
+build/models
+build/pyenv
 models
 /content
 whisper.cpp
@@ -17,8 +18,11 @@ spec.log
 setup-*.log
 setup.log
 TODO.md
-python_env
 output
 src/text/workflows
 whisper-cpp-temp
 whisper-coreml-temp
+input
+eng.traineddata
+=*
+wan2.1-repo
