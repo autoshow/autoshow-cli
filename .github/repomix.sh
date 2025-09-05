@@ -4,13 +4,8 @@ INCLUDE_PATHS=(
   "*"
   "src/*"
   ".github/setup/index.sh"
-  ".github/setup/transcription"
-  "docs/text/02-transcription-options.md"
-  "src/text/*"
-  "src/text/utils"
-  "src/text/process-commands/file.ts"
-  "src/text/process-commands/video.ts"
-  "src/text/process-steps/02-run-transcription"
+  "docs/video"
+  "src/video"
 )
 
 IGNORE_PATHS=(
