@@ -17,19 +17,7 @@ BIN_DIR="build/bin"
 MODELS_DIR="build/models"
 VENV_DIR="build/pyenv/coreml"
 
-find_py() {
-  for pth in python3.{11..9} python3 /usr/local/bin/python3.{11..9} /opt/homebrew/bin/python3.{11..9} python; do
-    if command -v "$pth" &>/dev/null; then
-      v=$("$pth" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
-      case "$v" in
-        3.9|3.10|3.11|3.12) echo "$pth"; return 0 ;;
-      esac
-    fi
-  done
-  return 1
-}
-
-PY=$(find_py) || { echo "$p ERROR: Python 3.9-3.11 required"; exit 1; }
+PY="python3"
 
 mkdir -p "$BIN_DIR" "$MODELS_DIR"
 
@@ -87,7 +75,7 @@ fi
 PIP="$VENV_DIR/bin/pip"
 "$PIP" install --upgrade pip setuptools wheel >/dev/null
 "$PIP" install "numpy<2" >/dev/null || "$PIP" install "numpy<2" -U >/dev/null
-"$PIP" install "torch==2.5.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null || "$PIP" install "torch==2.5.0" >/dev/null
+"$PIP" install "torch==2.2.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null || "$PIP" install "torch==2.2.0" >/dev/null
 "$PIP" install "coremltools>=7,<8" "transformers" "sentencepiece" "huggingface_hub" "safetensors" "ane-transformers" >/dev/null
 "$PIP" install 'protobuf<4' >/dev/null || true
 "$PIP" install "openai-whisper" >/dev/null || true
