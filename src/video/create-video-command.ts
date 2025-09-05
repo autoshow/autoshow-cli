@@ -34,6 +34,10 @@ export const createVideoCommand = (): Command => {
         
         const aspectRatio = parseAspectRatio(options.aspectRatio)
         
+        if (isRunwayModel && !options.image) {
+          err(`${p} Runway models require an input image. Please provide one with --image option`)
+        }
+        
         if (isVeoModel) {
           let veoAspectRatio: '16:9' | '9:16' | undefined = aspectRatio as any
           if (options.model !== 'veo-2.0-generate-001' && veoAspectRatio === '9:16') {
@@ -91,11 +95,6 @@ export const createVideoCommand = (): Command => {
             image: options.image,
             aspectRatio: runwayAspectRatio,
             duration: duration as 5 | 10
-          }
-          
-          if (!options.image) {
-            l.warn(`${p} Runway models require an input image. Please provide one with --image option`)
-            err(`${p} Image is required for Runway model ${options.model}`)
           }
           
           l.dim(`${p} Using Runway image-to-video with reference image: ${options.image}`)

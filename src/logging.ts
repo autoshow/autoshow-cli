@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { exit } from '@/node-utils'
 
 export function logInitialFunctionCall(functionName: string, details: Record<string, unknown>): void {
   l.opts(`${functionName} called with the following arguments:\n`)
@@ -69,4 +70,12 @@ function createChainableLogger(baseLogger: (...args: any[]) => void) {
 }
 
 export const l = createChainableLogger(console.log)
-export const err = createChainableLogger(console.error)
+
+function createErrorLogger(baseLogger: (...args: any[]) => void) {
+  return (...args: any[]) => {
+    baseLogger(chalk.bold.red(...args))
+    exit(1)
+  }
+}
+
+export const err = createErrorLogger(console.error)
