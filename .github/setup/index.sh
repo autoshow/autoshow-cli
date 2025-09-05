@@ -28,6 +28,15 @@ case "${1:-}" in
   --transcription)
     SETUP_MODE="transcription"
     ;;
+  --whisper)
+    SETUP_MODE="whisper"
+    ;;
+  --whisper-coreml)
+    SETUP_MODE="whisper-coreml"
+    ;;
+  --whisper-diarization)
+    SETUP_MODE="whisper-diarization"
+    ;;
   --tts)
     SETUP_MODE="tts"
     ;;
@@ -36,11 +45,14 @@ case "${1:-}" in
     ;;
   *)
     echo "$p ERROR: Invalid argument '$1'"
-    echo "$p Usage: $0 [--image|--music|--transcription|--tts]"
+    echo "$p Usage: $0 [--image|--music|--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
     echo "$p   (no args): Base setup only (npm dependencies and directories)"
     echo "$p   --image: Setup image generation environment and download models"
     echo "$p   --music: Setup music generation environment and download models"
-    echo "$p   --transcription: Setup transcription environment and download models"
+    echo "$p   --transcription: Setup all transcription environments and download models"
+    echo "$p   --whisper: Setup whisper-metal (default whisper.cpp with Metal support)"
+    echo "$p   --whisper-coreml: Setup whisper CoreML for optimized inference on Apple Silicon"
+    echo "$p   --whisper-diarization: Setup whisper with speaker diarization capabilities"
     echo "$p   --tts: Setup TTS environment and download models"
     exit 1
     ;;
@@ -144,7 +156,7 @@ case "$SETUP_MODE" in
     ;;
     
   transcription)
-    echo "$p Setting up transcription environment and downloading models"
+    echo "$p Setting up all transcription environments and downloading models"
     
     echo "$p Installing required Homebrew packages for transcription"
     quiet_brew_install "cmake"
@@ -167,7 +179,72 @@ case "$SETUP_MODE" in
     echo "$p Downloading transcription models"
     bash "$SETUP_DIR/transcription/models.sh"
     
-    echo "$p Transcription setup completed"
+    echo "$p All transcription environments setup completed"
+    ;;
+    
+  whisper)
+    echo "$p Setting up whisper-metal (default whisper.cpp with Metal support)"
+    
+    echo "$p Installing required Homebrew packages for whisper"
+    quiet_brew_install "cmake"
+    quiet_brew_install "ffmpeg"
+    quiet_brew_install "pkg-config"
+    
+    echo "$p Setting up Whisper CPU"
+    bash "$SETUP_DIR/transcription/whisper.sh"
+    
+    echo "$p Setting up Whisper Metal"
+    bash "$SETUP_DIR/transcription/whisper-metal.sh"
+    
+    echo "$p Downloading whisper models"
+    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
+    
+    echo "$p Whisper-metal setup completed"
+    ;;
+    
+  whisper-coreml)
+    echo "$p Setting up whisper CoreML for optimized inference on Apple Silicon"
+    
+    echo "$p Installing required Homebrew packages for whisper CoreML"
+    quiet_brew_install "cmake"
+    quiet_brew_install "ffmpeg"
+    quiet_brew_install "pkg-config"
+    
+    echo "$p Setting up Whisper CPU (base dependency)"
+    bash "$SETUP_DIR/transcription/whisper.sh"
+    
+    echo "$p Setting up Whisper CoreML"
+    bash "$SETUP_DIR/transcription/whisper-coreml.sh"
+    
+    echo "$p Downloading whisper models"
+    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
+    
+    echo "$p Generating CoreML models"
+    bash "$SETUP_DIR/transcription/generate-coreml-model.sh" base
+    
+    echo "$p Whisper CoreML setup completed"
+    ;;
+    
+  whisper-diarization)
+    echo "$p Setting up whisper with speaker diarization capabilities"
+    
+    echo "$p Installing required Homebrew packages for whisper diarization"
+    quiet_brew_install "cmake"
+    quiet_brew_install "ffmpeg"
+    quiet_brew_install "pkg-config"
+    quiet_brew_install "git"
+    
+    echo "$p Setting up Whisper CPU (base dependency)"
+    bash "$SETUP_DIR/transcription/whisper.sh"
+    
+    echo "$p Setting up Whisper Diarization"
+    bash "$SETUP_DIR/transcription/whisper-diarization.sh"
+    
+    echo "$p Downloading whisper models"
+    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
+    bash "$SETUP_DIR/transcription/download-ggml-model.sh" medium.en "./build/models"
+    
+    echo "$p Whisper diarization setup completed"
     ;;
     
   tts)
@@ -195,7 +272,7 @@ case "$SETUP_MODE" in
     
   base)
     echo "$p Base setup completed (npm dependencies and directories only)"
-    echo "$p Run with --image, --music, --transcription, or --tts to set up specific features"
+    echo "$p Run with --image, --music, --transcription, --whisper, --whisper-coreml, --whisper-diarization, or --tts to set up specific features"
     ;;
 esac
 
