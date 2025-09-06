@@ -10,10 +10,18 @@ Installs npm dependencies and creates directory structure. No Python environment
 
 ### Feature Setup
 ```bash
-npm run setup:image          # Image generation (stable-diffusion.cpp)
-npm run setup:music          # Music generation (AudioCraft + Stable Audio)
-npm run setup:transcription  # Audio transcription (Whisper variants)
-npm run setup:tts            # Text-to-speech (Coqui + Kitten)
+npm run setup:image               # Image generation (stable-diffusion.cpp)
+npm run setup:s1                  # Stable Diffusion 1.5
+npm run setup:s3                  # Stable Diffusion 3.5
+
+npm run setup:music               # Music generation (AudioCraft + Stable Audio)
+
+npm run setup:transcription       # Audio transcription (Whisper variants)
+npm run setup:whisper             # Whisper.cpp configured for Metal
+npm run setup:whisper-coreml      # Whisper.cpp configured for Apple CoreML
+npm run setup:whisper-diarization # Whisper with diarization (speaker labels) added
+
+npm run setup:tts                 # Text-to-speech (Coqui + Kitten)
 ```
 
 Each feature is self-contained and won't affect others if setup fails.
@@ -33,30 +41,6 @@ Each feature is self-contained and won't affect others if setup fails.
 | TTS | ~500MB | 2-3 min |
 | Music | ~2GB | 5-8 min |
 | Image | 1.6GB - 15GB | 5-15 min |
-
-## Usage Patterns
-
-**Minimal setup for transcription:**
-```bash
-npm run setup
-npm run setup:transcription
-```
-
-**Content creation setup:**
-```bash
-npm run setup
-npm run setup:transcription
-npm run setup:tts
-npm run setup:image
-```
-
-**Audio-focused setup:**
-```bash
-npm run setup
-npm run setup:transcription
-npm run setup:music
-npm run setup:tts
-```
 
 ## What Gets Installed
 
