@@ -170,7 +170,7 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt poetryCo
 ## Print Select Prompts without Process Commands
 
 ```bash
-npm run as -- --printPrompt summary longChapters
+npm run as -- text --printPrompt summary longChapters
 ```
 
 ## Write a Custom Prompt

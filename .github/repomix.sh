@@ -3,14 +3,11 @@
 INCLUDE_PATHS=(
   "*"
   "src/*"
-  ".github/setup/index.sh"
-  ".github/setup/transcription"
-  "docs/text/02-transcription-options.md"
-  "src/text/*"
-  "src/text/utils"
-  "src/text/process-commands/file.ts"
-  "src/text/process-commands/video.ts"
-  "src/text/process-steps/02-run-transcription"
+  ".github/setup"
+  "docs/setup.md"
+  "docs/image/01-image-command.md"
+  "docs/image/05-sdcpp-options.md"
+  "src/image"
 )
 
 IGNORE_PATHS=(

@@ -7,36 +7,75 @@ case "$OSTYPE" in
   darwin*) IS_MAC=true ;;
 esac
 
-WHISPER_DIAR_DIR="whisper-diarization-temp"
-BIN_DIR="build/bin"
-MODELS_DIR="build/models"
-SCRIPT_DIR=".github/setup/transcription"
+ensure_python311() {
+  if command -v python3.11 &>/dev/null; then
+    echo "$p Python 3.11 already available"
+    return 0
+  fi
+  
+  if command -v brew &>/dev/null; then
+    echo "$p Installing Python 3.11 via Homebrew"
+    brew install python@3.11 >/dev/null 2>&1 || {
+      echo "$p WARNING: Failed to install Python 3.11 via Homebrew"
+      return 1
+    }
+    echo "$p Python 3.11 installed successfully"
+    return 0
+  else
+    echo "$p ERROR: Homebrew not found, cannot install Python 3.11"
+    return 1
+  fi
+}
 
-find_py() {
-  for pth in python3.{11..9} python3 /usr/local/bin/python3.{11..9} /opt/homebrew/bin/python3.{11..9} python; do
+get_python311_path() {
+  for pth in python3.11 /usr/local/bin/python3.11 /opt/homebrew/bin/python3.11; do
     if command -v "$pth" &>/dev/null; then
       v=$("$pth" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
-      case "$v" in
-        3.9|3.10|3.11) echo "$pth"; return 0 ;;
-      esac
+      if [ "$v" = "3.11" ]; then
+        echo "$pth"
+        return 0
+      fi
     fi
   done
   return 1
 }
 
-PY=$(find_py) || { echo "$p ERROR: Python 3.9-3.11 required"; exit 1; }
+WHISPER_DIAR_DIR="whisper-diarization-temp"
+BIN_DIR="build/bin"
+MODELS_DIR="build/models"
+SCRIPT_DIR=".github/setup/transcription"
+VENV_DIR="build/pyenv/whisper-diarization"
 
 mkdir -p "$BIN_DIR" "$MODELS_DIR"
 
-echo "$p Setting up whisper-diarization Python environment"
-VENV_DIR="build/pyenv/whisper-diarization"
+echo "$p Setting up whisper-diarization Python environment with Python 3.11"
 
-if [ -d "$VENV_DIR" ]; then
-  rm -rf "$VENV_DIR"
+if ! ensure_python311; then
+  echo "$p ERROR: Cannot install Python 3.11, whisper-diarization features unavailable"
+  exit 1
 fi
 
-mkdir -p "$VENV_DIR"
-"$PY" -m venv "$VENV_DIR"
+PY311=$(get_python311_path) || {
+  echo "$p ERROR: Python 3.11 not found after installation"
+  exit 1
+}
+
+echo "$p Using Python 3.11 at: $PY311"
+
+if [ -d "$VENV_DIR" ]; then
+  echo "$p Removing existing whisper-diarization environment"
+  chmod -R u+w "$VENV_DIR" 2>/dev/null || true
+  rm -rf "$VENV_DIR" 2>/dev/null || {
+    echo "$p WARNING: Could not remove existing environment completely"
+    mv "$VENV_DIR" "${VENV_DIR}.backup.$(date +%s)" 2>/dev/null || true
+  }
+fi
+
+echo "$p Creating whisper-diarization environment with Python 3.11"
+"$PY311" -m venv "$VENV_DIR" || {
+  echo "$p ERROR: Failed to create virtual environment with Python 3.11"
+  exit 1
+}
 
 if [ ! -f "$VENV_DIR/bin/python" ]; then
   echo "$p ERROR: Failed to create Python virtual environment"
@@ -71,11 +110,11 @@ fi
 
 echo "$p Installing PyTorch (compatible versions)"
 if [ "$IS_MAC" = true ]; then
-  "$PIP" install "torch==2.1.2" >/dev/null 2>&1
-  "$PIP" install "torchaudio==2.1.2" >/dev/null 2>&1
+  "$PIP" install "torch==2.2.0" >/dev/null 2>&1
+  "$PIP" install "torchaudio==2.2.0" >/dev/null 2>&1
 else
-  "$PIP" install "torch==2.1.2" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
-  "$PIP" install "torchaudio==2.1.2" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
+  "$PIP" install "torch==2.2.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
+  "$PIP" install "torchaudio==2.2.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
 fi
 
 echo "$p Installing audio processing dependencies"
@@ -157,7 +196,6 @@ for module in optional_modules:
         mod = __import__(module)
         print(f"✓ {module}")
         
-        # Check for specific compatibility issues
         if module == "ctc_forced_aligner":
             try:
                 from ctc_forced_aligner import load_alignment_model
@@ -195,4 +233,6 @@ PY
 
 chmod +x "$BIN_DIR/whisper-diarize.py" 2>/dev/null || true
 
+FINAL_PY_VERSION=$("$PYTHON" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")')
+echo "$p Whisper-diarization environment setup complete with Python $FINAL_PY_VERSION"
 echo "$p Done"

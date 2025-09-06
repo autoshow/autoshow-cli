@@ -5,6 +5,7 @@
 - [Get Transcription Cost](#get-transcription-cost)
 - [Transcription Services](#transcription-services)
   - [Whisper](#whisper)
+  - [Whisper CoreML](#whisper-coreml)
   - [Whisper Diarization](#whisper-diarization)
   - [Deepgram](#deepgram)
   - [Assembly](#assembly)
@@ -28,6 +29,12 @@ npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisp
 npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper small
 npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper medium
 npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
+```
+
+### Whisper CoreML
+
+```bash
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-coreml large-v3-turbo
 ```
 
 ### Whisper Diarization

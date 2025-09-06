@@ -1,7 +1,7 @@
 import { l, err } from '@/logging'
 import { updateEnvVariable } from '../env-writer'
 import { testCloudflareCredentials } from './test-cloudflare-credentials'
-import { createBucket, healthCheck } from '@/save/cloudflare/client'
+import { createBucket, healthCheck } from '../../save/save-services/cloudflare/client'
 import { createInterface } from 'readline'
 
 async function promptForInput(message: string): Promise<string> {

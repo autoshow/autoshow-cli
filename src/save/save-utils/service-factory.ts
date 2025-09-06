@@ -4,44 +4,44 @@ import type { UploadMetadata, CloudStorageService } from '@/save/save-types'
 
 class AwsStorageService implements CloudStorageService {
   async uploadFile(filePath: string, options: ProcessingOptions, sessionId?: string): Promise<string | null> {
-    const { uploadToAws } = await import('./aws/upload')
+    const { uploadToAws } = await import('../save-services/aws/upload')
     return uploadToAws(filePath, options, sessionId)
   }
   
   async uploadAllFiles(baseFilePath: string, options: ProcessingOptions, metadata?: UploadMetadata): Promise<void> {
-    const { uploadAllAwsOutputFiles } = await import('./aws/upload')
+    const { uploadAllAwsOutputFiles } = await import('../save-services/aws/upload')
     return uploadAllAwsOutputFiles(baseFilePath, options, metadata)
   }
   
   async getOrCreateBucket(options: ProcessingOptions): Promise<string | null> {
-    const { getOrCreateAwsBucket } = await import('./aws/bucket')
+    const { getOrCreateAwsBucket } = await import('../save-services/aws/bucket')
     return getOrCreateAwsBucket(options)
   }
   
   async uploadJsonMetadata(baseFilePath: string, options: ProcessingOptions, metadata: UploadMetadata, sessionId: string): Promise<string | null> {
-    const { uploadAwsJsonMetadata } = await import('./aws/metadata')
+    const { uploadAwsJsonMetadata } = await import('../save-services/aws/metadata')
     return uploadAwsJsonMetadata(baseFilePath, options, metadata, sessionId)
   }
 }
 
 class CloudflareStorageService implements CloudStorageService {
   async uploadFile(filePath: string, options: ProcessingOptions, sessionId?: string): Promise<string | null> {
-    const { uploadToCloudflare } = await import('./cloudflare/upload')
+    const { uploadToCloudflare } = await import('../save-services/cloudflare/upload')
     return uploadToCloudflare(filePath, options, sessionId)
   }
   
   async uploadAllFiles(baseFilePath: string, options: ProcessingOptions, metadata?: UploadMetadata): Promise<void> {
-    const { uploadAllCloudflareOutputFiles } = await import('./cloudflare/upload')
+    const { uploadAllCloudflareOutputFiles } = await import('../save-services/cloudflare/upload')
     return uploadAllCloudflareOutputFiles(baseFilePath, options, metadata)
   }
   
   async getOrCreateBucket(options: ProcessingOptions): Promise<string | null> {
-    const { getOrCreateCloudflareBucket } = await import('./cloudflare/bucket')
+    const { getOrCreateCloudflareBucket } = await import('../save-services/cloudflare/bucket')
     return getOrCreateCloudflareBucket(options)
   }
   
   async uploadJsonMetadata(baseFilePath: string, options: ProcessingOptions, metadata: UploadMetadata, sessionId: string): Promise<string | null> {
-    const { uploadCloudflareJsonMetadata } = await import('./cloudflare/metadata')
+    const { uploadCloudflareJsonMetadata } = await import('../save-services/cloudflare/metadata')
     return uploadCloudflareJsonMetadata(baseFilePath, options, metadata, sessionId)
   }
 }

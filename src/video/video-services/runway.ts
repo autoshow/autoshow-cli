@@ -66,6 +66,10 @@ export async function generateVideoWithRunway(
       throw new Error('RUNWAYML_API_SECRET environment variable is missing')
     }
     
+    if (!options.image) {
+      throw new Error('Image is required for Runway video generation. Please provide an image using the --image option.')
+    }
+    
     const client = new RunwayML({
       apiKey: env['RUNWAYML_API_SECRET']
     })
@@ -74,6 +78,7 @@ export async function generateVideoWithRunway(
     
     l.opts(`${p} [${requestId}] Generating video with model: ${model}`)
     l.dim(`${p} [${requestId}] Prompt: ${prompt}`)
+    l.dim(`${p} [${requestId}] Image: ${options.image}`)
     
     const ratio = mapAspectRatioToRunway(options.aspectRatio, model)
     const duration = options.duration || 5
@@ -84,20 +89,12 @@ export async function generateVideoWithRunway(
     
     l.dim(`${p} [${requestId}] Using aspect ratio: ${ratio}, duration: ${duration}s`)
     
-    let promptImage: string | undefined
+    let promptImage: string
     
-    if (options.image) {
-      l.dim(`${p} [${requestId}] Using image-to-video mode with: ${options.image}`)
-      
-      if (options.image.startsWith('http://') || options.image.startsWith('https://')) {
-        promptImage = options.image
-      } else {
-        promptImage = await encodeImageToDataUri(options.image)
-      }
-    }
-    
-    if (!promptImage && (model as string) !== 'gen3a_turbo' && (model as string) !== 'gen4_turbo') {
-      throw new Error(`Model ${model} requires an input image. Use --image option or choose a text-to-image model.`)
+    if (options.image.startsWith('http://') || options.image.startsWith('https://')) {
+      promptImage = options.image
+    } else {
+      promptImage = await encodeImageToDataUri(options.image)
     }
     
     l.dim(`${p} [${requestId}] Starting video generation task...`)
@@ -105,7 +102,7 @@ export async function generateVideoWithRunway(
     const task = await client.imageToVideo
       .create({
         model: model as any,
-        promptImage: promptImage!,
+        promptImage,
         promptText: prompt,
         ratio: ratio as any,
         duration: duration as 5 | 10,
