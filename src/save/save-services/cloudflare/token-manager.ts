@@ -1,5 +1,5 @@
 import { err } from '@/logging'
-import { createCloudflareClient } from '@/save/cloudflare/client'
+import { createCloudflareClient } from './client'
 
 let cachedApiToken: string | null = null
 
@@ -84,7 +84,7 @@ async function createApiTokenWithPermissions(accountId: string): Promise<string 
       return null
     }
     
-    const { updateEnvVariable } = await import('../../config/env-writer')
+    const { updateEnvVariable } = await import('../../../config/env-writer')
     await updateEnvVariable('CLOUDFLARE_API_TOKEN', tokenResponse.value)
     
     return tokenResponse.value

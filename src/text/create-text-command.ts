@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { processRSS } from './process-commands/rss'
 import { COMMAND_CONFIG, validateCommandInput } from './utils/text-validation.ts'
 import { processEmbedCommand } from '../embeddings/embed-command.ts'
+import { printPrompt } from './process-steps/03-select-prompts/print-prompt.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
 import type { EmbeddingOptions } from "@/embeddings/embed-types.ts"
@@ -11,6 +12,12 @@ export async function processCommand(
   options: ProcessingOptions
 ): Promise<void> {
   const p = '[text/create-text-command]'
+  
+  if (options.printPrompt) {
+    l.dim(`${p} Processing print prompt request`)
+    await printPrompt(options.printPrompt)
+    exit(0)
+  }
   
   if (!options.inputDir) {
     options.inputDir = 'input'
@@ -66,6 +73,7 @@ export async function processCommand(
 export const createTextCommand = (): Command => {
   const textCommand = new Command('text')
     .description('Process audio/video content into text-based outputs')
+    .option('--printPrompt <sections...>', 'Print selected prompt sections without processing (e.g., summary longChapters)')
     .option('--input-dir <directory>', 'Input directory for files (default: input)')
     .option('--output-dir <subdirectory>', 'Output subdirectory within output/ (optional)')
     .option('--video <url>', 'Process a single YouTube video')

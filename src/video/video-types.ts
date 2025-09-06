@@ -38,7 +38,7 @@ export interface VeoApiOperation {
   }
 }
 
-export type RunwayModel = 'gen4_image' | 'gen4_image_turbo'
+export type RunwayModel = 'gen4_turbo' | 'gen3a_turbo'
 
 export interface RunwayGenerateOptions {
   model?: RunwayModel
