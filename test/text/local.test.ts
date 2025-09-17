@@ -7,14 +7,25 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-file-default': 'npm run as -- text --file "input/audio.mp3"' },
-  { '02-file-whisper-tiny': 'npm run as -- text --file "input/audio.mp3" --whisper tiny' },
+  { '01-file-default': 'npm run as -- text --file "input/file-types/audio.mp3"' },
+  { '02-file-whisper-tiny': 'npm run as -- text --file "input/file-types/audio.mp3" --whisper tiny' },
   { '03-video-default': 'npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"' },
   { '04-rss-default': 'npm run as -- text --rss "https://ajcwebdev.substack.com/feed"' },
-  { '05-file-whisper-coreml-tiny': 'npm run as -- text --file "input/audio.mp3" --whisper-coreml tiny' },
+  { '05-file-whisper-coreml-tiny': 'npm run as -- text --file "input/file-types/audio.mp3" --whisper-coreml tiny' },
+  { '06-file-aac': 'npm run as -- text --file "input/file-types/audio.aac"' },
+  { '07-file-flac': 'npm run as -- text --file "input/file-types/audio.flac"' },
+  { '08-file-m4a': 'npm run as -- text --file "input/file-types/audio.m4a"' },
+  { '09-file-ogg': 'npm run as -- text --file "input/file-types/audio.ogg"' },
+  { '10-file-wav': 'npm run as -- text --file "input/file-types/audio.wav"' },
+  { '11-file-video-avi': 'npm run as -- text --file "input/file-types/video.avi"' },
+  { '12-file-video-mkv': 'npm run as -- text --file "input/file-types/video.mkv"' },
+  { '13-file-video-mov': 'npm run as -- text --file "input/file-types/video.mov"' },
+  { '14-file-video-mp4': 'npm run as -- text --file "input/file-types/video.mp4"' },
+  { '15-file-video-webm': 'npm run as -- text --file "input/file-types/video.webm"' },
 ]
 
 test('CLI local tests', { concurrency: 1 }, async (t) => {
+  const p = '[test/text/local]'
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -24,6 +35,7 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
     const [testName, command] = entry
     
     await t.test(`Local: ${testName}`, { concurrency: 1 }, async () => {
+      console.log(`${p} Starting test: ${testName}`)
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -33,8 +45,10 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
+                console.error(`${p} Command failed for ${testName}: ${error.message}`)
                 reject(error)
               } else {
+                console.log(`${p} Command succeeded for ${testName}`)
                 resolve(stdout)
               }
             }
@@ -51,6 +65,7 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
       
       const newFiles = afterRun.filter(f => !beforeRun.includes(f))
       if (newFiles.length > 0) {
+        console.log(`${p} Found ${newFiles.length} new files for ${testName}`)
         filesToRename = newFiles
       } else {
         const possibleFile = afterRun.find(f => 
@@ -59,6 +74,7 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
           f.endsWith('.md')
         )
         if (possibleFile) {
+          console.log(`${p} Found modified file for ${testName}: ${possibleFile}`)
           filesToRename = [possibleFile]
         }
       }
@@ -78,6 +94,7 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
         const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         
+        console.log(`${p} Renaming file: ${file} -> ${newName}`)
         renameSync(oldPath, newPath)
         fileCounter++
       }

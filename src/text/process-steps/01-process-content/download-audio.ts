@@ -1,11 +1,11 @@
-import { fileTypeFromBuffer } from 'file-type'
 import { l, err } from '@/logging'
 import { execPromise, readFile, access, rename, execFilePromise, unlink, ensureDir } from '@/node-utils'
+import { detectFileTypeFromBuffer, isSupportedFormat } from '@/text/utils/file-type-detector'
 import type { ProcessingOptions } from '@/text/text-types'
 import ora from 'ora'
 
 export async function saveAudio(id: string, ensureFolders?: boolean) {
-  const p = '[text/process-steps/02-download-audio]'
+  const p = '[text/process-steps/01-process-content/download-audio]'
   if (ensureFolders) {
     return
   }
@@ -27,7 +27,7 @@ export async function executeWithRetry(
   command: string,
   args: string[],
 ) {
-  const p = '[text/process-steps/02-download-audio]'
+  const p = '[text/process-steps/01-process-content/download-audio]'
   const maxRetries = 7
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -55,7 +55,7 @@ export async function downloadAudio(
   input: string,
   filename: string
 ) {
-  const p = '[text/process-steps/02-download-audio]'
+  const p = '[text/process-steps/01-process-content/download-audio]'
 
   const spinner = ora('Download Audio').start()
 
@@ -98,17 +98,15 @@ export async function downloadAudio(
       throw error
     }
   } else if (options.file) {
-    const supportedFormats = new Set([
-      'wav', 'mp3', 'm4a', 'aac', 'ogg', 'flac',
-      'mp4', 'mkv', 'avi', 'mov', 'webm',
-    ])
     try {
       await access(input)
 
       const buffer = await readFile(input)
-      const fileType = await fileTypeFromBuffer(buffer)
+      const fileType = await detectFileTypeFromBuffer(new Uint8Array(buffer))
+      
+      l.dim(`${p} Detected file type: ${fileType ? `${fileType.ext} (${fileType.mime})` : 'unknown'}`)
 
-      if (!fileType || !supportedFormats.has(fileType.ext)) {
+      if (!fileType || !isSupportedFormat(fileType.ext)) {
         throw new Error(
           fileType ? `Unsupported file type: ${fileType.ext}` : 'Unable to determine file type'
         )
