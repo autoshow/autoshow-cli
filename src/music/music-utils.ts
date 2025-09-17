@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { l } from '@/logging'
+import { spawnSync } from '@/node-utils'
 
 const p = '[music/music-utils]'
 
@@ -71,4 +72,112 @@ export function getModelDescription(model: string): string {
   }
   
   return descriptions[model] || 'Unknown model'
+}
+
+export function checkMusicEnvironment(): boolean {
+  const pythonPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
+  const configPath = join(process.cwd(), 'build/config', '.music-config.json')
+  
+  l.dim(`${p} Checking music environment at ${pythonPath}`)
+  
+  if (!existsSync(pythonPath)) {
+    l.dim(`${p} Python environment not found`)
+    return false
+  }
+  
+  if (!existsSync(configPath)) {
+    l.dim(`${p} Music config not found`)
+    return false
+  }
+  
+  const checkAudiocraft = spawnSync(pythonPath, ['-c', 'import audiocraft'], { encoding: 'utf-8', stdio: 'pipe' })
+  const checkStableAudio = spawnSync(pythonPath, ['-c', 'import stable_audio_tools'], { encoding: 'utf-8', stdio: 'pipe' })
+  
+  const hasAudiocraft = checkAudiocraft.status === 0
+  const hasStableAudio = checkStableAudio.status === 0
+  
+  l.dim(`${p} AudioCraft: ${hasAudiocraft ? 'installed' : 'missing'}, Stable Audio: ${hasStableAudio ? 'installed' : 'missing'}`)
+  
+  return hasAudiocraft || hasStableAudio
+}
+
+export function runMusicSetup(): boolean {
+  l.wait(`${p} Music environment not found, running automatic setup...`)
+  
+  const ttsEnvScript = '.github/setup/tts/tts-env.sh'
+  const audiocraftScript = '.github/setup/music/audiocraft.sh'
+  const stableAudioScript = '.github/setup/music/stable-audio.sh'
+  
+  const setupScripts = [ttsEnvScript, audiocraftScript, stableAudioScript]
+  
+  const allScriptsExist = setupScripts.every(script => existsSync(join(process.cwd(), script)))
+  
+  if (!allScriptsExist) {
+    l.warn(`${p} Setup scripts not found, please run 'npm run setup:music' manually`)
+    return false
+  }
+  
+  try {
+    l.dim(`${p} Setting up shared TTS environment`)
+    const ttsSetupResult = spawnSync('bash', [ttsEnvScript], { 
+      encoding: 'utf-8', 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    })
+    
+    if (ttsSetupResult.status !== 0) {
+      l.warn(`${p} TTS environment setup failed`)
+      return false
+    }
+    
+    l.dim(`${p} Setting up AudioCraft`)
+    const audiocraftResult = spawnSync('bash', [audiocraftScript], {
+      encoding: 'utf-8',
+      stdio: 'inherit', 
+      cwd: process.cwd()
+    })
+    
+    if (audiocraftResult.status !== 0) {
+      l.warn(`${p} AudioCraft setup failed but continuing`)
+    }
+    
+    l.dim(`${p} Setting up Stable Audio`)
+    const stableAudioResult = spawnSync('bash', [stableAudioScript], {
+      encoding: 'utf-8',
+      stdio: 'inherit',
+      cwd: process.cwd()
+    })
+    
+    if (stableAudioResult.status !== 0) {
+      l.warn(`${p} Stable Audio setup failed but continuing`)
+    }
+    
+    const isSetup = checkMusicEnvironment()
+    
+    if (isSetup) {
+      l.success(`${p} Music environment setup completed successfully`)
+      return true
+    } else {
+      l.warn(`${p} Music environment setup completed with issues, some features may not work`)
+      return false
+    }
+  } catch (error) {
+    l.warn(`${p} Error during music setup: ${error}`)
+    return false
+  }
+}
+
+export function ensureMusicEnvironment(): void {
+  if (!checkMusicEnvironment()) {
+    l.dim(`${p} Music environment not detected, attempting automatic setup`)
+    const setupSuccess = runMusicSetup()
+    
+    if (!setupSuccess) {
+      l.warn(`${p} Automatic setup failed or incomplete`)
+      l.warn(`${p} Please run 'npm run setup:music' manually to install music generation dependencies`)
+      l.warn(`${p} Continuing anyway, but music generation may fail`)
+    }
+  } else {
+    l.dim(`${p} Music environment detected and ready`)
+  }
 }

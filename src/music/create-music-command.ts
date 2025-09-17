@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import { l, err } from '@/logging'
 import { generateMusicWithAudioCraft, listAvailableModels } from './music-services/audiocraft.ts'
 import { generateMusicWithStableAudio, listStableAudioModels } from './music-services/stable-audio.ts'
-import { validateMusicOptions, getModelDescription } from './music-utils.ts'
+import { validateMusicOptions, getModelDescription, ensureMusicEnvironment } from './music-utils.ts'
 import type { MusicService } from './music-types.ts'
 
 const p = '[music/create-music-command]'
@@ -35,6 +35,8 @@ export const createMusicCommand = (): Command => {
     .option('--continuation <path>', 'path to audio file for continuation (audiocraft only)')
     .action(async (options) => {
       try {
+        ensureMusicEnvironment()
+        
         const service = options.service as MusicService
         l.dim(`${p} Starting music generation with service: ${service}`)
         
@@ -113,6 +115,8 @@ export const createMusicCommand = (): Command => {
     .option('-s, --service <service>', 'service to list models for: audiocraft or stable-audio', 'all')
     .action(async (options) => {
       try {
+        ensureMusicEnvironment()
+        
         const service = options.service
         
         if (service === 'all' || service === 'audiocraft') {
@@ -143,6 +147,8 @@ export const createMusicCommand = (): Command => {
     .option('-s, --service <service>', 'service for the model: audiocraft or stable-audio')
     .action(async (model, options) => {
       try {
+        ensureMusicEnvironment()
+        
         const service = options.service || (model.startsWith('facebook/') ? 'audiocraft' : 'stable-audio')
         l.dim(`${p} Downloading model: ${model} for service: ${service}`)
         

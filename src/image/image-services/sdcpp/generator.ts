@@ -17,6 +17,7 @@ import {
   interpretError 
 } from './command-builder'
 import { MODELS_DIR, BIN_PATH, ModelTypes } from './models'
+import { ensureCompleteSetup } from './setup'
 import type { ImageGenerationResult, StableDiffusionCppOptions } from '@/image/image-types'
 
 export async function generateImageWithStableDiffusionCpp(
@@ -30,11 +31,17 @@ export async function generateImageWithStableDiffusionCpp(
   const uniqueOutputPath = outputPath || generateUniqueFilename('sdcpp', 'png')
   
   try {
+    const modelType = options.model || ModelTypes.SD15
+    l.dim(`${p} [${requestId}] Using model type: ${modelType}`)
+    
+    const setupSuccess = await ensureCompleteSetup(modelType)
+    if (!setupSuccess) {
+      throw new Error('Automatic setup failed. Please run manual setup with: npm run setup:image')
+    }
+    
     l.dim(`${p} [${requestId}] Validating binary exists at: ${BIN_PATH}`)
     validateBinaryExists()
     
-    const modelType = options.model || ModelTypes.SD15
-    l.dim(`${p} [${requestId}] Using model type: ${modelType}`)
     l.dim(`${p} [${requestId}] Using models directory: ${MODELS_DIR}`)
     
     const metalCheck = checkMetalCompatibility(modelType)

@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { ensureDir, path, spawnSync, readFileSync, existsSync } from '@/node-utils'
-import { generateUniqueFilename } from '../music-utils'
+import { generateUniqueFilename, ensureMusicEnvironment } from '../music-utils'
 import type { MusicGenerationOptions, MusicGenerationResult } from '../music-types'
 
 const p = '[music/music-services/audiocraft]'
@@ -17,9 +17,24 @@ const getAudioCraftConfig = () => {
 
 const verifyAudioCraftEnvironment = (pythonPath: string) => {
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
-  if (versionResult.error || versionResult.status !== 0) err(`${p} Python not accessible at ${pythonPath}. Run: npm run setup`)
+  if (versionResult.error || versionResult.status !== 0) {
+    l.dim(`${p} Python not accessible, attempting setup`)
+    ensureMusicEnvironment()
+    const retryResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
+    if (retryResult.error || retryResult.status !== 0) {
+      err(`${p} Python not accessible at ${pythonPath} even after setup attempt`)
+    }
+  }
+  
   const checkResult = spawnSync(pythonPath, ['-c', 'import audiocraft'], { encoding: 'utf-8', stdio: 'pipe' })
-  if (checkResult.status !== 0) err(`${p} AudioCraft not installed. Run: npm run setup`)
+  if (checkResult.status !== 0) {
+    l.dim(`${p} AudioCraft not installed, attempting setup`)
+    ensureMusicEnvironment()
+    const retryCheckResult = spawnSync(pythonPath, ['-c', 'import audiocraft'], { encoding: 'utf-8', stdio: 'pipe' })
+    if (retryCheckResult.status !== 0) {
+      err(`${p} AudioCraft not installed even after setup attempt. Please run: npm run setup:music`)
+    }
+  }
 }
 
 const downloadModelIfNeeded = async (modelName: string, pythonPath: string): Promise<void> => {
@@ -61,6 +76,8 @@ export async function generateMusicWithAudioCraft(
   outputPath?: string,
   options: MusicGenerationOptions = {}
 ): Promise<MusicGenerationResult> {
+  ensureMusicEnvironment()
+  
   const config = getAudioCraftConfig()
   verifyAudioCraftEnvironment(config.python)
   
@@ -103,12 +120,12 @@ export async function generateMusicWithAudioCraft(
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(`${p} ${errorWithCode.code === 'ENOENT' ? 'Python not found. Run: npm run setup' : `Python error: ${result.error.message}`}`)
+    err(`${p} ${errorWithCode.code === 'ENOENT' ? 'Python not found. Run: npm run setup:music' : `Python error: ${result.error.message}`}`)
   }
   
   if (result.status !== 0) {
     const stderr = result.stderr || ''
-    err(`${p} ${stderr.includes('ModuleNotFoundError') ? 'AudioCraft not installed. Run: npm run setup' :
+    err(`${p} ${stderr.includes('ModuleNotFoundError') ? 'AudioCraft not installed. Run: npm run setup:music' :
         stderr.includes('CUDA out of memory') ? 'Out of GPU memory. Try a smaller model or shorter duration.' :
         `Music generation failed: ${stderr}`}`)
   }
@@ -125,6 +142,8 @@ export async function generateMusicWithAudioCraft(
 }
 
 export async function listAvailableModels(): Promise<string[]> {
+  ensureMusicEnvironment()
+  
   const config = getAudioCraftConfig()
   const pythonPath = config.python || 'python3'
   l.dim(`${p} Listing models using Python: ${pythonPath}`)

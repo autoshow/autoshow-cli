@@ -127,10 +127,32 @@ if [ "$NEED_ENCODERS" = true ]; then
   dl_auth "https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/resolve/main/text_encoders/clip_g.safetensors" "$MODELS_DIR/clip_g.safetensors" "CLIP-G" $((690*1048576)) || true
   dl_auth "https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/resolve/main/text_encoders/t5xxl_fp16.safetensors" "$MODELS_DIR/t5xxl_fp16.safetensors" "T5XXL" $((9000*1048576)) || dl_auth "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors" "$MODELS_DIR/t5xxl_fp16.safetensors" "T5XXL" $((9000*1048576)) || true
 fi
-if [ "$ANY_MODEL" = false ]; then
-  echo "$p Skipping SD3.5 downloads. To enable, set HF_TOKEN and request access to:"
-  echo "$p https://huggingface.co/stabilityai/stable-diffusion-3-medium"
-  echo "$p https://huggingface.co/stabilityai/stable-diffusion-3.5-large"
+REQUIRED_FOR_SD3=false
+if [ -f "$MODELS_DIR/sd3_medium_incl_clips_t5xxlfp16.safetensors" ] || [ -f "$MODELS_DIR/sd3.5_large.safetensors" ]; then
+  REQUIRED_FOR_SD3=true
+fi
+if [ "$REQUIRED_FOR_SD3" = false ]; then
+  if [ "$AUTH" = false ]; then
+    echo "$p ERROR: No HuggingFace authentication found. SD3 models require authentication."
+    echo "$p To enable SD3 models:"
+    echo "$p 1. Set HF_TOKEN in your .env file"
+    echo "$p 2. Request access at:"
+    echo "$p    https://huggingface.co/stabilityai/stable-diffusion-3-medium"
+    echo "$p    https://huggingface.co/stabilityai/stable-diffusion-3.5-large"
+    echo "$p 3. Wait for approval then run setup again"
+  elif [ "$SD3_ACCESS" = false ] && [ "$SD35_ACCESS" = false ]; then
+    echo "$p ERROR: Access not granted to SD3 models. You need to:"
+    echo "$p 1. Request access at:"
+    echo "$p    https://huggingface.co/stabilityai/stable-diffusion-3-medium"
+    echo "$p    https://huggingface.co/stabilityai/stable-diffusion-3.5-large"
+    echo "$p 2. Wait for approval (usually instant after accepting license)"
+    echo "$p 3. Run setup again"
+  else
+    echo "$p ERROR: Failed to download SD3 models despite having access."
+    echo "$p Please check your internet connection and try again."
+  fi
+  echo "$p Failed"
+  exit 1
 fi
 echo "$p Done"
 exit 0
