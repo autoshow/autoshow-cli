@@ -1,5 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
+import { ensureWhisperBinary, ensureWhisperModel, runSetupWithRetry } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
@@ -37,25 +38,30 @@ export async function checkWhisperModel(whisperModel: string) {
 
   l.dim(`${p} Checking for whisper-cli at: ${whisperCliPath}`)
   if (!existsSync(whisperCliPath)) {
-    l.warn(`${p} whisper-cli binary not found at: ${whisperCliPath}`)
-    err('whisper-cli binary not found. Please run setup script: npm run setup:text')
-    throw new Error('whisper-cli binary not found')
+    l.warn(`${p} whisper-cli binary not found, attempting automatic setup`)
+    
+    const setupSuccess = await runSetupWithRetry(() => ensureWhisperBinary())
+    if (!setupSuccess || !existsSync(whisperCliPath)) {
+      err(`${p} Failed to automatically setup whisper-cli. Please run: npm run setup:whisper`)
+      throw new Error('whisper-cli binary not found after automatic setup attempt')
+    }
+    
+    l.success(`${p} whisper-cli binary successfully installed`)
   }
 
   l.dim(`${p} Checking for model at: ${modelPath}`)
   if (!existsSync(modelPath)) {
-    l.dim(`${p} Downloading model: ${whisperModel}`)
-    try {
-      await execPromise(
-        `bash ./.github/setup/transcription/download-ggml-model.sh ${whisperModel} ./build/models`,
-        { maxBuffer: 10000 * 1024 }
-      )
-      l.dim(`${p} Model download completed`)
-    } catch (error) {
-      err(`${p} Error downloading model: ${(error as Error).message}`)
-      throw error
+    l.dim(`${p} Model not found, attempting automatic download: ${whisperModel}`)
+    
+    const modelSuccess = await runSetupWithRetry(() => ensureWhisperModel(whisperModel))
+    if (!modelSuccess || !existsSync(modelPath)) {
+      err(`${p} Failed to automatically download model ${whisperModel}`)
+      throw new Error(`Model ${whisperModel} not found after automatic download attempt`)
     }
+    
+    l.success(`${p} Model ${whisperModel} successfully downloaded`)
   }
+  
   l.dim(`${p} Model validated at: ${modelPath}`)
 }
 

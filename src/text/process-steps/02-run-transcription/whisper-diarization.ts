@@ -1,5 +1,6 @@
 import { l, err } from '@/logging'
 import { execPromise, existsSync } from '@/node-utils'
+import { ensureDiarizationEnvironment, runSetupWithRetry } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions } from '@/text/text-types'
 
@@ -10,22 +11,24 @@ async function ensureWhisperDiarizationEnv(): Promise<void> {
   
   l.dim(`${p} Checking whisper-diarization environment`)
   
-  if (!existsSync(pythonPath)) {
-    err(`${p} Whisper-diarization Python environment not found at: ${pythonPath}`)
-    throw new Error('Whisper-diarization environment is missing. Run npm run setup')
-  }
-  
-  if (!existsSync(scriptPath)) {
-    err(`${p} Whisper-diarization script not found at: ${scriptPath}`)
-    throw new Error('Whisper-diarization script is missing. Run npm run setup')
+  if (!existsSync(pythonPath) || !existsSync(scriptPath)) {
+    l.warn(`${p} Whisper-diarization environment not found, attempting automatic setup`)
+    
+    const setupSuccess = await runSetupWithRetry(() => ensureDiarizationEnvironment(), 1)
+    if (!setupSuccess) {
+      err(`${p} Failed to automatically setup whisper-diarization environment`)
+      throw new Error('Whisper-diarization environment setup failed. Run npm run setup:whisper-diarization')
+    }
+    
+    l.success(`${p} Whisper-diarization environment successfully installed`)
   }
   
   try {
-    await execPromise(`${pythonPath} -c "import whisper,librosa,soundfile,scipy,torch,ctc_forced_aligner,demucs"`, { maxBuffer: 10000 * 1024 })
+    await execPromise(`${pythonPath} -c "import whisper,librosa,soundfile,scipy,torch,torchaudio,numpy"`, { maxBuffer: 10000 * 1024 })
     l.dim(`${p} Whisper-diarization environment dependencies verified`)
   } catch (e: any) {
     err(`${p} Whisper-diarization dependencies validation failed: ${e.message}`)
-    throw new Error('Whisper-diarization dependencies not properly installed. Run npm run setup')
+    throw new Error('Whisper-diarization dependencies not properly installed')
   }
   
   try {

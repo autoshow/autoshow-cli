@@ -1,7 +1,8 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, existsSync, execPromise, spawn } from '@/node-utils'
-import { formatWhisperTranscript, checkWhisperModel } from './whisper.ts'
+import { formatWhisperTranscript } from './whisper.ts'
 import { callWhisper } from './whisper.ts'
+import { ensureCoreMLEnvironment, ensureCoreMLModel, ensureWhisperModel, runSetupWithRetry } from '../../utils/setup-helpers'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
@@ -57,7 +58,7 @@ async function checkCoreMLAvailability(): Promise<boolean> {
     
     const py = './build/pyenv/coreml/bin/python'
     if (!existsSync(py)) {
-      l.dim(`${p} CoreML Python environment not found at: ${py}`)
+      l.dim(`${p} CoreML Python environment not found, will attempt automatic setup`)
       return false
     }
     
@@ -73,17 +74,28 @@ async function checkCoreMLAvailability(): Promise<boolean> {
 async function ensureCoreMLEnv(): Promise<void> {
   const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   const py = './build/pyenv/coreml/bin/python'
-  l.dim(`${p} Checking CoreML environment at ${py}`)
-  if (!existsSync(py)) {
-    l.warn(`${p} CoreML Python environment not found at: ${py}`)
-    throw new Error('CoreML conversion environment is missing. Run npm run setup')
+  const binary = './build/bin/whisper-cli-coreml'
+  
+  l.dim(`${p} Checking CoreML environment`)
+  
+  if (!existsSync(py) || !existsSync(binary)) {
+    l.warn(`${p} CoreML environment not found, attempting automatic setup`)
+    
+    const setupSuccess = await runSetupWithRetry(() => ensureCoreMLEnvironment(), 1)
+    if (!setupSuccess) {
+      l.warn(`${p} Could not automatically setup CoreML environment`)
+      throw new Error('CoreML environment setup failed. Run npm run setup:whisper-coreml')
+    }
+    
+    l.success(`${p} CoreML environment successfully installed`)
   }
+  
   try {
     await execPromise(`${py} -c "import torch,coremltools,numpy,transformers,sentencepiece,huggingface_hub,ane_transformers,safetensors,whisper"`, { maxBuffer: 10000 * 1024 })
     l.dim(`${p} CoreML environment dependencies verified`)
   } catch (e: any) {
     err(`${p} CoreML conversion dependencies missing: ${e.message}`)
-    throw new Error('CoreML conversion dependencies not installed. Run npm run setup')
+    throw new Error('CoreML conversion dependencies not installed properly')
   }
 }
 
@@ -113,34 +125,35 @@ async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
 }
 
 async function ensureCoreMLEncoder(modelId: string): Promise<void> {
+  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   const encPath = `./build/models/ggml-${modelId}-encoder.mlmodelc`
+  
   if (existsSync(encPath)) {
-    l.dim(`[text/process-steps/02-run-transcription/whisper-coreml] CoreML encoder exists at: ${encPath}`)
+    l.dim(`${p} CoreML encoder exists at: ${encPath}`)
     return
   }
-  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
+  
   const pkg = `./build/models/coreml-encoder-${modelId}.mlpackage`
   if (existsSync(pkg)) {
     l.dim(`${p} Found mlpackage, compiling to mlmodelc`)
     await compileMlpackageToMlmodelc(modelId)
     if (existsSync(encPath)) return
   }
-  l.dim(`${p} Generating CoreML encoder for ${modelId}`)
-  try {
-    await execPromise(`bash ./.github/setup/transcription/generate-coreml-model.sh ${modelId}`, { maxBuffer: 10000 * 1024 })
-  } catch (e: any) {
-    err(`${p} Error generating CoreML model: ${e.message}`)
-    throw e
-  }
-  if (!existsSync(encPath)) {
+  
+  l.dim(`${p} Generating CoreML encoder for ${modelId}, this may take a few minutes...`)
+  
+  const setupSuccess = await runSetupWithRetry(() => ensureCoreMLModel(modelId), 1)
+  if (!setupSuccess && !existsSync(encPath)) {
     if (existsSync(pkg)) {
       await compileMlpackageToMlmodelc(modelId)
     }
   }
+  
   if (!existsSync(encPath)) {
-    l.warn(`${p} CoreML encoder not found after generation: ${encPath}`)
+    l.warn(`${p} CoreML encoder generation failed for ${modelId}`)
     throw new Error(`CoreML encoder not found after generation: ${encPath}`)
   }
+  
   l.dim(`${p} CoreML encoder ready at: ${encPath}`)
 }
 
@@ -161,15 +174,26 @@ export async function callWhisperCoreml(
   
   const coremlAvailable = await checkCoreMLAvailability()
   if (!coremlAvailable) {
-    l.warn(`${p} CoreML environment not available, falling back to regular whisper`)
-    if (spinner) {
-      spinner.text = 'Step 2 - Run Transcription (fallback to whisper)'
+    const setupSuccess = await runSetupWithRetry(() => ensureCoreMLEnvironment(), 1)
+    if (!setupSuccess) {
+      l.warn(`${p} CoreML environment setup failed, falling back to regular whisper`)
+      if (spinner) {
+        spinner.text = 'Step 2 - Run Transcription (fallback to whisper)'
+      }
+      return await callWhisper(options, finalPath, spinner)
     }
-    return await callWhisper(options, finalPath, spinner)
   }
   
   try {
-    await checkWhisperModel(whisperModel)
+    const modelPath = `./build/models/ggml-${whisperModel}.bin`
+    if (!existsSync(modelPath)) {
+      l.dim(`${p} Base model not found, downloading ${whisperModel}`)
+      const modelSuccess = await runSetupWithRetry(() => ensureWhisperModel(whisperModel))
+      if (!modelSuccess) {
+        throw new Error(`Failed to download base model ${whisperModel}`)
+      }
+    }
+    
     await ensureCoreMLEnv()
     await ensureCoreMLEncoder(whisperModel)
 
