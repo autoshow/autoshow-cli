@@ -13,4 +13,10 @@ export {
   getModelRequirements,
   getModelDescription 
 } from './models'
+export { 
+  checkAndRunSetup,
+  checkBinaryExists,
+  checkModelExists,
+  ensureCompleteSetup
+} from './setup'
 export type { ModelType } from './models'
