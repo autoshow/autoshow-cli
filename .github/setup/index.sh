@@ -75,7 +75,8 @@ esac
 quiet_brew_install() {
   local pkg="$1"
   if ! brew list --formula | grep -qx "$pkg"; then
-    brew install "$pkg" &>/dev/null
+    echo "$p Installing $pkg..."
+    brew install "$pkg"
   fi
 }
 

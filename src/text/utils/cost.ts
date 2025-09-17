@@ -1,5 +1,5 @@
-import chalk from 'chalk'
 import { l } from '@/logging'
+import { colorUtils } from '@/logging'
 import { execPromise } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/02-run-transcription/transcription-models'
 import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models'
@@ -173,7 +173,7 @@ export function logLLMCost(info: {
     costLines.push(`Output: ${formatCost(outputCost)}`)
   }
   if (totalCost !== undefined) {
-    costLines.push(`Total: ${chalk.bold(formatCost(totalCost))}`)
+    costLines.push(`Total: ${colorUtils.bold(formatCost(totalCost))}`)
   }
   
   l.dim(`LLM Cost - Model: ${displayName}, Status: ${stopReason}, Tokens: [${tokenLines.join(', ')}], Cost: [${costLines.join(', ')}]`)

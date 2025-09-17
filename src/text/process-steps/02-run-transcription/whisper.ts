@@ -38,7 +38,7 @@ export async function checkWhisperModel(whisperModel: string) {
   l.dim(`${p} Checking for whisper-cli at: ${whisperCliPath}`)
   if (!existsSync(whisperCliPath)) {
     l.warn(`${p} whisper-cli binary not found at: ${whisperCliPath}`)
-    err('whisper-cli binary not found. Please run setup script: npm run setup')
+    err('whisper-cli binary not found. Please run setup script: npm run setup:text')
     throw new Error('whisper-cli binary not found')
   }
 

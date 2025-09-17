@@ -3,11 +3,15 @@
 INCLUDE_PATHS=(
   "*"
   "src/*"
-  ".github/setup"
-  "docs/setup.md"
-  "docs/image/01-image-command.md"
-  "docs/image/05-sdcpp-options.md"
-  "src/image"
+  "docs/README.md"
+  "docs/text"
+  ".github/setup/*"
+  ".github/setup/transcription"
+  "src/text/*"
+  "src/text/process-commands"
+  "src/text/process-steps/01-process-content"
+  "src/text/process-steps/02-run-transcription"
+  "src/text/utils"
 )
 
 IGNORE_PATHS=(
@@ -69,7 +73,7 @@ while [ -f "$OUTPUT_FILE" ]; do
   COUNTER=$((COUNTER + 1))
 done
 
-repomix \
+npx repomix \
   --instruction-file-path "$INSTRUCTION_FILE" \
   --include "$INCLUDE_STRING" \
   --ignore "$IGNORE_STRING" \
