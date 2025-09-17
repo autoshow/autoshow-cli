@@ -5,6 +5,9 @@ import {
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
 } from '../tts-utils'
+import {
+  checkElevenLabsInstalled, installNpmPackage
+} from '../tts-utils/setup-utils'
 import type { VoiceSettings } from '../tts-types'
 
 const p = '[tts/tts-services/elevenlabs]'
@@ -16,6 +19,16 @@ export const DEFAULT_SETTINGS: VoiceSettings = {
   use_speaker_boost: true
 }
 
+const ensureElevenLabsInstalled = () => {
+  if (!checkElevenLabsInstalled()) {
+    l.dim(`${p} ElevenLabs package not installed, attempting automatic installation...`)
+    const installed = installNpmPackage('elevenlabs')
+    if (!installed) {
+      err(`${p} Failed to install ElevenLabs. Please run: npm install elevenlabs`)
+    }
+  }
+}
+
 export async function synthesizeWithElevenLabs(
   text: string, 
   outputPath: string,
@@ -24,6 +37,8 @@ export async function synthesizeWithElevenLabs(
   retries: number = 3
 ): Promise<string> {
   if (!process.env['ELEVENLABS_API_KEY']) err(`${p} ELEVENLABS_API_KEY not set`)
+  
+  ensureElevenLabsInstalled()
   
   const delays = [1000, 2000, 4000]
   
@@ -67,6 +82,8 @@ export async function processScriptWithElevenLabs(
   outDir: string
 ): Promise<void> {
   try {
+    ensureElevenLabsInstalled()
+    
     const script = JSON.parse(await fs.readFile(scriptFile, 'utf8'))
     await ensureDir(outDir)
     await ensureSilenceFile(outDir)

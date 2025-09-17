@@ -5,10 +5,21 @@ import { callGroqWhisper } from './groq-whisper.ts'
 import { callWhisperCoreml } from './whisper-coreml.ts'
 import { callWhisperDiarization } from './whisper-diarization.ts'
 import { logTranscriptionCost, estimateTranscriptCost, getAudioDuration } from '../../utils/cost.ts'
+import { checkFFmpeg } from '../../utils/setup-helpers.ts'
 import { l, err } from '@/logging'
 import type { ProcessingOptions, TranscriptionResult } from '@/text/text-types'
 import ora from 'ora'
 import type { Ora } from 'ora'
+
+async function ensureTranscriptionPrerequisites(): Promise<void> {
+  const p = '[text/process-steps/02-run-transcription/run-transcription]'
+  l.dim(`${p} Checking transcription prerequisites`)
+  
+  const hasFFmpeg = await checkFFmpeg()
+  if (!hasFFmpeg) {
+    l.warn(`${p} ffmpeg not available - audio processing may fail`)
+  }
+}
 
 export async function runTranscription(
   options: ProcessingOptions,
@@ -17,6 +28,8 @@ export async function runTranscription(
 ): Promise<TranscriptionResult> {
   const p = '[text/process-steps/02-run-transcription/run-transcription]'
   const spinner = ora('Step 2 - Run Transcription').start()
+  
+  await ensureTranscriptionPrerequisites()
 
   let serviceToUse = transcriptServicesInput
   if (!serviceToUse) {
@@ -59,6 +72,7 @@ export async function runTranscription(
   try {
     switch (serviceToUse) {
       case 'whisperDiarization': {
+        l.dim(`${p} Starting whisper-diarization transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisperDiarization(options, finalPath),
           spinner
@@ -69,6 +83,7 @@ export async function runTranscription(
         break
       }
       case 'deepgram': {
+        l.dim(`${p} Starting Deepgram transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callDeepgram(options, finalPath),
           spinner
@@ -79,6 +94,7 @@ export async function runTranscription(
         break
       }
       case 'assembly': {
+        l.dim(`${p} Starting AssemblyAI transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callAssembly(options, finalPath),
           spinner
@@ -89,6 +105,7 @@ export async function runTranscription(
         break
       }
       case 'whisper': {
+        l.dim(`${p} Starting whisper transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisper(options, finalPath, spinner),
           spinner
@@ -99,6 +116,7 @@ export async function runTranscription(
         break
       }
       case 'whisperCoreml': {
+        l.dim(`${p} Starting whisper CoreML transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisperCoreml(options, finalPath, spinner),
           spinner
@@ -109,6 +127,7 @@ export async function runTranscription(
         break
       }
       case 'groqWhisper': {
+        l.dim(`${p} Starting Groq whisper transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callGroqWhisper(options, finalPath),
           spinner
@@ -175,6 +194,10 @@ export async function retryTranscriptionCall<T>(
     } catch (error) {
       const errorMessage = (error as Error).message
       err(`${p} Attempt ${attempt} failed: ${errorMessage}`)
+      
+      if (errorMessage.includes('automatically setup')) {
+        l.dim(`${p} Automatic setup was attempted but failed`)
+      }
       
       if (errorMessage.includes('CoreML') && errorMessage.includes('missing')) {
         l.warn(`${p} CoreML environment issue detected, will not retry CoreML`)
