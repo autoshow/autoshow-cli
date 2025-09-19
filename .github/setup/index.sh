@@ -9,6 +9,8 @@ cleanup_log() {
     rm -f "$LOGFILE"
   else
     echo "ERROR: Script failed (exit code $status). Logs saved in: $LOGFILE"
+    echo "Last 20 lines of log:"
+    tail -n 20 "$LOGFILE"
   fi
   exit $status
 }
@@ -252,16 +254,42 @@ case "$SETUP_MODE" in
     quiet_brew_install "pkg-config"
     
     echo "$p Setting up Whisper CPU (base dependency)"
-    bash "$SETUP_DIR/transcription/whisper.sh"
+    WHISPER_RESULT=0
+    bash "$SETUP_DIR/transcription/whisper.sh" || WHISPER_RESULT=$?
+    if [ $WHISPER_RESULT -ne 0 ]; then
+      echo "$p ERROR: Whisper CPU setup failed with code $WHISPER_RESULT"
+      exit $WHISPER_RESULT
+    fi
     
     echo "$p Setting up Whisper CoreML"
-    bash "$SETUP_DIR/transcription/whisper-coreml.sh"
+    COREML_RESULT=0
+    bash "$SETUP_DIR/transcription/whisper-coreml.sh" || COREML_RESULT=$?
+    if [ $COREML_RESULT -ne 0 ]; then
+      echo "$p ERROR: Whisper CoreML setup failed with code $COREML_RESULT"
+      exit $COREML_RESULT
+    fi
     
     echo "$p Downloading whisper models"
-    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
+    MODEL_RESULT=0
+    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models" || MODEL_RESULT=$?
+    if [ $MODEL_RESULT -ne 0 ]; then
+      echo "$p ERROR: Model download failed with code $MODEL_RESULT"
+      exit $MODEL_RESULT
+    fi
     
     echo "$p Generating CoreML models"
-    bash "$SETUP_DIR/transcription/generate-coreml-model.sh" base
+    GENERATE_RESULT=0
+    bash "$SETUP_DIR/transcription/generate-coreml-model.sh" base || GENERATE_RESULT=$?
+    if [ $GENERATE_RESULT -ne 0 ]; then
+      echo "$p WARNING: CoreML model generation returned code $GENERATE_RESULT"
+      echo "$p Checking if model was created despite non-zero exit code"
+      if [ -d "build/models/ggml-base-encoder.mlmodelc" ] || [ -d "build/models/coreml-encoder-base.mlpackage" ]; then
+        echo "$p CoreML model artifacts found, continuing"
+      else
+        echo "$p ERROR: No CoreML model artifacts found"
+        exit $GENERATE_RESULT
+      fi
+    fi
     
     echo "$p Whisper CoreML setup completed"
     ;;
@@ -318,3 +346,4 @@ case "$SETUP_MODE" in
 esac
 
 echo "$p Setup completed successfully"
+exit 0

@@ -99,12 +99,26 @@ async function ensureCoreMLEnv(): Promise<void> {
   }
 }
 
-async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
+async function compileMlpackageToMlmodelc(modelId: string): Promise<boolean> {
   const pkg = `./build/models/coreml-encoder-${modelId}.mlpackage`
   const out = `./build/models/ggml-${modelId}-encoder.mlmodelc`
   const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
-  if (!existsSync(pkg)) return
-  l.dim(`${p} Compiling mlpackage to mlmodelc for ${modelId}`)
+  
+  if (!existsSync(pkg)) return false
+  
+  l.dim(`${p} Attempting to compile mlpackage to mlmodelc for ${modelId}`)
+  
+  try {
+    const { stdout: xcrunCheck } = await execPromise('xcrun --find coremlc 2>&1 || xcrun --find coremlcompiler 2>&1', { maxBuffer: 1024 })
+    if (!xcrunCheck || xcrunCheck.includes('not found')) {
+      l.dim(`${p} CoreML compiler not available, using mlpackage format`)
+      return false
+    }
+  } catch {
+    l.dim(`${p} Xcode tools not available for compilation`)
+    return false
+  }
+  
   try {
     const compiledDir = `./build/models/tmp-compile-${modelId}`
     await execPromise(`mkdir -p "${compiledDir}"`)
@@ -118,43 +132,57 @@ async function compileMlpackageToMlmodelc(modelId: string): Promise<void> {
     if (!cand) throw new Error('Compiled .mlmodelc not found')
     await execPromise(`rm -rf "${out}" && mv "${cand}" "${out}" && rm -rf "${compiledDir}"`)
     l.dim(`${p} Compiled ${modelId} mlmodelc successfully`)
+    return true
   } catch (e: any) {
-    err(`${p} Error compiling mlpackage: ${e.message}`)
-    throw e
+    l.dim(`${p} Could not compile mlpackage: ${e.message}`)
+    return false
   }
+}
+
+async function findCoreMLEncoder(modelId: string): Promise<string | null> {
+  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
+  
+  const mlmodelcPath = `./build/models/ggml-${modelId}-encoder.mlmodelc`
+  if (existsSync(mlmodelcPath)) {
+    l.dim(`${p} Found compiled CoreML encoder at: ${mlmodelcPath}`)
+    return mlmodelcPath
+  }
+  
+  const mlpackagePath = `./build/models/ggml-${modelId}-encoder.mlpackage`
+  if (existsSync(mlpackagePath)) {
+    l.dim(`${p} Found CoreML encoder package at: ${mlpackagePath}`)
+    return mlpackagePath
+  }
+  
+  const altPackagePath = `./build/models/coreml-encoder-${modelId}.mlpackage`
+  if (existsSync(altPackagePath)) {
+    l.dim(`${p} Found alternative CoreML encoder package at: ${altPackagePath}`)
+    return altPackagePath
+  }
+  
+  return null
 }
 
 async function ensureCoreMLEncoder(modelId: string): Promise<void> {
   const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
-  const encPath = `./build/models/ggml-${modelId}-encoder.mlmodelc`
   
-  if (existsSync(encPath)) {
-    l.dim(`${p} CoreML encoder exists at: ${encPath}`)
+  const existingEncoder = await findCoreMLEncoder(modelId)
+  if (existingEncoder) {
+    l.dim(`${p} Using existing CoreML encoder: ${existingEncoder}`)
     return
-  }
-  
-  const pkg = `./build/models/coreml-encoder-${modelId}.mlpackage`
-  if (existsSync(pkg)) {
-    l.dim(`${p} Found mlpackage, compiling to mlmodelc`)
-    await compileMlpackageToMlmodelc(modelId)
-    if (existsSync(encPath)) return
   }
   
   l.dim(`${p} Generating CoreML encoder for ${modelId}, this may take a few minutes...`)
   
   const setupSuccess = await runSetupWithRetry(() => ensureCoreMLModel(modelId), 1)
-  if (!setupSuccess && !existsSync(encPath)) {
-    if (existsSync(pkg)) {
-      await compileMlpackageToMlmodelc(modelId)
-    }
-  }
   
-  if (!existsSync(encPath)) {
+  const newEncoder = await findCoreMLEncoder(modelId)
+  if (!newEncoder) {
     l.warn(`${p} CoreML encoder generation failed for ${modelId}`)
-    throw new Error(`CoreML encoder not found after generation: ${encPath}`)
+    throw new Error(`CoreML encoder not found after generation for model: ${modelId}`)
   }
   
-  l.dim(`${p} CoreML encoder ready at: ${encPath}`)
+  l.dim(`${p} CoreML encoder ready at: ${newEncoder}`)
 }
 
 export async function callWhisperCoreml(
@@ -197,6 +225,11 @@ export async function callWhisperCoreml(
     await ensureCoreMLEnv()
     await ensureCoreMLEncoder(whisperModel)
 
+    const encoderPath = await findCoreMLEncoder(whisperModel)
+    if (!encoderPath) {
+      throw new Error(`CoreML encoder not found for ${whisperModel}`)
+    }
+
     const args = [
       '-m', `./build/models/ggml-${whisperModel}.bin`,
       '-f', `${finalPath}.wav`,
@@ -208,6 +241,7 @@ export async function callWhisperCoreml(
       '--print-progress'
     ]
     
+    l.dim(`${p} Using CoreML encoder: ${encoderPath}`)
     l.dim(`${p} CoreML whisper command args: ${args.join(' ')}`)
     
     try {
