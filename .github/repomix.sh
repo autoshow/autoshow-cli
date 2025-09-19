@@ -4,9 +4,14 @@ INCLUDE_PATHS=(
   "*"
   "src/*"
   "docs/README.md"
-  "docs/music"
-  ".github/setup"
-  "src/music"
+  "docs/text/02-transcription-options.md"
+  "docs/setup.md"
+  ".github/setup/*"
+  ".github/setup/transcription"
+  "src/text/*"
+  "src/text/utils/*"
+  "src/text/process-steps/02-run-transcription"
+  "src/text/process-commands/*"
 )
 
 IGNORE_PATHS=(

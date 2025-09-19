@@ -12,6 +12,45 @@ if [ "$IS_MAC" != true ]; then
   exit 0
 fi
 
+check_xcode_tools() {
+  if command -v xcrun &>/dev/null; then
+    if xcrun --find coremlc &>/dev/null 2>&1 || xcrun --find coremlcompiler &>/dev/null 2>&1; then
+      echo "$p CoreML compiler (coremlc) found - full Xcode is installed"
+      return 0
+    fi
+  fi
+  
+  if xcode-select -p &>/dev/null 2>&1; then
+    echo "$p Xcode Command Line Tools are installed but CoreML compiler not found"
+    echo "$p Note: CoreML compiler (coremlc) requires the full Xcode app from the App Store"
+    echo "$p Without it, CoreML models will use mlpackage format which also works but is less optimized"
+    return 1
+  fi
+  
+  echo "$p Xcode Command Line Tools not installed"
+  echo "$p Installing Command Line Tools (required for compilation)..."
+  xcode-select --install 2>/dev/null || {
+    echo "$p Installation may already be in progress or require manual action"
+  }
+  
+  echo "$p Waiting for installation to complete (this may take 5-10 minutes)..."
+  local wait_count=0
+  while ! xcode-select -p &>/dev/null 2>&1; do
+    sleep 10
+    wait_count=$((wait_count + 1))
+    if [ $wait_count -eq 30 ]; then
+      echo "$p Installation taking longer than expected. Please check the installation dialog"
+    elif [ $wait_count -eq 60 ]; then
+      echo "$p Timeout waiting for Command Line Tools. Please install manually with: xcode-select --install"
+      return 1
+    fi
+  done
+  
+  echo "$p Command Line Tools installed successfully"
+  echo "$p Note: For optimal CoreML performance, install full Xcode from the App Store"
+  return 1
+}
+
 ensure_python311() {
   if command -v python3.11 &>/dev/null; then
     echo "$p Python 3.11 already available"
@@ -51,6 +90,9 @@ MODELS_DIR="build/models"
 VENV_DIR="build/pyenv/coreml"
 
 mkdir -p "$BIN_DIR" "$MODELS_DIR"
+
+echo "$p Checking Xcode tools availability"
+check_xcode_tools || true
 
 echo "$p Building whisper-cli-coreml binary"
 rm -rf "$WHISPER_DIR"
@@ -151,7 +193,7 @@ echo "$p Installing protobuf and whisper"
 
 cp ".github/setup/transcription/convert-whisper-to-coreml.py" "$MODELS_DIR/" >/dev/null 2>&1 || true
 cp ".github/setup/transcription/generate-coreml-model.sh" "$MODELS_DIR/" >/dev/null 2>&1 || true
-chmod +x "$MODELS_DIR/generate-coreml-model.sh" || true
+chmod +x "$MODELS_DIR/generate-coreml-model.sh" 2>/dev/null || true
 
 echo "$p Validating CoreML environment dependencies"
 "$PYTHON" - <<'PY'
@@ -169,12 +211,25 @@ PY
 
 if [ "${NO_MODELS:-false}" != "true" ]; then
   echo "$p Generating base CoreML model"
-  bash "$MODELS_DIR/generate-coreml-model.sh" base >/dev/null 2>&1 || true
+  
+  GENERATE_RESULT=0
+  bash "$MODELS_DIR/generate-coreml-model.sh" base || GENERATE_RESULT=$?
+  
+  if [ $GENERATE_RESULT -ne 0 ]; then
+    echo "$p WARNING: Model generation returned code $GENERATE_RESULT, checking artifacts"
+  fi
 
-  if [ ! -d "$MODELS_DIR/ggml-base-encoder.mlmodelc" ] && [ ! -d "$MODELS_DIR/coreml-encoder-base.mlpackage" ]; then
-    echo "$p WARNING: CoreML encoder artifact not detected"
+  if [ -d "$MODELS_DIR/ggml-base-encoder.mlmodelc" ]; then
+    echo "$p CoreML encoder ready (compiled mlmodelc format)"
+  elif [ -d "$MODELS_DIR/ggml-base-encoder.mlpackage" ]; then
+    echo "$p CoreML encoder ready (mlpackage format - works but less optimized)"
+    echo "$p For better performance, install full Xcode from App Store to compile to mlmodelc"
+  elif [ -d "$MODELS_DIR/coreml-encoder-base.mlpackage" ]; then
+    echo "$p CoreML encoder ready (mlpackage format - works but less optimized)"
+    echo "$p For better performance, install full Xcode from App Store to compile to mlmodelc"
   else
-    echo "$p CoreML encoder ready"
+    echo "$p WARNING: CoreML encoder artifact not detected after generation"
+    ls -la "$MODELS_DIR/" | grep -E "(mlmodelc|mlpackage)" || echo "$p No CoreML artifacts found"
   fi
 fi
 
@@ -186,3 +241,4 @@ fi
 FINAL_PY_VERSION=$("$PYTHON" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")')
 echo "$p CoreML environment setup complete with Python $FINAL_PY_VERSION"
 echo "$p Done"
+exit 0
