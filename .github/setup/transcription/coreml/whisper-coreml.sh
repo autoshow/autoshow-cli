@@ -12,6 +12,9 @@ if [ "$IS_MAC" != true ]; then
   exit 0
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../python-version.sh"
+
 check_xcode_tools() {
   if command -v xcrun &>/dev/null; then
     if xcrun --find coremlc &>/dev/null 2>&1 || xcrun --find coremlcompiler &>/dev/null 2>&1; then
@@ -40,44 +43,11 @@ check_xcode_tools() {
   return 1
 }
 
-ensure_python311() {
-  if command -v python3.11 &>/dev/null; then
-    echo "$p Python 3.11 already available"
-    return 0
-  fi
-  
-  if command -v brew &>/dev/null; then
-    echo "$p Installing Python 3.11 via Homebrew"
-    brew install python@3.11 >/dev/null 2>&1 || {
-      echo "$p WARNING: Failed to install Python 3.11 via Homebrew"
-      return 1
-    }
-    echo "$p Python 3.11 installed successfully"
-    return 0
-  else
-    echo "$p ERROR: Homebrew not found, cannot install Python 3.11"
-    return 1
-  fi
-}
-
-get_python311_path() {
-  for pth in python3.11 /usr/local/bin/python3.11 /opt/homebrew/bin/python3.11; do
-    if command -v "$pth" &>/dev/null; then
-      v=$("$pth" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
-      if [ "$v" = "3.11" ]; then
-        echo "$pth"
-        return 0
-      fi
-    fi
-  done
-  return 1
-}
-
 WHISPER_DIR="whisper-cpp-temp-coreml"
 BIN_DIR="build/bin"
 MODELS_DIR="build/models"
 VENV_DIR="build/pyenv/coreml"
-SCRIPT_DIR=".github/setup/transcription/coreml"
+CONVERT_SCRIPT_DIR=".github/setup/transcription/coreml"
 COREML_CACHE_DIR="build/cache/coreml"
 COREML_TMP_DIR="build/tmp/coreml"
 
@@ -135,7 +105,7 @@ rm -rf "$WHISPER_DIR"
 
 echo "$p Setting up CoreML Python environment"
 
-if ! ensure_python311; then
+if ! ensure_python311 "$p"; then
   echo "$p Cannot install Python 3.11"
   exit 1
 fi
@@ -191,13 +161,9 @@ export TMPDIR="$(pwd)/$COREML_TMP_DIR"
 "$PYTHON" -m pip install 'protobuf<4' >/dev/null 2>&1 || true
 "$PYTHON" -m pip install "openai-whisper" >/dev/null 2>&1 || true
 
-cp "$SCRIPT_DIR/convert-whisper-to-coreml.py" "$MODELS_DIR/" >/dev/null 2>&1 || true
-cp "$SCRIPT_DIR/generate-coreml-model.sh" "$MODELS_DIR/" >/dev/null 2>&1 || true
+cp "$CONVERT_SCRIPT_DIR/convert-whisper-to-coreml.py" "$MODELS_DIR/" >/dev/null 2>&1 || true
+cp "$CONVERT_SCRIPT_DIR/generate-coreml-model.sh" "$MODELS_DIR/" >/dev/null 2>&1 || true
 chmod +x "$MODELS_DIR/generate-coreml-model.sh" 2>/dev/null || true
-
-"$PYTHON" "$SCRIPT_DIR/whisper-coreml-validation.py" || {
-  echo "$p Validation reported issues but continuing"
-}
 
 if [ "${NO_MODELS:-false}" != "true" ]; then
   bash "$MODELS_DIR/generate-coreml-model.sh" base || true

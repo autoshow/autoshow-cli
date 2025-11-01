@@ -37,12 +37,6 @@ check_coreml_compiler() {
       return 0
     fi
   fi
-  
-  if xcode-select -p &>/dev/null 2>&1; then
-    echo "$p Xcode CLI Tools installed but CoreML compiler not found"
-    return 1
-  fi
-  
   return 1
 }
 
@@ -50,17 +44,10 @@ TMP_DIR="build/models/tmp-coreml-${MODEL}"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-CONV_RESULT=0
-$PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true 2>&1 | tee /tmp/coreml-convert.log || CONV_RESULT=$?
-
-if [ $CONV_RESULT -ne 0 ]; then
-  $PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true --output-dir "$TMP_DIR" 2>&1 | tee /tmp/coreml-convert-fallback.log || CONV_RESULT=$?
-fi
-
-if [ $CONV_RESULT -ne 0 ]; then
-  echo "$p Conversion failed with exit code $CONV_RESULT"
+$PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true 2>&1 | tee /tmp/coreml-convert.log || {
+  echo "$p Conversion failed"
   exit 1
-fi
+}
 
 MLCAND=""
 if [ -d "$TMP_DIR" ]; then
@@ -91,14 +78,7 @@ if [[ "$MLCAND" == *.mlpackage ]]; then
     COMPILED_DIR="$TMP_DIR/compiled"
     mkdir -p "$COMPILED_DIR"
     
-    COMPILE_RESULT=0
-    xcrun coremlc compile "$MLCAND" "$COMPILED_DIR" 2>&1 | tee /tmp/coreml-compile.log || COMPILE_RESULT=$?
-    
-    if [ $COMPILE_RESULT -ne 0 ]; then
-      xcrun coremlcompiler compile "$MLCAND" "$COMPILED_DIR" 2>&1 | tee /tmp/coreml-compile-fallback.log || COMPILE_RESULT=$?
-    fi
-    
-    if [ $COMPILE_RESULT -eq 0 ]; then
+    xcrun coremlc compile "$MLCAND" "$COMPILED_DIR" 2>&1 | tee /tmp/coreml-compile.log && {
       CANDIDATE=$(find "$COMPILED_DIR" -type d -name "*.mlmodelc" -maxdepth 2 2>/dev/null | head -n 1 || true)
       if [ -n "$CANDIDATE" ]; then
         rm -rf "$OUT"
@@ -107,7 +87,7 @@ if [[ "$MLCAND" == *.mlpackage ]]; then
         echo "$p Created $OUT"
         exit 0
       fi
-    fi
+    }
   fi
   
   rm -rf "$FALLBACK_OUT"
