@@ -150,10 +150,7 @@ case "$SETUP_MODE" in
     quiet_brew_install "pkg-config"
     quiet_brew_install "git"
     
-    bash "$SETUP_DIR/transcription/whisper.sh"
     bash "$SETUP_DIR/transcription/diarization/whisper-diarization.sh"
-    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    bash "$SETUP_DIR/transcription/download-ggml-model.sh" medium.en "./build/models"
     
     echo "$p Whisper diarization setup completed"
     ;;
