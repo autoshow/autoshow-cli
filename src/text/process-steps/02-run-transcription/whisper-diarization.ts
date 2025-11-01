@@ -1,33 +1,7 @@
 import { l, err } from '@/logging'
 import { execPromise, existsSync } from '@/node-utils'
-import { ensureDiarizationEnvironment, runSetupWithRetry } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions } from '@/text/text-types'
-
-async function ensureWhisperDiarizationEnv(): Promise<void> {
-  const p = '[text/process-steps/02-run-transcription/whisper-diarization]'
-  const pythonPath = './build/pyenv/whisper-diarization/bin/python'
-  const scriptPath = './build/bin/whisper-diarize.py'
-  
-  if (!existsSync(pythonPath) || !existsSync(scriptPath)) {
-    l.warn('Whisper-diarization environment not found, attempting automatic setup')
-    
-    const setupSuccess = await runSetupWithRetry(() => ensureDiarizationEnvironment(), 1)
-    if (!setupSuccess) {
-      err(`${p} Failed to automatically setup whisper-diarization environment`)
-      throw new Error('Whisper-diarization environment setup failed. Run npm run setup:whisper-diarization')
-    }
-    
-    l.success('Whisper-diarization environment successfully installed')
-  }
-  
-  try {
-    await execPromise(`${pythonPath} -c "import whisper,librosa,soundfile,scipy,torch,torchaudio,numpy"`, { maxBuffer: 10000 * 1024 })
-  } catch (e: any) {
-    err(`${p} Whisper-diarization dependencies validation failed: ${e.message}`)
-    throw new Error('Whisper-diarization dependencies not properly installed')
-  }
-}
 
 function formatWhisperDiarizationTranscript(output: string): string {
   const lines = output.trim().split('\n')
@@ -45,18 +19,6 @@ function formatWhisperDiarizationTranscript(output: string): string {
     }
     
     if (trimmedLine.includes('torchaudio') || trimmedLine.includes('set_audio_backend')) {
-      continue
-    }
-    
-    if (trimmedLine.includes('Diarization unavailable') || 
-        trimmedLine.includes('Using fallback') || 
-        trimmedLine.includes('Reason:')) {
-      continue
-    }
-    
-    if (trimmedLine.includes('Traceback') || 
-        trimmedLine.includes('File "') ||
-        trimmedLine.includes('from ctc_forced_aligner')) {
       continue
     }
     
@@ -125,72 +87,69 @@ export async function callWhisperDiarization(
 ): Promise<{ transcript: string; modelId: string; costPerMinuteCents: number }> {
   const p = '[text/process-steps/02-run-transcription/whisper-diarization]'
   
-  try {
-    const requestedModel = typeof options.whisperDiarization === 'string'
-      ? options.whisperDiarization
-      : 'medium.en'
-    
-    const configuredModel = TRANSCRIPTION_SERVICES_CONFIG.whisperDiarization.models.find(
-      m => m.modelId === requestedModel
-    )
-    
-    let modelId: string
-    let costPerMinuteCents: number
-    
-    if (configuredModel) {
-      modelId = configuredModel.modelId
-      costPerMinuteCents = configuredModel.costPerMinuteCents
-    } else {
-      modelId = requestedModel
-      costPerMinuteCents = 0
-      l.warn(`Model ${requestedModel} not in predefined list, using it anyway with cost 0`)
+  const requestedModel = typeof options.whisperDiarization === 'string'
+    ? options.whisperDiarization
+    : 'medium.en'
+  
+  const configuredModel = TRANSCRIPTION_SERVICES_CONFIG.whisperDiarization.models.find(
+    m => m.modelId === requestedModel
+  )
+  
+  let modelId: string
+  let costPerMinuteCents: number
+  
+  if (configuredModel) {
+    modelId = configuredModel.modelId
+    costPerMinuteCents = configuredModel.costPerMinuteCents
+  } else {
+    modelId = requestedModel
+    costPerMinuteCents = 0
+    l.warn(`Model ${requestedModel} not in predefined list, using it anyway with cost 0`)
+  }
+  
+  const audioFilePath = `${finalPath}.wav`
+  const pythonPath = './build/pyenv/whisper-diarization/bin/python'
+  const scriptPath = './build/bin/whisper-diarize.py'
+  
+  if (!existsSync(pythonPath)) {
+    throw new Error(`Diarization python not found at ${pythonPath}. Run: npm run setup:whisper-diarization`)
+  }
+  
+  if (!existsSync(scriptPath)) {
+    throw new Error(`Diarization script not found at ${scriptPath}. Run: npm run setup:whisper-diarization`)
+  }
+  
+  const diarizationArgs = [
+    scriptPath,
+    '-a', audioFilePath,
+    '--whisper-model', modelId,
+    '--device', 'cpu'
+  ]
+  
+  if (options.speakerLabels === false) {
+    diarizationArgs.push('--no-stem')
+  }
+  
+  const { stdout, stderr } = await execPromise(
+    `${pythonPath} ${diarizationArgs.join(' ')}`,
+    { 
+      maxBuffer: 50000 * 1024,
+      cwd: process.cwd(),
+      timeout: 300000
     }
-    
-    await ensureWhisperDiarizationEnv()
-    
-    const audioFilePath = `${finalPath}.wav`
-    const pythonPath = './build/pyenv/whisper-diarization/bin/python'
-    const scriptPath = './build/bin/whisper-diarize.py'
-    
-    const diarizationArgs = [
-      scriptPath,
-      '-a', audioFilePath,
-      '--whisper-model', modelId,
-      '--device', 'cpu'
-    ]
-    
-    if (options.speakerLabels === false) {
-      diarizationArgs.push('--no-stem')
-    }
-    
-    const { stdout, stderr } = await execPromise(
-      `${pythonPath} ${diarizationArgs.join(' ')}`,
-      { 
-        maxBuffer: 50000 * 1024,
-        cwd: process.cwd(),
-        timeout: 300000
-      }
-    )
-    
-    const combinedOutput = stdout + '\n' + stderr
-    const transcript = formatWhisperDiarizationTranscript(combinedOutput)
-    
-    if (!transcript || transcript.trim().length === 0) {
-      throw new Error('No transcription output generated by whisper-diarization')
-    }
-    
-    if (transcript.includes('Using fallback whisper-only transcription')) {
-      l.warn('Diarization fell back to whisper-only mode')
-    }
-    
-    return {
-      transcript,
-      modelId,
-      costPerMinuteCents
-    }
-    
-  } catch (error) {
-    err(`${p} Error in whisper-diarization: ${(error as Error).message}`)
-    throw error
+  )
+  
+  const combinedOutput = stdout + '\n' + stderr
+  const transcript = formatWhisperDiarizationTranscript(combinedOutput)
+  
+  if (!transcript || transcript.trim().length === 0) {
+    err(`${p} No transcription output generated`)
+    throw new Error('No transcription output generated by whisper-diarization')
+  }
+  
+  return {
+    transcript,
+    modelId,
+    costPerMinuteCents
   }
 }

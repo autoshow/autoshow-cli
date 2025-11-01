@@ -14,32 +14,6 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../python-version.sh"
 
-check_xcode_tools() {
-  if command -v xcrun &>/dev/null; then
-    if xcrun --find coremlc &>/dev/null 2>&1 || xcrun --find coremlcompiler &>/dev/null 2>&1; then
-      return 0
-    fi
-  fi
-  
-  if xcode-select -p &>/dev/null 2>&1; then
-    return 1
-  fi
-  
-  xcode-select --install 2>/dev/null || true
-  
-  local wait_count=0
-  while ! xcode-select -p &>/dev/null 2>&1; do
-    sleep 10
-    wait_count=$((wait_count + 1))
-    if [ $wait_count -eq 60 ]; then
-      echo "$p Timeout waiting for Command Line Tools"
-      return 1
-    fi
-  done
-  
-  return 1
-}
-
 WHISPER_DIR="whisper-cpp-temp-coreml"
 BIN_DIR="build/bin"
 MODELS_DIR="build/models"
@@ -50,7 +24,15 @@ COREML_TMP_DIR="build/tmp/coreml"
 
 mkdir -p "$BIN_DIR" "$MODELS_DIR" "$COREML_CACHE_DIR" "$COREML_TMP_DIR"
 
-check_xcode_tools || true
+if ! ensure_python311 "$p"; then
+  echo "$p Cannot install Python 3.11"
+  exit 1
+fi
+
+PY311=$(get_python311_path) || {
+  echo "$p No valid Python 3.11 installation found"
+  exit 1
+}
 
 rm -rf "$WHISPER_DIR"
 git clone https://github.com/ggerganov/whisper.cpp.git "$WHISPER_DIR" >/dev/null 2>&1
@@ -99,37 +81,12 @@ done
 
 rm -rf "$WHISPER_DIR"
 
-if ! ensure_python311 "$p"; then
-  echo "$p Cannot install Python 3.11"
-  exit 1
-fi
-
-PY311=$(get_python311_path) || {
-  echo "$p No valid Python 3.11 installation found"
-  exit 1
-}
-
-if [ -d "$VENV_DIR" ]; then
-  chmod -R u+w "$VENV_DIR" 2>/dev/null || true
-  rm -rf "$VENV_DIR" 2>/dev/null || {
-    mv "$VENV_DIR" "${VENV_DIR}.backup.$(date +%s)" 2>/dev/null || true
-  }
-fi
-
 unset PYTHONPATH
 unset PYTHONHOME
 export PIP_CACHE_DIR="$(pwd)/$COREML_CACHE_DIR"
 export TMPDIR="$(pwd)/$COREML_TMP_DIR"
 
-"$PY311" -m venv "$VENV_DIR" --clear || {
-  echo "$p Failed to create virtual environment"
-  exit 1
-}
-
-if [ ! -f "$VENV_DIR/bin/python" ]; then
-  echo "$p Virtual environment created but python binary missing"
-  exit 1
-fi
+"$PY311" -m venv "$VENV_DIR" --clear
 
 PYTHON="$VENV_DIR/bin/python"
 
@@ -159,11 +116,6 @@ chmod +x "$MODELS_DIR/generate-coreml-model.sh" 2>/dev/null || true
 
 if [ "${NO_MODELS:-false}" != "true" ]; then
   bash "$MODELS_DIR/generate-coreml-model.sh" base || true
-fi
-
-if [ ! -x "$BIN_DIR/whisper-cli-coreml" ]; then
-  echo "$p whisper-cli-coreml binary not executable"
-  exit 1
 fi
 
 mkdir -p build/config

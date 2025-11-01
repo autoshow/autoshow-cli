@@ -1,6 +1,5 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
-import { ensureWhisperBinary, ensureWhisperModel, runSetupWithRetry } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
@@ -27,36 +26,6 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
   return chunks
     .map((chunk: TranscriptChunk) => `[${chunk.timestamp}] ${chunk.text}`)
     .join('\n')
-}
-
-export async function checkWhisperModel(whisperModel: string) {
-  const p = '[text/process-steps/02-run-transcription/whisper]'
-  if (whisperModel === 'turbo') whisperModel = 'large-v3-turbo'
-
-  const whisperCliPath = './build/bin/whisper-cli'
-  const modelPath = `./build/models/ggml-${whisperModel}.bin`
-
-  if (!existsSync(whisperCliPath)) {
-    l.warn('whisper-cli binary not found, attempting automatic setup')
-    
-    const setupSuccess = await runSetupWithRetry(() => ensureWhisperBinary())
-    if (!setupSuccess || !existsSync(whisperCliPath)) {
-      err(`${p} Failed to automatically setup whisper-cli. Please run: npm run setup:whisper`)
-      throw new Error('whisper-cli binary not found after automatic setup attempt')
-    }
-    
-    l.success('whisper-cli binary successfully installed')
-  }
-
-  if (!existsSync(modelPath)) {
-    const modelSuccess = await runSetupWithRetry(() => ensureWhisperModel(whisperModel))
-    if (!modelSuccess || !existsSync(modelPath)) {
-      err(`${p} Failed to automatically download model ${whisperModel}`)
-      throw new Error(`Model ${whisperModel} not found after automatic download attempt`)
-    }
-    
-    l.success(`Model ${whisperModel} successfully downloaded`)
-  }
 }
 
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
@@ -120,7 +89,16 @@ export async function callWhisper(
 
     const { modelId, costPerMinuteCents } = chosenModel
 
-    await checkWhisperModel(modelId)
+    const whisperCliPath = './build/bin/whisper-cli'
+    const modelPath = `./build/models/ggml-${modelId}.bin`
+
+    if (!existsSync(whisperCliPath)) {
+      throw new Error(`whisper-cli not found at ${whisperCliPath}. Run: npm run setup:whisper`)
+    }
+
+    if (!existsSync(modelPath)) {
+      throw new Error(`Model ${modelId} not found at ${modelPath}. Run: npm run setup:whisper`)
+    }
     
     const args = [
       '--no-gpu',
