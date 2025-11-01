@@ -80,22 +80,8 @@ RUN /app/build/pyenv/tts/bin/pip install --no-cache-dir \
 RUN /app/build/pyenv/tts/bin/pip install --no-cache-dir \
     https://github.com/KittenML/KittenTTS/releases/download/0.1/kittentts-0.1.0-py3-none-any.whl || true
 
-RUN /app/build/pyenv/tts/bin/pip install --no-cache-dir \
-    audiocraft || /app/build/pyenv/tts/bin/pip install --no-cache-dir git+https://github.com/facebookresearch/audiocraft.git
-
-RUN /app/build/pyenv/tts/bin/pip install --no-cache-dir \
-    xformers || true
-
-RUN /app/build/pyenv/tts/bin/pip install --no-cache-dir \
-    stable-audio-tools || /app/build/pyenv/tts/bin/pip install --no-cache-dir git+https://github.com/Stability-AI/stable-audio-tools.git
-
-RUN /app/build/pyenv/tts/bin/pip install --no-cache-dir \
-    einops \
-    wandb \
-    gradio || true
-
 RUN mkdir -p /app/build/models /app/output /app/input /app/build/config \
-    /app/build/models/audiocraft /app/build/models/stable-audio /app/build/models/sd \
+    /app/build/models/sd \
     /app/build/pyenv/coreml
 
 RUN ARCH=$(uname -m) && \
@@ -152,13 +138,7 @@ RUN mkdir -p build/models && \
 
 RUN echo '{"python":"/app/build/pyenv/tts/bin/python","venv":"/app/build/pyenv/tts","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}' > /app/build/config/.tts-config.json
 
-RUN echo '{"python":"/app/build/pyenv/tts/bin/python","venv":"/app/build/pyenv/tts","audiocraft":{"default_model":"facebook/musicgen-small","cache_dir":"/app/build/models/audiocraft"},"stable_audio":{"default_model":"stabilityai/stable-audio-open-1.0","cache_dir":"/app/build/models/stable-audio"}}' > /app/build/config/.music-config.json
-
 RUN /app/build/pyenv/tts/bin/python -c "from TTS.api import TTS; print('TTS import successful')" || echo "TTS import check failed, will download models on first use"
-
-RUN /app/build/pyenv/tts/bin/python -c "import audiocraft; print('AudioCraft import successful')" || echo "AudioCraft import check failed, will work on first use"
-
-RUN /app/build/pyenv/tts/bin/python -c "import stable_audio_tools; print('Stable Audio Tools import successful')" || echo "Stable Audio Tools import check failed, will work on first use"
 
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
@@ -167,11 +147,7 @@ ENV PATH="/usr/local/bin:/app/build/bin:/app/build/pyenv/tts/bin:${PATH}"
 ENV TTS_PYTHON_PATH=/app/build/pyenv/tts/bin/python
 ENV COQUI_PYTHON_PATH=/app/build/pyenv/tts/bin/python
 ENV KITTEN_PYTHON_PATH=/app/build/pyenv/tts/bin/python
-ENV MUSIC_PYTHON_PATH=/app/build/pyenv/tts/bin/python
 ENV PYTHONPATH=/app/build/pyenv/tts/lib/python3.11/site-packages
-ENV AUDIOCRAFT_CACHE_DIR=/app/build/models/audiocraft
-ENV HF_HOME=/app/build/models/stable-audio
-ENV WANDB_MODE=offline
 
 VOLUME ["/app/input", "/app/output", "/app/build/models", "/app/build/config"]
 

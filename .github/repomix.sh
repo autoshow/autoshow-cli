@@ -1,23 +1,21 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  "*"
-  "src/*"
-  "docs/README.md"
-  "docs/text/02-transcription-options.md"
-  "docs/setup.md"
+  ".github/*"
   ".github/setup/*"
-  ".github/setup/transcription"
-  "src/text/*"
-  "src/text/utils/*"
-  "src/text/process-steps/02-run-transcription"
-  "src/text/process-commands/*"
+  ".github/setup/image"
+  ".github/setup/music"
+  "*"
+  "docs/*"
+  "docs/image"
+  "docs/music"
+  "src/*"
+  "src/image"
+  "src/music"
+  "test/music"
 )
 
 IGNORE_PATHS=(
-  ".github/parse.ts"
-  "README.md"
-  "WARP.md"
   "new-llm-*.md"
 )
 
