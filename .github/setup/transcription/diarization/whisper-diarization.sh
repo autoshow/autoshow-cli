@@ -12,43 +12,13 @@ if [ "$IS_MAC" != true ]; then
   exit 0
 fi
 
-ensure_python311() {
-  if command -v python3.11 &>/dev/null; then
-    echo "$p Python 3.11 already available"
-    return 0
-  fi
-  
-  if command -v brew &>/dev/null; then
-    echo "$p Installing Python 3.11 via Homebrew"
-    brew install python@3.11 >/dev/null 2>&1 || {
-      echo "$p WARNING: Failed to install Python 3.11 via Homebrew"
-      return 1
-    }
-    echo "$p Python 3.11 installed successfully"
-    return 0
-  else
-    echo "$p ERROR: Homebrew not found, cannot install Python 3.11"
-    return 1
-  fi
-}
-
-get_python311_path() {
-  for pth in python3.11 /usr/local/bin/python3.11 /opt/homebrew/bin/python3.11; do
-    if command -v "$pth" &>/dev/null; then
-      v=$("$pth" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
-      if [ "$v" = "3.11" ]; then
-        echo "$pth"
-        return 0
-      fi
-    fi
-  done
-  return 1
-}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../python-version.sh"
 
 WHISPER_DIAR_DIR="whisper-diarization-temp"
 VENV="build/pyenv/whisper-diarization"
 BIN_DIR="build/bin"
-SCRIPT_DIR=".github/setup/transcription/diarization"
+WRAPPER_SCRIPT_DIR=".github/setup/transcription/diarization"
 DIARIZATION_CACHE_DIR="build/cache/whisper-diarization"
 DIARIZATION_TMP_DIR="build/tmp/whisper-diarization"
 
@@ -63,7 +33,7 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! ensure_python311; then
+if ! ensure_python311 "$p"; then
   echo "$p ERROR: Cannot install Python 3.11, diarization features unavailable"
   exit 1
 fi
@@ -167,17 +137,12 @@ fi
 cd ..
 rm -rf "$WHISPER_DIAR_DIR"
 
-if [ -f "$SCRIPT_DIR/whisper-diarization-wrapper.py" ]; then
-  cp "$SCRIPT_DIR/whisper-diarization-wrapper.py" "$BIN_DIR/whisper-diarize.py"
+if [ -f "$WRAPPER_SCRIPT_DIR/whisper-diarization-wrapper.py" ]; then
+  cp "$WRAPPER_SCRIPT_DIR/whisper-diarization-wrapper.py" "$BIN_DIR/whisper-diarize.py"
 else
   echo "$p whisper-diarization-wrapper.py not found"
   exit 1
 fi
-
-echo "$p Validating core installation"
-"$PYTHON" "$SCRIPT_DIR/whisper-diarization-validation.py" || {
-  echo "$p Validation reported missing optional modules, but core whisper functionality available"
-}
 
 chmod +x "$BIN_DIR/whisper-diarize.py" 2>/dev/null || true
 
