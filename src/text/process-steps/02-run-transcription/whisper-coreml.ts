@@ -2,7 +2,7 @@ import { l, err } from '@/logging'
 import { readFile, unlink, existsSync, execPromise, spawn } from '@/node-utils'
 import { formatWhisperTranscript } from './whisper.ts'
 import { callWhisper } from './whisper.ts'
-import { ensureCoreMLEnvironment, ensureCoreMLModel, ensureWhisperModel, runSetupWithRetry } from '../../utils/setup-helpers'
+import { ensureCoreMLEnvironment, ensureWhisperModel, runSetupWithRetry } from '../../utils/setup-helpers'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
@@ -99,46 +99,6 @@ async function ensureCoreMLEnv(): Promise<void> {
   }
 }
 
-async function compileMlpackageToMlmodelc(modelId: string): Promise<boolean> {
-  const pkg = `./build/models/coreml-encoder-${modelId}.mlpackage`
-  const out = `./build/models/ggml-${modelId}-encoder.mlmodelc`
-  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
-  
-  if (!existsSync(pkg)) return false
-  
-  l.dim(`${p} Attempting to compile mlpackage to mlmodelc for ${modelId}`)
-  
-  try {
-    const { stdout: xcrunCheck } = await execPromise('xcrun --find coremlc 2>&1 || xcrun --find coremlcompiler 2>&1', { maxBuffer: 1024 })
-    if (!xcrunCheck || xcrunCheck.includes('not found')) {
-      l.dim(`${p} CoreML compiler not available, using mlpackage format`)
-      return false
-    }
-  } catch {
-    l.dim(`${p} Xcode tools not available for compilation`)
-    return false
-  }
-  
-  try {
-    const compiledDir = `./build/models/tmp-compile-${modelId}`
-    await execPromise(`mkdir -p "${compiledDir}"`)
-    try {
-      await execPromise(`xcrun coremlc compile "${pkg}" "${compiledDir}"`, { maxBuffer: 10000 * 1024 })
-    } catch {
-      await execPromise(`xcrun coremlcompiler compile "${pkg}" "${compiledDir}"`, { maxBuffer: 10000 * 1024 })
-    }
-    const { stdout } = await execPromise(`find "${compiledDir}" -type d -name "*.mlmodelc" -maxdepth 2 | head -n 1`)
-    const cand = stdout.trim()
-    if (!cand) throw new Error('Compiled .mlmodelc not found')
-    await execPromise(`rm -rf "${out}" && mv "${cand}" "${out}" && rm -rf "${compiledDir}"`)
-    l.dim(`${p} Compiled ${modelId} mlmodelc successfully`)
-    return true
-  } catch (e: any) {
-    l.dim(`${p} Could not compile mlpackage: ${e.message}`)
-    return false
-  }
-}
-
 async function findCoreMLEncoder(modelId: string): Promise<string | null> {
   const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   
@@ -173,9 +133,7 @@ async function ensureCoreMLEncoder(modelId: string): Promise<void> {
   }
   
   l.dim(`${p} Generating CoreML encoder for ${modelId}, this may take a few minutes...`)
-  
-  const setupSuccess = await runSetupWithRetry(() => ensureCoreMLModel(modelId), 1)
-  
+   
   const newEncoder = await findCoreMLEncoder(modelId)
   if (!newEncoder) {
     l.warn(`${p} CoreML encoder generation failed for ${modelId}`)

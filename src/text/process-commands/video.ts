@@ -16,9 +16,8 @@ export async function processVideo(
   try {
     const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, url)
     await downloadAudio(options, url, filename)
-    const { transcript, modelId: transcriptionModel, costPerMinuteCents, audioDuration } = await runTranscription(options, finalPath, transcriptServices)
+    const { transcript } = await runTranscription(options, finalPath, transcriptServices)
     const selectedPrompts = await selectPrompts(options)
-    const transcriptionCost = costPerMinuteCents * ((audioDuration || 0) / 60) / 100
     const llmOutput = await runLLM(
       options,
       finalPath,
@@ -26,11 +25,7 @@ export async function processVideo(
       selectedPrompts,
       transcript,
       metadata as ShowNoteMetadata,
-      llmServices,
-      transcriptServices,
-      transcriptionModel,
-      transcriptionCost,
-      audioDuration
+      llmServices
     )
     if (!options.saveAudio) {
       await saveAudio(finalPath)

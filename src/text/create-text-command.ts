@@ -1,11 +1,9 @@
 import { Command } from 'commander'
 import { processRSS } from './process-commands/rss'
 import { COMMAND_CONFIG, validateCommandInput } from './utils/text-validation.ts'
-import { processEmbedCommand } from '../embeddings/embed-command.ts'
 import { printPrompt } from './process-steps/03-select-prompts/print-prompt.ts'
 import { l, err, logSeparator, logInitialFunctionCall } from '@/logging'
 import { exit } from '@/node-utils'
-import type { EmbeddingOptions } from "@/embeddings/embed-types.ts"
 import type { ProcessingOptions } from '@/text/text-types'
 
 export async function processCommand(
@@ -105,35 +103,10 @@ export const createTextCommand = (): Command => {
     .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
     .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
     .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)
-    .option('--save <service>', 'Save output to cloud storage (s3 or r2)')
-    .option('--s3-bucket-prefix <prefix>', 'Custom prefix for S3 bucket name (default: autoshow)')
     .action(async (options: ProcessingOptions) => {
       logInitialFunctionCall('textCommand', options)
-      if (options.save) {
-        if (options.save !== 's3' && options.save !== 'r2') {
-          err(`Invalid save option: ${options.save}. Must be 's3' or 'r2'`)
-          exit(1)
-        }
-      }
       await processCommand(options)
     })
-  
-  const embedCommand = new Command('embed')
-    .description('Create or query vector embeddings using Cloudflare Vectorize')
-    .option('--create [directory]', 'Create embeddings from markdown files in directory (default: input)')
-    .option('--query <question>', 'Query embeddings with a question')
-    .action(async (options: EmbeddingOptions) => {
-      logInitialFunctionCall('embedCommand', options as Record<string, unknown>)
-      try {
-        await processEmbedCommand(options)
-        l.success('Embed command completed successfully')
-      } catch (error) {
-        err(`Embed command failed: ${(error as Error).message}`)
-        exit(1)
-      }
-    })
-  
-  textCommand.addCommand(embedCommand)
   
   return textCommand
 }
