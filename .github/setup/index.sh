@@ -21,15 +21,6 @@ p='[setup/index]'
 
 SETUP_MODE=""
 case "${1:-}" in
-  --image)
-    SETUP_MODE="image"
-    ;;
-  --sd1)
-    SETUP_MODE="sd1"
-    ;;
-  --sd3)
-    SETUP_MODE="sd3"
-    ;;
   --transcription)
     SETUP_MODE="transcription"
     ;;
@@ -50,11 +41,8 @@ case "${1:-}" in
     ;;
   *)
     echo "$p ERROR: Invalid argument '$1'"
-    echo "$p Usage: $0 [--image|--sd1|--sd3|--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
+    echo "$p Usage: $0 [--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
     echo "$p   (no args): Base setup only (npm dependencies and directories)"
-    echo "$p   --image: Setup image generation environment and download all models (SD 1.5 + SD 3.5)"
-    echo "$p   --sd1: Setup Stable Diffusion 1.5 models only"
-    echo "$p   --sd3: Setup Stable Diffusion 3.5 models only"
     echo "$p   --transcription: Setup all transcription environments and download models"
     echo "$p   --whisper: Setup whisper-metal (default whisper.cpp with Metal support)"
     echo "$p   --whisper-coreml: Setup whisper CoreML for optimized inference on Apple Silicon"
@@ -123,55 +111,6 @@ ensure_homebrew
 SETUP_DIR=".github/setup"
 
 case "$SETUP_MODE" in
-  image)
-    echo "$p Setting up image generation environment and downloading models"
-    
-    echo "$p Installing required Homebrew packages for image generation"
-    quiet_brew_install "cmake"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up stable-diffusion.cpp"
-    bash "$SETUP_DIR/image/sdcpp.sh"
-    
-    echo "$p Downloading image generation models"
-    bash "$SETUP_DIR/image/sd1_5.sh"
-    bash "$SETUP_DIR/image/sd3_5.sh"
-    
-    echo "$p Image generation setup completed"
-    ;;
-    
-  sd1)
-    echo "$p Setting up Stable Diffusion 1.5 models only"
-    
-    echo "$p Installing required Homebrew packages for image generation"
-    quiet_brew_install "cmake"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up stable-diffusion.cpp"
-    bash "$SETUP_DIR/image/sdcpp.sh"
-    
-    echo "$p Downloading Stable Diffusion 1.5 models"
-    bash "$SETUP_DIR/image/sd1_5.sh"
-    
-    echo "$p Stable Diffusion 1.5 setup completed"
-    ;;
-    
-  sd3)
-    echo "$p Setting up Stable Diffusion 3.5 models only"
-    
-    echo "$p Installing required Homebrew packages for image generation"
-    quiet_brew_install "cmake"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up stable-diffusion.cpp"
-    bash "$SETUP_DIR/image/sdcpp.sh"
-    
-    echo "$p Downloading Stable Diffusion 3.5 models"
-    bash "$SETUP_DIR/image/sd3_5.sh"
-    
-    echo "$p Stable Diffusion 3.5 setup completed"
-    ;;
-    
   transcription)
     echo "$p Setting up all transcription environments and downloading models"
     

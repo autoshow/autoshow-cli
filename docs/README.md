@@ -10,7 +10,6 @@
   - [Dall E](/docs/image/02-dalle-options.md)
   - [Black Forest Labs](/docs/image/03-bfl-options.md)
   - [AWS Nova](/docs/image/04-nova-options.md)
-  - [sd.cpp](/docs/image/05-sdcpp-options.md)
 - [Video Command](/docs/video/01-video-command.md)
   - [Runway](/docs/video/02-runway.md)
   - [Veo](/docs/video/03-veo.md)

@@ -42,36 +42,9 @@ export interface NovaCanvasPayload {
   }
 }
 
-export interface StableDiffusionCppOptions {
-  model?: 'sd1.5' | 'sd3.5' | 'sd3-medium'
-  width?: number
-  height?: number
-  steps?: number
-  seed?: number
-  cfgScale?: number
-  negativePrompt?: string
-  samplingMethod?: string
-  lora?: boolean
-  flashAttention?: boolean
-  quantization?: 'f32' | 'f16' | 'q8_0' | 'q5_0' | 'q5_1' | 'q4_0' | 'q4_1'
-  cpuOnly?: boolean
-}
-
 export interface RunwayImageOptions {
   model?: string
   width?: number
   height?: number
   style?: string
-}
-
-export interface ModelConfig {
-  hash?: string
-  minSizeMB: number
-  maxSizeMB: number
-}
-
-export interface ValidationResult {
-  valid: boolean
-  size: number
-  error?: string
 }
