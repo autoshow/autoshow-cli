@@ -24,17 +24,17 @@ npm run as -- --transcriptCost "input/audio.mp3" --assembly
 If neither the `--deepgram` or `--assembly` option is included for transcription, `autoshow` will default to running the largest Whisper.cpp model. To configure the size of the Whisper model, use the `--model` option and select one of the following:
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper tiny
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper base
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper small
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper medium
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
+npm run as -- text --file "input/audio.mp3" --whisper tiny
+npm run as -- text --file "input/audio.mp3" --whisper base
+npm run as -- text --file "input/audio.mp3" --whisper small
+npm run as -- text --file "input/audio.mp3" --whisper medium
+npm run as -- text --file "input/audio.mp3" --whisper large-v3-turbo
 ```
 
 ### Whisper CoreML
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-coreml large-v3-turbo
+npm run as -- text --file "input/audio.mp3" --whisper-coreml large-v3-turbo
 ```
 
 ### Whisper Diarization
@@ -42,15 +42,15 @@ npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisp
 The `--whisper-diarization` option combines OpenAI Whisper with advanced speaker diarization capabilities using Voice Activity Detection (VAD) and Speaker Embedding to identify different speakers in the audio. This option provides automatic speaker identification and separation.
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization
+npm run as -- text --file "input/audio.mp3" --whisper-diarization
 ```
 
 Select model:
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization medium.en
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization large-v3
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper-diarization base.en
+npm run as -- text --file "input/audio.mp3" --whisper-diarization medium.en
+npm run as -- text --file "input/audio.mp3" --whisper-diarization large-v3
+npm run as -- text --file "input/audio.mp3" --whisper-diarization base.en
 ```
 
 The whisper-diarization service automatically:
@@ -64,21 +64,21 @@ The whisper-diarization service automatically:
 ### Deepgram
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram
+npm run as -- text --file "input/audio.mp3" --deepgram
 ```
 
 Select model:
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-3
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
+npm run as -- text --file "input/audio.mp3" --deepgram nova-3
+npm run as -- text --file "input/audio.mp3" --deepgram nova-2
 ```
 
 Include Deepgram API key directly in CLI command instead of in `.env` file:
 
 ```bash
 npm run as -- text \
-  --video "https://www.youtube.com/watch?v=MORMZXEaONk" \
+  --file "input/audio.mp3" \
   --deepgram \
   --deepgramApiKey ""
 ```
@@ -86,15 +86,15 @@ npm run as -- text \
 ### Assembly
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly
+npm run as -- text --file "input/audio.mp3" --assembly
 ```
 
 Select model:
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly nano
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly slam-1
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal
+npm run as -- text --file "input/audio.mp3" --assembly nano
+npm run as -- text --file "input/audio.mp3" --assembly slam-1
+npm run as -- text --file "input/audio.mp3" --assembly universal
 ```
 
 Include speaker labels and number of speakers:
@@ -110,7 +110,7 @@ Include Assembly API key directly in CLI command instead of in `.env` file:
 
 ```bash
 npm run as -- text \
-  --video "https://www.youtube.com/watch?v=MORMZXEaONk" \
+  --file "input/audio.mp3" \
   --assembly \
   --assemblyApiKey ""
 ```
