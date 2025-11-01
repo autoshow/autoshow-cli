@@ -5,8 +5,12 @@ node_modules
 bin
 build/bin
 build/config/*.json
+build/config/.coreml-env
+build/config/.diarization-env
 build/models
 build/pyenv
+build/cache
+build/tmp
 models
 /content
 whisper.cpp
@@ -19,7 +23,9 @@ TODO.md
 output
 src/text/workflows
 whisper-cpp-temp
+whisper-cpp-temp-coreml
 whisper-coreml-temp
+whisper-diarization-temp
 input
 eng.traineddata
 =*
