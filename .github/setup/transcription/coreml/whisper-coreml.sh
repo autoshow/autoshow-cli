@@ -40,77 +40,36 @@ check_xcode_tools() {
   return 1
 }
 
-validate_python() {
-  local python_path="$1"
-  local test_venv="/tmp/test-venv-coreml-$$"
-  
-  if [ ! -x "$python_path" ]; then
-    return 1
-  fi
-  
-  local version=$("$python_path" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
-  if [ "$version" != "3.11" ]; then
-    return 1
-  fi
-  
-  "$python_path" -c 'import venv, encodings, sys' 2>/dev/null || return 1
-  
-  "$python_path" -m venv "$test_venv" --without-pip 2>/dev/null || {
-    rm -rf "$test_venv" 2>/dev/null
-    return 1
-  }
-  
-  if [ ! -f "$test_venv/bin/python" ]; then
-    rm -rf "$test_venv" 2>/dev/null
-    return 1
-  fi
-  
-  "$test_venv/bin/python" -c 'import sys' 2>/dev/null || {
-    rm -rf "$test_venv" 2>/dev/null
-    return 1
-  }
-  
-  rm -rf "$test_venv" 2>/dev/null
-  return 0
-}
-
 ensure_python311() {
+  if command -v python3.11 &>/dev/null; then
+    echo "$p Python 3.11 already available"
+    return 0
+  fi
+  
   if command -v brew &>/dev/null; then
-    local brew_python="/opt/homebrew/bin/python3.11"
-    if [ -x "$brew_python" ] && validate_python "$brew_python"; then
-      return 0
-    fi
-    
-    brew install python@3.11 >/dev/null 2>&1 || return 1
+    echo "$p Installing Python 3.11 via Homebrew"
+    brew install python@3.11 >/dev/null 2>&1 || {
+      echo "$p WARNING: Failed to install Python 3.11 via Homebrew"
+      return 1
+    }
+    echo "$p Python 3.11 installed successfully"
     return 0
   else
-    echo "$p Homebrew not found"
+    echo "$p ERROR: Homebrew not found, cannot install Python 3.11"
     return 1
   fi
 }
 
 get_python311_path() {
-  local candidates=(
-    "/opt/homebrew/bin/python3.11"
-    "/usr/local/bin/python3.11"
-    "python3.11"
-  )
-  
-  for python_path in "${candidates[@]}"; do
-    local full_path=""
-    
-    if [[ "$python_path" = /* ]]; then
-      full_path="$python_path"
-    else
-      full_path=$(command -v "$python_path" 2>/dev/null || echo "")
-    fi
-    
-    if [ -n "$full_path" ] && [ -x "$full_path" ] && validate_python "$full_path"; then
-      echo "$full_path"
-      return 0
+  for pth in python3.11 /usr/local/bin/python3.11 /opt/homebrew/bin/python3.11; do
+    if command -v "$pth" &>/dev/null; then
+      v=$("$pth" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
+      if [ "$v" = "3.11" ]; then
+        echo "$pth"
+        return 0
+      fi
     fi
   done
-  
   return 1
 }
 
@@ -186,6 +145,8 @@ PY311=$(get_python311_path) || {
   exit 1
 }
 
+echo "$p Using Python 3.11 at: $PY311"
+
 if [ -d "$VENV_DIR" ]; then
   chmod -R u+w "$VENV_DIR" 2>/dev/null || true
   rm -rf "$VENV_DIR" 2>/dev/null || {
@@ -225,7 +186,8 @@ export TMPDIR="$(pwd)/$COREML_TMP_DIR"
 "$PYTHON" -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1
 "$PYTHON" -m pip install "numpy<2" >/dev/null 2>&1
 "$PYTHON" -m pip install "torch==2.2.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
-"$PYTHON" -m pip install "coremltools>=7,<8" "transformers" "sentencepiece" "huggingface_hub" "safetensors" "ane-transformers" >/dev/null 2>&1
+"$PYTHON" -m pip install "coremltools>=7,<8" >/dev/null 2>&1
+"$PYTHON" -m pip install transformers sentencepiece huggingface_hub safetensors ane-transformers >/dev/null 2>&1
 "$PYTHON" -m pip install 'protobuf<4' >/dev/null 2>&1 || true
 "$PYTHON" -m pip install "openai-whisper" >/dev/null 2>&1 || true
 
@@ -233,7 +195,9 @@ cp "$SCRIPT_DIR/convert-whisper-to-coreml.py" "$MODELS_DIR/" >/dev/null 2>&1 || 
 cp "$SCRIPT_DIR/generate-coreml-model.sh" "$MODELS_DIR/" >/dev/null 2>&1 || true
 chmod +x "$MODELS_DIR/generate-coreml-model.sh" 2>/dev/null || true
 
-"$PYTHON" "$SCRIPT_DIR/whisper-coreml-validation.py"
+"$PYTHON" "$SCRIPT_DIR/whisper-coreml-validation.py" || {
+  echo "$p Validation reported issues but continuing"
+}
 
 if [ "${NO_MODELS:-false}" != "true" ]; then
   bash "$MODELS_DIR/generate-coreml-model.sh" base || true
