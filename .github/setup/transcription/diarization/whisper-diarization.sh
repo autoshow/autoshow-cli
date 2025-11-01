@@ -8,7 +8,6 @@ case "$OSTYPE" in
 esac
 
 if [ "$IS_MAC" != true ]; then
-  echo "$p Skipping diarization setup on non-macOS"
   exit 0
 fi
 
@@ -26,8 +25,6 @@ mkdir -p "$BIN_DIR"
 mkdir -p "$DIARIZATION_CACHE_DIR"
 mkdir -p "$DIARIZATION_TMP_DIR"
 
-echo "$p Setting up whisper-diarization Python environment"
-
 if ! command -v ffmpeg >/dev/null 2>&1; then
   echo "$p ERROR: ffmpeg not found. Install with: brew install ffmpeg"
   exit 1
@@ -42,8 +39,6 @@ PY311=$(get_python311_path) || {
   echo "$p ERROR: Python 3.11 not found after installation"
   exit 1
 }
-
-echo "$p Using Python 3.11 at: $PY311"
 
 if [ -d "$VENV" ]; then
   chmod -R u+w "$VENV" 2>/dev/null || true
@@ -80,7 +75,6 @@ export TMPDIR="$(pwd)/$DIARIZATION_TMP_DIR"
 
 "$PYTHON" -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1
 
-echo "$p Installing core dependencies"
 "$PYTHON" -m pip install "numpy<2" >/dev/null 2>&1
 
 if [ "$IS_MAC" = true ]; then
@@ -93,14 +87,10 @@ fi
 
 "$PYTHON" -m pip install librosa soundfile scipy >/dev/null 2>&1
 
-echo "$p Installing OpenAI Whisper"
 "$PYTHON" -m pip install "openai-whisper==20231117" >/dev/null 2>&1
-
-echo "$p Attempting to install optional diarization dependencies"
 
 if [ "$IS_MAC" = true ]; then
   if ! command -v rustc >/dev/null 2>&1; then
-    echo "$p Installing Rust toolchain for optional packages"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y >/dev/null 2>&1
     source "$HOME/.cargo/env" 2>/dev/null || export PATH="$HOME/.cargo/bin:$PATH"
   fi
@@ -108,19 +98,12 @@ fi
 
 export PATH="$HOME/.cargo/bin:$PATH"
 
-"$PYTHON" -m pip install "ctc-forced-aligner" >/dev/null 2>&1 || {
-  echo "$p WARNING: ctc-forced-aligner installation failed, using fallback mode"
-}
+"$PYTHON" -m pip install "ctc-forced-aligner" >/dev/null 2>&1 || true
 
-"$PYTHON" -m pip install "demucs" >/dev/null 2>&1 || {
-  echo "$p WARNING: demucs installation failed, audio separation unavailable"
-}
+"$PYTHON" -m pip install "demucs" >/dev/null 2>&1 || true
 
-"$PYTHON" -m pip install "pyannote.audio" >/dev/null 2>&1 || {
-  echo "$p WARNING: pyannote.audio installation failed, speaker diarization limited"
-}
+"$PYTHON" -m pip install "pyannote.audio" >/dev/null 2>&1 || true
 
-echo "$p Cloning whisper-diarization repository"
 rm -rf "$WHISPER_DIAR_DIR"
 git clone https://github.com/MahmoudAshraf97/whisper-diarization.git "$WHISPER_DIAR_DIR" >/dev/null 2>&1
 
@@ -154,5 +137,4 @@ DIARIZATION_CACHE=$DIARIZATION_CACHE_DIR
 DIARIZATION_TMP=$DIARIZATION_TMP_DIR
 EOF
 
-echo "$p Done"
 exit 0

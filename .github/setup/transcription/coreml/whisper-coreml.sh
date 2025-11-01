@@ -8,7 +8,6 @@ case "$OSTYPE" in
 esac
 
 if [ "$IS_MAC" != true ]; then
-  echo "$p Skipping CoreML setup on non-macOS"
   exit 0
 fi
 
@@ -23,11 +22,9 @@ check_xcode_tools() {
   fi
   
   if xcode-select -p &>/dev/null 2>&1; then
-    echo "$p Xcode CLI Tools installed but CoreML compiler not found"
     return 1
   fi
   
-  echo "$p Installing Xcode Command Line Tools..."
   xcode-select --install 2>/dev/null || true
   
   local wait_count=0
@@ -55,7 +52,6 @@ mkdir -p "$BIN_DIR" "$MODELS_DIR" "$COREML_CACHE_DIR" "$COREML_TMP_DIR"
 
 check_xcode_tools || true
 
-echo "$p Building whisper-cli-coreml"
 rm -rf "$WHISPER_DIR"
 git clone https://github.com/ggerganov/whisper.cpp.git "$WHISPER_DIR" >/dev/null 2>&1
 
@@ -103,8 +99,6 @@ done
 
 rm -rf "$WHISPER_DIR"
 
-echo "$p Setting up CoreML Python environment"
-
 if ! ensure_python311 "$p"; then
   echo "$p Cannot install Python 3.11"
   exit 1
@@ -114,8 +108,6 @@ PY311=$(get_python311_path) || {
   echo "$p No valid Python 3.11 installation found"
   exit 1
 }
-
-echo "$p Using Python 3.11 at: $PY311"
 
 if [ -d "$VENV_DIR" ]; then
   chmod -R u+w "$VENV_DIR" 2>/dev/null || true
@@ -167,14 +159,6 @@ chmod +x "$MODELS_DIR/generate-coreml-model.sh" 2>/dev/null || true
 
 if [ "${NO_MODELS:-false}" != "true" ]; then
   bash "$MODELS_DIR/generate-coreml-model.sh" base || true
-  
-  if [ -d "$MODELS_DIR/ggml-base-encoder.mlmodelc" ]; then
-    echo "$p CoreML encoder ready (mlmodelc)"
-  elif [ -d "$MODELS_DIR/ggml-base-encoder.mlpackage" ]; then
-    echo "$p CoreML encoder ready (mlpackage)"
-  elif [ -d "$MODELS_DIR/coreml-encoder-base.mlpackage" ]; then
-    echo "$p CoreML encoder ready (mlpackage)"
-  fi
 fi
 
 if [ ! -x "$BIN_DIR/whisper-cli-coreml" ]; then
@@ -190,5 +174,4 @@ COREML_CACHE=$COREML_CACHE_DIR
 COREML_TMP=$COREML_TMP_DIR
 EOF
 
-echo "$p Done"
 exit 0

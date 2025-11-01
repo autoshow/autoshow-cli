@@ -17,10 +17,8 @@ rm -rf "$WHISPER_DIR"
 git clone https://github.com/ggerganov/whisper.cpp.git "$WHISPER_DIR" >/dev/null 2>&1
 
 if [ "$IS_MAC" = true ]; then
-  echo "$p Building whisper-cli with Metal support"
   cmake -B "$WHISPER_DIR/build" -S "$WHISPER_DIR" -DGGML_METAL=ON -DBUILD_SHARED_LIBS=OFF >/dev/null 2>&1
 else
-  echo "$p Building whisper-cli (CPU only)"
   cmake -B "$WHISPER_DIR/build" -S "$WHISPER_DIR" -DBUILD_SHARED_LIBS=OFF >/dev/null 2>&1
 fi
 
@@ -65,5 +63,3 @@ if [ "$IS_MAC" = true ]; then
 fi
 
 rm -rf "$WHISPER_DIR"
-
-echo "$p Done"
