@@ -98,6 +98,8 @@ fi
 
 export PATH="$HOME/.cargo/bin:$PATH"
 
+"$PYTHON" -m pip install "faster-whisper" >/dev/null 2>&1
+
 "$PYTHON" -m pip install "ctc-forced-aligner" >/dev/null 2>&1 || true
 
 "$PYTHON" -m pip install "demucs" >/dev/null 2>&1 || true
