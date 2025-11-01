@@ -69,9 +69,8 @@ export async function processRSSFeeds(
           } else {
             throw new Error(`showLink is undefined for item: ${item.title}`)
           }
-          const { transcript, modelId: transcriptionModel, costPerMinuteCents, audioDuration } = await runTranscription(options, finalPath, transcriptServices)
+          const { transcript } = await runTranscription(options, finalPath, transcriptServices)
           const selectedPrompts = await selectPrompts(options)
-          const transcriptionCost = costPerMinuteCents * ((audioDuration || 0) / 60) / 100
           const llmOutput = await runLLM(
             options,
             finalPath,
@@ -79,11 +78,7 @@ export async function processRSSFeeds(
             selectedPrompts,
             transcript,
             metadata as ShowNoteMetadata,
-            llmServices,
-            transcriptServices,
-            transcriptionModel,
-            transcriptionCost,
-            audioDuration
+            llmServices
           )
           if (!options.saveAudio) {
             await saveAudio(finalPath)

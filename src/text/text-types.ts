@@ -47,8 +47,6 @@ export type ProcessingOptions = {
   metaInfo?: boolean
   keyMomentsCount?: number
   keyMomentDuration?: number
-  save?: 's3' | 'r2'
-  s3BucketPrefix?: string
   inputDir?: string
   outputDir?: string
   [key: string]: any

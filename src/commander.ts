@@ -3,7 +3,6 @@ import { createTtsCommand } from './tts/create-tts-command.ts'
 import { createImageCommand } from './image/create-image-command.ts'
 import { createVideoCommand } from './video/create-video-command.ts'
 import { createTextCommand } from './text/create-text-command.ts'
-import { createConfigCommand } from './config/create-config-command.ts'
 import { createMediaCommand } from './media/create-media-command.ts'
 import { createExtractCommand } from './extract/create-extract-command.ts'
 import { l, err } from '@/logging'
@@ -22,7 +21,6 @@ program.addCommand(createTextCommand())
 program.addCommand(createTtsCommand())
 program.addCommand(createImageCommand())
 program.addCommand(createVideoCommand())
-program.addCommand(createConfigCommand())
 program.addCommand(createMediaCommand())
 program.addCommand(createExtractCommand())
 

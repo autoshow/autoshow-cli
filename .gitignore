@@ -10,8 +10,6 @@ build/pyenv
 models
 /content
 whisper.cpp
-embeddings.db
-embeddings.json
 new-*.*
 test.md
 spec.log

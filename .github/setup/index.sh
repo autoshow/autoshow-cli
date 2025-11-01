@@ -315,7 +315,7 @@ case "$SETUP_MODE" in
     
   base)
     echo "$p Base setup completed (npm dependencies and directories only)"
-    echo "$p Run with --image, --sd1, --sd3, --transcription, --whisper, --whisper-coreml, --whisper-diarization, or --tts to set up specific features"
+    echo "$p See docs/setup.md to set up specific features"
     ;;
 esac
 
