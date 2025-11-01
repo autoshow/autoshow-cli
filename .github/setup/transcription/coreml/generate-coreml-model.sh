@@ -7,12 +7,10 @@ FALLBACK_OUT="build/models/ggml-${MODEL}-encoder.mlpackage"
 p='[setup/transcription/coreml/generate-coreml-model]'
 
 if [ -d "$OUT" ]; then
-  echo "$p CoreML encoder exists: $OUT"
   exit 0
 fi
 
 if [ -d "$FALLBACK_OUT" ]; then
-  echo "$p CoreML encoder exists: $FALLBACK_OUT"
   exit 0
 fi
 
@@ -44,7 +42,7 @@ TMP_DIR="build/models/tmp-coreml-${MODEL}"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-$PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true 2>&1 | tee /tmp/coreml-convert.log || {
+$PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true >/dev/null 2>&1 || {
   echo "$p Conversion failed"
   exit 1
 }
@@ -78,13 +76,12 @@ if [[ "$MLCAND" == *.mlpackage ]]; then
     COMPILED_DIR="$TMP_DIR/compiled"
     mkdir -p "$COMPILED_DIR"
     
-    xcrun coremlc compile "$MLCAND" "$COMPILED_DIR" 2>&1 | tee /tmp/coreml-compile.log && {
+    xcrun coremlc compile "$MLCAND" "$COMPILED_DIR" >/dev/null 2>&1 && {
       CANDIDATE=$(find "$COMPILED_DIR" -type d -name "*.mlmodelc" -maxdepth 2 2>/dev/null | head -n 1 || true)
       if [ -n "$CANDIDATE" ]; then
         rm -rf "$OUT"
         mv "$CANDIDATE" "$OUT"
         rm -rf "$TMP_DIR"
-        echo "$p Created $OUT"
         exit 0
       fi
     }
@@ -99,7 +96,6 @@ if [[ "$MLCAND" == *.mlpackage ]]; then
     exit 1
   fi
   
-  echo "$p Created $FALLBACK_OUT"
   exit 0
 else
   rm -rf "$OUT"
@@ -111,6 +107,5 @@ else
     exit 1
   fi
   
-  echo "$p Created $OUT"
   exit 0
 fi

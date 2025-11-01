@@ -12,12 +12,9 @@ import ora from 'ora'
 import type { Ora } from 'ora'
 
 async function ensureTranscriptionPrerequisites(): Promise<void> {
-  const p = '[text/process-steps/02-run-transcription/run-transcription]'
-  l.dim(`${p} Checking transcription prerequisites`)
-  
   const hasFFmpeg = await checkFFmpeg()
   if (!hasFFmpeg) {
-    l.warn(`${p} ffmpeg not available - audio processing may fail`)
+    l.warn('ffmpeg not available - audio processing may fail')
   }
 }
 
@@ -46,20 +43,17 @@ export async function runTranscription(
     } else if (options.groqWhisper) {
       serviceToUse = 'groqWhisper'
     } else {
-      l.warn(`${p} No transcription service specified. Defaulting to whisper.`)
+      l.warn('No transcription service specified. Defaulting to whisper.')
       serviceToUse = 'whisper'
       if (options.whisper === undefined) options.whisper = true
     }
   }
-
-  l.dim(`${p} Using transcription service: ${serviceToUse}`)
   
   const audioFilePath = `${finalPath}.wav`
   let audioDuration: number
   
   try {
     audioDuration = await getAudioDuration(audioFilePath)
-    l.dim(`${p} Audio duration: ${audioDuration} seconds`)
   } catch (error) {
     err(`${p} Error getting audio duration: ${(error as Error).message}`)
     audioDuration = 0
@@ -72,7 +66,6 @@ export async function runTranscription(
   try {
     switch (serviceToUse) {
       case 'whisperDiarization': {
-        l.dim(`${p} Starting whisper-diarization transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisperDiarization(options, finalPath),
           spinner
@@ -83,7 +76,6 @@ export async function runTranscription(
         break
       }
       case 'deepgram': {
-        l.dim(`${p} Starting Deepgram transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callDeepgram(options, finalPath),
           spinner
@@ -94,7 +86,6 @@ export async function runTranscription(
         break
       }
       case 'assembly': {
-        l.dim(`${p} Starting AssemblyAI transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callAssembly(options, finalPath),
           spinner
@@ -105,7 +96,6 @@ export async function runTranscription(
         break
       }
       case 'whisper': {
-        l.dim(`${p} Starting whisper transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisper(options, finalPath, spinner),
           spinner
@@ -116,7 +106,6 @@ export async function runTranscription(
         break
       }
       case 'whisperCoreml': {
-        l.dim(`${p} Starting whisper CoreML transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisperCoreml(options, finalPath, spinner),
           spinner
@@ -127,7 +116,6 @@ export async function runTranscription(
         break
       }
       case 'groqWhisper': {
-        l.dim(`${p} Starting Groq whisper transcription`)
         const result = await retryTranscriptionCall<TranscriptionResult>(
           () => callGroqWhisper(options, finalPath),
           spinner
@@ -154,14 +142,14 @@ export async function runTranscription(
     err(`${p} Error during runTranscription: ${(error as Error).message}`)
     
     if (serviceToUse === 'whisperCoreml') {
-      l.warn(`${p} Attempting automatic fallback from whisperCoreml to whisper`)
+      l.warn('Attempting automatic fallback from whisperCoreml to whisper')
       try {
         const fallbackOptions = { ...options, whisper: true }
         const fallbackResult = await retryTranscriptionCall<TranscriptionResult>(
           () => callWhisper(fallbackOptions, finalPath, ora('Step 2 - Run Transcription (fallback)').start()),
           undefined
         )
-        l.success(`${p} Fallback transcription completed successfully`)
+        l.success('Fallback transcription completed successfully')
         return {
           transcript: fallbackResult.transcript,
           modelId: fallbackResult.modelId,
@@ -195,27 +183,23 @@ export async function retryTranscriptionCall<T>(
       const errorMessage = (error as Error).message
       err(`${p} Attempt ${attempt} failed: ${errorMessage}`)
       
-      if (errorMessage.includes('automatically setup')) {
-        l.dim(`${p} Automatic setup was attempted but failed`)
-      }
-      
       if (errorMessage.includes('CoreML') && errorMessage.includes('missing')) {
-        l.warn(`${p} CoreML environment issue detected, will not retry CoreML`)
+        l.warn('CoreML environment issue detected, will not retry CoreML')
         throw error
       }
       
       if (errorMessage.includes('whisper-diarization') && errorMessage.includes('missing')) {
-        l.warn(`${p} Whisper-diarization environment issue detected, will not retry`)
+        l.warn('Whisper-diarization environment issue detected, will not retry')
         throw error
       }
       
       if (errorMessage.includes('ctc_forced_aligner') || errorMessage.includes('ModuleNotFoundError')) {
-        l.warn(`${p} Missing required dependencies for whisper-diarization, will not retry`)
+        l.warn('Missing required dependencies for whisper-diarization, will not retry')
         throw error
       }
       
       if (errorMessage.includes('yt-dlp') && errorMessage.includes('ENOENT')) {
-        l.warn(`${p} yt-dlp not found, this is a system issue`)
+        l.warn('yt-dlp not found, this is a system issue')
         throw error
       }
       
@@ -225,7 +209,6 @@ export async function retryTranscriptionCall<T>(
       }
       
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`${p} Retrying in ${delayMs / 1000} seconds...`)
       if (spinner) {
         spinner.text = `Step 2 - Run Transcription (retrying in ${delayMs / 1000}s...)`
       }

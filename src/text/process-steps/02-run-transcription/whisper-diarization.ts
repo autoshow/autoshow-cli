@@ -9,10 +9,8 @@ async function ensureWhisperDiarizationEnv(): Promise<void> {
   const pythonPath = './build/pyenv/whisper-diarization/bin/python'
   const scriptPath = './build/bin/whisper-diarize.py'
   
-  l.dim(`${p} Checking whisper-diarization environment`)
-  
   if (!existsSync(pythonPath) || !existsSync(scriptPath)) {
-    l.warn(`${p} Whisper-diarization environment not found, attempting automatic setup`)
+    l.warn('Whisper-diarization environment not found, attempting automatic setup')
     
     const setupSuccess = await runSetupWithRetry(() => ensureDiarizationEnvironment(), 1)
     if (!setupSuccess) {
@@ -20,48 +18,20 @@ async function ensureWhisperDiarizationEnv(): Promise<void> {
       throw new Error('Whisper-diarization environment setup failed. Run npm run setup:whisper-diarization')
     }
     
-    l.success(`${p} Whisper-diarization environment successfully installed`)
+    l.success('Whisper-diarization environment successfully installed')
   }
   
   try {
     await execPromise(`${pythonPath} -c "import whisper,librosa,soundfile,scipy,torch,torchaudio,numpy"`, { maxBuffer: 10000 * 1024 })
-    l.dim(`${p} Whisper-diarization environment dependencies verified`)
   } catch (e: any) {
     err(`${p} Whisper-diarization dependencies validation failed: ${e.message}`)
     throw new Error('Whisper-diarization dependencies not properly installed')
   }
-  
-  try {
-    const compatibilityCheck = `${pythonPath} -c "
-try:
-    from ctc_forced_aligner import load_alignment_model
-    print('COMPAT_OK')
-except ImportError:
-    try:
-        from ctc_forced_aligner.alignment import load_model
-        print('COMPAT_FALLBACK')
-    except ImportError:
-        print('COMPAT_ERROR')
-"`
-    const { stdout } = await execPromise(compatibilityCheck, { maxBuffer: 10000 * 1024 })
-    const compatStatus = stdout.trim()
-    
-    if (compatStatus === 'COMPAT_ERROR') {
-      l.warn(`${p} ctc_forced_aligner compatibility issue detected - using fallback mode`)
-    } else {
-      l.dim(`${p} ctc_forced_aligner compatibility: ${compatStatus}`)
-    }
-  } catch (e: any) {
-    l.warn(`${p} Could not verify ctc_forced_aligner compatibility: ${e.message}`)
-  }
 }
 
 function formatWhisperDiarizationTranscript(output: string): string {
-  const p = '[text/process-steps/02-run-transcription/whisper-diarization]'
   const lines = output.trim().split('\n')
   let formattedTranscript = ''
-  let filteredCount = 0
-  let duplicateFixCount = 0
   
   for (const line of lines) {
     const trimmedLine = line.trim()
@@ -71,38 +41,28 @@ function formatWhisperDiarizationTranscript(output: string): string {
     }
     
     if (trimmedLine.includes('|') && (trimmedLine.includes('frames/s') || trimmedLine.includes('%|'))) {
-      filteredCount++
-      l.dim(`${p} Filtering progress bar: ${trimmedLine.substring(0, 50)}...`)
       continue
     }
     
     if (trimmedLine.includes('torchaudio') || trimmedLine.includes('set_audio_backend')) {
-      filteredCount++
-      l.dim(`${p} Filtering torchaudio message`)
       continue
     }
     
     if (trimmedLine.includes('Diarization unavailable') || 
         trimmedLine.includes('Using fallback') || 
         trimmedLine.includes('Reason:')) {
-      filteredCount++
-      l.dim(`${p} Filtering diarization status message`)
       continue
     }
     
     if (trimmedLine.includes('Traceback') || 
         trimmedLine.includes('File "') ||
         trimmedLine.includes('from ctc_forced_aligner')) {
-      filteredCount++
-      l.dim(`${p} Filtering traceback/import error`)
       continue
     }
     
     if (trimmedLine.match(/^\d+%\|/) || 
         trimmedLine.match(/\d+\/\d+\s*\[/) ||
         trimmedLine.match(/\[\d+:\d+<\d+:\d+/)) {
-      filteredCount++
-      l.dim(`${p} Filtering progress indicator`)
       continue
     }
     
@@ -110,7 +70,6 @@ function formatWhisperDiarizationTranscript(output: string): string {
         trimmedLine.includes('Warning:') || 
         trimmedLine.includes('ImportError') ||
         trimmedLine.includes('ModuleNotFoundError')) {
-      filteredCount++
       continue
     }
     
@@ -124,7 +83,6 @@ function formatWhisperDiarizationTranscript(output: string): string {
         const speakerMatches = [...afterTimestamp.matchAll(/Speaker (\d+):/g)]
         
         if (speakerMatches.length > 1) {
-          duplicateFixCount++
           const lastSpeakerMatch = speakerMatches[speakerMatches.length - 1]
           if (lastSpeakerMatch && lastSpeakerMatch[1]) {
             const speaker = lastSpeakerMatch[1]
@@ -133,7 +91,6 @@ function formatWhisperDiarizationTranscript(output: string): string {
             
             if (text) {
               formattedTranscript += `[${timestamp}] Speaker ${speaker}: ${text}\n`
-              l.dim(`${p} Fixed duplicate speaker label, extracted: "${text.substring(0, 50)}..."`)
             }
           }
         } else if (speakerMatches.length === 1) {
@@ -157,14 +114,6 @@ function formatWhisperDiarizationTranscript(output: string): string {
     } else if (!trimmedLine.match(/^\s*$/) && !trimmedLine.includes('Speaker')) {
       formattedTranscript += trimmedLine + '\n'
     }
-  }
-  
-  if (filteredCount > 0) {
-    l.dim(`${p} Filtered ${filteredCount} technical output lines`)
-  }
-  
-  if (duplicateFixCount > 0) {
-    l.dim(`${p} Fixed ${duplicateFixCount} duplicate speaker labels`)
   }
   
   return formattedTranscript.trim() || '[00:00] Speaker 1: Transcription processing completed'
@@ -191,11 +140,10 @@ export async function callWhisperDiarization(
     if (configuredModel) {
       modelId = configuredModel.modelId
       costPerMinuteCents = configuredModel.costPerMinuteCents
-      l.dim(`${p} Using configured model: ${modelId}`)
     } else {
       modelId = requestedModel
       costPerMinuteCents = 0
-      l.warn(`${p} Model ${requestedModel} not in predefined list, using it anyway with cost 0`)
+      l.warn(`Model ${requestedModel} not in predefined list, using it anyway with cost 0`)
     }
     
     await ensureWhisperDiarizationEnv()
@@ -203,8 +151,6 @@ export async function callWhisperDiarization(
     const audioFilePath = `${finalPath}.wav`
     const pythonPath = './build/pyenv/whisper-diarization/bin/python'
     const scriptPath = './build/bin/whisper-diarize.py'
-    
-    l.dim(`${p} Running whisper-diarization with model: ${modelId}`)
     
     const diarizationArgs = [
       scriptPath,
@@ -217,8 +163,6 @@ export async function callWhisperDiarization(
       diarizationArgs.push('--no-stem')
     }
     
-    l.dim(`${p} Executing: ${pythonPath} ${diarizationArgs.join(' ')}`)
-    
     const { stdout, stderr } = await execPromise(
       `${pythonPath} ${diarizationArgs.join(' ')}`,
       { 
@@ -228,8 +172,6 @@ export async function callWhisperDiarization(
       }
     )
     
-    l.dim(`${p} Whisper-diarization completed`)
-    
     const combinedOutput = stdout + '\n' + stderr
     const transcript = formatWhisperDiarizationTranscript(combinedOutput)
     
@@ -238,10 +180,8 @@ export async function callWhisperDiarization(
     }
     
     if (transcript.includes('Using fallback whisper-only transcription')) {
-      l.warn(`${p} Diarization fell back to whisper-only mode`)
+      l.warn('Diarization fell back to whisper-only mode')
     }
-    
-    l.dim(`${p} Formatted transcript generated successfully`)
     
     return {
       transcript,

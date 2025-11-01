@@ -36,9 +36,8 @@ export async function checkWhisperModel(whisperModel: string) {
   const whisperCliPath = './build/bin/whisper-cli'
   const modelPath = `./build/models/ggml-${whisperModel}.bin`
 
-  l.dim(`${p} Checking for whisper-cli at: ${whisperCliPath}`)
   if (!existsSync(whisperCliPath)) {
-    l.warn(`${p} whisper-cli binary not found, attempting automatic setup`)
+    l.warn('whisper-cli binary not found, attempting automatic setup')
     
     const setupSuccess = await runSetupWithRetry(() => ensureWhisperBinary())
     if (!setupSuccess || !existsSync(whisperCliPath)) {
@@ -46,29 +45,23 @@ export async function checkWhisperModel(whisperModel: string) {
       throw new Error('whisper-cli binary not found after automatic setup attempt')
     }
     
-    l.success(`${p} whisper-cli binary successfully installed`)
+    l.success('whisper-cli binary successfully installed')
   }
 
-  l.dim(`${p} Checking for model at: ${modelPath}`)
   if (!existsSync(modelPath)) {
-    l.dim(`${p} Model not found, attempting automatic download: ${whisperModel}`)
-    
     const modelSuccess = await runSetupWithRetry(() => ensureWhisperModel(whisperModel))
     if (!modelSuccess || !existsSync(modelPath)) {
       err(`${p} Failed to automatically download model ${whisperModel}`)
       throw new Error(`Model ${whisperModel} not found after automatic download attempt`)
     }
     
-    l.success(`${p} Model ${whisperModel} successfully downloaded`)
+    l.success(`Model ${whisperModel} successfully downloaded`)
   }
-  
-  l.dim(`${p} Model validated at: ${modelPath}`)
 }
 
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
   const p = '[text/process-steps/02-run-transcription/whisper]'
   return new Promise((resolve, reject) => {
-    l.dim(`${p} Starting whisper process: ${command} ${args.join(' ')}`)
     const whisperProcess = spawn(command, args)
     let lastProgress = -1
     
@@ -93,7 +86,6 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
 
     whisperProcess.on('close', (code) => {
       if (code === 0) {
-        l.dim(`${p} Whisper process completed successfully`)
         resolve()
       } else {
         l.warn(`${p} Whisper process exited with code ${code}`)
@@ -128,7 +120,6 @@ export async function callWhisper(
 
     const { modelId, costPerMinuteCents } = chosenModel
 
-    l.dim(`${p} Using whisper model: ${modelId}`)
     await checkWhisperModel(modelId)
     
     const args = [
@@ -142,8 +133,6 @@ export async function callWhisper(
       '--output-json',
       '--print-progress'
     ]
-    
-    l.dim(`${p} Whisper command args: ${args.join(' ')}`)
     
     try {
       if (spinner) {
@@ -160,13 +149,11 @@ export async function callWhisper(
     }
 
     const jsonPath = `${finalPath}.json`
-    l.dim(`${p} Reading transcription result from: ${jsonPath}`)
     const jsonContent = await readFile(jsonPath, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)
     await unlink(jsonPath)
 
-    l.dim(`${p} Transcription completed successfully`)
     return {
       transcript: txtContent,
       modelId,

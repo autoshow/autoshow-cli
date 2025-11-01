@@ -55,8 +55,7 @@ esac
 quiet_brew_install() {
   local pkg="$1"
   if ! brew list --formula | grep -qx "$pkg"; then
-    echo "$p Installing $pkg..."
-    brew install "$pkg"
+    brew install "$pkg" >/dev/null 2>&1
   fi
 }
 
@@ -71,8 +70,6 @@ ensure_homebrew() {
   fi
 }
 
-echo "$p Starting AutoShow CLI setup (mode: $SETUP_MODE)"
-
 mkdir -p build/config
 mkdir -p build/pyenv
 
@@ -86,7 +83,7 @@ if [ -f ".env" ]; then
   set +a
 fi
 
-npm install
+npm install >/dev/null 2>&1
 
 if [ "$IS_MAC" != true ]; then
   echo "$p This script only supports macOS"
@@ -99,8 +96,6 @@ SETUP_DIR=".github/setup"
 
 case "$SETUP_MODE" in
   transcription)
-    echo "$p Setting up all transcription environments"
-    
     quiet_brew_install "cmake"
     quiet_brew_install "ffmpeg"
     quiet_brew_install "pkg-config"
@@ -110,26 +105,18 @@ case "$SETUP_MODE" in
     bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
     bash "$SETUP_DIR/transcription/diarization/whisper-diarization.sh"
     bash "$SETUP_DIR/transcription/models.sh"
-    
-    echo "$p Transcription setup completed"
     ;;
     
   whisper)
-    echo "$p Setting up whisper"
-    
     quiet_brew_install "cmake"
     quiet_brew_install "ffmpeg"
     quiet_brew_install "pkg-config"
     
     bash "$SETUP_DIR/transcription/whisper.sh"
     bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    
-    echo "$p Whisper setup completed"
     ;;
     
   whisper-coreml)
-    echo "$p Setting up whisper CoreML"
-    
     quiet_brew_install "cmake"
     quiet_brew_install "ffmpeg"
     quiet_brew_install "pkg-config"
@@ -138,26 +125,18 @@ case "$SETUP_MODE" in
     bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
     bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
     bash "$SETUP_DIR/transcription/coreml/generate-coreml-model.sh" base || true
-    
-    echo "$p Whisper CoreML setup completed"
     ;;
     
   whisper-diarization)
-    echo "$p Setting up whisper diarization"
-    
     quiet_brew_install "cmake"
     quiet_brew_install "ffmpeg"
     quiet_brew_install "pkg-config"
     quiet_brew_install "git"
     
     bash "$SETUP_DIR/transcription/diarization/whisper-diarization.sh"
-    
-    echo "$p Whisper diarization setup completed"
     ;;
     
   tts)
-    echo "$p Setting up TTS"
-    
     quiet_brew_install "ffmpeg"
     quiet_brew_install "espeak-ng"
     quiet_brew_install "pkg-config"
@@ -166,12 +145,9 @@ case "$SETUP_MODE" in
     bash "$SETUP_DIR/tts/kitten.sh"
     bash "$SETUP_DIR/tts/coqui.sh"
     bash "$SETUP_DIR/tts/models.sh"
-    
-    echo "$p TTS setup completed"
     ;;
     
   base)
-    echo "$p Base setup completed"
     ;;
 esac
 
