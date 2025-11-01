@@ -30,9 +30,6 @@ case "${1:-}" in
   --sd3)
     SETUP_MODE="sd3"
     ;;
-  --music)
-    SETUP_MODE="music"
-    ;;
   --transcription)
     SETUP_MODE="transcription"
     ;;
@@ -53,12 +50,11 @@ case "${1:-}" in
     ;;
   *)
     echo "$p ERROR: Invalid argument '$1'"
-    echo "$p Usage: $0 [--image|--sd1|--sd3|--music|--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
+    echo "$p Usage: $0 [--image|--sd1|--sd3|--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
     echo "$p   (no args): Base setup only (npm dependencies and directories)"
     echo "$p   --image: Setup image generation environment and download all models (SD 1.5 + SD 3.5)"
     echo "$p   --sd1: Setup Stable Diffusion 1.5 models only"
     echo "$p   --sd3: Setup Stable Diffusion 3.5 models only"
-    echo "$p   --music: Setup music generation environment and download models"
     echo "$p   --transcription: Setup all transcription environments and download models"
     echo "$p   --whisper: Setup whisper-metal (default whisper.cpp with Metal support)"
     echo "$p   --whisper-coreml: Setup whisper CoreML for optimized inference on Apple Silicon"
@@ -174,28 +170,6 @@ case "$SETUP_MODE" in
     bash "$SETUP_DIR/image/sd3_5.sh"
     
     echo "$p Stable Diffusion 3.5 setup completed"
-    ;;
-    
-  music)
-    echo "$p Setting up music generation environment and downloading models"
-    
-    echo "$p Installing required Homebrew packages for music generation"
-    quiet_brew_install "ffmpeg"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up shared TTS environment for music generation"
-    bash "$SETUP_DIR/tts/tts-env.sh"
-    
-    echo "$p Setting up AudioCraft"
-    bash "$SETUP_DIR/music/audiocraft.sh"
-    
-    echo "$p Setting up Stable Audio"
-    bash "$SETUP_DIR/music/stable-audio.sh"
-    
-    echo "$p Downloading music generation models"
-    bash "$SETUP_DIR/music/models.sh"
-    
-    echo "$p Music generation setup completed"
     ;;
     
   transcription)
@@ -341,7 +315,7 @@ case "$SETUP_MODE" in
     
   base)
     echo "$p Base setup completed (npm dependencies and directories only)"
-    echo "$p Run with --image, --sd1, --sd3, --music, --transcription, --whisper, --whisper-coreml, --whisper-diarization, or --tts to set up specific features"
+    echo "$p Run with --image, --sd1, --sd3, --transcription, --whisper, --whisper-coreml, --whisper-diarization, or --tts to set up specific features"
     ;;
 esac
 

@@ -64,7 +64,7 @@ if [ -n "$GROQ_API_KEY" ]; then
 fi
 
 if [ -n "$HF_TOKEN" ]; then
-    echo "$p Setting HF_TOKEN from environment for music model access"
+    echo "$p Setting HF_TOKEN from environment"
     sed -i "s/^HF_TOKEN=.*/HF_TOKEN=$HF_TOKEN/" .env
 fi
 
@@ -116,9 +116,6 @@ for model in tiny base small; do
         cd /app/build/models && wget -q "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${model}.bin" && cd /app
     fi
 done
-
-echo "$p Ensuring music model directories exist"
-mkdir -p /app/build/models/audiocraft /app/build/models/stable-audio
 
 echo "$p Checking CoreML availability"
 if [ -f "/app/build/config/.coreml-config.json" ]; then
