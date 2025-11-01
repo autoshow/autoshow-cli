@@ -2,7 +2,7 @@ import { l, err } from '@/logging'
 import { readFile, unlink, existsSync, execPromise, spawn } from '@/node-utils'
 import { formatWhisperTranscript } from './whisper.ts'
 import { callWhisper } from './whisper.ts'
-import { ensureCoreMLEnvironment, ensureWhisperModel, runSetupWithRetry } from '../../utils/setup-helpers'
+import { ensureCoreMLEnvironment, ensureWhisperModel, runSetupWithRetry, ensureCoreMLEncoder as ensureCoreMLEncoderHelper } from '../../utils/setup-helpers'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
@@ -133,6 +133,11 @@ async function ensureCoreMLEncoder(modelId: string): Promise<void> {
   }
   
   l.dim(`${p} Generating CoreML encoder for ${modelId}, this may take a few minutes...`)
+  
+  const encoderSuccess = await runSetupWithRetry(() => ensureCoreMLEncoderHelper(modelId), 1)
+  if (!encoderSuccess) {
+    throw new Error(`Failed to generate CoreML encoder for model: ${modelId}`)
+  }
    
   const newEncoder = await findCoreMLEncoder(modelId)
   if (!newEncoder) {
