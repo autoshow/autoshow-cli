@@ -9,6 +9,8 @@ cleanup_log() {
     rm -f "$LOGFILE"
   else
     echo "ERROR: Script failed (exit code $status). Logs saved in: $LOGFILE"
+    echo "Last 20 lines of log:"
+    tail -n 20 "$LOGFILE"
   fi
   exit $status
 }
@@ -17,303 +19,199 @@ trap cleanup_log EXIT
 set -euo pipefail
 p='[setup/index]'
 
-SETUP_MODE=""
-case "${1:-}" in
-  --image)
-    SETUP_MODE="image"
-    ;;
-  --sd1)
-    SETUP_MODE="sd1"
-    ;;
-  --sd3)
-    SETUP_MODE="sd3"
-    ;;
-  --music)
-    SETUP_MODE="music"
-    ;;
-  --transcription)
-    SETUP_MODE="transcription"
-    ;;
-  --whisper)
-    SETUP_MODE="whisper"
-    ;;
-  --whisper-coreml)
-    SETUP_MODE="whisper-coreml"
-    ;;
-  --whisper-diarization)
-    SETUP_MODE="whisper-diarization"
-    ;;
-  --tts)
-    SETUP_MODE="tts"
-    ;;
-  "")
-    SETUP_MODE="base"
+SETUP_MODE="${1:-base}"
+case "$SETUP_MODE" in
+  --transcription|--whisper|--whisper-coreml|--tts|base)
+    SETUP_MODE="${SETUP_MODE#--}"
     ;;
   *)
-    echo "$p ERROR: Invalid argument '$1'"
-    echo "$p Usage: $0 [--image|--sd1|--sd3|--music|--transcription|--whisper|--whisper-coreml|--whisper-diarization|--tts]"
-    echo "$p   (no args): Base setup only (npm dependencies and directories)"
-    echo "$p   --image: Setup image generation environment and download all models (SD 1.5 + SD 3.5)"
-    echo "$p   --sd1: Setup Stable Diffusion 1.5 models only"
-    echo "$p   --sd3: Setup Stable Diffusion 3.5 models only"
-    echo "$p   --music: Setup music generation environment and download models"
-    echo "$p   --transcription: Setup all transcription environments and download models"
-    echo "$p   --whisper: Setup whisper-metal (default whisper.cpp with Metal support)"
-    echo "$p   --whisper-coreml: Setup whisper CoreML for optimized inference on Apple Silicon"
-    echo "$p   --whisper-diarization: Setup whisper with speaker diarization capabilities"
-    echo "$p   --tts: Setup TTS environment and download models"
+    echo "$p Invalid argument '$1'"
+    echo "$p Usage: $0 [--transcription|--whisper|--whisper-coreml|--tts]"
     exit 1
     ;;
 esac
 
-IS_MAC=false
 case "$OSTYPE" in
-  darwin*) IS_MAC=true ;;
-  *) echo "$p ERROR: Only macOS is supported"; exit 1 ;;
+  darwin*) ;;
+  *) echo "$p Only macOS is supported"; exit 1 ;;
 esac
+
+log_dependency_info() {
+  local dep_name="$1"
+  local dep_command="${2:-$1}"
+  
+  if ! command -v "$dep_command" &>/dev/null; then
+    echo "$p $dep_name: not installed"
+    return
+  fi
+  
+  local location version
+  location=$(which "$dep_command" 2>/dev/null || echo "unknown")
+  
+  case "$dep_command" in
+    node)
+      version=$(node --version 2>/dev/null || echo "unknown")
+      ;;
+    npm)
+      version=$(npm --version 2>/dev/null || echo "unknown")
+      ;;
+    ffmpeg)
+      version=$(ffmpeg -version 2>/dev/null | head -n 1 | awk '{print $3}' || echo "unknown")
+      ;;
+    cmake)
+      version=$(cmake --version 2>/dev/null | head -n 1 | awk '{print $3}' || echo "unknown")
+      ;;
+    git)
+      version=$(git --version 2>/dev/null | awk '{print $3}' || echo "unknown")
+      ;;
+    yt-dlp)
+      version=$(yt-dlp --version 2>/dev/null || echo "unknown")
+      ;;
+    python3.11)
+      version=$(python3.11 --version 2>/dev/null | awk '{print $2}' || echo "unknown")
+      ;;
+    brew)
+      version=$(brew --version 2>/dev/null | head -n 1 | awk '{print $2}' || echo "unknown")
+      ;;
+    *)
+      version=$("$dep_command" --version 2>/dev/null | head -n 1 | awk '{print $NF}' || echo "unknown")
+      ;;
+  esac
+  
+  echo "$p $dep_name: $version (location: $location)"
+}
 
 quiet_brew_install() {
   local pkg="$1"
-  if ! brew list --formula | grep -qx "$pkg"; then
-    brew install "$pkg" &>/dev/null
+  if brew list --formula | grep -qx "$pkg"; then
+    echo "$p $pkg already installed"
+    return
   fi
+  echo "$p Installing $pkg via Homebrew..."
+  brew install "$pkg" >/dev/null 2>&1
+  echo "$p $pkg installed successfully"
 }
 
-command_exists() {
-  command -v "$1" &>/dev/null
-}
-
-ensure_homebrew() {
-  if ! command_exists brew; then
-    echo "$p ERROR: Homebrew not found. Install from https://brew.sh/"
-    exit 1
+check_and_update_ytdlp() {
+  if ! command -v yt-dlp &>/dev/null; then
+    echo "$p Installing yt-dlp..."
+    quiet_brew_install "yt-dlp"
+    log_dependency_info "yt-dlp"
+    return
   fi
+
+  local current_version latest_version
+  current_version=$(yt-dlp --version 2>/dev/null || echo "0")
+  latest_version=$(brew info yt-dlp 2>/dev/null | grep -m 1 "yt-dlp:" | awk '{print $3}' || echo "0")
+  
+  if [ "$current_version" != "$latest_version" ] && [ "$latest_version" != "0" ]; then
+    echo "$p Updating yt-dlp from $current_version to $latest_version..."
+    brew upgrade yt-dlp >/dev/null 2>&1 || quiet_brew_install "yt-dlp"
+    echo "$p yt-dlp updated successfully"
+  else
+    echo "$p yt-dlp already at latest version"
+  fi
+  
+  log_dependency_info "yt-dlp"
 }
 
-echo "$p Starting AutoShow CLI setup (mode: $SETUP_MODE)"
-
-echo "$p Running base setup (npm dependencies and directories)"
 mkdir -p build/config
-echo "$p Created build/config directory"
 mkdir -p build/pyenv
-echo "$p Created build/pyenv directory for Python environments"
 
 if [ ! -f ".env" ] && [ -f ".env.example" ]; then
   cp .env.example .env
+  echo "$p Created .env file from .env.example"
 fi
 
 if [ -f ".env" ]; then
-  echo "$p Loading environment from .env"
   set -a
   . ./.env
   set +a
-  if [ -n "${HF_TOKEN:-}" ]; then
-    echo "$p Detected HF_TOKEN starting with ${HF_TOKEN:0:8}..."
-  fi
 fi
 
-npm install
+echo "$p Installing Node.js dependencies..."
+npm install >/dev/null 2>&1
+echo "$p Node.js dependencies installed"
 
-if [ "$IS_MAC" != true ]; then
-  echo "$p ERROR: This script only supports macOS"
+echo "$p Checking system dependencies..."
+if ! command -v brew &>/dev/null; then
+  echo "$p Homebrew not found. Install from https://brew.sh/"
   exit 1
 fi
-
-ensure_homebrew
+log_dependency_info "Homebrew" "brew"
+log_dependency_info "Node.js" "node"
+log_dependency_info "npm"
+check_and_update_ytdlp
 
 SETUP_DIR=".github/setup"
 
+install_brew_deps() {
+  for pkg in "$@"; do
+    quiet_brew_install "$pkg"
+    local display_name
+    case "$pkg" in
+      cmake) display_name="CMake" ;;
+      ffmpeg) display_name="FFmpeg" ;;
+      pkg-config) display_name="pkg-config" ;;
+      git) display_name="Git" ;;
+      espeak-ng) display_name="eSpeak NG" ;;
+      *) display_name="$pkg" ;;
+    esac
+    log_dependency_info "$display_name" "$pkg"
+  done
+}
+
 case "$SETUP_MODE" in
-  image)
-    echo "$p Setting up image generation environment and downloading models"
-    
-    echo "$p Installing required Homebrew packages for image generation"
-    quiet_brew_install "cmake"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up stable-diffusion.cpp"
-    bash "$SETUP_DIR/image/sdcpp.sh"
-    
-    echo "$p Downloading image generation models"
-    bash "$SETUP_DIR/image/sd1_5.sh"
-    bash "$SETUP_DIR/image/sd3_5.sh"
-    
-    echo "$p Image generation setup completed"
-    ;;
-    
-  sd1)
-    echo "$p Setting up Stable Diffusion 1.5 models only"
-    
-    echo "$p Installing required Homebrew packages for image generation"
-    quiet_brew_install "cmake"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up stable-diffusion.cpp"
-    bash "$SETUP_DIR/image/sdcpp.sh"
-    
-    echo "$p Downloading Stable Diffusion 1.5 models"
-    bash "$SETUP_DIR/image/sd1_5.sh"
-    
-    echo "$p Stable Diffusion 1.5 setup completed"
-    ;;
-    
-  sd3)
-    echo "$p Setting up Stable Diffusion 3.5 models only"
-    
-    echo "$p Installing required Homebrew packages for image generation"
-    quiet_brew_install "cmake"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up stable-diffusion.cpp"
-    bash "$SETUP_DIR/image/sdcpp.sh"
-    
-    echo "$p Downloading Stable Diffusion 3.5 models"
-    bash "$SETUP_DIR/image/sd3_5.sh"
-    
-    echo "$p Stable Diffusion 3.5 setup completed"
-    ;;
-    
-  music)
-    echo "$p Setting up music generation environment and downloading models"
-    
-    echo "$p Installing required Homebrew packages for music generation"
-    quiet_brew_install "ffmpeg"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up shared TTS environment for music generation"
-    bash "$SETUP_DIR/tts/tts-env.sh"
-    
-    echo "$p Setting up AudioCraft"
-    bash "$SETUP_DIR/music/audiocraft.sh"
-    
-    echo "$p Setting up Stable Audio"
-    bash "$SETUP_DIR/music/stable-audio.sh"
-    
-    echo "$p Downloading music generation models"
-    bash "$SETUP_DIR/music/models.sh"
-    
-    echo "$p Music generation setup completed"
-    ;;
-    
   transcription)
-    echo "$p Setting up all transcription environments and downloading models"
-    
-    echo "$p Installing required Homebrew packages for transcription"
-    quiet_brew_install "cmake"
-    quiet_brew_install "ffmpeg"
-    quiet_brew_install "pkg-config"
-    quiet_brew_install "git"
-    
-    echo "$p Setting up Whisper CPU"
+    echo "$p Setting up transcription dependencies..."
+    install_brew_deps cmake ffmpeg pkg-config git
+    echo "$p Building Whisper.cpp..."
     bash "$SETUP_DIR/transcription/whisper.sh"
-    
-    echo "$p Setting up Whisper Metal"
-    bash "$SETUP_DIR/transcription/whisper-metal.sh"
-    
-    echo "$p Setting up Whisper CoreML"
-    bash "$SETUP_DIR/transcription/whisper-coreml.sh"
-    
-    echo "$p Setting up Whisper Diarization"
-    bash "$SETUP_DIR/transcription/whisper-diarization.sh"
-    
-    echo "$p Downloading transcription models"
+    echo "$p Building Whisper CoreML..."
+    bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
+    echo "$p Downloading transcription models..."
     bash "$SETUP_DIR/transcription/models.sh"
-    
-    echo "$p All transcription environments setup completed"
     ;;
     
   whisper)
-    echo "$p Setting up whisper-metal (default whisper.cpp with Metal support)"
-    
-    echo "$p Installing required Homebrew packages for whisper"
-    quiet_brew_install "cmake"
-    quiet_brew_install "ffmpeg"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up Whisper CPU"
+    echo "$p Setting up Whisper transcription..."
+    install_brew_deps cmake ffmpeg pkg-config
+    echo "$p Building Whisper.cpp..."
     bash "$SETUP_DIR/transcription/whisper.sh"
-    
-    echo "$p Setting up Whisper Metal"
-    bash "$SETUP_DIR/transcription/whisper-metal.sh"
-    
-    echo "$p Downloading whisper models"
+    echo "$p Downloading base model..."
     bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    
-    echo "$p Whisper-metal setup completed"
     ;;
     
   whisper-coreml)
-    echo "$p Setting up whisper CoreML for optimized inference on Apple Silicon"
-    
-    echo "$p Installing required Homebrew packages for whisper CoreML"
-    quiet_brew_install "cmake"
-    quiet_brew_install "ffmpeg"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up Whisper CPU (base dependency)"
+    echo "$p Setting up Whisper CoreML transcription..."
+    install_brew_deps cmake ffmpeg pkg-config
+    echo "$p Building Whisper.cpp..."
     bash "$SETUP_DIR/transcription/whisper.sh"
-    
-    echo "$p Setting up Whisper CoreML"
-    bash "$SETUP_DIR/transcription/whisper-coreml.sh"
-    
-    echo "$p Downloading whisper models"
+    echo "$p Building Whisper CoreML..."
+    bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
+    echo "$p Downloading base model..."
     bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    
-    echo "$p Generating CoreML models"
-    bash "$SETUP_DIR/transcription/generate-coreml-model.sh" base
-    
-    echo "$p Whisper CoreML setup completed"
-    ;;
-    
-  whisper-diarization)
-    echo "$p Setting up whisper with speaker diarization capabilities"
-    
-    echo "$p Installing required Homebrew packages for whisper diarization"
-    quiet_brew_install "cmake"
-    quiet_brew_install "ffmpeg"
-    quiet_brew_install "pkg-config"
-    quiet_brew_install "git"
-    
-    echo "$p Setting up Whisper CPU (base dependency)"
-    bash "$SETUP_DIR/transcription/whisper.sh"
-    
-    echo "$p Setting up Whisper Diarization"
-    bash "$SETUP_DIR/transcription/whisper-diarization.sh"
-    
-    echo "$p Downloading whisper models"
-    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    bash "$SETUP_DIR/transcription/download-ggml-model.sh" medium.en "./build/models"
-    
-    echo "$p Whisper diarization setup completed"
+    echo "$p Generating CoreML model..."
+    bash "$SETUP_DIR/transcription/coreml/generate-coreml-model.sh" base || true
     ;;
     
   tts)
-    echo "$p Setting up TTS environment and downloading models"
-    
-    echo "$p Installing required Homebrew packages for TTS"
-    quiet_brew_install "ffmpeg"
-    quiet_brew_install "espeak-ng"
-    quiet_brew_install "pkg-config"
-    
-    echo "$p Setting up shared TTS environment"
+    echo "$p Setting up Text-to-Speech dependencies..."
+    install_brew_deps ffmpeg espeak-ng pkg-config
+    echo "$p Setting up TTS Python environment..."
     bash "$SETUP_DIR/tts/tts-env.sh"
-    
-    echo "$p Setting up Kitten TTS"
+    echo "$p Installing Kitten TTS..."
     bash "$SETUP_DIR/tts/kitten.sh"
-    
-    echo "$p Setting up Coqui TTS"
+    echo "$p Installing Coqui TTS..."
     bash "$SETUP_DIR/tts/coqui.sh"
-    
-    echo "$p Downloading TTS models"
+    echo "$p Downloading TTS models..."
     bash "$SETUP_DIR/tts/models.sh"
-    
-    echo "$p TTS setup completed"
     ;;
     
   base)
-    echo "$p Base setup completed (npm dependencies and directories only)"
-    echo "$p Run with --image, --sd1, --sd3, --music, --transcription, --whisper, --whisper-coreml, --whisper-diarization, or --tts to set up specific features"
+    echo "$p Base setup completed - core dependencies verified"
     ;;
 esac
 
 echo "$p Setup completed successfully"
+exit 0

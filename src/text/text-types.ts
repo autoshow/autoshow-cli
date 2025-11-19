@@ -23,7 +23,6 @@ export type ProcessingOptions = {
   saveAudio?: boolean
   whisper?: boolean | string
   whisperCoreml?: boolean | string
-  whisperDiarization?: boolean | string
   deepgram?: boolean | string
   assembly?: boolean | string
   groqWhisper?: boolean | string
@@ -47,8 +46,6 @@ export type ProcessingOptions = {
   metaInfo?: boolean
   keyMomentsCount?: number
   keyMomentDuration?: number
-  save?: 's3' | 'r2'
-  s3BucketPrefix?: string
   inputDir?: string
   outputDir?: string
   [key: string]: any

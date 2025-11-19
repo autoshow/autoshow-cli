@@ -5,6 +5,9 @@ import {
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
 } from '../tts-utils'
+import {
+  ensureTtsEnvironment, checkKittenInstalled, runKittenSetup
+} from '../tts-utils/setup-utils'
 
 const p = '[tts/tts-services/kitten]'
 
@@ -12,17 +15,37 @@ const getKittenConfig = () => {
   const configPath = path.join(process.cwd(), 'build/config', '.tts-config.json')
   l.dim(`${p} Loading config from: ${configPath}`)
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
-  const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['KITTEN_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'build/pyenv/tts/bin/python')) ? path.join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
+  
+  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['KITTEN_PYTHON_PATH']
+  
+  if (!pythonPath || !existsSync(pythonPath)) {
+    l.dim(`${p} Python path not configured, checking for environment...`)
+    pythonPath = ensureTtsEnvironment()
+  }
+  
   l.dim(`${p} Using Python path: ${pythonPath}`)
   return { python: pythonPath, ...config.kitten }
 }
 
 const verifyKittenEnvironment = (pythonPath: string) => {
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
-  if (versionResult.error || versionResult.status !== 0) err(`${p} Python not accessible at ${pythonPath}. Run: npm run setup`)
-  const checkResult = spawnSync(pythonPath, ['-c', 'import kittentts'], { encoding: 'utf-8', stdio: 'pipe' })
-  if (checkResult.status !== 0) err(`${p} Kitten TTS not installed. Run: npm run setup`)
+  if (versionResult.error || versionResult.status !== 0) {
+    l.dim(`${p} Python not accessible, attempting to set up environment...`)
+    const newPythonPath = ensureTtsEnvironment()
+    return verifyKittenEnvironment(newPythonPath)
+  }
+  
+  if (!checkKittenInstalled(pythonPath)) {
+    l.dim(`${p} Kitten TTS not installed, attempting automatic setup...`)
+    const setupSuccessful = runKittenSetup()
+    if (!setupSuccessful) {
+      err(`${p} Failed to automatically set up Kitten TTS. Please run: npm run setup:tts`)
+    }
+    
+    if (!checkKittenInstalled(pythonPath)) {
+      err(`${p} Kitten TTS still not available after setup. Please check installation logs.`)
+    }
+  }
 }
 
 export async function synthesizeWithKitten(

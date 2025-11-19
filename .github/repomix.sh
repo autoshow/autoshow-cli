@@ -1,20 +1,19 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  "*"
-  "src/*"
   ".github/setup"
-  "docs/setup.md"
-  "docs/image/01-image-command.md"
-  "docs/image/05-sdcpp-options.md"
-  "src/image"
+  "*"
+  "docs/*"
+  "docs/text"
+  "src/*"
+  "src/text"
 )
 
 IGNORE_PATHS=(
-  ".github/parse.ts"
-  "README.md"
-  "WARP.md"
   "new-llm-*.md"
+  "src/text/process-steps/03-select-prompts"
+  "src/text/process-steps/04-run-llm"
+  ".github/setup/tts"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")
@@ -69,7 +68,7 @@ while [ -f "$OUTPUT_FILE" ]; do
   COUNTER=$((COUNTER + 1))
 done
 
-repomix \
+npx repomix \
   --instruction-file-path "$INSTRUCTION_FILE" \
   --include "$INCLUDE_STRING" \
   --ignore "$IGNORE_STRING" \

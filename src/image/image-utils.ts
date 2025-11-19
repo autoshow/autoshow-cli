@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
+import { execSync } from 'node:child_process'
 import { l, err } from '@/logging'
 import type { ApiError } from '@/image/image-types'
 
@@ -75,4 +76,28 @@ export const handleError = (error: any): void => {
   )
   
   err(`${p} ${matched ? matched[1] : `Error: ${error.message}`}`)
+}
+
+export async function ensureNpmDependencies(): Promise<boolean> {
+  const requestId = Math.random().toString(36).substring(2, 10)
+  
+  try {
+    l.dim(`${p} [${requestId}] Checking npm dependencies`)
+    
+    if (!existsSync('node_modules')) {
+      l.warn(`${p} [${requestId}] node_modules not found, running npm install`)
+      execSync('npm install', {
+        stdio: 'inherit',
+        encoding: 'utf8'
+      })
+      l.success(`${p} [${requestId}] npm dependencies installed successfully`)
+    } else {
+      l.dim(`${p} [${requestId}] npm dependencies already installed`)
+    }
+    
+    return true
+  } catch (error) {
+    l.warn(`${p} [${requestId}] Failed to install npm dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    return false
+  }
 }

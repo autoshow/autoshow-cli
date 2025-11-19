@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 import { l } from '@/logging'
-import { generateUniqueFilename, isApiError } from '../image-utils.ts'
+import { generateUniqueFilename, isApiError, ensureNpmDependencies } from '../image-utils.ts'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, BlackForestLabsOptions } from '../image-types'
 
@@ -18,6 +18,8 @@ export async function generateImageWithBlackForestLabs(
   const uniqueOutputPath = outputPath || generateUniqueFilename('blackforest', 'jpg')
   
   try {
+    await ensureNpmDependencies()
+    
     if (!env['BFL_API_KEY']) {
       throw new Error('BFL_API_KEY environment variable is missing')
     }

@@ -1,5 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
+import { isWhisperConfigured, autoSetupWhisper } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
@@ -28,41 +29,9 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
     .join('\n')
 }
 
-export async function checkWhisperModel(whisperModel: string) {
-  const p = '[text/process-steps/02-run-transcription/whisper]'
-  if (whisperModel === 'turbo') whisperModel = 'large-v3-turbo'
-
-  const whisperCliPath = './build/bin/whisper-cli'
-  const modelPath = `./build/models/ggml-${whisperModel}.bin`
-
-  l.dim(`${p} Checking for whisper-cli at: ${whisperCliPath}`)
-  if (!existsSync(whisperCliPath)) {
-    l.warn(`${p} whisper-cli binary not found at: ${whisperCliPath}`)
-    err('whisper-cli binary not found. Please run setup script: npm run setup')
-    throw new Error('whisper-cli binary not found')
-  }
-
-  l.dim(`${p} Checking for model at: ${modelPath}`)
-  if (!existsSync(modelPath)) {
-    l.dim(`${p} Downloading model: ${whisperModel}`)
-    try {
-      await execPromise(
-        `bash ./.github/setup/transcription/download-ggml-model.sh ${whisperModel} ./build/models`,
-        { maxBuffer: 10000 * 1024 }
-      )
-      l.dim(`${p} Model download completed`)
-    } catch (error) {
-      err(`${p} Error downloading model: ${(error as Error).message}`)
-      throw error
-    }
-  }
-  l.dim(`${p} Model validated at: ${modelPath}`)
-}
-
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
   const p = '[text/process-steps/02-run-transcription/whisper]'
   return new Promise((resolve, reject) => {
-    l.dim(`${p} Starting whisper process: ${command} ${args.join(' ')}`)
     const whisperProcess = spawn(command, args)
     let lastProgress = -1
     
@@ -87,7 +56,6 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
 
     whisperProcess.on('close', (code) => {
       if (code === 0) {
-        l.dim(`${p} Whisper process completed successfully`)
         resolve()
       } else {
         l.warn(`${p} Whisper process exited with code ${code}`)
@@ -109,6 +77,11 @@ export async function callWhisper(
 ) {
   const p = '[text/process-steps/02-run-transcription/whisper]'
 
+  if (!isWhisperConfigured()) {
+    l.dim(`${p} Whisper not found, initiating automatic setup`)
+    await autoSetupWhisper()
+  }
+
   try {
     const whisperModel = typeof options.whisper === 'string'
       ? options.whisper
@@ -122,8 +95,16 @@ export async function callWhisper(
 
     const { modelId, costPerMinuteCents } = chosenModel
 
-    l.dim(`${p} Using whisper model: ${modelId}`)
-    await checkWhisperModel(modelId)
+    const whisperCliPath = './build/bin/whisper-cli'
+    const modelPath = `./build/models/ggml-${modelId}.bin`
+
+    if (!existsSync(whisperCliPath)) {
+      throw new Error(`whisper-cli not found at ${whisperCliPath}. Run: npm run setup:whisper`)
+    }
+
+    if (!existsSync(modelPath)) {
+      throw new Error(`Model ${modelId} not found at ${modelPath}. Run: npm run setup:whisper`)
+    }
     
     const args = [
       '--no-gpu',
@@ -136,8 +117,6 @@ export async function callWhisper(
       '--output-json',
       '--print-progress'
     ]
-    
-    l.dim(`${p} Whisper command args: ${args.join(' ')}`)
     
     try {
       if (spinner) {
@@ -154,13 +133,11 @@ export async function callWhisper(
     }
 
     const jsonPath = `${finalPath}.json`
-    l.dim(`${p} Reading transcription result from: ${jsonPath}`)
     const jsonContent = await readFile(jsonPath, 'utf8')
     const parsedJson = JSON.parse(jsonContent)
     const txtContent = formatWhisperTranscript(parsedJson)
     await unlink(jsonPath)
 
-    l.dim(`${p} Transcription completed successfully`)
     return {
       transcript: txtContent,
       modelId,
