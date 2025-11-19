@@ -13,7 +13,6 @@ Installs npm dependencies and creates directory structure. No Python environment
 npm run setup:transcription       # Audio transcription (Whisper variants)
 npm run setup:whisper             # Whisper.cpp configured for Metal
 npm run setup:whisper-coreml      # Whisper.cpp configured for Apple CoreML
-npm run setup:whisper-diarization # Whisper with diarization (speaker labels) added
 
 npm run setup:tts                 # Text-to-speech (Coqui + Kitten)
 ```
@@ -38,7 +37,7 @@ Each feature is self-contained and won't affect others if setup fails.
 
 ### Transcription (`--transcription`)
 - **Binaries:** whisper-cli, whisper-cli-metal, whisper-cli-coreml
-- **Environments:** `build/pyenv/coreml/`, `build/pyenv/whisper-diarization/`
+- **Environments:** `build/pyenv/coreml/`
 - **Models:** GGML base model (~140MB), CoreML models (macOS)
 - **Dependencies:** cmake, ffmpeg, git
 

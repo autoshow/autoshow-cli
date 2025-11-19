@@ -90,8 +90,7 @@ export function validateCommandInput(options: ProcessingOptions): {
   const llmServices = selectedLLMs[0]
   let transcriptServices: string | undefined
   
-  if (options.whisperDiarization) transcriptServices = 'whisperDiarization'
-  else if (options.whisperCoreml) transcriptServices = 'whisperCoreml'
+  if (options.whisperCoreml) transcriptServices = 'whisperCoreml'
   else if (options.deepgram) transcriptServices = 'deepgram'
   else if (options.assembly) transcriptServices = 'assembly'
   else if (options.whisper) transcriptServices = 'whisper'
@@ -183,7 +182,6 @@ export const createTextCommand = (): Command => {
     .option('--days <number>', 'Number of days to look back for items for RSS and channel processing', parseInt)
     .option('--info [type]', 'Skip processing and write metadata to JSON objects. Use "combined" to merge multiple RSS feeds.', false)
     .option('--whisper-coreml [model]', 'Use Whisper.cpp (CoreML) for transcription with optional model specification (e.g., base, base.en, large-v3-turbo)')
-    .option('--whisper-diarization [model]', 'Use Whisper with speaker diarization for transcription with optional model specification (e.g., medium.en, large-v2)')
     .option('--whisper [model]', 'Use Whisper.cpp for transcription with optional model specification (e.g., base, large-v3-turbo)')
     .option('--deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-3)')
     .option('--assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., universal, nano)')
