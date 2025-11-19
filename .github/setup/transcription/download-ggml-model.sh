@@ -79,10 +79,8 @@ if echo "$model" | grep -q "tdrz"; then
     pfx="resolve/main/ggml"
 fi
 echo "$model" | grep -q '^"tdrz"*$'
-printf "Downloading ggml model %s from '%s' ...\n" "$model" "$src"
-cd "$models_path" || exit
+cd "$models_path" || exit 1
 if [ -f "ggml-$model.bin" ]; then
-    printf "Model %s already exists. Skipping download.\n" "$model"
     exit 0
 fi
 if [ -x "$(command -v wget2)" ]; then
@@ -97,15 +95,6 @@ else
 fi
 if [ $? -ne 0 ]; then
     printf "Failed to download ggml model %s \n" "$model"
-    printf "Please try again later or download the original Whisper model files and convert them yourself.\n"
     exit 1
 fi
-if command -v whisper-cli >/dev/null 2>&1; then
-    whisper_cmd="whisper-cli"
-else
-    whisper_cmd="./build/bin/whisper-cli"
-fi
-printf "Done! Model '%s' saved in '%s/ggml-%s.bin'\n" "$model" "$models_path" "$model"
-printf "You can now use it like this:\n\n"
-printf "  $ %s -m %s/ggml-%s.bin -f samples/jfk.wav\n" "$whisper_cmd" "$models_path" "$model"
-printf "\n"
+exit 0

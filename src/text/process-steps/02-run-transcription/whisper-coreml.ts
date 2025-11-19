@@ -1,6 +1,6 @@
 import { err } from '@/logging'
 import { readFile, unlink, existsSync, spawn } from '@/node-utils'
-import { isWhisperCoreMLConfigured, autoSetupWhisperCoreML } from '../../utils/setup-helpers'
+import { isWhisperCoreMLConfigured, autoSetupWhisperCoreML, ensureCoreMLModelExists } from '../../utils/setup-helpers'
 import { formatWhisperTranscript } from './whisper'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
@@ -81,12 +81,16 @@ export async function callWhisperCoreml(
 
   const modelPath = `./build/models/ggml-${whisperModel}.bin`
   if (!existsSync(modelPath)) {
-    throw new Error(`Model ${whisperModel} not found at ${modelPath}. Run: npm run setup:whisper-coreml`)
+    await ensureCoreMLModelExists(whisperModel)
   }
 
   const encoderPath = await findCoreMLEncoder(whisperModel)
   if (!encoderPath) {
-    throw new Error(`CoreML encoder not found for ${whisperModel}. Run: npm run setup:whisper-coreml`)
+    await ensureCoreMLModelExists(whisperModel)
+    const retryEncoderPath = await findCoreMLEncoder(whisperModel)
+    if (!retryEncoderPath) {
+      throw new Error(`CoreML encoder not found for ${whisperModel} even after generation attempt`)
+    }
   }
 
   const args = [

@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
-import { isWhisperConfigured, autoSetupWhisper } from '../../utils/setup-helpers'
+import { isWhisperConfigured, autoSetupWhisper, ensureModelExists } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
@@ -103,7 +103,8 @@ export async function callWhisper(
     }
 
     if (!existsSync(modelPath)) {
-      throw new Error(`Model ${modelId} not found at ${modelPath}. Run: npm run setup:whisper`)
+      l.wait(`${p} Model ${modelId} not found, downloading automatically...`)
+      await ensureModelExists(modelId)
     }
     
     const args = [

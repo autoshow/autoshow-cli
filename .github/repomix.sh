@@ -7,12 +7,14 @@ INCLUDE_PATHS=(
   "docs/text"
   "src/*"
   "src/text"
+  "test/text"
 )
 
 IGNORE_PATHS=(
   "new-llm-*.md"
-  "src/text/process-steps/03-select-prompts"
-  "src/text/process-steps/04-run-llm"
+  "src/text/process-steps/03-select-prompts/content-structure-summaries"
+  "src/text/process-steps/03-select-prompts/creative-entertainment"
+  "src/text/process-steps/03-select-prompts/marketing-social-media"
   ".github/setup/tts"
 )
 
