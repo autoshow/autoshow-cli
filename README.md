@@ -127,9 +127,9 @@ npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assem
 Specify LLM service:
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-4o-mini
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-3-5-haiku-latest
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-1.5-flash
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-5-nano
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-sonnet-4-20250514
+npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-2.5-flash
 ```
 
 Customize prompts:

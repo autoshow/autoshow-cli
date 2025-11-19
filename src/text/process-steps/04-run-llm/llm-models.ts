@@ -13,10 +13,7 @@ export const LLM_SERVICES_CONFIG = {
     models: [
       { modelName: 'GPT 5', modelId: 'gpt-5', inputCostPer1M: 1.25, outputCostPer1M: 10.00, inputCostPer1MCents: 125, outputCostPer1MCents: 1000 },
       { modelName: 'GPT 5 Mini', modelId: 'gpt-5-mini', inputCostPer1M: 0.25, outputCostPer1M: 2.00, inputCostPer1MCents: 25, outputCostPer1MCents: 200 },
-      { modelName: 'GPT 5 Nano', modelId: 'gpt-5-nano', inputCostPer1M: 0.05, outputCostPer1M: 0.40, inputCostPer1MCents: 5, outputCostPer1MCents: 40 },
-      { modelName: 'GPT 4.1 Nano', modelId: 'gpt-4.1-nano', inputCostPer1M: 0.10, outputCostPer1M: 0.40, inputCostPer1MCents: 10, outputCostPer1MCents: 40 },
-      { modelName: 'GPT 4.1', modelId: 'gpt-4.1', inputCostPer1M: 2.00, outputCostPer1M: 8.00, inputCostPer1MCents: 200, outputCostPer1MCents: 800 },
-      { modelName: 'GPT 4.1 Mini', modelId: 'gpt-4.1-mini', inputCostPer1M: 0.40, outputCostPer1M: 1.60, inputCostPer1MCents: 40, outputCostPer1MCents: 160 }
+      { modelName: 'GPT 5 Nano', modelId: 'gpt-5-nano', inputCostPer1M: 0.05, outputCostPer1M: 0.40, inputCostPer1MCents: 5, outputCostPer1MCents: 40 }
     ]
   },
   claude: {
@@ -25,7 +22,6 @@ export const LLM_SERVICES_CONFIG = {
     label: 'Claude',
     apiKeyPropName: 'anthropicApiKey',
     models: [
-      { modelName: 'Claude Sonnet 3.7', modelId: 'claude-3-7-sonnet-20250219', inputCostPer1M: 3.00, outputCostPer1M: 15.00, inputCostPer1MCents: 300, outputCostPer1MCents: 1500 },
       { modelName: 'Claude Opus 4', modelId: 'claude-opus-4-20250514', inputCostPer1M: 15.00, outputCostPer1M: 75.00, inputCostPer1MCents: 1500, outputCostPer1MCents: 7500 },
       { modelName: 'Claude Sonnet 4', modelId: 'claude-sonnet-4-20250514', inputCostPer1M: 3.00, outputCostPer1M: 15.00, inputCostPer1MCents: 300, outputCostPer1MCents: 1500 },
       { modelName: 'Claude Opus 4.1', modelId: 'claude-opus-4-1-20250805', inputCostPer1M: 15.00, outputCostPer1M: 75.00, inputCostPer1MCents: 1500, outputCostPer1MCents: 7500 }

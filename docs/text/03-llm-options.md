@@ -52,18 +52,6 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt
    ```bash
    npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5-nano
    ```
-4. **GPT 4.1 Nano** (`gpt-4.1-nano`)
-   ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-4.1-nano
-   ```
-5. **GPT 4.1** (`gpt-4.1`)
-   ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-4.1
-   ```
-6. **GPT 4.1 Mini** (`gpt-4.1-mini`)
-   ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-4.1-mini
-   ```
 
 ## Anthropic Claude
 
@@ -73,19 +61,15 @@ If you have set your `ANTHROPIC_API_KEY`:
 npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude
 ```
 
-1. **Claude Sonnet 3.7** (`claude-3-7-sonnet-20250219`)
-   ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-3-7-sonnet-20250219
-   ```
-2. **Claude Opus 4** (`claude-opus-4-20250514`)
+1. **Claude Opus 4** (`claude-opus-4-20250514`)
    ```bash
    npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-20250514
    ```
-3. **Claude Sonnet 4** (`claude-sonnet-4-20250514`)
+2. **Claude Sonnet 4** (`claude-sonnet-4-20250514`)
    ```bash
    npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-sonnet-4-20250514
    ```
-4. **Claude Opus 4.1** (`claude-opus-4-1-20250805`)
+3. **Claude Opus 4.1** (`claude-opus-4-1-20250805`)
    ```bash
    npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-1-20250805
    ```

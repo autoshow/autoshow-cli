@@ -13,10 +13,6 @@ const cliCommands = [
   { 'gpt-5': 'npm run as -- text --file "input/audio.mp3" --chatgpt gpt-5' },
   { 'gpt-5-mini': 'npm run as -- text --file "input/audio.mp3" --chatgpt gpt-5-mini' },
   { 'gpt-5-nano': 'npm run as -- text --file "input/audio.mp3" --chatgpt gpt-5-nano' },
-  { 'gpt-4.1-nano': 'npm run as -- text --file "input/audio.mp3" --chatgpt gpt-4.1-nano' },
-  { 'gpt-4.1': 'npm run as -- text --file "input/audio.mp3" --chatgpt gpt-4.1' },
-  { 'gpt-4.1-mini': 'npm run as -- text --file "input/audio.mp3" --chatgpt gpt-4.1-mini' },
-  { 'claude-3-7-sonnet-20250219': 'npm run as -- text --file "input/audio.mp3" --claude claude-3-7-sonnet-20250219' },
   { 'claude-opus-4-20250514': 'npm run as -- text --file "input/audio.mp3" --claude claude-opus-4-20250514' },
   { 'claude-sonnet-4-20250514': 'npm run as -- text --file "input/audio.mp3" --claude claude-sonnet-4-20250514' },
   { 'claude-opus-4-1-20250805': 'npm run as -- text --file "input/audio.mp3" --claude claude-opus-4-1-20250805' },
@@ -66,11 +62,9 @@ test('CLI model tests', { concurrency: 1 }, async (t) => {
         const oldPath = join(outputDirectory, file)
         if (!existsSync(oldPath)) continue
         
-        // Extract file extension and base name
         const fileExtension = file.substring(file.lastIndexOf('.'))
         const baseName = file.substring(0, file.lastIndexOf('.'))
         
-        // Create new name with counter, base name, and model
         const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${model}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         renameSync(oldPath, newPath)
