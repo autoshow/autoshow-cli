@@ -3,8 +3,6 @@ import { writeFile, ensureDir } from '@/node-utils'
 import { callChatGPT, callClaude, callGemini } from './llm-services.ts'
 import { LLM_SERVICES_CONFIG } from './llm-models.ts'
 import { formatCost, logLLMCost } from '../../utils/cost.ts'
-import { uploadAllOutputFiles } from '@/save'
-import type { UploadMetadata } from '@/save/save-types.ts'
 import type { ProcessingOptions, ShowNoteMetadata, ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '@/text/text-types'
 
 export async function runLLM(
@@ -14,11 +12,7 @@ export async function runLLM(
   prompt: string,
   transcript: string,
   metadata: ShowNoteMetadata,
-  llmServices?: string,
-  transcriptionServices?: string,
-  transcriptionModel?: string,
-  transcriptionCost?: number,
-  audioDuration?: number
+  llmServices?: string
 ) {
   const p = '[text/process-steps/05-run-llm]'
   l.step(`\nStep 4 - Run Language Model\n`)
@@ -30,9 +24,7 @@ export async function runLLM(
   metadata.mnemonic = options['mnemonic'] || metadata.mnemonic
   try {
     let showNotesResult = ''
-    let llmCost = 0
     let userModel = ''
-    let promptSections = options.prompt || ['summary', 'longChapters']
     if (llmServices) {
       const config = LLM_SERVICES_CONFIG[llmServices as keyof typeof LLM_SERVICES_CONFIG]
       if (!config) {
@@ -63,7 +55,7 @@ export async function runLLM(
         default:
           throw new Error(`Unknown LLM service: ${llmServices}`)
       }
-      const costBreakdown = logLLMCost({
+      logLLMCost({
         name: userModel,
         stopReason: showNotesData.usage?.stopReason ?? 'unknown',
         tokenUsage: {
@@ -72,7 +64,6 @@ export async function runLLM(
           total: showNotesData.usage?.total
         }
       })
-      llmCost = costBreakdown.totalCost ?? 0
       const showNotes = showNotesData.content
       const outputFilename = `${finalPath}-${llmServices}-shownotes.md`
       await writeFile(outputFilename, `${frontMatter}\n${showNotes}\n\n## Transcript\n\n${transcript}`)
@@ -84,27 +75,7 @@ export async function runLLM(
       l.dim(`${p} Writing front matter + prompt + transcript to file:\n    - ${noLLMFile}`)
       await writeFile(noLLMFile, `${frontMatter}\n${prompt}\n## Transcript\n\n${transcript}`)
     }
-    if (options.save) {
-      l.dim(`${p} Uploading output files to cloud storage (${options.save})`)
-      const transcriptionCostCents = Math.round((transcriptionCost || 0) * 100)
-      const llmCostCents = Math.round(llmCost * 100)
-      
-      const uploadMetadata: UploadMetadata = {
-        metadata,
-        transcriptionService: transcriptionServices,
-        transcriptionModel,
-        transcriptionCostCents,
-        audioDuration: audioDuration || 0,
-        llmService: llmServices,
-        llmModel: userModel,
-        llmCostCents,
-        promptSections,
-        transcript,
-        llmOutput: showNotesResult
-      }
-      
-      await uploadAllOutputFiles(finalPath, options, uploadMetadata)
-    }
+    
     return showNotesResult
   } catch (error) {
     err(`${p} Error running Language Model: ${(error as Error).message}`)

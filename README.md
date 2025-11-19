@@ -1,18 +1,18 @@
 <div align="center">
-  <h1>AutoShow CLI</h1>
-  <img alt="autoshow logo" src="https://ajc.pics/autoshow/autoshow-cover-01.webp" width="300" />
+  <h1>AutoShow CLI</h1>
+  <img alt="autoshow logo" src="https://ajc.pics/autoshow/autoshow-cover-01.webp" width="300" />
 </div>
 
 ## Outline
 
 - [Project Overview](#project-overview)
-  - [Prompts and Content Formats](#prompts-and-content-formats)
-  - [Key Features](#key-features)
-  - [AutoShow Pipeline](#autoshow-pipeline)
+  - [Prompts and Content Formats](#prompts-and-content-formats)
+  - [Key Features](#key-features)
+  - [AutoShow Pipeline](#autoshow-pipeline)
 - [Setup](#setup)
 - [Core AutoShow Commands](#core-autoshow-commands)
-  - [Process Options](#process-options)
-  - [Transcription and LLM Options](#transcription-and-llm-options)
+  - [Process Options](#process-options)
+  - [Transcription and LLM Options](#transcription-and-llm-options)
 - [Contributors](#contributors)
 
 ## Project Overview

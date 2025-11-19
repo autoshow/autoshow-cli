@@ -1,6 +1,6 @@
 # Image Generation Command
 
-Create AI-generated images using multiple services including DALL-E 3, Black Forest Labs, AWS Nova Canvas, stable-diffusion.cpp, and Runway.
+Create AI-generated images using multiple cloud-based services including DALL-E 3, Black Forest Labs, AWS Nova Canvas, and Runway.
 
 ## Quick Start
 
@@ -11,8 +11,6 @@ npm run as -- image generate --prompt "A majestic dragon" --service bfl
 
 npm run as -- image generate --prompt "Space station interior" --service nova
 
-npm run as -- image generate --prompt "A beautiful sunset" --service sdcpp
-
 npm run as -- image generate --prompt "Futuristic cityscape" --service runway
 ```
 
@@ -21,7 +19,6 @@ npm run as -- image generate --prompt "Futuristic cityscape" --service runway
 - **DALL-E 3** (`dalle`) - OpenAI's latest image generation model
 - **Black Forest Labs** (`bfl`) - High-quality Flux models  
 - **AWS Nova Canvas** (`nova`) - Amazon's image generation service
-- **stable-diffusion.cpp** (`sdcpp`) - Local generation with SD1.5 and SD3.5
 - **Runway** (`runway`) - Professional image generation
 
 ## Service Comparison
@@ -47,4 +44,3 @@ RUNWAYML_API_SECRET=your_runway_key
 - [DALL-E 3 Options](./02-dalle-options.md)
 - [Black Forest Labs Options](./03-bfl-options.md)
 - [AWS Nova Canvas Options](./04-nova-options.md)
-- [stable-diffusion.cpp Options](./05-sdcpp-options.md)

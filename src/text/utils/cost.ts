@@ -1,19 +1,9 @@
-import chalk from 'chalk'
 import { l } from '@/logging'
-import { execPromise } from '@/node-utils'
+import { colorUtils } from '@/logging'
+import { getAudioDuration } from './setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/02-run-transcription/transcription-models'
 import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models'
 import type { ProcessingOptions } from '@/text/text-types'
-
-export async function getAudioDuration(filePath: string): Promise<number> {
-  const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${filePath}"`
-  const { stdout } = await execPromise(cmd)
-  const seconds = parseFloat(stdout.trim())
-  if (isNaN(seconds)) {
-    throw new Error(`Could not parse audio duration for file: ${filePath}`)
-  }
-  return seconds
-}
 
 export async function logTranscriptionCost(info: {
   modelId: string
@@ -173,7 +163,7 @@ export function logLLMCost(info: {
     costLines.push(`Output: ${formatCost(outputCost)}`)
   }
   if (totalCost !== undefined) {
-    costLines.push(`Total: ${chalk.bold(formatCost(totalCost))}`)
+    costLines.push(`Total: ${colorUtils.bold(formatCost(totalCost))}`)
   }
   
   l.dim(`LLM Cost - Model: ${displayName}, Status: ${stopReason}, Tokens: [${tokenLines.join(', ')}], Cost: [${costLines.join(', ')}]`)
