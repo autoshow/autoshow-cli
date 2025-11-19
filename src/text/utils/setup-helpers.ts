@@ -36,6 +36,93 @@ export function isWhisperCoreMLConfigured(): boolean {
   return existsSync(whisperCoreMLBinary) && existsSync(baseModel)
 }
 
+export function checkModelExists(modelId: string): boolean {
+  const modelPath = `./build/models/ggml-${modelId}.bin`
+  return existsSync(modelPath)
+}
+
+export async function downloadModel(modelId: string): Promise<void> {
+  const p = '[text/utils/setup-helpers]'
+  
+  l.wait(`${p} Downloading model ${modelId}...`)
+  
+  try {
+    const result = spawnSync(
+      './.github/setup/transcription/download-ggml-model.sh',
+      [modelId, './build/models'],
+      { stdio: 'inherit', shell: true }
+    )
+    
+    if (result.status !== 0) {
+      throw new Error(`Model download script exited with code ${result.status}`)
+    }
+    
+    if (!checkModelExists(modelId)) {
+      throw new Error(`Model download completed but file not found`)
+    }
+    
+    l.success(`${p} Model ${modelId} downloaded successfully`)
+  } catch (error) {
+    err(`${p} Failed to download model ${modelId}: ${(error as Error).message}`)
+    throw error
+  }
+}
+
+export async function ensureModelExists(modelId: string): Promise<void> {
+  const p = '[text/utils/setup-helpers]'
+  
+  if (!checkModelExists(modelId)) {
+    l.wait(`${p} Model ${modelId} not found, downloading...`)
+    await downloadModel(modelId)
+  }
+}
+
+export function checkCoreMLModelExists(modelId: string): boolean {
+  const mlmodelcPath = `./build/models/ggml-${modelId}-encoder.mlmodelc`
+  const mlpackagePath = `./build/models/ggml-${modelId}-encoder.mlpackage`
+  const altPackagePath = `./build/models/coreml-encoder-${modelId}.mlpackage`
+  
+  return existsSync(mlmodelcPath) || existsSync(mlpackagePath) || existsSync(altPackagePath)
+}
+
+export async function generateCoreMLModel(modelId: string): Promise<void> {
+  const p = '[text/utils/setup-helpers]'
+  
+  l.wait(`${p} Generating CoreML model for ${modelId}...`)
+  
+  try {
+    const result = spawnSync(
+      './.github/setup/transcription/coreml/generate-coreml-model.sh',
+      [modelId],
+      { stdio: 'inherit', shell: true }
+    )
+    
+    if (result.status !== 0) {
+      throw new Error(`CoreML generation script exited with code ${result.status}`)
+    }
+    
+    if (!checkCoreMLModelExists(modelId)) {
+      throw new Error(`CoreML model generation completed but artifact not found`)
+    }
+    
+    l.success(`${p} CoreML model for ${modelId} generated successfully`)
+  } catch (error) {
+    err(`${p} Failed to generate CoreML model for ${modelId}: ${(error as Error).message}`)
+    throw error
+  }
+}
+
+export async function ensureCoreMLModelExists(modelId: string): Promise<void> {
+  const p = '[text/utils/setup-helpers]'
+  
+  await ensureModelExists(modelId)
+  
+  if (!checkCoreMLModelExists(modelId)) {
+    l.wait(`${p} CoreML model for ${modelId} not found, generating...`)
+    await generateCoreMLModel(modelId)
+  }
+}
+
 export async function autoSetupWhisper(): Promise<void> {
   const p = '[text/utils/setup-helpers]'
   
