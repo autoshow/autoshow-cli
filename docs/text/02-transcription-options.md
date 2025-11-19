@@ -6,7 +6,6 @@
 - [Transcription Services](#transcription-services)
   - [Whisper](#whisper)
   - [Whisper CoreML](#whisper-coreml)
-  - [Whisper Diarization](#whisper-diarization)
   - [Deepgram](#deepgram)
   - [Assembly](#assembly)
 
@@ -36,30 +35,6 @@ npm run as -- text --file "input/audio.mp3" --whisper large-v3-turbo
 ```bash
 npm run as -- text --file "input/audio.mp3" --whisper-coreml large-v3-turbo
 ```
-
-### Whisper Diarization
-
-The `--whisper-diarization` option combines OpenAI Whisper with advanced speaker diarization capabilities using Voice Activity Detection (VAD) and Speaker Embedding to identify different speakers in the audio. This option provides automatic speaker identification and separation.
-
-```bash
-npm run as -- text --file "input/audio.mp3" --whisper-diarization
-```
-
-Select model:
-
-```bash
-npm run as -- text --file "input/audio.mp3" --whisper-diarization medium.en
-npm run as -- text --file "input/audio.mp3" --whisper-diarization large-v3
-npm run as -- text --file "input/audio.mp3" --whisper-diarization base.en
-```
-
-The whisper-diarization service automatically:
-- Extracts vocals from audio to improve speaker embedding accuracy
-- Generates transcription using Whisper
-- Corrects and aligns timestamps using forced alignment
-- Uses MarbleNet for Voice Activity Detection (VAD) and segmentation
-- Applies TitaNet for speaker embedding extraction
-- Associates timestamps with speakers for each word and realigns using punctuation models
 
 ### Deepgram
 
@@ -101,7 +76,7 @@ Include speaker labels and number of speakers:
 
 ```bash
 npm run as -- text \
-  --video "https://ajc.pics/audio/fsjam-short.mp3" \
+  --video "https://ajc.pics/autoshow/fsjam-short.mp3" \
   --assembly \
   --speakerLabels
 ```

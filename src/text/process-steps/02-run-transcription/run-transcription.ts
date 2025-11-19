@@ -3,7 +3,6 @@ import { callDeepgram } from './deepgram.ts'
 import { callAssembly } from './assembly.ts'
 import { callGroqWhisper } from './groq-whisper.ts'
 import { callWhisperCoreml } from './whisper-coreml.ts'
-import { callWhisperDiarization } from './whisper-diarization.ts'
 import { logTranscriptionCost, estimateTranscriptCost } from '../../utils/cost.ts'
 import { checkFFmpeg, getAudioDuration } from '../../utils/setup-helpers.ts'
 import { l, err } from '@/logging'
@@ -29,9 +28,7 @@ export async function runTranscription(
 
   let serviceToUse = transcriptServicesInput
   if (!serviceToUse) {
-    if (options.whisperDiarization) {
-      serviceToUse = 'whisperDiarization'
-    } else if (options.whisperCoreml) {
+    if (options.whisperCoreml) {
       serviceToUse = 'whisperCoreml'
     } else if (options.whisper) {
       serviceToUse = 'whisper'
@@ -64,13 +61,6 @@ export async function runTranscription(
 
   try {
     switch (serviceToUse) {
-      case 'whisperDiarization': {
-        const result = await callWhisperDiarization(options, finalPath)
-        finalTranscript = result.transcript
-        finalModelId = result.modelId
-        finalCostPerMinuteCents = result.costPerMinuteCents
-        break
-      }
       case 'deepgram': {
         const result = await callDeepgram(options, finalPath)
         finalTranscript = result.transcript

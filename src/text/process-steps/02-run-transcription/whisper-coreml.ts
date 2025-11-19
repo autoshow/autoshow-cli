@@ -1,6 +1,7 @@
 import { err } from '@/logging'
 import { readFile, unlink, existsSync, spawn } from '@/node-utils'
-import { formatWhisperTranscript } from './whisper.ts'
+import { isWhisperCoreMLConfigured, autoSetupWhisperCoreML } from '../../utils/setup-helpers'
+import { formatWhisperTranscript } from './whisper'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
@@ -63,6 +64,10 @@ export async function callWhisperCoreml(
   finalPath: string,
   spinner?: Ora
 ) {
+  if (!isWhisperCoreMLConfigured()) {
+    await autoSetupWhisperCoreML()
+  }
+
   const whisperModel = typeof options['whisperCoreml'] === 'string'
     ? options['whisperCoreml']
     : options['whisperCoreml'] === true

@@ -4,31 +4,16 @@ INCLUDE_PATHS=(
   ".github/setup"
   "*"
   "docs/*"
-  # "docs/text/01-text-command.md"
-  "docs/text/02-transcription-options.md"
+  "docs/text"
   "src/*"
-  # "src/extract"
-  # "src/image"
-  # "src/media"
-  "src/text/*"
-  # "src/text/process-commands/video.ts"
-  "src/text/process-commands/file.ts"
-  "src/text/process-steps/01-process-content"
-  "src/text/process-steps/02-run-transcription/run-transcription.ts"
-  "src/text/process-steps/02-run-transcription/transcription-models.ts"
-  "src/text/process-steps/02-run-transcription/whisper-coreml.ts"
-  "src/text/process-steps/02-run-transcription/whisper-diarization.ts"
-  "src/text/process-steps/02-run-transcription/whisper.ts"
-  # "src/text/process-steps/03-select-prompts/*"
-  # "src/text/process-steps/04-run-llm"
-  "src/text/utils"
-  # "src/tts"
-  # "src/video"
-  # "test"
+  "src/text"
 )
 
 IGNORE_PATHS=(
   "new-llm-*.md"
+  "src/text/process-steps/03-select-prompts"
+  "src/text/process-steps/04-run-llm"
+  ".github/setup/tts"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

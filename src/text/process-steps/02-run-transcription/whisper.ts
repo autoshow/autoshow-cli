@@ -1,5 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
+import { isWhisperConfigured, autoSetupWhisper } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
@@ -75,6 +76,11 @@ export async function callWhisper(
   spinner?: Ora
 ) {
   const p = '[text/process-steps/02-run-transcription/whisper]'
+
+  if (!isWhisperConfigured()) {
+    l.dim(`${p} Whisper not found, initiating automatic setup`)
+    await autoSetupWhisper()
+  }
 
   try {
     const whisperModel = typeof options.whisper === 'string'
