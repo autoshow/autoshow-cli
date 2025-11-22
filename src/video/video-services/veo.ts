@@ -4,8 +4,6 @@ import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../vi
 import { env, readFileSync, existsSync } from '@/node-utils'
 import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig, VeoApiOperation } from '@/video/video-types.ts'
 
-const p = '[video/video-services/veo]'
-
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
 async function pollOperation(operationName: string, apiKey: string): Promise<VeoApiOperation> {
@@ -13,7 +11,7 @@ async function pollOperation(operationName: string, apiKey: string): Promise<Veo
   const maxAttempts = 60
   const pollInterval = 10000
   
-  l.dim(`${p} Starting polling for operation: ${operationName}`)
+  l.dim(`Starting polling for operation: ${operationName}`)
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
@@ -31,15 +29,15 @@ async function pollOperation(operationName: string, apiKey: string): Promise<Veo
         if (operation.error) {
           throw new Error(`Video generation failed: ${operation.error.message}`)
         }
-        l.dim(`${p} Operation completed successfully`)
-        l.dim(`${p} Response structure: ${JSON.stringify(operation.response, null, 2)}`)
+        l.dim('Operation completed successfully')
+        l.dim(`Response structure: ${JSON.stringify(operation.response, null, 2)}`)
         return operation
       }
       
-      l.dim(`${p} Still processing... (attempt ${attempt + 1}/${maxAttempts})`)
+      l.dim(`Still processing... (attempt ${attempt + 1}/${maxAttempts})`)
       await sleep(pollInterval)
     } catch (error) {
-      l.warn(`${p} Polling error: ${isApiError(error) ? error.message : 'Unknown error'}`)
+      l.warn(`Polling error: ${isApiError(error) ? error.message : 'Unknown error'}`)
       if (attempt === maxAttempts - 1) {
         throw error
       }
@@ -51,7 +49,7 @@ async function pollOperation(operationName: string, apiKey: string): Promise<Veo
 }
 
 async function downloadVideo(videoUri: string, apiKey: string, outputPath: string): Promise<void> {
-  l.dim(`${p} Downloading video from: ${videoUri}`)
+  l.dim(`Downloading video from: ${videoUri}`)
   
   const response = await fetch(videoUri, {
     headers: { 'x-goog-api-key': apiKey }
@@ -63,7 +61,7 @@ async function downloadVideo(videoUri: string, apiKey: string, outputPath: strin
   
   const buffer = await response.arrayBuffer()
   await writeFile(outputPath, Buffer.from(buffer))
-  l.dim(`${p} Video saved to: ${outputPath}`)
+  l.dim(`Video saved to: ${outputPath}`)
 }
 
 async function encodeImageToBase64(imagePath: string): Promise<{ imageBytes: string; mimeType: string }> {
@@ -96,15 +94,15 @@ export async function generateVideoWithVeo(
     const model = options.model || 'veo-3.0-fast-generate-preview'
     const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
     
-    l.opts(`${p} [${requestId}] Generating video with model: ${model}`)
-    l.dim(`${p} [${requestId}] Prompt: ${prompt}`)
+    l.opts(`Generating video with model: ${model}`)
+    l.dim(`Prompt: ${prompt}`)
     
     const requestBody: any = {
       instances: [{ prompt }]
     }
     
     if (options.image) {
-      l.dim(`${p} [${requestId}] Using image-to-video mode with: ${options.image}`)
+      l.dim(`Using image-to-video mode with: ${options.image}`)
       const imageData = await encodeImageToBase64(options.image)
       requestBody.instances[0].image = imageData
     }
@@ -116,7 +114,7 @@ export async function generateVideoWithVeo(
     
     if (Object.keys(config).length > 0) {
       requestBody.parameters = config
-      l.dim(`${p} [${requestId}] Using config: ${JSON.stringify(config)}`)
+      l.dim(`Using config: ${JSON.stringify(config)}`)
     }
     
     const submitResponse = await fetch(`${baseUrl}/models/${model}:predictLongRunning`, {
@@ -139,7 +137,7 @@ export async function generateVideoWithVeo(
       throw new Error('Invalid response: missing operation name')
     }
     
-    l.dim(`${p} [${requestId}] Operation started: ${operationName}`)
+    l.dim(`Operation started: ${operationName}`)
     
     const operation = await pollOperation(operationName, env['GEMINI_API_KEY'])
     
@@ -153,7 +151,7 @@ export async function generateVideoWithVeo(
     await downloadVideo(videoUri, env['GEMINI_API_KEY'], uniqueOutputPath)
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`${p} [${requestId}] Video generated in ${duration}s: ${uniqueOutputPath}`)
+    l.success(`Video generated in ${duration}s: ${uniqueOutputPath}`)
     
     return {
       success: true,
@@ -163,7 +161,7 @@ export async function generateVideoWithVeo(
     }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.warn(`${p} [${requestId}] Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l.warn(`Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',

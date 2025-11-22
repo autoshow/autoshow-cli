@@ -3,8 +3,6 @@ import { join, dirname } from 'node:path'
 import { l, err } from '@/logging'
 import type { ApiError } from '@/video/video-types'
 
-const p = '[video/video-utils]'
-
 export function generateUniqueFilename(prefix: string, extension: string = 'mp4'): string {
   const timestamp = generateTimestamp()
   const randomString = Math.random().toString(36).substring(2, 8)
@@ -21,7 +19,7 @@ export const isApiError = (error: unknown): error is ApiError =>
 
 export const handleError = (error: any): void => {
   if (!isApiError(error)) {
-    err(`${p} Unknown error: ${String(error)}`)
+    err(`Unknown error: ${String(error)}`)
   }
   
   const errorMap = {
@@ -38,7 +36,7 @@ export const handleError = (error: any): void => {
     error.name === key || error.message?.includes(key)
   )
   
-  err(`${p} ${matched ? matched[1] : `Error: ${error.message}`}`)
+  err(`${matched ? matched[1] : `Error: ${error.message}`}`)
 }
 
 export function ensureOutputDirectory(outputPath: string): void {
@@ -63,6 +61,6 @@ export function parseAspectRatio(value: string): '16:9' | '9:16' | undefined {
   if (validRatios.includes(value)) {
     return value as '16:9' | '9:16'
   }
-  l.warn(`${p} Invalid aspect ratio "${value}". Using default 16:9`)
+  l.warn(`Invalid aspect ratio "${value}". Using default 16:9`)
   return '16:9'
 }

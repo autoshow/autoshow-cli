@@ -14,4 +14,3 @@ https://feeds.captivate.fm/gradient-dissent/
 https://feeds.transistor.fm/this-day-in-ai
 https://feeds.megaphone.fm/nopriors
 https://feeds.simplecast.com/dOSE_bdP
-https://feeds.transistor.fm/high-agency-the-podcast-for-ai-builders

@@ -201,7 +201,7 @@ These commands automate processing for content organized within the `output/work
 Generate shownotes for AI category feeds (replace `YYYY-MM-DD` with the desired date, or omit for default behavior):
 
 ```bash
-npm run as -- text --rss --feed "01-ai-feeds.md" --date 2025-08-09 2025-08-10
+npm run as -- text --rss --feed "01-ai-feeds.md" --date 2025-11-01
 ```
 
 Generate shownotes and info files for AI category feeds:

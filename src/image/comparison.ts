@@ -7,9 +7,6 @@ import { generateImageWithNova } from './image-services/nova.ts'
 import { generateImageWithRunway } from './image-services/runway.ts'
 
 export async function generateComparisonImages(prompt: string): Promise<any> {
-  const p = '[image/image-services/comparison]'
-  const requestId = Math.random().toString(36).substring(2, 10)
-  
   try {
     const promises = []
     
@@ -33,7 +30,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       throw new Error('No API keys configured for comparison')
     }
     
-    l.opts(`${p} [${requestId}] Running ${promises.length} parallel generations`)
+    l.opts(`Running ${promises.length} parallel generations`)
     const results = await Promise.allSettled(promises)
     
     const comparison: any = { prompt }
@@ -43,7 +40,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.dalle = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.dalle) {
-        l.warn(`${p} [${requestId}] DALL-E failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l.warn(`DALL-E failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
       }
       resultIndex++
     }
@@ -52,7 +49,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.blackForest = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.blackForest) {
-        l.warn(`${p} [${requestId}] Black Forest Labs failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l.warn(`Black Forest Labs failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
       }
       resultIndex++
     }
@@ -61,7 +58,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.nova = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.nova) {
-        l.warn(`${p} [${requestId}] Nova Canvas failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l.warn(`Nova Canvas failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
       }
       resultIndex++
     }
@@ -70,14 +67,14 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.runway = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.runway) {
-        l.warn(`${p} [${requestId}] Runway failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l.warn(`Runway failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
       }
     }
     
-    l.success(`${p} [${requestId}] Comparison complete`)
+    l.success(`Comparison complete`)
     return comparison
   } catch (error) {
-    l.warn(`${p} [${requestId}] Comparison error: ${isApiError(error) ? error.message : 'Unknown error'}`)
+    l.warn(`Comparison error: ${isApiError(error) ? error.message : 'Unknown error'}`)
     
     return { 
       success: false, 

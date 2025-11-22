@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import { downloadAudioFromUrls } from './save-audio-urls.ts'
 import { convertLocalAudioFiles } from './save-audio-files.ts'
 
@@ -16,7 +16,7 @@ export const createMediaCommand = (): Command => {
     .option('--urls <markdownFile>', 'Path to markdown file containing URLs')
     .option('--verbose', 'Display detailed output from external tools')
     .action(async (options) => {
-      logInitialFunctionCall('mediaDownload', options)
+      l.opts(`Downloading audio from: ${options.urls}`)
       
       try {
         if (!options.urls) {
@@ -37,7 +37,7 @@ export const createMediaCommand = (): Command => {
     .option('--output <directory>', 'Output directory (default: output)')
     .option('--verbose', 'Display detailed output from external tools')
     .action(async (options) => {
-      logInitialFunctionCall('mediaConvert', options)
+      l.opts(`Converting media files from: ${options.files}`)
       
       try {
         if (!options.files) {

@@ -3,7 +3,7 @@ import { saveInfo } from '../../utils/save-info.ts'
 import { validateChannelOptions } from './channel-validation.ts'
 import { logChannelProcessingStatus } from './channel-logging.ts'
 import { selectVideos } from './selector.ts'
-import { err, logSeparator, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import { execFilePromise } from '@/node-utils'
 import type { ProcessingOptions } from '@/text/text-types'
 
@@ -13,9 +13,6 @@ export async function processChannel(
   llmServices?: string,
   transcriptServices?: string
 ): Promise<void> {
-  const p = '[text/process-commands/channel/index]'
-  logInitialFunctionCall('processChannel', { llmServices, transcriptServices })
-  
   try {
     validateChannelOptions(options)
 
@@ -27,7 +24,7 @@ export async function processChannel(
     ])
 
     if (stderr) {
-      err(`${p} yt-dlp warnings: ${stderr}`)
+      err(`yt-dlp warnings: ${stderr}`)
     }
 
     const { allVideos, videosToProcess } = await selectVideos(stdout, options)
@@ -40,21 +37,16 @@ export async function processChannel(
 
     for (const [index, video] of videosToProcess.entries()) {
       const url = video.url
-      logSeparator({
-        type: 'channel',
-        index,
-        total: videosToProcess.length,
-        descriptor: url
-      })
+      l.final(`Processing video ${index + 1}/${videosToProcess.length}: ${url}`)
 
       try {
         await processVideo(options, url, llmServices, transcriptServices)
       } catch (error) {
-        err(`${p} Error processing video ${url}: ${(error as Error).message}`)
+        err(`Error processing video ${url}: ${(error as Error).message}`)
       }
     }
   } catch (error) {
-    err(`${p} Error processing channel: ${(error as Error).message}`)
+    err(`Error processing channel: ${(error as Error).message}`)
     process.exit(1)
   }
 }

@@ -8,7 +8,6 @@ export async function filterRSSItems(
   channelLink?: string,
   channelImage?: string
 ): Promise<ShowNoteMetadata[]> {
-  const p = '[text/process-commands/rss/filters]'
   
   const defaultDate = new Date().toISOString().substring(0, 10)
   const unfilteredItems: ShowNoteMetadata[] = (feedItemsArray || [])
@@ -62,10 +61,6 @@ export async function filterRSSItems(
         ? unfilteredItems.slice().reverse()
         : unfilteredItems
     itemsToProcess = sortedItems
-  }
-  
-  if (itemsToProcess.length === 0 && unfilteredItems.length > 0) {
-    l.warn(`${p} No items matched the filter criteria`)
   }
   
   return itemsToProcess

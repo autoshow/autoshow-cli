@@ -4,8 +4,6 @@ import { ensureDir } from '@/node-utils'
 import { AUDIO_FMT, AUDIO_Q } from './create-media-command.ts'
 
 export async function downloadAudioFromUrls(markdownFile: string, verbose = false): Promise<void> {
-  const p = '[media/save-audio-urls]'
-  
   if (!markdownFile.toLowerCase().endsWith('.md')) {
     err(`Input file "${markdownFile}" is not a markdown file (.md extension required)`)
   }
@@ -24,7 +22,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
       err(`No URLs found in markdown file: ${markdownFile}`)
     }
     
-    l.opts(`${p} Processing ${urls.length} URLs with yt-dlp`)
+    l.opts(`Processing ${urls.length} URLs with yt-dlp`)
     
     const outputDir = 'output'
     await ensureDir(outputDir)
@@ -60,7 +58,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
       })
     })
     
-    l.success(`${p} Successfully downloaded ${urls.length} audio files`)
+    l.success(`Successfully downloaded ${urls.length} audio files`)
   } catch (error) {
     err(`Error reading markdown file: ${(error as Error).message}`)
   }

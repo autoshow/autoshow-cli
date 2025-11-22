@@ -21,9 +21,9 @@ RUNWAYML_API_SECRET=your_api_key_here
 ```bash
 # Animate an image
 npm run as -- video generate \
-  --prompt "Camera slowly pans left" \
-  --image input/photo.jpg \
-  --model gen4_turbo
+  --prompt "Ocean waves" \
+  --image input/wave.jpg \
+  --model gen3a_turbo
 
 # Extended duration
 npm run as -- video generate \

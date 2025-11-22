@@ -15,7 +15,6 @@ const serviceGenerators = {
 } as const
 
 export const createImageCommand = (): Command => {
-  const p = '[image/create-image-command]'
   const image = new Command('image').description('AI image generation operations')
 
   image
@@ -37,11 +36,11 @@ export const createImageCommand = (): Command => {
     .option('--runway-model <model>', 'Runway text-to-image model (if available)')
     .action(async (options) => {
       try {
-        l.dim(`${p} Starting generation with service: ${options.service}`)
+        l.dim(`Starting generation with service: ${options.service}`)
         
         const generator = serviceGenerators[options.service as keyof typeof serviceGenerators]
         if (!generator) {
-          err(`${p} Unknown service: ${options.service}. Use dalle, bfl, nova, or runway.`)
+          err(`Unknown service: ${options.service}. Use dalle, bfl, nova, or runway.`)
         }
         
         const result = await (options.service === 'bfl' 
@@ -63,13 +62,13 @@ export const createImageCommand = (): Command => {
           : generator(options.prompt, options.output))
         
         if (!result) {
-          err(`${p} Failed to generate image: result is undefined`)
+          err(`Failed to generate image: result is undefined`)
         }
         
         if (result.success) {
-          l.success(`${p} Image saved to: ${result.path}`)
+          l.success(`Image saved to: ${result.path}`)
         } else {
-          err(`${p} Failed to generate image: ${result.error}`)
+          err(`Failed to generate image: ${result.error}`)
         }
       } catch (error) {
         handleError(error)
@@ -82,13 +81,13 @@ export const createImageCommand = (): Command => {
     .action(async (prompt) => {
       try {
         const result = await generateComparisonImages(prompt)
-        l.success(`${p} Comparison completed`)
+        l.success(`Comparison completed`)
         
         const services = { dalle: 'DALL-E', blackForest: 'Black Forest Labs', nova: 'AWS Nova Canvas', runway: 'Runway' }
         Object.entries(services).forEach(([key, name]) => {
           const res = result[key]
           if (res?.success) {
-            l.success(`${p} ${name}: ${res.path}`)
+            l.success(`${name}: ${res.path}`)
           }
         })
       } catch (error) {

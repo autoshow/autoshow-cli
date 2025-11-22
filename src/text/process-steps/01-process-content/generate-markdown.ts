@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { err } from '@/logging'
 import { execFilePromise, basename, extname } from '@/node-utils'
 import { sanitizeTitle, constructOutputPath } from '../../utils/save-info.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
@@ -29,9 +29,6 @@ export async function generateMarkdown(
   options: ProcessingOptions,
   input: string | ShowNoteMetadata
 ) {
-  const p = '[text/process-steps/01-generate-markdown]'
-  l.step(`\nStep 1 - Process Content\n`)
-
   const { filename, metadata } = await (async () => {
     switch (true) {
       case !!options.video:
@@ -71,7 +68,7 @@ export async function generateMarkdown(
             }
           }
         } catch (error) {
-          err(`${p} Error extracting metadata for ${input}: ${error instanceof Error ? error.message : String(error)}`)
+          err(`Error extracting metadata for ${input}: ${error instanceof Error ? error.message : String(error)}`)
           throw error
         }
       case !!options.file:

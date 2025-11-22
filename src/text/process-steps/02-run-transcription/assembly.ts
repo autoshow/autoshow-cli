@@ -51,8 +51,6 @@ export async function callAssembly(
   options: ProcessingOptions,
   finalPath: string
 ) {
-  const p = '[text/transcription/assembly]'
-
   if (!env['ASSEMBLY_API_KEY']) {
     throw new Error('ASSEMBLY_API_KEY environment variable is not set. Please set it to your AssemblyAI API key.')
   }
@@ -142,7 +140,7 @@ export async function callAssembly(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`${p} Error processing transcription: ${(error as Error).message}`)
+    err(`Error processing transcription: ${(error as Error).message}`)
     throw error
   }
 }
