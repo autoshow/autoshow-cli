@@ -21,8 +21,6 @@ export async function convertLocalAudioFiles(
   outputDir?: string,
   verbose = false
 ): Promise<void> {
-  const p = '[media/save-audio-files]'
-  
   const targetDir = outputDir || 'output'
   
   const isInputDirectory = await isDirectory(input)
@@ -86,7 +84,7 @@ export async function convertLocalAudioFiles(
     })
   }))
   
-  l.success(`${p} All ${mediaFiles.length} files converted successfully`)
+  l.success(`All ${mediaFiles.length} files converted successfully`)
 }
 
 async function isDirectory(inputPath: string): Promise<boolean> {

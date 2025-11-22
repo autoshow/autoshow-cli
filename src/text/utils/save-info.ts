@@ -25,7 +25,6 @@ export async function saveInfo(
   data: string[] | VideoInfo[] | ShowNoteMetadata[],
   title?: string
 ) {
-  const p = '[text/utils/save-info]'
   
   await ensureDir('output')
   
@@ -96,7 +95,7 @@ export async function saveInfo(
         } as ShowNoteMetadata
       } catch (error) {
         err(
-          `${p} Error extracting metadata for ${url}: ${
+          `Error extracting metadata for ${url}: ${
             error instanceof Error ? error.message : String(error)
           }`
         )

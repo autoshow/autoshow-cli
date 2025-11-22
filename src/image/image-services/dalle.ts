@@ -9,8 +9,6 @@ export async function generateImageWithDallE(
   prompt: string, 
   outputPath?: string
 ): Promise<ImageGenerationResult> {
-  const p = '[image/image-services/dalle]'
-  const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   const uniqueOutputPath = outputPath || generateUniqueFilename('dalle', 'png')
   
@@ -21,7 +19,7 @@ export async function generateImageWithDallE(
       throw new Error('OPENAI_API_KEY environment variable is missing')
     }
     
-    l.dim(`${p} [${requestId}] Sending request to OpenAI API`)
+    l.dim(`Sending request to OpenAI API`)
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 
@@ -52,7 +50,7 @@ export async function generateImageWithDallE(
       throw new Error('Invalid response format')
     }
     
-    l.dim(`${p} [${requestId}] Image data received, saving to file`)
+    l.dim(`Image data received, saving to file`)
     await mkdir(dirname(uniqueOutputPath), { recursive: true }).catch(err => {
       if (isApiError(err) && err.code !== 'EEXIST') throw err
     })
@@ -60,7 +58,7 @@ export async function generateImageWithDallE(
     await writeFile(uniqueOutputPath, Buffer.from(imageData, 'base64'))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`${p} [${requestId}] Generated in ${duration}s: ${uniqueOutputPath}`)
+    l.success(`Generated in ${duration}s: ${uniqueOutputPath}`)
     
     return { 
       success: true, 
@@ -69,7 +67,7 @@ export async function generateImageWithDallE(
     }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.warn(`${p} [${requestId}] Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l.warn(`Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
     return { 
       success: false, 
       error: isApiError(error) ? error.message : 'Unknown error',

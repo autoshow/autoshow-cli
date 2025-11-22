@@ -6,7 +6,6 @@ import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
 async function runWithProgress(command: string, args: string[], spinner?: Ora): Promise<void> {
-  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args)
     let last = -1
@@ -29,12 +28,12 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
       if (code === 0) {
         resolve()
       } else {
-        err(`${p} CoreML whisper process exited with code ${code}`)
+        err(`CoreML whisper process exited with code ${code}`)
         reject(new Error(`whisper-cli-coreml exited with code ${code}`))
       }
     })
     proc.on('error', e => {
-      err(`${p} CoreML whisper process error: ${e.message}`)
+      err(`CoreML whisper process error: ${e.message}`)
       reject(e)
     })
   })

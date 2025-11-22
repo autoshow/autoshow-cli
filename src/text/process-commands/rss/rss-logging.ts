@@ -8,17 +8,17 @@ export function logRSSProcessingStatus(
   options: ProcessingOptions
 ): void {
   if (options.item && options.item.length > 0) {
-    l.dim(`\n  - Found ${total} items in the RSS feed.`)
-    l.dim(`  - Processing ${processing} specified items.`)
+    l.dim(`Found ${total} items in the RSS feed.`)
+    l.dim(`Processing ${processing} specified items.`)
   } else if (options.last) {
-    l.dim(`\n  - Found ${total} items in the RSS feed.`)
-    l.dim(`  - Processing the last ${options.last} items.`)
+    l.dim(`Found ${total} items in the RSS feed.`)
+    l.dim(`Processing the last ${options.last} items.`)
   } else if (options.days) {
-    l.dim(`\n  - Found ${total} items in the RSS feed.`)
-    l.dim(`  - Processing ${processing} items from the last ${options.days} days.\n`)
+    l.dim(`Found ${total} items in the RSS feed.`)
+    l.dim(`Processing ${processing} items from the last ${options.days} days.`)
   } else {
-    l.dim(`\n  - Found ${total} item(s) in the RSS feed.`)
-    l.dim(`  - Processing ${processing} item(s).\n`)
+    l.dim(`Found ${total} item(s) in the RSS feed.`)
+    l.dim(`Processing ${processing} item(s).`)
   }
 }
 
@@ -28,19 +28,17 @@ export async function logOperation(
   logFn: any,
   description: string
 ): Promise<void> {
-  const p = '[text/process-commands/rss/rss-logging]'
-  console.log('')
-  logFn(`${p}[${operationName}] Starting ${operationName}: ${description}`)
+  logFn(description)
   try {
     const { stdout, stderr } = await execPromise(command)
-    logFn(`${p}[${operationName}] stdout:`)
-    console.log(stdout)
+    if (stdout && stdout.trim()) {
+      console.log(stdout)
+    }
     if (stderr) {
-      l.warn(`${p}[${operationName}] stderr:`)
-      console.warn(stderr)
+      l.warn(stderr)
     }
   } catch (error: any) {
-    err(`${p}[${operationName}] Error during ${operationName}: ${error.message}`)
+    err(`Error during ${operationName}: ${error.message}`)
     throw error
   }
 }
@@ -50,14 +48,12 @@ export async function logCopy(source: string, destination: string, operationName
 }
 
 export async function logMkdir(targetPath: string, operationName: string): Promise<void> {
-  const p = '[text/process-commands/rss/rss-logging]'
-  console.log('')
   try {
     if (!existsSync(targetPath)) {
       await ensureDir(targetPath)
     }
   } catch (error: any) {
-    err(`${p}[${operationName}] Error creating directory ${targetPath}: ${error.message}`)
+    err(`Error creating directory ${targetPath}: ${error.message}`)
     throw error
   }
 }

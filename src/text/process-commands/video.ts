@@ -12,7 +12,6 @@ export async function processVideo(
   llmServices?: string,
   transcriptServices?: string
 ) {
-  const p = '[text/process-commands/video]'
   try {
     const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, url)
     await downloadAudio(options, url, filename)
@@ -37,7 +36,7 @@ export async function processVideo(
       transcript,
     }
   } catch (error) {
-    err(`${p} Error processing video: ${(error as Error).message}`)
+    err(`Error processing video: ${(error as Error).message}`)
     throw error
   }
 }

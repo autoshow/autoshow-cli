@@ -5,7 +5,6 @@ import type { ProcessingOptions } from '@/text/text-types'
 import ora from 'ora'
 
 export async function saveAudio(id: string, ensureFolders?: boolean) {
-  const p = '[text/process-steps/01-process-content/download-audio]'
   if (ensureFolders) {
     return
   }
@@ -17,7 +16,7 @@ export async function saveAudio(id: string, ensureFolders?: boolean) {
       await unlink(`${id}${ext}`)
     } catch (error) {
       if (error instanceof Error && (error as Error).message !== 'ENOENT') {
-        err(`${p} Error deleting file ${id}${ext}: ${(error as Error).message}`)
+        err(`Error deleting file ${id}${ext}: ${(error as Error).message}`)
       }
     }
   }
@@ -27,24 +26,23 @@ export async function executeWithRetry(
   command: string,
   args: string[],
 ) {
-  const p = '[text/process-steps/01-process-content/download-audio]'
   const maxRetries = 7
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const { stderr } = await execFilePromise(command, args)
       if (stderr) {
-        err(`${p} yt-dlp warnings: ${stderr}`)
+        err(`yt-dlp warnings: ${stderr}`)
       }
       return
     } catch (error) {
       if (attempt === maxRetries) {
-        err(`${p} Failed after ${maxRetries} attempts`)
+        err(`Failed after ${maxRetries} attempts`)
         throw error
       }
 
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`${p} Retry ${attempt} failed, waiting ${delayMs}ms...`)
+      l.dim(`Retry ${attempt} failed, waiting ${delayMs}ms...`)
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
@@ -55,8 +53,6 @@ export async function downloadAudio(
   input: string,
   filename: string
 ) {
-  const p = '[text/process-steps/01-process-content/download-audio]'
-
   const spinner = ora('Download Audio').start()
 
   const baseOutput = 'output'
@@ -94,7 +90,7 @@ export async function downloadAudio(
       spinner.succeed('Audio downloaded successfully.')
     } catch (error) {
       spinner.fail('Audio download failed.')
-      err(`${p} Error downloading audio: ${error instanceof Error ? error.message : String(error)}`)
+      err(`Error downloading audio: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
   } else if (options.file) {
@@ -104,7 +100,7 @@ export async function downloadAudio(
       const buffer = await readFile(input)
       const fileType = await detectFileTypeFromBuffer(new Uint8Array(buffer))
       
-      l.dim(`${p} Detected file type: ${fileType ? `${fileType.ext} (${fileType.mime})` : 'unknown'}`)
+      l.dim(`Detected file type: ${fileType ? `${fileType.ext} (${fileType.mime})` : 'unknown'}`)
 
       if (!fileType || !isSupportedFormat(fileType.ext)) {
         throw new Error(
@@ -118,7 +114,7 @@ export async function downloadAudio(
       spinner.succeed('File converted successfully.')
     } catch (error) {
       spinner.fail('File conversion failed.')
-      err(`${p} Error processing local file: ${error instanceof Error ? error.message : String(error)}`)
+      err(`Error processing local file: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
   } else {

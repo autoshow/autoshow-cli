@@ -30,7 +30,6 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
 }
 
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
-  const p = '[text/process-steps/02-run-transcription/whisper]'
   return new Promise((resolve, reject) => {
     const whisperProcess = spawn(command, args)
     let lastProgress = -1
@@ -58,13 +57,13 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
       if (code === 0) {
         resolve()
       } else {
-        l.warn(`${p} Whisper process exited with code ${code}`)
+        l.warn(`Whisper process exited with code ${code}`)
         reject(new Error(`whisper-cli exited with code ${code}`))
       }
     })
 
     whisperProcess.on('error', (error) => {
-      l.warn(`${p} Whisper process error: ${error.message}`)
+      l.warn(`Whisper process error: ${error.message}`)
       reject(error)
     })
   })
@@ -75,10 +74,8 @@ export async function callWhisper(
   finalPath: string,
   spinner?: Ora
 ) {
-  const p = '[text/process-steps/02-run-transcription/whisper]'
-
   if (!isWhisperConfigured()) {
-    l.dim(`${p} Whisper not found, initiating automatic setup`)
+    l.dim('Whisper not found, initiating automatic setup')
     await autoSetupWhisper()
   }
 
@@ -103,7 +100,7 @@ export async function callWhisper(
     }
 
     if (!existsSync(modelPath)) {
-      l.wait(`${p} Model ${modelId} not found, downloading automatically...`)
+      l.wait(`Model ${modelId} not found, downloading automatically...`)
       await ensureModelExists(modelId)
     }
     
@@ -129,7 +126,7 @@ export async function callWhisper(
         )
       }
     } catch (whisperError) {
-      err(`${p} Error running whisper-cli: ${(whisperError as Error).message}`)
+      err(`Error running whisper-cli: ${(whisperError as Error).message}`)
       throw whisperError
     }
 
@@ -145,7 +142,7 @@ export async function callWhisper(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`${p} Error in callWhisper: ${(error as Error).message}`)
+    err(`Error in callWhisper: ${(error as Error).message}`)
     process.exit(1)
   }
 }
