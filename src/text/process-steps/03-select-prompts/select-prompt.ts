@@ -11,6 +11,7 @@ export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
   { name: 'Summary', value: 'summary' },
   { name: 'Short Summary', value: 'shortSummary' },
   { name: 'Long Summary', value: 'longSummary' },
+  { name: 'Metadata', value: 'metadata' },
   { name: 'Bullet Point Summary', value: 'bulletPoints' },
   { name: 'Chapter Titles', value: 'chapterTitles' },
   { name: 'Short Chapters', value: 'shortChapters' },
@@ -62,7 +63,7 @@ export async function selectPrompts(options: ProcessingOptions) {
 
   let text = "This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.\n\n"
 
-  const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters']
+  const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters', 'metadata']
   l.dim(`Selected prompts: ${prompt.join(', ')}`)
 
   const validSections = prompt.filter(
