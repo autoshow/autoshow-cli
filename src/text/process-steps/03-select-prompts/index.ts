@@ -2,6 +2,7 @@ import { titles } from './content-structure-summaries/titles'
 import { summary } from './content-structure-summaries/summary'
 import { shortSummary } from './content-structure-summaries/short-summary'
 import { longSummary } from './content-structure-summaries/long-summary'
+import { metadata } from './content-structure-summaries/metadata'
 import { bulletPoints } from './content-structure-summaries/bullet-points'
 import { quotes } from './content-structure-summaries/quotes'
 import { chapterTitlesAndQuotes } from './content-structure-summaries/chapter-titles-and-quotes'
@@ -38,6 +39,7 @@ export const sections = {
   summary,
   shortSummary,
   longSummary,
+  metadata,
   bulletPoints,
   quotes,
   chapterTitlesAndQuotes,
