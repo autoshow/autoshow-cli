@@ -1,4 +1,3 @@
-import { l } from '@/logging'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function filterRSSItems(

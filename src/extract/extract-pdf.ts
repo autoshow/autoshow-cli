@@ -1,6 +1,5 @@
 import { l, err } from '@/logging'
-import { fs, path, execSync, ensureDir } from '@/node-utils'
-import { sleep } from '@/node-utils'
+import { stat, writeFile, rm, join, basename, ensureDir, sleep, execSync } from '@/node-utils'
 import type { ExtractResult, ExtractOptions, ExtractService, SinglePageExtractResult } from '@/extract/extract-types'
 import { extractWithZerox } from './extract-services/zerox'
 import { extractWithUnpdf } from './extract-services/unpdf'
@@ -9,7 +8,7 @@ import { extractWithTextract } from './extract-services/textract'
 const p = '[extract/extract-pdf]'
 
 const splitPdfIntoPages = async (pdfPath: string, requestId: string): Promise<string[]> => {
-  const tempDir = path.join('output', 'temp', requestId, 'pages')
+  const tempDir = join('output', 'temp', requestId, 'pages')
   await ensureDir(tempDir)
   
   try {
@@ -31,7 +30,7 @@ const splitPdfIntoPages = async (pdfPath: string, requestId: string): Promise<st
     const pagePaths: string[] = []
     
     for (let i = 0; i < pageCount; i++) {
-      const pageFile = path.join(tempDir, `page_${String(i + 1).padStart(3, '0')}.pdf`)
+      const pageFile = join(tempDir, `page_${String(i + 1).padStart(3, '0')}.pdf`)
       const pageRange = `[${i}]`
       execSync(`gm convert "${pdfPath}${pageRange}" "${pageFile}"`, { stdio: 'ignore' })
       pagePaths.push(pageFile)
@@ -76,9 +75,9 @@ const extractSinglePage = async (
 }
 
 const cleanupTempFiles = async (requestId: string): Promise<void> => {
-  const tempDir = path.join('output', 'temp', requestId)
+  const tempDir = join('output', 'temp', requestId)
   try {
-    await fs.rm(tempDir, { recursive: true, force: true })
+    await rm(tempDir, { recursive: true, force: true })
   } catch (error) {
     l.warn(`${p}[${requestId}] Failed to cleanup temp files`)
   }
@@ -86,7 +85,7 @@ const cleanupTempFiles = async (requestId: string): Promise<void> => {
 
 const isFile = async (filePath: string): Promise<boolean> => {
   try {
-    const stats = await fs.stat(filePath)
+    const stats = await stat(filePath)
     return stats.isFile()
   } catch {
     return false
@@ -157,13 +156,13 @@ export const extractPdf = async (
         : pageTexts.join('\n\n')
     }
     
-    const outputPath = options.output || path.join(
+    const outputPath = options.output || join(
       'output',
-      `${path.basename(pdfPath, '.pdf')}_extracted.txt`
+      `${basename(pdfPath, '.pdf')}_extracted.txt`
     )
     
     await ensureDir('output')
-    await fs.writeFile(outputPath, finalText, 'utf-8')
+    await writeFile(outputPath, finalText, 'utf-8')
     
     await cleanupTempFiles(requestId)
     

@@ -25,9 +25,9 @@ Create a `.env` file (or set them in your environment) for any service(s) you pl
 If you just want to calculate the estimated cost of input/output tokens for a given provider:
 
 ```bash
-npm run as -- --llmCost "input/audio-prompt.md" --chatgpt
-npm run as -- --llmCost "input/audio-prompt.md" --claude
-npm run as -- --llmCost "input/audio-prompt.md" --gemini
+bun as -- --llmCost "input/audio-prompt.md" --chatgpt
+bun as -- --llmCost "input/audio-prompt.md" --claude
+bun as -- --llmCost "input/audio-prompt.md" --gemini
 ```
 
 No LLM model will be called, and no LLM-based output file is generated.
@@ -37,20 +37,20 @@ No LLM model will be called, and no LLM-based output file is generated.
 If you have set your `OPENAI_API_KEY`:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt
 ```
 
 1. **GPT 5** (`gpt-5`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5
    ```
 2. **GPT 5 Mini** (`gpt-5-mini`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5-mini
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5-mini
    ```
 3. **GPT 5 Nano** (`gpt-5-nano`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5-nano
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5-nano
    ```
 
 ## Anthropic Claude
@@ -58,20 +58,20 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt
 If you have set your `ANTHROPIC_API_KEY`:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude
 ```
 
 1. **Claude Opus 4** (`claude-opus-4-20250514`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-20250514
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-20250514
    ```
 2. **Claude Sonnet 4** (`claude-sonnet-4-20250514`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-sonnet-4-20250514
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-sonnet-4-20250514
    ```
 3. **Claude Opus 4.1** (`claude-opus-4-1-20250805`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-1-20250805
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-1-20250805
    ```
 
 ## Google Gemini
@@ -79,18 +79,18 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --claude
 If you have set your `GEMINI_API_KEY`:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini
 ```
 
 1. **Gemini 2.5 Pro** (`gemini-2.5-pro`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-pro
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-pro
    ```
 2. **Gemini 2.5 Flash** (`gemini-2.5-flash`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-flash
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-flash
    ```
 3. **Gemini 2.5 Flash Lite Preview** (`gemini-2.5-flash-lite-preview-06-17`)
    ```bash
-   npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-flash-lite-preview-06-17
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-flash-lite-preview-06-17
    ```

@@ -1,6 +1,5 @@
 import { l, err } from '@/logging'
-import { spawn, fs } from '@/node-utils'
-import { ensureDir } from '@/node-utils'
+import { spawn, readFile, stat, ensureDir } from '@/node-utils'
 import { AUDIO_FMT, AUDIO_Q } from './create-media-command.ts'
 
 export async function downloadAudioFromUrls(markdownFile: string, verbose = false): Promise<void> {
@@ -14,7 +13,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
   }
   
   try {
-    const data = await fs.readFile(markdownFile, 'utf8')
+    const data = await readFile(markdownFile, 'utf8')
     const urlRegex = /https?:\/\/[^\s>)"]+/g
     const urls = [...data.matchAll(urlRegex)].map(match => match[0].replace(/[)>]$/, ''))
     
@@ -66,7 +65,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
 
 async function isFile(inputPath: string): Promise<boolean> {
   try {
-    const stats = await fs.stat(inputPath)
+    const stats = await stat(inputPath)
     return stats.isFile()
   } catch {
     return false

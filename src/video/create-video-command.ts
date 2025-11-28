@@ -28,7 +28,7 @@ export const createVideoCommand = (): Command => {
         const isRunwayModel = validateRunwayModel(options.model)
         
         if (!isVeoModel && !isRunwayModel) {
-          err(`Invalid model: ${options.model}. Use 'npm run as -- video list-models' to see available models`)
+          err(`Invalid model: ${options.model}. Use 'bun as -- video list-models' to see available models`)
         }
         
         const aspectRatio = parseAspectRatio(options.aspectRatio)

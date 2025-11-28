@@ -7,8 +7,8 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'elevenlabs-default': 'npm run as -- tts file input/sample.md --elevenlabs' },
-  { 'polly-default': 'npm run as -- tts file input/sample.md --polly' },
+  { 'elevenlabs-default': 'bun as -- tts file input/sample.md --elevenlabs' },
+  { 'polly-default': 'bun as -- tts file input/sample.md --polly' },
 ]
 
 test('CLI TTS services tests', { concurrency: 1 }, async (t) => {

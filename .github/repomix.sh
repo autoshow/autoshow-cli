@@ -1,16 +1,15 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
+  ".github/setup/*"
+  ".github/setup/tts"
   "*"
-  "config"
-  "docs"
-  "scripts"
+  "docs/media"
+  "docs/extract"
   "src/*"
-  "src/process-steps/*"
-  "src/types"
-  "src/utils"
-  "src/process-steps/02-run-transcribe"
-  "test"
+  "src/media"
+  "src/extract"
+  # "test"
 )
 
 IGNORE_PATHS=(
@@ -19,12 +18,6 @@ IGNORE_PATHS=(
   "TODO.md"
   "output"
   "data"
-  "scripts/01-dl-audio"
-  "scripts/01-dl-audio/yt-scripts"
-  "scripts/03-llm-scripts"
-  "src/process-steps/01-dl-audio"
-  "src/process-steps/03-run-llm"
-  # "src/process-steps"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

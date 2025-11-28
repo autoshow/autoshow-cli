@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { 
-  ensureDir, fs, path
+  ensureDir, readFile, writeFile, join, dirname
 } from '@/node-utils'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
@@ -54,8 +54,8 @@ export async function synthesizeWithElevenLabs(
       const chunks: Uint8Array[] = []
       for await (const chunk of audioStream) chunks.push(chunk)
       
-      await ensureDir(path.dirname(outputPath))
-      await fs.writeFile(outputPath, Buffer.concat(chunks))
+      await ensureDir(dirname(outputPath))
+      await writeFile(outputPath, Buffer.concat(chunks))
       return outputPath
     } catch (error: any) {
       if (error.code === 'MODULE_NOT_FOUND') err(`Install: npm install elevenlabs`)
@@ -82,7 +82,7 @@ export async function processScriptWithElevenLabs(
   try {
     ensureElevenLabsInstalled()
     
-    const script = JSON.parse(await fs.readFile(scriptFile, 'utf8'))
+    const script = JSON.parse(await readFile(scriptFile, 'utf8'))
     await ensureDir(outDir)
     await ensureSilenceFile(outDir)
     
@@ -100,17 +100,17 @@ export async function processScriptWithElevenLabs(
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
       const base = `${String(idx).padStart(3, '0')}_${speaker}`
-      const wavOut = path.join(outDir, `${base}.wav`)
-      const pcmOut = path.join(outDir, `${base}.pcm`)
+      const wavOut = join(outDir, `${base}.wav`)
+      const pcmOut = join(outDir, `${base}.pcm`)
       
       await synthesizeWithElevenLabs(text, wavOut, voiceMapping[speaker]!)
-      await fs.writeFile(pcmOut, (await fs.readFile(wavOut)).slice(44))
+      await writeFile(pcmOut, (await readFile(wavOut)).slice(44))
       if (idx < script.length - 1) await new Promise(resolve => setTimeout(resolve, 1000))
     }))
     
     await mergeAudioFiles(outDir)
     await convertPcmToWav(outDir)
-    l.success(`Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
+    l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')} 🔊`)
   } catch (error) {
     err(`Error processing ElevenLabs script: ${error}`)
   }

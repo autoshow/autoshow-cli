@@ -1,7 +1,5 @@
 import { l, err } from '@/logging'
-import { spawn } from '@/node-utils'
-import { fs, path } from '@/node-utils'
-import { ensureDir } from '@/node-utils'
+import { spawn, stat, readdir, parse, extname, join, ensureDir } from '@/node-utils'
 import { AUDIO_FMT, AUDIO_Q } from './create-media-command.ts'
 
 export async function sanitizeFilename(filename: string): Promise<string> {
@@ -38,10 +36,10 @@ export async function convertLocalAudioFiles(
     const MEDIA_EXTENSIONS = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.webm', '.mp3', '.wav', '.m4a', '.flac', '.ogg']
     
     try {
-      const entries = await fs.readdir(input, { withFileTypes: true })
+      const entries = await readdir(input, { withFileTypes: true })
       mediaFiles = entries
-        .filter(entry => entry.isFile() && MEDIA_EXTENSIONS.includes(path.extname(entry.name).toLowerCase()))
-        .map(entry => path.join(input, entry.name))
+        .filter(entry => entry.isFile() && MEDIA_EXTENSIONS.includes(extname(entry.name).toLowerCase()))
+        .map(entry => join(input, entry.name))
       
       if (mediaFiles.length === 0) {
         err(`No media files found in directory "${input}"`)
@@ -56,9 +54,9 @@ export async function convertLocalAudioFiles(
   l.opts(`Processing ${mediaFiles.length} media files with ffmpeg`)
   
   await Promise.all(mediaFiles.map(async (filePath) => {
-    const parsedPath = path.parse(filePath)
+    const parsedPath = parse(filePath)
     const sanitizedName = await sanitizeFilename(`${parsedPath.name}.${AUDIO_FMT}`)
-    const outputPath = path.join(targetDir, sanitizedName)
+    const outputPath = join(targetDir, sanitizedName)
     
     await new Promise<void>((resolve, reject) => {
       const ffmpegProcess = spawn('ffmpeg', [
@@ -89,7 +87,7 @@ export async function convertLocalAudioFiles(
 
 async function isDirectory(inputPath: string): Promise<boolean> {
   try {
-    const stats = await fs.stat(inputPath)
+    const stats = await stat(inputPath)
     return stats.isDirectory()
   } catch {
     return false
@@ -98,7 +96,7 @@ async function isDirectory(inputPath: string): Promise<boolean> {
 
 async function isFile(inputPath: string): Promise<boolean> {
   try {
-    const stats = await fs.stat(inputPath)
+    const stats = await stat(inputPath)
     return stats.isFile()
   } catch {
     return false

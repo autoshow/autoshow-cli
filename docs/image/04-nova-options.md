@@ -3,42 +3,42 @@
 ## Basic Usage
 
 ```bash
-npm run as -- image generate --prompt "Modern building" --service nova
+bun as -- image generate --prompt "Modern building" --service nova
 ```
 
 ## Available Options
 
 ### Resolution
 ```bash
-npm run as -- image generate --prompt "Landscape" --service nova --resolution 2048x2048
+bun as -- image generate --prompt "Landscape" --service nova --resolution 2048x2048
 ```
 - Supports up to 2048x2048 pixels
 - Common formats: 512x512, 1024x1024, 2048x2048
 
 ### Quality Settings
 ```bash
-npm run as -- image generate --prompt "Portrait" --service nova --quality premium
+bun as -- image generate --prompt "Portrait" --service nova --quality premium
 ```
 - `standard` - Balanced quality and speed (default)
 - `premium` - Maximum quality output
 
 ### Multiple Images
 ```bash
-npm run as -- image generate --prompt "Sunset beach" --service nova --count 3
+bun as -- image generate --prompt "Sunset beach" --service nova --count 3
 ```
 - Generate 1-5 images in a single request
 - Each image saved with unique filename
 
 ### Negative Prompts
 ```bash
-npm run as -- image generate --prompt "Forest path" --service nova --negative "dark, scary"
+bun as -- image generate --prompt "Forest path" --service nova --negative "dark, scary"
 ```
 - Specify elements to avoid in generation
 - Improves control over output style
 
 ### CFG Scale
 ```bash
-npm run as -- image generate --prompt "Abstract art" --service nova --cfg-scale 8.5
+bun as -- image generate --prompt "Abstract art" --service nova --cfg-scale 8.5
 ```
 - Range: 1.1-10.0 (default: 6.5)
 - Higher values = stronger prompt adherence
@@ -46,7 +46,7 @@ npm run as -- image generate --prompt "Abstract art" --service nova --cfg-scale 
 
 ### Seed Control
 ```bash
-npm run as -- image generate --prompt "Character design" --service nova --seed 123456
+bun as -- image generate --prompt "Character design" --service nova --seed 123456
 ```
 - Use for reproducible results
 - Random seed if not specified
@@ -68,11 +68,11 @@ npm run as -- image generate --prompt "Character design" --service nova --seed 1
 ## Example Commands
 
 ```bash
-npm run as -- image generate --prompt "Futuristic architecture" --service nova --resolution 2048x2048 --quality premium
+bun as -- image generate --prompt "Futuristic architecture" --service nova --resolution 2048x2048 --quality premium
 
-npm run as -- image generate --prompt "Fantasy character" --service nova --negative "blurry, low quality" --count 3
+bun as -- image generate --prompt "Fantasy character" --service nova --negative "blurry, low quality" --count 3
 
-npm run as -- image generate --prompt "Product photography" --service nova --cfg-scale 9 --seed 789
+bun as -- image generate --prompt "Product photography" --service nova --cfg-scale 9 --seed 789
 ```
 
 ## AWS Configuration

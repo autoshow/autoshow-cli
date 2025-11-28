@@ -5,8 +5,6 @@ import { generateUniqueFilename, isApiError, ensureNpmDependencies } from '../im
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, RunwayImageOptions } from '../image-types'
 
-const p = '[image/image-services/runway]'
-
 async function downloadImage(imageUrl: string, outputPath: string): Promise<void> {
   const response = await fetch(imageUrl)
   

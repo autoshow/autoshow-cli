@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import { fs } from '@/node-utils'
+import { readFile } from '@/node-utils'
 import type { ExtractOptions } from '@/extract/extract-types'
 
 const p = '[extract/extract-services/unpdf]'
@@ -15,7 +15,7 @@ export const extractWithUnpdf = async (
   try {
     const { extractText, getDocumentProxy } = await import('unpdf')
     
-    const buffer = await fs.readFile(pdfPath)
+    const buffer = await readFile(pdfPath)
     const pdf = await getDocumentProxy(new Uint8Array(buffer))
     const extractedData = await extractText(pdf, { mergePages: false })
     const text = extractedData.text.join('\n\n')

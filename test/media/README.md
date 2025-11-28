@@ -95,22 +95,22 @@ Unit tests for the `save-audio-urls.ts` module functions.
 
 ### Run All Media Tests
 ```bash
-npm run test:media
+bun test:media
 ```
 
 ### Run Individual Test Suites
 ```bash
 # Download command tests
-npm run test:media:download
+bun test:media:download
 
 # Convert command tests
-npm run test:media:convert
+bun test:media:convert
 
 # save-audio-files unit tests
-npm run test:media:save-audio-files
+bun test:media:save-audio-files
 
 # save-audio-urls unit tests
-npm run test:media:save-audio-urls
+bun test:media:save-audio-urls
 ```
 
 ## Prerequisites
