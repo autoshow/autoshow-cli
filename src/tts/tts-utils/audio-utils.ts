@@ -1,4 +1,5 @@
-import { fs, path } from '@/node-utils'
+import { readdir, readFile, writeFile, access } from '@/node-utils'
+import { join } from '@/node-utils'
 
 export const SAMPLE_RATE = 24000
 export const CHANNELS = 1
@@ -18,29 +19,29 @@ export const buildWavHeader = (pcmSize: number): Buffer => {
 }
 
 export const ensureSilenceFile = async (outDir: string): Promise<void> => {
-  const silence = path.join(outDir, 'silence_025.pcm')
+  const silence = join(outDir, 'silence_025.pcm')
   try { 
-    await fs.access(silence) 
+    await access(silence) 
   } catch {
-    await fs.writeFile(silence, Buffer.alloc(SAMPLE_RATE * 0.5 * BYTES_PER_SAMPLE * CHANNELS))
+    await writeFile(silence, Buffer.alloc(SAMPLE_RATE * 0.5 * BYTES_PER_SAMPLE * CHANNELS))
   }
 }
 
 export const mergeAudioFiles = async (outDir: string): Promise<void> => {
-  const files = await fs.readdir(outDir)
+  const files = await readdir(outDir)
   const pcms = files.filter(f => f.endsWith('.pcm') && f !== 'silence_025.pcm').sort()
   
-  const silence = await fs.readFile(path.join(outDir, 'silence_025.pcm'))
+  const silence = await readFile(join(outDir, 'silence_025.pcm'))
   const buffersNested = await Promise.all(pcms.map(async (pcm, i) => [
-    await fs.readFile(path.join(outDir, pcm)),
+    await readFile(join(outDir, pcm)),
     ...(i < pcms.length - 1 ? [silence] : [])
   ]))
   const buffers = buffersNested.flat()
-  await fs.writeFile(path.join(outDir, 'full_conversation.pcm'), Buffer.concat(buffers))
+  await writeFile(join(outDir, 'full_conversation.pcm'), Buffer.concat(buffers))
 }
 
 export const convertPcmToWav = async (outDir: string): Promise<void> => {
-  const pcmPath = path.join(outDir, 'full_conversation.pcm')
-  const pcm = await fs.readFile(pcmPath)
-  await fs.writeFile(path.join(outDir, 'full_conversation.wav'), Buffer.concat([buildWavHeader(pcm.length), pcm]))
+  const pcmPath = join(outDir, 'full_conversation.pcm')
+  const pcm = await readFile(pcmPath)
+  await writeFile(join(outDir, 'full_conversation.wav'), Buffer.concat([buildWavHeader(pcm.length), pcm]))
 }

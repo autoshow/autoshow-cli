@@ -7,9 +7,9 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-pdf-default': 'npm run as -- extract pdf "input/document.pdf"' },
-  { '02-pdf-custom-output': 'npm run as -- extract pdf "input/document.pdf" --output "output/custom-extract.txt"' },
-  { '03-pdf-page-breaks': 'npm run as -- extract pdf "input/document.pdf" --page-breaks' },
+  { '01-pdf-default': 'bun as -- extract pdf "input/document.pdf"' },
+  { '02-pdf-custom-output': 'bun as -- extract pdf "input/document.pdf" --output "output/custom-extract.txt"' },
+  { '03-pdf-page-breaks': 'bun as -- extract pdf "input/document.pdf" --page-breaks' },
 ]
 
 test('CLI extract local tests', { concurrency: 1 }, async (t) => {

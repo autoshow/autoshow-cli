@@ -7,8 +7,8 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-download-default': 'npm run as -- media download --urls "input/example-urls.md"' },
-  { '02-download-verbose': 'npm run as -- media download --urls "input/example-urls.md" --verbose' },
+  { '01-download-default': 'bun as -- media download --urls "input/example-urls.md"' },
+  { '02-download-verbose': 'bun as -- media download --urls "input/example-urls.md" --verbose' },
 ]
 
 test('CLI media download tests', { concurrency: 1 }, async (t) => {

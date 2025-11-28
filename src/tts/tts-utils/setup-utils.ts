@@ -1,9 +1,9 @@
 import { l } from '@/logging'
-import { spawnSync, existsSync, path, execSync, readFileSync } from '@/node-utils'
+import { spawnSync, existsSync, execSync, readFileSync, join } from '@/node-utils'
 
 export const checkTtsEnvironment = (): { hasEnv: boolean, pythonPath: string | null } => {
-  const configPath = path.join(process.cwd(), 'build/config', '.tts-config.json')
-  const venvPath = path.join(process.cwd(), 'build/pyenv/tts/bin/python')
+  const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
+  const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
   
   if (existsSync(venvPath)) {
     l.dim(`TTS environment found at: ${venvPath}`)
@@ -27,7 +27,7 @@ export const checkTtsEnvironment = (): { hasEnv: boolean, pythonPath: string | n
 export const runTtsSetup = (): boolean => {
   l.wait(`TTS environment not found, running automatic setup...`)
   
-  const setupScript = path.join(process.cwd(), '.github/setup/tts/tts-env.sh')
+  const setupScript = join(process.cwd(), '.github/setup/tts/tts-env.sh')
   if (!existsSync(setupScript)) {
     l.dim(`Setup script not found at: ${setupScript}`)
     return false
@@ -39,7 +39,7 @@ export const runTtsSetup = (): boolean => {
       cwd: process.cwd()
     })
     
-    const venvPath = path.join(process.cwd(), 'build/pyenv/tts/bin/python')
+    const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
     if (existsSync(venvPath)) {
       l.success(`TTS environment setup completed successfully`)
       return true
@@ -60,10 +60,10 @@ export const ensureTtsEnvironment = (): string => {
   
   const setupSuccessful = runTtsSetup()
   if (!setupSuccessful) {
-    throw new Error('TTS environment setup failed. Please run: npm run setup:tts')
+    throw new Error('TTS environment setup failed. Please run: bun setup:tts')
   }
   
-  const venvPath = path.join(process.cwd(), 'build/pyenv/tts/bin/python')
+  const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
   if (!existsSync(venvPath)) {
     throw new Error('TTS environment not found after setup')
   }
@@ -90,7 +90,7 @@ export const checkKittenInstalled = (pythonPath: string): boolean => {
 export const runCoquiSetup = (): boolean => {
   l.wait(`Coqui TTS not installed, running automatic setup...`)
   
-  const setupScript = path.join(process.cwd(), '.github/setup/tts/coqui.sh')
+  const setupScript = join(process.cwd(), '.github/setup/tts/coqui.sh')
   if (!existsSync(setupScript)) {
     l.dim(`Coqui setup script not found`)
     return false
@@ -112,7 +112,7 @@ export const runCoquiSetup = (): boolean => {
 export const runKittenSetup = (): boolean => {
   l.wait(`Kitten TTS not installed, running automatic setup...`)
   
-  const setupScript = path.join(process.cwd(), '.github/setup/tts/kitten.sh')
+  const setupScript = join(process.cwd(), '.github/setup/tts/kitten.sh')
   if (!existsSync(setupScript)) {
     l.dim(`Kitten setup script not found`)
     return false
@@ -152,7 +152,7 @@ export const checkPollyInstalled = (): boolean => {
 export const installNpmPackage = (packageName: string): boolean => {
   l.wait(`Installing missing dependencies...`)
   
-  const packageJsonPath = path.join(process.cwd(), 'package.json')
+  const packageJsonPath = join(process.cwd(), 'package.json')
   if (!existsSync(packageJsonPath)) {
     l.dim(`package.json not found`)
     return false

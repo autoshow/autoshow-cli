@@ -4,17 +4,17 @@
 
 ### Base Setup
 ```bash
-npm run setup
+bun setup
 ```
 Installs npm dependencies and creates directory structure. No Python environments or models.
 
 ### Feature Setup
 ```bash
-npm run setup:transcription       # Audio transcription (Whisper variants)
-npm run setup:whisper             # Whisper.cpp configured for Metal
-npm run setup:whisper-coreml      # Whisper.cpp configured for Apple CoreML
+bun setup:transcription       # Audio transcription (Whisper variants)
+bun setup:whisper             # Whisper.cpp configured for Metal
+bun setup:whisper-coreml      # Whisper.cpp configured for Apple CoreML
 
-npm run setup:tts                 # Text-to-speech (Coqui + Kitten)
+bun setup:tts                 # Text-to-speech (Coqui + Kitten)
 ```
 
 Each feature is self-contained and won't affect others if setup fails.

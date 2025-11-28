@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { 
-  ensureDir, fs, path, spawnSync
+  ensureDir, spawnSync, readFile, writeFile, copyFile, join, dirname
 } from '@/node-utils'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
@@ -143,8 +143,8 @@ export async function synthesizeWithPolly(
       }))
       
       if (!response.AudioStream) err(`No audio stream received from Polly`)
-      await ensureDir(path.dirname(outputPath))
-      await fs.writeFile(outputPath, Buffer.from(await response.AudioStream!.transformToByteArray()))
+      await ensureDir(dirname(outputPath))
+      await writeFile(outputPath, Buffer.from(await response.AudioStream!.transformToByteArray()))
       l.dim(`Cost: $${cost.toFixed(6)}`)
       return outputPath
     } catch (error: any) {
@@ -183,7 +183,7 @@ export async function processScriptWithPolly(
   try {
     await ensurePollyInstalled()
     
-    const script = JSON.parse(await fs.readFile(scriptFile, 'utf8'))
+    const script = JSON.parse(await readFile(scriptFile, 'utf8'))
     await ensureDir(outDir)
     await ensureSilenceFile(outDir)
     
@@ -200,8 +200,8 @@ export async function processScriptWithPolly(
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
       const base = `${String(idx).padStart(3, '0')}_${speaker}`
-      const audioOut = path.join(outDir, `${base}.${format}`)
-      const pcmOut = path.join(outDir, `${base}.pcm`)
+      const audioOut = join(outDir, `${base}.${format}`)
+      const pcmOut = join(outDir, `${base}.pcm`)
       
       const speakerVoice = voiceMapping[speaker] || options.voice || 'Joanna'
       const engineType = detectEngineType(speakerVoice, options.engine, region)
@@ -214,7 +214,7 @@ export async function processScriptWithPolly(
         const result = spawnSync('ffmpeg', ['-i', audioOut, '-f', 's16le', '-ar', '24000', '-ac', '1', pcmOut], { stdio: 'pipe' })
         if (result.status !== 0) l.dim(`Failed to convert: ${result.stderr?.toString()}`)
       } else if (format === 'pcm') {
-        await fs.copyFile(audioOut, pcmOut)
+        await copyFile(audioOut, pcmOut)
       }
       
       if (idx < script.length - 1) await new Promise(resolve => setTimeout(resolve, 100))
@@ -224,7 +224,7 @@ export async function processScriptWithPolly(
     if (format !== 'ogg_vorbis') {
       await mergeAudioFiles(outDir)
       await convertPcmToWav(outDir)
-      l.success(`Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
+      l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')} 🔊`)
     }
   } catch (error) {
     err(`Error processing Polly script: ${error}`)

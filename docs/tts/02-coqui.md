@@ -4,33 +4,33 @@
 
 ### Basic Usage
 ```bash
-npm run as -- tts file input/sample.md --coqui
-npm run as -- tts file input/sample.md --coqui --speaker "Ana Florence"
-npm run as -- tts file input/sample.md --coqui --speed 0.8
+bun as -- tts file input/sample.md --coqui
+bun as -- tts file input/sample.md --coqui --speaker "Ana Florence"
+bun as -- tts file input/sample.md --coqui --speed 0.8
 ```
 
 ### Voice Cloning with XTTS
 ```bash
-npm run as -- tts file input/sample.md --coqui --coqui-model xtts --voice-clone voice.wav
-npm run as -- tts file input/sample.md --coqui --coqui-model xtts --voice-clone voice.wav --language es
-npm run as -- tts file input/sample.md --coqui --coqui-model xtts --speaker "Ana Florence"
+bun as -- tts file input/sample.md --coqui --coqui-model xtts --voice-clone voice.wav
+bun as -- tts file input/sample.md --coqui --coqui-model xtts --voice-clone voice.wav --language es
+bun as -- tts file input/sample.md --coqui --coqui-model xtts --speaker "Ana Florence"
 ```
 
 ### Script Processing
 ```bash
-npm run as -- tts script input/script.json --coqui
-npm run as -- tts script input/script.json --coqui --coqui-model xtts
+bun as -- tts script input/script.json --coqui
+bun as -- tts script input/script.json --coqui --coqui-model xtts
 ```
 
 ### Model Selection
 ```bash
-npm run as -- tts file input/sample.md --coqui --coqui-model "tts_models/en/vctk/vits"
-npm run as -- tts file input/sample.md --coqui --coqui-model "tts_models/swl/fairseq/vits"
+bun as -- tts file input/sample.md --coqui --coqui-model "tts_models/en/vctk/vits"
+bun as -- tts file input/sample.md --coqui --coqui-model "tts_models/swl/fairseq/vits"
 ```
 
 ### List Available Speakers
 ```bash
-npm run as -- tts list
+bun as -- tts list
 ```
 
 ## Environment Variables

@@ -1,17 +1,17 @@
 import { readFileSync } from 'node:fs'
 import { l, err } from '@/logging'
-import { path, spawnSync, existsSync } from '@/node-utils'
+import { spawnSync, existsSync, join, dirname } from '@/node-utils'
 
 export const listModels = async (): Promise<void> => {
-  const configPath = path.join(process.cwd(), 'build/config', '.tts-config.json')
+  const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
   l.dim(`Loading config from: ${configPath}`)
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
-    (existsSync(path.join(process.cwd(), 'build/pyenv/tts/bin/python')) ? path.join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
+    (existsSync(join(process.cwd(), 'build/pyenv/tts/bin/python')) ? join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   
   l.dim(`Using Python path: ${pythonPath}`)
   
-  const pythonScriptPath = path.join(path.dirname(import.meta.url.replace('file://', '')), '../tts-services/coqui-list.py')
+  const pythonScriptPath = join(dirname(import.meta.url.replace('file://', '')), '../tts-services/coqui-list.py')
   
   l.dim(`Listing available TTS models`)
   
@@ -79,7 +79,7 @@ export const listModels = async (): Promise<void> => {
             })
           })
         
-        l.dim(`Use a model with: npm run as -- tts file input.md --coqui-model "model_name"`)
+        l.dim(`Use a model with: bun as -- tts file input.md --coqui-model "model_name"`)
         return
       }
     }
@@ -121,7 +121,7 @@ export const listModels = async (): Promise<void> => {
       })
     })
   
-  l.dim(`Use a model with: npm run as -- tts file input.md --coqui-model "model_name"`)
+  l.dim(`Use a model with: bun as -- tts file input.md --coqui-model "model_name"`)
 }
 
 export const downloadModel = async (_modelId: string): Promise<boolean> => {

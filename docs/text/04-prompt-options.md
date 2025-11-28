@@ -16,13 +16,13 @@
 Running a command without including the prompt flag like so:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed"
+bun as -- text --rss "https://ajcwebdev.substack.com/feed"
 ```
 
 Is the equivalent to including two options (`summary` and `longChapters`) to `--prompt`:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" \
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" \
   --prompt summary longChapters
 ```
 
@@ -32,149 +32,149 @@ npm run as -- text --rss "https://ajcwebdev.substack.com/feed" \
 
 ```bash
 # Create five title ideas:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt titles
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt titles
 
 # Generate a bullet-point list summarizing the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt bulletPoints
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt bulletPoints
 
 # Create a short, one sentence description of the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortSummary
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortSummary
 
 # Create a one paragraph summary of the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt longSummary
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt longSummary
 
 # Create a one sentence and one paragraph summary (combines shortSummary and longSummary):
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt summary
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt summary
 
 # Create a short, one sentence description for each chapter that's 25 words or shorter.
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortChapters
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortChapters
 
 # Create a one paragraph description for each chapter that's around 50 words.
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt mediumChapters
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt mediumChapters
 
 # Create a two paragraph description for each chapter that's over 75 words.
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt longChapters
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt longChapters
 ```
 
 ### Takeaways, Questions, Quotes, and FAQ
 
 ```bash
 # Create three key takeaways about the content:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt takeaways
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt takeaways
 
 # Create ten questions about the content to check for comprehension:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt questions
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt questions
 
 # Select five important quotes from the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt quotes
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt quotes
 
 # Generate frequently asked questions with answers based on the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt faq
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt faq
 
 # Create chapter titles with timestamps and representative quotes:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt chapterTitlesAndQuotes
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt chapterTitlesAndQuotes
 ```
 
 Extract key moments from the content with timestamps and explanations:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --chatgpt
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --chatgpt
 ```
 
 Configure the number of key moments (default: 3):
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 5 --chatgpt
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 5 --chatgpt
 ```
 
 Set the duration of each key moment segment in seconds (default: 60):
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentDuration 90 --chatgpt
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentDuration 90 --chatgpt
 ```
 
 Combine multiple configurations:
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 2 --keyMomentDuration 60 --claude
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 2 --keyMomentDuration 60 --claude
 ```
 
 ### Social Media Content and Marketing
 
 ```bash
 # Write a concise and engaging social media post optimized for X (Twitter):
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt x
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt x
 
 # Write an engaging and conversational Facebook post:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt facebook
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt facebook
 
 # Write a professional and insightful LinkedIn post:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt linkedin
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt linkedin
 
 # Write an engaging Instagram post with hashtags and emojis:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt instagram
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt instagram
 
 # Write a TikTok caption with trending hashtags and engagement hooks:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt tiktok
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt tiktok
 
 # Create an SEO-optimized YouTube video description with timestamps:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt youtubeDescription
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt youtubeDescription
 
 # Transform content into a professional email newsletter format:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt emailNewsletter
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt emailNewsletter
 
 # Create an SEO-optimized article with keyword strategy:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt seoArticle
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt seoArticle
 
 # Generate a 90-day content calendar and strategy:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt contentStrategy
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt contentStrategy
 
 # Generate a list of chapter titles with timestamps:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt chapterTitles
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt chapterTitles
 
 # Generate a blog outline and a first draft blog post (750+ words):
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt blog
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt blog
 ```
 
 ### Creative Entertainment Content
 
 ```bash
 # Write an Eminem-inspired rap song based on the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rapSong
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rapSong
 
 # Write a high-energy, anthemic rock song based on the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rockSong
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rockSong
 
 # Write a heartfelt, storytelling country song based on the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt countrySong
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt countrySong
 
 # Write a catchy, radio-friendly pop song based on the transcript:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt popSong
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt popSong
 
 # Write a sophisticated jazz song with complex emotions:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt jazzSong
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt jazzSong
 
 # Write an authentic folk song with social commentary:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt folkSong
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt folkSong
 
 # Transform content into a compelling short story:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortStory
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortStory
 
 # Convert content into screenplay format:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt screenplay
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt screenplay
 
 # Create a themed poetry collection with various forms:
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt poetryCollection
+bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt poetryCollection
 ```
 
 ## Print Select Prompts without Process Commands
 
 ```bash
-npm run as -- text --printPrompt summary longChapters
+bun as -- text --printPrompt summary longChapters
 ```
 
 ## Write a Custom Prompt
 
 ```bash
-npm run as -- text --file "input/audio.mp3" --customPrompt "input/custom-prompt.md" --chatgpt
+bun as -- text --file "input/audio.mp3" --customPrompt "input/custom-prompt.md" --chatgpt
 ```

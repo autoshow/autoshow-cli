@@ -20,13 +20,13 @@ RUNWAYML_API_SECRET=your_api_key_here
 
 ```bash
 # Animate an image
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Ocean waves" \
   --image input/wave.jpg \
   --model gen3a_turbo
 
 # Extended duration
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Zoom out revealing landscape" \
   --image scene.jpg \
   --model gen4_turbo \
@@ -48,27 +48,27 @@ npm run as -- video generate \
 
 ```bash
 # Simple animation
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Gentle breeze, leaves rustling" \
   --image landscape.jpg \
   --model gen4_turbo
 
 # Dynamic movement
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Explosion in background, debris flying" \
   --image action-scene.jpg \
   --model gen4_turbo \
   --duration 10
 
 # Portrait orientation
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Hair flowing in wind" \
   --image portrait.jpg \
   --model gen3a_turbo \
   --aspect-ratio 9:16
 
 # Fast generation
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Water ripples expanding" \
   --image pond.jpg \
   --model gen3a_turbo

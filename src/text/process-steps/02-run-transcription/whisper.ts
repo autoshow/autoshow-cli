@@ -96,7 +96,7 @@ export async function callWhisper(
     const modelPath = `./build/models/ggml-${modelId}.bin`
 
     if (!existsSync(whisperCliPath)) {
-      throw new Error(`whisper-cli not found at ${whisperCliPath}. Run: npm run setup:whisper`)
+      throw new Error(`whisper-cli not found at ${whisperCliPath}. Run: bun setup:whisper`)
     }
 
     if (!existsSync(modelPath)) {

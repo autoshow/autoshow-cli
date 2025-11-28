@@ -4,7 +4,7 @@ p='[setup/tts/kitten]'
 
 if [ ! -x "build/pyenv/tts/bin/pip" ]; then
   echo "$p ERROR: Shared TTS environment missing at build/pyenv/tts/bin/pip"
-  echo "$p Run: npm run setup:tts to set up the base TTS environment first"
+  echo "$p Run: bun setup:tts to set up the base TTS environment first"
   exit 1
 fi
 

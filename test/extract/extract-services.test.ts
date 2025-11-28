@@ -7,12 +7,12 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-pdf-zerox-gpt-4.1-mini': 'npm run as -- extract pdf "input/document.pdf" --service zerox --model gpt-4.1-mini' },
-  { '02-pdf-zerox-gpt-4.1': 'npm run as -- extract pdf "input/document.pdf" --service zerox --model gpt-4.1' },
-  { '03-pdf-zerox-gemini-flash': 'npm run as -- extract pdf "input/document.pdf" --service zerox --model gemini-2.0-flash' },
-  { '04-pdf-unpdf': 'npm run as -- extract pdf "input/document.pdf" --service unpdf' },
-  { '05-pdf-textract': 'npm run as -- extract pdf "input/document.pdf" --service textract' },
-  { '06-pdf-page-breaks': 'npm run as -- extract pdf "input/document.pdf" --page-breaks' },
+  { '01-pdf-zerox-gpt-4.1-mini': 'bun as -- extract pdf "input/document.pdf" --service zerox --model gpt-4.1-mini' },
+  { '02-pdf-zerox-gpt-4.1': 'bun as -- extract pdf "input/document.pdf" --service zerox --model gpt-4.1' },
+  { '03-pdf-zerox-gemini-flash': 'bun as -- extract pdf "input/document.pdf" --service zerox --model gemini-2.0-flash' },
+  { '04-pdf-unpdf': 'bun as -- extract pdf "input/document.pdf" --service unpdf' },
+  { '05-pdf-textract': 'bun as -- extract pdf "input/document.pdf" --service textract' },
+  { '06-pdf-page-breaks': 'bun as -- extract pdf "input/document.pdf" --page-breaks' },
 ]
 
 test('CLI extract services tests', { concurrency: 1 }, async (t) => {

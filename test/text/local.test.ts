@@ -7,11 +7,11 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-file-default': 'npm run as -- text --file "input/audio.mp3"' },
-  { '02-file-whisper-tiny': 'npm run as -- text --file "input/audio.mp3" --whisper tiny' },
-  { '03-video-default': 'npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"' },
-  { '04-rss-default': 'npm run as -- text --rss "https://ajcwebdev.substack.com/feed"' },
-  { '05-file-whisper-coreml-tiny': 'npm run as -- text --file "input/audio.mp3" --whisper-coreml tiny' },
+  { '01-file-default': 'bun as -- text --file "input/audio.mp3"' },
+  { '02-file-whisper-tiny': 'bun as -- text --file "input/audio.mp3" --whisper tiny' },
+  { '03-video-default': 'bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"' },
+  { '04-rss-default': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed"' },
+  { '05-file-whisper-coreml-tiny': 'bun as -- text --file "input/audio.mp3" --whisper-coreml tiny' },
 ]
 
 test('CLI local tests', { concurrency: 1 }, async (t) => {

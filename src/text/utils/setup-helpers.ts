@@ -133,7 +133,7 @@ export async function autoSetupWhisper(): Promise<void> {
     l.success('Whisper setup completed successfully')
   } catch (error) {
     err(`Failed to automatically setup Whisper: ${(error as Error).message}`)
-    l.warn('Please run manually: npm run setup:whisper')
+    l.warn('Please run manually: bun setup:whisper')
     throw error
   }
 }
@@ -158,7 +158,7 @@ export async function autoSetupWhisperCoreML(): Promise<void> {
     l.success('Whisper CoreML setup completed successfully')
   } catch (error) {
     err(`Failed to automatically setup Whisper CoreML: ${(error as Error).message}`)
-    l.warn('Please run manually: npm run setup:whisper-coreml')
+    l.warn('Please run manually: bun setup:whisper-coreml')
     throw error
   }
 }

@@ -12,8 +12,8 @@
 ## Get Transcription Cost
 
 ```bash
-npm run as -- --transcriptCost "input/audio.mp3" --deepgram
-npm run as -- --transcriptCost "input/audio.mp3" --assembly
+bun as -- --transcriptCost "input/audio.mp3" --deepgram
+bun as -- --transcriptCost "input/audio.mp3" --assembly
 ```
 
 ## Transcription Services
@@ -23,36 +23,36 @@ npm run as -- --transcriptCost "input/audio.mp3" --assembly
 If neither the `--deepgram` or `--assembly` option is included for transcription, `autoshow` will default to running the largest Whisper.cpp model. To configure the size of the Whisper model, use the `--model` option and select one of the following:
 
 ```bash
-npm run as -- text --file "input/audio.mp3" --whisper tiny
-npm run as -- text --file "input/audio.mp3" --whisper base
-npm run as -- text --file "input/audio.mp3" --whisper small
-npm run as -- text --file "input/audio.mp3" --whisper medium
-npm run as -- text --file "input/audio.mp3" --whisper large-v3-turbo
+bun as -- text --file "input/audio.mp3" --whisper tiny
+bun as -- text --file "input/audio.mp3" --whisper base
+bun as -- text --file "input/audio.mp3" --whisper small
+bun as -- text --file "input/audio.mp3" --whisper medium
+bun as -- text --file "input/audio.mp3" --whisper large-v3-turbo
 ```
 
 ### Whisper CoreML
 
 ```bash
-npm run as -- text --file "input/audio.mp3" --whisper-coreml large-v3-turbo
+bun as -- text --file "input/audio.mp3" --whisper-coreml large-v3-turbo
 ```
 
 ### Deepgram
 
 ```bash
-npm run as -- text --file "input/audio.mp3" --deepgram
+bun as -- text --file "input/audio.mp3" --deepgram
 ```
 
 Select model:
 
 ```bash
-npm run as -- text --file "input/audio.mp3" --deepgram nova-3
-npm run as -- text --file "input/audio.mp3" --deepgram nova-2
+bun as -- text --file "input/audio.mp3" --deepgram nova-3
+bun as -- text --file "input/audio.mp3" --deepgram nova-2
 ```
 
 Include Deepgram API key directly in CLI command instead of in `.env` file:
 
 ```bash
-npm run as -- text \
+bun as -- text \
   --file "input/audio.mp3" \
   --deepgram \
   --deepgramApiKey ""
@@ -61,21 +61,21 @@ npm run as -- text \
 ### Assembly
 
 ```bash
-npm run as -- text --file "input/audio.mp3" --assembly
+bun as -- text --file "input/audio.mp3" --assembly
 ```
 
 Select model:
 
 ```bash
-npm run as -- text --file "input/audio.mp3" --assembly nano
-npm run as -- text --file "input/audio.mp3" --assembly slam-1
-npm run as -- text --file "input/audio.mp3" --assembly universal
+bun as -- text --file "input/audio.mp3" --assembly nano
+bun as -- text --file "input/audio.mp3" --assembly slam-1
+bun as -- text --file "input/audio.mp3" --assembly universal
 ```
 
 Include speaker labels and number of speakers:
 
 ```bash
-npm run as -- text \
+bun as -- text \
   --video "https://ajc.pics/autoshow/fsjam-short.mp3" \
   --assembly \
   --speakerLabels
@@ -84,7 +84,7 @@ npm run as -- text \
 Include Assembly API key directly in CLI command instead of in `.env` file:
 
 ```bash
-npm run as -- text \
+bun as -- text \
   --file "input/audio.mp3" \
   --assembly \
   --assemblyApiKey ""

@@ -66,7 +66,7 @@ AutoShow can generate diverse content formats including:
 The `setup.sh` script checks for a `.env` file, installs Node dependencies, and builds `whisper.cpp`:
 
 ```bash
-npm run setup
+bun setup
 ```
 
 ## Core AutoShow Commands
@@ -78,31 +78,31 @@ Example commands for all available CLI options can be found in [`docs`](/docs/RE
 Run on a single YouTube video.
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"
 ```
 
 Run on a YouTube playlist.
 
 ```bash
-npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"
+bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"
 ```
 
 Run on a list of arbitrary URLs from a file.
 
 ```bash
-npm run as -- text --urls "./input/example-urls.md"
+bun as -- text --urls "./input/example-urls.md"
 ```
 
 Run on a local audio or video file.
 
 ```bash
-npm run as -- text --file "./input/audio.mp3"
+bun as -- text --file "./input/audio.mp3"
 ```
 
 Run on a podcast RSS feed.
 
 ```bash
-npm run as -- text --rss "https://ajcwebdev.substack.com/feed"
+bun as -- text --rss "https://ajcwebdev.substack.com/feed"
 ```
 
 For more granular control (e.g., specific RSS items, date filtering, order, skip, last), use options like `--item <url>`, `--date <YYYY-MM-DD>`, `--order newest|oldest`, `--last <num>`, `--days <num>`.
@@ -110,7 +110,7 @@ For more granular control (e.g., specific RSS items, date filtering, order, skip
 Use `--info` to fetch metadata without full processing for URLs, playlists, channels, or RSS feeds.
 
 ```bash
-npm run as -- text --urls "./input/example-urls.md" --info
+bun as -- text --urls "./input/example-urls.md" --info
 ```
 
 ### Transcription and LLM Options
@@ -118,31 +118,31 @@ npm run as -- text --urls "./input/example-urls.md" --info
 Specify transcription service (default is Whisper `base`):
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal --speakerLabels
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal --speakerLabels
 ```
 
 Specify LLM service:
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-5-nano
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-sonnet-4-20250514
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-2.5-flash
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-5-nano
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-sonnet-4-20250514
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-2.5-flash
 ```
 
 Customize prompts:
 
 ```bash
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --prompt summary shortChapters --chatgpt
-npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --customPrompt ./my-custom-prompt.md --chatgpt
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --prompt summary shortChapters --chatgpt
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --customPrompt ./my-custom-prompt.md --chatgpt
 ```
 
 For a full list of options, run:
 
 ```bash
-npm run as -- --help
+bun as -- --help
 ```
 
 ## Contributors

@@ -1,5 +1,5 @@
 import { l, err } from '@/logging'
-import { fs, path, execSync, ensureDir } from '@/node-utils'
+import { readFile, rm, join, ensureDir, execSync } from '@/node-utils'
 import type { ExtractOptions } from '@/extract/extract-types'
 
 const p = '[extract/extract-services/textract]'
@@ -55,24 +55,24 @@ export const extractWithTextract = async (
       throw new Error('GraphicsMagick is not installed. Please install it to use Textract with PDF files.')
     }
     
-    const tempDir = path.join('output', 'temp', requestId, 'textract')
+    const tempDir = join('output', 'temp', requestId, 'textract')
     await ensureDir(tempDir)
     
     try {
-      const pngPath = path.join(tempDir, `page_${pageNumber || 1}.png`)
+      const pngPath = join(tempDir, `page_${pageNumber || 1}.png`)
       const convertCommand = `gm convert -density 300 "${pdfPath}" "${pngPath}"`
       execSync(convertCommand, { stdio: 'ignore' })
       
-      const imageBuffer = await fs.readFile(pngPath)
+      const imageBuffer = await readFile(pngPath)
       const imageSizeMB = imageBuffer.length / (1024 * 1024)
       
       let finalBuffer = imageBuffer
       
       if (imageBuffer.length > 5 * 1024 * 1024) {
         l.warn(`${p}[${requestId}] Image${pageInfo} exceeds 5MB (${imageSizeMB.toFixed(2)} MB), resizing`)
-        const resizedPath = path.join(tempDir, `resized_page_${pageNumber || 1}.png`)
+        const resizedPath = join(tempDir, `resized_page_${pageNumber || 1}.png`)
         execSync(`gm convert "${pngPath}" -resize 2000x2000> "${resizedPath}"`, { stdio: 'ignore' })
-        finalBuffer = await fs.readFile(resizedPath)
+        finalBuffer = await readFile(resizedPath)
       }
       
       const command = new DetectDocumentTextCommand({
@@ -87,11 +87,11 @@ export const extractWithTextract = async (
       const totalCost = 0.0015
       l.opts(`${p}[${requestId}] Cost${pageInfo}: $${totalCost.toFixed(4)}`)
       
-      await fs.rm(tempDir, { recursive: true, force: true })
+      await rm(tempDir, { recursive: true, force: true })
       
       return { text, totalCost }
     } catch (error: any) {
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {})
+      await rm(tempDir, { recursive: true, force: true }).catch(() => {})
       
       if (error.name === 'UnsupportedDocumentException') {
         throw new Error('Document format not supported by Textract. Image may be corrupted.')

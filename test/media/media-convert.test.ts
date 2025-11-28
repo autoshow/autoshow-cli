@@ -7,10 +7,10 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-convert-single-file': 'npm run as -- media convert --files "input/test-media/sample.mp4"' },
-  { '02-convert-directory': 'npm run as -- media convert --files "input/test-media"' },
-  { '03-convert-custom-output': 'npm run as -- media convert --files "input/test-media" --output "output/custom-media"' },
-  { '04-convert-verbose': 'npm run as -- media convert --files "input/test-media/sample.mp4" --verbose' },
+  { '01-convert-single-file': 'bun as -- media convert --files "input/test-media/sample.mp4"' },
+  { '02-convert-directory': 'bun as -- media convert --files "input/test-media"' },
+  { '03-convert-custom-output': 'bun as -- media convert --files "input/test-media" --output "output/custom-media"' },
+  { '04-convert-verbose': 'bun as -- media convert --files "input/test-media/sample.mp4" --verbose' },
 ]
 
 test('CLI media convert tests', { concurrency: 1 }, async (t) => {

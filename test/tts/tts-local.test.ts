@@ -7,8 +7,8 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'coqui-default': 'npm run as -- tts file input/sample.md --coqui' },
-  { 'kitten-default': 'npm run as -- tts file input/sample.md --kitten' },
+  { 'coqui-default': 'bun as -- tts file input/sample.md --coqui' },
+  { 'kitten-default': 'bun as -- tts file input/sample.md --kitten' },
 ]
 
 test('CLI TTS local tests', { concurrency: 1 }, async (t) => {
