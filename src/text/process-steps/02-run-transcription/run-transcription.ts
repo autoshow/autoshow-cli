@@ -21,7 +21,6 @@ export async function runTranscription(
   finalPath: string,
   transcriptServicesInput?: string
 ): Promise<TranscriptionResult> {
-  const p = '[text/process-steps/02-run-transcription/run-transcription]'
   const spinner = ora('Step 2 - Run Transcription').start()
   
   await ensureTranscriptionPrerequisites()
@@ -51,7 +50,7 @@ export async function runTranscription(
   try {
     audioDuration = await getAudioDuration(audioFilePath)
   } catch (error) {
-    err(`${p} Error getting audio duration: ${(error as Error).message}`)
+    err(`Error getting audio duration: ${(error as Error).message}`)
     audioDuration = 0
   }
   
@@ -110,7 +109,7 @@ export async function runTranscription(
     }
   } catch (error) {
     spinner.fail('Transcription failed.')
-    err(`${p} Error during runTranscription: ${(error as Error).message}`)
+    err(`Error during runTranscription: ${(error as Error).message}`)
     throw error
   }
 }

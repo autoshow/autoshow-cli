@@ -30,3 +30,4 @@ input
 eng.traineddata
 =*
 wan2.1-repo
+*.pyc

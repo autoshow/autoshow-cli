@@ -11,6 +11,7 @@ export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
   { name: 'Summary', value: 'summary' },
   { name: 'Short Summary', value: 'shortSummary' },
   { name: 'Long Summary', value: 'longSummary' },
+  { name: 'Metadata', value: 'metadata' },
   { name: 'Bullet Point Summary', value: 'bulletPoints' },
   { name: 'Chapter Titles', value: 'chapterTitles' },
   { name: 'Short Chapters', value: 'shortChapters' },
@@ -46,16 +47,13 @@ export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
 const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
 
 export async function selectPrompts(options: ProcessingOptions) {
-  const p = '[process-steps/04-select-prompt]'
-  l.step(`\nStep 3 - Select Prompts\n`)
-
   let customPrompt = ''
   if (options.customPrompt) {
-    l.dim(`${p} Loading custom prompt from: ${options.customPrompt}`)
+    l.dim(`Loading custom prompt from: ${options.customPrompt}`)
     try {
       customPrompt = (await readFile(options.customPrompt, 'utf8')).trim()
     } catch (error) {
-      err(`${p} Error reading custom prompt file: ${(error as Error).message}`)
+      err(`Error reading custom prompt file: ${(error as Error).message}`)
     }
   }
 
@@ -65,8 +63,8 @@ export async function selectPrompts(options: ProcessingOptions) {
 
   let text = "This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.\n\n"
 
-  const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters']
-  l.dim(`${p} Selected prompts: ${prompt.join(', ')}`)
+  const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters', 'metadata']
+  l.dim(`Selected prompts: ${prompt.join(', ')}`)
 
   const validSections = prompt.filter(
     (section): section is keyof typeof sections =>
@@ -79,7 +77,7 @@ export async function selectPrompts(options: ProcessingOptions) {
     if (section === 'keyMoments') {
       const count = options.keyMomentsCount || DEFAULT_KEY_MOMENTS_COUNT
       const duration = options.keyMomentDuration || DEFAULT_KEY_MOMENTS_DURATION
-      l.dim(`${p} Configuring keyMoments with count: ${count}, duration: ${duration}s`)
+      l.dim(`Configuring keyMoments with count: ${count}, duration: ${duration}s`)
       instruction = instruction
         .replace('{COUNT}', count.toString())
         .replace('{DURATION}', duration.toString())

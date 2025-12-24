@@ -1,6 +1,6 @@
 import { processVideo } from './video.ts'
 import { saveInfo } from '../utils/save-info.ts'
-import { l, err, logSeparator } from '@/logging'
+import { l, err } from '@/logging'
 import { readFile } from '@/node-utils'
 import type { ProcessingOptions } from '@/text/text-types'
 
@@ -10,8 +10,6 @@ export async function processURLs(
   llmServices?: string,
   transcriptServices?: string
 ) {
-  const p = '[text/process-commands/urls]'
-
   try {
     const content = await readFile(filePath, 'utf8')
     const urls = content
@@ -20,11 +18,11 @@ export async function processURLs(
       .filter((line) => line && !line.startsWith('#'))
 
     if (urls.length === 0) {
-      err(`${p} Error: No URLs found in the file.`)
+      err('Error: No URLs found in the file.')
       process.exit(1)
     }
 
-    l.opts(`\nFound ${urls.length} URLs in the file...`)
+    l.opts(`Found ${urls.length} URLs in the file...`)
 
     if (options.info) {
       await saveInfo('urls', urls, '')
@@ -32,20 +30,15 @@ export async function processURLs(
     }
 
     for (const [index, url] of urls.entries()) {
-      logSeparator({
-        type: 'urls',
-        index,
-        total: urls.length,
-        descriptor: url
-      })
+      l.final(`Processing URL ${index + 1}/${urls.length}: ${url}`)
       try {
         await processVideo(options, url, llmServices, transcriptServices)
       } catch (error) {
-        err(`${p} Error processing URL ${url}: ${(error as Error).message}`)
+        err(`Error processing URL ${url}: ${(error as Error).message}`)
       }
     }
   } catch (error) {
-    err(`${p} Error reading or processing file ${filePath}: ${(error as Error).message}`)
+    err(`Error reading or processing file ${filePath}: ${(error as Error).message}`)
     process.exit(1)
   }
 }

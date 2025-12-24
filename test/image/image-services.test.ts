@@ -7,10 +7,10 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'dalle-default': 'npm run as -- image generate --prompt "A serene mountain landscape"' },
-  { 'bfl-dragon': 'npm run as -- image generate --prompt "A majestic dragon" --service bfl' },
-  { 'nova-space': 'npm run as -- image generate --prompt "Space station interior" --service nova' },
-  { 'runway-cityscape': 'npm run as -- image generate --prompt "Futuristic cityscape" --service runway' },
+  { 'dalle-default': 'bun as -- image generate --prompt "A serene mountain landscape"' },
+  { 'bfl-dragon': 'bun as -- image generate --prompt "A majestic dragon" --service bfl' },
+  { 'nova-space': 'bun as -- image generate --prompt "Space station interior" --service nova' },
+  { 'runway-cityscape': 'bun as -- image generate --prompt "Futuristic cityscape" --service runway' },
 ]
 
 test('CLI image services tests', { concurrency: 1 }, async (t) => {

@@ -4,25 +4,25 @@
 
 ### Basic Usage
 ```bash
-npm run as -- tts file input/sample.md --polly
-npm run as -- tts file input/sample.md --polly --voice Amy
-npm run as -- tts file input/sample.md --polly --polly-engine neural
-npm run as -- tts file input/sample.md --polly --polly-engine standard
-npm run as -- tts file input/sample.md --polly --polly-engine generative
-npm run as -- tts file input/sample.md --polly --polly-engine long-form --voice Gregory
-npm run as -- tts file input/sample.md --polly --polly-format ogg_vorbis
-npm run as -- tts file input/sample.md --polly --polly-sample-rate 16000
+bun as -- tts file input/sample.md --polly
+bun as -- tts file input/sample.md --polly --voice Amy
+bun as -- tts file input/sample.md --polly --polly-engine neural
+bun as -- tts file input/sample.md --polly --polly-engine standard
+bun as -- tts file input/sample.md --polly --polly-engine generative
+bun as -- tts file input/sample.md --polly --polly-engine long-form --voice Gregory
+bun as -- tts file input/sample.md --polly --polly-format ogg_vorbis
+bun as -- tts file input/sample.md --polly --polly-sample-rate 16000
 ```
 
 ### Script Processing
 ```bash
-npm run as -- tts script input/script.json --polly
+bun as -- tts script input/script.json --polly
 ```
 
 ### Multi-lingual
 ```bash
-npm run as -- tts file spanish.md --polly --voice Lupe --language es-US
-npm run as -- tts file french.md --polly --voice Celine --language fr-FR
+bun as -- tts file spanish.md --polly --voice Lupe --language es-US
+bun as -- tts file french.md --polly --voice Celine --language fr-FR
 ```
 
 ## Available Voices

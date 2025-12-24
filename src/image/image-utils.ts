@@ -4,15 +4,13 @@ import { execSync } from 'node:child_process'
 import { l, err } from '@/logging'
 import type { ApiError } from '@/image/image-types'
 
-const p = '[image/image-utils]'
-
 export function generateUniqueFilename(prefix: string, extension: string = 'png'): string {
   const timestamp = generateTimestamp()
   const randomString = Math.random().toString(36).substring(2, 8)
   const makeFilename = (extra = '') => join('./output', `${prefix}-${timestamp}-${randomString}${extra}.${extension}`)
   const filepath = makeFilename()
   const finalPath = existsSync(filepath) ? makeFilename(`-${Math.random().toString(36).substring(2, 8)}`) : filepath
-  l.dim(`${p} Generated unique filename: ${finalPath}`)
+  l.dim(`Generated unique filename: ${finalPath}`)
   return finalPath
 }
 
@@ -32,7 +30,7 @@ export function saveImage(base64Data: string, outputPath: string): void {
   }
   const fullPath = outputPath.startsWith('/') ? outputPath : join(dir, outputPath)
   writeFileSync(fullPath, Buffer.from(base64Data, 'base64'))
-  l.dim(`${p} Image saved to: ${fullPath}`)
+  l.dim(`Image saved to: ${fullPath}`)
 }
 
 export function parseResolution(value: string): { width: number; height: number } {
@@ -46,7 +44,7 @@ export function parseResolution(value: string): { width: number; height: number 
 const parseOption = (value: string, defaultValue: number, parser: (v: string) => number): number => {
   const parsed = parser(value)
   if (isNaN(parsed)) {
-    l.warn(`${p} Invalid number "${value}", using default: ${defaultValue}`)
+    l.warn(`Invalid number "${value}", using default: ${defaultValue}`)
     return defaultValue
   }
   return parsed
@@ -60,7 +58,7 @@ export const isApiError = (error: unknown): error is ApiError =>
 
 export const handleError = (error: any): void => {
   if (!isApiError(error)) {
-    err(`${p} Unknown error: ${String(error)}`)
+    err(`Unknown error: ${String(error)}`)
   }
   
   const errorMap = {
@@ -75,29 +73,27 @@ export const handleError = (error: any): void => {
     error.name === key || error.message?.includes(key)
   )
   
-  err(`${p} ${matched ? matched[1] : `Error: ${error.message}`}`)
+  err(`${matched ? matched[1] : `Error: ${error.message}`}`)
 }
 
 export async function ensureNpmDependencies(): Promise<boolean> {
-  const requestId = Math.random().toString(36).substring(2, 10)
-  
   try {
-    l.dim(`${p} [${requestId}] Checking npm dependencies`)
+    l.dim(`Checking npm dependencies`)
     
     if (!existsSync('node_modules')) {
-      l.warn(`${p} [${requestId}] node_modules not found, running npm install`)
+      l.warn(`node_modules not found, running npm install`)
       execSync('npm install', {
         stdio: 'inherit',
         encoding: 'utf8'
       })
-      l.success(`${p} [${requestId}] npm dependencies installed successfully`)
+      l.success(`npm dependencies installed successfully`)
     } else {
-      l.dim(`${p} [${requestId}] npm dependencies already installed`)
+      l.dim(`npm dependencies already installed`)
     }
     
     return true
   } catch (error) {
-    l.warn(`${p} [${requestId}] Failed to install npm dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    l.warn(`Failed to install npm dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`)
     return false
   }
 }

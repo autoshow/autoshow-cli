@@ -6,7 +6,6 @@ import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 export async function retryRSSFetch(
   fn: () => Promise<Response>
 ): Promise<Response> {
-  const p = '[text/process-commands/rss/fetch]'
   const maxRetries = 7
   let attempt = 0
   
@@ -17,7 +16,7 @@ export async function retryRSSFetch(
       return response
     } catch (error) {
       if (attempt >= maxRetries) {
-        err(`${p} Max retries (${maxRetries}) reached. Aborting RSS fetch.`)
+        err(`Max retries (${maxRetries}) reached. Aborting RSS fetch.`)
         throw error
       }
       const delayMs = 1000 * 2 ** (attempt - 1)

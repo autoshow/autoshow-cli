@@ -7,14 +7,14 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-file-multiple-prompts': 'npm run as -- text --file "input/audio.mp3" --prompt titles summary' },
-  { '02-chatgpt-default': 'npm run as -- text --file "input/audio.mp3" --chatgpt' },
-  { '03-claude-default': 'npm run as -- text --file "input/audio.mp3" --claude' },
-  { '04-gemini-shownotes': 'npm run as -- text --file "input/audio.mp3" --gemini' },
-  { '05-deepgram-prompt': 'npm run as -- text --file "input/audio.mp3" --deepgram' },
-  { '06-assembly-prompt': 'npm run as -- text --file "input/audio.mp3" --assembly' },
-  { '07-fsjam-info': 'npm run as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info' },
-  { '08-urls-info': 'npm run as -- text --urls "input/example-urls.md" --info' },
+  { '01-file-multiple-prompts': 'bun as -- text --file "input/audio.mp3" --prompt titles summary' },
+  { '02-chatgpt-default': 'bun as -- text --file "input/audio.mp3" --chatgpt' },
+  { '03-claude-default': 'bun as -- text --file "input/audio.mp3" --claude' },
+  { '04-gemini-shownotes': 'bun as -- text --file "input/audio.mp3" --gemini' },
+  { '05-deepgram-prompt': 'bun as -- text --file "input/audio.mp3" --deepgram' },
+  { '06-assembly-prompt': 'bun as -- text --file "input/audio.mp3" --assembly' },
+  { '07-fsjam-info': 'bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info' },
+  { '08-urls-info': 'bun as -- text --urls "input/example-urls.md" --info' },
 ]
 
 test('CLI services tests', { concurrency: 1 }, async (t) => {

@@ -7,9 +7,8 @@ export async function callGroqWhisper(
   options: ProcessingOptions,
   finalPath: string
 ) {
-  const p = '[text/transcription/groq-whisper]'
-  l.dim(`${p} callGroqWhisper called with arguments:`)
-  l.dim(`${p}   - finalPath: ${finalPath}`)
+  l.dim(`callGroqWhisper called with arguments:`)
+  l.dim(`  - finalPath: ${finalPath}`)
   
   if (!env['GROQ_API_KEY']) {
     throw new Error('GROQ_API_KEY environment variable is not set. Please set it to your Groq API key.')
@@ -47,7 +46,7 @@ export async function callGroqWhisper(
       formData.append('temperature', '0')
     }
     
-    l.dim(`${p} Making Groq API request with model: ${modelId}`)
+    l.dim(`Making Groq API request with model: ${modelId}`)
     
     const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -62,7 +61,7 @@ export async function callGroqWhisper(
     }
     
     const result = await response.json()
-    l.dim(`${p} Received response from Groq API`)
+    l.dim(`Received response from Groq API`)
     
     let txtContent = ''
     
@@ -83,7 +82,7 @@ export async function callGroqWhisper(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`${p} Error processing the transcription with Groq: ${(error as Error).message}`)
+    err(`Error processing the transcription with Groq: ${(error as Error).message}`)
     throw error
   }
 }

@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
-import { isWhisperConfigured, autoSetupWhisper } from '../../utils/setup-helpers'
+import { isWhisperConfigured, autoSetupWhisper, ensureModelExists } from '../../utils/setup-helpers'
 import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
@@ -30,7 +30,6 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
 }
 
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
-  const p = '[text/process-steps/02-run-transcription/whisper]'
   return new Promise((resolve, reject) => {
     const whisperProcess = spawn(command, args)
     let lastProgress = -1
@@ -58,13 +57,13 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
       if (code === 0) {
         resolve()
       } else {
-        l.warn(`${p} Whisper process exited with code ${code}`)
+        l.warn(`Whisper process exited with code ${code}`)
         reject(new Error(`whisper-cli exited with code ${code}`))
       }
     })
 
     whisperProcess.on('error', (error) => {
-      l.warn(`${p} Whisper process error: ${error.message}`)
+      l.warn(`Whisper process error: ${error.message}`)
       reject(error)
     })
   })
@@ -75,10 +74,8 @@ export async function callWhisper(
   finalPath: string,
   spinner?: Ora
 ) {
-  const p = '[text/process-steps/02-run-transcription/whisper]'
-
   if (!isWhisperConfigured()) {
-    l.dim(`${p} Whisper not found, initiating automatic setup`)
+    l.dim('Whisper not found, initiating automatic setup')
     await autoSetupWhisper()
   }
 
@@ -99,11 +96,12 @@ export async function callWhisper(
     const modelPath = `./build/models/ggml-${modelId}.bin`
 
     if (!existsSync(whisperCliPath)) {
-      throw new Error(`whisper-cli not found at ${whisperCliPath}. Run: npm run setup:whisper`)
+      throw new Error(`whisper-cli not found at ${whisperCliPath}. Run: bun setup:whisper`)
     }
 
     if (!existsSync(modelPath)) {
-      throw new Error(`Model ${modelId} not found at ${modelPath}. Run: npm run setup:whisper`)
+      l.wait(`Model ${modelId} not found, downloading automatically...`)
+      await ensureModelExists(modelId)
     }
     
     const args = [
@@ -128,7 +126,7 @@ export async function callWhisper(
         )
       }
     } catch (whisperError) {
-      err(`${p} Error running whisper-cli: ${(whisperError as Error).message}`)
+      err(`Error running whisper-cli: ${(whisperError as Error).message}`)
       throw whisperError
     }
 
@@ -144,7 +142,7 @@ export async function callWhisper(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`${p} Error in callWhisper: ${(error as Error).message}`)
+    err(`Error in callWhisper: ${(error as Error).message}`)
     process.exit(1)
   }
 }

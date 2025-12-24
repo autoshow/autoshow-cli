@@ -1,14 +1,12 @@
 import { l } from '@/logging'
-import { spawnSync, existsSync, path, execSync, readFileSync } from '@/node-utils'
-
-const p = '[tts/tts-utils/setup-utils]'
+import { spawnSync, existsSync, execSync, readFileSync, join } from '@/node-utils'
 
 export const checkTtsEnvironment = (): { hasEnv: boolean, pythonPath: string | null } => {
-  const configPath = path.join(process.cwd(), 'build/config', '.tts-config.json')
-  const venvPath = path.join(process.cwd(), 'build/pyenv/tts/bin/python')
+  const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
+  const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
   
   if (existsSync(venvPath)) {
-    l.dim(`${p} TTS environment found at: ${venvPath}`)
+    l.dim(`TTS environment found at: ${venvPath}`)
     return { hasEnv: true, pythonPath: venvPath }
   }
   
@@ -16,22 +14,22 @@ export const checkTtsEnvironment = (): { hasEnv: boolean, pythonPath: string | n
     try {
       const config = JSON.parse(readFileSync(configPath, 'utf8'))
       if (config.python && existsSync(config.python)) {
-        l.dim(`${p} TTS environment found from config: ${config.python}`)
+        l.dim(`TTS environment found from config: ${config.python}`)
         return { hasEnv: true, pythonPath: config.python }
       }
     } catch {}
   }
   
-  l.dim(`${p} TTS environment not found`)
+  l.dim(`TTS environment not found`)
   return { hasEnv: false, pythonPath: null }
 }
 
 export const runTtsSetup = (): boolean => {
-  l.wait(`${p} TTS environment not found, running automatic setup...`)
+  l.wait(`TTS environment not found, running automatic setup...`)
   
-  const setupScript = path.join(process.cwd(), '.github/setup/tts/tts-env.sh')
+  const setupScript = join(process.cwd(), '.github/setup/tts/tts-env.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`${p} Setup script not found at: ${setupScript}`)
+    l.dim(`Setup script not found at: ${setupScript}`)
     return false
   }
   
@@ -41,13 +39,13 @@ export const runTtsSetup = (): boolean => {
       cwd: process.cwd()
     })
     
-    const venvPath = path.join(process.cwd(), 'build/pyenv/tts/bin/python')
+    const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
     if (existsSync(venvPath)) {
-      l.success(`${p} TTS environment setup completed successfully`)
+      l.success(`TTS environment setup completed successfully`)
       return true
     }
   } catch (error) {
-    l.dim(`${p} Setup script failed: ${error}`)
+    l.dim(`Setup script failed: ${error}`)
   }
   
   return false
@@ -62,10 +60,10 @@ export const ensureTtsEnvironment = (): string => {
   
   const setupSuccessful = runTtsSetup()
   if (!setupSuccessful) {
-    throw new Error('TTS environment setup failed. Please run: npm run setup:tts')
+    throw new Error('TTS environment setup failed. Please run: bun setup:tts')
   }
   
-  const venvPath = path.join(process.cwd(), 'build/pyenv/tts/bin/python')
+  const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
   if (!existsSync(venvPath)) {
     throw new Error('TTS environment not found after setup')
   }
@@ -90,11 +88,11 @@ export const checkKittenInstalled = (pythonPath: string): boolean => {
 }
 
 export const runCoquiSetup = (): boolean => {
-  l.wait(`${p} Coqui TTS not installed, running automatic setup...`)
+  l.wait(`Coqui TTS not installed, running automatic setup...`)
   
-  const setupScript = path.join(process.cwd(), '.github/setup/tts/coqui.sh')
+  const setupScript = join(process.cwd(), '.github/setup/tts/coqui.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`${p} Coqui setup script not found`)
+    l.dim(`Coqui setup script not found`)
     return false
   }
   
@@ -103,20 +101,20 @@ export const runCoquiSetup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`${p} Coqui TTS setup completed`)
+    l.success(`Coqui TTS setup completed`)
     return true
   } catch (error) {
-    l.dim(`${p} Coqui setup failed: ${error}`)
+    l.dim(`Coqui setup failed: ${error}`)
     return false
   }
 }
 
 export const runKittenSetup = (): boolean => {
-  l.wait(`${p} Kitten TTS not installed, running automatic setup...`)
+  l.wait(`Kitten TTS not installed, running automatic setup...`)
   
-  const setupScript = path.join(process.cwd(), '.github/setup/tts/kitten.sh')
+  const setupScript = join(process.cwd(), '.github/setup/tts/kitten.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`${p} Kitten setup script not found`)
+    l.dim(`Kitten setup script not found`)
     return false
   }
   
@@ -125,10 +123,10 @@ export const runKittenSetup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`${p} Kitten TTS setup completed`)
+    l.success(`Kitten TTS setup completed`)
     return true
   } catch (error) {
-    l.dim(`${p} Kitten setup failed: ${error}`)
+    l.dim(`Kitten setup failed: ${error}`)
     return false
   }
 }
@@ -152,11 +150,11 @@ export const checkPollyInstalled = (): boolean => {
 }
 
 export const installNpmPackage = (packageName: string): boolean => {
-  l.wait(`${p} Installing missing dependencies...`)
+  l.wait(`Installing missing dependencies...`)
   
-  const packageJsonPath = path.join(process.cwd(), 'package.json')
+  const packageJsonPath = join(process.cwd(), 'package.json')
   if (!existsSync(packageJsonPath)) {
-    l.dim(`${p} package.json not found`)
+    l.dim(`package.json not found`)
     return false
   }
   
@@ -170,20 +168,20 @@ export const installNpmPackage = (packageName: string): boolean => {
     }
     
     if (!allDeps[packageName]) {
-      l.dim(`${p} ${packageName} is not in package.json dependencies`)
+      l.dim(`${packageName} is not in package.json dependencies`)
       return false
     }
     
-    l.dim(`${p} Running npm install to restore ${packageName}`)
+    l.dim(`Running npm install to restore ${packageName}`)
     execSync('npm install', {
       stdio: 'inherit',
       cwd: process.cwd()
     })
     
-    l.success(`${p} Dependencies restored successfully`)
+    l.success(`Dependencies restored successfully`)
     return true
   } catch (error) {
-    l.dim(`${p} Failed to restore dependencies: ${error}`)
+    l.dim(`Failed to restore dependencies: ${error}`)
     return false
   }
 }

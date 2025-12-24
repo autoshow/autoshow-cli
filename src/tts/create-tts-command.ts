@@ -5,7 +5,6 @@ import {
 } from '@/node-utils'
 import { downloadModel, detectEngine, listModels, processFileWithEngine, processScriptWithEngine } from './tts-utils'
 
-const p = '[tts/create-tts-command]'
 const OUTDIR = 'output'
 
 const sharedOptions = (cmd: Command): Command => cmd
@@ -29,7 +28,7 @@ const handleAction = async (action: string, runner: () => Promise<void>): Promis
   try {
     await runner()
   } catch (error) {
-    err(`${p} Error ${action === 'list' ? 'listing models' : action === 'download' ? 'downloading models' : 'generating speech'}: ${error}`)
+    err(`Error ${action === 'list' ? 'listing models' : action === 'download' ? 'downloading models' : 'generating speech'}: ${error}`)
   }
 }
 
@@ -48,7 +47,7 @@ export const createTtsCommand = (): Command => {
   sharedOptions(tts.command('file').description('Generate speech from a markdown file')
     .argument('<filePath>', 'Path to the markdown file'))
     .action(async (filePath, options) => handleAction('file', async () => {
-      if (!existsSync(filePath)) err(`${p} File not found: ${filePath}`)
+      if (!existsSync(filePath)) err(`File not found: ${filePath}`)
       
       const outputDir = options.output || OUTDIR
       if (!existsSync(outputDir)) {
@@ -56,13 +55,13 @@ export const createTtsCommand = (): Command => {
       }
       
       await processFileWithEngine(detectEngine(options), filePath, outputDir, options)
-      l.success(`${p} Speech saved to ${outputDir} 🔊`)
+      l.success(`Speech saved to ${outputDir} 🔊`)
     }))
 
   sharedOptions(tts.command('script').description('Generate speech from a JSON script file')
     .argument('<scriptPath>', 'Path to the JSON script file'))
     .action(async (scriptPath, options) => handleAction('script', async () => {
-      if (!existsSync(scriptPath)) err(`${p} Script file not found: ${scriptPath}`)
+      if (!existsSync(scriptPath)) err(`Script file not found: ${scriptPath}`)
       await processScriptWithEngine(detectEngine(options), scriptPath, options.output || OUTDIR, options)
     }))
 

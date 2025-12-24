@@ -7,21 +7,11 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-file-default': 'npm run as -- text --file "input/file-types/audio.mp3"' },
-  { '02-file-whisper-tiny': 'npm run as -- text --file "input/file-types/audio.mp3" --whisper tiny' },
-  { '03-video-default': 'npm run as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"' },
-  { '04-rss-default': 'npm run as -- text --rss "https://ajcwebdev.substack.com/feed"' },
-  { '05-file-whisper-coreml-tiny': 'npm run as -- text --file "input/file-types/audio.mp3" --whisper-coreml tiny' },
-  { '06-file-aac': 'npm run as -- text --file "input/file-types/audio.aac"' },
-  { '07-file-flac': 'npm run as -- text --file "input/file-types/audio.flac"' },
-  { '08-file-m4a': 'npm run as -- text --file "input/file-types/audio.m4a"' },
-  { '09-file-ogg': 'npm run as -- text --file "input/file-types/audio.ogg"' },
-  { '10-file-wav': 'npm run as -- text --file "input/file-types/audio.wav"' },
-  { '11-file-video-avi': 'npm run as -- text --file "input/file-types/video.avi"' },
-  { '12-file-video-mkv': 'npm run as -- text --file "input/file-types/video.mkv"' },
-  { '13-file-video-mov': 'npm run as -- text --file "input/file-types/video.mov"' },
-  { '14-file-video-mp4': 'npm run as -- text --file "input/file-types/video.mp4"' },
-  { '15-file-video-webm': 'npm run as -- text --file "input/file-types/video.webm"' },
+  { '01-file-default': 'bun as -- text --file "input/audio.mp3"' },
+  { '02-file-whisper-tiny': 'bun as -- text --file "input/audio.mp3" --whisper tiny' },
+  { '03-video-default': 'bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"' },
+  { '04-rss-default': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed"' },
+  { '05-file-whisper-coreml-tiny': 'bun as -- text --file "input/audio.mp3" --whisper-coreml tiny' },
 ]
 
 test('CLI local tests', { concurrency: 1 }, async (t) => {

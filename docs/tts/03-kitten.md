@@ -6,19 +6,19 @@ Ultra-lightweight text-to-speech engine.
 
 ### Basic Usage
 ```bash
-npm run as -- tts file input/sample.md --kitten
-npm run as -- tts file input/sample.md --kitten --voice expr-voice-3-m
-npm run as -- tts file input/sample.md --kitten --speed 0.9
+bun as -- tts file input/sample.md --kitten
+bun as -- tts file input/sample.md --kitten --voice expr-voice-3-m
+bun as -- tts file input/sample.md --kitten --speed 0.9
 ```
 
 ### Script Processing
 ```bash
-npm run as -- tts script input/script.json --kitten
+bun as -- tts script input/script.json --kitten
 ```
 
 ### Model Selection
 ```bash
-npm run as -- tts file input/sample.md --kitten --kitten-model "KittenML/kitten-tts-nano-0.1"
+bun as -- tts file input/sample.md --kitten --kitten-model "KittenML/kitten-tts-nano-0.1"
 ```
 
 ## Available Voices

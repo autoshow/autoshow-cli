@@ -1,6 +1,5 @@
 import { l, err } from '@/logging'
-import { fs, path, ensureDir } from '@/node-utils'
-import { sleep } from '@/node-utils'
+import { stat, readdir, join, basename, ensureDir, sleep } from '@/node-utils'
 import { extractPdf } from './extract-pdf'
 import type { BatchExtractResult, ExtractOptions } from '@/extract/extract-types'
 
@@ -8,7 +7,7 @@ const p = '[extract/batch-pdfs]'
 
 const isDirectory = async (dirPath: string): Promise<boolean> => {
   try {
-    const stats = await fs.stat(dirPath)
+    const stats = await stat(dirPath)
     return stats.isDirectory()
   } catch {
     return false
@@ -27,7 +26,7 @@ export const batchExtractPdfs = async (
       throw new Error(`Directory not found: ${directory}`)
     }
     
-    const files = await fs.readdir(directory)
+    const files = await readdir(directory)
     const pdfFiles = files.filter(file => file.toLowerCase().endsWith('.pdf'))
     
     if (pdfFiles.length === 0) {
@@ -44,8 +43,8 @@ export const batchExtractPdfs = async (
     const failedFiles: string[] = []
     
     for (const pdfFile of pdfFiles) {
-      const pdfPath = path.join(directory, pdfFile)
-      const outputPath = path.join(outputDir, `${path.basename(pdfFile, '.pdf')}_extracted.txt`)
+      const pdfPath = join(directory, pdfFile)
+      const outputPath = join(outputDir, `${basename(pdfFile, '.pdf')}_extracted.txt`)
       
       l.opts(`${p}[${requestId}] Processing ${successCount + failedFiles.length + 1}/${pdfFiles.length}: ${pdfFile}`)
       

@@ -1,22 +1,43 @@
 #!/bin/bash
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 LOGFILE="setup-${TIMESTAMP}.log"
+ERROR_CONTEXT=""
+
+# Redirect all output to log file
 exec > >(tee -a "$LOGFILE") 2>&1
 
 cleanup_log() {
   local status=$?
+  # Stop logging to prevent circular tail in log
+  exec > /dev/tty 2>&1
+  
   if [ "$status" -eq 0 ]; then
     rm -f "$LOGFILE"
   else
     echo "ERROR: Script failed (exit code $status). Logs saved in: $LOGFILE"
-    echo "Last 20 lines of log:"
-    tail -n 20 "$LOGFILE"
+    if [ -n "$ERROR_CONTEXT" ]; then
+      echo "ERROR CONTEXT: $ERROR_CONTEXT"
+    fi
+    echo "Last 30 lines of log:"
+    tail -n 30 "$LOGFILE" 2>/dev/null || echo "Could not read log file"
   fi
   exit $status
 }
 trap cleanup_log EXIT
 
+# Enhanced error handling
 set -euo pipefail
+error_handler() {
+  local line=$1
+  local command="$2"
+  echo "ERROR: Command failed at line $line: $command" >&2
+  if [ -n "$ERROR_CONTEXT" ]; then
+    echo "ERROR CONTEXT: $ERROR_CONTEXT" >&2
+  fi
+  exit 1
+}
+trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
+
 p='[setup/index]'
 
 SETUP_MODE="${1:-base}"

@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { 
-  ensureDir, fs, path, spawnSync
+  ensureDir, spawnSync, readFile, writeFile, copyFile, join, dirname
 } from '@/node-utils'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
@@ -8,8 +8,6 @@ import {
 import {
   checkPollyInstalled, installNpmPackage
 } from '../tts-utils/setup-utils'
-
-const p = '[tts/tts-services/polly]'
 
 const VOICE_TYPES = {
   neural: ['Ivy', 'Joanna', 'Kendra', 'Kimberly', 'Salli', 'Joey', 'Justin', 'Kevin', 'Matthew', 'Ruth', 'Stephen', 'Amy', 'Brian', 'Emma', 'Olivia', 'Aria', 'Ayanda', 'Gabrielle', 'Liam', 'Mia', 'Seoyeon', 'Danielle', 'Gregory', 'Takumi', 'Kazuha', 'Tomoko', 'Camila', 'Lupe', 'Pedro', 'Adriano', 'Remi', 'Lea', 'Vicki', 'Bianca', 'Lucia', 'Kajal'],
@@ -29,10 +27,10 @@ const PRICING = { standard: 4, neural: 16, 'long-form': 100, generative: 30 }
 
 const ensurePollyInstalled = async () => {
   if (!checkPollyInstalled()) {
-    l.dim(`${p} AWS Polly package not installed, attempting automatic installation...`)
+    l.dim(`AWS Polly package not installed, attempting automatic installation...`)
     const installed = installNpmPackage('@aws-sdk/client-polly')
     if (!installed) {
-      err(`${p} Failed to install AWS Polly. Please run: npm install @aws-sdk/client-polly`)
+      err(`Failed to install AWS Polly. Please run: npm install @aws-sdk/client-polly`)
     }
   }
 }
@@ -46,7 +44,7 @@ const detectEngineType = (voice: any, engine?: any, region?: string): keyof type
     if (NEURAL_SUPPORTED_REGIONS.includes(currentRegion)) {
       return 'long-form'
     }
-    l.dim(`${p} Long-form engine not supported in ${currentRegion}, falling back to standard`)
+    l.dim(`Long-form engine not supported in ${currentRegion}, falling back to standard`)
     return 'standard'
   }
   
@@ -54,7 +52,7 @@ const detectEngineType = (voice: any, engine?: any, region?: string): keyof type
     if (GENERATIVE_SUPPORTED_REGIONS.includes(currentRegion)) {
       return 'generative'
     }
-    l.dim(`${p} Generative engine not supported in ${currentRegion}, falling back to standard`)
+    l.dim(`Generative engine not supported in ${currentRegion}, falling back to standard`)
     return 'standard'
   }
   
@@ -62,7 +60,7 @@ const detectEngineType = (voice: any, engine?: any, region?: string): keyof type
     if (NEURAL_SUPPORTED_REGIONS.includes(currentRegion)) {
       return 'neural'
     }
-    l.dim(`${p} Neural engine not supported in ${currentRegion}, falling back to standard`)
+    l.dim(`Neural engine not supported in ${currentRegion}, falling back to standard`)
     return 'standard'
   }
   
@@ -73,7 +71,7 @@ const getPollyClient = async () => {
   await ensurePollyInstalled()
   const { PollyClient } = await import('@aws-sdk/client-polly')
   const region = process.env['AWS_REGION'] || 'us-east-1'
-  l.dim(`${p} Using AWS region: ${region}`)
+  l.dim(`Using AWS region: ${region}`)
   return new PollyClient({ region })
 }
 
@@ -109,7 +107,7 @@ export async function synthesizeWithPolly(
   } = {}
 ): Promise<string | undefined> {
   if (!process.env['AWS_ACCESS_KEY_ID'] || !process.env['AWS_SECRET_ACCESS_KEY']) 
-    err(`${p} AWS credentials not found. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY`)
+    err(`AWS credentials not found. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY`)
   
   await ensurePollyInstalled()
   
@@ -121,9 +119,9 @@ export async function synthesizeWithPolly(
   const actualEngine = getEngineForRegion(preferredEngine, voice, region)
   
   if (preferredEngine !== actualEngine) {
-    l.dim(`${p} Requested engine '${preferredEngine}' not available in ${region}, using '${actualEngine}'`)
+    l.dim(`Requested engine '${preferredEngine}' not available in ${region}, using '${actualEngine}'`)
   } else {
-    l.dim(`${p} Using engine: ${actualEngine} in region ${region}`)
+    l.dim(`Using engine: ${actualEngine} in region ${region}`)
   }
   
   const engineType = detectEngineType(voice, actualEngine, region)
@@ -144,25 +142,25 @@ export async function synthesizeWithPolly(
         ...(options.languageCode && { LanguageCode: options.languageCode })
       }))
       
-      if (!response.AudioStream) err(`${p} No audio stream received from Polly`)
-      await ensureDir(path.dirname(outputPath))
-      await fs.writeFile(outputPath, Buffer.from(await response.AudioStream!.transformToByteArray()))
-      l.dim(`${p} Cost: $${cost.toFixed(6)}`)
+      if (!response.AudioStream) err(`No audio stream received from Polly`)
+      await ensureDir(dirname(outputPath))
+      await writeFile(outputPath, Buffer.from(await response.AudioStream!.transformToByteArray()))
+      l.dim(`Cost: $${cost.toFixed(6)}`)
       return outputPath
     } catch (error: any) {
       if (error.message?.includes('not supported in this region') || error.message?.includes('selected engine')) {
         if (useEngine !== 'standard') {
-          l.dim(`${p} Engine ${useEngine} not supported, retrying with standard engine`)
+          l.dim(`Engine ${useEngine} not supported, retrying with standard engine`)
           return attemptSynthesis('standard')
         }
       }
       
       if (error.name === 'CredentialsProviderError') {
-        err(`${p} AWS credentials error. Check your keys`)
+        err(`AWS credentials error. Check your keys`)
       } else if (error.name === 'InvalidParameterValueException') {
-        err(`${p} Invalid parameter: ${error.message}`)
+        err(`Invalid parameter: ${error.message}`)
       } else {
-        err(`${p} Polly error: ${error.message || error}`)
+        err(`Polly error: ${error.message || error}`)
       }
       return undefined
     }
@@ -185,7 +183,7 @@ export async function processScriptWithPolly(
   try {
     await ensurePollyInstalled()
     
-    const script = JSON.parse(await fs.readFile(scriptFile, 'utf8'))
+    const script = JSON.parse(await readFile(scriptFile, 'utf8'))
     await ensureDir(outDir)
     await ensureSilenceFile(outDir)
     
@@ -194,7 +192,7 @@ export async function processScriptWithPolly(
       SEAMUS: process.env['POLLY_VOICE_SEAMUS'] || 'Brian'
     }
     
-    l.opts(`${p} Processing ${script.length} lines with Polly`)
+    l.opts(`Processing ${script.length} lines with Polly`)
     const format = options.format || 'mp3'
     const region = process.env['AWS_REGION'] || 'us-east-1'
     let totalCost = 0
@@ -202,8 +200,8 @@ export async function processScriptWithPolly(
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
       const base = `${String(idx).padStart(3, '0')}_${speaker}`
-      const audioOut = path.join(outDir, `${base}.${format}`)
-      const pcmOut = path.join(outDir, `${base}.pcm`)
+      const audioOut = join(outDir, `${base}.${format}`)
+      const pcmOut = join(outDir, `${base}.pcm`)
       
       const speakerVoice = voiceMapping[speaker] || options.voice || 'Joanna'
       const engineType = detectEngineType(speakerVoice, options.engine, region)
@@ -214,21 +212,21 @@ export async function processScriptWithPolly(
       
       if (format === 'mp3') {
         const result = spawnSync('ffmpeg', ['-i', audioOut, '-f', 's16le', '-ar', '24000', '-ac', '1', pcmOut], { stdio: 'pipe' })
-        if (result.status !== 0) l.dim(`${p} Failed to convert: ${result.stderr?.toString()}`)
+        if (result.status !== 0) l.dim(`Failed to convert: ${result.stderr?.toString()}`)
       } else if (format === 'pcm') {
-        await fs.copyFile(audioOut, pcmOut)
+        await copyFile(audioOut, pcmOut)
       }
       
       if (idx < script.length - 1) await new Promise(resolve => setTimeout(resolve, 100))
     }))
     
-    l.opts(`${p} Total cost: $${totalCost.toFixed(6)}`)
+    l.opts(`Total cost: $${totalCost.toFixed(6)}`)
     if (format !== 'ogg_vorbis') {
       await mergeAudioFiles(outDir)
       await convertPcmToWav(outDir)
-      l.success(`${p} Conversation saved to ${path.join(outDir, 'full_conversation.wav')} 🔊`)
+      l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')} 🔊`)
     }
   } catch (error) {
-    err(`${p} Error processing Polly script: ${error}`)
+    err(`Error processing Polly script: ${error}`)
   }
 }
