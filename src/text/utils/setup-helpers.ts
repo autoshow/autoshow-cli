@@ -2,14 +2,12 @@ import { l, err } from '@/logging'
 import { execPromise, existsSync, spawnSync } from '@/node-utils'
 
 export async function checkFFmpeg(): Promise<boolean> {
-  const p = '[text/utils/setup-helpers]'
-  
   try {
     await execPromise('which ffmpeg', { maxBuffer: 1024 })
     return true
   } catch {
-    l.warn(`${p} ffmpeg not found - audio processing may fail`)
-    l.warn(`${p} Install ffmpeg with: brew install ffmpeg`)
+    l.warn('ffmpeg not found - audio processing may fail')
+    l.warn('Install ffmpeg with: brew install ffmpeg')
     return false
   }
 }
@@ -36,10 +34,87 @@ export function isWhisperCoreMLConfigured(): boolean {
   return existsSync(whisperCoreMLBinary) && existsSync(baseModel)
 }
 
-export async function autoSetupWhisper(): Promise<void> {
-  const p = '[text/utils/setup-helpers]'
+export function checkModelExists(modelId: string): boolean {
+  const modelPath = `./build/models/ggml-${modelId}.bin`
+  return existsSync(modelPath)
+}
+
+export async function downloadModel(modelId: string): Promise<void> {
+  l.wait(`Downloading model ${modelId}...`)
   
-  l.wait(`${p} Whisper not configured, running automatic setup...`)
+  try {
+    const result = spawnSync(
+      './.github/setup/transcription/download-ggml-model.sh',
+      [modelId, './build/models'],
+      { stdio: 'inherit', shell: true }
+    )
+    
+    if (result.status !== 0) {
+      throw new Error(`Model download script exited with code ${result.status}`)
+    }
+    
+    if (!checkModelExists(modelId)) {
+      throw new Error(`Model download completed but file not found`)
+    }
+    
+    l.success(`Model ${modelId} downloaded successfully`)
+  } catch (error) {
+    err(`Failed to download model ${modelId}: ${(error as Error).message}`)
+    throw error
+  }
+}
+
+export async function ensureModelExists(modelId: string): Promise<void> {
+  if (!checkModelExists(modelId)) {
+    l.wait(`Model ${modelId} not found, downloading...`)
+    await downloadModel(modelId)
+  }
+}
+
+export function checkCoreMLModelExists(modelId: string): boolean {
+  const mlmodelcPath = `./build/models/ggml-${modelId}-encoder.mlmodelc`
+  const mlpackagePath = `./build/models/ggml-${modelId}-encoder.mlpackage`
+  const altPackagePath = `./build/models/coreml-encoder-${modelId}.mlpackage`
+  
+  return existsSync(mlmodelcPath) || existsSync(mlpackagePath) || existsSync(altPackagePath)
+}
+
+export async function generateCoreMLModel(modelId: string): Promise<void> {
+  l.wait(`Generating CoreML model for ${modelId}...`)
+  
+  try {
+    const result = spawnSync(
+      './.github/setup/transcription/coreml/generate-coreml-model.sh',
+      [modelId],
+      { stdio: 'inherit', shell: true }
+    )
+    
+    if (result.status !== 0) {
+      throw new Error(`CoreML generation script exited with code ${result.status}`)
+    }
+    
+    if (!checkCoreMLModelExists(modelId)) {
+      throw new Error(`CoreML model generation completed but artifact not found`)
+    }
+    
+    l.success(`CoreML model for ${modelId} generated successfully`)
+  } catch (error) {
+    err(`Failed to generate CoreML model for ${modelId}: ${(error as Error).message}`)
+    throw error
+  }
+}
+
+export async function ensureCoreMLModelExists(modelId: string): Promise<void> {
+  await ensureModelExists(modelId)
+  
+  if (!checkCoreMLModelExists(modelId)) {
+    l.wait(`CoreML model for ${modelId} not found, generating...`)
+    await generateCoreMLModel(modelId)
+  }
+}
+
+export async function autoSetupWhisper(): Promise<void> {
+  l.wait('Whisper not configured, running automatic setup...')
   
   try {
     const result = spawnSync('./.github/setup/index.sh', ['--whisper'], {
@@ -55,18 +130,16 @@ export async function autoSetupWhisper(): Promise<void> {
       throw new Error('Setup completed but Whisper binary or model not found')
     }
     
-    l.success(`${p} Whisper setup completed successfully`)
+    l.success('Whisper setup completed successfully')
   } catch (error) {
-    err(`${p} Failed to automatically setup Whisper: ${(error as Error).message}`)
-    l.warn(`${p} Please run manually: npm run setup:whisper`)
+    err(`Failed to automatically setup Whisper: ${(error as Error).message}`)
+    l.warn('Please run manually: bun setup:whisper')
     throw error
   }
 }
 
 export async function autoSetupWhisperCoreML(): Promise<void> {
-  const p = '[text/utils/setup-helpers]'
-  
-  l.wait(`${p} Whisper CoreML not configured, running automatic setup...`)
+  l.wait('Whisper CoreML not configured, running automatic setup...')
   
   try {
     const result = spawnSync('./.github/setup/index.sh', ['--whisper-coreml'], {
@@ -82,10 +155,10 @@ export async function autoSetupWhisperCoreML(): Promise<void> {
       throw new Error('Setup completed but Whisper CoreML binary or model not found')
     }
     
-    l.success(`${p} Whisper CoreML setup completed successfully`)
+    l.success('Whisper CoreML setup completed successfully')
   } catch (error) {
-    err(`${p} Failed to automatically setup Whisper CoreML: ${(error as Error).message}`)
-    l.warn(`${p} Please run manually: npm run setup:whisper-coreml`)
+    err(`Failed to automatically setup Whisper CoreML: ${(error as Error).message}`)
+    l.warn('Please run manually: bun setup:whisper-coreml')
     throw error
   }
 }

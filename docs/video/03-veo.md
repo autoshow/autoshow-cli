@@ -19,12 +19,12 @@ GEMINI_API_KEY=your_api_key_here
 
 ```bash
 # Standard generation
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "A butterfly landing on a flower" \
   --model veo-3.0-generate-preview
 
 # With audio description (Veo 3.0)
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Ocean waves crashing. Sound of seagulls and wind." \
   --model veo-3.0-generate-preview
 ```
@@ -44,24 +44,24 @@ npm run as -- video generate \
 
 ```bash
 # With dialogue (Veo 3.0)
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "'Hello!' she says cheerfully. Birds chirping." \
   --model veo-3.0-generate-preview
 
 # Exclude elements
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Mountain landscape at sunrise" \
   --negative "people, buildings, text" \
   --model veo-3.0-fast-generate-preview
 
 # Portrait mode (Veo 2.0 only)
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Fashion model on runway" \
   --model veo-2.0-generate-001 \
   --aspect-ratio 9:16
 
 # Fast generation
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "City traffic timelapse" \
   --model veo-3.0-fast-generate-preview
 ```
@@ -71,7 +71,7 @@ npm run as -- video generate \
 Include sound descriptions and dialogue in quotes:
 
 ```bash
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Two scientists in a lab. 'Eureka!' one shouts. Equipment beeping, electricity crackling." \
   --model veo-3.0-generate-preview
 ```
@@ -84,7 +84,7 @@ Control how people appear in videos:
 - `dont_allow` - No people
 
 ```bash
-npm run as -- video generate \
+bun as -- video generate \
   --prompt "Busy street scene" \
   --person allow_adult \
   --model veo-3.0-generate-preview

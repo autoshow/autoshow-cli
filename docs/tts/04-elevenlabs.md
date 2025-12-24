@@ -4,13 +4,13 @@
 
 ### Basic Usage
 ```bash
-npm run as -- tts file input/sample.md --elevenlabs
-npm run as -- tts file input/sample.md --elevenlabs --voice voice_id_here
+bun as -- tts file input/sample.md --elevenlabs
+bun as -- tts file input/sample.md --elevenlabs --voice voice_id_here
 ```
 
 ### Script Processing
 ```bash
-npm run as -- tts script input/script.json --elevenlabs
+bun as -- tts script input/script.json --elevenlabs
 ```
 
 ## Environment Variables

@@ -14,13 +14,13 @@ RUNWAYML_API_SECRET=xxx   # Runway
 
 ```bash
 # Generate video with Google Veo (default)
-npm run as -- video generate --prompt "A cat in a garden"
+bun as -- video generate --prompt "A cat in a garden"
 
 # Use specific model
-npm run as -- video generate --prompt "Ocean waves" --model veo-3.0-generate-preview
+bun as -- video generate --prompt "Ocean waves" --model veo-3.0-generate-preview
 
 # List all models
-npm run as -- video list-models
+bun as -- video list-models
 ```
 
 ## Available Models

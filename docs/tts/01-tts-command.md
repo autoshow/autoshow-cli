@@ -6,25 +6,25 @@ Generate speech from text using multiple TTS engines.
 
 ### Single File
 ```bash
-npm run as -- tts file input/sample.md
-npm run as -- tts file input/sample.md --coqui --output output/coqui
-npm run as -- tts file input/sample.md --kitten --output output/kitten
-npm run as -- tts file input/sample.md --elevenlabs --output output/elevenlabs
-npm run as -- tts file input/sample.md --polly --output output/polly
+bun as -- tts file input/sample.md
+bun as -- tts file input/sample.md --coqui --output output/coqui
+bun as -- tts file input/sample.md --kitten --output output/kitten
+bun as -- tts file input/sample.md --elevenlabs --output output/elevenlabs
+bun as -- tts file input/sample.md --polly --output output/polly
 ```
 
 ### Script Files
 ```bash
-npm run as -- tts script input/script.json
-npm run as -- tts script input/script.json --kitten
-npm run as -- tts script input/script.json --elevenlabs
-npm run as -- tts script input/script.json --coqui
-npm run as -- tts script input/script.json --polly
+bun as -- tts script input/script.json
+bun as -- tts script input/script.json --kitten
+bun as -- tts script input/script.json --elevenlabs
+bun as -- tts script input/script.json --coqui
+bun as -- tts script input/script.json --polly
 ```
 
 ### List Models
 ```bash
-npm run as -- tts list
+bun as -- tts list
 ```
 
 ## Options

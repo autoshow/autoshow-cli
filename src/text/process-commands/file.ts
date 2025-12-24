@@ -13,7 +13,6 @@ export async function processFile(
   llmServices?: string,
   transcriptServices?: string
 ) {
-  const p = '[text/process-commands/file]'
   try {
     const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, filePath)
     await downloadAudio(options, filePath, filename)
@@ -38,7 +37,7 @@ export async function processFile(
       transcript,
     }
   } catch (error) {
-    err(`${p} Error processing file: ${(error as Error).message}`)
+    err(`Error processing file: ${(error as Error).message}`)
     process.exit(1)
   }
 }

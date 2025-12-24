@@ -5,13 +5,13 @@ Create AI-generated images using multiple cloud-based services including DALL-E 
 ## Quick Start
 
 ```bash
-npm run as -- image generate --prompt "A serene mountain landscape"
+bun as -- image generate --prompt "A serene mountain landscape"
 
-npm run as -- image generate --prompt "A majestic dragon" --service bfl
+bun as -- image generate --prompt "A majestic dragon" --service bfl
 
-npm run as -- image generate --prompt "Space station interior" --service nova
+bun as -- image generate --prompt "Space station interior" --service nova
 
-npm run as -- image generate --prompt "Futuristic cityscape" --service runway
+bun as -- image generate --prompt "Futuristic cityscape" --service runway
 ```
 
 ## Available Services
@@ -24,7 +24,7 @@ npm run as -- image generate --prompt "Futuristic cityscape" --service runway
 ## Service Comparison
 
 ```bash
-npm run as -- image compare "A beautiful sunset over mountains"
+bun as -- image compare "A beautiful sunset over mountains"
 ```
 
 ## Configuration

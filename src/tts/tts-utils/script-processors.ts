@@ -5,8 +5,6 @@ import { processScriptWithPolly } from '../tts-services/polly.ts'
 import { processScriptWithKitten } from '../tts-services/kitten.ts'
 import type { TtsEngine } from '../tts-types'
 
-const p = '[tts/tts-utils/script-processors]'
-
 const scriptProcessors = {
   elevenlabs: processScriptWithElevenLabs,
   coqui: async (s: string, o: string, opts: any) => {
@@ -22,6 +20,6 @@ const scriptProcessors = {
 
 export const processScriptWithEngine = async (engine: TtsEngine, scriptPath: string, outDir: string, options: any): Promise<void> => {
   const processor = scriptProcessors[engine]
-  if (!processor) err(`${p} Unknown engine: ${engine}`)
+  if (!processor) err(`Unknown engine: ${engine}`)
   await processor(scriptPath, outDir, options)
 }

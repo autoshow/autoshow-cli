@@ -1,12 +1,11 @@
 import { err } from '@/logging'
 import { readFile, unlink, existsSync, spawn } from '@/node-utils'
-import { isWhisperCoreMLConfigured, autoSetupWhisperCoreML } from '../../utils/setup-helpers'
+import { isWhisperCoreMLConfigured, autoSetupWhisperCoreML, ensureCoreMLModelExists } from '../../utils/setup-helpers'
 import { formatWhisperTranscript } from './whisper'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 
 async function runWithProgress(command: string, args: string[], spinner?: Ora): Promise<void> {
-  const p = '[text/process-steps/02-run-transcription/whisper-coreml]'
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args)
     let last = -1
@@ -29,12 +28,12 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
       if (code === 0) {
         resolve()
       } else {
-        err(`${p} CoreML whisper process exited with code ${code}`)
+        err(`CoreML whisper process exited with code ${code}`)
         reject(new Error(`whisper-cli-coreml exited with code ${code}`))
       }
     })
     proc.on('error', e => {
-      err(`${p} CoreML whisper process error: ${e.message}`)
+      err(`CoreML whisper process error: ${e.message}`)
       reject(e)
     })
   })
@@ -76,17 +75,21 @@ export async function callWhisperCoreml(
   
   const binaryPath = './build/bin/whisper-cli-coreml'
   if (!existsSync(binaryPath)) {
-    throw new Error(`whisper-cli-coreml not found at ${binaryPath}. Run: npm run setup:whisper-coreml`)
+    throw new Error(`whisper-cli-coreml not found at ${binaryPath}. Run: bun setup:whisper-coreml`)
   }
 
   const modelPath = `./build/models/ggml-${whisperModel}.bin`
   if (!existsSync(modelPath)) {
-    throw new Error(`Model ${whisperModel} not found at ${modelPath}. Run: npm run setup:whisper-coreml`)
+    await ensureCoreMLModelExists(whisperModel)
   }
 
   const encoderPath = await findCoreMLEncoder(whisperModel)
   if (!encoderPath) {
-    throw new Error(`CoreML encoder not found for ${whisperModel}. Run: npm run setup:whisper-coreml`)
+    await ensureCoreMLModelExists(whisperModel)
+    const retryEncoderPath = await findCoreMLEncoder(whisperModel)
+    if (!retryEncoderPath) {
+      throw new Error(`CoreML encoder not found for ${whisperModel} even after generation attempt`)
+    }
   }
 
   const args = [

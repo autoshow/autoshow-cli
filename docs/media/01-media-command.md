@@ -12,13 +12,13 @@ The media command provides audio/video file operations including downloading fro
 Download audio from URLs listed in a markdown file using yt-dlp.
 
 ```bash
-npm run as -- media download --urls "input/example-urls.md"
+bun as -- media download --urls "input/example-urls.md"
 ```
 
 Display detailed output during download:
 
 ```bash
-npm run as -- media download --urls "input/example-urls.md" --verbose
+bun as -- media download --urls "input/example-urls.md" --verbose
 ```
 
 ### Input File Format
@@ -44,25 +44,25 @@ Downloaded files are saved to the `output` directory with the format:
 Convert local audio or video files to optimized MP3 format using ffmpeg.
 
 ```bash
-npm run as -- media convert --files "input/videos"
+bun as -- media convert --files "input/videos"
 ```
 
 Convert single file:
 
 ```bash
-npm run as -- media convert --files "input/audio.mp3"
+bun as -- media convert --files "input/audio.mp3"
 ```
 
 Specify custom output directory:
 
 ```bash
-npm run as -- media convert --files "input/videos" --output "output/audio"
+bun as -- media convert --files "input/videos" --output "output/audio"
 ```
 
 Display detailed output during conversion:
 
 ```bash
-npm run as -- media convert --files "input/videos" --verbose
+bun as -- media convert --files "input/videos" --verbose
 ```
 
 ### Supported Input Formats
@@ -96,17 +96,17 @@ output/
 echo "https://www.youtube.com/watch?v=MORMZXEaONk" > input/videos.md
 
 # Download audio
-npm run as -- media download --urls "input/videos.md"
+bun as -- media download --urls "input/videos.md"
 ```
 
 ### Convert Local Media
 
 ```bash
 # Convert all videos in a directory
-npm run as -- media convert --files "input/recordings"
+bun as -- media convert --files "input/recordings"
 
 # Convert single file with verbose output
-npm run as -- media convert --files "presentation.mp4" --verbose
+bun as -- media convert --files "presentation.mp4" --verbose
 ```
 
 ### Integration with Text Command
@@ -115,10 +115,10 @@ The media command works alongside the text processing pipeline:
 
 ```bash
 # 1. Download audio from URLs
-npm run as -- media download --urls "input/podcast-urls.md"
+bun as -- media download --urls "input/podcast-urls.md"
 
 # 2. Process downloaded audio with text command
-npm run as -- text --file "input/2024-01-15-podcast-episode.mp3" --chatgpt
+bun as -- text --file "input/2024-01-15-podcast-episode.mp3" --chatgpt
 ```
 
 ## Requirements

@@ -4,7 +4,7 @@ import { runTranscription } from '../../process-steps/02-run-transcription/run-t
 import { selectPrompts } from '../../process-steps/03-select-prompts/select-prompt.ts'
 import { runLLM } from '../../process-steps/04-run-llm/run-llm.ts'
 import { saveInfo } from '../../utils/save-info.ts'
-import { l, err, logSeparator } from '@/logging'
+import { l, err } from '@/logging'
 import { selectRSSItemsToProcess } from './fetch.ts'
 import { logRSSProcessingStatus } from './rss-logging.ts'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
@@ -15,17 +15,17 @@ export async function processRSSFeeds(
   llmServices?: string,
   transcriptServices?: string
 ): Promise<void> {
-  const p = '[text/process-commands/rss/processor]'
   let allItemsForCombined: ShowNoteMetadata[] = []
+  const skippedFeeds: string[] = []
   
   for (const rssUrl of expandedRssUrls) {
     if (options.item && options.item.length > 0) {
-      l.dim('\nProcessing specific items:')
-      options.item.forEach((url) => l.dim(`  - ${url}`))
+      l.dim('Processing specific items:')
+      options.item.forEach((url) => l.dim(`${url}`))
     } else if (options.last) {
-      l.dim(`\nProcessing the last ${options.last} items`)
+      l.dim(`Processing the last ${options.last} items`)
     } else if (options.days) {
-      l.dim(`\nProcessing items from the last ${options.days} days`)
+      l.dim(`Processing items from the last ${options.days} days`)
     }
     
     try {
@@ -45,7 +45,7 @@ export async function processRSSFeeds(
       }
       
       if (items.length === 0) {
-        l.warn(`${p} No items found matching criteria for ${channelTitle || rssUrl}`)
+        skippedFeeds.push(channelTitle || rssUrl)
         continue
       }
       
@@ -53,14 +53,7 @@ export async function processRSSFeeds(
       
       const results = []
       for (const [index, item] of items.entries()) {
-        logSeparator({
-          type: 'rss',
-          index,
-          total: items.length,
-          descriptor: item.title
-        })
-        l.opts('Parameters passed to processItem:\n')
-        l.opts(`  - llmServices: ${llmServices}\n  - transcriptServices: ${transcriptServices}\n`)
+        l.final(`Item ${index + 1}/${items.length} processing: ${item.title}`)
         
         try {
           const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, item)
@@ -90,7 +83,7 @@ export async function processRSSFeeds(
             transcript,
           })
         } catch (error) {
-          err(`${p} Error processing item ${item.title}: ${(error as Error).message}`)
+          err(`Error processing item ${item.title}: ${(error as Error).message}`)
           results.push({
             frontMatter: '',
             prompt: '',
@@ -100,9 +93,13 @@ export async function processRSSFeeds(
         }
       }
     } catch (error) {
-      err(`${p} Error processing RSS feed ${rssUrl}: ${(error as Error).message}`)
+      err(`Error processing RSS feed ${rssUrl}: ${(error as Error).message}`)
       throw error
     }
+  }
+  
+  if (skippedFeeds.length > 0) {
+    l.warn(`No items found for: ${skippedFeeds.join(', ')}`)
   }
   
   if (options.info === 'combined' && allItemsForCombined.length > 0) {

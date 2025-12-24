@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err, logInitialFunctionCall } from '@/logging'
+import { l, err } from '@/logging'
 import type { ExtractOptions } from '@/extract/extract-types'
 
 export const createExtractCommand = (): Command => {
@@ -15,7 +15,7 @@ export const createExtractCommand = (): Command => {
     .option('--model <model>', 'Model to use: gpt-4.1, gpt-4.1-mini (default), gemini-2.0-flash', 'gpt-4.1-mini')
     .option('--service <service>', 'Extraction service: zerox (default), unpdf, textract', 'zerox')
     .action(async (pdfFile: string, options: ExtractOptions) => {
-      logInitialFunctionCall('extractPdfCommand', { pdfFile, ...options })
+      l.opts(`Extracting PDF: ${pdfFile}`)
       
       try {
         const validServices = ['zerox', 'unpdf', 'textract']
@@ -48,7 +48,7 @@ export const createExtractCommand = (): Command => {
     .option('--model <model>', 'Model to use: gpt-4.1, gpt-4.1-mini (default), gemini-2.0-flash', 'gpt-4.1-mini')
     .option('--service <service>', 'Extraction service: zerox (default), unpdf, textract', 'zerox')
     .action(async (directory: string, options: ExtractOptions) => {
-      logInitialFunctionCall('extractBatchCommand', { directory, ...options })
+      l.opts(`Batch extracting PDFs from: ${directory}`)
       
       try {
         const validServices = ['zerox', 'unpdf', 'textract']

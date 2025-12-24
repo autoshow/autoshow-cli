@@ -1,7 +1,5 @@
 import { l } from '@/logging'
 
-const p = '[tts/tts-utils/remove-markdown]'
-
 export interface RemoveMarkdownOptions {
   listUnicodeChar?: string | false
   stripListLeaders?: boolean
@@ -27,7 +25,7 @@ export function removeMarkdown(md: string, options: RemoveMarkdownOptions = {}):
 
   let output = md || ''
   
-  l.dim(`${p} Processing markdown text with ${output.length} characters`)
+  l.dim(`Processing markdown text with ${output.length} characters`)
 
   output = output.replace(/^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/gm, '')
 
@@ -77,9 +75,9 @@ export function removeMarkdown(md: string, options: RemoveMarkdownOptions = {}):
       .replace(/`(.+?)`/g, '$1')
       .replace(/~(.*?)~/g, '$1')
       
-    l.dim(`${p} Successfully stripped markdown, output length: ${output.length} characters`)
+    l.dim(`Successfully stripped markdown, output length: ${output.length} characters`)
   } catch (error) {
-    l.dim(`${p} Error while removing markdown: ${error}`)
+    l.dim(`Error while removing markdown: ${error}`)
     if (opts.throwError) throw error
     return md
   }

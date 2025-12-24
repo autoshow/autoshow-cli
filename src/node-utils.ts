@@ -3,10 +3,8 @@ import { argv, env, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { existsSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs'
 import { exec, execFile, spawn, spawnSync, execSync } from 'node:child_process'
-import { readFile, readdir, writeFile, access, unlink, rename, copyFile } from 'node:fs/promises'
-import { basename, extname, join, dirname, isAbsolute, resolve, relative } from 'node:path'
-import fs from 'node:fs/promises'
-import path from 'node:path'
+import { readFile, readdir, writeFile, access, unlink, rename, copyFile, mkdir, stat, rm } from 'node:fs/promises'
+import { basename, extname, join, dirname, isAbsolute, resolve, relative, parse } from 'node:path'
 
 import { XMLParser } from 'fast-xml-parser'
 
@@ -21,7 +19,7 @@ export const execFilePromise = promisify(execFile)
 
 export const ensureDir = async (dir: string): Promise<void> => {
   try {
-    await fs.mkdir(dir, { recursive: true })
+    await mkdir(dir, { recursive: true })
   } catch (error) {
     if ((error as { code?: string }).code !== 'EEXIST') throw error
   }
@@ -41,6 +39,9 @@ export {
   access,
   writeFile,
   copyFile,
+  mkdir,
+  stat,
+  rm,
   basename,
   extname,
   join,
@@ -48,6 +49,7 @@ export {
   isAbsolute,
   resolve,
   relative,
+  parse,
   unlink,
   rename,
   existsSync,
@@ -58,7 +60,5 @@ export {
   execFile,
   spawn,
   spawnSync,
-  execSync,
-  fs,
-  path
+  execSync
 }

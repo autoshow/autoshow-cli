@@ -7,8 +7,6 @@ import { synthesizeWithKitten } from '../tts-services/kitten.ts'
 import { stripMarkdown } from './text-utils.ts'
 import type { TtsEngine } from '../tts-types'
 
-const p = '[tts/tts-utils/synthesizers]'
-
 const synthesizers = {
   elevenlabs: async (plain: string, out: string, opts: any) => {
     return synthesizeWithElevenLabs(plain, out, opts.voice || process.env['ELEVENLABS_DEFAULT_VOICE'] || 'onwK4e9ZLuTAKqWW03F9')
@@ -29,6 +27,6 @@ export const processFileWithEngine = async (engine: TtsEngine, filePath: string,
   const plain = stripMarkdown(filePath)
   const wavOut = join(outDir, basename(filePath, extname(filePath)) + '.wav')
   const synth = synthesizers[engine]
-  if (!synth) err(`${p} Unknown engine: ${engine}`)
+  if (!synth) err(`Unknown engine: ${engine}`)
   await synth(plain, wavOut, { ...options, outDir, filePath })
 }
