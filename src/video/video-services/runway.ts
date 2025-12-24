@@ -55,7 +55,6 @@ export async function generateVideoWithRunway(
   prompt: string,
   options: RunwayGenerateOptions = {}
 ): Promise<VideoGenerationResult> {
-  const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   const uniqueOutputPath = options.outputPath || generateUniqueFilename('runway', 'mp4')
   
