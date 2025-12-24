@@ -47,7 +47,7 @@ export async function logCopy(source: string, destination: string, operationName
   await logOperation(`cp -R "${source}" "${destination}"`, operationName, l, successMessage)
 }
 
-export async function logMkdir(targetPath: string, operationName: string): Promise<void> {
+export async function logMkdir(targetPath: string, _operationName: string): Promise<void> {
   try {
     if (!existsSync(targetPath)) {
       await ensureDir(targetPath)

@@ -82,7 +82,6 @@ export async function generateVideoWithVeo(
   prompt: string,
   options: VeoGenerateOptions = {}
 ): Promise<VideoGenerationResult> {
-  const requestId = Math.random().toString(36).substring(2, 10)
   const startTime = Date.now()
   const uniqueOutputPath = options.outputPath || generateUniqueFilename('veo', 'mp4')
   
