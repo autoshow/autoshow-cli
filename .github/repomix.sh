@@ -1,14 +1,10 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  ".github/setup/*"
-  ".github/setup/tts"
-  "*"
-  "docs/media"
-  "docs/extract"
-  "src/*"
-  "src/media"
-  "src/extract"
+  ".github/setup"
+  # "*"
+  # "docs"
+  # "src"
   # "test"
 )
 

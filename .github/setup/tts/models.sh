@@ -1,30 +1,33 @@
 #!/bin/bash
 set -euo pipefail
-p='[setup/tts/models]'
+source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
 
-if [ ! -x "build/pyenv/tts/bin/pip" ]; then
-  echo "$p ERROR: TTS environment not found. Run base setup first."
-  exit 1
-fi
+MARKER_FILE="$CONFIG_DIR/.tts-models-installed"
 
-build/pyenv/tts/bin/python - <<'PY' >/dev/null 2>&1 || true
+check_marker "$MARKER_FILE" && exit 0
+
+require_tts_env
+
+tts_python - <<'PY' >/dev/null 2>&1 || true
 try:
     from TTS.api import TTS
     import os
     os.environ['TTS_CACHE_PATH'] = 'build/models/tts'
     os.makedirs('build/models/tts', exist_ok=True)
     tts = TTS('tts_models/en/ljspeech/tacotron2-DDC', progress_bar=False)
-except Exception as e:
+except Exception:
     pass
 PY
 
-build/pyenv/tts/bin/python - <<'PY' >/dev/null 2>&1 || true
+tts_python - <<'PY' >/dev/null 2>&1 || true
 try:
     from kittentts import KittenTTS
     import os
     os.environ['HF_HOME'] = 'build/models/kitten'
     os.makedirs('build/models/kitten', exist_ok=True)
     m = KittenTTS("KittenML/kitten-tts-nano-0.1")
-except Exception as e:
+except Exception:
     pass
 PY
+
+touch "$MARKER_FILE"
