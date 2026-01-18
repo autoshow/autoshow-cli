@@ -72,6 +72,16 @@ get_python311_path() {
 }
 
 VENV="build/pyenv/tts"
+CONFIG_DIR="build/config"
+MARKER_FILE="$CONFIG_DIR/.tts-env-installed"
+
+mkdir -p "$CONFIG_DIR"
+
+# Check if already installed via marker file
+if [ -f "$MARKER_FILE" ] && [ -x "$VENV/bin/python" ]; then
+  log "TTS environment: already configured, skipping"
+  exit 0
+fi
 
 if ! ensure_python311; then
   log "ERROR: Cannot install Python 3.11, TTS features unavailable"
@@ -82,36 +92,6 @@ PY311=$(get_python311_path) || {
   log "ERROR: Python 3.11 not found after installation"
   exit 1
 }
-
-if [ -d "$VENV" ] && [ -x "$VENV/bin/python" ]; then
-  VENV_PY_VERSION=$("$VENV/bin/python" -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "0.0")
-  
-  if [ "$VENV_PY_VERSION" = "3.11" ]; then
-    if [ "${NO_MODELS:-false}" != "true" ]; then
-      if "$VENV/bin/python" -c "import torch, numpy, soundfile, librosa, scipy" 2>/dev/null && \
-         "$VENV/bin/python" -c "import TTS" 2>/dev/null && \
-         "$VENV/bin/python" -c "import kittentts" 2>/dev/null; then
-        mkdir -p build/config
-        if [ ! -f "build/config/.tts-config.json" ]; then
-          cat >build/config/.tts-config.json <<EOF
-{"python":"$VENV/bin/python","venv":"$VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}
-EOF
-        fi
-        exit 0
-      fi
-    else
-      if "$VENV/bin/python" -c "import torch, numpy, soundfile, librosa, scipy" 2>/dev/null; then
-        mkdir -p build/config
-        if [ ! -f "build/config/.tts-config.json" ]; then
-          cat >build/config/.tts-config.json <<EOF
-{"python":"$VENV/bin/python","venv":"$VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}
-EOF
-        fi
-        exit 0
-      fi
-    fi
-  fi
-fi
 
 if [ -d "$VENV" ]; then
   chmod -R u+w "$VENV" 2>/dev/null || true
@@ -135,3 +115,5 @@ if [ ! -f "build/config/.tts-config.json" ]; then
 {"python":"$VENV/bin/python","venv":"$VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"}}
 EOF
 fi
+
+touch "$MARKER_FILE"

@@ -9,6 +9,13 @@ ts() {
 }
 log() { echo "[$(ts)] $*"; }
 
+MARKER_FILE="build/config/.tts-models-installed"
+
+# Skip if already installed via marker file
+if [ -f "$MARKER_FILE" ]; then
+  exit 0
+fi
+
 if [ ! -x "build/pyenv/tts/bin/pip" ]; then
   log "ERROR: TTS environment not found. Run base setup first."
   exit 1
@@ -35,3 +42,5 @@ try:
 except Exception as e:
     pass
 PY
+
+touch "$MARKER_FILE"

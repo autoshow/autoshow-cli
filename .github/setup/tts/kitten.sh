@@ -9,6 +9,13 @@ ts() {
 }
 log() { echo "[$(ts)] $*"; }
 
+MARKER_FILE="build/config/.kitten-installed"
+
+# Skip if already installed via marker file
+if [ -f "$MARKER_FILE" ]; then
+  exit 0
+fi
+
 if [ ! -x "build/pyenv/tts/bin/pip" ]; then
   log "ERROR: Shared TTS environment missing at build/pyenv/tts/bin/pip"
   log "Run: bun setup:tts to set up the base TTS environment first"
@@ -18,6 +25,7 @@ fi
 pip() { "build/pyenv/tts/bin/pip" "$@"; }
 
 if build/pyenv/tts/bin/python -c "import kittentts" 2>/dev/null; then
+  touch "$MARKER_FILE"
   exit 0
 else
   pip install setuptools wheel >/dev/null 2>&1 || true
@@ -58,7 +66,7 @@ else
   fi
   
   if build/pyenv/tts/bin/python -c "import kittentts" 2>/dev/null; then
-    :
+    touch "$MARKER_FILE"
   else
     log "WARNING: Kitten TTS installation verification failed"
     log "The package may have installed but import is failing"

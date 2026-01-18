@@ -27,7 +27,7 @@ esac
 
 if [ "$IS_MAC" = true ]; then
     if [ -x "build/pyenv/coreml/bin/python" ]; then
-        bash ".github/setup/transcription/generate-coreml-model.sh" base >/dev/null 2>&1 || {
+        bash ".github/setup/transcription/coreml/generate-coreml-model.sh" base >/dev/null 2>&1 || {
             log "WARNING: Failed to generate CoreML model"
         }
         

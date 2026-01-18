@@ -10,8 +10,14 @@ Installs npm dependencies and creates directory structure. No Python environment
 
 ### Feature Setup
 ```bash
-bun setup:transcription       # Audio transcription (Whisper.cpp)
-bun setup:tts                 # Text-to-speech (Coqui + Kitten)
+# All features (transcription + TTS)
+bun setup:all
+
+# Audio transcription (Whisper.cpp)
+bun setup:transcription
+
+# Text-to-speech (Coqui + Kitten)
+bun setup:tts
 ```
 
 Each feature is self-contained and won't affect others if setup fails.
@@ -37,6 +43,7 @@ Each feature is self-contained and won't affect others if setup fails.
 | Base | ~200MB | 1-2 min |
 | Transcription | ~1GB | 3-5 min |
 | TTS | ~500MB | 2-3 min |
+| All | ~1.5GB | 5-8 min |
 
 ## What Gets Installed
 

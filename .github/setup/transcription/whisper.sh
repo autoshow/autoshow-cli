@@ -26,9 +26,17 @@ esac
 WHISPER_DIR="whisper-cpp-temp"
 BIN_DIR="build/bin"
 MODELS_DIR="build/models"
+CONFIG_DIR="build/config"
+MARKER_FILE="$CONFIG_DIR/.whisper-installed"
 TMP_LOG="/tmp/whisper-build-$$.log"
 
-mkdir -p "$BIN_DIR" "$MODELS_DIR"
+mkdir -p "$BIN_DIR" "$MODELS_DIR" "$CONFIG_DIR"
+
+# Skip if already installed
+if [ -f "$MARKER_FILE" ] && [ -x "$BIN_DIR/whisper-cli" ]; then
+  log "whisper-cli: already installed, skipping"
+  exit 0
+fi
 
 rm -rf "$WHISPER_DIR"
 log "Cloning whisper.cpp repository..."
@@ -111,4 +119,5 @@ if [ "$IS_MAC" = true ]; then
 fi
 
 rm -rf "$WHISPER_DIR"
+touch "$MARKER_FILE"
 log "Whisper.cpp setup completed"
