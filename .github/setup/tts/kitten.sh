@@ -2,68 +2,50 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
 
-MARKER_FILE="build/config/.kitten-installed"
+MARKER_FILE="$CONFIG_DIR/.kitten-installed"
 
-# Skip if already installed via marker file
-if [ -f "$MARKER_FILE" ]; then
-  exit 0
-fi
+check_marker "$MARKER_FILE" && exit 0
 
-if [ ! -x "build/pyenv/tts/bin/pip" ]; then
-  log "ERROR: Shared TTS environment missing at build/pyenv/tts/bin/pip"
-  log "Run: bun setup:tts to set up the base TTS environment first"
-  exit 1
-fi
+require_tts_env
 
-pip() { "build/pyenv/tts/bin/pip" "$@"; }
-
-if build/pyenv/tts/bin/python -c "import kittentts" 2>/dev/null; then
+if tts_can_import "kittentts"; then
   touch "$MARKER_FILE"
   exit 0
+fi
+
+tts_pip install setuptools wheel >/dev/null 2>&1 || true
+
+if tts_pip install https://github.com/KittenML/KittenTTS/releases/download/0.1/kittentts-0.1.0-py3-none-any.whl >/dev/null 2>&1; then
+  :
+elif tts_pip install kittentts >/dev/null 2>&1; then
+  :
 else
-  pip install setuptools wheel >/dev/null 2>&1 || true
+  WHEEL_URL="https://github.com/KittenML/KittenTTS/releases/download/0.1/kittentts-0.1.0-py3-none-any.whl"
+  TEMP_WHEEL="/tmp/kittentts-0.1.0-py3-none-any.whl"
   
-  if pip install https://github.com/KittenML/KittenTTS/releases/download/0.1/kittentts-0.1.0-py3-none-any.whl >/dev/null 2>&1; then
-    :
-  else
-    if pip install kittentts >/dev/null 2>&1; then
-      :
+  if curl -L -o "$TEMP_WHEEL" "$WHEEL_URL" 2>/dev/null; then
+    if tts_pip install "$TEMP_WHEEL" >/dev/null 2>&1; then
+      rm -f "$TEMP_WHEEL"
     else
-      WHEEL_URL="https://github.com/KittenML/KittenTTS/releases/download/0.1/kittentts-0.1.0-py3-none-any.whl"
-      TEMP_WHEEL="/tmp/kittentts-0.1.0-py3-none-any.whl"
-      
-      if curl -L -o "$TEMP_WHEEL" "$WHEEL_URL" 2>/dev/null; then
-        if pip install "$TEMP_WHEEL" >/dev/null 2>&1; then
-          rm -f "$TEMP_WHEEL"
-        else
-          rm -f "$TEMP_WHEEL"
-          
-          if pip install git+https://github.com/KittenML/KittenTTS.git >/dev/null 2>&1; then
-            :
-          else
-            log "ERROR: All Kitten TTS installation methods failed"
-            log "This may be due to:"
-            log "  - Network connectivity issues"
-            log "  - Missing system dependencies"
-            log "Kitten TTS will be unavailable, but Coqui TTS should still work"
-            log "WARNING: Continuing with setup without Kitten TTS"
-            exit 0
-          fi
-        fi
+      rm -f "$TEMP_WHEEL"
+      if tts_pip install git+https://github.com/KittenML/KittenTTS.git >/dev/null 2>&1; then
+        :
       else
-        log "ERROR: Failed to download Kitten TTS wheel file"
-        log "Network issue or URL changed. Continuing without Kitten TTS"
+        log "ERROR: All Kitten TTS installation methods failed"
+        log "Kitten TTS will be unavailable, but Coqui TTS should still work"
         exit 0
       fi
     fi
-  fi
-  
-  if build/pyenv/tts/bin/python -c "import kittentts" 2>/dev/null; then
-    touch "$MARKER_FILE"
   else
-    log "WARNING: Kitten TTS installation verification failed"
-    log "The package may have installed but import is failing"
-    log "Continuing with setup - Coqui TTS should still work"
+    log "ERROR: Failed to download Kitten TTS wheel file"
+    log "Continuing without Kitten TTS"
     exit 0
   fi
+fi
+
+if tts_can_import "kittentts"; then
+  touch "$MARKER_FILE"
+else
+  log "WARNING: Kitten TTS installation verification failed"
+  log "Continuing with setup - Coqui TTS should still work"
 fi

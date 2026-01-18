@@ -6,18 +6,11 @@ MODEL="${1:-base}"
 OUT="build/models/ggml-${MODEL}-encoder.mlmodelc"
 FALLBACK_OUT="build/models/ggml-${MODEL}-encoder.mlpackage"
 
-if [ -d "$OUT" ]; then
-  exit 0
-fi
+[ -d "$OUT" ] && exit 0
+[ -d "$FALLBACK_OUT" ] && exit 0
 
-if [ -d "$FALLBACK_OUT" ]; then
-  exit 0
-fi
-
-PY="build/pyenv/coreml/bin/python"
-if [ ! -x "$PY" ]; then
-  PY="python3"
-fi
+PY="$PYENV_DIR/coreml/bin/python"
+[ -x "$PY" ] || PY="python3"
 
 case "$MODEL" in
   tiny|tiny.en|base|base.en|small|small.en|medium|medium.en|large|large-v1|large-v2|large-v3|large-v3-turbo) ;;
@@ -25,46 +18,33 @@ case "$MODEL" in
 esac
 
 CONV_MODEL="$MODEL"
-if [[ "$MODEL" == "large" || "$MODEL" == "large-v1" || "$MODEL" == "large-v2" || "$MODEL" == "large-v3" ]]; then
-  CONV_MODEL="large-v3"
-fi
+case "$MODEL" in
+  large|large-v1|large-v2|large-v3) CONV_MODEL="large-v3" ;;
+esac
 
 check_coreml_compiler() {
-  if command -v xcrun &>/dev/null; then
-    if xcrun --find coremlc &>/dev/null 2>&1 || xcrun --find coremlcompiler &>/dev/null 2>&1; then
-      return 0
-    fi
-  fi
-  return 1
+  command -v xcrun &>/dev/null && \
+    (xcrun --find coremlc &>/dev/null 2>&1 || xcrun --find coremlcompiler &>/dev/null 2>&1)
 }
 
 TMP_DIR="build/models/tmp-coreml-${MODEL}"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-$PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true >/dev/null 2>&1 || {
+$PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py \
+  --model "$CONV_MODEL" --encoder-only true >/dev/null 2>&1 || {
   log "Conversion failed"
   exit 1
 }
 
 MLCAND=""
 if [ -d "$TMP_DIR" ]; then
-  CANDIDATE_C=$(find "$TMP_DIR" -type d -name "*.mlmodelc" -maxdepth 2 2>/dev/null | head -n 1 || true)
-  CANDIDATE_P=$(find "$TMP_DIR" -type d -name "*.mlpackage" -maxdepth 2 2>/dev/null | head -n 1 || true)
-  
-  if [ -n "${CANDIDATE_C:-}" ]; then
-    MLCAND="$CANDIDATE_C"
-  elif [ -n "${CANDIDATE_P:-}" ]; then
-    MLCAND="$CANDIDATE_P"
-  fi
+  MLCAND=$(find "$TMP_DIR" -type d -name "*.mlmodelc" -maxdepth 2 2>/dev/null | head -n 1 || true)
+  [ -z "$MLCAND" ] && MLCAND=$(find "$TMP_DIR" -type d -name "*.mlpackage" -maxdepth 2 2>/dev/null | head -n 1 || true)
 fi
 
-if [ -z "$MLCAND" ]; then
-  PKG_DEFAULT="build/models/coreml-encoder-${CONV_MODEL}.mlpackage"
-  if [ -d "$PKG_DEFAULT" ]; then
-    MLCAND="$PKG_DEFAULT"
-  fi
-fi
+[ -z "$MLCAND" ] && [ -d "build/models/coreml-encoder-${CONV_MODEL}.mlpackage" ] && \
+  MLCAND="build/models/coreml-encoder-${CONV_MODEL}.mlpackage"
 
 if [ -z "$MLCAND" ]; then
   log "No CoreML artifact produced for $MODEL"
@@ -76,7 +56,7 @@ if [[ "$MLCAND" == *.mlpackage ]]; then
     COMPILED_DIR="$TMP_DIR/compiled"
     mkdir -p "$COMPILED_DIR"
     
-    xcrun coremlc compile "$MLCAND" "$COMPILED_DIR" >/dev/null 2>&1 && {
+    if xcrun coremlc compile "$MLCAND" "$COMPILED_DIR" >/dev/null 2>&1; then
       CANDIDATE=$(find "$COMPILED_DIR" -type d -name "*.mlmodelc" -maxdepth 2 2>/dev/null | head -n 1 || true)
       if [ -n "$CANDIDATE" ]; then
         rm -rf "$OUT"
@@ -84,28 +64,16 @@ if [[ "$MLCAND" == *.mlpackage ]]; then
         rm -rf "$TMP_DIR"
         exit 0
       fi
-    }
+    fi
   fi
   
   rm -rf "$FALLBACK_OUT"
   mv "$MLCAND" "$FALLBACK_OUT"
   rm -rf "$TMP_DIR"
-  
-  if [ ! -d "$FALLBACK_OUT" ]; then
-    log "Failed to create $FALLBACK_OUT"
-    exit 1
-  fi
-  
-  exit 0
+  [ -d "$FALLBACK_OUT" ] || { log "Failed to create $FALLBACK_OUT"; exit 1; }
 else
   rm -rf "$OUT"
   mv "$MLCAND" "$OUT"
   rm -rf "$TMP_DIR"
-  
-  if [ ! -d "$OUT" ]; then
-    log "Failed to create $OUT"
-    exit 1
-  fi
-  
-  exit 0
+  [ -d "$OUT" ] || { log "Failed to create $OUT"; exit 1; }
 fi
