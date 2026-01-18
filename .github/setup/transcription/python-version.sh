@@ -1,16 +1,10 @@
 #!/bin/bash
-ts() {
-  if command -v gdate &>/dev/null; then
-    gdate "+%H:%M:%S.%3N"
-  else
-    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
-  fi
-}
-_log() { echo "[$(ts)] $*"; }
+source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
+
+# Alias for backwards compatibility (some scripts may use _log)
+_log() { log "$@"; }
 
 ensure_python311() {
-  local _unused="${1:-}"
-  
   if command -v python3.11 &>/dev/null; then
     return 0
   fi

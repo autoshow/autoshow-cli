@@ -38,14 +38,8 @@ error_handler() {
 }
 trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
 
-ts() {
-  if command -v gdate &>/dev/null; then
-    gdate "+%H:%M:%S.%3N"
-  else
-    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
-  fi
-}
-log() { echo "[$(ts)] $*"; }
+# Source common utilities
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 SETUP_MODE="${1:-base}"
 case "$SETUP_MODE" in
