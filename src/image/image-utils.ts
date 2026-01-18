@@ -76,24 +76,24 @@ export const handleError = (error: any): void => {
   err(`${matched ? matched[1] : `Error: ${error.message}`}`)
 }
 
-export async function ensureNpmDependencies(): Promise<boolean> {
+export async function ensureDependencies(): Promise<boolean> {
   try {
-    l.dim(`Checking npm dependencies`)
+    l.dim(`Checking dependencies`)
     
     if (!existsSync('node_modules')) {
-      l.warn(`node_modules not found, running npm install`)
-      execSync('npm install', {
+      l.warn(`node_modules not found, running bun install`)
+      execSync('bun install', {
         stdio: 'inherit',
         encoding: 'utf8'
       })
-      l.success(`npm dependencies installed successfully`)
+      l.success(`Dependencies installed successfully`)
     } else {
-      l.dim(`npm dependencies already installed`)
+      l.dim(`Dependencies already installed`)
     }
     
     return true
   } catch (error) {
-    l.warn(`Failed to install npm dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    l.warn(`Failed to install dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`)
     return false
   }
 }

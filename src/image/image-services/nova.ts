@@ -1,6 +1,6 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { l } from '@/logging'
-import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError, ensureNpmDependencies } from '../image-utils.ts'
+import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError, ensureDependencies } from '../image-utils.ts'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, NovaCanvasPayload } from '../image-types'
 
@@ -14,7 +14,7 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
   const startTime = Date.now()
   
   try {
-    await ensureNpmDependencies()
+    await ensureDependencies()
     
     const { width, height } = parseResolution(options.resolution || '1024x1024')
     const config = {

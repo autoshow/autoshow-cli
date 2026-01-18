@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 import { l } from '@/logging'
-import { generateUniqueFilename, isApiError, ensureNpmDependencies } from '../image-utils.ts'
+import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils.ts'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult } from '../image-types'
 
@@ -13,7 +13,7 @@ export async function generateImageWithDallE(
   const uniqueOutputPath = outputPath || generateUniqueFilename('dalle', 'png')
   
   try {
-    await ensureNpmDependencies()
+    await ensureDependencies()
     
     if (!env['OPENAI_API_KEY']) {
       throw new Error('OPENAI_API_KEY environment variable is missing')

@@ -1,7 +1,7 @@
 import { writeFile } from 'fs/promises'
 import RunwayML from '@runwayml/sdk'
 import { l } from '@/logging'
-import { generateUniqueFilename, isApiError, ensureNpmDependencies } from '../image-utils.ts'
+import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils.ts'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, RunwayImageOptions } from '../image-types'
 
@@ -25,7 +25,7 @@ export async function generateImageWithRunway(
   const uniqueOutputPath = outputPath || generateUniqueFilename('runway', 'jpg')
   
   try {
-    await ensureNpmDependencies()
+    await ensureDependencies()
     
     if (!env['RUNWAYML_API_SECRET']) {
       throw new Error('RUNWAYML_API_SECRET environment variable is missing')
