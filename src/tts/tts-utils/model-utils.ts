@@ -11,7 +11,7 @@ export const listModels = async (): Promise<void> => {
   
   l.dim(`Using Python path: ${pythonPath}`)
   
-  const pythonScriptPath = join(dirname(import.meta.url.replace('file://', '')), '../tts-services/coqui-list.py')
+  const pythonScriptPath = join(dirname(import.meta.url.replace('file://', '')), '../tts-local/coqui-list.py')
   
   l.dim(`Listing available TTS models`)
   

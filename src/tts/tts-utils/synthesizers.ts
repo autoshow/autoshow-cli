@@ -1,9 +1,9 @@
 import { err } from '@/logging'
 import { basename, extname, join } from '@/node-utils'
 import { synthesizeWithElevenLabs } from '../tts-services/elevenlabs.ts'
-import { synthesizeWithCoqui } from '../tts-services/coqui.ts'
+import { synthesizeWithCoqui } from '../tts-local/coqui.ts'
 import { synthesizeWithPolly } from '../tts-services/polly.ts'
-import { synthesizeWithKitten } from '../tts-services/kitten.ts'
+import { synthesizeWithKitten } from '../tts-local/kitten.ts'
 import { stripMarkdown } from './text-utils.ts'
 import type { TtsEngine } from '../tts-types'
 
