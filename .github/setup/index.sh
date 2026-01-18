@@ -49,12 +49,12 @@ log() { echo "[$(ts)] $*"; }
 
 SETUP_MODE="${1:-base}"
 case "$SETUP_MODE" in
-  --transcription|--tts|base)
+  --transcription|--tts|--all|base)
     SETUP_MODE="${SETUP_MODE#--}"
     ;;
   *)
     log "Invalid argument '$1'"
-    log "Usage: $0 [--transcription|--tts]"
+    log "Usage: $0 [--transcription|--tts|--all]"
     exit 1
     ;;
 esac
@@ -124,7 +124,8 @@ log_dependency_info() {
 
 quiet_brew_install() {
   local pkg="$1"
-  if brew list --formula | grep -qx "$pkg"; then
+  local cmd="${2:-$pkg}"  # Allow specifying command name if different from package
+  if command -v "$cmd" &>/dev/null; then
     return 0
   fi
   log "Installing $pkg via Homebrew..."
@@ -247,9 +248,19 @@ check_and_update_ytdlp() {
   if [ "$PLATFORM" = "macos" ]; then
     local current_version latest_version
     current_version=$(yt-dlp --version 2>/dev/null || echo "0")
-    latest_version=$(brew info yt-dlp 2>/dev/null | grep -m 1 "yt-dlp:" | awk '{print $3}' || echo "0")
+    # brew info output: "==> yt-dlp: stable 2025.12.8 (bottled), HEAD"
+    # Extract the version number (4th field) not "stable" (3rd field)
+    latest_version=$(brew info yt-dlp 2>/dev/null | grep -m 1 "yt-dlp:" | awk '{print $4}' || echo "0")
     
-    if [ "$current_version" != "$latest_version" ] && [ "$latest_version" != "0" ]; then
+    # Normalize version formats: yt-dlp uses 2025.12.08, brew uses 2025.12.8
+    # Remove leading zeros from date components for comparison
+    normalize_version() {
+      echo "$1" | sed 's/\.0\([0-9]\)/.\1/g'
+    }
+    current_normalized=$(normalize_version "$current_version")
+    latest_normalized=$(normalize_version "$latest_version")
+    
+    if [ "$current_normalized" != "$latest_normalized" ] && [ "$latest_normalized" != "0" ]; then
       log "Updating yt-dlp from $current_version to $latest_version..."
       brew upgrade yt-dlp >/dev/null 2>&1 || quiet_brew_install "yt-dlp"
     fi
@@ -331,6 +342,33 @@ case "$SETUP_MODE" in
     ;;
     
   tts)
+    log "Setting up Text-to-Speech dependencies..."
+    install_deps ffmpeg espeak-ng pkg-config
+    bash "$SETUP_DIR/tts/tts-env.sh"
+    bash "$SETUP_DIR/tts/kitten.sh"
+    bash "$SETUP_DIR/tts/coqui.sh"
+    bash "$SETUP_DIR/tts/models.sh"
+    ;;
+    
+  all)
+    log "Setting up all features (transcription + TTS)..."
+    
+    # Transcription setup
+    log "Setting up transcription dependencies..."
+    install_deps cmake ffmpeg pkg-config git
+    
+    if [ "$PLATFORM" = "macos" ]; then
+      log "Building Whisper.cpp with CoreML acceleration..."
+      bash "$SETUP_DIR/transcription/whisper.sh"
+      bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
+      bash "$SETUP_DIR/transcription/models.sh"
+    else
+      log "Building Whisper.cpp..."
+      bash "$SETUP_DIR/transcription/whisper.sh"
+      bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
+    fi
+    
+    # TTS setup
     log "Setting up Text-to-Speech dependencies..."
     install_deps ffmpeg espeak-ng pkg-config
     bash "$SETUP_DIR/tts/tts-env.sh"

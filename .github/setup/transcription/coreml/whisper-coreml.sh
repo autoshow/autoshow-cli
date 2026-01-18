@@ -35,12 +35,29 @@ WHISPER_DIR="whisper-cpp-temp-coreml"
 BIN_DIR="build/bin"
 MODELS_DIR="build/models"
 VENV_DIR="build/pyenv/coreml"
+CONFIG_DIR="build/config"
 CONVERT_SCRIPT_DIR=".github/setup/transcription/coreml"
 COREML_CACHE_DIR="build/cache/coreml"
 COREML_TMP_DIR="build/tmp/coreml"
 TMP_LOG="/tmp/whisper-coreml-build-$$.log"
+BINARY_MARKER="$CONFIG_DIR/.whisper-coreml-installed"
+VENV_MARKER="$CONFIG_DIR/.coreml-env"
 
-mkdir -p "$BIN_DIR" "$MODELS_DIR" "$COREML_CACHE_DIR" "$COREML_TMP_DIR"
+mkdir -p "$BIN_DIR" "$MODELS_DIR" "$COREML_CACHE_DIR" "$COREML_TMP_DIR" "$CONFIG_DIR"
+
+# Check if everything is already installed
+if [ -f "$BINARY_MARKER" ] && [ -x "$BIN_DIR/whisper-cli-coreml" ] && [ -f "$VENV_MARKER" ]; then
+  log "whisper-cli-coreml: already installed, skipping"
+  log "CoreML Python environment: already configured, skipping"
+  exit 0
+fi
+
+# Check if just the binary is installed (still need venv setup)
+SKIP_BINARY=false
+if [ -f "$BINARY_MARKER" ] && [ -x "$BIN_DIR/whisper-cli-coreml" ]; then
+  log "whisper-cli-coreml: already installed, skipping build"
+  SKIP_BINARY=true
+fi
 
 log "Checking for Python 3.11..."
 if ! ensure_python311 ""; then
@@ -57,76 +74,85 @@ PY311=$(get_python311_path) || {
 }
 log "Using Python: $PY311"
 
-log "Cloning whisper.cpp repository for CoreML..."
-rm -rf "$WHISPER_DIR"
-if ! git clone https://github.com/ggerganov/whisper.cpp.git "$WHISPER_DIR" > "$TMP_LOG" 2>&1; then
-  log "ERROR: Failed to clone whisper.cpp repository"
-  cat "$TMP_LOG"
-  rm -f "$TMP_LOG"
-  exit 1
-fi
-
-log "Configuring build with CMake (CoreML + Metal)..."
-if ! cmake -B "$WHISPER_DIR/build" -S "$WHISPER_DIR" -DGGML_METAL=ON -DWHISPER_COREML=ON -DBUILD_SHARED_LIBS=OFF > "$TMP_LOG" 2>&1; then
-  log "ERROR: CMake configuration failed"
-  cat "$TMP_LOG"
-  rm -f "$TMP_LOG"
-  exit 1
-fi
-
-log "Building whisper.cpp with CoreML support (this may take a few minutes)..."
-if ! cmake --build "$WHISPER_DIR/build" --config Release > "$TMP_LOG" 2>&1; then
-  log "ERROR: Build failed"
-  cat "$TMP_LOG"
-  rm -f "$TMP_LOG"
-  exit 1
-fi
-rm -f "$TMP_LOG"
-
-log "Installing whisper-cli-coreml binary..."
-if [ -f "$WHISPER_DIR/build/bin/whisper-cli" ]; then
-  cp "$WHISPER_DIR/build/bin/whisper-cli" "$BIN_DIR/whisper-cli-coreml"
-  chmod +x "$BIN_DIR/whisper-cli-coreml"
-elif [ -f "$WHISPER_DIR/build/whisper-cli" ]; then
-  cp "$WHISPER_DIR/build/whisper-cli" "$BIN_DIR/whisper-cli-coreml"
-  chmod +x "$BIN_DIR/whisper-cli-coreml"
-else
-  log "ERROR: CoreML whisper-cli not found in expected locations:"
-  log "  - $WHISPER_DIR/build/bin/whisper-cli"
-  log "  - $WHISPER_DIR/build/whisper-cli"
-  ls -la "$WHISPER_DIR/build/" 2>/dev/null || log "Build directory does not exist"
-  exit 1
-fi
-
-for lib_dir in "$WHISPER_DIR/build/src" "$WHISPER_DIR/build/ggml/src" "$WHISPER_DIR/build/ggml/src/ggml-metal"; do
-  if [ -d "$lib_dir" ]; then
-    cp "$lib_dir"/*.dylib "$BIN_DIR/" 2>/dev/null || true
+if [ "$SKIP_BINARY" = false ]; then
+  log "Cloning whisper.cpp repository for CoreML..."
+  rm -rf "$WHISPER_DIR"
+  if ! git clone https://github.com/ggerganov/whisper.cpp.git "$WHISPER_DIR" > "$TMP_LOG" 2>&1; then
+    log "ERROR: Failed to clone whisper.cpp repository"
+    cat "$TMP_LOG"
+    rm -f "$TMP_LOG"
+    exit 1
   fi
-done
 
-LIBS=$(otool -L "$BIN_DIR/whisper-cli-coreml" 2>/dev/null | grep -E "(libwhisper|libggml)" | awk '{print $1}' || true)
-if [ -n "$LIBS" ]; then
-  for lib in $LIBS; do
-    libname=$(basename "$lib")
-    if [ -f "$BIN_DIR/$libname" ]; then
-      install_name_tool -change "$lib" "@executable_path/$libname" "$BIN_DIR/whisper-cli-coreml" || true
+  log "Configuring build with CMake (CoreML + Metal)..."
+  if ! cmake -B "$WHISPER_DIR/build" -S "$WHISPER_DIR" -DGGML_METAL=ON -DWHISPER_COREML=ON -DBUILD_SHARED_LIBS=OFF > "$TMP_LOG" 2>&1; then
+    log "ERROR: CMake configuration failed"
+    cat "$TMP_LOG"
+    rm -f "$TMP_LOG"
+    exit 1
+  fi
+
+  log "Building whisper.cpp with CoreML support (this may take a few minutes)..."
+  if ! cmake --build "$WHISPER_DIR/build" --config Release > "$TMP_LOG" 2>&1; then
+    log "ERROR: Build failed"
+    cat "$TMP_LOG"
+    rm -f "$TMP_LOG"
+    exit 1
+  fi
+  rm -f "$TMP_LOG"
+
+  log "Installing whisper-cli-coreml binary..."
+  if [ -f "$WHISPER_DIR/build/bin/whisper-cli" ]; then
+    cp "$WHISPER_DIR/build/bin/whisper-cli" "$BIN_DIR/whisper-cli-coreml"
+    chmod +x "$BIN_DIR/whisper-cli-coreml"
+  elif [ -f "$WHISPER_DIR/build/whisper-cli" ]; then
+    cp "$WHISPER_DIR/build/whisper-cli" "$BIN_DIR/whisper-cli-coreml"
+    chmod +x "$BIN_DIR/whisper-cli-coreml"
+  else
+    log "ERROR: CoreML whisper-cli not found in expected locations:"
+    log "  - $WHISPER_DIR/build/bin/whisper-cli"
+    log "  - $WHISPER_DIR/build/whisper-cli"
+    ls -la "$WHISPER_DIR/build/" 2>/dev/null || log "Build directory does not exist"
+    exit 1
+  fi
+
+  for lib_dir in "$WHISPER_DIR/build/src" "$WHISPER_DIR/build/ggml/src" "$WHISPER_DIR/build/ggml/src/ggml-metal"; do
+    if [ -d "$lib_dir" ]; then
+      cp "$lib_dir"/*.dylib "$BIN_DIR/" 2>/dev/null || true
     fi
   done
-fi
 
-for dylib in "$BIN_DIR"/*.dylib; do
-  if [ -f "$dylib" ]; then
-    DEPS=$(otool -L "$dylib" 2>/dev/null | grep -E "(libwhisper|libggml)" | awk '{print $1}' || true)
-    for dep in $DEPS; do
-      depname=$(basename "$dep")
-      if [ -f "$BIN_DIR/$depname" ] && [ "$depname" != "$(basename "$dylib")" ]; then
-        install_name_tool -change "$dep" "@loader_path/$depname" "$dylib" || true
+  LIBS=$(otool -L "$BIN_DIR/whisper-cli-coreml" 2>/dev/null | grep -E "(libwhisper|libggml)" | awk '{print $1}' || true)
+  if [ -n "$LIBS" ]; then
+    for lib in $LIBS; do
+      libname=$(basename "$lib")
+      if [ -f "$BIN_DIR/$libname" ]; then
+        install_name_tool -change "$lib" "@executable_path/$libname" "$BIN_DIR/whisper-cli-coreml" || true
       fi
     done
   fi
-done
 
-rm -rf "$WHISPER_DIR"
+  for dylib in "$BIN_DIR"/*.dylib; do
+    if [ -f "$dylib" ]; then
+      DEPS=$(otool -L "$dylib" 2>/dev/null | grep -E "(libwhisper|libggml)" | awk '{print $1}' || true)
+      for dep in $DEPS; do
+        depname=$(basename "$dep")
+        if [ -f "$BIN_DIR/$depname" ] && [ "$depname" != "$(basename "$dylib")" ]; then
+          install_name_tool -change "$dep" "@loader_path/$depname" "$dylib" || true
+        fi
+      done
+    fi
+  done
+
+  rm -rf "$WHISPER_DIR"
+  touch "$BINARY_MARKER"
+fi
+
+# Check if venv is already configured
+if [ -f "$VENV_MARKER" ]; then
+  log "CoreML Python environment: already configured, skipping"
+  exit 0
+fi
 
 log "Setting up CoreML Python environment..."
 unset PYTHONPATH
