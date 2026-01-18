@@ -17,7 +17,7 @@ fi
 
 pip() { "build/pyenv/tts/bin/pip" "$@"; }
 
-if build/pyenv/tts/bin/python -c "import TTS; print('Coqui TTS already installed')" 2>/dev/null; then
+if build/pyenv/tts/bin/python -c "import TTS" 2>/dev/null; then
   exit 0
 else
   if ! pip install setuptools wheel >/dev/null 2>&1; then

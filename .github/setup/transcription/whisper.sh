@@ -66,17 +66,12 @@ fi
 rm -f "$TMP_LOG"
 
 log "Installing whisper-cli binary..."
-
-log "Installing whisper-cli binary..."
-
 if [ -f "$WHISPER_DIR/build/bin/whisper-cli" ]; then
   cp "$WHISPER_DIR/build/bin/whisper-cli" "$BIN_DIR/"
   chmod +x "$BIN_DIR/whisper-cli"
-  log "Successfully installed whisper-cli"
 elif [ -f "$WHISPER_DIR/build/whisper-cli" ]; then
   cp "$WHISPER_DIR/build/whisper-cli" "$BIN_DIR/"
   chmod +x "$BIN_DIR/whisper-cli"
-  log "Successfully installed whisper-cli (legacy path)"
 else
   log "ERROR: whisper-cli binary not found in expected locations:"
   log "  - $WHISPER_DIR/build/bin/whisper-cli"
@@ -84,8 +79,6 @@ else
   ls -la "$WHISPER_DIR/build/" 2>/dev/null || log "Build directory does not exist"
   exit 1
 fi
-
-log "Copying shared libraries..."
 
 for lib_dir in "$WHISPER_DIR/build/src" "$WHISPER_DIR/build/ggml/src" "$WHISPER_DIR/build/ggml/src/ggml-metal"; do
   if [ -d "$lib_dir" ]; then
@@ -117,6 +110,5 @@ if [ "$IS_MAC" = true ]; then
   done
 fi
 
-log "Cleaning up temporary files..."
 rm -rf "$WHISPER_DIR"
-log "Whisper.cpp setup completed successfully"
+log "Whisper.cpp setup completed"

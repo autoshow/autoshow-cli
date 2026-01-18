@@ -12,61 +12,41 @@ ensure_python311() {
   local _unused="${1:-}"
   
   if command -v python3.11 &>/dev/null; then
-    _log "Python 3.11 already available"
     return 0
   fi
   
   # macOS: use Homebrew
   if [[ "$OSTYPE" == darwin* ]]; then
     if command -v brew &>/dev/null; then
-      _log "Installing Python 3.11 via Homebrew"
+      _log "Installing Python 3.11 via Homebrew..."
       brew install python@3.11 >/dev/null 2>&1 || {
         _log "WARNING: Failed to install Python 3.11 via Homebrew"
         return 1
       }
-      _log "Python 3.11 installed successfully"
       return 0
     fi
   fi
   
   # Linux: try common package managers
   if command -v apt-get &>/dev/null; then
-    _log "Installing Python 3.11 via apt"
+    _log "Installing Python 3.11 via apt..."
     sudo apt-get update -qq >/dev/null 2>&1 || true
-    sudo apt-get install -y python3.11 python3.11-venv >/dev/null 2>&1 && {
-      _log "Python 3.11 installed successfully"
-      return 0
-    }
+    sudo apt-get install -y python3.11 python3.11-venv >/dev/null 2>&1 && return 0
   elif command -v dnf &>/dev/null; then
-    _log "Installing Python 3.11 via dnf"
-    sudo dnf install -y python3.11 >/dev/null 2>&1 && {
-      _log "Python 3.11 installed successfully"
-      return 0
-    }
+    _log "Installing Python 3.11 via dnf..."
+    sudo dnf install -y python3.11 >/dev/null 2>&1 && return 0
   elif command -v yum &>/dev/null; then
-    _log "Installing Python 3.11 via yum"
-    sudo yum install -y python3.11 >/dev/null 2>&1 && {
-      _log "Python 3.11 installed successfully"
-      return 0
-    }
+    _log "Installing Python 3.11 via yum..."
+    sudo yum install -y python3.11 >/dev/null 2>&1 && return 0
   elif command -v pacman &>/dev/null; then
-    _log "Installing Python via pacman"
-    sudo pacman -S --noconfirm python >/dev/null 2>&1 && {
-      _log "Python installed successfully"
-      return 0
-    }
+    _log "Installing Python via pacman..."
+    sudo pacman -S --noconfirm python >/dev/null 2>&1 && return 0
   elif command -v apk &>/dev/null; then
-    _log "Installing Python via apk"
-    sudo apk add python3 py3-pip >/dev/null 2>&1 && {
-      _log "Python installed successfully"
-      return 0
-    }
+    _log "Installing Python via apk..."
+    sudo apk add python3 py3-pip >/dev/null 2>&1 && return 0
   elif command -v zypper &>/dev/null; then
-    _log "Installing Python 3.11 via zypper"
-    sudo zypper install -y python311 >/dev/null 2>&1 && {
-      _log "Python 3.11 installed successfully"
-      return 0
-    }
+    _log "Installing Python 3.11 via zypper..."
+    sudo zypper install -y python311 >/dev/null 2>&1 && return 0
   fi
   
   _log "ERROR: Could not install Python 3.11 automatically"
