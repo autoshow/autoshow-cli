@@ -125,12 +125,10 @@ log_dependency_info() {
 quiet_brew_install() {
   local pkg="$1"
   if brew list --formula | grep -qx "$pkg"; then
-    log "$pkg already installed"
-    return
+    return 0
   fi
   log "Installing $pkg via Homebrew..."
   brew install "$pkg" >/dev/null 2>&1
-  log "$pkg installed successfully"
 }
 
 # Detect Linux package manager
@@ -190,13 +188,11 @@ quiet_linux_install() {
   
   # Check if already installed
   if command -v "$pkg" &>/dev/null; then
-    log "$pkg already installed"
     return 0
   fi
   
   log "Installing $pkg..."
   if install_linux_pkg "$pkg"; then
-    log "$pkg installed successfully"
     return 0
   fi
   
@@ -256,12 +252,7 @@ check_and_update_ytdlp() {
     if [ "$current_version" != "$latest_version" ] && [ "$latest_version" != "0" ]; then
       log "Updating yt-dlp from $current_version to $latest_version..."
       brew upgrade yt-dlp >/dev/null 2>&1 || quiet_brew_install "yt-dlp"
-      log "yt-dlp updated successfully"
-    else
-      log "yt-dlp already at latest version"
     fi
-  else
-    log "yt-dlp already installed"
   fi
   
   log_dependency_info "yt-dlp"
@@ -282,7 +273,7 @@ if [ -f ".env" ]; then
 fi
 
 log "Installing Node.js dependencies..."
-npm install >/dev/null 2>&1
+bun install >/dev/null 2>&1
 log "Node.js dependencies installed"
 
 log "Checking system dependencies..."
@@ -328,18 +319,13 @@ case "$SETUP_MODE" in
     install_deps cmake ffmpeg pkg-config git
     
     if [ "$PLATFORM" = "macos" ]; then
-      log "macOS detected - setting up Whisper with CoreML acceleration..."
-      log "Building Whisper.cpp..."
+      log "Building Whisper.cpp with CoreML acceleration..."
       bash "$SETUP_DIR/transcription/whisper.sh"
-      log "Building Whisper CoreML..."
       bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
-      log "Downloading transcription models..."
       bash "$SETUP_DIR/transcription/models.sh"
     else
-      log "Linux detected - setting up Whisper.cpp..."
       log "Building Whisper.cpp..."
       bash "$SETUP_DIR/transcription/whisper.sh"
-      log "Downloading base model..."
       bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
     fi
     ;;
@@ -347,13 +333,9 @@ case "$SETUP_MODE" in
   tts)
     log "Setting up Text-to-Speech dependencies..."
     install_deps ffmpeg espeak-ng pkg-config
-    log "Setting up TTS Python environment..."
     bash "$SETUP_DIR/tts/tts-env.sh"
-    log "Installing Kitten TTS..."
     bash "$SETUP_DIR/tts/kitten.sh"
-    log "Installing Coqui TTS..."
     bash "$SETUP_DIR/tts/coqui.sh"
-    log "Downloading TTS models..."
     bash "$SETUP_DIR/tts/models.sh"
     ;;
     

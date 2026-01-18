@@ -84,17 +84,12 @@ fi
 rm -f "$TMP_LOG"
 
 log "Installing whisper-cli-coreml binary..."
-
-log "Installing whisper-cli-coreml binary..."
-
 if [ -f "$WHISPER_DIR/build/bin/whisper-cli" ]; then
   cp "$WHISPER_DIR/build/bin/whisper-cli" "$BIN_DIR/whisper-cli-coreml"
   chmod +x "$BIN_DIR/whisper-cli-coreml"
-  log "Successfully installed whisper-cli-coreml"
 elif [ -f "$WHISPER_DIR/build/whisper-cli" ]; then
   cp "$WHISPER_DIR/build/whisper-cli" "$BIN_DIR/whisper-cli-coreml"
   chmod +x "$BIN_DIR/whisper-cli-coreml"
-  log "Successfully installed whisper-cli-coreml (legacy path)"
 else
   log "ERROR: CoreML whisper-cli not found in expected locations:"
   log "  - $WHISPER_DIR/build/bin/whisper-cli"
@@ -102,8 +97,6 @@ else
   ls -la "$WHISPER_DIR/build/" 2>/dev/null || log "Build directory does not exist"
   exit 1
 fi
-
-log "Copying CoreML shared libraries..."
 
 for lib_dir in "$WHISPER_DIR/build/src" "$WHISPER_DIR/build/ggml/src" "$WHISPER_DIR/build/ggml/src/ggml-metal"; do
   if [ -d "$lib_dir" ]; then
@@ -133,10 +126,9 @@ for dylib in "$BIN_DIR"/*.dylib; do
   fi
 done
 
-log "Cleaning up whisper.cpp temporary files..."
 rm -rf "$WHISPER_DIR"
 
-log "Setting up Python virtual environment..."
+log "Setting up CoreML Python environment..."
 unset PYTHONPATH
 unset PYTHONHOME
 export PIP_CACHE_DIR="$(pwd)/$COREML_CACHE_DIR"
@@ -148,7 +140,6 @@ if ! "$PY311" -m venv "$VENV_DIR" --clear; then
 fi
 
 PYTHON="$VENV_DIR/bin/python"
-log "Virtual environment created at: $VENV_DIR"
 
 unset PYTHONPATH
 unset PYTHONHOME
@@ -156,59 +147,44 @@ export PIP_NO_CACHE_DIR=0
 export PIP_CACHE_DIR="$(pwd)/$COREML_CACHE_DIR"
 export TMPDIR="$(pwd)/$COREML_TMP_DIR"
 
-log "Installing Python packages (this may take several minutes)..."
-"$PYTHON" -m ensurepip --upgrade 2>/dev/null || {
-  log "Installing pip..."
+"$PYTHON" -m ensurepip --upgrade >/dev/null 2>&1 || {
   curl -sS https://bootstrap.pypa.io/get-pip.py -o "$COREML_TMP_DIR/get-pip.py"
-  "$PYTHON" "$COREML_TMP_DIR/get-pip.py"
+  "$PYTHON" "$COREML_TMP_DIR/get-pip.py" >/dev/null 2>&1
   rm "$COREML_TMP_DIR/get-pip.py"
 }
 
-log "Upgrading pip, setuptools, wheel..."
+log "Installing Python packages (numpy, PyTorch, coremltools, transformers)..."
 "$PYTHON" -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1 || {
   log "ERROR: Failed to upgrade pip/setuptools/wheel"
   exit 1
 }
-
-log "Installing numpy..."
 "$PYTHON" -m pip install "numpy<2" >/dev/null 2>&1 || {
   log "ERROR: Failed to install numpy"
   exit 1
 }
-
-log "Installing PyTorch (CPU-only, this may take a while)..."
 "$PYTHON" -m pip install "torch==2.2.0" --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1 || {
   log "ERROR: Failed to install PyTorch"
   exit 1
 }
-
-log "Installing coremltools..."
 "$PYTHON" -m pip install "coremltools>=7,<8" >/dev/null 2>&1 || {
   log "ERROR: Failed to install coremltools"
   exit 1
 }
-
-log "Installing Hugging Face transformers and dependencies..."
 "$PYTHON" -m pip install transformers sentencepiece huggingface_hub safetensors ane-transformers >/dev/null 2>&1 || {
   log "ERROR: Failed to install transformers dependencies"
   exit 1
 }
-
-log "Installing protobuf and openai-whisper..."
 "$PYTHON" -m pip install 'protobuf<4' >/dev/null 2>&1 || true
 "$PYTHON" -m pip install "openai-whisper" >/dev/null 2>&1 || true
 
-log "Copying CoreML conversion scripts..."
 cp "$CONVERT_SCRIPT_DIR/convert-whisper-to-coreml.py" "$MODELS_DIR/" >/dev/null 2>&1 || true
 cp "$CONVERT_SCRIPT_DIR/generate-coreml-model.sh" "$MODELS_DIR/" >/dev/null 2>&1 || true
 chmod +x "$MODELS_DIR/generate-coreml-model.sh" 2>/dev/null || true
 
 if [ "${NO_MODELS:-false}" != "true" ]; then
-  log "Generating base CoreML model (optional, may fail gracefully)..."
-  bash "$MODELS_DIR/generate-coreml-model.sh" base || log "Warning: Base model generation failed (non-fatal)"
+  bash "$MODELS_DIR/generate-coreml-model.sh" base >/dev/null 2>&1 || true
 fi
 
-log "Creating CoreML environment configuration..."
 mkdir -p build/config
 cat > build/config/.coreml-env <<EOF
 COREML_PYTHON=$PYTHON
@@ -217,5 +193,5 @@ COREML_CACHE=$COREML_CACHE_DIR
 COREML_TMP=$COREML_TMP_DIR
 EOF
 
-log "CoreML setup completed successfully"
+log "CoreML setup completed"
 exit 0

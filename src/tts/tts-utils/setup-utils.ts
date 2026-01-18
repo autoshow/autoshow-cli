@@ -172,8 +172,8 @@ export const installNpmPackage = (packageName: string): boolean => {
       return false
     }
     
-    l.dim(`Running npm install to restore ${packageName}`)
-    execSync('npm install', {
+    l.dim(`Running bun install to restore ${packageName}`)
+    execSync('bun install', {
       stdio: 'inherit',
       cwd: process.cwd()
     })
