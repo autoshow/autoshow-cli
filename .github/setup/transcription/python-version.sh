@@ -1,23 +1,31 @@
 #!/bin/bash
+ts() {
+  if command -v gdate &>/dev/null; then
+    gdate "+%H:%M:%S.%3N"
+  else
+    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
+  fi
+}
+_log() { echo "[$(ts)] $*"; }
 
 ensure_python311() {
-  local p="${1:-[setup/transcription/python-version]}"
+  local _unused="${1:-}"
   
   if command -v python3.11 &>/dev/null; then
-    echo "$p Python 3.11 already available"
+    _log "Python 3.11 already available"
     return 0
   fi
   
   if command -v brew &>/dev/null; then
-    echo "$p Installing Python 3.11 via Homebrew"
+    _log "Installing Python 3.11 via Homebrew"
     brew install python@3.11 >/dev/null 2>&1 || {
-      echo "$p WARNING: Failed to install Python 3.11 via Homebrew"
+      _log "WARNING: Failed to install Python 3.11 via Homebrew"
       return 1
     }
-    echo "$p Python 3.11 installed successfully"
+    _log "Python 3.11 installed successfully"
     return 0
   else
-    echo "$p ERROR: Homebrew not found, cannot install Python 3.11"
+    _log "ERROR: Homebrew not found, cannot install Python 3.11"
     return 1
   fi
 }

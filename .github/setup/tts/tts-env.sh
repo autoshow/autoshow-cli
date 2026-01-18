@@ -1,6 +1,13 @@
 #!/bin/bash
 set -euo pipefail
-p='[setup/tts/tts-env]'
+ts() {
+  if command -v gdate &>/dev/null; then
+    gdate "+%H:%M:%S.%3N"
+  else
+    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
+  fi
+}
+log() { echo "[$(ts)] $*"; }
 
 ensure_python311() {
   if command -v python3.11 &>/dev/null; then
@@ -13,7 +20,7 @@ ensure_python311() {
     }
     return 0
   else
-    echo "$p ERROR: Homebrew not found, cannot install Python 3.11"
+    log "ERROR: Homebrew not found, cannot install Python 3.11"
     return 1
   fi
 }
@@ -34,12 +41,12 @@ get_python311_path() {
 VENV="build/pyenv/tts"
 
 if ! ensure_python311; then
-  echo "$p ERROR: Cannot install Python 3.11, TTS features unavailable"
+  log "ERROR: Cannot install Python 3.11, TTS features unavailable"
   exit 1
 fi
 
 PY311=$(get_python311_path) || {
-  echo "$p ERROR: Python 3.11 not found after installation"
+  log "ERROR: Python 3.11 not found after installation"
   exit 1
 }
 
@@ -80,14 +87,14 @@ if [ -d "$VENV" ]; then
   }
 fi
 
-"$PY311" -m venv "$VENV" || { echo "$p ERROR: Failed to create virtual environment with Python 3.11"; exit 1; }
+"$PY311" -m venv "$VENV" || { log "ERROR: Failed to create virtual environment with Python 3.11"; exit 1; }
 pip() { "$VENV/bin/pip" "$@"; }
 
 pip install --upgrade pip >/dev/null 2>&1
 
-pip install "numpy<2" soundfile librosa scipy >/dev/null 2>&1 || { echo "$p ERROR: Failed to install audio libraries"; exit 1; }
+pip install "numpy<2" soundfile librosa scipy >/dev/null 2>&1 || { log "ERROR: Failed to install audio libraries"; exit 1; }
 
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1 || pip install torch torchaudio >/dev/null 2>&1 || { echo "$p ERROR: Failed to install PyTorch"; exit 1; }
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1 || pip install torch torchaudio >/dev/null 2>&1 || { log "ERROR: Failed to install PyTorch"; exit 1; }
 
 mkdir -p build/config
 if [ ! -f "build/config/.tts-config.json" ]; then
