@@ -25,8 +25,6 @@
     "setup:all": "./.github/setup/index.sh --all",
     "setup:text": "./.github/setup/index.sh --transcription",
     "setup:transcription": "./.github/setup/index.sh --transcription",
-    "setup:whisper": "./.github/setup/index.sh --whisper",
-    "setup:whisper-coreml": "./.github/setup/index.sh --whisper-coreml",
     "setup:tts": "./.github/setup/index.sh --tts",
     "check": "bunx tsc --noEmit",
     "as": "bun --env-file=.env src/commander.ts",

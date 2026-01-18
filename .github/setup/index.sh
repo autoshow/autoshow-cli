@@ -49,20 +49,33 @@ log() { echo "[$(ts)] $*"; }
 
 SETUP_MODE="${1:-base}"
 case "$SETUP_MODE" in
-  --transcription|--whisper|--whisper-coreml|--tts|base)
+  --transcription|--tts|base)
     SETUP_MODE="${SETUP_MODE#--}"
     ;;
   *)
     log "Invalid argument '$1'"
-    log "Usage: $0 [--transcription|--whisper|--whisper-coreml|--tts]"
+    log "Usage: $0 [--transcription|--tts]"
     exit 1
     ;;
 esac
 
+# Detect platform
+PLATFORM="unknown"
 case "$OSTYPE" in
-  darwin*) ;;
-  *) log "Only macOS is supported"; exit 1 ;;
+  darwin*)  PLATFORM="macos" ;;
+  linux*)   PLATFORM="linux" ;;
+  msys*|cygwin*|mingw*) 
+    log "Windows detected. Please use WSL (Windows Subsystem for Linux)."
+    log "Install WSL: https://learn.microsoft.com/en-us/windows/wsl/install"
+    log "Then run this setup script from within WSL."
+    exit 1 
+    ;;
+  *)
+    log "Unsupported platform: $OSTYPE"
+    exit 1 
+    ;;
 esac
+log "Detected platform: $PLATFORM"
 
 log_dependency_info() {
   local dep_name="$1"
@@ -120,24 +133,135 @@ quiet_brew_install() {
   log "$pkg installed successfully"
 }
 
+# Detect Linux package manager
+detect_pkg_manager() {
+  if command -v apt-get &>/dev/null; then
+    echo "apt"
+  elif command -v dnf &>/dev/null; then
+    echo "dnf"
+  elif command -v yum &>/dev/null; then
+    echo "yum"
+  elif command -v pacman &>/dev/null; then
+    echo "pacman"
+  elif command -v apk &>/dev/null; then
+    echo "apk"
+  elif command -v zypper &>/dev/null; then
+    echo "zypper"
+  else
+    echo "unknown"
+  fi
+}
+
+# Install package on Linux (best-effort)
+install_linux_pkg() {
+  local pkg="$1"
+  local pkg_manager
+  pkg_manager=$(detect_pkg_manager)
+  
+  case "$pkg_manager" in
+    apt)
+      sudo apt-get update -qq >/dev/null 2>&1 || true
+      sudo apt-get install -y "$pkg" >/dev/null 2>&1
+      ;;
+    dnf)
+      sudo dnf install -y "$pkg" >/dev/null 2>&1
+      ;;
+    yum)
+      sudo yum install -y "$pkg" >/dev/null 2>&1
+      ;;
+    pacman)
+      sudo pacman -S --noconfirm "$pkg" >/dev/null 2>&1
+      ;;
+    apk)
+      sudo apk add "$pkg" >/dev/null 2>&1
+      ;;
+    zypper)
+      sudo zypper install -y "$pkg" >/dev/null 2>&1
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+# Install package on Linux with fallback instructions
+quiet_linux_install() {
+  local pkg="$1"
+  
+  # Check if already installed
+  if command -v "$pkg" &>/dev/null; then
+    log "$pkg already installed"
+    return 0
+  fi
+  
+  log "Installing $pkg..."
+  if install_linux_pkg "$pkg"; then
+    log "$pkg installed successfully"
+    return 0
+  fi
+  
+  # Installation failed - provide manual instructions
+  local pkg_manager
+  pkg_manager=$(detect_pkg_manager)
+  
+  log "ERROR: Failed to install $pkg automatically"
+  log "Please install it manually using your package manager:"
+  case "$pkg_manager" in
+    apt)     log "  sudo apt-get install $pkg" ;;
+    dnf)     log "  sudo dnf install $pkg" ;;
+    yum)     log "  sudo yum install $pkg" ;;
+    pacman)  log "  sudo pacman -S $pkg" ;;
+    apk)     log "  sudo apk add $pkg" ;;
+    zypper)  log "  sudo zypper install $pkg" ;;
+    *)
+      log "  Debian/Ubuntu: sudo apt-get install $pkg"
+      log "  Fedora/RHEL:   sudo dnf install $pkg"
+      log "  Arch:          sudo pacman -S $pkg"
+      log "  Alpine:        sudo apk add $pkg"
+      log "  openSUSE:      sudo zypper install $pkg"
+      ;;
+  esac
+  return 1
+}
+
 check_and_update_ytdlp() {
   if ! command -v yt-dlp &>/dev/null; then
     log "Installing yt-dlp..."
-    quiet_brew_install "yt-dlp"
+    if [ "$PLATFORM" = "macos" ]; then
+      quiet_brew_install "yt-dlp"
+    else
+      # Try pip first (most universal), then package manager
+      if command -v pip3 &>/dev/null; then
+        pip3 install --user yt-dlp >/dev/null 2>&1 || quiet_linux_install "yt-dlp" || {
+          log "WARNING: Could not install yt-dlp automatically"
+          log "Please install manually: pip3 install yt-dlp"
+        }
+      else
+        quiet_linux_install "yt-dlp" || {
+          log "WARNING: Could not install yt-dlp automatically"
+          log "Please install manually: pip3 install yt-dlp"
+        }
+      fi
+    fi
     log_dependency_info "yt-dlp"
     return
   fi
 
-  local current_version latest_version
-  current_version=$(yt-dlp --version 2>/dev/null || echo "0")
-  latest_version=$(brew info yt-dlp 2>/dev/null | grep -m 1 "yt-dlp:" | awk '{print $3}' || echo "0")
-  
-  if [ "$current_version" != "$latest_version" ] && [ "$latest_version" != "0" ]; then
-    log "Updating yt-dlp from $current_version to $latest_version..."
-    brew upgrade yt-dlp >/dev/null 2>&1 || quiet_brew_install "yt-dlp"
-    log "yt-dlp updated successfully"
+  # Version check and update only on macOS (uses brew info)
+  if [ "$PLATFORM" = "macos" ]; then
+    local current_version latest_version
+    current_version=$(yt-dlp --version 2>/dev/null || echo "0")
+    latest_version=$(brew info yt-dlp 2>/dev/null | grep -m 1 "yt-dlp:" | awk '{print $3}' || echo "0")
+    
+    if [ "$current_version" != "$latest_version" ] && [ "$latest_version" != "0" ]; then
+      log "Updating yt-dlp from $current_version to $latest_version..."
+      brew upgrade yt-dlp >/dev/null 2>&1 || quiet_brew_install "yt-dlp"
+      log "yt-dlp updated successfully"
+    else
+      log "yt-dlp already at latest version"
+    fi
   else
-    log "yt-dlp already at latest version"
+    log "yt-dlp already installed"
   fi
   
   log_dependency_info "yt-dlp"
@@ -162,20 +286,29 @@ npm install >/dev/null 2>&1
 log "Node.js dependencies installed"
 
 log "Checking system dependencies..."
-if ! command -v brew &>/dev/null; then
-  log "Homebrew not found. Install from https://brew.sh/"
-  exit 1
+if [ "$PLATFORM" = "macos" ]; then
+  if ! command -v brew &>/dev/null; then
+    log "Homebrew not found. Install from https://brew.sh/"
+    exit 1
+  fi
+  log_dependency_info "Homebrew" "brew"
 fi
-log_dependency_info "Homebrew" "brew"
 log_dependency_info "Node.js" "node"
 log_dependency_info "npm"
 check_and_update_ytdlp
 
 SETUP_DIR=".github/setup"
 
-install_brew_deps() {
+install_deps() {
   for pkg in "$@"; do
-    quiet_brew_install "$pkg"
+    if [ "$PLATFORM" = "macos" ]; then
+      quiet_brew_install "$pkg"
+    else
+      quiet_linux_install "$pkg" || {
+        log "WARNING: Could not install $pkg, continuing anyway..."
+      }
+    fi
+    
     local display_name
     case "$pkg" in
       cmake) display_name="CMake" ;;
@@ -192,40 +325,28 @@ install_brew_deps() {
 case "$SETUP_MODE" in
   transcription)
     log "Setting up transcription dependencies..."
-    install_brew_deps cmake ffmpeg pkg-config git
-    log "Building Whisper.cpp..."
-    bash "$SETUP_DIR/transcription/whisper.sh"
-    log "Building Whisper CoreML..."
-    bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
-    log "Downloading transcription models..."
-    bash "$SETUP_DIR/transcription/models.sh"
-    ;;
+    install_deps cmake ffmpeg pkg-config git
     
-  whisper)
-    log "Setting up Whisper transcription..."
-    install_brew_deps cmake ffmpeg pkg-config
-    log "Building Whisper.cpp..."
-    bash "$SETUP_DIR/transcription/whisper.sh"
-    log "Downloading base model..."
-    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    ;;
-    
-  whisper-coreml)
-    log "Setting up Whisper CoreML transcription..."
-    install_brew_deps cmake ffmpeg pkg-config
-    log "Building Whisper.cpp..."
-    bash "$SETUP_DIR/transcription/whisper.sh"
-    log "Building Whisper CoreML..."
-    bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
-    log "Downloading base model..."
-    bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    log "Generating CoreML model..."
-    bash "$SETUP_DIR/transcription/coreml/generate-coreml-model.sh" base || true
+    if [ "$PLATFORM" = "macos" ]; then
+      log "macOS detected - setting up Whisper with CoreML acceleration..."
+      log "Building Whisper.cpp..."
+      bash "$SETUP_DIR/transcription/whisper.sh"
+      log "Building Whisper CoreML..."
+      bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
+      log "Downloading transcription models..."
+      bash "$SETUP_DIR/transcription/models.sh"
+    else
+      log "Linux detected - setting up Whisper.cpp..."
+      log "Building Whisper.cpp..."
+      bash "$SETUP_DIR/transcription/whisper.sh"
+      log "Downloading base model..."
+      bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
+    fi
     ;;
     
   tts)
     log "Setting up Text-to-Speech dependencies..."
-    install_brew_deps ffmpeg espeak-ng pkg-config
+    install_deps ffmpeg espeak-ng pkg-config
     log "Setting up TTS Python environment..."
     bash "$SETUP_DIR/tts/tts-env.sh"
     log "Installing Kitten TTS..."

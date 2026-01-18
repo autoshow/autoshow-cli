@@ -10,19 +10,24 @@ Installs npm dependencies and creates directory structure. No Python environment
 
 ### Feature Setup
 ```bash
-bun setup:transcription       # Audio transcription (Whisper variants)
-bun setup:whisper             # Whisper.cpp configured for Metal
-bun setup:whisper-coreml      # Whisper.cpp configured for Apple CoreML
-
+bun setup:transcription       # Audio transcription (Whisper.cpp)
 bun setup:tts                 # Text-to-speech (Coqui + Kitten)
 ```
 
 Each feature is self-contained and won't affect others if setup fails.
 
+## Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **macOS** | Fully supported | Uses Homebrew, includes CoreML acceleration |
+| **Linux** | Fully supported | Auto-detects package manager (apt, dnf, yum, pacman, apk, zypper) |
+| **Windows** | Via WSL | Install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install), then use Linux instructions |
+
 ## Requirements
 
-- **macOS only**
-- **Homebrew** (install from https://brew.sh/)
+- **Homebrew** (macOS) - install from https://brew.sh/
+- **Package manager** (Linux) - apt, dnf, yum, pacman, apk, or zypper
 - **Internet connection** for model downloads
 
 ## Storage Requirements
@@ -36,15 +41,24 @@ Each feature is self-contained and won't affect others if setup fails.
 ## What Gets Installed
 
 ### Transcription (`--transcription`)
-- **Binaries:** whisper-cli, whisper-cli-metal, whisper-cli-coreml
-- **Environments:** `build/pyenv/coreml/`
-- **Models:** GGML base model (~140MB), CoreML models (macOS)
-- **Dependencies:** cmake, ffmpeg, git
+
+The setup automatically detects your platform and configures the optimal Whisper.cpp build:
+
+| Platform | Binary | Acceleration |
+|----------|--------|--------------|
+| **macOS** | whisper-cli, whisper-cli-coreml | Metal + CoreML |
+| **Linux** | whisper-cli | CPU |
+
+**Installed components:**
+- **Binaries:** `build/bin/whisper-cli` (+ `whisper-cli-coreml` on macOS)
+- **Environments:** `build/pyenv/coreml/` (macOS only)
+- **Models:** GGML base model (~140MB), CoreML models (macOS only)
+- **Dependencies:** cmake, ffmpeg, git, pkg-config
 
 ### Text-to-Speech (`--tts`)
 - **Environment:** `build/pyenv/tts/`
 - **Models:** Coqui TTS, KittenTTS default models
-- **Dependencies:** ffmpeg, espeak-ng
+- **Dependencies:** ffmpeg, espeak-ng, pkg-config
 
 ## Directory Structure
 
@@ -70,3 +84,34 @@ ELEVENLABS_API_KEY=your_elevenlabs_key
 AWS_ACCESS_KEY_ID=your_aws_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret
 ```
+
+## Troubleshooting
+
+### Linux: Missing dependencies
+
+If auto-installation fails, install dependencies manually:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install cmake ffmpeg git pkg-config espeak-ng python3.11 python3.11-venv
+
+# Fedora/RHEL
+sudo dnf install cmake ffmpeg git pkg-config espeak-ng python3.11
+
+# Arch
+sudo pacman -S cmake ffmpeg git pkg-config espeak-ng python
+
+# Alpine
+sudo apk add cmake ffmpeg git pkgconf espeak-ng python3 py3-pip
+
+# openSUSE
+sudo zypper install cmake ffmpeg git pkg-config espeak-ng python311
+```
+
+### Windows: Use WSL
+
+AutoShow CLI requires WSL on Windows:
+
+1. Install WSL: `wsl --install`
+2. Open a WSL terminal
+3. Follow Linux setup instructions
