@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { readFile, env } from '@/node-utils'
-import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../transcription-models'
 import type { ProcessingOptions } from '@/text/text-types'
 
 export async function callGroqWhisper(

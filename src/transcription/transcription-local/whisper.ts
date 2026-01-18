@@ -1,7 +1,7 @@
 import { l, err } from '@/logging'
 import { readFile, unlink, spawn, existsSync, execPromise } from '@/node-utils'
-import { isWhisperConfigured, autoSetupWhisper, ensureModelExists } from '../../utils/setup-helpers'
-import { TRANSCRIPTION_SERVICES_CONFIG } from './transcription-models'
+import { isWhisperConfigured, autoSetupWhisper, ensureModelExists } from '@/text/utils/setup-helpers'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
 

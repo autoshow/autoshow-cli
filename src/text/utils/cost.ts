@@ -1,7 +1,7 @@
 import { l } from '@/logging'
 import { colorUtils } from '@/logging'
 import { getAudioDuration } from './setup-helpers'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/02-run-transcription/transcription-models'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '@/transcription/transcription-models'
 import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models'
 import type { ProcessingOptions } from '@/text/text-types'
 
