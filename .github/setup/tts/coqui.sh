@@ -1,13 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-ts() {
-  if command -v gdate &>/dev/null; then
-    gdate "+%H:%M:%S.%3N"
-  else
-    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
-  fi
-}
-log() { echo "[$(ts)] $*"; }
+source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
 
 MARKER_FILE="build/config/.coqui-installed"
 
@@ -72,14 +65,4 @@ else
     log "Continuing with setup - Kitten TTS should still work"
     exit 0
   fi
-fi
-
-if [ "${NO_MODELS:-false}" != "true" ]; then
-  build/pyenv/tts/bin/python - <<'PY' >/dev/null 2>&1 || true
-try:
-    from TTS.api import TTS
-    tts = TTS('tts_models/en/ljspeech/tacotron2-DDC', progress_bar=False)
-except Exception as e:
-    pass
-PY
 fi

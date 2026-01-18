@@ -78,7 +78,6 @@ if echo "$model" | grep -q "tdrz"; then
     src="https://huggingface.co/akashmjn/tinydiarize-whisper.cpp"
     pfx="resolve/main/ggml"
 fi
-echo "$model" | grep -q '^"tdrz"*$'
 cd "$models_path" || exit 1
 if [ -f "ggml-$model.bin" ]; then
     exit 0

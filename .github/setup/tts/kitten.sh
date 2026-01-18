@@ -1,13 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-ts() {
-  if command -v gdate &>/dev/null; then
-    gdate "+%H:%M:%S.%3N"
-  else
-    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
-  fi
-}
-log() { echo "[$(ts)] $*"; }
+source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
 
 MARKER_FILE="build/config/.kitten-installed"
 
@@ -73,17 +66,4 @@ else
     log "Continuing with setup - Coqui TTS should still work"
     exit 0
   fi
-fi
-
-if [ "${NO_MODELS:-false}" != "true" ]; then
-  build/pyenv/tts/bin/python - <<'PY' >/dev/null 2>&1 || true
-try:
-    from kittentts import KittenTTS
-    import os
-    os.environ['HF_HOME'] = 'build/models/kitten'
-    os.makedirs('build/models/kitten', exist_ok=True)
-    m = KittenTTS("KittenML/kitten-tts-nano-0.1")
-except Exception as e:
-    pass
-PY
 fi
