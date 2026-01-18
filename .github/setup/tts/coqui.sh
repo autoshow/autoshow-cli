@@ -1,10 +1,17 @@
 #!/bin/bash
 set -euo pipefail
-p='[setup/tts/coqui]'
+ts() {
+  if command -v gdate &>/dev/null; then
+    gdate "+%H:%M:%S.%3N"
+  else
+    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
+  fi
+}
+log() { echo "[$(ts)] $*"; }
 
 if [ ! -x "build/pyenv/tts/bin/pip" ]; then
-  echo "$p ERROR: Shared TTS environment missing at build/pyenv/tts/bin/pip"
-  echo "$p Run: bun setup:tts to set up the base TTS environment first"
+  log "ERROR: Shared TTS environment missing at build/pyenv/tts/bin/pip"
+  log "Run: bun setup:tts to set up the base TTS environment first"
   exit 1
 fi
 
@@ -14,13 +21,13 @@ if build/pyenv/tts/bin/python -c "import TTS; print('Coqui TTS already installed
   exit 0
 else
   if ! pip install setuptools wheel >/dev/null 2>&1; then
-    echo "$p ERROR: Failed to install setuptools/wheel"
+    log "ERROR: Failed to install setuptools/wheel"
     exit 1
   fi
   
   if ! pip install sentencepiece >/dev/null 2>&1; then
     if ! pip install --only-binary :all: sentencepiece >/dev/null 2>&1; then
-      echo "$p WARNING: Failed to install sentencepiece, continuing anyway"
+      log "WARNING: Failed to install sentencepiece, continuing anyway"
     fi
   fi
   
@@ -39,11 +46,11 @@ else
       if [ "$TTS_INSTALL_SUCCESS" = true ]; then
         :
       else
-        echo "$p ERROR: All Coqui TTS installation methods failed"
-        echo "$p Error details:"
+        log "ERROR: All Coqui TTS installation methods failed"
+        log "Error details:"
         echo "$TTS_INSTALL_OUTPUT"
-        echo "$p Coqui TTS will be unavailable, but Kitten TTS should still work"
-        echo "$p WARNING: Continuing with setup without Coqui TTS"
+        log "Coqui TTS will be unavailable, but Kitten TTS should still work"
+        log "WARNING: Continuing with setup without Coqui TTS"
         exit 0
       fi
     fi
@@ -52,9 +59,9 @@ else
   if build/pyenv/tts/bin/python -c "import TTS" 2>/dev/null; then
     :
   else
-    echo "$p WARNING: Coqui TTS installation verification failed"
-    echo "$p The package may have installed but import is failing"
-    echo "$p Continuing with setup - Kitten TTS should still work"
+    log "WARNING: Coqui TTS installation verification failed"
+    log "The package may have installed but import is failing"
+    log "Continuing with setup - Kitten TTS should still work"
     exit 0
   fi
 fi

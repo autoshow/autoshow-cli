@@ -1,10 +1,17 @@
 #!/bin/bash
 set -euo pipefail
+ts() {
+  if command -v gdate &>/dev/null; then
+    gdate "+%H:%M:%S.%3N"
+  else
+    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
+  fi
+}
+log() { echo "[$(ts)] $*"; }
 
 MODEL="${1:-base}"
 OUT="build/models/ggml-${MODEL}-encoder.mlmodelc"
 FALLBACK_OUT="build/models/ggml-${MODEL}-encoder.mlpackage"
-p='[setup/transcription/coreml/generate-coreml-model]'
 
 if [ -d "$OUT" ]; then
   exit 0
@@ -21,7 +28,7 @@ fi
 
 case "$MODEL" in
   tiny|tiny.en|base|base.en|small|small.en|medium|medium.en|large|large-v1|large-v2|large-v3|large-v3-turbo) ;;
-  *) echo "$p Unsupported model: $MODEL"; exit 1 ;;
+  *) log "Unsupported model: $MODEL"; exit 1 ;;
 esac
 
 CONV_MODEL="$MODEL"
@@ -43,7 +50,7 @@ rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
 $PY .github/setup/transcription/coreml/convert-whisper-to-coreml.py --model "$CONV_MODEL" --encoder-only true >/dev/null 2>&1 || {
-  echo "$p Conversion failed"
+  log "Conversion failed"
   exit 1
 }
 
@@ -67,7 +74,7 @@ if [ -z "$MLCAND" ]; then
 fi
 
 if [ -z "$MLCAND" ]; then
-  echo "$p No CoreML artifact produced for $MODEL"
+  log "No CoreML artifact produced for $MODEL"
   exit 1
 fi
 
@@ -92,7 +99,7 @@ if [[ "$MLCAND" == *.mlpackage ]]; then
   rm -rf "$TMP_DIR"
   
   if [ ! -d "$FALLBACK_OUT" ]; then
-    echo "$p Failed to create $FALLBACK_OUT"
+    log "Failed to create $FALLBACK_OUT"
     exit 1
   fi
   
@@ -103,7 +110,7 @@ else
   rm -rf "$TMP_DIR"
   
   if [ ! -d "$OUT" ]; then
-    echo "$p Failed to create $OUT"
+    log "Failed to create $OUT"
     exit 1
   fi
   

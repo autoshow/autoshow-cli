@@ -38,7 +38,14 @@ error_handler() {
 }
 trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
 
-p='[setup/index]'
+ts() {
+  if command -v gdate &>/dev/null; then
+    gdate "+%H:%M:%S.%3N"
+  else
+    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
+  fi
+}
+log() { echo "[$(ts)] $*"; }
 
 SETUP_MODE="${1:-base}"
 case "$SETUP_MODE" in
@@ -46,15 +53,15 @@ case "$SETUP_MODE" in
     SETUP_MODE="${SETUP_MODE#--}"
     ;;
   *)
-    echo "$p Invalid argument '$1'"
-    echo "$p Usage: $0 [--transcription|--whisper|--whisper-coreml|--tts]"
+    log "Invalid argument '$1'"
+    log "Usage: $0 [--transcription|--whisper|--whisper-coreml|--tts]"
     exit 1
     ;;
 esac
 
 case "$OSTYPE" in
   darwin*) ;;
-  *) echo "$p Only macOS is supported"; exit 1 ;;
+  *) log "Only macOS is supported"; exit 1 ;;
 esac
 
 log_dependency_info() {
@@ -62,7 +69,7 @@ log_dependency_info() {
   local dep_command="${2:-$1}"
   
   if ! command -v "$dep_command" &>/dev/null; then
-    echo "$p $dep_name: not installed"
+    log "$dep_name: not installed"
     return
   fi
   
@@ -99,23 +106,23 @@ log_dependency_info() {
       ;;
   esac
   
-  echo "$p $dep_name: $version (location: $location)"
+  log "$dep_name: $version (location: $location)"
 }
 
 quiet_brew_install() {
   local pkg="$1"
   if brew list --formula | grep -qx "$pkg"; then
-    echo "$p $pkg already installed"
+    log "$pkg already installed"
     return
   fi
-  echo "$p Installing $pkg via Homebrew..."
+  log "Installing $pkg via Homebrew..."
   brew install "$pkg" >/dev/null 2>&1
-  echo "$p $pkg installed successfully"
+  log "$pkg installed successfully"
 }
 
 check_and_update_ytdlp() {
   if ! command -v yt-dlp &>/dev/null; then
-    echo "$p Installing yt-dlp..."
+    log "Installing yt-dlp..."
     quiet_brew_install "yt-dlp"
     log_dependency_info "yt-dlp"
     return
@@ -126,11 +133,11 @@ check_and_update_ytdlp() {
   latest_version=$(brew info yt-dlp 2>/dev/null | grep -m 1 "yt-dlp:" | awk '{print $3}' || echo "0")
   
   if [ "$current_version" != "$latest_version" ] && [ "$latest_version" != "0" ]; then
-    echo "$p Updating yt-dlp from $current_version to $latest_version..."
+    log "Updating yt-dlp from $current_version to $latest_version..."
     brew upgrade yt-dlp >/dev/null 2>&1 || quiet_brew_install "yt-dlp"
-    echo "$p yt-dlp updated successfully"
+    log "yt-dlp updated successfully"
   else
-    echo "$p yt-dlp already at latest version"
+    log "yt-dlp already at latest version"
   fi
   
   log_dependency_info "yt-dlp"
@@ -141,7 +148,7 @@ mkdir -p build/pyenv
 
 if [ ! -f ".env" ] && [ -f ".env.example" ]; then
   cp .env.example .env
-  echo "$p Created .env file from .env.example"
+  log "Created .env file from .env.example"
 fi
 
 if [ -f ".env" ]; then
@@ -150,13 +157,13 @@ if [ -f ".env" ]; then
   set +a
 fi
 
-echo "$p Installing Node.js dependencies..."
+log "Installing Node.js dependencies..."
 npm install >/dev/null 2>&1
-echo "$p Node.js dependencies installed"
+log "Node.js dependencies installed"
 
-echo "$p Checking system dependencies..."
+log "Checking system dependencies..."
 if ! command -v brew &>/dev/null; then
-  echo "$p Homebrew not found. Install from https://brew.sh/"
+  log "Homebrew not found. Install from https://brew.sh/"
   exit 1
 fi
 log_dependency_info "Homebrew" "brew"
@@ -184,55 +191,55 @@ install_brew_deps() {
 
 case "$SETUP_MODE" in
   transcription)
-    echo "$p Setting up transcription dependencies..."
+    log "Setting up transcription dependencies..."
     install_brew_deps cmake ffmpeg pkg-config git
-    echo "$p Building Whisper.cpp..."
+    log "Building Whisper.cpp..."
     bash "$SETUP_DIR/transcription/whisper.sh"
-    echo "$p Building Whisper CoreML..."
+    log "Building Whisper CoreML..."
     bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
-    echo "$p Downloading transcription models..."
+    log "Downloading transcription models..."
     bash "$SETUP_DIR/transcription/models.sh"
     ;;
     
   whisper)
-    echo "$p Setting up Whisper transcription..."
+    log "Setting up Whisper transcription..."
     install_brew_deps cmake ffmpeg pkg-config
-    echo "$p Building Whisper.cpp..."
+    log "Building Whisper.cpp..."
     bash "$SETUP_DIR/transcription/whisper.sh"
-    echo "$p Downloading base model..."
+    log "Downloading base model..."
     bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
     ;;
     
   whisper-coreml)
-    echo "$p Setting up Whisper CoreML transcription..."
+    log "Setting up Whisper CoreML transcription..."
     install_brew_deps cmake ffmpeg pkg-config
-    echo "$p Building Whisper.cpp..."
+    log "Building Whisper.cpp..."
     bash "$SETUP_DIR/transcription/whisper.sh"
-    echo "$p Building Whisper CoreML..."
+    log "Building Whisper CoreML..."
     bash "$SETUP_DIR/transcription/coreml/whisper-coreml.sh"
-    echo "$p Downloading base model..."
+    log "Downloading base model..."
     bash "$SETUP_DIR/transcription/download-ggml-model.sh" base "./build/models"
-    echo "$p Generating CoreML model..."
+    log "Generating CoreML model..."
     bash "$SETUP_DIR/transcription/coreml/generate-coreml-model.sh" base || true
     ;;
     
   tts)
-    echo "$p Setting up Text-to-Speech dependencies..."
+    log "Setting up Text-to-Speech dependencies..."
     install_brew_deps ffmpeg espeak-ng pkg-config
-    echo "$p Setting up TTS Python environment..."
+    log "Setting up TTS Python environment..."
     bash "$SETUP_DIR/tts/tts-env.sh"
-    echo "$p Installing Kitten TTS..."
+    log "Installing Kitten TTS..."
     bash "$SETUP_DIR/tts/kitten.sh"
-    echo "$p Installing Coqui TTS..."
+    log "Installing Coqui TTS..."
     bash "$SETUP_DIR/tts/coqui.sh"
-    echo "$p Downloading TTS models..."
+    log "Downloading TTS models..."
     bash "$SETUP_DIR/tts/models.sh"
     ;;
     
   base)
-    echo "$p Base setup completed - core dependencies verified"
+    log "Base setup completed - core dependencies verified"
     ;;
 esac
 
-echo "$p Setup completed successfully"
+log "Setup completed successfully"
 exit 0

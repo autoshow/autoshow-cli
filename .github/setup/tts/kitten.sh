@@ -1,10 +1,17 @@
 #!/bin/bash
 set -euo pipefail
-p='[setup/tts/kitten]'
+ts() {
+  if command -v gdate &>/dev/null; then
+    gdate "+%H:%M:%S.%3N"
+  else
+    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
+  fi
+}
+log() { echo "[$(ts)] $*"; }
 
 if [ ! -x "build/pyenv/tts/bin/pip" ]; then
-  echo "$p ERROR: Shared TTS environment missing at build/pyenv/tts/bin/pip"
-  echo "$p Run: bun setup:tts to set up the base TTS environment first"
+  log "ERROR: Shared TTS environment missing at build/pyenv/tts/bin/pip"
+  log "Run: bun setup:tts to set up the base TTS environment first"
   exit 1
 fi
 
@@ -33,18 +40,18 @@ else
           if pip install git+https://github.com/KittenML/KittenTTS.git >/dev/null 2>&1; then
             :
           else
-            echo "$p ERROR: All Kitten TTS installation methods failed"
-            echo "$p This may be due to:"
-            echo "$p   - Network connectivity issues"
-            echo "$p   - Missing system dependencies"
-            echo "$p Kitten TTS will be unavailable, but Coqui TTS should still work"
-            echo "$p WARNING: Continuing with setup without Kitten TTS"
+            log "ERROR: All Kitten TTS installation methods failed"
+            log "This may be due to:"
+            log "  - Network connectivity issues"
+            log "  - Missing system dependencies"
+            log "Kitten TTS will be unavailable, but Coqui TTS should still work"
+            log "WARNING: Continuing with setup without Kitten TTS"
             exit 0
           fi
         fi
       else
-        echo "$p ERROR: Failed to download Kitten TTS wheel file"
-        echo "$p Network issue or URL changed. Continuing without Kitten TTS"
+        log "ERROR: Failed to download Kitten TTS wheel file"
+        log "Network issue or URL changed. Continuing without Kitten TTS"
         exit 0
       fi
     fi
@@ -53,9 +60,9 @@ else
   if build/pyenv/tts/bin/python -c "import kittentts" 2>/dev/null; then
     :
   else
-    echo "$p WARNING: Kitten TTS installation verification failed"
-    echo "$p The package may have installed but import is failing"
-    echo "$p Continuing with setup - Coqui TTS should still work"
+    log "WARNING: Kitten TTS installation verification failed"
+    log "The package may have installed but import is failing"
+    log "Continuing with setup - Coqui TTS should still work"
     exit 0
   fi
 fi

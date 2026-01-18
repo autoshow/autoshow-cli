@@ -1,9 +1,16 @@
 #!/bin/bash
 set -euo pipefail
-p='[setup/tts/models]'
+ts() {
+  if command -v gdate &>/dev/null; then
+    gdate "+%H:%M:%S.%3N"
+  else
+    perl -MTime::HiRes=gettimeofday -e '($s,$us)=gettimeofday();@t=localtime($s);printf"%02d:%02d:%02d.%03d\n",$t[2],$t[1],$t[0],$us/1000'
+  fi
+}
+log() { echo "[$(ts)] $*"; }
 
 if [ ! -x "build/pyenv/tts/bin/pip" ]; then
-  echo "$p ERROR: TTS environment not found. Run base setup first."
+  log "ERROR: TTS environment not found. Run base setup first."
   exit 1
 fi
 
