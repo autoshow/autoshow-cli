@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { existsSync } from '@/node-utils'
-import { logMkdir } from './rss-logging.ts'
+import { logMkdir } from './rss-logging'
 import type { ProcessingOptions } from '@/text/text-types'
 
 const WORKFLOWS_DIR = 'input/workflows'

@@ -4,7 +4,7 @@ import {
 } from '@/node-utils'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
-} from '../tts-utils'
+} from '../tts-utils/audio-utils'
 import {
   ensureTtsEnvironment, checkKittenInstalled, runKittenSetup
 } from '../tts-utils/setup-utils'

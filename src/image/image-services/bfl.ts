@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 import { l } from '@/logging'
-import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils.ts'
+import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, BlackForestLabsOptions } from '../image-types'
 

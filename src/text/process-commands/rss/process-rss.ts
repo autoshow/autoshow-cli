@@ -1,6 +1,6 @@
-import { validateRSSOptions, getLLMService, getTranscriptService } from './rss-validation.ts'
-import { processRSSFeeds } from './processor.ts'
-import { handleWorkflow } from './workflows.ts'
+import { validateRSSOptions, getLLMService, getTranscriptService } from './rss-validation'
+import { processRSSFeeds } from './processor'
+import { handleWorkflow } from './workflows'
 import { err } from '@/logging'
 import type { ProcessingOptions } from '@/text/text-types'
 

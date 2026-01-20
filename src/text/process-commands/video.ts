@@ -1,8 +1,8 @@
-import { generateMarkdown } from '../process-steps/01-process-content/generate-markdown.ts'
-import { downloadAudio, saveAudio } from '../process-steps/01-process-content/download-audio.ts'
-import { runTranscription } from '../process-steps/02-run-transcription/run-transcription.ts'
-import { selectPrompts } from '../process-steps/03-select-prompts/select-prompt.ts'
-import { runLLM } from '../process-steps/04-run-llm/run-llm.ts'
+import { generateMarkdown } from '../process-steps/01-process-content/generate-markdown'
+import { downloadAudio, saveAudio } from '../process-steps/01-process-content/download-audio'
+import { runTranscription } from '../process-steps/02-run-transcription/run-transcription'
+import { selectPrompts } from '../process-steps/03-select-prompts/select-prompt'
+import { runLLM } from '../process-steps/04-run-llm/run-llm'
 import { err } from '@/logging'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 

@@ -1,10 +1,10 @@
 import { l } from '@/logging'
-import { isApiError } from './image-utils.ts'
+import { isApiError } from './image-utils'
 import { env } from '@/node-utils'
-import { generateImageWithDallE } from './image-services/dalle.ts'
-import { generateImageWithBlackForestLabs } from './image-services/bfl.ts'
-import { generateImageWithNova } from './image-services/nova.ts'
-import { generateImageWithRunway } from './image-services/runway.ts'
+import { generateImageWithDallE } from './image-services/dalle'
+import { generateImageWithBlackForestLabs } from './image-services/bfl'
+import { generateImageWithNova } from './image-services/nova'
+import { generateImageWithRunway } from './image-services/runway'
 
 export async function generateComparisonImages(prompt: string): Promise<any> {
   try {

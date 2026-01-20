@@ -1,8 +1,8 @@
 import { err } from '@/logging'
-import { processScriptWithElevenLabs } from '../tts-services/elevenlabs.ts'
-import { processScriptWithCoqui } from '../tts-local/coqui.ts'
-import { processScriptWithPolly } from '../tts-services/polly.ts'
-import { processScriptWithKitten } from '../tts-local/kitten.ts'
+import { processScriptWithElevenLabs } from '../tts-services/elevenlabs'
+import { processScriptWithCoqui } from '../tts-local/coqui'
+import { processScriptWithPolly } from '../tts-services/polly'
+import { processScriptWithKitten } from '../tts-local/kitten'
 import type { TtsEngine } from '../tts-types'
 
 const scriptProcessors = {

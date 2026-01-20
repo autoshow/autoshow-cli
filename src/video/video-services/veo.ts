@@ -1,8 +1,8 @@
 import { writeFile } from 'fs/promises'
 import { l } from '@/logging'
-import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils.ts'
+import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils'
 import { env, readFileSync, existsSync } from '@/node-utils'
-import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig, VeoApiOperation } from '@/video/video-types.ts'
+import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig, VeoApiOperation } from '@/video/video-types'
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 

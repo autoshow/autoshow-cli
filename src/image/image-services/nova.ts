@@ -1,6 +1,6 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { l } from '@/logging'
-import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError, ensureDependencies } from '../image-utils.ts'
+import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError, ensureDependencies } from '../image-utils'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, NovaCanvasPayload } from '../image-types'
 

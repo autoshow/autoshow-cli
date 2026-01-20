@@ -1,10 +1,10 @@
 import { err } from '@/logging'
 import { basename, extname, join } from '@/node-utils'
-import { synthesizeWithElevenLabs } from '../tts-services/elevenlabs.ts'
-import { synthesizeWithCoqui } from '../tts-local/coqui.ts'
-import { synthesizeWithPolly } from '../tts-services/polly.ts'
-import { synthesizeWithKitten } from '../tts-local/kitten.ts'
-import { stripMarkdown } from './text-utils.ts'
+import { synthesizeWithElevenLabs } from '../tts-services/elevenlabs'
+import { synthesizeWithCoqui } from '../tts-local/coqui'
+import { synthesizeWithPolly } from '../tts-services/polly'
+import { synthesizeWithKitten } from '../tts-local/kitten'
+import { stripMarkdown } from '../tts-utils/text-utils'
 import type { TtsEngine } from '../tts-types'
 
 const synthesizers = {

@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { spawn, stat, readdir, parse, extname, join, ensureDir } from '@/node-utils'
-import { AUDIO_FMT, AUDIO_Q } from './create-media-command.ts'
+import { AUDIO_FMT, AUDIO_Q } from './create-media-command'
 
 export async function sanitizeFilename(filename: string): Promise<string> {
   const ext = filename.match(/\.[^.]+$/)?.[0] || ''

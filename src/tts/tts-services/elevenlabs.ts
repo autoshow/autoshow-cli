@@ -4,7 +4,7 @@ import {
 } from '@/node-utils'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
-} from '../tts-utils'
+} from '../tts-utils/audio-utils'
 import {
   checkElevenLabsInstalled, installNpmPackage
 } from '../tts-utils/setup-utils'
