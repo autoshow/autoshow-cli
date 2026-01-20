@@ -173,7 +173,7 @@ export const createTextCommand = (): Command => {
     .option('--urls <filePath>', 'Process YouTube videos from a list of URLs in a file')
     .option('--file <filePath>', 'Process a local audio or video file')
     .option('--rss [rssURLs...]', 'Process one or more podcast RSS feeds (optional when using --feed)')
-    .option('--feed <feedFile>', 'Process workflow feed file (e.g., "01-ai-feeds.md") from output/workflows/feeds')
+    .option('--feed <feedFile>', 'Process workflow feed file (e.g., "01-ai-feeds.md") from input/workflows/feeds')
     .option('--metaInfo', 'Additionally run workflow for information gathering')
     .option('--item <itemUrls...>', 'Process specific items in the RSS feed by providing their audio URLs')
     .option('--order <order>', 'Specify the order for RSS feed and channel processing (newest or oldest)')

@@ -5,7 +5,7 @@ import { logCopy, logMkdir, logFindMove, logRemove, logMoveMd } from './rss-logg
 import { ensureWorkflowDirectories, validateFeedsFile } from './rss-validation.ts'
 import type { ProcessingOptions } from '@/text/text-types'
 
-const WORKFLOWS_DIR = 'output/workflows'
+const WORKFLOWS_DIR = 'input/workflows'
 
 async function copyFeeds(): Promise<void> {
   await logCopy(`./${WORKFLOWS_DIR}/feeds`, './output', 'copyFeeds', 'feeds folder copied to ./output')
