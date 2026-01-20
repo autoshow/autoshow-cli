@@ -3,7 +3,7 @@ import { existsSync } from '@/node-utils'
 import { logMkdir } from './rss-logging.ts'
 import type { ProcessingOptions } from '@/text/text-types'
 
-const WORKFLOWS_DIR = 'output/workflows'
+const WORKFLOWS_DIR = 'input/workflows'
 
 export function validateRSSOptions(options: ProcessingOptions): void {
   if (options.last !== undefined) {
