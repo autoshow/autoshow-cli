@@ -1,7 +1,7 @@
 import { err } from '@/logging'
 import { readFile, unlink, existsSync, spawn } from '@/node-utils'
 import { isWhisperCoreMLConfigured, autoSetupWhisperCoreML, ensureCoreMLModelExists } from '@/text/utils/setup-helpers'
-import { formatWhisperTranscript } from './whisper.ts'
+import { formatWhisperTranscript } from './whisper'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
 

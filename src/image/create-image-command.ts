@@ -1,11 +1,11 @@
 import { Command } from 'commander'
 import { l, err } from '@/logging'
-import { handleError } from './image-utils.ts'
-import { generateImageWithDallE } from './image-services/dalle.ts'
-import { generateImageWithBlackForestLabs } from './image-services/bfl.ts'
-import { generateImageWithNova } from './image-services/nova.ts'
-import { generateImageWithRunway } from './image-services/runway.ts'
-import { generateComparisonImages } from './comparison.ts'
+import { handleError } from './image-utils'
+import { generateImageWithDallE } from './image-services/dalle'
+import { generateImageWithBlackForestLabs } from './image-services/bfl'
+import { generateImageWithNova } from './image-services/nova'
+import { generateImageWithRunway } from './image-services/runway'
+import { generateComparisonImages } from './comparison'
 
 const serviceGenerators = {
   dalle: generateImageWithDallE,

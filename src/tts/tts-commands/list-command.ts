@@ -123,7 +123,3 @@ export const listModels = async (): Promise<void> => {
   
   l.dim(`Use a model with: bun as -- tts file input.md --coqui-model "model_name"`)
 }
-
-export const downloadModel = async (_modelId: string): Promise<boolean> => {
-  return true
-}

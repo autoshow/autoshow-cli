@@ -1,6 +1,6 @@
 import { l, err } from '@/logging'
 import { spawn, readFile, stat, ensureDir } from '@/node-utils'
-import { AUDIO_FMT, AUDIO_Q } from './create-media-command.ts'
+import { AUDIO_FMT, AUDIO_Q } from './create-media-command'
 
 export async function downloadAudioFromUrls(markdownFile: string, verbose = false): Promise<void> {
   if (!markdownFile.toLowerCase().endsWith('.md')) {

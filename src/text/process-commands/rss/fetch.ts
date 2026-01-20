@@ -1,6 +1,6 @@
 import { err } from '@/logging'
 import { parser } from '@/node-utils'
-import { filterRSSItems } from './filters.ts'
+import { filterRSSItems } from './filters'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function retryRSSFetch(

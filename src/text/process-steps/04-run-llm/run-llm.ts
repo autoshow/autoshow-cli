@@ -1,8 +1,8 @@
 import { l, err } from '@/logging'
 import { writeFile, ensureDir } from '@/node-utils'
-import { callChatGPT, callClaude, callGemini } from './llm-services.ts'
-import { LLM_SERVICES_CONFIG } from './llm-models.ts'
-import { formatCost, logLLMCost } from '../../utils/cost.ts'
+import { callChatGPT, callClaude, callGemini } from './llm-services'
+import { LLM_SERVICES_CONFIG } from './llm-models'
+import { formatCost, logLLMCost } from '../../utils/cost'
 import type { ProcessingOptions, ShowNoteMetadata, ChatGPTModelValue, ClaudeModelValue, GeminiModelValue } from '@/text/text-types'
 
 export async function runLLM(

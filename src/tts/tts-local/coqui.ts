@@ -4,7 +4,7 @@ import {
 } from '@/node-utils'
 import {
   ensureSilenceFile, mergeAudioFiles, convertPcmToWav
-} from '../tts-utils'
+} from '../tts-utils/audio-utils'
 import {
   ensureTtsEnvironment, checkCoquiInstalled, runCoquiSetup
 } from '../tts-utils/setup-utils'

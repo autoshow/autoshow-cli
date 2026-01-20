@@ -3,7 +3,11 @@ import { l, err } from '@/logging'
 import { 
   existsSync, mkdirSync
 } from '@/node-utils'
-import { downloadModel, detectEngine, listModels, processFileWithEngine, processScriptWithEngine } from './tts-utils'
+import { listModels } from './tts-commands/list-command'
+import { downloadModel } from './tts-commands/download-command'
+import { processFileWithEngine } from './tts-commands/file-command'
+import { processScriptWithEngine } from './tts-commands/script-command'
+import { detectEngine } from './tts-utils/engine-utils'
 
 const OUTDIR = 'output'
 

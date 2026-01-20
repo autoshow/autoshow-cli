@@ -2,7 +2,7 @@ import test from 'node:test'
 import { strictEqual, ok, rejects } from 'node:assert/strict'
 import { existsSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
-import { sanitizeFilename, convertLocalAudioFiles } from '../../src/media/save-audio-files.ts'
+import { sanitizeFilename, convertLocalAudioFiles } from '../../src/media/save-audio-files'
 
 test('sanitizeFilename function tests', async (t) => {
   await t.test('should convert uppercase to lowercase', async () => {

@@ -1,7 +1,7 @@
 import { writeFile } from 'fs/promises'
 import RunwayML from '@runwayml/sdk'
 import { l } from '@/logging'
-import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils.ts'
+import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, RunwayImageOptions } from '../image-types'
 

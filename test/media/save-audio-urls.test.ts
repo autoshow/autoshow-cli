@@ -2,7 +2,7 @@ import test from 'node:test'
 import { strictEqual, ok, rejects } from 'node:assert/strict'
 import { existsSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
-import { downloadAudioFromUrls } from '../../src/media/save-audio-urls.ts'
+import { downloadAudioFromUrls } from '../../src/media/save-audio-urls'
 
 test('downloadAudioFromUrls function tests', async (t) => {
   const p = '[test/media/save-audio-urls]'
