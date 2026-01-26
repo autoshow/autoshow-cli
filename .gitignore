@@ -25,3 +25,5 @@ eng.traineddata
 wan2.1-repo
 *.pyc
 __pycache__/
+checkpoints/
+references/

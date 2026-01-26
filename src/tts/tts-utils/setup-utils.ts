@@ -191,6 +191,36 @@ export const runChatterboxSetup = (): boolean => {
   }
 }
 
+export const checkFishAudioInstalled = (pythonPath: string): boolean => {
+  const result = spawnSync(pythonPath, ['-c', 'import requests; import torch'], { 
+    encoding: 'utf-8', 
+    stdio: 'pipe' 
+  })
+  return result.status === 0
+}
+
+export const runFishAudioSetup = (): boolean => {
+  l.wait(`FishAudio TTS not installed, running automatic setup...`)
+  
+  const setupScript = join(process.cwd(), '.github/setup/tts/fish-audio.sh')
+  if (!existsSync(setupScript)) {
+    l.dim(`FishAudio setup script not found`)
+    return false
+  }
+  
+  try {
+    execSync(`bash "${setupScript}"`, { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    })
+    l.success(`FishAudio TTS setup completed`)
+    return true
+  } catch (error) {
+    l.dim(`FishAudio setup failed: ${error}`)
+    return false
+  }
+}
+
 export const checkElevenLabsInstalled = (): boolean => {
   try {
     require.resolve('elevenlabs')

@@ -5,7 +5,7 @@ export interface VoiceSettings {
   use_speaker_boost: boolean
 }
 
-export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly' | 'kitten' | 'qwen3' | 'chatterbox'
+export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly' | 'kitten' | 'qwen3' | 'chatterbox' | 'fishaudio'
 
 export type Qwen3Mode = 'custom' | 'design' | 'clone'
 
@@ -60,4 +60,17 @@ export interface ChatterboxOptions {
   cfgWeight?: number          // 0.0-1.0, for standard model
   device?: 'cpu' | 'mps' | 'cuda'
   dtype?: 'float32' | 'float16' | 'bfloat16'
+}
+
+export type FishAudioLanguage = 
+  | 'en' | 'zh' | 'ja' | 'de' | 'fr' | 'es' 
+  | 'ko' | 'ar' | 'ru' | 'nl' | 'it' | 'pl' | 'pt'
+
+export interface FishAudioOptions {
+  language?: FishAudioLanguage | string
+  apiUrl?: string              // API server URL  
+  refAudio?: string            // Voice cloning reference
+  refText?: string             // Reference audio transcript
+  emotion?: string             // Emotion marker to prepend
+  device?: 'cpu' | 'cuda' | 'mps'
 }

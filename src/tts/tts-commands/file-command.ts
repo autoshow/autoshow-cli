@@ -6,6 +6,7 @@ import { synthesizeWithPolly } from '../tts-services/polly'
 import { synthesizeWithKitten } from '../tts-local/kitten'
 import { synthesizeWithQwen3 } from '../tts-local/qwen3'
 import { synthesizeWithChatterbox } from '../tts-local/chatterbox'
+import { synthesizeWithFishAudio } from '../tts-local/fish-audio'
 import { stripMarkdown } from '../tts-utils/text-utils'
 import type { TtsEngine } from '../tts-types'
 
@@ -45,6 +46,16 @@ const synthesizers: Record<TtsEngine, (plain: string, out: string, opts: any) =>
       dtype: opts.chatterboxDtype,
       exaggeration: opts.chatterboxExaggeration,
       cfgWeight: opts.chatterboxCfg
+    })
+  },
+  fishaudio: async (plain: string, out: string, opts: any) => {
+    return synthesizeWithFishAudio(plain, out, {
+      language: opts.fishLanguage,
+      apiUrl: opts.fishApiUrl || process.env['FISHAUDIO_API_URL'],
+      refAudio: opts.refAudio,
+      refText: opts.refText,
+      emotion: opts.fishEmotion,
+      device: opts.fishDevice
     })
   }
 }
