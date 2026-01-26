@@ -4,6 +4,7 @@ import { processScriptWithCoqui } from '../tts-local/coqui'
 import { processScriptWithPolly } from '../tts-services/polly'
 import { processScriptWithKitten } from '../tts-local/kitten'
 import { processScriptWithQwen3 } from '../tts-local/qwen3'
+import { processScriptWithChatterbox } from '../tts-local/chatterbox'
 import type { TtsEngine } from '../tts-types'
 
 const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => Promise<void>> = {
@@ -28,6 +29,17 @@ const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => P
       refText: opts.refText,
       speed: opts.speed,
       maxChunk: opts.qwen3MaxChunk
+    })
+  },
+  chatterbox: async (s: string, o: string, opts: any) => {
+    return processScriptWithChatterbox(s, o, { 
+      model: opts.chatterboxModel,
+      refAudio: opts.refAudio,
+      languageId: opts.chatterboxLanguage,
+      device: opts.chatterboxDevice,
+      dtype: opts.chatterboxDtype,
+      exaggeration: opts.chatterboxExaggeration,
+      cfgWeight: opts.chatterboxCfg
     })
   }
 }

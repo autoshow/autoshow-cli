@@ -12,6 +12,7 @@ bun as -- tts file input/sample.md --kitten --output output/kitten
 bun as -- tts file input/sample.md --elevenlabs --output output/elevenlabs
 bun as -- tts file input/sample.md --polly --output output/polly
 bun as -- tts file input/sample.md --qwen3 --output output/qwen3
+bun as -- tts file input/sample.md --chatterbox --output output/chatterbox
 ```
 
 ### Script Files
@@ -22,6 +23,7 @@ bun as -- tts script input/script.json --elevenlabs
 bun as -- tts script input/script.json --coqui
 bun as -- tts script input/script.json --polly
 bun as -- tts script input/script.json --qwen3
+bun as -- tts script input/script.json --chatterbox
 ```
 
 ### List Models
@@ -36,6 +38,7 @@ bun as -- tts list
 - `--elevenlabs` - Use ElevenLabs engine
 - `--polly` - Use AWS Polly engine
 - `--qwen3` - Use Qwen3 TTS engine
+- `--chatterbox` - Use Chatterbox TTS engine
 - `--output <dir>` - Output directory (default: output/)
 - `--voice <name>` - Voice ID or name
 - `--speaker <name>` - Speaker name (Coqui)
@@ -49,8 +52,13 @@ bun as -- tts list
 - `--qwen3-instruct <text>` - Natural language voice control
 - `--qwen3-mode <mode>` - Generation mode (custom, design, clone)
 - `--qwen3-language <lang>` - Language (Auto, Chinese, English, Japanese, Korean, etc.)
-- `--ref-audio <path>` - Reference audio for voice cloning (Qwen3)
+- `--ref-audio <path>` - Reference audio for voice cloning (Qwen3/Chatterbox)
 - `--ref-text <text>` - Transcript of reference audio (Qwen3)
+- `--chatterbox-model <model>` - Chatterbox model (turbo, standard, multilingual)
+- `--chatterbox-language <lang>` - Language for multilingual model (en, fr, ja, zh, etc.)
+- `--chatterbox-device <device>` - Device override (cpu, mps, cuda)
+- `--chatterbox-exaggeration <n>` - Exaggeration 0.0-1.0 (standard model)
+- `--chatterbox-cfg <n>` - CFG weight 0.0-1.0 (standard model)
 - `--polly-format <format>` - Output format (mp3, ogg_vorbis, pcm)
 - `--polly-sample-rate <rate>` - Sample rate (8000, 16000, 22050, 24000)
 - `--polly-engine <engine>` - Engine type (standard, neural, generative, long-form)
