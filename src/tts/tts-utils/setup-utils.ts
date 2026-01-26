@@ -95,6 +95,14 @@ export const checkQwen3Installed = (pythonPath: string): boolean => {
   return result.status === 0
 }
 
+export const checkChatterboxInstalled = (pythonPath: string): boolean => {
+  const result = spawnSync(pythonPath, ['-c', 'import chatterbox'], { 
+    encoding: 'utf-8', 
+    stdio: 'pipe' 
+  })
+  return result.status === 0
+}
+
 export const runCoquiSetup = (): boolean => {
   l.wait(`Coqui TTS not installed, running automatic setup...`)
   
@@ -157,6 +165,28 @@ export const runQwen3Setup = (): boolean => {
     return true
   } catch (error) {
     l.dim(`Qwen3 setup failed: ${error}`)
+    return false
+  }
+}
+
+export const runChatterboxSetup = (): boolean => {
+  l.wait(`Chatterbox TTS not installed, running automatic setup...`)
+  
+  const setupScript = join(process.cwd(), '.github/setup/tts/chatterbox.sh')
+  if (!existsSync(setupScript)) {
+    l.dim(`Chatterbox setup script not found`)
+    return false
+  }
+  
+  try {
+    execSync(`bash "${setupScript}"`, { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    })
+    l.success(`Chatterbox TTS setup completed`)
+    return true
+  } catch (error) {
+    l.dim(`Chatterbox setup failed: ${error}`)
     return false
   }
 }

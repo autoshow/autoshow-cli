@@ -5,6 +5,7 @@ import { synthesizeWithCoqui } from '../tts-local/coqui'
 import { synthesizeWithPolly } from '../tts-services/polly'
 import { synthesizeWithKitten } from '../tts-local/kitten'
 import { synthesizeWithQwen3 } from '../tts-local/qwen3'
+import { synthesizeWithChatterbox } from '../tts-local/chatterbox'
 import { stripMarkdown } from '../tts-utils/text-utils'
 import type { TtsEngine } from '../tts-types'
 
@@ -33,6 +34,17 @@ const synthesizers: Record<TtsEngine, (plain: string, out: string, opts: any) =>
       refText: opts.refText,
       speed: opts.speed,
       maxChunk: opts.qwen3MaxChunk
+    })
+  },
+  chatterbox: async (plain: string, out: string, opts: any) => {
+    return synthesizeWithChatterbox(plain, out, { 
+      model: opts.chatterboxModel,
+      refAudio: opts.refAudio,
+      languageId: opts.chatterboxLanguage,
+      device: opts.chatterboxDevice,
+      dtype: opts.chatterboxDtype,
+      exaggeration: opts.chatterboxExaggeration,
+      cfgWeight: opts.chatterboxCfg
     })
   }
 }

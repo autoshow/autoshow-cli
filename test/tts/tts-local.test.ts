@@ -14,6 +14,11 @@ const cliCommands = [
   { 'qwen3-ryan': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ryan' },
   { 'qwen3-japanese': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ono_Anna --qwen3-language Japanese' },
   { 'qwen3-instruct': 'bun as -- tts file input/sample.md --qwen3 --qwen3-instruct "Speak with enthusiasm"' },
+  // Chatterbox TTS test cases
+  { 'chatterbox-turbo': 'bun as -- tts file input/sample.md --chatterbox' },
+  { 'chatterbox-standard': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard' },
+  { 'chatterbox-multilingual-fr': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model multilingual --chatterbox-language fr' },
+  { 'chatterbox-exaggeration': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7' },
 ]
 
 test('CLI TTS local tests', { concurrency: 1 }, async (t) => {
