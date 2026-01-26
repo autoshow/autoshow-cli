@@ -9,6 +9,11 @@ import type { ExecException } from 'node:child_process'
 const cliCommands = [
   { 'coqui-default': 'bun as -- tts file input/sample.md --coqui' },
   { 'kitten-default': 'bun as -- tts file input/sample.md --kitten' },
+  // Qwen3 TTS test cases
+  { 'qwen3-default': 'bun as -- tts file input/sample.md --qwen3' },
+  { 'qwen3-ryan': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ryan' },
+  { 'qwen3-japanese': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ono_Anna --qwen3-language Japanese' },
+  { 'qwen3-instruct': 'bun as -- tts file input/sample.md --qwen3 --qwen3-instruct "Speak with enthusiasm"' },
 ]
 
 test('CLI TTS local tests', { concurrency: 1 }, async (t) => {

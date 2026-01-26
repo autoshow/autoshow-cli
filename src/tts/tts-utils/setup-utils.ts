@@ -87,6 +87,14 @@ export const checkKittenInstalled = (pythonPath: string): boolean => {
   return result.status === 0
 }
 
+export const checkQwen3Installed = (pythonPath: string): boolean => {
+  const result = spawnSync(pythonPath, ['-c', 'import qwen_tts'], { 
+    encoding: 'utf-8', 
+    stdio: 'pipe' 
+  })
+  return result.status === 0
+}
+
 export const runCoquiSetup = (): boolean => {
   l.wait(`Coqui TTS not installed, running automatic setup...`)
   
@@ -127,6 +135,28 @@ export const runKittenSetup = (): boolean => {
     return true
   } catch (error) {
     l.dim(`Kitten setup failed: ${error}`)
+    return false
+  }
+}
+
+export const runQwen3Setup = (): boolean => {
+  l.wait(`Qwen3 TTS not installed, running automatic setup...`)
+  
+  const setupScript = join(process.cwd(), '.github/setup/tts/qwen3.sh')
+  if (!existsSync(setupScript)) {
+    l.dim(`Qwen3 setup script not found`)
+    return false
+  }
+  
+  try {
+    execSync(`bash "${setupScript}"`, { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    })
+    l.success(`Qwen3 TTS setup completed`)
+    return true
+  } catch (error) {
+    l.dim(`Qwen3 setup failed: ${error}`)
     return false
   }
 }

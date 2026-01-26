@@ -3,9 +3,10 @@ import { processScriptWithElevenLabs } from '../tts-services/elevenlabs'
 import { processScriptWithCoqui } from '../tts-local/coqui'
 import { processScriptWithPolly } from '../tts-services/polly'
 import { processScriptWithKitten } from '../tts-local/kitten'
+import { processScriptWithQwen3 } from '../tts-local/qwen3'
 import type { TtsEngine } from '../tts-types'
 
-const scriptProcessors = {
+const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => Promise<void>> = {
   elevenlabs: processScriptWithElevenLabs,
   coqui: async (s: string, o: string, opts: any) => {
     return processScriptWithCoqui(s, o, { model: opts.coquiModel, language: opts.language, speed: opts.speed })
@@ -15,6 +16,19 @@ const scriptProcessors = {
   },
   kitten: async (s: string, o: string, opts: any) => {
     return processScriptWithKitten(s, o, { model: opts.kittenModel, speed: opts.speed })
+  },
+  qwen3: async (s: string, o: string, opts: any) => {
+    return processScriptWithQwen3(s, o, { 
+      model: opts.qwen3Model, 
+      speaker: opts.qwen3Speaker, 
+      language: opts.qwen3Language,
+      instruct: opts.qwen3Instruct,
+      mode: opts.qwen3Mode,
+      refAudio: opts.refAudio,
+      refText: opts.refText,
+      speed: opts.speed,
+      maxChunk: opts.qwen3MaxChunk
+    })
   }
 }
 
