@@ -4,10 +4,11 @@ import { synthesizeWithElevenLabs } from '../tts-services/elevenlabs'
 import { synthesizeWithCoqui } from '../tts-local/coqui'
 import { synthesizeWithPolly } from '../tts-services/polly'
 import { synthesizeWithKitten } from '../tts-local/kitten'
+import { synthesizeWithQwen3 } from '../tts-local/qwen3'
 import { stripMarkdown } from '../tts-utils/text-utils'
 import type { TtsEngine } from '../tts-types'
 
-const synthesizers = {
+const synthesizers: Record<TtsEngine, (plain: string, out: string, opts: any) => Promise<string | void>> = {
   elevenlabs: async (plain: string, out: string, opts: any) => {
     return synthesizeWithElevenLabs(plain, out, opts.voice || process.env['ELEVENLABS_DEFAULT_VOICE'] || 'onwK4e9ZLuTAKqWW03F9')
   },
@@ -20,6 +21,19 @@ const synthesizers = {
   },
   kitten: async (plain: string, out: string, opts: any) => {
     return synthesizeWithKitten(plain, out, { model: opts.kittenModel, voice: opts.voice, speed: opts.speed })
+  },
+  qwen3: async (plain: string, out: string, opts: any) => {
+    return synthesizeWithQwen3(plain, out, { 
+      model: opts.qwen3Model, 
+      speaker: opts.qwen3Speaker, 
+      language: opts.qwen3Language,
+      instruct: opts.qwen3Instruct,
+      mode: opts.qwen3Mode,
+      refAudio: opts.refAudio,
+      refText: opts.refText,
+      speed: opts.speed,
+      maxChunk: opts.qwen3MaxChunk
+    })
   }
 }
 

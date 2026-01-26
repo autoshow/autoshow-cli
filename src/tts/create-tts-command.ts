@@ -16,8 +16,17 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--elevenlabs', 'Use ElevenLabs engine')
   .option('--polly', 'Use AWS Polly engine')
   .option('--kitten', 'Use Kitten TTS engine (lightweight, CPU-only)')
+  .option('--qwen3', 'Use Qwen3 TTS engine')
   .option('--coqui-model <model>', 'Coqui model name or path (default: tacotron2-DDC, use "xtts" for XTTS v2)')
   .option('--kitten-model <model>', 'Kitten model name (default: KittenML/kitten-tts-nano-0.1)')
+  .option('--qwen3-model <model>', 'Qwen3 model variant (CustomVoice, VoiceDesign, Base)')
+  .option('--qwen3-speaker <name>', 'Qwen3 speaker: Vivian, Serena, Uncle_Fu, Dylan, Eric, Ryan, Aiden, Ono_Anna, Sohee')
+  .option('--qwen3-instruct <text>', 'Qwen3 natural language voice control')
+  .option('--qwen3-mode <mode>', 'Qwen3 generation mode: custom, design, clone')
+  .option('--qwen3-language <lang>', 'Qwen3 language: Auto, Chinese, English, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian')
+  .option('--qwen3-max-chunk <n>', 'Qwen3 max chunk size for long text (default: 500)', parseInt)
+  .option('--ref-audio <path>', 'Reference audio for voice cloning (qwen3 clone mode)')
+  .option('--ref-text <text>', 'Transcript of reference audio (qwen3 clone mode)')
   .option('--voice <name>', 'Voice ID (elevenlabs) or voice name (polly/kitten)')
   .option('--speaker <name>', 'Speaker name for Coqui TTS')
   .option('--voice-clone <path>', 'Path to voice sample for cloning (coqui XTTS)')
@@ -26,7 +35,7 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--polly-sample-rate <rate>', 'Polly sample rate: 8000, 16000, 22050, 24000 (default: 24000)')
   .option('--polly-engine <engine>', 'Polly engine: standard, neural (auto-selected based on voice)')
   .option('--output <dir>', 'Output directory', OUTDIR)
-  .option('--speed <number>', 'Speed 0.25-4.0 (coqui/kitten)', parseFloat)
+  .option('--speed <number>', 'Speed 0.25-4.0 (coqui/kitten/qwen3)', parseFloat)
 
 const handleAction = async (action: string, runner: () => Promise<void>): Promise<void> => {
   try {
