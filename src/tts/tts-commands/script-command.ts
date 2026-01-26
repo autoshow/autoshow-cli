@@ -5,6 +5,7 @@ import { processScriptWithPolly } from '../tts-services/polly'
 import { processScriptWithKitten } from '../tts-local/kitten'
 import { processScriptWithQwen3 } from '../tts-local/qwen3'
 import { processScriptWithChatterbox } from '../tts-local/chatterbox'
+import { processScriptWithFishAudio } from '../tts-local/fish-audio'
 import type { TtsEngine } from '../tts-types'
 
 const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => Promise<void>> = {
@@ -40,6 +41,16 @@ const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => P
       dtype: opts.chatterboxDtype,
       exaggeration: opts.chatterboxExaggeration,
       cfgWeight: opts.chatterboxCfg
+    })
+  },
+  fishaudio: async (s: string, o: string, opts: any) => {
+    return processScriptWithFishAudio(s, o, {
+      language: opts.fishLanguage,
+      apiUrl: opts.fishApiUrl || process.env['FISHAUDIO_API_URL'],
+      refAudio: opts.refAudio,
+      refText: opts.refText,
+      emotion: opts.fishEmotion,
+      device: opts.fishDevice
     })
   }
 }
