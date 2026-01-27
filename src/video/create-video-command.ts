@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel } from './video-utils'
 import { generateVideoWithVeo } from './video-services/veo'
 import { generateVideoWithRunway } from './video-services/runway'
@@ -21,14 +21,14 @@ export const createVideoCommand = (): Command => {
     .option('-d, --duration <seconds>', 'video duration in seconds (5|10) (Runway only)', '5')
     .action(async (options) => {
       try {
-        l.opts('Starting video generation')
-        l.dim(`Model: ${options.model}`)
+        l('Starting video generation')
+        l('Model', { model: options.model })
         
         const isVeoModel = validateVideoModel(options.model)
         const isRunwayModel = validateRunwayModel(options.model)
         
         if (!isVeoModel && !isRunwayModel) {
-          err(`Invalid model: ${options.model}. Use 'bun as -- video list-models' to see available models`)
+          err('Invalid model. Use \'bun as -- video list-models\' to see available models', { model: options.model })
         }
         
         const aspectRatio = parseAspectRatio(options.aspectRatio)
@@ -40,12 +40,12 @@ export const createVideoCommand = (): Command => {
         if (isVeoModel) {
           let veoAspectRatio: '16:9' | '9:16' | undefined = aspectRatio as any
           if (options.model !== 'veo-2.0-generate-001' && veoAspectRatio === '9:16') {
-            l.warn('Portrait mode (9:16) is only supported by veo-2.0-generate-001. Using 16:9 instead.')
+            l('Portrait mode (9:16) is only supported by veo-2.0-generate-001. Using 16:9 instead.')
             veoAspectRatio = '16:9'
           }
 
           if (veoAspectRatio !== '16:9' && veoAspectRatio !== '9:16') {
-            l.warn(`Unsupported aspect ratio for Veo model: ${veoAspectRatio}. Defaulting to 16:9.`)
+            l('Unsupported aspect ratio for Veo model. Defaulting to 16:9', { aspectRatio: veoAspectRatio })
             veoAspectRatio = '16:9'
           }
           
@@ -59,7 +59,7 @@ export const createVideoCommand = (): Command => {
           }
           
           if (options.image) {
-            l.dim(`Using image-to-video mode with reference image: ${options.image}`)
+            l('Using image-to-video mode with reference image', { image: options.image })
           }
           
           const result = await generateVideoWithVeo(options.prompt, veoOptions)
@@ -69,22 +69,22 @@ export const createVideoCommand = (): Command => {
           }
           
           if (result.success) {
-            l.success(`Video saved to: ${result.path}`)
+            success('Video saved', { path: result.path })
             if (result.duration) {
-              l.dim(`Generation took ${result.duration} seconds`)
+              l('Generation took', { duration: `${result.duration} seconds` })
             }
           } else {
-            err(`Failed to generate video: ${result.error}`)
+            err('Failed to generate video', { error: result.error })
           }
         } else if (isRunwayModel) {
           const duration = parseInt(options.duration)
           if (duration !== 5 && duration !== 10) {
-            err(`Invalid duration: ${options.duration}. Must be 5 or 10 seconds`)
+            err('Invalid duration. Must be 5 or 10 seconds', { duration: options.duration })
           }
 
           let runwayAspectRatio: '16:9' | '9:16' | undefined = aspectRatio as any
           if (runwayAspectRatio !== '16:9' && runwayAspectRatio !== '9:16') {
-            l.warn(`Unsupported aspect ratio for Runway model: ${runwayAspectRatio}. Defaulting to 16:9.`)
+            l('Unsupported aspect ratio for Runway model. Defaulting to 16:9', { aspectRatio: runwayAspectRatio })
             runwayAspectRatio = '16:9'
           }
           
@@ -96,7 +96,7 @@ export const createVideoCommand = (): Command => {
             duration: duration as 5 | 10
           }
           
-          l.dim(`Using Runway image-to-video with reference image: ${options.image}`)
+          l('Using Runway image-to-video with reference image', { image: options.image })
           
           const result = await generateVideoWithRunway(options.prompt, runwayOptions)
           
@@ -105,12 +105,12 @@ export const createVideoCommand = (): Command => {
           }
           
           if (result.success) {
-            l.success(`Video saved to: ${result.path}`)
+            success('Video saved', { path: result.path })
             if (result.duration) {
-              l.dim(`Generation took ${result.duration} seconds`)
+              l('Generation took', { duration: `${result.duration} seconds` })
             }
           } else {
-            err(`Failed to generate video: ${result.error}`)
+            err('Failed to generate video', { error: result.error })
           }
         }
       } catch (error) {
@@ -122,18 +122,18 @@ export const createVideoCommand = (): Command => {
     .command('list-models')
     .description('List available video generation models')
     .action(() => {
-      l.opts('Available video generation models:')
-      l.dim(' ')
-      l.dim('Google Veo models (cloud-based, requires GEMINI_API_KEY):')
-      l.dim('  • veo-3.0-generate-preview - Veo 3 with audio generation (8 seconds, 720p)')
-      l.dim('  • veo-3.0-fast-generate-preview - Veo 3 Fast for rapid generation')
-      l.dim('  • veo-2.0-generate-001 - Veo 2 stable version (5-8 seconds, supports portrait)')
-      l.dim(' ')
-      l.dim('Runway models (cloud-based, requires RUNWAYML_API_SECRET):')
-      l.dim('  • gen4_turbo - Gen-4 Turbo (5-10 seconds, 720p, 5 credits/sec)')
-      l.dim('  • gen3a_turbo - Gen-3 Alpha Turbo (5-10 seconds, 720p, 5 credits/sec)')
-      l.dim(' ')
-      l.dim('Note: All models run on cloud servers and require API keys.')
+      l('Available video generation models:')
+      l(' ')
+      l('Google Veo models (cloud-based, requires GEMINI_API_KEY):')
+      l('  • veo-3.0-generate-preview - Veo 3 with audio generation (8 seconds, 720p)')
+      l('  • veo-3.0-fast-generate-preview - Veo 3 Fast for rapid generation')
+      l('  • veo-2.0-generate-001 - Veo 2 stable version (5-8 seconds, supports portrait)')
+      l(' ')
+      l('Runway models (cloud-based, requires RUNWAYML_API_SECRET):')
+      l('  • gen4_turbo - Gen-4 Turbo (5-10 seconds, 720p, 5 credits/sec)')
+      l('  • gen3a_turbo - Gen-3 Alpha Turbo (5-10 seconds, 720p, 5 credits/sec)')
+      l(' ')
+      l('Note: All models run on cloud servers and require API keys.')
     })
 
   return video

@@ -1,8 +1,8 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect } from 'bun:test'
 import { readdirSync, existsSync, renameSync, statSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
+import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
@@ -15,8 +15,7 @@ const cliCommands = [
   { '06-pdf-page-breaks': 'bun as -- extract pdf "input/document.pdf" --page-breaks' },
 ]
 
-test('CLI extract services tests', { concurrency: 1 }, async (t) => {
-  const p = '[test/extract/services]'
+describe('CLI extract services tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -25,8 +24,8 @@ test('CLI extract services tests', { concurrency: 1 }, async (t) => {
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Extract Service: ${testName}`, { concurrency: 1 }, async () => {
-      console.log(`${p} Starting test: ${testName}`)
+    test(`Extract Service: ${testName}`, async () => {
+      l(`Starting test`, { testName })
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -37,11 +36,11 @@ test('CLI extract services tests', { concurrency: 1 }, async (t) => {
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
-                console.error(`${p} Command failed for ${testName}: ${error.message}`)
+                l(`Command failed`, { testName, error: error.message })
                 errorMessage = error.message
                 reject(error)
               } else {
-                console.log(`${p} Command succeeded for ${testName}`)
+                l(`Command succeeded`, { testName })
                 resolve(stdout)
               }
             }
@@ -49,17 +48,17 @@ test('CLI extract services tests', { concurrency: 1 }, async (t) => {
         })
       } catch (err) {
         errorOccurred = true
-        console.error(`${p} Error in test ${testName}: ${errorMessage}`)
+        l(`Error in test`, { testName, error: errorMessage })
       }
       
-      strictEqual(errorOccurred, false, `Test should complete without errors: ${errorMessage}`)
+      expect(errorOccurred).toBe(false)
       const afterRun = readdirSync(outputDirectory)
       
       let filesToRename: string[] = []
       
       const newFiles = afterRun.filter(f => !beforeRun.includes(f))
       if (newFiles.length > 0) {
-        console.log(`${p} Found ${newFiles.length} new files for ${testName}`)
+        l(`Found new files`, { testName, count: newFiles.length })
         filesToRename = newFiles
       } else {
         const possibleFile = afterRun.find(f => 
@@ -68,20 +67,20 @@ test('CLI extract services tests', { concurrency: 1 }, async (t) => {
           f.endsWith('.txt')
         )
         if (possibleFile) {
-          console.log(`${p} Found modified file for ${testName}: ${possibleFile}`)
+          l(`Found modified file`, { testName, file: possibleFile })
           filesToRename = [possibleFile]
         }
       }
       
-      ok(filesToRename.length > 0, 'Expected at least one new or modified file')
+      expect(filesToRename.length > 0).toBeTruthy()
       
       // Verify files contain extracted text
       for (const file of filesToRename) {
         const filePath = join(outputDirectory, file)
         if (existsSync(filePath) && file.endsWith('.txt')) {
           const stats = statSync(filePath)
-          ok(stats.size > 0, `Expected ${file} to contain extracted text`)
-          console.log(`${p} Verified file ${file} has size ${stats.size} bytes`)
+          expect(stats.size > 0).toBeTruthy()
+          l(`Verified file`, { file, size: stats.size })
         }
       }
       
@@ -99,10 +98,11 @@ test('CLI extract services tests', { concurrency: 1 }, async (t) => {
         const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         
-        console.log(`${p} Renaming file: ${file} -> ${newName}`)
+        l(`Renaming file`, { from: file, to: newName })
         renameSync(oldPath, newPath)
         fileCounter++
       }
     })
   }
 })
+

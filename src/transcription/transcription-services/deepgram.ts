@@ -93,7 +93,7 @@ export async function callDeepgram(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`Error processing transcription: ${(error as Error).message}`)
+    err('Error processing transcription', { error: (error as Error).message })
     throw error
   }
 }

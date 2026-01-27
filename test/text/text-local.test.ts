@@ -1,8 +1,8 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect } from 'bun:test'
 import { readdirSync, existsSync, renameSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
+import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
@@ -33,7 +33,7 @@ const cliCommands = [
   { '13-playlist-default': 'bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"' },
   
   // Channel input tests
-  { '14-channel-last-1': 'bun as -- text --channel "https://www.youtube.com/@ajcwebdev" --last 1' },
+  { '14-channel-last-1': 'bun as -- text --channel "https://www.youtube.com/@fsjamorg" --last 1' },
   
   // RSS input tests
   { '15-rss-default': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed"' },
@@ -53,8 +53,7 @@ const cliCommands = [
   { '23-print-prompt': 'bun as -- text --printPrompt summary longChapters' },
 ]
 
-test('CLI local tests', { concurrency: 1 }, async (t) => {
-  const p = '[test/text/local]'
+describe('CLI local tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -63,8 +62,8 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Local: ${testName}`, { concurrency: 1 }, async () => {
-      console.log(`${p} Starting test: ${testName}`)
+    test(`Local: ${testName}`, async () => {
+      l('Starting test', { testName })
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -74,10 +73,10 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
-                console.error(`${p} Command failed for ${testName}: ${error.message}`)
+                l('Command failed', { testName, error: error.message })
                 reject(error)
               } else {
-                console.log(`${p} Command succeeded for ${testName}`)
+                l('Command succeeded', { testName })
                 resolve(stdout)
               }
             }
@@ -87,14 +86,14 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
         errorOccurred = true
       }
       
-      strictEqual(errorOccurred, false)
+      expect(errorOccurred).toBe(false)
       const afterRun = readdirSync(outputDirectory)
       
       let filesToRename: string[] = []
       
       const newFiles = afterRun.filter(f => !beforeRun.includes(f))
       if (newFiles.length > 0) {
-        console.log(`${p} Found ${newFiles.length} new files for ${testName}`)
+        l('Found new files', { testName, count: newFiles.length })
         filesToRename = newFiles
       } else {
         const possibleFile = afterRun.find(f => 
@@ -103,12 +102,12 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
           f.endsWith('.md')
         )
         if (possibleFile) {
-          console.log(`${p} Found modified file for ${testName}: ${possibleFile}`)
+          l('Found modified file', { testName, file: possibleFile })
           filesToRename = [possibleFile]
         }
       }
       
-      ok(filesToRename.length > 0, 'Expected at least one new or modified file')
+      expect(filesToRename.length > 0).toBeTruthy()
       
       for (const file of filesToRename) {
         if (file.endsWith('.part')) continue
@@ -123,10 +122,11 @@ test('CLI local tests', { concurrency: 1 }, async (t) => {
         const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         
-        console.log(`${p} Renaming file: ${file} -> ${newName}`)
+        l('Renaming file', { from: file, to: newName })
         renameSync(oldPath, newPath)
         fileCounter++
       }
     })
   }
 })
+

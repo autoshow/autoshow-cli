@@ -25,7 +25,7 @@ export function removeMarkdown(md: string, options: RemoveMarkdownOptions = {}):
 
   let output = md || ''
   
-  l.dim(`Processing markdown text with ${output.length} characters`)
+  l('Processing markdown text', { characterCount: output.length })
 
   output = output.replace(/^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/gm, '')
 
@@ -75,9 +75,9 @@ export function removeMarkdown(md: string, options: RemoveMarkdownOptions = {}):
       .replace(/`(.+?)`/g, '$1')
       .replace(/~(.*?)~/g, '$1')
       
-    l.dim(`Successfully stripped markdown, output length: ${output.length} characters`)
+    l('Successfully stripped markdown', { outputLength: output.length })
   } catch (error) {
-    l.dim(`Error while removing markdown: ${error}`)
+    l('Error while removing markdown', { error })
     if (opts.throwError) throw error
     return md
   }

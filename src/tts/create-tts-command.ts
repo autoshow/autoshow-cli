@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err } from '@/logging'
+import { err, success } from '@/logging'
 import { 
   existsSync, mkdirSync
 } from '@/node-utils'
@@ -86,7 +86,7 @@ export const createTtsCommand = (): Command => {
       }
       
       await processFileWithEngine(detectEngine(options), filePath, outputDir, options)
-      l.success(`Speech saved to ${outputDir} 🔊`)
+      success(`Speech saved to ${outputDir} 🔊`)
     }))
 
   sharedOptions(tts.command('script').description('Generate speech from a JSON script file')

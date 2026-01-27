@@ -7,7 +7,7 @@ import { processFile } from './process-commands/file'
 import { processRSS } from './process-commands/rss/process-rss'
 import { printPrompt } from './process-steps/03-select-prompts/print-prompt'
 import { LLM_SERVICES_CONFIG } from './process-steps/04-run-llm/llm-models'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { exit } from '@/node-utils'
 import type { ProcessingOptions } from '@/text/text-types'
 
@@ -98,7 +98,7 @@ export function validateCommandInput(options: ProcessingOptions): {
   
   const needsTranscription = !options.info && !options.feed && action !== undefined
   if (needsTranscription && !transcriptServices) {
-    l.warn("Defaulting to Whisper for transcription as no service was specified.")
+    l("Defaulting to Whisper for transcription as no service was specified.")
     options.whisper = true
     transcriptServices = 'whisper'
   }
@@ -174,7 +174,7 @@ export async function processCommand(
       await COMMAND_CONFIG[action].handler(options, input, llmServices, transcriptServices)
     }
     
-    l.success(`${action} processing completed successfully`)
+    success(`${action} processing completed successfully`)
     exit(0)
   } catch (error) {
     err(`Error processing ${action}: ${(error as Error).message}`)
@@ -221,8 +221,7 @@ export const createTextCommand = (): Command => {
     .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
     .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)
     .action(async (options: ProcessingOptions) => {
-      l.opts('Text command options:')
-      l.opts(JSON.stringify(options, null, 2))
+      l('Text command options:', options)
       await processCommand(options)
     })
   

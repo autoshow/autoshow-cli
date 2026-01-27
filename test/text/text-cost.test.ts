@@ -1,6 +1,6 @@
-import test from 'node:test'
-import { strictEqual } from 'node:assert/strict'
+import { describe, test, expect } from 'bun:test'
 import { exec } from 'node:child_process'
+import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
@@ -15,16 +15,15 @@ const cliCommands = [
   { '05-llm-cost-gemini': 'bun as -- --llmCost "input/audio-prompt.md" --gemini' },
 ]
 
-test('CLI cost estimation tests', { concurrency: 1 }, async (t) => {
-  const p = '[test/text/cost]'
+describe('CLI cost estimation tests', () => {
   
   for (const commandObj of cliCommands) {
     const entry = Object.entries(commandObj)[0]
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Cost: ${testName}`, { concurrency: 1 }, async () => {
-      console.log(`${p} Starting test: ${testName}`)
+    test(`Cost: ${testName}`, async () => {
+      l(`Starting test`, { testName })
       
       let errorOccurred = false
       let stdout = ''
@@ -34,10 +33,10 @@ test('CLI cost estimation tests', { concurrency: 1 }, async (t) => {
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
-                console.error(`${p} Command failed for ${testName}: ${error.message}`)
+                l(`Command failed`, { testName, error: error.message })
                 reject(error)
               } else {
-                console.log(`${p} Command succeeded for ${testName}`)
+                l(`Command succeeded`, { testName })
                 resolve(stdout)
               }
             }
@@ -47,10 +46,11 @@ test('CLI cost estimation tests', { concurrency: 1 }, async (t) => {
         errorOccurred = true
       }
       
-      strictEqual(errorOccurred, false, 'Command should complete without errors')
+      expect(errorOccurred).toBe(false)
       
       // Cost commands output to stdout, not files - verify we got some output
-      console.log(`${p} Output for ${testName}: ${stdout.substring(0, 200)}...`)
+      l(`Output`, { testName, preview: stdout.substring(0, 200) })
     })
   }
 })
+

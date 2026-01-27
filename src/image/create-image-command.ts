@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { handleError } from './image-utils'
 import { generateImageWithDallE } from './image-services/dalle'
 import { generateImageWithBlackForestLabs } from './image-services/bfl'
@@ -36,11 +36,11 @@ export const createImageCommand = (): Command => {
     .option('--runway-model <model>', 'Runway text-to-image model (if available)')
     .action(async (options) => {
       try {
-        l.dim(`Starting generation with service: ${options.service}`)
+        l('Starting generation with service', { service: options.service })
         
         const generator = serviceGenerators[options.service as keyof typeof serviceGenerators]
         if (!generator) {
-          err(`Unknown service: ${options.service}. Use dalle, bfl, nova, or runway.`)
+          err('Unknown service. Use dalle, bfl, nova, or runway', { service: options.service })
         }
         
         const result = await (options.service === 'bfl' 
@@ -62,13 +62,13 @@ export const createImageCommand = (): Command => {
           : generator(options.prompt, options.output))
         
         if (!result) {
-          err(`Failed to generate image: result is undefined`)
+          err('Failed to generate image: result is undefined')
         }
         
         if (result.success) {
-          l.success(`Image saved to: ${result.path}`)
+          success('Image saved', { path: result.path })
         } else {
-          err(`Failed to generate image: ${result.error}`)
+          err('Failed to generate image', { error: result.error })
         }
       } catch (error) {
         handleError(error)
@@ -81,13 +81,13 @@ export const createImageCommand = (): Command => {
     .action(async (prompt) => {
       try {
         const result = await generateComparisonImages(prompt)
-        l.success(`Comparison completed`)
+        success('Comparison completed')
         
         const services = { dalle: 'DALL-E', blackForest: 'Black Forest Labs', nova: 'AWS Nova Canvas', runway: 'Runway' }
         Object.entries(services).forEach(([key, name]) => {
           const res = result[key]
           if (res?.success) {
-            l.success(`${name}: ${res.path}`)
+            success('Service result', { service: name, path: res.path })
           }
         })
       } catch (error) {

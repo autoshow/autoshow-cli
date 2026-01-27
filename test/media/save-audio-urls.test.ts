@@ -1,8 +1,8 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { readdirSync, existsSync, renameSync, statSync, writeFileSync, rmSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
+import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
@@ -11,7 +11,7 @@ const cliCommands = [
   { '02-download-verbose': 'bun as -- media download --urls "input/example-urls.md" --verbose' },
 ]
 
-test('CLI save audio URLs tests', { concurrency: 1 }, async (t) => {
+describe('CLI save audio URLs tests', () => {
   const p = '[test/media/save-audio-urls]'
   const outputDirectory = resolve(process.cwd(), 'output')
   const inputDirectory = resolve(process.cwd(), 'input')
@@ -19,7 +19,7 @@ test('CLI save audio URLs tests', { concurrency: 1 }, async (t) => {
   let fileCounter = 1
   
   // Create a test markdown file with sample URLs if example-urls.md doesn't exist
-  await t.before(() => {
+  beforeAll(() => {
     if (!existsSync(join(inputDirectory, 'example-urls.md'))) {
       const sampleUrls = `# Test URLs for Media Download
 
@@ -29,18 +29,18 @@ test('CLI save audio URLs tests', { concurrency: 1 }, async (t) => {
 These are sample URLs for testing the media download functionality.
 `
       writeFileSync(testUrlFile, sampleUrls, 'utf-8')
-      console.log(`${p} Created test URL file: ${testUrlFile}`)
+      l(`${p} Created test URL file`, { file: testUrlFile })
     }
   })
   
-  await t.after(() => {
+  afterAll(() => {
     // Clean up test file if we created it
     if (existsSync(testUrlFile)) {
       try {
         rmSync(testUrlFile)
-        console.log(`${p} Cleaned up test URL file`)
+        l(`${p} Cleaned up test URL file`)
       } catch (err) {
-        console.log(`${p} Could not clean up test file: ${err}`)
+        l(`${p} Could not clean up test file`, { error: String(err) })
       }
     }
   })
@@ -50,8 +50,8 @@ These are sample URLs for testing the media download functionality.
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Save Audio URLs: ${testName}`, { concurrency: 1 }, async () => {
-      console.log(`${p} Starting test: ${testName}`)
+    test(`Save Audio URLs: ${testName}`, async () => {
+      l(`${p} Starting test`, { testName })
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -62,11 +62,11 @@ These are sample URLs for testing the media download functionality.
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
-                console.error(`${p} Command failed for ${testName}: ${error.message}`)
+                l(`${p} Command failed`, { testName, error: error.message })
                 errorMessage = error.message
                 reject(error)
               } else {
-                console.log(`${p} Command succeeded for ${testName}`)
+                l(`${p} Command succeeded`, { testName })
                 resolve(stdout)
               }
             }
@@ -74,17 +74,17 @@ These are sample URLs for testing the media download functionality.
         })
       } catch (err) {
         errorOccurred = true
-        console.error(`${p} Error in test ${testName}: ${errorMessage}`)
+        l(`${p} Error in test`, { testName, error: errorMessage })
       }
       
-      strictEqual(errorOccurred, false, `Test should complete without errors: ${errorMessage}`)
+      expect(errorOccurred).toBe(false)
       const afterRun = readdirSync(outputDirectory)
       
       let filesToRename: string[] = []
       
       const newFiles = afterRun.filter(f => !beforeRun.includes(f))
       if (newFiles.length > 0) {
-        console.log(`${p} Found ${newFiles.length} new files for ${testName}`)
+        l(`${p} Found new files`, { testName, count: newFiles.length })
         filesToRename = newFiles
       } else {
         const possibleFile = afterRun.find(f => 
@@ -93,20 +93,20 @@ These are sample URLs for testing the media download functionality.
           f.endsWith('.mp3')
         )
         if (possibleFile) {
-          console.log(`${p} Found modified file for ${testName}: ${possibleFile}`)
+          l(`${p} Found modified file`, { testName, file: possibleFile })
           filesToRename = [possibleFile]
         }
       }
       
-      ok(filesToRename.length > 0, 'Expected at least one new or modified file')
+      expect(filesToRename.length > 0).toBeTruthy()
       
       // Verify files contain audio data
       for (const file of filesToRename) {
         const filePath = join(outputDirectory, file)
         if (existsSync(filePath) && file.endsWith('.mp3')) {
           const stats = statSync(filePath)
-          ok(stats.size > 0, `Expected ${file} to contain audio data`)
-          console.log(`${p} Verified file ${file} has size ${stats.size} bytes`)
+          expect(stats.size > 0).toBeTruthy()
+          l(`${p} Verified file`, { file, size: stats.size })
         }
       }
       
@@ -124,7 +124,7 @@ These are sample URLs for testing the media download functionality.
         const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         
-        console.log(`${p} Renaming file: ${file} -> ${newName}`)
+        l(`${p} Renaming file`, { from: file, to: newName })
         renameSync(oldPath, newPath)
         fileCounter++
       }

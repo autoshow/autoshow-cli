@@ -1,8 +1,8 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect } from 'bun:test'
 import { readdirSync, existsSync, renameSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
+import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
@@ -23,8 +23,7 @@ const cliCommands = [
   { '09-assembly-speaker-labels': 'bun as -- text --video "https://ajc.pics/autoshow/fsjam-short.mp3" --assembly --speakerLabels' },
 ]
 
-test('CLI services tests', { concurrency: 1 }, async (t) => {
-  const p = '[test/text/services]'
+describe('CLI services tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -33,8 +32,8 @@ test('CLI services tests', { concurrency: 1 }, async (t) => {
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Service: ${testName}`, { concurrency: 1 }, async () => {
-      console.log(`${p} Starting test: ${testName}`)
+    test(`Service: ${testName}`, async () => {
+      l(`Starting test`, { testName })
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -44,10 +43,10 @@ test('CLI services tests', { concurrency: 1 }, async (t) => {
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
-                console.error(`${p} Command failed for ${testName}: ${error.message}`)
+                l(`Command failed`, { testName, error: error.message })
                 reject(error)
               } else {
-                console.log(`${p} Command succeeded for ${testName}`)
+                l(`Command succeeded`, { testName })
                 resolve(stdout)
               }
             }
@@ -57,7 +56,7 @@ test('CLI services tests', { concurrency: 1 }, async (t) => {
         errorOccurred = true
       }
       
-      strictEqual(errorOccurred, false)
+      expect(errorOccurred).toBe(false)
       
       // printPrompt doesn't create files, just prints to stdout
       if (testName.includes('print-prompt')) {
@@ -70,7 +69,7 @@ test('CLI services tests', { concurrency: 1 }, async (t) => {
       
       const newFiles = afterRun.filter(f => !beforeRun.includes(f))
       if (newFiles.length > 0) {
-        console.log(`${p} Found ${newFiles.length} new files for ${testName}`)
+        l(`Found new files`, { testName, count: newFiles.length })
         filesToRename = newFiles
       } else {
         const possibleFile = afterRun.find(f => 
@@ -79,12 +78,12 @@ test('CLI services tests', { concurrency: 1 }, async (t) => {
           (f.endsWith('.md') || f.endsWith('.json'))
         )
         if (possibleFile) {
-          console.log(`${p} Found modified file for ${testName}: ${possibleFile}`)
+          l(`Found modified file`, { testName, file: possibleFile })
           filesToRename = [possibleFile]
         }
       }
       
-      ok(filesToRename.length > 0, 'Expected at least one new or modified file')
+      expect(filesToRename.length > 0).toBeTruthy()
       
       for (const file of filesToRename) {
         if (file.endsWith('.part')) continue
@@ -99,10 +98,11 @@ test('CLI services tests', { concurrency: 1 }, async (t) => {
         const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         
-        console.log(`${p} Renaming file: ${file} -> ${newName}`)
+        l(`Renaming file`, { from: file, to: newName })
         renameSync(oldPath, newPath)
         fileCounter++
       }
     })
   }
 })
+

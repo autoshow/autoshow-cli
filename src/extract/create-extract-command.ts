@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import type { ExtractOptions, EpubExtractOptions } from '@/extract/extract-types'
 
 export const createExtractCommand = (): Command => {
@@ -15,27 +15,27 @@ export const createExtractCommand = (): Command => {
     .option('--model <model>', 'Model to use: gpt-4.1, gpt-4.1-mini (default), gemini-2.0-flash', 'gpt-4.1-mini')
     .option('--service <service>', 'Extraction service: zerox (default), unpdf, textract', 'zerox')
     .action(async (pdfFile: string, options: ExtractOptions) => {
-      l.opts(`Extracting PDF: ${pdfFile}`)
+      l('Extracting PDF', { pdfFile })
       
       try {
         const validServices = ['zerox', 'unpdf', 'textract']
         if (options.service && !validServices.includes(options.service)) {
-          err(`Invalid service: ${options.service}. Available services: ${validServices.join(', ')}`)
+          err('Invalid service', { service: options.service, availableServices: validServices.join(', ') })
         }
         
         const { extractPdf } = await import('./extract-pdf')
         const result = await extractPdf(pdfFile, options)
         
         if (result.success) {
-          l.success(`Text extracted to: ${result.outputPath}`)
+          success('Text extracted to', { outputPath: result.outputPath })
           if (result.totalCost !== undefined) {
-            l.opts(`Total cost: $${result.totalCost.toFixed(4)}`)
+            l('Total cost', { totalCost: result.totalCost.toFixed(4) })
           }
         } else {
-          err(`Failed to extract PDF: ${result.error}`)
+          err('Failed to extract PDF', { error: result.error })
         }
       } catch (error) {
-        err(`Error extracting PDF: ${(error as Error).message}`)
+        err('Error extracting PDF', { error: (error as Error).message })
       }
     })
 
@@ -48,30 +48,30 @@ export const createExtractCommand = (): Command => {
     .option('--model <model>', 'Model to use: gpt-4.1, gpt-4.1-mini (default), gemini-2.0-flash', 'gpt-4.1-mini')
     .option('--service <service>', 'Extraction service: zerox (default), unpdf, textract', 'zerox')
     .action(async (directory: string, options: ExtractOptions) => {
-      l.opts(`Batch extracting PDFs from: ${directory}`)
+      l('Batch extracting PDFs from', { directory })
       
       try {
         const validServices = ['zerox', 'unpdf', 'textract']
         if (options.service && !validServices.includes(options.service)) {
-          err(`Invalid service: ${options.service}. Available services: ${validServices.join(', ')}`)
+          err('Invalid service', { service: options.service, availableServices: validServices.join(', ') })
         }
         
         const { batchExtractPdfs } = await import('./batch-pdfs')
         const result = await batchExtractPdfs(directory, options)
         
         if (result.success) {
-          l.success(`Processed ${result.filesProcessed} PDFs`)
+          success('Processed PDFs', { filesProcessed: result.filesProcessed })
           if (result.totalCost !== undefined) {
-            l.opts(`Total cost: $${result.totalCost.toFixed(4)}`)
+            l('Total cost', { totalCost: result.totalCost.toFixed(4) })
           }
         } else {
-          err(`Failed to process PDFs: ${result.error}`)
+          err('Failed to process PDFs', { error: result.error })
           if (result.failedFiles && result.failedFiles.length > 0) {
-            l.warn(`Failed files: ${result.failedFiles.join(', ')}`)
+            l('Failed files', { failedFiles: result.failedFiles.join(', ') })
           }
         }
       } catch (error) {
-        err(`Error processing batch PDFs: ${(error as Error).message}`)
+        err('Error processing batch PDFs', { error: (error as Error).message })
       }
     })
 
@@ -83,7 +83,7 @@ export const createExtractCommand = (): Command => {
     .option('--max-chars <number>', 'Max characters per output file (default: 39000)')
     .option('--split <number>', 'Split into exactly N files of roughly equal length')
     .action(async (inputPath: string, options: EpubExtractOptions) => {
-      l.opts(`Extracting EPUB: ${inputPath}`)
+      l('Extracting EPUB', { inputPath })
       
       try {
         // Parse numeric options
@@ -100,7 +100,7 @@ export const createExtractCommand = (): Command => {
         
         // Warn if both options provided
         if (parsedOptions.split && parsedOptions.maxChars) {
-          l.warn('Both --split and --max-chars provided; using --split')
+          l('Both --split and --max-chars provided; using --split')
         }
         
         const { extractEpub } = await import('./extract-epub')
@@ -108,18 +108,18 @@ export const createExtractCommand = (): Command => {
         
         if (result.success) {
           if ('outputDir' in result && result.outputDir) {
-            l.success(`Text extracted to: ${result.outputDir}`)
+            success('Text extracted to', { outputDir: result.outputDir })
             if (result.filesCreated) {
-              l.opts(`Files created: ${result.filesCreated}`)
+              l('Files created', { filesCreated: result.filesCreated })
             }
           } else if ('epubsProcessed' in result) {
-            l.success(`Processed ${result.epubsProcessed} EPUB file(s)`)
+            success('Processed EPUB files', { epubsProcessed: result.epubsProcessed })
           }
         } else {
-          err(`Failed to extract EPUB: ${result.error}`)
+          err('Failed to extract EPUB', { error: result.error })
         }
       } catch (error) {
-        err(`Error extracting EPUB: ${(error as Error).message}`)
+        err('Error extracting EPUB', { error: (error as Error).message })
       }
     })
 

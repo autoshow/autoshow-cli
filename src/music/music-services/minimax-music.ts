@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises'
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { 
   generateUniqueFilename, 
   isApiError, 
@@ -72,14 +72,14 @@ export async function generateMusicWithMinimax(
       throw new Error('Lyrics are required for MiniMax music generation')
     }
     
-    l.opts('Generating music with MiniMax Music 2.5')
+    l('Generating music with MiniMax Music 2.5')
     
     // Normalize section tags and truncate if needed
     let processedLyrics = normalizeSectionTagsForMinimax(options.lyrics)
     processedLyrics = truncateLyricsForMinimax(processedLyrics)
     
-    l.dim(`Lyrics: ${processedLyrics.substring(0, 100)}${processedLyrics.length > 100 ? '...' : ''}`)
-    l.dim(`Lyrics length: ${processedLyrics.length} characters`)
+    l('Lyrics', { lyrics: processedLyrics.substring(0, 100) + (processedLyrics.length > 100 ? '...' : '') })
+    l('Lyrics length', { length: processedLyrics.length, unit: 'characters' })
     
     const requestBody: Record<string, unknown> = {
       model: 'music-2.5',
@@ -96,10 +96,10 @@ export async function generateMusicWithMinimax(
       // Truncate prompt if needed (2000 char limit)
       const truncatedPrompt = truncatePromptForMinimax(options.prompt)
       requestBody['prompt'] = truncatedPrompt
-      l.dim(`Style: ${truncatedPrompt.substring(0, 100)}${truncatedPrompt.length > 100 ? '...' : ''}`)
+      l('Style', { style: truncatedPrompt.substring(0, 100) + (truncatedPrompt.length > 100 ? '...' : '') })
     }
     
-    l.dim('Sending request to MiniMax API...')
+    l('Sending request to MiniMax API...')
     
     const response = await fetch(BASE_URL, {
       method: 'POST',
@@ -131,7 +131,7 @@ export async function generateMusicWithMinimax(
       throw new Error('No audio URL in response')
     }
     
-    l.dim('Downloading generated audio...')
+    l('Downloading generated audio...')
     const audioResponse = await fetch(audioUrl)
     if (!audioResponse.ok) {
       throw new Error(`Failed to download audio: ${audioResponse.status}`)
@@ -142,16 +142,16 @@ export async function generateMusicWithMinimax(
     await writeFile(uniqueOutputPath, Buffer.from(buffer))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`Music generated in ${duration}s: ${uniqueOutputPath}`)
+    success('Music generated', { duration, unit: 's', path: uniqueOutputPath })
     
     // Log extra info if available
     if (result.extra_info) {
       const info = result.extra_info
       if (info.music_duration) {
-        l.dim(`Audio duration: ${(info.music_duration / 1000).toFixed(1)}s`)
+        l('Audio duration', { duration: (info.music_duration / 1000).toFixed(1), unit: 's' })
       }
       if (info.music_size) {
-        l.dim(`File size: ${(info.music_size / 1024).toFixed(1)} KB`)
+        l('File size', { size: (info.music_size / 1024).toFixed(1), unit: 'KB' })
       }
     }
     
@@ -163,7 +163,7 @@ export async function generateMusicWithMinimax(
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
     const errorMessage = isApiError(error) ? error.message : 'Unknown error'
-    l.warn(`Failed in ${duration}s: ${errorMessage}`)
+    l('Failed', { duration, unit: 's', error: errorMessage })
     return {
       success: false,
       error: errorMessage,

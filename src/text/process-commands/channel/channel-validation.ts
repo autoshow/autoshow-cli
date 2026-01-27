@@ -37,7 +37,7 @@ export function validateChannelOptions(options: ProcessingOptions): void {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/
     for (const d of options.date) {
       if (!dateRegex.test(d)) {
-        err(`Error: Invalid date format "${d}". Please use YYYY-MM-DD format.`)
+        err('Error: Invalid date format. Please use YYYY-MM-DD format', { date: d })
         process.exit(1)
       }
     }
@@ -51,10 +51,10 @@ export function validateChannelOptions(options: ProcessingOptions): void {
   }
 
   if (options.last) {
-    l.dim(`\nProcessing the last ${options.last} videos`)
+    l('\nProcessing the last videos', { count: options.last })
   } else if (options.days) {
-    l.dim(`\nProcessing videos from the last ${options.days} days`)
+    l('\nProcessing videos from the last days', { days: options.days })
   } else if (options.date && options.date.length > 0) {
-    l.dim(`\nProcessing videos from specific dates: ${options.date.join(', ')}`)
+    l('\nProcessing videos from specific dates', { dates: options.date.join(', ') })
   }
 }

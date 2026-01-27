@@ -8,17 +8,17 @@ export function logRSSProcessingStatus(
   options: ProcessingOptions
 ): void {
   if (options.item && options.item.length > 0) {
-    l.dim(`Found ${total} items in the RSS feed.`)
-    l.dim(`Processing ${processing} specified items.`)
+    l('Found items in the RSS feed', { total })
+    l('Processing specified items', { count: processing })
   } else if (options.last) {
-    l.dim(`Found ${total} items in the RSS feed.`)
-    l.dim(`Processing the last ${options.last} items.`)
+    l('Found items in the RSS feed', { total })
+    l('Processing the last items', { count: options.last })
   } else if (options.days) {
-    l.dim(`Found ${total} items in the RSS feed.`)
-    l.dim(`Processing ${processing} items from the last ${options.days} days.`)
+    l('Found items in the RSS feed', { total })
+    l('Processing items from the last days', { count: processing, days: options.days })
   } else {
-    l.dim(`Found ${total} item(s) in the RSS feed.`)
-    l.dim(`Processing ${processing} item(s).`)
+    l('Found items in the RSS feed', { total })
+    l('Processing items', { count: processing })
   }
 }
 
@@ -35,10 +35,10 @@ export async function logOperation(
       console.log(stdout)
     }
     if (stderr) {
-      l.warn(stderr)
+      l(stderr)
     }
   } catch (error: any) {
-    err(`Error during ${operationName}: ${error.message}`)
+    err('Error during operation', { operation: operationName, error: error.message })
     throw error
   }
 }
@@ -53,7 +53,7 @@ export async function logMkdir(targetPath: string, _operationName: string): Prom
       await ensureDir(targetPath)
     }
   } catch (error: any) {
-    err(`Error creating directory ${targetPath}: ${error.message}`)
+    err('Error creating directory', { targetPath, error: error.message })
     throw error
   }
 }

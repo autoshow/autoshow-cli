@@ -19,7 +19,7 @@ export const isApiError = (error: unknown): error is ApiError =>
 
 export const handleError = (error: any): void => {
   if (!isApiError(error)) {
-    err(`Unknown error: ${String(error)}`)
+    err('Unknown error', { error: String(error) })
   }
   
   const errorMap: Record<string, string> = {
@@ -35,7 +35,7 @@ export const handleError = (error: any): void => {
     error.name === key || error.message?.includes(key)
   )
   
-  err(`${matched ? matched[1] : `Error: ${error.message}`}`)
+  err(matched ? matched[1] : 'Error', matched ? undefined : { message: error.message })
 }
 
 export function ensureOutputDirectory(outputPath: string): void {
@@ -102,7 +102,10 @@ export function truncateLyricsForMinimax(lyrics: string): string {
     return lyrics
   }
   
-  l.warn(`Lyrics exceed MiniMax limit (${lyrics.length}/${MINIMAX_LYRICS_MAX_LENGTH} chars). Truncating...`)
+  l('Lyrics exceed MiniMax limit. Truncating...', { 
+    actualLength: lyrics.length, 
+    maxLength: MINIMAX_LYRICS_MAX_LENGTH 
+  })
   
   const truncated = lyrics.substring(0, MINIMAX_LYRICS_MAX_LENGTH)
   
@@ -129,7 +132,10 @@ export function truncatePromptForMinimax(prompt: string): string {
     return prompt
   }
   
-  l.warn(`Prompt exceeds MiniMax limit (${prompt.length}/${MINIMAX_PROMPT_MAX_LENGTH} chars). Truncating...`)
+  l('Prompt exceeds MiniMax limit. Truncating...', { 
+    actualLength: prompt.length, 
+    maxLength: MINIMAX_PROMPT_MAX_LENGTH 
+  })
   return prompt.substring(0, MINIMAX_PROMPT_MAX_LENGTH).trim()
 }
 
@@ -165,7 +171,7 @@ export function normalizeSectionTagsForMinimax(lyrics: string): string {
       return `[${validTag}]`
     }
     // Unknown tag - keep as-is but warn
-    l.warn(`Unknown section tag [${tag}] may not be recognized by MiniMax`)
+    l('Unknown section tag may not be recognized by MiniMax', { tag })
     return match
   })
 }
@@ -229,7 +235,7 @@ export function convertFormatForService(format: string, targetService: MusicServ
       return format
     }
     
-    l.warn(`Format "${format}" not compatible with MiniMax. Using closest match.`)
+    l('Format not compatible with MiniMax. Using closest match.', { format })
     
     // Extract sample rate from the format and find closest MiniMax equivalent
     const parts = format.split('_')
@@ -248,7 +254,7 @@ export function convertFormatForService(format: string, targetService: MusicServ
       return format
     }
     
-    l.warn(`Format "${format}" not compatible with ElevenLabs. Using closest match.`)
+    l('Format not compatible with ElevenLabs. Using closest match.', { format })
     
     // Extract sample rate and find closest ElevenLabs equivalent
     const parts = format.split('_')

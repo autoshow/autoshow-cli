@@ -41,7 +41,7 @@ export function validateRSSOptions(options: ProcessingOptions): void {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/
     for (const d of options.date) {
       if (!dateRegex.test(d)) {
-        err(`Error: Invalid date format "${d}". Please use YYYY-MM-DD format.`)
+        err('Error: Invalid date format. Please use YYYY-MM-DD format', { date: d })
         process.exit(1)
       }
     }
@@ -73,12 +73,12 @@ export function validateFeedsFile(feedFilename: string): boolean {
   const feedFile = `${feedsDir}/${feedFilename}`
   
   if (!existsSync(feedsDir)) {
-    l.warn(`${p} Feeds directory not found at ${feedsDir}`)
+    l('Feeds directory not found', { prefix: p, feedsDir })
     return false
   }
   
   if (!existsSync(feedFile)) {
-    l.warn(`${p} Feed file not found at ${feedFile}`)
+    l('Feed file not found', { prefix: p, feedFile })
     return false
   }
   

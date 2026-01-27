@@ -19,7 +19,7 @@ export const isApiError = (error: unknown): error is ApiError =>
 
 export const handleError = (error: any): void => {
   if (!isApiError(error)) {
-    err(`Unknown error: ${String(error)}`)
+    err('Unknown error', { error: String(error) })
   }
   
   const errorMap = {
@@ -36,7 +36,7 @@ export const handleError = (error: any): void => {
     error.name === key || error.message?.includes(key)
   )
   
-  err(`${matched ? matched[1] : `Error: ${error.message}`}`)
+  err(matched ? matched[1] : 'Error', matched ? undefined : { message: error.message })
 }
 
 export function ensureOutputDirectory(outputPath: string): void {
@@ -61,6 +61,6 @@ export function parseAspectRatio(value: string): '16:9' | '9:16' | undefined {
   if (validRatios.includes(value)) {
     return value as '16:9' | '9:16'
   }
-  l.warn(`Invalid aspect ratio "${value}". Using default 16:9`)
+  l('Invalid aspect ratio. Using default 16:9', { value })
   return '16:9'
 }

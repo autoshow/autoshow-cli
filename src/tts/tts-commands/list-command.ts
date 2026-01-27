@@ -4,16 +4,16 @@ import { spawnSync, existsSync, join, dirname } from '@/node-utils'
 
 export const listModels = async (): Promise<void> => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
-  l.dim(`Loading config from: ${configPath}`)
+  l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
     (existsSync(join(process.cwd(), 'build/pyenv/tts/bin/python')) ? join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   
-  l.dim(`Using Python path: ${pythonPath}`)
+  l('Using Python path', { pythonPath })
   
   const pythonScriptPath = join(dirname(import.meta.url.replace('file://', '')), '../tts-local/coqui-list.py')
   
-  l.dim(`Listing available TTS models`)
+  l(`Listing available TTS models`)
   
   const result = spawnSync(pythonPath, [pythonScriptPath], { 
     encoding: 'utf-8',
@@ -22,25 +22,25 @@ export const listModels = async (): Promise<void> => {
   })
   
   if (result.error) {
-    err(`Failed to execute Python: ${result.error.message}`)
+    err('Failed to execute Python', { message: result.error.message })
   }
   
   if (result.status !== 0) {
-    err(`Failed to list models: ${result.stderr || 'Unknown error'}`)
+    err('Failed to list models', { stderr: result.stderr || 'Unknown error' })
   }
   
   const output = result.stdout
   
   if (output.includes('ERROR:')) {
     const errorMatch = output.match(/ERROR: (.+)/)
-    err(`Error loading TTS: ${errorMatch ? errorMatch[1] : 'Unknown error'}`)
+    err('Error loading TTS', { error: errorMatch ? errorMatch[1] : 'Unknown error' })
   }
   
   const startIdx = output.indexOf('MODELS_START:')
   const endIdx = output.indexOf('MODELS_END')
   
   if (startIdx === -1 || endIdx === -1) {
-    l.dim(`Failed to parse model list, trying CLI fallback`)
+    l('Failed to parse model list, trying CLI fallback')
     const cliResult = spawnSync(pythonPath, ['-m', 'TTS', '--list_models'], {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -79,12 +79,12 @@ export const listModels = async (): Promise<void> => {
             })
           })
         
-        l.dim(`Use a model with: bun as -- tts file input.md --coqui-model "model_name"`)
+        l('Use a model with: bun as -- tts file input.md --coqui-model "model_name"')
         return
       }
     }
     
-    err(`Failed to parse model list. Coqui TTS may not be properly installed.`)
+    err('Failed to parse model list. Coqui TTS may not be properly installed.')
   }
   
   const modelsSection = output.substring(startIdx, endIdx)
@@ -95,7 +95,7 @@ export const listModels = async (): Promise<void> => {
     .map(line => line.trim())
   
   if (lines.length === 0) {
-    err(`No models found. Coqui TTS may not be properly installed or initialized.`)
+    err('No models found. Coqui TTS may not be properly installed or initialized.')
   }
   
   const modelsByCategory = lines.reduce((acc, model) => {
@@ -121,5 +121,5 @@ export const listModels = async (): Promise<void> => {
       })
     })
   
-  l.dim(`Use a model with: bun as -- tts file input.md --coqui-model "model_name"`)
+  l('Use a model with: bun as -- tts file input.md --coqui-model "model_name"')
 }

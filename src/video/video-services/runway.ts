@@ -1,12 +1,12 @@
 import { writeFile } from 'fs/promises'
 import RunwayML, { TaskFailedError } from '@runwayml/sdk'
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils'
 import { env, readFileSync, existsSync } from '@/node-utils'
 import type { VideoGenerationResult, RunwayGenerateOptions } from '@/video/video-types'
 
 async function downloadVideo(videoUrl: string, outputPath: string): Promise<void> {
-  l.dim(`Downloading video from: ${videoUrl}`)
+  l('Downloading video from URL', { url: videoUrl })
   
   const response = await fetch(videoUrl)
   
@@ -16,7 +16,7 @@ async function downloadVideo(videoUrl: string, outputPath: string): Promise<void
   
   const buffer = await response.arrayBuffer()
   await writeFile(outputPath, Buffer.from(buffer))
-  l.dim(`Video saved to: ${outputPath}`)
+  l('Video saved', { path: outputPath })
 }
 
 async function encodeImageToDataUri(imagePath: string): Promise<string> {
@@ -73,9 +73,9 @@ export async function generateVideoWithRunway(
     
     const model = options.model || 'gen4_turbo'
     
-    l.opts(`Generating video with model: ${model}`)
-    l.dim(`Prompt: ${prompt}`)
-    l.dim(`Image: ${options.image}`)
+    l('Generating video with model', { model })
+    l('Prompt', { prompt })
+    l('Image', { image: options.image })
     
     const ratio = mapAspectRatioToRunway(options.aspectRatio, model)
     const duration = options.duration || 5
@@ -84,7 +84,7 @@ export async function generateVideoWithRunway(
       throw new Error('Duration must be either 5 or 10 seconds')
     }
     
-    l.dim(`Using aspect ratio: ${ratio}, duration: ${duration}s`)
+    l('Using aspect ratio and duration', { ratio, duration: `${duration}s` })
     
     let promptImage: string
     
@@ -94,7 +94,7 @@ export async function generateVideoWithRunway(
       promptImage = await encodeImageToDataUri(options.image)
     }
     
-    l.dim('Starting video generation task...')
+    l('Starting video generation task')
     
     const task = await client.imageToVideo
       .create({
@@ -108,7 +108,7 @@ export async function generateVideoWithRunway(
         timeout: 10 * 60 * 1000
       })
     
-    l.dim('Task completed successfully')
+    l('Task completed successfully')
     
     if (!task.output || task.output.length === 0) {
       throw new Error('No video output in response')
@@ -124,7 +124,7 @@ export async function generateVideoWithRunway(
     await downloadVideo(videoUrl, uniqueOutputPath)
     
     const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`Video generated in ${durationSeconds}s: ${uniqueOutputPath}`)
+    success('Video generated', { duration: `${durationSeconds}s`, path: uniqueOutputPath })
     
     return {
       success: true,
@@ -136,7 +136,7 @@ export async function generateVideoWithRunway(
     const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1)
     
     if (error instanceof TaskFailedError) {
-      l.warn(`Task failed in ${durationSeconds}s: ${error.message}`)
+      l('Task failed', { duration: `${durationSeconds}s`, message: error.message })
       return {
         success: false,
         error: 'Video generation task failed',
@@ -144,7 +144,7 @@ export async function generateVideoWithRunway(
       }
     }
     
-    l.warn(`Failed in ${durationSeconds}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l('Failed', { duration: `${durationSeconds}s`, error: isApiError(error) ? error.message : 'Unknown' })
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',

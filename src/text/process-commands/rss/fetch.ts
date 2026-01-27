@@ -16,7 +16,7 @@ export async function retryRSSFetch(
       return response
     } catch (error) {
       if (attempt >= maxRetries) {
-        err(`Max retries (${maxRetries}) reached. Aborting RSS fetch.`)
+        err('Max retries reached. Aborting RSS fetch', { maxRetries })
         throw error
       }
       const delayMs = 1000 * 2 ** (attempt - 1)
@@ -72,7 +72,7 @@ export async function selectRSSItemsToProcess(
     clearTimeout(timeout)
     
     if (!response.ok) {
-      err(`HTTP error! status: ${response.status}`)
+      err('HTTP error', { status: response.status })
       process.exit(1)
     }
     
@@ -101,7 +101,7 @@ export async function selectRSSItemsToProcess(
     if ((error as Error).name === 'AbortError') {
       err('Error: Fetch request timed out.')
     } else {
-      err(`Error fetching RSS feed: ${(error as Error).message}`)
+      err('Error fetching RSS feed', { error: (error as Error).message })
     }
     process.exit(1)
   }

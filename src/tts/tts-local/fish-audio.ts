@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { 
   ensureDir, spawnSync, execSync, readFileSync, existsSync, mkdirSync, readFile, writeFile, join, dirname
 } from '@/node-utils'
@@ -29,11 +29,11 @@ const checkDockerRunning = (): boolean => {
 const downloadWeightsIfNeeded = (): boolean => {
   const configPath = join(process.cwd(), CHECKPOINT_DIR, 'config.json')
   if (existsSync(configPath)) {
-    l.dim(`FishAudio weights already present`)
+    l('FishAudio weights already present')
     return true
   }
   
-  l.wait(`Downloading FishAudio S1-mini weights (~2GB)...`)
+  l('Downloading FishAudio S1-mini weights (~2GB)')
   
   const checkpointDir = join(process.cwd(), CHECKPOINT_DIR)
   if (!existsSync(dirname(checkpointDir))) {
@@ -66,7 +66,7 @@ const downloadWeightsIfNeeded = (): boolean => {
       cwd: process.cwd(),
       env
     })
-    l.success(`FishAudio weights downloaded`)
+    success(`FishAudio weights downloaded`)
     return true
   } catch {
     // Fallback to Python with token
@@ -77,10 +77,10 @@ const downloadWeightsIfNeeded = (): boolean => {
         stdio: 'inherit',
         cwd: process.cwd()
       })
-      l.success(`FishAudio weights downloaded`)
+      success('FishAudio weights downloaded')
       return true
     } catch (e) {
-      l.dim(`Failed to download weights: ${e}`)
+      l('Failed to download weights', { error: e })
       return false
     }
   }
@@ -88,7 +88,7 @@ const downloadWeightsIfNeeded = (): boolean => {
 
 const startDockerServer = (): boolean => {
   if (checkDockerRunning()) {
-    l.dim(`FishAudio Docker server already running`)
+    l('FishAudio Docker server already running')
     return true
   }
   
@@ -97,7 +97,7 @@ const startDockerServer = (): boolean => {
     return false
   }
   
-  l.wait(`Starting FishAudio Docker server...`)
+  l('Starting FishAudio Docker server')
   
   try {
     // Remove any stopped container with same name
@@ -116,12 +116,12 @@ const startDockerServer = (): boolean => {
     })
     
     if (result.status !== 0) {
-      l.dim(`Docker run failed: ${result.stderr}`)
+      l('Docker run failed', { stderr: result.stderr })
       return false
     }
     
     // Wait for server to start - model warmup can take 5+ minutes on CPU
-    l.wait(`Waiting for server to initialize (this can take 5+ minutes on first run)...`)
+    l('Waiting for server to initialize (this can take 5+ minutes on first run)')
     let attempts = 0
     const maxAttempts = 90  // 90 * 4s = 6 minutes max wait
     while (attempts < maxAttempts) {
@@ -131,21 +131,21 @@ const startDockerServer = (): boolean => {
           stdio: 'pipe'
         })
         if (health.stdout && health.stdout.trim() === '200') {
-          l.success(`FishAudio server started`)
+          success('FishAudio server started')
           return true
         }
       } catch {}
       attempts++
       if (attempts % 15 === 0) {
-        l.dim(`Still waiting for server... (${attempts * 4}s elapsed)`)
+        l('Still waiting for server', { elapsedSeconds: attempts * 4 })
       }
       spawnSync('sleep', ['4'], { stdio: 'pipe' })
     }
     
-    l.dim(`Server didn't respond after 6 minutes. Check: docker logs ${DOCKER_CONTAINER_NAME}`)
+    l('Server did not respond after 6 minutes', { containerName: DOCKER_CONTAINER_NAME })
     return false
   } catch (e) {
-    l.dim(`Failed to start Docker server: ${e}`)
+    l('Failed to start Docker server', { error: e })
     return false
   }
 }
@@ -154,17 +154,17 @@ const VALID_LANGUAGES = ['en', 'zh', 'ja', 'de', 'fr', 'es', 'ko', 'ar', 'ru', '
 
 const getFishAudioConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
-  l.dim(`Loading config from: ${configPath}`)
+  l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
   let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['FISHAUDIO_PYTHON_PATH']
   
   if (!pythonPath || !existsSync(pythonPath)) {
-    l.dim(`Python path not configured, checking for environment...`)
+    l('Python path not configured, checking for environment')
     pythonPath = ensureTtsEnvironment()
   }
   
-  l.dim(`Using Python path: ${pythonPath}`)
+  l('Using Python path', { pythonPath })
   return {
     python: pythonPath,
     default_language: config.fishaudio?.default_language,
@@ -179,13 +179,13 @@ const getFishAudioConfig = () => {
 const verifyFishAudioEnvironment = (pythonPath: string) => {
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
   if (versionResult.error || versionResult.status !== 0) {
-    l.dim(`Python not accessible, attempting to set up environment...`)
+    l('Python not accessible, attempting to set up environment')
     const newPythonPath = ensureTtsEnvironment()
     return verifyFishAudioEnvironment(newPythonPath)
   }
   
   if (!checkFishAudioInstalled(pythonPath)) {
-    l.dim(`FishAudio TTS not installed, attempting automatic setup...`)
+    l('FishAudio TTS not installed, attempting automatic setup')
     const setupSuccessful = runFishAudioSetup()
     if (!setupSuccessful) {
       err(`Failed to automatically set up FishAudio TTS. Please run: bun setup:tts`)
@@ -199,15 +199,15 @@ const verifyFishAudioEnvironment = (pythonPath: string) => {
 
 const validateOptions = (options: FishAudioOptions): void => {
   if (options.language && !VALID_LANGUAGES.includes(options.language)) {
-    err(`Invalid language: ${options.language}. Valid languages: ${VALID_LANGUAGES.join(', ')}`)
+    err('Invalid language', { language: options.language, validLanguages: VALID_LANGUAGES.join(', ') })
   }
 
   if (options.refAudio && !existsSync(options.refAudio)) {
-    err(`Reference audio not found: ${options.refAudio}`)
+    err('Reference audio not found', { refAudio: options.refAudio })
   }
 
   if (options.device && !['cpu', 'mps', 'cuda'].includes(options.device)) {
-    err(`Invalid device: ${options.device}. Valid devices: cpu, mps, cuda`)
+    err('Invalid device', { device: options.device, validDevices: 'cpu, mps, cuda' })
   }
 }
 
@@ -225,7 +225,7 @@ export async function synthesizeWithFishAudio(
   
   validateOptions({ ...options, language })
   
-  l.dim(`Using FishAudio S1-mini`)
+  l(`Using FishAudio S1-mini`)
   
   const pythonScriptPath = new URL('fish-audio-python.py', import.meta.url).pathname
   
@@ -259,7 +259,7 @@ export async function synthesizeWithFishAudio(
     configData['device'] = options.device
   }
   
-  l.dim(`Generating speech with FishAudio TTS`)
+  l(`Generating speech with FishAudio TTS`)
   
   const result = spawnSync(config.python, [pythonScriptPath, JSON.stringify(configData)], { 
     stdio: ['pipe', 'pipe', 'pipe'], 
@@ -270,7 +270,8 @@ export async function synthesizeWithFishAudio(
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(`${errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : `Python error: ${result.error.message}`}`)
+    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : 'Python error',
+      { errorCode: errorWithCode.code, message: result.error.message })
   }
   
   const stdout = result.stdout || ''
@@ -284,18 +285,18 @@ export async function synthesizeWithFishAudio(
       // If API or CLI failed, try starting Docker server automatically
       if (error.includes('Connection refused') || error.includes('CLI fallback requires') || error.includes('Checkpoint not found')) {
         if (_retryCount >= MAX_RETRIES) {
-          err(`FishAudio TTS failed after ${MAX_RETRIES} retries. Server may still be starting.\nCheck logs: docker logs ${DOCKER_CONTAINER_NAME}\nManual setup: docker run -d -p 8080:8080 -v ./checkpoints:/app/checkpoints fishaudio/fish-speech:server-cpu`)
+          err('FishAudio TTS failed after retries', { maxRetries: MAX_RETRIES, containerName: DOCKER_CONTAINER_NAME })
         }
-        l.dim(`FishAudio API not available, attempting automatic Docker setup...`)
+        l('FishAudio API not available, attempting automatic Docker setup')
         if (startDockerServer()) {
           // Wait a bit for server to be fully ready
           await new Promise(resolve => setTimeout(resolve, 3000))
-          l.dim(`Retrying synthesis with Docker server... (attempt ${_retryCount + 1}/${MAX_RETRIES})`)
+          l('Retrying synthesis with Docker server', { attempt: _retryCount + 1, maxRetries: MAX_RETRIES })
           return synthesizeWithFishAudio(text, outputPath, options, _retryCount + 1)
         }
-        err(`FishAudio TTS failed. Could not start Docker server automatically.\nManual setup: docker run -d -p 8080:8080 -v ./checkpoints:/app/checkpoints fishaudio/fish-speech:server-cpu`)
+        err('FishAudio TTS failed. Could not start Docker server automatically')
       }
-      err(`FishAudio TTS failed: ${error}`)
+      err('FishAudio TTS failed', { error })
     }
   } catch {
     const stderr = result.stderr || ''
@@ -303,21 +304,26 @@ export async function synthesizeWithFishAudio(
       // If API or CLI failed, try starting Docker server automatically
       if (stderr.includes('Connection refused') || stderr.includes('CLI fallback requires') || stderr.includes('Checkpoint not found')) {
         if (_retryCount >= MAX_RETRIES) {
-          err(`FishAudio TTS failed after ${MAX_RETRIES} retries. Server may still be starting.\nCheck logs: docker logs ${DOCKER_CONTAINER_NAME}\nManual setup: docker run -d -p 8080:8080 -v ./checkpoints:/app/checkpoints fishaudio/fish-speech:server-cpu`)
+          err('FishAudio TTS failed after retries', { maxRetries: MAX_RETRIES, containerName: DOCKER_CONTAINER_NAME })
         }
-        l.dim(`FishAudio API not available, attempting automatic Docker setup...`)
+        l('FishAudio API not available, attempting automatic Docker setup')
         if (startDockerServer()) {
           // Wait a bit for server to be fully ready
           await new Promise(resolve => setTimeout(resolve, 3000))
-          l.dim(`Retrying synthesis with Docker server... (attempt ${_retryCount + 1}/${MAX_RETRIES})`)
+          l('Retrying synthesis with Docker server', { attempt: _retryCount + 1, maxRetries: MAX_RETRIES })
           return synthesizeWithFishAudio(text, outputPath, options, _retryCount + 1)
         }
-        err(`FishAudio TTS failed. Could not start Docker server automatically.\nManual setup: docker run -d -p 8080:8080 -v ./checkpoints:/app/checkpoints fishaudio/fish-speech:server-cpu`)
+        err('FishAudio TTS failed. Could not start Docker server automatically')
       }
-      err(`${stderr.includes('ModuleNotFoundError') ? 'FishAudio TTS not installed. Run: bun setup:tts' :
-          stderr.includes('torch') ? 'PyTorch not installed. Run: bun setup:tts' :
-          stderr.includes('CUDA out of memory') ? 'GPU out of memory. Try using CPU mode.' :
-          `FishAudio TTS failed: ${stderr}`}`)
+      if (stderr.includes('ModuleNotFoundError')) {
+        err('FishAudio TTS not installed. Run: bun setup:tts')
+      } else if (stderr.includes('torch')) {
+        err('PyTorch not installed. Run: bun setup:tts')
+      } else if (stderr.includes('CUDA out of memory')) {
+        err('GPU out of memory. Try using CPU mode.')
+      } else {
+        err('FishAudio TTS failed', { stderr })
+      }
     }
   }
   
@@ -348,7 +354,7 @@ export async function processScriptWithFishAudio(
       }
     }
     
-    l.opts(`Processing ${script.length} lines with FishAudio TTS`)
+    l('Processing lines with FishAudio TTS', { lineCount: script.length })
     
     for (let idx = 0; idx < script.length; idx++) {
       const entry = script[idx] as { speaker: string; text: string; refAudio?: string; emotion?: string }
@@ -358,7 +364,7 @@ export async function processScriptWithFishAudio(
       const wavOut = join(outDir, `${base}.wav`)
       const pcmOut = join(outDir, `${base}.pcm`)
       
-      l.dim(`Processing segment ${idx + 1}/${script.length}: ${entrySpeaker}`)
+      l('Processing segment', { current: idx + 1, total: script.length, speaker: entrySpeaker })
       
       await synthesizeWithFishAudio(entryText, wavOut, {
         ...options,
@@ -376,8 +382,8 @@ export async function processScriptWithFishAudio(
     
     await mergeAudioFiles(outDir)
     await convertPcmToWav(outDir)
-    l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')}`)
+    success('Conversation saved', { outputFile: join(outDir, 'full_conversation.wav') })
   } catch (error) {
-    err(`Error processing FishAudio TTS script: ${error}`)
+    err('Error processing FishAudio TTS script', { error })
   }
 }

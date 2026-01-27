@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { 
   ensureDir, readFile, writeFile, join, dirname
 } from '@/node-utils'
@@ -19,10 +19,10 @@ export const DEFAULT_SETTINGS: VoiceSettings = {
 
 const ensureElevenLabsInstalled = () => {
   if (!checkElevenLabsInstalled()) {
-    l.dim(`ElevenLabs package not installed, attempting automatic installation...`)
+    l('ElevenLabs package not installed, attempting automatic installation')
     const installed = installNpmPackage('elevenlabs')
     if (!installed) {
-      err(`Failed to install ElevenLabs. Please run: npm install elevenlabs`)
+      err('Failed to install ElevenLabs. Please run: npm install elevenlabs')
     }
   }
 }
@@ -58,12 +58,12 @@ export async function synthesizeWithElevenLabs(
       await writeFile(outputPath, Buffer.concat(chunks))
       return outputPath
     } catch (error: any) {
-      if (error.code === 'MODULE_NOT_FOUND') err(`Install: npm install elevenlabs`)
+      if (error.code === 'MODULE_NOT_FOUND') err('Install: npm install elevenlabs')
       if (error.message?.includes('429') || error.statusCode === 429) {
-        l.dim(`Rate limit hit, attempt ${attempt + 1} failed`)
+        l('Rate limit hit', { attempt: attempt + 1 })
         if (attempt < retries) {
           const delay = delays[attempt] || 4000
-          l.dim(`Waiting ${delay}ms before retry`)
+          l('Waiting before retry', { delayMs: delay })
           await new Promise(resolve => setTimeout(resolve, delay))
           return attemptSynthesis(attempt + 1)
         }
@@ -93,9 +93,9 @@ export async function processScriptWithElevenLabs(
     
     const uniqueSpeakers = [...new Set(script.map((e: {speaker: string}) => e.speaker))]
     const missingVoices = uniqueSpeakers.filter(s => !voiceMapping[s as string] || voiceMapping[s as string]?.length === 0)
-    if (missingVoices.length > 0) err(`Missing voice IDs for: ${missingVoices.join(', ')}`)
+    if (missingVoices.length > 0) err('Missing voice IDs', { speakers: missingVoices.join(', ') })
     
-    l.opts(`Processing ${script.length} lines with ElevenLabs`)
+    l('Processing lines with ElevenLabs', { lineCount: script.length })
     
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
@@ -110,8 +110,8 @@ export async function processScriptWithElevenLabs(
     
     await mergeAudioFiles(outDir)
     await convertPcmToWav(outDir)
-    l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')} 🔊`)
+    success('Conversation saved', { outputFile: join(outDir, 'full_conversation.wav') })
   } catch (error) {
-    err(`Error processing ElevenLabs script: ${error}`)
+    err('Error processing ElevenLabs script', { error })
   }
 }

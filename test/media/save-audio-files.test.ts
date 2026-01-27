@@ -1,8 +1,8 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { readdirSync, existsSync, renameSync, statSync, rmSync, mkdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
+import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
@@ -13,7 +13,7 @@ const cliCommands = [
   { '04-convert-verbose': 'bun as -- media convert --files "input/test-media/sample.mp4" --verbose' },
 ]
 
-test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
+describe('CLI save audio files tests', () => {
   const p = '[test/media/save-audio-files]'
   const outputDirectory = resolve(process.cwd(), 'output')
   const inputDirectory = resolve(process.cwd(), 'input')
@@ -22,10 +22,10 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
   let fileCounter = 1
   
   // Create a test media directory with a sample video file
-  await t.before(() => {
+  beforeAll(() => {
     if (!existsSync(testMediaDir)) {
       mkdirSync(testMediaDir, { recursive: true })
-      console.log(`${p} Created test media directory: ${testMediaDir}`)
+      l(`${p} Created test media directory`, { directory: testMediaDir })
     }
     
     if (!existsSync(testMediaFile)) {
@@ -35,25 +35,25 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
       try {
         exec(command, { shell: '/bin/zsh' }, (error) => {
           if (error) {
-            console.log(`${p} Could not create test media file: ${error.message}`)
+            l(`${p} Could not create test media file`, { error: error.message })
           } else {
-            console.log(`${p} Created test media file: ${testMediaFile}`)
+            l(`${p} Created test media file`, { file: testMediaFile })
           }
         })
       } catch (err) {
-        console.log(`${p} Error creating test file: ${err}`)
+        l(`${p} Error creating test file`, { error: String(err) })
       }
     }
   })
   
-  await t.after(() => {
+  afterAll(() => {
     // Clean up test directory if we created it
     if (existsSync(testMediaDir)) {
       try {
         rmSync(testMediaDir, { recursive: true, force: true })
-        console.log(`${p} Cleaned up test media directory`)
+        l(`${p} Cleaned up test media directory`)
       } catch (err) {
-        console.log(`${p} Could not clean up test directory: ${err}`)
+        l(`${p} Could not clean up test directory`, { error: String(err) })
       }
     }
     
@@ -62,9 +62,9 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
     if (existsSync(customOutputDir)) {
       try {
         rmSync(customOutputDir, { recursive: true, force: true })
-        console.log(`${p} Cleaned up custom output directory`)
+        l(`${p} Cleaned up custom output directory`)
       } catch (err) {
-        console.log(`${p} Could not clean up custom output directory: ${err}`)
+        l(`${p} Could not clean up custom output directory`, { error: String(err) })
       }
     }
   })
@@ -74,8 +74,8 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Save Audio Files: ${testName}`, { concurrency: 1 }, async () => {
-      console.log(`${p} Starting test: ${testName}`)
+    test(`Save Audio Files: ${testName}`, async () => {
+      l(`${p} Starting test`, { testName })
       
       // Determine the correct output directory based on command
       const checkDir = command.includes('--output') && command.includes('custom-media')
@@ -92,11 +92,11 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
-                console.error(`${p} Command failed for ${testName}: ${error.message}`)
+                l(`${p} Command failed`, { testName, error: error.message })
                 errorMessage = error.message
                 reject(error)
               } else {
-                console.log(`${p} Command succeeded for ${testName}`)
+                l(`${p} Command succeeded`, { testName })
                 resolve(stdout)
               }
             }
@@ -104,17 +104,17 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
         })
       } catch (err) {
         errorOccurred = true
-        console.error(`${p} Error in test ${testName}: ${errorMessage}`)
+        l(`${p} Error in test`, { testName, error: errorMessage })
       }
       
-      strictEqual(errorOccurred, false, `Test should complete without errors: ${errorMessage}`)
+      expect(errorOccurred).toBe(false)
       const afterRun = readdirSync(checkDir)
       
       let filesToRename: string[] = []
       
       const newFiles = afterRun.filter(f => !beforeRun.includes(f))
       if (newFiles.length > 0) {
-        console.log(`${p} Found ${newFiles.length} new files for ${testName}`)
+        l(`${p} Found new files`, { testName, count: newFiles.length })
         filesToRename = newFiles
       } else {
         const possibleFile = afterRun.find(f => 
@@ -123,20 +123,20 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
           f.endsWith('.mp3')
         )
         if (possibleFile) {
-          console.log(`${p} Found modified file for ${testName}: ${possibleFile}`)
+          l(`${p} Found modified file`, { testName, file: possibleFile })
           filesToRename = [possibleFile]
         }
       }
       
-      ok(filesToRename.length > 0, 'Expected at least one new or modified file')
+      expect(filesToRename.length > 0).toBeTruthy()
       
       // Verify files contain audio data
       for (const file of filesToRename) {
         const filePath = join(checkDir, file)
         if (existsSync(filePath) && file.endsWith('.mp3')) {
           const stats = statSync(filePath)
-          ok(stats.size > 0, `Expected ${file} to contain audio data`)
-          console.log(`${p} Verified file ${file} has size ${stats.size} bytes`)
+          expect(stats.size > 0).toBeTruthy()
+          l(`${p} Verified file`, { file, size: stats.size })
         }
       }
       
@@ -156,7 +156,7 @@ test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
           const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
           const newPath = join(checkDir, newName)
           
-          console.log(`${p} Renaming file: ${file} -> ${newName}`)
+          l(`${p} Renaming file`, { from: file, to: newName })
           renameSync(oldPath, newPath)
           fileCounter++
         }

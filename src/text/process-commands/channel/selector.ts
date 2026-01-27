@@ -7,7 +7,7 @@ export async function selectVideos(
   options: ProcessingOptions
 ): Promise<{ allVideos: VideoInfo[], videosToProcess: VideoInfo[] }> {
   const videoUrls = stdout.trim().split('\n').filter(Boolean)
-  l.opts(`Fetching detailed information for ${videoUrls.length} videos...`)
+  l('Fetching detailed information for videos', { count: videoUrls.length })
 
   const videoDetailsPromises = videoUrls.map(async (url) => {
     try {
@@ -36,7 +36,7 @@ export async function selectVideos(
         isLive: isLive === 'True'
       }
     } catch (error) {
-      err(`Error getting details for video ${url}: ${error instanceof Error ? error.message : String(error)}`)
+      err('Error getting details for video', { url, error: error instanceof Error ? error.message : String(error) })
       return null
     }
   })
@@ -55,7 +55,7 @@ export async function selectVideos(
     allVideos.reverse()
   }
 
-  l.opts(`Found ${allVideos.length} videos in the channel...`)
+  l('Found videos in the channel', { count: allVideos.length })
 
   let videosToProcess
   if (options.last) {
@@ -75,9 +75,9 @@ export async function selectVideos(
     })
     
     if (videosToProcess.length === 0) {
-      l.warn(`No videos found for the specified dates: ${options.date.join(', ')}`)
+      l('No videos found for the specified dates', { dates: options.date.join(', ') })
       const availableDates = allVideos.map(v => v.date.toISOString().substring(0, 10)).slice(0, 10)
-      l.dim(`Available dates in channel (first 10): ${availableDates.join(', ')}`)
+      l('Available dates in channel (first 10)', { dates: availableDates.join(', ') })
     }
   } else {
     videosToProcess = allVideos

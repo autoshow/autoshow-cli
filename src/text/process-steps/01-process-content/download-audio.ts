@@ -16,7 +16,7 @@ export async function saveAudio(id: string, ensureFolders?: boolean) {
       await unlink(`${id}${ext}`)
     } catch (error) {
       if (error instanceof Error && (error as Error).message !== 'ENOENT') {
-        err(`Error deleting file ${id}${ext}: ${(error as Error).message}`)
+        err('Error deleting file', { file: `${id}${ext}`, error: (error as Error).message })
       }
     }
   }
@@ -32,17 +32,17 @@ export async function executeWithRetry(
     try {
       const { stderr } = await execFilePromise(command, args)
       if (stderr) {
-        err(`yt-dlp warnings: ${stderr}`)
+        err('yt-dlp warnings', { warnings: stderr })
       }
       return
     } catch (error) {
       if (attempt === maxRetries) {
-        err(`Failed after ${maxRetries} attempts`)
+        err('Failed after max attempts', { maxRetries })
         throw error
       }
 
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`Retry ${attempt} failed, waiting ${delayMs}ms...`)
+      l('Retry attempt failed, waiting', { attempt, delayMs })
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }
@@ -90,7 +90,7 @@ export async function downloadAudio(
       spinner.succeed('Audio downloaded successfully.')
     } catch (error) {
       spinner.fail('Audio download failed.')
-      err(`Error downloading audio: ${error instanceof Error ? error.message : String(error)}`)
+      err('Error downloading audio', { error: error instanceof Error ? error.message : String(error) })
       throw error
     }
   } else if (options.file) {
@@ -100,7 +100,7 @@ export async function downloadAudio(
       const buffer = await readFile(input)
       const fileType = await detectFileTypeFromBuffer(new Uint8Array(buffer))
       
-      l.dim(`Detected file type: ${fileType ? `${fileType.ext} (${fileType.mime})` : 'unknown'}`)
+      l('Detected file type', { ext: fileType?.ext, mime: fileType?.mime })
 
       if (!fileType || !isSupportedFormat(fileType.ext)) {
         throw new Error(
@@ -114,7 +114,7 @@ export async function downloadAudio(
       spinner.succeed('File converted successfully.')
     } catch (error) {
       spinner.fail('File conversion failed.')
-      err(`Error processing local file: ${error instanceof Error ? error.message : String(error)}`)
+      err('Error processing local file', { error: error instanceof Error ? error.message : String(error) })
       throw error
     }
   } else {

@@ -24,7 +24,7 @@ export async function processChannel(
     ])
 
     if (stderr) {
-      err(`yt-dlp warnings: ${stderr}`)
+      err('yt-dlp warnings', { warnings: stderr })
     }
 
     const { allVideos, videosToProcess } = await selectVideos(stdout, options)
@@ -37,16 +37,16 @@ export async function processChannel(
 
     for (const [index, video] of videosToProcess.entries()) {
       const url = video.url
-      l.final(`Processing video ${index + 1}/${videosToProcess.length}: ${url}`)
+      l('Processing video', { current: index + 1, total: videosToProcess.length, url })
 
       try {
         await processVideo(options, url, llmServices, transcriptServices)
       } catch (error) {
-        err(`Error processing video ${url}: ${(error as Error).message}`)
+        err('Error processing video', { url, error: (error as Error).message })
       }
     }
   } catch (error) {
-    err(`Error processing channel: ${(error as Error).message}`)
+    err('Error processing channel', { error: (error as Error).message })
     process.exit(1)
   }
 }

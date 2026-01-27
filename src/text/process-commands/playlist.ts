@@ -19,7 +19,7 @@ export async function processPlaylist(
     ])
 
     if (stderr) {
-      err(`yt-dlp warnings: ${stderr}`)
+      err('yt-dlp warnings', { warnings: stderr })
     }
 
     const playlistData: { title: string, entries: Array<{ id: string }> } = JSON.parse(stdout)
@@ -33,7 +33,7 @@ export async function processPlaylist(
       process.exit(1)
     }
 
-    l.opts(`Found ${urls.length} videos in the playlist: ${playlistTitle}...`)
+    l('Found videos in the playlist', { count: urls.length, playlistTitle })
 
     if (options.info) {
       await saveInfo('playlist', urls, playlistTitle)
@@ -41,15 +41,15 @@ export async function processPlaylist(
     }
 
     for (const [index, url] of urls.entries()) {
-      l.final(`Processing video ${index + 1}/${urls.length}: ${url}`)
+      l('Processing video', { current: index + 1, total: urls.length, url })
       try {
         await processVideo(options, url, llmServices, transcriptServices)
       } catch (error) {
-        err(`Error processing video ${url}: ${(error as Error).message}`)
+        err('Error processing video', { url, error: (error as Error).message })
       }
     }
   } catch (error) {
-    err(`Error processing playlist: ${(error as Error).message}`)
+    err('Error processing playlist', { error: (error as Error).message })
     process.exit(1)
   }
 }

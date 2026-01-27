@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises'
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory, getExtensionFromFormat } from '../music-utils'
 import { env } from '@/node-utils'
 import type { 
@@ -28,8 +28,8 @@ export async function generateMusicWithElevenLabs(
       throw new Error('ELEVENLABS_API_KEY environment variable is missing')
     }
     
-    l.opts('Generating music with ElevenLabs')
-    l.dim(`Prompt: ${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}`)
+    l('Generating music with ElevenLabs')
+    l('Prompt', { prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : '') })
     
     const requestBody: Record<string, any> = {
       model_id: 'music_v1'
@@ -51,11 +51,11 @@ export async function generateMusicWithElevenLabs(
       
       if (options.durationMs) {
         requestBody['music_length_ms'] = options.durationMs
-        l.dim(`Duration: ${options.durationMs}ms`)
+        l('Duration', { durationMs: options.durationMs, unit: 'ms' })
       }
       if (options.instrumental) {
         requestBody['force_instrumental'] = true
-        l.dim('Mode: Instrumental only')
+        l('Mode: Instrumental only')
       }
     }
     
@@ -90,7 +90,7 @@ export async function generateMusicWithElevenLabs(
     await writeFile(uniqueOutputPath, Buffer.from(buffer))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`Music generated in ${duration}s: ${uniqueOutputPath}`)
+    success('Music generated', { duration, unit: 's', path: uniqueOutputPath })
     
     return {
       success: true,
@@ -100,7 +100,7 @@ export async function generateMusicWithElevenLabs(
     }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.warn(`Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l('Failed', { duration, unit: 's', error: isApiError(error) ? error.message : 'Unknown' })
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',
@@ -125,8 +125,8 @@ export async function generateMusicDetailedWithElevenLabs(
       throw new Error('ELEVENLABS_API_KEY environment variable is missing')
     }
     
-    l.opts('Generating music with ElevenLabs (detailed response)')
-    l.dim(`Prompt: ${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}`)
+    l('Generating music with ElevenLabs (detailed response)')
+    l('Prompt', { prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : '') })
     
     const requestBody: Record<string, any> = {
       model_id: 'music_v1',
@@ -185,8 +185,8 @@ export async function generateMusicDetailedWithElevenLabs(
     await writeFile(uniqueOutputPath, Buffer.from(buffer))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`Music generated in ${duration}s: ${uniqueOutputPath}`)
-    l.dim(`Content-Type: ${contentType}`)
+    success('Music generated', { duration, unit: 's', path: uniqueOutputPath })
+    l('Content-Type', { contentType })
     
     return {
       success: true,
@@ -197,7 +197,7 @@ export async function generateMusicDetailedWithElevenLabs(
     }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.warn(`Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l('Failed', { duration, unit: 's', error: isApiError(error) ? error.message : 'Unknown' })
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',
@@ -218,8 +218,8 @@ export async function createCompositionPlan(
       throw new Error('ELEVENLABS_API_KEY environment variable is missing')
     }
     
-    l.opts('Creating composition plan with ElevenLabs')
-    l.dim(`Prompt: ${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}`)
+    l('Creating composition plan with ElevenLabs')
+    l('Prompt', { prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : '') })
     
     const requestBody: Record<string, any> = {
       prompt,
@@ -250,15 +250,15 @@ export async function createCompositionPlan(
     
     const plan = await response.json() as MusicCompositionPlan
     
-    l.success('Composition plan created successfully')
-    l.dim(`Sections: ${plan.sections?.length || 0}`)
+    success('Composition plan created successfully')
+    l('Sections', { count: plan.sections?.length || 0 })
     
     return {
       success: true,
       plan
     }
   } catch (error) {
-    l.warn(`Failed: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l('Failed', { error: isApiError(error) ? error.message : 'Unknown' })
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',
