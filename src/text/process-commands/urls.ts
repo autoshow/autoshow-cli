@@ -1,5 +1,5 @@
-import { processVideo } from './video.ts'
-import { saveInfo } from '../utils/save-info.ts'
+import { processVideo } from './video'
+import { saveInfo } from '../utils/save-info'
 import { l, err } from '@/logging'
 import { readFile } from '@/node-utils'
 import type { ProcessingOptions } from '@/text/text-types'

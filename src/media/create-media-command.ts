@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { l, err } from '@/logging'
-import { downloadAudioFromUrls } from './save-audio-urls.ts'
-import { convertLocalAudioFiles } from './save-audio-files.ts'
+import { downloadAudioFromUrls } from './save-audio-urls'
+import { convertLocalAudioFiles } from './save-audio-files'
 
 export const AUDIO_FMT = 'mp3'
 export const AUDIO_Q = '0'

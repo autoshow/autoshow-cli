@@ -1,50 +1,22 @@
-import { sections } from './index'
+import { sections, PROMPT_CHOICES } from './prompt-choices'
 import { err, l } from '@/logging'
 import { readFile } from '@/node-utils'
-import type { ProcessingOptions } from '@/text/text-types'
+import type { ProcessingOptions, ElevenLabsGenre } from '@/text/text-types'
 
 const DEFAULT_KEY_MOMENTS_COUNT = 3
 const DEFAULT_KEY_MOMENTS_DURATION = 60
 
-export const PROMPT_CHOICES: Array<{ name: string; value: string }> = [
-  { name: 'Titles', value: 'titles' },
-  { name: 'Summary', value: 'summary' },
-  { name: 'Short Summary', value: 'shortSummary' },
-  { name: 'Long Summary', value: 'longSummary' },
-  { name: 'Metadata', value: 'metadata' },
-  { name: 'Bullet Point Summary', value: 'bulletPoints' },
-  { name: 'Chapter Titles', value: 'chapterTitles' },
-  { name: 'Short Chapters', value: 'shortChapters' },
-  { name: 'Medium Chapters', value: 'mediumChapters' },
-  { name: 'Long Chapters', value: 'longChapters' },
-  { name: 'Key Takeaways', value: 'takeaways' },
-  { name: 'Questions', value: 'questions' },
-  { name: 'FAQ', value: 'faq' },
-  { name: 'Blog', value: 'blog' },
-  { name: 'Rap Song', value: 'rapSong' },
-  { name: 'Rock Song', value: 'rockSong' },
-  { name: 'Country Song', value: 'countrySong' },
-  { name: 'Pop Song', value: 'popSong' },
-  { name: 'Jazz Song', value: 'jazzSong' },
-  { name: 'Folk Song', value: 'folkSong' },
-  { name: 'Short Story', value: 'shortStory' },
-  { name: 'Screenplay', value: 'screenplay' },
-  { name: 'Poetry Collection', value: 'poetryCollection' },
-  { name: 'Quotes', value: 'quotes' },
-  { name: 'Chapter Titles and Quotes', value: 'chapterTitlesAndQuotes' },
-  { name: 'Social Post (X)', value: 'x' },
-  { name: 'Social Post (Facebook)', value: 'facebook' },
-  { name: 'Social Post (LinkedIn)', value: 'linkedin' },
-  { name: 'Social Post (Instagram)', value: 'instagram' },
-  { name: 'Social Post (TikTok)', value: 'tiktok' },
-  { name: 'YouTube Description', value: 'youtubeDescription' },
-  { name: 'Email Newsletter', value: 'emailNewsletter' },
-  { name: 'SEO Article', value: 'seoArticle' },
-  { name: 'Content Strategy', value: 'contentStrategy' },
-  { name: 'Key Moments', value: 'keyMoments' },
-]
-
 const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
+
+// Map elevenlabs genre to the corresponding prompt key
+const GENRE_PROMPT_MAP: Record<ElevenLabsGenre, string> = {
+  rap: 'rapSong',
+  rock: 'rockSong',
+  folk: 'folkSong',
+  jazz: 'jazzSong',
+  pop: 'popSong',
+  country: 'countrySong',
+}
 
 export async function selectPrompts(options: ProcessingOptions) {
   let customPrompt = ''
@@ -64,6 +36,18 @@ export async function selectPrompts(options: ProcessingOptions) {
   let text = "This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.\n\n"
 
   const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters', 'metadata']
+  
+  // Add genre lyric prompt when music generation is requested (ElevenLabs or MiniMax)
+  const musicGenre = options.elevenlabs || options.minimax
+  if (musicGenre) {
+    const genrePromptKey = GENRE_PROMPT_MAP[musicGenre]
+    const musicService = options.elevenlabs ? 'ElevenLabs' : 'MiniMax'
+    if (genrePromptKey && !prompt.includes(genrePromptKey)) {
+      prompt.push(genrePromptKey)
+      l.dim(`Added ${genrePromptKey} prompt for ${musicService} ${musicGenre} music generation`)
+    }
+  }
+  
   l.dim(`Selected prompts: ${prompt.join(', ')}`)
 
   const validSections = prompt.filter(

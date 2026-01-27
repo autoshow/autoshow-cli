@@ -1,12 +1,12 @@
 import { Command } from 'commander'
-import { processVideo } from './process-commands/video.ts'
-import { processPlaylist } from './process-commands/playlist.ts'
-import { processChannel } from './process-commands/channel'
-import { processURLs } from './process-commands/urls.ts'
-import { processFile } from './process-commands/file.ts'
-import { processRSS } from './process-commands/rss'
-import { printPrompt } from './process-steps/03-select-prompts/print-prompt.ts'
-import { LLM_SERVICES_CONFIG } from './process-steps/04-run-llm/llm-models.ts'
+import { processVideo } from './process-commands/video'
+import { processPlaylist } from './process-commands/playlist'
+import { processChannel } from './process-commands/channel/process-channel'
+import { processURLs } from './process-commands/urls'
+import { processFile } from './process-commands/file'
+import { processRSS } from './process-commands/rss/process-rss'
+import { printPrompt } from './process-steps/03-select-prompts/print-prompt'
+import { LLM_SERVICES_CONFIG } from './process-steps/04-run-llm/llm-models'
 import { l, err } from '@/logging'
 import { exit } from '@/node-utils'
 import type { ProcessingOptions } from '@/text/text-types'
@@ -103,6 +103,27 @@ export function validateCommandInput(options: ProcessingOptions): {
     transcriptServices = 'whisper'
   }
   
+  // Validate music service options - only one allowed
+  if (options.elevenlabs && options.minimax) {
+    err('Cannot use both --elevenlabs and --minimax. Please specify only one music service.')
+    exit(1)
+  }
+  
+  const musicGenre = options.elevenlabs || options.minimax
+  const musicService = options.elevenlabs ? 'elevenlabs' : options.minimax ? 'minimax' : undefined
+  
+  if (musicGenre) {
+    const validGenres = ['rap', 'rock', 'folk', 'jazz', 'pop', 'country']
+    if (!validGenres.includes(musicGenre)) {
+      err(`Invalid --${musicService} genre: ${musicGenre}. Valid options: ${validGenres.join(', ')}`)
+      exit(1)
+    }
+    if (!llmServices) {
+      err(`--${musicService} requires an LLM option (--chatgpt, --claude, or --gemini)`)
+      exit(1)
+    }
+  }
+  
   return { action, llmServices, transcriptServices }
 }
 
@@ -173,7 +194,7 @@ export const createTextCommand = (): Command => {
     .option('--urls <filePath>', 'Process YouTube videos from a list of URLs in a file')
     .option('--file <filePath>', 'Process a local audio or video file')
     .option('--rss [rssURLs...]', 'Process one or more podcast RSS feeds (optional when using --feed)')
-    .option('--feed <feedFile>', 'Process workflow feed file (e.g., "01-ai-feeds.md") from output/workflows/feeds')
+    .option('--feed <feedFile>', 'Process workflow feed file (e.g., "01-ai-feeds.md") from input/workflows/feeds')
     .option('--metaInfo', 'Additionally run workflow for information gathering')
     .option('--item <itemUrls...>', 'Process specific items in the RSS feed by providing their audio URLs')
     .option('--order <order>', 'Specify the order for RSS feed and channel processing (newest or oldest)')
@@ -192,6 +213,10 @@ export const createTextCommand = (): Command => {
     .option('--gemini [model]', 'Use Google Gemini for processing with optional model specification')
     .option('--prompt <sections...>', 'Specify prompt sections to include (e.g., summary longChapters)')
     .option('--customPrompt <filePath>', 'Use a custom prompt from a markdown file')
+    .option('--elevenlabs <genre>', 'Generate music with ElevenLabs after LLM processing (rap, rock, folk, jazz, pop, country)')
+    .option('--minimax <genre>', 'Generate music with MiniMax after LLM processing (rap, rock, folk, jazz, pop, country)')
+    .option('--music-format <format>', 'Output format for generated music (service-specific)')
+    .option('--music-style <hint>', 'Additional style hints for music generation (appended to genre prompt)')
     .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
     .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
     .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)

@@ -1,9 +1,9 @@
 import { Command } from 'commander'
 import { l, err } from '@/logging'
-import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel } from './video-utils.ts'
-import { generateVideoWithVeo } from './video-services/veo.ts'
-import { generateVideoWithRunway } from './video-services/runway.ts'
-import type { VeoModel, RunwayModel, VeoGenerateOptions, RunwayGenerateOptions } from '@/video/video-types.ts'
+import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel } from './video-utils'
+import { generateVideoWithVeo } from './video-services/veo'
+import { generateVideoWithRunway } from './video-services/runway'
+import type { VeoModel, RunwayModel, VeoGenerateOptions, RunwayGenerateOptions } from '@/video/video-types'
 
 export const createVideoCommand = (): Command => {
   const video = new Command('video').description('AI video generation operations')

@@ -1,9 +1,9 @@
 import { writeFile } from 'fs/promises'
 import RunwayML, { TaskFailedError } from '@runwayml/sdk'
 import { l } from '@/logging'
-import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils.ts'
+import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils'
 import { env, readFileSync, existsSync } from '@/node-utils'
-import type { VideoGenerationResult, RunwayGenerateOptions } from '@/video/video-types.ts'
+import type { VideoGenerationResult, RunwayGenerateOptions } from '@/video/video-types'
 
 async function downloadVideo(videoUrl: string, outputPath: string): Promise<void> {
   l.dim(`Downloading video from: ${videoUrl}`)

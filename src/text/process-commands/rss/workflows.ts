@@ -1,11 +1,11 @@
 import { l, err } from '@/logging'
 import { basename } from '@/node-utils'
-import { processRSS } from './index.ts'
-import { logCopy, logMkdir, logFindMove, logRemove, logMoveMd } from './rss-logging.ts'
-import { ensureWorkflowDirectories, validateFeedsFile } from './rss-validation.ts'
+import { processRSS } from './process-rss'
+import { logCopy, logMkdir, logFindMove, logRemove, logMoveMd } from './rss-logging'
+import { ensureWorkflowDirectories, validateFeedsFile } from './rss-validation'
 import type { ProcessingOptions } from '@/text/text-types'
 
-const WORKFLOWS_DIR = 'output/workflows'
+const WORKFLOWS_DIR = 'input/workflows'
 
 async function copyFeeds(): Promise<void> {
   await logCopy(`./${WORKFLOWS_DIR}/feeds`, './output', 'copyFeeds', 'feeds folder copied to ./output')

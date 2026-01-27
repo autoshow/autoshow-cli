@@ -1,4 +1,4 @@
-import { selectPrompts } from './select-prompt.ts'
+import { selectPrompts } from './select-prompt'
 import { l, err } from '@/logging'
 import type { ProcessingOptions } from '@/text/text-types'
 

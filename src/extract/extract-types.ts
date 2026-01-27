@@ -30,3 +30,25 @@ export interface BatchExtractResult {
   error?: string
   failedFiles?: string[]
 }
+
+export interface EpubExtractOptions {
+  output?: string        // Custom output directory
+  maxChars?: number      // Max chars per file (default 39000)
+  split?: number         // Split into exactly N files
+}
+
+export interface EpubExtractResult {
+  success: boolean
+  outputDir?: string
+  filesCreated?: number
+  totalChars?: number
+  totalWords?: number
+  error?: string
+}
+
+export interface EpubBatchResult {
+  success: boolean
+  epubsProcessed?: number
+  error?: string
+  failedFiles?: string[]
+}
