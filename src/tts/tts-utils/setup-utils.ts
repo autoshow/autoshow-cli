@@ -43,12 +43,19 @@ export const runTtsSetup = (): boolean => {
     if (existsSync(venvPath)) {
       success('TTS environment setup completed successfully')
       return true
+    } else {
+      l('Setup script completed but Python venv not found', { expectedPath: venvPath })
+      return false
     }
   } catch (error) {
-    l('Setup script failed', { error })
+    const execError = error as { status?: number; stderr?: Buffer | string; stdout?: Buffer | string; message?: string }
+    l('Setup script failed', { 
+      error: execError.message || error,
+      status: execError.status,
+      scriptPath: setupScript 
+    })
+    return false
   }
-  
-  return false
 }
 
 export const ensureTtsEnvironment = (): string => {
@@ -108,7 +115,7 @@ export const runCoquiSetup = (): boolean => {
   
   const setupScript = join(process.cwd(), '.github/setup/tts/coqui.sh')
   if (!existsSync(setupScript)) {
-    l('Coqui setup script not found')
+    l('Coqui setup script not found', { expectedPath: setupScript })
     return false
   }
   
@@ -120,7 +127,13 @@ export const runCoquiSetup = (): boolean => {
     success('Coqui TTS setup completed')
     return true
   } catch (error) {
-    l('Coqui setup failed', { error })
+    const execError = error as { status?: number; message?: string }
+    l('Coqui setup failed', { 
+      error: execError.message || error,
+      status: execError.status,
+      scriptPath: setupScript,
+      hint: 'Check if bash is available and script has execute permissions'
+    })
     return false
   }
 }
@@ -130,7 +143,7 @@ export const runKittenSetup = (): boolean => {
   
   const setupScript = join(process.cwd(), '.github/setup/tts/kitten.sh')
   if (!existsSync(setupScript)) {
-    l('Kitten setup script not found')
+    l('Kitten setup script not found', { expectedPath: setupScript })
     return false
   }
   
@@ -142,7 +155,12 @@ export const runKittenSetup = (): boolean => {
     success('Kitten TTS setup completed')
     return true
   } catch (error) {
-    l('Kitten setup failed', { error })
+    const execError = error as { status?: number; message?: string }
+    l('Kitten setup failed', { 
+      error: execError.message || error,
+      status: execError.status,
+      scriptPath: setupScript
+    })
     return false
   }
 }
@@ -152,7 +170,7 @@ export const runQwen3Setup = (): boolean => {
   
   const setupScript = join(process.cwd(), '.github/setup/tts/qwen3.sh')
   if (!existsSync(setupScript)) {
-    l('Qwen3 setup script not found')
+    l('Qwen3 setup script not found', { expectedPath: setupScript })
     return false
   }
   
@@ -164,7 +182,12 @@ export const runQwen3Setup = (): boolean => {
     success('Qwen3 TTS setup completed')
     return true
   } catch (error) {
-    l('Qwen3 setup failed', { error })
+    const execError = error as { status?: number; message?: string }
+    l('Qwen3 setup failed', { 
+      error: execError.message || error,
+      status: execError.status,
+      scriptPath: setupScript
+    })
     return false
   }
 }
@@ -174,7 +197,7 @@ export const runChatterboxSetup = (): boolean => {
   
   const setupScript = join(process.cwd(), '.github/setup/tts/chatterbox.sh')
   if (!existsSync(setupScript)) {
-    l('Chatterbox setup script not found')
+    l('Chatterbox setup script not found', { expectedPath: setupScript })
     return false
   }
   
@@ -186,7 +209,12 @@ export const runChatterboxSetup = (): boolean => {
     success('Chatterbox TTS setup completed')
     return true
   } catch (error) {
-    l('Chatterbox setup failed', { error })
+    const execError = error as { status?: number; message?: string }
+    l('Chatterbox setup failed', { 
+      error: execError.message || error,
+      status: execError.status,
+      scriptPath: setupScript
+    })
     return false
   }
 }

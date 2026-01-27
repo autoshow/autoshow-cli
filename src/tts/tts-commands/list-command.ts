@@ -5,7 +5,14 @@ import { spawnSync, existsSync, join, dirname } from '@/node-utils'
 export const listModels = async (): Promise<void> => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
   l('Loading config from path', { configPath })
-  const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
+  
+  let config: any = {}
+  try {
+    config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
+  } catch (parseError) {
+    l('Failed to parse TTS config, using defaults', { configPath, error: parseError })
+  }
+  
   const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
     (existsSync(join(process.cwd(), 'build/pyenv/tts/bin/python')) ? join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   
@@ -22,11 +29,32 @@ export const listModels = async (): Promise<void> => {
   })
   
   if (result.error) {
-    err('Failed to execute Python', { message: result.error.message })
+    const errorWithCode = result.error as NodeJS.ErrnoException
+    if (errorWithCode.code === 'ENOENT') {
+      err(`Python not found at: ${pythonPath}
+
+SOLUTION:
+  1. Run setup: bun setup:tts
+  2. Or install Python 3.11+ and set TTS_PYTHON_PATH environment variable`)
+    } else {
+      l('Python execution error', { error: result.error, pythonPath })
+      err('Failed to execute Python script', { errorCode: errorWithCode.code, message: result.error.message })
+    }
   }
   
   if (result.status !== 0) {
-    err('Failed to list models', { stderr: result.stderr || 'Unknown error' })
+    const stderr = result.stderr || ''
+    l('Python script failed', { status: result.status, stderr, stdout: result.stdout || '' })
+    
+    if (stderr.includes('ModuleNotFoundError') || stderr.includes('No module named')) {
+      const missingModule = stderr.match(/No module named ['"]([^'"]+)['"]/)?.[1]
+      err(`Coqui TTS dependency missing${missingModule ? `: ${missingModule}` : ''}.
+
+SOLUTION: Run setup to install all dependencies:
+  bun setup:tts`)
+    } else {
+      err('Failed to list models', { stderr: stderr || 'Unknown error' })
+    }
   }
   
   const output = result.stdout
@@ -46,6 +74,10 @@ export const listModels = async (): Promise<void> => {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, PYTHONWARNINGS: 'ignore' }
     })
+    
+    if (cliResult.error) {
+      l('CLI fallback failed', { error: cliResult.error })
+    }
     
     if (cliResult.status === 0 && cliResult.stdout) {
       const cliOutput = cliResult.stdout
@@ -84,7 +116,18 @@ export const listModels = async (): Promise<void> => {
       }
     }
     
-    err('Failed to parse model list. Coqui TTS may not be properly installed.')
+    l('Both primary and CLI fallback methods failed', { 
+      primaryStderr: result.stderr,
+      cliStderr: cliResult?.stderr 
+    })
+    err(`Failed to list Coqui TTS models.
+
+Coqui TTS may not be properly installed or initialized.
+
+SOLUTION:
+  1. Run setup: bun setup:tts
+  2. Verify installation: build/pyenv/tts/bin/python -c "import TTS; print(TTS.__version__)"
+  3. If issues persist, try reinstalling: rm -rf build/pyenv/tts && bun setup:tts`)
   }
   
   const modelsSection = output.substring(startIdx, endIdx)

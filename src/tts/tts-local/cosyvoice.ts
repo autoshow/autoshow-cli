@@ -134,7 +134,23 @@ const synthesizeViaApi = async (
     
     return outputPath
   } catch (error) {
-    throw new Error(`CosyVoice API request failed: ${error}`)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    
+    // Check if it's a connection error
+    if (errorMsg.includes('ECONNREFUSED') || errorMsg.includes('fetch failed')) {
+      throw new Error(`CosyVoice API not accessible at ${apiUrl}.
+
+The API server is not running or not reachable.
+
+SOLUTION:
+  1. Start the Docker API: docker run -d -p 50000:50000 cosyvoice:latest
+  2. Or check if it's running: curl ${apiUrl}/health
+  3. Or use local Python mode (requires full setup): remove --cosy-api-url
+
+For easier setup, use Qwen3 TTS instead: --qwen3`)
+    }
+    
+    throw new Error(`CosyVoice API request failed: ${errorMsg}`)
   }
 }
 
@@ -166,15 +182,29 @@ export async function synthesizeWithCosyVoice(
         apiUrl: options.apiUrl || config.api_url || DEFAULT_API_URL
       })
     } catch (apiError) {
-      l('API mode failed, falling back to local mode', { apiError })
+      const errorMsg = apiError instanceof Error ? apiError.message : String(apiError)
+      
+      // If explicit API URL was provided, don't fallback - fail with clear message
+      if (options.apiUrl) {
+        err(`CosyVoice API failed: ${errorMsg}`)
+      }
+      
+      l('API mode failed, falling back to local mode', { apiError: errorMsg })
       if (useDocker && !checkCosyVoiceInstalled(pythonPath)) {
-        err('CosyVoice API failed and local installation not available', { apiError })
+        err(`CosyVoice API failed and local installation not available.
+
+${errorMsg}
+
+SOLUTION:
+  1. Start the Docker API: docker run -d -p 50000:50000 cosyvoice:latest
+  2. Or install locally: bun setup:tts (complex, requires model download)
+  3. Or use Qwen3 TTS instead: --qwen3 (simpler, no Docker needed)`)
       }
     }
   }
   
   // Local Python mode
-  const pythonScriptPath = join(dirname(import.meta.url.replace('file://', '')), 'cosyvoice-python.py')
+  const pythonScriptPath = new URL('cosyvoice-python.py', import.meta.url).pathname
   const cosyvoiceDir = config.model_dir || join(process.cwd(), 'build/cosyvoice')
   
   await ensureDir(dirname(outputPath))
@@ -206,15 +236,30 @@ export async function synthesizeWithCosyVoice(
     env: { 
       ...process.env, 
       PYTHONWARNINGS: 'ignore',
-      PYTHONPATH: join(cosyvoiceDir, 'third_party/Matcha-TTS')
+      PYTHONPATH: `${cosyvoiceDir}:${join(cosyvoiceDir, 'third_party/Matcha-TTS')}`
     },
     maxBuffer: 1024 * 1024 * 50 // 50MB buffer for large model outputs
   })
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : 'Python error',
-      { errorCode: errorWithCode.code, message: result.error.message })
+    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup:tts' : 'Python execution error',
+      { 
+        errorCode: errorWithCode.code, 
+        message: result.error.message,
+        pythonPath,
+        scriptPath: pythonScriptPath 
+      })
+  }
+  
+  if (result.status !== 0 && !result.stdout) {
+    err('CosyVoice Python script failed without output', {
+      status: result.status,
+      stderr: result.stderr || '(no stderr)',
+      stdout: result.stdout || '(no stdout)',
+      pythonPath,
+      scriptPath: pythonScriptPath
+    })
   }
   
   // Parse stdout for JSON result
@@ -223,20 +268,84 @@ export async function synthesizeWithCosyVoice(
   const lastLine = lines[lines.length - 1] || ''
   
   try {
+    if (!lastLine) {
+      err('CosyVoice TTS failed - no output from Python script', { 
+        stdout,
+        stderr: result.stderr || '(no stderr)',
+        status: result.status,
+        hint: 'The Python script did not produce any output. Check if the model is properly installed.'
+      })
+    }
+    
     const jsonResult = JSON.parse(lastLine)
     if (!jsonResult.ok) {
-      err('CosyVoice TTS failed', { error: jsonResult.error })
+      // Provide more helpful error messages
+      const error = jsonResult.error || ''
+      if (error.includes('pretrained_models') || error.includes('model not found')) {
+        err(`CosyVoice model not found.
+
+The CosyVoice model files are missing or incomplete.
+
+SOLUTION: Download the model:
+  1. Create directory: mkdir -p build/cosyvoice/pretrained_models
+  2. Download model from: https://www.modelscope.cn/models/iic/Fun-CosyVoice3-0.5B
+  
+Or use the Docker API instead:
+  docker run -d -p 50000:50000 cosyvoice:latest`)
+      } else if (error.includes('FileNotFoundError') || error.includes('No such file')) {
+        err(`CosyVoice file not found.
+
+Required files are missing.
+
+SOLUTION: 
+  1. Ensure model is downloaded: bun setup:tts
+  2. Or use Docker API: docker run -d -p 50000:50000 cosyvoice:latest`)
+      } else {
+        l('CosyVoice error details', { error })
+        err('CosyVoice TTS failed', { error })
+      }
     }
-  } catch {
+  } catch (parseError) {
+    l('JSON parse error', { parseError, lastLine, stdout })
     // If we can't parse JSON, check for errors in stderr
     const stderr = result.stderr || ''
     if (result.status !== 0) {
-      if (stderr.includes('ModuleNotFoundError')) {
-        err('CosyVoice not installed. Run: bun setup:tts')
-      } else if (stderr.includes('torch')) {
-        err('PyTorch not installed. Run: bun setup:tts')
+      if (stderr.includes('ModuleNotFoundError') || stderr.includes('No module named')) {
+        const missingModule = stderr.match(/No module named ['"]([^'"]+)['"]/)?.[1]
+        err(`CosyVoice dependency missing${missingModule ? `: ${missingModule}` : ''}.
+
+CosyVoice requires additional Python dependencies.
+
+SOLUTION:
+  1. Run full TTS setup: bun setup:tts
+  2. Or use Docker (easier): docker run -d -p 50000:50000 cosyvoice:latest
+  
+Then retry with: --cosyvoice --cosy-api-url http://localhost:50000`)
+      } else if (stderr.includes('torch') || stderr.includes('CUDA')) {
+        err(`PyTorch or CUDA error.
+
+CosyVoice requires PyTorch with proper device support.
+
+SOLUTION:
+  1. Ensure PyTorch is installed: bun setup:tts
+  2. For CPU-only inference, this is expected to be slow
+  3. Or use Docker: docker run -d -p 50000:50000 cosyvoice:latest`)
+      } else if (stderr.includes('pretrained_models') || stderr.includes('checkpoint')) {
+        err(`CosyVoice model not found.
+
+The model files are missing from build/cosyvoice/pretrained_models/
+
+SOLUTION:
+  1. Download model: bun setup:tts
+  2. Or use Docker API: docker run -d -p 50000:50000 cosyvoice:latest
+  
+Then access via: --cosyvoice --cosy-api-url http://localhost:50000`)
       } else {
-        err('CosyVoice TTS failed', { stderr })
+        err('CosyVoice TTS failed', { 
+          stderr: stderr || '(no stderr)',
+          stdout: lines.slice(0, -1).join('\n') || '(no output)',
+          hint: 'CosyVoice requires complex setup. Consider using Docker or try Qwen3 TTS (--qwen3) instead.'
+        })
       }
     }
   }

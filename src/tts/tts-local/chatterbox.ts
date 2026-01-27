@@ -10,8 +10,7 @@ import {
 } from '../tts-utils/setup-utils'
 import type { ChatterboxOptions, ChatterboxModel } from '../tts-types'
 
-const VALID_MODELS = ['turbo', 'standard', 'multilingual']
-const VALID_LANGUAGES = ['ar', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he', 'hi', 'it', 'ja', 'ko', 'ms', 'nl', 'no', 'pl', 'pt', 'ru', 'sv', 'sw', 'tr', 'zh']
+const VALID_MODELS = ['turbo', 'standard']
 
 const getChatterboxConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
@@ -64,12 +63,8 @@ const validateOptions = (options: ChatterboxOptions): void => {
     err('Invalid model', { model, validModels: VALID_MODELS.join(', ') })
   }
   
-  if (model === 'multilingual') {
-    if (options.languageId && !VALID_LANGUAGES.includes(options.languageId)) {
-      err('Invalid language', { language: options.languageId, validLanguages: VALID_LANGUAGES.join(', ') })
-    }
-  } else if (options.languageId) {
-    err('Language can only be set with the multilingual model')
+  if (options.languageId) {
+    err('Chatterbox multilingual model has been removed due to compatibility issues. For multilingual TTS, use Qwen3 TTS with --qwen3 --qwen3-language <language>')
   }
 
   if (options.refAudio && !existsSync(options.refAudio)) {
@@ -102,13 +97,10 @@ export async function synthesizeWithChatterbox(
   verifyChatterboxEnvironment(config.python)
   
   const modelName = options.model || config.default_model || 'turbo'
-  const languageId = modelName === 'multilingual'
-    ? (options.languageId || config.default_language)
-    : options.languageId
   const exaggeration = options.exaggeration ?? config.default_exaggeration
   const cfgWeight = options.cfgWeight ?? config.default_cfg_weight
   
-  validateOptions({ ...options, model: modelName as ChatterboxModel, languageId, exaggeration, cfgWeight })
+  validateOptions({ ...options, model: modelName as ChatterboxModel, exaggeration, cfgWeight })
   
   l('Using Chatterbox model', { model: modelName })
   
@@ -124,9 +116,6 @@ export async function synthesizeWithChatterbox(
   
   if (options.refAudio) {
     configData['ref_audio'] = options.refAudio
-  }
-  if (languageId) {
-    configData['language_id'] = languageId
   }
   if (options.device) {
     configData['device'] = options.device
@@ -163,19 +152,57 @@ export async function synthesizeWithChatterbox(
   try {
     const jsonResult = JSON.parse(lastLine)
     if (!jsonResult.ok) {
-      err('Chatterbox TTS failed', { error: jsonResult.error })
+      // Provide more helpful error messages
+      const error = jsonResult.error || ''
+      if (error.includes('Token is required')) {
+        err(`Hugging Face authentication required.
+
+The chatterbox ${modelName} model requires a Hugging Face token to download.
+
+SOLUTION: Log in to Hugging Face:
+  1. Get a token from: https://huggingface.co/settings/tokens
+  2. Run: build/pyenv/tts/bin/python -c "from huggingface_hub import login; login()"
+  
+Or use a different TTS engine that doesn't require authentication:
+  - Use qwen3 TTS: --qwen3 (no auth needed)
+  - Use Coqui TTS: --coqui (no auth needed)`)
+      } else if (error.includes('torch.load')) {
+        err('Model loading error. Try: bun setup:tts', { error })
+      } else if (error.includes('Invalid model type')) {
+        err('Invalid Chatterbox model. Supported models: turbo, standard. For multilingual TTS, use --qwen3 instead.', { error })
+      } else {
+        err('Chatterbox TTS failed', { error })
+      }
     }
   } catch {
     const stderr = result.stderr || ''
     if (result.status !== 0) {
       if (stderr.includes('ModuleNotFoundError')) {
         err('Chatterbox TTS not installed. Run: bun setup:tts')
+      } else if (stderr.includes('Token is required') || stderr.includes('LocalTokenNotFoundError')) {
+        err(`Hugging Face authentication required.
+
+The chatterbox ${modelName} model requires a Hugging Face token to download.
+
+SOLUTION: Log in to Hugging Face:
+  1. Get a token from: https://huggingface.co/settings/tokens
+  2. Run: build/pyenv/tts/bin/python -c "from huggingface_hub import login; login()"
+  
+Or use a different TTS engine that doesn't require authentication:
+  - Use qwen3 TTS: --qwen3 (no auth needed)
+  - Use Coqui TTS: --coqui (no auth needed)`)
+      } else if (stderr.includes('Invalid model type')) {
+        err('Invalid Chatterbox model. Supported models: turbo, standard. For multilingual TTS, use --qwen3 instead.')
       } else if (stderr.includes('torch')) {
         err('PyTorch not installed. Run: bun setup:tts')
       } else if (stderr.includes('CUDA out of memory')) {
         err('GPU out of memory. Try using CPU mode or a smaller model.')
       } else {
-        err('Chatterbox TTS failed', { stderr })
+        err('Chatterbox TTS failed', { 
+          stderr,
+          stdout: lines.slice(0, -1).join('\n') || '(no output)',
+          hint: 'Check the error output above for details.'
+        })
       }
     }
   }

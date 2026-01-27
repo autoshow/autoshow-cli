@@ -100,7 +100,7 @@ def synthesize_via_cli(config):
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(
             f"Checkpoint not found: {checkpoint_path}. "
-            f"Run: huggingface-cli download fishaudio/openaudio-s1-mini --local-dir {checkpoint_path}"
+            f"Run: hf download fishaudio/openaudio-s1-mini --local-dir {checkpoint_path}"
         )
 
     # Determine device

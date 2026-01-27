@@ -57,11 +57,11 @@ const downloadWeightsIfNeeded = (): boolean => {
   }
   
   try {
-    // Try using huggingface-cli
+    // Try using hf
     const env = { ...process.env }
     if (hfToken) env['HF_TOKEN'] = hfToken
     
-    execSync(`huggingface-cli download fishaudio/openaudio-s1-mini --local-dir ${checkpointDir}`, {
+    execSync(`hf download fishaudio/openaudio-s1-mini --local-dir ${checkpointDir}`, {
       stdio: 'inherit',
       cwd: process.cwd(),
       env

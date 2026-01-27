@@ -75,8 +75,9 @@ def get_device_and_dtype():
     """Determine optimal device and dtype."""
     if torch.cuda.is_available():
         return "cuda:0", torch.bfloat16, "flash_attention_2"
-    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "mps", torch.float16, "sdpa"
+    # Disable MPS for Qwen3-TTS due to compatibility issues
+    # elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    #     return "mps", torch.float16, "sdpa"
     else:
         return "cpu", torch.float32, "sdpa"
 
