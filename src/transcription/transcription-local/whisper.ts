@@ -57,13 +57,13 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
       if (code === 0) {
         resolve()
       } else {
-        l.warn(`Whisper process exited with code ${code}`)
+        l('Whisper process exited with code', { code })
         reject(new Error(`whisper-cli exited with code ${code}`))
       }
     })
 
     whisperProcess.on('error', (error) => {
-      l.warn(`Whisper process error: ${error.message}`)
+      l('Whisper process error', { error: error.message })
       reject(error)
     })
   })
@@ -75,7 +75,7 @@ export async function callWhisper(
   spinner?: Ora
 ) {
   if (!isWhisperConfigured()) {
-    l.dim('Whisper not found, initiating automatic setup')
+    l('Whisper not found, initiating automatic setup')
     await autoSetupWhisper()
   }
 
@@ -100,7 +100,7 @@ export async function callWhisper(
     }
 
     if (!existsSync(modelPath)) {
-      l.wait(`Model ${modelId} not found, downloading automatically...`)
+      l('Model not found, downloading automatically', { modelId })
       await ensureModelExists(modelId)
     }
     
@@ -126,7 +126,7 @@ export async function callWhisper(
         )
       }
     } catch (whisperError) {
-      err(`Error running whisper-cli: ${(whisperError as Error).message}`)
+      err('Error running whisper-cli', { error: (whisperError as Error).message })
       throw whisperError
     }
 
@@ -142,7 +142,7 @@ export async function callWhisper(
       costPerMinuteCents
     }
   } catch (error) {
-    err(`Error in callWhisper: ${(error as Error).message}`)
+    err('Error in callWhisper', { error: (error as Error).message })
     process.exit(1)
   }
 }

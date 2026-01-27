@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { 
   handleError, 
   validateDuration, 
@@ -43,15 +43,15 @@ export const createMusicCommand = (): Command => {
     .option('--respect-durations', 'strictly respect section durations from composition plan (ElevenLabs only)')
     .action(async (options) => {
       try {
-        l.opts('Starting music generation')
+        l('Starting music generation')
         
         // Validate service
         const service = (options.service || 'elevenlabs') as MusicService
         if (!isValidMusicService(service)) {
-          err(`Invalid --service: ${service}. Valid options: ${VALID_MUSIC_SERVICES.join(', ')}`)
+          err('Invalid --service', { service, validOptions: VALID_MUSIC_SERVICES.join(', ') })
         }
         
-        l.dim(`Using service: ${service}`)
+        l('Using service', { service })
         
         // Service-specific validation
         if (service === 'minimax') {
@@ -61,16 +61,16 @@ export const createMusicCommand = (): Command => {
           }
           // MiniMax doesn't support these options
           if (options.planFile) {
-            l.warn('--plan-file is not supported by MiniMax, ignoring')
+            l('--plan-file is not supported by MiniMax, ignoring')
           }
           if (options.instrumental) {
-            l.warn('--instrumental is not supported by MiniMax, ignoring')
+            l('--instrumental is not supported by MiniMax, ignoring')
           }
           if (options.timestamps) {
-            l.warn('--timestamps is not supported by MiniMax, ignoring')
+            l('--timestamps is not supported by MiniMax, ignoring')
           }
           if (options.duration) {
-            l.warn('--duration is not supported by MiniMax, ignoring')
+            l('--duration is not supported by MiniMax, ignoring')
           }
         } else {
           // ElevenLabs validation: need either prompt or plan-file
@@ -90,10 +90,10 @@ export const createMusicCommand = (): Command => {
         let lyrics: string | undefined
         if (options.lyricsFile) {
           if (!existsSync(options.lyricsFile)) {
-            err(`Lyrics file not found: ${options.lyricsFile}`)
+            err('Lyrics file not found', { lyricsFile: options.lyricsFile })
           }
           lyrics = await readFile(options.lyricsFile, 'utf8')
-          l.dim(`Loaded lyrics from: ${options.lyricsFile}`)
+          l('Loaded lyrics from', { lyricsFile: options.lyricsFile })
         } else if (options.lyrics) {
           lyrics = options.lyrics
         }
@@ -111,7 +111,7 @@ export const createMusicCommand = (): Command => {
         if (service === 'minimax' && !isMinimaxFormat(format)) {
           format = convertFormatForService(format, 'minimax')
         } else if (service === 'elevenlabs' && !isValidOutputFormat(format)) {
-          err(`Invalid --format for ElevenLabs: ${format}. Run "music list-formats --service elevenlabs" for valid values`)
+          err('Invalid --format for ElevenLabs', { format, help: 'Run "music list-formats --service elevenlabs" for valid values' })
         }
         
         // Route to appropriate service
@@ -125,7 +125,7 @@ export const createMusicCommand = (): Command => {
             const expected = `.${ext}`
             const actual = extname(options.output)
             if (actual && expected !== actual) {
-              l.warn(`Output extension ${actual} does not match --format ${format} (${expected}). Using --output as-is.`)
+              l('Output extension does not match --format. Using --output as-is.', { actual, expected, format })
             }
           }
           
@@ -137,12 +137,12 @@ export const createMusicCommand = (): Command => {
           })
           
           if (result.success) {
-            l.success(`Music saved to: ${result.path}`)
+            success('Music saved to', { path: result.path })
             if (result.duration) {
-              l.dim(`Generation took ${result.duration} seconds`)
+              l('Generation took', { duration: result.duration, unit: 'seconds' })
             }
           } else {
-            err(`Failed to generate music: ${result.error}`)
+            err('Failed to generate music', { error: result.error })
           }
         } else {
           // ElevenLabs generation
@@ -160,7 +160,7 @@ export const createMusicCommand = (): Command => {
             const expected = `.${getExtensionFromFormat(format as MusicOutputFormat)}`
             const actual = extname(options.output)
             if (actual && expected !== actual) {
-              l.warn(`Output extension ${actual} does not match --format ${format} (${expected}). Using --output as-is.`)
+              l('Output extension does not match --format. Using --output as-is.', { actual, expected, format })
             }
           }
           
@@ -172,14 +172,14 @@ export const createMusicCommand = (): Command => {
           let prompt = options.prompt || ''
           if (options.planFile) {
             if (!existsSync(options.planFile)) {
-              err(`Plan file not found: ${options.planFile}`)
+              err('Plan file not found', { planFile: options.planFile })
             }
             const planContent = await readFile(options.planFile, 'utf8')
             try {
               generateOptions.compositionPlan = JSON.parse(planContent) as MusicCompositionPlan
-              l.dim(`Loaded composition plan from: ${options.planFile}`)
+              l('Loaded composition plan from', { planFile: options.planFile })
             } catch {
-              err(`Invalid JSON in plan file: ${options.planFile}`)
+              err('Invalid JSON in plan file', { planFile: options.planFile })
             }
           }
           
@@ -187,13 +187,13 @@ export const createMusicCommand = (): Command => {
           if (options.duration) {
             const durationMs = parseDuration(options.duration)
             if (Number.isNaN(durationMs)) {
-              err(`Invalid duration: ${options.duration}. Use 30s, 2m, 2:30, or milliseconds`)
+              err('Invalid duration. Use 30s, 2m, 2:30, or milliseconds', { duration: options.duration })
             }
             if (!validateDuration(durationMs)) {
-              err(`Invalid duration: ${options.duration}. Must be between 3 seconds and 5 minutes (3000-600000ms)`)
+              err('Invalid duration. Must be between 3 seconds and 5 minutes (3000-600000ms)', { duration: options.duration })
             }
             generateOptions.durationMs = durationMs
-            l.dim(`Duration: ${durationMs}ms`)
+            l('Duration', { durationMs, unit: 'ms' })
           }
           
           const result = options.timestamps
@@ -201,15 +201,15 @@ export const createMusicCommand = (): Command => {
             : await generateMusicWithElevenLabs(prompt, generateOptions)
           
           if (result.success) {
-            l.success(`Music saved to: ${result.path}`)
+            success('Music saved to', { path: result.path })
             if (result.duration) {
-              l.dim(`Generation took ${result.duration} seconds`)
+              l('Generation took', { duration: result.duration, unit: 'seconds' })
             }
             if (result.songId) {
-              l.dim(`Song ID: ${result.songId}`)
+              l('Song ID', { songId: result.songId })
             }
           } else {
-            err(`Failed to generate music: ${result.error}`)
+            err('Failed to generate music', { error: result.error })
           }
         }
       } catch (error) {
@@ -225,17 +225,17 @@ export const createMusicCommand = (): Command => {
     .option('-o, --output <path>', 'save plan to JSON file')
     .action(async (options) => {
       try {
-        l.opts('Creating composition plan')
+        l('Creating composition plan')
         
         const planOptions: { durationMs?: number } = {}
         
         if (options.duration) {
           const durationMs = parseDuration(options.duration)
           if (Number.isNaN(durationMs)) {
-            err(`Invalid duration: ${options.duration}. Use 30s, 2m, 2:30, or milliseconds`)
+            err('Invalid duration. Use 30s, 2m, 2:30, or milliseconds', { duration: options.duration })
           }
           if (!validateDuration(durationMs)) {
-            err(`Invalid duration: ${options.duration}. Must be between 3 seconds and 5 minutes`)
+            err('Invalid duration. Must be between 3 seconds and 5 minutes', { duration: options.duration })
           }
           planOptions.durationMs = durationMs
         }
@@ -243,16 +243,16 @@ export const createMusicCommand = (): Command => {
         const result = await createCompositionPlan(options.prompt, planOptions)
         
         if (result.success && result.plan) {
-          l.success('Composition plan created:')
-          l.dim(JSON.stringify(result.plan, null, 2))
+          success('Composition plan created:')
+          l(JSON.stringify(result.plan, null, 2))
           
           if (options.output) {
             const { writeFile } = await import('fs/promises')
             await writeFile(options.output, JSON.stringify(result.plan, null, 2))
-            l.success(`Plan saved to: ${options.output}`)
+            success('Plan saved to', { output: options.output })
           }
         } else {
-          err(`Failed to create plan: ${result.error}`)
+          err('Failed to create plan', { error: result.error })
         }
       } catch (error) {
         handleError(error)
@@ -268,58 +268,58 @@ export const createMusicCommand = (): Command => {
       const service = options.service as MusicService | undefined
       
       if (service && !isValidMusicService(service)) {
-        err(`Invalid --service: ${service}. Valid options: ${VALID_MUSIC_SERVICES.join(', ')}`)
+        err('Invalid --service', { service, validOptions: VALID_MUSIC_SERVICES.join(', ') })
       }
       
       if (showAll || service === 'elevenlabs') {
-        l.opts('ElevenLabs formats:')
-        l.dim(' ')
-        l.dim('MP3 formats:')
-        l.dim('  mp3_22050_32  - 22.05kHz, 32kbps')
-        l.dim('  mp3_24000_48  - 24kHz, 48kbps')
-        l.dim('  mp3_44100_32  - 44.1kHz, 32kbps')
-        l.dim('  mp3_44100_64  - 44.1kHz, 64kbps')
-        l.dim('  mp3_44100_96  - 44.1kHz, 96kbps')
-        l.dim('  mp3_44100_128 - 44.1kHz, 128kbps (default)')
-        l.dim('  mp3_44100_192 - 44.1kHz, 192kbps (Creator tier+)')
-        l.dim(' ')
-        l.dim('PCM formats (Pro tier+):')
-        l.dim('  pcm_8000 to pcm_48000')
-        l.dim(' ')
-        l.dim('Opus formats:')
-        l.dim('  opus_48000_32 to opus_48000_192')
-        l.dim(' ')
-        l.dim('Telephony formats:')
-        l.dim('  ulaw_8000 - u-law (Twilio)')
-        l.dim('  alaw_8000 - A-law')
+        l('ElevenLabs formats:')
+        l(' ')
+        l('MP3 formats:')
+        l('  mp3_22050_32  - 22.05kHz, 32kbps')
+        l('  mp3_24000_48  - 24kHz, 48kbps')
+        l('  mp3_44100_32  - 44.1kHz, 32kbps')
+        l('  mp3_44100_64  - 44.1kHz, 64kbps')
+        l('  mp3_44100_96  - 44.1kHz, 96kbps')
+        l('  mp3_44100_128 - 44.1kHz, 128kbps (default)')
+        l('  mp3_44100_192 - 44.1kHz, 192kbps (Creator tier+)')
+        l(' ')
+        l('PCM formats (Pro tier+):')
+        l('  pcm_8000 to pcm_48000')
+        l(' ')
+        l('Opus formats:')
+        l('  opus_48000_32 to opus_48000_192')
+        l(' ')
+        l('Telephony formats:')
+        l('  ulaw_8000 - u-law (Twilio)')
+        l('  alaw_8000 - A-law')
       }
       
       if (showAll || service === 'minimax') {
         if (showAll) {
-          l.dim(' ')
-          l.dim('─'.repeat(50))
-          l.dim(' ')
+          l(' ')
+          l('─'.repeat(50))
+          l(' ')
         }
-        l.opts('MiniMax formats:')
-        l.dim(' ')
-        l.dim('MP3 formats (format_samplerate_bitrate):')
-        l.dim('  mp3_44100_256000 - 44.1kHz, 256kbps (default, highest quality)')
-        l.dim('  mp3_44100_128000 - 44.1kHz, 128kbps')
-        l.dim('  mp3_44100_64000  - 44.1kHz, 64kbps')
-        l.dim('  mp3_44100_32000  - 44.1kHz, 32kbps')
-        l.dim('  (Also available with 16000, 24000, 32000 Hz sample rates)')
-        l.dim(' ')
-        l.dim('WAV formats:')
-        l.dim('  wav_44100 - 44.1kHz WAV (uncompressed)')
-        l.dim('  wav_32000 - 32kHz WAV')
-        l.dim('  wav_24000 - 24kHz WAV')
-        l.dim('  wav_16000 - 16kHz WAV')
-        l.dim(' ')
-        l.dim('PCM formats:')
-        l.dim('  pcm_44100 - 44.1kHz PCM')
-        l.dim('  pcm_32000 - 32kHz PCM')
-        l.dim('  pcm_24000 - 24kHz PCM')
-        l.dim('  pcm_16000 - 16kHz PCM')
+        l('MiniMax formats:')
+        l(' ')
+        l('MP3 formats (format_samplerate_bitrate):')
+        l('  mp3_44100_256000 - 44.1kHz, 256kbps (default, highest quality)')
+        l('  mp3_44100_128000 - 44.1kHz, 128kbps')
+        l('  mp3_44100_64000  - 44.1kHz, 64kbps')
+        l('  mp3_44100_32000  - 44.1kHz, 32kbps')
+        l('  (Also available with 16000, 24000, 32000 Hz sample rates)')
+        l(' ')
+        l('WAV formats:')
+        l('  wav_44100 - 44.1kHz WAV (uncompressed)')
+        l('  wav_32000 - 32kHz WAV')
+        l('  wav_24000 - 24kHz WAV')
+        l('  wav_16000 - 16kHz WAV')
+        l(' ')
+        l('PCM formats:')
+        l('  pcm_44100 - 44.1kHz PCM')
+        l('  pcm_32000 - 32kHz PCM')
+        l('  pcm_24000 - 24kHz PCM')
+        l('  pcm_16000 - 16kHz PCM')
       }
     })
 

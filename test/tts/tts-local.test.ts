@@ -1,5 +1,4 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect } from 'bun:test'
 import { readdirSync, existsSync, renameSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
@@ -26,7 +25,7 @@ const cliCommands = [
   { 'cosyvoice-cantonese': 'bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"' },
 ]
 
-test('CLI TTS local tests', { concurrency: 1 }, async (t) => {
+describe('CLI TTS local tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -35,7 +34,7 @@ test('CLI TTS local tests', { concurrency: 1 }, async (t) => {
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Local TTS: ${testName}`, { concurrency: 1 }, async () => {
+    test(`Local TTS: ${testName}`, async () => {
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -56,7 +55,7 @@ test('CLI TTS local tests', { concurrency: 1 }, async (t) => {
         errorOccurred = true
       }
       
-      strictEqual(errorOccurred, false)
+      expect(errorOccurred).toBe(false)
       const afterRun = readdirSync(outputDirectory)
       
       let filesToRename: string[] = []
@@ -75,7 +74,7 @@ test('CLI TTS local tests', { concurrency: 1 }, async (t) => {
         }
       }
       
-      ok(filesToRename.length > 0, 'Expected at least one new or modified audio file')
+      expect(filesToRename.length > 0).toBeTruthy()
       
       for (const file of filesToRename) {
         if (file.endsWith('.part')) continue

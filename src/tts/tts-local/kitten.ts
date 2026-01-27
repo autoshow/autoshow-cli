@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { 
   ensureDir, spawnSync, readFileSync, existsSync, mkdirSync, readFile, writeFile, join, dirname
 } from '@/node-utils'
@@ -11,30 +11,30 @@ import {
 
 const getKittenConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
-  l.dim(`Loading config from: ${configPath}`)
+  l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
   let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['KITTEN_PYTHON_PATH']
   
   if (!pythonPath || !existsSync(pythonPath)) {
-    l.dim(`Python path not configured, checking for environment...`)
+    l('Python path not configured, checking for environment')
     pythonPath = ensureTtsEnvironment()
   }
   
-  l.dim(`Using Python path: ${pythonPath}`)
+  l('Using Python path', { pythonPath })
   return { python: pythonPath, ...config.kitten }
 }
 
 const verifyKittenEnvironment = (pythonPath: string) => {
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
   if (versionResult.error || versionResult.status !== 0) {
-    l.dim(`Python not accessible, attempting to set up environment...`)
+    l('Python not accessible, attempting to set up environment')
     const newPythonPath = ensureTtsEnvironment()
     return verifyKittenEnvironment(newPythonPath)
   }
   
   if (!checkKittenInstalled(pythonPath)) {
-    l.dim(`Kitten TTS not installed, attempting automatic setup...`)
+    l('Kitten TTS not installed, attempting automatic setup')
     const setupSuccessful = runKittenSetup()
     if (!setupSuccessful) {
       err(`Failed to automatically set up Kitten TTS. Please run: bun setup:tts`)
@@ -60,7 +60,7 @@ export async function synthesizeWithKitten(
   
   const modelName = options.model || config.default_model || 'KittenML/kitten-tts-nano-0.1'
   const voiceName = options.voice || config.default_voice || 'expr-voice-2-f'
-  l.dim(`Using model: ${modelName}, voice: ${voiceName}`)
+  l('Using model and voice', { model: modelName, voice: voiceName })
   
   const pythonScriptPath = join(dirname(import.meta.url.replace('file://', '')), 'kitten-python.py')
   
@@ -74,7 +74,7 @@ export async function synthesizeWithKitten(
     speed: options.speed || 1.0
   }
   
-  l.dim(`Generating speech with model: ${modelName}, voice: ${voiceName}`)
+  l('Generating speech with model and voice', { model: modelName, voice: voiceName })
   
   const result = spawnSync(config.python, [pythonScriptPath, JSON.stringify(configData)], { 
     stdio: ['pipe', 'pipe', 'pipe'], 
@@ -85,13 +85,18 @@ export async function synthesizeWithKitten(
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(`${errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : `Python error: ${result.error.message}`}`)
+    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : 'Python error',
+      { errorCode: errorWithCode.code, message: result.error.message })
   }
   if (result.status !== 0) {
     const stderr = result.stderr || ''
-    err(`${stderr.includes('ModuleNotFoundError') ? 'Kitten TTS not installed. Run: bun setup' :
-        stderr.includes('invalid expand shape') ? 'Text too long for Kitten TTS. Try a shorter text or use a different engine.' :
-        `Kitten TTS failed: ${stderr}`}`)
+    if (stderr.includes('ModuleNotFoundError')) {
+      err('Kitten TTS not installed. Run: bun setup')
+    } else if (stderr.includes('invalid expand shape')) {
+      err('Text too long for Kitten TTS. Try a shorter text or use a different engine.')
+    } else {
+      err('Kitten TTS failed', { stderr })
+    }
   }
   if (!existsSync(outputPath)) err(`Output file missing after synthesis`)
   return outputPath
@@ -118,7 +123,7 @@ export async function processScriptWithKitten(
       [s, process.env[`KITTEN_VOICE_${s}`] || (s === 'DUCO' ? 'expr-voice-2-m' : 'expr-voice-3-m')]
     ))
     
-    l.opts(`Processing ${script.length} lines with Kitten TTS`)
+    l('Processing lines with Kitten TTS', { lineCount: script.length })
     await Promise.all(script.map(async (entry: any, idx: number) => {
       const { speaker, text } = entry
       const base = `${String(idx).padStart(3, '0')}_${speaker}`
@@ -137,8 +142,8 @@ export async function processScriptWithKitten(
     
     await mergeAudioFiles(outDir)
     await convertPcmToWav(outDir)
-    l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')} 🔊`)
+    success('Conversation saved', { outputFile: join(outDir, 'full_conversation.wav') })
   } catch (error) {
-    err(`Error processing Kitten TTS script: ${error}`)
+    err('Error processing Kitten TTS script', { error })
   }
 }

@@ -1,8 +1,8 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect } from 'bun:test'
 import { readdirSync, existsSync, renameSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
+import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
@@ -32,8 +32,7 @@ const cliCommands = [
   { 'gemini-2.5-flash-lite-preview-06-17': 'bun as -- text --file "input/audio.mp3" --gemini gemini-2.5-flash-lite-preview-06-17' },
 ]
 
-test('CLI model tests', { concurrency: 1 }, async (t) => {
-  const p = '[test/text/models]'
+describe('CLI model tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -42,8 +41,8 @@ test('CLI model tests', { concurrency: 1 }, async (t) => {
     if (!entry) continue
     const [model, command] = entry
     
-    await t.test(`Model: ${model}`, { concurrency: 1 }, async () => {
-      console.log(`${p} Starting test: ${model}`)
+    test(`Model: ${model}`, async () => {
+      l(`Starting test`, { model })
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -53,10 +52,10 @@ test('CLI model tests', { concurrency: 1 }, async (t) => {
             error: ExecException | null, stdout: string, _stderr: string
           ) => {
               if (error) {
-                console.error(`${p} Command failed for ${model}: ${error.message}`)
+                l(`Command failed`, { model, error: error.message })
                 reject(error)
               } else {
-                console.log(`${p} Command succeeded for ${model}`)
+                l(`Command succeeded`, { model })
                 resolve(stdout)
               }
             }
@@ -66,10 +65,10 @@ test('CLI model tests', { concurrency: 1 }, async (t) => {
         errorOccurred = true
       }
       
-      strictEqual(errorOccurred, false)
+      expect(errorOccurred).toBe(false)
       const afterRun = readdirSync(outputDirectory)
       const newFiles = afterRun.filter(f => !beforeRun.includes(f))
-      ok(newFiles.length > 0, 'Expected at least one new file')
+      expect(newFiles.length > 0).toBeTruthy()
       
       for (const file of newFiles) {
         if (file.endsWith('.part')) continue
@@ -83,10 +82,11 @@ test('CLI model tests', { concurrency: 1 }, async (t) => {
         const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${model}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         
-        console.log(`${p} Renaming file: ${file} -> ${newName}`)
+        l(`Renaming file`, { from: file, to: newName })
         renameSync(oldPath, newPath)
         fileCounter++
       }
     })
   }
 })
+

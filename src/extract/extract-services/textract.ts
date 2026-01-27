@@ -69,7 +69,7 @@ export const extractWithTextract = async (
       let finalBuffer = imageBuffer
       
       if (imageBuffer.length > 5 * 1024 * 1024) {
-        l.warn(`${p}[${requestId}] Image${pageInfo} exceeds 5MB (${imageSizeMB.toFixed(2)} MB), resizing`)
+        l(`${p}[${requestId}] Image${pageInfo} exceeds 5MB, resizing`, { imageSizeMB: imageSizeMB.toFixed(2) })
         const resizedPath = join(tempDir, `resized_page_${pageNumber || 1}.png`)
         execSync(`gm convert "${pngPath}" -resize 2000x2000> "${resizedPath}"`, { stdio: 'ignore' })
         finalBuffer = await readFile(resizedPath)
@@ -85,7 +85,7 @@ export const extractWithTextract = async (
       const text = await processTextractResponse(response, pageNumber || 1, requestId)
       
       const totalCost = 0.0015
-      l.opts(`${p}[${requestId}] Cost${pageInfo}: $${totalCost.toFixed(4)}`)
+      l(`${p}[${requestId}] Cost${pageInfo}`, { totalCost: totalCost.toFixed(4) })
       
       await rm(tempDir, { recursive: true, force: true })
       
@@ -105,7 +105,7 @@ export const extractWithTextract = async (
       throw error
     }
   } catch (error) {
-    err(`${p}[${requestId}] Textract error${pageInfo}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Textract error${pageInfo}`, { error: error instanceof Error ? error.message : 'Unknown error' })
     throw error
   }
 }

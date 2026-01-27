@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { downloadAudioFromUrls } from './save-audio-urls'
 import { convertLocalAudioFiles } from './save-audio-files'
 
@@ -16,7 +16,7 @@ export const createMediaCommand = (): Command => {
     .option('--urls <markdownFile>', 'Path to markdown file containing URLs')
     .option('--verbose', 'Display detailed output from external tools')
     .action(async (options) => {
-      l.opts(`Downloading audio from: ${options.urls}`)
+      l('Downloading audio from file', { file: options.urls })
       
       try {
         if (!options.urls) {
@@ -24,9 +24,9 @@ export const createMediaCommand = (): Command => {
         }
         
         await downloadAudioFromUrls(options.urls, options.verbose || false)
-        l.success('Audio download completed successfully')
+        success('Audio download completed successfully')
       } catch (error) {
-        err(`Error downloading audio: ${(error as Error).message}`)
+        err('Error downloading audio', { error: (error as Error).message })
       }
     })
 
@@ -37,7 +37,7 @@ export const createMediaCommand = (): Command => {
     .option('--output <directory>', 'Output directory (default: output)')
     .option('--verbose', 'Display detailed output from external tools')
     .action(async (options) => {
-      l.opts(`Converting media files from: ${options.files}`)
+      l('Converting media files from directory', { source: options.files })
       
       try {
         if (!options.files) {
@@ -45,9 +45,9 @@ export const createMediaCommand = (): Command => {
         }
         
         await convertLocalAudioFiles(options.files, options.output, options.verbose || false)
-        l.success('Media conversion completed successfully')
+        success('Media conversion completed successfully')
       } catch (error) {
-        err(`Error converting audio files: ${(error as Error).message}`)
+        err('Error converting audio files', { error: (error as Error).message })
       }
     })
 

@@ -1,4 +1,4 @@
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { spawnSync, existsSync, execSync, readFileSync, join } from '@/node-utils'
 
 export const checkTtsEnvironment = (): { hasEnv: boolean, pythonPath: string | null } => {
@@ -6,7 +6,7 @@ export const checkTtsEnvironment = (): { hasEnv: boolean, pythonPath: string | n
   const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
   
   if (existsSync(venvPath)) {
-    l.dim(`TTS environment found at: ${venvPath}`)
+    l('TTS environment found', { pythonPath: venvPath })
     return { hasEnv: true, pythonPath: venvPath }
   }
   
@@ -14,22 +14,22 @@ export const checkTtsEnvironment = (): { hasEnv: boolean, pythonPath: string | n
     try {
       const config = JSON.parse(readFileSync(configPath, 'utf8'))
       if (config.python && existsSync(config.python)) {
-        l.dim(`TTS environment found from config: ${config.python}`)
+        l('TTS environment found from config', { pythonPath: config.python })
         return { hasEnv: true, pythonPath: config.python }
       }
     } catch {}
   }
   
-  l.dim(`TTS environment not found`)
+  l('TTS environment not found')
   return { hasEnv: false, pythonPath: null }
 }
 
 export const runTtsSetup = (): boolean => {
-  l.wait(`TTS environment not found, running automatic setup...`)
+  l('TTS environment not found, running automatic setup')
   
   const setupScript = join(process.cwd(), '.github/setup/tts/tts-env.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`Setup script not found at: ${setupScript}`)
+    l('Setup script not found', { scriptPath: setupScript })
     return false
   }
   
@@ -41,11 +41,11 @@ export const runTtsSetup = (): boolean => {
     
     const venvPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
     if (existsSync(venvPath)) {
-      l.success(`TTS environment setup completed successfully`)
+      success('TTS environment setup completed successfully')
       return true
     }
   } catch (error) {
-    l.dim(`Setup script failed: ${error}`)
+    l('Setup script failed', { error })
   }
   
   return false
@@ -104,11 +104,11 @@ export const checkChatterboxInstalled = (pythonPath: string): boolean => {
 }
 
 export const runCoquiSetup = (): boolean => {
-  l.wait(`Coqui TTS not installed, running automatic setup...`)
+  l('Coqui TTS not installed, running automatic setup')
   
   const setupScript = join(process.cwd(), '.github/setup/tts/coqui.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`Coqui setup script not found`)
+    l('Coqui setup script not found')
     return false
   }
   
@@ -117,20 +117,20 @@ export const runCoquiSetup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`Coqui TTS setup completed`)
+    success('Coqui TTS setup completed')
     return true
   } catch (error) {
-    l.dim(`Coqui setup failed: ${error}`)
+    l('Coqui setup failed', { error })
     return false
   }
 }
 
 export const runKittenSetup = (): boolean => {
-  l.wait(`Kitten TTS not installed, running automatic setup...`)
+  l('Kitten TTS not installed, running automatic setup')
   
   const setupScript = join(process.cwd(), '.github/setup/tts/kitten.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`Kitten setup script not found`)
+    l('Kitten setup script not found')
     return false
   }
   
@@ -139,20 +139,20 @@ export const runKittenSetup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`Kitten TTS setup completed`)
+    success('Kitten TTS setup completed')
     return true
   } catch (error) {
-    l.dim(`Kitten setup failed: ${error}`)
+    l('Kitten setup failed', { error })
     return false
   }
 }
 
 export const runQwen3Setup = (): boolean => {
-  l.wait(`Qwen3 TTS not installed, running automatic setup...`)
+  l('Qwen3 TTS not installed, running automatic setup')
   
   const setupScript = join(process.cwd(), '.github/setup/tts/qwen3.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`Qwen3 setup script not found`)
+    l('Qwen3 setup script not found')
     return false
   }
   
@@ -161,20 +161,20 @@ export const runQwen3Setup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`Qwen3 TTS setup completed`)
+    success('Qwen3 TTS setup completed')
     return true
   } catch (error) {
-    l.dim(`Qwen3 setup failed: ${error}`)
+    l('Qwen3 setup failed', { error })
     return false
   }
 }
 
 export const runChatterboxSetup = (): boolean => {
-  l.wait(`Chatterbox TTS not installed, running automatic setup...`)
+  l('Chatterbox TTS not installed, running automatic setup')
   
   const setupScript = join(process.cwd(), '.github/setup/tts/chatterbox.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`Chatterbox setup script not found`)
+    l('Chatterbox setup script not found')
     return false
   }
   
@@ -183,10 +183,10 @@ export const runChatterboxSetup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`Chatterbox TTS setup completed`)
+    success('Chatterbox TTS setup completed')
     return true
   } catch (error) {
-    l.dim(`Chatterbox setup failed: ${error}`)
+    l('Chatterbox setup failed', { error })
     return false
   }
 }
@@ -200,11 +200,11 @@ export const checkFishAudioInstalled = (pythonPath: string): boolean => {
 }
 
 export const runFishAudioSetup = (): boolean => {
-  l.wait(`FishAudio TTS not installed, running automatic setup...`)
+  l('FishAudio TTS not installed, running automatic setup')
   
   const setupScript = join(process.cwd(), '.github/setup/tts/fish-audio.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`FishAudio setup script not found`)
+    l('FishAudio setup script not found')
     return false
   }
   
@@ -213,10 +213,10 @@ export const runFishAudioSetup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`FishAudio TTS setup completed`)
+    success('FishAudio TTS setup completed')
     return true
   } catch (error) {
-    l.dim(`FishAudio setup failed: ${error}`)
+    l('FishAudio setup failed', { error })
     return false
   }
 }
@@ -256,13 +256,13 @@ export const checkCosyVoiceDocker = (): boolean => {
 }
 
 export const startCosyVoiceDocker = (): boolean => {
-  l.wait(`Attempting to start CosyVoice Docker container...`)
+  l('Attempting to start CosyVoice Docker container')
   
   try {
     // Check if Docker is available
     const dockerCheck = spawnSync('docker', ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
     if (dockerCheck.status !== 0) {
-      l.dim(`Docker not available`)
+      l('Docker not available')
       return false
     }
     
@@ -275,26 +275,26 @@ export const startCosyVoiceDocker = (): boolean => {
     // Wait for API to be ready
     for (let i = 0; i < 30; i++) {
       if (checkCosyVoiceDocker()) {
-        l.success(`CosyVoice Docker API started`)
+        success('CosyVoice Docker API started')
         return true
       }
       execSync('sleep 1')
     }
     
-    l.dim(`CosyVoice Docker API did not become ready in time`)
+    l('CosyVoice Docker API did not become ready in time')
     return false
   } catch (error) {
-    l.dim(`Failed to start CosyVoice Docker: ${error}`)
+    l('Failed to start CosyVoice Docker', { error })
     return false
   }
 }
 
 export const runCosyVoiceSetup = (): boolean => {
-  l.wait(`CosyVoice not installed, running automatic setup...`)
+  l('CosyVoice not installed, running automatic setup')
   
   const setupScript = join(process.cwd(), '.github/setup/tts/cosyvoice.sh')
   if (!existsSync(setupScript)) {
-    l.dim(`CosyVoice setup script not found`)
+    l('CosyVoice setup script not found')
     return false
   }
   
@@ -303,10 +303,10 @@ export const runCosyVoiceSetup = (): boolean => {
       stdio: 'inherit',
       cwd: process.cwd()
     })
-    l.success(`CosyVoice setup completed`)
+    success('CosyVoice setup completed')
     return true
   } catch (error) {
-    l.dim(`CosyVoice setup failed: ${error}`)
+    l('CosyVoice setup failed', { error })
     return false
   }
 }
@@ -330,11 +330,11 @@ export const checkPollyInstalled = (): boolean => {
 }
 
 export const installNpmPackage = (packageName: string): boolean => {
-  l.wait(`Installing missing dependencies...`)
+  l('Installing missing dependencies')
   
   const packageJsonPath = join(process.cwd(), 'package.json')
   if (!existsSync(packageJsonPath)) {
-    l.dim(`package.json not found`)
+    l('package.json not found')
     return false
   }
   
@@ -348,20 +348,20 @@ export const installNpmPackage = (packageName: string): boolean => {
     }
     
     if (!allDeps[packageName]) {
-      l.dim(`${packageName} is not in package.json dependencies`)
+      l('Package not in package.json dependencies', { packageName })
       return false
     }
     
-    l.dim(`Running bun install to restore ${packageName}`)
+    l('Running bun install to restore package', { packageName })
     execSync('bun install', {
       stdio: 'inherit',
       cwd: process.cwd()
     })
     
-    l.success(`Dependencies restored successfully`)
+    success('Dependencies restored successfully')
     return true
   } catch (error) {
-    l.dim(`Failed to restore dependencies: ${error}`)
+    l('Failed to restore dependencies', { error })
     return false
   }
 }

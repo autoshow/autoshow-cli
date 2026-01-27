@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { 
   ensureDir, spawnSync, readFileSync, existsSync, mkdirSync, readFile, writeFile, join, dirname
 } from '@/node-utils'
@@ -16,41 +16,41 @@ const DEFAULT_API_URL = 'http://localhost:50000'
 
 const getCosyVoiceConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
-  l.dim(`Loading config from: ${configPath}`)
+  l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
   let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COSYVOICE_PYTHON_PATH']
   
   if (!pythonPath || !existsSync(pythonPath)) {
-    l.dim(`Python path not configured, checking for environment...`)
+    l('Python path not configured, checking for environment')
     pythonPath = ensureTtsEnvironment()
   }
   
-  l.dim(`Using Python path: ${pythonPath}`)
+  l('Using Python path', { pythonPath })
   return { python: pythonPath, ...config.cosyvoice }
 }
 
 const verifyCosyVoiceEnvironment = (pythonPath: string): { useDocker: boolean, pythonPath: string } => {
   // First check if Docker API is available
   if (checkCosyVoiceDocker()) {
-    l.dim(`CosyVoice Docker API available`)
+    l('CosyVoice Docker API available')
     return { useDocker: true, pythonPath }
   }
   
   // Check local Python environment
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
   if (versionResult.error || versionResult.status !== 0) {
-    l.dim(`Python not accessible, attempting to set up environment...`)
+    l('Python not accessible, attempting to set up environment')
     const newPythonPath = ensureTtsEnvironment()
     return verifyCosyVoiceEnvironment(newPythonPath)
   }
   
   if (!checkCosyVoiceInstalled(pythonPath)) {
-    l.dim(`CosyVoice not installed, attempting automatic setup...`)
+    l('CosyVoice not installed, attempting automatic setup')
     const setupSuccessful = runCosyVoiceSetup()
     if (!setupSuccessful) {
       // Try starting Docker as fallback
-      l.dim(`Local setup failed, attempting Docker fallback...`)
+      l('Local setup failed, attempting Docker fallback')
       if (startCosyVoiceDocker()) {
         return { useDocker: true, pythonPath }
       }
@@ -69,15 +69,15 @@ const validateOptions = (options: CosyVoiceOptions): void => {
   const mode = options.mode || 'instruct'
   
   if (!VALID_MODES.includes(mode)) {
-    err(`Invalid mode: ${mode}. Valid modes: ${VALID_MODES.join(', ')}`)
+    err('Invalid mode', { mode, validModes: VALID_MODES.join(', ') })
   }
   
   if (mode === 'zero_shot' && !options.refAudio) {
-    err(`Zero-shot mode requires --ref-audio for voice cloning`)
+    err('Zero-shot mode requires --ref-audio for voice cloning')
   }
   
   if (options.language && !VALID_LANGUAGES.includes(options.language)) {
-    err(`Invalid language: ${options.language}. Valid languages: ${VALID_LANGUAGES.join(', ')}`)
+    err('Invalid language', { language: options.language, validLanguages: VALID_LANGUAGES.join(', ') })
   }
 }
 
@@ -89,7 +89,7 @@ const synthesizeViaApi = async (
   const apiUrl = options.apiUrl || DEFAULT_API_URL
   const mode = options.mode || 'instruct'
   
-  l.dim(`Using CosyVoice API at: ${apiUrl}`)
+  l('Using CosyVoice API', { apiUrl })
   
   const formData = new FormData()
   formData.append('tts_text', text)
@@ -154,7 +154,7 @@ export async function synthesizeWithCosyVoice(
   
   validateOptions({ ...options, mode: modeName as CosyVoiceMode, language: languageName })
   
-  l.dim(`Using mode: ${modeName}, language: ${languageName}`)
+  l('Using mode and language', { mode: modeName, language: languageName })
   
   // Try Docker API first if available
   if (useDocker || options.apiUrl) {
@@ -166,9 +166,9 @@ export async function synthesizeWithCosyVoice(
         apiUrl: options.apiUrl || config.api_url || DEFAULT_API_URL
       })
     } catch (apiError) {
-      l.dim(`API mode failed: ${apiError}, falling back to local mode...`)
+      l('API mode failed, falling back to local mode', { apiError })
       if (useDocker && !checkCosyVoiceInstalled(pythonPath)) {
-        err(`CosyVoice API failed and local installation not available: ${apiError}`)
+        err('CosyVoice API failed and local installation not available', { apiError })
       }
     }
   }
@@ -198,7 +198,7 @@ export async function synthesizeWithCosyVoice(
     configData['ref_text'] = options.refText
   }
   
-  l.dim(`Generating speech with CosyVoice TTS`)
+  l(`Generating speech with CosyVoice TTS`)
   
   const result = spawnSync(pythonPath, [pythonScriptPath, JSON.stringify(configData)], { 
     stdio: ['pipe', 'pipe', 'pipe'], 
@@ -213,7 +213,8 @@ export async function synthesizeWithCosyVoice(
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(`${errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : `Python error: ${result.error.message}`}`)
+    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : 'Python error',
+      { errorCode: errorWithCode.code, message: result.error.message })
   }
   
   // Parse stdout for JSON result
@@ -224,15 +225,19 @@ export async function synthesizeWithCosyVoice(
   try {
     const jsonResult = JSON.parse(lastLine)
     if (!jsonResult.ok) {
-      err(`CosyVoice TTS failed: ${jsonResult.error}`)
+      err('CosyVoice TTS failed', { error: jsonResult.error })
     }
   } catch {
     // If we can't parse JSON, check for errors in stderr
     const stderr = result.stderr || ''
     if (result.status !== 0) {
-      err(`${stderr.includes('ModuleNotFoundError') ? 'CosyVoice not installed. Run: bun setup:tts' :
-          stderr.includes('torch') ? 'PyTorch not installed. Run: bun setup:tts' :
-          `CosyVoice TTS failed: ${stderr}`}`)
+      if (stderr.includes('ModuleNotFoundError')) {
+        err('CosyVoice not installed. Run: bun setup:tts')
+      } else if (stderr.includes('torch')) {
+        err('PyTorch not installed. Run: bun setup:tts')
+      } else {
+        err('CosyVoice TTS failed', { stderr })
+      }
     }
   }
   
@@ -271,7 +276,7 @@ export async function processScriptWithCosyVoice(
       }
     }
     
-    l.opts(`Processing ${script.length} lines with CosyVoice TTS`)
+    l('Processing lines with CosyVoice TTS', { lineCount: script.length })
     
     // Process sequentially to avoid memory issues
     for (let idx = 0; idx < script.length; idx++) {
@@ -285,7 +290,7 @@ export async function processScriptWithCosyVoice(
       const wavOut = join(outDir, `${base}.wav`)
       const pcmOut = join(outDir, `${base}.pcm`)
       
-      l.dim(`Processing segment ${idx + 1}/${script.length}: ${entrySpeaker}`)
+      l('Processing segment', { current: idx + 1, total: script.length, speaker: entrySpeaker })
       
       const speakerConfig = voiceMapping[entrySpeaker] || {}
       
@@ -311,8 +316,8 @@ export async function processScriptWithCosyVoice(
     
     await mergeAudioFiles(outDir)
     await convertPcmToWav(outDir)
-    l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')}`)
+    success('Conversation saved', { outputFile: join(outDir, 'full_conversation.wav') })
   } catch (error) {
-    err(`Error processing CosyVoice TTS script: ${error}`)
+    err('Error processing CosyVoice TTS script', { error })
   }
 }

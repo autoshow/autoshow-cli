@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { stat, readdir, join, basename, ensureDir, sleep } from '@/node-utils'
 import { extractPdf } from './extract-pdf'
 import type { BatchExtractResult, ExtractOptions } from '@/extract/extract-types'
@@ -33,7 +33,7 @@ export const batchExtractPdfs = async (
       throw new Error(`No PDF files found in directory: ${directory}`)
     }
     
-    l.opts(`${p}[${requestId}] Processing ${pdfFiles.length} PDF files with ${options.service || 'zerox'}`)
+    l(`${p}[${requestId}] Processing PDF files`, { count: pdfFiles.length, service: options.service || 'zerox' })
     
     const outputDir = options.output || directory
     await ensureDir(outputDir)
@@ -46,7 +46,7 @@ export const batchExtractPdfs = async (
       const pdfPath = join(directory, pdfFile)
       const outputPath = join(outputDir, `${basename(pdfFile, '.pdf')}_extracted.txt`)
       
-      l.opts(`${p}[${requestId}] Processing ${successCount + failedFiles.length + 1}/${pdfFiles.length}: ${pdfFile}`)
+      l(`${p}[${requestId}] Processing`, { current: successCount + failedFiles.length + 1, total: pdfFiles.length, pdfFile })
       
       const result = await extractPdf(pdfPath, {
         ...options,
@@ -60,7 +60,7 @@ export const batchExtractPdfs = async (
         }
       } else {
         failedFiles.push(pdfFile)
-        l.warn(`${p}[${requestId}] Failed: ${pdfFile} - ${result.error}`)
+        l(`${p}[${requestId}] Failed`, { pdfFile, error: result.error })
       }
       
       if (successCount + failedFiles.length < pdfFiles.length) {
@@ -68,7 +68,7 @@ export const batchExtractPdfs = async (
       }
     }
     
-    l.success(`${p}[${requestId}] Batch complete: ${successCount}/${pdfFiles.length} successful`)
+    success(`${p}[${requestId}] Batch complete`, { successCount, total: pdfFiles.length })
     
     const result: BatchExtractResult = {
       success: failedFiles.length === 0,
@@ -77,7 +77,7 @@ export const batchExtractPdfs = async (
     
     if ((options.service === 'zerox' || options.service === 'textract') && totalCost > 0) {
       result.totalCost = totalCost
-      l.opts(`${p}[${requestId}] Total cost: $${totalCost.toFixed(4)}`)
+      l(`${p}[${requestId}] Total cost`, { totalCost: totalCost.toFixed(4) })
     }
     
     if (failedFiles.length > 0) {
@@ -86,7 +86,7 @@ export const batchExtractPdfs = async (
     
     return result
   } catch (error) {
-    err(`${p}[${requestId}] Batch processing error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Batch processing error`, { error: error instanceof Error ? error.message : 'Unknown error' })
     
     return {
       success: false,

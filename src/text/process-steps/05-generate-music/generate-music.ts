@@ -7,7 +7,7 @@ import {
   normalizeSectionTagsForMinimax,
   getExtensionFromMinimaxFormat,
 } from '@/music/music-utils'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { env } from '@/node-utils'
 import type { ProcessingOptions, ElevenLabsGenre } from '@/text/text-types'
 import type { MusicOutputFormat } from '@/music/music-types'
@@ -76,7 +76,7 @@ export async function generateMusic(
   }
 
   try {
-    l.opts(`Generating ${genre} music with ${service}`)
+    l('Generating music', { genre, service })
 
     // Extract lyrics from LLM output
     const lyrics = extractLyrics(llmOutput)
@@ -87,7 +87,7 @@ export async function generateMusic(
       }
     }
 
-    l.dim(`Extracted ${lyrics.split('\n').length} lines of lyrics`)
+    l('Extracted lines of lyrics', { lineCount: lyrics.split('\n').length })
 
     if (useMinimax) {
       return await generateWithMinimax(genre, lyrics, finalPath, options)
@@ -96,7 +96,7 @@ export async function generateMusic(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    err(`Music generation failed: ${errorMessage}`)
+    err('Music generation failed', { error: errorMessage })
     return {
       success: false,
       error: `Music generation failed: ${errorMessage}`
@@ -131,7 +131,7 @@ async function generateWithMinimax(
   
   const outputPath = `${finalPath}-minimax-${genre}.${ext}`
   
-  l.dim('Generating music with MiniMax Music 2.5...')
+  l('Generating music with MiniMax Music 2.5...')
   
   const result = await generateMusicWithMinimax({
     prompt: stylePrompt,
@@ -141,7 +141,7 @@ async function generateWithMinimax(
   })
   
   if (result.success) {
-    l.success(`Music generated: ${result.path}`)
+    success('Music generated', { path: result.path })
     return { success: true, path: result.path }
   } else {
     return { success: false, error: result.error }
@@ -166,7 +166,7 @@ async function generateWithElevenlabs(
   const planPrompt = `${musicStyle}\n\nLyrics:\n${lyrics}`
 
   // Create composition plan
-  l.dim('Creating composition plan with ElevenLabs...')
+  l('Creating composition plan with ElevenLabs...')
   const planResult = await createCompositionPlan(planPrompt)
 
   if (!planResult.success || !planResult.plan) {
@@ -176,10 +176,10 @@ async function generateWithElevenlabs(
     }
   }
 
-  l.dim(`Composition plan created with ${planResult.plan.sections?.length || 0} sections`)
+  l('Composition plan created', { sectionCount: planResult.plan.sections?.length || 0 })
 
   // Generate music with the composition plan
-  l.dim('Generating music from composition plan...')
+  l('Generating music from composition plan...')
   
   // Handle format conversion
   let format = options.musicFormat || 'mp3_44100_128'
@@ -194,7 +194,7 @@ async function generateWithElevenlabs(
   })
 
   if (musicResult.success) {
-    l.success(`Music generated: ${musicResult.path}`)
+    success('Music generated', { path: musicResult.path })
     return { success: true, path: musicResult.path }
   } else {
     return { success: false, error: musicResult.error }

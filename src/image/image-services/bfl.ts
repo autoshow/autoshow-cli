@@ -1,6 +1,6 @@
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, BlackForestLabsOptions } from '../image-types'
@@ -32,7 +32,7 @@ export async function generateImageWithBlackForestLabs(
       ...options
     }
     
-    l.dim(`Submitting generation request`)
+    l('Submitting generation request')
     const submitResponse = await fetch('https://api.bfl.ml/v1/flux-pro-1.1', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Key': env['BFL_API_KEY'] },
@@ -55,7 +55,7 @@ export async function generateImageWithBlackForestLabs(
       throw new Error('Invalid response: missing task ID')
     }
     
-    l.dim(`Task ID received: ${taskId}`)
+    l('Task ID received', { taskId })
     
     let timeoutId: NodeJS.Timeout | undefined
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -72,7 +72,7 @@ export async function generateImageWithBlackForestLabs(
           
           if (!status) continue
           
-          l.dim(`Status check ${i + 1}: ${status.status}`)
+          l('Status check', { attempt: i + 1, status: status.status })
           
           if (status.status === 'Ready' && status.result?.sample) {
             if (timeoutId) clearTimeout(timeoutId)
@@ -89,7 +89,7 @@ export async function generateImageWithBlackForestLabs(
       timeoutPromise
     ])
     
-    l.dim(`Downloading image from URL`)
+    l('Downloading image from URL')
     const imageBuffer = await fetch(imageUrl).then(r => {
       if (!r.ok) throw new Error(`Download failed: ${r.status}`)
       return r.arrayBuffer()
@@ -102,12 +102,12 @@ export async function generateImageWithBlackForestLabs(
     await writeFile(uniqueOutputPath, Buffer.from(imageBuffer))
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`Generated in ${duration}s: ${uniqueOutputPath}`)
+    success('Generated', { duration: `${duration}s`, path: uniqueOutputPath })
     
     return { success: true, path: uniqueOutputPath, taskId, imageUrl, seed: config.seed }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.warn(`Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l('Failed', { duration: `${duration}s`, error: isApiError(error) ? error.message : 'Unknown' })
     return { 
       success: false, 
       error: isApiError(error) ? error.message : 'Unknown error',

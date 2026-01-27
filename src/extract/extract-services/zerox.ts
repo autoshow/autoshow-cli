@@ -82,8 +82,8 @@ export const extractWithZerox = async (
   const credentials = getCredentials(selectedModel.provider)
   
   if (pageNumber === 1 || !pageNumber) {
-    l.opts(`${p}[${requestId}] Using ${selectedModel.name} (${selectedModel.provider})`)
-    l.opts(`${p}[${requestId}] Pricing: Input $${selectedModel.pricing.input}/1M tokens, Output $${selectedModel.pricing.output}/1M tokens`)
+    l(`${p}[${requestId}] Using model`, { modelName: selectedModel.name, provider: selectedModel.provider })
+    l(`${p}[${requestId}] Pricing`, { inputPrice: selectedModel.pricing.input, outputPrice: selectedModel.pricing.output, unit: '1M tokens' })
   }
   
   try {
@@ -105,19 +105,19 @@ export const extractWithZerox = async (
     })
     
     if (result.summary?.ocr) {
-      l.opts(`${p}[${requestId}] OCR${pageInfo}: ${result.summary.ocr.successful} successful, ${result.summary.ocr.failed} failed`)
+      l(`${p}[${requestId}] OCR${pageInfo}`, { successful: result.summary.ocr.successful, failed: result.summary.ocr.failed })
     }
     
     const totalCost = calculateCost(result.inputTokens, result.outputTokens, selectedModel.pricing)
-    l.opts(`${p}[${requestId}] Tokens${pageInfo}: ${result.inputTokens} input, ${result.outputTokens} output`)
-    l.opts(`${p}[${requestId}] Cost${pageInfo}: $${totalCost.toFixed(4)}`)
+    l(`${p}[${requestId}] Tokens${pageInfo}`, { inputTokens: result.inputTokens, outputTokens: result.outputTokens })
+    l(`${p}[${requestId}] Cost${pageInfo}`, { totalCost: totalCost.toFixed(4) })
     
     const pageContents = result.pages.map((page: any) => page.content)
     const text = pageContents.join('\n\n')
     
     return { text, totalCost }
   } catch (error) {
-    err(`${p}[${requestId}] Zerox error${pageInfo}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Zerox error${pageInfo}`, { error: error instanceof Error ? error.message : 'Unknown error' })
     throw error
   }
 }

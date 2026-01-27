@@ -1,4 +1,4 @@
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { isApiError } from './image-utils'
 import { env } from '@/node-utils'
 import { generateImageWithDallE } from './image-services/dalle'
@@ -30,7 +30,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       throw new Error('No API keys configured for comparison')
     }
     
-    l.opts(`Running ${promises.length} parallel generations`)
+    l('Running parallel generations', { count: promises.length })
     const results = await Promise.allSettled(promises)
     
     const comparison: any = { prompt }
@@ -40,7 +40,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.dalle = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.dalle) {
-        l.warn(`DALL-E failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l('DALL-E failed', { reason: result && result.status === 'rejected' ? result.reason : 'Unknown' })
       }
       resultIndex++
     }
@@ -49,7 +49,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.blackForest = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.blackForest) {
-        l.warn(`Black Forest Labs failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l('Black Forest Labs failed', { reason: result && result.status === 'rejected' ? result.reason : 'Unknown' })
       }
       resultIndex++
     }
@@ -58,7 +58,7 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.nova = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.nova) {
-        l.warn(`Nova Canvas failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l('Nova Canvas failed', { reason: result && result.status === 'rejected' ? result.reason : 'Unknown' })
       }
       resultIndex++
     }
@@ -67,14 +67,14 @@ export async function generateComparisonImages(prompt: string): Promise<any> {
       const result = results[resultIndex]
       comparison.runway = result && result.status === 'fulfilled' ? result.value : null
       if (!comparison.runway) {
-        l.warn(`Runway failed: ${result && result.status === 'rejected' ? result.reason : 'Unknown'}`)
+        l('Runway failed', { reason: result && result.status === 'rejected' ? result.reason : 'Unknown' })
       }
     }
     
-    l.success(`Comparison complete`)
+    success('Comparison complete')
     return comparison
   } catch (error) {
-    l.warn(`Comparison error: ${isApiError(error) ? error.message : 'Unknown error'}`)
+    l('Comparison error', { error: isApiError(error) ? error.message : 'Unknown error' })
     
     return { 
       success: false, 

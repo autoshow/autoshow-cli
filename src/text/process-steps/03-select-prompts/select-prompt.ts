@@ -21,11 +21,11 @@ const GENRE_PROMPT_MAP: Record<ElevenLabsGenre, string> = {
 export async function selectPrompts(options: ProcessingOptions) {
   let customPrompt = ''
   if (options.customPrompt) {
-    l.dim(`Loading custom prompt from: ${options.customPrompt}`)
+    l('Loading custom prompt from file', { filePath: options.customPrompt })
     try {
       customPrompt = (await readFile(options.customPrompt, 'utf8')).trim()
     } catch (error) {
-      err(`Error reading custom prompt file: ${(error as Error).message}`)
+      err('Error reading custom prompt file', { error: (error as Error).message })
     }
   }
 
@@ -44,11 +44,11 @@ export async function selectPrompts(options: ProcessingOptions) {
     const musicService = options.elevenlabs ? 'ElevenLabs' : 'MiniMax'
     if (genrePromptKey && !prompt.includes(genrePromptKey)) {
       prompt.push(genrePromptKey)
-      l.dim(`Added ${genrePromptKey} prompt for ${musicService} ${musicGenre} music generation`)
+      l('Added prompt for music generation', { promptKey: genrePromptKey, service: musicService, genre: musicGenre })
     }
   }
   
-  l.dim(`Selected prompts: ${prompt.join(', ')}`)
+  l('Selected prompts', { prompts: prompt })
 
   const validSections = prompt.filter(
     (section): section is keyof typeof sections =>
@@ -61,7 +61,7 @@ export async function selectPrompts(options: ProcessingOptions) {
     if (section === 'keyMoments') {
       const count = options.keyMomentsCount || DEFAULT_KEY_MOMENTS_COUNT
       const duration = options.keyMomentDuration || DEFAULT_KEY_MOMENTS_DURATION
-      l.dim(`Configuring keyMoments with count: ${count}, duration: ${duration}s`)
+      l('Configuring keyMoments', { count, durationSeconds: duration })
       instruction = instruction
         .replace('{COUNT}', count.toString())
         .replace('{DURATION}', duration.toString())

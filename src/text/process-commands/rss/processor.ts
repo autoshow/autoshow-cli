@@ -21,12 +21,11 @@ export async function processRSSFeeds(
   
   for (const rssUrl of expandedRssUrls) {
     if (options.item && options.item.length > 0) {
-      l.dim('Processing specific items:')
-      options.item.forEach((url) => l.dim(`${url}`))
+      l('Processing specific items', { urls: options.item })
     } else if (options.last) {
-      l.dim(`Processing the last ${options.last} items`)
+      l('Processing the last items', { count: options.last })
     } else if (options.days) {
-      l.dim(`Processing items from the last ${options.days} days`)
+      l('Processing items from the last days', { days: options.days })
     }
     
     try {
@@ -54,7 +53,7 @@ export async function processRSSFeeds(
       
       const results = []
       for (const [index, item] of items.entries()) {
-        l.final(`Item ${index + 1}/${items.length} processing: ${item.title}`)
+        l('Item processing', { current: index + 1, total: items.length, title: item.title })
         
         try {
           const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, item)
@@ -79,7 +78,7 @@ export async function processRSSFeeds(
           if ((options.elevenlabs || options.minimax) && llmOutput) {
             const musicResult = await generateMusic(options, llmOutput, finalPath)
             if (!musicResult.success) {
-              l.warn(`Music generation failed: ${musicResult.error}`)
+              l('Music generation failed', { error: musicResult.error })
             }
           }
           
@@ -93,7 +92,7 @@ export async function processRSSFeeds(
             transcript,
           })
         } catch (error) {
-          err(`Error processing item ${item.title}: ${(error as Error).message}`)
+          err('Error processing item', { title: item.title, error: (error as Error).message })
           results.push({
             frontMatter: '',
             prompt: '',
@@ -103,13 +102,13 @@ export async function processRSSFeeds(
         }
       }
     } catch (error) {
-      err(`Error processing RSS feed ${rssUrl}: ${(error as Error).message}`)
+      err('Error processing RSS feed', { rssUrl, error: (error as Error).message })
       throw error
     }
   }
   
   if (skippedFeeds.length > 0) {
-    l.warn(`No items found for: ${skippedFeeds.join(', ')}`)
+    l('No items found for feeds', { feeds: skippedFeeds.join(', ') })
   }
   
   if (options.info === 'combined' && allItemsForCombined.length > 0) {

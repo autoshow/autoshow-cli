@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { writeFile, execFilePromise, ensureDir, join } from '@/node-utils'
 import type { ShowNoteMetadata, VideoInfo, ProcessingOptions } from '@/text/text-types'
 
@@ -33,7 +33,7 @@ export async function saveInfo(
     const jsonContent = JSON.stringify(items, null, 2)
     const jsonFilePath = constructOutputPath('combined-feeds-info.json')
     await writeFile(jsonFilePath, jsonContent)
-    l.success(`Combined RSS feeds information (${items.length} items) saved to: ${jsonFilePath}`)
+    success(`Combined RSS feeds information (${items.length} items) saved to: ${jsonFilePath}`)
     return
   }
   
@@ -43,13 +43,13 @@ export async function saveInfo(
     const sanitizedTitle = sanitizeTitle(title || '')
     const jsonFilePath = constructOutputPath(`${sanitizedTitle}_info.json`)
     await writeFile(jsonFilePath, jsonContent)
-    l.success(`RSS feed information saved to: ${jsonFilePath}`)
+    success(`RSS feed information saved to: ${jsonFilePath}`)
     return
   }
   
   let urls: string[] = []
   let outputFilePath = ''
-  let successLogFunction = l.success
+  let useWait = false
   
   if (type === 'channel') {
     const videosToProcess = data as VideoInfo[]
@@ -62,7 +62,7 @@ export async function saveInfo(
   } else if (type === 'urls') {
     urls = data as string[]
     outputFilePath = constructOutputPath('urls_info.json')
-    successLogFunction = l.wait
+    useWait = true
   }
   
   const metadataList = await Promise.all(
@@ -110,5 +110,11 @@ export async function saveInfo(
   
   const jsonContent = JSON.stringify(validMetadata, null, 2)
   await writeFile(outputFilePath, jsonContent)
-  successLogFunction(`${type === 'urls' ? 'Video' : type.charAt(0).toUpperCase() + type.slice(1)} information saved to: ${outputFilePath}`)
+  
+  const message = `${type === 'urls' ? 'Video' : type.charAt(0).toUpperCase() + type.slice(1)} information saved to: ${outputFilePath}`
+  if (useWait) {
+    l(message)
+  } else {
+    success(message)
+  }
 }

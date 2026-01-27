@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { stat, writeFile, readdir, join, basename, extname, ensureDir } from '@/node-utils'
 import type { EpubExtractOptions, EpubExtractResult, EpubBatchResult } from '@/extract/extract-types'
 
@@ -335,7 +335,7 @@ async function processEpubForTTS(
   const startTime = Date.now()
   
   try {
-    l.opts(`${p}[${requestId}] Processing ${epubPath}...`)
+    l(`${p}[${requestId}] Processing`, { epubPath })
 
     // Dynamic imports for epub and htmlparser2
     const EPub = (await import('epub')).default
@@ -387,7 +387,7 @@ async function processEpubForTTS(
               fullText += cleanText + '\n\n'
             }
           } catch (error) {
-            l.warn(`${p}[${requestId}] Could not process file ${filename}`)
+            l(`${p}[${requestId}] Could not process file`, { filename })
           }
         }
       }
@@ -411,7 +411,7 @@ async function processEpubForTTS(
             }
           }
         } catch (error) {
-          l.warn(`${p}[${requestId}] Could not process chapter ${chapter.id}`)
+          l(`${p}[${requestId}] Could not process chapter`, { chapterId: chapter.id })
         }
       }
     }
@@ -441,10 +441,10 @@ async function processEpubForTTS(
     const totalWords = fullText.split(/\s+/).length
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
-    l.success(`${p}[${requestId}] Output written to ${outputDir}/`)
-    l.opts(`${p}[${requestId}]   ${finalChunks.length} files created`)
-    l.opts(`${p}[${requestId}]   ${fullText.length.toLocaleString()} characters, ${totalWords.toLocaleString()} words total`)
-    l.opts(`${p}[${requestId}]   Completed in ${duration}s`)
+    success(`${p}[${requestId}] Output written to`, { outputDir })
+    l(`${p}[${requestId}] Files created`, { filesCreated: finalChunks.length })
+    l(`${p}[${requestId}] Content stats`, { characters: fullText.length.toLocaleString(), words: totalWords.toLocaleString() })
+    l(`${p}[${requestId}] Completed`, { duration })
 
     return {
       success: true,
@@ -456,7 +456,7 @@ async function processEpubForTTS(
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    err(`${p}[${requestId}] Failed in ${duration}s: ${errorMessage}`)
+    err(`${p}[${requestId}] Failed`, { duration, error: errorMessage })
     
     return {
       success: false,
@@ -522,7 +522,7 @@ export async function extractEpub(
   }
   
   // Directory (batch) processing
-  l.opts(`${p}[${requestId}] Scanning directory: ${inputPath}`)
+  l(`${p}[${requestId}] Scanning directory`, { inputPath })
   
   try {
     const files = await readdir(inputPath)
@@ -535,7 +535,7 @@ export async function extractEpub(
       }
     }
     
-    l.opts(`${p}[${requestId}] Found ${epubFiles.length} EPUB file(s) to process`)
+    l(`${p}[${requestId}] Found EPUB files to process`, { count: epubFiles.length })
     
     const failedFiles: string[] = []
     let processedCount = 0
@@ -552,12 +552,12 @@ export async function extractEpub(
           failedFiles.push(file)
         }
       } catch (error) {
-        l.warn(`${p}[${requestId}] Error processing ${file}`)
+        l(`${p}[${requestId}] Error processing`, { file })
         failedFiles.push(file)
       }
     }
     
-    l.success(`${p}[${requestId}] Batch processing complete: ${processedCount}/${epubFiles.length} files processed`)
+    success(`${p}[${requestId}] Batch processing complete`, { processedCount, total: epubFiles.length })
     
     return {
       success: failedFiles.length === 0,

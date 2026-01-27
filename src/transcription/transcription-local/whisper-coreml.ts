@@ -28,12 +28,12 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
       if (code === 0) {
         resolve()
       } else {
-        err(`CoreML whisper process exited with code ${code}`)
+        err('CoreML whisper process exited with code', { code })
         reject(new Error(`whisper-cli-coreml exited with code ${code}`))
       }
     })
     proc.on('error', e => {
-      err(`CoreML whisper process error: ${e.message}`)
+      err('CoreML whisper process error', { error: e.message })
       reject(e)
     })
   })

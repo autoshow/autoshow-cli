@@ -20,11 +20,11 @@ export const extractWithUnpdf = async (
     const extractedData = await extractText(pdf, { mergePages: false })
     const text = extractedData.text.join('\n\n')
     
-    l.opts(`${p}[${requestId}] Extracted${pageInfo}: ${text.length} characters from ${extractedData.totalPages} pages`)
+    l(`${p}[${requestId}] Extracted${pageInfo}`, { characters: text.length, totalPages: extractedData.totalPages })
     
     return { text }
   } catch (error) {
-    err(`${p}[${requestId}] Unpdf error${pageInfo}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Unpdf error${pageInfo}`, { error: error instanceof Error ? error.message : 'Unknown error' })
     throw error
   }
 }

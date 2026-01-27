@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { stat, writeFile, rm, join, basename, ensureDir, sleep, execSync } from '@/node-utils'
 import type { ExtractResult, ExtractOptions, ExtractService, SinglePageExtractResult } from '@/extract/extract-types'
 import { extractWithZerox } from './extract-services/zerox'
@@ -25,7 +25,7 @@ const splitPdfIntoPages = async (pdfPath: string, requestId: string): Promise<st
       return [pdfPath]
     }
     
-    l.opts(`${p}[${requestId}] Splitting ${pageCount} pages`)
+    l(`${p}[${requestId}] Splitting pages`, { pageCount })
     
     const pagePaths: string[] = []
     
@@ -39,7 +39,7 @@ const splitPdfIntoPages = async (pdfPath: string, requestId: string): Promise<st
     return pagePaths
     
   } catch (error) {
-    l.warn(`${p}[${requestId}] Error splitting PDF, processing as single file`)
+    l(`${p}[${requestId}] Error splitting PDF, processing as single file`)
     return [pdfPath]
   }
 }
@@ -69,7 +69,7 @@ const extractSinglePage = async (
     
     return result
   } catch (error) {
-    err(`${p}[${requestId}] Error extracting page ${pageNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Error extracting page`, { pageNumber, error: error instanceof Error ? error.message : 'Unknown error' })
     throw error
   }
 }
@@ -79,7 +79,7 @@ const cleanupTempFiles = async (requestId: string): Promise<void> => {
   try {
     await rm(tempDir, { recursive: true, force: true })
   } catch (error) {
-    l.warn(`${p}[${requestId}] Failed to cleanup temp files`)
+    l(`${p}[${requestId}] Failed to cleanup temp files`)
   }
 }
 
@@ -107,7 +107,7 @@ export const extractPdf = async (
     }
     
     const service = (options.service || 'zerox') as ExtractService
-    l.opts(`${p}[${requestId}] Extracting with ${service}`)
+    l(`${p}[${requestId}] Extracting with`, { service })
     
     let finalText = ''
     let totalCost = 0
@@ -126,7 +126,7 @@ export const extractPdf = async (
         const pageNumber = i + 1
         
         if (pagePaths.length > 1) {
-          l.opts(`${p}[${requestId}] Processing page ${pageNumber}/${pagePaths.length}`)
+          l(`${p}[${requestId}] Processing page`, { pageNumber, totalPages: pagePaths.length })
         }
         
         const result = await extractSinglePage(
@@ -167,7 +167,7 @@ export const extractPdf = async (
     await cleanupTempFiles(requestId)
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`${p}[${requestId}] Extracted ${finalText.length} characters in ${duration}s`)
+    success(`${p}[${requestId}] Extracted`, { characters: finalText.length, duration })
     
     const result: ExtractResult = {
       success: true,
@@ -183,7 +183,7 @@ export const extractPdf = async (
     await cleanupTempFiles(requestId)
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    err(`${p}[${requestId}] Failed in ${duration}s: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Failed`, { duration, error: error instanceof Error ? error.message : 'Unknown error' })
     
     return {
       success: false,

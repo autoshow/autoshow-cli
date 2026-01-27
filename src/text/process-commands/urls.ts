@@ -22,7 +22,7 @@ export async function processURLs(
       process.exit(1)
     }
 
-    l.opts(`Found ${urls.length} URLs in the file...`)
+    l('Found URLs in the file', { count: urls.length })
 
     if (options.info) {
       await saveInfo('urls', urls, '')
@@ -30,15 +30,15 @@ export async function processURLs(
     }
 
     for (const [index, url] of urls.entries()) {
-      l.final(`Processing URL ${index + 1}/${urls.length}: ${url}`)
+      l('Processing URL', { current: index + 1, total: urls.length, url })
       try {
         await processVideo(options, url, llmServices, transcriptServices)
       } catch (error) {
-        err(`Error processing URL ${url}: ${(error as Error).message}`)
+        err('Error processing URL', { url, error: (error as Error).message })
       }
     }
   } catch (error) {
-    err(`Error reading or processing file ${filePath}: ${(error as Error).message}`)
+    err('Error reading or processing file', { filePath, error: (error as Error).message })
     process.exit(1)
   }
 }

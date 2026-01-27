@@ -32,7 +32,7 @@ export async function processVideo(
     if ((options.elevenlabs || options.minimax) && llmOutput) {
       const musicResult = await generateMusic(options, llmOutput, finalPath)
       if (!musicResult.success) {
-        l.warn(`Music generation failed: ${musicResult.error}`)
+        l('Music generation failed', { error: musicResult.error })
       }
     }
     

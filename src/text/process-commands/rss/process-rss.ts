@@ -48,7 +48,7 @@ export async function processRSS(
           .map(line => line.trim())
           .filter(line => line && !line.startsWith('#'))
         if (lines.length === 0) {
-          err(`Error: No RSS URLs found in the .md file: ${rssUrl}`)
+          err('Error: No RSS URLs found in the .md file', { file: rssUrl })
           process.exit(1)
         }
         expandedRssUrls.push(...lines)
