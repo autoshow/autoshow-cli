@@ -1,6 +1,6 @@
 # Chatterbox TTS
 
-Chatterbox is a family of three state-of-the-art, open-source text-to-speech models by Resemble AI. It supports zero-shot voice cloning, paralinguistic tags, and 23+ languages.
+Chatterbox is a family of open-source text-to-speech models by Resemble AI. It supports zero-shot voice cloning and paralinguistic tags for natural-sounding English speech.
 
 ## Requirements
 
@@ -17,9 +17,6 @@ bun as -- tts file input/sample.md --chatterbox
 # Use the standard model with creative controls
 bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard
 
-# Multilingual synthesis (French)
-bun as -- tts file input/sample.md --chatterbox --chatterbox-model multilingual --chatterbox-language fr
-
 # Voice cloning with a reference audio
 bun as -- tts file input/sample.md --chatterbox --ref-audio path/to/voice-sample.wav
 
@@ -32,8 +29,7 @@ bun as -- tts script input/script.json --chatterbox
 | Option | Description |
 |--------|-------------|
 | `--chatterbox` | Use Chatterbox TTS engine |
-| `--chatterbox-model <model>` | Model variant: turbo, standard, multilingual (default: turbo) |
-| `--chatterbox-language <lang>` | Language code for multilingual model |
+| `--chatterbox-model <model>` | Model variant: turbo, standard (default: turbo) |
 | `--chatterbox-device <device>` | Device override: cpu, mps, cuda |
 | `--chatterbox-dtype <dtype>` | Dtype override: float32, float16, bfloat16 |
 | `--chatterbox-exaggeration <n>` | Exaggeration level 0.0-1.0 (standard model only) |
@@ -47,11 +43,8 @@ bun as -- tts script input/script.json --chatterbox
 |-------|------|-----------|--------------|----------|
 | **Turbo** (default) | 350M | English | Paralinguistic tags, lowest latency | Voice agents, production |
 | Standard | 500M | English | CFG & exaggeration tuning | Creative controls |
-| Multilingual | 500M | 23+ | Zero-shot cloning, multiple languages | Global applications |
 
-## Supported Languages (Multilingual Model)
-
-Arabic (ar), Danish (da), German (de), Greek (el), English (en), Spanish (es), Finnish (fi), French (fr), Hebrew (he), Hindi (hi), Italian (it), Japanese (ja), Korean (ko), Malay (ms), Dutch (nl), Norwegian (no), Polish (pl), Portuguese (pt), Russian (ru), Swedish (sv), Swahili (sw), Turkish (tr), Chinese (zh)
+**Note**: The multilingual model has been removed due to compatibility issues with non-CUDA devices. For multilingual TTS, use Qwen3 TTS (`--qwen3`) which supports 10+ languages including French, Spanish, German, Japanese, Korean, and more.
 
 ## Voice Cloning
 
@@ -60,9 +53,6 @@ All Chatterbox models support zero-shot voice cloning from a reference audio sam
 ```bash
 # Clone a voice (10-second reference clip recommended)
 bun as -- tts file input/sample.md --chatterbox --ref-audio path/to/sample.wav
-
-# Multilingual cloning
-bun as -- tts file input/sample.md --chatterbox --chatterbox-model multilingual --chatterbox-language ja --ref-audio path/to/sample.wav
 ```
 
 **Tips for best cloning results:**
@@ -157,9 +147,6 @@ All Chatterbox-generated audio includes Resemble AI's Perth watermark for respon
 # English with Turbo (fastest)
 bun as -- tts file input/sample.md --chatterbox
 
-# Japanese with multilingual model
-bun as -- tts file input/japanese.md --chatterbox --chatterbox-model multilingual --chatterbox-language ja
-
 # Expressive narration
 bun as -- tts file input/story.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.8 --chatterbox-cfg 0.3
 
@@ -168,4 +155,7 @@ bun as -- tts file input/script.md --chatterbox --ref-audio voices/host.wav
 
 # Multi-speaker conversation
 bun as -- tts script input/conversation.json --chatterbox
+
+# For multilingual TTS, use Qwen3 instead:
+bun as -- tts file input/japanese.md --qwen3 --qwen3-language Japanese --qwen3-speaker Ono_Anna
 ```

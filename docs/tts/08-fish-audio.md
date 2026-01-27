@@ -16,13 +16,13 @@ The FishAudio model requires HuggingFace authentication (gated model).
 
 ```bash
 # 1. Login to HuggingFace (one-time setup)
-huggingface-cli login
+hf auth login
 
 # 2. Accept the model license at https://huggingface.co/fishaudio/openaudio-s1-mini
 
 # 3. Download weights (~2GB)
 mkdir -p checkpoints
-huggingface-cli download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
+hf download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
 ```
 
 **Step 2: Start the FishAudio API server**
@@ -77,12 +77,12 @@ FishAudio requires the Fish Speech API server to be running.
 
 ```bash
 # 1. Login to HuggingFace and accept model license
-huggingface-cli login
+hf auth login
 # Then visit https://huggingface.co/fishaudio/openaudio-s1-mini and accept the license
 
 # 2. Download weights (~2GB)
 mkdir -p checkpoints
-huggingface-cli download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
+hf download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
 
 # 3. Start server - GPU (fastest)
 docker run -d --gpus all -p 8080:8080 \
@@ -107,7 +107,7 @@ cd fish-speech
 pip install -e .[cu129]  # or .[cpu] for CPU-only
 
 # Download weights
-huggingface-cli download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
+hf download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
 
 # Start server
 python -m tools.api_server \
@@ -227,7 +227,7 @@ Add to `build/config/.tts-config.json`:
 ## Troubleshooting
 
 - **Connection refused**: API server not running. Start it with Docker (see Server Setup)
-- **401 Unauthorized / Gated repo**: Login to HuggingFace (`huggingface-cli login`) and accept the model license at https://huggingface.co/fishaudio/openaudio-s1-mini
+- **401 Unauthorized / Gated repo**: Login to HuggingFace (`hf auth login`) and accept the model license at https://huggingface.co/fishaudio/openaudio-s1-mini
 - **Checkpoint not found**: Download weights after logging in to HuggingFace
 - **CUDA out of memory**: Use `--fish-device cpu` or reduce text length
 - **ModuleNotFoundError**: Run `bun setup:tts`

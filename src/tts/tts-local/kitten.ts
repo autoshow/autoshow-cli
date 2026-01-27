@@ -85,20 +85,84 @@ export async function synthesizeWithKitten(
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : 'Python error',
-      { errorCode: errorWithCode.code, message: result.error.message })
-  }
-  if (result.status !== 0) {
-    const stderr = result.stderr || ''
-    if (stderr.includes('ModuleNotFoundError')) {
-      err('Kitten TTS not installed. Run: bun setup')
-    } else if (stderr.includes('invalid expand shape')) {
-      err('Text too long for Kitten TTS. Try a shorter text or use a different engine.')
+    if (errorWithCode.code === 'ENOENT') {
+      err(`Python not found at: ${config.python}
+
+SOLUTION: Run setup to install Python environment:
+  bun setup:tts`)
     } else {
-      err('Kitten TTS failed', { stderr })
+      l('Python execution error', { error: result.error, pythonPath: config.python })
+      err('Python execution error', { errorCode: errorWithCode.code, message: result.error.message })
     }
   }
-  if (!existsSync(outputPath)) err(`Output file missing after synthesis`)
+  
+  const stdout = result.stdout || ''
+  const lines = stdout.trim().split('\n')
+  const lastLine = lines[lines.length - 1] || ''
+  
+  // Try to parse JSON response first
+  try {
+    if (lastLine && lastLine.startsWith('{')) {
+      const jsonResult = JSON.parse(lastLine)
+      if (!jsonResult.ok) {
+        l('Kitten TTS error from Python', { error: jsonResult.error })
+        err('Kitten TTS failed', { error: jsonResult.error })
+      }
+    }
+  } catch (parseError) {
+    // If JSON parsing fails, fall through to stderr checking
+    l('Could not parse JSON response', { lastLine, parseError })
+  }
+  
+  if (result.status !== 0) {
+    const stderr = result.stderr || ''
+    l('Kitten TTS failed', { status: result.status, stderr, stdout: lines.slice(0, -1).join('\n') })
+    
+    if (stderr.includes('ModuleNotFoundError') || stderr.includes('No module named')) {
+      const missingModule = stderr.match(/No module named ['"]([^'"]+)['"]/)?.[1]
+      err(`Kitten TTS dependency missing${missingModule ? `: ${missingModule}` : ''}.
+
+SOLUTION: Run setup to install all dependencies:
+  bun setup:tts`)
+    } else if (stderr.includes('invalid expand shape') || stderr.includes('shape') || stderr.includes('dimension')) {
+      err(`Text too long or incompatible with Kitten TTS.
+
+Kitten TTS is a lightweight model with limitations on input length and complexity.
+
+SOLUTION:
+  1. Try shorter text (max ~200 characters recommended)
+  2. Or use a more capable engine: --qwen3 or --coqui`)
+    } else if (stderr.includes('torch') || stderr.includes('CUDA')) {
+      err(`PyTorch error detected.
+
+SOLUTION:
+  1. Ensure PyTorch is installed: bun setup:tts
+  2. Kitten TTS works on CPU, GPU not required
+  3. Check Python environment: ${config.python} -c "import torch; print(torch.__version__)"`)
+    } else if (stderr.includes('model') || stderr.includes('checkpoint') || stderr.includes('load')) {
+      err(`Kitten TTS model loading error.
+
+The model may not be properly downloaded or initialized.
+
+SOLUTION:
+  1. Reinstall: bun setup:tts
+  2. Check model directory exists: ls -la build/pyenv/tts/lib/python*/site-packages/kittentts/`)
+    } else {
+      err('Kitten TTS failed', { 
+        stderr: stderr || '(no stderr)',
+        hint: 'Check the error output above. Kitten TTS is lightweight but has limitations.'
+      })
+    }
+  }
+  
+  if (!existsSync(outputPath)) {
+    err(`Output file missing after synthesis.
+
+The synthesis may have completed but failed to save the audio file.
+
+Check: ${outputPath}`)
+  }
+  
   return outputPath
 }
 

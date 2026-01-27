@@ -29,12 +29,12 @@ if tts_can_import "requests" && tts_can_import "torch"; then
       log "FishAudio weights downloaded successfully"
     elif echo "$DOWNLOAD_OUTPUT" | grep -q "GatedRepoError\|401\|Unauthorized"; then
       log "WARNING: FishAudio model requires HuggingFace authentication"
-      log "  1. Run: huggingface-cli login"
+      log "  1. Run: hf auth login"
       log "  2. Accept license at: https://huggingface.co/fishaudio/openaudio-s1-mini"
-      log "  3. Then run: huggingface-cli download fishaudio/openaudio-s1-mini --local-dir $CHECKPOINT_DIR"
+      log "  3. Then run: hf download fishaudio/openaudio-s1-mini --local-dir $CHECKPOINT_DIR"
     else
       log "WARNING: Failed to download weights. You can download manually:"
-      log "  huggingface-cli download fishaudio/openaudio-s1-mini --local-dir $CHECKPOINT_DIR"
+      log "  hf download fishaudio/openaudio-s1-mini --local-dir $CHECKPOINT_DIR"
     fi
   else
     log "FishAudio weights already present at $CHECKPOINT_DIR"

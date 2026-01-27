@@ -41,7 +41,7 @@
     "c3": "bun as -- text --whisper-coreml large-v3-turbo --channel",
     "tts": "bun as -- tts",
     "image": "bun as -- image",
-    "test:base": "bun test --env-file=.env --reporter=junit --reporter-outfile=spec.xml --timeout 360000",
+    "test:base": "mkdir -p output && bun test --env-file=.env --reporter=junit --reporter-outfile=spec.xml --timeout 360000",
     "test:local": "bun test:base test/text/text-local.test.ts test/tts/tts-local.test.ts test/extract/extract-local.test.ts",
     "test:services": "bun test:base test/tts/tts-services.test.ts test/text/text-services.test.ts test/image/image-services.test.ts test/video/video-services.test.ts",
     "test:text": "bun test:base test/text/*.test.ts",

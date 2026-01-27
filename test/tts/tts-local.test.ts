@@ -16,7 +16,6 @@ const cliCommands = [
   // Chatterbox TTS test cases
   { 'chatterbox-turbo': 'bun as -- tts file input/sample.md --chatterbox' },
   { 'chatterbox-standard': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard' },
-  { 'chatterbox-multilingual-fr': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model multilingual --chatterbox-language fr' },
   { 'chatterbox-exaggeration': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7' },
   // CosyVoice TTS test cases
   { 'cosyvoice-default': 'bun as -- tts file input/sample.md --cosyvoice' },
