@@ -1,36 +1,43 @@
 # Music Generation Options
 
-Generate music with ElevenLabs based on AI-generated lyrics from your audio/video content.
+Generate music with ElevenLabs or MiniMax based on AI-generated lyrics from your audio/video content.
 
 ## Outline
 
 - [Overview](#overview)
 - [Environment Variables](#environment-variables)
 - [Basic Usage](#basic-usage)
+- [Service Comparison](#service-comparison)
 - [Genre Options](#genre-options)
 - [Output Format](#output-format)
+- [Custom Style Hints](#custom-style-hints)
 - [Combining with Other Options](#combining-with-other-options)
 - [Output Files](#output-files)
 - [How It Works](#how-it-works)
 
 ## Overview
 
-The `--elevenlabs` option integrates music generation into the text processing pipeline. It:
+The `--elevenlabs` and `--minimax` options integrate music generation into the text processing pipeline. They:
 
-1. Transcribes your audio/video content
-2. Uses an LLM to generate lyrics in a specific genre style based on the transcript
-3. Creates a composition plan with ElevenLabs
-4. Generates music using the composition plan
+1. Transcribe your audio/video content
+2. Use an LLM to generate lyrics in a specific genre style based on the transcript
+3. Generate music using the selected service
+
+**Important:** You can only use one music service at a time. Specifying both `--elevenlabs` and `--minimax` will result in an error.
 
 ## Environment Variables
 
-Set the following environment variable in your `.env` file:
+Set the API key for your chosen music service in your `.env` file:
 
 ```bash
+# For ElevenLabs
 ELEVENLABS_API_KEY=your_api_key_here
+
+# For MiniMax
+MINIMAX_API_KEY=your_api_key_here
 ```
 
-You also need an API key for at least one LLM provider since `--elevenlabs` requires an LLM to generate lyrics:
+You also need an API key for at least one LLM provider since music generation requires an LLM to generate lyrics:
 
 - `OPENAI_API_KEY`
 - `ANTHROPIC_API_KEY`
@@ -38,7 +45,9 @@ You also need an API key for at least one LLM provider since `--elevenlabs` requ
 
 ## Basic Usage
 
-The `--elevenlabs` option requires both a genre and an LLM provider:
+Both options require a genre and an LLM provider:
+
+### ElevenLabs
 
 ```bash
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs rap
@@ -47,69 +56,114 @@ bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs rap
 This will:
 1. Transcribe the audio file
 2. Generate rap lyrics based on the transcript using ChatGPT
-3. Create and generate music with ElevenLabs
+3. Create a composition plan and generate music with ElevenLabs
+
+### MiniMax
+
+```bash
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax rap
+```
+
+This will:
+1. Transcribe the audio file
+2. Generate rap lyrics based on the transcript using ChatGPT
+3. Generate music directly with MiniMax Music 2.5
+
+## Service Comparison
+
+| Feature | ElevenLabs (`--elevenlabs`) | MiniMax (`--minimax`) |
+|---------|----------------------------|----------------------|
+| API Key | `ELEVENLABS_API_KEY` | `MINIMAX_API_KEY` |
+| Generation method | Composition plan | Direct lyrics + prompt |
+| Default format | `mp3_44100_128` | `mp3_44100_256000` |
+| Vocal quality | Good | Excellent (humanized) |
+| Instrumental support | Yes | No |
+| Best for | Versatile generation | High-quality vocals |
+
+### When to Use Each Service
+
+**Use ElevenLabs when:**
+- You want composition plan control
+- You need instrumental music options
+- You want detailed section timing control
+
+**Use MiniMax when:**
+- You want highest quality vocal synthesis
+- You want genre-specific production characteristics
+- You prefer simpler prompt-based workflow
 
 ## Genre Options
 
-Six genres are supported, each with its own lyric-writing style:
+Six genres are supported, each with its own lyric-writing style and optimized music prompts:
 
 ### Rap
 
-Hip-hop style with complex, multi-syllabic rhyming inspired by Eminem:
+Hip-hop style with complex, multi-syllabic rhyming:
 
 ```bash
+# ElevenLabs
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs rap
+
+# MiniMax
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax rap
 ```
 
 ### Rock
 
-High-energy, anthemic rock with powerful imagery and themes of rebellion or freedom:
+High-energy, anthemic rock with powerful imagery:
 
 ```bash
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs rock
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax rock
 ```
 
 ### Folk
 
-Authentic storytelling with simple, direct language and social commentary:
+Authentic storytelling with simple, direct language:
 
 ```bash
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs folk
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax folk
 ```
 
 ### Jazz
 
-Sophisticated lyrics with complex emotions, poetic imagery, and syncopated rhythms:
+Sophisticated lyrics with complex emotions and poetic imagery:
 
 ```bash
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs jazz
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax jazz
 ```
 
 ### Pop
 
-Catchy, radio-friendly songs with memorable hooks and relatable themes:
+Catchy, radio-friendly songs with memorable hooks:
 
 ```bash
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs pop
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax pop
 ```
 
 ### Country
 
-Heartfelt storytelling with simple, emotionally charged lyrics about life and love:
+Heartfelt storytelling with emotionally charged lyrics:
 
 ```bash
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs country
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax country
 ```
 
 ## Output Format
 
-By default, music is generated in `mp3_44100_128` format. Use `--music-format` to specify a different format:
+Use `--music-format` to specify a different output format. The format is service-specific.
+
+### ElevenLabs Formats
+
+Default: `mp3_44100_128`
 
 ```bash
 bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs rock --music-format mp3_44100_192
 ```
-
-### Available Formats
 
 **MP3 formats:**
 - `mp3_22050_32` - 22.05kHz, 32kbps
@@ -130,6 +184,46 @@ bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs rock --music-form
 - `ulaw_8000` - u-law (Twilio)
 - `alaw_8000` - A-law
 
+### MiniMax Formats
+
+Default: `mp3_44100_256000`
+
+```bash
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax rock --music-format mp3_44100_128000
+```
+
+**MP3 formats** (`mp3_{sampleRate}_{bitrate}`):
+- `mp3_44100_256000` - 44.1kHz, 256kbps (default, highest quality)
+- `mp3_44100_128000` - 44.1kHz, 128kbps
+- `mp3_44100_64000` - 44.1kHz, 64kbps
+- `mp3_44100_32000` - 44.1kHz, 32kbps
+- Also available with 16000, 24000, 32000 Hz sample rates
+
+**WAV formats:**
+- `wav_44100`, `wav_32000`, `wav_24000`, `wav_16000`
+
+**PCM formats:**
+- `pcm_44100`, `pcm_32000`, `pcm_24000`, `pcm_16000`
+
+### Format Conversion
+
+If you specify a format that doesn't match the selected service, the CLI will automatically convert to the closest available format and display a warning.
+
+## Custom Style Hints
+
+Use `--music-style` to add custom style hints that are appended to the genre's default prompt:
+
+```bash
+# Add 80s synth influence to a pop song
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax pop --music-style "80s synth influence, nostalgic feel"
+
+# Add Celtic elements to folk
+bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs folk --music-style "Celtic instruments, Irish folk influence"
+
+# Make rock more aggressive
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax rock --music-style "heavy metal influence, aggressive vocals"
+```
+
 ## Combining with Other Options
 
 ### With Different LLM Providers
@@ -139,12 +233,13 @@ Use any supported LLM provider:
 ```bash
 # With Claude
 bun as -- text --file "input/audio.mp3" --claude --elevenlabs jazz
+bun as -- text --file "input/audio.mp3" --claude --minimax jazz
 
 # With Gemini
 bun as -- text --file "input/audio.mp3" --gemini --elevenlabs folk
 
 # With specific model
-bun as -- text --file "input/audio.mp3" --chatgpt gpt-5 --elevenlabs pop
+bun as -- text --file "input/audio.mp3" --chatgpt gpt-4o --minimax pop
 ```
 
 ### With Additional Prompts
@@ -162,13 +257,13 @@ Works with all input types:
 
 ```bash
 # YouTube video
-bun as -- text --video "https://youtube.com/watch?v=..." --chatgpt --elevenlabs rap
+bun as -- text --video "https://youtube.com/watch?v=..." --chatgpt --minimax rap
 
 # YouTube playlist
 bun as -- text --playlist "https://youtube.com/playlist?list=..." --chatgpt --elevenlabs rock
 
 # RSS feed
-bun as -- text --rss "https://example.com/feed.xml" --chatgpt --elevenlabs folk
+bun as -- text --rss "https://example.com/feed.xml" --chatgpt --minimax folk
 
 # Multiple URLs
 bun as -- text --urls "input/urls.txt" --chatgpt --elevenlabs jazz
@@ -180,7 +275,7 @@ Specify your preferred transcription service:
 
 ```bash
 bun as -- text --file "input/audio.mp3" --deepgram --chatgpt --elevenlabs country
-bun as -- text --file "input/audio.mp3" --assembly --claude --elevenlabs pop
+bun as -- text --file "input/audio.mp3" --assembly --claude --minimax pop
 ```
 
 ## Output Files
@@ -188,7 +283,7 @@ bun as -- text --file "input/audio.mp3" --assembly --claude --elevenlabs pop
 For a command like:
 
 ```bash
-bun as -- text --file "input/audio.mp3" --chatgpt --elevenlabs rap
+bun as -- text --file "input/audio.mp3" --chatgpt --minimax rap
 ```
 
 Two files are generated:
@@ -198,8 +293,9 @@ Two files are generated:
    - Includes the generated lyrics in a `## Song` section
    - Includes the transcript
 
-2. **Music file:** `output/audio-elevenlabs-rap.mp3`
+2. **Music file:** `output/audio-minimax-rap.mp3` or `output/audio-elevenlabs-rap.mp3`
    - The generated music based on the lyrics
+   - Filename includes the service name and genre
 
 If music generation fails (e.g., API error), the markdown file is still saved and a warning is displayed.
 
@@ -225,18 +321,31 @@ Input Audio/Video
        |
        v
 +------------------+
-| 3. Music Gen     |  (ElevenLabs)
-|    - Create plan |
-|    - Generate    |
+| 3. Music Gen     |  (ElevenLabs or MiniMax)
 +------------------+
        |
        v
 Output: .md + .mp3
 ```
 
+### ElevenLabs Processing
+
+1. Extract lyrics from LLM output
+2. Create composition plan with genre style
+3. Generate music from composition plan
+
+### MiniMax Processing
+
+1. Extract lyrics from LLM output
+2. Normalize section tags to MiniMax format
+3. Truncate lyrics if over 3500 character limit
+4. Generate music with genre-optimized style prompt
+
 ### Genre Style Mapping
 
-Each genre uses a specific music style when creating the composition plan:
+Each genre uses optimized music style prompts for each service:
+
+#### ElevenLabs Style Prompts
 
 | Genre   | Music Style Description |
 |---------|------------------------|
@@ -247,9 +356,40 @@ Each genre uses a specific music style when creating the composition plan:
 | pop     | pop, catchy hooks, radio-friendly, modern production, upbeat |
 | country | country, acoustic, heartfelt, Americana, storytelling |
 
+#### MiniMax Style Prompts
+
+MiniMax uses more detailed prompts to leverage Music 2.5's capabilities:
+
+| Genre   | Key Characteristics |
+|---------|---------------------|
+| rap     | R&B/Hip-Hop, Trap influences, 808 basslines, Auto-Tune character |
+| rock    | Electric guitars, saturated distortion, arena-ready production |
+| folk    | Acoustic guitar, humanized vocals, warm organic sound |
+| jazz    | Piano, brass, swing rhythm, rich harmonic complexity |
+| pop     | Bright vocals, layered harmonies, crisp transparent mix |
+| country | Pedal steel, humanized flow, Americana warmth |
+
 ### Lyrics Extraction
 
 The system looks for lyrics in the LLM output using several patterns:
 1. `## Song` section (from the standard song prompt format)
 2. `Lyrics:` section
 3. Verse/Chorus structure markers (e.g., `[Verse 1]`, `[Chorus]`)
+
+### MiniMax Section Tag Normalization
+
+For MiniMax, section tags are automatically normalized:
+
+| Input | Normalized To |
+|-------|---------------|
+| `[verse 1]`, `[Verse 2]` | `[Verse]` |
+| `[pre-chorus]` | `[Pre Chorus]` |
+| `[post-chorus]` | `[Post Chorus]` |
+| `[instrumental]` | `[Inst]` |
+| `[refrain]` | `[Chorus]` |
+
+## See Also
+
+- [Music Command](../music/01-music-command.md) - Standalone music generation
+- [ElevenLabs Music Options](../music/02-elevenlabs-music.md) - Detailed ElevenLabs guide
+- [MiniMax Music Options](../music/03-minimax-music.md) - Detailed MiniMax guide

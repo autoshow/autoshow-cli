@@ -1,17 +1,40 @@
 import { createCompositionPlan, generateMusicWithElevenLabs } from '@/music/music-services/elevenlabs-music'
+import { generateMusicWithMinimax } from '@/music/music-services/minimax-music'
+import { 
+  convertFormatForService, 
+  parseMinimaxFormat, 
+  truncateLyricsForMinimax,
+  normalizeSectionTagsForMinimax,
+  getExtensionFromMinimaxFormat,
+} from '@/music/music-utils'
 import { l, err } from '@/logging'
 import { env } from '@/node-utils'
 import type { ProcessingOptions, ElevenLabsGenre } from '@/text/text-types'
 import type { MusicOutputFormat } from '@/music/music-types'
 
-// Genre to music style mapping for composition plan prompt
-const GENRE_STYLE_MAP: Record<ElevenLabsGenre, string> = {
+// ElevenLabs genre to music style mapping for composition plan prompt
+const ELEVENLABS_GENRE_STYLE_MAP: Record<ElevenLabsGenre, string> = {
   rap: 'hip-hop, rap, rhythmic beats, urban flow, confident delivery',
   rock: 'rock, electric guitar, powerful drums, energetic, anthemic',
   folk: 'folk, acoustic guitar, authentic storytelling, organic sound',
   jazz: 'jazz, sophisticated, piano, brass, swing rhythm, smooth',
   pop: 'pop, catchy hooks, radio-friendly, modern production, upbeat',
   country: 'country, acoustic, heartfelt, Americana, storytelling',
+}
+
+// MiniMax Music 2.5 optimized prompts (leverage its strengths in vocal/instrumentation)
+const MINIMAX_GENRE_STYLE_MAP: Record<ElevenLabsGenre, string> = {
+  rap: 'Contemporary R&B/Hip-Hop with Trap influences, confident and assertive energy. Features rhythmic vocal delivery with Auto-Tune character, 808 basslines, intricate hi-hat patterns, sharp claps, and atmospheric synth pads. Modern polished production with layered harmonies and ad-libs.',
+  
+  rock: 'Modern Rock with powerful electric guitars, driving drums, and anthemic energy. Features saturated distortion, dynamic builds, wide-frequency transients, and arena-ready production. Energetic and powerful with full spectral characteristics.',
+  
+  folk: 'Indie Folk with acoustic guitar, authentic storytelling, and organic warmth. Features intimate humanized vocals, natural instrumentation, introspective mood, and warm low-pass feel. Melancholic and genuine with transparent mixing.',
+  
+  jazz: 'Sophisticated Jazz with piano, brass, and swing rhythm. Features smooth expressive vocals, classic warm production, improvisational feel, and rich harmonic complexity. Elegant and timeless with expanded orchestral sound library.',
+  
+  pop: 'Contemporary Pop with catchy hooks, modern production, and radio-ready polish. Features bright clear vocals, layered harmonies, upbeat energy, and crisp transparent mix. Perfect for mainstream appeal with dynamic evolution.',
+  
+  country: 'Modern Country with acoustic instrumentation, heartfelt storytelling, and Americana warmth. Features authentic vocal delivery with humanized flow, pedal steel, and organic production. Genuine and emotionally resonant.',
 }
 
 export interface MusicGenerationResult {
@@ -21,9 +44,9 @@ export interface MusicGenerationResult {
 }
 
 /**
- * Generate music with ElevenLabs based on LLM-generated lyrics
+ * Generate music based on LLM-generated lyrics
  * 
- * @param options - Processing options containing elevenlabs genre and musicFormat
+ * @param options - Processing options containing music service (elevenlabs/minimax), genre, and format
  * @param llmOutput - The LLM output containing generated lyrics
  * @param finalPath - The base path for output files (without extension)
  * @returns Result object with success status and path or error
@@ -33,22 +56,27 @@ export async function generateMusic(
   llmOutput: string,
   finalPath: string
 ): Promise<MusicGenerationResult> {
-  if (!options.elevenlabs) {
+  const useElevenlabs = !!options.elevenlabs
+  const useMinimax = !!options.minimax
+  
+  if (!useElevenlabs && !useMinimax) {
     return { success: true } // No music generation requested
   }
 
-  const genre = options.elevenlabs
+  const genre = (options.elevenlabs || options.minimax) as ElevenLabsGenre
+  const service = useMinimax ? 'minimax' : 'elevenlabs'
+  const apiKeyVar = useMinimax ? 'MINIMAX_API_KEY' : 'ELEVENLABS_API_KEY'
 
   // Check for API key
-  if (!env['ELEVENLABS_API_KEY']) {
+  if (!env[apiKeyVar]) {
     return {
       success: false,
-      error: 'ELEVENLABS_API_KEY environment variable is missing'
+      error: `${apiKeyVar} environment variable is missing`
     }
   }
 
   try {
-    l.opts(`Generating ${genre} music with ElevenLabs`)
+    l.opts(`Generating ${genre} music with ${service}`)
 
     // Extract lyrics from LLM output
     const lyrics = extractLyrics(llmOutput)
@@ -61,39 +89,10 @@ export async function generateMusic(
 
     l.dim(`Extracted ${lyrics.split('\n').length} lines of lyrics`)
 
-    // Build music style prompt for composition plan
-    const musicStyle = GENRE_STYLE_MAP[genre]
-    const planPrompt = `${musicStyle}\n\nLyrics:\n${lyrics}`
-
-    // Create composition plan
-    l.dim('Creating composition plan with ElevenLabs...')
-    const planResult = await createCompositionPlan(planPrompt)
-
-    if (!planResult.success || !planResult.plan) {
-      return {
-        success: false,
-        error: `Failed to create composition plan: ${planResult.error}`
-      }
-    }
-
-    l.dim(`Composition plan created with ${planResult.plan.sections?.length || 0} sections`)
-
-    // Generate music with the composition plan
-    l.dim('Generating music from composition plan...')
-    const outputPath = `${finalPath}-elevenlabs-${genre}.mp3`
-    const outputFormat = (options.musicFormat || 'mp3_44100_128') as MusicOutputFormat
-
-    const musicResult = await generateMusicWithElevenLabs('', {
-      compositionPlan: planResult.plan,
-      outputPath,
-      outputFormat,
-    })
-
-    if (musicResult.success) {
-      l.success(`Music generated: ${musicResult.path}`)
-      return { success: true, path: musicResult.path }
+    if (useMinimax) {
+      return await generateWithMinimax(genre, lyrics, finalPath, options)
     } else {
-      return { success: false, error: musicResult.error }
+      return await generateWithElevenlabs(genre, lyrics, finalPath, options)
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -102,6 +101,103 @@ export async function generateMusic(
       success: false,
       error: `Music generation failed: ${errorMessage}`
     }
+  }
+}
+
+/**
+ * Generate music using MiniMax Music 2.5
+ */
+async function generateWithMinimax(
+  genre: ElevenLabsGenre,
+  lyrics: string,
+  finalPath: string,
+  options: ProcessingOptions
+): Promise<MusicGenerationResult> {
+  // Build style prompt (genre base + optional custom hints)
+  let stylePrompt = MINIMAX_GENRE_STYLE_MAP[genre]
+  if (options.musicStyle) {
+    stylePrompt = `${stylePrompt} ${options.musicStyle}`
+  }
+  
+  // Normalize section tags and truncate lyrics for MiniMax limits
+  let processedLyrics = normalizeSectionTagsForMinimax(lyrics)
+  processedLyrics = truncateLyricsForMinimax(processedLyrics)
+  
+  // Handle format conversion
+  let format = options.musicFormat || 'mp3_44100_256000'
+  format = convertFormatForService(format, 'minimax')
+  const audioSetting = parseMinimaxFormat(format)
+  const ext = getExtensionFromMinimaxFormat(format)
+  
+  const outputPath = `${finalPath}-minimax-${genre}.${ext}`
+  
+  l.dim('Generating music with MiniMax Music 2.5...')
+  
+  const result = await generateMusicWithMinimax({
+    prompt: stylePrompt,
+    lyrics: processedLyrics,
+    outputPath,
+    audioSetting,
+  })
+  
+  if (result.success) {
+    l.success(`Music generated: ${result.path}`)
+    return { success: true, path: result.path }
+  } else {
+    return { success: false, error: result.error }
+  }
+}
+
+/**
+ * Generate music using ElevenLabs
+ */
+async function generateWithElevenlabs(
+  genre: ElevenLabsGenre,
+  lyrics: string,
+  finalPath: string,
+  options: ProcessingOptions
+): Promise<MusicGenerationResult> {
+  // Build style prompt (genre base + optional custom hints)
+  let musicStyle = ELEVENLABS_GENRE_STYLE_MAP[genre]
+  if (options.musicStyle) {
+    musicStyle = `${musicStyle}, ${options.musicStyle}`
+  }
+  
+  const planPrompt = `${musicStyle}\n\nLyrics:\n${lyrics}`
+
+  // Create composition plan
+  l.dim('Creating composition plan with ElevenLabs...')
+  const planResult = await createCompositionPlan(planPrompt)
+
+  if (!planResult.success || !planResult.plan) {
+    return {
+      success: false,
+      error: `Failed to create composition plan: ${planResult.error}`
+    }
+  }
+
+  l.dim(`Composition plan created with ${planResult.plan.sections?.length || 0} sections`)
+
+  // Generate music with the composition plan
+  l.dim('Generating music from composition plan...')
+  
+  // Handle format conversion
+  let format = options.musicFormat || 'mp3_44100_128'
+  format = convertFormatForService(format, 'elevenlabs')
+  
+  const outputPath = `${finalPath}-elevenlabs-${genre}.mp3`
+
+  const musicResult = await generateMusicWithElevenLabs('', {
+    compositionPlan: planResult.plan,
+    outputPath,
+    outputFormat: format as MusicOutputFormat,
+  })
+
+  if (musicResult.success) {
+    l.success(`Music generated: ${musicResult.path}`)
+    return { success: true, path: musicResult.path }
+  } else {
+    return { success: false, error: musicResult.error }
   }
 }
 

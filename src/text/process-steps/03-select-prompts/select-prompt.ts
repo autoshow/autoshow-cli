@@ -37,12 +37,14 @@ export async function selectPrompts(options: ProcessingOptions) {
 
   const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters', 'metadata']
   
-  // Add genre lyric prompt when --elevenlabs is used
-  if (options.elevenlabs) {
-    const genrePromptKey = GENRE_PROMPT_MAP[options.elevenlabs]
+  // Add genre lyric prompt when music generation is requested (ElevenLabs or MiniMax)
+  const musicGenre = options.elevenlabs || options.minimax
+  if (musicGenre) {
+    const genrePromptKey = GENRE_PROMPT_MAP[musicGenre]
+    const musicService = options.elevenlabs ? 'ElevenLabs' : 'MiniMax'
     if (genrePromptKey && !prompt.includes(genrePromptKey)) {
       prompt.push(genrePromptKey)
-      l.dim(`Added ${genrePromptKey} prompt for ElevenLabs ${options.elevenlabs} music generation`)
+      l.dim(`Added ${genrePromptKey} prompt for ${musicService} ${musicGenre} music generation`)
     }
   }
   
