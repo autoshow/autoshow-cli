@@ -1,5 +1,7 @@
 import { LLM_SERVICES_CONFIG } from './process-steps/04-run-llm/llm-models'
 
+export type ElevenLabsGenre = 'rap' | 'rock' | 'folk' | 'jazz' | 'pop' | 'country'
+
 export type ShowNoteMetadata = {
   showLink?: string
   channel?: string
@@ -48,6 +50,8 @@ export type ProcessingOptions = {
   keyMomentDuration?: number
   inputDir?: string
   outputDir?: string
+  elevenlabs?: ElevenLabsGenre
+  musicFormat?: string
   [key: string]: any
 }
 export interface VideoInfo {

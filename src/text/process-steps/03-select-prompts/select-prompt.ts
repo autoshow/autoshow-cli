@@ -1,12 +1,22 @@
 import { sections, PROMPT_CHOICES } from './prompt-choices'
 import { err, l } from '@/logging'
 import { readFile } from '@/node-utils'
-import type { ProcessingOptions } from '@/text/text-types'
+import type { ProcessingOptions, ElevenLabsGenre } from '@/text/text-types'
 
 const DEFAULT_KEY_MOMENTS_COUNT = 3
 const DEFAULT_KEY_MOMENTS_DURATION = 60
 
 const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
+
+// Map elevenlabs genre to the corresponding prompt key
+const GENRE_PROMPT_MAP: Record<ElevenLabsGenre, string> = {
+  rap: 'rapSong',
+  rock: 'rockSong',
+  folk: 'folkSong',
+  jazz: 'jazzSong',
+  pop: 'popSong',
+  country: 'countrySong',
+}
 
 export async function selectPrompts(options: ProcessingOptions) {
   let customPrompt = ''
@@ -26,6 +36,16 @@ export async function selectPrompts(options: ProcessingOptions) {
   let text = "This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.\n\n"
 
   const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters', 'metadata']
+  
+  // Add genre lyric prompt when --elevenlabs is used
+  if (options.elevenlabs) {
+    const genrePromptKey = GENRE_PROMPT_MAP[options.elevenlabs]
+    if (genrePromptKey && !prompt.includes(genrePromptKey)) {
+      prompt.push(genrePromptKey)
+      l.dim(`Added ${genrePromptKey} prompt for ElevenLabs ${options.elevenlabs} music generation`)
+    }
+  }
+  
   l.dim(`Selected prompts: ${prompt.join(', ')}`)
 
   const validSections = prompt.filter(

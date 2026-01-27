@@ -103,6 +103,19 @@ export function validateCommandInput(options: ProcessingOptions): {
     transcriptServices = 'whisper'
   }
   
+  // Validate elevenlabs genre option
+  if (options.elevenlabs) {
+    const validGenres = ['rap', 'rock', 'folk', 'jazz', 'pop', 'country']
+    if (!validGenres.includes(options.elevenlabs)) {
+      err(`Invalid --elevenlabs genre: ${options.elevenlabs}. Valid options: ${validGenres.join(', ')}`)
+      exit(1)
+    }
+    if (!llmServices) {
+      err('--elevenlabs requires an LLM option (--chatgpt, --claude, or --gemini)')
+      exit(1)
+    }
+  }
+  
   return { action, llmServices, transcriptServices }
 }
 
@@ -192,6 +205,8 @@ export const createTextCommand = (): Command => {
     .option('--gemini [model]', 'Use Google Gemini for processing with optional model specification')
     .option('--prompt <sections...>', 'Specify prompt sections to include (e.g., summary longChapters)')
     .option('--customPrompt <filePath>', 'Use a custom prompt from a markdown file')
+    .option('--elevenlabs <genre>', 'Generate music with ElevenLabs after LLM processing (rap, rock, folk, jazz, pop, country)')
+    .option('--music-format <format>', 'Output format for generated music (default: mp3_44100_128)')
     .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
     .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
     .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)

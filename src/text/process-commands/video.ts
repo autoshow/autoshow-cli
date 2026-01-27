@@ -3,7 +3,8 @@ import { downloadAudio, saveAudio } from '../process-steps/01-process-content/do
 import { runTranscription } from '../process-steps/02-run-transcription/run-transcription'
 import { selectPrompts } from '../process-steps/03-select-prompts/select-prompt'
 import { runLLM } from '../process-steps/04-run-llm/run-llm'
-import { err } from '@/logging'
+import { generateMusic } from '../process-steps/05-generate-music/generate-music'
+import { err, l } from '@/logging'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function processVideo(
@@ -26,6 +27,15 @@ export async function processVideo(
       metadata as ShowNoteMetadata,
       llmServices
     )
+    
+    // Generate music with ElevenLabs if requested
+    if (options.elevenlabs && llmOutput) {
+      const musicResult = await generateMusic(options, llmOutput, finalPath)
+      if (!musicResult.success) {
+        l.warn(`Music generation failed: ${musicResult.error}`)
+      }
+    }
+    
     if (!options.saveAudio) {
       await saveAudio(finalPath)
     }
