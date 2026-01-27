@@ -3,6 +3,7 @@ import { downloadAudio, saveAudio } from '../../process-steps/01-process-content
 import { runTranscription } from '../../process-steps/02-run-transcription/run-transcription'
 import { selectPrompts } from '../../process-steps/03-select-prompts/select-prompt'
 import { runLLM } from '../../process-steps/04-run-llm/run-llm'
+import { generateMusic } from '../../process-steps/05-generate-music/generate-music'
 import { saveInfo } from '../../utils/save-info'
 import { l, err } from '@/logging'
 import { selectRSSItemsToProcess } from './fetch'
@@ -73,6 +74,15 @@ export async function processRSSFeeds(
             metadata as ShowNoteMetadata,
             llmServices
           )
+          
+          // Generate music with ElevenLabs if requested
+          if (options.elevenlabs && llmOutput) {
+            const musicResult = await generateMusic(options, llmOutput, finalPath)
+            if (!musicResult.success) {
+              l.warn(`Music generation failed: ${musicResult.error}`)
+            }
+          }
+          
           if (!options.saveAudio) {
             await saveAudio(finalPath)
           }
