@@ -19,6 +19,11 @@ const cliCommands = [
   { 'chatterbox-standard': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard' },
   { 'chatterbox-multilingual-fr': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model multilingual --chatterbox-language fr' },
   { 'chatterbox-exaggeration': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7' },
+  // CosyVoice TTS test cases
+  { 'cosyvoice-default': 'bun as -- tts file input/sample.md --cosyvoice' },
+  { 'cosyvoice-instruct': 'bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm"' },
+  { 'cosyvoice-japanese': 'bun as -- tts file input/sample.md --cosyvoice --cosy-language ja' },
+  { 'cosyvoice-cantonese': 'bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"' },
 ]
 
 test('CLI TTS local tests', { concurrency: 1 }, async (t) => {

@@ -6,6 +6,7 @@ import { processScriptWithKitten } from '../tts-local/kitten'
 import { processScriptWithQwen3 } from '../tts-local/qwen3'
 import { processScriptWithChatterbox } from '../tts-local/chatterbox'
 import { processScriptWithFishAudio } from '../tts-local/fish-audio'
+import { processScriptWithCosyVoice } from '../tts-local/cosyvoice'
 import type { TtsEngine } from '../tts-types'
 
 const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => Promise<void>> = {
@@ -51,6 +52,17 @@ const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => P
       refText: opts.refText,
       emotion: opts.fishEmotion,
       device: opts.fishDevice
+    })
+  },
+  cosyvoice: async (s: string, o: string, opts: any) => {
+    return processScriptWithCosyVoice(s, o, {
+      mode: opts.cosyMode,
+      language: opts.cosyLanguage,
+      apiUrl: opts.cosyApiUrl || process.env['COSYVOICE_API_URL'],
+      refAudio: opts.refAudio,
+      refText: opts.refText,
+      instruct: opts.cosyInstruct,
+      stream: opts.cosyStream
     })
   }
 }
