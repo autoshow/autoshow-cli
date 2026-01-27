@@ -7,6 +7,7 @@ import { synthesizeWithKitten } from '../tts-local/kitten'
 import { synthesizeWithQwen3 } from '../tts-local/qwen3'
 import { synthesizeWithChatterbox } from '../tts-local/chatterbox'
 import { synthesizeWithFishAudio } from '../tts-local/fish-audio'
+import { synthesizeWithCosyVoice } from '../tts-local/cosyvoice'
 import { stripMarkdown } from '../tts-utils/text-utils'
 import type { TtsEngine } from '../tts-types'
 
@@ -56,6 +57,17 @@ const synthesizers: Record<TtsEngine, (plain: string, out: string, opts: any) =>
       refText: opts.refText,
       emotion: opts.fishEmotion,
       device: opts.fishDevice
+    })
+  },
+  cosyvoice: async (plain: string, out: string, opts: any) => {
+    return synthesizeWithCosyVoice(plain, out, {
+      mode: opts.cosyMode,
+      language: opts.cosyLanguage,
+      apiUrl: opts.cosyApiUrl || process.env['COSYVOICE_API_URL'],
+      refAudio: opts.refAudio,
+      refText: opts.refText,
+      instruct: opts.cosyInstruct,
+      stream: opts.cosyStream
     })
   }
 }

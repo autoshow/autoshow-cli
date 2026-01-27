@@ -48,7 +48,7 @@ tts_pip install torch torchaudio --index-url https://download.pytorch.org/whl/cp
 
 if [ ! -f "$CONFIG_DIR/.tts-config.json" ]; then
   cat >"$CONFIG_DIR/.tts-config.json" <<EOF
-{"python":"$TTS_PYTHON","venv":"$TTS_VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"},"qwen3":{"default_model":"Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice","default_speaker":"Vivian","default_language":"Auto","default_mode":"custom"},"chatterbox":{"default_model":"turbo","default_language":"en","default_exaggeration":0.5,"default_cfg_weight":0.5}}
+{"python":"$TTS_PYTHON","venv":"$TTS_VENV","coqui":{"default_model":"tts_models/en/ljspeech/tacotron2-DDC","xtts_model":"tts_models/multilingual/multi-dataset/xtts_v2"},"kitten":{"default_model":"KittenML/kitten-tts-nano-0.1","default_voice":"expr-voice-2-f"},"qwen3":{"default_model":"Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice","default_speaker":"Vivian","default_language":"Auto","default_mode":"custom"},"chatterbox":{"default_model":"turbo","default_language":"en","default_exaggeration":0.5,"default_cfg_weight":0.5},"cosyvoice":{"api_url":"http://localhost:50000","default_mode":"instruct","default_language":"auto","model_dir":"build/cosyvoice/pretrained_models/Fun-CosyVoice3-0.5B"}}
 EOF
 fi
 

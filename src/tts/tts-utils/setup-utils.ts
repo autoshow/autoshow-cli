@@ -221,6 +221,96 @@ export const runFishAudioSetup = (): boolean => {
   }
 }
 
+export const checkCosyVoiceInstalled = (pythonPath: string): boolean => {
+  // Check if CosyVoice repo exists and model is loaded
+  const cosyvoiceDir = join(process.cwd(), 'build/cosyvoice')
+  if (!existsSync(cosyvoiceDir)) {
+    return false
+  }
+  
+  // Check if the cosyvoice module can be imported
+  const result = spawnSync(pythonPath, ['-c', `
+import sys
+sys.path.insert(0, '${cosyvoiceDir}')
+sys.path.insert(0, '${cosyvoiceDir}/third_party/Matcha-TTS')
+from cosyvoice.cli.cosyvoice import AutoModel
+print('ok')
+`], { 
+    encoding: 'utf-8', 
+    stdio: 'pipe' 
+  })
+  return result.status === 0 && (result.stdout || '').includes('ok')
+}
+
+export const checkCosyVoiceDocker = (): boolean => {
+  // Check if CosyVoice Docker API is available
+  try {
+    const result = execSync('curl -s -o /dev/null -w "%{http_code}" http://localhost:50000/health 2>/dev/null || echo "000"', {
+      encoding: 'utf-8',
+      timeout: 3000
+    })
+    return result.trim() === '200'
+  } catch {
+    return false
+  }
+}
+
+export const startCosyVoiceDocker = (): boolean => {
+  l.wait(`Attempting to start CosyVoice Docker container...`)
+  
+  try {
+    // Check if Docker is available
+    const dockerCheck = spawnSync('docker', ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
+    if (dockerCheck.status !== 0) {
+      l.dim(`Docker not available`)
+      return false
+    }
+    
+    // Try to start the container
+    execSync(`docker run -d --name cosyvoice-api -p 50000:50000 cosyvoice:latest 2>/dev/null || docker start cosyvoice-api 2>/dev/null`, {
+      stdio: 'pipe',
+      timeout: 30000
+    })
+    
+    // Wait for API to be ready
+    for (let i = 0; i < 30; i++) {
+      if (checkCosyVoiceDocker()) {
+        l.success(`CosyVoice Docker API started`)
+        return true
+      }
+      execSync('sleep 1')
+    }
+    
+    l.dim(`CosyVoice Docker API did not become ready in time`)
+    return false
+  } catch (error) {
+    l.dim(`Failed to start CosyVoice Docker: ${error}`)
+    return false
+  }
+}
+
+export const runCosyVoiceSetup = (): boolean => {
+  l.wait(`CosyVoice not installed, running automatic setup...`)
+  
+  const setupScript = join(process.cwd(), '.github/setup/tts/cosyvoice.sh')
+  if (!existsSync(setupScript)) {
+    l.dim(`CosyVoice setup script not found`)
+    return false
+  }
+  
+  try {
+    execSync(`bash "${setupScript}"`, { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    })
+    l.success(`CosyVoice setup completed`)
+    return true
+  } catch (error) {
+    l.dim(`CosyVoice setup failed: ${error}`)
+    return false
+  }
+}
+
 export const checkElevenLabsInstalled = (): boolean => {
   try {
     require.resolve('elevenlabs')
