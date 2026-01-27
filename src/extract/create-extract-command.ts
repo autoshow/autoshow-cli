@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { l, err } from '@/logging'
-import type { ExtractOptions } from '@/extract/extract-types'
+import type { ExtractOptions, EpubExtractOptions } from '@/extract/extract-types'
 
 export const createExtractCommand = (): Command => {
   const extract = new Command('extract')
@@ -72,6 +72,54 @@ export const createExtractCommand = (): Command => {
         }
       } catch (error) {
         err(`Error processing batch PDFs: ${(error as Error).message}`)
+      }
+    })
+
+  extract
+    .command('epub')
+    .description('Extract text from EPUB files for TTS processing')
+    .argument('<path>', 'Path to EPUB file or directory containing EPUB files')
+    .option('-o, --output <path>', 'Output directory (defaults to output/<filename>)')
+    .option('--max-chars <number>', 'Max characters per output file (default: 39000)')
+    .option('--split <number>', 'Split into exactly N files of roughly equal length')
+    .action(async (inputPath: string, options: EpubExtractOptions) => {
+      l.opts(`Extracting EPUB: ${inputPath}`)
+      
+      try {
+        // Parse numeric options
+        const parsedOptions: EpubExtractOptions = {
+          output: options.output,
+          maxChars: options.maxChars ? parseInt(String(options.maxChars), 10) : undefined,
+          split: options.split ? parseInt(String(options.split), 10) : undefined
+        }
+        
+        // Validate split option
+        if (parsedOptions.split !== undefined && parsedOptions.split <= 0) {
+          err('--split must be a positive number')
+        }
+        
+        // Warn if both options provided
+        if (parsedOptions.split && parsedOptions.maxChars) {
+          l.warn('Both --split and --max-chars provided; using --split')
+        }
+        
+        const { extractEpub } = await import('./extract-epub')
+        const result = await extractEpub(inputPath, parsedOptions)
+        
+        if (result.success) {
+          if ('outputDir' in result && result.outputDir) {
+            l.success(`Text extracted to: ${result.outputDir}`)
+            if (result.filesCreated) {
+              l.opts(`Files created: ${result.filesCreated}`)
+            }
+          } else if ('epubsProcessed' in result) {
+            l.success(`Processed ${result.epubsProcessed} EPUB file(s)`)
+          }
+        } else {
+          err(`Failed to extract EPUB: ${result.error}`)
+        }
+      } catch (error) {
+        err(`Error extracting EPUB: ${(error as Error).message}`)
       }
     })
 

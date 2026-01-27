@@ -1,9 +1,10 @@
-import { generateMarkdown } from '../process-steps/01-process-content/generate-markdown.ts'
-import { downloadAudio, saveAudio } from '../process-steps/01-process-content/download-audio.ts'
-import { runTranscription } from '../process-steps/02-run-transcription/run-transcription.ts'
-import { selectPrompts } from '../process-steps/03-select-prompts/select-prompt.ts'
-import { runLLM } from '../process-steps/04-run-llm/run-llm.ts'
-import { err } from '@/logging'
+import { generateMarkdown } from '../process-steps/01-process-content/generate-markdown'
+import { downloadAudio, saveAudio } from '../process-steps/01-process-content/download-audio'
+import { runTranscription } from '../process-steps/02-run-transcription/run-transcription'
+import { selectPrompts } from '../process-steps/03-select-prompts/select-prompt'
+import { runLLM } from '../process-steps/04-run-llm/run-llm'
+import { generateMusic } from '../process-steps/05-generate-music/generate-music'
+import { err, l } from '@/logging'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function processVideo(
@@ -26,6 +27,15 @@ export async function processVideo(
       metadata as ShowNoteMetadata,
       llmServices
     )
+    
+    // Generate music if requested (ElevenLabs or MiniMax)
+    if ((options.elevenlabs || options.minimax) && llmOutput) {
+      const musicResult = await generateMusic(options, llmOutput, finalPath)
+      if (!musicResult.success) {
+        l.warn(`Music generation failed: ${musicResult.error}`)
+      }
+    }
+    
     if (!options.saveAudio) {
       await saveAudio(finalPath)
     }

@@ -1,10 +1,11 @@
 import { Command } from 'commander'
-import { createTtsCommand } from './tts/create-tts-command.ts'
-import { createImageCommand } from './image/create-image-command.ts'
-import { createVideoCommand } from './video/create-video-command.ts'
-import { createTextCommand } from './text/create-text-command.ts'
-import { createMediaCommand } from './media/create-media-command.ts'
-import { createExtractCommand } from './extract/create-extract-command.ts'
+import { createTtsCommand } from './tts/create-tts-command'
+import { createImageCommand } from './image/create-image-command'
+import { createVideoCommand } from './video/create-video-command'
+import { createMusicCommand } from './music/create-music-command'
+import { createTextCommand } from './text/create-text-command'
+import { createMediaCommand } from './media/create-media-command'
+import { createExtractCommand } from './extract/create-extract-command'
 import { err } from '@/logging'
 import { argv, exit, fileURLToPath, basename } from '@/node-utils'
 
@@ -19,6 +20,7 @@ program.addCommand(createTextCommand())
 program.addCommand(createTtsCommand())
 program.addCommand(createImageCommand())
 program.addCommand(createVideoCommand())
+program.addCommand(createMusicCommand())
 program.addCommand(createMediaCommand())
 program.addCommand(createExtractCommand())
 

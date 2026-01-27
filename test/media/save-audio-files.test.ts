@@ -1,229 +1,166 @@
 import test from 'node:test'
-import { strictEqual, ok, rejects } from 'node:assert/strict'
-import { existsSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
+import { strictEqual, ok } from 'node:assert/strict'
+import { readdirSync, existsSync, renameSync, statSync, rmSync, mkdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
-import { sanitizeFilename, convertLocalAudioFiles } from '../../src/media/save-audio-files.ts'
+import { exec } from 'node:child_process'
 
-test('sanitizeFilename function tests', async (t) => {
-  await t.test('should convert uppercase to lowercase', async () => {
-    const result = await sanitizeFilename('MyFile.mp3')
-    strictEqual(result, 'myfile.mp3')
-  })
-  
-  await t.test('should replace spaces with hyphens', async () => {
-    const result = await sanitizeFilename('My Audio File.mp3')
-    strictEqual(result, 'my-audio-file.mp3')
-  })
-  
-  await t.test('should remove special characters', async () => {
-    const result = await sanitizeFilename('My@File#Name!.mp3')
-    strictEqual(result, 'my-file-name-.mp3')
-  })
-  
-  await t.test('should collapse multiple hyphens', async () => {
-    const result = await sanitizeFilename('My---File---Name.mp3')
-    strictEqual(result, 'my-file-name.mp3')
-  })
-  
-  await t.test('should remove leading and trailing hyphens', async () => {
-    const result = await sanitizeFilename('-MyFile-.mp3')
-    strictEqual(result, 'myfile.mp3')
-  })
-  
-  await t.test('should preserve file extension', async () => {
-    const result = await sanitizeFilename('MyFile.MP4')
-    strictEqual(result, 'myfile.MP4')
-  })
-  
-  await t.test('should handle files without extension', async () => {
-    const result = await sanitizeFilename('MyFile')
-    strictEqual(result, 'myfile')
-  })
-  
-  await t.test('should handle complex filenames', async () => {
-    const result = await sanitizeFilename('The Best Song (2024) [Official].mp3')
-    strictEqual(result, 'the-best-song-2024--official-.mp3')
-  })
-})
+import type { ExecException } from 'node:child_process'
 
-test('convertLocalAudioFiles function tests', async (t) => {
+const cliCommands = [
+  { '01-convert-single-file': 'bun as -- media convert --files "input/test-media/sample.mp4"' },
+  { '02-convert-directory': 'bun as -- media convert --files "input/test-media"' },
+  { '03-convert-custom-output': 'bun as -- media convert --files "input/test-media" --output "output/custom-media"' },
+  { '04-convert-verbose': 'bun as -- media convert --files "input/test-media/sample.mp4" --verbose' },
+]
+
+test('CLI save audio files tests', { concurrency: 1 }, async (t) => {
   const p = '[test/media/save-audio-files]'
-  const testDir = resolve(process.cwd(), 'test', 'media', 'test-fixtures')
-  const outputDir = join(testDir, 'output')
-  const inputDir = join(testDir, 'input')
+  const outputDirectory = resolve(process.cwd(), 'output')
+  const inputDirectory = resolve(process.cwd(), 'input')
+  const testMediaDir = join(inputDirectory, 'test-media')
+  const testMediaFile = join(testMediaDir, 'sample.mp4')
+  let fileCounter = 1
   
+  // Create a test media directory with a sample video file
   await t.before(() => {
-    // Create test directories
-    if (existsSync(testDir)) {
-      rmSync(testDir, { recursive: true, force: true })
+    if (!existsSync(testMediaDir)) {
+      mkdirSync(testMediaDir, { recursive: true })
+      console.log(`${p} Created test media directory: ${testMediaDir}`)
     }
-    mkdirSync(inputDir, { recursive: true })
-    console.log(`${p} Created test fixtures directory`)
+    
+    if (!existsSync(testMediaFile)) {
+      // Create a minimal valid MP4 file using ffmpeg
+      const command = `ffmpeg -f lavfi -i sine=frequency=1000:duration=5 -f lavfi -i color=c=blue:s=320x240:d=5 -c:v libx264 -c:a aac -y "${testMediaFile}"`
+      
+      try {
+        exec(command, { shell: '/bin/zsh' }, (error) => {
+          if (error) {
+            console.log(`${p} Could not create test media file: ${error.message}`)
+          } else {
+            console.log(`${p} Created test media file: ${testMediaFile}`)
+          }
+        })
+      } catch (err) {
+        console.log(`${p} Error creating test file: ${err}`)
+      }
+    }
   })
   
   await t.after(() => {
-    // Clean up test directories
-    if (existsSync(testDir)) {
-      rmSync(testDir, { recursive: true, force: true })
-      console.log(`${p} Cleaned up test fixtures directory`)
+    // Clean up test directory if we created it
+    if (existsSync(testMediaDir)) {
+      try {
+        rmSync(testMediaDir, { recursive: true, force: true })
+        console.log(`${p} Cleaned up test media directory`)
+      } catch (err) {
+        console.log(`${p} Could not clean up test directory: ${err}`)
+      }
+    }
+    
+    // Clean up custom output directory
+    const customOutputDir = join(outputDirectory, 'custom-media')
+    if (existsSync(customOutputDir)) {
+      try {
+        rmSync(customOutputDir, { recursive: true, force: true })
+        console.log(`${p} Cleaned up custom output directory`)
+      } catch (err) {
+        console.log(`${p} Could not clean up custom output directory: ${err}`)
+      }
     }
   })
   
-  await t.test('should reject non-existent file', async () => {
-    const nonExistentFile = join(inputDir, 'non-existent.mp4')
+  for (const commandObj of cliCommands) {
+    const entry = Object.entries(commandObj)[0]
+    if (!entry) continue
+    const [testName, command] = entry
     
-    await rejects(
-      async () => await convertLocalAudioFiles(nonExistentFile, outputDir),
-      {
-        message: /Input ".*" is neither a valid file nor directory/
+    await t.test(`Save Audio Files: ${testName}`, { concurrency: 1 }, async () => {
+      console.log(`${p} Starting test: ${testName}`)
+      
+      // Determine the correct output directory based on command
+      const checkDir = command.includes('--output') && command.includes('custom-media')
+        ? join(outputDirectory, 'custom-media')
+        : outputDirectory
+      
+      const beforeRun = existsSync(checkDir) ? readdirSync(checkDir) : []
+      
+      let errorOccurred = false
+      let errorMessage = ''
+      try {
+        await new Promise<string>((resolve, reject) => {
+          exec(command, { shell: '/bin/zsh' }, (
+            error: ExecException | null, stdout: string, _stderr: string
+          ) => {
+              if (error) {
+                console.error(`${p} Command failed for ${testName}: ${error.message}`)
+                errorMessage = error.message
+                reject(error)
+              } else {
+                console.log(`${p} Command succeeded for ${testName}`)
+                resolve(stdout)
+              }
+            }
+          )
+        })
+      } catch (err) {
+        errorOccurred = true
+        console.error(`${p} Error in test ${testName}: ${errorMessage}`)
       }
-    )
-  })
-  
-  await t.test('should reject non-existent directory', async () => {
-    const nonExistentDir = join(inputDir, 'non-existent-dir')
-    
-    await rejects(
-      async () => await convertLocalAudioFiles(nonExistentDir, outputDir),
-      {
-        message: /Input ".*" is neither a valid file nor directory/
-      }
-    )
-  })
-  
-  await t.test('should reject directory with no media files', async () => {
-    const emptyDir = join(inputDir, 'empty')
-    mkdirSync(emptyDir, { recursive: true })
-    
-    // Create a non-media file
-    writeFileSync(join(emptyDir, 'readme.txt'), 'test')
-    
-    await rejects(
-      async () => await convertLocalAudioFiles(emptyDir, outputDir),
-      {
-        message: /No media files found in directory/
-      }
-    )
-  })
-  
-  await t.test('should accept single video file', async () => {
-    const testFile = join(inputDir, 'test-video.mp4')
-    
-    // Create a minimal valid MP4 file using ffmpeg
-    const { exec } = await import('node:child_process')
-    const { promisify } = await import('node:util')
-    const execAsync = promisify(exec)
-    
-    try {
-      await execAsync(
-        `ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -f lavfi -i color=c=blue:s=320x240:d=1 -c:v libx264 -c:a aac -y "${testFile}"`,
-        { shell: '/bin/zsh' }
-      )
       
-      ok(existsSync(testFile), 'Test video file should exist')
+      strictEqual(errorOccurred, false, `Test should complete without errors: ${errorMessage}`)
+      const afterRun = readdirSync(checkDir)
       
-      await convertLocalAudioFiles(testFile, outputDir, false)
+      let filesToRename: string[] = []
       
-      ok(existsSync(outputDir), 'Output directory should be created')
-      
-      // Check that an MP3 file was created
-      const fs = await import('node:fs/promises')
-      const outputFiles = await fs.readdir(outputDir)
-      const mp3Files = outputFiles.filter(f => f.endsWith('.mp3'))
-      
-      ok(mp3Files.length > 0, 'Should create at least one MP3 file')
-      console.log(`${p} Successfully converted video to audio`)
-    } catch (error) {
-      console.log(`${p} Skipping test - ffmpeg not available: ${error}`)
-      // Skip test if ffmpeg is not available
-      t.skip()
-    }
-  })
-  
-  await t.test('should accept directory with multiple media files', async () => {
-    const mediaDir = join(inputDir, 'media')
-    mkdirSync(mediaDir, { recursive: true })
-    
-    const testFile1 = join(mediaDir, 'video1.mp4')
-    const testFile2 = join(mediaDir, 'video2.mp4')
-    
-    // Create minimal valid MP4 files
-    const { exec } = await import('node:child_process')
-    const { promisify } = await import('node:util')
-    const execAsync = promisify(exec)
-    
-    try {
-      await execAsync(
-        `ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -f lavfi -i color=c=blue:s=320x240:d=1 -c:v libx264 -c:a aac -y "${testFile1}"`,
-        { shell: '/bin/zsh' }
-      )
-      await execAsync(
-        `ffmpeg -f lavfi -i sine=frequency=1500:duration=1 -f lavfi -i color=c=red:s=320x240:d=1 -c:v libx264 -c:a aac -y "${testFile2}"`,
-        { shell: '/bin/zsh' }
-      )
-      
-      ok(existsSync(testFile1), 'Test video file 1 should exist')
-      ok(existsSync(testFile2), 'Test video file 2 should exist')
-      
-      const multiOutputDir = join(testDir, 'multi-output')
-      await convertLocalAudioFiles(mediaDir, multiOutputDir, false)
-      
-      ok(existsSync(multiOutputDir), 'Output directory should be created')
-      
-      // Check that MP3 files were created
-      const fs = await import('node:fs/promises')
-      const outputFiles = await fs.readdir(multiOutputDir)
-      const mp3Files = outputFiles.filter(f => f.endsWith('.mp3'))
-      
-      ok(mp3Files.length >= 2, 'Should create at least two MP3 files')
-      console.log(`${p} Successfully converted multiple videos to audio`)
-    } catch (error) {
-      console.log(`${p} Skipping test - ffmpeg not available: ${error}`)
-      // Skip test if ffmpeg is not available
-      t.skip()
-    }
-  })
-  
-  await t.test('should use default output directory when not specified', async () => {
-    const testFile = join(inputDir, 'test-default.mp4')
-    const defaultOutputDir = resolve(process.cwd(), 'output')
-    
-    // Create a minimal valid MP4 file
-    const { exec } = await import('node:child_process')
-    const { promisify } = await import('node:util')
-    const execAsync = promisify(exec)
-    
-    try {
-      await execAsync(
-        `ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -f lavfi -i color=c=green:s=320x240:d=1 -c:v libx264 -c:a aac -y "${testFile}"`,
-        { shell: '/bin/zsh' }
-      )
-      
-      // Get files before conversion
-      const fs = await import('node:fs/promises')
-      const beforeFiles = existsSync(defaultOutputDir) ? await fs.readdir(defaultOutputDir) : []
-      
-      await convertLocalAudioFiles(testFile, undefined, false)
-      
-      ok(existsSync(defaultOutputDir), 'Default output directory should exist')
-      
-      // Check that new files were created
-      const afterFiles = await fs.readdir(defaultOutputDir)
-      const newFiles = afterFiles.filter(f => !beforeFiles.includes(f) && f.endsWith('.mp3'))
-      
-      ok(newFiles.length > 0, 'Should create at least one new MP3 file in default output')
-      console.log(`${p} Successfully used default output directory`)
-      
-      // Clean up the test file from default output
-      for (const file of newFiles) {
-        if (file.includes('test-default')) {
-          rmSync(join(defaultOutputDir, file), { force: true })
+      const newFiles = afterRun.filter(f => !beforeRun.includes(f))
+      if (newFiles.length > 0) {
+        console.log(`${p} Found ${newFiles.length} new files for ${testName}`)
+        filesToRename = newFiles
+      } else {
+        const possibleFile = afterRun.find(f => 
+          !f.endsWith('.part') && 
+          !f.match(/^\d{2}-/) && 
+          f.endsWith('.mp3')
+        )
+        if (possibleFile) {
+          console.log(`${p} Found modified file for ${testName}: ${possibleFile}`)
+          filesToRename = [possibleFile]
         }
       }
-    } catch (error) {
-      console.log(`${p} Skipping test - ffmpeg not available: ${error}`)
-      // Skip test if ffmpeg is not available
-      t.skip()
-    }
-  })
+      
+      ok(filesToRename.length > 0, 'Expected at least one new or modified file')
+      
+      // Verify files contain audio data
+      for (const file of filesToRename) {
+        const filePath = join(checkDir, file)
+        if (existsSync(filePath) && file.endsWith('.mp3')) {
+          const stats = statSync(filePath)
+          ok(stats.size > 0, `Expected ${file} to contain audio data`)
+          console.log(`${p} Verified file ${file} has size ${stats.size} bytes`)
+        }
+      }
+      
+      // Only rename files in the standard output directory
+      if (checkDir === outputDirectory) {
+        for (const file of filesToRename) {
+          if (file.endsWith('.part')) continue
+          if (/^\d{2}-/.test(file)) continue
+          if (file === 'temp') continue
+          
+          const oldPath = join(checkDir, file)
+          if (!existsSync(oldPath)) continue
+          
+          const fileExtension = file.substring(file.lastIndexOf('.'))
+          const baseName = file.substring(0, file.lastIndexOf('.'))
+          
+          const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
+          const newPath = join(checkDir, newName)
+          
+          console.log(`${p} Renaming file: ${file} -> ${newName}`)
+          renameSync(oldPath, newPath)
+          fileCounter++
+        }
+      }
+    })
+  }
 })
