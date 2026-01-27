@@ -1,67 +1,89 @@
 # Music Generation Command
 
-Generate AI music using ElevenLabs Eleven Music model.
+Generate AI music using ElevenLabs or MiniMax music models.
 
 ## Quick Setup
 
 ```bash
-# Add API key to .env
+# Add API keys to .env (use one or both)
 ELEVENLABS_API_KEY=xxx
+MINIMAX_API_KEY=xxx
 ```
 
 ## Basic Usage
 
 ```bash
-# Generate music from a prompt
+# Generate music with ElevenLabs (default)
 bun as -- music generate --prompt "An upbeat electronic dance track"
 
-# Instrumental only
+# Generate music with MiniMax (requires lyrics)
+bun as -- music generate --service minimax --prompt "Contemporary pop" \
+  --lyrics "[Verse]\nHello world\n[Chorus]\nSing along"
+
+# ElevenLabs: Instrumental only
 bun as -- music generate --prompt "A peaceful piano melody" --instrumental
 
-# With specific duration
+# ElevenLabs: With specific duration
 bun as -- music generate --prompt "A dramatic orchestral piece" --duration 2m
 
-# With inline lyrics
-bun as -- music generate --prompt "Upbeat pop song" --lyrics "Walking down the street on a sunny day..."
-
 # With lyrics from file
-bun as -- music generate --prompt "Folk ballad" --lyrics-file ./lyrics.txt
+bun as -- music generate --service minimax --prompt "Folk ballad" --lyrics-file ./lyrics.txt
 
-# Using a composition plan
+# Using a composition plan (ElevenLabs only)
 bun as -- music generate --plan-file ./my-plan.json
 
-# Create a composition plan (free)
+# Create a composition plan (free, ElevenLabs only)
 bun as -- music plan --prompt "A pop song about summer" --duration 2m -o plan.json
 
 # List output formats
 bun as -- music list-formats
+bun as -- music list-formats --service minimax
 ```
+
+## Available Services
+
+| Service | Description | Requirements |
+|---------|-------------|--------------|
+| `elevenlabs` | ElevenLabs Eleven Music (default) | `ELEVENLABS_API_KEY` |
+| `minimax` | MiniMax Music 2.5 | `MINIMAX_API_KEY`, lyrics required |
 
 ## Available Subcommands
 
 | Command | Description |
 |---------|-------------|
 | `generate` | Generate music from a prompt or plan |
-| `plan` | Create a composition plan (no credits) |
+| `plan` | Create a composition plan (ElevenLabs, no credits) |
 | `list-formats` | Show available output formats |
 
 ## Generate Options
 
 ```bash
---prompt <text>         # Text prompt (required unless --plan-file used)
---plan-file <path>      # Use composition plan from JSON file
+--service <service>     # Music service: elevenlabs (default), minimax
+--prompt <text>         # Text prompt for style/mood description
+--plan-file <path>      # Use composition plan from JSON file (ElevenLabs only)
 --output <path>         # Output file path
---duration <duration>   # Duration (30s, 2m, 2:30)
---instrumental          # No vocals
---lyrics <text>         # Inline lyrics
+--duration <duration>   # Duration: 30s, 2m, 2:30 (ElevenLabs only)
+--instrumental          # No vocals (ElevenLabs only)
+--lyrics <text>         # Inline lyrics (required for MiniMax)
 --lyrics-file <path>    # Lyrics from file
---format <format>       # Output format (default: mp3_44100_128)
---timestamps            # Include word timestamps
---c2pa                  # Sign with C2PA (mp3 only)
---respect-durations     # Strictly follow section durations from plan
+--format <format>       # Output format (service-specific)
+--timestamps            # Include word timestamps (ElevenLabs only)
+--c2pa                  # Sign with C2PA (ElevenLabs mp3 only)
+--respect-durations     # Strictly follow section durations from plan (ElevenLabs only)
 ```
 
-## Workflow: Using Composition Plans
+## Service Comparison
+
+| Feature | ElevenLabs | MiniMax |
+|---------|------------|---------|
+| Prompt only | Yes | No |
+| Lyrics required | No | Yes |
+| Composition plans | Yes | No |
+| Instrumental mode | Yes | No |
+| Duration control | Yes | No |
+| Default format | `mp3_44100_128` | `mp3_44100_256000` |
+
+## Workflow: ElevenLabs Composition Plans
 
 1. Create a plan (free, no credits):
    ```bash
@@ -75,7 +97,30 @@ bun as -- music list-formats
    bun as -- music generate --plan-file plan.json
    ```
 
-## Duration Formats
+## Workflow: MiniMax with Lyrics
+
+1. Write lyrics with section tags:
+   ```
+   [Intro]
+   (instrumental opening)
+   
+   [Verse]
+   Walking down the street on a sunny day
+   Everything feels right in every way
+   
+   [Chorus]
+   This is our moment, this is our time
+   Everything is falling into line
+   ```
+
+2. Generate with style prompt:
+   ```bash
+   bun as -- music generate --service minimax \
+     --prompt "Upbeat indie pop with acoustic guitar" \
+     --lyrics-file ./lyrics.txt
+   ```
+
+## Duration Formats (ElevenLabs)
 
 - Seconds: `30s`
 - Minutes: `2m`  
@@ -86,18 +131,20 @@ Valid range: 3 seconds to 5 minutes
 
 ## Notes
 
-- The detailed endpoint used by `--timestamps` may return JSON or multipart; parsing should follow the actual `content-type` response.
-- If `--output` conflicts with `--format` (e.g. `.wav` with `mp3_44100_128`), prefer the explicit output path and warn.
+- MiniMax requires lyrics; use `--lyrics` or `--lyrics-file`
+- Format conversion happens automatically with a warning if the format doesn't match the service
+- If `--output` extension conflicts with `--format`, the explicit output path is used with a warning
 
 ## CLI Error Messages
 
-- `Missing input. Provide --prompt or --plan-file`
+- `Missing input. Provide --prompt or --plan-file` (ElevenLabs)
+- `MiniMax requires lyrics. Use --lyrics or --lyrics-file`
 - `Conflicting input. Use either --prompt or --plan-file, not both`
 - `Invalid --format: <value>. Run "music list-formats" for valid values`
 - `Conflicting lyrics input. Use --lyrics or --lyrics-file, not both`
 - `Invalid duration: <value>. Use 30s, 2m, 2:30, or milliseconds`
-- `Invalid duration: <value>. Must be between 3 seconds and 5 minutes (3000-600000ms)`
 
 ## See Also
 
-- [ElevenLabs Music Options](./02-elevenlabs-music.md) - Detailed prompting guide
+- [ElevenLabs Music Options](./02-elevenlabs-music.md) - Detailed ElevenLabs prompting guide
+- [MiniMax Music Options](./03-minimax-music.md) - Detailed MiniMax prompting guide

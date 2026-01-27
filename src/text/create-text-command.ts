@@ -103,15 +103,23 @@ export function validateCommandInput(options: ProcessingOptions): {
     transcriptServices = 'whisper'
   }
   
-  // Validate elevenlabs genre option
-  if (options.elevenlabs) {
+  // Validate music service options - only one allowed
+  if (options.elevenlabs && options.minimax) {
+    err('Cannot use both --elevenlabs and --minimax. Please specify only one music service.')
+    exit(1)
+  }
+  
+  const musicGenre = options.elevenlabs || options.minimax
+  const musicService = options.elevenlabs ? 'elevenlabs' : options.minimax ? 'minimax' : undefined
+  
+  if (musicGenre) {
     const validGenres = ['rap', 'rock', 'folk', 'jazz', 'pop', 'country']
-    if (!validGenres.includes(options.elevenlabs)) {
-      err(`Invalid --elevenlabs genre: ${options.elevenlabs}. Valid options: ${validGenres.join(', ')}`)
+    if (!validGenres.includes(musicGenre)) {
+      err(`Invalid --${musicService} genre: ${musicGenre}. Valid options: ${validGenres.join(', ')}`)
       exit(1)
     }
     if (!llmServices) {
-      err('--elevenlabs requires an LLM option (--chatgpt, --claude, or --gemini)')
+      err(`--${musicService} requires an LLM option (--chatgpt, --claude, or --gemini)`)
       exit(1)
     }
   }
@@ -206,7 +214,9 @@ export const createTextCommand = (): Command => {
     .option('--prompt <sections...>', 'Specify prompt sections to include (e.g., summary longChapters)')
     .option('--customPrompt <filePath>', 'Use a custom prompt from a markdown file')
     .option('--elevenlabs <genre>', 'Generate music with ElevenLabs after LLM processing (rap, rock, folk, jazz, pop, country)')
-    .option('--music-format <format>', 'Output format for generated music (default: mp3_44100_128)')
+    .option('--minimax <genre>', 'Generate music with MiniMax after LLM processing (rap, rock, folk, jazz, pop, country)')
+    .option('--music-format <format>', 'Output format for generated music (service-specific)')
+    .option('--music-style <hint>', 'Additional style hints for music generation (appended to genre prompt)')
     .option('--saveAudio', 'Do not delete intermediary audio files (e.g., .wav) after processing')
     .option('--keyMomentsCount <number>', 'Number of key moments to extract (default: 3)', parseInt)
     .option('--keyMomentDuration <number>', 'Duration of each key moment segment in seconds (default: 60)', parseInt)

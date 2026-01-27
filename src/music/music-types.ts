@@ -16,6 +16,36 @@ export type MusicOutputFormat =
 
 export type MusicModel = 'music_v1'
 
+// Music service selection
+export type MusicService = 'elevenlabs' | 'minimax'
+
+// MiniMax Music 2.5 types
+export type MinimaxAudioFormat = 'mp3' | 'wav' | 'pcm'
+export type MinimaxSampleRate = 16000 | 24000 | 32000 | 44100
+export type MinimaxBitrate = 32000 | 64000 | 128000 | 256000
+
+export interface MinimaxAudioSetting {
+  sample_rate?: MinimaxSampleRate
+  bitrate?: MinimaxBitrate
+  format?: MinimaxAudioFormat
+}
+
+export interface MinimaxMusicOptions {
+  outputPath?: string
+  prompt?: string           // Style/mood description, 0-2000 chars
+  lyrics: string            // Required, 1-3500 chars with section tags
+  audioSetting?: MinimaxAudioSetting
+}
+
+// Supported MiniMax section tags
+export const MINIMAX_SECTION_TAGS = [
+  'Intro', 'Verse', 'Pre Chorus', 'Chorus', 'Interlude',
+  'Bridge', 'Outro', 'Post Chorus', 'Transition', 'Break',
+  'Hook', 'Build Up', 'Inst', 'Solo'
+] as const
+
+export type MinimaxSectionTag = typeof MINIMAX_SECTION_TAGS[number]
+
 // Time range for section sources
 export interface TimeRange {
   start_ms: number
