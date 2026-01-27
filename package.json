@@ -65,6 +65,8 @@
     "test:media": "bun test:base -- test/media/*.test.ts",
     "test:video": "bun test:base -- test/video/*.test.ts",
     "test:video:services": "bun test:base -- test/video/video-services.test.ts",
+    "test:music": "bun test:base -- test/music/*.test.ts",
+    "test:music:services": "bun test:base -- test/music/music-services.test.ts",
     "test:cli": "bun test:base -- test/**/*.test.ts",
     "test:setup": "bun test:base -- test/setup/setup.test.ts",
     "test:setup:integration": "bun test:base -- test/setup/setup-integration.test.ts"
