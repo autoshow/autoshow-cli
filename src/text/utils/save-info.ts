@@ -1,5 +1,5 @@
 import { l, err, success } from '@/logging'
-import { writeFile, execFilePromise, ensureDir, join } from '@/node-utils'
+import { writeFile, execFilePromise, ensureDir, join, existsSync } from '@/node-utils'
 import type { ShowNoteMetadata, VideoInfo, ProcessingOptions } from '@/text/text-types'
 
 export function sanitizeTitle(title: string) {
@@ -20,12 +20,18 @@ export function constructOutputPath(filename: string, options?: ProcessingOption
   return outputPath
 }
 
+export function outputExists(filename: string, options?: ProcessingOptions): boolean {
+  const basePath = constructOutputPath(filename, options)
+  
+  const extensions = ['.md', '.json', '.txt', '.wav', '.mp3']
+  return extensions.some(ext => existsSync(`${basePath}${ext}`))
+}
+
 export async function saveInfo(
   type: 'playlist' | 'urls' | 'channel' | 'rss' | 'combined',
   data: string[] | VideoInfo[] | ShowNoteMetadata[],
   title?: string
 ) {
-  
   await ensureDir('output')
   
   if (type === 'combined') {

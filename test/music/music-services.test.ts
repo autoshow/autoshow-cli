@@ -4,7 +4,7 @@ import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
-// ElevenLabs CLI commands
+
 const elevenlabsCommands = [
   { 'elevenlabs-basic': 'bun as -- music generate --service elevenlabs --prompt "An upbeat electronic dance track with driving synths"' },
   { 'elevenlabs-instrumental': 'bun as -- music generate --service elevenlabs --prompt "A peaceful acoustic guitar melody" --instrumental' },
@@ -12,15 +12,15 @@ const elevenlabsCommands = [
   { 'elevenlabs-plan': 'bun as -- music plan --prompt "A pop song about summer" --duration 1m' },
 ]
 
-// MiniMax CLI commands (require lyrics)
+
 const minimaxCommands = [
   { 'minimax-basic': 'bun as -- music generate --service minimax --prompt "Contemporary pop with catchy hooks" --lyrics "[Verse]\\nHello world, this is a test\\nJust a simple song at best\\n[Chorus]\\nLa la la, sing along\\nThis is our test song"' },
   { 'minimax-format': 'bun as -- music generate --service minimax --prompt "Upbeat dance track" --lyrics "[Verse]\\nDancing through the night\\nEverything feels right\\n[Chorus]\\nMove your feet, feel the beat" --format mp3_44100_128000' },
 ]
 
-// ============================================================================
-// CLI integration tests for ElevenLabs
-// ============================================================================
+
+
+
 
 describe.skipIf(!process.env['ELEVENLABS_API_KEY'])('CLI ElevenLabs music services tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
@@ -70,7 +70,7 @@ describe.skipIf(!process.env['ELEVENLABS_API_KEY'])('CLI ElevenLabs music servic
         }
       }
       
-      // For 'plan' command, no file is created
+      
       if (!testName.includes('plan')) {
         expect(filesToRename.length > 0).toBeTruthy()
       }
@@ -95,9 +95,9 @@ describe.skipIf(!process.env['ELEVENLABS_API_KEY'])('CLI ElevenLabs music servic
   }
 })
 
-// ============================================================================
-// CLI integration tests for MiniMax
-// ============================================================================
+
+
+
 
 describe.skipIf(!process.env['MINIMAX_API_KEY'])('CLI MiniMax music services tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')

@@ -8,6 +8,7 @@ import {
 import {
   checkPollyInstalled, installNpmPackage
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 
 const VOICE_TYPES = {
   neural: ['Ivy', 'Joanna', 'Kendra', 'Kimberly', 'Salli', 'Joey', 'Justin', 'Kevin', 'Matthew', 'Ruth', 'Stephen', 'Amy', 'Brian', 'Emma', 'Olivia', 'Aria', 'Ayanda', 'Gabrielle', 'Liam', 'Mia', 'Seoyeon', 'Danielle', 'Gregory', 'Takumi', 'Kazuha', 'Tomoko', 'Camila', 'Lupe', 'Pedro', 'Adriano', 'Remi', 'Lea', 'Vicki', 'Bianca', 'Lucia', 'Kajal'],
@@ -188,8 +189,8 @@ export async function processScriptWithPolly(
     await ensureSilenceFile(outDir)
     
     const voiceMapping: Record<string, any> = {
-      DUCO: process.env['POLLY_VOICE_DUCO'] || 'Matthew',
-      SEAMUS: process.env['POLLY_VOICE_SEAMUS'] || 'Brian'
+      DUCO: getUserVoice('polly', 'DUCO', 'Matthew'),
+      SEAMUS: getUserVoice('polly', 'SEAMUS', 'Brian')
     }
     
     l('Processing lines with Polly', { lineCount: script.length })

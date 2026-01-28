@@ -8,6 +8,7 @@ import {
 import {
   ensureTtsEnvironment, checkCosyVoiceInstalled, runCosyVoiceSetup, checkCosyVoiceDocker, startCosyVoiceDocker
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 import type { CosyVoiceOptions, CosyVoiceMode } from '../tts-types'
 
 const VALID_LANGUAGES = ['auto', 'zh', 'en', 'ja', 'ko', 'de', 'es', 'fr', 'it', 'ru']
@@ -19,7 +20,8 @@ const getCosyVoiceConfig = () => {
   l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
-  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COSYVOICE_PYTHON_PATH']
+  
+  let pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['COSYVOICE_PYTHON_PATH'] || config.python
   
   if (!pythonPath || !existsSync(pythonPath)) {
     l('Python path not configured, checking for environment')
@@ -31,13 +33,13 @@ const getCosyVoiceConfig = () => {
 }
 
 const verifyCosyVoiceEnvironment = (pythonPath: string): { useDocker: boolean, pythonPath: string } => {
-  // First check if Docker API is available
+  
   if (checkCosyVoiceDocker()) {
     l('CosyVoice Docker API available')
     return { useDocker: true, pythonPath }
   }
   
-  // Check local Python environment
+  
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
   if (versionResult.error || versionResult.status !== 0) {
     l('Python not accessible, attempting to set up environment')
@@ -49,7 +51,7 @@ const verifyCosyVoiceEnvironment = (pythonPath: string): { useDocker: boolean, p
     l('CosyVoice not installed, attempting automatic setup')
     const setupSuccessful = runCosyVoiceSetup()
     if (!setupSuccessful) {
-      // Try starting Docker as fallback
+      
       l('Local setup failed, attempting Docker fallback')
       if (startCosyVoiceDocker()) {
         return { useDocker: true, pythonPath }
@@ -136,7 +138,7 @@ const synthesizeViaApi = async (
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
     
-    // Check if it's a connection error
+    
     if (errorMsg.includes('ECONNREFUSED') || errorMsg.includes('fetch failed')) {
       throw new Error(`CosyVoice API not accessible at ${apiUrl}.
 
@@ -154,7 +156,7 @@ For easier setup, use Qwen3 TTS instead: --qwen3`)
   }
 }
 
-// Import writeFileSync for API mode
+
 import { writeFileSync } from 'node:fs'
 
 export async function synthesizeWithCosyVoice(
@@ -172,7 +174,7 @@ export async function synthesizeWithCosyVoice(
   
   l('Using mode and language', { mode: modeName, language: languageName })
   
-  // Try Docker API first if available
+  
   if (useDocker || options.apiUrl) {
     try {
       return await synthesizeViaApi(text, outputPath, {
@@ -184,7 +186,7 @@ export async function synthesizeWithCosyVoice(
     } catch (apiError) {
       const errorMsg = apiError instanceof Error ? apiError.message : String(apiError)
       
-      // If explicit API URL was provided, don't fallback - fail with clear message
+      
       if (options.apiUrl) {
         err(`CosyVoice API failed: ${errorMsg}`)
       }
@@ -203,7 +205,7 @@ SOLUTION:
     }
   }
   
-  // Local Python mode
+  
   const pythonScriptPath = new URL('cosyvoice-python.py', import.meta.url).pathname
   const cosyvoiceDir = config.model_dir || join(process.cwd(), 'build/cosyvoice')
   
@@ -238,7 +240,7 @@ SOLUTION:
       PYTHONWARNINGS: 'ignore',
       PYTHONPATH: `${cosyvoiceDir}:${join(cosyvoiceDir, 'third_party/Matcha-TTS')}`
     },
-    maxBuffer: 1024 * 1024 * 50 // 50MB buffer for large model outputs
+    maxBuffer: 1024 * 1024 * 50 
   })
   
   if (result.error) {
@@ -262,7 +264,7 @@ SOLUTION:
     })
   }
   
-  // Parse stdout for JSON result
+  
   const stdout = result.stdout || ''
   const lines = stdout.trim().split('\n')
   const lastLine = lines[lines.length - 1] || ''
@@ -279,7 +281,7 @@ SOLUTION:
     
     const jsonResult = JSON.parse(lastLine)
     if (!jsonResult.ok) {
-      // Provide more helpful error messages
+      
       const error = jsonResult.error || ''
       if (error.includes('pretrained_models') || error.includes('model not found')) {
         err(`CosyVoice model not found.
@@ -307,7 +309,7 @@ SOLUTION:
     }
   } catch (parseError) {
     l('JSON parse error', { parseError, lastLine, stdout })
-    // If we can't parse JSON, check for errors in stderr
+    
     const stderr = result.stderr || ''
     if (result.status !== 0) {
       if (stderr.includes('ModuleNotFoundError') || stderr.includes('No module named')) {
@@ -368,7 +370,7 @@ export async function processScriptWithCosyVoice(
     
     await ensureSilenceFile(outDir)
     
-    // Voice mapping from environment variables
+    
     const voiceMapping: Record<string, { instruct?: string, refAudio?: string }> = {}
     const defaultInstructs: Record<string, string> = {
       'DUCO': 'Speak with energy and enthusiasm',
@@ -377,17 +379,17 @@ export async function processScriptWithCosyVoice(
     }
     
     for (const speakerKey of Object.keys(defaultInstructs)) {
-      const envInstruct = process.env[`COSYVOICE_INSTRUCT_${speakerKey}`]
-      const envRefAudio = process.env[`COSYVOICE_REF_${speakerKey}`]
+      const instruct = getUserVoice('cosyvoice_instruct', speakerKey, defaultInstructs[speakerKey])
+      const refAudio = getUserVoice('cosyvoice_ref', speakerKey)
       voiceMapping[speakerKey] = {
-        instruct: envInstruct || defaultInstructs[speakerKey],
-        refAudio: envRefAudio
+        instruct: instruct,
+        refAudio: refAudio
       }
     }
     
     l('Processing lines with CosyVoice TTS', { lineCount: script.length })
     
-    // Process sequentially to avoid memory issues
+    
     for (let idx = 0; idx < script.length; idx++) {
       const entry = script[idx] as { speaker: string; text: string; instruct?: string; mode?: CosyVoiceMode; refAudio?: string }
       const entrySpeaker = entry.speaker
@@ -405,11 +407,11 @@ export async function processScriptWithCosyVoice(
       
       await synthesizeWithCosyVoice(entryText, wavOut, {
         ...options,
-        // Segment-level overrides
+        
         ...(segmentInstruct && { instruct: segmentInstruct }),
         ...(segmentMode && { mode: segmentMode }),
         ...(segmentRefAudio && { refAudio: segmentRefAudio }),
-        // Speaker defaults from env
+        
         ...(!segmentInstruct && speakerConfig.instruct && { instruct: speakerConfig.instruct }),
         ...(!segmentRefAudio && speakerConfig.refAudio && { refAudio: speakerConfig.refAudio })
       })
@@ -417,7 +419,7 @@ export async function processScriptWithCosyVoice(
       const wavData = await readFile(wavOut)
       await writeFile(pcmOut, wavData.slice(44))
       
-      // Small delay between segments
+      
       if (idx < script.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 100))
       }

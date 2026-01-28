@@ -7,15 +7,15 @@ import { l } from '@/logging'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  // Multiple prompts test
+  
   { '01-file-multiple-prompts': 'bun as -- text --file "input/audio.mp3" --prompt titles summary' },
   
-  // LLM service tests
+  
   { '02-chatgpt-default': 'bun as -- text --file "input/audio.mp3" --chatgpt' },
   { '03-claude-default': 'bun as -- text --file "input/audio.mp3" --claude' },
   { '04-gemini-default': 'bun as -- text --file "input/audio.mp3" --gemini' },
   
-  // Transcription service tests
+  
   { '05-deepgram-default': 'bun as -- text --file "input/audio.mp3" --deepgram' },
   { '06-deepgram-nova-2': 'bun as -- text --file "input/audio.mp3" --deepgram nova-2' },
   { '07-assembly-default': 'bun as -- text --file "input/audio.mp3" --assembly' },
@@ -58,7 +58,7 @@ describe('CLI services tests', () => {
       
       expect(errorOccurred).toBe(false)
       
-      // printPrompt doesn't create files, just prints to stdout
+      
       if (testName.includes('print-prompt')) {
         return
       }

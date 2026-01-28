@@ -19,7 +19,6 @@ def log(msg):
 
 
 def synthesize_via_api(config):
-    """Primary path: Use Fish Speech HTTP API server."""
     import requests
 
     api_url = config.get("api_url", "http://localhost:8080")
@@ -30,15 +29,15 @@ def synthesize_via_api(config):
 
     log(f"Using API server at {api_url}")
 
-    # Build request - Fish Speech API format
-    # See: https://github.com/fishaudio/fish-speech/blob/main/tools/api_server.py
 
-    # CPU inference is very slow (~0.2 tokens/sec), so use a long timeout
-    # A typical sentence can take 3-5 minutes on CPU
-    timeout = 600  # 10 minutes
+
+
+
+
+    timeout = 600
 
     if ref_audio and os.path.exists(ref_audio):
-        # Multipart request for voice cloning
+
         with open(ref_audio, "rb") as f:
             files = {"audio": ("reference.wav", f, "audio/wav")}
             data = {"text": text, "format": "wav"}
@@ -49,7 +48,7 @@ def synthesize_via_api(config):
                 f"{api_url}/v1/tts", files=files, data=data, timeout=timeout
             )
     else:
-        # JSON request for standard synthesis
+
         payload = {"text": text, "format": "wav"}
         response = requests.post(
             f"{api_url}/v1/tts",
@@ -67,7 +66,6 @@ def synthesize_via_api(config):
 
 
 def synthesize_via_cli(config):
-    """Fallback path: Direct CLI inference with local weights."""
     import torch
 
     checkpoint_path = config.get("checkpoint_path", "checkpoints/openaudio-s1-mini")
@@ -78,7 +76,7 @@ def synthesize_via_cli(config):
     compile_flag = config.get("compile", False)
     device = config.get("device")
 
-    # Check if fish_speech module is available
+
     fish_speech_inference = os.path.join(
         os.getcwd(), "fish_speech/models/text2semantic/inference.py"
     )
@@ -103,7 +101,7 @@ def synthesize_via_cli(config):
             f"Run: hf download fishaudio/openaudio-s1-mini --local-dir {checkpoint_path}"
         )
 
-    # Determine device
+
     if device:
         pass
     elif torch.cuda.is_available():
@@ -115,9 +113,9 @@ def synthesize_via_cli(config):
 
     log(f"Using device: {device}, checkpoint: {checkpoint_path}")
 
-    # Create temp directory for intermediate files
+
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Step 1: If reference audio provided, extract VQ tokens
+
         prompt_tokens = None
         if ref_audio and os.path.exists(ref_audio):
             log("Extracting reference audio tokens...")
@@ -139,7 +137,7 @@ def synthesize_via_cli(config):
                 if not os.path.exists(prompt_tokens):
                     prompt_tokens = None
 
-        # Step 2: Generate semantic tokens from text
+
         log("Generating semantic tokens...")
         semantic_cmd = [
             sys.executable,
@@ -164,7 +162,7 @@ def synthesize_via_cli(config):
         if result.returncode != 0:
             raise RuntimeError(f"Semantic generation failed: {result.stderr}")
 
-        # Find generated codes file
+
         codes_file = None
         for f in os.listdir(tmpdir):
             if f.startswith("codes_") and f.endswith(".npy"):
@@ -174,7 +172,7 @@ def synthesize_via_cli(config):
         if not codes_file:
             raise RuntimeError("No codes file generated")
 
-        # Step 3: Generate audio from semantic tokens
+
         log("Generating audio...")
         audio_cmd = [
             sys.executable,

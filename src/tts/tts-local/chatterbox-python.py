@@ -11,7 +11,6 @@ import numpy as np
 
 
 def get_device_and_dtype(requested_device=None, requested_dtype=None):
-    """Determine optimal device and dtype for Chatterbox."""
     if requested_device in ["cpu", "mps", "cuda"]:
         device = requested_device
     elif torch.cuda.is_available():

@@ -1,6 +1,7 @@
 import { l, err } from '@/logging'
 import { readFile, rm, join, ensureDir, execSync } from '@/node-utils'
 import type { ExtractOptions } from '@/extract/extract-types'
+import { registerTempDir, getTempDir } from '@/utils'
 
 const p = '[extract/extract-services/textract]'
 
@@ -55,8 +56,10 @@ export const extractWithTextract = async (
       throw new Error('GraphicsMagick is not installed. Please install it to use Textract with PDF files.')
     }
     
-    const tempDir = join('output', 'temp', requestId, 'textract')
+    const tempDir = join(getTempDir(), requestId, 'textract')
     await ensureDir(tempDir)
+    
+    const unregister = registerTempDir(tempDir)
     
     try {
       const pngPath = join(tempDir, `page_${pageNumber || 1}.png`)
@@ -88,10 +91,12 @@ export const extractWithTextract = async (
       l(`${p}[${requestId}] Cost${pageInfo}`, { totalCost: totalCost.toFixed(4) })
       
       await rm(tempDir, { recursive: true, force: true })
+      unregister()
       
       return { text, totalCost }
     } catch (error: any) {
       await rm(tempDir, { recursive: true, force: true }).catch(() => {})
+      unregister()
       
       if (error.name === 'UnsupportedDocumentException') {
         throw new Error('Document format not supported by Textract. Image may be corrupted.')

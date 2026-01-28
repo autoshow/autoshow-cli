@@ -2,7 +2,7 @@ import { l, err } from '@/logging'
 import { execPromise, readFile, access, rename, execFilePromise, unlink, ensureDir } from '@/node-utils'
 import { detectFileTypeFromBuffer, isSupportedFormat } from '@/text/utils/file-type-detector'
 import type { ProcessingOptions } from '@/text/text-types'
-import ora from 'ora'
+import { createSpinner, getCliContext, requireDependency } from '@/utils'
 
 export async function saveAudio(id: string, ensureFolders?: boolean) {
   if (ensureFolders) {
@@ -26,7 +26,8 @@ export async function executeWithRetry(
   command: string,
   args: string[],
 ) {
-  const maxRetries = 7
+  const ctx = getCliContext()
+  const maxRetries = ctx.network.maxRetries
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -53,7 +54,7 @@ export async function downloadAudio(
   input: string,
   filename: string
 ) {
-  const spinner = ora('Download Audio').start()
+  const spinner = createSpinner('Download Audio').start()
 
   const baseOutput = 'output'
   const finalPath = options.outputDir 
@@ -73,6 +74,8 @@ export async function downloadAudio(
   }
 
   if (options.video || options.playlist || options.urls || options.rss || options.channel) {
+    requireDependency('yt-dlp', 'to download audio from YouTube')
+    
     try {
       await executeWithRetry(
         'yt-dlp',
@@ -94,6 +97,8 @@ export async function downloadAudio(
       throw error
     }
   } else if (options.file) {
+    requireDependency('ffmpeg', 'to convert audio files')
+    
     try {
       await access(input)
 

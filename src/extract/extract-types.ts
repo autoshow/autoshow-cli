@@ -32,9 +32,9 @@ export interface BatchExtractResult {
 }
 
 export interface EpubExtractOptions {
-  output?: string        // Custom output directory
-  maxChars?: number      // Max chars per file (default 39000)
-  split?: number         // Split into exactly N files
+  output?: string
+  maxChars?: number
+  split?: number
 }
 
 export interface EpubExtractResult {

@@ -8,6 +8,7 @@ import {
 import {
   checkElevenLabsInstalled, installNpmPackage
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 import type { VoiceSettings } from '../tts-types'
 
 export const DEFAULT_SETTINGS: VoiceSettings = {
@@ -87,8 +88,8 @@ export async function processScriptWithElevenLabs(
     await ensureSilenceFile(outDir)
     
     const voiceMapping: Record<string, string> = {
-      DUCO: process.env['VOICE_ID_DUCO'] || 'ryn3WBvkCsp4dPZksMIf',
-      SEAMUS: process.env['VOICE_ID_SEAMUS'] || '21m00Tcm4TlvDq8ikWAM'
+      DUCO: getUserVoice('elevenlabs', 'DUCO', 'ryn3WBvkCsp4dPZksMIf')!,
+      SEAMUS: getUserVoice('elevenlabs', 'SEAMUS', '21m00Tcm4TlvDq8ikWAM')!
     }
     
     const uniqueSpeakers = [...new Set(script.map((e: {speaker: string}) => e.speaker))]

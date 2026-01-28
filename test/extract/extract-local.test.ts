@@ -71,7 +71,7 @@ describe('CLI extract local tests', () => {
       
       expect(filesToRename.length > 0).toBeTruthy()
       
-      // Verify files contain extracted text
+      
       for (const file of filesToRename) {
         const filePath = join(outputDirectory, file)
         if (existsSync(filePath) && file.endsWith('.txt')) {
@@ -81,7 +81,7 @@ describe('CLI extract local tests', () => {
         }
       }
       
-      // Verify page breaks are present if requested
+      
       if (testName.includes('page-breaks')) {
         const file = filesToRename.find(f => f.endsWith('.txt'))
         if (file) {

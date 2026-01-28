@@ -6,9 +6,6 @@ const p = '[extract/extract-epub]'
 
 const DEFAULT_MAX_CHARS = 39000
 
-/**
- * Get text content from a DOM node recursively
- */
 function getTextContent(node: any): string {
   if (!node) return ''
   
@@ -31,9 +28,6 @@ function getTextContent(node: any): string {
   return ''
 }
 
-/**
- * Find elements in DOM tree matching a selector function
- */
 function findElements(node: any, selector: (el: any) => boolean): any[] {
   const results: any[] = []
   
@@ -63,13 +57,9 @@ function findElements(node: any, selector: (el: any) => boolean): any[] {
   return results
 }
 
-/**
- * Clean HTML content for TTS output
- */
 function cleanHtmlForTTS(html: string, parseDocument: (html: string) => any): string {
   const dom = parseDocument(html)
 
-  // Remove script and style elements
   if (dom.children) {
     for (const child of dom.children) {
       if (child.type === 'tag') {
@@ -86,7 +76,6 @@ function cleanHtmlForTTS(html: string, parseDocument: (html: string) => any): st
     }
   }
 
-  // Remove footnotes and related elements
   if (dom.children) {
     for (const child of dom.children) {
       if (child.type === 'tag') {
@@ -121,7 +110,6 @@ function cleanHtmlForTTS(html: string, parseDocument: (html: string) => any): st
 
   let text = getTextContent(dom)
 
-  // Decode HTML entities
   text = text
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -133,17 +121,13 @@ function cleanHtmlForTTS(html: string, parseDocument: (html: string) => any): st
     .replace(/&#(\d+);/g, (_: string, num: string) => String.fromCharCode(parseInt(num, 10)))
     .replace(/&#x([0-9a-f]+);/gi, (_: string, hex: string) => String.fromCharCode(parseInt(hex, 16)))
 
-  // Remove footnote references
   text = text.replace(/\[\d+\]/g, '')
   text = text.replace(/\(\d+\)/g, '')
 
-  // Remove superscript numbers
   text = text.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, '')
 
-  // Remove other footnote markers
   text = text.replace(/\[[a-z*†‡§]\]/gi, '')
 
-  // Clean whitespace
   text = text.replace(/[ \t]+/g, ' ')
   text = text.replace(/\n[ \t]+/g, '\n')
   text = text.replace(/[ \t]+\n/g, '\n')
@@ -152,21 +136,14 @@ function cleanHtmlForTTS(html: string, parseDocument: (html: string) => any): st
   return text.trim()
 }
 
-/**
- * Final cleanup of extracted text
- */
 function finalCleanup(text: string): string {
-  // Remove page numbers
   text = text.replace(/^[\s-]*Page\s+\d+[\s-]*$/gim, '')
   text = text.replace(/^[\s-]*\d+[\s-]*$/gm, '')
 
-  // Remove standalone chapter markers
   text = text.replace(/^[\s-]*(Chapter|CHAPTER)[\s-]*$/gm, '')
 
-  // Clean excess newlines
   text = text.replace(/\n{3,}/g, '\n\n')
 
-  // Trim each line
   text = text
     .split('\n')
     .map((line) => line.trim())
@@ -175,9 +152,6 @@ function finalCleanup(text: string): string {
   return text.trim()
 }
 
-/**
- * Split text into chunks with a hard character limit
- */
 function splitWithHardLimit(text: string, maxChars: number): string[] {
   const chunks: string[] = []
   const paragraphs = text.split(/\n\n+/)
@@ -198,7 +172,6 @@ function splitWithHardLimit(text: string, maxChars: number): string[] {
       }
       
       if (trimmed.length > maxChars) {
-        // Split long paragraph by words
         const words = trimmed.split(/\s+/)
         let tempChunk = ''
         
@@ -213,7 +186,6 @@ function splitWithHardLimit(text: string, maxChars: number): string[] {
             }
             
             if (word.length > maxChars) {
-              // Split very long word
               for (let i = 0; i < word.length; i += maxChars) {
                 chunks.push(word.slice(i, i + maxChars))
               }
@@ -243,9 +215,6 @@ function splitWithHardLimit(text: string, maxChars: number): string[] {
   return chunks
 }
 
-/**
- * Split text into exactly N parts of roughly equal length
- */
 function splitIntoNParts(text: string, n: number): string[] {
   if (n <= 0) return [text]
   if (n === 1) return [text]
@@ -264,13 +233,11 @@ function splitIntoNParts(text: string, n: number): string[] {
     const separator = currentChunk.length > 0 ? '\n\n' : ''
     const testChunk = currentChunk + separator + trimmed
     
-    // Start new chunk if we've exceeded target AND we haven't reached n-1 chunks yet
     if (testChunk.length >= targetLength && chunks.length < n - 1) {
       if (currentChunk.length > 0) {
         chunks.push(currentChunk)
         currentChunk = trimmed
       } else {
-        // Current paragraph alone exceeds target, push it and continue
         chunks.push(testChunk)
         currentChunk = ''
       }
@@ -279,14 +246,11 @@ function splitIntoNParts(text: string, n: number): string[] {
     }
   }
   
-  // Push final chunk
   if (currentChunk.length > 0) {
     chunks.push(currentChunk)
   }
   
-  // If we have fewer chunks than requested, split the largest chunks
   while (chunks.length < n && chunks.length > 0) {
-    // Find the largest chunk
     let maxIdx = 0
     let maxLen = 0
     for (let i = 0; i < chunks.length; i++) {
@@ -299,15 +263,12 @@ function splitIntoNParts(text: string, n: number): string[] {
     const largestChunk = chunks[maxIdx]!
     const midPoint = Math.floor(largestChunk.length / 2)
     
-    // Find a good split point near the middle (prefer paragraph or sentence boundaries)
     let splitPoint = midPoint
     
-    // Look for paragraph break near middle
     const paragraphBreak = largestChunk.indexOf('\n\n', midPoint - 1000)
     if (paragraphBreak !== -1 && paragraphBreak < midPoint + 1000) {
       splitPoint = paragraphBreak + 2
     } else {
-      // Look for sentence break near middle
       const sentenceBreak = largestChunk.indexOf('. ', midPoint - 500)
       if (sentenceBreak !== -1 && sentenceBreak < midPoint + 500) {
         splitPoint = sentenceBreak + 2
@@ -317,16 +278,12 @@ function splitIntoNParts(text: string, n: number): string[] {
     const firstHalf = largestChunk.slice(0, splitPoint).trim()
     const secondHalf = largestChunk.slice(splitPoint).trim()
     
-    // Replace the largest chunk with two halves
     chunks.splice(maxIdx, 1, firstHalf, secondHalf)
   }
   
   return chunks
 }
 
-/**
- * Process a single EPUB file for TTS
- */
 async function processEpubForTTS(
   epubPath: string,
   options: EpubExtractOptions,
@@ -337,7 +294,6 @@ async function processEpubForTTS(
   try {
     l(`${p}[${requestId}] Processing`, { epubPath })
 
-    // Dynamic imports for epub and htmlparser2
     const EPub = (await import('epub')).default
     const { parseDocument } = await import('htmlparser2')
 
@@ -420,7 +376,6 @@ async function processEpubForTTS(
 
     await ensureDir(outputDir)
 
-    // Split text based on options
     let finalChunks: string[]
     if (options.split && options.split > 0) {
       finalChunks = splitIntoNParts(fullText, options.split)
@@ -429,7 +384,6 @@ async function processEpubForTTS(
       finalChunks = splitWithHardLimit(fullText, maxChars)
     }
     
-    // Write output files
     for (let i = 0; i < finalChunks.length; i++) {
       const chunk = finalChunks[i]
       if (!chunk) continue
@@ -465,9 +419,6 @@ async function processEpubForTTS(
   }
 }
 
-/**
- * Check if path is a file
- */
 async function isFile(filePath: string): Promise<boolean> {
   try {
     const stats = await stat(filePath)
@@ -477,9 +428,6 @@ async function isFile(filePath: string): Promise<boolean> {
   }
 }
 
-/**
- * Check if path is a directory
- */
 async function isDirectory(dirPath: string): Promise<boolean> {
   try {
     const stats = await stat(dirPath)
@@ -489,17 +437,12 @@ async function isDirectory(dirPath: string): Promise<boolean> {
   }
 }
 
-/**
- * Main entry point for EPUB extraction
- * Handles both single file and directory (batch) processing
- */
 export async function extractEpub(
   inputPath: string,
   options: EpubExtractOptions
 ): Promise<EpubExtractResult | EpubBatchResult> {
   const requestId = Math.random().toString(36).substring(2, 10)
   
-  // Check if input is a file or directory
   const isFileInput = await isFile(inputPath)
   const isDirInput = await isDirectory(inputPath)
   
@@ -510,7 +453,6 @@ export async function extractEpub(
     }
   }
   
-  // Single file processing
   if (isFileInput) {
     if (!inputPath.toLowerCase().endsWith('.epub')) {
       return {
@@ -521,7 +463,6 @@ export async function extractEpub(
     return processEpubForTTS(inputPath, options, requestId)
   }
   
-  // Directory (batch) processing
   l(`${p}[${requestId}] Scanning directory`, { inputPath })
   
   try {

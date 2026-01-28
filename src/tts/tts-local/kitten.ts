@@ -8,13 +8,15 @@ import {
 import {
   ensureTtsEnvironment, checkKittenInstalled, runKittenSetup
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 
 const getKittenConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
   l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
-  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['KITTEN_PYTHON_PATH']
+  
+  let pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['KITTEN_PYTHON_PATH'] || config.python
   
   if (!pythonPath || !existsSync(pythonPath)) {
     l('Python path not configured, checking for environment')
@@ -100,7 +102,7 @@ SOLUTION: Run setup to install Python environment:
   const lines = stdout.trim().split('\n')
   const lastLine = lines[lines.length - 1] || ''
   
-  // Try to parse JSON response first
+  
   try {
     if (lastLine && lastLine.startsWith('{')) {
       const jsonResult = JSON.parse(lastLine)
@@ -110,7 +112,7 @@ SOLUTION: Run setup to install Python environment:
       }
     }
   } catch (parseError) {
-    // If JSON parsing fails, fall through to stderr checking
+    
     l('Could not parse JSON response', { lastLine, parseError })
   }
   
@@ -184,7 +186,7 @@ export async function processScriptWithKitten(
     await ensureSilenceFile(outDir)
     
     const voiceMapping = Object.fromEntries(['DUCO', 'SEAMUS'].map(s => 
-      [s, process.env[`KITTEN_VOICE_${s}`] || (s === 'DUCO' ? 'expr-voice-2-m' : 'expr-voice-3-m')]
+      [s, getUserVoice('kitten', s, s === 'DUCO' ? 'expr-voice-2-m' : 'expr-voice-3-m')]
     ))
     
     l('Processing lines with Kitten TTS', { lineCount: script.length })

@@ -7,7 +7,6 @@ export async function filterRSSItems(
   channelLink?: string,
   channelImage?: string
 ): Promise<ShowNoteMetadata[]> {
-  
   const defaultDate = new Date().toISOString().substring(0, 10)
   const unfilteredItems: ShowNoteMetadata[] = (feedItemsArray || [])
     .filter((item: any) => {

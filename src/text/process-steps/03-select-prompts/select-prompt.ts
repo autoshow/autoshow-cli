@@ -8,7 +8,6 @@ const DEFAULT_KEY_MOMENTS_DURATION = 60
 
 const validPromptValues = new Set(PROMPT_CHOICES.map(choice => choice.value))
 
-// Map elevenlabs genre to the corresponding prompt key
 const GENRE_PROMPT_MAP: Record<ElevenLabsGenre, string> = {
   rap: 'rapSong',
   rock: 'rockSong',
@@ -37,7 +36,6 @@ export async function selectPrompts(options: ProcessingOptions) {
 
   const prompt = options.printPrompt || options.prompt || ['summary', 'longChapters', 'metadata']
   
-  // Add genre lyric prompt when music generation is requested (ElevenLabs or MiniMax)
   const musicGenre = options.elevenlabs || options.minimax
   if (musicGenre) {
     const genrePromptKey = GENRE_PROMPT_MAP[musicGenre]

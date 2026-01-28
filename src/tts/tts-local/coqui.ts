@@ -8,13 +8,15 @@ import {
 import {
   ensureTtsEnvironment, checkCoquiInstalled, runCoquiSetup
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 
 const getCoquiConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
   l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
-  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH']
+  
+  let pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || config.python
   
   if (!pythonPath || !existsSync(pythonPath)) {
     l('Python path not configured, checking for environment')
@@ -106,7 +108,7 @@ SOLUTION: Run setup to install Python environment:
   const lines = stdout.trim().split('\n')
   const lastLine = lines[lines.length - 1] || ''
   
-  // Try to parse JSON response first
+  
   try {
     if (lastLine && lastLine.startsWith('{')) {
       const jsonResult = JSON.parse(lastLine)
@@ -116,7 +118,7 @@ SOLUTION: Run setup to install Python environment:
       }
     }
   } catch (parseError) {
-    // If JSON parsing fails, fall through to stderr checking
+    
     l('Could not parse JSON response', { lastLine, parseError })
   }
   
@@ -183,8 +185,8 @@ export async function processScriptWithCoqui(
     
     await ensureSilenceFile(outDir)
     
-    const voiceSamples = Object.fromEntries(['DUCO', 'SEAMUS'].map(s => [s, process.env[`COQUI_VOICE_${s}`] || '']))
-    const speakers = Object.fromEntries(['DUCO', 'SEAMUS'].map(s => [s, process.env[`COQUI_SPEAKER_${s}`] || '']))
+    const voiceSamples = Object.fromEntries(['DUCO', 'SEAMUS'].map(s => [s, getUserVoice('coqui', s) || '']))
+    const speakers = Object.fromEntries(['DUCO', 'SEAMUS'].map(s => [s, getUserVoice('coqui_speaker', s) || '']))
     
     l('Processing lines with Coqui', { lineCount: script.length })
     await Promise.all(script.map(async (entry: any, idx: number) => {

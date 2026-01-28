@@ -8,6 +8,7 @@ import {
 import {
   ensureTtsEnvironment, checkFishAudioInstalled, runFishAudioSetup
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 import type { FishAudioOptions } from '../tts-types'
 
 const CHECKPOINT_DIR = 'checkpoints/openaudio-s1-mini'
@@ -40,7 +41,7 @@ const downloadWeightsIfNeeded = (): boolean => {
     mkdirSync(dirname(checkpointDir), { recursive: true })
   }
   
-  // Read HF token from standard locations
+  
   const homeDir = process.env['HOME'] || ''
   const tokenPaths = [
     join(homeDir, '.cache/huggingface/token'),
@@ -57,7 +58,7 @@ const downloadWeightsIfNeeded = (): boolean => {
   }
   
   try {
-    // Try using hf
+    
     const env = { ...process.env }
     if (hfToken) env['HF_TOKEN'] = hfToken
     
@@ -69,7 +70,7 @@ const downloadWeightsIfNeeded = (): boolean => {
     success(`FishAudio weights downloaded`)
     return true
   } catch {
-    // Fallback to Python with token
+    
     try {
       const pythonPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
       const tokenArg = hfToken ? `, token='${hfToken}'` : ''
@@ -92,7 +93,7 @@ const startDockerServer = (): boolean => {
     return true
   }
   
-  // Ensure weights are downloaded first
+  
   if (!downloadWeightsIfNeeded()) {
     return false
   }
@@ -100,7 +101,7 @@ const startDockerServer = (): boolean => {
   l('Starting FishAudio Docker server')
   
   try {
-    // Remove any stopped container with same name
+    
     spawnSync('docker', ['rm', '-f', DOCKER_CONTAINER_NAME], { stdio: 'pipe' })
     
     const checkpointPath = join(process.cwd(), 'checkpoints')
@@ -120,10 +121,10 @@ const startDockerServer = (): boolean => {
       return false
     }
     
-    // Wait for server to start - model warmup can take 5+ minutes on CPU
+    
     l('Waiting for server to initialize (this can take 5+ minutes on first run)')
     let attempts = 0
-    const maxAttempts = 90  // 90 * 4s = 6 minutes max wait
+    const maxAttempts = 90  
     while (attempts < maxAttempts) {
       try {
         const health = spawnSync('curl', ['-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://localhost:8080/v1/health'], {
@@ -157,7 +158,8 @@ const getFishAudioConfig = () => {
   l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
-  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['FISHAUDIO_PYTHON_PATH']
+  
+  let pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['FISHAUDIO_PYTHON_PATH'] || config.python
   
   if (!pythonPath || !existsSync(pythonPath)) {
     l('Python path not configured, checking for environment')
@@ -168,8 +170,9 @@ const getFishAudioConfig = () => {
   return {
     python: pythonPath,
     default_language: config.fishaudio?.default_language,
-    api_url: config.fishaudio?.api_url || process.env['FISHAUDIO_API_URL'] || 'http://localhost:8080',
-    checkpoint_path: config.fishaudio?.checkpoint_path || process.env['FISHAUDIO_CHECKPOINT_PATH'] || 'checkpoints/openaudio-s1-mini',
+    
+    api_url: process.env['FISHAUDIO_API_URL'] || config.fishaudio?.api_url || 'http://localhost:8080',
+    checkpoint_path: process.env['FISHAUDIO_CHECKPOINT_PATH'] || config.fishaudio?.checkpoint_path || 'checkpoints/openaudio-s1-mini',
     use_api: config.fishaudio?.use_api ?? true,
     compile: config.fishaudio?.compile ?? false,
     ...config.fishaudio
@@ -231,7 +234,7 @@ export async function synthesizeWithFishAudio(
   
   await ensureDir(dirname(outputPath))
   
-  // Build text with emotion marker if specified
+  
   let processedText = text
   if (options.emotion) {
     processedText = `(${options.emotion}) ${text}`
@@ -282,14 +285,14 @@ export async function synthesizeWithFishAudio(
     const jsonResult = JSON.parse(lastLine)
     if (!jsonResult.ok) {
       const error = jsonResult.error || ''
-      // If API or CLI failed, try starting Docker server automatically
+      
       if (error.includes('Connection refused') || error.includes('CLI fallback requires') || error.includes('Checkpoint not found')) {
         if (_retryCount >= MAX_RETRIES) {
           err('FishAudio TTS failed after retries', { maxRetries: MAX_RETRIES, containerName: DOCKER_CONTAINER_NAME })
         }
         l('FishAudio API not available, attempting automatic Docker setup')
         if (startDockerServer()) {
-          // Wait a bit for server to be fully ready
+          
           await new Promise(resolve => setTimeout(resolve, 3000))
           l('Retrying synthesis with Docker server', { attempt: _retryCount + 1, maxRetries: MAX_RETRIES })
           return synthesizeWithFishAudio(text, outputPath, options, _retryCount + 1)
@@ -301,14 +304,14 @@ export async function synthesizeWithFishAudio(
   } catch {
     const stderr = result.stderr || ''
     if (result.status !== 0) {
-      // If API or CLI failed, try starting Docker server automatically
+      
       if (stderr.includes('Connection refused') || stderr.includes('CLI fallback requires') || stderr.includes('Checkpoint not found')) {
         if (_retryCount >= MAX_RETRIES) {
           err('FishAudio TTS failed after retries', { maxRetries: MAX_RETRIES, containerName: DOCKER_CONTAINER_NAME })
         }
         l('FishAudio API not available, attempting automatic Docker setup')
         if (startDockerServer()) {
-          // Wait a bit for server to be fully ready
+          
           await new Promise(resolve => setTimeout(resolve, 3000))
           l('Retrying synthesis with Docker server', { attempt: _retryCount + 1, maxRetries: MAX_RETRIES })
           return synthesizeWithFishAudio(text, outputPath, options, _retryCount + 1)
@@ -345,12 +348,12 @@ export async function processScriptWithFishAudio(
     
     await ensureSilenceFile(outDir)
     
-    // Voice mapping from environment variables (reference audio paths)
+    
     const voiceMapping: Record<string, string> = {}
     for (const speakerKey of ['DUCO', 'SEAMUS', 'NARRATOR']) {
-      const envValue = process.env[`FISHAUDIO_VOICE_${speakerKey}`]
-      if (envValue) {
-        voiceMapping[speakerKey] = envValue
+      const voiceValue = getUserVoice('fishaudio', speakerKey)
+      if (voiceValue) {
+        voiceMapping[speakerKey] = voiceValue
       }
     }
     
