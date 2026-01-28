@@ -21,7 +21,7 @@ describe('CLI save audio files tests', () => {
   const testMediaFile = join(testMediaDir, 'sample.mp4')
   let fileCounter = 1
   
-  // Create a test media directory with a sample video file
+  
   beforeAll(() => {
     if (!existsSync(testMediaDir)) {
       mkdirSync(testMediaDir, { recursive: true })
@@ -29,7 +29,7 @@ describe('CLI save audio files tests', () => {
     }
     
     if (!existsSync(testMediaFile)) {
-      // Create a minimal valid MP4 file using ffmpeg
+      
       const command = `ffmpeg -f lavfi -i sine=frequency=1000:duration=5 -f lavfi -i color=c=blue:s=320x240:d=5 -c:v libx264 -c:a aac -y "${testMediaFile}"`
       
       try {
@@ -47,7 +47,7 @@ describe('CLI save audio files tests', () => {
   })
   
   afterAll(() => {
-    // Clean up test directory if we created it
+    
     if (existsSync(testMediaDir)) {
       try {
         rmSync(testMediaDir, { recursive: true, force: true })
@@ -57,7 +57,7 @@ describe('CLI save audio files tests', () => {
       }
     }
     
-    // Clean up custom output directory
+    
     const customOutputDir = join(outputDirectory, 'custom-media')
     if (existsSync(customOutputDir)) {
       try {
@@ -77,7 +77,7 @@ describe('CLI save audio files tests', () => {
     test(`Save Audio Files: ${testName}`, async () => {
       l(`${p} Starting test`, { testName })
       
-      // Determine the correct output directory based on command
+      
       const checkDir = command.includes('--output') && command.includes('custom-media')
         ? join(outputDirectory, 'custom-media')
         : outputDirectory
@@ -130,7 +130,7 @@ describe('CLI save audio files tests', () => {
       
       expect(filesToRename.length > 0).toBeTruthy()
       
-      // Verify files contain audio data
+      
       for (const file of filesToRename) {
         const filePath = join(checkDir, file)
         if (existsSync(filePath) && file.endsWith('.mp3')) {
@@ -140,7 +140,7 @@ describe('CLI save audio files tests', () => {
         }
       }
       
-      // Only rename files in the standard output directory
+      
       if (checkDir === outputDirectory) {
         for (const file of filesToRename) {
           if (file.endsWith('.part')) continue

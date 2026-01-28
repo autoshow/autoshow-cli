@@ -8,6 +8,7 @@ import {
 import {
   ensureTtsEnvironment, checkQwen3Installed, runQwen3Setup
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 import type { Qwen3Options, Qwen3Mode } from '../tts-types'
 
 const VALID_SPEAKERS = ['Vivian', 'Serena', 'Uncle_Fu', 'Dylan', 'Eric', 'Ryan', 'Aiden', 'Ono_Anna', 'Sohee']
@@ -18,7 +19,8 @@ const getQwen3Config = () => {
   l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
-  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['QWEN3_PYTHON_PATH']
+  
+  let pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['QWEN3_PYTHON_PATH'] || config.python
   
   if (!pythonPath || !existsSync(pythonPath)) {
     l('Python path not configured, checking for environment')
@@ -133,7 +135,7 @@ export async function synthesizeWithQwen3(
     stdio: ['pipe', 'pipe', 'pipe'], 
     encoding: 'utf-8',
     env: { ...process.env, PYTHONWARNINGS: 'ignore' },
-    maxBuffer: 1024 * 1024 * 50 // 50MB buffer for large model outputs
+    maxBuffer: 1024 * 1024 * 50 
   })
   
   if (result.error) {
@@ -142,7 +144,7 @@ export async function synthesizeWithQwen3(
       { errorCode: errorWithCode.code, message: result.error.message })
   }
   
-  // Parse stdout for JSON result
+  
   const stdout = result.stdout || ''
   const lines = stdout.trim().split('\n')
   const lastLine = lines[lines.length - 1] || ''
@@ -153,7 +155,7 @@ export async function synthesizeWithQwen3(
       err('Qwen3 TTS failed', { error: jsonResult.error })
     }
   } catch {
-    // If we can't parse JSON, check for errors in stderr
+    
     const stderr = result.stderr || ''
     if (result.status !== 0) {
       if (stderr.includes('ModuleNotFoundError')) {
@@ -186,7 +188,7 @@ export async function processScriptWithQwen3(
     
     await ensureSilenceFile(outDir)
     
-    // Voice mapping from environment variables
+    
     const voiceMapping: Record<string, string> = {}
     const defaultVoices: Record<string, string> = {
       'DUCO': 'Ryan',
@@ -195,12 +197,12 @@ export async function processScriptWithQwen3(
     }
     
     for (const speakerKey of Object.keys(defaultVoices)) {
-      voiceMapping[speakerKey] = process.env[`QWEN3_VOICE_${speakerKey}`] || defaultVoices[speakerKey] as string
+      voiceMapping[speakerKey] = getUserVoice('qwen3', speakerKey, defaultVoices[speakerKey]) as string
     }
     
     l('Processing lines with Qwen3 TTS', { lineCount: script.length })
     
-    // Process sequentially to avoid GPU memory issues
+    
     for (let idx = 0; idx < script.length; idx++) {
       const entry = script[idx] as { speaker: string; text: string; instruct?: string; mode?: Qwen3Mode }
       const entrySpeaker = entry.speaker
@@ -216,7 +218,7 @@ export async function processScriptWithQwen3(
       await synthesizeWithQwen3(entryText, wavOut, {
         ...options,
         speaker: voiceMapping[entrySpeaker] || options.speaker || 'Vivian',
-        // Segment-level overrides
+        
         ...(segmentInstruct && { instruct: segmentInstruct }),
         ...(segmentMode && { mode: segmentMode })
       })
@@ -224,7 +226,7 @@ export async function processScriptWithQwen3(
       const wavData = await readFile(wavOut)
       await writeFile(pcmOut, wavData.slice(44))
       
-      // Small delay between segments
+      
       if (idx < script.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 100))
       }

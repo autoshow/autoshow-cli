@@ -1,35 +1,31 @@
 import { l, err } from '@/logging'
 import type { ProcessingOptions } from '@/text/text-types'
+import { EXIT_USAGE } from '@/utils'
 
 export function validateChannelOptions(options: ProcessingOptions): void {
   if (options.last !== undefined) {
     if (!Number.isInteger(options.last) || options.last < 1) {
-      err('Error: The --last option must be a positive integer.')
-      process.exit(1)
+      err('Error: The --last option must be a positive integer.', undefined, EXIT_USAGE)
     }
     if (options.order !== undefined) {
-      err('Error: The --last option cannot be used with --order.')
-      process.exit(1)
+      err('Error: The --last option cannot be used with --order.', undefined, EXIT_USAGE)
     }
   }
 
   if (options.order !== undefined && !['newest', 'oldest'].includes(options.order)) {
-    err("Error: The --order option must be either 'newest' or 'oldest'.")
-    process.exit(1)
+    err("Error: The --order option must be either 'newest' or 'oldest'.", undefined, EXIT_USAGE)
   }
 
   if (options.days !== undefined) {
     if (!Number.isInteger(options.days) || options.days < 1) {
-      err('Error: The --days option must be a positive integer.')
-      process.exit(1)
+      err('Error: The --days option must be a positive integer.', undefined, EXIT_USAGE)
     }
     if (
       options.last !== undefined ||
       options.order !== undefined ||
       (options.date && options.date.length > 0)
     ) {
-      err('Error: The --days option cannot be used with --last, --order, or --date.')
-      process.exit(1)
+      err('Error: The --days option cannot be used with --last, --order, or --date.', undefined, EXIT_USAGE)
     }
   }
 
@@ -37,16 +33,14 @@ export function validateChannelOptions(options: ProcessingOptions): void {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/
     for (const d of options.date) {
       if (!dateRegex.test(d)) {
-        err('Error: Invalid date format. Please use YYYY-MM-DD format', { date: d })
-        process.exit(1)
+        err('Error: Invalid date format. Please use YYYY-MM-DD format', { date: d }, EXIT_USAGE)
       }
     }
     if (
       options.last !== undefined ||
       options.order !== undefined
     ) {
-      err('Error: The --date option cannot be used with --last or --order.')
-      process.exit(1)
+      err('Error: The --date option cannot be used with --last or --order.', undefined, EXIT_USAGE)
     }
   }
 

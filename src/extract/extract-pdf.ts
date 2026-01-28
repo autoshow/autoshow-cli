@@ -4,12 +4,15 @@ import type { ExtractResult, ExtractOptions, ExtractService, SinglePageExtractRe
 import { extractWithZerox } from './extract-services/zerox'
 import { extractWithUnpdf } from './extract-services/unpdf'
 import { extractWithTextract } from './extract-services/textract'
+import { registerTempDir, getTempDir } from '@/utils'
 
 const p = '[extract/extract-pdf]'
 
 const splitPdfIntoPages = async (pdfPath: string, requestId: string): Promise<string[]> => {
-  const tempDir = join('output', 'temp', requestId, 'pages')
+  const tempDir = join(getTempDir(), requestId, 'pages')
   await ensureDir(tempDir)
+  
+  registerTempDir(join(getTempDir(), requestId))
   
   try {
     execSync('gm version', { stdio: 'ignore' })
@@ -75,7 +78,7 @@ const extractSinglePage = async (
 }
 
 const cleanupTempFiles = async (requestId: string): Promise<void> => {
-  const tempDir = join('output', 'temp', requestId)
+  const tempDir = join(getTempDir(), requestId)
   try {
     await rm(tempDir, { recursive: true, force: true })
   } catch (error) {

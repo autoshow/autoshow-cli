@@ -1,4 +1,5 @@
 import { exit } from '@/node-utils'
+import { getCliContext, EXIT_ERROR } from '@/utils'
 import type { LogColors } from '@/types/logging'
 
 const isBrowser = typeof window !== 'undefined'
@@ -13,24 +14,56 @@ const isStepTitle = (message: string): boolean => {
   return STEP_PATTERN.test(message)
 }
 
+
+const NO_COLORS: LogColors = {
+  timestamp: '',
+  message: '',
+  path: '',
+  value: '',
+  jsonKey: '',
+  jsonValue: '',
+  error: '',
+  success: '',
+  stepTitle: ''
+}
+
+
 let colorsCache: LogColors | null = null
 
+
+
+
+
+const shouldDisableColors = (): boolean => {
+  if (isBrowser) return true
+  
+  const ctx = getCliContext()
+  
+  
+  if (ctx.noColor) return true
+  
+  
+  if (ctx.format === 'plain') return true
+  
+  
+  if (ctx.format === 'json') return true
+  
+  return false
+}
+
+
+export const resetColorsCache = (): void => {
+  colorsCache = null
+}
+
 const getColors = (): LogColors => {
-  if (colorsCache) return colorsCache
-  if (isBrowser) {
-    colorsCache = {
-      timestamp: '',
-      message: '',
-      path: '',
-      value: '',
-      jsonKey: '',
-      jsonValue: '',
-      error: '',
-      success: '',
-      stepTitle: ''
-    }
-    return colorsCache
+  
+  if (shouldDisableColors()) {
+    return NO_COLORS
   }
+  
+  if (colorsCache) return colorsCache
+  
   colorsCache = {
     timestamp: Bun.color('#6b7280', 'ansi-16m') || '',
     message: Bun.color('#e5e7eb', 'ansi-16m') || '',
@@ -47,6 +80,12 @@ const getColors = (): LogColors => {
 
 const getTimestamp = (): string => {
   if (isBrowser) return ''
+  
+  const ctx = getCliContext()
+  
+  
+  if (ctx.format === 'plain' || ctx.format === 'json') return ''
+  
   const c = getColors()
   const iso = new Date().toISOString().split('T')[1] || ''
   const time = iso.slice(0, 12)
@@ -63,6 +102,15 @@ const isPath = (str: string): boolean => {
 
 const formatJsonObject = (obj: Record<string, unknown>, indent = 2): string => {
   const c = getColors()
+  const ctx = getCliContext()
+  
+  
+  if (ctx.format === 'plain') {
+    return Object.entries(obj)
+      .map(([key, val]) => `${key}=${typeof val === 'string' ? val : JSON.stringify(val)}`)
+      .join(' ')
+  }
+  
   const entries = Object.entries(obj)
   const lines = entries.map(([key, val]) => {
     const spaces = ' '.repeat(indent)
@@ -103,60 +151,105 @@ const formatJsonObject = (obj: Record<string, unknown>, indent = 2): string => {
   return `{\n${lines.join(',\n')}\n}`
 }
 
+
+
+
+
 export const l = (message: string, data?: Record<string, unknown>): void => {
   if (isBrowser) {
-    console.log(message, data || '')
+    console.error(message, data || '')
     return
   }
+  
+  const ctx = getCliContext()
+  
+  
+  if (ctx.quiet) return
+  
+  
+  if (ctx.format === 'json') return
   
   const c = getColors()
   const timestamp = getTimestamp()
   
   if (isStepTitle(message)) {
-    const coloredMessage = `${BOLD}${UNDERLINE}${c.stepTitle}${message}${RESET}`
+    const coloredMessage = ctx.format === 'plain' 
+      ? message 
+      : `${BOLD}${UNDERLINE}${c.stepTitle}${message}${RESET}`
     if (data) {
-      console.log(`\n${timestamp}${coloredMessage} ${formatJsonObject(data)}`)
+      console.error(`\n${timestamp}${coloredMessage} ${formatJsonObject(data)}`)
     } else {
-      console.log(`\n${timestamp}${coloredMessage}`)
+      console.error(`\n${timestamp}${coloredMessage}`)
     }
     return
   }
   
-  const coloredMessage = `${c.message}${message}${RESET}`
+  const coloredMessage = ctx.format === 'plain' ? message : `${c.message}${message}${RESET}`
   
   if (data) {
-    console.log(`${timestamp}${coloredMessage} ${formatJsonObject(data)}`)
+    console.error(`${timestamp}${coloredMessage} ${formatJsonObject(data)}`)
   } else {
-    console.log(`${timestamp}${coloredMessage}`)
+    console.error(`${timestamp}${coloredMessage}`)
   }
 }
 
-export const err = (message: string, errorObj?: unknown): void => {
+
+
+
+
+
+
+
+
+export const err = (message: string, errorObj?: unknown, exitCode: number = EXIT_ERROR): void => {
   if (isBrowser) {
     console.error(message, errorObj || '')
     return
   }
   
+  const ctx = getCliContext()
   const c = getColors()
   const timestamp = getTimestamp()
   const errorMessage = errorObj instanceof Error ? `: ${errorObj.message}` : ''
-  console.error(`${timestamp}${c.error}${message}${errorMessage}${RESET}`)
-  exit(1)
+  
+  
+  
+  if (ctx.format === 'json') {
+    console.error(`Error: ${message}${errorMessage}`)
+  } else if (ctx.format === 'plain') {
+    console.error(`ERROR ${message}${errorMessage}`)
+  } else {
+    console.error(`${timestamp}${c.error}${message}${errorMessage}${RESET}`)
+  }
+  
+  exit(exitCode)
 }
+
+
+
+
 
 export const success = (message: string, data?: Record<string, unknown>): void => {
   if (isBrowser) {
-    console.log(message, data || '')
+    console.error(message, data || '')
     return
   }
   
+  const ctx = getCliContext()
+  
+  
+  if (ctx.quiet) return
+  
+  
+  if (ctx.format === 'json') return
+  
   const c = getColors()
   const timestamp = getTimestamp()
-  const coloredMessage = `${c.success}${message}${RESET}`
+  const coloredMessage = ctx.format === 'plain' ? message : `${c.success}${message}${RESET}`
   
   if (data) {
-    console.log(`${timestamp}${coloredMessage} ${formatJsonObject(data)}`)
+    console.error(`${timestamp}${coloredMessage} ${formatJsonObject(data)}`)
   } else {
-    console.log(`${timestamp}${coloredMessage}`)
+    console.error(`${timestamp}${coloredMessage}`)
   }
 }

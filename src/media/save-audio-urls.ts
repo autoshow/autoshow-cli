@@ -1,6 +1,7 @@
 import { l, err, success } from '@/logging'
 import { spawn, readFile, stat, ensureDir } from '@/node-utils'
 import { AUDIO_FMT, AUDIO_Q } from './create-media-command'
+import { registerProcess } from '@/utils'
 
 export async function downloadAudioFromUrls(markdownFile: string, verbose = false): Promise<void> {
   if (!markdownFile.toLowerCase().endsWith('.md')) {
@@ -44,7 +45,10 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
         stdio: verbose ? 'inherit' : 'ignore' 
       })
       
+      const unregister = registerProcess(ytDlpProcess)
+      
       ytDlpProcess.on('close', (code) => {
+        unregister()
         if (code === 0) {
           resolve()
         } else {
@@ -53,6 +57,7 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
       })
       
       ytDlpProcess.on('error', (error) => {
+        unregister()
         reject(new Error(`yt-dlp process error: ${error.message}`))
       })
     })

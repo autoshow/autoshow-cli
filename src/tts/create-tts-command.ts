@@ -8,6 +8,7 @@ import { downloadModel } from './tts-commands/download-command'
 import { processFileWithEngine } from './tts-commands/file-command'
 import { processScriptWithEngine } from './tts-commands/script-command'
 import { detectEngine } from './tts-utils/engine-utils'
+import { createJsonOutput, setJsonError, outputJson, type TtsJsonOutput } from '@/utils'
 
 const OUTDIR = 'output'
 
@@ -53,6 +54,8 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--polly-engine <engine>', 'Polly engine: standard, neural (auto-selected based on voice)')
   .option('--output <dir>', 'Output directory', OUTDIR)
   .option('--speed <number>', 'Speed 0.25-4.0 (coqui/kitten/qwen3)', parseFloat)
+  
+  .option('--elevenlabs-key-file <path>', 'Path to file containing ElevenLabs API key')
 
 const handleAction = async (action: string, runner: () => Promise<void>): Promise<void> => {
   try {
@@ -76,24 +79,74 @@ export const createTtsCommand = (): Command => {
 
   sharedOptions(tts.command('file').description('Generate speech from a markdown file')
     .argument('<filePath>', 'Path to the markdown file'))
-    .action(async (filePath, options) => handleAction('file', async () => {
-      if (!existsSync(filePath)) err(`File not found: ${filePath}`)
+    .action(async (filePath, options) => {
+      const jsonBuilder = createJsonOutput<TtsJsonOutput>('tts')
       
-      const outputDir = options.output || OUTDIR
-      if (!existsSync(outputDir)) {
-        mkdirSync(outputDir, { recursive: true })
+      try {
+        if (!existsSync(filePath)) {
+          setJsonError(jsonBuilder, `File not found: ${filePath}`)
+          outputJson(jsonBuilder)
+          err(`File not found: ${filePath}`)
+        }
+        
+        const outputDir = options.output || OUTDIR
+        if (!existsSync(outputDir)) {
+          mkdirSync(outputDir, { recursive: true })
+        }
+        
+        await processFileWithEngine(detectEngine(options), filePath, outputDir, options)
+        
+        jsonBuilder.output.data = {
+          inputPath: filePath,
+          outputPath: outputDir,
+          service: detectEngine(options)
+        }
+        outputJson(jsonBuilder)
+        success(`Speech saved to ${outputDir}`)
+      } catch (error) {
+        setJsonError(jsonBuilder, error as Error)
+        outputJson(jsonBuilder)
+        err(`Error generating speech: ${error}`)
       }
-      
-      await processFileWithEngine(detectEngine(options), filePath, outputDir, options)
-      success(`Speech saved to ${outputDir} 🔊`)
-    }))
+    })
 
   sharedOptions(tts.command('script').description('Generate speech from a JSON script file')
     .argument('<scriptPath>', 'Path to the JSON script file'))
-    .action(async (scriptPath, options) => handleAction('script', async () => {
-      if (!existsSync(scriptPath)) err(`Script file not found: ${scriptPath}`)
-      await processScriptWithEngine(detectEngine(options), scriptPath, options.output || OUTDIR, options)
-    }))
+    .action(async (scriptPath, options) => {
+      const jsonBuilder = createJsonOutput<TtsJsonOutput>('tts')
+      
+      try {
+        if (!existsSync(scriptPath)) {
+          setJsonError(jsonBuilder, `Script file not found: ${scriptPath}`)
+          outputJson(jsonBuilder)
+          err(`Script file not found: ${scriptPath}`)
+        }
+        
+        const outputDir = options.output || OUTDIR
+        await processScriptWithEngine(detectEngine(options), scriptPath, outputDir, options)
+        
+        jsonBuilder.output.data = {
+          inputPath: scriptPath,
+          outputPath: outputDir,
+          service: detectEngine(options)
+        }
+        outputJson(jsonBuilder)
+        success(`Speech saved to ${outputDir}`)
+      } catch (error) {
+        setJsonError(jsonBuilder, error as Error)
+        outputJson(jsonBuilder)
+        err(`Error generating speech: ${error}`)
+      }
+    })
+
+  tts.addHelpText('after', `
+Examples:
+  $ autoshow-cli tts list
+  $ autoshow-cli tts file ./input/sample.md --coqui
+  $ autoshow-cli tts file ./input/story.md --elevenlabs --voice "Rachel"
+  $ autoshow-cli tts script ./input/script.json --coqui
+  $ autoshow-cli tts file ./input/sample.md --coqui --voice-clone ./input/audio.mp3
+`)
 
   return tts
 }

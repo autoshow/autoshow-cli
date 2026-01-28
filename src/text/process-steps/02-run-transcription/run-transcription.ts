@@ -7,7 +7,7 @@ import { logTranscriptionCost, estimateTranscriptCost } from '../../utils/cost'
 import { checkFFmpeg, getAudioDuration } from '../../utils/setup-helpers'
 import { l, err } from '@/logging'
 import type { ProcessingOptions, TranscriptionResult } from '@/text/text-types'
-import ora from 'ora'
+import { createSpinner } from '@/utils'
 
 async function ensureTranscriptionPrerequisites(): Promise<void> {
   const hasFFmpeg = await checkFFmpeg()
@@ -21,7 +21,7 @@ export async function runTranscription(
   finalPath: string,
   transcriptServicesInput?: string
 ): Promise<TranscriptionResult> {
-  const spinner = ora('Step 2 - Run Transcription').start()
+  const spinner = createSpinner('Step 2 - Run Transcription').start()
   
   await ensureTranscriptionPrerequisites()
 

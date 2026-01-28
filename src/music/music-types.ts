@@ -6,7 +6,6 @@ export interface ApiError {
   $metadata?: { httpStatusCode?: number }
 }
 
-// Output format options
 export type MusicOutputFormat = 
   | 'mp3_22050_32' | 'mp3_24000_48' | 'mp3_44100_32' | 'mp3_44100_64' 
   | 'mp3_44100_96' | 'mp3_44100_128' | 'mp3_44100_192'
@@ -16,10 +15,8 @@ export type MusicOutputFormat =
 
 export type MusicModel = 'music_v1'
 
-// Music service selection
 export type MusicService = 'elevenlabs' | 'minimax'
 
-// MiniMax Music 2.5 types
 export type MinimaxAudioFormat = 'mp3' | 'wav' | 'pcm'
 export type MinimaxSampleRate = 16000 | 24000 | 32000 | 44100
 export type MinimaxBitrate = 32000 | 64000 | 128000 | 256000
@@ -32,12 +29,11 @@ export interface MinimaxAudioSetting {
 
 export interface MinimaxMusicOptions {
   outputPath?: string
-  prompt?: string           // Style/mood description, 0-2000 chars
-  lyrics: string            // Required, 1-3500 chars with section tags
+  prompt?: string
+  lyrics: string
   audioSetting?: MinimaxAudioSetting
 }
 
-// Supported MiniMax section tags
 export const MINIMAX_SECTION_TAGS = [
   'Intro', 'Verse', 'Pre Chorus', 'Chorus', 'Interlude',
   'Bridge', 'Outro', 'Post Chorus', 'Transition', 'Break',
@@ -46,20 +42,17 @@ export const MINIMAX_SECTION_TAGS = [
 
 export type MinimaxSectionTag = typeof MINIMAX_SECTION_TAGS[number]
 
-// Time range for section sources
 export interface TimeRange {
   start_ms: number
   end_ms: number
 }
 
-// Section source for inpainting (enterprise only)
 export interface SectionSource {
   song_id: string
   range: TimeRange
   negative_ranges?: TimeRange[]
 }
 
-// Individual song section
 export interface SongSection {
   section_name: string
   positive_local_styles: string[]
@@ -69,14 +62,12 @@ export interface SongSection {
   source_from?: SectionSource | null
 }
 
-// Detailed composition plan
 export interface MusicCompositionPlan {
   positive_global_styles: string[]
   negative_global_styles: string[]
   sections: SongSection[]
 }
 
-// Options for music generation
 export interface MusicGenerateOptions {
   outputPath?: string
   outputFormat?: MusicOutputFormat
@@ -89,24 +80,21 @@ export interface MusicGenerateOptions {
   signWithC2pa?: boolean
 }
 
-// Options for composition plan creation
 export interface MusicPlanOptions {
   durationMs?: number
   sourceCompositionPlan?: MusicCompositionPlan
 }
 
-// Result of music generation
 export interface MusicGenerationResult {
   success: boolean
   path?: string
   error?: string
   details?: string
-  duration?: number  // Generation time in seconds
-  songId?: string    // From response headers
-  timestamps?: any   // Word timestamps if requested
+  duration?: number
+  songId?: string
+  timestamps?: any
 }
 
-// Result of composition plan creation
 export interface MusicPlanResult {
   success: boolean
   plan?: MusicCompositionPlan

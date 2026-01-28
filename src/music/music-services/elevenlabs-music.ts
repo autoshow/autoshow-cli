@@ -12,9 +12,6 @@ import type {
 
 const BASE_URL = 'https://api.elevenlabs.io/v1/music'
 
-/**
- * Generate music using ElevenLabs Music API (simple endpoint)
- */
 export async function generateMusicWithElevenLabs(
   prompt: string,
   options: MusicGenerateOptions = {}
@@ -35,14 +32,12 @@ export async function generateMusicWithElevenLabs(
       model_id: 'music_v1'
     }
     
-    // Use either prompt or composition_plan, not both
     if (options.compositionPlan) {
       requestBody['composition_plan'] = options.compositionPlan
       if (options.respectSectionDurations !== undefined) {
         requestBody['respect_sections_durations'] = options.respectSectionDurations
       }
     } else {
-      // Build prompt with optional lyrics
       let fullPrompt = prompt
       if (options.lyrics) {
         fullPrompt = `${prompt}\n\nLyrics:\n${options.lyrics}`
@@ -82,7 +77,6 @@ export async function generateMusicWithElevenLabs(
       throw new Error(`API error (${response.status}): ${errorText}`)
     }
     
-    // Get song ID from response headers if available
     const songId = response.headers.get('x-song-id') || undefined
     
     const buffer = await response.arrayBuffer()
@@ -109,9 +103,6 @@ export async function generateMusicWithElevenLabs(
   }
 }
 
-/**
- * Generate music with detailed response (includes metadata and timestamps)
- */
 export async function generateMusicDetailedWithElevenLabs(
   prompt: string,
   options: MusicGenerateOptions = {}
@@ -173,13 +164,10 @@ export async function generateMusicDetailedWithElevenLabs(
       throw new Error(`API error (${response.status}): ${errorText}`)
     }
     
-    // Handle response (verify actual format: audio binary vs JSON vs multipart)
-    // TODO: parse contentType and extract timestamps/metadata when format is confirmed
     const contentType = response.headers.get('content-type') || ''
     let songId: string | undefined
     let timestamps: any
     
-    // For now, treat as binary audio - parsing strategy may need adjustment based on actual response
     const buffer = await response.arrayBuffer()
     ensureOutputDirectory(uniqueOutputPath)
     await writeFile(uniqueOutputPath, Buffer.from(buffer))
@@ -206,9 +194,6 @@ export async function generateMusicDetailedWithElevenLabs(
   }
 }
 
-/**
- * Create a composition plan (no credits charged, rate-limited)
- */
 export async function createCompositionPlan(
   prompt: string,
   options: MusicPlanOptions = {}

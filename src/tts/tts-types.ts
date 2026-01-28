@@ -54,10 +54,10 @@ export type ChatterboxLanguage =
 
 export interface ChatterboxOptions {
   model?: ChatterboxModel
-  refAudio?: string           // Voice cloning reference (10s clip)
-  languageId?: ChatterboxLanguage  // For multilingual model
-  exaggeration?: number       // 0.0-1.0, for standard model
-  cfgWeight?: number          // 0.0-1.0, for standard model
+  refAudio?: string           
+  languageId?: ChatterboxLanguage  
+  exaggeration?: number       
+  cfgWeight?: number          
   device?: 'cpu' | 'mps' | 'cuda'
   dtype?: 'float32' | 'float16' | 'bfloat16'
 }
@@ -68,10 +68,10 @@ export type FishAudioLanguage =
 
 export interface FishAudioOptions {
   language?: FishAudioLanguage | string
-  apiUrl?: string              // API server URL  
-  refAudio?: string            // Voice cloning reference
-  refText?: string             // Reference audio transcript
-  emotion?: string             // Emotion marker to prepend
+  apiUrl?: string              
+  refAudio?: string            
+  refText?: string             
+  emotion?: string             
   device?: 'cpu' | 'cuda' | 'mps'
 }
 
@@ -81,11 +81,11 @@ export type CosyVoiceLanguage =
 export type CosyVoiceMode = 'instruct' | 'zero_shot' | 'cross_lingual'
 
 export interface CosyVoiceOptions {
-  mode?: CosyVoiceMode              // Default: instruct
-  language?: CosyVoiceLanguage      // Default: auto
-  apiUrl?: string                   // Docker API URL (default: http://localhost:50000)
-  refAudio?: string                 // Reference audio for zero_shot mode (optional)
-  refText?: string                  // Transcript of reference audio (optional)
-  instruct?: string                 // Instruction text (e.g., "Speak slowly", "Cantonese dialect")
-  stream?: boolean                  // Enable streaming (default: false)
+  mode?: CosyVoiceMode              
+  language?: CosyVoiceLanguage      
+  apiUrl?: string                   
+  refAudio?: string                 
+  refText?: string                  
+  instruct?: string                 
+  stream?: boolean                  
 }

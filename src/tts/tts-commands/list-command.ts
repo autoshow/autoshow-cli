@@ -1,19 +1,40 @@
 import { readFileSync } from 'node:fs'
 import { l, err } from '@/logging'
 import { spawnSync, existsSync, join, dirname } from '@/node-utils'
+import { withPager, getCliContext } from '@/utils'
+
+
+
+
+function formatModelsByCategory(modelsByCategory: Record<string, string[]>): string {
+  const lines: string[] = []
+  
+  Object.entries(modelsByCategory)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([category, models]) => {
+      lines.push(`\n  ${category}:`)
+      models.sort().forEach(model => {
+        const modelName = model.split('/').slice(2).join('/')
+        lines.push(`    - ${modelName || model}`)
+      })
+    })
+  
+  return lines.join('\n')
+}
 
 export const listModels = async (): Promise<void> => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
   l('Loading config from path', { configPath })
   
-  let config: any = {}
+  let config: Record<string, unknown> = {}
   try {
     config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   } catch (parseError) {
     l('Failed to parse TTS config, using defaults', { configPath, error: parseError })
   }
   
-  const pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || 
+  
+  const pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['COQUI_PYTHON_PATH'] || (config['python'] as string) || 
     (existsSync(join(process.cwd(), 'build/pyenv/tts/bin/python')) ? join(process.cwd(), 'build/pyenv/tts/bin/python') : 'python3')
   
   l('Using Python path', { pythonPath })
@@ -101,17 +122,21 @@ SOLUTION: Run setup to install all dependencies:
           return acc
         }, {} as Record<string, string[]>)
         
-        Object.entries(modelsByCategory)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .forEach(([category, models]) => {
-            console.log(`\n  ${category}:`)
-            models.sort().forEach(model => {
-              const modelName = model.split('/').slice(2).join('/')
-              console.log(`    - ${modelName}`)
-            })
-          })
+        const ctx = getCliContext()
+        const formattedOutput = formatModelsByCategory(modelsByCategory)
         
-        l('Use a model with: bun as -- tts file input.md --coqui-model "model_name"')
+        
+        if (ctx.format === 'json') {
+          console.log(JSON.stringify({
+            success: true,
+            command: 'tts list',
+            timestamp: new Date().toISOString(),
+            data: { models: modelsByCategory }
+          }, null, 2))
+        } else {
+          
+          await withPager(formattedOutput + '\n\nUse a model with: bun as -- tts file input.md --coqui-model "model_name"')
+        }
         return
       }
     }
@@ -154,15 +179,19 @@ SOLUTION:
     return acc
   }, {} as Record<string, string[]>)
   
-  Object.entries(modelsByCategory)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .forEach(([category, models]) => {
-      console.log(`\n  ${category}:`)
-      models.sort().forEach(model => {
-        const modelName = model.split('/').slice(2).join('/')
-        console.log(`    - ${modelName || model}`)
-      })
-    })
+  const ctx = getCliContext()
+  const formattedOutput = formatModelsByCategory(modelsByCategory)
   
-  l('Use a model with: bun as -- tts file input.md --coqui-model "model_name"')
+  
+  if (ctx.format === 'json') {
+    console.log(JSON.stringify({
+      success: true,
+      command: 'tts list',
+      timestamp: new Date().toISOString(),
+      data: { models: modelsByCategory }
+    }, null, 2))
+  } else {
+    
+    await withPager(formattedOutput + '\n\nUse a model with: bun as -- tts file input.md --coqui-model "model_name"')
+  }
 }

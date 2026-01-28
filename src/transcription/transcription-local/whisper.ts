@@ -4,6 +4,7 @@ import { isWhisperConfigured, autoSetupWhisper, ensureModelExists } from '@/text
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../transcription-models'
 import type { ProcessingOptions, WhisperTranscriptItem, WhisperJsonData, TranscriptChunk } from '@/text/text-types'
 import type { Ora } from 'ora'
+import { registerProcess } from '@/utils'
 
 export function formatTimestamp(timestamp: string) {
   const [timeWithoutMs] = timestamp.split(',') as [string]
@@ -32,6 +33,9 @@ export function formatWhisperTranscript(jsonData: WhisperJsonData): string {
 async function runWhisperWithProgress(command: string, args: string[], spinner: Ora): Promise<void> {
   return new Promise((resolve, reject) => {
     const whisperProcess = spawn(command, args)
+    
+    const unregister = registerProcess(whisperProcess)
+    
     let lastProgress = -1
     
     const processOutput = (data: Buffer) => {
@@ -54,6 +58,7 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
     whisperProcess.stderr.on('data', processOutput)
 
     whisperProcess.on('close', (code) => {
+      unregister()
       if (code === 0) {
         resolve()
       } else {
@@ -63,6 +68,7 @@ async function runWhisperWithProgress(command: string, args: string[], spinner: 
     })
 
     whisperProcess.on('error', (error) => {
+      unregister()
       l('Whisper process error', { error: error.message })
       reject(error)
     })

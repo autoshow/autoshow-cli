@@ -3,6 +3,7 @@ import { l, success } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils'
 import { env, readFileSync, existsSync } from '@/node-utils'
 import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig, VeoApiOperation } from '@/video/video-types'
+import { isCancelled } from '@/utils'
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -14,6 +15,10 @@ async function pollOperation(operationName: string, apiKey: string): Promise<Veo
   l('Starting polling for operation', { operationName })
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (isCancelled()) {
+      throw new Error('Video generation cancelled by user')
+    }
+    
     try {
       const response = await fetch(`${baseUrl}/${operationName}`, {
         headers: { 'x-goog-api-key': apiKey }

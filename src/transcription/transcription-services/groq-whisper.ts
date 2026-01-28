@@ -32,7 +32,6 @@ export async function callGroqWhisper(
     const audioBuffer = await readFile(audioFilePath)
     
     const formData = new FormData()
-    // convert Node Buffer to Uint8Array for Blob compatibility
     const audioUint8 = new Uint8Array(audioBuffer)
     formData.append('file', new Blob([audioUint8]), 'audio.wav')
     formData.append('model', modelId)

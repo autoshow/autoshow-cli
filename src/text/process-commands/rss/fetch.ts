@@ -1,12 +1,14 @@
 import { err } from '@/logging'
 import { parser } from '@/node-utils'
+import { getCliContext, registerAbortController } from '@/utils'
 import { filterRSSItems } from './filters'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
 
 export async function retryRSSFetch(
   fn: () => Promise<Response>
 ): Promise<Response> {
-  const maxRetries = 7
+  const ctx = getCliContext()
+  const maxRetries = ctx.network.maxRetries
   let attempt = 0
   
   while (attempt < maxRetries) {
@@ -55,11 +57,13 @@ export async function selectRSSItemsToProcess(
     )
     return { items: itemsToProcess, channelTitle: channelTitle || '' }
   } catch {
-    // Not a local file, try remote fetch
   }
   
+  const ctx = getCliContext()
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 10000)
+  const timeout = setTimeout(() => controller.abort(), ctx.network.timeout)
+  
+  const unregister = registerAbortController(controller)
   
   try {
     const response = await retryRSSFetch(
@@ -70,6 +74,7 @@ export async function selectRSSItemsToProcess(
       })
     )
     clearTimeout(timeout)
+    unregister()
     
     if (!response.ok) {
       err('HTTP error', { status: response.status })

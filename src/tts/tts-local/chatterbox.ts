@@ -8,6 +8,7 @@ import {
 import {
   ensureTtsEnvironment, checkChatterboxInstalled, runChatterboxSetup
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 import type { ChatterboxOptions, ChatterboxModel } from '../tts-types'
 
 const VALID_MODELS = ['turbo', 'standard']
@@ -17,7 +18,8 @@ const getChatterboxConfig = () => {
   l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
-  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['CHATTERBOX_PYTHON_PATH']
+  
+  let pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['CHATTERBOX_PYTHON_PATH'] || config.python
   
   if (!pythonPath || !existsSync(pythonPath)) {
     l('Python path not configured, checking for environment')
@@ -152,7 +154,7 @@ export async function synthesizeWithChatterbox(
   try {
     const jsonResult = JSON.parse(lastLine)
     if (!jsonResult.ok) {
-      // Provide more helpful error messages
+      
       const error = jsonResult.error || ''
       if (error.includes('Token is required')) {
         err(`Hugging Face authentication required.
@@ -225,12 +227,12 @@ export async function processScriptWithChatterbox(
     
     await ensureSilenceFile(outDir)
     
-    // Voice mapping from environment variables (reference audio paths)
+    
     const voiceMapping: Record<string, string> = {}
     for (const speakerKey of ['DUCO', 'SEAMUS', 'NARRATOR']) {
-      const envValue = process.env[`CHATTERBOX_VOICE_${speakerKey}`]
-      if (envValue) {
-        voiceMapping[speakerKey] = envValue
+      const voiceValue = getUserVoice('chatterbox', speakerKey)
+      if (voiceValue) {
+        voiceMapping[speakerKey] = voiceValue
       }
     }
     

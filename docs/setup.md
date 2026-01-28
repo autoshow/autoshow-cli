@@ -22,6 +22,66 @@ bun setup:tts
 
 Each feature is self-contained and won't affect others if setup fails.
 
+## Global CLI Options
+
+These options work with all commands and control output formatting, behavior, and error handling.
+
+### Output Formatting
+
+| Option | Description |
+|--------|-------------|
+| `--no-color` | Disable colored output (also respects `NO_COLOR` env var) |
+| `--json` | Output results as JSON for scripting and automation |
+| `--plain` | Plain text output without formatting (for piping to grep, awk, etc.) |
+| `-q, --quiet` | Suppress progress messages and non-essential output |
+
+```bash
+# Machine-readable JSON output
+bun as -- text --file input/audio.mp3 --json
+
+# Plain output for piping
+bun as -- tts list --plain | grep coqui
+
+# Quiet mode for scripts
+bun as -- text --rss "https://example.com/feed" --quiet
+```
+
+### Scripting and Automation
+
+| Option | Description |
+|--------|-------------|
+| `--no-input` | Disable all interactive prompts (for unattended scripts) |
+| `--skip-existing` | Skip processing items that already have output files |
+
+```bash
+# Batch processing without prompts
+bun as -- text --rss "https://example.com/feed" --no-input --skip-existing
+```
+
+### Network and Reliability
+
+| Option | Description |
+|--------|-------------|
+| `--timeout <ms>` | Network request timeout in milliseconds (default: 30000) |
+| `--max-retries <n>` | Maximum retry attempts for failed requests (default: 7) |
+
+```bash
+# Longer timeout for slow connections
+bun as -- text --video "https://youtube.com/..." --timeout 60000
+
+# More retries for flaky networks
+bun as -- text --rss "https://example.com/feed" --max-retries 10
+```
+
+### Signal Handling
+
+AutoShow CLI handles Ctrl-C (SIGINT) gracefully:
+
+- **First Ctrl-C**: Stops processing, cleans up temporary files, and exits
+- **Second Ctrl-C**: Forces immediate exit if cleanup takes too long
+
+This ensures downloads and temporary files are properly cleaned up when you cancel an operation.
+
 ## Platform Support
 
 | Platform | Status | Notes |
@@ -92,6 +152,74 @@ AWS_ACCESS_KEY_ID=your_aws_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret
 ```
 
+## User Configuration
+
+AutoShow CLI supports user-level configuration stored in `~/.config/autoshow-cli/config.json`. This follows the XDG Base Directory specification.
+
+### Configuration Locations
+
+| Location | Purpose |
+|----------|---------|
+| `~/.config/autoshow-cli/config.json` | User-level settings and API keys |
+| `~/.cache/autoshow-cli/` | Downloaded models and cached data |
+| `~/.local/share/autoshow-cli/` | Persistent application data |
+
+### User Config File
+
+Create `~/.config/autoshow-cli/config.json` to store settings:
+
+```json
+{
+  "api_keys": {
+    "OPENAI_API_KEY": "sk-...",
+    "ANTHROPIC_API_KEY": "sk-ant-...",
+    "ELEVENLABS_API_KEY": "..."
+  },
+  "tts": {
+    "default_engine": "coqui",
+    "voices": {
+      "elevenlabs": {
+        "DUCO": "voice_id_here",
+        "SEAMUS": "voice_id_here"
+      },
+      "coqui": {
+        "DUCO": "Claribel Dervla",
+        "SEAMUS": "Daisy Studious"
+      }
+    }
+  },
+  "defaults": {
+    "transcription": "whisper",
+    "llm": "chatgpt",
+    "timeout": 30000,
+    "max_retries": 7
+  }
+}
+```
+
+### API Key Priority
+
+API keys are loaded in this order (first found wins):
+
+1. **Key file** via `--*-key-file` option (most secure for scripts)
+2. **Environment variable** (e.g., `OPENAI_API_KEY`)
+3. **User config** (`~/.config/autoshow-cli/config.json`)
+
+```bash
+# Using a key file (recommended for CI/CD)
+bun as -- text --file input/audio.mp3 --chatgpt --openai-key-file /path/to/key.txt
+```
+
+### XDG Environment Variables
+
+You can customize config locations using XDG environment variables:
+
+```bash
+export XDG_CONFIG_HOME=/custom/config/path
+export XDG_CACHE_HOME=/custom/cache/path
+export XDG_DATA_HOME=/custom/data/path
+```
+
 ## Troubleshooting
 
 ### Linux: Missing dependencies
@@ -122,3 +250,26 @@ AutoShow CLI requires WSL on Windows:
 1. Install WSL: `wsl --install`
 2. Open a WSL terminal
 3. Follow Linux setup instructions
+
+## Exit Codes
+
+AutoShow CLI uses standard exit codes for scripting:
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | General error |
+| `2` | Invalid usage or arguments |
+| `3` | API or network error |
+| `4` | File I/O error |
+| `130` | Interrupted (Ctrl-C) |
+
+```bash
+# Check exit code in scripts
+bun as -- text --file input/audio.mp3 --chatgpt
+if [ $? -eq 0 ]; then
+  echo "Success"
+elif [ $? -eq 3 ]; then
+  echo "API error - check your API key"
+fi
+```

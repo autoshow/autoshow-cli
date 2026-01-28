@@ -4,8 +4,9 @@ import { runTranscription } from '../../process-steps/02-run-transcription/run-t
 import { selectPrompts } from '../../process-steps/03-select-prompts/select-prompt'
 import { runLLM } from '../../process-steps/04-run-llm/run-llm'
 import { generateMusic } from '../../process-steps/05-generate-music/generate-music'
-import { saveInfo } from '../../utils/save-info'
+import { saveInfo, sanitizeTitle, outputExists } from '../../utils/save-info'
 import { l, err } from '@/logging'
+import { getCliContext, createBatchProgress } from '@/utils'
 import { selectRSSItemsToProcess } from './fetch'
 import { logRSSProcessingStatus } from './rss-logging'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
@@ -52,7 +53,19 @@ export async function processRSSFeeds(
       logRSSProcessingStatus(items.length, items.length, options)
       
       const results = []
+      const ctx = getCliContext()
+      const progress = createBatchProgress({ label: 'RSS items', total: items.length })
+      
       for (const [index, item] of items.entries()) {
+        if (ctx.network.skipExisting) {
+          const expectedFilename = `${item.publishDate}-${sanitizeTitle(item.title)}`
+          if (outputExists(expectedFilename, options)) {
+            l('Skipping (output exists)', { current: index + 1, total: items.length, title: item.title })
+            progress.skip()
+            continue
+          }
+        }
+        
         l('Item processing', { current: index + 1, total: items.length, title: item.title })
         
         try {
@@ -74,7 +87,6 @@ export async function processRSSFeeds(
             llmServices
           )
           
-          // Generate music if requested (ElevenLabs or MiniMax)
           if ((options.elevenlabs || options.minimax) && llmOutput) {
             const musicResult = await generateMusic(options, llmOutput, finalPath)
             if (!musicResult.success) {
@@ -91,8 +103,10 @@ export async function processRSSFeeds(
             llmOutput: llmOutput || '',
             transcript,
           })
+          progress.complete(true)
         } catch (error) {
           err('Error processing item', { title: item.title, error: (error as Error).message })
+          progress.complete(false)
           results.push({
             frontMatter: '',
             prompt: '',
@@ -101,6 +115,8 @@ export async function processRSSFeeds(
           })
         }
       }
+      
+      progress.printSummary()
     } catch (error) {
       err('Error processing RSS feed', { rssUrl, error: (error as Error).message })
       throw error

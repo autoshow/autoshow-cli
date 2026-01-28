@@ -4,10 +4,14 @@ import { isWhisperCoreMLConfigured, autoSetupWhisperCoreML, ensureCoreMLModelExi
 import { formatWhisperTranscript } from './whisper'
 import type { ProcessingOptions } from '@/text/text-types'
 import type { Ora } from 'ora'
+import { registerProcess } from '@/utils'
 
 async function runWithProgress(command: string, args: string[], spinner?: Ora): Promise<void> {
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args)
+    
+    const unregister = registerProcess(proc)
+    
     let last = -1
     const onData = (data: Buffer) => {
       const out = data.toString()
@@ -25,6 +29,7 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
     proc.stdout.on('data', onData)
     proc.stderr.on('data', onData)
     proc.on('close', code => {
+      unregister()
       if (code === 0) {
         resolve()
       } else {
@@ -33,6 +38,7 @@ async function runWithProgress(command: string, args: string[], spinner?: Ora): 
       }
     })
     proc.on('error', e => {
+      unregister()
       err('CoreML whisper process error', { error: e.message })
       reject(e)
     })

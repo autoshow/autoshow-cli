@@ -142,7 +142,7 @@ export async function autoSetupWhisperCoreML(): Promise<void> {
   l('Whisper CoreML not configured, running automatic setup...')
   
   try {
-    // CoreML is set up as part of the transcription setup on macOS
+    
     const result = spawnSync('./.github/setup/index.sh', ['--transcription'], {
       stdio: 'inherit',
       shell: true

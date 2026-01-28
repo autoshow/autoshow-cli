@@ -7,7 +7,7 @@ import { l } from '@/logging'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  // Summaries, Chapters, and Titles
+  
   { titles: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt titles --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { summary: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt summary --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { shortSummary: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt shortSummary --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
@@ -18,7 +18,7 @@ const cliCommands = [
   { longChapters: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt longChapters --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { chapterTitles: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt chapterTitles --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   
-  // Takeaways, Questions, Quotes, and FAQ
+  
   { takeaways: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt takeaways --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { questions: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt questions --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { quotes: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt quotes --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
@@ -28,7 +28,7 @@ const cliCommands = [
   { keyMomentsCount5: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentsCount 5 --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { keyMomentDuration90: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt keyMoments --keyMomentDuration 90 --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   
-  // Social Media Content and Marketing
+  
   { x: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt x --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { facebook: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt facebook --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { linkedin: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt linkedin --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
@@ -40,7 +40,7 @@ const cliCommands = [
   { contentStrategy: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt contentStrategy --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { blog: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt blog --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   
-  // Creative Entertainment Content
+  
   { rapSong: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rapSong --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { rockSong: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt rockSong --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },
   { countrySong: 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --prompt countrySong --whisper-coreml large-v3-turbo --chatgpt gpt-5-nano' },

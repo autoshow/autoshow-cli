@@ -74,7 +74,7 @@ describe('CLI extract services tests', () => {
       
       expect(filesToRename.length > 0).toBeTruthy()
       
-      // Verify files contain extracted text
+      
       for (const file of filesToRename) {
         const filePath = join(outputDirectory, file)
         if (existsSync(filePath) && file.endsWith('.txt')) {

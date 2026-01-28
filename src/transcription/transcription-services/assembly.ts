@@ -2,6 +2,7 @@ import { err } from '@/logging'
 import { readFile, env } from '@/node-utils'
 import { TRANSCRIPTION_SERVICES_CONFIG } from '../transcription-models'
 import type { ProcessingOptions } from '@/text/text-types'
+import { isCancelled } from '@/utils'
 
 const BASE_URL = 'https://api.assemblyai.com/v2'
 
@@ -121,6 +122,10 @@ export async function callAssembly(
 
     let transcript
     while (true) {
+      if (isCancelled()) {
+        throw new Error('Transcription cancelled by user')
+      }
+      
       const pollingResponse = await fetch(`${BASE_URL}/transcript/${transcriptData.id}`, { headers })
       transcript = await pollingResponse.json()
       if (transcript.status === 'completed' || transcript.status === 'error') {

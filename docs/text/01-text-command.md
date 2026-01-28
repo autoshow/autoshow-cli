@@ -8,6 +8,7 @@
 - [playlist - Process Multiple Videos in YouTube Playlist](#playlist-process-multiple-videos-in-youtube-playlist)
 - [channel - Process All Videos from a YouTube Channel](#channel-process-all-videos-from-a-youtube-channel)
 - [rss - Process Podcast RSS Feed](#rss-process-podcast-rss-feed)
+- [Global Options](#global-options)
 
 If you want to keep the downloaded audio file for debugging or reprocessing purposes, use `--saveAudio`. This prevents the CLI from deleting WAV files after finishing its run.
 

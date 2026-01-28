@@ -1,6 +1,7 @@
 import { l, err, success } from '@/logging'
 import { spawn, stat, readdir, parse, extname, join, ensureDir } from '@/node-utils'
 import { AUDIO_FMT, AUDIO_Q } from './create-media-command'
+import { registerProcess } from '@/utils'
 
 export async function sanitizeFilename(filename: string): Promise<string> {
   const ext = filename.match(/\.[^.]+$/)?.[0] || ''
@@ -68,7 +69,10 @@ export async function convertLocalAudioFiles(
         outputPath
       ], { stdio: verbose ? 'inherit' : 'ignore' })
       
+      const unregister = registerProcess(ffmpegProcess)
+      
       ffmpegProcess.on('close', (code) => {
+        unregister()
         if (code === 0) {
           resolve()
         } else {
@@ -77,6 +81,7 @@ export async function convertLocalAudioFiles(
       })
       
       ffmpegProcess.on('error', (error) => {
+        unregister()
         reject(new Error(`ffmpeg process error: ${error.message}`))
       })
     })

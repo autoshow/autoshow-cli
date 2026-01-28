@@ -29,7 +29,6 @@ export async function processFile(
       llmServices
     )
     
-    // Generate music if requested (ElevenLabs or MiniMax)
     if ((options.elevenlabs || options.minimax) && llmOutput) {
       const musicResult = await generateMusic(options, llmOutput, finalPath)
       if (!musicResult.success) {

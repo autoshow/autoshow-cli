@@ -8,16 +8,16 @@ import type { ExecException } from 'node:child_process'
 const cliCommands = [
   { 'coqui-default': 'bun as -- tts file input/sample.md --coqui' },
   { 'kitten-default': 'bun as -- tts file input/sample.md --kitten' },
-  // Qwen3 TTS test cases
+  
   { 'qwen3-default': 'bun as -- tts file input/sample.md --qwen3' },
   { 'qwen3-ryan': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ryan' },
   { 'qwen3-japanese': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ono_Anna --qwen3-language Japanese' },
   { 'qwen3-instruct': 'bun as -- tts file input/sample.md --qwen3 --qwen3-instruct "Speak with enthusiasm"' },
-  // Chatterbox TTS test cases
+  
   { 'chatterbox-turbo': 'bun as -- tts file input/sample.md --chatterbox' },
   { 'chatterbox-standard': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard' },
   { 'chatterbox-exaggeration': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7' },
-  // CosyVoice TTS test cases
+  
   { 'cosyvoice-default': 'bun as -- tts file input/sample.md --cosyvoice' },
   { 'cosyvoice-instruct': 'bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm"' },
   { 'cosyvoice-japanese': 'bun as -- tts file input/sample.md --cosyvoice --cosy-language ja' },

@@ -18,7 +18,7 @@ describe('CLI save audio URLs tests', () => {
   const testUrlFile = join(inputDirectory, 'test-media-urls.md')
   let fileCounter = 1
   
-  // Create a test markdown file with sample URLs if example-urls.md doesn't exist
+  
   beforeAll(() => {
     if (!existsSync(join(inputDirectory, 'example-urls.md'))) {
       const sampleUrls = `# Test URLs for Media Download
@@ -34,7 +34,7 @@ These are sample URLs for testing the media download functionality.
   })
   
   afterAll(() => {
-    // Clean up test file if we created it
+    
     if (existsSync(testUrlFile)) {
       try {
         rmSync(testUrlFile)
@@ -100,7 +100,7 @@ These are sample URLs for testing the media download functionality.
       
       expect(filesToRename.length > 0).toBeTruthy()
       
-      // Verify files contain audio data
+      
       for (const file of filesToRename) {
         const filePath = join(outputDirectory, file)
         if (existsSync(filePath) && file.endsWith('.mp3')) {

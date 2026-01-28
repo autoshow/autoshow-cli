@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import { l, err, success } from '@/logging'
 import type { ExtractOptions, EpubExtractOptions } from '@/extract/extract-types'
+import { createJsonOutput, setJsonError, outputJson, type ExtractJsonOutput } from '@/utils'
 
 export const createExtractCommand = (): Command => {
   const extract = new Command('extract')
@@ -15,11 +16,14 @@ export const createExtractCommand = (): Command => {
     .option('--model <model>', 'Model to use: gpt-4.1, gpt-4.1-mini (default), gemini-2.0-flash', 'gpt-4.1-mini')
     .option('--service <service>', 'Extraction service: zerox (default), unpdf, textract', 'zerox')
     .action(async (pdfFile: string, options: ExtractOptions) => {
+      const jsonBuilder = createJsonOutput<ExtractJsonOutput>('extract')
       l('Extracting PDF', { pdfFile })
       
       try {
         const validServices = ['zerox', 'unpdf', 'textract']
         if (options.service && !validServices.includes(options.service)) {
+          setJsonError(jsonBuilder, `Invalid service: ${options.service}`)
+          outputJson(jsonBuilder)
           err('Invalid service', { service: options.service, availableServices: validServices.join(', ') })
         }
         
@@ -27,14 +31,24 @@ export const createExtractCommand = (): Command => {
         const result = await extractPdf(pdfFile, options)
         
         if (result.success) {
+          jsonBuilder.output.data = {
+            inputPath: pdfFile,
+            outputPath: result.outputPath || '',
+            service: options.service || 'zerox'
+          }
+          outputJson(jsonBuilder)
           success('Text extracted to', { outputPath: result.outputPath })
           if (result.totalCost !== undefined) {
             l('Total cost', { totalCost: result.totalCost.toFixed(4) })
           }
         } else {
+          setJsonError(jsonBuilder, result.error || 'Unknown error')
+          outputJson(jsonBuilder)
           err('Failed to extract PDF', { error: result.error })
         }
       } catch (error) {
+        setJsonError(jsonBuilder, error as Error)
+        outputJson(jsonBuilder)
         err('Error extracting PDF', { error: (error as Error).message })
       }
     })
@@ -86,19 +100,16 @@ export const createExtractCommand = (): Command => {
       l('Extracting EPUB', { inputPath })
       
       try {
-        // Parse numeric options
         const parsedOptions: EpubExtractOptions = {
           output: options.output,
           maxChars: options.maxChars ? parseInt(String(options.maxChars), 10) : undefined,
           split: options.split ? parseInt(String(options.split), 10) : undefined
         }
         
-        // Validate split option
         if (parsedOptions.split !== undefined && parsedOptions.split <= 0) {
           err('--split must be a positive number')
         }
         
-        // Warn if both options provided
         if (parsedOptions.split && parsedOptions.maxChars) {
           l('Both --split and --max-chars provided; using --split')
         }
@@ -122,6 +133,14 @@ export const createExtractCommand = (): Command => {
         err('Error extracting EPUB', { error: (error as Error).message })
       }
     })
+
+  extract.addHelpText('after', `
+Examples:
+  $ autoshow-cli extract pdf ./input/document.pdf
+  $ autoshow-cli extract pdf ./input/document.pdf --service textract
+  $ autoshow-cli extract batch ./input/ -o ./output/
+  $ autoshow-cli extract epub ./input/sum-david-eagleman.epub --split 10
+`)
 
   return extract
 }

@@ -4,6 +4,7 @@ import { l, success } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, BlackForestLabsOptions } from '../image-types'
+import { isCancelled } from '@/utils'
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -65,6 +66,11 @@ export async function generateImageWithBlackForestLabs(
     const imageUrl = await Promise.race([
       (async () => {
         for (let i = 0; i < 120; i++) {
+          if (isCancelled()) {
+            if (timeoutId) clearTimeout(timeoutId)
+            throw new Error('Image generation cancelled by user')
+          }
+          
           await sleep(5000)
           const status = await fetch(`https://api.bfl.ml/v1/get_result?id=${taskId}`, {
             headers: { 'X-Key': env['BFL_API_KEY'] || '' }

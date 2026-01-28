@@ -9,7 +9,6 @@ export async function processRSS(
   llmServicesParam?: string,
   transcriptServicesParam?: string
 ): Promise<void> {
-  
   if (options.feed) {
     const workflowHandled = await handleWorkflow(options)
     if (workflowHandled) {

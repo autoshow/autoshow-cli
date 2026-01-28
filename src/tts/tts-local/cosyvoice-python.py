@@ -3,7 +3,7 @@ import json
 import warnings
 import os
 
-# Suppress warnings
+
 os.environ["TRANSFORMERS_NO_FLASH_ATTN_WARNING"] = "1"
 warnings.filterwarnings("ignore")
 
@@ -29,7 +29,6 @@ def log(msg):
 
 
 def chunk_text(text, max_size=500):
-    """Split text into manageable chunks, preserving sentence boundaries."""
     import re
 
     sentences = re.split(r"(?<=[.!?])\s+", text)
@@ -71,8 +70,7 @@ def chunk_text(text, max_size=500):
 
 
 def load_cosyvoice_model(cosyvoice_dir, model_name="Fun-CosyVoice3-0.5B"):
-    """Load CosyVoice model."""
-    # Add CosyVoice to path
+
     sys.path.insert(0, cosyvoice_dir)
     sys.path.insert(0, os.path.join(cosyvoice_dir, "third_party/Matcha-TTS"))
 
@@ -86,7 +84,6 @@ def load_cosyvoice_model(cosyvoice_dir, model_name="Fun-CosyVoice3-0.5B"):
 
 
 def get_default_ref_audio(cosyvoice_dir):
-    """Get default reference audio path from the CosyVoice asset folder."""
     default_path = os.path.join(cosyvoice_dir, "asset", "zero_shot_prompt.wav")
     if os.path.exists(default_path):
         return default_path
@@ -94,13 +91,12 @@ def get_default_ref_audio(cosyvoice_dir):
 
 
 def inference_instruct(model, text, instruct_text, ref_audio_path, language="auto"):
-    """Run instruct mode inference."""
-    # Build system prompt for instruct mode
+
     system_prompt = "You are a helpful assistant."
     if instruct_text:
         system_prompt = f"You are a helpful assistant. {instruct_text}"
 
-    # CosyVoice3 requires a reference audio for all modes
+
     if not ref_audio_path or not os.path.exists(ref_audio_path):
         raise ValueError("Reference audio is required for CosyVoice3")
 
@@ -113,11 +109,10 @@ def inference_instruct(model, text, instruct_text, ref_audio_path, language="aut
 
 
 def inference_zero_shot(model, text, ref_audio_path, ref_text=None, language="auto"):
-    """Run zero-shot voice cloning inference."""
     if not ref_audio_path or not os.path.exists(ref_audio_path):
         raise ValueError("Zero-shot mode requires a reference audio file")
 
-    # Default prompt text if not provided
+
     prompt_text = ref_text or "You are a helpful assistant."
 
     for i, result in enumerate(
@@ -129,7 +124,6 @@ def inference_zero_shot(model, text, ref_audio_path, ref_text=None, language="au
 
 
 def inference_cross_lingual(model, text, ref_audio_path, language="auto"):
-    """Run cross-lingual inference with fine-grained control."""
     if not ref_audio_path or not os.path.exists(ref_audio_path):
         raise ValueError("Cross-lingual mode requires a reference audio file")
 
@@ -155,7 +149,7 @@ instruct = config.get("instruct", "")
 ref_audio = config.get("ref_audio")
 ref_text = config.get("ref_text")
 
-# Use default reference audio if not provided
+
 if not ref_audio or not os.path.exists(str(ref_audio)):
     ref_audio = get_default_ref_audio(cosyvoice_dir)
     if ref_audio:
@@ -167,15 +161,15 @@ log(f"Mode: {mode}, Language: {language}")
 log(f"CosyVoice directory: {cosyvoice_dir}")
 
 try:
-    # Force CPU for simplicity
+
     device = "cpu"
     log(f"Using device: {device}")
 
     model = load_cosyvoice_model(cosyvoice_dir)
 
-    # Handle long text by chunking
+
     max_chunk = 500
-    sr = model.sample_rate  # Get sample rate from model
+    sr = model.sample_rate
 
     if len(text) > max_chunk:
         log(f"Text too long ({len(text)} chars), processing in chunks...")
@@ -200,13 +194,13 @@ try:
             else:
                 raise ValueError(f"Unknown mode: {mode}")
 
-            sr = chunk_sr  # Update sample rate from actual inference
+            sr = chunk_sr
             audio_parts.append(audio)
-            # Add small silence between chunks
+
             silence = torch.zeros(int(0.2 * sr))
             audio_parts.append(silence)
 
-        # Combine all chunks (remove trailing silence)
+
         audio = torch.cat(audio_parts[:-1])
     else:
         if mode == "instruct":
@@ -218,7 +212,7 @@ try:
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
-    # Save output - CosyVoice returns [1, samples] tensor
+
     if audio.dim() == 1:
         audio = audio.unsqueeze(0)
     torchaudio.save(output_path, audio, sr)

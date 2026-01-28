@@ -7,49 +7,49 @@ import { l } from '@/logging'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  // File input tests
+  
   { '01-file-default': 'bun as -- text --file "input/audio.mp3"' },
   { '02-file-save-audio': 'bun as -- text --file "input/audio.mp3" --saveAudio' },
   
-  // Whisper model tests
+  
   { '03-whisper-tiny': 'bun as -- text --file "input/audio.mp3" --whisper tiny' },
   { '04-whisper-base': 'bun as -- text --file "input/audio.mp3" --whisper base' },
   { '05-whisper-small': 'bun as -- text --file "input/audio.mp3" --whisper small' },
   { '06-whisper-medium': 'bun as -- text --file "input/audio.mp3" --whisper medium' },
   { '07-whisper-large-v3-turbo': 'bun as -- text --file "input/audio.mp3" --whisper large-v3-turbo' },
   
-  // Whisper CoreML tests
+  
   { '08-whisper-coreml-tiny': 'bun as -- text --file "input/audio.mp3" --whisper-coreml tiny' },
   { '09-whisper-coreml-large-v3-turbo': 'bun as -- text --file "input/audio.mp3" --whisper-coreml large-v3-turbo' },
   
-  // Video input tests
+  
   { '10-video-default': 'bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"' },
   { '11-video-save-audio': 'bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --saveAudio' },
   
-  // URLs input tests
+  
   { '12-urls-default': 'bun as -- text --urls "input/example-urls.md"' },
   
-  // Playlist input tests
+  
   { '13-playlist-default': 'bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"' },
   
-  // Channel input tests
+  
   { '14-channel-last-1': 'bun as -- text --channel "https://www.youtube.com/@fsjamorg" --last 1' },
   
-  // RSS input tests
+  
   { '15-rss-default': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed"' },
   { '16-rss-last-1': 'bun as -- text --rss "https://feeds.transistor.fm/fsjam-podcast" --last 1' },
   { '17-rss-item': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --item "https://api.substack.com/feed/podcast/36236609/fd1f1532d9842fe1178de1c920442541.mp3"' },
   
-  // Info commands
+  
   { '18-playlist-info': 'bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info' },
   { '19-urls-info': 'bun as -- text --urls "input/example-urls.md" --info' },
   { '20-channel-info': 'bun as -- text --channel "https://www.youtube.com/@ajcwebdev" --info --last 1' },
   { '21-rss-info': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --info' },
   
-  // Custom prompt test
+  
   { '22-custom-prompt': 'bun as -- text --file "input/audio.mp3" --customPrompt "input/custom-prompt.md"' },
   
-  // Print prompt test (no output file expected, just verifies command runs)
+  
   { '23-print-prompt': 'bun as -- text --printPrompt summary longChapters' },
 ]
 
