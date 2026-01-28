@@ -48,3 +48,5 @@ export interface RunwayImageOptions {
   height?: number
   style?: string
 }
+
+export type ChatGPTImageModel = 'gpt-image-1' | 'gpt-image-1.5' | 'gpt-image-1-mini'

@@ -145,9 +145,8 @@ SOLUTION:
 The requested model may not be available or failed to load.
 
 SOLUTION:
-  1. List available models: bun as -- tts list
-  2. Use a specific model: --coqui-model "model_name"
-  3. Or reinstall: bun setup:tts`)
+  1. Use a specific model: --coqui-model "model_name"
+  2. Or reinstall: bun setup:tts`)
     } else {
       err('Coqui TTS failed', { 
         stderr: stderr || '(no stderr)',

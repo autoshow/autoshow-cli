@@ -2,7 +2,7 @@ import { writeFile } from 'fs/promises'
 import { l, success } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureOutputDirectory } from '../video-utils'
 import { env, readFileSync, existsSync } from '@/node-utils'
-import type { VideoGenerationResult, VeoGenerateOptions, VeoGenerateConfig, VeoApiOperation } from '@/video/video-types'
+import type { VideoGenerationResult, VeoGenerateOptions, VeoApiOperation } from '@/video/video-types'
 import { isCancelled } from '@/utils'
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
@@ -95,7 +95,7 @@ export async function generateVideoWithVeo(
       throw new Error('GEMINI_API_KEY environment variable is missing')
     }
     
-    const model = options.model || 'veo-3.0-fast-generate-preview'
+    const model = options.model || 'veo-3.1-fast-generate-preview'
     const baseUrl = 'https://generativelanguage.googleapis.com/v1beta'
     
     l('Generating video with model', { model })
@@ -111,14 +111,30 @@ export async function generateVideoWithVeo(
       requestBody.instances[0].image = imageData
     }
     
-    const config: VeoGenerateConfig = {}
-    if (options.aspectRatio) config.aspectRatio = options.aspectRatio
-    if (options.negativePrompt) config.negativePrompt = options.negativePrompt
-    if (options.personGeneration) config.personGeneration = options.personGeneration
+    const parameters: Record<string, any> = {}
+    if (options.aspectRatio) parameters['aspectRatio'] = options.aspectRatio
+    if (options.resolution) parameters['resolution'] = options.resolution
+    if (options.negativePrompt) parameters['negativePrompt'] = options.negativePrompt
+    if (options.personGeneration) parameters['personGeneration'] = options.personGeneration
     
-    if (Object.keys(config).length > 0) {
-      requestBody.parameters = config
-      l('Using config', { config })
+    // Add reference images for content guidance (up to 3)
+    if (options.referenceImages && options.referenceImages.length > 0) {
+      const referenceImagesData: Array<{ image: { imageBytes: string; mimeType: string }; referenceType: string }> = []
+      for (const imagePath of options.referenceImages.slice(0, 3)) {
+        const imageData = await encodeImageToBase64(imagePath)
+        referenceImagesData.push({
+          image: imageData,
+          referenceType: 'asset'
+        })
+      }
+      parameters['referenceImages'] = referenceImagesData
+      l('Using reference images', { count: referenceImagesData.length })
+    }
+    
+    if (Object.keys(parameters).length > 0) {
+      requestBody.parameters = parameters
+      const refImages = parameters['referenceImages'] as Array<any> | undefined
+      l('Using parameters', { parameters: { ...parameters, referenceImages: refImages ? `[${refImages.length} images]` : undefined } })
     }
     
     const submitResponse = await fetch(`${baseUrl}/models/${model}:predictLongRunning`, {

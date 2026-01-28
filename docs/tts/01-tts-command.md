@@ -55,11 +55,6 @@ bun as -- tts script input/script.json --fish-audio
 bun as -- tts script input/script.json --cosyvoice
 ```
 
-### List Models
-```bash
-bun as -- tts list
-```
-
 ## Options
 
 - `--coqui` - Use Coqui TTS engine (default)
@@ -94,10 +89,11 @@ bun as -- tts list
 - `--fish-api-url <url>` - FishAudio API server URL (default: http://localhost:8080)
 - `--fish-emotion <emotion>` - Emotion marker (excited, sad, whispering, etc.)
 - `--fish-device <device>` - Device override (cpu, mps, cuda)
-- `--cosyvoice-model <model>` - CosyVoice model (CosyVoice-300M, CosyVoice-300M-SFT, CosyVoice-300M-Instruct, CosyVoice-300M-25Hz, CosyVoice2-0.5B)
-- `--cosyvoice-speaker <name>` - Speaker name for SFT/Instruct models
-- `--cosyvoice-instruct <text>` - Natural language voice control for Instruct models
-- `--cosyvoice-device <device>` - Device override (cpu, mps, cuda)
+- `--cosy-mode <mode>` - CosyVoice mode (instruct, zero_shot, cross_lingual)
+- `--cosy-language <lang>` - Language (auto, zh, en, ja, ko, de, es, fr, it, ru)
+- `--cosy-api-url <url>` - CosyVoice API server URL (default: http://localhost:50000)
+- `--cosy-instruct <text>` - Voice instruction (e.g., "Speak with enthusiasm")
+- `--cosy-stream` - Enable streaming inference
 - `--polly-format <format>` - Output format (mp3, ogg_vorbis, pcm)
 - `--polly-sample-rate <rate>` - Sample rate (8000, 16000, 22050, 24000)
 - `--polly-engine <engine>` - Engine type (standard, neural, generative, long-form)

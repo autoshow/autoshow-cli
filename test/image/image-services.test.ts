@@ -6,7 +6,9 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'dalle-default': 'bun as -- image generate --prompt "A serene mountain landscape"' },
+  { 'gpt-image-1-test': 'bun as -- image generate --prompt "A serene mountain landscape" --service gpt-image-1' },
+  { 'gpt-image-1.5-test': 'bun as -- image generate --prompt "A serene mountain landscape" --service gpt-image-1.5' },
+  { 'gpt-image-1-mini-test': 'bun as -- image generate --prompt "A serene mountain landscape" --service gpt-image-1-mini' },
   { 'bfl-dragon': 'bun as -- image generate --prompt "A majestic dragon" --service bfl' },
   { 'nova-space': 'bun as -- image generate --prompt "Space station interior" --service nova' },
   { 'runway-cityscape': 'bun as -- image generate --prompt "Futuristic cityscape" --service runway' },

@@ -3,8 +3,6 @@ import { err, success } from '@/logging'
 import { 
   existsSync, mkdirSync
 } from '@/node-utils'
-import { listModels } from './tts-commands/list-command'
-import { downloadModel } from './tts-commands/download-command'
 import { processFileWithEngine } from './tts-commands/file-command'
 import { processScriptWithEngine } from './tts-commands/script-command'
 import { detectEngine } from './tts-utils/engine-utils'
@@ -57,25 +55,8 @@ const sharedOptions = (cmd: Command): Command => cmd
   
   .option('--elevenlabs-key-file <path>', 'Path to file containing ElevenLabs API key')
 
-const handleAction = async (action: string, runner: () => Promise<void>): Promise<void> => {
-  try {
-    await runner()
-  } catch (error) {
-    err(`Error ${action === 'list' ? 'listing models' : action === 'download' ? 'downloading models' : 'generating speech'}: ${error}`)
-  }
-}
-
 export const createTtsCommand = (): Command => {
   const tts = new Command('tts').description('Text-to-speech operations')
-
-  tts.command('list').description('List available models')
-    .action(async () => handleAction('list', listModels))
-
-  tts.command('download').description('Download TTS models')
-    .argument('<models...>', 'Model IDs to download')
-    .action(async (models: string[]) => handleAction('download', async () => {
-      await Promise.all(models.map(async m => { await downloadModel(m) }))
-    }))
 
   sharedOptions(tts.command('file').description('Generate speech from a markdown file')
     .argument('<filePath>', 'Path to the markdown file'))
@@ -141,7 +122,6 @@ export const createTtsCommand = (): Command => {
 
   tts.addHelpText('after', `
 Examples:
-  $ autoshow-cli tts list
   $ autoshow-cli tts file ./input/sample.md --coqui
   $ autoshow-cli tts file ./input/story.md --elevenlabs --voice "Rachel"
   $ autoshow-cli tts script ./input/script.json --coqui

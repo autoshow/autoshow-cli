@@ -81,7 +81,7 @@ export async function callWhisperCoreml(
   
   const binaryPath = './build/bin/whisper-cli-coreml'
   if (!existsSync(binaryPath)) {
-    throw new Error(`whisper-cli-coreml not found at ${binaryPath}. Run: bun setup:whisper-coreml`)
+    throw new Error(`whisper-cli-coreml not found at ${binaryPath}. Run: bun setup:transcription`)
   }
 
   const modelPath = `./build/models/ggml-${whisperModel}.bin`

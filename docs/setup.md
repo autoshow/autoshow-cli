@@ -45,9 +45,6 @@ These options work with all commands and control output formatting, behavior, an
 # Machine-readable JSON output
 bun as -- text --file input/audio.mp3 --json
 
-# Plain output for piping
-bun as -- tts list --plain | grep coqui
-
 # Quiet mode for scripts
 bun as -- text --rss "https://example.com/feed" --quiet
 ```

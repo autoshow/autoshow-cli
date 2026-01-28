@@ -1,6 +1,6 @@
 # Google Veo Video Generation
 
-Text-to-video generation with Google's Veo models, including audio support.
+Text-to-video generation with Google's Veo 3.1 models, featuring native audio, portrait mode, and up to 4K resolution.
 
 ## Setup
 
@@ -11,9 +11,8 @@ GEMINI_API_KEY=your_api_key_here
 
 ## Models
 
-- `veo-3.0-generate-preview` - Latest with native audio generation
-- `veo-3.0-fast-generate-preview` - Faster generation, audio support
-- `veo-2.0-generate-001` - Stable version, supports portrait mode
+- `veo-3.1-generate-preview` - Full-featured with native audio, portrait mode, 720p/1080p/4k, reference images
+- `veo-3.1-fast-generate-preview` - Faster generation with full feature support
 
 ## Basic Usage
 
@@ -21,12 +20,12 @@ GEMINI_API_KEY=your_api_key_here
 # Standard generation
 bun as -- video generate \
   --prompt "A butterfly landing on a flower" \
-  --model veo-3.0-generate-preview
+  --model veo-3.1-generate-preview
 
-# With audio description (Veo 3.0)
+# With audio description
 bun as -- video generate \
   --prompt "Ocean waves crashing. Sound of seagulls and wind." \
-  --model veo-3.0-generate-preview
+  --model veo-3.1-fast-generate-preview
 ```
 
 ## Options
@@ -34,46 +33,74 @@ bun as -- video generate \
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--prompt` | Video and audio description | Required |
-| `--model` | Veo model version | veo-3.0-generate-preview |
+| `--model` | Veo model version | veo-3.1-fast-generate-preview |
+| `--resolution` | Output resolution (720p, 1080p, 4k) | 720p |
+| `--aspect-ratio` | 16:9 or 9:16 | 16:9 |
 | `--negative` | What to exclude | None |
-| `--aspect-ratio` | 16:9 or 9:16 (v2.0 only) | 16:9 |
 | `--person` | Person generation mode | Varies by region |
+| `--image` | Starting frame for image-to-video | None |
+| `--reference` | Reference images (up to 3) | None |
 | `--output` | Output path | Auto-generated |
 
 ## Examples
 
 ```bash
-# With dialogue (Veo 3.0)
+# With dialogue
 bun as -- video generate \
   --prompt "'Hello!' she says cheerfully. Birds chirping." \
-  --model veo-3.0-generate-preview
+  --model veo-3.1-generate-preview
 
 # Exclude elements
 bun as -- video generate \
   --prompt "Mountain landscape at sunrise" \
   --negative "people, buildings, text" \
-  --model veo-3.0-fast-generate-preview
+  --model veo-3.1-fast-generate-preview
 
-# Portrait mode (Veo 2.0 only)
+# Portrait mode
 bun as -- video generate \
   --prompt "Fashion model on runway" \
-  --model veo-2.0-generate-001 \
+  --model veo-3.1-generate-preview \
   --aspect-ratio 9:16
 
-# Fast generation
+# 4K resolution
 bun as -- video generate \
-  --prompt "City traffic timelapse" \
-  --model veo-3.0-fast-generate-preview
+  --prompt "Stunning drone view of Grand Canyon at sunset" \
+  --model veo-3.1-generate-preview \
+  --resolution 4k
+
+# Image-to-video (starting frame)
+bun as -- video generate \
+  --prompt "Panning shot of the scene coming to life" \
+  --model veo-3.1-generate-preview \
+  --image ./starting-frame.jpg
+
+# Reference images for content guidance
+bun as -- video generate \
+  --prompt "Woman in elegant dress walks through a garden" \
+  --model veo-3.1-generate-preview \
+  --reference dress.jpg woman.jpg garden.jpg \
+  --resolution 1080p
 ```
 
-## Audio Prompting (Veo 3.0)
+## Audio Prompting
 
 Include sound descriptions and dialogue in quotes:
 
 ```bash
 bun as -- video generate \
   --prompt "Two scientists in a lab. 'Eureka!' one shouts. Equipment beeping, electricity crackling." \
-  --model veo-3.0-generate-preview
+  --model veo-3.1-generate-preview
+```
+
+## Reference Images
+
+Use up to 3 reference images to preserve subject appearance:
+
+```bash
+bun as -- video generate \
+  --prompt "The woman in the red dress dances elegantly" \
+  --reference woman.jpg dress.jpg background.jpg \
+  --model veo-3.1-generate-preview
 ```
 
 ## Person Generation Modes
@@ -87,5 +114,13 @@ Control how people appear in videos:
 bun as -- video generate \
   --prompt "Busy street scene" \
   --person allow_adult \
-  --model veo-3.0-generate-preview
+  --model veo-3.1-generate-preview
 ```
+
+## Veo 3.1 Capabilities
+
+- **Portrait videos**: Both landscape (16:9) and portrait (9:16)
+- **Resolution options**: 720p, 1080p, or 4k output
+- **Reference images**: Use up to 3 images to guide video content
+- **Native audio**: Dialogue and sound effects generated directly from prompts
+- **Image-to-video**: Use a starting frame to begin your video
