@@ -7,9 +7,10 @@ import { l } from '@/logging'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-pdf-default': 'bun as -- extract pdf "input/document.pdf"' },
-  { '02-pdf-custom-output': 'bun as -- extract pdf "input/document.pdf" --output "output/custom-extract.txt"' },
-  { '03-pdf-page-breaks': 'bun as -- extract pdf "input/document.pdf" --page-breaks' },
+  { '01-pdf-unpdf-default': 'bun as -- extract pdf "input/document.pdf"' },
+  { '02-pdf-unpdf-custom-output': 'bun as -- extract pdf "input/document.pdf" --output "output/custom-extract.txt"' },
+  { '03-pdf-unpdf-page-breaks': 'bun as -- extract pdf "input/document.pdf" --page-breaks' },
+  { '04-epub-default': 'bun as -- extract epub "input/epub-example.epub"' },
 ]
 
 describe('CLI extract local tests', () => {
@@ -61,7 +62,7 @@ describe('CLI extract local tests', () => {
         const possibleFile = afterRun.find(f => 
           !f.endsWith('.part') && 
           !f.match(/^\d{2}-/) && 
-          f.endsWith('.txt')
+          (f.endsWith('.txt') || statSync(join(outputDirectory, f)).isDirectory())
         )
         if (possibleFile) {
           l(`Found modified file`, { testName, file: possibleFile })
@@ -74,8 +75,19 @@ describe('CLI extract local tests', () => {
       
       for (const file of filesToRename) {
         const filePath = join(outputDirectory, file)
-        if (existsSync(filePath) && file.endsWith('.txt')) {
-          const stats = statSync(filePath)
+        const stats = statSync(filePath)
+        
+        if (stats.isDirectory()) {
+          const dirContents = readdirSync(filePath)
+          const txtFiles = dirContents.filter(f => f.endsWith('.txt'))
+          expect(txtFiles.length > 0).toBeTruthy()
+          l(`Verified directory`, { file, txtFiles: txtFiles.length })
+          
+          for (const txtFile of txtFiles) {
+            const txtStats = statSync(join(filePath, txtFile))
+            expect(txtStats.size > 0).toBeTruthy()
+          }
+        } else if (file.endsWith('.txt')) {
           expect(stats.size > 0).toBeTruthy()
           l(`Verified file`, { file, size: stats.size })
         }
@@ -94,16 +106,23 @@ describe('CLI extract local tests', () => {
       
       for (const file of filesToRename) {
         if (file.endsWith('.part')) continue
-        if (/^\d{2}-/.test(file)) continue
+        if (/^\d{14}-/.test(file)) continue
         if (file === 'temp') continue
         
         const oldPath = join(outputDirectory, file)
         if (!existsSync(oldPath)) continue
         
-        const fileExtension = file.substring(file.lastIndexOf('.'))
-        const baseName = file.substring(0, file.lastIndexOf('.'))
+        const stats = statSync(oldPath)
+        let fileExtension = ''
+        let baseName = file
         
-        const newName = `${String(fileCounter).padStart(2, '0')}-${baseName}-${testName}${fileExtension}`
+        if (stats.isFile() && file.includes('.')) {
+          fileExtension = file.substring(file.lastIndexOf('.'))
+          baseName = file.substring(0, file.lastIndexOf('.'))
+        }
+        
+        const timestamp = new Date().toISOString().replace(/[-:T]/g, '').split('.')[0]
+        const newName = `${timestamp}-${baseName}-${testName}${fileExtension}`
         const newPath = join(outputDirectory, newName)
         
         l(`Renaming file`, { from: file, to: newName })

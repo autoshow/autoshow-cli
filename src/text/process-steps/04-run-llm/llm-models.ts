@@ -11,9 +11,9 @@ export const LLM_SERVICES_CONFIG = {
     label: 'ChatGPT',
     apiKeyPropName: 'openaiApiKey',
     models: [
-      { modelName: 'GPT 5', modelId: 'gpt-5', inputCostPer1M: 1.25, outputCostPer1M: 10.00, inputCostPer1MCents: 125, outputCostPer1MCents: 1000 },
-      { modelName: 'GPT 5 Mini', modelId: 'gpt-5-mini', inputCostPer1M: 0.25, outputCostPer1M: 2.00, inputCostPer1MCents: 25, outputCostPer1MCents: 200 },
-      { modelName: 'GPT 5 Nano', modelId: 'gpt-5-nano', inputCostPer1M: 0.05, outputCostPer1M: 0.40, inputCostPer1MCents: 5, outputCostPer1MCents: 40 }
+      { modelName: 'GPT 5.2', modelId: 'gpt-5.2', inputCostPer1M: 2.00, outputCostPer1M: 10.00, inputCostPer1MCents: 200, outputCostPer1MCents: 1000 },
+      { modelName: 'GPT 5.2 Pro', modelId: 'gpt-5.2-pro', inputCostPer1M: 4.00, outputCostPer1M: 18.00, inputCostPer1MCents: 400, outputCostPer1MCents: 1800 },
+      { modelName: 'GPT 5.1', modelId: 'gpt-5.1', inputCostPer1M: 1.50, outputCostPer1M: 8.00, inputCostPer1MCents: 150, outputCostPer1MCents: 800 }
     ]
   },
   claude: {
@@ -22,9 +22,9 @@ export const LLM_SERVICES_CONFIG = {
     label: 'Claude',
     apiKeyPropName: 'anthropicApiKey',
     models: [
-      { modelName: 'Claude Opus 4', modelId: 'claude-opus-4-20250514', inputCostPer1M: 15.00, outputCostPer1M: 75.00, inputCostPer1MCents: 1500, outputCostPer1MCents: 7500 },
-      { modelName: 'Claude Sonnet 4', modelId: 'claude-sonnet-4-20250514', inputCostPer1M: 3.00, outputCostPer1M: 15.00, inputCostPer1MCents: 300, outputCostPer1MCents: 1500 },
-      { modelName: 'Claude Opus 4.1', modelId: 'claude-opus-4-1-20250805', inputCostPer1M: 15.00, outputCostPer1M: 75.00, inputCostPer1MCents: 1500, outputCostPer1MCents: 7500 }
+      { modelName: 'Claude Opus 4.5', modelId: 'claude-opus-4-5-20251101', inputCostPer1M: 5.00, outputCostPer1M: 25.00, inputCostPer1MCents: 500, outputCostPer1MCents: 2500 },
+      { modelName: 'Claude Sonnet 4.5', modelId: 'claude-sonnet-4-5-20250929', inputCostPer1M: 3.00, outputCostPer1M: 15.00, inputCostPer1MCents: 300, outputCostPer1MCents: 1500 },
+      { modelName: 'Claude Haiku 4.5', modelId: 'claude-haiku-4-5-20251001', inputCostPer1M: 1.00, outputCostPer1M: 5.00, inputCostPer1MCents: 100, outputCostPer1MCents: 500 }
     ]
   },
   gemini: {
@@ -33,9 +33,8 @@ export const LLM_SERVICES_CONFIG = {
     label: 'Gemini',
     apiKeyPropName: 'geminiApiKey',
     models: [
-      { modelName: 'Gemini 2.5 Pro', modelId: 'gemini-2.5-pro', inputCostPer1M: 1.25, outputCostPer1M: 10.00, inputCostPer1MCents: 125, outputCostPer1MCents: 1000 },
-      { modelName: 'Gemini 2.5 Flash', modelId: 'gemini-2.5-flash', inputCostPer1M: 0.30, outputCostPer1M: 2.50, inputCostPer1MCents: 30, outputCostPer1MCents: 250 },
-      { modelName: 'Gemini 2.5 Flash Lite Preview', modelId: 'gemini-2.5-flash-lite-preview-06-17', inputCostPer1M: 0.10, outputCostPer1M: 0.40, inputCostPer1MCents: 10, outputCostPer1MCents: 40 }
+      { modelName: 'Gemini 3 Pro', modelId: 'gemini-3-pro-preview', inputCostPer1M: 2.00, outputCostPer1M: 12.00, inputCostPer1MCents: 200, outputCostPer1MCents: 1200 },
+      { modelName: 'Gemini 3 Flash', modelId: 'gemini-3-flash-preview', inputCostPer1M: 0.50, outputCostPer1M: 3.00, inputCostPer1MCents: 50, outputCostPer1MCents: 300 }
     ]
   }
 } as const

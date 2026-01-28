@@ -6,7 +6,7 @@ const p = '[extract/extract-services/unpdf]'
 
 export const extractWithUnpdf = async (
   pdfPath: string,
-  _options: ExtractOptions,
+  options: ExtractOptions,
   requestId: string,
   pageNumber?: number
 ): Promise<{ text: string, totalCost?: number }> => {
@@ -18,7 +18,11 @@ export const extractWithUnpdf = async (
     const buffer = await readFile(pdfPath)
     const pdf = await getDocumentProxy(new Uint8Array(buffer))
     const extractedData = await extractText(pdf, { mergePages: false })
-    const text = extractedData.text.join('\n\n')
+    
+    const separator = options.pageBreaks && extractedData.totalPages > 1
+      ? '\n\n--- Page Break ---\n\n'
+      : '\n\n'
+    const text = extractedData.text.join(separator)
     
     l(`${p}[${requestId}] Extracted${pageInfo}`, { characters: text.length, totalPages: extractedData.totalPages })
     

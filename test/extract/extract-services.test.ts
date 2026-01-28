@@ -10,9 +10,8 @@ const cliCommands = [
   { '01-pdf-zerox-gpt-4.1-mini': 'bun as -- extract pdf "input/document.pdf" --service zerox --model gpt-4.1-mini' },
   { '02-pdf-zerox-gpt-4.1': 'bun as -- extract pdf "input/document.pdf" --service zerox --model gpt-4.1' },
   { '03-pdf-zerox-gemini-flash': 'bun as -- extract pdf "input/document.pdf" --service zerox --model gemini-2.0-flash' },
-  { '04-pdf-unpdf': 'bun as -- extract pdf "input/document.pdf" --service unpdf' },
-  { '05-pdf-textract': 'bun as -- extract pdf "input/document.pdf" --service textract' },
-  { '06-pdf-page-breaks': 'bun as -- extract pdf "input/document.pdf" --page-breaks' },
+  { '04-pdf-textract': 'bun as -- extract pdf "input/document.pdf" --service textract' },
+  { '05-pdf-textract-page-breaks': 'bun as -- extract pdf "input/document.pdf" --service textract --page-breaks' },
 ]
 
 describe('CLI extract services tests', () => {

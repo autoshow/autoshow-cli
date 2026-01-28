@@ -117,7 +117,6 @@ export async function generateVideoWithVeo(
     if (options.negativePrompt) parameters['negativePrompt'] = options.negativePrompt
     if (options.personGeneration) parameters['personGeneration'] = options.personGeneration
     
-    // Add reference images for content guidance (up to 3)
     if (options.referenceImages && options.referenceImages.length > 0) {
       const referenceImagesData: Array<{ image: { imageBytes: string; mimeType: string }; referenceType: string }> = []
       for (const imagePath of options.referenceImages.slice(0, 3)) {
