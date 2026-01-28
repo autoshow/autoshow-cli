@@ -24,13 +24,13 @@ The setup script will:
 
 ```bash
 # Basic usage with default settings (Vivian voice)
-bun as -- tts file input/sample.md --qwen3
+bun as -- tts input/sample.md --qwen3
 
 # Choose a different speaker
-bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ryan
+bun as -- tts input/sample.md --qwen3 --qwen3-speaker Ryan
 
 # Add voice instructions
-bun as -- tts file input/sample.md --qwen3 --qwen3-instruct "Speak with enthusiasm and energy"
+bun as -- tts input/sample.md --qwen3 --qwen3-instruct "Speak with enthusiasm and energy"
 
 # Process a script file
 bun as -- tts script input/script.json --qwen3
@@ -86,8 +86,8 @@ bun as -- tts script input/script.json --qwen3
 Uses pre-built voices with optional instruction control.
 
 ```bash
-bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Vivian
-bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ryan --qwen3-instruct "Speak slowly and clearly"
+bun as -- tts input/sample.md --qwen3 --qwen3-speaker Vivian
+bun as -- tts input/sample.md --qwen3 --qwen3-speaker Ryan --qwen3-instruct "Speak slowly and clearly"
 ```
 
 ### Voice Design Mode
@@ -95,7 +95,7 @@ bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ryan --qwen3-instruct
 Creates voices from natural language descriptions. Requires `--qwen3-instruct`.
 
 ```bash
-bun as -- tts file input/sample.md --qwen3 --qwen3-mode design --qwen3-instruct "Young cheerful female voice with a slight British accent"
+bun as -- tts input/sample.md --qwen3 --qwen3-mode design --qwen3-instruct "Young cheerful female voice with a slight British accent"
 ```
 
 Note: Voice design mode requires the `VoiceDesign` model variant.
@@ -105,7 +105,7 @@ Note: Voice design mode requires the `VoiceDesign` model variant.
 Clones a voice from a reference audio sample. Requires `--ref-audio`.
 
 ```bash
-bun as -- tts file input/sample.md --qwen3 --qwen3-mode clone --ref-audio path/to/sample.wav --ref-text "Transcript of the sample audio"
+bun as -- tts input/sample.md --qwen3 --qwen3-mode clone --ref-audio path/to/sample.wav --ref-text "Transcript of the sample audio"
 ```
 
 Note: Voice clone mode requires the `Base` model variant.
@@ -174,14 +174,14 @@ QWEN3_VOICE_NARRATOR=Vivian
 
 ```bash
 # Japanese voice
-bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ono_Anna --qwen3-language Japanese
+bun as -- tts input/sample.md --qwen3 --qwen3-speaker Ono_Anna --qwen3-language Japanese
 
 # Korean voice with instructions
-bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Sohee --qwen3-language Korean --qwen3-instruct "Warm and friendly"
+bun as -- tts input/sample.md --qwen3 --qwen3-speaker Sohee --qwen3-language Korean --qwen3-instruct "Warm and friendly"
 
 # Voice design from description
-bun as -- tts file input/sample.md --qwen3 --qwen3-mode design --qwen3-model "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign" --qwen3-instruct "Elderly wise male voice with gravelly undertones"
+bun as -- tts input/sample.md --qwen3 --qwen3-mode design --qwen3-model "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign" --qwen3-instruct "Elderly wise male voice with gravelly undertones"
 
 # Voice cloning
-bun as -- tts file input/sample.md --qwen3 --qwen3-mode clone --qwen3-model "Qwen/Qwen3-TTS-12Hz-1.7B-Base" --ref-audio samples/my-voice.wav --ref-text "This is a sample of my voice"
+bun as -- tts input/sample.md --qwen3 --qwen3-mode clone --qwen3-model "Qwen/Qwen3-TTS-12Hz-1.7B-Base" --ref-audio samples/my-voice.wav --ref-text "This is a sample of my voice"
 ```

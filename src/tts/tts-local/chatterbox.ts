@@ -165,9 +165,8 @@ SOLUTION: Log in to Hugging Face:
   1. Get a token from: https://huggingface.co/settings/tokens
   2. Run: build/pyenv/tts/bin/python -c "from huggingface_hub import login; login()"
   
-Or use a different TTS engine that doesn't require authentication:
-  - Use qwen3 TTS: --qwen3 (no auth needed)
-  - Use Coqui TTS: --coqui (no auth needed)`)
+  Or use a different TTS engine that doesn't require authentication:
+  - Use qwen3 TTS: --qwen3 (no auth needed)`)
       } else if (error.includes('torch.load')) {
         err('Model loading error. Try: bun setup:tts', { error })
       } else if (error.includes('Invalid model type')) {
@@ -190,9 +189,8 @@ SOLUTION: Log in to Hugging Face:
   1. Get a token from: https://huggingface.co/settings/tokens
   2. Run: build/pyenv/tts/bin/python -c "from huggingface_hub import login; login()"
   
-Or use a different TTS engine that doesn't require authentication:
-  - Use qwen3 TTS: --qwen3 (no auth needed)
-  - Use Coqui TTS: --coqui (no auth needed)`)
+  Or use a different TTS engine that doesn't require authentication:
+  - Use qwen3 TTS: --qwen3 (no auth needed)`)
       } else if (stderr.includes('Invalid model type')) {
         err('Invalid Chatterbox model. Supported models: turbo, standard. For multilingual TTS, use --qwen3 instead.')
       } else if (stderr.includes('torch')) {

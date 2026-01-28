@@ -26,19 +26,19 @@ The setup script will:
 
 ```bash
 # Basic usage with default settings (instruct mode)
-bun as -- tts file input/sample.md --cosyvoice
+bun as -- tts input/sample.md --cosyvoice
 
 # Add voice instructions
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm and energy"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm and energy"
 
 # Specify language
-bun as -- tts file input/sample.md --cosyvoice --cosy-language ja
+bun as -- tts input/sample.md --cosyvoice --cosy-language ja
 
 # Use Chinese dialect via instruction
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"
 
 # Voice cloning (zero-shot mode)
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio voice.wav
 
 # Process a script file
 bun as -- tts script input/script.json --cosyvoice
@@ -80,19 +80,19 @@ Uses instruction text to control voice characteristics. Does not require referen
 
 ```bash
 # Basic instruct mode
-bun as -- tts file input/sample.md --cosyvoice
+bun as -- tts input/sample.md --cosyvoice
 
 # With specific instructions
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak slowly and clearly"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak slowly and clearly"
 
 # Dialect control
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"
 
 # Speed control
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak as fast as possible"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak as fast as possible"
 
 # Emotion control
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak with excitement and joy"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak with excitement and joy"
 ```
 
 ### Zero-Shot Mode
@@ -101,10 +101,10 @@ Clones a voice from a reference audio sample. Requires `--ref-audio`.
 
 ```bash
 # Basic voice cloning
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav
 
 # With transcript for better quality
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav --ref-text "This is what the sample audio says"
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav --ref-text "This is what the sample audio says"
 ```
 
 **Tips for voice cloning:**
@@ -117,7 +117,7 @@ bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio
 Fine-grained control with breath markers and pronunciation inpainting. Requires `--ref-audio`.
 
 ```bash
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode cross_lingual --ref-audio samples/voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode cross_lingual --ref-audio samples/voice.wav
 ```
 
 You can include control markers in your text:
@@ -269,7 +269,7 @@ snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='build/cosyv
 
 Zero-shot voice cloning requires a reference audio file:
 ```bash
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio path/to/voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio path/to/voice.wav
 ```
 
 If you don't have reference audio, use instruct mode instead (the default).

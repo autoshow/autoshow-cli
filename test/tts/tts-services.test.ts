@@ -6,8 +6,8 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'elevenlabs-default': 'bun as -- tts file input/sample.md --elevenlabs' },
-  { 'polly-default': 'bun as -- tts file input/sample.md --polly' },
+  { 'elevenlabs-default': 'bun as -- tts input/sample.md --elevenlabs' },
+  { 'polly-default': 'bun as -- tts input/sample.md --polly' },
 ]
 
 describe('CLI TTS services tests', () => {

@@ -4,14 +4,14 @@
 
 ### Basic Usage
 ```bash
-bun as -- tts file input/sample.md --polly
-bun as -- tts file input/sample.md --polly --voice Amy
-bun as -- tts file input/sample.md --polly --polly-engine neural
-bun as -- tts file input/sample.md --polly --polly-engine standard
-bun as -- tts file input/sample.md --polly --polly-engine generative
-bun as -- tts file input/sample.md --polly --polly-engine long-form --voice Gregory
-bun as -- tts file input/sample.md --polly --polly-format ogg_vorbis
-bun as -- tts file input/sample.md --polly --polly-sample-rate 16000
+bun as -- tts input/sample.md --polly
+bun as -- tts input/sample.md --polly --voice Amy
+bun as -- tts input/sample.md --polly --polly-engine neural
+bun as -- tts input/sample.md --polly --polly-engine standard
+bun as -- tts input/sample.md --polly --polly-engine generative
+bun as -- tts input/sample.md --polly --polly-engine long-form --voice Gregory
+bun as -- tts input/sample.md --polly --polly-format ogg_vorbis
+bun as -- tts input/sample.md --polly --polly-sample-rate 16000
 ```
 
 ### Script Processing
@@ -21,8 +21,8 @@ bun as -- tts script input/script.json --polly
 
 ### Multi-lingual
 ```bash
-bun as -- tts file spanish.md --polly --voice Lupe --language es-US
-bun as -- tts file french.md --polly --voice Celine --language fr-FR
+bun as -- tts spanish.md --polly --voice Lupe --language es-US
+bun as -- tts french.md --polly --voice Celine --language fr-FR
 ```
 
 ## Available Voices

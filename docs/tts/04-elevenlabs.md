@@ -4,8 +4,8 @@
 
 ### Basic Usage
 ```bash
-bun as -- tts file input/sample.md --elevenlabs
-bun as -- tts file input/sample.md --elevenlabs --voice voice_id_here
+bun as -- tts input/sample.md --elevenlabs
+bun as -- tts input/sample.md --elevenlabs --voice voice_id_here
 ```
 
 ### Script Processing
