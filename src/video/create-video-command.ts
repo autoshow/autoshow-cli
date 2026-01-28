@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { l, err, success } from '@/logging'
-import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel } from './video-utils'
+import { handleError, validateVideoModel, parseAspectRatio, validateRunwayModel, validateResolution } from './video-utils'
 import { generateVideoWithVeo } from './video-services/veo'
 import { generateVideoWithRunway } from './video-services/runway'
 import type { VeoModel, RunwayModel, VeoGenerateOptions, RunwayGenerateOptions } from '@/video/video-types'
@@ -13,11 +13,13 @@ export const createVideoCommand = (): Command => {
     .command('generate')
     .description('Generate videos using AI services')
     .requiredOption('-p, --prompt <text>', 'text prompt for video generation')
-    .option('-m, --model <model>', 'model to use (veo: veo-3.0-generate-preview|veo-3.0-fast-generate-preview|veo-2.0-generate-001, runway: gen4_turbo|gen3a_turbo)', 'veo-3.0-fast-generate-preview')
+    .option('-m, --model <model>', 'model to use (veo: veo-3.1-generate-preview|veo-3.1-fast-generate-preview, runway: gen4_turbo|gen3a_turbo)', 'veo-3.1-fast-generate-preview')
     .option('-o, --output <path>', 'output path for generated video')
-    .option('-i, --image <path>', 'reference image for image-to-video generation')
+    .option('-i, --image <path>', 'starting frame image for image-to-video generation')
     .option('-a, --aspect-ratio <ratio>', 'aspect ratio (16:9|9:16)', '16:9')
+    .option('-r, --resolution <resolution>', 'video resolution (720p|1080p|4k) (Veo only)', '720p')
     .option('-n, --negative <text>', 'negative prompt to exclude elements')
+    .option('--reference <paths...>', 'reference images for content guidance, up to 3 (Veo only)')
     .option('--person <mode>', 'person generation mode (allow_all|allow_adult|dont_allow) (Veo only)')
     .option('-d, --duration <seconds>', 'video duration in seconds (5|10) (Runway only)', '5')
     .option('--gemini-key-file <path>', 'Path to file containing Gemini API key (for Veo)')
@@ -48,11 +50,6 @@ export const createVideoCommand = (): Command => {
         
         if (isVeoModel) {
           let veoAspectRatio: '16:9' | '9:16' | undefined = aspectRatio as any
-          if (options.model !== 'veo-2.0-generate-001' && veoAspectRatio === '9:16') {
-            l('Portrait mode (9:16) is only supported by veo-2.0-generate-001. Using 16:9 instead.')
-            veoAspectRatio = '16:9'
-          }
-
           if (veoAspectRatio !== '16:9' && veoAspectRatio !== '9:16') {
             l('Unsupported aspect ratio for Veo model. Defaulting to 16:9', { aspectRatio: veoAspectRatio })
             veoAspectRatio = '16:9'
@@ -63,12 +60,18 @@ export const createVideoCommand = (): Command => {
             outputPath: options.output,
             image: options.image,
             aspectRatio: veoAspectRatio,
+            resolution: validateResolution(options.resolution),
             negativePrompt: options.negative,
-            personGeneration: options.person
+            personGeneration: options.person,
+            referenceImages: options.reference
           }
           
           if (options.image) {
-            l('Using image-to-video mode with reference image', { image: options.image })
+            l('Using image-to-video mode with starting frame', { image: options.image })
+          }
+          
+          if (options.reference && options.reference.length > 0) {
+            l('Using reference images for content guidance', { count: Math.min(options.reference.length, 3) })
           }
           
           const result = await generateVideoWithVeo(options.prompt, veoOptions)
@@ -163,9 +166,8 @@ export const createVideoCommand = (): Command => {
       
       const modelsData = {
         veo: [
-          { id: 'veo-3.0-generate-preview', description: 'Veo 3 with audio generation (8 seconds, 720p)' },
-          { id: 'veo-3.0-fast-generate-preview', description: 'Veo 3 Fast for rapid generation' },
-          { id: 'veo-2.0-generate-001', description: 'Veo 2 stable version (5-8 seconds, supports portrait)' }
+          { id: 'veo-3.1-generate-preview', description: 'Veo 3.1 with audio, portrait mode, 720p/1080p/4k, reference images' },
+          { id: 'veo-3.1-fast-generate-preview', description: 'Veo 3.1 Fast for rapid generation with full feature support' }
         ],
         runway: [
           { id: 'gen4_turbo', description: 'Gen-4 Turbo (5-10 seconds, 720p, 5 credits/sec)' },
@@ -187,9 +189,8 @@ export const createVideoCommand = (): Command => {
         'Available video generation models:',
         '',
         'Google Veo models (cloud-based, requires GEMINI_API_KEY):',
-        '  • veo-3.0-generate-preview - Veo 3 with audio generation (8 seconds, 720p)',
-        '  • veo-3.0-fast-generate-preview - Veo 3 Fast for rapid generation',
-        '  • veo-2.0-generate-001 - Veo 2 stable version (5-8 seconds, supports portrait)',
+        '  • veo-3.1-generate-preview - Veo 3.1 with audio, portrait mode, 720p/1080p/4k, reference images',
+        '  • veo-3.1-fast-generate-preview - Veo 3.1 Fast for rapid generation with full feature support',
         '',
         'Runway models (cloud-based, requires RUNWAYML_API_SECRET):',
         '  • gen4_turbo - Gen-4 Turbo (5-10 seconds, 720p, 5 credits/sec)',
@@ -205,7 +206,8 @@ export const createVideoCommand = (): Command => {
 Examples:
   $ autoshow-cli video list
   $ autoshow-cli video generate -p "ocean waves crashing on rocks"
-  $ autoshow-cli video generate -p "timelapse of clouds" -m veo-2.0-generate-001 -a 9:16
+  $ autoshow-cli video generate -p "timelapse of clouds" -m veo-3.1-generate-preview -a 9:16
+  $ autoshow-cli video generate -p "woman in dress" --reference dress.jpg woman.jpg -r 1080p
   $ autoshow-cli video generate -p "person walking" -m gen4_turbo -i ./input/image.jpg
 `)
 

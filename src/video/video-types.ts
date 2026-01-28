@@ -6,10 +6,13 @@ export interface ApiError {
   $metadata?: { httpStatusCode?: number }
 }
 
-export type VeoModel = 'veo-3.0-generate-preview' | 'veo-3.0-fast-generate-preview' | 'veo-2.0-generate-001'
+export type VeoModel = 'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'
+
+export type VeoResolution = '720p' | '1080p' | '4k'
 
 export interface VeoGenerateConfig {
   aspectRatio?: '16:9' | '9:16'
+  resolution?: VeoResolution
   negativePrompt?: string
   personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow'
 }
@@ -17,6 +20,7 @@ export interface VeoGenerateConfig {
 export interface VeoGenerateOptions extends VeoGenerateConfig {
   model?: VeoModel
   image?: string
+  referenceImages?: string[]
   outputPath?: string
 }
 

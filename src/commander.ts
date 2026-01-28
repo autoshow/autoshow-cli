@@ -47,7 +47,7 @@ Examples:
   $ autoshow-cli text --file ./input/audio.mp3 --whisper --chatgpt
   $ autoshow-cli tts file ./input/sample.md --coqui
   $ autoshow-cli image generate -p "a sunset over mountains"
-  $ autoshow-cli video generate -p "ocean waves" -m veo-3.0-fast-generate-preview
+  $ autoshow-cli video generate -p "ocean waves" -m veo-3.1-fast-generate-preview
 
 Global Options:
   --no-color       Disable colored output (also respects NO_COLOR env var)

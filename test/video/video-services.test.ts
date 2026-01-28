@@ -6,10 +6,10 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'veo-fast-default': 'bun as -- video generate --prompt "A serene waterfall in a lush forest" --model veo-3.0-fast-generate-preview' },
-  { 'veo-3-default': 'bun as -- video generate --prompt "A time-lapse of a sunset over mountains" --model veo-3.0-generate-preview' },
-  { 'veo-2-portrait': 'bun as -- video generate --prompt "A bustling city street at night" --model veo-2.0-generate-001 --aspect-ratio 9:16' },
-  { 'veo-fast-negative': 'bun as -- video generate --prompt "A peaceful beach scene" --model veo-3.0-fast-generate-preview --negative "people, buildings"' },
+  { 'veo-3.1-fast-default': 'bun as -- video generate --prompt "A serene waterfall in a lush forest" --model veo-3.1-fast-generate-preview' },
+  { 'veo-3.1-default': 'bun as -- video generate --prompt "A time-lapse of a sunset over mountains" --model veo-3.1-generate-preview' },
+  { 'veo-3.1-portrait': 'bun as -- video generate --prompt "A bustling city street at night" --model veo-3.1-generate-preview --aspect-ratio 9:16' },
+  { 'veo-3.1-fast-negative': 'bun as -- video generate --prompt "A peaceful beach scene" --model veo-3.1-fast-generate-preview --negative "people, buildings"' },
 ]
 
 describe('CLI video services tests', () => {

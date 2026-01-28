@@ -28,11 +28,6 @@ bun as -- tts file input/sample.md --coqui --coqui-model "tts_models/en/vctk/vit
 bun as -- tts file input/sample.md --coqui --coqui-model "tts_models/swl/fairseq/vits"
 ```
 
-### List Available Speakers
-```bash
-bun as -- tts list
-```
-
 ## Environment Variables
 ```env
 COQUI_PYTHON_PATH=/path/to/python

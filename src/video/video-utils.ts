@@ -47,8 +47,17 @@ export function ensureOutputDirectory(outputPath: string): void {
 }
 
 export function validateVideoModel(model: string): boolean {
-  const validModels = ['veo-3.0-generate-preview', 'veo-3.0-fast-generate-preview', 'veo-2.0-generate-001']
+  const validModels = ['veo-3.1-generate-preview', 'veo-3.1-fast-generate-preview']
   return validModels.includes(model)
+}
+
+export function validateResolution(value: string): '720p' | '1080p' | '4k' {
+  const validResolutions = ['720p', '1080p', '4k']
+  if (validResolutions.includes(value)) {
+    return value as '720p' | '1080p' | '4k'
+  }
+  l('Invalid resolution. Using default 720p', { value })
+  return '720p'
 }
 
 export function validateRunwayModel(model: string): boolean {
