@@ -18,6 +18,12 @@ bun setup:transcription
 
 # Text-to-speech (Coqui + Kitten)
 bun setup:tts
+
+# Individual TTS engines
+bun setup:tts:qwen3      # Qwen3 TTS (multilingual)
+bun setup:tts:chatterbox # Chatterbox TTS (voice cloning)
+bun setup:tts:fish       # FishAudio TTS (emotion control)
+bun setup:tts:cosyvoice  # CosyVoice TTS (9 languages, dialects)
 ```
 
 Each feature is self-contained and won't affect others if setup fails.
@@ -126,6 +132,7 @@ The setup automatically detects your platform and configures the optimal Whisper
 - **Environment:** `build/pyenv/tts/`
 - **Models:** Coqui TTS, KittenTTS default models
 - **Dependencies:** ffmpeg, espeak-ng, pkg-config
+- **Individual engines:** Install additional engines with `setup:tts:qwen3`, `setup:tts:chatterbox`, `setup:tts:fish`, or `setup:tts:cosyvoice`
 
 ## Directory Structure
 

@@ -8,6 +8,21 @@ FishAudio S1-mini is an open-source 0.5B parameter TTS model with natural, expre
 - **FishAudio API server running** (Docker recommended)
 - GPU recommended (12GB VRAM) but CPU mode works
 
+## Setup
+
+```bash
+# Install FishAudio TTS dependencies
+bun setup:tts:fish
+```
+
+The setup script will:
+1. Create the base TTS Python environment (if not already present)
+2. Install required dependencies (requests, torch)
+3. Attempt to download FishAudio weights (~2GB) if HuggingFace credentials are configured
+4. Optionally install flash-attn for better performance if CUDA is available
+
+**Note:** FishAudio requires HuggingFace authentication to download the model weights. See the server setup instructions below.
+
 ## Quick Start
 
 **Step 1: Download the model weights**
@@ -21,8 +36,8 @@ hf auth login
 # 2. Accept the model license at https://huggingface.co/fishaudio/openaudio-s1-mini
 
 # 3. Download weights (~2GB)
-mkdir -p checkpoints
-hf download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
+mkdir -p build/checkpoints
+hf download fishaudio/openaudio-s1-mini --local-dir build/checkpoints/openaudio-s1-mini
 ```
 
 **Step 2: Start the FishAudio API server**
@@ -81,8 +96,8 @@ hf auth login
 # Then visit https://huggingface.co/fishaudio/openaudio-s1-mini and accept the license
 
 # 2. Download weights (~2GB)
-mkdir -p checkpoints
-hf download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
+mkdir -p build/checkpoints
+hf download fishaudio/openaudio-s1-mini --local-dir build/checkpoints/openaudio-s1-mini
 
 # 3. Start server - GPU (fastest)
 docker run -d --gpus all -p 8080:8080 \
@@ -107,13 +122,13 @@ cd fish-speech
 pip install -e .[cu129]  # or .[cpu] for CPU-only
 
 # Download weights
-hf download fishaudio/openaudio-s1-mini --local-dir checkpoints/openaudio-s1-mini
+hf download fishaudio/openaudio-s1-mini --local-dir build/checkpoints/openaudio-s1-mini
 
 # Start server
 python -m tools.api_server \
   --listen 0.0.0.0:8080 \
-  --llama-checkpoint-path checkpoints/openaudio-s1-mini \
-  --decoder-checkpoint-path checkpoints/openaudio-s1-mini/codec.pth
+  --llama-checkpoint-path build/checkpoints/openaudio-s1-mini \
+  --decoder-checkpoint-path build/checkpoints/openaudio-s1-mini/codec.pth
 ```
 
 ## Emotion Control
@@ -200,7 +215,7 @@ For multi-speaker scripts:
 FISHAUDIO_API_URL=http://localhost:8080
 
 # Checkpoint location
-FISHAUDIO_CHECKPOINT_PATH=checkpoints/openaudio-s1-mini
+FISHAUDIO_CHECKPOINT_PATH=build/checkpoints/openaudio-s1-mini
 
 # Voice mappings for script processing
 FISHAUDIO_VOICE_DUCO=path/to/duco.wav
@@ -217,7 +232,7 @@ Add to `build/config/.tts-config.json`:
   "fishaudio": {
     "default_language": "en",
     "api_url": "http://localhost:8080",
-    "checkpoint_path": "checkpoints/openaudio-s1-mini",
+    "checkpoint_path": "build/checkpoints/openaudio-s1-mini",
     "use_api": true,
     "compile": true
   }
@@ -230,7 +245,7 @@ Add to `build/config/.tts-config.json`:
 - **401 Unauthorized / Gated repo**: Login to HuggingFace (`hf auth login`) and accept the model license at https://huggingface.co/fishaudio/openaudio-s1-mini
 - **Checkpoint not found**: Download weights after logging in to HuggingFace
 - **CUDA out of memory**: Use `--fish-device cpu` or reduce text length
-- **ModuleNotFoundError**: Run `bun setup:tts`
+- **ModuleNotFoundError**: Run `bun setup:tts:fish` to install FishAudio dependencies
 
 ## Performance Notes
 

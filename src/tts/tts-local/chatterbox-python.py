@@ -9,7 +9,6 @@ import torch
 import torchaudio as ta
 import numpy as np
 
-
 def get_device_and_dtype(requested_device=None, requested_dtype=None):
     if requested_device in ["cpu", "mps", "cuda"]:
         device = requested_device
@@ -29,16 +28,13 @@ def get_device_and_dtype(requested_device=None, requested_dtype=None):
 
     return device, dtype
 
-
 def emit_result(payload):
     sys.stdout.write(json.dumps(payload) + "\n")
     sys.stdout.flush()
 
-
 def log(msg):
     sys.stderr.write(str(msg) + "\n")
     sys.stderr.flush()
-
 
 config = json.loads(sys.argv[1])
 model_type = config.get("model", "turbo")

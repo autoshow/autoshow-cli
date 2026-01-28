@@ -29,15 +29,9 @@ def synthesize_via_api(config):
 
     log(f"Using API server at {api_url}")
 
-
-
-
-
-
     timeout = 600
 
     if ref_audio and os.path.exists(ref_audio):
-
         with open(ref_audio, "rb") as f:
             files = {"audio": ("reference.wav", f, "audio/wav")}
             data = {"text": text, "format": "wav"}
@@ -48,7 +42,6 @@ def synthesize_via_api(config):
                 f"{api_url}/v1/tts", files=files, data=data, timeout=timeout
             )
     else:
-
         payload = {"text": text, "format": "wav"}
         response = requests.post(
             f"{api_url}/v1/tts",
@@ -68,14 +61,15 @@ def synthesize_via_api(config):
 def synthesize_via_cli(config):
     import torch
 
-    checkpoint_path = config.get("checkpoint_path", "checkpoints/openaudio-s1-mini")
+    checkpoint_path = config.get(
+        "checkpoint_path", "build/checkpoints/openaudio-s1-mini"
+    )
     text = config["text"]
     output = config["output"]
     ref_audio = config.get("ref_audio")
     ref_text = config.get("ref_text")
     compile_flag = config.get("compile", False)
     device = config.get("device")
-
 
     fish_speech_inference = os.path.join(
         os.getcwd(), "fish_speech/models/text2semantic/inference.py"
@@ -101,7 +95,6 @@ def synthesize_via_cli(config):
             f"Run: hf download fishaudio/openaudio-s1-mini --local-dir {checkpoint_path}"
         )
 
-
     if device:
         pass
     elif torch.cuda.is_available():
@@ -113,9 +106,7 @@ def synthesize_via_cli(config):
 
     log(f"Using device: {device}, checkpoint: {checkpoint_path}")
 
-
     with tempfile.TemporaryDirectory() as tmpdir:
-
         prompt_tokens = None
         if ref_audio and os.path.exists(ref_audio):
             log("Extracting reference audio tokens...")
@@ -136,7 +127,6 @@ def synthesize_via_cli(config):
                 prompt_tokens = os.path.join(tmpdir, "fake.npy")
                 if not os.path.exists(prompt_tokens):
                     prompt_tokens = None
-
 
         log("Generating semantic tokens...")
         semantic_cmd = [
@@ -162,7 +152,6 @@ def synthesize_via_cli(config):
         if result.returncode != 0:
             raise RuntimeError(f"Semantic generation failed: {result.stderr}")
 
-
         codes_file = None
         for f in os.listdir(tmpdir):
             if f.startswith("codes_") and f.endswith(".npy"):
@@ -171,7 +160,6 @@ def synthesize_via_cli(config):
 
         if not codes_file:
             raise RuntimeError("No codes file generated")
-
 
         log("Generating audio...")
         audio_cmd = [

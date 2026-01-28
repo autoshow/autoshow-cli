@@ -144,7 +144,6 @@ setup_tts() {
   bash "$SETUP_DIR/tts/tts-env.sh"
   bash "$SETUP_DIR/tts/kitten.sh"
   bash "$SETUP_DIR/tts/coqui.sh"
-  bash "$SETUP_DIR/tts/qwen3.sh"
   bash "$SETUP_DIR/tts/models.sh"
 }
 

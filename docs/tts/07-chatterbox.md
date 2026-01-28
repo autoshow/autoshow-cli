@@ -8,6 +8,18 @@ Chatterbox is a family of open-source text-to-speech models by Resemble AI. It s
 - GPU recommended (CUDA or Apple Silicon MPS) but CPU mode works
 - First run will download models from Hugging Face (~350MB-500MB depending on model)
 
+## Setup
+
+```bash
+# Install Chatterbox TTS only
+bun setup:tts:chatterbox
+```
+
+The setup script will:
+1. Create the base TTS Python environment (if not already present)
+2. Install chatterbox-tts from PyPI
+3. Optionally install flash-attn for better performance if CUDA is available
+
 ## Quick Start
 
 ```bash
@@ -134,7 +146,7 @@ CHATTERBOX_VOICE_NARRATOR=path/to/narrator-voice.wav
 ## Troubleshooting
 
 - **MPS failure on model load**: try `--chatterbox` with `--chatterbox-device cpu` or set a device override in config
-- **ModuleNotFoundError**: run `bun setup:tts` and ensure `chatterbox-tts` installed in the TTS venv
+- **ModuleNotFoundError**: run `bun setup:tts:chatterbox` to install Chatterbox TTS
 - **First run stalls**: model download may take several minutes; check Hugging Face cache location
 
 ## Watermarking

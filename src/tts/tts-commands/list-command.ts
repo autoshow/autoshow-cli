@@ -3,9 +3,6 @@ import { l, err } from '@/logging'
 import { spawnSync, existsSync, join, dirname } from '@/node-utils'
 import { withPager, getCliContext } from '@/utils'
 
-
-
-
 function formatModelsByCategory(modelsByCategory: Record<string, string[]>): string {
   const lines: string[] = []
   

@@ -3,7 +3,6 @@ import json
 import warnings
 import os
 
-
 os.environ["TRANSFORMERS_NO_FLASH_ATTN_WARNING"] = "1"
 warnings.filterwarnings("ignore")
 
@@ -17,16 +16,13 @@ import torchaudio
 
 sys.stderr = _stderr
 
-
 def emit_result(payload):
     sys.stdout.write(json.dumps(payload, ensure_ascii=True) + "\n")
     sys.stdout.flush()
 
-
 def log(msg):
     sys.stderr.write(str(msg) + "\n")
     sys.stderr.flush()
-
 
 def chunk_text(text, max_size=500):
     import re
@@ -68,7 +64,6 @@ def chunk_text(text, max_size=500):
 
     return chunks if chunks else [text]
 
-
 def load_cosyvoice_model(cosyvoice_dir, model_name="Fun-CosyVoice3-0.5B"):
 
     sys.path.insert(0, cosyvoice_dir)
@@ -82,20 +77,17 @@ def load_cosyvoice_model(cosyvoice_dir, model_name="Fun-CosyVoice3-0.5B"):
     model = AutoModel(model_dir=model_dir)
     return model
 
-
 def get_default_ref_audio(cosyvoice_dir):
     default_path = os.path.join(cosyvoice_dir, "asset", "zero_shot_prompt.wav")
     if os.path.exists(default_path):
         return default_path
     return None
 
-
 def inference_instruct(model, text, instruct_text, ref_audio_path, language="auto"):
 
     system_prompt = "You are a helpful assistant."
     if instruct_text:
         system_prompt = f"You are a helpful assistant. {instruct_text}"
-
 
     if not ref_audio_path or not os.path.exists(ref_audio_path):
         raise ValueError("Reference audio is required for CosyVoice3")
@@ -107,11 +99,9 @@ def inference_instruct(model, text, instruct_text, ref_audio_path, language="aut
 
     raise ValueError("Failed to generate audio in instruct mode")
 
-
 def inference_zero_shot(model, text, ref_audio_path, ref_text=None, language="auto"):
     if not ref_audio_path or not os.path.exists(ref_audio_path):
         raise ValueError("Zero-shot mode requires a reference audio file")
-
 
     prompt_text = ref_text or "You are a helpful assistant."
 
@@ -121,7 +111,6 @@ def inference_zero_shot(model, text, ref_audio_path, ref_text=None, language="au
         return result["tts_speech"], model.sample_rate
 
     raise ValueError("Failed to generate audio in zero-shot mode")
-
 
 def inference_cross_lingual(model, text, ref_audio_path, language="auto"):
     if not ref_audio_path or not os.path.exists(ref_audio_path):
@@ -133,7 +122,6 @@ def inference_cross_lingual(model, text, ref_audio_path, language="auto"):
         return result["tts_speech"], model.sample_rate
 
     raise ValueError("Failed to generate audio in cross-lingual mode")
-
 
 if len(sys.argv) < 2:
     emit_result({"ok": False, "error": "No configuration provided"})
@@ -148,7 +136,6 @@ language = config.get("language", "auto")
 instruct = config.get("instruct", "")
 ref_audio = config.get("ref_audio")
 ref_text = config.get("ref_text")
-
 
 if not ref_audio or not os.path.exists(str(ref_audio)):
     ref_audio = get_default_ref_audio(cosyvoice_dir)
@@ -166,7 +153,6 @@ try:
     log(f"Using device: {device}")
 
     model = load_cosyvoice_model(cosyvoice_dir)
-
 
     max_chunk = 500
     sr = model.sample_rate
@@ -200,7 +186,6 @@ try:
             silence = torch.zeros(int(0.2 * sr))
             audio_parts.append(silence)
 
-
         audio = torch.cat(audio_parts[:-1])
     else:
         if mode == "instruct":
@@ -211,7 +196,6 @@ try:
             audio, sr = inference_cross_lingual(model, text, ref_audio, language)
         else:
             raise ValueError(f"Unknown mode: {mode}")
-
 
     if audio.dim() == 1:
         audio = audio.unsqueeze(0)

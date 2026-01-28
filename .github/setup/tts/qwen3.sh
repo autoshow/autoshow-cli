@@ -13,7 +13,13 @@ if tts_can_import "qwen_tts"; then
   exit 0
 fi
 
-# Install qwen-tts from PyPI
+# Install qwen-tts from PyPI with compatible transformers version
+# qwen_tts requires transformers>=4.48 for ALL_ATTENTION_FUNCTIONS
+tts_pip install "transformers>=4.48" >/dev/null 2>&1 || {
+  log "ERROR: Failed to upgrade transformers"
+  exit 0
+}
+
 tts_pip install qwen-tts >/dev/null 2>&1 || {
   log "ERROR: Failed to install qwen-tts"
   log "Qwen3 TTS will be unavailable"

@@ -7,28 +7,18 @@ import { l } from '@/logging'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { '01-file-default': 'bun as -- text --file "input/audio.mp3"' },
-  { '02-file-save-audio': 'bun as -- text --file "input/audio.mp3" --saveAudio' },
+  { '15-urls-default': 'bun as -- text --urls "input/example-urls.md"' },
   
-  { '03-whisper-tiny': 'bun as -- text --file "input/audio.mp3" --whisper tiny' },
-  { '04-whisper-base': 'bun as -- text --file "input/audio.mp3" --whisper base' },
-  { '05-whisper-large-v3-turbo': 'bun as -- text --file "input/audio.mp3" --whisper large-v3-turbo' },
+  { '16-playlist-default': 'bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"' },
   
-  { '06-whisper-coreml-tiny': 'bun as -- text --file "input/audio.mp3" --whisper-coreml tiny' },
-  { '07-whisper-coreml-large-v3-turbo': 'bun as -- text --file "input/audio.mp3" --whisper-coreml large-v3-turbo' },
+  { '17-channel-last-1': 'bun as -- text --channel "https://www.youtube.com/@fsjamorg" --last 1' },
   
-  { '08-video-default': 'bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"' },
-  { '09-video-save-audio': 'bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --saveAudio' },
-  
-  { '10-custom-prompt': 'bun as -- text --file "input/audio.mp3" --customPrompt "input/custom-prompt.md"' },
-
-  { '11-playlist-info': 'bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr" --info' },
-  { '12-urls-info': 'bun as -- text --urls "input/example-urls.md" --info' },
-  { '13-channel-info': 'bun as -- text --channel "https://www.youtube.com/@ajcwebdev" --info --last 1' },
-  { '14-rss-info': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --info' },
+  { '18-rss-default': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed"' },
+  { '19-rss-last-1': 'bun as -- text --rss "https://feeds.transistor.fm/fsjam-podcast" --last 1' },
+  { '20-rss-item': 'bun as -- text --rss "https://ajcwebdev.substack.com/feed" --item "https://api.substack.com/feed/podcast/36236609/fd1f1532d9842fe1178de1c920442541.mp3"' },
 ]
 
-describe('CLI local tests', () => {
+describe('CLI process commands tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -37,7 +27,7 @@ describe('CLI local tests', () => {
     if (!entry) continue
     const [testName, command] = entry
     
-    test(`Local: ${testName}`, async () => {
+    test(`Process: ${testName}`, async () => {
       l('Starting test', { testName })
       const beforeRun = readdirSync(outputDirectory)
       
@@ -104,4 +94,3 @@ describe('CLI local tests', () => {
     })
   }
 })
-
