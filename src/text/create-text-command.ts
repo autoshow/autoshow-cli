@@ -90,21 +90,10 @@ export function validateCommandInput(options: ProcessingOptions): {
   let transcriptServices: string | undefined
   
   if (options.whisperCoreml) transcriptServices = 'whisperCoreml'
-  else if (options.reverb) transcriptServices = 'reverb'
   else if (options.deepgram) transcriptServices = 'deepgram'
   else if (options.assembly) transcriptServices = 'assembly'
   else if (options.whisper) transcriptServices = 'whisper'
   else if (options.groqWhisper) transcriptServices = 'groqWhisper'
-
-  if (options.reverb) {
-    if (!options.reverbDiarization) {
-      options.reverbDiarization = 'v2'
-    }
-    const diarizationValue = String(options.reverbDiarization).toLowerCase()
-    if (!['v1', 'v2', 'reverb-diarization-v1', 'reverb-diarization-v2'].includes(diarizationValue)) {
-      err(`Invalid --reverb-diarization option: ${options.reverbDiarization}. Use v1 or v2.`, undefined, EXIT_USAGE)
-    }
-  }
   
   const needsTranscription = !options.info && !options.feed && action !== undefined
   if (needsTranscription && !transcriptServices) {
@@ -225,8 +214,6 @@ export const createTextCommand = (): Command => {
     .option('-D, --deepgram [model]', 'Use Deepgram for transcription with optional model specification (e.g., nova-3)')
     .option('-A, --assembly [model]', 'Use AssemblyAI for transcription with optional model specification (e.g., universal, nano)')
     .option('-G, --groq-whisper [model]', 'Use Groq Whisper for transcription with optional model specification (e.g., whisper-large-v3-turbo, distil-whisper-large-v3-en, whisper-large-v3)')
-    .option('--reverb [model]', 'Use Reverb ASR for transcription with required diarization (default model: reverb_asr_v1)')
-    .option('--reverb-diarization <version>', 'Select Reverb diarization model (v1 or v2). Defaults to v2 when --reverb is used.')
     .option('-S, --speakerLabels', 'Use speaker labels for AssemblyAI or Deepgram transcription')
     .option('--chatgpt [model]', 'Use OpenAI ChatGPT for processing with optional model specification')
     .option('--claude [model]', 'Use Anthropic Claude for processing with optional model specification')
@@ -262,7 +249,6 @@ Examples:
   $ autoshow-cli text --rss "https://ajcwebdev.substack.com/feed" --last 3 --whisper
   $ autoshow-cli text --urls ./input/example-urls.md --whisper-coreml large-v3-turbo
   $ autoshow-cli text --file ./input/audio.mp3 --claude --prompt summary longChapters
-  $ autoshow-cli text --file ./input/audio.mp3 --reverb --reverb-diarization v2
 `)
   
   return textCommand

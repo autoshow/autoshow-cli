@@ -8,7 +8,6 @@
   - [Whisper CoreML](#whisper-coreml)
   - [Deepgram](#deepgram)
   - [Assembly](#assembly)
-  - [Reverb (ASR + Diarization)](#reverb-asr--diarization)
 
 ## Get Transcription Cost
 
@@ -89,26 +88,4 @@ bun as -- text \
   --file "input/audio.mp3" \
   --assembly \
   --assemblyApiKey ""
-```
-
-### Reverb (ASR + Diarization)
-
-Reverb always runs with diarization enabled. If you do not specify a diarization version, it defaults to `v2`.
-Run `bun setup:reverb` before using this service.
-
-```bash
-bun as -- text --file "input/audio.mp3" --reverb
-```
-
-Select diarization model version:
-
-```bash
-bun as -- text --file "input/audio.mp3" --reverb --reverb-diarization v1
-bun as -- text --file "input/audio.mp3" --reverb --reverb-diarization v2
-```
-
-Reverb diarization requires a HuggingFace token:
-
-```bash
-export HF_TOKEN="your_hf_token"
 ```

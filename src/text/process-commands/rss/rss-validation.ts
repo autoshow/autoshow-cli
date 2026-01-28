@@ -87,7 +87,6 @@ export function getLLMService(options: ProcessingOptions): string | undefined {
 }
 
 export function getTranscriptService(options: ProcessingOptions): string | undefined {
-  if (options.reverb) return 'reverb'
   if (options.deepgram) return 'deepgram'
   if (options.assembly) return 'assembly'
   if (options.whisperCoreml) return 'whisperCoreml'

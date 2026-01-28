@@ -13,7 +13,7 @@
  *   bun .github/setup/setup-report.ts <setup-command> [--fresh]
  *
  * Examples:
- *   bun .github/setup/setup-report.ts setup:reverb
+ *   bun .github/setup/setup-report.ts setup:transcription
  *   bun .github/setup/setup-report.ts setup:tts:qwen3 --fresh
  *
  * The --fresh flag removes marker files before running to force a complete setup.
@@ -132,7 +132,6 @@ const CONFIG_DIR = 'build/config'
 
 // Marker file patterns for different setup commands
 const MARKER_PATTERNS: Record<string, string[]> = {
-  'setup:reverb': ['.reverb-installed'],
   'setup:tts:qwen3': ['.qwen3-installed', '.tts-env-installed'],
   'setup:tts:chatterbox': ['.chatterbox-installed', '.tts-env-installed'],
   'setup:tts:fish': ['.fish-audio-installed', '.tts-env-installed'],
@@ -169,11 +168,6 @@ const TEST_CONFIGS: Record<string, TestConfig> = {
     type: 'tts',
     inputFile: 'input/sample.md',
     commandArgs: ['tts', 'input/sample.md', '--cosyvoice'],
-  },
-  'setup:reverb': {
-    type: 'transcription',
-    inputFile: 'input/audio.mp3',
-    commandArgs: ['text', '--file', 'input/audio.mp3', '--reverb'],
   },
   'setup:transcription': {
     type: 'transcription',
@@ -1260,12 +1254,10 @@ Options:
   --skip-test  Skip the post-setup test run
 
 Examples:
-  bun .github/setup/setup-report.ts setup:reverb
   bun .github/setup/setup-report.ts setup:tts:qwen3 --fresh
   bun .github/setup/setup-report.ts setup:tts:chatterbox --skip-test
 
 Available setup commands:
-  setup:reverb
   setup:tts:qwen3
   setup:tts:chatterbox
   setup:tts:fish

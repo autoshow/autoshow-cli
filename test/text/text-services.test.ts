@@ -6,26 +6,21 @@ import { l } from '@/logging'
 
 import type { ExecException } from 'node:child_process'
 
-const hasHfToken = Boolean(process.env['HF_TOKEN'])
-
 const cliCommands = [
-  
+
   { '01-file-multiple-prompts': 'bun as -- text --file "input/audio.mp3" --prompt titles summary' },
-  
-  
+
+
   { '02-chatgpt-default': 'bun as -- text --file "input/audio.mp3" --chatgpt' },
   { '03-claude-default': 'bun as -- text --file "input/audio.mp3" --claude' },
   { '04-gemini-default': 'bun as -- text --file "input/audio.mp3" --gemini' },
-  
-  
+
+
   { '05-deepgram-default': 'bun as -- text --file "input/audio.mp3" --deepgram' },
   { '06-deepgram-nova-2': 'bun as -- text --file "input/audio.mp3" --deepgram nova-2' },
   { '07-assembly-default': 'bun as -- text --file "input/audio.mp3" --assembly' },
   { '08-assembly-nano': 'bun as -- text --file "input/audio.mp3" --assembly nano' },
   { '09-assembly-speaker-labels': 'bun as -- text --video "https://ajc.pics/autoshow/fsjam-short.mp3" --assembly --speakerLabels' },
-  ...(hasHfToken
-    ? [{ '10-reverb-diarization-v2': 'bun as -- text --file "input/audio.mp3" --reverb --reverb-diarization v2' }]
-    : [])
 ]
 
 describe('CLI services tests', () => {
