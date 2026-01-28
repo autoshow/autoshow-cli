@@ -17,19 +17,18 @@ const cliCommands = [
   { 'deepgram-nova-2': 'bun as -- text --file "input/audio.mp3" --deepgram nova-2' },
   
   
-  { 'chatgpt-gpt-5': 'bun as -- text --file "input/audio.mp3" --chatgpt gpt-5' },
-  { 'chatgpt-gpt-5-mini': 'bun as -- text --file "input/audio.mp3" --chatgpt gpt-5-mini' },
-  { 'chatgpt-gpt-5-nano': 'bun as -- text --file "input/audio.mp3" --chatgpt gpt-5-nano' },
+  { 'chatgpt-gpt-5.2': 'bun as -- text --file "input/audio.mp3" --chatgpt gpt-5.2' },
+  { 'chatgpt-gpt-5.2-pro': 'bun as -- text --file "input/audio.mp3" --chatgpt gpt-5.2-pro' },
+  { 'chatgpt-gpt-5.1': 'bun as -- text --file "input/audio.mp3" --chatgpt gpt-5.1' },
   
   
-  { 'claude-opus-4-20250514': 'bun as -- text --file "input/audio.mp3" --claude claude-opus-4-20250514' },
-  { 'claude-sonnet-4-20250514': 'bun as -- text --file "input/audio.mp3" --claude claude-sonnet-4-20250514' },
-  { 'claude-opus-4-1-20250805': 'bun as -- text --file "input/audio.mp3" --claude claude-opus-4-1-20250805' },
+  { 'claude-opus-4-5-20251101': 'bun as -- text --file "input/audio.mp3" --claude claude-opus-4-5-20251101' },
+  { 'claude-sonnet-4-5-20250929': 'bun as -- text --file "input/audio.mp3" --claude claude-sonnet-4-5-20250929' },
+  { 'claude-haiku-4-5-20251001': 'bun as -- text --file "input/audio.mp3" --claude claude-haiku-4-5-20251001' },
   
   
-  { 'gemini-2.5-pro': 'bun as -- text --file "input/audio.mp3" --gemini gemini-2.5-pro' },
-  { 'gemini-2.5-flash': 'bun as -- text --file "input/audio.mp3" --gemini gemini-2.5-flash' },
-  { 'gemini-2.5-flash-lite-preview-06-17': 'bun as -- text --file "input/audio.mp3" --gemini gemini-2.5-flash-lite-preview-06-17' },
+  { 'gemini-3-pro-preview': 'bun as -- text --file "input/audio.mp3" --gemini gemini-3-pro-preview' },
+  { 'gemini-3-flash-preview': 'bun as -- text --file "input/audio.mp3" --gemini gemini-3-flash-preview' },
 ]
 
 describe('CLI model tests', () => {

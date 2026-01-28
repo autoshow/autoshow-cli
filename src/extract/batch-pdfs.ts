@@ -33,7 +33,7 @@ export const batchExtractPdfs = async (
       throw new Error(`No PDF files found in directory: ${directory}`)
     }
     
-    l(`${p}[${requestId}] Processing PDF files`, { count: pdfFiles.length, service: options.service || 'zerox' })
+    l(`${p}[${requestId}] Processing PDF files`, { count: pdfFiles.length, service: options.service || 'unpdf' })
     
     const outputDir = options.output || directory
     await ensureDir(outputDir)

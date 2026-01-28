@@ -109,7 +109,7 @@ export const extractPdf = async (
       throw new Error(`PDF file not found: ${pdfPath}`)
     }
     
-    const service = (options.service || 'zerox') as ExtractService
+    const service = (options.service || 'unpdf') as ExtractService
     l(`${p}[${requestId}] Extracting with`, { service })
     
     let finalText = ''

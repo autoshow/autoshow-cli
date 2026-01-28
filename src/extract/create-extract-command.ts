@@ -14,7 +14,7 @@ export const createExtractCommand = (): Command => {
     .option('-o, --output <path>', 'Output file path (defaults to <input>_extracted.txt)')
     .option('--page-breaks', 'Include page break markers in output')
     .option('--model <model>', 'Model to use: gpt-4.1, gpt-4.1-mini (default), gemini-2.0-flash', 'gpt-4.1-mini')
-    .option('--service <service>', 'Extraction service: zerox (default), unpdf, textract', 'zerox')
+    .option('--service <service>', 'Extraction service: unpdf (default), zerox, textract', 'unpdf')
     .action(async (pdfFile: string, options: ExtractOptions) => {
       const jsonBuilder = createJsonOutput<ExtractJsonOutput>('extract')
       l('Extracting PDF', { pdfFile })
@@ -34,7 +34,7 @@ export const createExtractCommand = (): Command => {
           jsonBuilder.output.data = {
             inputPath: pdfFile,
             outputPath: result.outputPath || '',
-            service: options.service || 'zerox'
+            service: options.service || 'unpdf'
           }
           outputJson(jsonBuilder)
           success('Text extracted to', { outputPath: result.outputPath })
@@ -60,7 +60,7 @@ export const createExtractCommand = (): Command => {
     .option('-o, --output <dir>', 'Output directory (defaults to same as input)')
     .option('--page-breaks', 'Include page break markers in output')
     .option('--model <model>', 'Model to use: gpt-4.1, gpt-4.1-mini (default), gemini-2.0-flash', 'gpt-4.1-mini')
-    .option('--service <service>', 'Extraction service: zerox (default), unpdf, textract', 'zerox')
+    .option('--service <service>', 'Extraction service: unpdf (default), zerox, textract', 'unpdf')
     .action(async (directory: string, options: ExtractOptions) => {
       l('Batch extracting PDFs from', { directory })
       

@@ -40,17 +40,17 @@ If you have set your `OPENAI_API_KEY`:
 bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt
 ```
 
-1. **GPT 5** (`gpt-5`)
+1. **GPT 5.2** (`gpt-5.2`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5.2
    ```
-2. **GPT 5 Mini** (`gpt-5-mini`)
+2. **GPT 5.2 Pro** (`gpt-5.2-pro`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5-mini
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5.2-pro
    ```
-3. **GPT 5 Nano** (`gpt-5-nano`)
+3. **GPT 5.1** (`gpt-5.1`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5-nano
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --chatgpt gpt-5.1
    ```
 
 ## Anthropic Claude
@@ -61,17 +61,17 @@ If you have set your `ANTHROPIC_API_KEY`:
 bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude
 ```
 
-1. **Claude Opus 4** (`claude-opus-4-20250514`)
+1. **Claude Opus 4.5** (`claude-opus-4-5-20251101`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-20250514
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-5-20251101
    ```
-2. **Claude Sonnet 4** (`claude-sonnet-4-20250514`)
+2. **Claude Sonnet 4.5** (`claude-sonnet-4-5-20250929`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-sonnet-4-20250514
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-sonnet-4-5-20250929
    ```
-3. **Claude Opus 4.1** (`claude-opus-4-1-20250805`)
+3. **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-opus-4-1-20250805
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --claude claude-haiku-4-5-20251001
    ```
 
 ## Google Gemini
@@ -82,15 +82,11 @@ If you have set your `GEMINI_API_KEY`:
 bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini
 ```
 
-1. **Gemini 2.5 Pro** (`gemini-2.5-pro`)
+1. **Gemini 3 Pro** (`gemini-3-pro-preview`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-pro
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-3-pro-preview
    ```
-2. **Gemini 2.5 Flash** (`gemini-2.5-flash`)
+2. **Gemini 3 Flash** (`gemini-3-flash-preview`)
    ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-flash
-   ```
-3. **Gemini 2.5 Flash Lite Preview** (`gemini-2.5-flash-lite-preview-06-17`)
-   ```bash
-   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-2.5-flash-lite-preview-06-17
+   bun as -- text --rss "https://ajcwebdev.substack.com/feed" --gemini gemini-3-flash-preview
    ```
