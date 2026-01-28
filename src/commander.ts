@@ -10,9 +10,7 @@ import { err, resetColorsCache } from '@/logging'
 import { argv, exit, fileURLToPath, basename, readFileSync } from '@/node-utils'
 import { initCliContext, EXIT_USAGE, installSignalHandlers } from '@/utils'
 
-
 installSignalHandlers()
-
 
 const packageJsonPath = new URL('../package.json', import.meta.url)
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
@@ -63,7 +61,6 @@ Global Options:
 
 Report issues: https://github.com/autoshow/autoshow-cli/issues
 `)
-
 
 program.hook('preAction', (_thisCommand) => {
   

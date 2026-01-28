@@ -3,12 +3,10 @@ import json
 import warnings
 import os
 
-
 os.environ["TRANSFORMERS_NO_FLASH_ATTN_WARNING"] = "1"
 os.environ["QWEN_TTS_NO_FLASH_ATTN_WARNING"] = "1"
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", message=".*flash-attn.*")
-
 
 import io
 
@@ -20,15 +18,12 @@ import soundfile as sf
 import numpy as np
 from qwen_tts import Qwen3TTSModel
 
-
 sys.stderr = _stderr
 
 MAX_CHUNK_SIZE = 500
 
-
 def chunk_text(text, max_size=MAX_CHUNK_SIZE):
     import re
-
 
     sentences = re.split(r"(?<=[.!?])\s+", text)
     sentences = [s.strip() for s in sentences if s.strip()]
@@ -69,16 +64,12 @@ def chunk_text(text, max_size=MAX_CHUNK_SIZE):
 
     return chunks if chunks else [text]
 
-
 def get_device_and_dtype():
     if torch.cuda.is_available():
         return "cuda:0", torch.bfloat16, "flash_attention_2"
 
-
-
     else:
         return "cpu", torch.float32, "sdpa"
-
 
 def generate_custom_voice(model, config):
     text = config["text"]
@@ -97,7 +88,6 @@ def generate_custom_voice(model, config):
     wavs, sr = model.generate_custom_voice(**kwargs)
     return wavs[0], sr
 
-
 def generate_voice_design(model, config):
     text = config["text"]
     language = config.get("language", "Auto")
@@ -110,7 +100,6 @@ def generate_voice_design(model, config):
         text=text, language=language, instruct=instruct
     )
     return wavs[0], sr
-
 
 def generate_voice_clone(model, config):
     text = config["text"]
@@ -132,16 +121,13 @@ def generate_voice_clone(model, config):
     wavs, sr = model.generate_voice_clone(**kwargs)
     return wavs[0], sr
 
-
 def emit_result(payload):
     sys.stdout.write(json.dumps(payload, ensure_ascii=True) + "\n")
     sys.stdout.flush()
 
-
 def log(msg):
     sys.stderr.write(str(msg) + "\n")
     sys.stderr.flush()
-
 
 if len(sys.argv) < 2:
     emit_result({"ok": False, "error": "No configuration provided"})
@@ -154,13 +140,11 @@ max_chunk = config.get("max_chunk", MAX_CHUNK_SIZE)
 
 log(f"Mode: {mode}, Model: {model_name}")
 
-
 sr = 24000
 
 try:
     device, dtype, attn_impl = get_device_and_dtype()
     log(f"Using device: {device}, dtype: {dtype}")
-
 
     load_kwargs = {
         "device_map": device,
@@ -195,7 +179,6 @@ try:
             silence = np.zeros(int(0.2 * sr), dtype=audio.dtype)
             audio_parts.append(silence)
 
-
         audio = np.concatenate(audio_parts[:-1])
     else:
         if mode == "custom":
@@ -206,7 +189,6 @@ try:
             audio, sr = generate_voice_clone(model, config)
         else:
             raise ValueError(f"Unknown mode: {mode}")
-
 
     speed = config.get("speed", 1.0)
     if speed != 1.0:

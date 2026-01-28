@@ -8,6 +8,18 @@ Qwen3 TTS is a high-quality multilingual text-to-speech engine from Alibaba. It 
 - GPU recommended (4GB+ VRAM for 1.7B model) but CPU mode works
 - First run will download models from Hugging Face (~3-7GB depending on model)
 
+## Setup
+
+```bash
+# Install Qwen3 TTS
+bun setup:tts:qwen3
+```
+
+The setup script will:
+1. Create the base TTS Python environment (if not already present)
+2. Install qwen-tts from PyPI
+3. Optionally install flash-attn for better performance if CUDA is available
+
 ## Quick Start
 
 ```bash

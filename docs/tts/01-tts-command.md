@@ -2,6 +2,31 @@
 
 Generate speech from text using multiple TTS engines.
 
+## Setup
+
+### Install Default TTS Engines
+```bash
+# Installs Coqui and Kitten
+bun setup:tts
+```
+
+### Install Individual TTS Engines
+```bash
+# Qwen3 - Multilingual TTS with voice cloning and instructions
+bun setup:tts:qwen3
+
+# Chatterbox - Zero-shot voice cloning with paralinguistic tags
+bun setup:tts:chatterbox
+
+# FishAudio - Natural speech with emotion control
+bun setup:tts:fish
+
+# CosyVoice - 9 languages, 18+ Chinese dialects, instruction-based control
+bun setup:tts:cosyvoice
+```
+
+Each setup command automatically creates the base TTS environment if it doesn't exist.
+
 ## Commands
 
 ### Single File
@@ -14,6 +39,7 @@ bun as -- tts file input/sample.md --polly --output output/polly
 bun as -- tts file input/sample.md --qwen3 --output output/qwen3
 bun as -- tts file input/sample.md --chatterbox --output output/chatterbox
 bun as -- tts file input/sample.md --fish-audio --output output/fishaudio
+bun as -- tts file input/sample.md --cosyvoice --output output/cosyvoice
 ```
 
 ### Script Files
@@ -26,6 +52,7 @@ bun as -- tts script input/script.json --polly
 bun as -- tts script input/script.json --qwen3
 bun as -- tts script input/script.json --chatterbox
 bun as -- tts script input/script.json --fish-audio
+bun as -- tts script input/script.json --cosyvoice
 ```
 
 ### List Models
@@ -42,6 +69,7 @@ bun as -- tts list
 - `--qwen3` - Use Qwen3 TTS engine
 - `--chatterbox` - Use Chatterbox TTS engine
 - `--fish-audio` - Use FishAudio TTS engine (S1-mini)
+- `--cosyvoice` - Use CosyVoice TTS engine
 - `--output <dir>` - Output directory (default: output/)
 - `--voice <name>` - Voice ID or name
 - `--speaker <name>` - Speaker name (Coqui)
@@ -66,6 +94,10 @@ bun as -- tts list
 - `--fish-api-url <url>` - FishAudio API server URL (default: http://localhost:8080)
 - `--fish-emotion <emotion>` - Emotion marker (excited, sad, whispering, etc.)
 - `--fish-device <device>` - Device override (cpu, mps, cuda)
+- `--cosyvoice-model <model>` - CosyVoice model (CosyVoice-300M, CosyVoice-300M-SFT, CosyVoice-300M-Instruct, CosyVoice-300M-25Hz, CosyVoice2-0.5B)
+- `--cosyvoice-speaker <name>` - Speaker name for SFT/Instruct models
+- `--cosyvoice-instruct <text>` - Natural language voice control for Instruct models
+- `--cosyvoice-device <device>` - Device override (cpu, mps, cuda)
 - `--polly-format <format>` - Output format (mp3, ogg_vorbis, pcm)
 - `--polly-sample-rate <rate>` - Sample rate (8000, 16000, 22050, 24000)
 - `--polly-engine <engine>` - Engine type (standard, neural, generative, long-form)

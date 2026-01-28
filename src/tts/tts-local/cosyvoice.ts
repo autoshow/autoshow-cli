@@ -156,7 +156,6 @@ For easier setup, use Qwen3 TTS instead: --qwen3`)
   }
 }
 
-
 import { writeFileSync } from 'node:fs'
 
 export async function synthesizeWithCosyVoice(

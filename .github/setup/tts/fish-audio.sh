@@ -11,7 +11,7 @@ require_tts_env
 # Check if dependencies are available
 if tts_can_import "requests" && tts_can_import "torch"; then
   # Download weights automatically for setup:tts
-  CHECKPOINT_DIR="${FISHAUDIO_CHECKPOINT_PATH:-checkpoints/openaudio-s1-mini}"
+  CHECKPOINT_DIR="${FISHAUDIO_CHECKPOINT_PATH:-build/checkpoints/openaudio-s1-mini}"
   
   if [ ! -d "$CHECKPOINT_DIR" ] || [ -z "$(ls -A "$CHECKPOINT_DIR" 2>/dev/null)" ]; then
     log "Downloading FishAudio S1-mini weights (~2GB)..."

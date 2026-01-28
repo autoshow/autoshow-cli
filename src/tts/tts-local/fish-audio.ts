@@ -11,7 +11,7 @@ import {
 import { getUserVoice } from '@/utils'
 import type { FishAudioOptions } from '../tts-types'
 
-const CHECKPOINT_DIR = 'checkpoints/openaudio-s1-mini'
+const CHECKPOINT_DIR = 'build/checkpoints/openaudio-s1-mini'
 const DOCKER_IMAGE = 'fishaudio/fish-speech:server-cpu'
 const DOCKER_CONTAINER_NAME = 'fish-speech-server'
 
@@ -172,7 +172,7 @@ const getFishAudioConfig = () => {
     default_language: config.fishaudio?.default_language,
     
     api_url: process.env['FISHAUDIO_API_URL'] || config.fishaudio?.api_url || 'http://localhost:8080',
-    checkpoint_path: process.env['FISHAUDIO_CHECKPOINT_PATH'] || config.fishaudio?.checkpoint_path || 'checkpoints/openaudio-s1-mini',
+    checkpoint_path: process.env['FISHAUDIO_CHECKPOINT_PATH'] || config.fishaudio?.checkpoint_path || 'build/checkpoints/openaudio-s1-mini',
     use_api: config.fishaudio?.use_api ?? true,
     compile: config.fishaudio?.compile ?? false,
     ...config.fishaudio

@@ -8,6 +8,20 @@ CosyVoice3 (Fun-CosyVoice3-0.5B) is a state-of-the-art multilingual text-to-spee
 - Docker (optional, for containerized deployment)
 - First run will download models (~2-3GB)
 
+## Setup
+
+```bash
+# Install CosyVoice TTS
+bun setup:tts:cosyvoice
+```
+
+The setup script will:
+1. Create the base TTS Python environment (if not already present)
+2. Check for Docker and use containerized deployment if available
+3. If Docker is not available, clone the CosyVoice repository to `build/cosyvoice`
+4. Install required dependencies
+5. Download the Fun-CosyVoice3-0.5B model (~2-3GB) from ModelScope or HuggingFace
+
 ## Quick Start
 
 ```bash
@@ -164,7 +178,7 @@ If Docker is available, the setup script will check for a CosyVoice container:
 docker build -t cosyvoice:latest path/to/cosyvoice/runtime/python
 
 # The setup script will auto-start the container
-bun setup:tts
+bun setup:tts:cosyvoice
 ```
 
 ### Local Mode
@@ -175,7 +189,7 @@ If Docker is not available, the setup script will:
 3. Download the Fun-CosyVoice3-0.5B model from ModelScope/HuggingFace
 
 ```bash
-bun setup:tts
+bun setup:tts:cosyvoice
 ```
 
 ## Performance Notes
@@ -221,7 +235,7 @@ CosyVoice3 supports various instruction types:
 
 Run the setup script:
 ```bash
-bun setup:tts
+bun setup:tts:cosyvoice
 ```
 
 Or manually:

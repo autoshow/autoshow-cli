@@ -14,7 +14,6 @@ const isStepTitle = (message: string): boolean => {
   return STEP_PATTERN.test(message)
 }
 
-
 const NO_COLORS: LogColors = {
   timestamp: '',
   message: '',
@@ -27,12 +26,7 @@ const NO_COLORS: LogColors = {
   stepTitle: ''
 }
 
-
 let colorsCache: LogColors | null = null
-
-
-
-
 
 const shouldDisableColors = (): boolean => {
   if (isBrowser) return true
@@ -50,7 +44,6 @@ const shouldDisableColors = (): boolean => {
   
   return false
 }
-
 
 export const resetColorsCache = (): void => {
   colorsCache = null
@@ -151,10 +144,6 @@ const formatJsonObject = (obj: Record<string, unknown>, indent = 2): string => {
   return `{\n${lines.join(',\n')}\n}`
 }
 
-
-
-
-
 export const l = (message: string, data?: Record<string, unknown>): void => {
   if (isBrowser) {
     console.error(message, data || '')
@@ -193,14 +182,6 @@ export const l = (message: string, data?: Record<string, unknown>): void => {
   }
 }
 
-
-
-
-
-
-
-
-
 export const err = (message: string, errorObj?: unknown, exitCode: number = EXIT_ERROR): void => {
   if (isBrowser) {
     console.error(message, errorObj || '')
@@ -224,10 +205,6 @@ export const err = (message: string, errorObj?: unknown, exitCode: number = EXIT
   
   exit(exitCode)
 }
-
-
-
-
 
 export const success = (message: string, data?: Record<string, unknown>): void => {
   if (isBrowser) {
