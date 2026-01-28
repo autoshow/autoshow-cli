@@ -29,6 +29,8 @@ export type ProcessingOptions = {
   deepgram?: boolean | string
   assembly?: boolean | string
   groqWhisper?: boolean | string
+  reverb?: boolean | string
+  reverbDiarization?: 'v1' | 'v2' | string
   speakerLabels?: boolean
   transcriptCost?: string
   llmCost?: string

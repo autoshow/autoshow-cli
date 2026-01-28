@@ -45,7 +45,7 @@ program.addHelpText('after', `
 Examples:
   $ autoshow-cli text --video "https://www.youtube.com/watch?v=MORMZXEaONk"
   $ autoshow-cli text --file ./input/audio.mp3 --whisper --chatgpt
-  $ autoshow-cli tts file ./input/sample.md --coqui
+  $ autoshow-cli tts ./input/sample.md --qwen3
   $ autoshow-cli image generate -p "a sunset over mountains"
   $ autoshow-cli video generate -p "ocean waves" -m veo-3.1-fast-generate-preview
 

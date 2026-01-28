@@ -59,16 +59,16 @@ docker run -d -p 8080:8080 \
 
 ```bash
 # Basic usage
-bun as -- tts file input/sample.md --fish-audio
+bun as -- tts input/sample.md --fish-audio
 
 # With emotion control
-bun as -- tts file input/sample.md --fish-audio --fish-emotion excited
+bun as -- tts input/sample.md --fish-audio --fish-emotion excited
 
 # Voice cloning with reference audio
-bun as -- tts file input/sample.md --fish-audio --ref-audio path/to/sample.wav
+bun as -- tts input/sample.md --fish-audio --ref-audio path/to/sample.wav
 
 # Process a script file
-bun as -- tts script input/script.json --fish-audio
+bun as -- tts input/script.json --fish-audio
 ```
 
 ## CLI Options
@@ -162,11 +162,11 @@ FishAudio supports inline emotion markers in text:
 Example:
 ```bash
 # Via CLI flag
-bun as -- tts file input/sample.md --fish-audio --fish-emotion excited
+bun as -- tts input/sample.md --fish-audio --fish-emotion excited
 
 # Or embed directly in text
 echo "(whispering) This is a secret message." > input/secret.md
-bun as -- tts file input/secret.md --fish-audio
+bun as -- tts input/secret.md --fish-audio
 ```
 
 ## Voice Cloning
@@ -174,7 +174,7 @@ bun as -- tts file input/secret.md --fish-audio
 Clone any voice from a short reference sample (10-30 seconds recommended):
 
 ```bash
-bun as -- tts file input/sample.md --fish-audio \
+bun as -- tts input/sample.md --fish-audio \
   --ref-audio path/to/voice-sample.wav \
   --ref-text "Transcript of the sample audio"
 ```
@@ -238,6 +238,14 @@ Add to `build/config/.tts-config.json`:
   }
 }
 ```
+
+## Testing
+
+```bash
+bun test test/tts/tts-local.test.ts
+```
+
+Ensure the FishAudio API server is running and weights are available before running the test.
 
 ## Troubleshooting
 

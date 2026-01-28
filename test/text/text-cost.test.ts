@@ -8,11 +8,12 @@ const cliCommands = [
   
   { '01-transcript-cost-deepgram': 'bun as -- --transcriptCost "input/audio.mp3" --deepgram' },
   { '02-transcript-cost-assembly': 'bun as -- --transcriptCost "input/audio.mp3" --assembly' },
+  { '03-transcript-cost-reverb': 'bun as -- --transcriptCost "input/audio.mp3" --reverb' },
   
   
-  { '03-llm-cost-chatgpt': 'bun as -- --llmCost "input/audio-prompt.md" --chatgpt' },
-  { '04-llm-cost-claude': 'bun as -- --llmCost "input/audio-prompt.md" --claude' },
-  { '05-llm-cost-gemini': 'bun as -- --llmCost "input/audio-prompt.md" --gemini' },
+  { '04-llm-cost-chatgpt': 'bun as -- --llmCost "input/audio-prompt.md" --chatgpt' },
+  { '05-llm-cost-claude': 'bun as -- --llmCost "input/audio-prompt.md" --claude' },
+  { '06-llm-cost-gemini': 'bun as -- --llmCost "input/audio-prompt.md" --gemini' },
 ]
 
 describe('CLI cost estimation tests', () => {
@@ -53,4 +54,3 @@ describe('CLI cost estimation tests', () => {
     })
   }
 })
-

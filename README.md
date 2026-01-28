@@ -48,7 +48,7 @@ AutoShow can generate diverse content formats including:
 - Support for multiple input types (YouTube links, RSS feeds, local video and audio files)
 - Integration with various:
   - LLMs (ChatGPT, Claude, Gemini)
-  - Transcription services (Whisper.cpp, Deepgram, Assembly)
+  - Transcription services (Whisper.cpp, Deepgram, Assembly, Reverb ASR + diarization)
 - Customizable prompts for generating titles, summaries, chapter titles/descriptions, key takeaways, and questions to test comprehension
 - Markdown output with metadata and formatted content
 - Workflow management for processing content from `./workflows` subdirectory.
@@ -122,6 +122,7 @@ bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper l
 bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
 bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
 bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal --speakerLabels
+bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --reverb --reverb-diarization v2
 ```
 
 Specify LLM service:

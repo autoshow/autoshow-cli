@@ -15,6 +15,27 @@ const CHECKPOINT_DIR = 'build/checkpoints/openaudio-s1-mini'
 const DOCKER_IMAGE = 'fishaudio/fish-speech:server-cpu'
 const DOCKER_CONTAINER_NAME = 'fish-speech-server'
 
+const waitForServerReady = (maxAttempts = 90): boolean => {
+  let attempts = 0
+  while (attempts < maxAttempts) {
+    try {
+      const health = spawnSync('curl', ['-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://localhost:8080/v1/health'], {
+        encoding: 'utf-8',
+        stdio: 'pipe'
+      })
+      if (health.stdout && health.stdout.trim() === '200') {
+        return true
+      }
+    } catch {}
+    attempts++
+    if (attempts % 15 === 0) {
+      l('Still waiting for server', { elapsedSeconds: attempts * 4 })
+    }
+    spawnSync('sleep', ['4'], { stdio: 'pipe' })
+  }
+  return false
+}
+
 const checkDockerRunning = (): boolean => {
   try {
     const result = spawnSync('docker', ['ps', '-q', '-f', `name=${DOCKER_CONTAINER_NAME}`], {
@@ -90,7 +111,11 @@ const downloadWeightsIfNeeded = (): boolean => {
 const startDockerServer = (): boolean => {
   if (checkDockerRunning()) {
     l('FishAudio Docker server already running')
-    return true
+    if (waitForServerReady(30)) {
+      return true
+    }
+    l('FishAudio server not responding while container is running', { containerName: DOCKER_CONTAINER_NAME })
+    return false
   }
   
   
@@ -104,7 +129,7 @@ const startDockerServer = (): boolean => {
     
     spawnSync('docker', ['rm', '-f', DOCKER_CONTAINER_NAME], { stdio: 'pipe' })
     
-    const checkpointPath = join(process.cwd(), 'checkpoints')
+    const checkpointPath = join(process.cwd(), 'build/checkpoints')
     const result = spawnSync('docker', [
       'run', '-d',
       '--name', DOCKER_CONTAINER_NAME,
@@ -123,26 +148,10 @@ const startDockerServer = (): boolean => {
     
     
     l('Waiting for server to initialize (this can take 5+ minutes on first run)')
-    let attempts = 0
-    const maxAttempts = 90  
-    while (attempts < maxAttempts) {
-      try {
-        const health = spawnSync('curl', ['-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://localhost:8080/v1/health'], {
-          encoding: 'utf-8',
-          stdio: 'pipe'
-        })
-        if (health.stdout && health.stdout.trim() === '200') {
-          success('FishAudio server started')
-          return true
-        }
-      } catch {}
-      attempts++
-      if (attempts % 15 === 0) {
-        l('Still waiting for server', { elapsedSeconds: attempts * 4 })
-      }
-      spawnSync('sleep', ['4'], { stdio: 'pipe' })
+    if (waitForServerReady()) {
+      success('FishAudio server started')
+      return true
     }
-    
     l('Server did not respond after 6 minutes', { containerName: DOCKER_CONTAINER_NAME })
     return false
   } catch (e) {

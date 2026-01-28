@@ -27,11 +27,11 @@ export async function estimateTranscriptCost(
   const filePath = options.transcriptCost
   if (!filePath) throw new Error('No file path provided to estimate transcription cost.')
   
-  if (!['whisper', 'whisperCoreml', 'deepgram', 'assembly', 'groqWhisper'].includes(transcriptServices)) {
+  if (!['whisper', 'whisperCoreml', 'deepgram', 'assembly', 'groqWhisper', 'reverb'].includes(transcriptServices)) {
     throw new Error(`Unsupported transcription service: ${transcriptServices}`)
   }
   
-  const serviceKey = transcriptServices as 'whisper' | 'whisperCoreml' | 'deepgram' | 'assembly' | 'groqWhisper'
+  const serviceKey = transcriptServices as 'whisper' | 'whisperCoreml' | 'deepgram' | 'assembly' | 'groqWhisper' | 'reverb'
   const config = TRANSCRIPTION_SERVICES_CONFIG[serviceKey]
   let modelInput = typeof options[serviceKey] === 'string' ? options[serviceKey] as string : undefined
   
@@ -41,6 +41,7 @@ export async function estimateTranscriptCost(
     if (serviceKey === 'assembly' && !modelInput) modelInput = 'universal'
     if ((serviceKey === 'whisper' || serviceKey === 'whisperCoreml') && !modelInput) modelInput = 'base'
     if (serviceKey === 'groqWhisper' && !modelInput) modelInput = 'whisper-large-v3-turbo'
+    if (serviceKey === 'reverb' && !modelInput) modelInput = 'reverb_asr_v1'
   }
   
   if (!modelInput) throw new Error(`Could not determine default model for service: ${transcriptServices}`)

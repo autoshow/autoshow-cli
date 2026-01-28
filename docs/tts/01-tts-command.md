@@ -6,7 +6,7 @@ Generate speech from text using multiple TTS engines.
 
 ### Install Default TTS Engines
 ```bash
-# Installs Coqui and Kitten
+# Installs Qwen3
 bun setup:tts
 ```
 
@@ -31,48 +31,38 @@ Each setup command automatically creates the base TTS environment if it doesn't 
 
 ### Single File
 ```bash
-bun as -- tts file input/sample.md
-bun as -- tts file input/sample.md --coqui --output output/coqui
-bun as -- tts file input/sample.md --kitten --output output/kitten
-bun as -- tts file input/sample.md --elevenlabs --output output/elevenlabs
-bun as -- tts file input/sample.md --polly --output output/polly
-bun as -- tts file input/sample.md --qwen3 --output output/qwen3
-bun as -- tts file input/sample.md --chatterbox --output output/chatterbox
-bun as -- tts file input/sample.md --fish-audio --output output/fishaudio
-bun as -- tts file input/sample.md --cosyvoice --output output/cosyvoice
+bun as -- tts input/sample.md
+bun as -- tts input/sample.md --elevenlabs --output output/elevenlabs
+bun as -- tts input/sample.md --polly --output output/polly
+bun as -- tts input/sample.md --qwen3 --output output/qwen3
+bun as -- tts input/sample.md --chatterbox --output output/chatterbox
+bun as -- tts input/sample.md --fish-audio --output output/fishaudio
+bun as -- tts input/sample.md --cosyvoice --output output/cosyvoice
 ```
 
 ### Script Files
 ```bash
-bun as -- tts script input/script.json
-bun as -- tts script input/script.json --kitten
-bun as -- tts script input/script.json --elevenlabs
-bun as -- tts script input/script.json --coqui
-bun as -- tts script input/script.json --polly
-bun as -- tts script input/script.json --qwen3
-bun as -- tts script input/script.json --chatterbox
-bun as -- tts script input/script.json --fish-audio
-bun as -- tts script input/script.json --cosyvoice
+bun as -- tts input/script.json
+bun as -- tts input/script.json --elevenlabs
+bun as -- tts input/script.json --polly
+bun as -- tts input/script.json --qwen3
+bun as -- tts input/script.json --chatterbox
+bun as -- tts input/script.json --fish-audio
+bun as -- tts input/script.json --cosyvoice
 ```
 
 ## Options
 
-- `--coqui` - Use Coqui TTS engine (default)
-- `--kitten` - Use Kitten TTS engine
 - `--elevenlabs` - Use ElevenLabs engine
 - `--polly` - Use AWS Polly engine
-- `--qwen3` - Use Qwen3 TTS engine
+- `--qwen3` - Use Qwen3 TTS engine (default)
 - `--chatterbox` - Use Chatterbox TTS engine
 - `--fish-audio` - Use FishAudio TTS engine (S1-mini)
 - `--cosyvoice` - Use CosyVoice TTS engine
 - `--output <dir>` - Output directory (default: output/)
 - `--voice <name>` - Voice ID or name
-- `--speaker <name>` - Speaker name (Coqui)
-- `--voice-clone <path>` - Voice sample for cloning (Coqui XTTS)
 - `--language <code>` - Language code
-- `--speed <number>` - Speed 0.25-4.0 (Coqui/Kitten/Qwen3)
-- `--coqui-model <model>` - Coqui model name
-- `--kitten-model <model>` - Kitten model name
+- `--speed <number>` - Speed 0.25-4.0 (Qwen3)
 - `--qwen3-model <model>` - Qwen3 model variant (CustomVoice, VoiceDesign, Base)
 - `--qwen3-speaker <name>` - Qwen3 speaker (Vivian, Ryan, Aiden, etc.)
 - `--qwen3-instruct <text>` - Natural language voice control

@@ -5,7 +5,7 @@ export interface VoiceSettings {
   use_speaker_boost: boolean
 }
 
-export type TtsEngine = 'elevenlabs' | 'coqui' | 'polly' | 'kitten' | 'qwen3' | 'chatterbox' | 'fishaudio' | 'cosyvoice'
+export type TtsEngine = 'elevenlabs' | 'polly' | 'qwen3' | 'chatterbox' | 'fishaudio' | 'cosyvoice'
 
 export type Qwen3Mode = 'custom' | 'design' | 'clone'
 

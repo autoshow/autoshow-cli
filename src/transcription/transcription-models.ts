@@ -66,4 +66,16 @@ export const TRANSCRIPTION_SERVICES_CONFIG = {
       { modelId: 'whisper-large-v3', costPerMinuteCents: 0.185 },
     ]
   },
+  reverb: {
+    serviceName: 'Reverb ASR + Diarization',
+    value: 'reverb',
+    label: 'Reverb',
+    models: [
+      { modelId: 'reverb_asr_v1', costPerMinuteCents: 0 },
+    ],
+    diarizationModels: [
+      { modelId: 'reverb-diarization-v1' },
+      { modelId: 'reverb-diarization-v2' },
+    ]
+  },
 } as const

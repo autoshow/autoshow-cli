@@ -78,22 +78,6 @@ export const ensureTtsEnvironment = (): string => {
   return venvPath
 }
 
-export const checkCoquiInstalled = (pythonPath: string): boolean => {
-  const result = spawnSync(pythonPath, ['-c', 'import TTS'], { 
-    encoding: 'utf-8', 
-    stdio: 'pipe' 
-  })
-  return result.status === 0
-}
-
-export const checkKittenInstalled = (pythonPath: string): boolean => {
-  const result = spawnSync(pythonPath, ['-c', 'import kittentts'], { 
-    encoding: 'utf-8', 
-    stdio: 'pipe' 
-  })
-  return result.status === 0
-}
-
 export const checkQwen3Installed = (pythonPath: string): boolean => {
   const result = spawnSync(pythonPath, ['-c', 'import qwen_tts'], { 
     encoding: 'utf-8', 
@@ -108,61 +92,6 @@ export const checkChatterboxInstalled = (pythonPath: string): boolean => {
     stdio: 'pipe' 
   })
   return result.status === 0
-}
-
-export const runCoquiSetup = (): boolean => {
-  l('Coqui TTS not installed, running automatic setup')
-  
-  const setupScript = join(process.cwd(), '.github/setup/tts/coqui.sh')
-  if (!existsSync(setupScript)) {
-    l('Coqui setup script not found', { expectedPath: setupScript })
-    return false
-  }
-  
-  try {
-    execSync(`bash "${setupScript}"`, { 
-      stdio: 'inherit',
-      cwd: process.cwd()
-    })
-    success('Coqui TTS setup completed')
-    return true
-  } catch (error) {
-    const execError = error as { status?: number; message?: string }
-    l('Coqui setup failed', { 
-      error: execError.message || error,
-      status: execError.status,
-      scriptPath: setupScript,
-      hint: 'Check if bash is available and script has execute permissions'
-    })
-    return false
-  }
-}
-
-export const runKittenSetup = (): boolean => {
-  l('Kitten TTS not installed, running automatic setup')
-  
-  const setupScript = join(process.cwd(), '.github/setup/tts/kitten.sh')
-  if (!existsSync(setupScript)) {
-    l('Kitten setup script not found', { expectedPath: setupScript })
-    return false
-  }
-  
-  try {
-    execSync(`bash "${setupScript}"`, { 
-      stdio: 'inherit',
-      cwd: process.cwd()
-    })
-    success('Kitten TTS setup completed')
-    return true
-  } catch (error) {
-    const execError = error as { status?: number; message?: string }
-    l('Kitten setup failed', { 
-      error: execError.message || error,
-      status: execError.status,
-      scriptPath: setupScript
-    })
-    return false
-  }
 }
 
 export const runQwen3Setup = (): boolean => {

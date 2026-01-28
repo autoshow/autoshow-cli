@@ -3,6 +3,7 @@ import { callDeepgram } from '@/transcription/transcription-services/deepgram'
 import { callAssembly } from '@/transcription/transcription-services/assembly'
 import { callGroqWhisper } from '@/transcription/transcription-services/groq-whisper'
 import { callWhisperCoreml } from '@/transcription/transcription-local/whisper-coreml'
+import { callReverb } from '@/transcription/transcription-services/reverb'
 import { logTranscriptionCost, estimateTranscriptCost } from '../../utils/cost'
 import { checkFFmpeg, getAudioDuration } from '../../utils/setup-helpers'
 import { l, err } from '@/logging'
@@ -29,6 +30,8 @@ export async function runTranscription(
   if (!serviceToUse) {
     if (options.whisperCoreml) {
       serviceToUse = 'whisperCoreml'
+    } else if (options.reverb) {
+      serviceToUse = 'reverb'
     } else if (options.whisper) {
       serviceToUse = 'whisper'
     } else if (options.deepgram) {
@@ -90,6 +93,13 @@ export async function runTranscription(
       }
       case 'groqWhisper': {
         const result = await callGroqWhisper(options, finalPath)
+        finalTranscript = result.transcript
+        finalModelId = result.modelId
+        finalCostPerMinuteCents = result.costPerMinuteCents
+        break
+      }
+      case 'reverb': {
+        const result = await callReverb(options, finalPath)
         finalTranscript = result.transcript
         finalModelId = result.modelId
         finalCostPerMinuteCents = result.costPerMinuteCents

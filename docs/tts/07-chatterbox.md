@@ -24,13 +24,13 @@ The setup script will:
 
 ```bash
 # Basic usage with Turbo model (default, fastest)
-bun as -- tts file input/sample.md --chatterbox
+bun as -- tts input/sample.md --chatterbox
 
 # Use the standard model with creative controls
-bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard
+bun as -- tts input/sample.md --chatterbox --chatterbox-model standard
 
 # Voice cloning with a reference audio
-bun as -- tts file input/sample.md --chatterbox --ref-audio path/to/voice-sample.wav
+bun as -- tts input/sample.md --chatterbox --ref-audio path/to/voice-sample.wav
 
 # Process a script file
 bun as -- tts script input/script.json --chatterbox
@@ -64,7 +64,7 @@ All Chatterbox models support zero-shot voice cloning from a reference audio sam
 
 ```bash
 # Clone a voice (10-second reference clip recommended)
-bun as -- tts file input/sample.md --chatterbox --ref-audio path/to/sample.wav
+bun as -- tts input/sample.md --chatterbox --ref-audio path/to/sample.wav
 ```
 
 **Tips for best cloning results:**
@@ -80,7 +80,7 @@ The Turbo model supports embedded paralinguistic tags for natural speech:
 ```bash
 # Embed tags directly in your text
 echo "Hi there [chuckle], have you got a minute?" > input/tagged.md
-bun as -- tts file input/tagged.md --chatterbox
+bun as -- tts input/tagged.md --chatterbox
 ```
 
 Supported tags: `[laugh]`, `[chuckle]`, `[cough]`, and more.
@@ -91,13 +91,13 @@ The standard model offers fine-grained control over speech characteristics:
 
 ```bash
 # Higher exaggeration = more expressive, faster speech
-bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7
+bun as -- tts input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7
 
 # Lower CFG weight = slower, more deliberate pacing
-bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-cfg 0.3
+bun as -- tts input/sample.md --chatterbox --chatterbox-model standard --chatterbox-cfg 0.3
 
 # Combine for dramatic speech
-bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7 --chatterbox-cfg 0.3
+bun as -- tts input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7 --chatterbox-cfg 0.3
 ```
 
 **Tuning Guidelines:**
@@ -157,17 +157,17 @@ All Chatterbox-generated audio includes Resemble AI's Perth watermark for respon
 
 ```bash
 # English with Turbo (fastest)
-bun as -- tts file input/sample.md --chatterbox
+bun as -- tts input/sample.md --chatterbox
 
 # Expressive narration
-bun as -- tts file input/story.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.8 --chatterbox-cfg 0.3
+bun as -- tts input/story.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.8 --chatterbox-cfg 0.3
 
 # Voice cloning for podcast
-bun as -- tts file input/script.md --chatterbox --ref-audio voices/host.wav
+bun as -- tts input/script.md --chatterbox --ref-audio voices/host.wav
 
 # Multi-speaker conversation
 bun as -- tts script input/conversation.json --chatterbox
 
 # For multilingual TTS, use Qwen3 instead:
-bun as -- tts file input/japanese.md --qwen3 --qwen3-language Japanese --qwen3-speaker Ono_Anna
+bun as -- tts input/japanese.md --qwen3 --qwen3-language Japanese --qwen3-speaker Ono_Anna
 ```

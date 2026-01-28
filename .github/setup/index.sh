@@ -33,8 +33,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 SETUP_MODE="${1:-base}"
 case "$SETUP_MODE" in
-  --transcription|--tts|--all|base) SETUP_MODE="${SETUP_MODE#--}" ;;
-  *) log "Invalid argument '$1'"; log "Usage: $0 [--transcription|--tts|--all]"; exit 1 ;;
+  --transcription|--tts|--reverb|--all|base) SETUP_MODE="${SETUP_MODE#--}" ;;
+  *) log "Invalid argument '$1'"; log "Usage: $0 [--transcription|--reverb|--tts|--all]"; exit 1 ;;
 esac
 
 PLATFORM="unknown"
@@ -142,9 +142,13 @@ setup_tts() {
   log "Setting up Text-to-Speech dependencies..."
   install_deps ffmpeg espeak-ng pkg-config
   bash "$SETUP_DIR/tts/tts-env.sh"
-  bash "$SETUP_DIR/tts/kitten.sh"
-  bash "$SETUP_DIR/tts/coqui.sh"
-  bash "$SETUP_DIR/tts/models.sh"
+  bash "$SETUP_DIR/tts/qwen3.sh"
+}
+
+setup_reverb() {
+  log "Setting up Reverb ASR + diarization dependencies..."
+  install_deps git-lfs
+  bash "$SETUP_DIR/transcription/reverb.sh"
 }
 
 ensure_build_dirs
@@ -174,9 +178,11 @@ SETUP_DIR=".github/setup"
 case "$SETUP_MODE" in
   transcription) setup_transcription ;;
   tts) setup_tts ;;
+  reverb) setup_reverb ;;
   all)
-    log "Setting up all features (transcription + TTS)..."
+    log "Setting up all features (transcription + Reverb + TTS)..."
     setup_transcription
+    setup_reverb
     setup_tts
     ;;
   base) log "Base setup completed - core dependencies verified" ;;

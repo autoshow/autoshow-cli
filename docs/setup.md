@@ -10,13 +10,16 @@ Installs npm dependencies and creates directory structure. No Python environment
 
 ### Feature Setup
 ```bash
-# All features (transcription + TTS)
+# All features (transcription + Reverb + TTS)
 bun setup:all
 
 # Audio transcription (Whisper.cpp)
 bun setup:transcription
 
-# Text-to-speech (Coqui + Kitten)
+# Reverb ASR + diarization
+bun setup:reverb
+
+# Text-to-speech (Qwen3)
 bun setup:tts
 
 # Individual TTS engines
@@ -27,6 +30,23 @@ bun setup:tts:cosyvoice  # CosyVoice TTS (9 languages, dialects)
 ```
 
 Each feature is self-contained and won't affect others if setup fails.
+
+### Setup Report
+
+```bash
+# Run report for any setup command
+bun report:reverb
+bun report:tts:qwen3
+bun report:tts:chatterbox
+bun report:tts:fish
+bun report:tts:cosyvoice
+
+# Force fresh run (removes marker files first)
+bun report:tts:qwen3 --fresh
+
+# Or directly
+bun .github/setup/setup-report.ts setup:reverb --fresh
+```
 
 ## Global CLI Options
 
@@ -105,8 +125,9 @@ This ensures downloads and temporary files are properly cleaned up when you canc
 |---------|------------|------|
 | Base | ~200MB | 1-2 min |
 | Transcription | ~1GB | 3-5 min |
+| Reverb (ASR + diarization) | ~3-6GB | 8-15 min |
 | TTS | ~500MB | 2-3 min |
-| All | ~1.5GB | 5-8 min |
+| All | ~4-7GB | 10-18 min |
 
 ## What Gets Installed
 
@@ -125,9 +146,14 @@ The setup automatically detects your platform and configures the optimal Whisper
 - **Models:** GGML base model (~140MB), CoreML models (macOS only)
 - **Dependencies:** cmake, ffmpeg, git, pkg-config
 
+### Reverb (`--reverb`)
+- **Environment:** `build/pyenv/reverb/`
+- **Dependencies:** git-lfs, python3.11
+- **Models:** Reverb ASR + Pyannote diarization models (downloaded via HuggingFace)
+
 ### Text-to-Speech (`--tts`)
 - **Environment:** `build/pyenv/tts/`
-- **Models:** Coqui TTS, KittenTTS default models
+- **Models:** Qwen3 default model
 - **Dependencies:** ffmpeg, espeak-ng, pkg-config
 - **Individual engines:** Install additional engines with `setup:tts:qwen3`, `setup:tts:chatterbox`, `setup:tts:fish`, or `setup:tts:cosyvoice`
 
@@ -154,6 +180,9 @@ OPENAI_API_KEY=your_openai_key
 ELEVENLABS_API_KEY=your_elevenlabs_key
 AWS_ACCESS_KEY_ID=your_aws_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret
+
+# Required for Reverb diarization models
+HF_TOKEN=your_hf_token
 ```
 
 ## User Configuration
@@ -180,15 +209,15 @@ Create `~/.config/autoshow-cli/config.json` to store settings:
     "ELEVENLABS_API_KEY": "..."
   },
   "tts": {
-    "default_engine": "coqui",
+    "default_engine": "qwen3",
     "voices": {
       "elevenlabs": {
         "DUCO": "voice_id_here",
         "SEAMUS": "voice_id_here"
       },
-      "coqui": {
-        "DUCO": "Claribel Dervla",
-        "SEAMUS": "Daisy Studious"
+      "qwen3": {
+        "DUCO": "Vivian",
+        "SEAMUS": "Ryan"
       }
     }
   },

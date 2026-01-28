@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { err, success } from '@/logging'
 import { 
-  existsSync, mkdirSync
+  existsSync, extname, mkdirSync
 } from '@/node-utils'
 import { processFileWithEngine } from './tts-commands/file-command'
 import { processScriptWithEngine } from './tts-commands/script-command'
@@ -11,11 +11,9 @@ import { createJsonOutput, setJsonError, outputJson, type TtsJsonOutput } from '
 const OUTDIR = 'output'
 
 const sharedOptions = (cmd: Command): Command => cmd
-  .option('--coqui', 'Use Coqui TTS engine (default)')
   .option('--elevenlabs', 'Use ElevenLabs engine')
   .option('--polly', 'Use AWS Polly engine')
-  .option('--kitten', 'Use Kitten TTS engine (lightweight, CPU-only)')
-  .option('--qwen3', 'Use Qwen3 TTS engine')
+  .option('--qwen3', 'Use Qwen3 TTS engine (default)')
   .option('--chatterbox', 'Use Chatterbox TTS engine (GPU/MPS recommended)')
   .option('--chatterbox-model <model>', 'Chatterbox model: turbo, standard (default: turbo)')
   .option('--chatterbox-device <device>', 'Device override: cpu, mps, cuda')
@@ -33,8 +31,6 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--cosy-api-url <url>', 'CosyVoice API server URL (default: http://localhost:50000)')
   .option('--cosy-instruct <text>', 'Voice instruction (e.g., "Speak with enthusiasm", "Use Cantonese")')
   .option('--cosy-stream', 'Enable streaming inference')
-  .option('--coqui-model <model>', 'Coqui model name or path (default: tacotron2-DDC, use "xtts" for XTTS v2)')
-  .option('--kitten-model <model>', 'Kitten model name (default: KittenML/kitten-tts-nano-0.1)')
   .option('--qwen3-model <model>', 'Qwen3 model variant (CustomVoice, VoiceDesign, Base)')
   .option('--qwen3-speaker <name>', 'Qwen3 speaker: Vivian, Serena, Uncle_Fu, Dylan, Eric, Ryan, Aiden, Ono_Anna, Sohee')
   .option('--qwen3-instruct <text>', 'Qwen3 natural language voice control')
@@ -43,71 +39,52 @@ const sharedOptions = (cmd: Command): Command => cmd
   .option('--qwen3-max-chunk <n>', 'Qwen3 max chunk size for long text (default: 500)', parseInt)
   .option('--ref-audio <path>', 'Reference audio for voice cloning (qwen3 clone mode)')
   .option('--ref-text <text>', 'Transcript of reference audio (qwen3 clone mode)')
-  .option('--voice <name>', 'Voice ID (elevenlabs) or voice name (polly/kitten)')
-  .option('--speaker <name>', 'Speaker name for Coqui TTS')
-  .option('--voice-clone <path>', 'Path to voice sample for cloning (coqui XTTS)')
-  .option('--language <code>', 'Language code for multi-lingual models (coqui/polly)')
+  .option('--voice <name>', 'Voice ID (elevenlabs) or voice name (polly)')
+  .option('--language <code>', 'Language code for multi-lingual models (polly)')
   .option('--polly-format <format>', 'Polly output format: mp3, ogg_vorbis, pcm (default: mp3)')
   .option('--polly-sample-rate <rate>', 'Polly sample rate: 8000, 16000, 22050, 24000 (default: 24000)')
   .option('--polly-engine <engine>', 'Polly engine: standard, neural (auto-selected based on voice)')
   .option('--output <dir>', 'Output directory', OUTDIR)
-  .option('--speed <number>', 'Speed 0.25-4.0 (coqui/kitten/qwen3)', parseFloat)
+  .option('--speed <number>', 'Speed 0.25-4.0 (qwen3)', parseFloat)
   
   .option('--elevenlabs-key-file <path>', 'Path to file containing ElevenLabs API key')
 
 export const createTtsCommand = (): Command => {
   const tts = new Command('tts').description('Text-to-speech operations')
 
-  sharedOptions(tts.command('file').description('Generate speech from a markdown file')
-    .argument('<filePath>', 'Path to the markdown file'))
-    .action(async (filePath, options) => {
+  sharedOptions(tts)
+    .argument('<path>', 'Path to a .md, .txt, or .json file')
+    .action(async (inputPath, options) => {
       const jsonBuilder = createJsonOutput<TtsJsonOutput>('tts')
-      
+
       try {
-        if (!existsSync(filePath)) {
-          setJsonError(jsonBuilder, `File not found: ${filePath}`)
+        if (!existsSync(inputPath)) {
+          setJsonError(jsonBuilder, `File not found: ${inputPath}`)
           outputJson(jsonBuilder)
-          err(`File not found: ${filePath}`)
+          err(`File not found: ${inputPath}`)
+          return
         }
-        
+
         const outputDir = options.output || OUTDIR
         if (!existsSync(outputDir)) {
           mkdirSync(outputDir, { recursive: true })
         }
-        
-        await processFileWithEngine(detectEngine(options), filePath, outputDir, options)
-        
-        jsonBuilder.output.data = {
-          inputPath: filePath,
-          outputPath: outputDir,
-          service: detectEngine(options)
-        }
-        outputJson(jsonBuilder)
-        success(`Speech saved to ${outputDir}`)
-      } catch (error) {
-        setJsonError(jsonBuilder, error as Error)
-        outputJson(jsonBuilder)
-        err(`Error generating speech: ${error}`)
-      }
-    })
 
-  sharedOptions(tts.command('script').description('Generate speech from a JSON script file')
-    .argument('<scriptPath>', 'Path to the JSON script file'))
-    .action(async (scriptPath, options) => {
-      const jsonBuilder = createJsonOutput<TtsJsonOutput>('tts')
-      
-      try {
-        if (!existsSync(scriptPath)) {
-          setJsonError(jsonBuilder, `Script file not found: ${scriptPath}`)
+        const extension = extname(inputPath).toLowerCase()
+        if (extension === '.md' || extension === '.txt') {
+          await processFileWithEngine(detectEngine(options), inputPath, outputDir, options)
+        } else if (extension === '.json') {
+          await processScriptWithEngine(detectEngine(options), inputPath, outputDir, options)
+        } else {
+          const message = `Unsupported file type: ${extension || 'unknown'}. Use .md, .txt, or .json.`
+          setJsonError(jsonBuilder, message)
           outputJson(jsonBuilder)
-          err(`Script file not found: ${scriptPath}`)
+          err(message)
+          return
         }
-        
-        const outputDir = options.output || OUTDIR
-        await processScriptWithEngine(detectEngine(options), scriptPath, outputDir, options)
-        
+
         jsonBuilder.output.data = {
-          inputPath: scriptPath,
+          inputPath,
           outputPath: outputDir,
           service: detectEngine(options)
         }
@@ -122,10 +99,9 @@ export const createTtsCommand = (): Command => {
 
   tts.addHelpText('after', `
 Examples:
-  $ autoshow-cli tts file ./input/sample.md --coqui
-  $ autoshow-cli tts file ./input/story.md --elevenlabs --voice "Rachel"
-  $ autoshow-cli tts script ./input/script.json --coqui
-  $ autoshow-cli tts file ./input/sample.md --coqui --voice-clone ./input/audio.mp3
+  $ autoshow-cli tts ./input/sample.md --qwen3
+  $ autoshow-cli tts ./input/story.md --elevenlabs --voice "Rachel"
+  $ autoshow-cli tts ./input/script.json --qwen3
 `)
 
   return tts

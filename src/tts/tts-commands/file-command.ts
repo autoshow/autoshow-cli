@@ -1,9 +1,7 @@
 import { err } from '@/logging'
 import { basename, extname, join } from '@/node-utils'
 import { synthesizeWithElevenLabs } from '../tts-services/elevenlabs'
-import { synthesizeWithCoqui } from '../tts-local/coqui'
 import { synthesizeWithPolly } from '../tts-services/polly'
-import { synthesizeWithKitten } from '../tts-local/kitten'
 import { synthesizeWithQwen3 } from '../tts-local/qwen3'
 import { synthesizeWithChatterbox } from '../tts-local/chatterbox'
 import { synthesizeWithFishAudio } from '../tts-local/fish-audio'
@@ -15,15 +13,9 @@ const synthesizers: Record<TtsEngine, (plain: string, out: string, opts: any) =>
   elevenlabs: async (plain: string, out: string, opts: any) => {
     return synthesizeWithElevenLabs(plain, out, opts.voice || process.env['ELEVENLABS_DEFAULT_VOICE'] || 'onwK4e9ZLuTAKqWW03F9')
   },
-  coqui: async (plain: string, out: string, opts: any) => {
-    return synthesizeWithCoqui(plain, out, { model: opts.coquiModel, speaker: opts.speaker, speakerWav: opts.voiceClone, language: opts.language, speed: opts.speed })
-  },
   polly: async (plain: string, _: string, opts: any) => {
     return synthesizeWithPolly(plain, join(opts.outDir, basename(opts.filePath, extname(opts.filePath)) + '.' + (opts.pollyFormat || 'mp3')), 
       { voice: opts.voice, format: opts.pollyFormat || 'mp3', sampleRate: opts.pollySampleRate, engine: opts.pollyEngine, languageCode: opts.language })
-  },
-  kitten: async (plain: string, out: string, opts: any) => {
-    return synthesizeWithKitten(plain, out, { model: opts.kittenModel, voice: opts.voice, speed: opts.speed })
   },
   qwen3: async (plain: string, out: string, opts: any) => {
     return synthesizeWithQwen3(plain, out, { 

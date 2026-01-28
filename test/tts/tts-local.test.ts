@@ -6,22 +6,21 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'coqui-default': 'bun as -- tts file input/sample.md --coqui' },
-  { 'kitten-default': 'bun as -- tts file input/sample.md --kitten' },
+  { 'qwen3-default': 'bun as -- tts input/sample.md --qwen3' },
+  { 'qwen3-ryan': 'bun as -- tts input/sample.md --qwen3 --qwen3-speaker Ryan' },
+  { 'qwen3-japanese': 'bun as -- tts input/sample.md --qwen3 --qwen3-speaker Ono_Anna --qwen3-language Japanese' },
+  { 'qwen3-instruct': 'bun as -- tts input/sample.md --qwen3 --qwen3-instruct "Speak with enthusiasm"' },
   
-  { 'qwen3-default': 'bun as -- tts file input/sample.md --qwen3' },
-  { 'qwen3-ryan': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ryan' },
-  { 'qwen3-japanese': 'bun as -- tts file input/sample.md --qwen3 --qwen3-speaker Ono_Anna --qwen3-language Japanese' },
-  { 'qwen3-instruct': 'bun as -- tts file input/sample.md --qwen3 --qwen3-instruct "Speak with enthusiasm"' },
+  { 'chatterbox-turbo': 'bun as -- tts input/sample.md --chatterbox' },
+  { 'chatterbox-standard': 'bun as -- tts input/sample.md --chatterbox --chatterbox-model standard' },
+  { 'chatterbox-exaggeration': 'bun as -- tts input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7' },
   
-  { 'chatterbox-turbo': 'bun as -- tts file input/sample.md --chatterbox' },
-  { 'chatterbox-standard': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard' },
-  { 'chatterbox-exaggeration': 'bun as -- tts file input/sample.md --chatterbox --chatterbox-model standard --chatterbox-exaggeration 0.7' },
-  
-  { 'cosyvoice-default': 'bun as -- tts file input/sample.md --cosyvoice' },
-  { 'cosyvoice-instruct': 'bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm"' },
-  { 'cosyvoice-japanese': 'bun as -- tts file input/sample.md --cosyvoice --cosy-language ja' },
-  { 'cosyvoice-cantonese': 'bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"' },
+  { 'cosyvoice-default': 'bun as -- tts input/sample.md --cosyvoice' },
+  { 'cosyvoice-instruct': 'bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm"' },
+  { 'cosyvoice-japanese': 'bun as -- tts input/sample.md --cosyvoice --cosy-language ja' },
+  { 'cosyvoice-cantonese': 'bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"' },
+
+  { 'fishaudio-default': 'bun as -- tts input/sample.md --fish-audio' },
 ]
 
 describe('CLI TTS local tests', () => {
