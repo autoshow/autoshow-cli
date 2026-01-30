@@ -126,7 +126,7 @@ interface SetupReport {
 // ============================================================================
 
 const BUILD_DIR = 'build'
-const REPORTS_DIR = 'build/reports'
+const REPORTS_DIR = 'reports'
 const WATCH_DIRS = ['build/bin', 'build/models', 'build/config', 'build/pyenv', 'build/src']
 const CONFIG_DIR = 'build/config'
 
@@ -625,28 +625,34 @@ async function findOutputFile(inputFile: string, type: 'tts' | 'transcription'):
   return undefined
 }
 
-async function runTestCommand(setupCommand: string): Promise<TestRunResult | undefined> {
+async function runTestCommand(setupCommand: string, customInputFile?: string): Promise<TestRunResult | undefined> {
   const config = TEST_CONFIGS[setupCommand]
   if (!config) {
     console.log(`\nNo test configuration for ${setupCommand}, skipping test run.`)
     return undefined
   }
 
+  // Override input file if custom one provided
+  const inputFile = customInputFile || config.inputFile
+  const commandArgs = customInputFile
+    ? config.commandArgs.map((arg) => (arg === config.inputFile ? customInputFile : arg))
+    : config.commandArgs
+
   console.log(`\n${'='.repeat(60)}`)
   console.log(`Running Test: ${config.type.toUpperCase()}`)
-  console.log(`Input: ${config.inputFile}`)
-  console.log(`Command: bun as -- ${config.commandArgs.join(' ')}`)
+  console.log(`Input: ${inputFile}`)
+  console.log(`Command: bun as -- ${commandArgs.join(' ')}`)
   console.log(`${'='.repeat(60)}\n`)
 
   // Read input file to get character/word counts
   let inputContent = ''
   let inputSize = 0
   try {
-    const inputFile = Bun.file(config.inputFile)
-    inputContent = await inputFile.text()
-    inputSize = inputFile.size
+    const inputFileHandle = Bun.file(inputFile)
+    inputContent = await inputFileHandle.text()
+    inputSize = inputFileHandle.size
   } catch (err) {
-    console.error(`Warning: Could not read input file ${config.inputFile}:`, err)
+    console.error(`Warning: Could not read input file ${inputFile}:`, err)
   }
 
   const inputCharacters = inputContent.length
@@ -661,7 +667,7 @@ async function runTestCommand(setupCommand: string): Promise<TestRunResult | und
   let error: string | undefined
 
   try {
-    const proc = Bun.spawn(['bun', 'as', '--', ...config.commandArgs], {
+    const proc = Bun.spawn(['bun', 'as', '--', ...commandArgs], {
       cwd: process.cwd(),
       stdout: 'pipe',
       stderr: 'pipe',
@@ -709,7 +715,7 @@ async function runTestCommand(setupCommand: string): Promise<TestRunResult | und
   const durationSeconds = durationMs / 1000
 
   // Find the output file
-  const outputFile = await findOutputFile(config.inputFile, config.type)
+  const outputFile = await findOutputFile(inputFile, config.type)
   let outputSize: number | undefined
   let outputDurationSeconds: number | undefined
 
@@ -726,8 +732,8 @@ async function runTestCommand(setupCommand: string): Promise<TestRunResult | und
   const realTimeRatio = outputDurationSeconds && durationSeconds > 0 ? outputDurationSeconds / durationSeconds : undefined
 
   const result: TestRunResult = {
-    command: `bun as -- ${config.commandArgs.join(' ')}`,
-    inputFile: config.inputFile,
+    command: `bun as -- ${commandArgs.join(' ')}`,
+    inputFile,
     inputSize,
     inputCharacters,
     inputWords,
@@ -1067,7 +1073,7 @@ async function removeMarkers(setupCommand: string): Promise<string[]> {
 // Main Runner
 // ============================================================================
 
-async function runSetupWithReport(setupCommand: string, fresh: boolean, runTest: boolean): Promise<SetupReport> {
+async function runSetupWithReport(setupCommand: string, fresh: boolean, runTest: boolean, customInputFile?: string): Promise<SetupReport> {
   const startTime = new Date()
   const startNanos = Bun.nanoseconds()
 
@@ -1225,7 +1231,7 @@ async function runSetupWithReport(setupCommand: string, fresh: boolean, runTest:
 
   // Run post-setup test if enabled and setup succeeded
   if (runTest && exitCode === 0) {
-    report.testRun = await runTestCommand(setupCommand)
+    report.testRun = await runTestCommand(setupCommand, customInputFile)
   } else if (runTest && exitCode !== 0) {
     console.log('\nSkipping test run because setup failed.')
   }
@@ -1243,19 +1249,23 @@ async function main(): Promise<void> {
   // Parse arguments
   const fresh = args.includes('--fresh')
   const skipTest = args.includes('--skip-test')
-  const setupCommand = args.find((a) => !a.startsWith('-'))
+  const inputIndex = args.findIndex((a) => a === '--input')
+  const customInput = inputIndex !== -1 ? args[inputIndex + 1] : undefined
+  const setupCommand = args.find((a) => !a.startsWith('-') && a !== customInput)
 
   if (!setupCommand) {
     console.error(`
 Usage: bun .github/setup/setup-report.ts <setup-command> [options]
 
 Options:
-  --fresh      Remove marker files before running to force a complete setup
-  --skip-test  Skip the post-setup test run
+  --fresh         Remove marker files before running to force a complete setup
+  --skip-test     Skip the post-setup test run
+  --input <file>  Use a custom input file for the test run
 
 Examples:
   bun .github/setup/setup-report.ts setup:tts:qwen3 --fresh
   bun .github/setup/setup-report.ts setup:tts:chatterbox --skip-test
+  bun .github/setup/setup-report.ts setup:tts:qwen3 --input input/story.md
 
 Available setup commands:
   setup:tts:qwen3
@@ -1270,16 +1280,18 @@ Available setup commands:
 
   // Run setup and generate report
   const runTest = !skipTest
-  const report = await runSetupWithReport(setupCommand, fresh, runTest)
+  const report = await runSetupWithReport(setupCommand, fresh, runTest, customInput)
 
   // Generate filenames
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const commandSlug = sanitizeForFilename(report.command)
-  const jsonPath = join(REPORTS_DIR, `${commandSlug}-${timestamp}.json`)
-  const mdPath = join(REPORTS_DIR, `${commandSlug}-${timestamp}.md`)
+  const inputSlug = customInput ? `-${sanitizeForFilename(customInput.split('/').pop()?.replace(/\.[^.]+$/, '') || 'custom')}` : ''
+  const jsonPath = join(REPORTS_DIR, `${commandSlug}${inputSlug}-${timestamp}.json`)
+  const mdPath = join(REPORTS_DIR, `${commandSlug}${inputSlug}-${timestamp}.md`)
 
-  // Write reports
-  await Bun.write(jsonPath, JSON.stringify(report, null, 2))
+  // Write reports (exclude fileOperations from JSON to avoid bloat)
+  const { fileOperations: _, ...jsonReport } = report
+  await Bun.write(jsonPath, JSON.stringify(jsonReport, null, 2))
   await Bun.write(mdPath, generateMarkdownReport(report))
 
   // Print summary

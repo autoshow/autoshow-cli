@@ -81,11 +81,12 @@ export type CosyVoiceLanguage =
 export type CosyVoiceMode = 'instruct' | 'zero_shot' | 'cross_lingual'
 
 export interface CosyVoiceOptions {
-  mode?: CosyVoiceMode              
-  language?: CosyVoiceLanguage      
-  apiUrl?: string                   
-  refAudio?: string                 
-  refText?: string                  
-  instruct?: string                 
-  stream?: boolean                  
+  mode?: CosyVoiceMode
+  language?: CosyVoiceLanguage
+  speaker?: string
+  apiUrl?: string
+  refAudio?: string
+  refText?: string
+  instruct?: string
+  stream?: boolean
 }

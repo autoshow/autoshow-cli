@@ -4,10 +4,12 @@ node_modules
 bin
 build
 input
+logs
 output
 new-*.*
 spec.*
 setup-*.log
 setup.log
 TODO.md
-eng.traineddata
+eng.traineddatareports/
+reports

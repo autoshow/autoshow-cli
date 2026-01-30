@@ -64,46 +64,34 @@ def chunk_text(text, max_size=500):
 
     return chunks if chunks else [text]
 
-def load_cosyvoice_model(cosyvoice_dir, model_name="Fun-CosyVoice3-0.5B"):
-
+def load_cosyvoice_model(cosyvoice_dir, model_name="CosyVoice-300M-Instruct"):
     sys.path.insert(0, cosyvoice_dir)
     sys.path.insert(0, os.path.join(cosyvoice_dir, "third_party/Matcha-TTS"))
-
-    from cosyvoice.cli.cosyvoice import AutoModel
 
     model_dir = os.path.join(cosyvoice_dir, "pretrained_models", model_name)
     log(f"Loading model from: {model_dir}")
 
-    model = AutoModel(model_dir=model_dir)
+    # Use CosyVoice class for 300M models (CPU compatible)
+    from cosyvoice.cli.cosyvoice import CosyVoice
+    model = CosyVoice(model_dir)
     return model
 
-def get_default_ref_audio(cosyvoice_dir):
-    default_path = os.path.join(cosyvoice_dir, "asset", "zero_shot_prompt.wav")
-    if os.path.exists(default_path):
-        return default_path
-    return None
-
-def inference_instruct(model, text, instruct_text, ref_audio_path, language="auto"):
-
-    system_prompt = "You are a helpful assistant."
-    if instruct_text:
-        system_prompt = f"You are a helpful assistant. {instruct_text}"
-
-    if not ref_audio_path or not os.path.exists(ref_audio_path):
-        raise ValueError("Reference audio is required for CosyVoice3")
+def inference_instruct(model, text, instruct_text, speaker="中文女"):
+    # CosyVoice-300M-Instruct uses inference_instruct with speaker name
+    instruct = instruct_text or "Speak clearly and naturally."
 
     for i, result in enumerate(
-        model.inference_instruct2(text, system_prompt, ref_audio_path, stream=False)
+        model.inference_instruct(text, speaker, instruct, stream=False)
     ):
         return result["tts_speech"], model.sample_rate
 
     raise ValueError("Failed to generate audio in instruct mode")
 
-def inference_zero_shot(model, text, ref_audio_path, ref_text=None, language="auto"):
+def inference_zero_shot(model, text, ref_audio_path, ref_text=None):
     if not ref_audio_path or not os.path.exists(ref_audio_path):
         raise ValueError("Zero-shot mode requires a reference audio file")
 
-    prompt_text = ref_text or "You are a helpful assistant."
+    prompt_text = ref_text or "这是一段示例音频。"
 
     for i, result in enumerate(
         model.inference_zero_shot(text, prompt_text, ref_audio_path, stream=False)
@@ -112,7 +100,7 @@ def inference_zero_shot(model, text, ref_audio_path, ref_text=None, language="au
 
     raise ValueError("Failed to generate audio in zero-shot mode")
 
-def inference_cross_lingual(model, text, ref_audio_path, language="auto"):
+def inference_cross_lingual(model, text, ref_audio_path):
     if not ref_audio_path or not os.path.exists(ref_audio_path):
         raise ValueError("Cross-lingual mode requires a reference audio file")
 
@@ -123,6 +111,15 @@ def inference_cross_lingual(model, text, ref_audio_path, language="auto"):
 
     raise ValueError("Failed to generate audio in cross-lingual mode")
 
+def inference_sft(model, text, speaker="中文女"):
+    # SFT mode uses predefined speakers
+    for i, result in enumerate(
+        model.inference_sft(text, speaker, stream=False)
+    ):
+        return result["tts_speech"], model.sample_rate
+
+    raise ValueError("Failed to generate audio in SFT mode")
+
 if len(sys.argv) < 2:
     emit_result({"ok": False, "error": "No configuration provided"})
     sys.exit(1)
@@ -130,29 +127,22 @@ if len(sys.argv) < 2:
 config = json.loads(sys.argv[1])
 mode = config.get("mode", "instruct")
 cosyvoice_dir = config.get("cosyvoice_dir", "build/cosyvoice")
+model_name = config.get("model_name", "CosyVoice-300M-Instruct")
 text = config.get("text", "")
 output_path = config.get("output", "output.wav")
-language = config.get("language", "auto")
 instruct = config.get("instruct", "")
+speaker = config.get("speaker", "中文女")
 ref_audio = config.get("ref_audio")
 ref_text = config.get("ref_text")
 
-if not ref_audio or not os.path.exists(str(ref_audio)):
-    ref_audio = get_default_ref_audio(cosyvoice_dir)
-    if ref_audio:
-        log(f"Using default reference audio: {ref_audio}")
-    else:
-        log("WARNING: No reference audio found, synthesis may fail")
-
-log(f"Mode: {mode}, Language: {language}")
+log(f"Mode: {mode}, Model: {model_name}")
 log(f"CosyVoice directory: {cosyvoice_dir}")
 
 try:
-
     device = "cpu"
     log(f"Using device: {device}")
 
-    model = load_cosyvoice_model(cosyvoice_dir)
+    model = load_cosyvoice_model(cosyvoice_dir, model_name)
 
     max_chunk = 500
     sr = model.sample_rate
@@ -166,17 +156,13 @@ try:
             log(f"Processing chunk {i + 1}/{len(chunks)}")
 
             if mode == "instruct":
-                audio, chunk_sr = inference_instruct(
-                    model, chunk, instruct, ref_audio, language
-                )
+                audio, chunk_sr = inference_instruct(model, chunk, instruct, speaker)
             elif mode == "zero_shot":
-                audio, chunk_sr = inference_zero_shot(
-                    model, chunk, ref_audio, ref_text, language
-                )
+                audio, chunk_sr = inference_zero_shot(model, chunk, ref_audio, ref_text)
             elif mode == "cross_lingual":
-                audio, chunk_sr = inference_cross_lingual(
-                    model, chunk, ref_audio, language
-                )
+                audio, chunk_sr = inference_cross_lingual(model, chunk, ref_audio)
+            elif mode == "sft":
+                audio, chunk_sr = inference_sft(model, chunk, speaker)
             else:
                 raise ValueError(f"Unknown mode: {mode}")
 
@@ -189,11 +175,13 @@ try:
         audio = torch.cat(audio_parts[:-1])
     else:
         if mode == "instruct":
-            audio, sr = inference_instruct(model, text, instruct, ref_audio, language)
+            audio, sr = inference_instruct(model, text, instruct, speaker)
         elif mode == "zero_shot":
-            audio, sr = inference_zero_shot(model, text, ref_audio, ref_text, language)
+            audio, sr = inference_zero_shot(model, text, ref_audio, ref_text)
         elif mode == "cross_lingual":
-            audio, sr = inference_cross_lingual(model, text, ref_audio, language)
+            audio, sr = inference_cross_lingual(model, text, ref_audio)
+        elif mode == "sft":
+            audio, sr = inference_sft(model, text, speaker)
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
