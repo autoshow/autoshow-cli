@@ -30,18 +30,20 @@ Each feature is self-contained and won't affect others if setup fails.
 
 ### Setup Report
 
+Generate detailed reports about setup commands. See [docs/report.md](report.md) for full documentation.
+
 ```bash
-# Run report for any setup command
-bun report:tts:qwen3
-bun report:tts:chatterbox
-bun report:tts:fish
-bun report:tts:cosyvoice
+# Run report for a setup command
+bun report:run setup:tts:fish --input input/sample.md
 
-# Force fresh run (removes marker files first)
-bun report:tts:qwen3 --fresh
+# List existing reports
+bun report:list --reports
 
-# Or directly
-bun .github/setup/setup-report.ts setup:tts:qwen3 --fresh
+# View a report
+bun report view tts-fish-sample-2026-01-30
+
+# Compare two reports
+bun report compare tts-fish-sample tts-qwen3-sample
 ```
 
 ## Global CLI Options
