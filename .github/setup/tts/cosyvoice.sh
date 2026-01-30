@@ -4,7 +4,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
 
 MARKER_FILE="$CONFIG_DIR/.cosyvoice-installed"
 COSYVOICE_DIR="build/cosyvoice"
-MODEL_NAME="Fun-CosyVoice3-0.5B"
+MODEL_NAME="CosyVoice-300M-Instruct"
 
 check_marker "$MARKER_FILE" && exit 0
 
@@ -71,6 +71,7 @@ log "Installing CosyVoice dependencies..."
 # Core dependencies required for CosyVoice
 tts_pip install diffusers gdown modelscope omegaconf soundfile transformers hyperpyyaml openai-whisper \
   hydra-core lightning wget x_transformers pyarrow pyworld rich pydantic conformer onnxruntime inflect \
+  matplotlib torchcodec \
   >/dev/null 2>&1 || {
     log "ERROR: Failed to install core CosyVoice dependencies"
     exit 1
@@ -84,7 +85,7 @@ tts_python -c "
 from modelscope import snapshot_download
 import os
 model_dir = os.path.join('$COSYVOICE_DIR', 'pretrained_models', '$MODEL_NAME')
-snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir=model_dir)
+snapshot_download('iic/CosyVoice-300M-Instruct', local_dir=model_dir)
 print('Model downloaded successfully')
 " 2>/dev/null || {
   log "ModelScope download failed, trying HuggingFace..."
@@ -93,7 +94,7 @@ print('Model downloaded successfully')
 from huggingface_hub import snapshot_download
 import os
 model_dir = os.path.join('$COSYVOICE_DIR', 'pretrained_models', '$MODEL_NAME')
-snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir=model_dir)
+snapshot_download('FunAudioLLM/CosyVoice-300M-Instruct', local_dir=model_dir)
 print('Model downloaded successfully')
 " || {
     log "ERROR: Failed to download model"

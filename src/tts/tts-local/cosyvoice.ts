@@ -206,19 +206,20 @@ SOLUTION:
   
   
   const pythonScriptPath = new URL('cosyvoice-python.py', import.meta.url).pathname
-  const cosyvoiceDir = config.model_dir || join(process.cwd(), 'build/cosyvoice')
+  const cosyvoiceDir = join(process.cwd(), 'build/cosyvoice')
   
   await ensureDir(dirname(outputPath))
   
   const configData: Record<string, unknown> = {
     mode: modeName,
-    language: languageName,
+    model_name: 'CosyVoice-300M-Instruct',
     text,
     output: outputPath,
     cosyvoice_dir: cosyvoiceDir,
+    speaker: options.speaker || '中文女',
     stream: options.stream || false
   }
-  
+
   if (options.instruct) {
     configData['instruct'] = options.instruct
   }
@@ -230,7 +231,7 @@ SOLUTION:
   }
   
   l(`Generating speech with CosyVoice TTS`)
-  
+
   const result = spawnSync(pythonPath, [pythonScriptPath, JSON.stringify(configData)], { 
     stdio: ['pipe', 'pipe', 'pipe'], 
     encoding: 'utf-8',
