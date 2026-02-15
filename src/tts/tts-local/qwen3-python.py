@@ -135,7 +135,7 @@ if len(sys.argv) < 2:
 
 config = json.loads(sys.argv[1])
 mode = config.get("mode", "custom")
-model_name = config.get("model", "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
+model_name = config.get("model", "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice")
 max_chunk = config.get("max_chunk", MAX_CHUNK_SIZE)
 
 log(f"Mode: {mode}, Model: {model_name}")

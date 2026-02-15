@@ -9,11 +9,20 @@ import {
   ensureTtsEnvironment, checkCosyVoiceInstalled, runCosyVoiceSetup, checkCosyVoiceDocker, startCosyVoiceDocker
 } from '../tts-utils/setup-utils'
 import { getUserVoice } from '@/utils'
-import type { CosyVoiceOptions, CosyVoiceMode } from '../tts-types'
+import type { CosyVoiceOptions, CosyVoiceMode, CosyVoiceModel } from '../tts-types'
 
 const VALID_LANGUAGES = ['auto', 'zh', 'en', 'ja', 'ko', 'de', 'es', 'fr', 'it', 'ru']
 const VALID_MODES = ['instruct', 'zero_shot', 'cross_lingual']
+const VALID_MODELS: CosyVoiceModel[] = [
+  'Fun-CosyVoice3-0.5B',
+  'CosyVoice2-0.5B',
+  'CosyVoice-300M',
+  'CosyVoice-300M-SFT',
+  'CosyVoice-300M-Instruct',
+  'CosyVoice-ttsfrd'
+]
 const DEFAULT_API_URL = 'http://localhost:50000'
+const DEFAULT_MODEL = 'CosyVoice-300M-Instruct'
 
 const getCosyVoiceConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
@@ -69,15 +78,20 @@ const verifyCosyVoiceEnvironment = (pythonPath: string): { useDocker: boolean, p
 
 const validateOptions = (options: CosyVoiceOptions): void => {
   const mode = options.mode || 'instruct'
-  
+  const model = options.model || DEFAULT_MODEL
+
   if (!VALID_MODES.includes(mode)) {
     err('Invalid mode', { mode, validModes: VALID_MODES.join(', ') })
   }
-  
+
+  if (model && !VALID_MODELS.includes(model as CosyVoiceModel)) {
+    err('Invalid model', { model, validModels: VALID_MODELS.join(', ') })
+  }
+
   if (mode === 'zero_shot' && !options.refAudio) {
     err('Zero-shot mode requires --ref-audio for voice cloning')
   }
-  
+
   if (options.language && !VALID_LANGUAGES.includes(options.language)) {
     err('Invalid language', { language: options.language, validLanguages: VALID_LANGUAGES.join(', ') })
   }
@@ -165,13 +179,14 @@ export async function synthesizeWithCosyVoice(
 ): Promise<string> {
   const config = getCosyVoiceConfig()
   const { useDocker, pythonPath } = verifyCosyVoiceEnvironment(config.python)
-  
+
+  const modelName = options.model || config.default_model || DEFAULT_MODEL
   const modeName = options.mode || config.default_mode || 'instruct'
   const languageName = options.language || config.default_language || 'auto'
-  
-  validateOptions({ ...options, mode: modeName as CosyVoiceMode, language: languageName })
-  
-  l('Using mode and language', { mode: modeName, language: languageName })
+
+  validateOptions({ ...options, model: modelName, mode: modeName as CosyVoiceMode, language: languageName })
+
+  l('Using CosyVoice configuration', { model: modelName, mode: modeName, language: languageName })
   
   
   if (useDocker || options.apiUrl) {
@@ -212,7 +227,7 @@ SOLUTION:
   
   const configData: Record<string, unknown> = {
     mode: modeName,
-    model_name: 'CosyVoice-300M-Instruct',
+    model_name: modelName,
     text,
     output: outputPath,
     cosyvoice_dir: cosyvoiceDir,

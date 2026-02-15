@@ -2,27 +2,9 @@
 
 Generate, view, and compare detailed setup reports for AutoShow CLI.
 
-## Quick Start
-
-```bash
-# Generate a report for a setup command
-bun report:run setup:tts:fish --input input/sample.md
-
-# List existing reports
-bun report:list --reports
-
-# View a report
-bun report view tts-fish-sample-2026-01-30
-
-# Compare two reports
-bun report compare tts-fish-sample tts-qwen3-sample
-```
-
 ## Commands
 
 ### `run` - Generate a Report
-
-Run a setup command and generate a detailed report with metrics.
 
 ```bash
 bun .github/report/cli.ts run <setup-command> [options]
@@ -35,22 +17,7 @@ bun .github/report/cli.ts run <setup-command> [options]
 | `--fresh` | Remove marker files before running to force a complete setup |
 | `--skip-test` | Skip the post-setup test run |
 | `--input <file>` | Use a custom input file for the test run |
-
-**Examples:**
-
-```bash
-# Basic report generation
-bun .github/report/cli.ts run setup:tts:fish
-
-# Fresh run (removes cached setup markers)
-bun .github/report/cli.ts run setup:tts:qwen3 --fresh
-
-# Skip the test run after setup
-bun .github/report/cli.ts run setup:tts:chatterbox --skip-test
-
-# Use a custom input file for testing
-bun .github/report/cli.ts run setup:tts:fish --input input/story.md
-```
+| `--model <model>` | Model to use for the test run |
 
 **Available Setup Commands:**
 
@@ -63,9 +30,29 @@ bun .github/report/cli.ts run setup:tts:fish --input input/story.md
 | `setup:transcription` | Transcription | `input/audio.mp3` |
 | `setup:tts` | TTS | `input/sample.md` |
 
-### `list` - List Reports
+**All Command Variations:**
 
-List available report types or existing reports.
+```bash
+# Basic
+bun .github/report/cli.ts run <setup-command>
+bun .github/report/cli.ts run <setup-command> --fresh
+bun .github/report/cli.ts run <setup-command> --skip-test
+bun .github/report/cli.ts run <setup-command> --input <file>
+bun .github/report/cli.ts run <setup-command> --model <model>
+bun .github/report/cli.ts run <setup-command> --fresh --skip-test
+bun .github/report/cli.ts run <setup-command> --fresh --input <file>
+bun .github/report/cli.ts run <setup-command> --fresh --model <model>
+bun .github/report/cli.ts run <setup-command> --skip-test --input <file>
+bun .github/report/cli.ts run <setup-command> --skip-test --model <model>
+bun .github/report/cli.ts run <setup-command> --input <file> --model <model>
+bun .github/report/cli.ts run <setup-command> --fresh --skip-test --input <file>
+bun .github/report/cli.ts run <setup-command> --fresh --skip-test --model <model>
+bun .github/report/cli.ts run <setup-command> --fresh --input <file> --model <model>
+bun .github/report/cli.ts run <setup-command> --skip-test --input <file> --model <model>
+bun .github/report/cli.ts run <setup-command> --fresh --skip-test --input <file> --model <model>
+```
+
+### `list` - List Reports
 
 ```bash
 bun .github/report/cli.ts list [options]
@@ -78,22 +65,16 @@ bun .github/report/cli.ts list [options]
 | `--reports` | List existing reports instead of report types |
 | `--json` | Output as JSON |
 
-**Examples:**
+**All Command Variations:**
 
 ```bash
-# List available setup commands
 bun .github/report/cli.ts list
-
-# List existing reports
 bun .github/report/cli.ts list --reports
-
-# Get reports as JSON (for scripting)
+bun .github/report/cli.ts list --json
 bun .github/report/cli.ts list --reports --json
 ```
 
 ### `view` - View a Report
-
-Display details of a specific report.
 
 ```bash
 bun .github/report/cli.ts view <name> [options]
@@ -106,25 +87,15 @@ bun .github/report/cli.ts view <name> [options]
 | `--json` | Output as JSON |
 | `--markdown` | Output as Markdown |
 
-**Examples:**
+**All Command Variations:**
 
 ```bash
-# View report summary
-bun .github/report/cli.ts view tts-fish-sample-2026-01-30
-
-# Partial name matching (if unique)
-bun .github/report/cli.ts view qwen3
-
-# Get full JSON report
-bun .github/report/cli.ts view tts-fish-sample --json
-
-# Get Markdown report
-bun .github/report/cli.ts view tts-fish-sample --markdown
+bun .github/report/cli.ts view <name>
+bun .github/report/cli.ts view <name> --json
+bun .github/report/cli.ts view <name> --markdown
 ```
 
 ### `compare` - Compare Reports
-
-Compare metrics between two reports.
 
 ```bash
 bun .github/report/cli.ts compare <report1> <report2> [options]
@@ -137,28 +108,21 @@ bun .github/report/cli.ts compare <report1> <report2> [options]
 | `--json` | Output as JSON |
 | `--markdown` | Output as Markdown |
 
-**Examples:**
+**All Command Variations:**
 
 ```bash
-# Compare two reports
-bun .github/report/cli.ts compare tts-fish-sample tts-fish-story
-
-# Compare different TTS engines
-bun .github/report/cli.ts compare tts-fish-sample tts-qwen3-sample
-
-# Get comparison as JSON
-bun .github/report/cli.ts compare fish qwen3 --json
+bun .github/report/cli.ts compare <report1> <report2>
+bun .github/report/cli.ts compare <report1> <report2> --json
+bun .github/report/cli.ts compare <report1> <report2> --markdown
 ```
 
 ## Package.json Scripts
 
-Convenient shortcuts are available in `package.json`:
-
 ```bash
 # Main CLI
 bun report                    # Shows help
-bun report:run               # Shortcut for run command
-bun report:list              # Shortcut for list command
+bun report:run <args>         # Shortcut for run command
+bun report:list <args>        # Shortcut for list command
 
 # Quick TTS reports
 bun report:tts:fish          # Fish Audio report with sample.md
@@ -168,194 +132,158 @@ bun report:tts:cosyvoice     # CosyVoice report (sample + story)
 bun report:tts               # All TTS reports
 ```
 
+## TTS Models Reference
+
+### Chatterbox Models
+
+| Model | Flag | Size | Notes |
+|-------|------|------|-------|
+| turbo | `--chatterbox-model turbo` | ~800MB | Default, fastest |
+| standard | `--chatterbox-model standard` | ~800MB | Supports exaggeration and CFG weight |
+
+**All Chatterbox Combinations:**
+
+```bash
+# Turbo model (default)
+bun .github/report/cli.ts run setup:tts:chatterbox
+bun .github/report/cli.ts run setup:tts:chatterbox --model turbo
+
+# Standard model
+bun .github/report/cli.ts run setup:tts:chatterbox --model standard
+```
+
+### Qwen3 Models
+
+| Model | Flag | Size | Streaming | Features |
+|-------|------|------|-----------|----------|
+| Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice | `--qwen3-model Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice` | ~1.2GB | No | Default, lightweight, pre-built voices |
+| Qwen/Qwen3-TTS-12Hz-0.6B-Base | `--qwen3-model Qwen/Qwen3-TTS-12Hz-0.6B-Base` | ~1.2GB | No | Lightweight, voice cloning |
+| Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice | `--qwen3-model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice` | ~3GB | Yes | Pre-built voices, streaming |
+| Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign | `--qwen3-model Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign` | ~3GB | Yes | Voice design from descriptions |
+| Qwen/Qwen3-TTS-12Hz-1.7B-Base | `--qwen3-model Qwen/Qwen3-TTS-12Hz-1.7B-Base` | ~3GB | No | Voice cloning |
+
+**All Qwen3 Combinations:**
+
+```bash
+# 0.6B CustomVoice (default)
+bun .github/report/cli.ts run setup:tts:qwen3
+bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice
+
+# 0.6B Base (voice cloning)
+bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-0.6B-Base
+
+# 1.7B CustomVoice (streaming)
+bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+
+# 1.7B VoiceDesign (voice design from descriptions)
+bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
+
+# 1.7B Base (voice cloning)
+bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-1.7B-Base
+```
+
+### Fish Audio Models
+
+| Model | Flag | Size | Features |
+|-------|------|------|----------|
+| s1-mini | `--fish-model s1-mini` | ~2GB | 0.5B parameters, default, open-source |
+| s1 | `--fish-model s1` | ~8GB | 4B parameters, best quality and stability |
+
+**All Fish Audio Combinations:**
+
+```bash
+# s1-mini (default)
+bun .github/report/cli.ts run setup:tts:fish
+bun .github/report/cli.ts run setup:tts:fish --model s1-mini
+
+# s1 (best quality)
+bun .github/report/cli.ts run setup:tts:fish --model s1
+```
+
+### CosyVoice Models
+
+| Model | Flag | Size | Features |
+|-------|------|------|----------|
+| Fun-CosyVoice3-0.5B | `--cosyvoice-model Fun-CosyVoice3-0.5B` | ~500MB | Latest V3, best quality, 9 languages, 18+ dialects |
+| CosyVoice2-0.5B | `--cosyvoice-model CosyVoice2-0.5B` | ~500MB | Version 2, high quality |
+| CosyVoice-300M | `--cosyvoice-model CosyVoice-300M` | ~300MB | Base model |
+| CosyVoice-300M-SFT | `--cosyvoice-model CosyVoice-300M-SFT` | ~300MB | Fine-tuned with predefined speakers |
+| CosyVoice-300M-Instruct | `--cosyvoice-model CosyVoice-300M-Instruct` | ~300MB | Default, instruction-following |
+| CosyVoice-ttsfrd | `--cosyvoice-model CosyVoice-ttsfrd` | ~300MB | Text normalization resources |
+
+**All CosyVoice Combinations:**
+
+```bash
+# CosyVoice-300M-Instruct (default)
+bun .github/report/cli.ts run setup:tts:cosyvoice
+bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-300M-Instruct
+
+# Fun-CosyVoice3-0.5B (latest, best quality)
+bun .github/report/cli.ts run setup:tts:cosyvoice --model Fun-CosyVoice3-0.5B
+
+# CosyVoice2-0.5B (version 2)
+bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice2-0.5B
+
+# CosyVoice-300M (base)
+bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-300M
+
+# CosyVoice-300M-SFT (fine-tuned)
+bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-300M-SFT
+
+# CosyVoice-ttsfrd (text normalization)
+bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-ttsfrd
+```
+
 ## Report Contents
 
-Each report captures:
-
 ### Setup Metrics
-- **Duration**: Total time for setup
-- **Storage Added**: Disk space used by new files
-- **Phases**: Installation phases detected from logs
-- **Downloads**: External resources fetched (git repos, pip packages, models)
-- **Errors**: Any errors encountered during setup
+- Duration
+- Storage Added
+- Phases
+- Downloads
+- Errors
 
-### Test Run Metrics (if not skipped)
-- **Generation Time**: Time to process input
-- **Input Stats**: Character count, word count
-- **Output Stats**: File path, size, audio duration
-- **Performance**: Characters/second, words/second
-- **Real-time Ratio**: Audio duration vs generation time
+### Test Run Metrics
+- Model
+- Generation Time
+- Input Stats (character count, word count)
+- Output Stats (file path, size, audio duration)
+- Performance (characters/second, words/second)
+- Real-time Ratio (audio duration vs generation time)
 
 ### Environment Info
-- Platform (darwin, linux)
-- Architecture (arm64, x64)
+- Platform
+- Architecture
 - Bun version
 - Working directory
 
 ## Output Files
 
-Reports are saved to the `reports/` directory in two formats:
+Reports are saved to `reports/` directory:
 
-| Format | File | Purpose |
-|--------|------|---------|
-| JSON | `<command>-<input>-<timestamp>.json` | Machine-readable, full data |
-| Markdown | `<command>-<input>-<timestamp>.md` | Human-readable, for documentation |
+| Format | Filename Pattern |
+|--------|------------------|
+| JSON | `<command>-<input>-<timestamp>.json` |
+| Markdown | `<command>-<input>-<timestamp>.md` |
 
-**Example filenames:**
-```
-reports/tts-fish-sample-2026-01-30T19-29-06.json
-reports/tts-fish-sample-2026-01-30T19-29-06.md
-```
-
-## Use Cases
-
-### Benchmarking TTS Engines
-
-Compare performance across different TTS engines:
-
-```bash
-# Generate reports for each engine
-bun .github/report/cli.ts run setup:tts:fish --input input/sample.md
-bun .github/report/cli.ts run setup:tts:qwen3 --input input/sample.md
-bun .github/report/cli.ts run setup:tts:chatterbox --input input/sample.md
-
-# Compare results
-bun .github/report/cli.ts compare fish qwen3
-bun .github/report/cli.ts compare fish chatterbox
-```
-
-### Testing Different Input Sizes
-
-Measure performance with different content lengths:
-
-```bash
-# Short content
-bun .github/report/cli.ts run setup:tts:fish --input input/sample.md
-
-# Long content
-bun .github/report/cli.ts run setup:tts:fish --input input/story.md
-
-# Compare
-bun .github/report/cli.ts compare tts-fish-sample tts-fish-story
-```
-
-### Fresh vs Cached Setup
-
-Compare fresh installation vs cached run:
-
-```bash
-# Cached run (uses existing markers)
-bun .github/report/cli.ts run setup:tts:fish
-
-# Fresh run (removes markers first)
-bun .github/report/cli.ts run setup:tts:fish --fresh
-
-# Compare setup times
-bun .github/report/cli.ts list --reports
-```
-
-### CI/CD Integration
-
-Generate reports in CI pipelines:
-
-```bash
-# Generate report with JSON output
-bun .github/report/cli.ts run setup:tts:fish --skip-test
-
-# Check report programmatically
-bun .github/report/cli.ts view tts-fish --json | jq '.success'
-
-# Compare against baseline
-bun .github/report/cli.ts compare current-report baseline-report --json
-```
-
-## Report Comparison Output
-
-The compare command shows a side-by-side comparison:
-
-```
-======================================================================
-Report Comparison
-======================================================================
-
-Metric              Report 1                 Report 2                 Difference
-----------------------------------------------------------------------
-Command             setup:tts:fish           setup:tts:fish
-Date                1/30/2026, 1:19:02 PM    1/30/2026, 1:29:09 PM
-Status              Success                  Success
-Duration            1m 12.6s                 1m 11.9s                 760ms
-Storage Added       853.91 MB                853.94 MB                +26.02 KB
-Phases              1                        1                        0
-Downloads           0                        0                        0
-Errors              0                        0                        0
-
-----------------------------------------------------------------------
-Test Run Comparison
-----------------------------------------------------------------------
-Generation Time     8m 51.4s                 126m 8.3s                +117m 17.0s
-Chars/Second        0.2                      0.3                      +0.1
-Real-time Ratio     0.01x                    0.00x                    -0.01x
-```
-
-## Troubleshooting
-
-### Report Not Found
-
-If `view` can't find a report:
-
-```bash
-# List all reports to see exact names
-bun .github/report/cli.ts list --reports
-
-# Use full name
-bun .github/report/cli.ts view tts-fish-sample-2026-01-30T19-29-06
-```
-
-### Multiple Matches
-
-If partial name matches multiple reports:
-
-```bash
-# Error: Multiple reports match 'fish'
-# Solution: Be more specific
-bun .github/report/cli.ts view tts-fish-sample-2026-01-30
-```
-
-### Fresh Run Not Working
-
-If `--fresh` doesn't trigger a full reinstall:
-
-```bash
-# Check which markers exist
-ls -la build/config/
-
-# Manually remove all markers
-rm -f build/config/.*-installed
-
-# Run fresh
-bun .github/report/cli.ts run setup:tts:fish --fresh
-```
-
-## Architecture
-
-The Report CLI is organized as a modular TypeScript application:
+## Structure
 
 ```
 .github/report/
-├── cli.ts                    # Main entry point (Commander.js)
-├── types.ts                  # TypeScript interfaces
-├── constants.ts              # Configuration constants
+├── cli.ts
+├── types.ts
+├── constants.ts
 ├── commands/
-│   ├── run.ts                # Run setup and generate report
-│   ├── list.ts               # List reports/report types
-│   ├── view.ts               # View a specific report
-│   └── compare.ts            # Compare two reports
+│   ├── run.ts
+│   ├── list.ts
+│   ├── view.ts
+│   └── compare.ts
 └── lib/
-    ├── filesystem-tracker.ts # FileSystemTracker class
-    ├── output-parser.ts      # OutputParser class
-    ├── test-runner.ts        # Test execution logic
-    ├── report-generator.ts   # JSON + Markdown generation
-    ├── marker-manager.ts     # Marker file operations
-    ├── formatters.ts         # formatBytes, formatDuration, etc.
-    └── utils.ts              # fileExists, ensureDir, etc.
+    ├── filesystem-tracker.ts
+    ├── output-parser.ts
+    ├── test-runner.ts
+    ├── report-generator.ts
+    ├── marker-manager.ts
+    ├── formatters.ts
+    └── utils.ts
 ```

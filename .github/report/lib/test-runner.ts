@@ -70,7 +70,17 @@ export async function findOutputFile(inputFile: string, type: 'tts' | 'transcrip
   return undefined
 }
 
-export async function runTestCommand(setupCommand: string, customInputFile?: string): Promise<TestRunResult | undefined> {
+// Map setup commands to their model flags
+const MODEL_FLAGS: Record<string, string> = {
+  'setup:tts:qwen3': '--qwen3-model',
+  'setup:tts:chatterbox': '--chatterbox-model',
+  'setup:tts:fish': '--fish-model',
+  'setup:tts:cosyvoice': '--cosyvoice-model',
+  'setup:transcription': '--whisper',
+  'setup:text': '--whisper',
+}
+
+export async function runTestCommand(setupCommand: string, customInputFile?: string, model?: string): Promise<TestRunResult | undefined> {
   const config = TEST_CONFIGS[setupCommand]
   if (!config) {
     console.log(`\nNo test configuration for ${setupCommand}, skipping test run.`)
@@ -79,13 +89,34 @@ export async function runTestCommand(setupCommand: string, customInputFile?: str
 
   // Override input file if custom one provided
   const inputFile = customInputFile || config.inputFile
-  const commandArgs = customInputFile
+  let commandArgs = customInputFile
     ? config.commandArgs.map((arg) => (arg === config.inputFile ? customInputFile : arg))
-    : config.commandArgs
+    : [...config.commandArgs]
+
+  // Add model flag if specified
+  if (model) {
+    const modelFlag = MODEL_FLAGS[setupCommand]
+    if (modelFlag) {
+      // For transcription, replace the existing model arg (e.g., --whisper base -> --whisper turbo)
+      if (setupCommand.includes('transcription') || setupCommand.includes('text')) {
+        const whisperIndex = commandArgs.indexOf('--whisper')
+        if (whisperIndex !== -1 && whisperIndex + 1 < commandArgs.length) {
+          commandArgs[whisperIndex + 1] = model
+        } else {
+          commandArgs.push(modelFlag, model)
+        }
+      } else {
+        commandArgs.push(modelFlag, model)
+      }
+    }
+  }
 
   console.log(`\n${'='.repeat(60)}`)
   console.log(`Running Test: ${config.type.toUpperCase()}`)
   console.log(`Input: ${inputFile}`)
+  if (model) {
+    console.log(`Model: ${model}`)
+  }
   console.log(`Command: bun as -- ${commandArgs.join(' ')}`)
   console.log(`${'='.repeat(60)}\n`)
 
@@ -181,6 +212,7 @@ export async function runTestCommand(setupCommand: string, customInputFile?: str
     inputSize,
     inputCharacters,
     inputWords,
+    model,
     outputFile,
     outputSize,
     outputDurationSeconds,

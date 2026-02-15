@@ -36,6 +36,7 @@ program
   .option('--fresh', 'Remove marker files before running to force a complete setup')
   .option('--skip-test', 'Skip the post-setup test run')
   .option('--input <file>', 'Use a custom input file for the test run')
+  .option('--model <model>', 'Model to use for the test run (e.g., turbo, base, Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice)')
   .addHelpText(
     'after',
     `
@@ -44,6 +45,8 @@ Examples:
   $ bun .github/report/cli.ts run setup:tts:qwen3 --fresh
   $ bun .github/report/cli.ts run setup:tts:chatterbox --skip-test
   $ bun .github/report/cli.ts run setup:tts:fish --input input/story.md
+  $ bun .github/report/cli.ts run setup:tts:chatterbox --model turbo
+  $ bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
 
 Available setup commands:
 ${AVAILABLE_SETUP_COMMANDS.map((cmd) => `  ${cmd}`).join('\n')}
@@ -54,6 +57,7 @@ ${AVAILABLE_SETUP_COMMANDS.map((cmd) => `  ${cmd}`).join('\n')}
       fresh: options.fresh,
       skipTest: options.skipTest,
       input: options.input,
+      model: options.model,
     })
   })
 

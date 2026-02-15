@@ -49,6 +49,7 @@ export interface TestRunResult {
   inputSize: number
   inputCharacters: number
   inputWords: number
+  model?: string
   outputFile?: string
   outputSize?: number
   outputDurationSeconds?: number

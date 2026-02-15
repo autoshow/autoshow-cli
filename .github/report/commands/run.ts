@@ -17,6 +17,7 @@ export interface RunOptions {
   fresh?: boolean
   skipTest?: boolean
   input?: string
+  model?: string
 }
 
 export async function runSetupWithReport(
@@ -69,14 +70,31 @@ export async function runSetupWithReport(
   let exitCode = 0
 
   try {
+    // Build environment with model-specific variables
+    const setupEnv: Record<string, string> = {
+      ...process.env,
+      FORCE_COLOR: '1',
+    }
+
+    // Map model option to environment variable for setup scripts
+    if (options.model) {
+      const modelEnvMap: Record<string, string> = {
+        'setup:tts:cosyvoice': 'COSYVOICE_MODEL',
+        'setup:tts:fish': 'FISHAUDIO_MODEL',
+        'setup:tts:chatterbox': 'CHATTERBOX_MODEL',
+        'setup:tts:qwen3': 'QWEN3_MODEL',
+      }
+      const envVar = modelEnvMap[setupCommand]
+      if (envVar) {
+        setupEnv[envVar] = options.model
+      }
+    }
+
     const proc = Bun.spawn(['bun', 'run', setupCommand], {
       cwd,
       stdout: 'pipe',
       stderr: 'pipe',
-      env: {
-        ...process.env,
-        FORCE_COLOR: '1',
-      },
+      env: setupEnv,
     })
 
     // Stream stdout
@@ -183,7 +201,7 @@ export async function runSetupWithReport(
 
   // Run post-setup test if enabled and setup succeeded
   if (runTest && exitCode === 0) {
-    report.testRun = await runTestCommand(setupCommand, customInputFile)
+    report.testRun = await runTestCommand(setupCommand, customInputFile, options.model)
   } else if (runTest && exitCode !== 0) {
     console.log('\nSkipping test run because setup failed.')
   }
@@ -207,11 +225,17 @@ export async function runCommand(setupCommand: string, options: RunOptions): Pro
   // Generate filenames
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const commandSlug = sanitizeForFilename(report.command)
+  const modelSlug = options.model ? `-${sanitizeForFilename(options.model)}` : ''
   const inputSlug = options.input
     ? `-${sanitizeForFilename(options.input.split('/').pop()?.replace(/\.[^.]+$/, '') || 'custom')}`
     : ''
-  const jsonPath = join(REPORTS_DIR, `${commandSlug}${inputSlug}-${timestamp}.json`)
-  const mdPath = join(REPORTS_DIR, `${commandSlug}${inputSlug}-${timestamp}.md`)
+  // Consider both setup success and test run success when categorizing the report
+  const overallSuccess = report.success && (!report.testRun || report.testRun.success)
+  const statusDir = overallSuccess ? 'success' : 'failed'
+  const outputDir = join(REPORTS_DIR, statusDir)
+  await ensureDir(outputDir)
+  const jsonPath = join(outputDir, `${timestamp}-${commandSlug}${modelSlug}${inputSlug}.json`)
+  const mdPath = join(outputDir, `${timestamp}-${commandSlug}${modelSlug}${inputSlug}.md`)
 
   // Write reports (exclude fileOperations from JSON to avoid bloat)
   const { fileOperations: _, ...jsonReport } = report
@@ -222,7 +246,7 @@ export async function runCommand(setupCommand: string, options: RunOptions): Pro
   console.log(`\n${'='.repeat(60)}`)
   console.log('Setup Report Complete')
   console.log(`${'='.repeat(60)}`)
-  console.log(`Status: ${report.success ? 'Success' : 'Failed'}`)
+  console.log(`Status: ${overallSuccess ? 'Success' : 'Failed'}${!report.success ? ' (Setup Failed)' : report.testRun && !report.testRun.success ? ' (Test Failed)' : ''}`)
   console.log(`Duration: ${formatDuration(report.durationMs)}`)
   console.log(`Storage Added: ${formatBytes(report.storage.totalBytesAdded)}`)
   console.log(`Files Created: ${report.fileOperations.filter((f) => f.type === 'created').length}`)
@@ -234,6 +258,9 @@ export async function runCommand(setupCommand: string, options: RunOptions): Pro
     console.log('')
     console.log('Test Run:')
     console.log(`  Status: ${report.testRun.success ? 'Success' : 'Failed'}`)
+    if (report.testRun.model) {
+      console.log(`  Model: ${report.testRun.model}`)
+    }
     console.log(`  Generation Time: ${formatDuration(report.testRun.durationMs)}`)
     console.log(`  Input: ${report.testRun.inputCharacters} chars, ${report.testRun.inputWords} words`)
     if (report.testRun.outputDurationSeconds) {
@@ -252,6 +279,7 @@ export async function runCommand(setupCommand: string, options: RunOptions): Pro
   console.log(`  Markdown: ${mdPath}`)
   console.log('')
 
-  // Exit with setup exit code (test failures don't affect exit)
-  process.exit(report.exitCode)
+  // Exit with non-zero code if either setup or test failed
+  const exitCode = overallSuccess ? 0 : (report.exitCode || 1)
+  process.exit(exitCode)
 }

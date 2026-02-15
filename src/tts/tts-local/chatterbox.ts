@@ -60,7 +60,7 @@ const verifyChatterboxEnvironment = (pythonPath: string) => {
 
 const validateOptions = (options: ChatterboxOptions): void => {
   const model = options.model || 'turbo'
-  
+
   if (!VALID_MODELS.includes(model)) {
     err('Invalid model', { model, validModels: VALID_MODELS.join(', ') })
   }
