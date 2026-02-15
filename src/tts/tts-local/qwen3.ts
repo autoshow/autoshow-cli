@@ -66,7 +66,7 @@ const validateModeModelCompatibility = (mode: Qwen3Mode, model: string): void =>
 
 const validateOptions = (options: Qwen3Options): void => {
   const mode = options.mode || 'custom'
-  const model = options.model || 'Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice'
+  const model = options.model || 'Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice'
   
   validateModeModelCompatibility(mode, model)
   
@@ -95,7 +95,7 @@ export async function synthesizeWithQwen3(
   const config = getQwen3Config()
   verifyQwen3Environment(config.python)
   
-  const modelName = options.model || config.default_model || 'Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice'
+  const modelName = options.model || config.default_model || 'Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice'
   const speakerName = options.speaker || config.default_speaker || 'Vivian'
   const languageName = options.language || config.default_language || 'Auto'
   const modeName = options.mode || config.default_mode || 'custom'

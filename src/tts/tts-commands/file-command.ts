@@ -43,6 +43,7 @@ const synthesizers: Record<TtsEngine, (plain: string, out: string, opts: any) =>
   },
   fishaudio: async (plain: string, out: string, opts: any) => {
     return synthesizeWithFishAudio(plain, out, {
+      model: opts.fishModel,
       language: opts.fishLanguage,
       apiUrl: opts.fishApiUrl || process.env['FISHAUDIO_API_URL'],
       refAudio: opts.refAudio,
@@ -53,6 +54,7 @@ const synthesizers: Record<TtsEngine, (plain: string, out: string, opts: any) =>
   },
   cosyvoice: async (plain: string, out: string, opts: any) => {
     return synthesizeWithCosyVoice(plain, out, {
+      model: opts.cosyvoiceModel,
       mode: opts.cosyMode,
       language: opts.cosyLanguage,
       apiUrl: opts.cosyApiUrl || process.env['COSYVOICE_API_URL'],

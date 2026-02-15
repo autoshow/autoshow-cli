@@ -154,6 +154,9 @@ export function generateMarkdownReport(report: SetupReport): string {
     lines.push('')
     lines.push(`**Command:** \`${test.command}\``)
     lines.push(`**Status:** ${test.success ? 'Success' : 'Failed'}`)
+    if (test.model) {
+      lines.push(`**Model:** ${test.model}`)
+    }
     lines.push(`**Generation Time:** ${formatDuration(test.durationMs)}`)
     lines.push('')
 
@@ -309,6 +312,14 @@ export function generateComparisonReport(report1: SetupReport, report2: SetupRep
   if (report1.testRun && report2.testRun) {
     lines.push('## Test Run Comparison')
     lines.push('')
+
+    // Show models if different
+    if (report1.testRun.model || report2.testRun.model) {
+      lines.push(`**Report 1 Model:** ${report1.testRun.model || 'default'}`)
+      lines.push(`**Report 2 Model:** ${report2.testRun.model || 'default'}`)
+      lines.push('')
+    }
+
     lines.push('| Metric | Report 1 | Report 2 | Difference |')
     lines.push('|--------|----------|----------|------------|')
 

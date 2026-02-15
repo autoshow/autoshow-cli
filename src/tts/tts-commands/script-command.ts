@@ -38,6 +38,7 @@ const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => P
   },
   fishaudio: async (s: string, o: string, opts: any) => {
     return processScriptWithFishAudio(s, o, {
+      model: opts.fishModel,
       language: opts.fishLanguage,
       apiUrl: opts.fishApiUrl || process.env['FISHAUDIO_API_URL'],
       refAudio: opts.refAudio,
@@ -48,6 +49,7 @@ const scriptProcessors: Record<TtsEngine, (s: string, o: string, opts: any) => P
   },
   cosyvoice: async (s: string, o: string, opts: any) => {
     return processScriptWithCosyVoice(s, o, {
+      model: opts.cosyvoiceModel,
       mode: opts.cosyMode,
       language: opts.cosyLanguage,
       apiUrl: opts.cosyApiUrl || process.env['COSYVOICE_API_URL'],

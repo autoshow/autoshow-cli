@@ -150,7 +150,7 @@ Segment-level fields (`speaker`, `instruct`, `mode`) override CLI/environment de
 
 ```bash
 # Default settings
-QWEN3_DEFAULT_MODEL=Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+QWEN3_DEFAULT_MODEL=Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice
 QWEN3_DEFAULT_SPEAKER=Vivian
 QWEN3_DEFAULT_LANGUAGE=Auto
 

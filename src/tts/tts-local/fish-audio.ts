@@ -9,9 +9,23 @@ import {
   ensureTtsEnvironment, checkFishAudioInstalled, runFishAudioSetup
 } from '../tts-utils/setup-utils'
 import { getUserVoice } from '@/utils'
-import type { FishAudioOptions } from '../tts-types'
+import type { FishAudioOptions, FishAudioModel } from '../tts-types'
 
-const CHECKPOINT_DIR = 'build/checkpoints/openaudio-s1-mini'
+const VALID_MODELS: FishAudioModel[] = ['s1-mini', 's1']
+const DEFAULT_MODEL: FishAudioModel = 's1-mini'
+
+const getCheckpointDir = (model: FishAudioModel): string => {
+  return model === 's1'
+    ? 'build/checkpoints/openaudio-s1'
+    : 'build/checkpoints/openaudio-s1-mini'
+}
+
+const getHuggingFaceRepo = (model: FishAudioModel): string => {
+  return model === 's1'
+    ? 'fishaudio/openaudio-s1'
+    : 'fishaudio/openaudio-s1-mini'
+}
+
 const DOCKER_IMAGE = 'fishaudio/fish-speech:server-cpu'
 const DOCKER_CONTAINER_NAME = 'fish-speech-server'
 
@@ -48,28 +62,29 @@ const checkDockerRunning = (): boolean => {
   }
 }
 
-const downloadWeightsIfNeeded = (): boolean => {
-  const configPath = join(process.cwd(), CHECKPOINT_DIR, 'config.json')
+const downloadWeightsIfNeeded = (model: FishAudioModel): boolean => {
+  const checkpointDir = join(process.cwd(), getCheckpointDir(model))
+  const configPath = join(checkpointDir, 'config.json')
   if (existsSync(configPath)) {
-    l('FishAudio weights already present')
+    l('FishAudio weights already present', { model })
     return true
   }
-  
-  l('Downloading FishAudio S1-mini weights (~2GB)')
-  
-  const checkpointDir = join(process.cwd(), CHECKPOINT_DIR)
+
+  const modelSize = model === 's1' ? '~8GB' : '~2GB'
+  l(`Downloading FishAudio ${model} weights (${modelSize})`)
+
+  const checkpointPath = checkpointDir
   if (!existsSync(dirname(checkpointDir))) {
     mkdirSync(dirname(checkpointDir), { recursive: true })
   }
-  
-  
+
   const homeDir = process.env['HOME'] || ''
   const tokenPaths = [
     join(homeDir, '.cache/huggingface/token'),
     join(homeDir, '.huggingface/token')
   ]
   let hfToken = process.env['HF_TOKEN'] || process.env['HUGGING_FACE_HUB_TOKEN'] || ''
-  
+
   for (const tokenPath of tokenPaths) {
     if (!hfToken && existsSync(tokenPath)) {
       try {
@@ -77,38 +92,38 @@ const downloadWeightsIfNeeded = (): boolean => {
       } catch {}
     }
   }
-  
+
+  const repo = getHuggingFaceRepo(model)
+
   try {
-    
     const env = { ...process.env }
     if (hfToken) env['HF_TOKEN'] = hfToken
-    
-    execSync(`hf download fishaudio/openaudio-s1-mini --local-dir ${checkpointDir}`, {
+
+    execSync(`hf download ${repo} --local-dir ${checkpointDir}`, {
       stdio: 'inherit',
       cwd: process.cwd(),
       env
     })
-    success(`FishAudio weights downloaded`)
+    success(`FishAudio ${model} weights downloaded`)
     return true
   } catch {
-    
     try {
       const pythonPath = join(process.cwd(), 'build/pyenv/tts/bin/python')
       const tokenArg = hfToken ? `, token='${hfToken}'` : ''
-      execSync(`${pythonPath} -c "from huggingface_hub import snapshot_download; snapshot_download('fishaudio/openaudio-s1-mini', local_dir='${checkpointDir}'${tokenArg})"`, {
+      execSync(`${pythonPath} -c "from huggingface_hub import snapshot_download; snapshot_download('${repo}', local_dir='${checkpointDir}'${tokenArg})"`, {
         stdio: 'inherit',
         cwd: process.cwd()
       })
-      success('FishAudio weights downloaded')
+      success(`FishAudio ${model} weights downloaded`)
       return true
     } catch (e) {
-      l('Failed to download weights', { error: e })
+      l('Failed to download weights', { error: e, model })
       return false
     }
   }
 }
 
-const startDockerServer = (): boolean => {
+const startDockerServer = (model: FishAudioModel): boolean => {
   if (checkDockerRunning()) {
     l('FishAudio Docker server already running')
     if (waitForServerReady(30)) {
@@ -117,9 +132,8 @@ const startDockerServer = (): boolean => {
     l('FishAudio server not responding while container is running', { containerName: DOCKER_CONTAINER_NAME })
     return false
   }
-  
-  
-  if (!downloadWeightsIfNeeded()) {
+
+  if (!downloadWeightsIfNeeded(model)) {
     return false
   }
   
@@ -178,10 +192,10 @@ const getFishAudioConfig = () => {
   l('Using Python path', { pythonPath })
   return {
     python: pythonPath,
+    default_model: config.fishaudio?.default_model,
     default_language: config.fishaudio?.default_language,
-    
     api_url: process.env['FISHAUDIO_API_URL'] || config.fishaudio?.api_url || 'http://localhost:8080',
-    checkpoint_path: process.env['FISHAUDIO_CHECKPOINT_PATH'] || config.fishaudio?.checkpoint_path || 'build/checkpoints/openaudio-s1-mini',
+    checkpoint_path: process.env['FISHAUDIO_CHECKPOINT_PATH'] || config.fishaudio?.checkpoint_path,
     use_api: config.fishaudio?.use_api ?? true,
     compile: config.fishaudio?.compile ?? false,
     ...config.fishaudio
@@ -210,6 +224,10 @@ const verifyFishAudioEnvironment = (pythonPath: string) => {
 }
 
 const validateOptions = (options: FishAudioOptions): void => {
+  if (options.model && !VALID_MODELS.includes(options.model as FishAudioModel)) {
+    err('Invalid model', { model: options.model, validModels: VALID_MODELS.join(', ') })
+  }
+
   if (options.language && !VALID_LANGUAGES.includes(options.language)) {
     err('Invalid language', { language: options.language, validLanguages: VALID_LANGUAGES.join(', ') })
   }
@@ -232,28 +250,29 @@ export async function synthesizeWithFishAudio(
   const MAX_RETRIES = 3
   const config = getFishAudioConfig()
   verifyFishAudioEnvironment(config.python)
-  
+
+  const model = (options.model || config.default_model || DEFAULT_MODEL) as FishAudioModel
   const language = options.language || config.default_language
-  
-  validateOptions({ ...options, language })
-  
-  l(`Using FishAudio S1-mini`)
-  
+  const checkpointPath = config.checkpoint_path || getCheckpointDir(model)
+
+  validateOptions({ ...options, model, language })
+
+  l(`Using FishAudio ${model}`)
+
   const pythonScriptPath = new URL('fish-audio-python.py', import.meta.url).pathname
-  
+
   await ensureDir(dirname(outputPath))
-  
-  
+
   let processedText = text
   if (options.emotion) {
     processedText = `(${options.emotion}) ${text}`
   }
-  
+
   const configData: Record<string, unknown> = {
     text: processedText,
     output: outputPath,
     api_url: options.apiUrl || config.api_url,
-    checkpoint_path: config.checkpoint_path,
+    checkpoint_path: checkpointPath,
     use_api: options.apiUrl ? true : config.use_api,
     compile: config.compile
   }
@@ -300,8 +319,7 @@ export async function synthesizeWithFishAudio(
           err('FishAudio TTS failed after retries', { maxRetries: MAX_RETRIES, containerName: DOCKER_CONTAINER_NAME })
         }
         l('FishAudio API not available, attempting automatic Docker setup')
-        if (startDockerServer()) {
-          
+        if (startDockerServer(model)) {
           await new Promise(resolve => setTimeout(resolve, 3000))
           l('Retrying synthesis with Docker server', { attempt: _retryCount + 1, maxRetries: MAX_RETRIES })
           return synthesizeWithFishAudio(text, outputPath, options, _retryCount + 1)
@@ -319,8 +337,7 @@ export async function synthesizeWithFishAudio(
           err('FishAudio TTS failed after retries', { maxRetries: MAX_RETRIES, containerName: DOCKER_CONTAINER_NAME })
         }
         l('FishAudio API not available, attempting automatic Docker setup')
-        if (startDockerServer()) {
-          
+        if (startDockerServer(model)) {
           await new Promise(resolve => setTimeout(resolve, 3000))
           l('Retrying synthesis with Docker server', { attempt: _retryCount + 1, maxRetries: MAX_RETRIES })
           return synthesizeWithFishAudio(text, outputPath, options, _retryCount + 1)

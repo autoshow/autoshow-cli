@@ -62,16 +62,19 @@ export interface ChatterboxOptions {
   dtype?: 'float32' | 'float16' | 'bfloat16'
 }
 
-export type FishAudioLanguage = 
-  | 'en' | 'zh' | 'ja' | 'de' | 'fr' | 'es' 
+export type FishAudioLanguage =
+  | 'en' | 'zh' | 'ja' | 'de' | 'fr' | 'es'
   | 'ko' | 'ar' | 'ru' | 'nl' | 'it' | 'pl' | 'pt'
 
+export type FishAudioModel = 's1-mini' | 's1'
+
 export interface FishAudioOptions {
+  model?: FishAudioModel | string
   language?: FishAudioLanguage | string
-  apiUrl?: string              
-  refAudio?: string            
-  refText?: string             
-  emotion?: string             
+  apiUrl?: string
+  refAudio?: string
+  refText?: string
+  emotion?: string
   device?: 'cpu' | 'cuda' | 'mps'
 }
 
@@ -80,7 +83,16 @@ export type CosyVoiceLanguage =
 
 export type CosyVoiceMode = 'instruct' | 'zero_shot' | 'cross_lingual'
 
+export type CosyVoiceModel =
+  | 'Fun-CosyVoice3-0.5B'
+  | 'CosyVoice2-0.5B'
+  | 'CosyVoice-300M'
+  | 'CosyVoice-300M-SFT'
+  | 'CosyVoice-300M-Instruct'
+  | 'CosyVoice-ttsfrd'
+
 export interface CosyVoiceOptions {
+  model?: CosyVoiceModel | string
   mode?: CosyVoiceMode
   language?: CosyVoiceLanguage
   speaker?: string

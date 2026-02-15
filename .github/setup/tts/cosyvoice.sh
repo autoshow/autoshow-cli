@@ -4,7 +4,46 @@ source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
 
 MARKER_FILE="$CONFIG_DIR/.cosyvoice-installed"
 COSYVOICE_DIR="build/cosyvoice"
-MODEL_NAME="CosyVoice-300M-Instruct"
+MODEL_NAME="${COSYVOICE_MODEL:-CosyVoice-300M-Instruct}"
+
+# Map short model names to full model names
+case "$MODEL_NAME" in
+  "Fun-CosyVoice3-0.5B")
+    MODELSCOPE_REPO="FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+    HUGGINGFACE_REPO="FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+    MODEL_DIR="Fun-CosyVoice3-0.5B"
+    ;;
+  "CosyVoice2-0.5B")
+    MODELSCOPE_REPO="iic/CosyVoice2-0.5B"
+    HUGGINGFACE_REPO="FunAudioLLM/CosyVoice2-0.5B"
+    MODEL_DIR="CosyVoice2-0.5B"
+    ;;
+  "CosyVoice-300M")
+    MODELSCOPE_REPO="iic/CosyVoice-300M"
+    HUGGINGFACE_REPO="FunAudioLLM/CosyVoice-300M"
+    MODEL_DIR="CosyVoice-300M"
+    ;;
+  "CosyVoice-300M-SFT")
+    MODELSCOPE_REPO="iic/CosyVoice-300M-SFT"
+    HUGGINGFACE_REPO="FunAudioLLM/CosyVoice-300M-SFT"
+    MODEL_DIR="CosyVoice-300M-SFT"
+    ;;
+  "CosyVoice-300M-Instruct")
+    MODELSCOPE_REPO="iic/CosyVoice-300M-Instruct"
+    HUGGINGFACE_REPO="FunAudioLLM/CosyVoice-300M-Instruct"
+    MODEL_DIR="CosyVoice-300M-Instruct"
+    ;;
+  "CosyVoice-ttsfrd")
+    MODELSCOPE_REPO="iic/CosyVoice-ttsfrd"
+    HUGGINGFACE_REPO="FunAudioLLM/CosyVoice-ttsfrd"
+    MODEL_DIR="CosyVoice-ttsfrd"
+    ;;
+  *)
+    log "ERROR: Invalid model name: $MODEL_NAME"
+    log "Valid models: Fun-CosyVoice3-0.5B, CosyVoice2-0.5B, CosyVoice-300M, CosyVoice-300M-SFT, CosyVoice-300M-Instruct, CosyVoice-ttsfrd"
+    exit 1
+    ;;
+esac
 
 check_marker "$MARKER_FILE" && exit 0
 
@@ -36,16 +75,16 @@ fi
 require_tts_env
 
 # Check if already installed locally
-if [ -d "$COSYVOICE_DIR" ] && [ -d "$COSYVOICE_DIR/pretrained_models/$MODEL_NAME" ]; then
+if [ -d "$COSYVOICE_DIR" ] && [ -d "$COSYVOICE_DIR/pretrained_models/$MODEL_DIR" ]; then
   if tts_python -c "
 import sys
 sys.path.insert(0, '$COSYVOICE_DIR')
 sys.path.insert(0, '$COSYVOICE_DIR/third_party/Matcha-TTS')
-from cosyvoice.cli.cosyvoice import AutoModel
+from cosyvoice.cli.cosyvoice import CosyVoice
 print('ok')
 " 2>/dev/null | grep -q "ok"; then
     touch "$MARKER_FILE"
-    log "CosyVoice already installed"
+    log "CosyVoice ($MODEL_NAME) already installed"
     exit 0
   fi
 fi
@@ -84,8 +123,8 @@ mkdir -p "$COSYVOICE_DIR/pretrained_models"
 tts_python -c "
 from modelscope import snapshot_download
 import os
-model_dir = os.path.join('$COSYVOICE_DIR', 'pretrained_models', '$MODEL_NAME')
-snapshot_download('iic/CosyVoice-300M-Instruct', local_dir=model_dir)
+model_dir = os.path.join('$COSYVOICE_DIR', 'pretrained_models', '$MODEL_DIR')
+snapshot_download('$MODELSCOPE_REPO', local_dir=model_dir)
 print('Model downloaded successfully')
 " 2>/dev/null || {
   log "ModelScope download failed, trying HuggingFace..."
@@ -93,8 +132,8 @@ print('Model downloaded successfully')
   tts_python -c "
 from huggingface_hub import snapshot_download
 import os
-model_dir = os.path.join('$COSYVOICE_DIR', 'pretrained_models', '$MODEL_NAME')
-snapshot_download('FunAudioLLM/CosyVoice-300M-Instruct', local_dir=model_dir)
+model_dir = os.path.join('$COSYVOICE_DIR', 'pretrained_models', '$MODEL_DIR')
+snapshot_download('$HUGGINGFACE_REPO', local_dir=model_dir)
 print('Model downloaded successfully')
 " || {
     log "ERROR: Failed to download model"
@@ -107,12 +146,12 @@ if tts_python -c "
 import sys
 sys.path.insert(0, '$COSYVOICE_DIR')
 sys.path.insert(0, '$COSYVOICE_DIR/third_party/Matcha-TTS')
-from cosyvoice.cli.cosyvoice import AutoModel
+from cosyvoice.cli.cosyvoice import CosyVoice
 print('ok')
 " 2>/dev/null | grep -q "ok"; then
   touch "$MARKER_FILE"
-  log "CosyVoice installed successfully"
+  log "CosyVoice ($MODEL_NAME) installed successfully"
 else
-  log "WARNING: CosyVoice installation verification failed"
+  log "WARNING: CosyVoice ($MODEL_NAME) installation verification failed"
   log "You may need to run setup manually"
 fi
