@@ -8,6 +8,7 @@ export const BUILD_DIR = 'build'
 export const REPORTS_DIR = 'reports'
 export const WATCH_DIRS = ['build/bin', 'build/models', 'build/config', 'build/pyenv', 'build/src']
 export const CONFIG_DIR = 'build/config'
+export const REPORT_READY_DIR = `${CONFIG_DIR}/.report-ready`
 
 // Marker file patterns for different setup commands
 export const MARKER_PATTERNS: Record<string, string[]> = {
@@ -80,3 +81,10 @@ export const AVAILABLE_SETUP_COMMANDS = [
   'setup:transcription',
   'setup:tts',
 ]
+
+export const TTS_SETUP_COMMANDS = [
+  'setup:tts:qwen3',
+  'setup:tts:chatterbox',
+  'setup:tts:fish',
+  'setup:tts:cosyvoice',
+] as const

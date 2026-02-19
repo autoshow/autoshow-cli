@@ -1,60 +1,53 @@
 /**
- * View command - displays a specific report
+ * View command - displays a specific report.
  */
 
-import { readdir } from 'node:fs/promises'
-import { join } from 'node:path'
-import type { SetupReport } from '../types.ts'
-import { REPORTS_DIR } from '../constants.ts'
-import { fileExists } from '../lib/utils.ts'
+import type { AnyReport } from '../types.ts'
 import { formatBytes, formatDuration, formatDate } from '../lib/formatters.ts'
+import { findReportPath } from '../lib/report-files.ts'
+import { isLegacyRunReport, isRuntimeReport, isSetupReport, normalizeReport } from '../lib/report-type.ts'
 
 export interface ViewOptions {
   json?: boolean
   markdown?: boolean
 }
 
-async function findReport(name: string): Promise<string | null> {
-  // Try exact match first
-  const exactJson = join(REPORTS_DIR, `${name}.json`)
-  if (await fileExists(exactJson)) {
-    return exactJson
-  }
+async function loadReport(name: string): Promise<{ path: string; report: AnyReport } | null> {
+  const found = await findReportPath(name)
 
-  // Try partial match
-  if (await fileExists(REPORTS_DIR)) {
-    const entries = await readdir(REPORTS_DIR, { withFileTypes: true })
-    const matches = entries.filter(
-      (e) => e.isFile() && e.name.endsWith('.json') && e.name.toLowerCase().includes(name.toLowerCase())
-    )
-
-    if (matches.length === 1) {
-      return join(REPORTS_DIR, matches[0].name)
-    } else if (matches.length > 1) {
-      console.error(`Multiple reports match '${name}':`)
-      for (const m of matches) {
-        console.error(`  ${m.name.replace('.json', '')}`)
-      }
-      return null
+  if (found.matches.length > 0) {
+    console.error(`Multiple reports match '${name}':`)
+    for (const match of found.matches) {
+      console.error(`  ${match}`)
     }
+    return null
   }
 
-  return null
+  if (!found.path) {
+    return null
+  }
+
+  const raw = await Bun.file(found.path).json()
+  return {
+    path: found.path,
+    report: normalizeReport(raw),
+  }
 }
 
 export async function viewCommand(name: string, options: ViewOptions): Promise<void> {
-  const reportPath = await findReport(name)
-
-  if (!reportPath) {
+  const loaded = await loadReport(name)
+  if (!loaded) {
     console.error(`Report not found: ${name}`)
     console.error('\nUse "bun .github/report/cli.ts list --reports" to see available reports.')
     process.exit(1)
   }
 
-  // Check if markdown version exists
+  const { path: reportPath, report } = loaded
+
   if (options.markdown) {
-    const mdPath = reportPath.replace('.json', '.md')
-    if (await fileExists(mdPath)) {
+    const mdPath = reportPath.replace(/\.json$/, '.md')
+    const exists = await Bun.file(mdPath).exists()
+    if (exists) {
       const content = await Bun.file(mdPath).text()
       console.log(content)
       return
@@ -62,25 +55,22 @@ export async function viewCommand(name: string, options: ViewOptions): Promise<v
     console.error('Markdown report not found, showing summary instead.')
   }
 
-  const report = (await Bun.file(reportPath).json()) as SetupReport
-
   if (options.json) {
     console.log(JSON.stringify(report, null, 2))
     return
   }
 
-  // Display summary
   console.log(`\n${'='.repeat(60)}`)
   console.log(`Report: ${report.command}`)
   console.log(`${'='.repeat(60)}\n`)
 
   console.log('Overview:')
+  console.log(`  Type:        ${report.reportType}`)
   console.log(`  Command:     ${report.setupCommand}`)
   console.log(`  Date:        ${formatDate(report.startTime)}`)
   console.log(`  Duration:    ${formatDuration(report.durationMs)}`)
   console.log(`  Status:      ${report.success ? 'Success' : 'Failed'}`)
   console.log(`  Exit Code:   ${report.exitCode}`)
-  console.log(`  Fresh Run:   ${report.freshRun ? 'Yes' : 'No'}`)
   console.log('')
 
   console.log('Environment:')
@@ -89,69 +79,83 @@ export async function viewCommand(name: string, options: ViewOptions): Promise<v
   console.log(`  Bun:         ${report.environment.bunVersion}`)
   console.log('')
 
-  console.log('Storage:')
-  console.log(`  Added:       ${formatBytes(report.storage.totalBytesAdded)}`)
-  if (report.storage.totalBytesModified > 0) {
-    console.log(`  Modified:    ${formatBytes(report.storage.totalBytesModified)}`)
-  }
+  if (!isRuntimeReport(report)) {
+    console.log('Storage:')
+    console.log(`  Added:       ${formatBytes(report.storage.totalBytesAdded)}`)
+    if (report.storage.totalBytesModified > 0) {
+      console.log(`  Modified:    ${formatBytes(report.storage.totalBytesModified)}`)
+    }
+    console.log('')
 
-  const nonZeroDirs = Object.entries(report.storage.byDirectory).filter(([_, size]) => size > 0)
-  if (nonZeroDirs.length > 0) {
-    console.log('  By Directory:')
-    for (const [dir, size] of nonZeroDirs.sort((a, b) => b[1] - a[1])) {
-      console.log(`    ${dir}: ${formatBytes(size)}`)
+    if (report.phases.length > 0) {
+      console.log(`Phases: ${report.phases.length}`)
+      for (const phase of report.phases.slice(0, 10)) {
+        const duration = phase.durationMs ? formatDuration(phase.durationMs) : '-'
+        const status = phase.success ? 'OK' : 'FAIL'
+        console.log(`  [${status}] ${phase.name} (${duration})`)
+      }
+      if (report.phases.length > 10) {
+        console.log(`  ... and ${report.phases.length - 10} more phases`)
+      }
+      console.log('')
+    }
+
+    if (report.downloads.length > 0) {
+      console.log(`Downloads: ${report.downloads.length}`)
+      for (const dl of report.downloads.slice(0, 5)) {
+        const displayUrl = dl.url.replace(/^(pypi|huggingface):\/\/\//, '')
+        console.log(`  ${displayUrl}`)
+      }
+      if (report.downloads.length > 5) {
+        console.log(`  ... and ${report.downloads.length - 5} more`)
+      }
+      console.log('')
     }
   }
-  console.log('')
 
-  if (report.phases.length > 0) {
-    console.log(`Phases: ${report.phases.length}`)
-    for (const phase of report.phases.slice(0, 10)) {
-      const duration = phase.durationMs ? formatDuration(phase.durationMs) : '-'
-      const status = phase.success ? 'OK' : 'FAIL'
-      console.log(`  [${status}] ${phase.name} (${duration})`)
+  if (isSetupReport(report)) {
+    console.log('Model Preparation:')
+    console.log(`  Model:       ${report.modelPreparation.model}`)
+    console.log(`  Method:      ${report.modelPreparation.method}`)
+    console.log(`  Duration:    ${formatDuration(report.modelPreparation.durationMs)}`)
+    console.log(`  Status:      ${report.modelPreparation.success ? 'Success' : 'Failed'}`)
+    if (report.modelPreparation.details) {
+      console.log(`  Details:     ${report.modelPreparation.details}`)
     }
-    if (report.phases.length > 10) {
-      console.log(`  ... and ${report.phases.length - 10} more phases`)
+    if (report.modelPreparation.error) {
+      console.log(`  Error:       ${report.modelPreparation.error}`)
+    }
+    console.log(`  Ready Key:   ${report.readinessKey}`)
+    console.log(`  Marker:      ${report.readinessMarkerPath}`)
+    console.log('')
+  }
+
+  if (isRuntimeReport(report)) {
+    console.log('Runtime Benchmark:')
+    console.log(`  Input:       ${report.inputFile}`)
+    if (report.model) {
+      console.log(`  Model:       ${report.model}`)
+    }
+    console.log(`  Warm-up:     ${formatDuration(report.warmupRun.durationMs)} (${report.warmupRun.success ? 'Success' : 'Failed'})`)
+    if (report.measuredRun) {
+      console.log(`  Measured:    ${formatDuration(report.measuredRun.durationMs)} (${report.measuredRun.success ? 'Success' : 'Failed'})`)
+      if (report.measuredRun.charactersPerSecond) {
+        console.log(`  Speed:       ${report.measuredRun.charactersPerSecond.toFixed(1)} chars/sec`)
+      }
+      if (report.measuredRun.realTimeRatio) {
+        console.log(`  RT Ratio:    ${report.measuredRun.realTimeRatio.toFixed(2)}x`)
+      }
+    } else {
+      console.log('  Measured:    Missing')
     }
     console.log('')
   }
 
-  if (report.downloads.length > 0) {
-    console.log(`Downloads: ${report.downloads.length}`)
-    for (const dl of report.downloads.slice(0, 5)) {
-      const displayUrl = dl.url.replace(/^(pypi|huggingface):\/\/\//, '')
-      console.log(`  ${displayUrl}`)
-    }
-    if (report.downloads.length > 5) {
-      console.log(`  ... and ${report.downloads.length - 5} more`)
-    }
-    console.log('')
-  }
-
-  if (report.errors.length > 0) {
-    console.log(`Errors: ${report.errors.length}`)
-    for (const err of report.errors.slice(0, 3)) {
-      console.log(`  ${err.message.slice(0, 80)}${err.message.length > 80 ? '...' : ''}`)
-    }
-    if (report.errors.length > 3) {
-      console.log(`  ... and ${report.errors.length - 3} more`)
-    }
-    console.log('')
-  }
-
-  if (report.testRun) {
-    console.log('Test Run:')
+  if (isLegacyRunReport(report) && report.testRun) {
+    console.log('Legacy Test Run:')
     console.log(`  Command:     ${report.testRun.command}`)
     console.log(`  Status:      ${report.testRun.success ? 'Success' : 'Failed'}`)
     console.log(`  Duration:    ${formatDuration(report.testRun.durationMs)}`)
-    console.log(`  Input:       ${report.testRun.inputCharacters} chars, ${report.testRun.inputWords} words`)
-    if (report.testRun.outputFile) {
-      console.log(`  Output:      ${report.testRun.outputFile} (${formatBytes(report.testRun.outputSize || 0)})`)
-    }
-    if (report.testRun.outputDurationSeconds) {
-      console.log(`  Audio:       ${report.testRun.outputDurationSeconds.toFixed(2)}s`)
-    }
     if (report.testRun.charactersPerSecond) {
       console.log(`  Speed:       ${report.testRun.charactersPerSecond.toFixed(1)} chars/sec`)
     }
@@ -161,8 +165,19 @@ export async function viewCommand(name: string, options: ViewOptions): Promise<v
     console.log('')
   }
 
-  console.log(`Report files:`)
+  if (report.errors.length > 0) {
+    console.log(`Errors: ${report.errors.length}`)
+    for (const error of report.errors.slice(0, 3)) {
+      console.log(`  ${error.message.slice(0, 100)}${error.message.length > 100 ? '...' : ''}`)
+    }
+    if (report.errors.length > 3) {
+      console.log(`  ... and ${report.errors.length - 3} more`)
+    }
+    console.log('')
+  }
+
+  console.log('Report files:')
   console.log(`  JSON:     ${reportPath}`)
-  console.log(`  Markdown: ${reportPath.replace('.json', '.md')}`)
+  console.log(`  Markdown: ${reportPath.replace(/\.json$/, '.md')}`)
   console.log('')
 }

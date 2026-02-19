@@ -33,17 +33,23 @@ Each feature is self-contained and won't affect others if setup fails.
 Generate detailed reports about setup commands. See [docs/report.md](report.md) for full documentation.
 
 ```bash
-# Run report for a setup command
+# Setup/download timing report (TTS only)
+bun report setup setup:tts:qwen3 --fresh
+
+# Ready runtime timing report (TTS only, requires setup report first)
+bun report runtime setup:tts:qwen3 --input input/sample.md
+
+# Legacy combined report
 bun report:run setup:tts:fish --input input/sample.md
 
 # List existing reports
 bun report:list --reports
 
 # View a report
-bun report view tts-fish-sample-2026-01-30
+bun report view setup/success/<report-name>
 
 # Compare two reports
-bun report compare tts-fish-sample tts-qwen3-sample
+bun report compare <report1> <report2>
 ```
 
 ## Global CLI Options

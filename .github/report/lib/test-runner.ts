@@ -24,18 +24,35 @@ export async function getAudioDuration(filePath: string): Promise<number | undef
   }
 }
 
-export async function findOutputFile(inputFile: string, type: 'tts' | 'transcription'): Promise<string | undefined> {
+export async function findOutputFile(
+  inputFile: string,
+  type: 'tts' | 'transcription',
+  minMtimeMs?: number
+): Promise<string | undefined> {
   const baseName = inputFile.split('/').pop()?.replace(/\.[^.]+$/, '') || ''
   const outputDir = 'output'
 
   try {
     const entries = await readdir(outputDir, { withFileTypes: true })
 
+    const isFreshEnough = async (path: string): Promise<boolean> => {
+      if (!minMtimeMs) return true
+      try {
+        const fileStat = await stat(path)
+        return fileStat.mtimeMs >= minMtimeMs
+      } catch {
+        return false
+      }
+    }
+
     if (type === 'tts') {
       // Look for .wav or .mp3 files matching the input name
       for (const entry of entries) {
-        if (entry.isFile() && entry.name.startsWith(baseName) && /\.(wav|mp3)$/.test(entry.name)) {
-          return join(outputDir, entry.name)
+        if (!entry.isFile()) continue
+        if (!entry.name.startsWith(baseName) || !/\.(wav|mp3)$/.test(entry.name)) continue
+        const candidate = join(outputDir, entry.name)
+        if (await isFreshEnough(candidate)) {
+          return candidate
         }
       }
       // Also check for most recent audio file
@@ -48,18 +65,23 @@ export async function findOutputFile(inputFile: string, type: 'tts' | 'transcrip
         let mostRecentTime = 0
         for (const f of audioFiles) {
           const s = await stat(f)
-          if (s.mtimeMs > mostRecentTime) {
+          if (s.mtimeMs > mostRecentTime && s.mtimeMs >= (minMtimeMs || 0)) {
             mostRecentTime = s.mtimeMs
             mostRecent = f
           }
         }
-        return mostRecent
+        if (mostRecentTime > 0) {
+          return mostRecent
+        }
       }
     } else {
       // Transcription: look for .txt or .md files
       for (const entry of entries) {
-        if (entry.isFile() && entry.name.startsWith(baseName) && /\.(txt|md)$/.test(entry.name)) {
-          return join(outputDir, entry.name)
+        if (!entry.isFile()) continue
+        if (!entry.name.startsWith(baseName) || !/\.(txt|md)$/.test(entry.name)) continue
+        const candidate = join(outputDir, entry.name)
+        if (await isFreshEnough(candidate)) {
+          return candidate
         }
       }
     }
@@ -80,12 +102,22 @@ const MODEL_FLAGS: Record<string, string> = {
   'setup:text': '--whisper',
 }
 
-export async function runTestCommand(setupCommand: string, customInputFile?: string, model?: string): Promise<TestRunResult | undefined> {
+export interface RunTestOptions {
+  label?: string
+}
+
+export async function runTestCommand(
+  setupCommand: string,
+  customInputFile?: string,
+  model?: string,
+  options: RunTestOptions = {}
+): Promise<TestRunResult | undefined> {
   const config = TEST_CONFIGS[setupCommand]
   if (!config) {
     console.log(`\nNo test configuration for ${setupCommand}, skipping test run.`)
     return undefined
   }
+  const label = options.label || 'Test Run'
 
   // Override input file if custom one provided
   const inputFile = customInputFile || config.inputFile
@@ -112,7 +144,7 @@ export async function runTestCommand(setupCommand: string, customInputFile?: str
   }
 
   console.log(`\n${'='.repeat(60)}`)
-  console.log(`Running Test: ${config.type.toUpperCase()}`)
+  console.log(`Running ${label}: ${config.type.toUpperCase()}`)
   console.log(`Input: ${inputFile}`)
   if (model) {
     console.log(`Model: ${model}`)
@@ -136,6 +168,7 @@ export async function runTestCommand(setupCommand: string, customInputFile?: str
 
   const startTime = new Date()
   const startNanos = Bun.nanoseconds()
+  const startedAtMs = startTime.getTime()
 
   let stdout = ''
   let stderr = ''
@@ -190,7 +223,9 @@ export async function runTestCommand(setupCommand: string, customInputFile?: str
   const durationSeconds = durationMs / 1000
 
   // Find the output file
-  const outputFile = await findOutputFile(inputFile, config.type)
+  const outputFile = exitCode === 0
+    ? await findOutputFile(inputFile, config.type, startedAtMs)
+    : undefined
   let outputSize: number | undefined
   let outputDurationSeconds: number | undefined
 
@@ -202,9 +237,11 @@ export async function runTestCommand(setupCommand: string, customInputFile?: str
   }
 
   // Calculate performance metrics
-  const charactersPerSecond = durationSeconds > 0 ? inputCharacters / durationSeconds : undefined
-  const wordsPerSecond = durationSeconds > 0 ? inputWords / durationSeconds : undefined
-  const realTimeRatio = outputDurationSeconds && durationSeconds > 0 ? outputDurationSeconds / durationSeconds : undefined
+  const charactersPerSecond = exitCode === 0 && durationSeconds > 0 ? inputCharacters / durationSeconds : undefined
+  const wordsPerSecond = exitCode === 0 && durationSeconds > 0 ? inputWords / durationSeconds : undefined
+  const realTimeRatio = exitCode === 0 && outputDurationSeconds && durationSeconds > 0
+    ? outputDurationSeconds / durationSeconds
+    : undefined
 
   const result: TestRunResult = {
     command: `bun as -- ${commandArgs.join(' ')}`,
@@ -231,7 +268,7 @@ export async function runTestCommand(setupCommand: string, customInputFile?: str
 
   // Print test summary
   console.log(`\n${'='.repeat(60)}`)
-  console.log('Test Run Complete')
+  console.log(`${label} Complete`)
   console.log(`${'='.repeat(60)}`)
   console.log(`Status: ${result.success ? 'Success' : 'Failed'}`)
   console.log(`Duration: ${formatDuration(result.durationMs)}`)
