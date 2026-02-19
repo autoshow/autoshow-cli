@@ -2,6 +2,10 @@
  * Type definitions for the Report CLI
  */
 
+export type ReportType = 'run' | 'setup' | 'runtime'
+
+export const REPORT_SCHEMA_VERSION = 2
+
 export interface FileOperation {
   type: 'created' | 'modified' | 'deleted'
   path: string
@@ -66,7 +70,14 @@ export interface TestRunResult {
   realTimeRatio?: number
 }
 
-export interface SetupReport {
+export interface ReportEnvironment {
+  platform: string
+  arch: string
+  bunVersion: string
+  cwd: string
+}
+
+export interface SetupExecutionReport {
   command: string
   setupCommand: string
   startTime: string
@@ -82,18 +93,66 @@ export interface SetupReport {
   errors: ErrorInfo[]
   storage: StorageMetrics
 
-  testRun?: TestRunResult
-
-  environment: {
-    platform: string
-    arch: string
-    bunVersion: string
-    cwd: string
-  }
+  environment: ReportEnvironment
 
   stdout: string
   stderr: string
 }
+
+export interface ModelPreparationResult {
+  model: string
+  method: 'python-prefetch' | 'asset-check' | 'docker-health-check'
+  startTime: string
+  endTime: string
+  durationMs: number
+  success: boolean
+  details?: string
+  error?: string
+}
+
+export interface LegacyRunReport extends SetupExecutionReport {
+  schemaVersion: number
+  reportType: 'run'
+  testRun?: TestRunResult
+}
+
+export interface SetupOnlyReport extends SetupExecutionReport {
+  schemaVersion: number
+  reportType: 'setup'
+  model?: string
+  modelPreparation: ModelPreparationResult
+  readinessKey: string
+  readinessMarkerPath: string
+}
+
+export interface RuntimeReport {
+  schemaVersion: number
+  reportType: 'runtime'
+  command: string
+  setupCommand: string
+  startTime: string
+  endTime: string
+  durationMs: number
+  success: boolean
+  exitCode: number
+
+  model?: string
+  inputFile: string
+  benchmarkRun: 'measured'
+
+  warmupRun: TestRunResult
+  measuredRun?: TestRunResult
+  errors: ErrorInfo[]
+
+  environment: ReportEnvironment
+  stdout: string
+  stderr: string
+}
+
+// Backward-compatible alias used by legacy run command paths
+export type SetupReport = LegacyRunReport
+
+export type AnyReport = LegacyRunReport | SetupOnlyReport | RuntimeReport
 
 export interface TestConfig {
   type: 'tts' | 'transcription'
@@ -104,10 +163,13 @@ export interface TestConfig {
 export interface ReportSummary {
   name: string
   path: string
+  reportType: ReportType
   command: string
   date: string
   success: boolean
   durationMs: number
   storageAdded: number
   hasTestRun: boolean
+  hasWarmupRun?: boolean
+  hasMeasuredRun?: boolean
 }

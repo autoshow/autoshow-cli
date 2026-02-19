@@ -1,10 +1,67 @@
 # Report CLI
 
-Generate, view, and compare detailed setup reports for AutoShow CLI.
+Generate, view, and compare setup/runtime performance reports for AutoShow CLI.
 
 ## Commands
 
-### `run` - Generate a Report
+### `setup` - Setup + Model Preparation Timing (TTS only)
+
+Measures setup command execution and model/download readiness preparation.
+
+```bash
+bun .github/report/cli.ts setup <setup-command> [options]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--fresh` | Remove marker files before running to force a complete setup |
+| `--model <model>` | Model to use for setup/model preparation |
+
+**Examples:**
+
+```bash
+bun .github/report/cli.ts setup setup:tts:qwen3 --fresh
+bun .github/report/cli.ts setup setup:tts:chatterbox --model standard
+bun .github/report/cli.ts setup setup:tts:fish --model s1-mini
+bun .github/report/cli.ts setup setup:tts:cosyvoice --model CosyVoice-300M-Instruct
+```
+
+### `runtime` - Ready Runtime Timing (TTS only)
+
+Measures warm-up and measured TTS generation after setup is already ready.
+
+```bash
+bun .github/report/cli.ts runtime <setup-command> [options]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--input <file>` | Use a custom input file for runtime timing |
+| `--model <model>` | Model to use for runtime timing |
+
+**Important precondition:**
+- `runtime` requires a successful matching `setup` report first.
+- If readiness is missing, the command fails with guidance.
+- For `setup:tts:fish`, Docker daemon availability is required for ready runtime timing.
+
+**Examples:**
+
+```bash
+# 1) setup timing + readiness marker
+bun .github/report/cli.ts setup setup:tts:qwen3 --fresh
+
+# 2) runtime timing (warm-up + measured)
+bun .github/report/cli.ts runtime setup:tts:qwen3 --input input/sample.md
+bun .github/report/cli.ts runtime setup:tts:qwen3 --input input/story.md
+```
+
+### `run` - Legacy Combined Report
+
+Legacy mode that runs setup and optional post-setup test in one report.
 
 ```bash
 bun .github/report/cli.ts run <setup-command> [options]
@@ -19,75 +76,22 @@ bun .github/report/cli.ts run <setup-command> [options]
 | `--input <file>` | Use a custom input file for the test run |
 | `--model <model>` | Model to use for the test run |
 
-**Available Setup Commands:**
-
-| Command | Type | Default Input |
-|---------|------|---------------|
-| `setup:tts:qwen3` | TTS | `input/sample.md` |
-| `setup:tts:chatterbox` | TTS | `input/sample.md` |
-| `setup:tts:fish` | TTS | `input/sample.md` |
-| `setup:tts:cosyvoice` | TTS | `input/sample.md` |
-| `setup:transcription` | Transcription | `input/audio.mp3` |
-| `setup:tts` | TTS | `input/sample.md` |
-
-**All Command Variations:**
+**Examples:**
 
 ```bash
-# Basic
-bun .github/report/cli.ts run <setup-command>
-bun .github/report/cli.ts run <setup-command> --fresh
-bun .github/report/cli.ts run <setup-command> --skip-test
-bun .github/report/cli.ts run <setup-command> --input <file>
-bun .github/report/cli.ts run <setup-command> --model <model>
-bun .github/report/cli.ts run <setup-command> --fresh --skip-test
-bun .github/report/cli.ts run <setup-command> --fresh --input <file>
-bun .github/report/cli.ts run <setup-command> --fresh --model <model>
-bun .github/report/cli.ts run <setup-command> --skip-test --input <file>
-bun .github/report/cli.ts run <setup-command> --skip-test --model <model>
-bun .github/report/cli.ts run <setup-command> --input <file> --model <model>
-bun .github/report/cli.ts run <setup-command> --fresh --skip-test --input <file>
-bun .github/report/cli.ts run <setup-command> --fresh --skip-test --model <model>
-bun .github/report/cli.ts run <setup-command> --fresh --input <file> --model <model>
-bun .github/report/cli.ts run <setup-command> --skip-test --input <file> --model <model>
-bun .github/report/cli.ts run <setup-command> --fresh --skip-test --input <file> --model <model>
+bun .github/report/cli.ts run setup:tts:fish --input input/sample.md
+bun .github/report/cli.ts run setup:transcription --input input/audio.mp3
 ```
 
-### `list` - List Reports
-
-```bash
-bun .github/report/cli.ts list [options]
-```
-
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--reports` | List existing reports instead of report types |
-| `--json` | Output as JSON |
-
-**All Command Variations:**
+### `list` - List Report Types or Existing Reports
 
 ```bash
 bun .github/report/cli.ts list
 bun .github/report/cli.ts list --reports
-bun .github/report/cli.ts list --json
 bun .github/report/cli.ts list --reports --json
 ```
 
 ### `view` - View a Report
-
-```bash
-bun .github/report/cli.ts view <name> [options]
-```
-
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--json` | Output as JSON |
-| `--markdown` | Output as Markdown |
-
-**All Command Variations:**
 
 ```bash
 bun .github/report/cli.ts view <name>
@@ -95,20 +99,7 @@ bun .github/report/cli.ts view <name> --json
 bun .github/report/cli.ts view <name> --markdown
 ```
 
-### `compare` - Compare Reports
-
-```bash
-bun .github/report/cli.ts compare <report1> <report2> [options]
-```
-
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--json` | Output as JSON |
-| `--markdown` | Output as Markdown |
-
-**All Command Variations:**
+### `compare` - Compare Two Reports
 
 ```bash
 bun .github/report/cli.ts compare <report1> <report2>
@@ -116,174 +107,77 @@ bun .github/report/cli.ts compare <report1> <report2> --json
 bun .github/report/cli.ts compare <report1> <report2> --markdown
 ```
 
+**Note:** compare requires both reports to be the same type (`setup/setup`, `runtime/runtime`, or `run/run`).
+
+## Supported Setup Commands
+
+| Command | Type | Split Reporting |
+|---------|------|-----------------|
+| `setup:tts:qwen3` | TTS | Yes (`setup`, `runtime`, `run`) |
+| `setup:tts:chatterbox` | TTS | Yes (`setup`, `runtime`, `run`) |
+| `setup:tts:fish` | TTS | Yes (`setup`, `runtime`, `run`) |
+| `setup:tts:cosyvoice` | TTS | Yes (`setup`, `runtime`, `run`) |
+| `setup:transcription` | Transcription | Legacy only (`run`) |
+| `setup:tts` | TTS base env | Legacy only (`run`) |
+
 ## Package.json Scripts
 
 ```bash
-# Main CLI
-bun report                    # Shows help
-bun report:run <args>         # Shortcut for run command
-bun report:list <args>        # Shortcut for list command
+# CLI
+bun report
+bun report:list --reports
 
-# Quick TTS reports
-bun report:tts:fish          # Fish Audio report with sample.md
-bun report:tts:qwen3         # Qwen3 report (sample + story)
-bun report:tts:chatterbox    # Chatterbox report (sample + story)
-bun report:tts:cosyvoice     # CosyVoice report (sample + story)
-bun report:tts               # All TTS reports
-```
+# Split setup reports (TTS only)
+bun report:setup:tts:qwen3
+bun report:setup:tts:chatterbox
+bun report:setup:tts:fish
+bun report:setup:tts:cosyvoice
+bun report:setup:tts
 
-## TTS Models Reference
+# Split runtime reports (TTS only)
+bun report:runtime:tts:qwen3
+bun report:runtime:tts:chatterbox
+bun report:runtime:tts:fish
+bun report:runtime:tts:cosyvoice
+bun report:runtime:tts
 
-### Chatterbox Models
-
-| Model | Flag | Size | Notes |
-|-------|------|------|-------|
-| turbo | `--chatterbox-model turbo` | ~800MB | Default, fastest |
-| standard | `--chatterbox-model standard` | ~800MB | Supports exaggeration and CFG weight |
-
-**All Chatterbox Combinations:**
-
-```bash
-# Turbo model (default)
-bun .github/report/cli.ts run setup:tts:chatterbox
-bun .github/report/cli.ts run setup:tts:chatterbox --model turbo
-
-# Standard model
-bun .github/report/cli.ts run setup:tts:chatterbox --model standard
-```
-
-### Qwen3 Models
-
-| Model | Flag | Size | Streaming | Features |
-|-------|------|------|-----------|----------|
-| Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice | `--qwen3-model Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice` | ~1.2GB | No | Default, lightweight, pre-built voices |
-| Qwen/Qwen3-TTS-12Hz-0.6B-Base | `--qwen3-model Qwen/Qwen3-TTS-12Hz-0.6B-Base` | ~1.2GB | No | Lightweight, voice cloning |
-| Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice | `--qwen3-model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice` | ~3GB | Yes | Pre-built voices, streaming |
-| Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign | `--qwen3-model Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign` | ~3GB | Yes | Voice design from descriptions |
-| Qwen/Qwen3-TTS-12Hz-1.7B-Base | `--qwen3-model Qwen/Qwen3-TTS-12Hz-1.7B-Base` | ~3GB | No | Voice cloning |
-
-**All Qwen3 Combinations:**
-
-```bash
-# 0.6B CustomVoice (default)
-bun .github/report/cli.ts run setup:tts:qwen3
-bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice
-
-# 0.6B Base (voice cloning)
-bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-0.6B-Base
-
-# 1.7B CustomVoice (streaming)
-bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
-
-# 1.7B VoiceDesign (voice design from descriptions)
-bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
-
-# 1.7B Base (voice cloning)
-bun .github/report/cli.ts run setup:tts:qwen3 --model Qwen/Qwen3-TTS-12Hz-1.7B-Base
-```
-
-### Fish Audio Models
-
-| Model | Flag | Size | Features |
-|-------|------|------|----------|
-| s1-mini | `--fish-model s1-mini` | ~2GB | 0.5B parameters, default, open-source |
-| s1 | `--fish-model s1` | ~8GB | 4B parameters, best quality and stability |
-
-**All Fish Audio Combinations:**
-
-```bash
-# s1-mini (default)
-bun .github/report/cli.ts run setup:tts:fish
-bun .github/report/cli.ts run setup:tts:fish --model s1-mini
-
-# s1 (best quality)
-bun .github/report/cli.ts run setup:tts:fish --model s1
-```
-
-### CosyVoice Models
-
-| Model | Flag | Size | Features |
-|-------|------|------|----------|
-| Fun-CosyVoice3-0.5B | `--cosyvoice-model Fun-CosyVoice3-0.5B` | ~500MB | Latest V3, best quality, 9 languages, 18+ dialects |
-| CosyVoice2-0.5B | `--cosyvoice-model CosyVoice2-0.5B` | ~500MB | Version 2, high quality |
-| CosyVoice-300M | `--cosyvoice-model CosyVoice-300M` | ~300MB | Base model |
-| CosyVoice-300M-SFT | `--cosyvoice-model CosyVoice-300M-SFT` | ~300MB | Fine-tuned with predefined speakers |
-| CosyVoice-300M-Instruct | `--cosyvoice-model CosyVoice-300M-Instruct` | ~300MB | Default, instruction-following |
-| CosyVoice-ttsfrd | `--cosyvoice-model CosyVoice-ttsfrd` | ~300MB | Text normalization resources |
-
-**All CosyVoice Combinations:**
-
-```bash
-# CosyVoice-300M-Instruct (default)
-bun .github/report/cli.ts run setup:tts:cosyvoice
-bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-300M-Instruct
-
-# Fun-CosyVoice3-0.5B (latest, best quality)
-bun .github/report/cli.ts run setup:tts:cosyvoice --model Fun-CosyVoice3-0.5B
-
-# CosyVoice2-0.5B (version 2)
-bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice2-0.5B
-
-# CosyVoice-300M (base)
-bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-300M
-
-# CosyVoice-300M-SFT (fine-tuned)
-bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-300M-SFT
-
-# CosyVoice-ttsfrd (text normalization)
-bun .github/report/cli.ts run setup:tts:cosyvoice --model CosyVoice-ttsfrd
+# Backward-compatible wrappers (setup + runtime)
+bun report:tts:qwen3
+bun report:tts:chatterbox
+bun report:tts:fish
+bun report:tts:cosyvoice
+bun report:tts
 ```
 
 ## Report Contents
 
-### Setup Metrics
-- Duration
-- Storage Added
-- Phases
-- Downloads
-- Errors
+### Setup Report (`reportType=setup`)
+- Setup duration and phases
+- Storage changes
+- Downloads/sources
+- Model preparation timing (`python-prefetch`, `asset-check`, or `docker-health-check`)
+- Readiness marker metadata for runtime precondition
 
-### Test Run Metrics
-- Model
-- Generation Time
-- Input Stats (character count, word count)
-- Output Stats (file path, size, audio duration)
-- Performance (characters/second, words/second)
-- Real-time Ratio (audio duration vs generation time)
+### Runtime Report (`reportType=runtime`)
+- Warm-up run metrics
+- Measured run metrics (benchmark run)
+- Throughput metrics (chars/sec, words/sec)
+- Real-time ratio
 
-### Environment Info
-- Platform
-- Architecture
-- Bun version
-- Working directory
+### Legacy Run Report (`reportType=run`)
+- Combined setup metrics
+- Optional single post-setup test run
 
 ## Output Files
 
-Reports are saved to `reports/` directory:
+Reports are saved under type + status directories:
 
-| Format | Filename Pattern |
-|--------|------------------|
-| JSON | `<command>-<input>-<timestamp>.json` |
-| Markdown | `<command>-<input>-<timestamp>.md` |
+| Type | Directory |
+|------|-----------|
+| Setup | `reports/setup/success` or `reports/setup/failed` |
+| Runtime | `reports/runtime/success` or `reports/runtime/failed` |
+| Legacy run | `reports/run/success` or `reports/run/failed` |
 
-## Structure
-
-```
-.github/report/
-├── cli.ts
-├── types.ts
-├── constants.ts
-├── commands/
-│   ├── run.ts
-│   ├── list.ts
-│   ├── view.ts
-│   └── compare.ts
-└── lib/
-    ├── filesystem-tracker.ts
-    ├── output-parser.ts
-    ├── test-runner.ts
-    ├── report-generator.ts
-    ├── marker-manager.ts
-    ├── formatters.ts
-    └── utils.ts
-```
+Each report writes:
+- JSON: `<timestamp>-<command>-<model>-<input>.json`
+- Markdown: `<timestamp>-<command>-<model>-<input>.md`

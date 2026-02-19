@@ -1,9 +1,11 @@
 #!/usr/bin/env bun
 /**
- * Report CLI - Generate and manage setup reports
+ * Report CLI - Generate and manage setup/runtime reports
  *
  * Commands:
- *   run <setup-command>    Run setup and generate report
+ *   setup <setup-command>  Run setup/download timing report (TTS only)
+ *   runtime <setup-command> Run warm-up + measured runtime report (TTS only)
+ *   run <setup-command>    Legacy combined setup+test report
  *   list                   List report types or existing reports
  *   view <name>            View a specific report
  *   compare <r1> <r2>      Compare two reports
@@ -17,6 +19,8 @@
 
 import { Command } from 'commander'
 import { runCommand } from './commands/run.ts'
+import { setupCommand } from './commands/setup.ts'
+import { runtimeCommand } from './commands/runtime.ts'
 import { listCommand } from './commands/list.ts'
 import { viewCommand } from './commands/view.ts'
 import { compareCommand } from './commands/compare.ts'
@@ -26,13 +30,54 @@ const program = new Command()
 
 program
   .name('report')
-  .description('Generate and manage setup reports for autoshow-cli')
+  .description('Generate and manage setup/runtime reports for autoshow-cli')
   .version('1.0.0')
 
 // Run command
 program
+  .command('setup <setup-command>')
+  .description('Run setup/model-download timing report (TTS commands only)')
+  .option('--fresh', 'Remove marker files before running to force a complete setup')
+  .option('--model <model>', 'Model to use for setup/model preparation')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  $ bun .github/report/cli.ts setup setup:tts:qwen3 --fresh
+  $ bun .github/report/cli.ts setup setup:tts:chatterbox --model standard
+  $ bun .github/report/cli.ts setup setup:tts:fish --model s1-mini
+`
+  )
+  .action(async (setupCommandName: string, options) => {
+    await setupCommand(setupCommandName, {
+      fresh: options.fresh,
+      model: options.model,
+    })
+  })
+
+program
+  .command('runtime <setup-command>')
+  .description('Run ready-to-go runtime timing report (warm-up + measured, TTS commands only)')
+  .option('--input <file>', 'Use a custom input file for runtime measurements')
+  .option('--model <model>', 'Model to use for runtime measurements')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  $ bun .github/report/cli.ts runtime setup:tts:qwen3 --input input/sample.md
+  $ bun .github/report/cli.ts runtime setup:tts:cosyvoice --model CosyVoice-300M-Instruct
+`
+  )
+  .action(async (setupCommandName: string, options) => {
+    await runtimeCommand(setupCommandName, {
+      input: options.input,
+      model: options.model,
+    })
+  })
+
+program
   .command('run <setup-command>')
-  .description('Run a setup command and generate a detailed report')
+  .description('Legacy: run setup and optional post-setup test in one combined report')
   .option('--fresh', 'Remove marker files before running to force a complete setup')
   .option('--skip-test', 'Skip the post-setup test run')
   .option('--input <file>', 'Use a custom input file for the test run')
@@ -132,7 +177,9 @@ program.addHelpText(
   'after',
   `
 Quick Start:
-  $ bun .github/report/cli.ts run setup:tts:fish --input input/sample.md
+  $ bun .github/report/cli.ts setup setup:tts:qwen3 --fresh
+  $ bun .github/report/cli.ts runtime setup:tts:qwen3 --input input/sample.md
+  $ bun .github/report/cli.ts run setup:tts:fish --input input/sample.md  # legacy
   $ bun .github/report/cli.ts list --reports
   $ bun .github/report/cli.ts view <report-name>
 
