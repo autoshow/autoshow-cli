@@ -6,13 +6,30 @@ import type {
   Step5Metadata,
   Step6VideoMetadata,
   Step7MusicMetadata,
+  ExtractionMetadata,
   StepCostEntry,
   ActualCostBreakdown,
   EstimatedStepEntry,
   EstimatedCostBreakdown,
   AggregatedPriceEstimate
 } from '~/types'
-import { getSttCost, getLlmCost, getTtsCost, getTtsPricing, getImageCost, getVideoModelMeta, getMusicModelMeta } from '~/cli/commands/models/model-loader'
+import {
+  getExtractEstimation,
+  getExtractPricing,
+  getImageCost,
+  getImageEstimation,
+  getLlmCost,
+  getLlmEstimation,
+  getMusicEstimation,
+  getMusicModelMeta,
+  getSttCost,
+  getSttEstimation,
+  getTtsCost,
+  getTtsEstimation,
+  getTtsPricing,
+  getVideoEstimation,
+  getVideoModelMeta,
+} from '~/cli/commands/models/model-loader'
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCost } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 
@@ -69,9 +86,15 @@ const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
   return metadata.transcriptionModel
 }
 
+const isExtractionMetadata = (metadata: Step2Metadata | ExtractionMetadata): metadata is ExtractionMetadata => {
+  return 'extractionMethod' in metadata
+}
+
+const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
+
 type ComputeActualCostsInput = {
   step1?: Step1Metadata | undefined
-  step2?: Step2Metadata | undefined
+  step2?: Step2Metadata | ExtractionMetadata | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | undefined
   step5?: Step5Metadata | undefined
@@ -83,7 +106,21 @@ type ComputeActualCostsInput = {
 export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBreakdown => {
   const steps: StepCostEntry[] = []
 
-  if (input.step1 && input.step2) {
+  if (input.step2 && isExtractionMetadata(input.step2) && input.step2.extractionMethod.includes('mistral-ocr') && input.step2.ocrModel) {
+    const extractPricing = getExtractPricing('mistral', input.step2.ocrModel)
+    const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
+    const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
+    steps.push({
+      step: 'extract',
+      provider: 'mistral',
+      model: input.step2.ocrModel,
+      cost,
+      inputMetric: 'pages',
+      inputValue: input.step2.totalPages,
+    })
+  }
+
+  if (input.step1 && input.step2 && !isExtractionMetadata(input.step2)) {
     const durationSeconds = parseDurationToSeconds(input.step1.duration)
     const service = input.step2.transcriptionService
     const model = resolveTranscriptionModel(input.step2)
@@ -151,14 +188,15 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   }
 
   if (input.step5) {
-    const cost = getImageCost(input.step5.imageService, input.step5.imageModel)
+    const imageCount = Math.max(1, input.step5.imageCount)
+    const cost = getImageCost(input.step5.imageService, input.step5.imageModel) * imageCount
     steps.push({
       step: 'image',
       provider: input.step5.imageService,
       model: input.step5.imageModel,
       cost,
       inputMetric: 'images',
-      inputValue: 1
+      inputValue: imageCount
     })
   }
 
@@ -219,6 +257,8 @@ type ComputeEstimatedCostsInput = {
   openaiSttModel?: string | undefined
   mistralSttModel?: string | undefined
   assemblyaiSttModel?: string | undefined
+  mistralOcrModel?: string | undefined
+  extractPageCount?: number | undefined
   useReverb?: boolean | undefined
   audioDurationSeconds?: number | undefined
   llmService?: string | undefined
@@ -252,54 +292,81 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   const durationSeconds = input.audioDurationSeconds ?? 0
 
   if (input.useReverb) {
-    steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, durationSeconds })
+    steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
   } else if (input.elevenlabsSttModel) {
     const sttCost = getSttCost('elevenlabs', input.elevenlabsSttModel)
-    const cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
+    const estimation = getSttEstimation('elevenlabs', input.elevenlabsSttModel)
+    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'stt', provider: 'elevenlabs', model: input.elevenlabsSttModel, cost, durationSeconds })
+    steps.push({ step: 'stt', provider: 'elevenlabs', model: input.elevenlabsSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
   } else if (input.groqSttModel) {
     const sttCost = getSttCost('groq', input.groqSttModel)
-    const cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
+    const estimation = getSttEstimation('groq', input.groqSttModel)
+    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'stt', provider: 'groq', model: input.groqSttModel, cost, durationSeconds })
+    steps.push({ step: 'stt', provider: 'groq', model: input.groqSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
   } else if (input.openaiSttModel) {
     const sttCost = getSttCost('openai', input.openaiSttModel)
-    const cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
+    const estimation = getSttEstimation('openai', input.openaiSttModel)
+    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'stt', provider: 'openai', model: input.openaiSttModel, cost, durationSeconds })
+    steps.push({ step: 'stt', provider: 'openai', model: input.openaiSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
   } else if (input.mistralSttModel) {
     const sttCost = getSttCost('mistral', input.mistralSttModel)
-    const cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
+    const estimation = getSttEstimation('mistral', input.mistralSttModel)
+    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'stt', provider: 'mistral', model: input.mistralSttModel, cost, durationSeconds })
+    steps.push({ step: 'stt', provider: 'mistral', model: input.mistralSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
   } else if (input.assemblyaiSttModel) {
     const sttCost = getSttCost('assemblyai', input.assemblyaiSttModel)
-    const cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
+    const estimation = getSttEstimation('assemblyai', input.assemblyaiSttModel)
+    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'stt', provider: 'assemblyai', model: input.assemblyaiSttModel, cost, durationSeconds })
+    steps.push({ step: 'stt', provider: 'assemblyai', model: input.assemblyaiSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
   } else if (input.whisperModel) {
     const sttCost = getSttCost('whisper', input.whisperModel)
-    const cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
+    const estimation = getSttEstimation('whisper', input.whisperModel)
+    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'stt', provider: 'whisper', model: input.whisperModel, cost, durationSeconds })
+    steps.push({ step: 'stt', provider: 'whisper', model: input.whisperModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
+  }
+
+  if (input.mistralOcrModel && typeof input.extractPageCount === 'number') {
+    const extractPricing = getExtractPricing('mistral', input.mistralOcrModel)
+    const estimation = getExtractEstimation('mistral', input.mistralOcrModel)
+    const cost = applyCostMultiplier(
+      (input.extractPageCount / 1000) * (extractPricing.costPer1kPagesCents ?? 0),
+      estimation.costMultiplier
+    )
+    totalCost += cost
+    steps.push({
+      step: 'extract',
+      provider: 'mistral',
+      model: input.mistralOcrModel,
+      cost,
+      costMultiplier: estimation.costMultiplier,
+    })
   }
 
   if (!input.skipLLM && input.llmService && input.llmModel) {
     const registryService = input.llmService === 'llama.cpp' ? 'llama' : input.llmService
     const rates = getLlmCost(registryService, input.llmModel)
     if (rates) {
+      const estimation = getLlmEstimation(registryService, input.llmModel)
       const estimatedInputTokens = typeof input.llmInputTokenCount === 'number' ? input.llmInputTokenCount : 0
       const estimatedOutputTokens = typeof input.llmOutputTokenCount === 'number' ? input.llmOutputTokenCount : 0
-      const cost =
+      const cost = applyCostMultiplier(
         (estimatedInputTokens / 1_000_000) * rates.inputCostPer1MCents
-        + (estimatedOutputTokens / 1_000_000) * rates.outputCostPer1MCents
+        + (estimatedOutputTokens / 1_000_000) * rates.outputCostPer1MCents,
+        estimation.costMultiplier
+      )
       totalCost += cost
       steps.push({
         step: 'llm',
         provider: input.llmService,
         model: input.llmModel,
         cost,
+        costMultiplier: estimation.costMultiplier,
         inputCostPer1MCents: rates.inputCostPer1MCents,
         outputCostPer1MCents: rates.outputCostPer1MCents,
         estimatedInputTokens,
@@ -311,16 +378,19 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   if (input.ttsService && input.ttsModel) {
     const resolvedTtsCharacterCount = typeof input.ttsCharacterCount === 'number' ? input.ttsCharacterCount : 0
     const ttsCost = computeTtsCost(input.ttsService, input.ttsModel, resolvedTtsCharacterCount)
+    const estimation = getTtsEstimation(input.ttsService, input.ttsModel)
     const pricing = getTtsPricing(input.ttsService, input.ttsModel)
     const hasDualRates = pricing.inputCostPer1MCharsCents !== undefined && pricing.outputCostPer1MCharsCents !== undefined
     const costPer1kCharsCents = hasDualRates ? undefined : (pricing.costPer1kCharsCents ?? getTtsCost(input.ttsService, input.ttsModel))
 
-    totalCost += ttsCost.cost
+    const cost = applyCostMultiplier(ttsCost.cost, estimation.costMultiplier)
+    totalCost += cost
     steps.push({
       step: 'tts',
       provider: input.ttsService,
       model: input.ttsModel,
-      cost: ttsCost.cost,
+      cost,
+      costMultiplier: estimation.costMultiplier,
       ...(costPer1kCharsCents !== undefined ? { costPer1kCharactersCents: costPer1kCharsCents } : {}),
       ...(pricing.inputCostPer1MCharsCents !== undefined ? { inputCostPer1MCharactersCents: pricing.inputCostPer1MCharsCents } : {}),
       ...(pricing.outputCostPer1MCharsCents !== undefined ? { outputCostPer1MCharactersCents: pricing.outputCostPer1MCharsCents } : {})
@@ -334,9 +404,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         : 'minimax'
     const count = imageService === 'gemini' ? (input.imagenCount ?? 1) : 1
     const costPerImageCents = getImageCost(imageService, imageModel)
-    const cost = costPerImageCents * count
+    const estimation = getImageEstimation(imageService, imageModel)
+    const cost = applyCostMultiplier(costPerImageCents * count, estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'image', provider: imageService, model: imageModel, cost })
+    steps.push({ step: 'image', provider: imageService, model: imageModel, cost, costMultiplier: estimation.costMultiplier })
   }
 
   const hasVideo = input.soraVideoModel || input.geminiVideoModel || input.minimaxVideoModel
@@ -349,8 +420,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       videoSize: input.videoSize,
       videoResolution: input.videoResolution
     })
-    totalCost += estimate.totalCost
-    steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost: estimate.totalCost })
+    const estimation = getVideoEstimation(estimate.provider, estimate.model)
+    const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+    totalCost += cost
+    steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
   }
 
   const hasMusic = input.elevenlabsMusicModel || input.minimaxMusicModel
@@ -363,8 +436,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       musicInstrumental: input.musicInstrumental
     })
     if (estimate) {
-      totalCost += estimate.totalCost
-      steps.push({ step: 'music', provider: estimate.provider, model: estimate.model, cost: estimate.totalCost })
+      const estimation = getMusicEstimation(estimate.provider, estimate.model)
+      const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+      totalCost += cost
+      steps.push({ step: 'music', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
     }
   }
 
@@ -382,7 +457,17 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           provider: s.provider,
           model: s.model,
           cost: s.totalCost,
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
           durationSeconds: s.durationSeconds
+        })
+        break
+      case 'extract':
+        steps.push({
+          step: 'extract',
+          provider: s.provider,
+          model: s.model,
+          cost: s.totalCost,
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
         })
         break
       case 'llm':
@@ -391,6 +476,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           provider: s.provider,
           model: s.model,
           cost: s.totalCost,
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
           inputCostPer1MCents: s.inputCostPer1MCents,
           outputCostPer1MCents: s.outputCostPer1MCents,
           ...(typeof s.estimatedInputTokens === 'number' ? { estimatedInputTokens: s.estimatedInputTokens } : {}),
@@ -403,26 +489,38 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           provider: s.provider,
           model: s.model,
           cost: s.totalCost,
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
           ...(s.costPer1kCharactersCents !== undefined ? { costPer1kCharactersCents: s.costPer1kCharactersCents } : {}),
           ...(s.inputCostPer1MCharactersCents !== undefined ? { inputCostPer1MCharactersCents: s.inputCostPer1MCharactersCents } : {}),
           ...(s.outputCostPer1MCharactersCents !== undefined ? { outputCostPer1MCharactersCents: s.outputCostPer1MCharactersCents } : {})
         })
         break
       case 'image':
-        steps.push({ step: 'image', provider: s.provider, model: s.model, cost: s.totalCost })
+        steps.push({
+          step: 'image',
+          provider: s.provider,
+          model: s.model,
+          cost: s.totalCost,
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+        })
         break
       case 'video':
-        steps.push({ step: 'video', provider: s.provider, model: s.model, cost: s.totalCost })
+        steps.push({
+          step: 'video',
+          provider: s.provider,
+          model: s.model,
+          cost: s.totalCost,
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+        })
         break
       case 'music':
         steps.push({
           step: 'music',
           provider: s.provider,
           model: s.model,
-          cost: s.totalCost
+          cost: s.totalCost,
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
         })
-        break
-      case 'extract':
         break
     }
   }

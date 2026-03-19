@@ -91,12 +91,15 @@ Each `bun t` invocation creates a timestamped run directory under `./test-output
   metrics.ndjson
   junit.xml
   report.json
+  e2e-report.json
+  model-calibration.json
 ```
 
 - Artifacts are preserved by default.
 - Use `--cleanup` to remove the run directory on successful runs.
 - Runner output and streamed `bun test` lines are always prefixed with wall-clock plus elapsed time for profiling.
 - Command-generated output still goes to `./output/`.
+- Successful test-mode runs also emit `model-calibration.json` and may update per-model `estimation` fields inside the model config JSON files.
 
 ## Environment Variables
 
@@ -163,10 +166,14 @@ Each run writes summary artifacts to:
 ```text
 ./test-output/YYYY-MM-DD_HH-MM-SS_test-run/
   report.json
+  e2e-report.json
+  model-calibration.json
   commands.log
 ```
 
-Use those artifacts as the current price-estimate report.
+- `report.json` is the full runner artifact.
+- `e2e-report.json` is the condensed end-to-end report with per-test service/model, run datetime, estimated/actual command duration, estimated/actual processing time, and estimated/actual cost when available.
+- `model-calibration.json` records the per-model drift analysis and any config updates applied back to `src/cli/commands/models/*.json`.
 
 ## Suite Docs
 

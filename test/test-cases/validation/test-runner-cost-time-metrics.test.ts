@@ -15,6 +15,8 @@ const createArtifacts = (rootDir: string, runId = 'test-run'): TestRunArtifacts 
   metricsLogPath: join(rootDir, runId, 'metrics.ndjson'),
   junitPath: join(rootDir, runId, 'junit.xml'),
   reportJsonPath: join(rootDir, runId, 'report.json'),
+  e2eReportJsonPath: join(rootDir, runId, 'e2e-report.json'),
+  calibrationReportJsonPath: join(rootDir, runId, 'model-calibration.json'),
   metadataDirPath: join(rootDir, runId, 'metadata'),
   startedAtMs: 1000,
   startedAtIso: '2026-03-19T00:00:01.000Z',
@@ -29,16 +31,22 @@ describe('test runner cost/time metrics', () => {
         estimated: { totalCost: 0.3 },
         actual: { totalCost: 0.0402 }
       }
+      ,
+      timing: {
+        estimated: { totalProcessingTimeMs: 1200 },
+        actual: { totalProcessingTimeMs: 1500 }
+      }
     })
 
     expect(summary).toEqual({
       estimatedCostCents: 0.3,
       actualCostCents: 0.0402,
+      estimatedProcessingTimeMs: 1200,
       actualProcessingTimeMs: 1500,
     })
   })
 
-  test('includes metadata-derived cost, actual processing time, and historical estimated processing time in test reports', async () => {
+  test('includes metadata-derived cost plus current and fallback processing-time estimates in test reports', async () => {
     const junitCases: ParsedJunitCase[] = [
       {
         id: 'test/test-cases/e2e/example.test.ts::example test',
@@ -54,7 +62,8 @@ describe('test runner cost/time metrics', () => {
     const metrics: ParsedCommandMetric[] = [
       {
         source: 'runCommand',
-        command: 'bun src/cli/create-cli.ts write input.mp3',
+        command: 'bun src/cli/create-cli.ts write input.mp3 --openai gpt-5.1',
+        args: ['src/cli/create-cli.ts', 'write', 'input.mp3', '--openai', 'gpt-5.1'],
         exitCode: 0,
         durationMs: 2400,
         outputDir: 'output/2026-03-19_00-00-00_example',
@@ -65,6 +74,7 @@ describe('test runner cost/time metrics', () => {
         testName: 'example test',
         estimatedCostCents: 0.3,
         actualCostCents: 0.0402,
+        estimatedProcessingTimeMs: 1400,
         actualProcessingTimeMs: 1500,
       }
     ]
@@ -83,6 +93,7 @@ describe('test runner cost/time metrics', () => {
             file: 'test/test-cases/e2e/example.test.ts',
             name: 'example test',
             status: 'passed',
+            durationMs: 2200,
             metrics: {
               actualProcessingTimeMs: 1300,
             }
@@ -99,6 +110,10 @@ describe('test runner cost/time metrics', () => {
         ['test/test-cases/e2e/example.test.ts']
       ) as {
         tests: Array<{ metrics: Record<string, unknown> }>
+        e2e: {
+          summary: Record<string, unknown>
+          tests: Array<Record<string, unknown>>
+        }
       }
 
       expect(report.tests).toHaveLength(1)
@@ -108,9 +123,97 @@ describe('test runner cost/time metrics', () => {
         commandDurationMs: 2400,
         estimatedCostCents: 0.3,
         actualCostCents: 0.0402,
-        estimatedProcessingTimeMs: 1300,
+        estimatedProcessingTimeMs: 1400,
         actualProcessingTimeMs: 1500,
         notes: [],
+      })
+      expect(report.e2e.summary['total']).toBe(1)
+      expect(report.e2e.tests[0]).toMatchObject({
+        file: 'test/test-cases/e2e/example.test.ts',
+        name: 'example test',
+        status: 'passed',
+        serviceName: 'openai',
+        modelName: 'gpt-5.1',
+        estimatedDurationMs: 2200,
+        actualDurationMs: 2500,
+        estimatedProcessingTimeMs: 1400,
+        actualProcessingTimeMs: 1500,
+        estimatedCostCents: 0.3,
+        actualCostCents: 0.0402,
+      })
+      expect(typeof report.e2e.tests[0]?.['runAt']).toBe('string')
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
+  })
+
+  test('heuristically matches shared-helper metrics back to e2e test cases', async () => {
+    const junitCases: ParsedJunitCase[] = [
+      {
+        id: 'test/test-cases/e2e/step-4-tts-e2e/gemini-tts.test.ts::gemini-2.5-pro-preview-tts generates speech.wav',
+        file: 'test/test-cases/e2e/step-4-tts-e2e/gemini-tts.test.ts',
+        name: 'gemini-2.5-pro-preview-tts generates speech.wav',
+        line: 37,
+        durationMs: 17_552,
+        status: 'passed',
+        failureMessage: null,
+      }
+    ]
+
+    const metrics: ParsedCommandMetric[] = [
+      {
+        source: 'runCommand',
+        command: 'bun src/cli/create-cli.ts tts input/1-tts.md --gemini-tts gemini-2.5-pro-preview-tts',
+        args: ['src/cli/create-cli.ts', 'tts', 'input/1-tts.md', '--gemini-tts', 'gemini-2.5-pro-preview-tts'],
+        exitCode: 0,
+        durationMs: 17_552,
+        outputDir: null,
+        callerFile: 'test/test-utils/define-tts-service-test.ts',
+        callerLine: 60,
+        callerColumn: 28,
+        at: '2026-03-19T00:00:19.000Z',
+        testName: null,
+        estimatedCostCents: 0.018,
+        actualCostCents: 0.018,
+        estimatedProcessingTimeMs: null,
+        actualProcessingTimeMs: 17_387,
+      }
+    ]
+
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-cli-bun-test-runner-heuristic-'))
+    try {
+      const artifacts = createArtifacts(rootDir, 'current-run')
+      const report = await buildTestReportData(
+        junitCases,
+        metrics,
+        artifacts,
+        '2026-03-19T00:00:21.000Z',
+        21_000,
+        ['test/test-cases/e2e/step-4-tts-e2e/gemini-tts.test.ts']
+      ) as {
+        tests: Array<{ metrics: Record<string, unknown> }>
+        e2e: { tests: Array<Record<string, unknown>> }
+      }
+
+      expect(report.tests[0]?.metrics).toEqual({
+        source: 'runCommand',
+        matchedBy: 'heuristic',
+        commandDurationMs: 17_552,
+        estimatedCostCents: 0.018,
+        actualCostCents: 0.018,
+        estimatedProcessingTimeMs: null,
+        actualProcessingTimeMs: 17_387,
+        notes: [
+          'metric matched heuristically by provider/model/time',
+        ],
+      })
+      expect(report.e2e.tests[0]).toMatchObject({
+        serviceName: 'gemini',
+        modelName: 'gemini-2.5-pro-preview-tts',
+        estimatedProcessingTimeMs: null,
+        actualProcessingTimeMs: 17_387,
+        estimatedCostCents: 0.018,
+        actualCostCents: 0.018,
       })
     } finally {
       await rm(rootDir, { recursive: true, force: true })

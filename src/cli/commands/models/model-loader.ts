@@ -5,11 +5,17 @@ import { validateData } from '~/utils/validate/validation'
 import type { ModelRegistry } from '~/types'
 export type { ModelRegistry } from '~/types'
 
+const SttEstimationSchema = v.object({
+  costMultiplier: v.optional(v.number(), undefined),
+  msPerSecond: v.optional(v.number(), undefined)
+})
+
 const SttModelSchema = v.object({
   description: v.string(),
   costPerHourUSD: v.optional(v.number(), undefined),
   costPerHourCents: v.optional(v.number(), undefined),
-  costPerThreeHours: v.optional(v.number(), undefined)
+  costPerThreeHours: v.optional(v.number(), undefined),
+  estimation: v.optional(SttEstimationSchema, undefined)
 })
 
 const SttServiceSchema = v.object({
@@ -21,7 +27,11 @@ const SttServiceSchema = v.object({
 const ExtractModelSchema = v.object({
   description: v.string(),
   costPer1kPagesUSD: v.optional(v.number(), undefined),
-  costPer1kPagesCents: v.optional(v.number(), undefined)
+  costPer1kPagesCents: v.optional(v.number(), undefined),
+  estimation: v.optional(v.object({
+    costMultiplier: v.optional(v.number(), undefined),
+    msPerPage: v.optional(v.number(), undefined)
+  }), undefined)
 })
 
 const ExtractServiceSchema = v.object({
@@ -36,7 +46,11 @@ const LlmModelSchema = v.object({
   inputCostPer1MCents: v.number(),
   outputCostPer1MUSD: v.number(),
   outputCostPer1MCents: v.number(),
-  hfDownloadRepo: v.optional(v.string(), undefined)
+  hfDownloadRepo: v.optional(v.string(), undefined),
+  estimation: v.optional(v.object({
+    costMultiplier: v.optional(v.number(), undefined),
+    msPer1KTokens: v.optional(v.number(), undefined)
+  }), undefined)
 })
 
 const LlmServiceSchema = v.object({
@@ -55,7 +69,11 @@ const TtsModelSchema = v.object({
   outputCostPer1MCharsUSD: v.optional(v.number(), undefined),
   outputCostPer1MCharsCents: v.optional(v.number(), undefined),
   hfRepo: v.optional(v.string(), undefined),
-  modelFamily: v.optional(v.string(), undefined)
+  modelFamily: v.optional(v.string(), undefined),
+  estimation: v.optional(v.object({
+    costMultiplier: v.optional(v.number(), undefined),
+    msPer1KChars: v.optional(v.number(), undefined)
+  }), undefined)
 })
 
 const TtsServiceSchema = v.object({
@@ -72,7 +90,11 @@ const ImageModelSchema = v.object({
   description: v.string(),
   costPerImageUSD: v.number(),
   costPerImageCents: v.number(),
-  nativeGeminiImage: v.optional(v.boolean(), undefined)
+  nativeGeminiImage: v.optional(v.boolean(), undefined),
+  estimation: v.optional(v.object({
+    costMultiplier: v.optional(v.number(), undefined),
+    msPerImage: v.optional(v.number(), undefined)
+  }), undefined)
 })
 
 const ImageServiceSchema = v.object({
@@ -88,7 +110,11 @@ const MusicModelSchema = v.object({
   costPerMinuteUSD: v.optional(v.number(), undefined),
   costPerMinuteCents: v.optional(v.number(), undefined),
   lyricsCostPerTrackUSD: v.optional(v.number(), undefined),
-  lyricsCostPerTrackCents: v.optional(v.number(), undefined)
+  lyricsCostPerTrackCents: v.optional(v.number(), undefined),
+  estimation: v.optional(v.object({
+    costMultiplier: v.optional(v.number(), undefined),
+    msPerSecond: v.optional(v.number(), undefined)
+  }), undefined)
 })
 
 const MusicServiceSchema = v.object({
@@ -110,7 +136,11 @@ const VideoModelSchema = v.object({
   blockCost720pUSD: v.optional(v.number(), undefined),
   blockCost720pCents: v.optional(v.number(), undefined),
   blockCost1080pUSD: v.optional(v.number(), undefined),
-  blockCost1080pCents: v.optional(v.number(), undefined)
+  blockCost1080pCents: v.optional(v.number(), undefined),
+  estimation: v.optional(v.object({
+    costMultiplier: v.optional(v.number(), undefined),
+    msPerSecond: v.optional(v.number(), undefined)
+  }), undefined)
 })
 
 const VideoServiceSchema = v.object({
@@ -151,6 +181,66 @@ const VIDEO_PATH = resolve(import.meta.dir, 'video-config.json')
 
 let cached: ModelRegistry | undefined
 
+const DEFAULT_COST_MULTIPLIER = 1
+const DEFAULT_STT_MS_PER_SECOND = {
+  api: 900,
+  local: 100,
+}
+const DEFAULT_EXTRACT_MS_PER_PAGE = 3500
+const DEFAULT_LLM_MS_PER_1K_TOKENS = {
+  api: 18_000,
+  local: 65_000,
+}
+const DEFAULT_TTS_MS_PER_1K_CHARS = {
+  api: 10_000,
+  local: 5_000,
+}
+const DEFAULT_IMAGE_MS_PER_IMAGE = 12_000
+const DEFAULT_VIDEO_MS_PER_SECOND = 12_000
+const DEFAULT_MUSIC_MS_PER_SECOND = 4_000
+
+export const MODEL_CONFIG_PATHS = {
+  stt: STT_PATH,
+  extract: EXTRACT_PATH,
+  llm: LLM_PATH,
+  tts: TTS_PATH,
+  image: IMAGE_PATH,
+  music: MUSIC_PATH,
+  video: VIDEO_PATH,
+} as const
+
+export type CostEstimation = {
+  costMultiplier: number
+}
+
+export type SttEstimation = CostEstimation & {
+  msPerSecond: number
+}
+
+export type ExtractEstimation = CostEstimation & {
+  msPerPage: number
+}
+
+export type LlmEstimation = CostEstimation & {
+  msPer1KTokens: number
+}
+
+export type TtsEstimation = CostEstimation & {
+  msPer1KChars: number
+}
+
+export type ImageEstimation = CostEstimation & {
+  msPerImage: number
+}
+
+export type MusicEstimation = CostEstimation & {
+  msPerSecond: number
+}
+
+export type VideoEstimation = CostEstimation & {
+  msPerSecond: number
+}
+
 export const getModelRegistry = (): ModelRegistry => {
   if (cached) return cached
 
@@ -177,6 +267,13 @@ export const getServiceModels = (
   return Object.keys(svc.models)
 }
 
+const getRegistryServiceType = (
+  step: keyof ModelRegistry,
+  service: string
+): 'local' | 'api' | undefined => {
+  return getModelRegistry()[step][service]?.type
+}
+
 
 export const getSttCost = (
   service: string,
@@ -194,6 +291,15 @@ export const getSttCost = (
   }
 }
 
+export const getSttEstimation = (service: string, model: string): SttEstimation => {
+  const serviceType = getRegistryServiceType('stt', service) ?? 'api'
+  const modelMeta = getModelRegistry().stt[service]?.models[model]
+  return {
+    costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
+    msPerSecond: modelMeta?.estimation?.msPerSecond ?? DEFAULT_STT_MS_PER_SECOND[serviceType],
+  }
+}
+
 export const getExtractPricing = (service: string, model: string): { costPer1kPagesCents?: number } => {
   const extractModel = getModelRegistry().extract[service]?.models[model]
   if (!extractModel) return {}
@@ -203,6 +309,14 @@ export const getExtractPricing = (service: string, model: string): { costPer1kPa
       : extractModel.costPer1kPagesUSD !== undefined
         ? { costPer1kPagesCents: extractModel.costPer1kPagesUSD * 100 }
         : {})
+  }
+}
+
+export const getExtractEstimation = (service: string, model: string): ExtractEstimation => {
+  const modelMeta = getModelRegistry().extract[service]?.models[model]
+  return {
+    costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
+    msPerPage: modelMeta?.estimation?.msPerPage ?? DEFAULT_EXTRACT_MS_PER_PAGE,
   }
 }
 
@@ -220,6 +334,15 @@ export const getLlmCost = (
   return {
     inputCostPer1MCents: llmModel.inputCostPer1MCents,
     outputCostPer1MCents: llmModel.outputCostPer1MCents
+  }
+}
+
+export const getLlmEstimation = (service: string, model: string): LlmEstimation => {
+  const serviceType = getRegistryServiceType('llm', service) ?? 'api'
+  const modelMeta = getModelRegistry().llm[service]?.models[model]
+  return {
+    costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
+    msPer1KTokens: modelMeta?.estimation?.msPer1KTokens ?? DEFAULT_LLM_MS_PER_1K_TOKENS[serviceType],
   }
 }
 
@@ -253,6 +376,15 @@ export const getTtsPricing = (
   }
 }
 
+export const getTtsEstimation = (service: string, model: string): TtsEstimation => {
+  const serviceType = getRegistryServiceType('tts', service) ?? 'api'
+  const modelMeta = getModelRegistry().tts[service]?.models[model]
+  return {
+    costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
+    msPer1KChars: modelMeta?.estimation?.msPer1KChars ?? DEFAULT_TTS_MS_PER_1K_CHARS[serviceType],
+  }
+}
+
 export const getTtsCost = (service: string, model: string): number => {
   const pricing = getTtsPricing(service, model)
   if (pricing.costPer1kCharsCents !== undefined) return pricing.costPer1kCharsCents
@@ -280,6 +412,14 @@ export const getImageCost = (service: string, model: string): number => {
   return imageModel.costPerImageUSD * 100
 }
 
+export const getImageEstimation = (service: string, model: string): ImageEstimation => {
+  const modelMeta = getModelRegistry().image[service]?.models[model]
+  return {
+    costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
+    msPerImage: modelMeta?.estimation?.msPerImage ?? DEFAULT_IMAGE_MS_PER_IMAGE,
+  }
+}
+
 export const isNativeGeminiImage = (model: string): boolean => {
   return getModelRegistry().image['gemini']?.models[model]?.nativeGeminiImage === true
 }
@@ -288,7 +428,23 @@ export const getMusicModelMeta = (service: string, model: string): v.InferOutput
   return getModelRegistry().music[service]?.models[model]
 }
 
+export const getMusicEstimation = (service: string, model: string): MusicEstimation => {
+  const modelMeta = getModelRegistry().music[service]?.models[model]
+  return {
+    costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
+    msPerSecond: modelMeta?.estimation?.msPerSecond ?? DEFAULT_MUSIC_MS_PER_SECOND,
+  }
+}
+
 
 export const getVideoModelMeta = (service: string, model: string): v.InferOutput<typeof VideoModelSchema> | undefined => {
   return getModelRegistry().video[service]?.models[model]
+}
+
+export const getVideoEstimation = (service: string, model: string): VideoEstimation => {
+  const modelMeta = getModelRegistry().video[service]?.models[model]
+  return {
+    costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
+    msPerSecond: modelMeta?.estimation?.msPerSecond ?? DEFAULT_VIDEO_MS_PER_SECOND,
+  }
 }

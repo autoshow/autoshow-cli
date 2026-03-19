@@ -30,6 +30,9 @@ export const readMetrics = async (path: string): Promise<ParsedCommandMetric[]> 
 
       const source = typeof parsedRaw['source'] === 'string' ? parsedRaw['source'] : 'unknown'
       const command = typeof parsedRaw['command'] === 'string' ? parsedRaw['command'] : ''
+      const args = Array.isArray(parsedRaw['args'])
+        ? parsedRaw['args'].filter((value): value is string => typeof value === 'string')
+        : []
       const exitCode = typeof parsedRaw['exitCode'] === 'number' ? parsedRaw['exitCode'] : Number.NaN
       const durationMs = typeof parsedRaw['durationMs'] === 'number' ? parsedRaw['durationMs'] : Number.NaN
 
@@ -53,6 +56,9 @@ export const readMetrics = async (path: string): Promise<ParsedCommandMetric[]> 
       const actualCostCents = typeof parsedRaw['actualCostCents'] === 'number' && Number.isFinite(parsedRaw['actualCostCents'])
         ? parsedRaw['actualCostCents']
         : null
+      const estimatedProcessingTimeMs = typeof parsedRaw['estimatedProcessingTimeMs'] === 'number' && Number.isFinite(parsedRaw['estimatedProcessingTimeMs'])
+        ? parsedRaw['estimatedProcessingTimeMs']
+        : null
       const actualProcessingTimeMs = typeof parsedRaw['actualProcessingTimeMs'] === 'number' && Number.isFinite(parsedRaw['actualProcessingTimeMs'])
         ? parsedRaw['actualProcessingTimeMs']
         : null
@@ -60,6 +66,7 @@ export const readMetrics = async (path: string): Promise<ParsedCommandMetric[]> 
       out.push({
         source,
         command,
+        args,
         exitCode,
         durationMs,
         outputDir,
@@ -70,6 +77,7 @@ export const readMetrics = async (path: string): Promise<ParsedCommandMetric[]> 
         testName,
         estimatedCostCents,
         actualCostCents,
+        estimatedProcessingTimeMs,
         actualProcessingTimeMs,
       })
     }
@@ -114,13 +122,15 @@ export const parseJunit = async (junitPath: string): Promise<ParsedJunitCase[]> 
       let status: TestStatus = 'passed'
       let failureMessage: string | null = null
 
-      const failureTag = body.match(/<failure\b([^>]*)>([\s\S]*?)<\/failure>/)
-      const errorTag = body.match(/<error\b([^>]*)>([\s\S]*?)<\/error>/)
+      const failureTag = body.match(/<failure\b([^>]*)>([\s\S]*?)<\/failure>|<failure\b([^>]*)\/>/)
+      const errorTag = body.match(/<error\b([^>]*)>([\s\S]*?)<\/error>|<error\b([^>]*)\/>/)
       const skippedTag = body.match(/<skipped\b([^>]*)\/?>(?:[\s\S]*?<\/skipped>)?/)
 
       if (failureTag || errorTag) {
         status = 'failed'
-        const failureAttrs = parseXmlAttributes(failureTag?.[1] ?? errorTag?.[1] ?? '')
+        const failureAttrs = parseXmlAttributes(
+          failureTag?.[1] ?? failureTag?.[3] ?? errorTag?.[1] ?? errorTag?.[3] ?? ''
+        )
         const msgFromAttr = failureAttrs['message']?.trim()
         const bodyText = decodeXml((failureTag?.[2] ?? errorTag?.[2] ?? '').trim())
         failureMessage = msgFromAttr && msgFromAttr.length > 0

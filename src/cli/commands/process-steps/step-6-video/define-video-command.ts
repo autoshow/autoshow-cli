@@ -5,6 +5,7 @@ import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download
 import { runVideoGen } from './run-video-gen'
 import { validateSoraVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -82,9 +83,17 @@ export const videoCommand = defineCommand({
   })
   const actual = computeActualCosts({ step6: metadata })
   const cost = { estimated, actual }
+  const timing = {
+    estimated: computeEstimatedProcessingTimes({
+      videoService: metadata.videoGenService,
+      videoModel: metadata.videoGenModel,
+      videoDurationSeconds: metadata.videoDuration,
+    }),
+    actual: computeActualProcessingTimes({ step6: metadata }),
+  }
 
   const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ video: metadata, cost }, null, 2))
+  await Bun.write(metadataPath, JSON.stringify({ video: metadata, cost, timing }, null, 2))
 
   l.report.complete(outputDir, { video: videoPath.split('/').pop() as string, metadata: 'metadata.json' })
 })

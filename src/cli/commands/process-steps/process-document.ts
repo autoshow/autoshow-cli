@@ -5,6 +5,8 @@ import {
   type ExtractionOptions,
   type ProcessDocumentOutput
 } from '~/types'
+import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from './step-1-download/document/dl-document'
 import { runExtract } from './step-2-document/run-extract'
 import { runWithLogContext } from '~/logger'
@@ -52,15 +54,30 @@ export const processDocument = async (
 
   const { result: extractionResult, step2Metadata } = result
 
-  const cost = {
-    estimated: { totalCost: 0, steps: [] as never[] },
-    actual: { totalCost: 0, steps: [] as never[] }
-  }
+  const estimated = computeEstimatedCosts({
+    mistralOcrModel: opts.mistralOcrModel,
+    extractPageCount: step1Metadata.pageCount,
+  })
+  const actual = computeActualCosts({ step2: step2Metadata })
+  const cost = { estimated, actual }
+
+  const estimatedTiming = computeEstimatedProcessingTimes({
+    mistralOcrModel: opts.mistralOcrModel,
+    extractPageCount: step1Metadata.pageCount,
+  })
+  const actualTiming = computeActualProcessingTimes({
+    step1: step1Metadata,
+    step2: step2Metadata,
+  })
+  const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+    ? { estimated: estimatedTiming, actual: actualTiming }
+    : undefined
 
   await writeFile(`${outputDir}/metadata.json`, JSON.stringify({
     step1: step1Metadata,
     step2: step2Metadata,
-    cost
+    cost,
+    ...(timing ? { timing } : {}),
   }, null, 2))
 
   const isEpubInspectMode = step2Metadata.extractionMethod === 'epub-bun' || step2Metadata.extractionMethod === 'epub-calibre'

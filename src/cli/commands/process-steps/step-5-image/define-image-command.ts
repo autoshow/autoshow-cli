@@ -9,6 +9,7 @@ import {
   validateMinimaxImageModel
 } from '~/cli/commands/models/model-options'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -90,9 +91,19 @@ export const imageCommand = defineCommand({
   })
   const actual = computeActualCosts({ step5: metadata })
   const cost = { estimated, actual }
+  const imageService = metadata.imageService
+  const imageModel = metadata.imageModel
+  const timing = {
+    estimated: computeEstimatedProcessingTimes({
+      imageService,
+      imageModel,
+      imageCount: Number.isFinite(imagenCountRaw) ? imagenCountRaw : 1,
+    }),
+    actual: computeActualProcessingTimes({ step5: metadata }),
+  }
 
   const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ image: metadata, cost }, null, 2))
+  await Bun.write(metadataPath, JSON.stringify({ image: metadata, cost, timing }, null, 2))
 
   const imageFiles: Record<string, string> = {}
   for (const p of imagePaths) {

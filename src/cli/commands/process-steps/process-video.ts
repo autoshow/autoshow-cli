@@ -15,6 +15,7 @@ import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
 import { runMusicGen } from './step-7-music/run-music-gen'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 
 export const processVideo = async (options: ProcessingOptions, precomputedMetadata?: VideoMetadata, preflightEstimate?: AggregatedPriceEstimate): Promise<string> => {
   const processStart = Date.now()
@@ -192,6 +193,54 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   })
 
   const cost = { estimated, actual }
+  const estimatedTiming = computeEstimatedProcessingTimes({
+    transcriptionService: transcriptionResult.metadata.transcriptionService,
+    transcriptionModel: transcriptionResult.metadata.transcriptionModelName ?? transcriptionResult.metadata.transcriptionModel,
+    audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+    llmService,
+    llmModel,
+    llmInputTokenCount,
+    llmOutputTokenCount,
+    skipLLM: processingOptions.skipLLM,
+    ttsService,
+    ttsModel,
+    ttsCharacterCount,
+    ...(step5Metadata
+      ? {
+          imageService: step5Metadata.imageService,
+          imageModel: step5Metadata.imageModel,
+          imageCount: processingOptions.imagenCount ?? 1,
+        }
+      : {}),
+    ...(step6Metadata
+      ? {
+          videoService: step6Metadata.videoGenService,
+          videoModel: step6Metadata.videoGenModel,
+          videoDurationSeconds: step6Metadata.videoDuration,
+        }
+      : {}),
+    ...(step7Metadata
+      ? {
+          musicService: step7Metadata.musicService,
+          musicModel: step7Metadata.musicModel,
+          musicDurationSeconds: typeof step7Metadata.musicDurationMs === 'number'
+            ? step7Metadata.musicDurationMs / 1000
+            : undefined,
+        }
+      : {}),
+  })
+  const actualTiming = computeActualProcessingTimes({
+    audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+    step2: transcriptionResult.metadata,
+    ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
+    ...(step4Metadata ? { step4: step4Metadata, ttsCharacterCount } : {}),
+    ...(step5Metadata ? { step5: step5Metadata } : {}),
+    ...(step6Metadata ? { step6: step6Metadata } : {}),
+    ...(step7Metadata ? { step7: step7Metadata } : {}),
+  })
+  const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+    ? { estimated: estimatedTiming, actual: actualTiming }
+    : undefined
 
   const processingMetadata = {
     step1: step1Metadata,
@@ -201,7 +250,8 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     ...(step5Metadata ? { step5: step5Metadata } : {}),
     ...(step6Metadata ? { step6: step6Metadata } : {}),
     ...(step7Metadata ? { step7: step7Metadata } : {}),
-    cost
+    cost,
+    ...(timing ? { timing } : {}),
   }
   const metadataPath = `${outputDir}/metadata.json`
   const metadataJson = JSON.stringify(processingMetadata, null, 2)

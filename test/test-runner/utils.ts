@@ -80,5 +80,5 @@ export const formatElapsedForOutput = (elapsedMs: number): string => {
 }
 
 export const formatTimedOutputPrefix = (atMs: number, startedAtMs: number): string => {
-  return `[${new Date(atMs).toISOString()} +${formatElapsedForOutput(atMs - startedAtMs)}]`
+  return `[${formatElapsedForOutput(atMs - startedAtMs)}]`
 }

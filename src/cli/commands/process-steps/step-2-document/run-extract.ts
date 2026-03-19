@@ -649,6 +649,9 @@ export const runExtract = async (
     tokenEstimate: estimateTokens(result.text)
   }
 
+  if (typeof opts.mistralOcrModel === 'string' && extractionMethod.includes('mistral-ocr')) {
+    step2MetadataPayload['ocrModel'] = opts.mistralOcrModel
+  }
   if (epubPayload) step2MetadataPayload['epub'] = epubPayload
   if (inputFamily) step2MetadataPayload['inputFamily'] = inputFamily
   if (normalizedFrom) step2MetadataPayload['normalizedFrom'] = normalizedFrom

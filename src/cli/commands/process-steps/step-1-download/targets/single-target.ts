@@ -20,6 +20,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { isDocumentByExtension, isLikelyUrl } from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import type { InputKind } from '~/types'
 
 
@@ -224,20 +225,41 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
     }
 
     const estimated = computeEstimatedCosts({
+      mistralOcrModel: opts.mistralOcrModel,
+      extractPageCount: extraction.step1Metadata.pageCount,
       llmService,
       llmModel,
       llmInputTokenCount: step3.inputTokenCount,
       llmOutputTokenCount: step3.outputTokenCount,
       skipLLM: false
     })
-    const actual = computeActualCosts({ step3 })
+    const actual = computeActualCosts({ step2: extraction.step2Metadata, step3 })
     const cost = { estimated, actual }
+
+    const estimatedTiming = computeEstimatedProcessingTimes({
+      mistralOcrModel: opts.mistralOcrModel,
+      extractPageCount: extraction.step1Metadata.pageCount,
+      llmService,
+      llmModel,
+      llmInputTokenCount: step3.inputTokenCount,
+      llmOutputTokenCount: step3.outputTokenCount,
+      skipLLM: false,
+    })
+    const actualTiming = computeActualProcessingTimes({
+      step1: extraction.step1Metadata,
+      step2: extraction.step2Metadata,
+      step3,
+    })
+    const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+      ? { estimated: estimatedTiming, actual: actualTiming }
+      : undefined
 
     await writeFile(`${extraction.outputDir}/metadata.json`, JSON.stringify({
       step1: extraction.step1Metadata,
       step2: extraction.step2Metadata,
       step3,
-      cost
+      cost,
+      ...(timing ? { timing } : {}),
     }, null, 2))
 
     l.report.complete(extraction.outputDir, { prompt: 'prompt.md', summary: 'text.md', metadata: 'metadata.json' })
@@ -291,20 +313,41 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
   const llmModel = step3Results[0]?.llmModel ?? (llmConfig.llamaModel ?? 'unknown')
 
   const estimated = computeEstimatedCosts({
+    mistralOcrModel: opts.mistralOcrModel,
+    extractPageCount: extraction.step1Metadata.pageCount,
     llmService,
     llmModel,
     llmInputTokenCount,
     llmOutputTokenCount,
     skipLLM: false
   })
-  const actual = computeActualCosts({ step3: step3Serialized })
+  const actual = computeActualCosts({ step2: extraction.step2Metadata, step3: step3Serialized })
   const cost = { estimated, actual }
+
+  const estimatedTiming = computeEstimatedProcessingTimes({
+    mistralOcrModel: opts.mistralOcrModel,
+    extractPageCount: extraction.step1Metadata.pageCount,
+    llmService,
+    llmModel,
+    llmInputTokenCount,
+    llmOutputTokenCount,
+    skipLLM: false,
+  })
+  const actualTiming = computeActualProcessingTimes({
+    step1: extraction.step1Metadata,
+    step2: extraction.step2Metadata,
+    step3: step3Serialized,
+  })
+  const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+    ? { estimated: estimatedTiming, actual: actualTiming }
+    : undefined
 
   await writeFile(`${extraction.outputDir}/metadata.json`, JSON.stringify({
     step1: extraction.step1Metadata,
     step2: extraction.step2Metadata,
     step3: step3Serialized,
-    cost
+    cost,
+    ...(timing ? { timing } : {}),
   }, null, 2))
 
   const artifactFiles: Record<string, string> = {

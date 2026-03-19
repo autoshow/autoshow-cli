@@ -42,6 +42,8 @@ export const createRunArtifacts = async (): Promise<TestRunArtifacts> => {
     metricsLogPath,
     junitPath: resolve(runDir, 'junit.xml'),
     reportJsonPath: resolve(runDir, 'report.json'),
+    e2eReportJsonPath: resolve(runDir, 'e2e-report.json'),
+    calibrationReportJsonPath: resolve(runDir, 'model-calibration.json'),
     metadataDirPath,
     startedAtMs,
     startedAtIso,
@@ -61,4 +63,11 @@ export const writeReportJson = async (
   json: Record<string, unknown>
 ): Promise<void> => {
   await Bun.write(artifacts.reportJsonPath, JSON.stringify(json, null, 2))
+}
+
+export const writeJsonFile = async (
+  path: string,
+  json: Record<string, unknown>
+): Promise<void> => {
+  await Bun.write(path, JSON.stringify(json, null, 2))
 }

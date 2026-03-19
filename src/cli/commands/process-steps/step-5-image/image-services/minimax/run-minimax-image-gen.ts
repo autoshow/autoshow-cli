@@ -99,6 +99,7 @@ export const runMinimaxImageGen = async (
     imageService: 'minimax',
     imageModel: options.model,
     processingTime,
+    imageCount: 1,
     imageFileName: 'generated-image.jpeg',
     imageFileSize: imageFile.size,
     imageWidth: undefined,

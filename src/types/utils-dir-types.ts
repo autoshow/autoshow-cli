@@ -90,6 +90,7 @@ export type RateEstimateBase<P extends string = string, M extends string = strin
 export type CostEstimateBase<P extends string = string, M extends string = string> =
   ProviderModelBase<P, M> & {
     totalCost: number
+    costMultiplier?: number
     note?: string
   }
 
@@ -178,6 +179,7 @@ export type LlmStepEstimate = ProviderModelBase & {
   estimatedInputTokens?: number
   estimatedOutputTokens?: number
   totalCost: number
+  costMultiplier?: number
 }
 
 export type TtsStepEstimate = ProviderModelBase & {
@@ -187,6 +189,7 @@ export type TtsStepEstimate = ProviderModelBase & {
   outputCostPer1MCharactersCents?: number
   characterCount?: number
   totalCost: number
+  costMultiplier?: number
 }
 
 export type ImageStepEstimate = CostEstimateBase<'gemini' | 'openai' | 'minimax'> & {
@@ -200,6 +203,7 @@ export type VideoStepEstimate = CostEstimateBase<VideoProvider> & {
 export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   step: 'music'
   totalCost: number
+  costMultiplier?: number
   lyricsSource: 'provided' | 'generated' | 'none'
   note?: string
 }
@@ -209,6 +213,7 @@ export type ExtractStepEstimate = ProviderModelBase<'mistral'> & {
   costPer1kPagesCents: number
   pageCount?: number
   totalCost: number
+  costMultiplier?: number
 }
 
 export type StepEstimate =

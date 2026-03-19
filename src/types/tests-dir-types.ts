@@ -27,6 +27,8 @@ export type TestRunArtifacts = {
   metricsLogPath: string
   junitPath: string
   reportJsonPath: string
+  e2eReportJsonPath: string
+  calibrationReportJsonPath: string
   metadataDirPath: string
   startedAtMs: number
   startedAtIso: string
@@ -47,12 +49,14 @@ export type CommandMetricRecord = {
   testName?: string | null
   estimatedCostCents?: number | null
   actualCostCents?: number | null
+  estimatedProcessingTimeMs?: number | null
   actualProcessingTimeMs?: number | null
 }
 
 export type ParsedCommandMetric = {
   source: string
   command: string
+  args: string[]
   exitCode: number
   durationMs: number
   outputDir: string | null
@@ -63,6 +67,7 @@ export type ParsedCommandMetric = {
   testName: string | null
   estimatedCostCents: number | null
   actualCostCents: number | null
+  estimatedProcessingTimeMs: number | null
   actualProcessingTimeMs: number | null
 }
 

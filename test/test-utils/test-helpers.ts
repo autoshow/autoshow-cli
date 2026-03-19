@@ -1,5 +1,6 @@
 import { mkdir, readdir, rm, appendFile, copyFile, stat } from 'node:fs/promises'
 import { basename, isAbsolute, join, normalize, relative, resolve } from 'node:path'
+import { parseCommandEstimatedTotal } from '../test-runner/utils'
 import { readOutputMetadataSummary } from './output-metadata-summary'
 
 export const OUTPUT_DIR = './output'
@@ -178,6 +179,7 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
   const metadataSummary = absoluteOutputDir
     ? await readOutputMetadataSummary(`${absoluteOutputDir}/metadata.json`)
     : null
+  const parsedEstimatedCostCents = parseCommandEstimatedTotal(combined)
   const caller = parseCallerLocation()
 
   if (metricsLogPath) {
@@ -194,8 +196,9 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
       callerLine: caller.line,
       callerColumn: caller.column,
       testName,
-      estimatedCostCents: metadataSummary?.estimatedCostCents ?? null,
+      estimatedCostCents: metadataSummary?.estimatedCostCents ?? parsedEstimatedCostCents,
       actualCostCents: metadataSummary?.actualCostCents ?? null,
+      estimatedProcessingTimeMs: metadataSummary?.estimatedProcessingTimeMs ?? null,
       actualProcessingTimeMs: metadataSummary?.actualProcessingTimeMs ?? null,
     }
 

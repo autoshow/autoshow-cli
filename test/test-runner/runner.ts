@@ -3,7 +3,7 @@ import type { ApiCheapPriceCommand } from '../test-utils/api-cheap-config'
 import { dedupePriceCommands } from '../test-utils/api-cheap-config'
 import type { PriceCommandResult, TestRunArtifacts, Tier } from '../../src/types/tests-dir-types'
 import { parseRunnerArgs, type RunnerArgs } from './args'
-import { createRunArtifacts, appendRunnerLog, appendCommandLog, writeReportJson } from './artifacts'
+import { createRunArtifacts, appendRunnerLog, appendCommandLog, writeJsonFile, writeReportJson } from './artifacts'
 import {
   ALL_TIERS,
   TIER_RULES,
@@ -19,6 +19,7 @@ import {
 import { buildTierPriceCommands } from './price-commands'
 import { buildPriceReportData, buildTestReportData, type BudgetPreflightSummary } from './reports'
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
+import { applyModelConfigCalibrations } from './model-calibration'
 
 const formatCents = (cents: number): string => `${cents.toFixed(4)}¢`
 
@@ -624,6 +625,15 @@ const runStandardTestMode = async (
   const endedAtMs = Date.now()
   const reportData = await buildTestReportData(junitCases, metrics, artifacts, endedAtIso, endedAtMs, argv.slice(2), budgetSummary)
   await writeReportJson(artifacts, reportData)
+  if (typeof reportData['e2e'] === 'object' && reportData['e2e'] !== null) {
+    await writeJsonFile(artifacts.e2eReportJsonPath, reportData['e2e'] as Record<string, unknown>)
+  }
+  const calibrationReport = await applyModelConfigCalibrations(artifacts.rootDir)
+  await writeJsonFile(artifacts.calibrationReportJsonPath, calibrationReport as unknown as Record<string, unknown>)
+  console.log(`Model calibration report: ${normalizeRepoPath(artifacts.calibrationReportJsonPath)}`)
+  if (calibrationReport.updatedModels > 0) {
+    console.log(`Auto-calibration updated ${calibrationReport.updatedModels} model entr${calibrationReport.updatedModels === 1 ? 'y' : 'ies'}`)
+  }
 
   return exitCode
 }
@@ -783,6 +793,10 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
     console.log('Run artifacts cleaned up because --cleanup was provided')
   } else {
     console.log(`Report JSON: ${normalizeRepoPath(artifacts.reportJsonPath)}`)
+    if (!args.priceMode) {
+      console.log(`E2E Report JSON: ${normalizeRepoPath(artifacts.e2eReportJsonPath)}`)
+      console.log(`Model Calibration JSON: ${normalizeRepoPath(artifacts.calibrationReportJsonPath)}`)
+    }
   }
 
   return exitCode

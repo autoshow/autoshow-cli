@@ -14,6 +14,7 @@ import {
   validateKittenTtsSpeaker
 } from '~/cli/commands/models/model-options'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -146,9 +147,20 @@ export const ttsCommand = defineCommand({
     ttsCharacterCount: text.length
   })
   const cost = { estimated, actual }
+  const timing = {
+    estimated: computeEstimatedProcessingTimes({
+      ttsService,
+      ttsModel,
+      ttsCharacterCount: text.length,
+    }),
+    actual: computeActualProcessingTimes({
+      step4: metadata,
+      ttsCharacterCount: text.length,
+    }),
+  }
 
   const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ tts: metadata, cost }, null, 2))
+  await Bun.write(metadataPath, JSON.stringify({ tts: metadata, cost, timing }, null, 2))
 
   l.report.complete(
     outputDir,

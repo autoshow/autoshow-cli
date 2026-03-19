@@ -5,6 +5,7 @@ import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download
 import { runMusicGen } from './run-music-gen'
 import { validateElevenlabsMusicModel, validateMinimaxMusicModel } from '~/cli/commands/models/model-options'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -76,9 +77,17 @@ export const musicCommand = defineCommand({
   })
   const actual = computeActualCosts({ step7: metadata })
   const cost = { estimated, actual }
+  const timing = {
+    estimated: computeEstimatedProcessingTimes({
+      musicService: metadata.musicService,
+      musicModel: metadata.musicModel,
+      musicDurationSeconds: typeof metadata.musicDurationMs === 'number' ? metadata.musicDurationMs / 1000 : undefined,
+    }),
+    actual: computeActualProcessingTimes({ step7: metadata }),
+  }
 
   const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ music: metadata, cost }, null, 2))
+  await Bun.write(metadataPath, JSON.stringify({ music: metadata, cost, timing }, null, 2))
 
   l.report.complete(outputDir, { music: musicPath.split('/').pop() as string, metadata: 'metadata.json' })
 })

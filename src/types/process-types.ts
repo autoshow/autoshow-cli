@@ -207,6 +207,7 @@ export const ExtractionMetadataSchema = v.object({
   dpi: v.number(),
   languages: v.string(),
   tokenEstimate: v.number(),
+  ocrModel: v.optional(v.string(), undefined),
   epub: v.optional(EpubInspectionSchema, undefined),
   inputFamily: v.optional(v.string(), undefined),
   normalizedFrom: v.optional(v.string(), undefined),
@@ -463,6 +464,7 @@ export type Step5Metadata = {
   imageService: 'gemini' | 'openai' | 'minimax'
   imageModel: string
   processingTime: number
+  imageCount: number
   imageFileName: string
   imageFileSize: number
   imageWidth: number | undefined
@@ -489,7 +491,7 @@ export type Step7MusicMetadata = {
 }
 
 export type StepCostEntry = {
-  step: 'stt' | 'llm' | 'tts' | 'image' | 'video' | 'music'
+  step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
   provider: string
   model: string
   cost: number
@@ -503,10 +505,11 @@ export type ActualCostBreakdown = {
 }
 
 export type EstimatedStepEntry = {
-  step: 'stt' | 'llm' | 'tts' | 'image' | 'video' | 'music'
+  step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
   provider: string
   model: string
   cost: number
+  costMultiplier?: number
   durationSeconds?: number
   inputCostPer1MCents?: number
   outputCostPer1MCents?: number
@@ -520,6 +523,30 @@ export type EstimatedStepEntry = {
 export type EstimatedCostBreakdown = {
   totalCost: number
   steps: EstimatedStepEntry[]
+}
+
+export type TimingStepEntry = {
+  step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
+  provider: string
+  model: string
+  processingTimeMs: number
+  inputMetric?: string
+  inputValue?: number
+}
+
+export type EstimatedTimingBreakdown = {
+  totalProcessingTimeMs: number
+  steps: TimingStepEntry[]
+}
+
+export type ActualTimingBreakdown = {
+  totalProcessingTimeMs: number
+  steps: TimingStepEntry[]
+}
+
+export type TimingBreakdown = {
+  estimated: EstimatedTimingBreakdown
+  actual: ActualTimingBreakdown
 }
 
 export type CostBreakdown = {

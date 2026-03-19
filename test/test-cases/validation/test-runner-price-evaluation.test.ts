@@ -12,6 +12,8 @@ const artifacts: TestRunArtifacts = {
   metricsLogPath: 'test-output/test-run/metrics.ndjson',
   junitPath: 'test-output/test-run/junit.xml',
   reportJsonPath: 'test-output/test-run/report.json',
+  e2eReportJsonPath: 'test-output/test-run/e2e-report.json',
+  calibrationReportJsonPath: 'test-output/test-run/model-calibration.json',
   metadataDirPath: 'test-output/test-run/metadata',
   startedAtMs: 1000,
   startedAtIso: '2026-03-19T00:00:01.000Z',
