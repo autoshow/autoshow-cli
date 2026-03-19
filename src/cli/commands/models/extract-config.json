@@ -1,0 +1,18 @@
+{
+  "mistral": {
+    "description": "Mistral cloud OCR",
+    "type": "api",
+    "models": {
+      "mistral-ocr-latest": {
+        "description": "Mistral OCR latest alias",
+        "costPer1kPagesUSD": 2,
+        "costPer1kPagesCents": 200
+      },
+      "mistral-ocr-2512": {
+        "description": "Mistral OCR (December 2025)",
+        "costPer1kPagesUSD": 2,
+        "costPer1kPagesCents": 200
+      }
+    }
+  }
+}

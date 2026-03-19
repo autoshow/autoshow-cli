@@ -1,0 +1,94 @@
+import type { ClercFlagDefinitionValue, ClercFlagsDefinition } from 'clerc'
+import {
+  transcriptionFlags,
+  llmProviderFlags,
+  extractFlags,
+  advancedExtractFlags,
+  batchFlags,
+  promptFlag,
+  structuredWriteFlags,
+  priceFlag
+} from './shared-flags'
+import { ttsFlags } from './tts-flags'
+import { imageGenFlags } from './image-flags'
+import { musicGenFlags } from './music-flags'
+import { videoGenFlags } from './video-flags'
+
+export const CONFIG_COMMAND_HELP_FLAG_GROUPS = [
+  ['config', 'Config'],
+  ['pricing', 'Pricing'],
+  ['step-1-download', 'Step 1 - Download'],
+  ['step-2-stt', 'Step 2 - Transcribe'],
+  ['step-2-document', 'Step 2 - Document'],
+  ['step-3-write', 'Step 3 - Write'],
+  ['step-4-tts', 'Step 4 - Text to Speech'],
+  ['step-5-image', 'Step 5 - Image'],
+  ['step-6-video', 'Step 6 - Video'],
+  ['step-7-music', 'Step 7 - Music']
+] as const
+
+type ConfigHelpFlagGroup = (typeof CONFIG_COMMAND_HELP_FLAG_GROUPS)[number][0]
+
+const withHelpGroup = (flags: ClercFlagsDefinition, group: ConfigHelpFlagGroup): ClercFlagsDefinition => {
+  const grouped: ClercFlagsDefinition = {}
+  for (const [name, definition] of Object.entries(flags)) {
+    const flagDefinition = definition as ClercFlagDefinitionValue
+    if (typeof flagDefinition === 'function' || Array.isArray(flagDefinition)) {
+      grouped[name] = flagDefinition
+      continue
+    }
+
+    const existingHelp = (flagDefinition as { help?: Record<string, unknown> }).help
+    grouped[name] = {
+      ...(flagDefinition as object),
+      help: {
+        ...(typeof existingHelp === 'object' && existingHelp !== null ? existingHelp : {}),
+        group
+      }
+    } as ClercFlagDefinitionValue
+  }
+  return grouped
+}
+
+const configFlags = {
+  show: {
+    description: 'Print the effective config and resolved path',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  reset: {
+    description: 'Clear the config file back to empty defaults',
+    type: Boolean,
+    default: false,
+    negatable: false
+  }
+} as const satisfies ClercFlagsDefinition
+
+const pricingFlags = {
+  'max-cents': {
+    description: 'Budget limit in cents — commands exceeding this fail unless --allow-over-budget is set',
+    type: String
+  },
+  'max-usd': {
+    description: 'Legacy budget limit in USD (converted to cents internally)',
+    type: String
+  }
+} as const satisfies ClercFlagsDefinition
+
+export const configCommandFlags = {
+  ...withHelpGroup(configFlags, 'config'),
+  ...withHelpGroup(pricingFlags, 'pricing'),
+  ...withHelpGroup(batchFlags, 'step-1-download'),
+  ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
+  ...withHelpGroup(extractFlags, 'step-2-document'),
+  ...withHelpGroup(advancedExtractFlags, 'step-2-document'),
+  ...withHelpGroup(llmProviderFlags, 'step-3-write'),
+  ...withHelpGroup(promptFlag, 'step-3-write'),
+  ...withHelpGroup(structuredWriteFlags, 'step-3-write'),
+  ...withHelpGroup(ttsFlags, 'step-4-tts'),
+  ...withHelpGroup(imageGenFlags, 'step-5-image'),
+  ...withHelpGroup(videoGenFlags, 'step-6-video'),
+  ...withHelpGroup(musicGenFlags, 'step-7-music'),
+  ...withHelpGroup(priceFlag, 'pricing')
+} as const satisfies ClercFlagsDefinition

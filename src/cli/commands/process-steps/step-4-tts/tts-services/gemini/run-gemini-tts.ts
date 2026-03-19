@@ -1,0 +1,281 @@
+import { GoogleGenAI } from '@google/genai'
+import type { Step4Metadata } from '~/types'
+import * as l from '~/logger'
+import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
+import { exec } from '~/utils/cli-utils'
+import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { GEMINI_DEFAULT_TTS_VOICE, type GeminiTtsModel } from '~/cli/commands/models/model-options'
+import { readEnv } from '~/utils/validate/env-utils'
+
+const MAX_CHARS_PER_CHUNK = 4000
+
+type GeminiInlineAudioInfo = {
+  ext: string
+  isRawPcm: boolean
+  sampleRate: number
+}
+
+const parseStatusFromGeminiError = (error: unknown): number | undefined => {
+  if (error && typeof error === 'object') {
+    if ('status' in error && typeof error.status === 'number') {
+      return error.status
+    }
+    if ('code' in error && typeof error.code === 'number') {
+      return error.code
+    }
+  }
+
+  if (error instanceof Error) {
+    const codeMatch = /"code"\s*:\s*(\d{3})/.exec(error.message)
+    if (codeMatch) {
+      const parsed = Number.parseInt(codeMatch[1] as string, 10)
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+  }
+
+  return undefined
+}
+
+const splitTextIntoChunks = (text: string, maxChars: number): string[] => {
+  const chunks: string[] = []
+  let remaining = text.trim()
+
+  while (remaining.length > maxChars) {
+    let splitAt = remaining.lastIndexOf('\n', maxChars)
+    if (splitAt < Math.floor(maxChars * 0.5)) {
+      splitAt = remaining.lastIndexOf(' ', maxChars)
+    }
+    if (splitAt < Math.floor(maxChars * 0.5)) {
+      splitAt = maxChars
+    }
+
+    const chunk = remaining.slice(0, splitAt).trim()
+    if (chunk.length > 0) {
+      chunks.push(chunk)
+    }
+    remaining = remaining.slice(splitAt).trim()
+  }
+
+  if (remaining.length > 0) {
+    chunks.push(remaining)
+  }
+
+  return chunks
+}
+
+const parseGeminiInlineAudioInfo = (mimeType: string | undefined): GeminiInlineAudioInfo => {
+  const raw = mimeType ?? ''
+  const normalized = raw.toLowerCase()
+  const rateMatch = /rate=(\d+)/i.exec(raw)
+  const parsedRate = rateMatch ? Number.parseInt(rateMatch[1] as string, 10) : NaN
+  const sampleRate = Number.isFinite(parsedRate) && parsedRate > 0 ? parsedRate : 24000
+
+  if (normalized.includes('audio/l16') || normalized.includes('codec=pcm') || normalized.includes('audio/pcm')) {
+    return {
+      ext: 'pcm',
+      isRawPcm: true,
+      sampleRate
+    }
+  }
+  if (normalized.includes('wav')) return { ext: 'wav', isRawPcm: false, sampleRate }
+  if (normalized.includes('mpeg') || normalized.includes('mp3')) return { ext: 'mp3', isRawPcm: false, sampleRate }
+  if (normalized.includes('ogg')) return { ext: 'ogg', isRawPcm: false, sampleRate }
+  if (normalized.includes('aac')) return { ext: 'aac', isRawPcm: false, sampleRate }
+  if (normalized.includes('flac')) return { ext: 'flac', isRawPcm: false, sampleRate }
+  return { ext: 'wav', isRawPcm: false, sampleRate }
+}
+
+const concatAndConvertToWav = async (chunkPaths: string[], outputDir: string): Promise<string> => {
+  const wavPath = `${outputDir}/speech.wav`
+
+  if (chunkPaths.length === 1) {
+    const ffmpeg = await exec('ffmpeg', [
+      '-i', chunkPaths[0] as string,
+      '-ar', '16000',
+      '-ac', '1',
+      '-c:a', 'pcm_s16le',
+      '-y',
+      wavPath
+    ])
+    if (ffmpeg.exitCode !== 0) {
+      throw new Error(`Failed to convert Gemini audio to WAV: ${ffmpeg.stderr.trim()}`)
+    }
+    return wavPath
+  }
+
+  const concatListPath = `${outputDir}/speech-gemini-chunks.txt`
+  const concatList = chunkPaths
+    .map(path => `file '${path.replace(/'/g, `'\\''`)}'`)
+    .join('\n')
+  await Bun.write(concatListPath, `${concatList}\n`)
+
+  const ffmpeg = await exec('ffmpeg', [
+    '-f', 'concat',
+    '-safe', '0',
+    '-i', concatListPath,
+    '-ar', '16000',
+    '-ac', '1',
+    '-c:a', 'pcm_s16le',
+    '-y',
+    wavPath
+  ])
+
+  if (ffmpeg.exitCode !== 0) {
+    throw new Error(`Failed to concatenate Gemini audio chunks: ${ffmpeg.stderr.trim()}`)
+  }
+
+  await Bun.$`rm -f ${concatListPath}`.quiet().nothrow()
+  return wavPath
+}
+
+export const runGeminiTts = async (
+  text: string,
+  outputDir: string,
+  options: { model: GeminiTtsModel, voiceId?: string | undefined }
+): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
+  const apiKey = readEnv('GEMINI_API_KEY')
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is required for Gemini TTS')
+  }
+
+  const voiceId = options.voiceId?.trim() || readEnv('GEMINI_TTS_VOICE') || GEMINI_DEFAULT_TTS_VOICE
+  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  if (chunks.length === 0) {
+    throw new Error('Gemini TTS input text is empty')
+  }
+
+  logTtsConfig('Gemini', [
+    { label: 'model', value: options.model },
+    { label: 'voice', value: voiceId },
+    { label: 'chunk count', value: chunks.length }
+  ])
+
+  const ai = new GoogleGenAI({ apiKey })
+  const startTime = Date.now()
+  const chunkPaths: string[] = []
+  let chunkFileIndex = 0
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i] as string
+    const response = await withRetry(
+      {
+        retryClass: 'runtime_http_create_conservative',
+        operationName: 'gemini-tts-generate',
+        policy: { maxAttempts: 3 }
+      },
+      async () => {
+        return await ai.models.generateContent({
+          model: options.model,
+          contents: chunk,
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName: voiceId
+                }
+              }
+            }
+          }
+        })
+      },
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative')
+        if (decision.shouldRetry) {
+          return decision
+        }
+
+        const status = parseStatusFromGeminiError(error)
+        if (status !== undefined && (status === 408 || status === 425 || status === 429 || status >= 500)) {
+          return {
+            shouldRetry: true,
+            delayMs: 0,
+            reason: `retryable status ${status}`
+          }
+        }
+
+        return decision
+      }
+    )
+
+    const parts = response.candidates?.[0]?.content?.parts ?? []
+    for (const part of parts) {
+      const inlineData = part.inlineData
+      if (!inlineData || part.thought === true) {
+        continue
+      }
+
+      const data = inlineData.data
+      if (!data) {
+        continue
+      }
+
+      chunkFileIndex += 1
+      const info = parseGeminiInlineAudioInfo(inlineData.mimeType)
+      const rawPath = `${outputDir}/speech-gemini-raw-${String(chunkFileIndex).padStart(3, '0')}.${info.ext}`
+      const wavChunkPath = `${outputDir}/speech-gemini-chunk-${String(chunkFileIndex).padStart(3, '0')}.wav`
+      const rawBytes = Buffer.from(data, 'base64')
+      if (rawBytes.byteLength === 0) {
+        continue
+      }
+      await Bun.write(rawPath, rawBytes)
+
+      const ffmpegArgs = info.isRawPcm
+        ? [
+            '-f', 's16le',
+            '-ar', String(info.sampleRate),
+            '-ac', '1',
+            '-i', rawPath,
+            '-ar', '16000',
+            '-ac', '1',
+            '-c:a', 'pcm_s16le',
+            '-y',
+            wavChunkPath
+          ]
+        : [
+            '-i', rawPath,
+            '-ar', '16000',
+            '-ac', '1',
+            '-c:a', 'pcm_s16le',
+            '-y',
+            wavChunkPath
+          ]
+
+      const ffmpeg = await exec('ffmpeg', ffmpegArgs)
+      if (ffmpeg.exitCode !== 0) {
+        throw new Error(`Failed to convert Gemini audio chunk to WAV: ${ffmpeg.stderr.trim()}`)
+      }
+
+      await Bun.$`rm -f ${rawPath}`.quiet().nothrow()
+      chunkPaths.push(wavChunkPath)
+    }
+  }
+
+  if (chunkPaths.length === 0) {
+    throw new Error('Gemini TTS returned no audio data')
+  }
+
+  const audioPath = await concatAndConvertToWav(chunkPaths, outputDir)
+  for (const chunkPath of chunkPaths) {
+    await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
+  }
+
+  const processingTime = Date.now() - startTime
+  const audioFile = Bun.file(audioPath)
+
+  l.success(`Speech saved to ${audioPath}`)
+
+  const metadata: Step4Metadata = {
+    ttsService: 'gemini',
+    ttsModel: options.model,
+    speaker: voiceId,
+    processingTime,
+    audioFileName: 'speech.wav',
+    audioFileSize: audioFile.size,
+    chunkCount: chunkPaths.length
+  }
+
+  return { audioPath, metadata }
+}

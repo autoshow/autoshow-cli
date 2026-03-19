@@ -1,0 +1,35 @@
+import type { RuntimeOptions } from '~/types'
+import type { ResolvedLLMConfig } from '~/types'
+export type { ResolvedLLMConfig } from '~/types'
+
+
+export const DEFAULT_LLAMA_MODEL = 'ggml-org/gemma-3-270m-it-GGUF'
+
+export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
+  const useOpenAIArg = opts.useOpenAI && !!opts.openaiModel
+  const useGroqArg = !!opts.groqModel
+  const useGeminiArg = opts.useGemini && !!opts.geminiModel
+  const useAnthropicArg = opts.useAnthropic && !!opts.anthropicModel
+  const useMinimaxArg = !!opts.minimaxModel
+  const useLlamaArg = !!opts.llamaModel
+
+  const anySelected = useOpenAIArg || useGroqArg || useGeminiArg || useAnthropicArg || useMinimaxArg || useLlamaArg
+
+  return {
+    useOpenAI: useOpenAIArg,
+    useGroq: useGroqArg,
+    useGemini: useGeminiArg,
+    useAnthropic: useAnthropicArg,
+    useMinimax: useMinimaxArg,
+    llamaModel: useLlamaArg
+      ? opts.llamaModel
+      : anySelected
+        ? undefined
+        : DEFAULT_LLAMA_MODEL,
+    openaiModel: useOpenAIArg ? opts.openaiModel : undefined,
+    groqModel: useGroqArg ? opts.groqModel : undefined,
+    geminiModel: useGeminiArg ? opts.geminiModel : undefined,
+    anthropicModel: useAnthropicArg ? opts.anthropicModel : undefined,
+    minimaxModel: useMinimaxArg ? opts.minimaxModel : undefined,
+  }
+}

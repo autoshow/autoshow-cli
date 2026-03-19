@@ -1,0 +1,105 @@
+{
+  "sora": {
+    "description": "OpenAI Sora video generation",
+    "type": "api",
+    "sizes": [
+      "720x1280",
+      "1280x720",
+      "1024x1792",
+      "1792x1024"
+    ],
+    "billedDurations": [
+      4,
+      8,
+      12
+    ],
+    "models": {
+      "sora-2": {
+        "description": "Sora 2 — standard video generation",
+        "baseCostPerSecondUSD": 0.28,
+        "baseCostPerSecondCents": 28,
+        "largeSizeMultiplier": 1.3
+      },
+      "sora-2-pro": {
+        "description": "Sora 2 Pro — high quality video generation",
+        "baseCostPerSecondUSD": 0.46,
+        "baseCostPerSecondCents": 46,
+        "baseJobFeeUSD": 0.8,
+        "baseJobFeeCents": 80,
+        "standardSizeMultiplier": 1.1,
+        "largeSizeMultiplier": 1.35
+      }
+    }
+  },
+  "gemini": {
+    "description": "Google Veo video generation",
+    "type": "api",
+    "resolutions": [
+      "720p",
+      "1080p"
+    ],
+    "billedDurations": [
+      4,
+      6,
+      8
+    ],
+    "models": {
+      "veo-3.1-generate-preview": {
+        "description": "Veo 3.1 — standard quality video generation",
+        "baseCostPerSecondUSD": 0.25,
+        "baseCostPerSecondCents": 25,
+        "resolutionMultiplier1080p": 1.4
+      },
+      "veo-3.1-fast-generate-preview": {
+        "description": "Veo 3.1 Fast — faster video generation",
+        "blockSizeSec": 5,
+        "blockCost720pUSD": 0.55,
+        "blockCost720pCents": 55,
+        "blockCost1080pUSD": 0.8,
+        "blockCost1080pCents": 80
+      }
+    }
+  },
+  "minimax": {
+    "description": "MiniMax video generation",
+    "type": "api",
+    "resolutions": [
+      "720p",
+      "1080p"
+    ],
+    "billedDurations": [
+      6,
+      10
+    ],
+    "models": {
+      "MiniMax-Hailuo-2.3": {
+        "description": "MiniMax Hailuo 2.3 — flagship video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.28,
+        "blockCost720pCents": 28,
+        "blockCost1080pUSD": 0.49,
+        "blockCost1080pCents": 49
+      },
+      "MiniMax-Hailuo-02": {
+        "description": "MiniMax Hailuo 02 — balanced video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.28,
+        "blockCost720pCents": 28,
+        "blockCost1080pUSD": 0.49,
+        "blockCost1080pCents": 49
+      },
+      "T2V-01-Director": {
+        "description": "T2V-01-Director — camera-control focused video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.19,
+        "blockCost720pCents": 19
+      },
+      "T2V-01": {
+        "description": "T2V-01 — text-to-video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.19,
+        "blockCost720pCents": 19
+      }
+    }
+  }
+}

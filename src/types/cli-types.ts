@@ -1,0 +1,93 @@
+export const PROCESS_COMMANDS = ['download', 'transcribe', 'write', 'extract', 'tts', 'image', 'music', 'video'] as const
+
+export type ProcessCommand = typeof PROCESS_COMMANDS[number]
+
+export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
+
+export type BatchOrder = 'newest' | 'oldest'
+
+export type RuntimeOptions = {
+  useReverb: boolean
+  useOpenAI: boolean
+  useGemini: boolean
+  useAnthropic: boolean
+  llamaModel: string | undefined
+  openaiModel: string | undefined
+  groqModel: string | undefined
+  geminiModel: string | undefined
+  anthropicModel: string | undefined
+  minimaxModel: string | undefined
+  whisperModel: string
+  groqSttModel: string | undefined
+  elevenlabsSttModel: string | undefined
+  openaiSttModel: string | undefined
+  mistralSttModel: string | undefined
+  assemblyaiSttModel: string | undefined
+  diarizationSpeakerCount: number | undefined
+  price: boolean
+  allowOverBudget: boolean
+  reverbVerbatimicity: number
+  split: boolean
+  skipLLM: boolean
+  structured: boolean
+  structuredStrict: boolean
+  structuredCompatRetries: number
+  dpi: number
+  lang: string
+  psm: number
+  oem: number
+  out: OutputFormat
+  password: string | undefined
+  pageSeparator: string | undefined
+  preserveSpaces: boolean
+  rotate: number
+  useOcrmypdf: boolean
+  usePaddleOcr: boolean
+  mistralOcrModel: string | undefined
+  useEpubBun: boolean
+  useEpubCalibre: boolean
+
+  batchLimit: number
+  batchAll: boolean
+  batchOrder: BatchOrder
+  batchConcurrency: number
+
+  ttsSpeaker: string
+
+  prompts: string[]
+
+  kittenTtsModel: string | undefined
+  groqTtsModel: string | undefined
+  groqVoiceId: string | undefined
+  openaiTtsModel: string | undefined
+  openaiVoiceId: string | undefined
+  geminiTtsModel: string | undefined
+  geminiVoiceId: string | undefined
+  elevenlabsTtsModel: string | undefined
+  elevenlabsVoiceId: string | undefined
+  minimaxTtsModel: string | undefined
+  minimaxTtsVoice: string | undefined
+  geminiImageModel: string | undefined
+  openaiImageModel: string | undefined
+  minimaxImageModel: string | undefined
+  imageAspectRatio: string | undefined
+  imageSize: string | undefined
+  imageQuality: string | undefined
+  imageFormat: string | undefined
+  imageBackground: string | undefined
+  imagenCount: number | undefined
+
+  elevenlabsMusicModel: string | undefined
+  minimaxMusicModel: string | undefined
+  musicDuration: number | undefined
+  musicLyricsFile: string | undefined
+  musicInstrumental: boolean | undefined
+
+  soraVideoModel: string | undefined
+  geminiVideoModel: string | undefined
+  minimaxVideoModel: string | undefined
+  videoDuration: number | undefined
+  videoSize: string | undefined
+  videoAspectRatio: string | undefined
+  videoResolution: string | undefined
+}

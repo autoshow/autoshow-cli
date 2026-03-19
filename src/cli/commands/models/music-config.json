@@ -1,0 +1,26 @@
+{
+  "elevenlabs": {
+    "description": "ElevenLabs music generation",
+    "type": "api",
+    "models": {
+      "music_v1": {
+        "description": "music_v1 — text prompt to complete song generation (business-tier starting rate)",
+        "costPerMinuteUSD": 0.28,
+        "costPerMinuteCents": 28
+      }
+    }
+  },
+  "minimax": {
+    "description": "MiniMax music generation",
+    "type": "api",
+    "models": {
+      "music-2.5": {
+        "description": "music-2.5 — full song generation from prompt and lyrics",
+        "costPerTrackUSD": 0.15,
+        "costPerTrackCents": 15,
+        "lyricsCostPerTrackUSD": 0.01,
+        "lyricsCostPerTrackCents": 1
+      }
+    }
+  }
+}

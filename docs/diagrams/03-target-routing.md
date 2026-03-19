@@ -1,0 +1,126 @@
+# Target Classification & Routing
+
+How inputs are classified and routed to batch or single-item processing paths.
+
+## Outline
+
+- [Top-Level Classification](#top-level-classification)
+- [Single Target Input Classification](#single-target-input-classification)
+- [Command + Input Kind Matrix](#command--input-kind-matrix)
+
+## Top-Level Classification
+
+```
+src/cli/commands.ts → handleProcessTarget()
+         |
+         |  resolvedTarget = positional arg or -- value
+         |  opts = buildOptsFromFlags(skipLLM, rawFlags)
+         v
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  classifyTopLevelTarget(target)                                              │
+│                                                                              │
+│  Is it a directory?  ───yes──>  { kind: 'directory' }                        │
+│         |no                                                                  │
+│  Is it a .md/.txt file?  ──yes──>  { kind: 'input_list' }                   │
+│         |no                                                                  │
+│  Otherwise  ──────────────────>  { kind: 'single' }                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+         |
+         v
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          ROUTING BRANCHES                                     │
+│                                                                              │
+│  ┌─── 'directory' ──────────────────────────────────────────────────┐        │
+│  │  handleDirectoryTargetBatch()                                     │        │
+│  │  1. collectInputFiles() → find all media/doc/image files          │        │
+│  │  2. If dir named "input/" → also read 2-urls.md for URLs          │        │
+│  │  3. Filter docs-only when command='extract'                       │        │
+│  │  4. processBatch(allItems) → sequential loop                      │        │
+│  └───────────────────────────────────────────────────────────────────┘        │
+│                                                                              │
+│  ┌─── 'input_list' ────────────────────────────────────────────────┐         │
+│  │  handleInputListTargetBatch()                                    │         │
+│  │  1. readInputList() → parse .md/.txt line-by-line                │         │
+│  │     - Strip bullets (- / *)                                      │         │
+│  │     - Parse markdown links [text](url)                           │         │
+│  │     - Resolve relative file paths                                │         │
+│  │  2. processBatch(items) → sequential loop                        │         │
+│  └──────────────────────────────────────────────────────────────────┘         │
+│                                                                              │
+│  ┌─── 'single' (batch source check first) ─────────────────────────┐         │
+│  │  tryResolveBatchSource()                                         │         │
+│  │  1. YouTube channel/playlist? → tryEnumerateYoutubeChannel()     │         │
+│  │     (URL pattern check, no network cost)                         │         │
+│  │  2. Podcast RSS/Atom feed? → tryEnumeratePodcastFeed()           │         │
+│  │     (URL heuristic + HEAD request)                               │         │
+│  │  3. If batch source found → processBatch(items)                  │         │
+│  │  4. If no match → return null (fall through to single)           │         │
+│  └──────────────────────────────────────────────────────────────────┘         │
+│                                                                              │
+│  ┌─── 'single' ────────────────────────────────────────────────────┐         │
+│  │  handleSingleTarget() → processSingleTarget()                    │         │
+│  │  (see single target input classification below)                  │         │
+│  └──────────────────────────────────────────────────────────────────┘         │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Single Target Input Classification
+
+```
+src/cli/targets/single-target.ts → processSingleTarget()
+
+                      ┌──────────────┐
+                      │  Input Item  │
+                      └──────┬───────┘
+                             |
+                    ┌────────┴────────┐
+                    │  isLikelyUrl()  │
+                    └────────┬────────┘
+                        yes/ \no
+                       /       \
+                      v         v
+          ┌───────────────┐  ┌─────────────────┐
+          │ classifyUrl() │  │ Local file path  │
+          └───────┬───────┘  └────────┬─────────┘
+                  |                    |
+       ┌─────────┼────────┐    ┌──────┴───────┐
+       |         |        |    |              |
+       v         v        v    v              v
+ ┌──────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+ │url_direct│ │url_    │ │url_      │ │local_    │ │local_    │
+ │_document │ │direct_ │ │streaming │ │document  │ │media     │
+ │          │ │media   │ │          │ │          │ │          │
+ │.pdf,.epub│ │.mp3,   │ │YouTube,  │ │.pdf,.epub│ │.wav,.mp3,│
+ │.png,.jpg │ │.mp4,   │ │Twitch,   │ │.png,.jpg │ │.mp4,.mkv │
+ │.tif URLs │ │.wav,   │ │TikTok    │ │.tif local│ │.mov,...  │
+ │          │ │.webm   │ │(default  │ │          │ │          │
+ │          │ │URLs    │ │fallback) │ │          │ │          │
+ └─────┬────┘ └───┬────┘ └────┬─────┘ └─────┬───┘ └────┬─────┘
+       |          |           |              |           |
+       v          v           v              v           v
+  ┌──────────────────────┐  ┌──────────────────────────────┐
+  │  DOCUMENT PIPELINE   │  │     MEDIA PIPELINE           │
+  │  extract / write     │  │     transcribe / write       │
+  └──────────────────────┘  └──────────────────────────────┘
+```
+
+## Command + Input Kind Matrix
+
+```
+                    url_streaming   url_direct_media   url_direct_document   local_media   local_document
+                   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
+  transcribe      │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
+                  │             │                  │                     │             │
+  write           │  MEDIA (3)  │     MEDIA (3)    │   DOCUMENT (4)      │  MEDIA (3)  │ DOCUMENT (4)
+                  │             │                  │                     │             │
+  extract         │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
+                  ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
+
+  (1) processVideo() with skipLLM=true
+  (2) CLIUsageError: "Use: bun as extract or bun as write"
+  (3) processVideo() with full LLM pipeline
+  (4) processDocument() + buildDocumentPrompt() + LLM summary
+  (5) CLIUsageError: "Use a direct document URL or local file"
+  (6) processDocument() extraction only
+  (7) Skipped with warning: "non-document file in extract mode"
+```

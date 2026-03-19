@@ -1,0 +1,82 @@
+import { commandExists, runCapture, runInherit, detectPlatform } from '../../step-0-setup/setup-orchestrator/run-complete-setup'
+import * as l from '~/logger'
+
+const shouldPrintCompletion = (): boolean => {
+  return (process.env['AUTOSHOW_COMPACT_SETUP'] || '0') !== '1'
+}
+
+const installTesseract = async (): Promise<void> => {
+  if (commandExists('tesseract')) {
+    l.success('Tesseract already installed')
+    return
+  }
+
+  l.info('Installing Tesseract')
+  const platform = detectPlatform()
+
+  if (platform === 'darwin') {
+    await runInherit('brew', ['install', 'tesseract'])
+    l.success('Tesseract installed')
+    return
+  }
+
+  if (platform === 'linux') {
+    await runInherit('sudo', ['apt', 'install', '-y', 'tesseract-ocr'])
+    l.success('Tesseract installed')
+    return
+  }
+
+  l.error('Unsupported platform for tesseract auto-install')
+  throw new Error('Unsupported platform for tesseract setup')
+}
+
+const ensureEnglishLanguageData = async (): Promise<void> => {
+  const result = await runCapture('tesseract', ['--list-langs'], { allowFailure: true })
+  const langs = result.stdout
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  if (langs.includes('eng')) {
+    l.success('Tesseract language data (eng) found')
+    return
+  }
+
+  l.warn('Could not find eng.traineddata in tessdata path')
+  l.info('Set TESSDATA_PREFIX if your language files are in a custom directory')
+}
+
+const installLibreOffice = async (): Promise<void> => {
+  if (commandExists('soffice')) {
+    l.success('LibreOffice already installed')
+    return
+  }
+
+  l.info('Installing LibreOffice')
+  const platform = detectPlatform()
+
+  if (platform === 'darwin') {
+    await runInherit('brew', ['install', '--cask', 'libreoffice'])
+    l.success('LibreOffice installed')
+    return
+  }
+
+  if (platform === 'linux') {
+    await runInherit('sudo', ['apt', 'install', '-y', 'libreoffice'])
+    l.success('LibreOffice installed')
+    return
+  }
+
+  l.error('Unsupported platform for libreoffice auto-install')
+  throw new Error('Unsupported platform for libreoffice setup')
+}
+
+export const setupExtractionOcr = async (): Promise<void> => {
+  await installTesseract()
+  await ensureEnglishLanguageData()
+  await installLibreOffice()
+
+  if (shouldPrintCompletion()) {
+    l.success('Extraction OCR setup complete')
+  }
+}

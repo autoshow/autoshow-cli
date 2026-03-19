@@ -1,0 +1,129 @@
+{
+  "kitten": {
+    "description": "KittenML local text-to-speech",
+    "type": "local",
+    "voices": [
+      "Bella",
+      "Jasper",
+      "Luna",
+      "Bruno",
+      "Rosie",
+      "Hugo",
+      "Kiki",
+      "Leo"
+    ],
+    "models": {
+      "kitten-tts-mini": {
+        "description": "Kitten TTS Mini — balanced quality and speed",
+        "hfRepo": "KittenML/kitten-tts-mini-0.8",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0
+      },
+      "kitten-tts-micro": {
+        "description": "Kitten TTS Micro — lightweight",
+        "hfRepo": "KittenML/kitten-tts-micro-0.8",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0
+      },
+      "kitten-tts-nano": {
+        "description": "Kitten TTS Nano — ultra-lightweight fp32",
+        "hfRepo": "KittenML/kitten-tts-nano-0.8-fp32",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0
+      },
+      "kitten-tts-nano-0.8-int8": {
+        "description": "Kitten TTS Nano — ultra-lightweight int8 quantized",
+        "hfRepo": "KittenML/kitten-tts-nano-0.8-int8",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0
+      }
+    }
+  },
+  "elevenlabs": {
+    "description": "ElevenLabs cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "eleven_v3": {
+        "description": "ElevenLabs v3 — latest generation",
+        "costPer1kCharsUSD": 0.12,
+        "costPer1kCharsCents": 12
+      },
+      "eleven_flash_v2_5": {
+        "description": "ElevenLabs Flash v2.5 — low latency",
+        "costPer1kCharsUSD": 0.06,
+        "costPer1kCharsCents": 6
+      },
+      "eleven_turbo_v2_5": {
+        "description": "ElevenLabs Turbo v2.5 — low latency",
+        "costPer1kCharsUSD": 0.06,
+        "costPer1kCharsCents": 6
+      }
+    }
+  },
+  "minimax": {
+    "description": "MiniMax cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "speech-2.8-hd": {
+        "description": "speech-2.8-hd — high quality synthesis",
+        "costPer1kCharsUSD": 0.1,
+        "costPer1kCharsCents": 10
+      },
+      "speech-2.8-turbo": {
+        "description": "speech-2.8-turbo — low latency synthesis",
+        "costPer1kCharsUSD": 0.06,
+        "costPer1kCharsCents": 6
+      }
+    }
+  },
+  "groq": {
+    "description": "Groq cloud text-to-speech",
+    "type": "api",
+    "voices": [
+      "autumn",
+      "diana",
+      "hannah",
+      "austin",
+      "daniel",
+      "troy"
+    ],
+    "models": {
+      "canopylabs/orpheus-v1-english": {
+        "description": "Orpheus v1 English — expressive low-latency cloud TTS",
+        "inputCostPer1MCharsUSD": 10,
+        "inputCostPer1MCharsCents": 1000,
+        "outputCostPer1MCharsUSD": 22,
+        "outputCostPer1MCharsCents": 2200
+      }
+    }
+  },
+  "openai": {
+    "description": "OpenAI cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "gpt-4o-mini-tts": {
+        "description": "GPT-4o Mini TTS — compact speech synthesis model",
+        "inputCostPer1MCharsUSD": 0.6,
+        "inputCostPer1MCharsCents": 60,
+        "outputCostPer1MCharsUSD": 12,
+        "outputCostPer1MCharsCents": 1200
+      }
+    }
+  },
+  "gemini": {
+    "description": "Google Gemini cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "gemini-2.5-flash-preview-tts": {
+        "description": "Gemini 2.5 Flash Preview TTS — fast speech synthesis",
+        "costPer1kCharsUSD": 0.0005,
+        "costPer1kCharsCents": 0.05
+      },
+      "gemini-2.5-pro-preview-tts": {
+        "description": "Gemini 2.5 Pro Preview TTS — higher quality speech synthesis",
+        "costPer1kCharsUSD": 0.001,
+        "costPer1kCharsCents": 0.1
+      }
+    }
+  }
+}

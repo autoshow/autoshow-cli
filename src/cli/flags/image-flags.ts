@@ -1,0 +1,51 @@
+import type { ClercFlagsDefinition } from 'clerc'
+import {
+  SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_MINIMAX_IMAGE_MODELS,
+  SUPPORTED_OPENAI_IMAGE_MODELS
+} from '~/cli/commands/models/model-options'
+import { priceFlag } from './shared-flags'
+
+const GEMINI_IMAGE_MODELS_DESCRIPTION = `Gemini image model: ${SUPPORTED_GEMINI_IMAGE_MODELS.join('|')}`
+const MINIMAX_IMAGE_MODELS_DESCRIPTION = `MiniMax image model: ${SUPPORTED_MINIMAX_IMAGE_MODELS.join('|')}`
+const OPENAI_IMAGE_MODELS_DESCRIPTION = `OpenAI image model: ${SUPPORTED_OPENAI_IMAGE_MODELS.join('|')}`
+
+export const imageGenFlags = {
+  'gemini-image': {
+    description: GEMINI_IMAGE_MODELS_DESCRIPTION,
+    type: String
+  },
+  'openai-image': {
+    description: OPENAI_IMAGE_MODELS_DESCRIPTION,
+    type: String
+  },
+  'minimax-image': {
+    description: MINIMAX_IMAGE_MODELS_DESCRIPTION,
+    type: String
+  },
+  'image-aspect-ratio': {
+    description: 'Image aspect ratio: 1:1|16:9|9:16|4:3|3:4 (Gemini)',
+    type: String
+  },
+  'image-size': {
+    description: 'Image size: 1K|2K|4K (Gemini) or 1024x1024|1536x1024|1024x1536 (OpenAI)',
+    type: String
+  },
+  'image-quality': {
+    description: 'Image quality: low|medium|high|auto (OpenAI, default: auto)',
+    type: String
+  },
+  'image-format': {
+    description: 'Image output format: png|jpeg|webp (OpenAI, default: png)',
+    type: String
+  },
+  'image-background': {
+    description: 'Image background: transparent|opaque|auto (OpenAI, default: auto)',
+    type: String
+  },
+  'imagen-count': {
+    description: 'Number of images to generate 1-4 (Imagen 4, default: 1)',
+    type: String
+  },
+  ...priceFlag
+} as const satisfies ClercFlagsDefinition

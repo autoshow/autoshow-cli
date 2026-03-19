@@ -1,0 +1,8 @@
+[install]
+exact = true
+auto = "disable"
+linker = "isolated"
+minimumReleaseAge = 43200
+
+[test]
+root = "./test"

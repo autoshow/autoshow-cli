@@ -1,0 +1,64 @@
+{
+  "gemini": {
+    "description": "Google Gemini image generation",
+    "type": "api",
+    "models": {
+      "gemini-3-pro-image-preview": {
+        "description": "Gemini 3 Pro native image generation",
+        "costPerImageUSD": 0.03,
+        "costPerImageCents": 3,
+        "nativeGeminiImage": true
+      },
+      "imagen-4.0-generate-001": {
+        "description": "Imagen 4.0 — dedicated image generation",
+        "costPerImageUSD": 0.04,
+        "costPerImageCents": 4,
+        "nativeGeminiImage": false
+      },
+      "imagen-4.0-ultra-generate-001": {
+        "description": "Imagen 4.0 Ultra — highest quality image generation",
+        "costPerImageUSD": 0.06,
+        "costPerImageCents": 6,
+        "nativeGeminiImage": false
+      },
+      "imagen-4.0-fast-generate-001": {
+        "description": "Imagen 4.0 Fast — fastest image generation",
+        "costPerImageUSD": 0.02,
+        "costPerImageCents": 2,
+        "nativeGeminiImage": false
+      }
+    }
+  },
+  "openai": {
+    "description": "OpenAI DALL-E / GPT Image generation",
+    "type": "api",
+    "models": {
+      "gpt-image-1.5": {
+        "description": "GPT Image 1.5 — latest generation",
+        "costPerImageUSD": 0.08,
+        "costPerImageCents": 8
+      },
+      "gpt-image-1": {
+        "description": "GPT Image 1 — standard quality",
+        "costPerImageUSD": 0.04,
+        "costPerImageCents": 4
+      },
+      "gpt-image-1-mini": {
+        "description": "GPT Image 1 Mini — budget option",
+        "costPerImageUSD": 0.02,
+        "costPerImageCents": 2
+      }
+    }
+  },
+  "minimax": {
+    "description": "MiniMax image generation",
+    "type": "api",
+    "models": {
+      "image-01": {
+        "description": "image-01 — text-to-image generation",
+        "costPerImageUSD": 0.0035,
+        "costPerImageCents": 0.35
+      }
+    }
+  }
+}
