@@ -28,11 +28,10 @@ export async function processVideo(
       llmServices
     )
     
-    // Generate music if requested (ElevenLabs or MiniMax)
     if ((options.elevenlabs || options.minimax) && llmOutput) {
       const musicResult = await generateMusic(options, llmOutput, finalPath)
       if (!musicResult.success) {
-        l.warn(`Music generation failed: ${musicResult.error}`)
+        l('Music generation failed', { error: musicResult.error })
       }
     }
     

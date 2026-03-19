@@ -19,7 +19,7 @@ export const isApiError = (error: unknown): error is ApiError =>
 
 export const handleError = (error: any): void => {
   if (!isApiError(error)) {
-    err(`Unknown error: ${String(error)}`)
+    err('Unknown error', { error: String(error) })
   }
   
   const errorMap = {
@@ -36,7 +36,7 @@ export const handleError = (error: any): void => {
     error.name === key || error.message?.includes(key)
   )
   
-  err(`${matched ? matched[1] : `Error: ${error.message}`}`)
+  err(matched ? matched[1] : 'Error', matched ? undefined : { message: error.message })
 }
 
 export function ensureOutputDirectory(outputPath: string): void {
@@ -47,8 +47,17 @@ export function ensureOutputDirectory(outputPath: string): void {
 }
 
 export function validateVideoModel(model: string): boolean {
-  const validModels = ['veo-3.0-generate-preview', 'veo-3.0-fast-generate-preview', 'veo-2.0-generate-001']
+  const validModels = ['veo-3.1-generate-preview', 'veo-3.1-fast-generate-preview']
   return validModels.includes(model)
+}
+
+export function validateResolution(value: string): '720p' | '1080p' | '4k' {
+  const validResolutions = ['720p', '1080p', '4k']
+  if (validResolutions.includes(value)) {
+    return value as '720p' | '1080p' | '4k'
+  }
+  l('Invalid resolution. Using default 720p', { value })
+  return '720p'
 }
 
 export function validateRunwayModel(model: string): boolean {
@@ -61,6 +70,6 @@ export function parseAspectRatio(value: string): '16:9' | '9:16' | undefined {
   if (validRatios.includes(value)) {
     return value as '16:9' | '9:16'
   }
-  l.warn(`Invalid aspect ratio "${value}". Using default 16:9`)
+  l('Invalid aspect ratio. Using default 16:9', { value })
   return '16:9'
 }

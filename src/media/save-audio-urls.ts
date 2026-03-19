@@ -1,15 +1,16 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { spawn, readFile, stat, ensureDir } from '@/node-utils'
 import { AUDIO_FMT, AUDIO_Q } from './create-media-command'
+import { registerProcess } from '@/utils'
 
 export async function downloadAudioFromUrls(markdownFile: string, verbose = false): Promise<void> {
   if (!markdownFile.toLowerCase().endsWith('.md')) {
-    err(`Input file "${markdownFile}" is not a markdown file (.md extension required)`)
+    err('Input file is not a markdown file (.md extension required)', { file: markdownFile })
   }
   
   const isInputFile = await isFile(markdownFile)
   if (!isInputFile) {
-    err(`Input file "${markdownFile}" does not exist or is not accessible`)
+    err('Input file does not exist or is not accessible', { file: markdownFile })
   }
   
   try {
@@ -18,10 +19,10 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
     const urls = [...data.matchAll(urlRegex)].map(match => match[0].replace(/[)>]$/, ''))
     
     if (urls.length === 0) {
-      err(`No URLs found in markdown file: ${markdownFile}`)
+      err('No URLs found in markdown file', { file: markdownFile })
     }
     
-    l.opts(`Processing ${urls.length} URLs with yt-dlp`)
+    l('Processing URLs with yt-dlp', { count: urls.length })
     
     const outputDir = 'output'
     await ensureDir(outputDir)
@@ -44,7 +45,10 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
         stdio: verbose ? 'inherit' : 'ignore' 
       })
       
+      const unregister = registerProcess(ytDlpProcess)
+      
       ytDlpProcess.on('close', (code) => {
+        unregister()
         if (code === 0) {
           resolve()
         } else {
@@ -53,13 +57,14 @@ export async function downloadAudioFromUrls(markdownFile: string, verbose = fals
       })
       
       ytDlpProcess.on('error', (error) => {
+        unregister()
         reject(new Error(`yt-dlp process error: ${error.message}`))
       })
     })
     
-    l.success(`Successfully downloaded ${urls.length} audio files`)
+    success('Successfully downloaded audio files', { count: urls.length })
   } catch (error) {
-    err(`Error reading markdown file: ${(error as Error).message}`)
+    err('Error reading markdown file', { error: (error as Error).message })
   }
 }
 

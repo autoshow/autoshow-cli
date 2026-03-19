@@ -16,23 +16,26 @@ export async function callChatGPT(
   const openai = new OpenAI({ apiKey: env['OPENAI_API_KEY'] })
   const combinedPrompt = `${prompt}\n${transcript}`
   try {
-    const response = await openai.chat.completions.create({
+    const response = await openai.responses.create({
       model: modelValue,
-      max_completion_tokens: 4000,
-      messages: [{ role: 'user', content: combinedPrompt }],
+      max_output_tokens: 4000,
+      input: combinedPrompt,
     })
-    const firstChoice = response.choices[0]
-    if (!firstChoice?.message?.content) {
+    
+    const content = response.output_text
+    if (!content) {
       throw new Error('No valid response from the API')
     }
-    const content = firstChoice.message.content
+    
+    const stopReason = 'completed'
+    
     return {
       content,
       usage: {
-        stopReason: firstChoice.finish_reason ?? 'unknown',
-        input: response.usage?.prompt_tokens,
-        output: response.usage?.completion_tokens,
-        total: response.usage?.total_tokens
+        stopReason,
+        input: response.usage?.input_tokens,
+        output: response.usage?.output_tokens,
+        total: (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0)
       }
     }
   } catch (error) {

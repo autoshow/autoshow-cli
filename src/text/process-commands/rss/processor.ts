@@ -4,8 +4,9 @@ import { runTranscription } from '../../process-steps/02-run-transcription/run-t
 import { selectPrompts } from '../../process-steps/03-select-prompts/select-prompt'
 import { runLLM } from '../../process-steps/04-run-llm/run-llm'
 import { generateMusic } from '../../process-steps/05-generate-music/generate-music'
-import { saveInfo } from '../../utils/save-info'
+import { saveInfo, sanitizeTitle, outputExists } from '../../utils/save-info'
 import { l, err } from '@/logging'
+import { getCliContext, createBatchProgress } from '@/utils'
 import { selectRSSItemsToProcess } from './fetch'
 import { logRSSProcessingStatus } from './rss-logging'
 import type { ProcessingOptions, ShowNoteMetadata } from '@/text/text-types'
@@ -21,12 +22,11 @@ export async function processRSSFeeds(
   
   for (const rssUrl of expandedRssUrls) {
     if (options.item && options.item.length > 0) {
-      l.dim('Processing specific items:')
-      options.item.forEach((url) => l.dim(`${url}`))
+      l('Processing specific items', { urls: options.item })
     } else if (options.last) {
-      l.dim(`Processing the last ${options.last} items`)
+      l('Processing the last items', { count: options.last })
     } else if (options.days) {
-      l.dim(`Processing items from the last ${options.days} days`)
+      l('Processing items from the last days', { days: options.days })
     }
     
     try {
@@ -53,8 +53,20 @@ export async function processRSSFeeds(
       logRSSProcessingStatus(items.length, items.length, options)
       
       const results = []
+      const ctx = getCliContext()
+      const progress = createBatchProgress({ label: 'RSS items', total: items.length })
+      
       for (const [index, item] of items.entries()) {
-        l.final(`Item ${index + 1}/${items.length} processing: ${item.title}`)
+        if (ctx.network.skipExisting) {
+          const expectedFilename = `${item.publishDate}-${sanitizeTitle(item.title)}`
+          if (outputExists(expectedFilename, options)) {
+            l('Skipping (output exists)', { current: index + 1, total: items.length, title: item.title })
+            progress.skip()
+            continue
+          }
+        }
+        
+        l('Item processing', { current: index + 1, total: items.length, title: item.title })
         
         try {
           const { frontMatter, finalPath, filename, metadata } = await generateMarkdown(options, item)
@@ -75,11 +87,10 @@ export async function processRSSFeeds(
             llmServices
           )
           
-          // Generate music if requested (ElevenLabs or MiniMax)
           if ((options.elevenlabs || options.minimax) && llmOutput) {
             const musicResult = await generateMusic(options, llmOutput, finalPath)
             if (!musicResult.success) {
-              l.warn(`Music generation failed: ${musicResult.error}`)
+              l('Music generation failed', { error: musicResult.error })
             }
           }
           
@@ -92,8 +103,10 @@ export async function processRSSFeeds(
             llmOutput: llmOutput || '',
             transcript,
           })
+          progress.complete(true)
         } catch (error) {
-          err(`Error processing item ${item.title}: ${(error as Error).message}`)
+          err('Error processing item', { title: item.title, error: (error as Error).message })
+          progress.complete(false)
           results.push({
             frontMatter: '',
             prompt: '',
@@ -102,14 +115,16 @@ export async function processRSSFeeds(
           })
         }
       }
+      
+      progress.printSummary()
     } catch (error) {
-      err(`Error processing RSS feed ${rssUrl}: ${(error as Error).message}`)
+      err('Error processing RSS feed', { rssUrl, error: (error as Error).message })
       throw error
     }
   }
   
   if (skippedFeeds.length > 0) {
-    l.warn(`No items found for: ${skippedFeeds.join(', ')}`)
+    l('No items found for feeds', { feeds: skippedFeeds.join(', ') })
   }
   
   if (options.info === 'combined' && allItemsForCombined.length > 0) {

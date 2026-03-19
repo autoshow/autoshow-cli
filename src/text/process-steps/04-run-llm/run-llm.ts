@@ -64,18 +64,18 @@ export async function runLLM(
       const showNotes = showNotesData.content
       const outputFilename = `${finalPath}-${llmServices}-shownotes.md`
       await writeFile(outputFilename, `${frontMatter}\n${showNotes}\n\n## Transcript\n\n${transcript}`)
-      l.dim(`LLM processing completed, combined front matter + LLM output + transcript written to: ${outputFilename}`)
+      l('LLM processing completed, combined front matter + LLM output + transcript written to', { outputFile: outputFilename })
       showNotesResult = showNotes
     } else {
-      l.dim('No LLM selected, skipping processing...')
+      l('No LLM selected, skipping processing...')
       const noLLMFile = `${finalPath}-prompt.md`
-      l.dim(`Writing front matter + prompt + transcript to file: ${noLLMFile}`)
+      l('Writing front matter + prompt + transcript to file', { outputFile: noLLMFile })
       await writeFile(noLLMFile, `${frontMatter}\n${prompt}\n## Transcript\n\n${transcript}`)
     }
     
     return showNotesResult
   } catch (error) {
-    err(`Error running Language Model: ${(error as Error).message}`)
+    err('Error running Language Model', { error: (error as Error).message })
     throw error
   }
 }
@@ -91,13 +91,13 @@ export async function retryLLMCall<T>(
       const result = await fn()
       return result
     } catch (error) {
-      err(`Attempt ${attempt} failed: ${(error as Error).message}`)
+      err('LLM attempt failed', { attempt, error: (error as Error).message })
       if (attempt >= maxRetries) {
-        err(`Max retries (${maxRetries}) reached. Aborting LLM processing.`)
+        err('Max retries reached, aborting LLM processing', { maxRetries })
         throw error
       }
       const delayMs = 1000 * 2 ** (attempt - 1)
-      l.dim(`Retrying in ${delayMs / 1000} seconds...`)
+      l('Retrying in seconds', { delay: delayMs / 1000 })
       await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
   }

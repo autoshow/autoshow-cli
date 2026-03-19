@@ -1,30 +1,62 @@
 # CosyVoice TTS
 
-CosyVoice3 (Fun-CosyVoice3-0.5B) is a state-of-the-art multilingual text-to-speech engine from FunAudioLLM. It supports 9 languages, 18+ Chinese dialects, zero-shot voice cloning, and instruction-based voice control.
+CosyVoice is a state-of-the-art multilingual text-to-speech engine from FunAudioLLM. The latest version (Fun-CosyVoice3-0.5B) supports 9 languages, 18+ Chinese dialects, zero-shot voice cloning, and instruction-based voice control.
+
+## Available Models
+
+| Model | Size | Features |
+|-------|------|----------|
+| **Fun-CosyVoice3-0.5B** | ~500MB | Latest V3, best quality, 9 languages, 18+ dialects, bi-streaming |
+| **CosyVoice2-0.5B** | ~500MB | Version 2, high quality |
+| **CosyVoice-300M** | ~300MB | Base model |
+| **CosyVoice-300M-SFT** | ~300MB | Fine-tuned with predefined speakers |
+| **CosyVoice-300M-Instruct** | ~300MB | Default, instruction-following |
+| **CosyVoice-ttsfrd** | ~300MB | Text normalization resources |
 
 ## Requirements
 
 - Python 3.10+ with the TTS virtual environment
 - Docker (optional, for containerized deployment)
-- First run will download models (~2-3GB)
+- First run will download selected model (~300MB-500MB)
+
+## Setup
+
+```bash
+# Install CosyVoice TTS (default: CosyVoice-300M-Instruct)
+bun setup:tts:cosyvoice
+
+# Install with specific model
+COSYVOICE_MODEL=Fun-CosyVoice3-0.5B bun setup:tts:cosyvoice
+COSYVOICE_MODEL=CosyVoice2-0.5B bun setup:tts:cosyvoice
+```
+
+The setup script will:
+1. Create the base TTS Python environment (if not already present)
+2. Check for Docker and use containerized deployment if available
+3. If Docker is not available, clone the CosyVoice repository to `build/cosyvoice`
+4. Install required dependencies
+5. Download the specified model (~300-500MB) from ModelScope or HuggingFace
 
 ## Quick Start
 
 ```bash
-# Basic usage with default settings (instruct mode)
-bun as -- tts file input/sample.md --cosyvoice
+# Basic usage with default model (CosyVoice-300M-Instruct)
+bun as -- tts input/sample.md --cosyvoice
+
+# Use Fun-CosyVoice3 (latest, best quality)
+bun as -- tts input/sample.md --cosyvoice --cosyvoice-model Fun-CosyVoice3-0.5B
 
 # Add voice instructions
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm and energy"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak with enthusiasm and energy"
 
 # Specify language
-bun as -- tts file input/sample.md --cosyvoice --cosy-language ja
+bun as -- tts input/sample.md --cosyvoice --cosy-language ja
 
-# Use Chinese dialect via instruction
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"
+# Use Chinese dialect via instruction (best with Fun-CosyVoice3)
+bun as -- tts input/sample.md --cosyvoice --cosyvoice-model Fun-CosyVoice3-0.5B --cosy-instruct "Use Cantonese dialect"
 
 # Voice cloning (zero-shot mode)
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio voice.wav
 
 # Process a script file
 bun as -- tts script input/script.json --cosyvoice
@@ -34,8 +66,9 @@ bun as -- tts script input/script.json --cosyvoice
 
 | Option | Description |
 |--------|-------------|
-| `--cosyvoice` | Use CosyVoice3 TTS engine |
-| `--cosy-mode <mode>` | Generation mode: instruct (default), zero_shot, cross_lingual |
+| `--cosyvoice` | Use CosyVoice TTS engine |
+| `--cosyvoice-model <model>` | Model: Fun-CosyVoice3-0.5B, CosyVoice2-0.5B, CosyVoice-300M, CosyVoice-300M-SFT, CosyVoice-300M-Instruct (default), CosyVoice-ttsfrd |
+| `--cosy-mode <mode>` | Generation mode: instruct (default), zero_shot, cross_lingual, sft |
 | `--cosy-language <lang>` | Language: auto, zh, en, ja, ko, de, es, fr, it, ru |
 | `--cosy-api-url <url>` | API server URL (default: http://localhost:50000) |
 | `--cosy-instruct <text>` | Voice instruction for instruct mode |
@@ -66,19 +99,19 @@ Uses instruction text to control voice characteristics. Does not require referen
 
 ```bash
 # Basic instruct mode
-bun as -- tts file input/sample.md --cosyvoice
+bun as -- tts input/sample.md --cosyvoice
 
 # With specific instructions
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak slowly and clearly"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak slowly and clearly"
 
 # Dialect control
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Use Cantonese dialect"
 
 # Speed control
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak as fast as possible"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak as fast as possible"
 
 # Emotion control
-bun as -- tts file input/sample.md --cosyvoice --cosy-instruct "Speak with excitement and joy"
+bun as -- tts input/sample.md --cosyvoice --cosy-instruct "Speak with excitement and joy"
 ```
 
 ### Zero-Shot Mode
@@ -87,10 +120,10 @@ Clones a voice from a reference audio sample. Requires `--ref-audio`.
 
 ```bash
 # Basic voice cloning
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav
 
 # With transcript for better quality
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav --ref-text "This is what the sample audio says"
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio samples/voice.wav --ref-text "This is what the sample audio says"
 ```
 
 **Tips for voice cloning:**
@@ -103,7 +136,7 @@ bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio
 Fine-grained control with breath markers and pronunciation inpainting. Requires `--ref-audio`.
 
 ```bash
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode cross_lingual --ref-audio samples/voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode cross_lingual --ref-audio samples/voice.wav
 ```
 
 You can include control markers in your text:
@@ -164,7 +197,7 @@ If Docker is available, the setup script will check for a CosyVoice container:
 docker build -t cosyvoice:latest path/to/cosyvoice/runtime/python
 
 # The setup script will auto-start the container
-bun setup:tts
+bun setup:tts:cosyvoice
 ```
 
 ### Local Mode
@@ -175,7 +208,7 @@ If Docker is not available, the setup script will:
 3. Download the Fun-CosyVoice3-0.5B model from ModelScope/HuggingFace
 
 ```bash
-bun setup:tts
+bun setup:tts:cosyvoice
 ```
 
 ## Performance Notes
@@ -221,7 +254,7 @@ CosyVoice3 supports various instruction types:
 
 Run the setup script:
 ```bash
-bun setup:tts
+bun setup:tts:cosyvoice
 ```
 
 Or manually:
@@ -239,23 +272,43 @@ git submodule update --init --recursive
 
 ### "Model download failed"
 
-Try downloading manually:
+Try downloading manually. Choose the model you want to use:
+
+**Fun-CosyVoice3 (latest, best quality):**
 ```python
 from modelscope import snapshot_download
 snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='build/cosyvoice/pretrained_models/Fun-CosyVoice3-0.5B')
-```
 
-Or from HuggingFace:
-```python
+# Or from HuggingFace
 from huggingface_hub import snapshot_download
 snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='build/cosyvoice/pretrained_models/Fun-CosyVoice3-0.5B')
+```
+
+**CosyVoice2:**
+```python
+from modelscope import snapshot_download
+snapshot_download('iic/CosyVoice2-0.5B', local_dir='build/cosyvoice/pretrained_models/CosyVoice2-0.5B')
+
+# Or from HuggingFace
+from huggingface_hub import snapshot_download
+snapshot_download('FunAudioLLM/CosyVoice2-0.5B', local_dir='build/cosyvoice/pretrained_models/CosyVoice2-0.5B')
+```
+
+**CosyVoice-300M-Instruct (default):**
+```python
+from modelscope import snapshot_download
+snapshot_download('iic/CosyVoice-300M-Instruct', local_dir='build/cosyvoice/pretrained_models/CosyVoice-300M-Instruct')
+
+# Or from HuggingFace
+from huggingface_hub import snapshot_download
+snapshot_download('FunAudioLLM/CosyVoice-300M-Instruct', local_dir='build/cosyvoice/pretrained_models/CosyVoice-300M-Instruct')
 ```
 
 ### "Zero-shot mode requires --ref-audio"
 
 Zero-shot voice cloning requires a reference audio file:
 ```bash
-bun as -- tts file input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio path/to/voice.wav
+bun as -- tts input/sample.md --cosyvoice --cosy-mode zero_shot --ref-audio path/to/voice.wav
 ```
 
 If you don't have reference audio, use instruct mode instead (the default).

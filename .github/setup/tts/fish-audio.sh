@@ -3,6 +3,24 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
 
 MARKER_FILE="$CONFIG_DIR/.fish-audio-installed"
+MODEL_NAME="${FISHAUDIO_MODEL:-s1-mini}"
+
+# Map model names to HuggingFace repositories and checkpoint directories
+case "$MODEL_NAME" in
+  "s1-mini")
+    HUGGINGFACE_REPO="fishaudio/openaudio-s1-mini"
+    CHECKPOINT_DIR="build/checkpoints/openaudio-s1-mini"
+    ;;
+  "s1")
+    HUGGINGFACE_REPO="fishaudio/openaudio-s1"
+    CHECKPOINT_DIR="build/checkpoints/openaudio-s1"
+    ;;
+  *)
+    log "ERROR: Invalid model name: $MODEL_NAME"
+    log "Valid models: s1-mini, s1"
+    exit 1
+    ;;
+esac
 
 check_marker "$MARKER_FILE" && exit 0
 
@@ -11,37 +29,41 @@ require_tts_env
 # Check if dependencies are available
 if tts_can_import "requests" && tts_can_import "torch"; then
   # Download weights automatically for setup:tts
-  CHECKPOINT_DIR="${FISHAUDIO_CHECKPOINT_PATH:-checkpoints/openaudio-s1-mini}"
-  
+  CHECKPOINT_DIR="${FISHAUDIO_CHECKPOINT_PATH:-$CHECKPOINT_DIR}"
+
   if [ ! -d "$CHECKPOINT_DIR" ] || [ -z "$(ls -A "$CHECKPOINT_DIR" 2>/dev/null)" ]; then
-    log "Downloading FishAudio S1-mini weights (~2GB)..."
-    
+    MODEL_SIZE="~2GB"
+    if [ "$MODEL_NAME" = "s1" ]; then
+      MODEL_SIZE="~8GB"
+    fi
+    log "Downloading FishAudio $MODEL_NAME weights ($MODEL_SIZE)..."
+
     # Ensure huggingface_hub is available
     tts_pip install "huggingface_hub[cli]" >/dev/null 2>&1 || true
-    
+
     mkdir -p "$CHECKPOINT_DIR"
-    
+
     # Try downloading via Python
-    DOWNLOAD_OUTPUT=$(tts_python -c "from huggingface_hub import snapshot_download; snapshot_download('fishaudio/openaudio-s1-mini', local_dir='$CHECKPOINT_DIR')" 2>&1)
+    DOWNLOAD_OUTPUT=$(tts_python -c "from huggingface_hub import snapshot_download; snapshot_download('$HUGGINGFACE_REPO', local_dir='$CHECKPOINT_DIR')" 2>&1)
     DOWNLOAD_STATUS=$?
     
     if [ $DOWNLOAD_STATUS -eq 0 ]; then
-      log "FishAudio weights downloaded successfully"
+      log "FishAudio $MODEL_NAME weights downloaded successfully"
     elif echo "$DOWNLOAD_OUTPUT" | grep -q "GatedRepoError\|401\|Unauthorized"; then
       log "WARNING: FishAudio model requires HuggingFace authentication"
-      log "  1. Run: huggingface-cli login"
-      log "  2. Accept license at: https://huggingface.co/fishaudio/openaudio-s1-mini"
-      log "  3. Then run: huggingface-cli download fishaudio/openaudio-s1-mini --local-dir $CHECKPOINT_DIR"
+      log "  1. Run: hf auth login"
+      log "  2. Accept license at: https://huggingface.co/$HUGGINGFACE_REPO"
+      log "  3. Then run: hf download $HUGGINGFACE_REPO --local-dir $CHECKPOINT_DIR"
     else
       log "WARNING: Failed to download weights. You can download manually:"
-      log "  huggingface-cli download fishaudio/openaudio-s1-mini --local-dir $CHECKPOINT_DIR"
+      log "  hf download $HUGGINGFACE_REPO --local-dir $CHECKPOINT_DIR"
     fi
   else
-    log "FishAudio weights already present at $CHECKPOINT_DIR"
+    log "FishAudio $MODEL_NAME weights already present at $CHECKPOINT_DIR"
   fi
-  
+
   touch "$MARKER_FILE"
-  log "FishAudio TTS installed successfully"
+  log "FishAudio TTS ($MODEL_NAME) installed successfully"
   exit 0
 fi
 

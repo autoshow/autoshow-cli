@@ -9,9 +9,7 @@ import torch
 import torchaudio as ta
 import numpy as np
 
-
 def get_device_and_dtype(requested_device=None, requested_dtype=None):
-    """Determine optimal device and dtype for Chatterbox."""
     if requested_device in ["cpu", "mps", "cuda"]:
         device = requested_device
     elif torch.cuda.is_available():
@@ -30,16 +28,13 @@ def get_device_and_dtype(requested_device=None, requested_dtype=None):
 
     return device, dtype
 
-
 def emit_result(payload):
     sys.stdout.write(json.dumps(payload) + "\n")
     sys.stdout.flush()
 
-
 def log(msg):
     sys.stderr.write(str(msg) + "\n")
     sys.stderr.flush()
-
 
 config = json.loads(sys.argv[1])
 model_type = config.get("model", "turbo")
@@ -75,26 +70,7 @@ try:
         else:
             wav = model.generate(text)
 
-    elif model_type == "multilingual":
-        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
-
-        try:
-            model = ChatterboxMultilingualTTS.from_pretrained(device=device)
-        except Exception:
-            if device == "mps":
-                log("MPS load failed, falling back to CPU")
-                device = "cpu"
-                model = ChatterboxMultilingualTTS.from_pretrained(device=device)
-            else:
-                raise
-        language_id = config.get("language_id", "en")
-
-        kwargs = {"text": text, "language_id": language_id}
-        if ref_audio:
-            kwargs["audio_prompt_path"] = ref_audio
-        wav = model.generate(**kwargs)
-
-    else:  # standard
+    elif model_type == "standard":
         from chatterbox.tts import ChatterboxTTS
 
         try:
@@ -115,6 +91,11 @@ try:
         if "cfg_weight" in config:
             kwargs["cfg_weight"] = config["cfg_weight"]
         wav = model.generate(**kwargs)
+
+    else:
+        raise ValueError(
+            f"Invalid model type: {model_type}. Supported models: turbo, standard"
+        )
 
     ta.save(output, wav, model.sr)
     emit_result({"ok": True, "output": output, "sample_rate": model.sr})

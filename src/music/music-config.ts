@@ -1,8 +1,3 @@
-/**
- * Music services configuration
- * Centralized configuration for all supported music generation providers
- */
-
 export const MUSIC_SERVICES_CONFIG = {
   elevenlabs: {
     serviceName: 'ElevenLabs Music',

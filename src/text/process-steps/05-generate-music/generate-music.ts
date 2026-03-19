@@ -7,12 +7,11 @@ import {
   normalizeSectionTagsForMinimax,
   getExtensionFromMinimaxFormat,
 } from '@/music/music-utils'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { env } from '@/node-utils'
 import type { ProcessingOptions, ElevenLabsGenre } from '@/text/text-types'
 import type { MusicOutputFormat } from '@/music/music-types'
 
-// ElevenLabs genre to music style mapping for composition plan prompt
 const ELEVENLABS_GENRE_STYLE_MAP: Record<ElevenLabsGenre, string> = {
   rap: 'hip-hop, rap, rhythmic beats, urban flow, confident delivery',
   rock: 'rock, electric guitar, powerful drums, energetic, anthemic',
@@ -22,7 +21,6 @@ const ELEVENLABS_GENRE_STYLE_MAP: Record<ElevenLabsGenre, string> = {
   country: 'country, acoustic, heartfelt, Americana, storytelling',
 }
 
-// MiniMax Music 2.5 optimized prompts (leverage its strengths in vocal/instrumentation)
 const MINIMAX_GENRE_STYLE_MAP: Record<ElevenLabsGenre, string> = {
   rap: 'Contemporary R&B/Hip-Hop with Trap influences, confident and assertive energy. Features rhythmic vocal delivery with Auto-Tune character, 808 basslines, intricate hi-hat patterns, sharp claps, and atmospheric synth pads. Modern polished production with layered harmonies and ad-libs.',
   
@@ -43,14 +41,6 @@ export interface MusicGenerationResult {
   error?: string
 }
 
-/**
- * Generate music based on LLM-generated lyrics
- * 
- * @param options - Processing options containing music service (elevenlabs/minimax), genre, and format
- * @param llmOutput - The LLM output containing generated lyrics
- * @param finalPath - The base path for output files (without extension)
- * @returns Result object with success status and path or error
- */
 export async function generateMusic(
   options: ProcessingOptions,
   llmOutput: string,
@@ -60,14 +50,13 @@ export async function generateMusic(
   const useMinimax = !!options.minimax
   
   if (!useElevenlabs && !useMinimax) {
-    return { success: true } // No music generation requested
+    return { success: true } 
   }
 
   const genre = (options.elevenlabs || options.minimax) as ElevenLabsGenre
   const service = useMinimax ? 'minimax' : 'elevenlabs'
   const apiKeyVar = useMinimax ? 'MINIMAX_API_KEY' : 'ELEVENLABS_API_KEY'
 
-  // Check for API key
   if (!env[apiKeyVar]) {
     return {
       success: false,
@@ -76,9 +65,8 @@ export async function generateMusic(
   }
 
   try {
-    l.opts(`Generating ${genre} music with ${service}`)
+    l('Generating music', { genre, service })
 
-    // Extract lyrics from LLM output
     const lyrics = extractLyrics(llmOutput)
     if (!lyrics) {
       return {
@@ -87,7 +75,7 @@ export async function generateMusic(
       }
     }
 
-    l.dim(`Extracted ${lyrics.split('\n').length} lines of lyrics`)
+    l('Extracted lines of lyrics', { lineCount: lyrics.split('\n').length })
 
     if (useMinimax) {
       return await generateWithMinimax(genre, lyrics, finalPath, options)
@@ -96,7 +84,7 @@ export async function generateMusic(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    err(`Music generation failed: ${errorMessage}`)
+    err('Music generation failed', { error: errorMessage })
     return {
       success: false,
       error: `Music generation failed: ${errorMessage}`
@@ -104,26 +92,20 @@ export async function generateMusic(
   }
 }
 
-/**
- * Generate music using MiniMax Music 2.5
- */
 async function generateWithMinimax(
   genre: ElevenLabsGenre,
   lyrics: string,
   finalPath: string,
   options: ProcessingOptions
 ): Promise<MusicGenerationResult> {
-  // Build style prompt (genre base + optional custom hints)
   let stylePrompt = MINIMAX_GENRE_STYLE_MAP[genre]
   if (options.musicStyle) {
     stylePrompt = `${stylePrompt} ${options.musicStyle}`
   }
   
-  // Normalize section tags and truncate lyrics for MiniMax limits
   let processedLyrics = normalizeSectionTagsForMinimax(lyrics)
   processedLyrics = truncateLyricsForMinimax(processedLyrics)
   
-  // Handle format conversion
   let format = options.musicFormat || 'mp3_44100_256000'
   format = convertFormatForService(format, 'minimax')
   const audioSetting = parseMinimaxFormat(format)
@@ -131,7 +113,7 @@ async function generateWithMinimax(
   
   const outputPath = `${finalPath}-minimax-${genre}.${ext}`
   
-  l.dim('Generating music with MiniMax Music 2.5...')
+  l('Generating music with MiniMax Music 2.5...')
   
   const result = await generateMusicWithMinimax({
     prompt: stylePrompt,
@@ -141,23 +123,19 @@ async function generateWithMinimax(
   })
   
   if (result.success) {
-    l.success(`Music generated: ${result.path}`)
+    success('Music generated', { path: result.path })
     return { success: true, path: result.path }
   } else {
     return { success: false, error: result.error }
   }
 }
 
-/**
- * Generate music using ElevenLabs
- */
 async function generateWithElevenlabs(
   genre: ElevenLabsGenre,
   lyrics: string,
   finalPath: string,
   options: ProcessingOptions
 ): Promise<MusicGenerationResult> {
-  // Build style prompt (genre base + optional custom hints)
   let musicStyle = ELEVENLABS_GENRE_STYLE_MAP[genre]
   if (options.musicStyle) {
     musicStyle = `${musicStyle}, ${options.musicStyle}`
@@ -165,8 +143,7 @@ async function generateWithElevenlabs(
   
   const planPrompt = `${musicStyle}\n\nLyrics:\n${lyrics}`
 
-  // Create composition plan
-  l.dim('Creating composition plan with ElevenLabs...')
+  l('Creating composition plan with ElevenLabs...')
   const planResult = await createCompositionPlan(planPrompt)
 
   if (!planResult.success || !planResult.plan) {
@@ -176,12 +153,10 @@ async function generateWithElevenlabs(
     }
   }
 
-  l.dim(`Composition plan created with ${planResult.plan.sections?.length || 0} sections`)
+  l('Composition plan created', { sectionCount: planResult.plan.sections?.length || 0 })
 
-  // Generate music with the composition plan
-  l.dim('Generating music from composition plan...')
+  l('Generating music from composition plan...')
   
-  // Handle format conversion
   let format = options.musicFormat || 'mp3_44100_128'
   format = convertFormatForService(format, 'elevenlabs')
   
@@ -194,26 +169,14 @@ async function generateWithElevenlabs(
   })
 
   if (musicResult.success) {
-    l.success(`Music generated: ${musicResult.path}`)
+    success('Music generated', { path: musicResult.path })
     return { success: true, path: musicResult.path }
   } else {
     return { success: false, error: musicResult.error }
   }
 }
 
-/**
- * Extract lyrics from LLM output
- * 
- * Looks for lyrics in several formats:
- * 1. ## Song section (from the song prompt templates)
- * 2. Lyrics: section
- * 3. Verse/Chorus structure patterns
- * 
- * @param llmOutput - The full LLM output text
- * @returns Extracted lyrics or null if not found
- */
 function extractLyrics(llmOutput: string): string | null {
-  // Look for ## Song section in the LLM output (matches song prompt template format)
   const songMatch = llmOutput.match(/## Song\s*\n([\s\S]*?)(?=\n## |$)/)
   if (songMatch && songMatch[1]) {
     const lyrics = songMatch[1].trim()
@@ -222,7 +185,6 @@ function extractLyrics(llmOutput: string): string | null {
     }
   }
 
-  // Fallback: look for "Lyrics:" section
   const lyricsMatch = llmOutput.match(/Lyrics:\s*\n([\s\S]*?)(?=\n## |$)/)
   if (lyricsMatch && lyricsMatch[1]) {
     const lyrics = lyricsMatch[1].trim()
@@ -231,20 +193,15 @@ function extractLyrics(llmOutput: string): string | null {
     }
   }
 
-  // Fallback: look for verse/chorus structure anywhere in the output
-  // This handles cases where the LLM doesn't follow exact format
   const verseChorusMatch = llmOutput.match(/(\[Verse[\s\S]*?\[Chorus[\s\S]*?)(?=\n## |$)/i)
   if (verseChorusMatch && verseChorusMatch[1]) {
     return verseChorusMatch[1].trim()
   }
 
-  // Last resort: look for content between common song section markers
   const sectionMarkers = /\[(Verse|Chorus|Bridge|Hook|Intro|Outro)[^\]]*\]/gi
   if (sectionMarkers.test(llmOutput)) {
-    // Find the first occurrence of a section marker and extract from there
     const firstMarkerIndex = llmOutput.search(/\[(Verse|Chorus|Bridge|Hook|Intro|Outro)[^\]]*\]/i)
     if (firstMarkerIndex !== -1) {
-      // Extract until we hit a ## heading or end of content
       const lyricsSection = llmOutput.substring(firstMarkerIndex)
       const endMatch = lyricsSection.match(/\n## /)
       const lyrics = endMatch

@@ -2,38 +2,34 @@ import { l, err } from '@/logging'
 import { existsSync } from '@/node-utils'
 import { logMkdir } from './rss-logging'
 import type { ProcessingOptions } from '@/text/text-types'
+import { EXIT_USAGE } from '@/utils'
 
 const WORKFLOWS_DIR = 'input/workflows'
 
 export function validateRSSOptions(options: ProcessingOptions): void {
   if (options.last !== undefined) {
     if (!Number.isInteger(options.last) || options.last < 1) {
-      err('Error: The --last option must be a positive integer.')
-      process.exit(1)
+      err('Error: The --last option must be a positive integer.', undefined, EXIT_USAGE)
     }
     if (options.order !== undefined) {
-      err('Error: The --last option cannot be used with --order.')
-      process.exit(1)
+      err('Error: The --last option cannot be used with --order.', undefined, EXIT_USAGE)
     }
   }
   
   if (options.order !== undefined && !['newest', 'oldest'].includes(options.order)) {
-    err("Error: The --order option must be either 'newest' or 'oldest'.")
-    process.exit(1)
+    err("Error: The --order option must be either 'newest' or 'oldest'.", undefined, EXIT_USAGE)
   }
   
   if (options.days !== undefined) {
     if (!Number.isInteger(options.days) || options.days < 1) {
-      err('Error: The --days option must be a positive integer.')
-      process.exit(1)
+      err('Error: The --days option must be a positive integer.', undefined, EXIT_USAGE)
     }
     if (
       options.last !== undefined ||
       options.order !== undefined ||
       (options.date && options.date.length > 0)
     ) {
-      err('Error: The --days option cannot be used with --last, --order, or --date.')
-      process.exit(1)
+      err('Error: The --days option cannot be used with --last, --order, or --date.', undefined, EXIT_USAGE)
     }
   }
   
@@ -41,16 +37,14 @@ export function validateRSSOptions(options: ProcessingOptions): void {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/
     for (const d of options.date) {
       if (!dateRegex.test(d)) {
-        err(`Error: Invalid date format "${d}". Please use YYYY-MM-DD format.`)
-        process.exit(1)
+        err('Error: Invalid date format. Please use YYYY-MM-DD format', { date: d }, EXIT_USAGE)
       }
     }
     if (
       options.last !== undefined ||
       options.order !== undefined
     ) {
-      err('Error: The --date option cannot be used with --last or --order.')
-      process.exit(1)
+      err('Error: The --date option cannot be used with --last or --order.', undefined, EXIT_USAGE)
     }
   }
 }
@@ -73,12 +67,12 @@ export function validateFeedsFile(feedFilename: string): boolean {
   const feedFile = `${feedsDir}/${feedFilename}`
   
   if (!existsSync(feedsDir)) {
-    l.warn(`${p} Feeds directory not found at ${feedsDir}`)
+    l('Feeds directory not found', { prefix: p, feedsDir })
     return false
   }
   
   if (!existsSync(feedFile)) {
-    l.warn(`${p} Feed file not found at ${feedFile}`)
+    l('Feed file not found', { prefix: p, feedFile })
     return false
   }
   
@@ -95,6 +89,8 @@ export function getLLMService(options: ProcessingOptions): string | undefined {
 export function getTranscriptService(options: ProcessingOptions): string | undefined {
   if (options.deepgram) return 'deepgram'
   if (options.assembly) return 'assembly'
+  if (options.whisperCoreml) return 'whisperCoreml'
   if (options.whisper) return 'whisper'
+  if (options.groqWhisper) return 'groqWhisper'
   return undefined
 }

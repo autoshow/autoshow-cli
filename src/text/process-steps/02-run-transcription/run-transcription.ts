@@ -1,18 +1,18 @@
-import { callWhisper } from '@/transcription/transcription-local/whisper'
-import { callDeepgram } from '@/transcription/transcription-services/deepgram'
-import { callAssembly } from '@/transcription/transcription-services/assembly'
-import { callGroqWhisper } from '@/transcription/transcription-services/groq-whisper'
-import { callWhisperCoreml } from '@/transcription/transcription-local/whisper-coreml'
+import { callWhisper } from './transcription-local/whisper'
+import { callDeepgram } from './transcription-services/deepgram'
+import { callAssembly } from './transcription-services/assembly'
+import { callGroqWhisper } from './transcription-services/groq-whisper'
+import { callWhisperCoreml } from './transcription-local/whisper-coreml'
 import { logTranscriptionCost, estimateTranscriptCost } from '../../utils/cost'
 import { checkFFmpeg, getAudioDuration } from '../../utils/setup-helpers'
 import { l, err } from '@/logging'
 import type { ProcessingOptions, TranscriptionResult } from '@/text/text-types'
-import ora from 'ora'
+import { createSpinner } from '@/utils'
 
 async function ensureTranscriptionPrerequisites(): Promise<void> {
   const hasFFmpeg = await checkFFmpeg()
   if (!hasFFmpeg) {
-    l.warn('ffmpeg not available - audio processing may fail')
+    l('ffmpeg not available - audio processing may fail')
   }
 }
 
@@ -21,7 +21,7 @@ export async function runTranscription(
   finalPath: string,
   transcriptServicesInput?: string
 ): Promise<TranscriptionResult> {
-  const spinner = ora('Step 2 - Run Transcription').start()
+  const spinner = createSpinner('Step 2 - Run Transcription').start()
   
   await ensureTranscriptionPrerequisites()
 
@@ -38,7 +38,7 @@ export async function runTranscription(
     } else if (options.groqWhisper) {
       serviceToUse = 'groqWhisper'
     } else {
-      l.warn('No transcription service specified. Defaulting to whisper.')
+      l('No transcription service specified. Defaulting to whisper.')
       serviceToUse = 'whisper'
       if (options.whisper === undefined) options.whisper = true
     }
@@ -50,7 +50,7 @@ export async function runTranscription(
   try {
     audioDuration = await getAudioDuration(audioFilePath)
   } catch (error) {
-    err(`Error getting audio duration: ${(error as Error).message}`)
+    err('Error getting audio duration', { error: (error as Error).message })
     audioDuration = 0
   }
   
@@ -109,7 +109,7 @@ export async function runTranscription(
     }
   } catch (error) {
     spinner.fail('Transcription failed.')
-    err(`Error during runTranscription: ${(error as Error).message}`)
+    err('Error during runTranscription', { error: (error as Error).message })
     throw error
   }
 }

@@ -6,7 +6,7 @@ const p = '[extract/extract-services/unpdf]'
 
 export const extractWithUnpdf = async (
   pdfPath: string,
-  _options: ExtractOptions,
+  options: ExtractOptions,
   requestId: string,
   pageNumber?: number
 ): Promise<{ text: string, totalCost?: number }> => {
@@ -18,13 +18,17 @@ export const extractWithUnpdf = async (
     const buffer = await readFile(pdfPath)
     const pdf = await getDocumentProxy(new Uint8Array(buffer))
     const extractedData = await extractText(pdf, { mergePages: false })
-    const text = extractedData.text.join('\n\n')
     
-    l.opts(`${p}[${requestId}] Extracted${pageInfo}: ${text.length} characters from ${extractedData.totalPages} pages`)
+    const separator = options.pageBreaks && extractedData.totalPages > 1
+      ? '\n\n--- Page Break ---\n\n'
+      : '\n\n'
+    const text = extractedData.text.join(separator)
+    
+    l(`${p}[${requestId}] Extracted${pageInfo}`, { characters: text.length, totalPages: extractedData.totalPages })
     
     return { text }
   } catch (error) {
-    err(`${p}[${requestId}] Unpdf error${pageInfo}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    err(`${p}[${requestId}] Unpdf error${pageInfo}`, { error: error instanceof Error ? error.message : 'Unknown error' })
     throw error
   }
 }

@@ -1,7 +1,7 @@
 import { LLM_SERVICES_CONFIG } from './process-steps/04-run-llm/llm-models'
 
 export type ElevenLabsGenre = 'rap' | 'rock' | 'folk' | 'jazz' | 'pop' | 'country'
-export type MinimaxGenre = ElevenLabsGenre  // Same genres, different service
+export type MinimaxGenre = ElevenLabsGenre  
 
 export type ShowNoteMetadata = {
   showLink?: string
@@ -54,7 +54,7 @@ export type ProcessingOptions = {
   elevenlabs?: ElevenLabsGenre
   minimax?: MinimaxGenre
   musicFormat?: string
-  musicStyle?: string  // Custom style hints appended to genre prompt
+  musicStyle?: string  
   [key: string]: any
 }
 export interface VideoInfo {

@@ -1,7 +1,6 @@
 import { l } from '@/logging'
-import { colorUtils } from '@/logging'
 import { getAudioDuration } from './setup-helpers'
-import { TRANSCRIPTION_SERVICES_CONFIG } from '@/transcription/transcription-models'
+import { TRANSCRIPTION_SERVICES_CONFIG } from '../process-steps/02-run-transcription/transcription-models'
 import { LLM_SERVICES_CONFIG } from '../process-steps/04-run-llm/llm-models'
 import type { ProcessingOptions } from '@/text/text-types'
 
@@ -13,9 +12,11 @@ export async function logTranscriptionCost(info: {
   const seconds = await getAudioDuration(info.filePath)
   const minutes = seconds / 60
   const cost = info.costPerMinuteCents * minutes
-  l.dim(
-    `Transcription Cost - Model: ${info.modelId}, Duration: ${minutes.toFixed(2)} min, Cost: ¢${cost.toFixed(5)}`
-  )
+  l(`Transcription Cost`, {
+    model: info.modelId,
+    duration: `${minutes.toFixed(2)} min`,
+    cost: `¢${cost.toFixed(5)}`
+  })
   return cost
 }
 
@@ -29,7 +30,7 @@ export async function estimateTranscriptCost(
   if (!['whisper', 'whisperCoreml', 'deepgram', 'assembly', 'groqWhisper'].includes(transcriptServices)) {
     throw new Error(`Unsupported transcription service: ${transcriptServices}`)
   }
-  
+
   const serviceKey = transcriptServices as 'whisper' | 'whisperCoreml' | 'deepgram' | 'assembly' | 'groqWhisper'
   const config = TRANSCRIPTION_SERVICES_CONFIG[serviceKey]
   let modelInput = typeof options[serviceKey] === 'string' ? options[serviceKey] as string : undefined
@@ -163,10 +164,15 @@ export function logLLMCost(info: {
     costLines.push(`Output: ${formatCost(outputCost)}`)
   }
   if (totalCost !== undefined) {
-    costLines.push(`Total: ${colorUtils.bold(formatCost(totalCost))}`)
+    costLines.push(`Total: ${formatCost(totalCost)}`)
   }
   
-  l.dim(`LLM Cost - Model: ${displayName}, Status: ${stopReason}, Tokens: [${tokenLines.join(', ')}], Cost: [${costLines.join(', ')}]`)
+  l(`LLM Cost`, {
+    model: displayName,
+    status: stopReason,
+    tokens: tokenLines.join(', '),
+    cost: costLines.join(', ')
+  })
   
   return { inputCost, outputCost, totalCost }
 }

@@ -1,5 +1,4 @@
-import test from 'node:test'
-import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test, expect } from 'bun:test'
 import { readdirSync, existsSync, renameSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { exec } from 'node:child_process'
@@ -7,13 +6,13 @@ import { exec } from 'node:child_process'
 import type { ExecException } from 'node:child_process'
 
 const cliCommands = [
-  { 'veo-fast-default': 'bun as -- video generate --prompt "A serene waterfall in a lush forest" --model veo-3.0-fast-generate-preview' },
-  { 'veo-3-default': 'bun as -- video generate --prompt "A time-lapse of a sunset over mountains" --model veo-3.0-generate-preview' },
-  { 'veo-2-portrait': 'bun as -- video generate --prompt "A bustling city street at night" --model veo-2.0-generate-001 --aspect-ratio 9:16' },
-  { 'veo-fast-negative': 'bun as -- video generate --prompt "A peaceful beach scene" --model veo-3.0-fast-generate-preview --negative "people, buildings"' },
+  { 'veo-3.1-fast-default': 'bun as -- video generate --prompt "A serene waterfall in a lush forest" --model veo-3.1-fast-generate-preview' },
+  { 'veo-3.1-default': 'bun as -- video generate --prompt "A time-lapse of a sunset over mountains" --model veo-3.1-generate-preview' },
+  { 'veo-3.1-portrait': 'bun as -- video generate --prompt "A bustling city street at night" --model veo-3.1-generate-preview --aspect-ratio 9:16' },
+  { 'veo-3.1-fast-negative': 'bun as -- video generate --prompt "A peaceful beach scene" --model veo-3.1-fast-generate-preview --negative "people, buildings"' },
 ]
 
-test('CLI video services tests', { concurrency: 1 }, async (t) => {
+describe('CLI video services tests', () => {
   const outputDirectory = resolve(process.cwd(), 'output')
   let fileCounter = 1
   
@@ -22,7 +21,7 @@ test('CLI video services tests', { concurrency: 1 }, async (t) => {
     if (!entry) continue
     const [testName, command] = entry
     
-    await t.test(`Video Service: ${testName}`, { concurrency: 1 }, async () => {
+    test(`Video Service: ${testName}`, async () => {
       const beforeRun = readdirSync(outputDirectory)
       
       let errorOccurred = false
@@ -43,7 +42,7 @@ test('CLI video services tests', { concurrency: 1 }, async (t) => {
         errorOccurred = true
       }
       
-      strictEqual(errorOccurred, false)
+      expect(errorOccurred).toBe(false)
       const afterRun = readdirSync(outputDirectory)
       
       let filesToRename: string[] = []
@@ -62,7 +61,7 @@ test('CLI video services tests', { concurrency: 1 }, async (t) => {
         }
       }
       
-      ok(filesToRename.length > 0, 'Expected at least one new or modified video file')
+      expect(filesToRename.length > 0).toBeTruthy()
       
       for (const file of filesToRename) {
         if (file.endsWith('.part')) continue
@@ -83,3 +82,4 @@ test('CLI video services tests', { concurrency: 1 }, async (t) => {
     })
   }
 })
+

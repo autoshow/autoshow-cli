@@ -1,5 +1,5 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { saveImage, parseResolution, generateTimestamp, parseIntOption, parseFloatOption, isApiError, ensureDependencies } from '../image-utils'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, NovaCanvasPayload } from '../image-types'
@@ -35,7 +35,7 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       imageGenerationConfig: config
     }
     
-    l.dim(`Invoking Nova Canvas model`)
+    l('Invoking Nova Canvas model')
     const response = await bedrockRuntimeClient.send(new InvokeModelCommand({
       modelId: 'amazon.nova-canvas-v1:0',
       body: JSON.stringify(payload)
@@ -47,7 +47,7 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
       if (!result.error.includes('Some of')) {
         throw new Error(result.error)
       }
-      l.warn(`Some images blocked by content filters`)
+        l('Some images blocked by content filters')
     }
     
     const images = result.images || []
@@ -62,12 +62,12 @@ export async function generateImageWithNova(prompt: string, options: any): Promi
     })
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`Generated ${images.length} image(s) in ${duration}s`)
+    success('Generated', { count: images.length, duration: `${duration}s` })
     
     return { success: true, path: outputPaths[0] ?? '', seed: config.seed }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.warn(`Failed in ${duration}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l('Failed', { duration: `${duration}s`, error: isApiError(error) ? error.message : 'Unknown' })
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',

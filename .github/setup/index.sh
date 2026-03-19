@@ -142,10 +142,7 @@ setup_tts() {
   log "Setting up Text-to-Speech dependencies..."
   install_deps ffmpeg espeak-ng pkg-config
   bash "$SETUP_DIR/tts/tts-env.sh"
-  bash "$SETUP_DIR/tts/kitten.sh"
-  bash "$SETUP_DIR/tts/coqui.sh"
   bash "$SETUP_DIR/tts/qwen3.sh"
-  bash "$SETUP_DIR/tts/models.sh"
 }
 
 ensure_build_dirs

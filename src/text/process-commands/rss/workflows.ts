@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { basename } from '@/node-utils'
 import { processRSS } from './process-rss'
 import { logCopy, logMkdir, logFindMove, logRemove, logMoveMd } from './rss-logging'
@@ -46,7 +46,7 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
   }
   const filterString = filterInfo.length > 0 ? filterInfo.join(', ') : 'latest available'
   
-  l.dim(`Processing shownotes for ${dirName} with ${filterString}`)
+  l('Processing shownotes for directory with filters', { dirName, filters: filterString })
   
   await copyFeeds()
   await logMkdir(`./output/${subfolder}`, 'createDirectoryForShownotes')
@@ -62,7 +62,7 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
   try {
     await processRSS(rssOptions, rssOptions.llmServices, rssOptions.transcriptServices)
   } catch (e) {
-    err(`Error during RSS processing for shownotes: ${(e as Error).message}`)
+    err('Error during RSS processing for shownotes', { error: (e as Error).message })
     throw e
   }
   
@@ -71,7 +71,7 @@ export async function prepareShownotes(dirName: string, feedFilename: string, op
   await logRemove('./output/feeds', 'cleanupShownotes', 'feeds folder from ./output')
   await logRemove(`./output/${subfolder}`, 'cleanupShownotes', `${subfolder} from ./output`)
   
-  l.final(`prepareShownotes completed for ${dirName}`)
+  l('prepareShownotes completed', { dirName })
 }
 
 export async function prepareInfo(dirName: string, feedFilename: string): Promise<void> {
@@ -88,7 +88,7 @@ export async function prepareInfo(dirName: string, feedFilename: string): Promis
   try {
     await processRSS(rssOptions)
   } catch (e) {
-    err(`Error during RSS processing for info: ${(e as Error).message}`)
+    err('Error during RSS processing for info', { error: (e as Error).message })
     throw e
   }
   
@@ -98,7 +98,7 @@ export async function prepareInfo(dirName: string, feedFilename: string): Promis
   await logRemove('./output/feeds', 'cleanupInfo', 'feeds folder from ./output')
   await logRemove(`./output/${subfolder}`, 'cleanupInfo', `${subfolder} from ./output`)
   
-  l.final(`prepareInfo completed for ${dirName}`)
+  l('prepareInfo completed', { dirName })
 }
 
 export async function handleWorkflow(options: ProcessingOptions): Promise<boolean> {
@@ -112,7 +112,7 @@ export async function handleWorkflow(options: ProcessingOptions): Promise<boolea
   
   if (!validateFeedsFile(feedFilename)) {
     err(`Error: Required feed file not found.`)
-    l.warn('To get started, run these commands:')
+    l('To get started, run these commands:')
     console.log(`  mkdir -p ${WORKFLOWS_DIR}/feeds`)
     console.log(`  echo 'https://feeds.megaphone.fm/MLN2155636147' > ${WORKFLOWS_DIR}/feeds/${feedFilename}`)
     process.exit(1)
@@ -122,19 +122,19 @@ export async function handleWorkflow(options: ProcessingOptions): Promise<boolea
   
   try {
     if (options.metaInfo) {
-      l.final(`Running workflow with both Info and Shownotes for ${dirName} from ${WORKFLOWS_DIR}`)
+      l('Running workflow with both Info and Shownotes', { dirName, workflowsDir: WORKFLOWS_DIR })
       await prepareInfo(dirName, feedFilename)
-      l.success(`Workflow Info for ${dirName} completed successfully`)
+      success('Workflow Info completed successfully', { dirName })
     } else {
-      l.final(`Running workflow: Shownotes only for ${dirName} from ${WORKFLOWS_DIR}`)
+      l('Running workflow: Shownotes only', { dirName, workflowsDir: WORKFLOWS_DIR })
     }
     
     await prepareShownotes(dirName, feedFilename, options)
-    l.success(`Workflow Shownotes for ${dirName} completed successfully`)
+    success('Workflow Shownotes completed successfully', { dirName })
     
     return true
   } catch (error) {
-    err(`Error in workflow for ${dirName}: ${(error as Error).message}`)
+    err('Error in workflow', { dirName, error: (error as Error).message })
     process.exit(1)
   }
 }

@@ -1,4 +1,4 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { 
   ensureDir, spawnSync, readFileSync, existsSync, mkdirSync, readFile, writeFile, join, dirname
 } from '@/node-utils'
@@ -8,24 +8,25 @@ import {
 import {
   ensureTtsEnvironment, checkChatterboxInstalled, runChatterboxSetup
 } from '../tts-utils/setup-utils'
+import { getUserVoice } from '@/utils'
 import type { ChatterboxOptions, ChatterboxModel } from '../tts-types'
 
-const VALID_MODELS = ['turbo', 'standard', 'multilingual']
-const VALID_LANGUAGES = ['ar', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he', 'hi', 'it', 'ja', 'ko', 'ms', 'nl', 'no', 'pl', 'pt', 'ru', 'sv', 'sw', 'tr', 'zh']
+const VALID_MODELS = ['turbo', 'standard']
 
 const getChatterboxConfig = () => {
   const configPath = join(process.cwd(), 'build/config', '.tts-config.json')
-  l.dim(`Loading config from: ${configPath}`)
+  l('Loading config from path', { configPath })
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {}
   
-  let pythonPath = config.python || process.env['TTS_PYTHON_PATH'] || process.env['CHATTERBOX_PYTHON_PATH']
+  
+  let pythonPath = process.env['TTS_PYTHON_PATH'] || process.env['CHATTERBOX_PYTHON_PATH'] || config.python
   
   if (!pythonPath || !existsSync(pythonPath)) {
-    l.dim(`Python path not configured, checking for environment...`)
+    l('Python path not configured, checking for environment')
     pythonPath = ensureTtsEnvironment()
   }
   
-  l.dim(`Using Python path: ${pythonPath}`)
+  l('Using Python path', { pythonPath })
   return {
     python: pythonPath,
     default_model: config.chatterbox?.default_model,
@@ -39,13 +40,13 @@ const getChatterboxConfig = () => {
 const verifyChatterboxEnvironment = (pythonPath: string) => {
   const versionResult = spawnSync(pythonPath, ['--version'], { encoding: 'utf-8', stdio: 'pipe' })
   if (versionResult.error || versionResult.status !== 0) {
-    l.dim(`Python not accessible, attempting to set up environment...`)
+    l('Python not accessible, attempting to set up environment')
     const newPythonPath = ensureTtsEnvironment()
     return verifyChatterboxEnvironment(newPythonPath)
   }
   
   if (!checkChatterboxInstalled(pythonPath)) {
-    l.dim(`Chatterbox TTS not installed, attempting automatic setup...`)
+    l('Chatterbox TTS not installed, attempting automatic setup')
     const setupSuccessful = runChatterboxSetup()
     if (!setupSuccessful) {
       err(`Failed to automatically set up Chatterbox TTS. Please run: bun setup:tts`)
@@ -59,37 +60,33 @@ const verifyChatterboxEnvironment = (pythonPath: string) => {
 
 const validateOptions = (options: ChatterboxOptions): void => {
   const model = options.model || 'turbo'
-  
+
   if (!VALID_MODELS.includes(model)) {
-    err(`Invalid model: ${model}. Valid models: ${VALID_MODELS.join(', ')}`)
+    err('Invalid model', { model, validModels: VALID_MODELS.join(', ') })
   }
   
-  if (model === 'multilingual') {
-    if (options.languageId && !VALID_LANGUAGES.includes(options.languageId)) {
-      err(`Invalid language: ${options.languageId}. Valid languages: ${VALID_LANGUAGES.join(', ')}`)
-    }
-  } else if (options.languageId) {
-    err(`Language can only be set with the multilingual model`)
+  if (options.languageId) {
+    err('Chatterbox multilingual model has been removed due to compatibility issues. For multilingual TTS, use Qwen3 TTS with --qwen3 --qwen3-language <language>')
   }
 
   if (options.refAudio && !existsSync(options.refAudio)) {
-    err(`Reference audio not found: ${options.refAudio}`)
+    err('Reference audio not found', { refAudio: options.refAudio })
   }
 
   if (options.device && !['cpu', 'mps', 'cuda'].includes(options.device)) {
-    err(`Invalid device: ${options.device}. Valid devices: cpu, mps, cuda`)
+    err('Invalid device', { device: options.device, validDevices: 'cpu, mps, cuda' })
   }
 
   if (options.dtype && !['float32', 'float16', 'bfloat16'].includes(options.dtype)) {
-    err(`Invalid dtype: ${options.dtype}. Valid dtypes: float32, float16, bfloat16`)
+    err('Invalid dtype', { dtype: options.dtype, validDtypes: 'float32, float16, bfloat16' })
   }
   
   if (options.exaggeration !== undefined && (options.exaggeration < 0 || options.exaggeration > 1)) {
-    err(`Exaggeration must be between 0.0 and 1.0`)
+    err('Exaggeration must be between 0.0 and 1.0')
   }
   
   if (options.cfgWeight !== undefined && (options.cfgWeight < 0 || options.cfgWeight > 1)) {
-    err(`CFG weight must be between 0.0 and 1.0`)
+    err('CFG weight must be between 0.0 and 1.0')
   }
 }
 
@@ -102,15 +99,12 @@ export async function synthesizeWithChatterbox(
   verifyChatterboxEnvironment(config.python)
   
   const modelName = options.model || config.default_model || 'turbo'
-  const languageId = modelName === 'multilingual'
-    ? (options.languageId || config.default_language)
-    : options.languageId
   const exaggeration = options.exaggeration ?? config.default_exaggeration
   const cfgWeight = options.cfgWeight ?? config.default_cfg_weight
   
-  validateOptions({ ...options, model: modelName as ChatterboxModel, languageId, exaggeration, cfgWeight })
+  validateOptions({ ...options, model: modelName as ChatterboxModel, exaggeration, cfgWeight })
   
-  l.dim(`Using Chatterbox model: ${modelName}`)
+  l('Using Chatterbox model', { model: modelName })
   
   const pythonScriptPath = new URL('chatterbox-python.py', import.meta.url).pathname
   
@@ -125,9 +119,6 @@ export async function synthesizeWithChatterbox(
   if (options.refAudio) {
     configData['ref_audio'] = options.refAudio
   }
-  if (languageId) {
-    configData['language_id'] = languageId
-  }
   if (options.device) {
     configData['device'] = options.device
   }
@@ -141,7 +132,7 @@ export async function synthesizeWithChatterbox(
     configData['cfg_weight'] = cfgWeight
   }
   
-  l.dim(`Generating speech with Chatterbox TTS`)
+  l(`Generating speech with Chatterbox TTS`)
   
   const result = spawnSync(config.python, [pythonScriptPath, JSON.stringify(configData)], { 
     stdio: ['pipe', 'pipe', 'pipe'], 
@@ -152,7 +143,8 @@ export async function synthesizeWithChatterbox(
   
   if (result.error) {
     const errorWithCode = result.error as NodeJS.ErrnoException
-    err(`${errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : `Python error: ${result.error.message}`}`)
+    err(errorWithCode.code === 'ENOENT' ? 'Python not found. Run: bun setup' : 'Python error', 
+      { errorCode: errorWithCode.code, message: result.error.message })
   }
   
   const stdout = result.stdout || ''
@@ -162,15 +154,56 @@ export async function synthesizeWithChatterbox(
   try {
     const jsonResult = JSON.parse(lastLine)
     if (!jsonResult.ok) {
-      err(`Chatterbox TTS failed: ${jsonResult.error}`)
+      
+      const error = jsonResult.error || ''
+      if (error.includes('Token is required')) {
+        err(`Hugging Face authentication required.
+
+The chatterbox ${modelName} model requires a Hugging Face token to download.
+
+SOLUTION: Log in to Hugging Face:
+  1. Get a token from: https://huggingface.co/settings/tokens
+  2. Run: build/pyenv/tts/bin/python -c "from huggingface_hub import login; login()"
+  
+  Or use a different TTS engine that doesn't require authentication:
+  - Use qwen3 TTS: --qwen3 (no auth needed)`)
+      } else if (error.includes('torch.load')) {
+        err('Model loading error. Try: bun setup:tts', { error })
+      } else if (error.includes('Invalid model type')) {
+        err('Invalid Chatterbox model. Supported models: turbo, standard. For multilingual TTS, use --qwen3 instead.', { error })
+      } else {
+        err('Chatterbox TTS failed', { error })
+      }
     }
   } catch {
     const stderr = result.stderr || ''
     if (result.status !== 0) {
-      err(`${stderr.includes('ModuleNotFoundError') ? 'Chatterbox TTS not installed. Run: bun setup:tts' :
-          stderr.includes('torch') ? 'PyTorch not installed. Run: bun setup:tts' :
-          stderr.includes('CUDA out of memory') ? 'GPU out of memory. Try using CPU mode or a smaller model.' :
-          `Chatterbox TTS failed: ${stderr}`}`)
+      if (stderr.includes('ModuleNotFoundError')) {
+        err('Chatterbox TTS not installed. Run: bun setup:tts')
+      } else if (stderr.includes('Token is required') || stderr.includes('LocalTokenNotFoundError')) {
+        err(`Hugging Face authentication required.
+
+The chatterbox ${modelName} model requires a Hugging Face token to download.
+
+SOLUTION: Log in to Hugging Face:
+  1. Get a token from: https://huggingface.co/settings/tokens
+  2. Run: build/pyenv/tts/bin/python -c "from huggingface_hub import login; login()"
+  
+  Or use a different TTS engine that doesn't require authentication:
+  - Use qwen3 TTS: --qwen3 (no auth needed)`)
+      } else if (stderr.includes('Invalid model type')) {
+        err('Invalid Chatterbox model. Supported models: turbo, standard. For multilingual TTS, use --qwen3 instead.')
+      } else if (stderr.includes('torch')) {
+        err('PyTorch not installed. Run: bun setup:tts')
+      } else if (stderr.includes('CUDA out of memory')) {
+        err('GPU out of memory. Try using CPU mode or a smaller model.')
+      } else {
+        err('Chatterbox TTS failed', { 
+          stderr,
+          stdout: lines.slice(0, -1).join('\n') || '(no output)',
+          hint: 'Check the error output above for details.'
+        })
+      }
     }
   }
   
@@ -192,16 +225,16 @@ export async function processScriptWithChatterbox(
     
     await ensureSilenceFile(outDir)
     
-    // Voice mapping from environment variables (reference audio paths)
+    
     const voiceMapping: Record<string, string> = {}
     for (const speakerKey of ['DUCO', 'SEAMUS', 'NARRATOR']) {
-      const envValue = process.env[`CHATTERBOX_VOICE_${speakerKey}`]
-      if (envValue) {
-        voiceMapping[speakerKey] = envValue
+      const voiceValue = getUserVoice('chatterbox', speakerKey)
+      if (voiceValue) {
+        voiceMapping[speakerKey] = voiceValue
       }
     }
     
-    l.opts(`Processing ${script.length} lines with Chatterbox TTS`)
+    l('Processing lines with Chatterbox TTS', { lineCount: script.length })
     
     for (let idx = 0; idx < script.length; idx++) {
       const entry = script[idx] as { speaker: string; text: string; refAudio?: string }
@@ -211,7 +244,7 @@ export async function processScriptWithChatterbox(
       const wavOut = join(outDir, `${base}.wav`)
       const pcmOut = join(outDir, `${base}.pcm`)
       
-      l.dim(`Processing segment ${idx + 1}/${script.length}: ${entrySpeaker}`)
+      l('Processing segment', { current: idx + 1, total: script.length, speaker: entrySpeaker })
       
       await synthesizeWithChatterbox(entryText, wavOut, {
         ...options,
@@ -228,8 +261,8 @@ export async function processScriptWithChatterbox(
     
     await mergeAudioFiles(outDir)
     await convertPcmToWav(outDir)
-    l.success(`Conversation saved to ${join(outDir, 'full_conversation.wav')}`)
+    success('Conversation saved', { outputFile: join(outDir, 'full_conversation.wav') })
   } catch (error) {
-    err(`Error processing Chatterbox TTS script: ${error}`)
+    err('Error processing Chatterbox TTS script', { error })
   }
 }

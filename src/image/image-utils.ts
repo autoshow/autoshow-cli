@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { execSync } from 'node:child_process'
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import type { ApiError } from '@/image/image-types'
 
 export function generateUniqueFilename(prefix: string, extension: string = 'png'): string {
@@ -10,7 +10,7 @@ export function generateUniqueFilename(prefix: string, extension: string = 'png'
   const makeFilename = (extra = '') => join('./output', `${prefix}-${timestamp}-${randomString}${extra}.${extension}`)
   const filepath = makeFilename()
   const finalPath = existsSync(filepath) ? makeFilename(`-${Math.random().toString(36).substring(2, 8)}`) : filepath
-  l.dim(`Generated unique filename: ${finalPath}`)
+  l('Generated unique filename', { path: finalPath })
   return finalPath
 }
 
@@ -30,7 +30,7 @@ export function saveImage(base64Data: string, outputPath: string): void {
   }
   const fullPath = outputPath.startsWith('/') ? outputPath : join(dir, outputPath)
   writeFileSync(fullPath, Buffer.from(base64Data, 'base64'))
-  l.dim(`Image saved to: ${fullPath}`)
+  l('Image saved', { path: fullPath })
 }
 
 export function parseResolution(value: string): { width: number; height: number } {
@@ -44,7 +44,7 @@ export function parseResolution(value: string): { width: number; height: number 
 const parseOption = (value: string, defaultValue: number, parser: (v: string) => number): number => {
   const parsed = parser(value)
   if (isNaN(parsed)) {
-    l.warn(`Invalid number "${value}", using default: ${defaultValue}`)
+    l('Invalid number, using default', { value, default: defaultValue })
     return defaultValue
   }
   return parsed
@@ -58,7 +58,7 @@ export const isApiError = (error: unknown): error is ApiError =>
 
 export const handleError = (error: any): void => {
   if (!isApiError(error)) {
-    err(`Unknown error: ${String(error)}`)
+    err('Unknown error', { error: String(error) })
   }
   
   const errorMap = {
@@ -73,27 +73,27 @@ export const handleError = (error: any): void => {
     error.name === key || error.message?.includes(key)
   )
   
-  err(`${matched ? matched[1] : `Error: ${error.message}`}`)
+  err(matched ? matched[1] : 'Error', matched ? undefined : { message: error.message })
 }
 
 export async function ensureDependencies(): Promise<boolean> {
   try {
-    l.dim(`Checking dependencies`)
+    l('Checking dependencies')
     
     if (!existsSync('node_modules')) {
-      l.warn(`node_modules not found, running bun install`)
+      l('node_modules not found, running bun install')
       execSync('bun install', {
         stdio: 'inherit',
         encoding: 'utf8'
       })
-      l.success(`Dependencies installed successfully`)
+      success('Dependencies installed successfully')
     } else {
-      l.dim(`Dependencies already installed`)
+      l('Dependencies already installed')
     }
     
     return true
   } catch (error) {
-    l.warn(`Failed to install dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    l('Failed to install dependencies', { error: error instanceof Error ? error.message : 'Unknown error' })
     return false
   }
 }

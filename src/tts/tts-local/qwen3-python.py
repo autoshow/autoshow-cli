@@ -3,13 +3,11 @@ import json
 import warnings
 import os
 
-# Suppress flash-attn warning from qwen-tts
 os.environ["TRANSFORMERS_NO_FLASH_ATTN_WARNING"] = "1"
 os.environ["QWEN_TTS_NO_FLASH_ATTN_WARNING"] = "1"
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", message=".*flash-attn.*")
 
-# Temporarily redirect stderr to suppress library warnings during import
 import io
 
 _stderr = sys.stderr
@@ -20,17 +18,13 @@ import soundfile as sf
 import numpy as np
 from qwen_tts import Qwen3TTSModel
 
-# Restore stderr
 sys.stderr = _stderr
 
 MAX_CHUNK_SIZE = 500
 
-
 def chunk_text(text, max_size=MAX_CHUNK_SIZE):
-    """Split text into manageable chunks, preserving sentence boundaries."""
     import re
 
-    # Split on sentence-ending punctuation while preserving the punctuation
     sentences = re.split(r"(?<=[.!?])\s+", text)
     sentences = [s.strip() for s in sentences if s.strip()]
 
@@ -39,7 +33,7 @@ def chunk_text(text, max_size=MAX_CHUNK_SIZE):
 
     for sentence in sentences:
         if len(sentence) > max_size:
-            # Split long sentences by words
+
             words = sentence.split()
             temp_chunk = ""
             for word in words:
@@ -47,7 +41,7 @@ def chunk_text(text, max_size=MAX_CHUNK_SIZE):
                     temp_chunk = temp_chunk + " " + word if temp_chunk else word
                 else:
                     if temp_chunk:
-                        # Add period if doesn't end with punctuation
+
                         if not temp_chunk[-1] in ".!?":
                             temp_chunk += "."
                         chunks.append(temp_chunk)
@@ -70,19 +64,14 @@ def chunk_text(text, max_size=MAX_CHUNK_SIZE):
 
     return chunks if chunks else [text]
 
-
 def get_device_and_dtype():
-    """Determine optimal device and dtype."""
     if torch.cuda.is_available():
         return "cuda:0", torch.bfloat16, "flash_attention_2"
-    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "mps", torch.float16, "sdpa"
+
     else:
         return "cpu", torch.float32, "sdpa"
 
-
 def generate_custom_voice(model, config):
-    """Generate speech using custom voice mode."""
     text = config["text"]
     speaker = config.get("speaker", "Vivian")
     language = config.get("language", "Auto")
@@ -99,9 +88,7 @@ def generate_custom_voice(model, config):
     wavs, sr = model.generate_custom_voice(**kwargs)
     return wavs[0], sr
 
-
 def generate_voice_design(model, config):
-    """Generate speech using voice design mode."""
     text = config["text"]
     language = config.get("language", "Auto")
     instruct = config.get("instruct", "")
@@ -114,9 +101,7 @@ def generate_voice_design(model, config):
     )
     return wavs[0], sr
 
-
 def generate_voice_clone(model, config):
-    """Generate speech using voice clone mode."""
     text = config["text"]
     language = config.get("language", "English")
     ref_audio = config.get("ref_audio")
@@ -136,16 +121,13 @@ def generate_voice_clone(model, config):
     wavs, sr = model.generate_voice_clone(**kwargs)
     return wavs[0], sr
 
-
 def emit_result(payload):
     sys.stdout.write(json.dumps(payload, ensure_ascii=True) + "\n")
     sys.stdout.flush()
 
-
 def log(msg):
     sys.stderr.write(str(msg) + "\n")
     sys.stderr.flush()
-
 
 if len(sys.argv) < 2:
     emit_result({"ok": False, "error": "No configuration provided"})
@@ -153,19 +135,17 @@ if len(sys.argv) < 2:
 
 config = json.loads(sys.argv[1])
 mode = config.get("mode", "custom")
-model_name = config.get("model", "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
+model_name = config.get("model", "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice")
 max_chunk = config.get("max_chunk", MAX_CHUNK_SIZE)
 
 log(f"Mode: {mode}, Model: {model_name}")
 
-# Initialize sr for sample rate (will be set during generation)
-sr = 24000  # Default sample rate
+sr = 24000
 
 try:
     device, dtype, attn_impl = get_device_and_dtype()
     log(f"Using device: {device}, dtype: {dtype}")
 
-    # Load model with appropriate attention implementation
     load_kwargs = {
         "device_map": device,
         "torch_dtype": dtype,
@@ -195,11 +175,10 @@ try:
                 raise ValueError(f"Unknown mode: {mode}")
 
             audio_parts.append(audio)
-            # Add small silence between chunks
+
             silence = np.zeros(int(0.2 * sr), dtype=audio.dtype)
             audio_parts.append(silence)
 
-        # Combine all chunks (remove trailing silence)
         audio = np.concatenate(audio_parts[:-1])
     else:
         if mode == "custom":
@@ -211,7 +190,6 @@ try:
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
-    # Apply speed adjustment if specified
     speed = config.get("speed", 1.0)
     if speed != 1.0:
         indices = np.round(np.arange(0, len(audio), speed)).astype(int)

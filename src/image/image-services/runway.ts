@@ -1,6 +1,6 @@
 import { writeFile } from 'fs/promises'
 import RunwayML from '@runwayml/sdk'
-import { l } from '@/logging'
+import { l, success } from '@/logging'
 import { generateUniqueFilename, isApiError, ensureDependencies } from '../image-utils'
 import { env } from '@/node-utils'
 import type { ImageGenerationResult, RunwayImageOptions } from '../image-types'
@@ -35,8 +35,8 @@ export async function generateImageWithRunway(
       apiKey: env['RUNWAYML_API_SECRET']
     })
     
-    l.opts(`Generating image with Runway`)
-    l.dim(`Prompt: ${prompt}`)
+    l('Generating image with Runway')
+    l('Prompt', { prompt })
     
     let ratio = '1024:1024'
     if (options.width && options.height) {
@@ -45,7 +45,7 @@ export async function generateImageWithRunway(
     
     let validModel = 'gen4_image'
     if (options.model === 'gen4_image_turbo') {
-      l.warn(`Note: gen4_image_turbo requires reference images. Using gen4_image instead for text-to-image.`)
+      l('Note: gen4_image_turbo requires reference images. Using gen4_image instead for text-to-image.')
       validModel = 'gen4_image'
     } else if (options.model === 'gen4_image') {
       validModel = 'gen4_image'
@@ -57,16 +57,15 @@ export async function generateImageWithRunway(
       model: validModel
     }
     
-    l.dim(`Using model: ${validModel}`)
-    l.dim(`Using ratio: ${ratio}`)
+    l('Using model', { model: validModel })
+    l('Using ratio', { ratio })
     
     if (options.style) {
       config.style = options.style
-      l.dim(`Using style: ${options.style}`)
+      l('Using style', { style: options.style })
     }
     
-    l.dim(`Starting image generation task with config:`)
-    l.dim(`${JSON.stringify(config)}`)
+    l('Starting image generation task with config', { config })
     
     const task = await client.textToImage
       .create(config)
@@ -74,8 +73,8 @@ export async function generateImageWithRunway(
         timeout: 5 * 60 * 1000
       })
     
-    l.dim(`Task completed successfully`)
-    l.dim(`Task ID: ${task.id}`)
+    l('Task completed successfully')
+    l('Task ID', { taskId: task.id })
     
     if (!task.output || task.output.length === 0) {
       throw new Error('No image output in response')
@@ -87,12 +86,12 @@ export async function generateImageWithRunway(
       throw new Error('No image URL in response')
     }
     
-    l.dim(`Downloading image from: ${imageUrl}`)
+    l('Downloading image from URL', { url: imageUrl })
     await downloadImage(imageUrl, uniqueOutputPath)
-    l.dim(`Image saved to: ${uniqueOutputPath}`)
+    l('Image saved', { path: uniqueOutputPath })
     
     const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1)
-    l.success(`Image generated in ${durationSeconds}s: ${uniqueOutputPath}`)
+    success('Image generated', { duration: `${durationSeconds}s`, path: uniqueOutputPath })
     
     return {
       success: true,
@@ -102,12 +101,12 @@ export async function generateImageWithRunway(
   } catch (error: any) {
     const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1)
     
-    l.dim(`Error occurred: ${error.name}`)
-    l.dim(`Error status: ${error.status}`)
-    l.dim(`Error message: ${error.message}`)
+    l('Error occurred', { name: error.name })
+    l('Error status', { status: error.status })
+    l('Error message', { message: error.message })
     
     if (error.name === 'TaskFailedError') {
-      l.warn(`Task failed in ${durationSeconds}s: ${error.message}`)
+      l('Task failed', { duration: `${durationSeconds}s`, message: error.message })
       return {
         success: false,
         error: 'Image generation task failed',
@@ -117,7 +116,7 @@ export async function generateImageWithRunway(
     
     if (error.status === 403) {
       const errorMsg = error.error?.error || error.message
-      l.warn(`Permission denied in ${durationSeconds}s: ${errorMsg}`)
+      l('Permission denied', { duration: `${durationSeconds}s`, message: errorMsg })
       
       if (errorMsg?.includes('not available')) {
         return {
@@ -136,7 +135,7 @@ export async function generateImageWithRunway(
     
     if (error.status === 400) {
       const errorMsg = error.error?.error || error.message
-      l.warn(`Bad request in ${durationSeconds}s: ${errorMsg}`)
+      l('Bad request', { duration: `${durationSeconds}s`, message: errorMsg })
       
       if (errorMsg?.includes('ratio')) {
         return {
@@ -169,7 +168,7 @@ export async function generateImageWithRunway(
       }
     }
     
-    l.warn(`Failed in ${durationSeconds}s: ${isApiError(error) ? error.message : 'Unknown'}`)
+    l('Failed', { duration: `${durationSeconds}s`, error: isApiError(error) ? error.message : 'Unknown' })
     return {
       success: false,
       error: isApiError(error) ? error.message : 'Unknown error',

@@ -17,35 +17,37 @@ RUNWAYML_API_SECRET=xxx   # Runway
 bun as -- video generate --prompt "A cat in a garden"
 
 # Use specific model
-bun as -- video generate --prompt "Ocean waves" --model veo-3.0-generate-preview
+bun as -- video generate --prompt "Ocean waves" --model veo-3.1-generate-preview
 
 # List all models
-bun as -- video list-models
+bun as -- video list
 ```
 
 ## Available Models
 
 | Provider | Model | Requirements |
 |----------|-------|--------------|
-| Google Veo | `veo-3.0-generate-preview` | API key |
-| Google Veo | `veo-3.0-fast-generate-preview` | API key |
-| Google Veo | `veo-2.0-generate-001` | API key |
+| Google Veo | `veo-3.1-generate-preview` | API key |
+| Google Veo | `veo-3.1-fast-generate-preview` | API key |
 | Runway | `gen4_turbo` | API key + image |
 | Runway | `gen3a_turbo` | API key + image |
 
 ## Common Options
 
 ```bash
---prompt <text>         # Required: video description
---model <model>         # Model to use
---output <path>         # Output file path
---aspect-ratio <ratio>  # 16:9 or 9:16
---negative <text>       # What to exclude
+--prompt <text>           # Required: video description
+--model <model>           # Model to use
+--output <path>           # Output file path
+--aspect-ratio <ratio>    # 16:9 or 9:16
+--resolution <res>        # 720p, 1080p, or 4k (Veo only)
+--negative <text>         # What to exclude
+--image <path>            # Starting frame for image-to-video
+--reference <paths...>    # Reference images for Veo (up to 3)
 ```
 
 ## Model-Specific Docs
 
-- [Google Veo Guide](./03-veo.md) - Cloud-based with audio support
+- [Google Veo Guide](./03-veo.md) - Cloud-based with audio, portrait mode, 4K support
 - [Runway Guide](./02-runway.md) - Image-to-video animation
 
 ## System Requirements

@@ -7,16 +7,16 @@ export function logChannelProcessingStatus(
   options: ProcessingOptions
 ): void {
   if (options.last) {
-    l.dim(`\n  - Found ${total} videos in the channel.`)
-    l.dim(`  - Processing the last ${processing} videos.`)
+    l('\n  - Found videos in the channel', { total })
+    l('  - Processing the last videos', { count: processing })
   } else if (options.days) {
-    l.dim(`\n  - Found ${total} videos in the channel.`)
-    l.dim(`  - Processing ${processing} videos from the last ${options.days} days.\n`)
+    l('\n  - Found videos in the channel', { total })
+    l('  - Processing videos from the last days', { count: processing, days: options.days })
   } else if (options.date && options.date.length > 0) {
-    l.dim(`\n  - Found ${total} videos in the channel.`)
-    l.dim(`  - Processing ${processing} videos from specified dates: ${options.date.join(', ')}.\n`)
+    l('\n  - Found videos in the channel', { total })
+    l('  - Processing videos from specified dates', { count: processing, dates: options.date.join(', ') })
   } else {
-    l.dim(`\n  - Found ${total} videos in the channel.`)
-    l.dim(`  - Processing all ${processing} videos.\n`)
+    l('\n  - Found videos in the channel', { total })
+    l('  - Processing all videos', { count: processing })
   }
 }

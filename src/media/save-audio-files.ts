@@ -1,6 +1,7 @@
-import { l, err } from '@/logging'
+import { l, err, success } from '@/logging'
 import { spawn, stat, readdir, parse, extname, join, ensureDir } from '@/node-utils'
 import { AUDIO_FMT, AUDIO_Q } from './create-media-command'
+import { registerProcess } from '@/utils'
 
 export async function sanitizeFilename(filename: string): Promise<string> {
   const ext = filename.match(/\.[^.]+$/)?.[0] || ''
@@ -25,7 +26,7 @@ export async function convertLocalAudioFiles(
   const isInputFile = await isFile(input)
   
   if (!isInputDirectory && !isInputFile) {
-    err(`Input "${input}" is neither a valid file nor directory`)
+    err('Input is neither a valid file nor directory', { input })
   }
   
   await ensureDir(targetDir)
@@ -42,16 +43,16 @@ export async function convertLocalAudioFiles(
         .map(entry => join(input, entry.name))
       
       if (mediaFiles.length === 0) {
-        err(`No media files found in directory "${input}"`)
+        err('No media files found in directory', { directory: input })
       }
     } catch (error) {
-      err(`Error reading directory "${input}": ${(error as Error).message}`)
+      err('Error reading directory', { directory: input, error: (error as Error).message })
     }
   } else {
     mediaFiles = [input]
   }
   
-  l.opts(`Processing ${mediaFiles.length} media files with ffmpeg`)
+  l('Processing media files with ffmpeg', { count: mediaFiles.length })
   
   await Promise.all(mediaFiles.map(async (filePath) => {
     const parsedPath = parse(filePath)
@@ -68,7 +69,10 @@ export async function convertLocalAudioFiles(
         outputPath
       ], { stdio: verbose ? 'inherit' : 'ignore' })
       
+      const unregister = registerProcess(ffmpegProcess)
+      
       ffmpegProcess.on('close', (code) => {
+        unregister()
         if (code === 0) {
           resolve()
         } else {
@@ -77,12 +81,13 @@ export async function convertLocalAudioFiles(
       })
       
       ffmpegProcess.on('error', (error) => {
+        unregister()
         reject(new Error(`ffmpeg process error: ${error.message}`))
       })
     })
   }))
   
-  l.success(`All ${mediaFiles.length} files converted successfully`)
+  success('All files converted successfully', { count: mediaFiles.length })
 }
 
 async function isDirectory(inputPath: string): Promise<boolean> {
