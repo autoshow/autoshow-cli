@@ -16,6 +16,7 @@ import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
 import { CLIUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { redactCliArgv } from '~/logger/redaction'
 import { modelsCommand } from '~/cli/commands/models/define-models-command'
+import { linksCommand } from '~/cli/commands/links/define-links-command'
 import { PROCESS_COMMANDS } from '~/types'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
@@ -182,7 +183,8 @@ const COMMAND_DEFINITIONS = [
   ttsCommand,
   imageCommand,
   musicCommand,
-  videoCommand
+  videoCommand,
+  linksCommand
 ] as const
 
 const expandBareModelFlags = (argv: string[]): string[] => {

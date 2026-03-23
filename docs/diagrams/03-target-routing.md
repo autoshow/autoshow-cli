@@ -11,7 +11,8 @@ How inputs are classified and routed to batch or single-item processing paths.
 ## Top-Level Classification
 
 ```
-src/cli/commands.ts → handleProcessTarget()
+src/cli/commands/process-steps/step-1-download/targets/handle-process-target.ts
+→ handleProcessTarget()
          |
          |  resolvedTarget = positional arg or -- value
          |  opts = buildOptsFromFlags(skipLLM, rawFlags)
@@ -35,7 +36,7 @@ src/cli/commands.ts → handleProcessTarget()
 │  │  1. collectInputFiles() → find all media/doc/image files          │        │
 │  │  2. If dir named "input/" → also read 2-urls.md for URLs          │        │
 │  │  3. Filter docs-only when command='extract'                       │        │
-│  │  4. processBatch(allItems) → sequential loop                      │        │
+│  │  4. processBatch(allItems) → concurrency-limited batch run        │        │
 │  └───────────────────────────────────────────────────────────────────┘        │
 │                                                                              │
 │  ┌─── 'input_list' ────────────────────────────────────────────────┐         │
@@ -44,7 +45,7 @@ src/cli/commands.ts → handleProcessTarget()
 │  │     - Strip bullets (- / *)                                      │         │
 │  │     - Parse markdown links [text](url)                           │         │
 │  │     - Resolve relative file paths                                │         │
-│  │  2. processBatch(items) → sequential loop                        │         │
+│  │  2. processBatch(items) → concurrency-limited batch run          │         │
 │  └──────────────────────────────────────────────────────────────────┘         │
 │                                                                              │
 │  ┌─── 'single' (batch source check first) ─────────────────────────┐         │
@@ -67,7 +68,8 @@ src/cli/commands.ts → handleProcessTarget()
 ## Single Target Input Classification
 
 ```
-src/cli/targets/single-target.ts → processSingleTarget()
+src/cli/commands/process-steps/step-1-download/targets/single-target.ts
+→ processSingleTarget()
 
                       ┌──────────────┐
                       │  Input Item  │

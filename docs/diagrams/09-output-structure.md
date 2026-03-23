@@ -20,32 +20,34 @@ output/
     ├── audio.wav
     ├── transcription.txt
     ├── prompt.md
-    ├── text.md                     # LLM-generated summary + chapters
-    ├── tts-audio.wav               # (if --kitten-tts/--elevenlabs-tts/... set)
-    ├── image.png                   # (if --gemini-image/--openai-image/... set)
-    ├── video.mp4                   # (if --sora-video/--gemini-video/... set)
-    ├── music.mp3                   # (if --elevenlabs-music/--minimax-music set)
+    ├── text.json                   # structured service write output (default)
+    ├── text.md                     # local or legacy markdown write output
+    ├── speech.wav                  # (if --kitten-tts/--elevenlabs-tts/... set)
+    ├── generated-image.*          # (if --gemini-image/--openai-image/... set)
+    ├── generated-video.mp4        # (if --sora-video/--gemini-video/... set)
+    ├── generated-music.mp3        # (if --elevenlabs-music/--minimax-music set)
     ├── metadata.json               # { step1, step2, step3[, step4, step5, step6, step7] }
     │
     │  ── Document (extract command) ──
-    ├── extraction.txt              # Full extracted text
-    ├── extraction.json             # Structured per-page results
-    ├── extraction.tsv              # (if --out tsv)
-    ├── extraction.hocr             # (if --out hocr)
+    ├── extraction.txt              # if --out text
+    ├── extraction.json             # if --out json
+    ├── extraction.tsv              # if --out tsv
+    ├── extraction.hocr             # if --out hocr
     ├── metadata.json               # { step1, step2 }
+    │                               # EPUB inspect mode writes metadata.json only
     │
     │  ── Document (write command) ──
-    ├── extraction.txt
-    ├── extraction.json
+    ├── extraction.<requested-format>
     ├── prompt.md
-    ├── text.md
+    ├── text.json                   # structured service write output (default)
+    ├── text.md                     # local or legacy markdown write output
     ├── metadata.json               # { step1, step2, step3 }
     │
     │  ── Standalone commands (tts / image / music / video) ──
-    ├── tts-audio.wav               # (tts command output)
-    ├── image.png                   # (image command output)
-    ├── video.mp4                   # (video command output)
-    ├── music.mp3                   # (music command output)
+    ├── speech.wav                  # (tts command output)
+    ├── generated-image.*           # (image command output)
+    ├── generated-video.mp4         # (video command output)
+    ├── generated-music.mp3         # (music command output)
     │
     │  ── Batch Processing ──
     └── output/YYYY-MM-DD_HH-MM-SS_<batch-label>/

@@ -7,7 +7,8 @@ Diagram of directory, URL list, and YouTube/RSS collection batch processing flow
 - [Batch Entry Points](#batch-entry-points)
 
 ```
-src/cli/targets/target-utils.ts → processBatch()
+src/cli/commands/process-steps/step-1-download/targets/target-utils.ts
+→ processBatch()
 
   ┌──────────────────────────────────────────────────────────────────────┐
   │  Items[] from:                                                      │
@@ -24,7 +25,8 @@ src/cli/targets/target-utils.ts → processBatch()
                                              |
                                              v
   ┌──────────────────────────────────────────────────────────────────────┐
-  │  Sequential loop: for each item                                     │
+  │  Process items with concurrency limit                               │
+  │  (`--batch-concurrency`, default 1)                                 │
   │  ┌──────────────────────────────────────────────────────────────┐   │
   │  │  try {                                                       │   │
   │  │    processSingleTarget(command, item, batchDir, opts)         │   │
