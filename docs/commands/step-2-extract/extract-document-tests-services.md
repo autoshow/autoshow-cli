@@ -9,16 +9,11 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
 - [E2E Services](#e2e-services)
 
 ## Validation / Price / Non-E2E
 
-No separate extract service pricing file exists; validation is embedded in the e2e suite.
-
-## E2E Local
-
-No local service-extraction tests — see [extract-document-tests-local.md](./extract-document-tests-local.md).
+There is no separate Mistral OCR price-only or invalid-model test file right now. Current hosted coverage is the e2e extraction suite below.
 
 ## E2E Services
 
@@ -28,6 +23,8 @@ No local service-extraction tests — see [extract-document-tests-local.md](./ex
 bun t test/test-cases/e2e/step-2-extract-e2e/extract-mistral-ocr.test.ts
 ```
 
-Covers Mistral OCR extraction for PDF and image inputs, gated by `MISTRAL_API_KEY`.
+Covers:
+- PDF extraction with `mistral-ocr-latest` and `mistral-ocr-2512`
+- image extraction with the same two model IDs
 
-Service setup/env prerequisites are in [`extract-document-setup.md`](./extract-document-setup.md).
+Service setup details are in [`extract-document-local.md#setup`](./extract-document-local.md#setup).

@@ -13,31 +13,38 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
-- [E2E Services](#e2e-services)
+- [E2E Smoke](#e2e-smoke)
+- [E2E Slow-API](#e2e-slow-api)
 
 ## Validation / Price / Non-E2E
 
-No standalone download-only validation/price file is currently defined. Validation coverage is embedded in the e2e suites.
+No standalone download-only validation or price file is currently defined. Coverage is embedded in the e2e suites.
 
-## E2E Local
+## E2E Smoke
 
-**Tier:** `smoke`/`local`
+The test runner currently routes these files as `smoke`:
 
 ```bash
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts
+bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts
 ```
 
-Covers local audio and local document input downloads.
+Covers:
+- local audio and local PDF document inputs
+- direct hosted audio and video URLs
+- URL-list batching for direct URLs
 
-## E2E Services
+## E2E Slow-API
 
-**Tier:** `api`/`slow-api`
+The test runner currently routes these files as `slow-api`:
 
 ```bash
-bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts
 ```
 
-Covers direct hosted URLs, RSS/YouTube channel inputs, YouTube/Twitch URLs, and URL-list batch inputs.
+Covers:
+- RSS feed batching
+- YouTube channel batching
+- YouTube and Twitch streaming URLs
+- URL-list batching for streaming URLs

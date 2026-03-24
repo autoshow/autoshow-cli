@@ -1,6 +1,6 @@
 # write (services)
 
-Run step 1 + step 2 + step 3 with service LLMs only.
+Run `write` with one or more hosted LLM providers.
 
 ## Outline
 
@@ -18,17 +18,17 @@ Run step 1 + step 2 + step 3 with service LLMs only.
 bun as write [input] [flags]
 ```
 
+You can select multiple LLM providers in one run. Each provider executes sequentially and writes its own artifact.
+
 ## Service LLMs
 
-| Service | Selection | Example models |
+| Service | Selection | Current models |
 |---------|-----------|----------------|
-| OpenAI | `--openai <model>` | `gpt-5.1`, `gpt-5.2`, `gpt-5.2-pro` |
+| OpenAI | `--openai <model>` | `gpt-5.2`, `gpt-5.1`, `gpt-5.2-pro` |
 | Anthropic | `--anthropic <model>` | `claude-sonnet-4-6`, `claude-opus-4-6` |
 | Gemini | `--gemini <model>` | `gemini-3-flash-preview`, `gemini-3-pro-preview` |
 | Groq | `--groq <model>` | `openai/gpt-oss-20b`, `openai/gpt-oss-120b` |
 | MiniMax | `--minimax <model>` | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
-
-You can select multiple LLM services in one run; each provider executes sequentially and writes its own artifact.
 
 ## Examples
 
@@ -48,50 +48,47 @@ bun as write input/1-audio.mp3 --groq openai/gpt-oss-20b
 # MiniMax
 bun as write input/1-audio.mp3 --minimax MiniMax-M2.5
 
+# Multi-provider run
+bun as write input/1-audio.mp3 --openai gpt-5.2 --groq openai/gpt-oss-20b
+
 # Price preflight
 bun as write input/1-audio.mp3 --openai gpt-5.2 --price
-
-bun as write input/1-audio.mp3 --groq openai/gpt-oss-20b --openai gpt-5.2 --price
 ```
 
 ## Prompts
 
-Available prompt names:
+Prompt names are loaded from `src/prompts/prompts.json`. Common names include:
+- `default`
 - `shortSummary`
 - `longSummary`
 - `chapters`
-- `rapSong`
-- `default`
-
-Prompt definitions live in `src/prompts/prompts.json`. Each leaf prompt includes
-`expectedInputTokens` and `expectedOutputTokens`, which are used for LLM cost estimation.
 
 ## Structured Outputs
 
-- Structured outputs are enabled by default for `write` and root command runs.
-- Structured runs write JSON artifacts (`text.json`, or `text-<model>.json` for multi-provider runs).
-- Use `--no-structured` to keep legacy markdown artifacts (`text.md`).
-- MiniMax uses automatic compatibility mode (prompted JSON + validation retries).
-- Local `llama.cpp` keeps legacy markdown output (structured mode is currently service-only).
-- Strict mode applies only to providers that support it (`--structured-strict`, default on).
+- Structured outputs are enabled by default for non-llama `write` runs.
+- Single-provider runs write `text.json`.
+- Multi-provider runs write `text-<model>.json` for each provider.
+- Use `--no-structured` to keep markdown output.
+- MiniMax uses compatibility-mode validation retries because it does not have the same native structured-output path as the other hosted providers.
+- `--structured-strict` is only meaningful for providers that support strict schema enforcement.
 
 ## Flags
 
 | Flag | Description |
 |------|-------------|
-| `--openai <model>` | OpenAI LLM model |
-| `--anthropic <model>` | Anthropic LLM model |
-| `--gemini <model>` | Gemini LLM model |
-| `--groq <model>` | Groq LLM model |
-| `--minimax <model>` | MiniMax LLM model |
-| `--prompt <name...>` | Named prompt(s) |
-| `--structured` / `--no-structured` | Enable/disable structured JSON output |
+| `--openai <model>` | Select an OpenAI model |
+| `--anthropic <model>` | Select an Anthropic model |
+| `--gemini <model>` | Select a Gemini model |
+| `--groq <model>` | Select a Groq model |
+| `--minimax <model>` | Select a MiniMax model |
+| `--prompt <name...>` | Select prompt preset(s) |
+| `--structured` / `--no-structured` | Enable or disable structured JSON output |
 | `--structured-strict` / `--no-structured-strict` | Request strict schema mode where supported |
-| `--structured-compat-retries <n>` | Retry count for compat-mode JSON validation failures |
-| `--price` | Show cost estimate and exit |
+| `--structured-compat-retries <n>` | Retry count for compatibility-mode validation |
+| `--price` | Show the aggregated estimate and exit |
 
 ## Notes
 
-- Service setup/env details are in [`write-text-setup.md`](./write-text-setup.md).
-- Document `write` now uses real LLM calls when a provider is configured (cost/latency apply).
-- Legacy zero-cost document fallback remains when no LLM provider is configured and `--no-structured` is set.
+- Service LLM selection only affects step 3. You can still use local or hosted step 2 engines in the same `write` run.
+- When no explicit LLM provider is configured and `--no-structured` is set, document `write` still has a legacy extract-plus-markdown fallback path.
+- Service setup details are in [`write-text-local.md#setup`](./write-text-local.md#setup).

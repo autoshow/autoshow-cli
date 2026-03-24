@@ -15,16 +15,13 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
 - [E2E Services](#e2e-services)
 
 ## Validation / Price / Non-E2E
 
-Write subcommand validation is covered in `write-subcommand-services.test.ts`. Each provider model test uses the shared `defineLLMWriteTest` factory.
-
-## E2E Local
-
-No service-tier local tests — see [write-text-tests-local.md](./write-text-tests-local.md).
+Coverage currently comes from:
+- provider model suites built on `defineLLMWriteTest`
+- `write-subcommand-services.test.ts` for explicit `write` command flows and `--price`
 
 ## E2E Services
 
@@ -39,4 +36,4 @@ bun t test/test-cases/e2e/step-3-write-e2e/minimax/minimax-models.test.ts
 bun t test/test-cases/e2e/step-3-write-e2e/write-subcommand-services.test.ts
 ```
 
-Service setup/env prerequisites are in [`write-text-setup.md`](./write-text-setup.md).
+Service setup details are in [`write-text-local.md#setup`](./write-text-local.md#setup).

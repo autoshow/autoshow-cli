@@ -1,14 +1,13 @@
 # tts (services)
 
-Generate speech audio from text input using service TTS APIs only.
+Generate speech audio from a local text file with a hosted TTS provider.
 
 ## Outline
 
 - [Usage](#usage)
-- [Service TTS engines](#service-tts-engines)
+- [Service Engines](#service-engines)
 - [Examples](#examples)
 - [Flags](#flags)
-- [Pricing](#pricing)
 - [Output](#output)
 
 ## Usage
@@ -17,19 +16,19 @@ Generate speech audio from text input using service TTS APIs only.
 bun as tts <input> [flags]
 ```
 
-`<input>` must be a `.md` or `.txt` file.
+`<input>` must be a local `.md` or `.txt` file.
 
-## Service TTS engines
+## Service Engines
 
 | Engine | Selection | Models |
 |--------|-----------|--------|
-| ElevenLabs TTS | `--elevenlabs-tts <model>` | `eleven_v3`, `eleven_flash_v2_5`, `eleven_turbo_v2_5` |
-| MiniMax TTS | `--minimax-tts <model>` | `speech-2.8-hd`, `speech-2.8-turbo` |
-| Groq TTS | `--groq-tts <model>` | `canopylabs/orpheus-v1-english` |
-| OpenAI TTS | `--openai-tts <model>` | `gpt-4o-mini-tts` |
-| Gemini TTS | `--gemini-tts <model>` | `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` |
+| ElevenLabs | `--elevenlabs-tts <model>` | `eleven_v3`, `eleven_flash_v2_5`, `eleven_turbo_v2_5` |
+| MiniMax | `--minimax-tts <model>` | `speech-2.8-hd`, `speech-2.8-turbo` |
+| Groq | `--groq-tts <model>` | `canopylabs/orpheus-v1-english` |
+| OpenAI | `--openai-tts <model>` | `gpt-4o-mini-tts` |
+| Gemini | `--gemini-tts <model>` | `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` |
 
-Exactly one service TTS engine flag must be set.
+For hosted TTS usage, pass exactly one of these provider flags.
 
 ## Examples
 
@@ -45,29 +44,24 @@ bun as tts input/1-tts.md --minimax-tts speech-2.8-hd --minimax-tts-voice <voice
 
 | Flag | Description |
 |------|-------------|
-| `--elevenlabs-tts <model>` | ElevenLabs model |
-| `--minimax-tts <model>` | MiniMax model |
-| `--groq-tts <model>` | Groq model |
-| `--openai-tts <model>` | OpenAI model |
-| `--gemini-tts <model>` | Gemini model |
-| `--elevenlabs-voice <id>` | ElevenLabs voice override |
-| `--minimax-tts-voice <id>` | MiniMax voice override |
-| `--groq-voice <id>` | Groq voice override |
-| `--openai-voice <id>` | OpenAI voice override |
-| `--gemini-voice <id>` | Gemini voice override |
-| `--price` | Show cost estimate and exit |
-
-## Pricing
-
-- ElevenLabs: `$0.06` to `$0.12` per 1K chars by model
-- MiniMax: `$0.06` to `$0.10` per 1K chars by model
-- Gemini: `$0.0005` to `$0.001` per 1K chars by model
-- Groq/OpenAI: dual-rate input/output pricing
+| `--elevenlabs-tts <model>` | Select an ElevenLabs model |
+| `--minimax-tts <model>` | Select a MiniMax model |
+| `--groq-tts <model>` | Select a Groq model |
+| `--openai-tts <model>` | Select an OpenAI model |
+| `--gemini-tts <model>` | Select a Gemini model |
+| `--elevenlabs-voice <id>` | Override the ElevenLabs voice ID |
+| `--minimax-tts-voice <id>` | Override the MiniMax voice ID |
+| `--groq-voice <id>` | Override the Groq voice ID |
+| `--openai-voice <id>` | Override the OpenAI voice ID |
+| `--gemini-voice <name>` | Override the Gemini voice name |
+| `--price` | Show the estimate and exit |
 
 ## Output
 
-Each run writes:
+Each standalone `tts` run writes:
 - `speech.wav`
 - `metadata.json`
 
-Service setup/env details are in [`text-to-speech-setup.md`](./text-to-speech-setup.md).
+`metadata.json` includes `tts`, `cost`, and `timing` sections.
+
+Service setup details are in [`text-to-speech-local.md#setup`](./text-to-speech-local.md#setup).

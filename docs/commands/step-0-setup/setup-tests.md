@@ -1,5 +1,7 @@
 # Setup Tests
 
+Current setup-related coverage:
+
 ```bash
 bun t \
   test/test-cases/e2e/step-0-setup-e2e/llama-models/llama-downloads.test.ts \
@@ -9,14 +11,13 @@ bun t \
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
-- [E2E Services](#e2e-services)
+- [E2E Coverage](#e2e-coverage)
 
 ## Validation / Price / Non-E2E
 
-No standalone setup unit/price tests currently exist under `test/test-cases/price/` or `test/test-cases/validation/` for setup.
+No standalone setup validation or price tests currently exist under `test/test-cases/validation/` or `test/test-cases/price/`.
 
-## E2E Local
+## E2E Coverage
 
 **Tier:** `slow-api`
 
@@ -26,9 +27,7 @@ bun t test/test-cases/e2e/step-0-setup-e2e/tts-models/tts-setup.test.ts
 ```
 
 Covers:
-- llama model download/setup path
-- local TTS environment setup for kitten
+- local llama model download readiness via `bun as models <model>`
+- Kitten TTS setup module execution and runtime venv validation
 
-## E2E Services
-
-No service-only setup e2e file is currently defined.
+There is no separate service-only setup e2e file at the moment.

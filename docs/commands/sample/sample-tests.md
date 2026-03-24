@@ -53,4 +53,4 @@ Coverage (requires ffmpeg, libreoffice):
 - Valid CSV fixture extracts as raw text
 - Binary `.csv` invalid fixture is rejected as non-text content
 
-Local setup prerequisites are in [`extract-document-setup.md`](../step-2-extract/extract-document-setup.md) and [`sample.md`](./sample.md).
+Local setup prerequisites are in [`extract-document-local.md#setup`](../step-2-extract/extract-document-local.md#setup) and [`sample.md`](./sample.md).

@@ -1,23 +1,65 @@
 # extract (local)
 
-Extract text from documents and images using local engines only.
+Extract text from documents and images with the local extract engines exposed by `bun as extract`.
 
 ## Outline
 
+- [Setup](#setup)
+- [Runtime Setup](#runtime-setup)
+- [Tooling Notes](#tooling-notes)
+- [Service Environment](#service-environment)
 - [Usage](#usage)
-- [Format families and default dispatch](#format-families-and-default-dispatch)
-- [EPUB default extraction](#epub-default-extraction)
-- [EPUB inspect modes](#epub-inspect-modes)
-- [Ebook normalization (MOBI / AZW3 / FB2 / LIT)](#ebook-normalization-mobi--azw3--fb2--lit)
-- [Office quality heuristic (DOCX / PPTX / XLSX / ODF)](#office-quality-heuristic-docx--pptx--xlsx--odf)
-- [CBZ page ordering](#cbz-page-ordering)
-- [`--out` file contract](#--out-file-contract)
-- [`--lang` behavior](#--lang-behavior)
+- [Default Routing](#default-routing)
+- [EPUB Inspect Modes](#epub-inspect-modes)
+- [OCR Language Handling](#ocr-language-handling)
 - [Examples](#examples)
-- [Flags](#flags)
-  - [Basic](#basic)
-  - [Advanced (Tesseract only)](#advanced-tesseract-only)
+- [Standalone `extract` Flags](#standalone-extract-flags)
 - [Notes](#notes)
+- [Local Tests](#local-tests)
+- [Validation / Price / Non-E2E](#validation--price--non-e2e)
+- [E2E Smoke](#e2e-smoke)
+- [E2E Slow-Local](#e2e-slow-local)
+
+## Setup
+
+### Runtime Setup
+
+```bash
+# full local setup
+bun as setup
+
+# document foundations: mutool + Calibre CLI tools
+bun as setup --step calibre
+
+# verify fixture-generation prerequisites
+bun as setup --step sample
+```
+
+PaddleOCR can also be prepared lazily on first use:
+
+```bash
+bun as extract input/1-document.pdf --paddle-ocr
+```
+
+`--epub-calibre` can also trigger lazy Calibre setup on supported platforms if the Calibre CLI tools are missing.
+
+### Tooling Notes
+
+| Tool | Used for | Current behavior |
+|------|----------|------------------|
+| MuPDF (`mutool`) | PDF rendering and document conversion | installed by the document foundation setup |
+| Calibre CLI tools | ebook normalization and `--epub-calibre` | installed by `bun as setup` or `bun as setup --step calibre`; may also be installed lazily for `--epub-calibre` |
+| Tesseract | default local OCR | installed by `bun as setup` |
+| LibreOffice (`soffice`) | office/RTF to PDF conversion | installed by `bun as setup`; `extract` itself does not auto-install it |
+| OCRmyPDF | `--ocrmypdf` engine | must already be available on `$PATH` |
+| PaddleOCR venv | `--paddle-ocr` engine | created lazily under `runtime/bin/paddle-ocr/` |
+| ImageMagick (`convert`) | WebP/BMP normalization before OCR | optional; if missing, the file is passed through as-is |
+
+### Service Environment
+
+```bash
+MISTRAL_API_KEY=...
+```
 
 ## Usage
 
@@ -25,156 +67,138 @@ Extract text from documents and images using local engines only.
 bun as extract [input] [flags]
 ```
 
-## Format families and default dispatch
+## Default Routing
 
-| Input family         | Default (no OCR flag)                                     | `--ocrmypdf`                           | `--paddle-ocr`                             |
-|----------------------|-----------------------------------------------------------|----------------------------------------|--------------------------------------------|
-| PDF                  | text-first + Tesseract fallback (`mutool+tesseract`)      | `pdf+ocrmypdf`                         | `pdf+paddle-ocr`                           |
-| EPUB                 | chapter text extraction (`epub-text`)                     | LibreOffice→PDF→OCRmyPDF               | LibreOffice→PDF→PaddleOCR                  |
-| MOBI / AZW3 / FB2 / LIT | normalized to EPUB via Calibre, then same as EPUB    | same as EPUB + OCR flag                | same as EPUB + OCR flag                    |
-| DOCX / PPTX / XLSX / ODF | native ZIP+XML, fallback to LibreOffice+Tesseract   | force LibreOffice→PDF→OCRmyPDF         | force LibreOffice→PDF→PaddleOCR            |
-| RTF                  | LibreOffice→PDF→Tesseract (`rtf+tesseract`)               | LibreOffice→PDF→OCRmyPDF               | LibreOffice→PDF→PaddleOCR                  |
-| CBZ                  | per-image Tesseract (`cbz+tesseract`)                     | per-image OCRmyPDF (`cbz+ocrmypdf`)    | per-image PaddleOCR (`cbz+paddle-ocr`)     |
-| CSV                  | raw text (`csv-raw`), OCR flags ignored with warning      | —                                      | —                                          |
-| PNG / JPG / TIF      | `image+tesseract`                                         | `image+ocrmypdf`                       | `image+paddle-ocr`                         |
-| WebP / BMP / GIF     | ImageMagick→PNG→Tesseract (`image+tesseract`)             | ImageMagick→PNG→OCRmyPDF               | ImageMagick→PNG→PaddleOCR                  |
+| Input family | Default path | `--ocrmypdf` | `--paddle-ocr` |
+|--------------|--------------|--------------|----------------|
+| PDF | `mutool+tesseract` | `pdf+ocrmypdf` | `mutool+paddle-ocr` |
+| EPUB | `epub-text` via Bun ZIP/XML chapter extraction | EPUB to PDF, then `pdf+ocrmypdf` | EPUB to PDF, then `pdf+paddle-ocr` |
+| MOBI / AZW3 / FB2 / LIT | normalize to EPUB via Calibre, then follow the EPUB path | same | same |
+| DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, with OCR fallback through LibreOffice if quality is poor | LibreOffice to PDF, then OCRmyPDF | LibreOffice to PDF, then PaddleOCR |
+| RTF | LibreOffice to PDF, then Tesseract | LibreOffice to PDF, then OCRmyPDF | LibreOffice to PDF, then PaddleOCR |
+| CBZ | per-image Tesseract (`cbz+tesseract`) | per-image OCRmyPDF (`cbz+ocrmypdf`) | per-image PaddleOCR (`cbz+paddle-ocr`) |
+| CSV | raw text (`csv-raw`) | ignored with a warning | ignored with a warning |
+| PNG / JPG / TIF | `image+tesseract` | `image+ocrmypdf` | `image+paddle-ocr` |
+| WebP / BMP | normalize to PNG first when ImageMagick is available, then OCR | same | same |
+| GIF | pass the image directly to the selected engine | same | same |
 
 Only one OCR engine flag may be used at a time.
 
-## EPUB default extraction
+## EPUB Inspect Modes
 
-EPUB inputs without an OCR flag use native chapter text extraction via the Bun ZIP/XML parser. Each chapter is output as a page with its title as a `## heading` when available. No mutool or OCR invocation occurs.
+Structured EPUB inspection is available through two mutually exclusive flags:
 
-## EPUB inspect modes
-
-Deep inspect modes are available for structured EPUB metadata:
-
-| Flag            | Engine                        | Output                                                                                     |
-|-----------------|-------------------------------|--------------------------------------------------------------------------------------------|
-| `--epub-bun`    | Native Bun ZIP/XML parser     | Writes full EPUB structure/TOC/chapter text/inventory into `metadata.json` (`step2.epub`) |
-| `--epub-calibre`| Calibre CLI tools             | Same unified `step2.epub` shape in `metadata.json`                                         |
+| Flag | Engine | Result |
+|------|--------|--------|
+| `--epub-bun` | native Bun ZIP/XML parser | writes structured EPUB payload into `metadata.json` (`step2.epub`) |
+| `--epub-calibre` | Calibre CLI tools | writes the same unified `step2.epub` payload shape |
 
 Rules:
-- `--epub-bun` and `--epub-calibre` are mutually exclusive.
-- In EPUB inspect mode, only `metadata.json` is written (no extraction artifact).
-- For non-EPUB files, these flags fall back to the normal extract flow.
-- `--epub-bun` and `--epub-calibre` also apply to ebook inputs normalized to EPUB (MOBI/AZW3/FB2/LIT).
+- inspect mode is metadata-only for EPUB inputs
+- if `--out` is explicitly provided in inspect mode, it must be `json`
+- for non-EPUB inputs, these flags fall back to the normal extract flow
 
-## Ebook normalization (MOBI / AZW3 / FB2 / LIT)
+## OCR Language Handling
 
-Ebook formats that are not EPUB are automatically normalized to EPUB via Calibre in step 1 before extraction. The conversion chain is recorded in `metadata.json` (`step1.conversionChain`). Calibre must be installed (`bun as setup --step calibre`).
+`--lang` accepts Tesseract-style language codes such as `eng` or `eng+fra`.
 
-LIT support is best-effort — Calibre's LIT import is deprecated and may fail on some files.
-
-## Office quality heuristic (DOCX / PPTX / XLSX / ODF)
-
-Native ZIP+XML extraction is attempted first. If the extracted text fails a quality check (too few words, high replacement-character ratio, or poor alpha/numeric content ratio), the document is re-processed via LibreOffice→PDF→OCR. Spreadsheet-heavy XLSX/ODS files receive a relaxed heuristic to avoid false OCR fallback on numeric tables.
-
-If any OCR engine flag is present, the native parser is skipped entirely and LibreOffice conversion is always used.
-
-## CBZ page ordering
-
-CBZ archives are extracted and sorted by natural numeric filename order (`1.png, 2.png, 10.png` — not lexicographic).
-
-## `--out` file contract
-
-Strict output: only the requested primary artifact plus `metadata.json` is written per run.
-
-| `--out` value  | Primary artifact   |
-|----------------|--------------------|
-| `text` (default) | `extraction.txt` |
-| `json`         | `extraction.json`  |
-| `tsv`          | `extraction.tsv`   |
-| `hocr`         | `extraction.hocr`  |
-
-## `--lang` behavior
-
-`--lang` accepts Tesseract-format language codes (e.g. `eng`, `fra`, `deu+fra`).
-
-| Engine      | Behavior                                                                                      |
-|-------------|-----------------------------------------------------------------------------------------------|
-| Tesseract   | passed directly as `-l <lang>`                                                                |
-| OCRmyPDF    | passed directly (delegates to Tesseract)                                                      |
-| PaddleOCR   | mapped from Tesseract codes (`eng`→`en`, `fra`→`fr`, etc.); logs a warning if no mapping     |
-| Mistral OCR | ignored; `languageSupported: false` recorded in metadata                                      |
+| Engine | Behavior |
+|--------|----------|
+| Tesseract | passed through directly |
+| OCRmyPDF | passed through to the underlying Tesseract OCR run |
+| PaddleOCR | mapped from Tesseract-style codes when possible |
 
 ## Examples
 
 ```bash
-# Default: PDF with Tesseract
+# Default PDF extraction
 bun as extract input/1-document.pdf
-
-# EPUB default text extraction (no OCR)
-bun as extract input/1-document.epub
-
-# EPUB extract with OCRmyPDF (converts to PDF first)
-bun as extract input/1-document.epub --ocrmypdf
-
-# Ebook (MOBI) — normalized to EPUB via Calibre, then extracted
-bun as extract input/1-document.mobi
-
-# RTF document
-bun as extract input/1-document.rtf
-
-# CBZ comic archive
-bun as extract input/1-document.cbz
-
-# CSV as raw text
-bun as extract input/1-document.csv
-
-# WebP image
-bun as extract input/1-image.webp
 
 # JSON output
 bun as extract input/1-document.pdf --out json
 
-# OCRmyPDF engine
-bun as extract input/1-document.pdf --ocrmypdf
+# EPUB chapter extraction
+bun as extract input/1-document.epub
 
-# PaddleOCR engine
-bun as extract input/1-document.pdf --paddle-ocr
+# EPUB OCR path
+bun as extract input/1-document.epub --ocrmypdf
 
-# Multi-language Tesseract
-bun as extract input/1-document.pdf --lang eng+fra
+# Ebook normalized through Calibre first
+bun as extract input/1-document.mobi
 
-# EPUB inspect with Bun parser
+# Local image OCR
+bun as extract input/1-document.png --paddle-ocr
+
+# Structured EPUB inspect with Bun
 bun as extract input/1-document.epub --epub-bun --out json
 
-# EPUB inspect with Calibre parser
+# Structured EPUB inspect with Calibre
 bun as extract input/1-document.epub --epub-calibre --out json
 ```
 
-## Flags
+## Standalone `extract` Flags
 
-### Basic
+These are the flags currently exposed by the standalone `extract` command:
 
-| Flag             | Default | Description                                                                     |
-|------------------|---------|---------------------------------------------------------------------------------|
-| `--lang`         | `eng`   | Tesseract language codes, e.g. `eng+fra`                                        |
-| `--out`          | `text`  | Output format: `text`, `json`, `tsv`, `hocr`                                   |
-| `--password`     | —       | Password for encrypted PDFs                                                     |
-| `--ocrmypdf`     | `false` | Use OCRmyPDF engine                                                             |
-| `--paddle-ocr`   | `false` | Use PaddleOCR engine                                                            |
-| `--epub-bun`     | `false` | EPUB deep inspect using Bun ZIP/XML parser; writes structured data into `metadata.json` |
-| `--epub-calibre` | `false` | EPUB deep inspect using Calibre tools; writes structured data into `metadata.json` |
-
-### Advanced (Tesseract only)
-
-| Flag                | Default | Description                                        |
-|---------------------|---------|----------------------------------------------------|
-| `--dpi`             | `300`   | Render DPI for OCR pages                           |
-| `--psm`             | `3`     | Tesseract page segmentation mode                   |
-| `--oem`             | `1`     | Tesseract OCR engine mode                          |
-| `--page-separator`  | `\n\n`  | Custom string between pages                        |
-| `--preserve-spaces` | `false` | Enable `preserve_interword_spaces=1`               |
-| `--rotate`          | `0`     | Rotate pages before OCR (degrees)                  |
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--lang` | `eng` | Tesseract language code(s) |
+| `--out` | `text` | `text`, `json`, `tsv`, or `hocr` |
+| `--password` | - | Password for encrypted PDFs |
+| `--ocrmypdf` | `false` | Use OCRmyPDF |
+| `--paddle-ocr` | `false` | Use PaddleOCR |
+| `--epub-bun` | `false` | Inspect EPUB structure with the Bun parser |
+| `--epub-calibre` | `false` | Inspect EPUB structure with Calibre |
+| `--price` | `false` | Show the aggregated extract estimate and exit |
 
 ## Notes
 
 - Supported document formats: PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, CBZ.
 - Supported image formats: PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF.
-- DOCX/PPTX/XLSX/ODF attempt native ZIP+XML parsing first; OCR fallback triggers automatically if quality check fails.
-- EPUB inspect modes emit metadata-only output (`metadata.json`).
-- CSV always returns raw text; OCR flags produce a warning and are ignored.
-- LIT support is best-effort (Calibre's LIT import is deprecated).
-- Local setup/install details are in [`extract-document-setup.md`](./extract-document-setup.md).
+- Office files use native ZIP/XML extraction first and only fall back to OCR when the extracted text quality is poor.
+- `--mistral-ocr` is documented separately in [`extract-document-services.md`](./extract-document-services.md).
+- Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are currently exposed through `write`, not through standalone `extract`.
+
+## Local Tests
+
+```bash
+bun t \
+  test/test-cases/e2e/step-2-extract-e2e/extract-options.test.ts \
+  test/test-cases/e2e/step-2-extract-e2e/extract-paddle-ocr-image.test.ts
+```
+
+For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
+
+### Validation / Price / Non-E2E
+
+No standalone local extract validation or price file exists. Validation is mixed into `extract-options.test.ts`.
+
+### E2E Smoke
+
+**Tier:** `smoke`
+
+```bash
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-options.test.ts
+```
+
+Current coverage in this file includes:
+- default PDF extraction
+- `--out json` for PDF extraction
+- PDF extraction with `--ocrmypdf`
+- PDF extraction with `--paddle-ocr`
+- EPUB extraction with `--ocrmypdf`
+- image extraction with `--ocrmypdf`
+- EPUB inspect via `--epub-bun`
+- EPUB inspect via `--epub-calibre`
+- rejection of non-JSON `--out` in EPUB inspect mode
+- non-EPUB fallback when `--epub-bun` is passed
+
+### E2E Slow-Local
+
+**Tier:** `slow-local`
+
+```bash
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-paddle-ocr-image.test.ts
+```
+
+Covers PaddleOCR image extraction.

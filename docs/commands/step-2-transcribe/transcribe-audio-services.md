@@ -1,11 +1,11 @@
 # transcribe (services)
 
-Download audio and transcribe using service APIs only.
+Download audio and transcribe it with the hosted STT providers.
 
 ## Outline
 
 - [Usage](#usage)
-- [Service transcription engines](#service-transcription-engines)
+- [Service Engines](#service-engines)
 - [Examples](#examples)
 - [Flags](#flags)
 - [Notes](#notes)
@@ -16,17 +16,19 @@ Download audio and transcribe using service APIs only.
 bun as transcribe [input] [flags]
 ```
 
-## Service transcription engines
+The input routing is the same as local `transcribe`: direct media URLs, streaming URLs, local media files, URL lists, directories, feeds, and YouTube channels are all supported.
+
+## Service Engines
 
 | Engine | Selection | Models |
 |--------|-----------|--------|
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3`, `whisper-large-v3-turbo` |
-| ElevenLabs STT | `--elevenlabs-stt <model>` | `scribe_v2` |
-| OpenAI STT | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
-| Mistral STT | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
-| AssemblyAI STT | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
+| ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
+| OpenAI | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
+| Mistral | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
+| AssemblyAI | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
 
-Only one service flag may be used at a time.
+Only one hosted STT provider flag may be active at a time.
 
 ## Examples
 
@@ -34,16 +36,16 @@ Only one service flag may be used at a time.
 # Groq
 bun as transcribe input/1-audio.mp3 --groq-stt whisper-large-v3
 
-# ElevenLabs
+# ElevenLabs with a speaker-count hint
 bun as transcribe input/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 3
 
-# OpenAI
+# OpenAI with a speaker-count hint
 bun as transcribe input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --speaker-count 2
 
 # Mistral
-bun as transcribe input/1-audio.mp3 --mistral-stt voxtral-mini-2602 --speaker-count 2
+bun as transcribe input/1-audio.mp3 --mistral-stt voxtral-mini-2602
 
-# AssemblyAI
+# AssemblyAI with a speaker-count hint
 bun as transcribe input/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
 
 # Price preflight
@@ -54,17 +56,22 @@ bun as transcribe input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --pri
 
 | Flag | Description |
 |------|-------------|
-| `--groq-stt <model>` | Groq Whisper STT model |
-| `--elevenlabs-stt <model>` | ElevenLabs STT model |
-| `--openai-stt <model>` | OpenAI STT model |
-| `--mistral-stt <model>` | Mistral STT model |
-| `--assemblyai-stt <model>` | AssemblyAI STT model |
-| `--speaker-count <n>` | Speaker-count hint for diarization-capable services |
-| `--price` | Show cost estimate and exit |
+| `--groq-stt <model>` | Select a Groq Whisper model |
+| `--elevenlabs-stt <model>` | Select the ElevenLabs STT model |
+| `--openai-stt <model>` | Select the OpenAI STT model |
+| `--mistral-stt <model>` | Select the Mistral STT model |
+| `--assemblyai-stt <model>` | Select the AssemblyAI STT model |
+| `--speaker-count <n>` | Speaker-count hint for providers that support it |
 | `--prompt <name...>` | Named prompt(s) from `src/prompts/prompts.json` |
+| `--batch-limit <n>` | Limit batch size |
+| `--batch-all` | Process all batch items |
+| `--batch-order <newest|oldest>` | Choose batch ordering |
+| `--batch-concurrency <n>` | Process batch items concurrently |
+| `--price` | Show the aggregated estimate and exit |
 
 ## Notes
 
-- With Mistral, diarization can be enabled but `--speaker-count` is treated as a hint and may be ignored.
-- AssemblyAI supports speaker count hints, diarization, and word-level timestamps.
-- Service setup/env details are in [`transcribe-audio-setup.md`](./transcribe-audio-setup.md).
+- OpenAI, ElevenLabs, and AssemblyAI use `--speaker-count` as a real diarization hint.
+- Groq ignores `--speaker-count`.
+- Mistral enables diarization but does not support speaker-count hints, so `--speaker-count` is ignored there.
+- Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).

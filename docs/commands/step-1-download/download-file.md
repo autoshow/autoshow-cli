@@ -8,7 +8,7 @@ Download media or documents and collect metadata without running transcription, 
 - [Flags](#flags)
 - [Output](#output)
 - [Examples](#examples)
-- [Setup and environment](#setup-and-environment)
+- [Setup and Environment](#setup-and-environment)
 - [Processing Step Layout](#processing-step-layout)
 
 ```bash
@@ -20,56 +20,58 @@ bun as dl <input>          # alias
 
 | Input | Behavior |
 |-------|----------|
-| YouTube/Twitch URL | yt-dlp download, convert to WAV, collect video metadata |
-| Direct media URL (.mp3, .mp4, etc.) | HTTP fetch, convert to WAV, collect metadata |
-| Direct document URL (.pdf, .epub, .docx, etc.) | HTTP fetch to temp file, detect format, extract document metadata |
-| Direct document URL (no extension) | HEAD probe for `content-type`/`content-disposition`; falls back to download + magic-byte detection |
-| Local media file | ffmpeg convert to WAV, collect metadata |
-| Local document file | Format detected by magic bytes first, then extension; see supported formats below |
-| YouTube channel URL | Batch download latest videos (use `--batch-limit`) |
-| RSS/podcast feed URL | Batch download latest episodes (use `--batch-limit`) |
-| .md/.txt URL list | Batch process each URL |
-| Directory | Batch process each supported file |
+| YouTube / Twitch / TikTok URL | `yt-dlp` download, convert to WAV, collect media metadata |
+| Direct media URL (`.mp3`, `.mp4`, etc.) | HTTP fetch, convert to WAV, collect media metadata |
+| Direct document URL (`.pdf`, `.epub`, `.docx`, etc.) | HTTP fetch to a temp file, detect format, collect document metadata |
+| Direct document URL without an extension | HEAD probe plus download + magic-byte detection |
+| Local media file | ffmpeg convert to WAV, collect media metadata |
+| Local document file | detect format by magic bytes first, then extension |
+| YouTube channel URL | batch the latest videos |
+| RSS / podcast feed URL | batch the latest episodes |
+| URL list file (`.md` / `.txt`) | batch each listed input |
+| Directory | batch each supported local input |
 
 **Supported document formats:** PDF, EPUB, MOBI, AZW3, AZW, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, CBZ
 
 **Supported image formats:** PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF
 
-MOBI/AZW3/FB2/LIT inputs are automatically normalized to EPUB via Calibre during step 1. The source format and conversion chain are recorded in `metadata.json`.
+MOBI, AZW3, FB2, and LIT inputs are normalized to EPUB through Calibre during step 1. The source format and conversion chain are recorded in `metadata.json`.
 
 ## Flags
 
-```
+```text
 --password           Password for encrypted PDFs
---batch-limit        Number of items to process in batch mode (default 5)
---batch-all          Process all items in batch mode
---batch-order        Item order: newest|oldest (default newest)
---batch-concurrency  Concurrent items in batch mode (default 1)
+--batch-limit        Batch: number of items to process (default 5)
+--batch-all          Batch: process all items
+--batch-order        Batch: item order newest|oldest (default newest)
+--batch-concurrency  Batch: number of items to process concurrently (default 1)
 ```
 
 ## Output
 
-**Media (YouTube, direct URL, local file):**
-```
+**Media inputs**
+
+```text
 output/YYYY-MM-DD_HH-MM-SS_title/
-├── YYYY-MM-DD-title.wav       # Downloaded & converted audio
-└── metadata.json              # { step1: Step1Metadata }
+  <audio>.wav
+  metadata.json
 ```
 
-**Documents (PDF, EPUB, DOCX, MOBI, RTF, CSV, CBZ, images, etc.):**
-```
+**Document inputs**
+
+```text
 output/YYYY-MM-DD_HH-MM-SS_title/
-└── metadata.json              # { step1: DocumentMetadata }
+  metadata.json
 ```
 
-**Batch (YouTube channel, RSS feed, URL list, directory):**
-```
+**Batch inputs**
+
+```text
 output/YYYY-MM-DD_HH-MM-SS_batch-label/
-├── source.json                # Batch source metadata
-├── info.json                  # Per-item info
-└── YYYY-MM-DD_HH-MM-SS_item/
-    ├── *.wav
-    └── metadata.json
+  source.json
+  info.json
+  YYYY-MM-DD_HH-MM-SS_item/
+    <artifacts for that item>
 ```
 
 ## Examples
@@ -91,46 +93,26 @@ bun as download https://example.com/feed --batch-limit 3
 bun as download https://www.youtube.com/@channelname --batch-limit 2
 
 # Download all items from a URL list
-bun as dl urls.md --batch-all
+bun as dl input/2-urls.md --batch-all
 ```
 
-## Setup and environment
+## Setup and Environment
 
-For setup command usage, model pre-downloads, environment variables, setup module layout, and runtime/output directory structure, see:
-
-- [`setup.md`](../step-0-setup/setup.md)
+Setup details are centralized in [`setup.md`](../step-0-setup/setup.md).
 
 ## Processing Step Layout
 
-Runtime processing steps and shared routing live under the current CLI step layout:
+Runtime processing steps and shared routing live under:
 
 ```text
 src/cli/commands/process-steps/
   step-0-setup/
-    setup-orchestrator/
   step-1-download/
-    audio/
-    document/
-    setup-download/
-    targets/
   step-2-stt/
-    stt-local/
-    stt-services/
   step-2-document/
-    document-local/
-    document-services/
-    epub/
   step-3-write/
-    write-local/
-    write-services/
-    structured-output/
   step-4-tts/
-    tts-local/
-    tts-services/
   step-5-image/
-    image-services/
   step-6-video/
-    video-services/
   step-7-music/
-    music-services/
 ```

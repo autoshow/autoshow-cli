@@ -1,29 +1,37 @@
 import { defineCommand } from 'clerc'
 import modelLinks from '~/../../docs/links/model-links.json'
+import * as l from '~/logger'
+import { CLIUsageError } from '~/utils/error-handler'
 
 type ModelLinksData = Record<string, Record<string, string[]>>
-
-const data = modelLinks as ModelLinksData
-
-const serviceKeySet = new Set(Object.keys(data).map((s) => s.toLowerCase()))
-
-/**
- * Parse argv after the "links" command into two structures:
- *   - serviceSelections: Map<service, section[]>  (from --service section1 section2 ...)
- *   - globalSections: string[]                     (bare words not preceded by a --service flag)
- *
- * Examples:
- *   links --openai general text --minimax video
- *     => serviceSelections: { openai: [general, text], minimax: [video] }
- *
- *   links general tts stt
- *     => globalSections: [general, tts, stt]
- */
-const parseLinksArgv = (): {
+type LinksSelection = {
   serviceSelections: Map<string, string[]>
   globalSections: string[]
-} => {
-  const argv = process.argv
+}
+type FetchFn = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
+type RunLinksOptions = {
+  outputPath?: string | URL
+  fetchImpl?: FetchFn
+}
+
+const data = modelLinks as ModelLinksData
+export const LINKS_OUTPUT_PATH = new URL('../../../../docs/links/bun-links.md', import.meta.url)
+
+const serviceEntries = Object.entries(data)
+const serviceKeySet = new Set(serviceEntries.map(([serviceName]) => serviceName.toLowerCase()))
+const serviceSectionKeyMap = new Map(
+  serviceEntries.map(([serviceName, sections]) => [
+    serviceName.toLowerCase(),
+    new Set(Object.keys(sections).map(sectionName => sectionName.toLowerCase()))
+  ])
+)
+const globalSectionKeySet = new Set(
+  serviceEntries.flatMap(([, sections]) => Object.keys(sections).map(sectionName => sectionName.toLowerCase()))
+)
+const knownProviders = [...serviceKeySet].sort()
+const knownSections = [...globalSectionKeySet].sort()
+
+export const parseLinksArgv = (argv: string[]): LinksSelection => {
   const linksIdx = argv.findIndex((a) => a === 'links')
   const args = linksIdx >= 0 ? argv.slice(linksIdx + 1) : []
 
@@ -41,7 +49,7 @@ const parseLinksArgv = (): {
           serviceSelections.set(currentService, [])
         }
       } else {
-        currentService = null
+        throw CLIUsageError(`Unknown links provider "--${flag}". Known providers: ${knownProviders.join(', ')}`)
       }
     } else if (currentService) {
       serviceSelections.get(currentService)!.push(arg.toLowerCase())
@@ -53,7 +61,25 @@ const parseLinksArgv = (): {
   return { serviceSelections, globalSections }
 }
 
-const collectLinks = (
+const assertKnownSections = (
+  serviceSelections: Map<string, string[]>,
+  globalSections: string[]
+): void => {
+  const unknownGlobalSections = globalSections.filter(sectionName => !globalSectionKeySet.has(sectionName))
+  if (unknownGlobalSections.length > 0) {
+    throw CLIUsageError(`Unknown links section(s): ${unknownGlobalSections.join(', ')}. Known sections: ${knownSections.join(', ')}`)
+  }
+
+  for (const [serviceName, sections] of serviceSelections) {
+    const serviceSections = serviceSectionKeyMap.get(serviceName)
+    const unknownSections = sections.filter(sectionName => !serviceSections?.has(sectionName))
+    if (unknownSections.length > 0) {
+      throw CLIUsageError(`Unknown links section(s) for --${serviceName}: ${unknownSections.join(', ')}`)
+    }
+  }
+}
+
+export const collectLinks = (
   serviceSelections: Map<string, string[]>,
   globalSections: string[]
 ): string[] => {
@@ -64,9 +90,9 @@ const collectLinks = (
   if (hasServiceSelections) {
     for (const [serviceName, sections] of Object.entries(data)) {
       const requested = serviceSelections.get(serviceName.toLowerCase())
-      if (!requested || requested.length === 0) continue
+      if (!requested) continue
       for (const [sectionName, urls] of Object.entries(sections)) {
-        if (requested.includes(sectionName.toLowerCase())) {
+        if (requested.length === 0 || requested.includes(sectionName.toLowerCase())) {
           links.push(...urls)
         }
       }
@@ -94,15 +120,66 @@ const collectLinks = (
   return [...new Set(links)]
 }
 
-const runLinks = async (): Promise<void> => {
-  const { serviceSelections, globalSections } = parseLinksArgv()
-  const links = collectLinks(serviceSelections, globalSections)
-  for (const link of links) {
-    console.log(link)
+const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<string> => {
+  try {
+    const response = await fetchImpl(url)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`)
+    }
+
+    const content = (await response.text()).trim()
+    if (content.length === 0) {
+      l.warn(`Fetched empty response from ${url}`)
+      return `<!-- Empty response from ${url} -->`
+    }
+
+    return `<!-- Source: ${url} -->\n\n${content}`
+  } catch (error) {
+    l.warn(`Failed to fetch ${url}`, error)
+    return `<!-- Failed to fetch ${url} -->`
   }
+}
+
+export const runLinksWithArgv = async (
+  argv: string[],
+  options: RunLinksOptions = {}
+): Promise<{ outputPath: string, urlCount: number, lineCount: number }> => {
+  const { serviceSelections, globalSections } = parseLinksArgv(argv)
+  assertKnownSections(serviceSelections, globalSections)
+  const links = collectLinks(serviceSelections, globalSections)
+
+  if (links.length === 0) {
+    throw CLIUsageError('No documentation links matched the provided selections')
+  }
+
+  const outputPath = options.outputPath ?? LINKS_OUTPUT_PATH
+  const fetchImpl = options.fetchImpl ?? fetch
+
+  l.info(`Fetching ${links.length} documentation URLs`)
+
+  const fetchedContents = await Promise.all(links.map(url => fetchUrl(url, fetchImpl)))
+  const combinedContent = `${fetchedContents.join('\n\n')}\n`
+  await Bun.write(outputPath, combinedContent)
+
+  const resolvedOutputPath = typeof outputPath === 'string'
+    ? outputPath
+    : decodeURIComponent(outputPath.pathname)
+  const lineCount = combinedContent.split('\n').length
+
+  l.success(`Wrote ${resolvedOutputPath} from ${links.length} URLs (${lineCount} lines)`)
+
+  return {
+    outputPath: resolvedOutputPath,
+    urlCount: links.length,
+    lineCount
+  }
+}
+
+const runLinks = async (): Promise<void> => {
+  await runLinksWithArgv(process.argv)
 }
 
 export const linksCommand = defineCommand({
   name: 'links',
-  description: 'Print API documentation links for model providers'
+  description: 'Fetch provider documentation markdown and write a combined file'
 }, runLinks)

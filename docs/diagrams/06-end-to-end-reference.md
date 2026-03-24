@@ -1,4 +1,4 @@
-# Complete End-to-End Data Flow
+# End-to-End Execution Reference
 
 Complete trace of a real CLI command from input to output, plus environment variable reference.
 
@@ -81,7 +81,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --minimax-music models                  │
 │  ├── ELEVENLABS_API_KEY              Required for --elevenlabs-stt,          │
 │  │                                   --elevenlabs-tts, --elevenlabs-music    │
-│  └── HF_TOKEN                        HuggingFace private model access        │
+│  └── HF_TOKEN                        HuggingFace private model access         │
 │                                                                              │
 │  llama.cpp Overrides                                                         │
 │  ├── LLAMA_MODEL_PATH                Skip auto-download, use local path      │
@@ -89,9 +89,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  └── LLAMA_SERVER_START_TIMEOUT_MS   Server startup timeout (default: 30m)   │
 │                                                                              │
 │  yt-dlp Configuration                                                        │
-│  ├── YTDLP_COOKIES_FROM_BROWSER      Browser for cookie extraction           │
-│  ├── YTDLP_COOKIES_FILE              Path to cookies file                    │
+│  ├── YTDLP_ACCEPT_LANGUAGE           Custom Accept-Language header           │
 │  ├── YTDLP_USER_AGENT                Custom user agent string                │
-│  └── YTDLP_EXTRACTOR_ARGS            Extra yt-dlp arguments                  │
+│  └── YTDLP_NO_CHECK_CERTS            Disable TLS certificate verification    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```

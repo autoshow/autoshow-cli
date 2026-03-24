@@ -12,16 +12,19 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
 - [E2E Services](#e2e-services)
 
 ## Validation / Price / Non-E2E
 
-Each provider test file includes `--price` estimate tests and an "rejects invalid model" validation test via the shared `defineImageServiceTest` factory. Provider-specific validation (multiple providers, image-size restrictions) is inline in each test file.
+Each provider suite uses `defineImageServiceTest`, which currently covers:
+- invalid model rejection
+- `--price` output
+- real generation and metadata checks when the required API key is configured
 
-## E2E Local
-
-No local image generation models are supported.
+Additional provider-specific coverage:
+- Gemini rejects multiple providers and rejects `--image-size` for `imagen-4.0-fast-generate-001`
+- OpenAI rejects multiple providers
+- MiniMax includes an explicit aspect-ratio generation case
 
 ## E2E Services
 
@@ -33,6 +36,4 @@ bun t test/test-cases/e2e/step-5-image-gen-e2e/gemini-image-gen.test.ts
 bun t test/test-cases/e2e/step-5-image-gen-e2e/minimax-image-gen.test.ts
 ```
 
-Covers provider/model validation, `--price` preflight, generation, and metadata checks.
-
-Service setup/env prerequisites are in [`text-to-image-setup.md`](./text-to-image-setup.md).
+Setup details are in [`text-to-image-setup.md`](./text-to-image-setup.md).

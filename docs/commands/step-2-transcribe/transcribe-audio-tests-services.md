@@ -14,16 +14,14 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
 - [E2E Services](#e2e-services)
 
 ## Validation / Price / Non-E2E
 
-Each provider test file includes `--price` estimate tests and an "rejects invalid model" validation test via the shared `defineSTTServiceTest` factory.
-
-## E2E Local
-
-No service-tier local tests — see [transcribe-audio-tests-local.md](./transcribe-audio-tests-local.md).
+Each provider file uses the shared `defineSTTServiceTest` helper, which currently covers:
+- invalid model rejection
+- `--price` output
+- real transcription when the required API key is configured
 
 ## E2E Services
 
@@ -37,4 +35,4 @@ bun t test/test-cases/e2e/step-2-transcribe-e2e/mistral/mistral-voxtral-mini-260
 bun t test/test-cases/e2e/step-2-transcribe-e2e/openai/openai-gpt-4o-transcribe-diarize.test.ts
 ```
 
-Service setup/env prerequisites are in [`transcribe-audio-setup.md`](./transcribe-audio-setup.md).
+Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).

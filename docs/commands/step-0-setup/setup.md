@@ -1,23 +1,23 @@
 # setup
 
-Install local dependencies and generate test fixtures.
+Install local runtimes and prerequisite tools. Sample fixture generation is handled by `sample`, not by `setup`.
 
 ## Outline
 
 - [Step Setup Docs](#step-setup-docs)
 - [Global Setup Command](#global-setup-command)
-- [Common setup steps](#common-setup-steps)
-- [Sample fixture generation](#sample-fixture-generation)
+- [Targeted Setup Steps](#targeted-setup-steps)
+- [Sample Fixtures](#sample-fixtures)
 
 ## Step Setup Docs
 
-- Step 2 Extract: [`extract-document-setup.md`](../step-2-extract/extract-document-setup.md)
-- Step 2 Transcribe: [`transcribe-audio-setup.md`](../step-2-transcribe/transcribe-audio-setup.md)
-- Step 3 Write: [`write-text-setup.md`](../step-3-write/write-text-setup.md)
-- Step 4 TTS: [`text-to-speech-setup.md`](../step-4-tts/text-to-speech-setup.md)
+- Step 2 Extract: [`extract-document-local.md#setup`](../step-2-extract/extract-document-local.md#setup)
+- Step 2 Transcribe: [`transcribe-audio-local.md#setup`](../step-2-transcribe/transcribe-audio-local.md#setup)
+- Step 3 Write: [`write-text-local.md#setup`](../step-3-write/write-text-local.md#setup)
+- Step 4 TTS: [`text-to-speech-local.md#setup`](../step-4-tts/text-to-speech-local.md#setup)
 - Step 5 Image: [`text-to-image-setup.md`](../step-5-image/text-to-image-setup.md)
-- Step 6 Video: [`text-to-video-services.md`](../step-6-video/text-to-video-services.md)
-- Step 7 Music: [`text-to-music-services.md`](../step-7-music/text-to-music-services.md)
+- Step 6 Video: [`text-to-video-services.md`](../step-6-video/text-to-video-services.md) for env/setup notes
+- Step 7 Music: [`text-to-music-services.md`](../step-7-music/text-to-music-services.md) for env/setup notes
 
 ## Global Setup Command
 
@@ -25,32 +25,64 @@ Install local dependencies and generate test fixtures.
 bun as setup
 ```
 
-## Common setup steps
+Use full setup on a clean machine when you want local download, extract, transcribe, write, or TTS workflows to work without manually installing their prerequisites first.
 
-```bash
-# Step 1 download foundations (documents): mutool + Calibre CLI tools
-bun as setup --step calibre
+## Targeted Setup Steps
 
-# Verify sample fixture generation prerequisites (ffmpeg, libreoffice)
-bun as setup --step sample
+The `setup` command currently supports:
+
+```text
+uv | yt-dlp | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | sample
 ```
 
-## Sample fixture generation
+Isolated steps assume their prerequisites are already present. On a clean machine, prefer `bun as setup`.
 
 ```bash
-# Generate all test fixtures under input/samples/
+# Document foundations: mutool + Calibre CLI tools
+bun as setup --step calibre
+
+# Build whisper.cpp binary only
+bun as setup --step whisper-binary
+
+# Download the default whisper model only
+bun as setup --step whisper-model
+
+# Download large-v3-turbo + Reverb assets
+bun as setup --step transcription
+
+# Install llama.cpp and download all supported local write models
+bun as setup --step write
+
+# Install Kitten TTS and download all supported local TTS models
+bun as setup --step tts
+
+# Image providers are API-based, so this is effectively a no-op confirmation step
+bun as setup --step image
+
+# Verify fixture-generation prerequisites (ffmpeg, ffprobe, soffice)
+bun as setup --step sample
+
+# Remove existing artifacts before re-downloading
+bun as setup --step write --force-redownload
+
+# Benchmark a setup step
+bun as setup --step tts --repeat 3
+```
+
+## Sample Fixtures
+
+```bash
+# Generate fixtures under input/samples/
 bun as sample
 
 # Alias
 bun as samples
 
-# Verify existing fixtures without regenerating
+# Verify an existing manifest without regenerating
 bun as sample --verify-only
 
-# Force regeneration
+# Regenerate fixtures even if the manifest is valid
 bun as sample --refresh
 ```
 
 See [`sample.md`](../sample/sample.md) for the full `sample` command reference.
-
-Use the per-step setup docs above for setup subcommands, environment variables, and test prerequisites.

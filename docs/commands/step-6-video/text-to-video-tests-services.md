@@ -11,29 +11,28 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
 - [E2E Services](#e2e-services)
 
 ## Validation / Price / Non-E2E
 
-**Tier:** `smoke`
+**Tier:** `api`
 
-Each provider test file includes `--price` estimate tests and an "rejects invalid model" validation test via the shared `defineVideoServiceTest` factory. `video-gen.test.ts` also covers "requires a provider flag" and "rejects multiple providers" validation.
+Current coverage:
+- invalid model rejection via `defineVideoServiceTest`
+- `--price` coverage for Sora, Gemini Veo, and MiniMax model IDs
+- explicit validation that `video` requires a provider flag
+- explicit validation that multiple providers are rejected
 
 ```bash
 bun t test/test-cases/e2e/step-6-video-gen-e2e/video-gen.test.ts
 bun t test/test-cases/e2e/step-6-video-gen-e2e/minimax-video-gen.test.ts
 ```
 
-## E2E Local
-
-No local video generation models are supported.
-
 ## E2E Services
 
-No E2E video generation tests exist (validation and `--price` coverage only). Video generation is expensive and slow; provider functionality is verified through preflight checks.
+There are currently no full provider-generation e2e video tests. Video coverage is limited to validation and `--price` preflight.
 
 Provider env keys:
-- `OPENAI_API_KEY` (Sora)
-- `GEMINI_API_KEY` (Veo)
-- `MINIMAX_API_KEY` (MiniMax video)
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+- `MINIMAX_API_KEY`

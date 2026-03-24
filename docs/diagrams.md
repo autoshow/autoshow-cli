@@ -1,6 +1,6 @@
 # AutoShow CLI Architecture Diagrams
 
-Comprehensive architecture diagrams covering the entire data flow and all processing branches.
+Consolidated architecture diagrams covering the same system content in a smaller set of broader, more naturally grouped views.
 
 ## Outline
 
@@ -8,14 +8,9 @@ Comprehensive architecture diagrams covering the entire data flow and all proces
 
 ## Diagrams
 
-1. [High-Level System Overview](diagrams/01-overview.md) - The 4 main layers and how they connect
-2. [CLI Entry Point & Commands](diagrams/02-cli-entry.md) - Clerc CLI setup, commands, interceptors, flag system
-3. [Target Classification & Routing](diagrams/03-target-routing.md) - Input routing, single target classification, command/input matrix
-4. [Media Processing Pipeline](diagrams/04-media-pipeline.md) - Download audio, transcribe (Whisper/Groq/Reverb/ElevenLabs/OpenAI), LLM summary, optional TTS/image/video/music
-5. [Document Processing Pipeline](diagrams/05-document-pipeline.md) - Detect format, extract text (MuPDF + Tesseract/OCRmyPDF/PaddleOCR), LLM summary
-6. [LLM Provider Selection](diagrams/06-llm-providers.md) - llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax routing with all model options
-7. [Batch Processing](diagrams/07-batch-processing.md) - Directory, URL list, and YouTube collection batch flows
-8. [Setup Pipeline](diagrams/08-setup-pipeline.md) - All 8 setup steps and dependency requirements per command
-9. [Output Directory Structure](diagrams/09-output-structure.md) - File outputs per command and runtime directory layout
-10. [Type System](diagrams/10-types.md) - All types organized by pipeline step (Valibot schemas)
-11. [End-to-End Data Flow](diagrams/11-end-to-end.md) - Complete trace of a real command and environment variables
+1. [System Overview & CLI Surface](diagrams/01-system-overview-cli.md) - High-level architecture, command routing, interceptors, and the flag system
+2. [Input Routing & Batch Orchestration](diagrams/02-input-routing-batch.md) - Target classification, single-item routing, command/input matrix, and batch flows
+3. [Processing Pipelines](diagrams/03-processing-pipelines.md) - Media and document execution paths from download/detect through extraction/transcription and optional LLM/generation steps
+4. [Providers, Models & Setup](diagrams/04-providers-and-setup.md) - LLM provider selection, model options, runtime setup sequence, and per-command dependency requirements
+5. [Types, Metadata & Output Layout](diagrams/05-types-and-output.md) - Output directory structure, runtime layout, and the full type system by pipeline step
+6. [End-to-End Execution Reference](diagrams/06-end-to-end-reference.md) - Full command trace plus environment variable reference

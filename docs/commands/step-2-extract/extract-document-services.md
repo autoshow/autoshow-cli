@@ -1,67 +1,63 @@
 # extract (services)
 
-Extract text from documents and images using service OCR only.
+Extract text with the hosted OCR path currently exposed by `bun as extract`: Mistral OCR.
 
 ## Outline
 
 - [Usage](#usage)
-- [Service engine](#service-engine)
-- [Mistral OCR](#mistral-ocr)
+- [Mistral OCR Routing](#mistral-ocr-routing)
 - [Examples](#examples)
-- [Flags](#flags)
+- [Standalone `extract` Flags](#standalone-extract-flags)
 - [Notes](#notes)
 
 ## Usage
 
 ```bash
-bun as extract [input] [flags]
+bun as extract [input] --mistral-ocr <model>
 ```
 
-## Service engine
+## Mistral OCR Routing
 
-| Format                     | `--mistral-ocr <model>`                          |
-|----------------------------|--------------------------------------------------|
-| PDF                        | `pdf+mistral-ocr`                                |
-| EPUB (with OCR flag)       | LibreOffice→PDF→`pdf+mistral-ocr`                |
-| MOBI / AZW3 / FB2 / LIT   | Calibre→EPUB→LibreOffice→PDF→`pdf+mistral-ocr`   |
-| DOCX / PPTX / XLSX / ODF  | force LibreOffice→PDF→`office+mistral-ocr`       |
-| RTF                        | LibreOffice→PDF→`rtf+mistral-ocr`                |
-| CBZ                        | per-image `cbz+mistral-ocr`                      |
-| PNG / JPG / TIF            | `image+mistral-ocr`                              |
-| WebP / BMP / GIF           | unsupported (standard image formats only)        |
-| CSV                        | raw text (`csv-raw`), OCR flag ignored with warning |
+| Input family | Service path |
+|--------------|--------------|
+| PDF | `mistral-ocr` |
+| EPUB with `--mistral-ocr` | EPUB to PDF, then Mistral OCR |
+| MOBI / AZW3 / FB2 / LIT | Calibre to EPUB, then EPUB to PDF, then Mistral OCR |
+| DOCX / PPTX / XLSX / ODF | LibreOffice to PDF, then `office+mistral-ocr` |
+| RTF | LibreOffice to PDF, then `rtf+mistral-ocr` |
+| CBZ | per-image `cbz+mistral-ocr` |
+| PNG / JPG / TIF | `image+mistral-ocr` |
+| WebP / BMP / GIF | rejected; direct Mistral routing only accepts PNG / JPG / TIF |
+| CSV | raw text; OCR flag is ignored with a warning |
 
-## Mistral OCR
-
-- Supports PDF and standard image (PNG/JPG/TIF) input directly.
-- Other formats are converted to PDF or processed per-image before routing to Mistral.
-- Supported models: `mistral-ocr-latest`, `mistral-ocr-2512`.
-- File limits: up to 50 MB and 1000 pages per request.
-- Current pricing reference: `$2 / 1000 pages`.
-- `--lang` is ignored by Mistral OCR; `languageSupported: false` is recorded in metadata.
+Current Mistral OCR models:
+- `mistral-ocr-latest`
+- `mistral-ocr-2512`
 
 ## Examples
 
 ```bash
-bun as extract input/1-document.pdf --mistral-ocr mistral-ocr-2512
+bun as extract input/1-document.pdf --mistral-ocr mistral-ocr-latest
 bun as extract input/1-document.jpg --mistral-ocr mistral-ocr-2512
 bun as extract input/1-document.epub --mistral-ocr mistral-ocr-2512
-bun as extract input/1-document.docx --mistral-ocr mistral-ocr-2512
+bun as extract input/1-document.docx --mistral-ocr mistral-ocr-latest
+bun as extract input/1-document.pdf --mistral-ocr mistral-ocr-latest --price
 ```
 
-## Flags
+## Standalone `extract` Flags
 
-| Flag                      | Description                                               |
-|---------------------------|-----------------------------------------------------------|
-| `--mistral-ocr <model>`   | Use Mistral OCR engine (PDF, image, and convertible formats) |
-| `--out`                   | Output format: `text`, `json`, `tsv`, `hocr`             |
-| `--password`              | Password for encrypted PDFs                               |
+| Flag | Description |
+|------|-------------|
+| `--mistral-ocr <model>` | Use Mistral OCR |
+| `--out <format>` | `text`, `json`, `tsv`, or `hocr` |
+| `--password <value>` | Password for encrypted PDFs |
+| `--lang <codes>` | Accepted by the CLI but ignored by Mistral OCR |
+| `--epub-bun` / `--epub-calibre` | EPUB inspect modes, which take precedence on EPUB inputs |
+| `--price` | Show the aggregated extract estimate and exit |
 
 ## Notes
 
-- Supported document formats: PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CBZ.
-- Supported image formats for direct Mistral routing: PNG, JPG, JPEG, TIF, TIFF.
-- WebP/BMP/GIF are not supported with `--mistral-ocr` (use local engines for those formats).
-- CSV always returns raw text regardless of OCR flags.
-- EPUB deep inspection (`--epub-bun`, `--epub-calibre`) produces metadata-only JSON output and is unaffected by `--mistral-ocr`.
-- Service setup/env details are in [`extract-document-setup.md`](./extract-document-setup.md).
+- Current pricing metadata in the project config is `$2 / 1000 pages` for both Mistral OCR model IDs.
+- `--lang` is ignored when the active extraction method uses Mistral OCR.
+- Standalone `extract` does not expose the advanced Tesseract tuning flags; those are only available through `write`.
+- Setup and env details are in [`extract-document-local.md#setup`](./extract-document-local.md#setup).

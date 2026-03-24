@@ -98,6 +98,8 @@
     "Image": [
       "https://developers.openai.com/api/docs/guides/images-vision.md",
       "https://developers.openai.com/api/docs/guides/image-generation.md",
+      "https://developers.openai.com/api/docs/guides/tools-image-generation.md",
+      "https://developers.openai.com/api/reference/resources/images/index.md",
       "https://developers.openai.com/api/reference/resources/images/methods/generate/index.md",
       "https://developers.openai.com/api/reference/resources/images/methods/edit/index.md",
       "https://developers.openai.com/api/reference/resources/images/methods/create_variation/index.md"

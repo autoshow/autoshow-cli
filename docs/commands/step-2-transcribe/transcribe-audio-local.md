@@ -1,15 +1,64 @@
 # transcribe (local)
 
-Download audio and transcribe using local engines only.
+Download audio and transcribe it with the local STT engines.
 
 ## Outline
 
+- [Setup](#setup)
+- [Runtime Setup](#runtime-setup)
+- [Local Runtime](#local-runtime)
+- [Service Environment](#service-environment)
 - [Usage](#usage)
-- [Supported inputs](#supported-inputs)
-- [Local transcription engines](#local-transcription-engines)
+- [Supported Inputs](#supported-inputs)
+- [Local Engines](#local-engines)
 - [Examples](#examples)
 - [Flags](#flags)
 - [Notes](#notes)
+- [Local Tests](#local-tests)
+- [Validation / Price / Non-E2E](#validation--price--non-e2e)
+- [E2E Local](#e2e-local)
+- [E2E Slow-Local](#e2e-slow-local)
+
+## Setup
+
+### Runtime Setup
+
+```bash
+# full local setup
+bun as setup
+
+# isolated steps below assume their prerequisites already exist
+
+# build whisper.cpp binary
+bun as setup --step whisper-binary
+
+# download the default whisper model (tiny)
+bun as setup --step whisper-model
+
+# download large-v3-turbo + Reverb assets
+bun as setup --step transcription
+
+# install the Reverb environment and models
+bun as setup --step reverb
+```
+
+### Local Runtime
+
+Local transcribe runtime pieces:
+- Whisper binary at `runtime/bin/whisper-cli`
+- Whisper models under `runtime/models/whisper/`
+- Reverb environment under `runtime/bin/reverb/`
+- Reverb models under `runtime/models/reverb/`
+
+### Service Environment
+
+```bash
+GROQ_API_KEY=...
+ELEVENLABS_API_KEY=...
+OPENAI_API_KEY=...
+MISTRAL_API_KEY=...
+ASSEMBLYAI_API_KEY=...
+```
 
 ## Usage
 
@@ -17,54 +66,107 @@ Download audio and transcribe using local engines only.
 bun as transcribe [input] [flags]
 ```
 
-## Supported inputs
+## Supported Inputs
 
-- media URL
-- local media file (`.wav`, `.mp3`, `.m4a`, `.mp4`, `.webm`, `.mkv`, `.opus`, `.ogg`, `.aac`, `.mov`, `.flac`)
-- directory (batch)
-- URL-list file (`.md` or `.txt`, batch)
+`transcribe` uses the same input routing as `download` for audio/video sources:
 
-## Local transcription engines
+- YouTube, Twitch, or TikTok URL
+- direct media URL
+- local media file
+- directory batch
+- URL-list batch (`.md` / `.txt`)
+- RSS / podcast feed batch
+- YouTube channel batch
 
-| Engine | Selection | Models |
-|--------|-----------|--------|
-| Whisper.cpp | default or `--whisper <model>` | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
-| Reverb ASR | `--reverb` | fixed Reverb engine |
+Document inputs are not supported by `transcribe`.
 
-Only one explicit engine flag may be used at a time.
+## Local Engines
+
+| Engine | Selection | Models / behavior |
+|--------|-----------|-------------------|
+| Whisper.cpp | default, or `--whisper <model>` | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
+| Reverb | `--reverb` | diarized local transcription |
+
+If no engine flag is provided, `transcribe` uses Whisper with the default `tiny` model.
 
 ## Examples
 
 ```bash
-# Whisper default
+# Default local Whisper
 bun as transcribe input/1-audio.mp3
 
-# Whisper explicit model
+# Larger Whisper model
 bun as transcribe input/1-audio.mp3 --whisper large-v3-turbo
 
-# Reverb
-bun as transcribe input/1-audio.mp3 --reverb
+# Reverb with explicit verbatimicity
 bun as transcribe input/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
 
-# Split and batch
+# Split a long media file into 10-minute chunks first
 bun as transcribe input/2-video.mp4 --whisper large-v3-turbo --split
-bun as transcribe input/2-urls.md --whisper tiny --batch-limit 5
+
+# Batch from a URL list
+bun as transcribe input/2-urls.md --batch-limit 5
 ```
 
 ## Flags
 
 | Flag | Description |
 |------|-------------|
-| `--whisper <model>` | Whisper local model (default: `tiny`) |
-| `--reverb` | Use Reverb ASR |
-| `--reverb-verbatimicity <0-1>` | Reverb output style (default: `0.5`) |
-| `--split` | Split audio into 10-minute segments before transcription |
+| `--whisper <model>` | Select the local Whisper model |
+| `--reverb` | Use Reverb instead of Whisper |
+| `--reverb-verbatimicity <0-1>` | Reverb output style |
+| `--split` | Split audio into 10-minute chunks before transcription |
 | `--prompt <name...>` | Named prompt(s) from `src/prompts/prompts.json` |
-| `--batch-limit <n>` | Process up to `n` items (default: `5`) |
-| `--batch-all` | Process all discovered inputs |
-| `--batch-order <order>` | Batch order control |
+| `--batch-limit <n>` | Limit batch size |
+| `--batch-all` | Process all batch items |
+| `--batch-order <newest|oldest>` | Choose batch ordering |
+| `--batch-concurrency <n>` | Process batch items concurrently |
+| `--price` | Show the aggregated estimate and exit |
 
 ## Notes
 
-- Document inputs are not supported in `transcribe`; use `extract` or `write` for documents.
-- Local setup details are in [`transcribe-audio-setup.md`](./transcribe-audio-setup.md).
+- `--speaker-count` is accepted by the CLI but ignored by the local engines.
+
+## Local Tests
+
+```bash
+bun t \
+  test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-default.test.ts \
+  test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-large-v3-turbo.test.ts \
+  test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-models-price.test.ts \
+  test/test-cases/e2e/step-2-transcribe-e2e/reverb/reverb.test.ts
+```
+
+For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
+
+### Validation / Price / Non-E2E
+
+`whisper-models-price.test.ts` covers `--price` for all supported local Whisper models.
+
+### E2E Local
+
+**Tier:** `local`
+
+```bash
+bun t test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-default.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-models-price.test.ts
+```
+
+Covers:
+- default Whisper transcription on local audio
+- split-mode transcription on local audio
+- `--price` for `tiny`, `base`, `small`, `medium`, and `large-v3-turbo`
+
+### E2E Slow-Local
+
+**Tier:** `slow-local`
+
+```bash
+bun t test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-large-v3-turbo.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/reverb/reverb.test.ts
+```
+
+Covers:
+- `large-v3-turbo` on local audio
+- `large-v3-turbo` with split-mode video input
+- Reverb transcription with and without explicit verbatimicity

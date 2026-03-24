@@ -1,13 +1,14 @@
 # image (services)
 
-Generate an image from a text prompt using service providers only.
+Generate images with the hosted image providers.
 
 ## Outline
 
 - [Usage](#usage)
-- [Service providers](#service-providers)
+- [Providers](#providers)
 - [Examples](#examples)
 - [Flags](#flags)
+- [Output](#output)
 - [Notes](#notes)
 
 ## Usage
@@ -16,7 +17,7 @@ Generate an image from a text prompt using service providers only.
 bun as image <prompt> [flags]
 ```
 
-## Service providers
+## Providers
 
 | Provider | Flag | Models |
 |----------|------|--------|
@@ -24,13 +25,15 @@ bun as image <prompt> [flags]
 | OpenAI | `--openai-image <model>` | `gpt-image-1.5`, `gpt-image-1`, `gpt-image-1-mini` |
 | MiniMax | `--minimax-image <model>` | `image-01` |
 
-Only one service provider flag may be used at a time.
+Only one provider flag may be active at a time.
 
 ## Examples
 
 ```bash
-# Gemini
+# Gemini native image generation
 bun as image "a serene mountain lake at dawn" --gemini-image gemini-3-pro-image-preview
+
+# Imagen 4 with multiple outputs
 bun as image "a serene mountain lake at dawn" --gemini-image imagen-4.0-generate-001 --imagen-count 4 --image-aspect-ratio 16:9
 
 # OpenAI
@@ -39,7 +42,7 @@ bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --imag
 # MiniMax
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01 --image-aspect-ratio 16:9
 
-# Service price preflight
+# Price preflight
 bun as image "a sunset" --openai-image gpt-image-1 --price
 ```
 
@@ -47,17 +50,28 @@ bun as image "a sunset" --openai-image gpt-image-1 --price
 
 | Flag | Description |
 |------|-------------|
-| `--gemini-image <model>` | Gemini image model |
-| `--openai-image <model>` | OpenAI image model |
-| `--minimax-image <model>` | MiniMax image model |
+| `--gemini-image <model>` | Select a Gemini image model |
+| `--openai-image <model>` | Select an OpenAI image model |
+| `--minimax-image <model>` | Select a MiniMax image model |
 | `--image-aspect-ratio <ratio>` | Aspect ratio control |
-| `--image-size <size>` | Size hint/control |
-| `--imagen-count <n>` | Number of images for Imagen 4 (`1`-`4`) |
+| `--image-size <size>` | Size control |
+| `--imagen-count <n>` | Number of images for Imagen models |
 | `--image-quality <q>` | OpenAI quality |
-| `--image-format <fmt>` | OpenAI format |
-| `--image-background <bg>` | OpenAI background |
-| `--price` | Show cost estimate and exit |
+| `--image-format <fmt>` | OpenAI output format |
+| `--image-background <bg>` | OpenAI background mode |
+| `--price` | Show the estimate and exit |
+
+## Output
+
+Standalone `image` runs always write `metadata.json`, and the generated image filenames vary by provider:
+
+- Gemini: `generated-image.png`, plus `generated-image-2.png`, `generated-image-3.png`, and so on when multiple images are returned
+- OpenAI: `generated-image.<format>` where the default format is `png`
+- MiniMax: `generated-image.jpeg`
+
+`metadata.json` includes `image`, `cost`, and `timing` sections.
 
 ## Notes
 
-- Service setup/env details are in [`text-to-image-setup.md`](./text-to-image-setup.md).
+- `--image-size` is currently rejected for `imagen-4.0-fast-generate-001`.
+- Setup details are in [`text-to-image-setup.md`](./text-to-image-setup.md).

@@ -15,16 +15,14 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
 - [E2E Services](#e2e-services)
 
 ## Validation / Price / Non-E2E
 
-Each provider test file includes `--price` estimate tests and an "rejects invalid model" validation test via the shared `defineTTSServiceTest` factory.
-
-## E2E Local
-
-No service-tier local tests — see [text-to-speech-tests-local.md](./text-to-speech-tests-local.md).
+Each provider suite uses `defineTTSServiceTest`, which currently covers:
+- invalid model rejection
+- `--price` output
+- real synthesis when the required API key is configured
 
 ## E2E Services
 
@@ -39,6 +37,6 @@ bun t test/test-cases/e2e/step-4-tts-e2e/minimax-tts.test.ts
 bun t test/test-cases/e2e/step-4-tts-e2e/kitten-tts-pipeline.test.ts
 ```
 
-`kitten-tts-pipeline` runs the full write+tts pipeline with `--groq` (requires `GROQ_API_KEY`).
+`kitten-tts-pipeline.test.ts` covers the root `write` pipeline with Groq for step 3 plus Kitten TTS for step 4.
 
-Service setup/env prerequisites are in [`text-to-speech-setup.md`](./text-to-speech-setup.md).
+Service setup details are in [`text-to-speech-local.md#setup`](./text-to-speech-local.md#setup).
