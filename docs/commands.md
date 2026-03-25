@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 12 named commands plus the root shorthand. `bun as <input>` is equivalent to `bun as write <input>`.
+AutoShow currently exposes 13 named commands plus the root shorthand. `bun as <input>` is equivalent to `bun as metadata <input>`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -27,8 +27,11 @@ bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize
 # full pipeline (download/transcribe + LLM write)
 bun as write input/1-audio.mp3 --openai gpt-5.2
 
-# root shorthand for write
-bun as input/1-audio.mp3 --openai gpt-5.2
+# root shorthand for metadata (default command)
+bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
+
+# metadata with save
+bun as --save "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # document OCR/extraction only
 bun as ocr input/1-document.pdf
@@ -51,7 +54,8 @@ bun as video "a cinematic mountain sunrise" --sora-video sora-2
 
 ## Command Map
 
-- `(root)` shorthand: `bun as <input>` = `bun as write <input>`
+- `(root)` shorthand: `bun as <input>` = `bun as metadata <input>`
+- `metadata` (aliases: `meta`, `info`): [metadata](./commands/metadata/metadata.md)
 - `setup` / model pre-downloads: [setup](./commands/step-0-setup/setup.md)
 - `sample`: [sample](./commands/sample/sample.md)
 - `models`: download a Whisper or llama.cpp model without running inference (`bun as models <model>`)
@@ -68,6 +72,8 @@ bun as video "a cinematic mountain sunrise" --sora-video sora-2
 
 ## Selection Guide
 
+- Use `metadata` (or just `bun as <input>`) for quick metadata inspection without downloading.
+- Use `download` for downloading media/documents and collecting metadata.
 - Use `ocr` for documents/images when you only need OCR/text extraction.
 - Use `stt` for audio/video when you only need transcript + prompt output.
 - Use `write` for full summary pipeline with optional TTS/image/video generation.

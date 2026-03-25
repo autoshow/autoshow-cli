@@ -1,4 +1,4 @@
-export const PROCESS_COMMANDS = ['download', 'stt', 'write', 'ocr', 'tts', 'image', 'music', 'video'] as const
+export const PROCESS_COMMANDS = ['metadata', 'download', 'stt', 'write', 'ocr', 'tts', 'image', 'music', 'video'] as const
 export const PROCESS_COMMAND_ALIASES = ['transcribe', 'extract'] as const
 
 export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
@@ -104,4 +104,6 @@ export type RuntimeOptions = {
   videoSize: string | undefined
   videoAspectRatio: string | undefined
   videoResolution: string | undefined
+
+  save: boolean
 }

@@ -1,5 +1,5 @@
-import { join, resolve as pathResolve } from 'node:path'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { basename, join, resolve as pathResolve } from 'node:path'
+import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
@@ -12,6 +12,7 @@ import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audi
 import { downloadDocument } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
 import { processDocument } from '~/cli/commands/process-steps/process-document'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
+import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-document/document-utils/doc-prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { ExtractionOptions } from '~/types'
@@ -483,6 +484,89 @@ const processExtractSingle = async (target: string, baseDir: string, opts: Runti
   return { outputDir: extraction.outputDir }
 }
 
+const processMetadataMedia = async (
+  target: string,
+  save: boolean,
+  baseDir: string
+): Promise<void> => {
+  const isUrl = isLikelyUrl(target)
+  const exists = await fileExists(target)
+
+  const src: { url?: string, filePath?: string } = {}
+  if (isUrl) src.url = target
+  if (!isUrl && exists) src.filePath = target
+
+  const meta = await extractSourceMetadata(src)
+
+  const metadata = {
+    title: meta.title,
+    duration: meta.duration,
+    author: meta.author,
+    url: meta.url,
+    ...(meta.publishDate ? { publishDate: meta.publishDate } : {}),
+    ...(meta.thumbnail ? { thumbnail: meta.thumbnail } : {}),
+    ...(meta.channelUrl ? { channelUrl: meta.channelUrl } : {}),
+    ...(meta.chapters?.length ? { chapters: meta.chapters } : {}),
+    ...(meta.description?.length ? { description: meta.description } : {})
+  }
+
+  console.log(JSON.stringify(metadata, null, 2))
+
+  if (save) {
+    const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+    const uniqueDirName = createUniqueDirectoryName(meta.title)
+    const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+    await ensureDirectory(outputDir)
+    const metadataPath = `${outputDir}/metadata.json`
+    await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
+    l.report.complete(outputDir, { metadata: 'metadata.json' })
+  }
+}
+
+const processMetadataDocument = async (
+  target: string,
+  save: boolean,
+  baseDir: string,
+  password?: string
+): Promise<void> => {
+  const detectedFormat = await detectDocumentFormat(target)
+  if (!detectedFormat) {
+    throw CLIUsageError(`Unsupported document format: ${target}`)
+  }
+
+  let pageCount = 1
+  let title = basename(target).replace(/\.[^.]+$/, '')
+  let author: string | undefined
+
+  if (detectedFormat === 'pdf' || detectedFormat === 'epub') {
+    const info = await getDocumentInfo(target, password)
+    pageCount = Math.max(1, info.pageCount)
+    if (info.title?.length) title = info.title
+    if (info.author?.length) author = info.author
+  }
+
+  const stats = await stat(target)
+  const metadata = {
+    format: detectedFormat,
+    title,
+    ...(author ? { author } : {}),
+    pageCount,
+    fileSize: stats.size
+  }
+
+  console.log(JSON.stringify(metadata, null, 2))
+
+  if (save) {
+    const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+    const uniqueDirName = createUniqueDirectoryName(title)
+    const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+    await ensureDirectory(outputDir)
+    const metadataPath = `${outputDir}/metadata.json`
+    await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
+    l.report.complete(outputDir, { metadata: 'metadata.json' })
+  }
+}
+
 const processDownloadMedia = async (
   target: string,
   baseDir: string
@@ -553,6 +637,37 @@ export const processSingleTarget = async (
   preflightEstimate?: AggregatedPriceEstimate
 ): Promise<void> => {
   const displayCommand = canonicalizeProcessCommand(command)
+
+  if (command === 'metadata') {
+    if (isLikelyUrl(item)) {
+      const kind = classifyUrlInput(item)
+      if (kind === 'url_direct_document') {
+        const downloaded = await downloadDocumentUrlToTempFile(item)
+        try {
+          await processMetadataDocument(downloaded.filePath, opts.save, baseDir, opts.password)
+        } finally {
+          await downloaded.cleanup()
+        }
+        return
+      }
+      await processMetadataMedia(item, opts.save, baseDir)
+      return
+    }
+
+    const exists = await fileExists(item)
+    if (!exists) {
+      throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help metadata`)
+    }
+
+    const isDocExt = isDocumentByExtension(item)
+    const detected = isDocExt ? await detectDocumentFormat(item) : null
+    if (isDocExt || detected !== null) {
+      await processMetadataDocument(item, opts.save, baseDir, opts.password)
+    } else {
+      await processMetadataMedia(item, opts.save, baseDir)
+    }
+    return
+  }
 
   if (command === 'download') {
     if (isLikelyUrl(item)) {

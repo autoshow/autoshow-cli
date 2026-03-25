@@ -78,7 +78,7 @@ output/YYYY-MM-DD_HH-MM-SS_batch-label/
 
 ```bash
 # Download a YouTube video
-bun as download https://www.youtube.com/watch?v=VIDEO_ID
+bun as download https://www.youtube.com/watch?v=u1-WHqATSQU
 
 # Download a local audio file
 bun as download input/1-audio.mp3

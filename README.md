@@ -9,16 +9,19 @@ bun install
 bun as setup
 ```
 
-Top 3 workflows:
+Top 4 workflows:
 
 ```bash
-# 1) Transcribe media only (creates transcription + prompt, no summary)
+# 1) Collect metadata only (default command, no download)
+bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
+
+# 2) Transcribe media only (creates transcription + prompt, no summary)
 bun as stt "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
-# 2) Full write pipeline for media (transcription + prompt + summary)
+# 3) Full write pipeline for media (transcription + prompt + summary)
 bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --llama ggml-org/gemma-3-4b-it-GGUF
 
-# 3) Document OCR/extraction only
+# 4) Document OCR/extraction only
 bun as ocr "input/1-document.pdf" --out json
 ```
 
@@ -28,7 +31,7 @@ Use command-first order for all examples and scripts:
 
 ```bash
 bun as <command> [parameters] [flags]
-bun as <input> [flags]              # root shorthand (equivalent to write)
+bun as <input> [flags]              # root shorthand (equivalent to metadata)
 bun as --help                       # global help
 bun as --help write                 # show help for write
 bun as <command> --help             # command help
@@ -72,6 +75,18 @@ AUTOSHOW_LOG_LEVEL=info    # debug | info | success | warn | error
 - Secrets and credentials are redacted from logger output automatically.
 
 ## Commands
+
+### metadata
+
+Collect and display metadata for media or documents without downloading. Default command. Aliases: `meta`, `info`.
+
+```bash
+bun as "URL"                              # default command
+bun as metadata "URL"                     # explicit
+bun as metadata "URL" --save              # save metadata.json to disk
+bun as metadata "/path/to/local-file.ext"
+bun as metadata "/path/to/document.pdf" --password secret
+```
 
 ### stt
 
@@ -155,9 +170,9 @@ bun as stt input/1-audio.mp3 --elevenlabs-stt scribe_v2 --dry-run
 
 ## Root Shorthand and Collisions
 
-- `bun as <input>` is shorthand for `bun as write <input>`.
+- `bun as <input>` is shorthand for `bun as metadata <input>`.
 - `bun as setup` resolves to the `setup` command, not an input named `setup`.
-- If the literal input is `setup`, use `bun as write setup`.
+- If the literal input is `setup`, use `bun as metadata setup`.
 
 If an input starts with `-`, end flag parsing with `--`:
 

@@ -14,6 +14,9 @@ Reference for filesystem outputs, runtime directories, and the full type system 
 output/
 └── YYYY-MM-DD_HH-MM-SS_<sanitized-title>/
     │
+    │  ── Metadata (metadata command, with --save) ──
+    ├── metadata.json               # { step1 } — metadata only, no downloaded files
+    │
     │  ── Media (stt command) ──
     ├── audio.wav                   # 16kHz mono PCM audio
     ├── transcription.txt           # [HH:MM:SS] timestamped text
@@ -86,7 +89,7 @@ src/types/
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  cli-types.ts                                                                │
 │                                                                              │
-│  ProcessCommand = 'download' | 'stt' | 'write' | 'ocr'                      │
+│  ProcessCommand = 'metadata' | 'download' | 'stt' | 'write' | 'ocr'         │
 │                 | 'tts' | 'image' | 'music' | 'video'                        │
 │  OutputFormat   = 'text' | 'json' | 'tsv' | 'hocr'                          │
 │  BatchOrder     = 'newest' | 'oldest'                                        │

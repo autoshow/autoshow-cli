@@ -1,6 +1,7 @@
 import { Clerc, defaultFormatters, helpPlugin, versionPlugin } from 'clerc'
 import { rootCommand } from './define-root-command'
 import { configCommand } from './commands/config/define-config-command'
+import { metadataCommand } from '~/cli/commands/process-steps/step-0-metadata/define-metadata-command'
 import { downloadCommand } from '~/cli/commands/process-steps/step-1-download/define-download-command'
 import { transcribeCommand } from '~/cli/commands/process-steps/step-2-stt/define-transcribe-command'
 import { writeCommand } from '~/cli/commands/process-steps/step-3-write/define-write-command'
@@ -59,6 +60,8 @@ const CLI_VERSION = (await import('../../package.json')).version as string
 
 const COMMAND_ALIASES: Record<string, string> = {
   model: 'models',
+  meta: 'metadata',
+  info: 'metadata',
   dl: 'download',
   transcribe: 'stt',
   transcript: 'stt',
@@ -203,6 +206,7 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   sample: 'setup',
   models: 'setup',
   links: 'setup',
+  metadata: 'processing',
   download: 'processing',
   ocr: 'processing',
   stt: 'processing',
@@ -220,6 +224,7 @@ const COMMAND_DEFINITIONS = [
   sampleCommand,
   modelsCommand,
   linksCommand,
+  metadataCommand,
   downloadCommand,
   extractCommand,
   transcribeCommand,
@@ -350,7 +355,7 @@ const HELP_MODEL_SEGMENT_PATTERN = /(\bmodel(?:s)?(?:\s+ID)?(?:\s*\([^)]*\))?\s*
 const HELP_FLAG_ROW_PATTERN = /^(\s+)(--.+?)(\s{2,})(.*)$/gm
 const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*m/
 const ANSI_ESCAPE_GLOBAL_PATTERN = /\x1b\[[0-9;]*m/g
-const ROOT_COMMAND_DESCRIPTION = 'Default command (equivalent to write <input>)'
+const ROOT_COMMAND_DESCRIPTION = 'Default command (equivalent to metadata <input>)'
 const ROOT_COMMAND_GROUP_LABEL = 'Core Commands'
 const ROOT_COMMAND_GROUP_ROW = `    (root)    ${ROOT_COMMAND_DESCRIPTION}`
 
@@ -517,6 +522,7 @@ const createCli = () => {
       '',
       'Aliases:',
       '  models: model',
+      '  metadata: meta, info',
       '  download: dl',
       '  stt: transcribe, transcript, transcription',
       '  ocr: extract, document',

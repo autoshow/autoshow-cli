@@ -254,7 +254,7 @@ const runFullSetup = async (): Promise<void> => {
   await validateBinary('whisper-cli', whisperBinaryPath, ['--help'])
   await validateBinary('llama-server', llamaBinaryPath, ['--version'])
 
-  l.info('You can now run: bun as "https://www.youtube.com/watch?v=VIDEO_ID"')
+  l.info('You can now run: bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"')
 }
 
 export const runCompleteSetup = async (): Promise<void> => { await runFullSetup() }

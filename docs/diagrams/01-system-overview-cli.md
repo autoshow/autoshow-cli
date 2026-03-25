@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 12 named commands plus the root shorthand (`bun as <input>` => `write <input>`): `download`, `stt`, `write`, `ocr`, `tts`, `image`, `music`, `video`, `setup`, `sample`, `models`, `config`
+   - Defines 13 named commands plus the root shorthand (`bun as <input>` => `metadata <input>`): `metadata`, `download`, `stt`, `write`, `ocr`, `tts`, `image`, `music`, `video`, `setup`, `sample`, `models`, `config`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -80,12 +80,20 @@ src/cli/create-cli.ts
 │  COMMANDS  (src/cli/create-cli.ts + per-step define-*-command.ts files)      │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
-│  │  (root) / write  │  │   stt            │  │    ocr           │            │
+│  │ (root) / metadata│  │      write       │  │   stt            │            │
 │  │                  │  │                  │  │                  │            │
-│  │ Download +       │  │ Download +       │  │ Detect +         │            │
-│  │ Transcribe +     │  │ Transcribe only  │  │ Extract only     │            │
-│  │ LLM Summary      │  │ (skipLLM=true)   │  │ (documents)      │            │
+│  │ Metadata only    │  │ Download +       │  │ Download +       │            │
+│  │ (no download)    │  │ Transcribe +     │  │ Transcribe only  │            │
+│  │                  │  │ LLM Summary      │  │ (skipLLM=true)   │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
+│                                                                              │
+│  ┌──────────────────┐                                                        │
+│  │    ocr           │                                                        │
+│  │                  │                                                        │
+│  │ Detect +         │                                                        │
+│  │ Extract only     │                                                        │
+│  │ (documents)      │                                                        │
+│  └──────────────────┘                                                        │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
 │  │     download     │  │      tts         │  │     image        │            │
@@ -160,6 +168,7 @@ src/cli/flags/
 └─────────────────────────────────────────────────────────────┘
 
 Command-to-flag mapping:
+  metadata    → --save + --password + batchFlags
   stt         → transcriptionFlags + promptFlag + batchFlags + priceFlag
   write       → mediaFlags + extractFlags + advancedExtractFlags + batchFlags
                   + ttsFlags + imageGenFlags + musicGenFlags + videoGenFlags + promptFlag

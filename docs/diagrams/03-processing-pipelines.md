@@ -2,6 +2,8 @@
 
 Step-by-step diagrams for both media and document inputs, from initial intake through optional downstream generation.
 
+The `metadata` command (default) runs only the metadata extraction portion of Step 1 without downloading. The `download` command runs the full Step 1. The `stt`/`ocr` commands run Steps 1-2. The `write` command runs the full pipeline.
+
 ## Outline
 
 - [Media Processing Pipeline](#media-processing-pipeline)

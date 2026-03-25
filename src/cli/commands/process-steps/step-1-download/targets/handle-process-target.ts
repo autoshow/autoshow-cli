@@ -22,6 +22,9 @@ import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-load
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/config/config-merge'
 
 const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): string[] => {
+  if (command === 'metadata') {
+    return opts.save ? ['metadata.json'] : ['metadata (logged to terminal)']
+  }
   if (command === 'download') {
     return ['Audio or document file', 'metadata.json']
   }
@@ -157,7 +160,7 @@ export const handleProcessTarget = async (
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
 
-  const opts = buildOptsFromFlags(isSttCommand(command) || command === 'download', mergedFlags, doubleDash)
+  const opts = buildOptsFromFlags(isSttCommand(command) || command === 'download' || command === 'metadata', mergedFlags, doubleDash)
 
   if (command === 'write' || isSttCommand(command)) {
     const sttEngineCount = [opts.useReverb, opts.elevenlabsSttModel, opts.groqSttModel, opts.openaiSttModel, opts.mistralSttModel, opts.assemblyaiSttModel].filter(Boolean).length

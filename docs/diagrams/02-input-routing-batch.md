@@ -104,6 +104,7 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
        v          v           v              v           v
   ┌──────────────────────┐  ┌──────────────────────────────┐
   │  DOCUMENT PIPELINE   │  │     MEDIA PIPELINE           │
+  │  metadata/download/  │  │     metadata/download/       │
   │  ocr / write         │  │     stt / write              │
   └──────────────────────┘  └──────────────────────────────┘
 ```
@@ -113,6 +114,10 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
 ```
                     url_streaming   url_direct_media   url_direct_document   local_media   local_document
                    ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
+  metadata        │  META (0a) │    META (0a)     │    META (0b)        │  META (0a) │  META (0b)
+                  │             │                  │                     │             │
+  download        │  DL+META   │    DL+META       │    DL+META          │  DL+META   │  DL+META
+                  │             │                  │                     │             │
   stt             │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
                   │             │                  │                     │             │
   write           │  MEDIA (3)  │     MEDIA (3)    │   DOCUMENT (4)      │  MEDIA (3)  │ DOCUMENT (4)
@@ -120,6 +125,8 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
   ocr             │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
                   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
 
+  (0a) processMetadataMedia() — metadata only, no download
+  (0b) processMetadataDocument() — metadata only, no download (temp file for remote docs)
   (1) processVideo() with skipLLM=true
   (2) CLIUsageError: "Use: bun as ocr or bun as write"
   (3) processVideo() with full LLM pipeline
