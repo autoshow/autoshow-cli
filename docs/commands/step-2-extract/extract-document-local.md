@@ -1,6 +1,6 @@
-# extract (local)
+# ocr (local)
 
-Extract text from documents and images with the local extract engines exposed by `bun as extract`.
+Extract text from documents and images with the local OCR engines exposed by `bun as ocr`. Alias: `extract`.
 
 ## Outline
 
@@ -13,7 +13,7 @@ Extract text from documents and images with the local extract engines exposed by
 - [EPUB Inspect Modes](#epub-inspect-modes)
 - [OCR Language Handling](#ocr-language-handling)
 - [Examples](#examples)
-- [Standalone `extract` Flags](#standalone-extract-flags)
+- [Standalone `ocr` Flags](#standalone-ocr-flags)
 - [Notes](#notes)
 - [Local Tests](#local-tests)
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
@@ -38,7 +38,7 @@ bun as setup --step sample
 PaddleOCR can also be prepared lazily on first use:
 
 ```bash
-bun as extract input/1-document.pdf --paddle-ocr
+bun as ocr input/1-document.pdf --paddle-ocr
 ```
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms if the Calibre CLI tools are missing.
@@ -50,7 +50,7 @@ bun as extract input/1-document.pdf --paddle-ocr
 | MuPDF (`mutool`) | PDF rendering and document conversion | installed by the document foundation setup |
 | Calibre CLI tools | ebook normalization and `--epub-calibre` | installed by `bun as setup` or `bun as setup --step calibre`; may also be installed lazily for `--epub-calibre` |
 | Tesseract | default local OCR | installed by `bun as setup` |
-| LibreOffice (`soffice`) | office/RTF to PDF conversion | installed by `bun as setup`; `extract` itself does not auto-install it |
+| LibreOffice (`soffice`) | office/RTF to PDF conversion | installed by `bun as setup`; `ocr` itself does not auto-install it |
 | OCRmyPDF | `--ocrmypdf` engine | must already be available on `$PATH` |
 | PaddleOCR venv | `--paddle-ocr` engine | created lazily under `runtime/bin/paddle-ocr/` |
 | ImageMagick (`convert`) | WebP/BMP normalization before OCR | optional; if missing, the file is passed through as-is |
@@ -64,7 +64,7 @@ MISTRAL_API_KEY=...
 ## Usage
 
 ```bash
-bun as extract [input] [flags]
+bun as ocr [input] [flags]
 ```
 
 ## Default Routing
@@ -96,7 +96,7 @@ Structured EPUB inspection is available through two mutually exclusive flags:
 Rules:
 - inspect mode is metadata-only for EPUB inputs
 - if `--out` is explicitly provided in inspect mode, it must be `json`
-- for non-EPUB inputs, these flags fall back to the normal extract flow
+- for non-EPUB inputs, these flags fall back to the normal OCR flow
 
 ## OCR Language Handling
 
@@ -112,33 +112,33 @@ Rules:
 
 ```bash
 # Default PDF extraction
-bun as extract input/1-document.pdf
+bun as ocr input/1-document.pdf
 
 # JSON output
-bun as extract input/1-document.pdf --out json
+bun as ocr input/1-document.pdf --out json
 
 # EPUB chapter extraction
-bun as extract input/1-document.epub
+bun as ocr input/1-document.epub
 
 # EPUB OCR path
-bun as extract input/1-document.epub --ocrmypdf
+bun as ocr input/1-document.epub --ocrmypdf
 
 # Ebook normalized through Calibre first
-bun as extract input/1-document.mobi
+bun as ocr input/1-document.mobi
 
 # Local image OCR
-bun as extract input/1-document.png --paddle-ocr
+bun as ocr input/1-document.png --paddle-ocr
 
 # Structured EPUB inspect with Bun
-bun as extract input/1-document.epub --epub-bun --out json
+bun as ocr input/1-document.epub --epub-bun --out json
 
 # Structured EPUB inspect with Calibre
-bun as extract input/1-document.epub --epub-calibre --out json
+bun as ocr input/1-document.epub --epub-calibre --out json
 ```
 
-## Standalone `extract` Flags
+## Standalone `ocr` Flags
 
-These are the flags currently exposed by the standalone `extract` command:
+These are the flags currently exposed by the standalone `ocr` command:
 
 | Flag | Default | Description |
 |------|---------|-------------|
@@ -149,7 +149,7 @@ These are the flags currently exposed by the standalone `extract` command:
 | `--paddle-ocr` | `false` | Use PaddleOCR |
 | `--epub-bun` | `false` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | `false` | Inspect EPUB structure with Calibre |
-| `--price` | `false` | Show the aggregated extract estimate and exit |
+| `--price` | `false` | Show the aggregated OCR estimate and exit |
 
 ## Notes
 
@@ -157,7 +157,7 @@ These are the flags currently exposed by the standalone `extract` command:
 - Supported image formats: PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF.
 - Office files use native ZIP/XML extraction first and only fall back to OCR when the extracted text quality is poor.
 - `--mistral-ocr` is documented separately in [`extract-document-services.md`](./extract-document-services.md).
-- Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are currently exposed through `write`, not through standalone `extract`.
+- Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are currently exposed through `write`, not through standalone `ocr`.
 
 ## Local Tests
 
@@ -171,7 +171,7 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 
 ### Validation / Price / Non-E2E
 
-No standalone local extract validation or price file exists. Validation is mixed into `extract-options.test.ts`.
+No standalone local OCR validation or price file exists. Validation is mixed into `extract-options.test.ts`.
 
 ### Core Local Paths
 

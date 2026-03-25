@@ -54,8 +54,8 @@ const getHost = (): string | undefined => {
   return undefined
 }
 
-const createConfiguredSinks = (): LogSink[] => {
-  const resolvedFormat = resolveLogFormat(parseLogFormat(process.env['AUTOSHOW_LOG_FORMAT']))
+const createConfiguredSinks = (formatOverride?: LogFormat): LogSink[] => {
+  const resolvedFormat = resolveLogFormat(formatOverride ?? parseLogFormat(process.env['AUTOSHOW_LOG_FORMAT']))
 
   if (resolvedFormat === 'human') {
     return [createHumanSink()]
@@ -70,17 +70,13 @@ const createConfiguredSinks = (): LogSink[] => {
 
 const host = getHost()
 
-const coreLogger = createLogger({
-  context: {
-    service: 'autoshow-cli',
-    component: 'cli',
-    env: process.env['NODE_ENV'] ?? 'development',
-    pid: process.pid,
-    ...(host ? { host } : {})
-  },
-  minLevel: parseMinLogLevel(process.env['AUTOSHOW_LOG_LEVEL']),
-  sinks: createConfiguredSinks()
-})
+const baseContext = {
+  service: 'autoshow-cli',
+  component: 'cli',
+  env: process.env['NODE_ENV'] ?? 'development',
+  pid: process.pid,
+  ...(host ? { host } : {})
+}
 
 const attachReport = (logger: Logger): GlobalLogger => {
   return {
@@ -90,10 +86,56 @@ const attachReport = (logger: Logger): GlobalLogger => {
   }
 }
 
-export const l = attachReport(coreLogger)
+let activeLogger = attachReport(createLogger({
+  context: baseContext,
+  minLevel: parseMinLogLevel(process.env['AUTOSHOW_LOG_LEVEL']),
+  sinks: createConfiguredSinks()
+}))
+
+export type ReconfigureOptions = {
+  verbose?: boolean
+  quiet?: boolean
+  json?: boolean
+}
+
+export const reconfigureLogger = (opts: ReconfigureOptions): void => {
+  let minLevel: LogLevel | undefined
+  let formatOverride: LogFormat | undefined
+
+  if (opts.verbose) {
+    minLevel = 'debug'
+  } else if (opts.quiet) {
+    minLevel = 'error'
+  }
+
+  if (opts.json) {
+    formatOverride = 'json'
+  }
+
+  if (minLevel === undefined && formatOverride === undefined) {
+    return
+  }
+
+  activeLogger = attachReport(createLogger({
+    context: baseContext,
+    minLevel: minLevel ?? parseMinLogLevel(process.env['AUTOSHOW_LOG_LEVEL']),
+    sinks: createConfiguredSinks(formatOverride)
+  }))
+}
+
+export const l: GlobalLogger = {
+  get report() { return activeLogger.report },
+  write: (...args) => activeLogger.write(...args),
+  debug: (...args) => activeLogger.debug(...args),
+  info: (...args) => activeLogger.info(...args),
+  success: (...args) => activeLogger.success(...args),
+  warn: (...args) => activeLogger.warn(...args),
+  error: (...args) => activeLogger.error(...args),
+  withContext: (context) => attachReport(activeLogger.withContext(context))
+}
 
 export const withContext = (context: LogContext): GlobalLogger => {
-  return attachReport(coreLogger.withContext(context))
+  return attachReport(activeLogger.withContext(context))
 }
 
 export const report = l.report

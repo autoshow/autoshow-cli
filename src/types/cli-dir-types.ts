@@ -49,6 +49,7 @@ export type BatchRunOptions = {
   source?: BatchSource
   selectedItems?: BatchItem[]
   concurrency?: number
+  totalCount?: number
 }
 
 export type ResolvedLLMConfig = {
@@ -87,4 +88,5 @@ export type ResolvedBatch = {
   source: BatchSource
   selectedUrls: string[]
   selectedItems: BatchItem[]
+  totalCount: number
 }

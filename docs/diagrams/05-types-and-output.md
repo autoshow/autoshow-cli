@@ -14,7 +14,7 @@ Reference for filesystem outputs, runtime directories, and the full type system 
 output/
 └── YYYY-MM-DD_HH-MM-SS_<sanitized-title>/
     │
-    │  ── Media (transcribe command) ──
+    │  ── Media (stt command) ──
     ├── audio.wav                   # 16kHz mono PCM audio
     ├── transcription.txt           # [HH:MM:SS] timestamped text
     ├── prompt.md                   # Formatted prompt for LLM
@@ -32,7 +32,7 @@ output/
     ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music set)
     ├── metadata.json               # { step1, step2, step3[, step4, step5, step6, step7] }
     │
-    │  ── Document (extract command) ──
+    │  ── Document (ocr command) ──
     ├── extraction.txt              # if --out text
     ├── extraction.json             # if --out json
     ├── extraction.tsv              # if --out tsv
@@ -86,7 +86,7 @@ src/types/
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  cli-types.ts                                                                │
 │                                                                              │
-│  ProcessCommand = 'download' | 'transcribe' | 'write' | 'extract'           │
+│  ProcessCommand = 'download' | 'stt' | 'write' | 'ocr'                      │
 │                 | 'tts' | 'image' | 'music' | 'video'                        │
 │  OutputFormat   = 'text' | 'json' | 'tsv' | 'hocr'                          │
 │  BatchOrder     = 'newest' | 'oldest'                                        │

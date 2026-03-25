@@ -149,7 +149,7 @@ describe('sample extract commands on generated fixtures', () => {
     if (!exists) return
 
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'extract', corruptPdf
+      'src/cli/create-cli.ts', 'ocr', corruptPdf
     ])
 
     // Corrupt PDF should fail during extraction
@@ -162,7 +162,7 @@ describe('sample extract commands on generated fixtures', () => {
     if (!exists) return
 
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'extract', validPdf
+      'src/cli/create-cli.ts', 'ocr', validPdf
     ])
 
     expect(result.exitCode).toBe(0)
@@ -174,7 +174,7 @@ describe('sample extract commands on generated fixtures', () => {
     if (!exists) return
 
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'extract', validCsv
+      'src/cli/create-cli.ts', 'ocr', validCsv
     ])
 
     expect(result.exitCode).toBe(0)
@@ -186,7 +186,7 @@ describe('sample extract commands on generated fixtures', () => {
     if (!exists) return
 
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'extract', binaryCsv
+      'src/cli/create-cli.ts', 'ocr', binaryCsv
     ])
 
     expect(result.exitCode).not.toBe(0)

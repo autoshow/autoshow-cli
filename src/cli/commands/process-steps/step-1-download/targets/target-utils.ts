@@ -156,6 +156,10 @@ export const processBatch = async (
     return { ok: 0, fail: 0 }
   }
 
+  if (typeof runOpts.totalCount === 'number' && runOpts.totalCount > items.length) {
+    l.warn(`Processing ${items.length} of ${runOpts.totalCount} items. Use --batch-all to process all.`)
+  }
+
   const batchDirName = createUniqueDirectoryName(batchLabel)
   const batchDir = `./output/${batchDirName}`
   await ensureDirectory(batchDir)

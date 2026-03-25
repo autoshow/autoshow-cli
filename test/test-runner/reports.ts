@@ -54,7 +54,13 @@ export type BudgetPreflightSummary = {
   }[]
 }
 
-const COMMAND_KIND_NAMES = new Set(['setup', 'sample', 'download', 'transcribe', 'extract', 'write', 'tts', 'image', 'video', 'music'])
+const COMMAND_KIND_NAMES = new Set(['setup', 'sample', 'download', 'stt', 'transcribe', 'ocr', 'extract', 'write', 'tts', 'image', 'video', 'music'])
+
+const normalizeMetricCommandKind = (kind: string): string => {
+  if (kind === 'stt') return 'transcribe'
+  if (kind === 'ocr') return 'extract'
+  return kind
+}
 
 const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--openai': { service: 'openai', kind: 'write' },
@@ -154,7 +160,7 @@ const isControlE2ETest = (name: string): boolean => {
 const parseMetricCommandKind = (metric: ParsedCommandMetric): string | null => {
   const subcommand = metric.args[1]
   if (subcommand && COMMAND_KIND_NAMES.has(subcommand)) {
-    return subcommand
+    return normalizeMetricCommandKind(subcommand)
   }
 
   if (metric.args.length > 1) {

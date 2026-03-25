@@ -83,7 +83,9 @@ export const runLLM = async (
   }
 
   const hasStructuredTarget = targets.some((target) => resolveStructuredMode(target.service, structuredEnabled) !== 'off')
-  const instructionBase = await resolvePromptNames(options.prompts ?? [])
+  const instructionBase = await resolvePromptNames(options.prompts ?? [], {
+    exampleFormat: structuredEnabled ? 'json' : 'markdown'
+  })
   const structuredSchema = hasStructuredTarget
     ? await resolveStructuredSchema(options.prompts ?? [])
     : undefined

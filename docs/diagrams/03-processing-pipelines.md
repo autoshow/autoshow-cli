@@ -214,7 +214,7 @@ src/cli/commands/process-steps/process-document.ts
                                     |
                         ┌───────────┴───────────┐
                         |                       |
-                  extract cmd               write cmd
+                    ocr cmd                write cmd
                         |                       |
                         v                       v
                 ┌───────────────┐  ┌────────────────────────────────────┐

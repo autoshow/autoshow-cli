@@ -1,5 +1,6 @@
 import * as l from '~/logger'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
+import { isOcrCommand } from '~/types'
 import { collectInputFiles, isDocumentByExtension, isInputDirectoryPath, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 
@@ -9,7 +10,7 @@ export const handleDirectoryTargetBatch = async (
   opts: RuntimeOptions
 ): Promise<void> => {
   const allFiles = await collectInputFiles(resolvedTarget)
-  const files = command === 'extract'
+  const files = isOcrCommand(command)
     ? allFiles.filter(file => isDocumentByExtension(file))
     : allFiles
   const includeUrlsFromInputDir = isInputDirectoryPath(resolvedTarget)

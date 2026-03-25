@@ -93,7 +93,7 @@ export const resolveSttInputDurationSeconds = async (input: string): Promise<num
   if (!isLikelyUrl(input)) {
     const exists = await fileExists(input)
     if (!exists) {
-      throw CLIUsageError(`Input does not exist: ${input}. Run: bun as help transcribe`)
+      throw CLIUsageError(`Input does not exist: ${input}. Run: bun as help stt`)
     }
     if (isDocumentLikePath(input)) {
       throw CLIUsageError(`--price requires media input (audio/video). Got document/image input: ${input}`)

@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 12 named commands plus the root shorthand (`bun as <input>` => `write <input>`): `download`, `transcribe`, `write`, `extract`, `tts`, `image`, `music`, `video`, `setup`, `sample`, `models`, `config`
+   - Defines 12 named commands plus the root shorthand (`bun as <input>` => `write <input>`): `download`, `stt`, `write`, `ocr`, `tts`, `image`, `music`, `video`, `setup`, `sample`, `models`, `config`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -55,7 +55,7 @@ src/cli/create-cli.ts
 │  expandPromptArgs()                                                          │
 │  - Allows multiple --prompt values (--prompt chapters summary)               │
 │  normalizeCommandAliases()                                                   │
-│  - Maps aliases: llm → write, transcript → transcribe, dl → download, ...   │
+│  - Maps aliases: transcribe → stt, extract → ocr, voice → tts, dl → download, ... │
 │  normalizeCommandHelpShortcut()                                              │
 │  - Maps "write --help" → "help write"                                        │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -80,7 +80,7 @@ src/cli/create-cli.ts
 │  COMMANDS  (src/cli/create-cli.ts + per-step define-*-command.ts files)      │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
-│  │  (root) / write  │  │   transcribe     │  │    extract       │            │
+│  │  (root) / write  │  │   stt            │  │    ocr           │            │
 │  │                  │  │                  │  │                  │            │
 │  │ Download +       │  │ Download +       │  │ Detect +         │            │
 │  │ Transcribe +     │  │ Transcribe only  │  │ Extract only     │            │
@@ -160,10 +160,10 @@ src/cli/flags/
 └─────────────────────────────────────────────────────────────┘
 
 Command-to-flag mapping:
-  transcribe  → transcriptionFlags + promptFlag + batchFlags + priceFlag
+  stt         → transcriptionFlags + promptFlag + batchFlags + priceFlag
   write       → mediaFlags + extractFlags + advancedExtractFlags + batchFlags
                   + ttsFlags + imageGenFlags + musicGenFlags + videoGenFlags + promptFlag
-  extract     → extractFlags
+  ocr         → extractFlags
   tts         → ttsFlags
   image       → imageGenFlags
   music       → musicGenFlags

@@ -26,6 +26,12 @@ export const priceFlag = {
     type: Boolean,
     default: false,
     negatable: false
+  },
+  'dry-run': {
+    description: 'Preview what would happen without executing (same as --price)',
+    type: Boolean,
+    default: false,
+    negatable: false
   }
 } as const satisfies ClercFlagsDefinition
 
@@ -139,6 +145,21 @@ export const promptFlag = {
     description: 'Named prompt(s) from src/prompts/prompts.json (default: "default")',
     type: [String] as [StringConstructor],
     default: [] as string[]
+  }
+} as const satisfies ClercFlagsDefinition
+
+export const promptOutputFlags = {
+  'json-output': {
+    description: 'Use JSON prompt examples and prefer structured JSON write output when supported',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'md-output': {
+    description: 'Use markdown prompt examples and disable structured JSON write output',
+    type: Boolean,
+    default: false,
+    negatable: false
   }
 } as const satisfies ClercFlagsDefinition
 

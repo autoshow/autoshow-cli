@@ -1,7 +1,15 @@
 import { resolve } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
-import type { LeafPrompt, PromptEntry, PromptTokenEstimate, PromptsRegistry, ResolvedLeafPrompt } from '~/types'
+import type {
+  LeafPrompt,
+  PromptEntry,
+  PromptExampleFormat,
+  PromptExamples,
+  PromptTokenEstimate,
+  PromptsRegistry,
+  ResolvedLeafPrompt
+} from '~/types'
 
 
 const LeafPromptSchema = v.object({
@@ -9,7 +17,10 @@ const LeafPromptSchema = v.object({
   expectedInputTokens: v.pipe(v.number(), v.integer(), v.minValue(0)),
   expectedOutputTokens: v.pipe(v.number(), v.integer(), v.minValue(0)),
   instruction: v.string(),
-  example: v.string(),
+  examples: v.object({
+    json: v.string(),
+    markdown: v.string()
+  }),
   structuredPreset: v.optional(v.string(), undefined)
 })
 
@@ -26,10 +37,67 @@ let cachedRegistry: PromptsRegistry | undefined
 
 const isLeaf = (entry: PromptEntry): entry is LeafPrompt => 'instruction' in entry
 
-const buildLeafPromptText = (entry: LeafPrompt): string =>
-  entry.example.trim().length > 0
-    ? `${entry.instruction}\n\n${entry.example}`
-    : entry.instruction
+const getPromptExample = (examples: PromptExamples, exampleFormat: PromptExampleFormat): string =>
+  examples[exampleFormat]
+
+const stripMarkdownExamplePrefix = (example: string): string => {
+  const prefixMatch = example.match(/^\s*Format the output like so:(?:\r?\n)+/u)
+  const stripped = prefixMatch ? example.slice(prefixMatch[0].length) : example
+  return stripped.trimEnd()
+}
+
+const stripJsonExamplePrefix = (example: string): string =>
+  example.replace(/^\s*Example JSON output:\s*/u, '').trim()
+
+const normalizeExampleText = (
+  example: string,
+  exampleFormat: PromptExampleFormat
+): string => {
+  if (exampleFormat === 'markdown') {
+    return stripMarkdownExamplePrefix(example)
+  }
+
+  return stripJsonExamplePrefix(example)
+}
+
+const tryBuildCombinedJsonExample = (leaves: ResolvedLeafPrompt[]): string | undefined => {
+  if (leaves.length <= 1) {
+    return undefined
+  }
+
+  try {
+    const combined = Object.fromEntries(
+      leaves.map(({ name, entry }) => [name, JSON.parse(normalizeExampleText(entry.examples.json, 'json'))])
+    )
+    return JSON.stringify(combined, null, 2)
+  } catch {
+    return undefined
+  }
+}
+
+const buildExamplesText = (
+  leaves: ResolvedLeafPrompt[],
+  exampleFormat: PromptExampleFormat
+): string => {
+  const normalizedExamples = leaves
+    .map(({ entry }) => normalizeExampleText(getPromptExample(entry.examples, exampleFormat), exampleFormat))
+    .filter((example) => example.length > 0)
+
+  if (normalizedExamples.length === 0) {
+    return ''
+  }
+
+  if (exampleFormat === 'markdown') {
+    return `Format the output like so:\n\n${normalizedExamples.join('\n\n')}`
+  }
+
+  const combinedJsonExample = tryBuildCombinedJsonExample(leaves)
+  if (combinedJsonExample) {
+    return `Example JSON output:\n\n${combinedJsonExample}`
+  }
+
+  return `Example JSON output:\n\n${normalizedExamples[0]}`
+}
 
 const resolveRequestedPromptNames = (names: string[]): string[] =>
   names.length === 0 ? ['default'] : names
@@ -95,10 +163,23 @@ const loadPrompts = async (): Promise<PromptsRegistry> => {
   return validated
 }
 
-export const resolvePromptNames = async (names: string[]): Promise<string> => {
+export const resolvePromptNames = async (
+  names: string[],
+  options: { exampleFormat?: PromptExampleFormat } = {}
+): Promise<string> => {
   const registry = await loadPrompts()
-  return collectLeafPromptsFromRegistry(registry, names)
-    .map(({ entry }) => buildLeafPromptText(entry))
+  const exampleFormat = options.exampleFormat ?? 'json'
+  const leaves = collectLeafPromptsFromRegistry(registry, names)
+
+  const instructionsText = leaves
+    .map(({ entry }) => entry.instruction.trim())
+    .filter((instruction) => instruction.length > 0)
+    .join('\n\n')
+
+  const examplesText = buildExamplesText(leaves, exampleFormat)
+
+  return [instructionsText, examplesText]
+    .filter((section) => section.length > 0)
     .join('\n\n')
 }
 

@@ -1,6 +1,20 @@
-export const PROCESS_COMMANDS = ['download', 'transcribe', 'write', 'extract', 'tts', 'image', 'music', 'video'] as const
+export const PROCESS_COMMANDS = ['download', 'stt', 'write', 'ocr', 'tts', 'image', 'music', 'video'] as const
+export const PROCESS_COMMAND_ALIASES = ['transcribe', 'extract'] as const
 
-export type ProcessCommand = typeof PROCESS_COMMANDS[number]
+export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
+export type ProcessCommand = CanonicalProcessCommand | typeof PROCESS_COMMAND_ALIASES[number]
+
+export const isSttCommand = (command: ProcessCommand): command is 'stt' | 'transcribe' =>
+  command === 'stt' || command === 'transcribe'
+
+export const isOcrCommand = (command: ProcessCommand): command is 'ocr' | 'extract' =>
+  command === 'ocr' || command === 'extract'
+
+export const canonicalizeProcessCommand = (command: ProcessCommand): CanonicalProcessCommand => {
+  if (isSttCommand(command)) return 'stt'
+  if (isOcrCommand(command)) return 'ocr'
+  return command
+}
 
 export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
 

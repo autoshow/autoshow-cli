@@ -1,6 +1,6 @@
-# transcribe (local)
+# stt (local)
 
-Download audio and transcribe it with the local STT engines.
+Download audio and transcribe it with the local STT engines. Alias: `transcribe`.
 
 ## Outline
 
@@ -63,12 +63,12 @@ ASSEMBLYAI_API_KEY=...
 ## Usage
 
 ```bash
-bun as transcribe [input] [flags]
+bun as stt [input] [flags]
 ```
 
 ## Supported Inputs
 
-`transcribe` uses the same input routing as `download` for audio/video sources:
+`stt` uses the same input routing as `download` for audio/video sources:
 
 - YouTube, Twitch, or TikTok URL
 - direct media URL
@@ -78,7 +78,7 @@ bun as transcribe [input] [flags]
 - RSS / podcast feed batch
 - YouTube channel batch
 
-Document inputs are not supported by `transcribe`.
+Document inputs are not supported by `stt`.
 
 ## Local Engines
 
@@ -87,25 +87,25 @@ Document inputs are not supported by `transcribe`.
 | Whisper.cpp | default, or `--whisper <model>` | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
 | Reverb | `--reverb` | diarized local transcription |
 
-If no engine flag is provided, `transcribe` uses Whisper with the default `tiny` model.
+If no engine flag is provided, `stt` uses Whisper with the default `tiny` model.
 
 ## Examples
 
 ```bash
 # Default local Whisper
-bun as transcribe input/1-audio.mp3
+bun as stt input/1-audio.mp3
 
 # Larger Whisper model
-bun as transcribe input/1-audio.mp3 --whisper large-v3-turbo
+bun as stt input/1-audio.mp3 --whisper large-v3-turbo
 
 # Reverb with explicit verbatimicity
-bun as transcribe input/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
+bun as stt input/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
 
 # Split a long media file into 10-minute chunks first
-bun as transcribe input/2-video.mp4 --whisper large-v3-turbo --split
+bun as stt input/2-video.mp4 --whisper large-v3-turbo --split
 
 # Batch from a URL list
-bun as transcribe input/2-urls.md --batch-limit 5
+bun as stt input/2-urls.md --batch-limit 5
 ```
 
 ## Flags

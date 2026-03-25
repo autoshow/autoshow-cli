@@ -17,9 +17,9 @@ import { CLIUsageError, normalizeExitCode, usageMessage } from '~/utils/error-ha
 import { redactCliArgv } from '~/logger/redaction'
 import { modelsCommand } from '~/cli/commands/models/define-models-command'
 import { linksCommand } from '~/cli/commands/links/define-links-command'
-import { PROCESS_COMMANDS } from '~/types'
+import { PROCESS_COMMANDS, canonicalizeProcessCommand } from '~/types'
 import * as l from '~/logger'
-import { runWithLogContext } from '~/logger'
+import { runWithLogContext, reconfigureLogger } from '~/logger'
 
 const cliErrorHandler = (error: unknown): void => {
   const exitCode = normalizeExitCode(error)
@@ -55,14 +55,17 @@ const cliErrorHandler = (error: unknown): void => {
   process.exit(1)
 }
 
-const CLI_VERSION = '1.0.0'
+const CLI_VERSION = (await import('../../package.json')).version as string
 
 const COMMAND_ALIASES: Record<string, string> = {
   model: 'models',
-  'download-llama': 'models',
   dl: 'download',
-  transcript: 'transcribe',
-  transcription: 'transcribe',
+  transcribe: 'stt',
+  transcript: 'stt',
+  transcription: 'stt',
+  extract: 'ocr',
+  document: 'ocr',
+  voice: 'tts',
   llm: 'write',
   llms: 'write',
   samples: 'sample'
@@ -95,6 +98,17 @@ const normalizeCommandAliases = (argv: string[]): string[] => {
   return argv
 }
 
+const normalizeKnownCommandName = (command: string): string | null => {
+  if (!knownCommands.has(command)) {
+    return null
+  }
+
+  const mapped = COMMAND_ALIASES[command] ?? command
+  return PROCESS_COMMANDS.includes(mapped as typeof PROCESS_COMMANDS[number])
+    ? canonicalizeProcessCommand(mapped as Parameters<typeof canonicalizeProcessCommand>[0])
+    : mapped
+}
+
 const normalizeCommandHelpShortcut = (argv: string[]): string[] => {
   if (argv.length === 2) {
     const [first, second] = argv
@@ -113,6 +127,7 @@ const normalizeCommandHelpShortcut = (argv: string[]): string[] => {
 
 const knownCommands = new Set<string>([
   ...PROCESS_COMMANDS,
+  ...Object.keys(COMMAND_ALIASES),
   'config',
   'setup',
   'sample',
@@ -137,14 +152,14 @@ const formatInput = (argv: string[]): string => {
   return `bun as ${redacted.join(' ')}`.trim()
 }
 
-const validateTranscribeFlagCompatibility = (argv: string[]): void => {
-  if (argv[0] !== 'transcribe') {
+const validateSttFlagCompatibility = (argv: string[]): void => {
+  if (argv[0] !== 'stt') {
     return
   }
 
   const usedUnsupportedFlags = argv.filter((token) => TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.has(token))
   if (usedUnsupportedFlags.length > 0) {
-    throw CLIUsageError('LLM provider flags are not supported with "transcribe" (--openai, --groq, --gemini, --anthropic, --minimax, --llama). Use: bun as write <input> [flags]')
+    throw CLIUsageError('LLM provider flags are not supported with "stt" (--openai, --groq, --gemini, --anthropic, --minimax, --llama). Use: bun as write <input> [flags]')
   }
 }
 
@@ -170,22 +185,74 @@ const BARE_FLAG_DEFAULTS: Record<string, string> = {
   '--minimax-video': 'MiniMax-Hailuo-2.3'
 }
 
+const HELP_COMMAND_GROUPS = [
+  ['core', 'Core Commands'],
+  ['setup', 'Setup & Utilities'],
+  ['processing', 'Processing & Generation']
+] as const
+
+type HelpCommandGroupKey = typeof HELP_COMMAND_GROUPS[number][0]
+const HELP_COMMAND_GROUP_DEFINITIONS: [string, string][] = HELP_COMMAND_GROUPS.map(([key, label]) => [key, label])
+
+const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> = {
+  '': 'core',
+  version: 'core',
+  help: 'core',
+  config: 'setup',
+  setup: 'setup',
+  sample: 'setup',
+  models: 'setup',
+  links: 'setup',
+  download: 'processing',
+  ocr: 'processing',
+  stt: 'processing',
+  write: 'processing',
+  tts: 'processing',
+  image: 'processing',
+  music: 'processing',
+  video: 'processing'
+}
+
 const COMMAND_DEFINITIONS = [
   rootCommand,
   configCommand,
   setupCommand,
   sampleCommand,
   modelsCommand,
+  linksCommand,
   downloadCommand,
+  extractCommand,
   transcribeCommand,
   writeCommand,
-  extractCommand,
   ttsCommand,
   imageCommand,
   musicCommand,
-  videoCommand,
-  linksCommand
+  videoCommand
 ] as const
+
+const setCommandHelpGroup = (command: unknown, group: HelpCommandGroupKey): void => {
+  if (typeof command !== 'object' || command === null) {
+    return
+  }
+
+  const commandDefinition = command as { help?: Record<string, unknown> }
+  const existingHelp = commandDefinition.help
+  commandDefinition.help = {
+    ...(typeof existingHelp === 'object' && existingHelp !== null && !Array.isArray(existingHelp) ? existingHelp : {}),
+    group
+  }
+}
+
+const applyCommandHelpGroups = (): void => {
+  for (const command of COMMAND_DEFINITIONS) {
+    const group = HELP_COMMAND_GROUP_BY_NAME[command.name]
+    if (group !== undefined) {
+      setCommandHelpGroup(command, group)
+    }
+  }
+}
+
+applyCommandHelpGroups()
 
 const expandBareModelFlags = (argv: string[]): string[] => {
   const result: string[] = []
@@ -282,8 +349,13 @@ const HELP_MODEL_DELIMITER_COLOR = 'steelblue'
 const HELP_MODEL_SEGMENT_PATTERN = /(\bmodel(?:s)?(?:\s+ID)?(?:\s*\([^)]*\))?\s*:\s*)([^\n]+)/gi
 const HELP_FLAG_ROW_PATTERN = /^(\s+)(--.+?)(\s{2,})(.*)$/gm
 const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*m/
+const ANSI_ESCAPE_GLOBAL_PATTERN = /\x1b\[[0-9;]*m/g
+const ROOT_COMMAND_DESCRIPTION = 'Default command (equivalent to write <input>)'
+const ROOT_COMMAND_GROUP_LABEL = 'Core Commands'
+const ROOT_COMMAND_GROUP_ROW = `    (root)    ${ROOT_COMMAND_DESCRIPTION}`
 
 const hasAnsiEscapes = (text: string): boolean => ANSI_ESCAPE_PATTERN.test(text)
+const stripAnsiEscapes = (text: string): string => text.replace(ANSI_ESCAPE_GLOBAL_PATTERN, '')
 
 const colorizeModelToken = (token: string): string => {
   const leadingWhitespace = token.match(/^\s*/)?.[0] ?? ''
@@ -322,21 +394,54 @@ const colorizeHelpFlagRows = (rendered: string): string => {
   })
 }
 
-const withPatchedHelpConsole = async (run: () => Promise<void>): Promise<void> => {
-  if (!helpColorsEnabled) {
-    await run()
-    return
+const moveRootCommandIntoCoreGroup = (rendered: string): string => {
+  if (!rendered.includes('\nCommands\n')) {
+    return rendered
   }
 
+  const lines = rendered.split('\n')
+  const rootIndex = lines.findIndex(line => stripAnsiEscapes(line).trim() === `(root)  ${ROOT_COMMAND_DESCRIPTION}`)
+  const coreIndex = lines.findIndex(line => stripAnsiEscapes(line).trim() === ROOT_COMMAND_GROUP_LABEL)
+
+  if (rootIndex === -1 || coreIndex === -1 || rootIndex > coreIndex) {
+    return rendered
+  }
+
+  lines.splice(rootIndex, 1)
+
+  const updatedCoreIndex = lines.findIndex(line => stripAnsiEscapes(line).trim() === ROOT_COMMAND_GROUP_LABEL)
+  if (updatedCoreIndex === -1) {
+    return rendered
+  }
+
+  if (updatedCoreIndex > 0 && stripAnsiEscapes(lines[updatedCoreIndex - 1] ?? '').trim() === '') {
+    lines.splice(updatedCoreIndex - 1, 1)
+  }
+
+  const insertionIndex = lines.findIndex(line => stripAnsiEscapes(line).trim().startsWith('version'))
+  if (insertionIndex === -1) {
+    return rendered
+  }
+
+  lines.splice(insertionIndex, 0, ROOT_COMMAND_GROUP_ROW)
+  return lines.join('\n')
+}
+
+const transformHelpOutput = (rendered: string): string => {
+  const normalized = moveRootCommandIntoCoreGroup(rendered)
+  return colorizeHelpFlagRows(normalized)
+}
+
+const withPatchedHelpConsole = async (run: () => Promise<void>): Promise<void> => {
   const originalLog = console.log
   console.log = (...args: unknown[]): void => {
-    const styled = args.map(arg => {
+    const transformed = args.map(arg => {
       if (typeof arg !== 'string') {
         return arg
       }
-      return colorizeHelpFlagRows(arg)
+      return transformHelpOutput(arg)
     })
-    originalLog(...styled)
+    originalLog(...transformed)
   }
 
   try {
@@ -347,9 +452,6 @@ const withPatchedHelpConsole = async (run: () => Promise<void>): Promise<void> =
 }
 
 const shouldPatchHelpConsole = (argv: string[]): boolean => {
-  if (!helpColorsEnabled) {
-    return false
-  }
   if (argv.length === 0) {
     return true
   }
@@ -414,16 +516,20 @@ const createCli = () => {
       'Process audio/video and documents with transcription, extraction, and write workflows',
       '',
       'Aliases:',
-      '  models: model, download-llama',
+      '  models: model',
       '  download: dl',
-      '  transcribe: transcript, transcription',
-      '  write: llm, llms'
+      '  stt: transcribe, transcript, transcription',
+      '  ocr: extract, document',
+      '  tts: voice',
+      '  write: llm, llms',
+      '  sample: samples'
     ].join('\n'),
     version: CLI_VERSION
   })
     .use(versionPlugin())
     .use(helpPlugin({
       groups: {
+        commands: HELP_COMMAND_GROUP_DEFINITIONS,
         flags: colorizeHelpFlagGroups(CONFIG_COMMAND_HELP_FLAG_GROUPS)
       },
       formatters: {
@@ -437,6 +543,14 @@ const createCli = () => {
         }
       }
     }))
+
+  for (const commandName of ['version', 'help'] as const) {
+    const registeredCommand = cli._commands.get(commandName)
+    const group = HELP_COMMAND_GROUP_BY_NAME[commandName]
+    if (registeredCommand && group !== undefined) {
+      setCommandHelpGroup(registeredCommand, group)
+    }
+  }
 
   return cli
     .globalFlag('help', colorizeHelpDescription('Show help'), {
@@ -459,8 +573,30 @@ const createCli = () => {
       default: false,
       negatable: false
     })
+    .globalFlag('verbose', colorizeHelpDescription('Enable debug-level logging (overrides AUTOSHOW_LOG_LEVEL)'), {
+      type: Boolean,
+      default: false,
+      negatable: false
+    })
+    .globalFlag('quiet', colorizeHelpDescription('Suppress all output except errors (overrides AUTOSHOW_LOG_LEVEL)'), {
+      short: 'q',
+      type: Boolean,
+      default: false,
+      negatable: false
+    })
+    .globalFlag('json', colorizeHelpDescription('Output logs as JSON (overrides AUTOSHOW_LOG_FORMAT)'), {
+      type: Boolean,
+      default: false,
+      negatable: false
+    })
     .command(COMMAND_DEFINITIONS)
     .interceptor({ enforce: 'pre', handler: async (ctx, next) => {
+      const flags = ctx.flags as Record<string, unknown>
+      reconfigureLogger({
+        verbose: flags['verbose'] === true,
+        quiet: flags['quiet'] === true,
+        json: flags['json'] === true
+      })
       const store = ctx.store as { startedAtMs?: number }
       store.startedAtMs = Date.now()
       const command = ctx.calledAs || ctx.command?.name || '(root)'
@@ -490,7 +626,7 @@ const createCli = () => {
 
 const main = async (): Promise<void> => {
   const argv = normalizeCommandHelpShortcut(normalizeCommandAliases(expandPromptArgs(expandBareModelFlags(Bun.argv.slice(2)))))
-  validateTranscribeFlagCompatibility(argv)
+  validateSttFlagCompatibility(argv)
   const parseCli = async (parseArgv: string[]): Promise<void> => {
     if (shouldPatchHelpConsole(parseArgv)) {
       await withPatchedHelpConsole(async () => {
@@ -511,26 +647,26 @@ const main = async (): Promise<void> => {
       }
 
       const maybeCommand = rest[0]
-      if (maybeCommand && knownCommands.has(maybeCommand)) {
-        throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as help ${maybeCommand} or bun as ${maybeCommand} --help`)
-      }
-
-      throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as <command> --help`)
-    }
-
-    if (first === '--version' || first === '-v' || first === '-V') {
-      if (rest.length === 0) {
-        await parseCli(['--version'])
+      const canonicalCommand = maybeCommand ? normalizeKnownCommandName(maybeCommand) : null
+      if (canonicalCommand) {
+        await parseCli(['help', canonicalCommand])
         return
       }
 
-      throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as --version`)
+      await parseCli(['help'])
+      return
+    }
+
+    if (first === '--version' || first === '-v' || first === '-V') {
+      await parseCli(['--version'])
+      return
     }
 
     if (first !== '--' && first!.startsWith('-')) {
       const maybeCommand = rest.find(token => knownCommands.has(token))
-      if (maybeCommand) {
-        throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as ${maybeCommand} <input> [flags]`)
+      const canonicalCommand = maybeCommand ? normalizeKnownCommandName(maybeCommand) : null
+      if (canonicalCommand) {
+        throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as ${canonicalCommand} <input> [flags]`)
       }
 
       throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as <command> [parameters] [flags]`)

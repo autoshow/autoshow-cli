@@ -7,7 +7,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, or URL list (.md/.txt)' }] as const
 
 export const extractCommand = defineCommand({
-  name: 'extract',
+  name: 'ocr',
   description: 'Extract text from PDF, EPUB, and image files',
   parameters: inputParameter,
   flags: extractCommandFlags
@@ -29,5 +29,5 @@ export const extractCommand = defineCommand({
     throw CLIUsageError('EPUB inspect mode supports JSON output only. Use --out json with --epub-bun or --epub-calibre.')
   }
 
-  await handleProcessTarget('extract', ctx.parameters.input, ctx.flags, ctx.rawParsed.doubleDash)
+  await handleProcessTarget('ocr', ctx.parameters.input, ctx.flags, ctx.rawParsed.doubleDash)
 })

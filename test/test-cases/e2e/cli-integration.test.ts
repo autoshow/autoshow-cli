@@ -71,7 +71,7 @@ test("bun as with default settings processes audio successfully", async () => {
 test("bun as transcribe skips LLM processing but creates prompt", async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   
-  const result = await runCommand(["src/cli/create-cli.ts", "transcribe", STABLE_LOCAL_AUDIO_PATH, "--prompt", "shortSummary"])
+  const result = await runCommand(["src/cli/create-cli.ts", 'stt', STABLE_LOCAL_AUDIO_PATH, "--prompt", "shortSummary"])
   
   expect(result.exitCode).toBe(0)
   

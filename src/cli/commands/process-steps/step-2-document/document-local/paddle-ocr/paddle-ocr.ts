@@ -79,8 +79,8 @@ export const setupPaddleOcr = async (): Promise<void> => {
     l.success('PaddleOCR setup complete!')
     l.success('')
     l.success('You can now use PaddleOCR:')
-    l.success('bun as extract input/1-document.pdf --paddle-ocr')
-    l.success('bun as extract input/1-document.jpg --paddle-ocr')
+    l.success('bun as ocr input/1-document.pdf --paddle-ocr')
+    l.success('bun as ocr input/1-document.jpg --paddle-ocr')
     l.success('========================================')
   }
 }

@@ -1,4 +1,5 @@
 import type { AutoshowConfig } from '~/types'
+import { CLIUsageError } from '~/utils/error-handler'
 
 const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt'] as const
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax'] as const
@@ -259,8 +260,19 @@ export const buildConfigPatchFromFlags = (
 ): Record<string, unknown> => {
   const patch: Record<string, unknown> = {}
 
+  if (explicitFlags.has('json-output') && explicitFlags.has('md-output')) {
+    throw CLIUsageError('Cannot use both --json-output and --md-output at the same time.')
+  }
+
+  if (explicitFlags.has('json-output')) {
+    setNestedValue(patch, ['defaults', 'llm', 'structured'], true)
+  } else if (explicitFlags.has('md-output')) {
+    setNestedValue(patch, ['defaults', 'llm', 'structured'], false)
+  }
+
   for (const flagName of explicitFlags) {
     if (RUNTIME_ONLY_FLAGS.has(flagName)) continue
+    if (flagName === 'json-output' || flagName === 'md-output') continue
     const configPath = FLAG_TO_CONFIG_PATH[flagName]
     if (!configPath) continue
     const rawValue = flags[flagName]

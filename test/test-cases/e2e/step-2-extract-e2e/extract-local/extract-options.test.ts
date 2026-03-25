@@ -25,7 +25,7 @@ afterAll(async () => {
 test('extract PDF with default options', async () => {
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput], { testName: 'extract PDF with default options' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput], { testName: 'extract PDF with default options' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
@@ -40,7 +40,7 @@ test('extract PDF with default options', async () => {
 test('extract PDF with --out json', async () => {
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--out', 'json'], { testName: 'extract PDF with --out json' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, '--out', 'json'], { testName: 'extract PDF with --out json' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
@@ -58,7 +58,7 @@ test('extract PDF with --ocrmypdf', async () => {
 
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--ocrmypdf'], { testName: 'extract PDF with --ocrmypdf' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, '--ocrmypdf'], { testName: 'extract PDF with --ocrmypdf' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
@@ -76,7 +76,7 @@ test('extract PDF with --paddle-ocr', async () => {
 
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--paddle-ocr'], { testName: 'extract PDF with --paddle-ocr' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, '--paddle-ocr'], { testName: 'extract PDF with --paddle-ocr' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
@@ -93,7 +93,7 @@ for (const args of [
   ['--mistral-ocr', 'mistral-ocr-2512', '--paddle-ocr'],
 ]) {
   test(`extract rejects conflicting flags: ${args.join(' ')}`, async () => {
-    const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, ...args])
+    const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, ...args])
     expect(result.exitCode).not.toBe(0)
   })
 }
@@ -105,7 +105,7 @@ test('extract EPUB with --ocrmypdf', async () => {
 
   await cleanupTestOutput('1-epub')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', epubInput, '--ocrmypdf'], { testName: 'extract EPUB with --ocrmypdf' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', epubInput, '--ocrmypdf'], { testName: 'extract EPUB with --ocrmypdf' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-epub')
@@ -125,7 +125,7 @@ test('extract image with --ocrmypdf', async () => {
   await ensurePageImageFixture(imageInput)
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', imageInput, '--ocrmypdf'], { testName: 'extract image with --ocrmypdf' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', imageInput, '--ocrmypdf'], { testName: 'extract image with --ocrmypdf' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
@@ -141,7 +141,7 @@ test('extract image with --ocrmypdf', async () => {
 test('extract EPUB with --epub-bun writes structured data into metadata.json only', async () => {
   await cleanupTestOutput('1-epub')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', epubInput, '--epub-bun'], { testName: 'extract EPUB with --epub-bun writes structured data into metadata.json only' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', epubInput, '--epub-bun'], { testName: 'extract EPUB with --epub-bun writes structured data into metadata.json only' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-epub')
@@ -164,7 +164,7 @@ test('extract EPUB with --epub-calibre', async () => {
 
   await cleanupTestOutput('1-epub')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', epubInput, '--epub-calibre'], { testName: 'extract EPUB with --epub-calibre' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', epubInput, '--epub-calibre'], { testName: 'extract EPUB with --epub-calibre' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-epub')
@@ -181,20 +181,20 @@ for (const args of [
   ['--epub-calibre', '--epub-bun']
 ]) {
   test(`extract rejects conflicting EPUB inspect flags: ${args.join(' ')}`, async () => {
-    const result = await runCommand(['src/cli/create-cli.ts', 'extract', epubInput, ...args])
+    const result = await runCommand(['src/cli/create-cli.ts', 'ocr', epubInput, ...args])
     expect(result.exitCode).not.toBe(0)
   })
 }
 
 test('extract rejects non-json --out with EPUB inspect mode', async () => {
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', epubInput, '--epub-bun', '--out', 'text'])
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', epubInput, '--epub-bun', '--out', 'text'])
   expect(result.exitCode).not.toBe(0)
 })
 
 test('extract non-EPUB with --epub-bun falls back to normal extraction flow', async () => {
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--epub-bun'], { testName: 'extract non-EPUB with --epub-bun falls back to normal extraction flow' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, '--epub-bun'], { testName: 'extract non-EPUB with --epub-bun falls back to normal extraction flow' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')

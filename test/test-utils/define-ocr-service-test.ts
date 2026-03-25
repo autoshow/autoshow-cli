@@ -48,7 +48,7 @@ export const defineOCRServiceTest = ({
 
       await cleanupTestOutput('1-document')
 
-      const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, cliFlag, model])
+      const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, cliFlag, model])
       expect(result.exitCode).toBe(0)
 
       const outputDir = await findLatestDirectory('1-document')
@@ -69,7 +69,7 @@ export const defineOCRServiceTest = ({
       await ensurePageImageFixture(imageInput)
       await cleanupTestOutput('1-document')
 
-      const result = await runCommand(['src/cli/create-cli.ts', 'extract', imageInput, cliFlag, model])
+      const result = await runCommand(['src/cli/create-cli.ts', 'ocr', imageInput, cliFlag, model])
       expect(result.exitCode).toBe(0)
 
       const outputDir = await findLatestDirectory('1-document')

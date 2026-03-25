@@ -125,7 +125,7 @@ describe('api-cheap', () => {
 
         await cleanupTestOutput(SHORT_AUDIO_TITLE)
 
-        const args = ['src/cli/create-cli.ts', 'transcribe', SHORT_AUDIO_PATH, selection.flag, selection.model]
+        const args = ['src/cli/create-cli.ts', 'stt', SHORT_AUDIO_PATH, selection.flag, selection.model]
         if (selection.service === 'elevenlabs') {
           args.push('--speaker-count', '1')
         }

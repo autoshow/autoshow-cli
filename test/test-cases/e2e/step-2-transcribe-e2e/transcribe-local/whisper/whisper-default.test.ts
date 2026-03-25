@@ -15,7 +15,7 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
 
   const testName = 'default transcribe processes local audio'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'transcribe', STABLE_LOCAL_AUDIO_PATH],
+    ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH],
     { testName }
   )
 
@@ -51,7 +51,7 @@ for (const modelCase of [
 
     const testName = `whisper ${modelCase.model} model transcribes local audio`
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'transcribe', STABLE_LOCAL_AUDIO_PATH, '--whisper', modelCase.model],
+      ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', modelCase.model],
       { testName }
     )
 
@@ -90,7 +90,7 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
 
   const testName = 'split mode processes audio in segments'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'transcribe', STABLE_LOCAL_AUDIO_PATH, '--split', '--whisper', 'tiny'],
+    ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--split', '--whisper', 'tiny'],
     { testName }
   )
 

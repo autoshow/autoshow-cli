@@ -13,7 +13,7 @@ afterAll(async () => {
 budgetedTest('transcribe-reverb', "reverb processes local audio with speaker diarization and verbatimicity options", async () => {
   const testName = "reverb processes local audio with speaker diarization and verbatimicity options"
   const result = await runCommand(
-    ["src/cli/create-cli.ts", "transcribe", STABLE_LOCAL_AUDIO_PATH, "--reverb", "--reverb-verbatimicity", "0.5"],
+    ["src/cli/create-cli.ts", 'stt', STABLE_LOCAL_AUDIO_PATH, "--reverb", "--reverb-verbatimicity", "0.5"],
     { testName }
   )
   
@@ -38,7 +38,7 @@ budgetedTest('transcribe-reverb', 'reverb processes local audio without verbatim
 
   const testName = 'reverb processes local audio without verbatimicity option'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'transcribe', STABLE_LOCAL_AUDIO_PATH, '--reverb'],
+    ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--reverb'],
     { testName }
   )
 

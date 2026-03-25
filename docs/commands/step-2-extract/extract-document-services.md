@@ -1,19 +1,19 @@
-# extract (services)
+# ocr (services)
 
-Extract text with the hosted OCR path currently exposed by `bun as extract`: Mistral OCR.
+Extract text with the hosted OCR path currently exposed by `bun as ocr`: Mistral OCR. Alias: `extract`.
 
 ## Outline
 
 - [Usage](#usage)
 - [Mistral OCR Routing](#mistral-ocr-routing)
 - [Examples](#examples)
-- [Standalone `extract` Flags](#standalone-extract-flags)
+- [Standalone `ocr` Flags](#standalone-ocr-flags)
 - [Notes](#notes)
 
 ## Usage
 
 ```bash
-bun as extract [input] --mistral-ocr <model>
+bun as ocr [input] --mistral-ocr <model>
 ```
 
 ## Mistral OCR Routing
@@ -37,14 +37,14 @@ Current Mistral OCR models:
 ## Examples
 
 ```bash
-bun as extract input/1-document.pdf --mistral-ocr mistral-ocr-latest
-bun as extract input/1-document.jpg --mistral-ocr mistral-ocr-2512
-bun as extract input/1-document.epub --mistral-ocr mistral-ocr-2512
-bun as extract input/1-document.docx --mistral-ocr mistral-ocr-latest
-bun as extract input/1-document.pdf --mistral-ocr mistral-ocr-latest --price
+bun as ocr input/1-document.pdf --mistral-ocr mistral-ocr-latest
+bun as ocr input/1-document.jpg --mistral-ocr mistral-ocr-2512
+bun as ocr input/1-document.epub --mistral-ocr mistral-ocr-2512
+bun as ocr input/1-document.docx --mistral-ocr mistral-ocr-latest
+bun as ocr input/1-document.pdf --mistral-ocr mistral-ocr-latest --price
 ```
 
-## Standalone `extract` Flags
+## Standalone `ocr` Flags
 
 | Flag | Description |
 |------|-------------|
@@ -53,11 +53,11 @@ bun as extract input/1-document.pdf --mistral-ocr mistral-ocr-latest --price
 | `--password <value>` | Password for encrypted PDFs |
 | `--lang <codes>` | Accepted by the CLI but ignored by Mistral OCR |
 | `--epub-bun` / `--epub-calibre` | EPUB inspect modes, which take precedence on EPUB inputs |
-| `--price` | Show the aggregated extract estimate and exit |
+| `--price` | Show the aggregated OCR estimate and exit |
 
 ## Notes
 
 - Current pricing metadata in the project config is `$2 / 1000 pages` for both Mistral OCR model IDs.
 - `--lang` is ignored when the active extraction method uses Mistral OCR.
-- Standalone `extract` does not expose the advanced Tesseract tuning flags; those are only available through `write`.
+- Standalone `ocr` does not expose the advanced Tesseract tuning flags; those are only available through `write`.
 - Setup and env details are in [`extract-document-local.md#setup`](./extract-document-local.md#setup).

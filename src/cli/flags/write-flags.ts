@@ -19,6 +19,7 @@ import {
   advancedExtractFlags,
   batchFlags,
   promptFlag,
+  promptOutputFlags,
   structuredWriteFlags,
   priceFlag
 } from './shared-flags'
@@ -169,6 +170,7 @@ export const writeFlags = {
   ...withHelpGroup(advancedExtractFlags, 'step-2-document'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
+  ...withHelpGroup(promptOutputFlags, 'step-3-write'),
   ...withHelpGroup(structuredWriteFlags, 'step-3-write'),
   ...withHelpGroup(writeTtsFlags, 'step-4-tts'),
   ...withHelpGroup(imageGenFlags, 'step-5-image'),

@@ -1,6 +1,7 @@
 
 
 import type { ProcessCommand, RuntimeOptions } from '~/types'
+import { isOcrCommand } from '~/types'
 import type { BatchSource } from './batch-types'
 import { selectBatchItems } from './batch-select'
 import { tryEnumerateYoutubeChannel } from '../youtube-channel-provider'
@@ -13,7 +14,7 @@ export const tryResolveBatchSource = async (
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<ResolvedBatch | null> => {
-  if (command === 'extract') return null
+  if (isOcrCommand(command)) return null
   if (!input.startsWith('http')) return null
 
   const batchOpts = {
@@ -24,23 +25,27 @@ export const tryResolveBatchSource = async (
 
   const ytSource = await tryEnumerateYoutubeChannel(input, batchOpts)
   if (ytSource) {
+    const totalCount = ytSource.items.length
     const selected = selectBatchItems(ytSource.items, batchOpts)
     const sourceWithSelected: BatchSource = { ...ytSource, items: selected }
     return {
       source: sourceWithSelected,
       selectedUrls: selected.map(i => i.url),
-      selectedItems: selected
+      selectedItems: selected,
+      totalCount
     }
   }
 
   const rssSource = await tryEnumeratePodcastFeed(input)
   if (rssSource) {
+    const totalCount = rssSource.items.length
     const selected = selectBatchItems(rssSource.items, batchOpts)
     const sourceWithSelected: BatchSource = { ...rssSource, items: selected }
     return {
       source: sourceWithSelected,
       selectedUrls: selected.map(i => i.url),
-      selectedItems: selected
+      selectedItems: selected,
+      totalCount
     }
   }
 

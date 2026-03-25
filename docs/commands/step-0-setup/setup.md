@@ -6,6 +6,7 @@ Install local runtimes and prerequisite tools. Sample fixture generation is hand
 
 - [Step Setup Docs](#step-setup-docs)
 - [Global Setup Command](#global-setup-command)
+- [Doctor](#doctor)
 - [Targeted Setup Steps](#targeted-setup-steps)
 - [Sample Fixtures](#sample-fixtures)
 
@@ -26,6 +27,16 @@ bun as setup
 ```
 
 Use full setup on a clean machine when you want local download, extract, transcribe, write, or TTS workflows to work without manually installing their prerequisites first.
+
+## Doctor
+
+Check prerequisites, API keys, and configuration without installing anything:
+
+```bash
+bun as setup --doctor
+```
+
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys, config file validity, and Bun version.
 
 ## Targeted Setup Steps
 

@@ -1,6 +1,6 @@
-# transcribe (services)
+# stt (services)
 
-Download audio and transcribe it with the hosted STT providers.
+Download audio and transcribe it with the hosted STT providers. Alias: `transcribe`.
 
 ## Outline
 
@@ -13,10 +13,10 @@ Download audio and transcribe it with the hosted STT providers.
 ## Usage
 
 ```bash
-bun as transcribe [input] [flags]
+bun as stt [input] [flags]
 ```
 
-The input routing is the same as local `transcribe`: direct media URLs, streaming URLs, local media files, URL lists, directories, feeds, and YouTube channels are all supported.
+The input routing is the same as local `stt`: direct media URLs, streaming URLs, local media files, URL lists, directories, feeds, and YouTube channels are all supported.
 
 ## Service Engines
 
@@ -34,22 +34,22 @@ Only one hosted STT provider flag may be active at a time.
 
 ```bash
 # Groq
-bun as transcribe input/1-audio.mp3 --groq-stt whisper-large-v3
+bun as stt input/1-audio.mp3 --groq-stt whisper-large-v3
 
 # ElevenLabs with a speaker-count hint
-bun as transcribe input/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 3
+bun as stt input/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 3
 
 # OpenAI with a speaker-count hint
-bun as transcribe input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --speaker-count 2
+bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --speaker-count 2
 
 # Mistral
-bun as transcribe input/1-audio.mp3 --mistral-stt voxtral-mini-2602
+bun as stt input/1-audio.mp3 --mistral-stt voxtral-mini-2602
 
 # AssemblyAI with a speaker-count hint
-bun as transcribe input/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
+bun as stt input/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
 
 # Price preflight
-bun as transcribe input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
+bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
 ```
 
 ## Flags

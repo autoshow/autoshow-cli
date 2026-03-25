@@ -5,7 +5,7 @@ import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download
 test('CLI invalid whisper model exits with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--whisper',
     'whisper-large-v4'
@@ -17,7 +17,7 @@ test('CLI invalid whisper model exits with usage error code 2', async () => {
 test('CLI invalid ElevenLabs STT model exits with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--elevenlabs-stt',
     'scribe_v3'
@@ -29,7 +29,7 @@ test('CLI invalid ElevenLabs STT model exits with usage error code 2', async () 
 test('CLI invalid Groq STT model exits with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--groq-stt',
     'whisper-large-v4'
@@ -41,7 +41,7 @@ test('CLI invalid Groq STT model exits with usage error code 2', async () => {
 test('CLI invalid OpenAI STT model exits with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--openai-stt',
     'gpt-4o-transcribe'
@@ -53,7 +53,7 @@ test('CLI invalid OpenAI STT model exits with usage error code 2', async () => {
 test('CLI invalid Mistral STT model exits with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--mistral-stt',
     'voxtral-mini-2507'
@@ -65,7 +65,7 @@ test('CLI invalid Mistral STT model exits with usage error code 2', async () => 
 test('CLI invalid Mistral OCR model exits with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'extract',
+    'ocr',
     'input/1-document.pdf',
     '--mistral-ocr',
     'mistral-ocr-2505'
@@ -74,10 +74,10 @@ test('CLI invalid Mistral OCR model exits with usage error code 2', async () => 
   expect(result.exitCode).toBe(2)
 })
 
-test('transcribe help excludes LLM provider flags and includes prompt flag', async () => {
+test('stt help excludes LLM provider flags and includes prompt flag', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     '--help'
   ])
 
@@ -96,10 +96,10 @@ test('transcribe help excludes LLM provider flags and includes prompt flag', asy
   expect(result.stdout).not.toMatch(/--llama(\s|$)/)
 })
 
-test('extract help includes mistral-ocr flag', async () => {
+test('ocr help includes mistral-ocr flag', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'extract',
+    'ocr',
     '--help'
   ])
 
@@ -120,10 +120,10 @@ test('setup help includes calibre step', async () => {
   expect(result.stdout).toContain('calibre')
 })
 
-test('transcribe rejects invalid speaker-count with usage error code 2', async () => {
+test('stt rejects invalid speaker-count with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--speaker-count',
     '0'
@@ -132,10 +132,10 @@ test('transcribe rejects invalid speaker-count with usage error code 2', async (
   expect(result.exitCode).toBe(2)
 })
 
-test('transcribe rejects multiple STT engines with usage error code 2', async () => {
+test('stt rejects multiple STT engines with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--reverb',
     '--elevenlabs-stt',
@@ -145,10 +145,10 @@ test('transcribe rejects multiple STT engines with usage error code 2', async ()
   expect(result.exitCode).toBe(2)
 })
 
-test('transcribe rejects groq-stt with another STT engine', async () => {
+test('stt rejects groq-stt with another STT engine', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--groq-stt',
     'whisper-large-v3',
@@ -159,10 +159,10 @@ test('transcribe rejects groq-stt with another STT engine', async () => {
   expect(result.exitCode).toBe(2)
 })
 
-test('transcribe rejects LLM provider flags with usage error code 2', async () => {
+test('stt rejects LLM provider flags with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--openai',
     'gpt-5.2'
@@ -171,10 +171,10 @@ test('transcribe rejects LLM provider flags with usage error code 2', async () =
   expect(result.exitCode).toBe(2)
 })
 
-test('transcribe rejects MiniMax LLM flag with usage error code 2', async () => {
+test('stt rejects MiniMax LLM flag with usage error code 2', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--minimax',
     'MiniMax-M2.5'
@@ -368,4 +368,27 @@ test('buildOptsFromFlags maps --gemini-voice to geminiVoiceId', () => {
 
   expect(opts.geminiTtsModel).toBe('gemini-2.5-flash-preview-tts')
   expect(opts.geminiVoiceId).toBe('Kore')
+})
+
+test('buildOptsFromFlags maps --json-output to structured output', () => {
+  const opts = buildOptsFromFlags(false, {
+    'json-output': true
+  })
+
+  expect(opts.structured).toBe(true)
+})
+
+test('buildOptsFromFlags maps --md-output to markdown output', () => {
+  const opts = buildOptsFromFlags(false, {
+    'md-output': true
+  })
+
+  expect(opts.structured).toBe(false)
+})
+
+test('buildOptsFromFlags rejects conflicting output mode flags', () => {
+  expect(() => buildOptsFromFlags(false, {
+    'json-output': true,
+    'md-output': true
+  })).toThrow('Cannot use both --json-output and --md-output at the same time.')
 })

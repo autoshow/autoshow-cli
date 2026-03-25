@@ -152,6 +152,12 @@ export const buildOptsFromFlags = (
   const ddArgs = parseDoubleDashArgs(doubleDashArgs)
 
   const mergedFlags: Record<string, unknown> = { ...ddArgs, ...flags }
+  const jsonOutput = readBooleanFlag(mergedFlags, 'json-output')
+  const mdOutput = readBooleanFlag(mergedFlags, 'md-output')
+
+  if (jsonOutput && mdOutput) {
+    throw CLIUsageError('Cannot use both --json-output and --md-output at the same time.')
+  }
 
   const outputFormat = readStringFlag(mergedFlags, 'out', 'json')
   const normalizedOut: OutputFormat = outputFormat === 'text' || outputFormat === 'tsv' || outputFormat === 'hocr' ? outputFormat : 'json'
@@ -229,12 +235,16 @@ export const buildOptsFromFlags = (
     mistralSttModel,
     assemblyaiSttModel,
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
-    price: readBooleanFlag(mergedFlags, 'price'),
+    price: readBooleanFlag(mergedFlags, 'price') || readBooleanFlag(mergedFlags, 'dry-run'),
     allowOverBudget: readBooleanFlag(mergedFlags, 'allow-over-budget'),
     reverbVerbatimicity: parseFloatWithDefault(readOptionalStringFlag(mergedFlags, 'reverb-verbatimicity'), 0.5),
     split: readBooleanFlag(mergedFlags, 'split'),
     skipLLM,
-    structured: readBooleanFlagWithDefault(mergedFlags, 'structured', true),
+    structured: jsonOutput
+      ? true
+      : mdOutput
+        ? false
+        : readBooleanFlagWithDefault(mergedFlags, 'structured', true),
     structuredStrict: readBooleanFlagWithDefault(mergedFlags, 'structured-strict', true),
     structuredCompatRetries: parseNonNegativeIntFlag(readOptionalStringFlag(mergedFlags, 'structured-compat-retries'), 'structured-compat-retries', 2),
     dpi: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'dpi'), 300),

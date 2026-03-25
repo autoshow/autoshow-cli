@@ -36,7 +36,7 @@ export const defineSTTServiceTest = ({
   test(`rejects invalid ${sttService} model`, async () => {
     const result = await runCommand([
       'src/cli/create-cli.ts',
-      'transcribe',
+      'stt',
       STABLE_LOCAL_AUDIO_PATH,
       cliFlag,
       'invalid-model'
@@ -57,7 +57,7 @@ export const defineSTTServiceTest = ({
 
       const result = await runCommand([
         'src/cli/create-cli.ts',
-        'transcribe',
+        'stt',
         STABLE_LOCAL_AUDIO_PATH,
         cliFlag,
         model,
@@ -94,7 +94,7 @@ export const defineSTTServiceTest = ({
     budgetedTest(budgetKey, `${sttService} ${model} --price prints estimate`, async () => {
       const result = await runCommand([
         'src/cli/create-cli.ts',
-        'transcribe',
+        'stt',
         STABLE_LOCAL_AUDIO_PATH,
         cliFlag,
         model,

@@ -304,11 +304,11 @@ Only flags explicitly typed on the command line override config values. Flags th
 
 Every runnable command (`download`, `transcribe`, `write`, `extract`, `tts`, `image`, `music`, `video`) runs a cost preflight automatically before executing. The estimate is logged to the console.
 
-To show the estimate and exit without running the pipeline, pass `--price`:
+To show the estimate and exit without running the pipeline, pass `--price` or `--dry-run`:
 
 ```bash
 bun as write input/audio.mp3 --price
-bun as write input/audio.mp3 --openai gpt-5.2 --price
+bun as write input/audio.mp3 --openai gpt-5.2 --dry-run
 ```
 
 ## Budget enforcement
@@ -423,6 +423,10 @@ Notable findings from the full pricing comparison:
 | `--reset` | boolean | Clear the config file |
 | `--config-path` | string | Path to config file (global, all commands) |
 | `--allow-over-budget` | boolean | Continue when estimate exceeds maxUsd (global, never persisted) |
+| `--verbose` | boolean | Enable debug-level logging (global, overrides AUTOSHOW_LOG_LEVEL) |
+| `--quiet` / `-q` | boolean | Suppress all output except errors (global, overrides AUTOSHOW_LOG_LEVEL) |
+| `--json` | boolean | Output logs as JSON (global, overrides AUTOSHOW_LOG_FORMAT) |
+| `--dry-run` | boolean | Preview what would happen without executing (same as --price) |
 | `--max-cents` | number | Budget limit in cents |
 | `--max-usd` | number | Budget limit in USD |
 | All provider/model flags | string | Same surface as `write`, `tts`, `image`, `music`, `video` |

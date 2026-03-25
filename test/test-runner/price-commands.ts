@@ -79,55 +79,55 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   }))),
 
   ...exact('test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts', [
-    reportOnly('transcribe-url-audio', ['src/cli/create-cli.ts', 'transcribe', 'https://ajc.pics/autoshow/1-audio.mp3', '--whisper', 'tiny', '--price']),
-    reportOnly('transcribe-url-video', ['src/cli/create-cli.ts', 'transcribe', 'https://ajc.pics/autoshow/2-video.mp4', '--whisper', 'tiny', '--price']),
+    reportOnly('transcribe-url-audio', ['src/cli/create-cli.ts', 'stt', 'https://ajc.pics/autoshow/1-audio.mp3', '--whisper', 'tiny', '--price']),
+    reportOnly('transcribe-url-video', ['src/cli/create-cli.ts', 'stt', 'https://ajc.pics/autoshow/2-video.mp4', '--whisper', 'tiny', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts', [
-    reportOnly('transcribe-youtube-single', ['src/cli/create-cli.ts', 'transcribe', 'https://www.youtube.com/watch?v=u1-WHqATSQU', '--whisper', 'tiny', '--price']),
-    reportOnly('transcribe-twitch', ['src/cli/create-cli.ts', 'transcribe', 'https://www.twitch.tv/videos/1844440442', '--whisper', 'tiny', '--price']),
-    reportOnly('transcribe-streaming-url-list-batch-1', ['src/cli/create-cli.ts', 'transcribe', 'input/2-urls.md', '--batch-limit', '1', '--whisper', 'tiny', '--price']),
+    reportOnly('transcribe-youtube-single', ['src/cli/create-cli.ts', 'stt', 'https://www.youtube.com/watch?v=u1-WHqATSQU', '--whisper', 'tiny', '--price']),
+    reportOnly('transcribe-twitch', ['src/cli/create-cli.ts', 'stt', 'https://www.twitch.tv/videos/1844440442', '--whisper', 'tiny', '--price']),
+    reportOnly('transcribe-streaming-url-list-batch-1', ['src/cli/create-cli.ts', 'stt', 'input/2-urls.md', '--batch-limit', '1', '--whisper', 'tiny', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts', [
-    reportOnly('transcribe-rss-batch-1', ['src/cli/create-cli.ts', 'transcribe', 'https://ajcwebdev.substack.com/feed', '--batch-limit', '1', '--whisper', 'tiny', '--price']),
-    reportOnly('transcribe-youtube-channel-batch-1', ['src/cli/create-cli.ts', 'transcribe', 'https://www.youtube.com/@fireship', '--batch-limit', '1', '--whisper', 'tiny', '--price']),
+    reportOnly('transcribe-rss-batch-1', ['src/cli/create-cli.ts', 'stt', 'https://ajcwebdev.substack.com/feed', '--batch-limit', '1', '--whisper', 'tiny', '--price']),
+    reportOnly('transcribe-youtube-channel-batch-1', ['src/cli/create-cli.ts', 'stt', 'https://www.youtube.com/@fireship', '--batch-limit', '1', '--whisper', 'tiny', '--price']),
   ]),
 
   ...exact('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-default.test.ts', [
-    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'tiny', '--price']),
-    command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'base', '--price']),
-    command('transcribe-whisper-split', 'transcribe-whisper-split', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--split', '--whisper', 'tiny', '--price']),
+    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'tiny', '--price']),
+    command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'base', '--price']),
+    command('transcribe-whisper-split', 'transcribe-whisper-split', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--split', '--whisper', 'tiny', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-models-price.test.ts', [
-    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'tiny', '--price']),
-    command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'base', '--price']),
-    command('transcribe-whisper-small', 'transcribe-whisper-small', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'small', '--price']),
-    command('transcribe-whisper-medium', 'transcribe-whisper-medium', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'medium', '--price']),
-    command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
+    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'tiny', '--price']),
+    command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'base', '--price']),
+    command('transcribe-whisper-small', 'transcribe-whisper-small', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'small', '--price']),
+    command('transcribe-whisper-medium', 'transcribe-whisper-medium', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'medium', '--price']),
+    command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-large-v3-turbo.test.ts', [
-    command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
-    command('transcribe-whisper-large-v3-turbo-split', 'transcribe-whisper-large-v3-turbo-split', ['src/cli/create-cli.ts', 'transcribe', 'input/2-video.mp4', '--whisper', 'large-v3-turbo', '--split', '--price']),
+    command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
+    command('transcribe-whisper-large-v3-turbo-split', 'transcribe-whisper-large-v3-turbo-split', ['src/cli/create-cli.ts', 'stt', 'input/2-video.mp4', '--whisper', 'large-v3-turbo', '--split', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/', [
-    command('transcribe-reverb', 'transcribe-reverb', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--reverb', '--reverb-verbatimicity', '0.5', '--price']),
+    command('transcribe-reverb', 'transcribe-reverb', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--reverb', '--reverb-verbatimicity', '0.5', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/', [
-    command('transcribe-assemblyai-universal-2', 'transcribe-assemblyai-universal-2', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--assemblyai-stt', 'universal-2', '--price']),
-    command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
+    command('transcribe-assemblyai-universal-2', 'transcribe-assemblyai-universal-2', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--assemblyai-stt', 'universal-2', '--price']),
+    command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/elevenlabs/', [
-    command('transcribe-elevenlabs-scribe_v2', 'transcribe-elevenlabs-scribe_v2', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--elevenlabs-stt', 'scribe_v2', '--price']),
+    command('transcribe-elevenlabs-scribe_v2', 'transcribe-elevenlabs-scribe_v2', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--elevenlabs-stt', 'scribe_v2', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/groq/', [
-    command('transcribe-groq-whisper-large-v3', 'transcribe-groq-whisper-large-v3', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--groq-stt', 'whisper-large-v3', '--price']),
-    command('transcribe-groq-whisper-large-v3-turbo', 'transcribe-groq-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--groq-stt', 'whisper-large-v3-turbo', '--price']),
+    command('transcribe-groq-whisper-large-v3', 'transcribe-groq-whisper-large-v3', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--groq-stt', 'whisper-large-v3', '--price']),
+    command('transcribe-groq-whisper-large-v3-turbo', 'transcribe-groq-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--groq-stt', 'whisper-large-v3-turbo', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/openai/', [
-    command('transcribe-openai-gpt-4o-transcribe-diarize', 'transcribe-openai-gpt-4o-transcribe-diarize', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--openai-stt', 'gpt-4o-transcribe-diarize', '--price']),
+    command('transcribe-openai-gpt-4o-transcribe-diarize', 'transcribe-openai-gpt-4o-transcribe-diarize', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--openai-stt', 'gpt-4o-transcribe-diarize', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/mistral/', [
-    command('transcribe-mistral-voxtral-mini-2602', 'transcribe-mistral-voxtral-mini-2602', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--mistral-stt', 'voxtral-mini-2602', '--price']),
-    command('transcribe-mistral-voxtral-mini-latest', 'transcribe-mistral-voxtral-mini-latest', ['src/cli/create-cli.ts', 'transcribe', 'input/1-audio.mp3', '--mistral-stt', 'voxtral-mini-latest', '--price']),
+    command('transcribe-mistral-voxtral-mini-2602', 'transcribe-mistral-voxtral-mini-2602', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--mistral-stt', 'voxtral-mini-2602', '--price']),
+    command('transcribe-mistral-voxtral-mini-latest', 'transcribe-mistral-voxtral-mini-latest', ['src/cli/create-cli.ts', 'stt', 'input/1-audio.mp3', '--mistral-stt', 'voxtral-mini-latest', '--price']),
   ]),
 
   ...prefix('test/test-cases/e2e/step-3-write-e2e/write-services/openai/', [
@@ -233,11 +233,11 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   ]),
 
   ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts', [
-    command('extract-mistral-mistral-ocr-latest', 'extract-mistral-mistral-ocr-latest', ['src/cli/create-cli.ts', 'extract', 'input/1-document.pdf', '--mistral-ocr', 'mistral-ocr-latest', '--price']),
-    command('extract-mistral-mistral-ocr-2512', 'extract-mistral-mistral-ocr-2512', ['src/cli/create-cli.ts', 'extract', 'input/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2512', '--price']),
+    command('extract-mistral-mistral-ocr-latest', 'extract-mistral-mistral-ocr-latest', ['src/cli/create-cli.ts', 'ocr', 'input/1-document.pdf', '--mistral-ocr', 'mistral-ocr-latest', '--price']),
+    command('extract-mistral-mistral-ocr-2512', 'extract-mistral-mistral-ocr-2512', ['src/cli/create-cli.ts', 'ocr', 'input/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2512', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts', [
-    command('extract-paddle-ocr-image', 'extract-paddle-ocr-image', ['src/cli/create-cli.ts', 'extract', 'input/1-document.pdf', '--paddle-ocr', '--price']),
+    command('extract-paddle-ocr-image', 'extract-paddle-ocr-image', ['src/cli/create-cli.ts', 'ocr', 'input/1-document.pdf', '--paddle-ocr', '--price']),
   ]),
 ]
 

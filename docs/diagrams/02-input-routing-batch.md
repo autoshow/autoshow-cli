@@ -37,7 +37,7 @@ src/cli/commands/process-steps/step-1-download/targets/handle-process-target.ts
 │  │  handleDirectoryTargetBatch()                                     │        │
 │  │  1. collectInputFiles() → find all media/doc/image files          │        │
 │  │  2. If dir named "input/" → also read 2-urls.md for URLs          │        │
-│  │  3. Filter docs-only when command='extract'                       │        │
+│  │  3. Filter docs-only when command='ocr'                           │        │
 │  │  4. processBatch(allItems) → concurrency-limited batch run        │        │
 │  └───────────────────────────────────────────────────────────────────┘        │
 │                                                                              │
@@ -104,7 +104,7 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
        v          v           v              v           v
   ┌──────────────────────┐  ┌──────────────────────────────┐
   │  DOCUMENT PIPELINE   │  │     MEDIA PIPELINE           │
-  │  extract / write     │  │     transcribe / write       │
+  │  ocr / write         │  │     stt / write              │
   └──────────────────────┘  └──────────────────────────────┘
 ```
 
@@ -113,20 +113,20 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
 ```
                     url_streaming   url_direct_media   url_direct_document   local_media   local_document
                    ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
-  transcribe      │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
+  stt             │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
                   │             │                  │                     │             │
   write           │  MEDIA (3)  │     MEDIA (3)    │   DOCUMENT (4)      │  MEDIA (3)  │ DOCUMENT (4)
                   │             │                  │                     │             │
-  extract         │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
+  ocr             │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
                   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
 
   (1) processVideo() with skipLLM=true
-  (2) CLIUsageError: "Use: bun as extract or bun as write"
+  (2) CLIUsageError: "Use: bun as ocr or bun as write"
   (3) processVideo() with full LLM pipeline
   (4) processDocument() + buildDocumentPrompt() + LLM summary
   (5) CLIUsageError: "Use a direct document URL or local file"
   (6) processDocument() extraction only
-  (7) Skipped with warning: "non-document file in extract mode"
+  (7) Skipped with warning: "non-document file in ocr mode"
 ```
 
 ## Batch Processing Flow

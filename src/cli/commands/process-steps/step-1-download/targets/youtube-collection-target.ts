@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import * as l from '~/logger'
 import { exec, loadEnvFile } from '~/utils/cli-utils'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
+import { isOcrCommand } from '~/types'
 import { isLikelyUrl, processBatch } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { validateDataSafe } from '~/utils/validate/validation'
@@ -62,7 +63,7 @@ export const resolveYoutubeCollectionItems = async (
   resolvedTarget: string,
   command: ProcessCommand
 ): Promise<string[] | null> => {
-  if (!isLikelyUrl(resolvedTarget) || !isYoutubeUrl(resolvedTarget) || command === 'extract') {
+  if (!isLikelyUrl(resolvedTarget) || !isYoutubeUrl(resolvedTarget) || isOcrCommand(command)) {
     return null
   }
 

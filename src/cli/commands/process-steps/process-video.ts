@@ -46,7 +46,9 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   if (processingOptions.skipLLM) {
     await runWithLogContext({ step: 'step-3-write' }, async () => {
       const promptPath = `${outputDir}/prompt.md`
-      const instruction = await resolvePromptNames(processingOptions.prompts ?? [])
+      const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
+        exampleFormat: processingOptions.structured === false ? 'markdown' : 'json'
+      })
       const promptContent = buildPrompt(metadata, transcriptionResult.result, instruction)
       await Bun.write(promptPath, promptContent)
     })

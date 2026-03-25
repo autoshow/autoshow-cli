@@ -1,9 +1,16 @@
+export type PromptExampleFormat = 'json' | 'markdown'
+
+export type PromptExamples = {
+  json: string
+  markdown: string
+}
+
 export type LeafPrompt = {
   description: string
   expectedInputTokens: number
   expectedOutputTokens: number
   instruction: string
-  example: string
+  examples: PromptExamples
   structuredPreset?: string | undefined
 }
 

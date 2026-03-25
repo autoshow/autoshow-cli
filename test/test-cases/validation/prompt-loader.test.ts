@@ -23,10 +23,22 @@ describe('prompt loader token estimates', () => {
     await expect(resolvePromptTokenEstimate(['missing-prompt'])).rejects.toThrow('Unknown prompt')
   })
 
-  test('default prompt still resolves instructions', async () => {
+  test('default prompt resolves JSON examples', async () => {
     const resolved = await resolvePromptNames([])
-    expect(resolved).toContain('Episode Description')
-    expect(resolved).toContain('Episode Summary')
+    expect(resolved).toContain('Example JSON output:')
+    expect(resolved).toContain('"shortSummary": {')
+    expect(resolved).toContain('"longSummary": {')
+    expect(resolved).toContain('"chapters": {')
+  })
+
+  test('markdown prompt examples remain selectable', async () => {
+    const resolved = await resolvePromptNames([], { exampleFormat: 'markdown' })
+    expect(resolved.match(/Format the output like so:/g)?.length).toBe(1)
+    expect(resolved.indexOf('- Write a one-sentence description of the transcript.')).toBeLessThan(
+      resolved.indexOf('Format the output like so:')
+    )
+    expect(resolved).toContain('## Episode Description')
+    expect(resolved).toContain('## Episode Summary')
     expect(resolved).toContain('## Chapters')
   })
 })

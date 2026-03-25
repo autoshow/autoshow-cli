@@ -16,6 +16,7 @@ import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-documen
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
+import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { isDocumentByExtension, isLikelyUrl } from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
@@ -180,7 +181,9 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
 
   const useLegacyFallback = opts.structured === false && !hasExplicitLlmProvider(opts)
   if (useLegacyFallback) {
-    const instruction = await resolvePromptNames(opts.prompts ?? [])
+    const instruction = await resolvePromptNames(opts.prompts ?? [], {
+      exampleFormat: 'markdown'
+    })
     const prompt = buildDocumentPrompt(extraction.result.text, extraction.step1Metadata, instruction)
     const promptPath = `${extraction.outputDir}/prompt.md`
     await Bun.write(promptPath, prompt)
@@ -549,6 +552,8 @@ export const processSingleTarget = async (
   opts: RuntimeOptions,
   preflightEstimate?: AggregatedPriceEstimate
 ): Promise<void> => {
+  const displayCommand = canonicalizeProcessCommand(command)
+
   if (command === 'download') {
     if (isLikelyUrl(item)) {
       const kind = classifyUrlInput(item)
@@ -583,13 +588,13 @@ export const processSingleTarget = async (
   if (isLikelyUrl(item)) {
     const kind = classifyUrlInput(item)
     if (kind === 'url_direct_document') {
-      if (command === 'transcribe') {
-        throw CLIUsageError(`Unsupported transcribe input "${item}". Use: bun as extract <input> or bun as write <input>`)
+      if (isSttCommand(command)) {
+        throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
       }
 
       const downloaded = await downloadDocumentUrlToTempFile(item)
       try {
-        if (command === 'extract') {
+        if (isOcrCommand(command)) {
           await processExtractSingle(downloaded.filePath, baseDir, opts)
         } else {
           await runDocumentWrite(downloaded.filePath, baseDir, opts)
@@ -600,8 +605,8 @@ export const processSingleTarget = async (
       return
     }
 
-    if (command === 'extract') {
-      throw CLIUsageError(`Unsupported extract input "${item}". Use a direct document URL or local file.`)
+    if (isOcrCommand(command)) {
+      throw CLIUsageError(`Unsupported ocr input "${item}". Use a direct document URL or local file.`)
     }
 
     await processMediaSingle(item, baseDir, opts, preflightEstimate)
@@ -610,16 +615,16 @@ export const processSingleTarget = async (
 
   const exists = await fileExists(item)
   if (!exists) {
-    throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help ${command}`)
+    throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help ${displayCommand}`)
   }
 
   const isDocExt = isDocumentByExtension(item)
   const detected = isDocExt ? await detectDocumentFormat(item) : null
   const kind: InputKind = (isDocExt || detected !== null) ? 'local_document' : 'local_media'
 
-  if (command === 'extract') {
+  if (isOcrCommand(command)) {
     if (kind !== 'local_document') {
-      l.warn(`Skipping non-document file in extract mode: ${item}`)
+      l.warn(`Skipping non-document file in ocr mode: ${item}`)
       return
     }
     await processExtractSingle(item, baseDir, opts)
@@ -631,8 +636,8 @@ export const processSingleTarget = async (
     return
   }
 
-  if (command === 'transcribe' && kind === 'local_document') {
-    throw CLIUsageError(`Unsupported transcribe input "${item}". Use: bun as extract <input> or bun as write <input>`)
+  if (isSttCommand(command) && kind === 'local_document') {
+    throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
   }
 
   await processMediaSingle(item, baseDir, opts, preflightEstimate)

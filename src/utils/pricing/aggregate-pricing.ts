@@ -1,4 +1,5 @@
 import type { ProcessCommand, RuntimeOptions } from '~/types'
+import { isOcrCommand, isSttCommand } from '~/types'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
 import { estimateTtsCost } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
@@ -288,7 +289,7 @@ export const buildAggregatedPriceEstimate = async (
   const steps: StepEstimate[] = []
   let totalEstimatedCost = 0
 
-  if (command === 'transcribe' || command === 'write') {
+  if (isSttCommand(command) || command === 'write') {
     const stt = await buildSttEstimate(resolvedTarget, opts)
     if (stt) {
       steps.push(stt)
@@ -296,7 +297,7 @@ export const buildAggregatedPriceEstimate = async (
     }
   }
 
-  if (command === 'extract') {
+  if (isOcrCommand(command)) {
     const extract = await buildExtractEstimate(resolvedTarget, opts)
     if (extract) {
       steps.push(extract)

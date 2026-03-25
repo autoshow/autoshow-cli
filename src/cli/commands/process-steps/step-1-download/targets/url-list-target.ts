@@ -37,7 +37,8 @@ export const handleInputListTargetBatch = async (
   const { ok, fail } = await processBatch(selectedUrls, 'inputs', command, opts, processSingleTarget, {
     source,
     selectedItems,
-    concurrency: opts.batchConcurrency
+    concurrency: opts.batchConcurrency,
+    totalCount: items.length
   })
   if (ok === 0 && fail > 0) {
     throw new Error(`Batch processing failed for ${fail} item(s)`)

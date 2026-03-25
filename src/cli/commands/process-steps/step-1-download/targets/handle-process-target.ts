@@ -1,6 +1,7 @@
 import * as l from '~/logger'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
+import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/types'
 import {
   buildOptsFromFlags,
   classifyTopLevelTarget,
@@ -24,13 +25,13 @@ const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): 
   if (command === 'download') {
     return ['Audio or document file', 'metadata.json']
   }
-  if (command === 'extract') {
+  if (isOcrCommand(command)) {
     if (opts.useEpubBun || opts.useEpubCalibre) {
       return ['metadata.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)']
     }
     return ['Extracted text', 'metadata.json']
   }
-  if (command === 'transcribe') {
+  if (isSttCommand(command)) {
     return ['Audio file', 'transcription.txt', 'prompt.md', 'metadata.json']
   }
   const hasNonLlamaLlmProvider = !!(
@@ -89,7 +90,7 @@ const resolvePriceTargets = async (
 
   if (topLevel.kind === 'directory') {
     const allFiles = await collectInputFiles(resolvedTarget)
-    const files = command === 'extract'
+    const files = isOcrCommand(command)
       ? allFiles.filter(file => isDocumentByExtension(file))
       : allFiles
 
@@ -132,8 +133,10 @@ export const handleProcessTarget = async (
   rawFlags: Record<string, unknown>,
   doubleDash: string[] = []
 ): Promise<void> => {
-  if (command === 'transcribe' && hasTranscribeUnsupportedLLMFlags(rawFlags, doubleDash)) {
-    throw CLIUsageError('LLM provider flags are not supported with "transcribe" (--openai, --groq, --gemini, --anthropic, --minimax, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.')
+  const displayCommand = canonicalizeProcessCommand(command)
+
+  if (isSttCommand(command) && hasTranscribeUnsupportedLLMFlags(rawFlags, doubleDash)) {
+    throw CLIUsageError('LLM provider flags are not supported with "stt" (--openai, --groq, --gemini, --anthropic, --minimax, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.')
   }
 
   let resolvedTarget: string
@@ -142,9 +145,9 @@ export const handleProcessTarget = async (
   } else if (doubleDash.length === 1) {
     resolvedTarget = doubleDash[0] as string
   } else if (doubleDash.length > 1) {
-    throw CLIUsageError(`Too many positional inputs for "${command}": ${doubleDash.join(' ')}. Run: bun as help ${command}`)
+    throw CLIUsageError(`Too many positional inputs for "${displayCommand}": ${doubleDash.join(' ')}. Run: bun as help ${displayCommand}`)
   } else {
-    throw CLIUsageError(`Missing input for "${command}". Run: bun as help ${command}`)
+    throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
   }
 
 
@@ -154,16 +157,16 @@ export const handleProcessTarget = async (
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
 
-  const opts = buildOptsFromFlags(command === 'transcribe' || command === 'download', mergedFlags, doubleDash)
+  const opts = buildOptsFromFlags(isSttCommand(command) || command === 'download', mergedFlags, doubleDash)
 
-  if (command === 'write' || command === 'transcribe') {
+  if (command === 'write' || isSttCommand(command)) {
     const sttEngineCount = [opts.useReverb, opts.elevenlabsSttModel, opts.groqSttModel, opts.openaiSttModel, opts.mistralSttModel, opts.assemblyaiSttModel].filter(Boolean).length
     if (sttEngineCount > 1) {
       throw CLIUsageError('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
     }
   }
 
-  if (command === 'extract' || command === 'write') {
+  if (isOcrCommand(command) || command === 'write') {
     const ocrEngineCount = [opts.useOcrmypdf, opts.usePaddleOcr, opts.mistralOcrModel].filter(Boolean).length
     if (ocrEngineCount > 1) {
       throw CLIUsageError('Cannot use more than one extract OCR engine at the same time (--ocrmypdf, --paddle-ocr, --mistral-ocr)')
@@ -242,7 +245,8 @@ export const handleProcessTarget = async (
       {
         source: resolved.source,
         selectedItems: resolved.selectedItems,
-        concurrency: opts.batchConcurrency
+        concurrency: opts.batchConcurrency,
+        totalCount: resolved.totalCount
       }
     )
     if (ok === 0 && fail > 0) {

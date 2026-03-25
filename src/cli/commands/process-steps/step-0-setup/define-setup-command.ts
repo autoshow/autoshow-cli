@@ -2,6 +2,7 @@ import { defineCommand } from 'clerc'
 import { setupFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { runCompleteSetup, runSetupStep, type SetupStepId } from './setup-orchestrator/run-complete-setup'
+import { runDoctor } from './run-doctor'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 
@@ -12,6 +13,11 @@ export const setupCommand = defineCommand({
   description: 'Install local dependencies and required tools',
   flags: setupFlags
 }, async (ctx) => {
+  if (ctx.flags.doctor) {
+    await runDoctor()
+    return
+  }
+
   const step = ctx.flags.step as string
   if (!VALID_SETUP_STEPS.includes(step as SetupStepId)) {
     throw CLIUsageError(`Invalid --step value: ${step}. Valid values: ${VALID_SETUP_STEPS.join(', ')}`)
