@@ -9,11 +9,9 @@ bun t \
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
+- [Sample Fixture Generation](#sample-fixture-generation)
 
 ## Validation / Price / Non-E2E
-
-**Tier:** `smoke`
 
 ```bash
 bun t test/test-cases/smoke/sample/sample-command.test.ts
@@ -31,9 +29,7 @@ Coverage (no tools required):
 
 No assertions on human log strings; all assertions use exit codes, `fileExists`, and structured `manifest.json` fields.
 
-## E2E Local
-
-**Tier:** `local`
+## Sample Fixture Generation
 
 ```bash
 bun t test/test-cases/local/sample/sample-generate.test.ts

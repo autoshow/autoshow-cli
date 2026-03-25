@@ -28,12 +28,12 @@ Additional provider-specific coverage:
 
 ## E2E Services
 
-**Tier:** `api`
-
 ```bash
 bun t test/test-cases/e2e/step-5-image-gen-e2e/openai-image-gen.test.ts
 bun t test/test-cases/e2e/step-5-image-gen-e2e/gemini-image-gen.test.ts
 bun t test/test-cases/e2e/step-5-image-gen-e2e/minimax-image-gen.test.ts
+bun t test/test-cases/e2e/step-5-image-gen-e2e/ --test-price
+bun t test/test-cases/e2e/step-5-image-gen-e2e/openai-image-gen.test.ts --budget 25
 ```
 
 Setup details are in [`text-to-image-setup.md`](./text-to-image-setup.md).

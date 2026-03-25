@@ -17,8 +17,8 @@ Extract text from documents and images with the local extract engines exposed by
 - [Notes](#notes)
 - [Local Tests](#local-tests)
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Smoke](#e2e-smoke)
-- [E2E Slow-Local](#e2e-slow-local)
+- [Core Local Paths](#core-local-paths)
+- [Heavier Local Paths](#heavier-local-paths)
 
 ## Setup
 
@@ -163,8 +163,8 @@ These are the flags currently exposed by the standalone `extract` command:
 
 ```bash
 bun t \
-  test/test-cases/e2e/step-2-extract-e2e/extract-options.test.ts \
-  test/test-cases/e2e/step-2-extract-e2e/extract-paddle-ocr-image.test.ts
+  test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-options.test.ts \
+  test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
@@ -173,12 +173,10 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 
 No standalone local extract validation or price file exists. Validation is mixed into `extract-options.test.ts`.
 
-### E2E Smoke
-
-**Tier:** `smoke`
+### Core Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-options.test.ts
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-options.test.ts
 ```
 
 Current coverage in this file includes:
@@ -193,12 +191,13 @@ Current coverage in this file includes:
 - rejection of non-JSON `--out` in EPUB inspect mode
 - non-EPUB fallback when `--epub-bun` is passed
 
-### E2E Slow-Local
+`extract-options.test.ts` does not currently have mapped `--test-price` commands.
 
-**Tier:** `slow-local`
+### Heavier Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-paddle-ocr-image.test.ts
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts --budget 5
 ```
 
 Covers PaddleOCR image extraction.

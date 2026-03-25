@@ -5,6 +5,18 @@ export type ApiCheapPriceCommand = {
   args: string[]
 }
 
+export type PriceCommandSpec = {
+  name: string
+  key: string
+  args: string[]
+  budgetSkippable: boolean
+}
+
+export type PriceSelectionEntry = PriceCommandSpec & {
+  selector: string
+  selectorKind: 'file' | 'prefix'
+}
+
 export type VideoSelection = {
   provider: VideoProvider
   model: string
@@ -13,8 +25,6 @@ export type VideoSelection = {
   resolution?: string
   totalCost: number
 }
-
-export type Tier = 'smoke' | 'local' | 'api' | 'slow-local' | 'slow-api'
 
 export type TestStatus = 'passed' | 'failed' | 'skipped'
 
@@ -83,6 +93,7 @@ export type ParsedJunitCase = {
 
 export type PriceCommandResult = {
   name: string
+  key: string
   args: string[]
   status: TestStatus
   exitCode: number

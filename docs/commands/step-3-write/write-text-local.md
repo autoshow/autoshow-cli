@@ -15,9 +15,9 @@ Run `write` with a local llama.cpp model.
 - [Flags](#flags)
 - [Notes](#notes)
 - [Local Tests](#local-tests)
-- [E2E Local](#e2e-local)
-- [E2E Slow-Local](#e2e-slow-local)
-- [Related Local Coverage Routed as API](#related-local-coverage-routed-as-api)
+- [Core Local Paths](#core-local-paths)
+- [Heavier Local Paths](#heavier-local-paths)
+- [Related Local Coverage](#related-local-coverage)
 
 ## Setup
 
@@ -102,46 +102,43 @@ Prompt names are loaded from `src/prompts/prompts.json`. Common names include:
 
 ```bash
 bun t \
-  test/test-cases/e2e/step-3-write-e2e/llama/llama-smoke.test.ts \
-  test/test-cases/e2e/step-3-write-e2e/llama/llama-models.test.ts \
-  test/test-cases/e2e/step-3-write-e2e/llama/llama-qwen.test.ts \
-  test/test-cases/e2e/step-3-write-e2e/write-subcommand-local.test.ts
+  test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts \
+  test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-models.test.ts \
+  test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-qwen.test.ts \
+  test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
 
-### E2E Local
-
-**Tier:** `local`
+### Core Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-3-write-e2e/llama/llama-smoke.test.ts
-bun t test/test-cases/e2e/step-3-write-e2e/llama/llama-models.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-models.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts --test-price
 ```
 
 Covers:
 - local llama smoke / price coverage
 - the Gemma local model
 
-### E2E Slow-Local
-
-**Tier:** `slow-local`
+### Heavier Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-3-write-e2e/llama/llama-qwen.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-qwen.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-qwen.test.ts --budget 5
 ```
 
 Covers the Qwen local model.
 
-### Related Local Coverage Routed as API
+### Related Local Coverage
 
 `write-subcommand-local.test.ts` exercises local llama flows for:
 - audio input
 - document input
 - multi-prompt local output
 
-It currently routes to the `api` tier because of its file location:
-
 ```bash
-bun t test/test-cases/e2e/step-3-write-e2e/write-subcommand-local.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --budget 5
 ```

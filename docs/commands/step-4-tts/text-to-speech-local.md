@@ -14,8 +14,8 @@ Generate speech audio from a local text file with Kitten TTS.
 - [Flags](#flags)
 - [Output](#output)
 - [Local Tests](#local-tests)
-- [E2E Local](#e2e-local)
-- [Related Slow-API Setup Coverage](#related-slow-api-setup-coverage)
+- [Core Local Paths](#core-local-paths)
+- [Related Setup Coverage](#related-setup-coverage)
 
 ## Setup
 
@@ -91,17 +91,16 @@ Each standalone `tts` run writes:
 ```bash
 bun t \
   test/test-cases/e2e/step-0-setup-e2e/tts-models/tts-setup.test.ts \
-  test/test-cases/e2e/step-4-tts-e2e/kitten-tts.test.ts
+  test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
 
-### E2E Local
-
-**Tier:** `local`
+### Core Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-4-tts-e2e/kitten-tts.test.ts
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --test-price --budget 5
 ```
 
 Covers:
@@ -111,9 +110,7 @@ Covers:
 - mutual exclusion with hosted TTS flags
 - invalid Kitten model and invalid speaker rejection
 
-### Related Slow-API Setup Coverage
-
-**Tier:** `slow-api`
+### Related Setup Coverage
 
 ```bash
 bun t test/test-cases/e2e/step-0-setup-e2e/tts-models/tts-setup.test.ts

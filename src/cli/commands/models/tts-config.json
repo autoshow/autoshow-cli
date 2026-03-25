@@ -17,25 +17,37 @@
         "description": "Kitten TTS Mini — balanced quality and speed",
         "hfRepo": "KittenML/kitten-tts-mini-0.8",
         "costPer1kCharsUSD": 0,
-        "costPer1kCharsCents": 0
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 40900
+        }
       },
       "kitten-tts-micro": {
         "description": "Kitten TTS Micro — lightweight",
         "hfRepo": "KittenML/kitten-tts-micro-0.8",
         "costPer1kCharsUSD": 0,
-        "costPer1kCharsCents": 0
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 111074
+        }
       },
       "kitten-tts-nano": {
         "description": "Kitten TTS Nano — ultra-lightweight fp32",
         "hfRepo": "KittenML/kitten-tts-nano-0.8-fp32",
         "costPer1kCharsUSD": 0,
-        "costPer1kCharsCents": 0
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 28122
+        }
       },
       "kitten-tts-nano-0.8-int8": {
         "description": "Kitten TTS Nano — ultra-lightweight int8 quantized",
         "hfRepo": "KittenML/kitten-tts-nano-0.8-int8",
         "costPer1kCharsUSD": 0,
-        "costPer1kCharsCents": 0
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 29533
+        }
       }
     }
   },
@@ -46,17 +58,29 @@
       "eleven_v3": {
         "description": "ElevenLabs v3 — latest generation",
         "costPer1kCharsUSD": 0.12,
-        "costPer1kCharsCents": 12
+        "costPer1kCharsCents": 12,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 27283
+        }
       },
       "eleven_flash_v2_5": {
         "description": "ElevenLabs Flash v2.5 — low latency",
         "costPer1kCharsUSD": 0.06,
-        "costPer1kCharsCents": 6
+        "costPer1kCharsCents": 6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 18095
+        }
       },
       "eleven_turbo_v2_5": {
         "description": "ElevenLabs Turbo v2.5 — low latency",
         "costPer1kCharsUSD": 0.06,
-        "costPer1kCharsCents": 6
+        "costPer1kCharsCents": 6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3700
+        }
       }
     }
   },
@@ -93,7 +117,11 @@
         "inputCostPer1MCharsUSD": 10,
         "inputCostPer1MCharsCents": 1000,
         "outputCostPer1MCharsUSD": 22,
-        "outputCostPer1MCharsCents": 2200
+        "outputCostPer1MCharsCents": 2200,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 16316
+        }
       }
     }
   },
@@ -106,7 +134,11 @@
         "inputCostPer1MCharsUSD": 0.6,
         "inputCostPer1MCharsCents": 60,
         "outputCostPer1MCharsUSD": 12,
-        "outputCostPer1MCharsCents": 1200
+        "outputCostPer1MCharsCents": 1200,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 62025
+        }
       }
     }
   },
@@ -117,12 +149,20 @@
       "gemini-2.5-flash-preview-tts": {
         "description": "Gemini 2.5 Flash Preview TTS — fast speech synthesis",
         "costPer1kCharsUSD": 0.0005,
-        "costPer1kCharsCents": 0.05
+        "costPer1kCharsCents": 0.05,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 82884
+        }
       },
       "gemini-2.5-pro-preview-tts": {
         "description": "Gemini 2.5 Pro Preview TTS — higher quality speech synthesis",
         "costPer1kCharsUSD": 0.001,
-        "costPer1kCharsCents": 0.1
+        "costPer1kCharsCents": 0.1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 111372
+        }
       }
     }
   }

@@ -13,16 +13,14 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 ## Outline
 
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Smoke](#e2e-smoke)
-- [E2E Slow-API](#e2e-slow-api)
+- [Local And Hosted Inputs](#local-and-hosted-inputs)
+- [Networked Inputs](#networked-inputs)
 
 ## Validation / Price / Non-E2E
 
 No standalone download-only validation or price file is currently defined. Coverage is embedded in the e2e suites.
 
-## E2E Smoke
-
-The test runner currently routes these files as `smoke`:
+## Local And Hosted Inputs
 
 ```bash
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts
@@ -34,13 +32,15 @@ Covers:
 - direct hosted audio and video URLs
 - URL-list batching for direct URLs
 
-## E2E Slow-API
+`download-input-types-direct-url.test.ts` has mapped `--test-price` coverage for the hosted audio/video cases. The local-file test does not.
 
-The test runner currently routes these files as `slow-api`:
+## Networked Inputs
 
 ```bash
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts
+bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts --test-price
+bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts --test-price
 ```
 
 Covers:

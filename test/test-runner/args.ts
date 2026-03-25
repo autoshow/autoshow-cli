@@ -1,8 +1,4 @@
-import type { Tier } from '../../src/types/tests-dir-types'
-import { ALL_TIERS } from './constants'
-
 export type RunnerArgs = {
-  selectedTiers: Set<Tier> | null
   priceMode: boolean
   budgetCents: number | undefined
   cleanupAfterRun: boolean
@@ -10,19 +6,7 @@ export type RunnerArgs = {
   pathFilters: string[]
 }
 
-const parseTier = (value: string): Tier | null => {
-  if (value === 'smoke') return 'smoke'
-  if (value === 'local') return 'local'
-  if (value === 'api') return 'api'
-  if (value === 'slow-local') return 'slow-local'
-  if (value === 'slow-api') return 'slow-api'
-  return null
-}
-
-const SLOW_TIERS: Tier[] = ['slow-local', 'slow-api']
-
 export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
-  let selectedTiers: Set<Tier> | null = null
   let priceMode = false
   let budgetCents: number | undefined
   let cleanupAfterRun = false
@@ -36,33 +20,13 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
     }
 
     switch (arg) {
-      case '--tier': {
-        const tierArg = argv[++i]
-        if (!tierArg) {
-          throw new Error('Error: --tier requires a value (smoke, local, api, slow, slow-local, slow-api)')
-        }
-
-        const tiers = tierArg.split(',').map(value => value.trim())
-        const parsedTiers = new Set<Tier>()
-        for (const tierValue of tiers) {
-          if (tierValue === 'slow') {
-            for (const st of SLOW_TIERS) parsedTiers.add(st)
-            continue
-          }
-          const tier = parseTier(tierValue)
-          if (!tier) {
-            throw new Error(`Error: unknown tier "${tierValue}". Valid tiers: ${ALL_TIERS.join(', ')}, slow`)
-          }
-          parsedTiers.add(tier)
-        }
-
-        selectedTiers = parsedTiers
-        break
-      }
       case '--cleanup':            cleanupAfterRun = true; break
-      case '--api':                selectedTiers = new Set<Tier>(['api']); break
+      case '--tier':
+        throw new Error('Error: --tier has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.')
+      case '--api':
+        throw new Error('Error: --api has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.')
       case '--api-cheap':
-        throw new Error('Error: --api-cheap has been removed. Use --tier api for API tests, plus --test-price or --budget for cost preflight.')
+        throw new Error('Error: --api-cheap has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.')
       case '--test-price':         priceMode = true; break
       case '--timestamps':         break
       case '--budget': {
@@ -93,7 +57,6 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
   }
 
   return {
-    selectedTiers,
     priceMode,
     budgetCents,
     cleanupAfterRun,

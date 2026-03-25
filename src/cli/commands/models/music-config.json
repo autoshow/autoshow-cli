@@ -6,7 +6,11 @@
       "music_v1": {
         "description": "music_v1 — text prompt to complete song generation (business-tier starting rate)",
         "costPerMinuteUSD": 0.28,
-        "costPerMinuteCents": 28
+        "costPerMinuteCents": 28,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 543
+        }
       }
     }
   },

@@ -6,12 +6,20 @@
       "mistral-ocr-latest": {
         "description": "Mistral OCR latest alias",
         "costPer1kPagesUSD": 2,
-        "costPer1kPagesCents": 200
+        "costPer1kPagesCents": 200,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 1906
+        }
       },
       "mistral-ocr-2512": {
         "description": "Mistral OCR (December 2025)",
         "costPer1kPagesUSD": 2,
-        "costPer1kPagesCents": 200
+        "costPer1kPagesCents": 200,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 1982
+        }
       }
     }
   }

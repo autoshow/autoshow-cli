@@ -15,8 +15,6 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 
 ## Validation / Price / Non-E2E
 
-**Tier:** `api`
-
 Current coverage:
 - invalid model rejection via `defineVideoServiceTest`
 - `--price` coverage for Sora, Gemini Veo, and MiniMax model IDs
@@ -26,6 +24,8 @@ Current coverage:
 ```bash
 bun t test/test-cases/e2e/step-6-video-gen-e2e/video-gen.test.ts
 bun t test/test-cases/e2e/step-6-video-gen-e2e/minimax-video-gen.test.ts
+bun t test/test-cases/e2e/step-6-video-gen-e2e/ --test-price
+bun t test/test-cases/e2e/step-6-video-gen-e2e/minimax-video-gen.test.ts --budget 25
 ```
 
 ## E2E Services

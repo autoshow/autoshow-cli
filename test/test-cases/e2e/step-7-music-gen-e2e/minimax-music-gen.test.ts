@@ -7,6 +7,7 @@ import {
   cleanupTestOutput,
   hasConfiguredEnvVar
 } from '../../../test-utils/test-helpers'
+import { budgetedTest } from '../../../test-utils/budget'
 
 const MUSIC_GEN_TITLE = 'music-gen'
 
@@ -19,7 +20,7 @@ defineMusicServiceTest({
   envVarKey: 'MINIMAX_API_KEY',
 })
 
-test('music-2.5 generates indie pop music', async () => {
+budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop music', async () => {
   const hasApiKey = await hasConfiguredEnvVar('MINIMAX_API_KEY')
   if (!hasApiKey) {
     console.log('Skipping: MINIMAX_API_KEY not configured')
@@ -58,7 +59,7 @@ test('music-2.5 generates indie pop music', async () => {
   }
 })
 
-test('music-2.5 generates indie pop with lyrics file', async () => {
+budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop with lyrics file', async () => {
   const hasApiKey = await hasConfiguredEnvVar('MINIMAX_API_KEY')
   if (!hasApiKey) {
     console.log('Skipping: MINIMAX_API_KEY not configured')
@@ -88,7 +89,7 @@ test('music-2.5 generates indie pop with lyrics file', async () => {
   }
 })
 
-test('write --price includes MiniMax music estimate', async () => {
+budgetedTest('music-pipeline-minimax-music-2.5', 'write --price includes MiniMax music estimate', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'write', 'any-input', '--minimax-music', 'music-2.5', '--price'],
   )
@@ -109,7 +110,7 @@ test('write with elevenlabs music pipeline', async () => {
   expect(result.exitCode).toBe(0)
 })
 
-test('write with minimax music and lyrics file', async () => {
+budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and lyrics file', async () => {
   const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
   if (!hasMinimax) {
     console.log('Skipping: MINIMAX_API_KEY required')
@@ -122,7 +123,7 @@ test('write with minimax music and lyrics file', async () => {
   expect(result.exitCode).toBe(0)
 })
 
-test('write --price with minimax music estimate', async () => {
+budgetedTest('music-pipeline-minimax-music-2.5', 'write --price with minimax music estimate', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'write', 'input/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
   )

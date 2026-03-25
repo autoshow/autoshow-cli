@@ -16,8 +16,8 @@ Download audio and transcribe it with the local STT engines.
 - [Notes](#notes)
 - [Local Tests](#local-tests)
 - [Validation / Price / Non-E2E](#validation--price--non-e2e)
-- [E2E Local](#e2e-local)
-- [E2E Slow-Local](#e2e-slow-local)
+- [Core Local Paths](#core-local-paths)
+- [Heavier Local Paths](#heavier-local-paths)
 
 ## Setup
 
@@ -131,10 +131,10 @@ bun as transcribe input/2-urls.md --batch-limit 5
 
 ```bash
 bun t \
-  test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-default.test.ts \
-  test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-large-v3-turbo.test.ts \
-  test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-models-price.test.ts \
-  test/test-cases/e2e/step-2-transcribe-e2e/reverb/reverb.test.ts
+  test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-default.test.ts \
+  test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-large-v3-turbo.test.ts \
+  test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-models-price.test.ts \
+  test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/reverb.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
@@ -143,13 +143,12 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 
 `whisper-models-price.test.ts` covers `--price` for all supported local Whisper models.
 
-### E2E Local
-
-**Tier:** `local`
+### Core Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-default.test.ts
-bun t test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-models-price.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-default.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-models-price.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/ --test-price
 ```
 
 Covers:
@@ -157,13 +156,13 @@ Covers:
 - split-mode transcription on local audio
 - `--price` for `tiny`, `base`, `small`, `medium`, and `large-v3-turbo`
 
-### E2E Slow-Local
-
-**Tier:** `slow-local`
+### Heavier Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-large-v3-turbo.test.ts
-bun t test/test-cases/e2e/step-2-transcribe-e2e/reverb/reverb.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-large-v3-turbo.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/reverb.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-large-v3-turbo.test.ts --budget 5
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/reverb.test.ts --budget 5
 ```
 
 Covers:

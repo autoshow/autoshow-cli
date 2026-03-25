@@ -28,11 +28,11 @@ Additional write-pipeline coverage currently lives in `minimax-music-gen.test.ts
 
 ## E2E Services
 
-**Tier:** `api`
-
 ```bash
 bun t test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts
 bun t test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts
+bun t test/test-cases/e2e/step-7-music-gen-e2e/ --test-price
+bun t test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts --budget 25
 ```
 
 Provider env keys:

@@ -1,84 +1,64 @@
 # Service Tests
 
-API-backed and networked test coverage for the current `api` and `slow-api` suites, plus the smoke-tier remote download case that often travels with them.
+API-backed and networked test coverage for provider integrations, remote-input download paths, and cross-provider e2e flows.
 
-Shared `bun t` runner behavior, artifacts, cleanup, and path-filter rules are documented in [Local Tests](local-tests.md).
-
-## Outline
-
-- [Quick Start](#quick-start)
-- [Service-Specific Notes](#service-specific-notes)
-- [Tier Map](#tier-map)
-- [Current Suites](#current-suites)
-- [Price Preflight](#price-preflight)
-- [Command Docs](#command-docs)
+Shared `bun t` runner behavior, artifacts, cleanup, and path-based selection are documented in [Local Tests](local-tests.md).
 
 ## Quick Start
 
 ```bash
-# service and network tiers
-bun t --tier api
-bun t --tier slow-api
-bun t --tier api,slow-api
-
-# targeted service suites
-bun t test/test-cases/e2e/step-2-transcribe-e2e/assemblyai/
-bun t test/test-cases/e2e/step-3-write-e2e/openai/openai-models.test.ts
+# service STT, write, and media-provider suites
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/
+bun t test/test-cases/e2e/step-3-write-e2e/write-services/openai/
 bun t test/test-cases/e2e/step-5-image-gen-e2e/
+
+# network and remote-input coverage
+bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts
+bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts
+bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts
 ```
 
 ## Service-Specific Notes
 
-- `test/test-cases/validation/model-options.test.ts` is the only validation file routed to `api`.
-- `test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts` uses a remote input but is routed to `smoke`, not `api`.
-- `test/test-cases/e2e/step-0-setup-e2e/` is pure `slow-api`: it downloads assets and validates setup flows, but it does not perform API inference.
-- `test/test-cases/e2e/step-2-extract-e2e/` is mixed `smoke` + `api` + `slow-local`, so use exact files for service-only extract coverage.
-- `test/test-cases/e2e/step-4-tts-e2e/` is mixed `local` + `api`, so use exact files or `--tier api` for service-only TTS coverage.
+- `test/test-cases/validation/model-options.test.ts` is still a useful service-facing validation file, but it does not have mapped `--test-price` coverage.
+- `test/test-cases/e2e/step-0-setup-e2e/` downloads assets and validates setup flows, but it does not currently have mapped price commands.
+- Step 2 through step 4 e2e coverage now lives under explicit `*-services/` subfolders, so hosted suites can be selected by directory.
+- `test/test-cases/e2e/api-cheap.test.ts` has report-only price mappings. It is useful for `--test-price`, but `--budget` will not skip tests in that file.
 
-## Tier Map
+## Current Coverage
 
-| Tier | What runs | Notes |
-|------|-----------|-------|
-| `api` | `model-options.test.ts`, provider OCR/STT/LLM/TTS/image/video/music suites, `api-cheap.test.ts`, `cli-integration.test.ts` | API-backed coverage |
-| `slow-api` | Setup downloads plus feed/channel and streaming download tests | Network-dependent coverage, no local-only guarantees |
-| `smoke` companion | `download-input-types-direct-url.test.ts` | Remote input coverage that is not routed to `api` |
-
-## Current Suites
-
-| Area | Tier | Paths | Notes |
-|------|------|-------|-------|
-| Validation | `api` | `test/test-cases/validation/model-options.test.ts` | The rest of `validation/` is `smoke` |
-| Direct URL download | `smoke` | `test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts` | Remote input, but not `api` |
-| Feed/channel and streaming downloads | `slow-api` | `test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts`, `test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts` | Network-dependent remote-input coverage |
-| Setup downloads | `slow-api` | `test/test-cases/e2e/step-0-setup-e2e/` | Includes `llama-models/llama-downloads.test.ts` and `tts-models/tts-setup.test.ts` |
-| Extract | `api` | `test/test-cases/e2e/step-2-extract-e2e/extract-mistral-ocr.test.ts` | The directory also contains `smoke` and `slow-local` files |
-| Transcribe | `api` | `test/test-cases/e2e/step-2-transcribe-e2e/assemblyai/`, `elevenlabs/`, `groq/`, `openai/`, `mistral/` | Provider-specific STT coverage |
-| Write | `api` | `test/test-cases/e2e/step-3-write-e2e/openai/`, `anthropic/`, `gemini/`, `groq/`, `minimax/`, `test/test-cases/e2e/step-3-write-e2e/write-subcommand-services.test.ts` | Provider LLM coverage |
-| TTS | `api` | `test/test-cases/e2e/step-4-tts-e2e/openai-tts.test.ts`, `gemini-tts.test.ts`, `groq-tts.test.ts`, `elevenlabs-tts.test.ts`, `minimax-tts.test.ts`, `kitten-tts-pipeline.test.ts` | Use exact files because the directory also contains local TTS |
-| Image | `api` | `test/test-cases/e2e/step-5-image-gen-e2e/` | Provider image generation coverage |
-| Video | `api` | `test/test-cases/e2e/step-6-video-gen-e2e/` | Provider video generation coverage |
-| Music | `api` | `test/test-cases/e2e/step-7-music-gen-e2e/` | Provider music generation coverage |
-| Integration | `api` | `test/test-cases/e2e/api-cheap.test.ts`, `test/test-cases/e2e/cli-integration.test.ts` | Cross-provider integration coverage |
+| Area | Paths | Notes |
+|------|-------|-------|
+| Validation | `test/test-cases/validation/model-options.test.ts` | Service-model validation without mapped price commands |
+| Direct URL download | `test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts` | Hosted audio/video URL coverage |
+| Feed/channel and streaming downloads | `test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts`, `test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts` | Network-dependent remote-input coverage |
+| Setup downloads | `test/test-cases/e2e/step-0-setup-e2e/` | Llama downloads and Kitten setup validation |
+| Extract | `test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts` | Hosted OCR coverage |
+| Transcribe | `test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/`, `elevenlabs/`, `groq/`, `openai/`, `mistral/` | Provider-specific STT coverage |
+| Write | `test/test-cases/e2e/step-3-write-e2e/write-services/openai/`, `anthropic/`, `gemini/`, `groq/`, `minimax/`, `test/test-cases/e2e/step-3-write-e2e/write-services/write-subcommand-services.test.ts` | Hosted LLM coverage |
+| TTS | `test/test-cases/e2e/step-4-tts-e2e/tts-services/` | Hosted TTS coverage, including the Kitten pipeline test |
+| Image | `test/test-cases/e2e/step-5-image-gen-e2e/` | Hosted image generation coverage |
+| Video | `test/test-cases/e2e/step-6-video-gen-e2e/` | Provider video `--price` coverage |
+| Music | `test/test-cases/e2e/step-7-music-gen-e2e/` | Provider music and write-pipeline coverage |
+| Integration | `test/test-cases/e2e/api-cheap.test.ts`, `test/test-cases/e2e/cli-integration.test.ts` | Cross-provider integration coverage |
 
 ## Price Preflight
 
-Tier-level price preflight is the canonical service workflow:
+Service price and budget commands are now path-based:
 
 ```bash
-bun t --tier api --test-price
-bun t --tier slow-api --test-price
-bun t --tier api --test-price --budget 25
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/ --test-price
+bun t test/test-cases/e2e/step-3-write-e2e/write-services/openai/ --test-price --budget 25
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/openai-tts.test.ts --test-price
+bun t test/test-cases/e2e/step-5-image-gen-e2e/ --test-price
+bun t test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts --budget 25
+bun t test/test-cases/e2e/api-cheap.test.ts --test-price
 ```
 
-Direct file/path `--test-price` mappings currently exist for:
-
-- `test/test-cases/e2e/step-2-extract-e2e/extract-mistral-ocr.test.ts`
-- Provider STT files and directories under `test/test-cases/e2e/step-2-transcribe-e2e/`
-- Provider write files and directories under `test/test-cases/e2e/step-3-write-e2e/`
-- Exact service TTS files except `test/test-cases/e2e/step-4-tts-e2e/kitten-tts-pipeline.test.ts`
-- Image, video, and music files/directories under `step-5-image-gen-e2e/`, `step-6-video-gen-e2e/`, and `step-7-music-gen-e2e/`
-
-Use tier-level preflight instead for `model-options.test.ts`, download files/directories, setup files/directories, `api-cheap.test.ts`, `cli-integration.test.ts`, and `kitten-tts-pipeline.test.ts`.
+Notes:
+- `api-cheap.test.ts` contributes report-only price coverage. It is included in `--test-price` but excluded from budget skip propagation.
+- Setup files, `cli-integration.test.ts`, `kitten-tts-pipeline.test.ts`, and `validation/model-options.test.ts` currently have no mapped price commands.
+- `--test-price` with no path filters resolves all mapped priceable tests across local and service coverage.
 
 ## Command Docs
 

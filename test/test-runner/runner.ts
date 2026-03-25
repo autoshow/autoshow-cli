@@ -1,13 +1,7 @@
 import { appendFile, rm } from 'node:fs/promises'
-import type { ApiCheapPriceCommand } from '../test-utils/api-cheap-config'
-import { dedupePriceCommands } from '../test-utils/api-cheap-config'
-import type { PriceCommandResult, TestRunArtifacts, Tier } from '../../src/types/tests-dir-types'
+import type { PriceCommandResult, PriceCommandSpec, TestRunArtifacts } from '../../src/types/tests-dir-types'
 import { parseRunnerArgs, type RunnerArgs } from './args'
 import { createRunArtifacts, appendRunnerLog, appendCommandLog, writeJsonFile, writeReportJson } from './artifacts'
-import {
-  ALL_TIERS,
-  TIER_RULES,
-} from './constants'
 import { readMetrics, parseJunit } from './parsers'
 import {
   evaluatePriceObservationGroup,
@@ -16,10 +10,11 @@ import {
   toObservation,
   type PriceCommandObservation,
 } from './price-evaluation'
-import { buildTierPriceCommands } from './price-commands'
+import { resolvePriceSelection } from './price-commands'
 import { buildPriceReportData, buildTestReportData, type BudgetPreflightSummary } from './reports'
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
 import { applyModelConfigCalibrations } from './model-calibration'
+import { resolveSelectedFiles } from './path-selection'
 
 const formatCents = (cents: number): string => `${cents.toFixed(4)}¢`
 
@@ -102,7 +97,7 @@ const writeCommandMetric = async (artifacts: TestRunArtifacts, record: Record<st
 }
 
 const executePriceCommand = async (
-  entry: ApiCheapPriceCommand,
+  entry: PriceCommandSpec,
   artifacts: TestRunArtifacts,
   logLabel: string
 ): Promise<ExecutedPriceCommand> => {
@@ -150,83 +145,6 @@ const executePriceCommand = async (
     durationMs,
     parsedCost,
   }
-}
-
-const getTier = (file: string): Tier => {
-  for (const [prefix, tier] of TIER_RULES) {
-    if (file.startsWith(prefix)) return tier
-  }
-  return 'smoke'
-}
-
-const matchPathFilters = (file: string, pathFilters: string[]): boolean => {
-  return pathFilters.some(pathFilter => {
-    const prefix = pathFilter.endsWith('/') ? pathFilter : `${pathFilter}/`
-    return file.startsWith(prefix) || file === pathFilter || file.startsWith(pathFilter)
-  })
-}
-
-const PRICE_FILTER_STOPWORDS = new Set(['step', 'e2e', 'gen', 'test', 'cases', 'models', 'subcommand', 'services'])
-
-const extractFilterKeywords = (pathFilter: string): string[] => {
-  const segments = pathFilter.replace(/\/$/, '').split('/')
-  const keywords = new Set<string>()
-  for (const segment of segments) {
-    const stem = segment.replace(/\.test\.ts$/, '')
-    for (const part of stem.split('-')) {
-      if (part.length > 0 && !PRICE_FILTER_STOPWORDS.has(part) && !/^\d+$/.test(part)) {
-        keywords.add(part)
-      }
-    }
-  }
-  return [...keywords]
-}
-
-const filterCommandsByPaths = (
-  commands: ApiCheapPriceCommand[],
-  pathFilters: string[]
-): ApiCheapPriceCommand[] => {
-  const keywordSets = pathFilters.map(extractFilterKeywords).filter(ks => ks.length > 0)
-  if (keywordSets.length === 0) return commands
-  return commands.filter(cmd =>
-    keywordSets.some(keywords => keywords.every(keyword => cmd.name.includes(keyword)))
-  )
-}
-
-const resolvePriceTierSelection = (args: RunnerArgs, allFiles: string[]): Set<Tier> => {
-  if (args.selectedTiers && args.selectedTiers.size > 0) {
-    return new Set(args.selectedTiers)
-  }
-
-  if (args.pathFilters.length > 0) {
-    const pathFilteredFiles = allFiles.filter(file => matchPathFilters(file, args.pathFilters))
-    if (pathFilteredFiles.length === 0) {
-      throw new Error(`No tests matched path filters: ${args.pathFilters.join(', ')}`)
-    }
-    return new Set(pathFilteredFiles.map(getTier))
-  }
-
-  return new Set(ALL_TIERS)
-}
-
-const resolveSuitePriceCommands = (
-  args: RunnerArgs,
-  allFiles: string[]
-): { suiteName: string, commands: ApiCheapPriceCommand[] } => {
-  const tiers = Array.from(resolvePriceTierSelection(args, allFiles))
-  const orderedTiers = ALL_TIERS.filter(tier => tiers.includes(tier))
-  let commands = dedupePriceCommands(orderedTiers.flatMap(tier => buildTierPriceCommands(tier)))
-  let suiteName = orderedTiers.length === ALL_TIERS.length ? 'All tiers' : `Tier ${orderedTiers.join('+')}`
-
-  if (args.pathFilters.length > 0) {
-    commands = filterCommandsByPaths(commands, args.pathFilters)
-    const filterLabels = args.pathFilters.map(f =>
-      f.replace(/\/$/, '').split('/').pop()?.replace(/\.test\.ts$/, '') ?? f
-    )
-    suiteName = filterLabels.join(', ')
-  }
-
-  return { suiteName, commands }
 }
 
 const buildEmptyBudgetSummary = (suiteName: string, budgetCents: number): BudgetPreflightSummary => {
@@ -313,20 +231,6 @@ const forwardSpawnOutput = async (
   }
 }
 
-const buildExcludedPaths = (args: RunnerArgs, allFiles: string[]): Set<string> => {
-  const excludedPaths = new Set<string>()
-
-  if (args.selectedTiers) {
-    for (const file of allFiles) {
-      if (!args.selectedTiers.has(getTier(file))) {
-        excludedPaths.add(file)
-      }
-    }
-  }
-
-  return excludedPaths
-}
-
 const runBunTest = async (
   files: string[],
   artifacts: TestRunArtifacts,
@@ -385,7 +289,7 @@ const runBunTest = async (
 
 const runPriceSuite = async (
   suiteName: string,
-  commands: ApiCheapPriceCommand[],
+  commands: PriceCommandSpec[],
   artifacts: TestRunArtifacts,
   budgetCents?: number
 ): Promise<{ exitCode: number, results: PriceCommandResult[], budgetSummary: BudgetPreflightSummary | undefined }> => {
@@ -455,7 +359,7 @@ const runPriceSuite = async (
 
 const runBudgetPreflight = async (
   suiteName: string,
-  commands: ApiCheapPriceCommand[],
+  commands: PriceCommandSpec[],
   budgetCents: number,
   artifacts: TestRunArtifacts
 ): Promise<BudgetPreflightResult> => {
@@ -565,36 +469,23 @@ const runBudgetPreflight = async (
 const runStandardTestMode = async (
   args: RunnerArgs,
   allFiles: string[],
-  excludedPaths: Set<string>,
   artifacts: TestRunArtifacts,
   argv: string[]
 ): Promise<number> => {
-  let filesToRun: string[]
+  const filesToRun = resolveSelectedFiles(allFiles, args.pathFilters)
 
-  if (args.pathFilters.length > 0) {
-    filesToRun = allFiles.filter(file => matchPathFilters(file, args.pathFilters))
-    if (filesToRun.length === 0) {
-      throw new Error(`No tests matched path filters: ${args.pathFilters.join(', ')}`)
-    }
+  if (args.pathFilters.length === 0) {
+    console.log(`Running all discovered tests (${filesToRun.length} files)`)
   } else {
-    filesToRun = allFiles.filter(file => !excludedPaths.has(file))
-    if (args.selectedTiers) {
-      const tierCounts: Record<string, number> = {}
-      for (const file of filesToRun) {
-        const tier = getTier(file)
-        tierCounts[tier] = (tierCounts[tier] || 0) + 1
-      }
-      const summary = Object.entries(tierCounts).map(([tier, count]) => `${tier}:${count}`).join(', ')
-      console.log(`Running ${filesToRun.length} tests (${summary})`)
-    }
+    console.log(`Running selected tests (${filesToRun.length} files from ${args.pathFilters.length} path filter${args.pathFilters.length === 1 ? '' : 's'})`)
   }
 
   let budgetSummary: BudgetPreflightSummary | undefined
   let budgetSkipKeys: string[] = []
   if (args.budgetCents !== undefined) {
-    const resolved = resolveSuitePriceCommands(args, allFiles)
+    const resolved = resolvePriceSelection(allFiles, args.pathFilters, true)
     if (resolved.commands.length === 0) {
-      console.log('No pricing commands resolved for --budget preflight; proceeding without budget-based skips')
+      console.log('No budget-skippable pricing commands resolved for --budget preflight; proceeding without budget-based skips')
       budgetSummary = buildEmptyBudgetSummary(resolved.suiteName, args.budgetCents)
     } else {
       const preflight = await runBudgetPreflight(resolved.suiteName, resolved.commands, args.budgetCents, artifacts)
@@ -644,16 +535,16 @@ const runPriceMode = async (
   artifacts: TestRunArtifacts,
   argv: string[]
 ): Promise<number> => {
-  let suiteName = 'All tiers'
+  let suiteName = 'All mapped tests'
   let results: PriceCommandResult[] = []
   let budgetSummary: BudgetPreflightSummary | undefined
   let exitCode = 0
 
-  const resolved = resolveSuitePriceCommands(args, allFiles)
+  const resolved = resolvePriceSelection(allFiles, args.pathFilters)
   suiteName = resolved.suiteName
 
   if (resolved.commands.length === 0) {
-    console.error('No pricing commands resolved for the selected suite(s)')
+    console.error('No pricing commands resolved for the selected paths')
     exitCode = 1
     results = []
     budgetSummary = args.budgetCents !== undefined ? buildEmptyBudgetSummary(suiteName, args.budgetCents) : undefined
@@ -729,7 +620,6 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
   const args = parseRunnerArgs(argv)
   const glob = new Bun.Glob('test/test-cases/**/*.test.ts')
   const allFiles = (await Array.fromAsync(glob.scan({ dot: false }))).sort()
-  const excludedPaths = buildExcludedPaths(args, allFiles)
 
   const artifacts = await createRunArtifacts()
   installTimestampedConsole(artifacts.startedAtMs)
@@ -747,7 +637,7 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
   try {
     exitCode = args.priceMode
       ? await runPriceMode(args, allFiles, artifacts, argv)
-      : await runStandardTestMode(args, allFiles, excludedPaths, artifacts, argv)
+      : await runStandardTestMode(args, allFiles, artifacts, argv)
   } catch (error) {
     exitCode = 1
     const endedAtIso = new Date().toISOString()

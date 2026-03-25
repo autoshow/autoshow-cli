@@ -8,21 +8,33 @@
         "inputCostPer1MUSD": 2,
         "inputCostPer1MCents": 200,
         "outputCostPer1MUSD": 8,
-        "outputCostPer1MCents": 800
+        "outputCostPer1MCents": 800,
+        "estimation": {
+          "costMultiplier": 0.1509,
+          "msPer1KTokens": 8626
+        }
       },
       "gpt-5.2-pro": {
         "description": "GPT-5.2 Pro — extended thinking",
         "inputCostPer1MUSD": 10,
         "inputCostPer1MCents": 1000,
         "outputCostPer1MUSD": 40,
-        "outputCostPer1MCents": 4000
+        "outputCostPer1MCents": 4000,
+        "estimation": {
+          "costMultiplier": 0.1587,
+          "msPer1KTokens": 72246
+        }
       },
       "gpt-5.1": {
         "description": "GPT-5.1 — previous generation flagship",
         "inputCostPer1MUSD": 2,
         "inputCostPer1MCents": 200,
         "outputCostPer1MUSD": 8,
-        "outputCostPer1MCents": 800
+        "outputCostPer1MCents": 800,
+        "estimation": {
+          "costMultiplier": 0.239,
+          "msPer1KTokens": 7872
+        }
       }
     }
   },
@@ -34,15 +46,23 @@
         "description": "GPT OSS 20B — open-weight model via Groq",
         "inputCostPer1MUSD": 0.075,
         "inputCostPer1MCents": 7.5,
-        "outputCostPer1MUSD": 0.30,
-        "outputCostPer1MCents": 30
+        "outputCostPer1MUSD": 0.3,
+        "outputCostPer1MCents": 30,
+        "estimation": {
+          "costMultiplier": 0.143,
+          "msPer1KTokens": 824
+        }
       },
       "openai/gpt-oss-120b": {
         "description": "GPT OSS 120B — open-weight model via Groq",
         "inputCostPer1MUSD": 0.15,
         "inputCostPer1MCents": 15,
-        "outputCostPer1MUSD": 0.60,
-        "outputCostPer1MCents": 60
+        "outputCostPer1MUSD": 0.6,
+        "outputCostPer1MCents": 60,
+        "estimation": {
+          "costMultiplier": 0.1983,
+          "msPer1KTokens": 1544
+        }
       }
     }
   },
@@ -55,14 +75,22 @@
         "inputCostPer1MUSD": 1.25,
         "inputCostPer1MCents": 125,
         "outputCostPer1MUSD": 10,
-        "outputCostPer1MCents": 1000
+        "outputCostPer1MCents": 1000,
+        "estimation": {
+          "costMultiplier": 0.1909,
+          "msPer1KTokens": 47113
+        }
       },
       "gemini-3-flash-preview": {
         "description": "Gemini 3 Flash — fast and efficient",
         "inputCostPer1MUSD": 0.15,
         "inputCostPer1MCents": 15,
         "outputCostPer1MUSD": 0.6,
-        "outputCostPer1MCents": 60
+        "outputCostPer1MCents": 60,
+        "estimation": {
+          "costMultiplier": 0.1846,
+          "msPer1KTokens": 20492
+        }
       }
     }
   },
@@ -75,14 +103,22 @@
         "inputCostPer1MUSD": 15,
         "inputCostPer1MCents": 1500,
         "outputCostPer1MUSD": 75,
-        "outputCostPer1MCents": 7500
+        "outputCostPer1MCents": 7500,
+        "estimation": {
+          "costMultiplier": 0.153,
+          "msPer1KTokens": 14920
+        }
       },
       "claude-sonnet-4-6": {
         "description": "Claude Sonnet 4.6 — balanced performance",
         "inputCostPer1MUSD": 3,
         "inputCostPer1MCents": 300,
         "outputCostPer1MUSD": 15,
-        "outputCostPer1MCents": 1500
+        "outputCostPer1MCents": 1500,
+        "estimation": {
+          "costMultiplier": 0.133,
+          "msPer1KTokens": 13968
+        }
       }
     }
   },
@@ -116,14 +152,20 @@
         "inputCostPer1MUSD": 0,
         "inputCostPer1MCents": 0,
         "outputCostPer1MUSD": 0,
-        "outputCostPer1MCents": 0
+        "outputCostPer1MCents": 0,
+        "estimation": {
+          "msPer1KTokens": 1178
+        }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {
         "description": "Qwen3 0.6B — ultra-lightweight",
         "inputCostPer1MUSD": 0,
         "inputCostPer1MCents": 0,
         "outputCostPer1MUSD": 0,
-        "outputCostPer1MCents": 0
+        "outputCostPer1MCents": 0,
+        "estimation": {
+          "msPer1KTokens": 3516
+        }
       }
     }
   }

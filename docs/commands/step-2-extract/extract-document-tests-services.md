@@ -1,7 +1,7 @@
 # Extract Tests (services)
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-mistral-ocr.test.ts
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
@@ -17,10 +17,10 @@ There is no separate Mistral OCR price-only or invalid-model test file right now
 
 ## E2E Services
 
-**Tier:** `api`
-
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-mistral-ocr.test.ts
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts --test-price
+bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts --budget 25
 ```
 
 Covers:

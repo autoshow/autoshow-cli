@@ -6,12 +6,18 @@
       "tiny": {
         "description": "Tiny — fastest, lowest accuracy",
         "costPerHourUSD": 0,
-        "costPerHourCents": 0
+        "costPerHourCents": 0,
+        "estimation": {
+          "msPerSecond": 18
+        }
       },
       "base": {
         "description": "Base — fast with reasonable accuracy",
         "costPerHourUSD": 0,
-        "costPerHourCents": 0
+        "costPerHourCents": 0,
+        "estimation": {
+          "msPerSecond": 23
+        }
       },
       "small": {
         "description": "Small — balanced speed and accuracy",
@@ -26,7 +32,10 @@
       "large-v3-turbo": {
         "description": "Large v3 Turbo — fast with near-v3 accuracy",
         "costPerHourUSD": 0,
-        "costPerHourCents": 0
+        "costPerHourCents": 0,
+        "estimation": {
+          "msPerSecond": 72
+        }
       }
     }
   },
@@ -37,12 +46,20 @@
       "whisper-large-v3": {
         "description": "Groq-hosted Whisper large v3",
         "costPerHourUSD": 0.111,
-        "costPerHourCents": 11.1
+        "costPerHourCents": 11.1,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 36
+        }
       },
       "whisper-large-v3-turbo": {
         "description": "Groq-hosted Whisper large v3 turbo",
         "costPerHourUSD": 0.04,
-        "costPerHourCents": 4
+        "costPerHourCents": 4,
+        "estimation": {
+          "costMultiplier": 0.9951,
+          "msPerSecond": 51
+        }
       }
     }
   },
@@ -53,7 +70,11 @@
       "scribe_v2": {
         "description": "Scribe v2 — 90+ languages, diarization, word-level timestamps",
         "costPerHourUSD": 0.22,
-        "costPerHourCents": 22
+        "costPerHourCents": 22,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 107
+        }
       }
     }
   },
@@ -64,7 +85,11 @@
       "gpt-4o-transcribe-diarize": {
         "description": "GPT-4o Transcribe Diarize — diarized transcription with speaker labels",
         "costPerHourUSD": 0.36,
-        "costPerHourCents": 36
+        "costPerHourCents": 36,
+        "estimation": {
+          "costMultiplier": 0.9951,
+          "msPerSecond": 523
+        }
       }
     }
   },
@@ -75,12 +100,20 @@
       "voxtral-mini-latest": {
         "description": "Voxtral Mini latest alias",
         "costPerHourUSD": 0.18,
-        "costPerHourCents": 18
+        "costPerHourCents": 18,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 71
+        }
       },
       "voxtral-mini-2602": {
         "description": "Voxtral Mini Transcribe 2",
         "costPerHourUSD": 0.18,
-        "costPerHourCents": 18
+        "costPerHourCents": 18,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 71
+        }
       }
     }
   },
@@ -91,12 +124,20 @@
       "universal-2": {
         "description": "Universal-2 — 99 languages, diarization, word-level timestamps",
         "costPerHourUSD": 0.15,
-        "costPerHourCents": 15
+        "costPerHourCents": 15,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 125
+        }
       },
       "universal-3-pro": {
         "description": "Universal-3 Pro — 6 languages, advanced prompting, diarization",
         "costPerHourUSD": 0.21,
-        "costPerHourCents": 21
+        "costPerHourCents": 21,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 178
+        }
       }
     }
   }

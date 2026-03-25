@@ -1,20 +1,23 @@
 import type {
-  ApiCheapPriceCommand,
+  PriceCommandSpec,
   PriceCommandResult,
 } from '../../src/types/tests-dir-types'
 import type { BudgetPreflightSummary } from './reports'
 
 export type PriceCommandObservation = {
   name: string
+  key: string
   args: string[]
   exitCode: number
   durationMs: number
   costCents: number | null
   failureMessage: string | null
+  budgetSkippable: boolean
 }
 
 export type PriceCommandKeySummary = {
   key: string
+  budgetSkippable: boolean
   variantCount: number
   variantCostsCents: number[]
   failedVariantCount: number
@@ -27,11 +30,11 @@ export type BudgetSkippedEntry = {
   selectedCostCents: number
 }
 
-type NamedEntry = {
-  name: string
+type KeyedEntry = {
+  key: string
 }
 
-export type GroupedCommandEntries<T extends NamedEntry> = {
+export type GroupedCommandEntries<T extends KeyedEntry> = {
   key: string
   variants: T[]
 }
@@ -40,15 +43,15 @@ const isSuccessfulObservation = (observation: PriceCommandObservation): boolean 
   return observation.exitCode === 0 && observation.costCents !== null
 }
 
-export const groupCommandsByKey = <T extends NamedEntry>(commands: T[]): GroupedCommandEntries<T>[] => {
+export const groupCommandsByKey = <T extends KeyedEntry>(commands: T[]): GroupedCommandEntries<T>[] => {
   const grouped = new Map<string, T[]>()
 
   for (const command of commands) {
-    const existing = grouped.get(command.name)
+    const existing = grouped.get(command.key)
     if (existing) {
       existing.push(command)
     } else {
-      grouped.set(command.name, [command])
+      grouped.set(command.key, [command])
     }
   }
 
@@ -66,12 +69,15 @@ export const evaluatePriceObservationGroup = (
 
   const failedVariantCount = observations.filter(observation => !isSuccessfulObservation(observation)).length
   const selectedCostCents = variantCostsCents.length > 0 ? Math.max(...variantCostsCents) : null
+  const budgetSkippable = observations.some(observation => observation.budgetSkippable)
   const overBudget = budgetCents !== undefined
+    && budgetSkippable
     && selectedCostCents !== null
     && selectedCostCents > budgetCents
 
   return {
     key,
+    budgetSkippable,
     variantCount: observations.length,
     variantCostsCents,
     failedVariantCount,
@@ -93,14 +99,16 @@ export const evaluatePriceObservations = (
 } => {
   const grouped = groupCommandsByKey(observations)
   const keySummaries = grouped.map(group => evaluatePriceObservationGroup(group.key, group.variants, budgetCents))
+  const budgetEligibleSummaries = keySummaries.filter(summary => summary.budgetSkippable)
   const overBudgetKeys = new Set(
-    keySummaries
+    budgetEligibleSummaries
       .filter(summary => summary.overBudget)
       .map(summary => summary.key)
   )
 
   const failedCommands = keySummaries.reduce((sum, summary) => sum + summary.failedVariantCount, 0)
-  const skippedEntries: BudgetSkippedEntry[] = keySummaries
+  const budgetFailedCommands = budgetEligibleSummaries.reduce((sum, summary) => sum + summary.failedVariantCount, 0)
+  const skippedEntries: BudgetSkippedEntry[] = budgetEligibleSummaries
     .filter((summary): summary is PriceCommandKeySummary & { selectedCostCents: number } => {
       return summary.overBudget && summary.selectedCostCents !== null
     })
@@ -120,11 +128,11 @@ export const evaluatePriceObservations = (
     : {
         suiteName,
         budgetCents,
-        commandsChecked: keySummaries.length,
-        commandsRunnable: keySummaries.filter(summary => summary.selectedCostCents !== null && !summary.overBudget).length,
+        commandsChecked: budgetEligibleSummaries.length,
+        commandsRunnable: budgetEligibleSummaries.filter(summary => summary.selectedCostCents !== null && !summary.overBudget).length,
         commandsSkipped: skippedEntries.length,
-        commandsFailed: failedCommands,
-        runnableEstimatedCostCents: keySummaries
+        commandsFailed: budgetFailedCommands,
+        runnableEstimatedCostCents: budgetEligibleSummaries
           .filter(summary => summary.selectedCostCents !== null && !summary.overBudget)
           .reduce((sum, summary) => sum + (summary.selectedCostCents ?? 0), 0),
         skipKeys: skippedEntries.map(summary => summary.key),
@@ -135,12 +143,13 @@ export const evaluatePriceObservations = (
     const successful = isSuccessfulObservation(observation)
     const status = !successful
       ? 'failed'
-      : overBudgetKeys.has(observation.name)
+      : observation.budgetSkippable && overBudgetKeys.has(observation.key)
         ? 'skipped'
         : 'passed'
 
     return {
       name: observation.name,
+      key: observation.key,
       args: observation.args,
       status,
       exitCode: observation.exitCode,
@@ -166,7 +175,7 @@ export const evaluatePriceObservations = (
 }
 
 export const toObservation = (
-  command: ApiCheapPriceCommand,
+  command: PriceCommandSpec,
   executed: {
     exitCode: number
     durationMs: number
@@ -181,10 +190,12 @@ export const toObservation = (
 
   return {
     name: command.name,
+    key: command.key,
     args: command.args,
     exitCode: executed.exitCode,
     durationMs: executed.durationMs,
     costCents: executed.parsedCost,
     failureMessage,
+    budgetSkippable: command.budgetSkippable,
   }
 }

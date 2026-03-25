@@ -20,7 +20,7 @@ After this change, `--tier`, `--api`, and all tier-specific routing and reportin
 
 ## Current Tier Dependencies
 
-The current tier model affects four separate surfaces:
+The current tier model affects five separate surfaces:
 
 1. CLI parsing and execution filtering
    - `test/test-runner/args.ts`
@@ -28,19 +28,26 @@ The current tier model affects four separate surfaces:
    - `test/test-runner/constants.ts`
    - `src/types/tests-dir-types.ts`
 
-2. Price command selection
+2. Price command selection and evaluation
    - `test/test-runner/price-commands.ts`
+   - `test/test-runner/price-evaluation.ts` — `groupCommandsByKey()` and `evaluatePriceObservations()` use tier-derived suite names
    - `test/test-runner/runner.ts`
 
-3. Validation coverage
+3. Reporting and budget summaries
+   - `test/test-runner/reports.ts` — `BudgetPreflightSummary.suiteName` currently stores tier labels
+   - `test/test-runner/artifacts.ts` — creates run directories and artifact paths
+
+4. Validation coverage
    - `test/test-cases/validation/tier-routing.test.ts`
    - `test/test-cases/validation/test-runner-args.test.ts`
    - `test/test-cases/validation/test-runner-price-evaluation.test.ts`
 
-4. Documentation
+5. Documentation
    - `docs/tests/local-tests.md`
    - `docs/tests/service-tests.md`
    - command-specific test docs under `docs/commands/**`
+
+Note: `test/test-utils/budget.ts` (the `budgetedTest()` wrapper itself) is not tier-dependent but must stay aligned with registry keys throughout the migration.
 
 ## Important Implementation Constraint
 
@@ -69,57 +76,19 @@ The runner should no longer know what `smoke`, `local`, `api`, `slow-local`, or 
 
 ## Migration Plan
 
-### Phase 1: Lock the New CLI Contract
+The phases below are numbered in the recommended safe implementation order. This ordering prevents a temporary state where tier deletion breaks `--test-price` and `--budget` before the replacement model exists.
 
-Update the runner interface first so the intended behavior is explicit before the internal cleanup starts.
+### Phase 1: Define the Explicit Path-Based Price Registry
 
-Work:
-
-- remove `--tier` parsing from `test/test-runner/args.ts`
-- remove the `--api` alias
-- remove the old `slow` shorthand behavior
-- decide how to handle `--api-cheap`
-- keep a hard error for removed flags for one transition cycle, with a message that points users to path-based usage plus `--test-price` and `--budget`
-
-Recommended error direction:
-
-```text
-Error: --tier has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.
-```
-
-This keeps the breakage explicit and avoids silent behavior changes in existing scripts.
-
-### Phase 2: Remove Tier-Based Execution Filtering
-
-Once the CLI contract is fixed, simplify standard test execution.
-
-Work:
-
-- delete `Tier` from `src/types/tests-dir-types.ts`
-- delete `ALL_TIERS` and `TIER_RULES` from `test/test-runner/constants.ts`
-- delete `selectedTiers`, `parseTier`, and `SLOW_TIERS` from `test/test-runner/args.ts`
-- delete `getTier()` and `buildExcludedPaths()` from `test/test-runner/runner.ts`
-- simplify `runStandardTestMode()` so it uses either:
-  - all discovered files, or
-  - files matched by `matchPathFilters()`
-
-Logging updates:
-
-- replace tier summaries like `smoke:12, api:40`
-- log either:
-  - `Running all discovered tests (N files)`
-  - `Running selected tests (N files from M path filters)`
-
-### Phase 3: Replace Tier-Based Price Resolution With an Explicit Path Registry
-
-This is the critical phase.
+This is the critical foundation. Everything else depends on it.
 
 The current implementation builds pricing commands from tiers in `test/test-runner/price-commands.ts` and only narrows them by path later using `filterCommandsByPaths()`. That heuristic is not strong enough to become the primary selection model.
 
 Replace it with a new path-first registry. The registry should declare:
 
 - the file or directory prefix it covers
-- the price command key
+- the price command name (for reports and grouping)
+- the price command key (for budget skip matching)
 - the command args
 - whether the command is report-only or also budget-skippable
 
@@ -129,11 +98,14 @@ Suggested shape:
 type PriceSelectionEntry = {
   selector: string
   selectorKind: 'file' | 'prefix'
+  name: string
   key: string
   args: string[]
   budgetSkippable: boolean
 }
 ```
+
+The `name` field replaces the current `ApiCheapPriceCommand.name` used in reports and by `groupCommandsByKey()` in `price-evaluation.ts`. The `key` field is the budget skip key that must exactly match the string passed to `budgetedTest()` in test files.
 
 Behavior:
 
@@ -145,14 +117,30 @@ Behavior:
 Examples of labels:
 
 - `All mapped tests`
-- `Selected paths: step-2-transcribe-e2e/whisper`
-- `Selected paths: kitten-tts.test.ts`
+- `Selected paths: step-2-transcribe-e2e/transcribe-local/whisper`
+- `Selected paths: step-4-tts-e2e/tts-local/kitten-tts.test.ts`
 
 This phase should also remove:
 
 - `buildTierPriceCommands()` from `test/test-runner/price-commands.ts`
+- `filterCommandsByPaths()` from `test/test-runner/price-commands.ts` (replaced by registry-native selection)
 - `resolvePriceTierSelection()` from `test/test-runner/runner.ts`
 - tier-derived suite labels like `Tier api` and `All tiers`
+
+Report metadata should become selection-based at this point. Update report wording in `test/test-runner/runner.ts` and `test/test-runner/reports.ts` so fields like `budgetPreflightSuite` contain neutral labels such as:
+
+- `All mapped tests`
+- `Selected paths: step-3-write-e2e/write-services/openai`
+
+Update `groupCommandsByKey()` in `test/test-runner/price-evaluation.ts` to derive grouping from the registry `name` field instead of tier-based command names.
+
+### Phase 2: Wire Price Mode to the Registry
+
+Connect `runPriceMode()` in `test/test-runner/runner.ts` to resolve commands from the new registry instead of iterating tiers with `buildTierPriceCommands()`.
+
+### Phase 3: Wire Budget Preflight to the Registry
+
+Connect `runBudgetPreflight()` in `test/test-runner/runner.ts` to resolve budget-skippable commands from the registry instead of tier-based selection.
 
 ### Phase 4: Align Price Keys With Budget Skip Keys
 
@@ -172,13 +160,13 @@ But several local and mixed tests still rely on tier-level pricing or standalone
 
 Representative files to normalize:
 
-- `test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-default.test.ts`
-- `test/test-cases/e2e/step-2-transcribe-e2e/whisper/whisper-models-price.test.ts`
-- `test/test-cases/e2e/step-3-write-e2e/llama/llama-smoke.test.ts`
-- `test/test-cases/e2e/step-3-write-e2e/llama/llama-qwen.test.ts`
-- `test/test-cases/e2e/step-3-write-e2e/write-subcommand-local.test.ts`
-- `test/test-cases/e2e/step-4-tts-e2e/kitten-tts.test.ts`
-- `test/test-cases/e2e/step-2-extract-e2e/extract-paddle-ocr-image.test.ts`
+- `test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-default.test.ts`
+- `test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-models-price.test.ts`
+- `test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts`
+- `test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-qwen.test.ts`
+- `test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts`
+- `test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts`
+- `test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts`
 
 Rules for this phase:
 
@@ -190,6 +178,8 @@ Rules for this phase:
 ### Phase 5: Rewrite Validation Tests
 
 After the new selection model exists, rewrite validation coverage around it.
+
+Note: non-tier-dependent validation tests (`test-budget-helper.test.ts`, junit parsing, model calibration, etc.) are not being rewritten — only the three tier-dependent files listed below.
 
 Work:
 
@@ -206,10 +196,51 @@ Work:
   - mixed path selection
   - budget skip key propagation into `AUTOSHOW_TEST_BUDGET_SKIP_KEYS`
   - empty price resolution for unmapped selections
+  - registry key to `budgetedTest()` key alignment (assert every registry key with `budgetSkippable: true` has a corresponding `budgetedTest()` call, and vice versa)
 
 This phase should verify the new model directly instead of recreating tier semantics under a different name.
 
-### Phase 6: Rewrite Documentation
+### Phase 6: Remove Tier Parsing and Tier Routing Code
+
+With the registry in place and validated, remove all tier infrastructure.
+
+CLI cleanup:
+
+- remove `--tier` parsing from `test/test-runner/args.ts`
+- remove the `--api` alias
+- remove the old `slow` shorthand behavior
+- `--api-cheap` already throws a removal error — keep it during the transition
+- `--timestamps` is already silently ignored — no action needed
+- keep a hard error for removed flags for one transition cycle, with a message that points users to path-based usage plus `--test-price` and `--budget`
+
+Recommended error direction:
+
+```text
+Error: --tier has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.
+```
+
+This keeps the breakage explicit and avoids silent behavior changes in existing scripts.
+
+Execution cleanup:
+
+- delete `Tier` from `src/types/tests-dir-types.ts`
+- delete `ALL_TIERS` and `TIER_RULES` from `test/test-runner/constants.ts`
+- delete `selectedTiers`, `parseTier`, and `SLOW_TIERS` from `test/test-runner/args.ts`
+- delete `getTier()` and `buildExcludedPaths()` from `test/test-runner/runner.ts`
+- simplify `runStandardTestMode()` so it uses either:
+  - all discovered files, or
+  - files matched by path filters
+
+Note: if `matchPathFilters()` does not exist yet, it needs to be written as part of this phase.
+
+Logging updates:
+
+- replace tier summaries like `smoke:12, api:40`
+- log either:
+  - `Running all discovered tests (N files)`
+  - `Running selected tests (N files from M path filters)`
+
+### Phase 7: Rewrite Documentation
 
 The documentation currently teaches the tier model in multiple places, so it must change in the same refactor.
 
@@ -248,7 +279,7 @@ Documentation changes:
 
 The docs should still group tests conceptually as "local/runtime" versus "service/network" when that helps readers, but that grouping should be documentation-only, not runner behavior.
 
-### Phase 7: Verify and Clean Up
+### Phase 8: Verify and Clean Up
 
 Verification should happen in this order:
 
@@ -262,9 +293,9 @@ Recommended verification commands:
 
 ```bash
 bun t test/test-cases/validation/
-bun t test/test-cases/e2e/step-2-transcribe-e2e/whisper/ --test-price
-bun t test/test-cases/e2e/step-3-write-e2e/openai/ --test-price
-bun t test/test-cases/e2e/step-4-tts-e2e/kitten-tts.test.ts --budget 5
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/ --test-price
+bun t test/test-cases/e2e/step-3-write-e2e/write-services/openai/ --test-price
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --budget 5
 bun t
 ```
 
@@ -283,17 +314,6 @@ Expected result:
 - no tier-labeled reports
 - no tier-specific docs
 - path-based pricing and budget behavior work consistently
-
-## Reporting Changes
-
-Report metadata should become selection-based, not tier-based.
-
-Update report wording in `test/test-runner/runner.ts` and any validation expectations so fields like `budgetPreflightSuite` contain neutral labels such as:
-
-- `All mapped tests`
-- `Selected paths: step-3-write-e2e/openai`
-
-This avoids preserving tier concepts in JSON after the runner no longer supports them.
 
 ## Risks
 
@@ -325,15 +345,12 @@ Mitigation:
 - keep explicit removal errors during the transition
 - update any external scripts at the same time as the code change
 
-## Recommended Implementation Order
+### Risk 4: Registry Key / budgetedTest Key Mismatch
 
-Use this order to keep the refactor safe:
+A mismatch between registry `key` values and the strings passed to `budgetedTest()` in test files will silently break budget skipping with no error. Tests will run (and incur cost) even when the budget preflight determined they should be skipped.
 
-1. add the explicit path-based price registry
-2. align budget skip keys with real tests
-3. rewrite validation tests around the new selection model
-4. remove tier parsing and tier routing code
-5. update docs
-6. run verification and do final cleanup
+Mitigation:
 
-This order prevents a temporary state where tier deletion breaks `--test-price` and `--budget` before the replacement model exists.
+- add a validation test in Phase 5 that asserts all registry entries with `budgetSkippable: true` have a corresponding `budgetedTest()` call using the same key
+- assert the reverse: every `budgetedTest()` key in test files has a matching registry entry
+- fail loudly on orphaned keys in either direction
