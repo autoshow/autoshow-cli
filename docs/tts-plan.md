@@ -3,6 +3,7 @@
 ## Summary
 
 - Allow multiple existing TTS provider flags in one run; do not add new CLI flags.
+- Rename the Kitten-only speaker flag from `--tts-speaker` to `--kitten-voice` so it matches the existing provider/model naming pattern.
 - Apply this to standalone `tts`, and to `write` only when step 3 produces exactly one summary text.
 - Keep the current `write` behavior when multiple LLM providers are selected: log a clear warning and skip step 4 instead of guessing which summary to synthesize. (This is existing behavior in `processVideo.ts`, preserved as-is.)
 - Execute selected TTS targets sequentially, mirroring multi-provider LLM behavior.
@@ -60,7 +61,9 @@ const runTtsTargets = async (
 
 ### CLI flags
 
-- Keep `RuntimeOptions` and CLI flags as-is; the user opts into fanout by passing multiple existing flags such as `--openai-tts ... --gemini-tts ...`.
+- Keep the provider model flags as-is; the user opts into fanout by passing multiple existing flags such as `--openai-tts ... --gemini-tts ...`.
+- Rename the Kitten speaker flag from `--tts-speaker` to `--kitten-voice`.
+- If we want a non-breaking transition, keep `--tts-speaker` as a deprecated alias for one release, but make `--kitten-voice` the only flag shown in help text, docs, config output, and error messages.
 
 ## Implementation Changes
 
@@ -69,14 +72,23 @@ const runTtsTargets = async (
 Changes:
 - Remove mutual-exclusion checks for TTS provider flags from standalone `tts` (`define-tts-command.ts` lines 62-65), `write` (`handle-process-target.ts` lines 179-183), and the TTS runner (`run-tts.ts` lines 91-93).
 - Replace single-dispatch `resolveTtsEngine` in `run-tts.ts` with `collectTtsTargets` + `runTtsTargets`.
+- Rename Kitten speaker flag plumbing from `--tts-speaker` to `--kitten-voice` across CLI definitions, parsing, help text, and config command generation.
 - Update pricing/timing aggregation and artifact reporting for multi-target.
 
 Preserved as-is (no changes needed):
 - Standalone `tts` default behavior: if no explicit TTS provider flag is set, implicitly select Kitten only; if any explicit TTS provider flag is set, do not also add Kitten. (Current fallback in `resolveTtsEngine`; replicated in standalone command's call to `collectTtsTargets`.)
 - `write` runtime gating: step 4 runs only when the effective LLM output count is exactly 1; with 0 or >1 outputs, skip TTS. (Already implemented in `processVideo.ts`.)
 - Provider-specific voice behavior:
-  - `--tts-speaker` applies only to Kitten
+  - `--kitten-voice` applies only to Kitten
   - each provider-specific voice flag applies only to that provider target
+
+### Kitten speaker rename
+
+- Update flag definitions in `src/cli/flags/tts-flags.ts` and `src/cli/flags/write-flags.ts` so help output exposes `--kitten-voice` instead of `--tts-speaker`.
+- Update TTS option parsing and validation in `build-opts-from-flags.ts`, `define-tts-command.ts`, and any related validation/error helpers so Kitten speaker selection reads from `kitten-voice`.
+- Update config command plumbing in `config-merge.ts` so generated commands emit `--kitten-voice`; decide separately whether the persisted config field stays `ttsSpeaker` for compatibility or is renamed in a follow-up migration.
+- Update all human-facing references, examples, and failure text to use `--kitten-voice` so multi-provider TTS no longer presents a provider-agnostic flag that only affects one engine.
+- If we keep `--tts-speaker` temporarily, make it a compatibility alias with a deprecation warning and remove it after docs/tests/config output have fully moved to `--kitten-voice`.
 
 ### Per-target workspace isolation
 
@@ -116,6 +128,7 @@ Each provider currently hardcodes `speech.wav` as output and some providers writ
   - `metadata.tts` is an array with both entries in deterministic order
   - cost/timing sections contain two `tts` step entries
 - Replace current standalone mutual-exclusion tests with multi-provider acceptance tests; keep invalid-model validation tests per provider.
+- Update Kitten-specific tests, config tests, and help-text assertions to use `--kitten-voice`; if `--tts-speaker` remains as a deprecated alias, add coverage for the warning path.
 - Add standalone `tts --price` coverage for multiple providers and verify:
   - per-target estimate lines are shown
   - summed total matches individual estimates

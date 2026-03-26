@@ -512,13 +512,13 @@ const processMetadataMedia = async (
 
   console.log(JSON.stringify(metadata, null, 2))
 
+  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+  const uniqueDirName = createUniqueDirectoryName(meta.title)
+  const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+  await ensureDirectory(outputDir)
+  const metadataPath = `${outputDir}/metadata.json`
+  await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
   if (save) {
-    const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
-    const uniqueDirName = createUniqueDirectoryName(meta.title)
-    const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
-    await ensureDirectory(outputDir)
-    const metadataPath = `${outputDir}/metadata.json`
-    await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
     l.report.complete(outputDir, { metadata: 'metadata.json' })
   }
 }
@@ -556,13 +556,13 @@ const processMetadataDocument = async (
 
   console.log(JSON.stringify(metadata, null, 2))
 
+  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+  const uniqueDirName = createUniqueDirectoryName(title)
+  const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+  await ensureDirectory(outputDir)
+  const metadataPath = `${outputDir}/metadata.json`
+  await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
   if (save) {
-    const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
-    const uniqueDirName = createUniqueDirectoryName(title)
-    const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
-    await ensureDirectory(outputDir)
-    const metadataPath = `${outputDir}/metadata.json`
-    await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
     l.report.complete(outputDir, { metadata: 'metadata.json' })
   }
 }

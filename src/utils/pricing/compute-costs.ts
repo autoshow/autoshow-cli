@@ -96,7 +96,7 @@ type ComputeActualCostsInput = {
   step1?: Step1Metadata | undefined
   step2?: Step2Metadata | ExtractionMetadata | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
-  step4?: Step4Metadata | undefined
+  step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | undefined
   step6?: Step6VideoMetadata | undefined
   step7?: Step7MusicMetadata | undefined
@@ -175,16 +175,22 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     })
   }
 
-  if (input.step4 && typeof input.ttsCharacterCount === 'number') {
-    const ttsCost = computeTtsCost(input.step4.ttsService, input.step4.ttsModel, input.ttsCharacterCount)
-    steps.push({
-      step: 'tts',
-      provider: input.step4.ttsService,
-      model: input.step4.ttsModel,
-      cost: ttsCost.cost,
-      inputMetric: 'characters',
-      inputValue: input.ttsCharacterCount
-    })
+  const step4Array = input.step4
+    ? Array.isArray(input.step4) ? input.step4 : [input.step4]
+    : []
+
+  if (step4Array.length > 0 && typeof input.ttsCharacterCount === 'number') {
+    for (const step4 of step4Array) {
+      const ttsCost = computeTtsCost(step4.ttsService, step4.ttsModel, input.ttsCharacterCount)
+      steps.push({
+        step: 'tts',
+        provider: step4.ttsService,
+        model: step4.ttsModel,
+        cost: ttsCost.cost,
+        inputMetric: 'characters',
+        inputValue: input.ttsCharacterCount
+      })
+    }
   }
 
   if (input.step5) {
@@ -266,6 +272,7 @@ type ComputeEstimatedCostsInput = {
   llmInputTokenCount?: number | undefined
   llmOutputTokenCount?: number | undefined
   skipLLM?: boolean | undefined
+  ttsTargets?: Array<{ service: string, model: string }> | undefined
   ttsService?: string | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
@@ -375,20 +382,26 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     }
   }
 
-  if (input.ttsService && input.ttsModel) {
+  const ttsTargets = input.ttsTargets && input.ttsTargets.length > 0
+    ? input.ttsTargets
+    : input.ttsService && input.ttsModel
+      ? [{ service: input.ttsService, model: input.ttsModel }]
+      : []
+
+  for (const ttsTarget of ttsTargets) {
     const resolvedTtsCharacterCount = typeof input.ttsCharacterCount === 'number' ? input.ttsCharacterCount : 0
-    const ttsCost = computeTtsCost(input.ttsService, input.ttsModel, resolvedTtsCharacterCount)
-    const estimation = getTtsEstimation(input.ttsService, input.ttsModel)
-    const pricing = getTtsPricing(input.ttsService, input.ttsModel)
+    const ttsCost = computeTtsCost(ttsTarget.service, ttsTarget.model, resolvedTtsCharacterCount)
+    const estimation = getTtsEstimation(ttsTarget.service, ttsTarget.model)
+    const pricing = getTtsPricing(ttsTarget.service, ttsTarget.model)
     const hasDualRates = pricing.inputCostPer1MCharsCents !== undefined && pricing.outputCostPer1MCharsCents !== undefined
-    const costPer1kCharsCents = hasDualRates ? undefined : (pricing.costPer1kCharsCents ?? getTtsCost(input.ttsService, input.ttsModel))
+    const costPer1kCharsCents = hasDualRates ? undefined : (pricing.costPer1kCharsCents ?? getTtsCost(ttsTarget.service, ttsTarget.model))
 
     const cost = applyCostMultiplier(ttsCost.cost, estimation.costMultiplier)
     totalCost += cost
     steps.push({
       step: 'tts',
-      provider: input.ttsService,
-      model: input.ttsModel,
+      provider: ttsTarget.service,
+      model: ttsTarget.model,
       cost,
       costMultiplier: estimation.costMultiplier,
       ...(costPer1kCharsCents !== undefined ? { costPer1kCharactersCents: costPer1kCharsCents } : {}),

@@ -63,6 +63,13 @@ const toFiniteNumber = (value: unknown): number | null => {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+const toRecordArray = (value: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(value)) {
+    return value.filter(isRecord)
+  }
+  return isRecord(value) ? [value] : []
+}
+
 const normalizeLlmService = (service: string): string => {
   return service === 'llama.cpp' ? 'llama' : service
 }
@@ -259,7 +266,10 @@ const getLegacyTimingSteps = (metadata: Record<string, unknown>): Map<string, { 
   const step1 = isRecord(metadata['step1']) ? metadata['step1'] : null
   const step2 = isRecord(metadata['step2']) ? metadata['step2'] : null
   const step3Raw = metadata['step3']
-  const step4 = isRecord(metadata['step4']) ? metadata['step4'] : isRecord(metadata['tts']) ? metadata['tts'] : null
+  const step4Entries = [
+    ...toRecordArray(metadata['step4']),
+    ...toRecordArray(metadata['tts'])
+  ]
   const step5 = isRecord(metadata['step5']) ? metadata['step5'] : isRecord(metadata['image']) ? metadata['image'] : null
   const step6 = isRecord(metadata['step6']) ? metadata['step6'] : isRecord(metadata['video']) ? metadata['video'] : null
   const step7 = isRecord(metadata['step7']) ? metadata['step7'] : isRecord(metadata['music']) ? metadata['music'] : null
@@ -302,7 +312,10 @@ const getLegacyTimingSteps = (metadata: Record<string, unknown>): Map<string, { 
     }
   }
 
-  if (step4 && typeof step4['ttsService'] === 'string' && typeof step4['ttsModel'] === 'string') {
+  for (const step4 of step4Entries) {
+    if (typeof step4['ttsService'] !== 'string' || typeof step4['ttsModel'] !== 'string') {
+      continue
+    }
     const normalized = normalizeStepShape('tts', step4['ttsService'], step4['ttsModel'])
     const processingTimeMs = toFiniteNumber(step4['processingTime'])
     if (normalized && processingTimeMs !== null) {

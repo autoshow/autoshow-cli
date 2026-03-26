@@ -20,6 +20,20 @@ import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/config/config-merge'
+import { resolveLLMDefaults } from './llm-defaults'
+import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
+
+const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
+  const llmConfig = resolveLLMDefaults(opts)
+  return [
+    llmConfig.openaiModel,
+    llmConfig.groqModel,
+    llmConfig.geminiModel,
+    llmConfig.anthropicModel,
+    llmConfig.minimaxModel,
+    llmConfig.llamaModel
+  ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
+}
 
 const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): string[] => {
   if (command === 'metadata') {
@@ -46,8 +60,11 @@ const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): 
   )
   const summaryFile = opts.structured && hasNonLlamaLlmProvider ? 'text.json' : 'text.md'
   const files = ['Audio file', 'transcription.txt', summaryFile]
-  if (opts.kittenTtsModel || opts.elevenlabsTtsModel || opts.minimaxTtsModel || opts.groqTtsModel || opts.openaiTtsModel || opts.geminiTtsModel) {
-    files.push('speech.wav')
+  const ttsTargets = collectTtsTargets(opts)
+  if (ttsTargets.length > 0 && getEffectiveLlmOutputCount(opts) === 1) {
+    for (const target of ttsTargets) {
+      files.push(getTtsArtifactFileName(target, ttsTargets.length === 1))
+    }
   }
   if (opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel) {
     files.push('generated-image.png')
@@ -177,11 +194,6 @@ export const handleProcessTarget = async (
   }
 
   if (command === 'write') {
-    const ttsEngineCount = [opts.kittenTtsModel, opts.elevenlabsTtsModel, opts.minimaxTtsModel, opts.groqTtsModel, opts.openaiTtsModel, opts.geminiTtsModel].filter(Boolean).length
-    if (ttsEngineCount > 1) {
-      throw CLIUsageError('Cannot use more than one TTS engine at the same time (--kitten-tts, --elevenlabs-tts, --minimax-tts, --groq-tts, --openai-tts, --gemini-tts)')
-    }
-
     const musicProviderCount = [opts.elevenlabsMusicModel, opts.minimaxMusicModel].filter(Boolean).length
     if (musicProviderCount > 1) {
       throw CLIUsageError('Cannot use more than one music provider at the same time (--elevenlabs-music, --minimax-music)')

@@ -1,5 +1,5 @@
 import { defineCommand } from 'clerc'
-import modelLinks from '~/../../docs/links/model-links.json'
+import modelLinks from './model-links.json'
 import * as l from '~/logger'
 import { CLIUsageError } from '~/utils/error-handler'
 

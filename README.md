@@ -128,6 +128,7 @@ Generate speech from local markdown/txt files:
 ```bash
 bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts
 bun as tts input/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts
+bun as tts input/1-tts.md --kitten-tts kitten-tts-mini --openai-tts gpt-4o-mini-tts
 ```
 
 ### ocr

@@ -17,7 +17,7 @@ const OPENAI_TTS_MODELS_DESCRIPTION = `OpenAI TTS model: ${SUPPORTED_OPENAI_TTS_
 const GEMINI_TTS_MODELS_DESCRIPTION = `Gemini TTS model: ${SUPPORTED_GEMINI_TTS_MODELS.join('|')}`
 
 export const ttsFlags = {
-  'tts-speaker': {
+  'kitten-voice': {
     description: 'Kitten TTS speaker: Bella|Jasper|Luna|Bruno|Rosie|Hugo|Kiki|Leo',
     type: String,
     default: 'Jasper'

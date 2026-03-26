@@ -107,6 +107,10 @@ const KNOWN_SERVICE_HINTS: Array<{ pattern: RegExp, service: string }> = [
   { pattern: /\bsora\b/i, service: 'sora' },
 ]
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null
+}
+
 const cleanValue = (value: string | null | undefined): string | null => {
   if (!value) return null
   const cleaned = value.trim()
@@ -116,6 +120,13 @@ const cleanValue = (value: string | null | undefined): string | null => {
 const normalizeValue = (value: string | null | undefined): string | null => {
   const cleaned = cleanValue(value)
   return cleaned ? cleaned.toLowerCase() : null
+}
+
+const toRecordArray = (value: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(value)) {
+    return value.filter(isRecord)
+  }
+  return isRecord(value) ? [value] : []
 }
 
 const dedupePairs = (pairs: ServiceModelPair[]): ServiceModelPair[] => {
@@ -194,21 +205,12 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
   const step2 = typeof metadata['step2'] === 'object' && metadata['step2'] !== null
     ? metadata['step2'] as Record<string, unknown>
     : null
-  const step3 = typeof metadata['step3'] === 'object' && metadata['step3'] !== null
-    ? metadata['step3'] as Record<string, unknown>
-    : null
-  const music = typeof metadata['music'] === 'object' && metadata['music'] !== null
-    ? metadata['music'] as Record<string, unknown>
-    : null
-  const tts = typeof metadata['tts'] === 'object' && metadata['tts'] !== null
-    ? metadata['tts'] as Record<string, unknown>
-    : null
-  const image = typeof metadata['image'] === 'object' && metadata['image'] !== null
-    ? metadata['image'] as Record<string, unknown>
-    : null
-  const video = typeof metadata['video'] === 'object' && metadata['video'] !== null
-    ? metadata['video'] as Record<string, unknown>
-    : null
+  const step3Entries = toRecordArray(metadata['step3'])
+  const step4Entries = toRecordArray(metadata['step4'])
+  const musicEntries = toRecordArray(metadata['music'])
+  const ttsEntries = toRecordArray(metadata['tts'])
+  const imageEntries = toRecordArray(metadata['image'])
+  const videoEntries = toRecordArray(metadata['video'])
 
   pushPair(
     pairs,
@@ -230,36 +232,54 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
         : null,
     typeof step2?.['ocrModel'] === 'string' ? step2['ocrModel'] : null
   )
-  pushPair(
-    pairs,
-    'write',
-    typeof step3?.['llmService'] === 'string' ? step3['llmService'] : null,
-    typeof step3?.['llmModel'] === 'string' ? step3['llmModel'] : null
-  )
-  pushPair(
-    pairs,
-    'music',
-    typeof music?.['musicService'] === 'string' ? music['musicService'] : null,
-    typeof music?.['musicModel'] === 'string' ? music['musicModel'] : null
-  )
-  pushPair(
-    pairs,
-    'tts',
-    typeof tts?.['ttsService'] === 'string' ? tts['ttsService'] : null,
-    typeof tts?.['ttsModel'] === 'string' ? tts['ttsModel'] : null
-  )
-  pushPair(
-    pairs,
-    'image',
-    typeof image?.['imageService'] === 'string' ? image['imageService'] : null,
-    typeof image?.['imageModel'] === 'string' ? image['imageModel'] : null
-  )
-  pushPair(
-    pairs,
-    'video',
-    typeof video?.['videoService'] === 'string' ? video['videoService'] : null,
-    typeof video?.['videoModel'] === 'string' ? video['videoModel'] : null
-  )
+  for (const step3 of step3Entries) {
+    pushPair(
+      pairs,
+      'write',
+      typeof step3['llmService'] === 'string' ? step3['llmService'] : null,
+      typeof step3['llmModel'] === 'string' ? step3['llmModel'] : null
+    )
+  }
+  for (const step4 of step4Entries) {
+    pushPair(
+      pairs,
+      'tts',
+      typeof step4['ttsService'] === 'string' ? step4['ttsService'] : null,
+      typeof step4['ttsModel'] === 'string' ? step4['ttsModel'] : null
+    )
+  }
+  for (const music of musicEntries) {
+    pushPair(
+      pairs,
+      'music',
+      typeof music['musicService'] === 'string' ? music['musicService'] : null,
+      typeof music['musicModel'] === 'string' ? music['musicModel'] : null
+    )
+  }
+  for (const tts of ttsEntries) {
+    pushPair(
+      pairs,
+      'tts',
+      typeof tts['ttsService'] === 'string' ? tts['ttsService'] : null,
+      typeof tts['ttsModel'] === 'string' ? tts['ttsModel'] : null
+    )
+  }
+  for (const image of imageEntries) {
+    pushPair(
+      pairs,
+      'image',
+      typeof image['imageService'] === 'string' ? image['imageService'] : null,
+      typeof image['imageModel'] === 'string' ? image['imageModel'] : null
+    )
+  }
+  for (const video of videoEntries) {
+    pushPair(
+      pairs,
+      'video',
+      typeof video['videoService'] === 'string' ? video['videoService'] : null,
+      typeof video['videoModel'] === 'string' ? video['videoModel'] : null
+    )
+  }
 
   return dedupePairs(pairs)
 }

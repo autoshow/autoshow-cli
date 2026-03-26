@@ -4,9 +4,9 @@ This document is the release narrative for the Bun CLI.
 It explains what the project is, what ships in this release,
 and how to use it.
 
-As of March 19, 2026, live help output in this repo reports `bun as v1.0.0`.
-This document uses `v0.1` as the release label for the Bun CLI merge package,
-not as the current internal semver string exposed by `--help`.
+Current CLI help in this repo reports `bun as v0.1.0`.
+This document uses `v0.1` as the release label for the Bun CLI package,
+not as a separate semver string.
 
 ## Outline
 
@@ -22,7 +22,7 @@ not as the current internal semver string exposed by `--help`.
 
 AutoShow is a Bun-native CLI for turning media, documents, and text prompts into:
 
-- downloaded audio and metadata
+- downloaded files and source metadata
 - transcripts and prompt-ready text
 - OCR and document extraction artifacts
 - summaries and structured JSON outputs
@@ -30,11 +30,12 @@ AutoShow is a Bun-native CLI for turning media, documents, and text prompts into
 
 This release brings together:
 
-- a single CLI entrypoint
+- a single CLI entrypoint with a root shorthand
 - a step-oriented processing model from setup through post-generation
 - local and service-backed engines across STT, OCR, LLM, TTS, image, video, and music
 - persistent CLI defaults in `config/autoshow.json`
 - automatic cost preflight and budget enforcement
+- a `links` command for fetching provider documentation into one local markdown file
 
 ## What AutoShow Is
 
@@ -48,7 +49,7 @@ It is a pipeline-oriented CLI that can:
 5. record step metadata, cost estimates, actual cost, and timing
 
 It supports single targets, directories, markdown/text URL lists, YouTube collections,
-podcast feeds, local text files for TTS, and prompt-driven image/video/music generation.
+podcast feeds, local text files for TTS, and prompt-driven image, video, and music generation.
 
 ## What Ships In This Release
 
@@ -56,50 +57,59 @@ podcast feeds, local text files for TTS, and prompt-driven image/video/music gen
 
 | Area | What it does |
 |------|--------------|
+| Metadata | Collect and display metadata without downloading (`metadata`, aliases: `meta`, `info`) |
 | Download | Fetch or normalize media/documents and collect metadata only |
-| Extract | OCR and text extraction for documents and images |
-| Transcribe | Audio/video transcription without LLM summarization |
-| Write | Full download/extract/transcribe + prompt + summary pipeline |
+| OCR | Document OCR and text extraction (`ocr`, alias: `extract`) |
+| STT | Audio/video transcription plus prompt artifact (`stt`, alias: `transcribe`) |
+| Write | Full download/ocr/stt + prompt + summary pipeline |
 | TTS | Generate speech from local markdown or text |
 | Image | Generate images from text prompts |
 | Video | Generate videos from text prompts |
 | Music | Generate music from text prompts |
-| Config | Persist defaults, prompts, batch settings, extract settings, and budgets |
-| Setup | Install local runtimes, tools, and provider prerequisites |
-| Models | Pre-download Whisper or llama.cpp models |
-| Sample | Build deterministic fixtures for testing and validation |
+| Config | Persist defaults for providers, prompts, batch/extract settings, post-processing, and budgets |
+| Setup | Install local runtimes and verify prerequisites with `--doctor` |
+| Models | Download Whisper model IDs or llama.cpp repo IDs without running inference |
+| Sample | Generate and validate deterministic fixtures for testing and validation |
+| Links | Fetch curated provider documentation markdown into one combined file |
 
 ### High-value behaviors
 
-- `bun as <input>` is a root shorthand for `bun as write <input>`.
-- Command aliases are normalized up front, including `dl`, `llm`, `llms`, `model`, `download-llama`, `transcript`, `transcription`, and `samples`.
-- Bare provider flags expand to default models, so `--openai` becomes `--openai gpt-5.2`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, and similar for the rest of the provider surface.
-- Batch processing supports configurable concurrency with `--batch-concurrency` and defaults to `1`.
+- `bun as <input>` is a root shorthand for `bun as metadata <input>`.
+- Command aliases are normalized up front, including `meta`, `info`, `dl`, `model`, `stt`, `transcript`, `transcription`, `document`, `ocr`, `voice`, `llm`, `llms`, and `samples`.
+- Bare provider flags expand to default models across STT, LLM, TTS, image, video, and music. Examples: `--openai` becomes `--openai gpt-5.2`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, and `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`.
+- Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - Runnable commands run an automatic cost preflight before execution.
-- `--price` prints the aggregated estimate and expected output files, then exits.
+- `--price` (or `--dry-run`) prints the aggregated estimate and expected output files, then exits.
 - `write` can run multiple LLM providers in one invocation and will write provider-specific artifacts for each result.
 - Post-generation steps on `write` run in parallel after step 3, but only when there is exactly one LLM output to consume.
+- `links` can fetch all curated docs or a provider/section subset and writes the combined markdown to `docs/links/bun-links.md`.
 
 ### Quick start
 
 ```bash
+# check prerequisites without installing
+bun as setup --doctor
+
 # install local runtimes and verify core tools
 bun as setup
 
-# transcribe only
-bun as transcribe input/1-audio.mp3
+# stt only
+bun as stt input/1-audio.mp3
 
 # full media pipeline with service LLM
 bun as write input/1-audio.mp3 --openai gpt-5.2
 
-# document extraction
-bun as extract input/1-document.pdf --out json
+# document OCR/extraction
+bun as ocr input/1-document.pdf --out json
 
 # standalone text-to-speech
 bun as tts input/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
 
 # standalone image generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
+
+# fetch curated OpenAI provider docs
+bun as links --openai
 ```
 
 ### Prompts and the write command
@@ -130,18 +140,20 @@ Metadata records:
 
 ## Command Surface
 
-AutoShow exposes 12 workflow/support commands, plus `help`, `version`, and the root shorthand.
+AutoShow exposes 14 workflow/support commands, plus `help`, `version`, and the root shorthand.
 
 | Command | Primary purpose | Typical input |
 |---------|-----------------|---------------|
-| `(root)` | shorthand for `write` | URL, local file, directory, or list |
+| `(root)` | shorthand for `metadata` | URL, local file, directory, or list |
+| `metadata` | metadata-only inspection (`meta`/`info` aliases) | URL, file, directory, list |
 | `setup` | install runtimes and verify tools | none |
 | `sample` | generate or validate fixtures | none |
-| `models` | download Whisper or llama.cpp models | model ID |
+| `models` | download a Whisper model or llama repo | model ID |
 | `config` | inspect or persist defaults | none |
+| `links` | fetch provider documentation | provider/section filters |
 | `download` | metadata-only acquisition | URL, file, directory, list |
-| `extract` | document/image extraction | URL, file, directory, list |
-| `transcribe` | media transcription only | URL, file, directory, list |
+| `ocr` | document/image extraction (`extract` alias) | URL, file, directory, list |
+| `stt` | media transcription only (`transcribe` alias) | URL, file, directory, list |
 | `write` | full pipeline orchestration | URL, file, directory, list |
 | `tts` | text-to-speech | local `.md` or `.txt` |
 | `image` | text-to-image | prompt |
@@ -154,13 +166,13 @@ AutoShow exposes 12 workflow/support commands, plus `help`, `version`, and the r
 
 | Input kind | Supported workflows |
 |------------|---------------------|
-| Streaming URLs | `download`, `transcribe`, `write` |
-| Direct media URLs | `download`, `transcribe`, `write` |
-| Direct document URLs | `download`, `extract`, `write` |
-| Local media files | `download`, `transcribe`, `write` |
-| Local document and image files | `download`, `extract`, `write` |
-| Directories | batch `download`, `extract`, `transcribe`, `write` |
-| `.md` / `.txt` input lists | batch `download`, `extract`, `transcribe`, `write` |
+| Streaming URLs | `metadata`, `download`, `stt`, `write` |
+| Direct media URLs | `metadata`, `download`, `stt`, `write` |
+| Direct document URLs | `metadata`, `download`, `ocr`, `write` |
+| Local media files | `metadata`, `download`, `stt`, `write` |
+| Local document and image files | `metadata`, `download`, `ocr`, `write` |
+| Directories | batch `metadata`, `download`, `ocr`, `stt`, `write` |
+| `.md` / `.txt` input lists | batch `metadata`, `download`, `ocr`, `stt`, `write` |
 | YouTube channels / playlists | batch media workflows |
 | RSS / Atom podcast feeds | batch media workflows |
 | Local `.md` / `.txt` content files | `tts` |
@@ -183,7 +195,7 @@ Current extraction and download coverage includes:
 Notable behavior:
 
 - EPUB defaults to native chapter extraction when no OCR engine is requested.
-- EPUB deep-inspect modes are available through `--epub-bun` and `--epub-calibre`.
+- EPUB inspect modes are available through `--epub-bun` and `--epub-calibre`, and they write structured EPUB payloads into `metadata.json`.
 - MOBI / AZW3 / FB2 / LIT are normalized through Calibre before downstream extraction.
 - Office formats attempt native ZIP/XML extraction first, then fall back to OCR when quality heuristics fail.
 - CSV is treated as raw text, not OCR.
@@ -200,7 +212,7 @@ Notable behavior:
 | Video | none | OpenAI Sora, Gemini Veo, MiniMax |
 | Music | none | ElevenLabs, MiniMax |
 
-### Supported model families in the live registry
+### Supported model families in the live flag registry
 
 | Area | Supported model IDs |
 |------|---------------------|
@@ -233,6 +245,9 @@ Notable behavior:
 | ElevenLabs music | `music_v1` |
 | MiniMax music | `music-2.5` |
 
+`models` is slightly looser for llama downloads than the flag registry:
+it accepts Whisper model IDs directly, but forwards non-Whisper values as llama repo IDs to the local downloader.
+
 ## Prompts, Structured Output, Config, And Pricing
 
 ### Prompts
@@ -245,14 +260,16 @@ Common built-in prompt names include:
 - `shortSummary`
 - `longSummary`
 - `chapters`
-- `default`
-- `rapSong`
 - `bulletPoints`
 - `faq`
 - `titles`
 - `blog`
+- `contentStrategy`
+- `emailNewsletter`
+- `seoArticle`
 - `screenplay`
 - `shortStory`
+- `youtubeDescription`
 
 `default` expands to:
 
@@ -262,14 +279,15 @@ shortSummary + longSummary + chapters
 
 ### Structured output
 
-Service `write` runs default to structured JSON output.
+Structured output is enabled by default for `write` when a selected provider supports or emulates it.
 
 Key behaviors:
 
 - structured artifacts are written as `text.json` or `text-<model>.json`
-- legacy markdown artifacts are still available through `--no-structured`
-- `llama.cpp` remains markdown-oriented
-- providers that cannot satisfy the target schema natively can fall back to validation-and-retry or compatibility behavior
+- legacy markdown artifacts are still available through `--no-structured`, `--md-output`, or any markdown-only path
+- `llama.cpp` remains markdown-oriented and writes `text.md`
+- providers that cannot satisfy the target schema natively can fall back to validation/retry or compatibility behavior
+- multi-provider `write` runs can mix output filenames by provider and model
 
 ### Persistent config
 
@@ -277,7 +295,9 @@ Key behaviors:
 
 - STT engines and models
 - LLM engines and models
+- structured output settings like `structured`, `structured-strict`, and compat retries
 - TTS, image, video, and music post-processing defaults
+- voice and speaker overrides
 - extract defaults
 - batch defaults
 - default prompt lists
@@ -289,6 +309,7 @@ Example capabilities:
 bun as config --openai gpt-5.2
 bun as config --whisper large-v3-turbo
 bun as config --batch-limit 20 --batch-order oldest
+bun as config --structured --structured-compat-retries 3
 bun as config --max-cents 50
 ```
 
@@ -299,7 +320,8 @@ All runnable commands perform preflight cost estimation.
 Supported behaviors:
 
 - automatic estimate logging before execution
-- `--price` for estimate-only mode
+- `--price` or `--dry-run` for estimate-only mode
+- per-target and multi-target suite price previews
 - `--max-cents` and `--max-usd` for hard budgets
 - `--allow-over-budget` for one-off overrides
 
@@ -313,17 +335,25 @@ Important setup coverage includes:
 
 - `uv`
 - `yt-dlp`
-- FFmpeg
-- Whisper.cpp binary and local model download
-- llama.cpp binary and local model download
+- FFmpeg / ffprobe
+- Whisper.cpp binary and default local model download
+- llama.cpp binary and default local model download
 - Reverb Python environment and models
 - Calibre
-- document OCR dependencies
-- Kitten TTS environment and local model downloads
-- service-provider environment validation for supported APIs
+- local document OCR dependencies
+- Kitten TTS environment and default local model download
+- provider-specific setup hooks for supported STT, TTS, image, and music services
+- `bun as setup --doctor` checks for core tools, API keys, config presence, and config validity
 
 There are also targeted setup substeps such as:
 
+- `bun as setup --step uv`
+- `bun as setup --step yt-dlp`
+- `bun as setup --step whisper-binary`
+- `bun as setup --step whisper-model`
+- `bun as setup --step llama-binary`
+- `bun as setup --step reverb`
+- `bun as setup --step calibre`
 - `bun as setup --step transcription`
 - `bun as setup --step write`
 - `bun as setup --step tts`
@@ -334,6 +364,7 @@ There are also targeted setup substeps such as:
 
 The project standardizes on:
 
+- `runtime/build/` for checked-out build trees such as `whisper.cpp`
 - `runtime/bin/` for binaries and virtual environments
 - `runtime/models/` for downloaded local models
 - `output/` for timestamped run artifacts
@@ -343,9 +374,10 @@ The project standardizes on:
 
 Common output artifacts include:
 
+- downloaded media or normalized document/image files
 - `prompt.md`
 - `transcription.txt`
-- `extraction.<format>`
+- extracted text or OCR output in the requested format
 - `text.json` or `text.md`
 - `speech.wav`
 - `generated-image.*`

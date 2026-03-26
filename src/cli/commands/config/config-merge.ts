@@ -93,7 +93,7 @@ export const mergeConfigIntoRawFlags = (
       injectStr('openai-tts', d.post.tts.openaiTts)
       injectStr('gemini-tts', d.post.tts.geminiTts)
     }
-    injectStr('tts-speaker', d.post.tts.ttsSpeaker)
+    injectStr('kitten-voice', d.post.tts.ttsSpeaker)
     injectStr('groq-voice', d.post.tts.groqVoice)
     injectStr('openai-voice', d.post.tts.openaiVoice)
     injectStr('gemini-voice', d.post.tts.geminiVoice)
@@ -186,7 +186,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'groq-tts':          ['defaults', 'post', 'tts', 'groqTts'],
   'openai-tts':        ['defaults', 'post', 'tts', 'openaiTts'],
   'gemini-tts':        ['defaults', 'post', 'tts', 'geminiTts'],
-  'tts-speaker':       ['defaults', 'post', 'tts', 'ttsSpeaker'],
+  'kitten-voice':      ['defaults', 'post', 'tts', 'ttsSpeaker'],
   'groq-voice':        ['defaults', 'post', 'tts', 'groqVoice'],
   'openai-voice':      ['defaults', 'post', 'tts', 'openaiVoice'],
   'gemini-voice':      ['defaults', 'post', 'tts', 'geminiVoice'],

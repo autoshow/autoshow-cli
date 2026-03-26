@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeAll, afterAll } from "bun:test"
-import { join } from "node:path"
+import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { join } from 'node:path'
 import {
   runCommand,
   fileExists,
@@ -7,18 +7,34 @@ import {
   cleanupTestOutput,
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
-} from "../../../../test-utils/test-helpers"
+  hasConfiguredEnvVar,
+} from '../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../test-utils/budget'
 
-const KITTEN_TTS_ENV_DIR = "runtime/bin/kitten-tts"
-const KITTEN_PYTHON_VERSION = "3.12"
+const KITTEN_TTS_ENV_DIR = 'runtime/bin/kitten-tts'
+const KITTEN_PYTHON_VERSION = '3.12'
 
-describe("kitten-tts", () => {
-  describe("environment", () => {
-    test("venv is configured with required packages", async () => {
-      const pythonExists = await fileExists(join(KITTEN_TTS_ENV_DIR, "bin/python"))
+const hasOpenAiTtsEnv = async (): Promise<boolean> => {
+  return await hasConfiguredEnvVar('OPENAI_API_KEY') || await hasConfiguredEnvVar('NITRO_OPENAI_API_KEY')
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null
+}
+
+const toRecordArray = (value: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(value)) {
+    return value.filter(isRecord)
+  }
+  return isRecord(value) ? [value] : []
+}
+
+describe('kitten-tts', () => {
+  describe('environment', () => {
+    test('venv is configured with required packages', async () => {
+      const pythonExists = await fileExists(join(KITTEN_TTS_ENV_DIR, 'bin/python'))
       if (!pythonExists) {
-        console.log("Skipping: Kitten TTS venv not set up (run: bun as setup)")
+        console.log('Skipping: Kitten TTS venv not set up (run: bun as setup)')
         return
       }
       expect(pythonExists).toBe(true)
@@ -34,13 +50,13 @@ describe("kitten-tts", () => {
       expect(soundfileExists).toBe(true)
 
       const result = Bun.spawnSync(
-        [join(KITTEN_TTS_ENV_DIR, "bin/python"), "-c", "from kittentts import KittenTTS; import soundfile"],
+        [join(KITTEN_TTS_ENV_DIR, 'bin/python'), '-c', 'from kittentts import KittenTTS; import soundfile'],
       )
       expect(result.exitCode).toBe(0)
     })
   })
 
-  describe("tts command", () => {
+  describe('tts command', () => {
     beforeAll(async () => {
       await cleanupTestOutput(STABLE_TTS_MD_TITLE)
     })
@@ -57,9 +73,9 @@ describe("kitten-tts", () => {
     ] as const
 
     for (const kittenModelCase of kittenModelCases) {
-      budgetedTest(kittenModelCase.budgetKey, `${kittenModelCase.model} with --tts-speaker ${kittenModelCase.speaker} generates speech.wav`, async () => {
+      budgetedTest(kittenModelCase.budgetKey, `${kittenModelCase.model} with --kitten-voice ${kittenModelCase.speaker} generates speech.wav`, async () => {
         await cleanupTestOutput(STABLE_TTS_MD_TITLE)
-        const testName = `${kittenModelCase.model} with --tts-speaker ${kittenModelCase.speaker} generates speech.wav`
+        const testName = `${kittenModelCase.model} with --kitten-voice ${kittenModelCase.speaker} generates speech.wav`
 
         const result = await runCommand(
           [
@@ -68,7 +84,7 @@ describe("kitten-tts", () => {
             STABLE_TTS_MD_PATH,
             '--kitten-tts',
             kittenModelCase.model,
-            '--tts-speaker',
+            '--kitten-voice',
             kittenModelCase.speaker
           ],
           { testName }
@@ -97,36 +113,154 @@ describe("kitten-tts", () => {
         }
       })
     }
+
+    test('multi-provider --price prints both TTS targets and renamed output files', async () => {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'tts',
+        STABLE_TTS_MD_PATH,
+        '--kitten-tts',
+        'kitten-tts-mini',
+        '--openai-tts',
+        'gpt-4o-mini-tts',
+        '--price'
+      ])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('"provider": "kitten"')
+      expect(result.stdout).toContain('"provider": "openai"')
+      expect(result.stdout).toContain('speech-kitten-kitten-tts-mini.wav')
+      expect(result.stdout).toContain('speech-openai-gpt-4o-mini-tts.wav')
+    })
+
+    test('multi-provider run succeeds when one local and one API target are both available', async () => {
+      if (!await hasOpenAiTtsEnv()) {
+        console.log('Skipping: OPENAI_API_KEY or NITRO_OPENAI_API_KEY is required for multi-provider TTS success coverage')
+        return
+      }
+
+      await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'tts',
+        STABLE_TTS_MD_PATH,
+        '--kitten-tts',
+        'kitten-tts-mini',
+        '--kitten-voice',
+        'Luna',
+        '--openai-tts',
+        'gpt-4o-mini-tts'
+      ])
+
+      expect(result.exitCode).toBe(0)
+
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+      expect(outputDir).not.toBeNull()
+
+      if (outputDir) {
+        expect(await fileExists(`${outputDir}/speech-kitten-kitten-tts-mini.wav`)).toBe(true)
+        expect(await fileExists(`${outputDir}/speech-openai-gpt-4o-mini-tts.wav`)).toBe(true)
+
+        const metadata = JSON.parse(await Bun.file(`${outputDir}/metadata.json`).text()) as Record<string, unknown>
+        const ttsEntries = toRecordArray(metadata['tts'])
+        expect(ttsEntries).toHaveLength(2)
+        expect(ttsEntries[0]?.['ttsService']).toBe('kitten')
+        expect(ttsEntries[0]?.['ttsModel']).toBe('kitten-tts-mini')
+        expect(ttsEntries[0]?.['audioFileName']).toBe('speech-kitten-kitten-tts-mini.wav')
+        expect(ttsEntries[1]?.['ttsService']).toBe('openai')
+        expect(ttsEntries[1]?.['ttsModel']).toBe('gpt-4o-mini-tts')
+        expect(ttsEntries[1]?.['audioFileName']).toBe('speech-openai-gpt-4o-mini-tts.wav')
+
+        const cost = isRecord(metadata['cost']) ? metadata['cost'] : null
+        const actualCost = cost && isRecord(cost['actual']) ? cost['actual'] : null
+        const timing = isRecord(metadata['timing']) ? metadata['timing'] : null
+        const actualTiming = timing && isRecord(timing['actual']) ? timing['actual'] : null
+        const actualCostSteps = actualCost ? toRecordArray(actualCost['steps']) : []
+        const actualTimingSteps = actualTiming ? toRecordArray(actualTiming['steps']) : []
+        expect(actualCostSteps.filter((step) => step['step'] === 'tts')).toHaveLength(2)
+        expect(actualTimingSteps.filter((step) => step['step'] === 'tts')).toHaveLength(2)
+      }
+    }, 30000)
+
+    test('multi-provider run stays successful when one selected target fails', async () => {
+      await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+      const result = await runCommand(
+        [
+          'src/cli/create-cli.ts',
+          'tts',
+          STABLE_TTS_MD_PATH,
+          '--kitten-tts',
+          'kitten-tts-mini',
+          '--openai-tts',
+          'gpt-4o-mini-tts'
+        ],
+        {
+          env: {
+            OPENAI_API_KEY: '',
+            NITRO_OPENAI_API_KEY: ''
+          }
+        }
+      )
+
+      expect(result.exitCode).toBe(0)
+
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+      expect(outputDir).not.toBeNull()
+
+      if (outputDir) {
+        expect(await fileExists(`${outputDir}/speech-kitten-kitten-tts-mini.wav`)).toBe(true)
+        expect(await fileExists(`${outputDir}/speech-openai-gpt-4o-mini-tts.wav`)).toBe(false)
+
+        const metadata = JSON.parse(await Bun.file(`${outputDir}/metadata.json`).text()) as Record<string, unknown>
+        const tts = metadata['tts']
+        expect(Array.isArray(tts)).toBe(false)
+        expect(isRecord(tts)).toBe(true)
+        if (isRecord(tts)) {
+          expect(tts['ttsService']).toBe('kitten')
+          expect(tts['audioFileName']).toBe('speech-kitten-kitten-tts-mini.wav')
+        }
+      }
+    }, 15000)
+
+    test('multi-provider run fails when every selected target fails', async () => {
+      const result = await runCommand(
+        [
+          'src/cli/create-cli.ts',
+          'tts',
+          STABLE_TTS_MD_PATH,
+          '--openai-tts',
+          'gpt-4o-mini-tts',
+          '--gemini-tts',
+          'gemini-2.5-flash-preview-tts'
+        ],
+        {
+          env: {
+            OPENAI_API_KEY: '',
+            NITRO_OPENAI_API_KEY: '',
+            GEMINI_API_KEY: ''
+          }
+        }
+      )
+
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stderr + result.stdout).toContain('No TTS outputs were generated')
+    })
   })
 
-  describe("mutual exclusion", () => {
-    test("rejects --kitten-tts with --elevenlabs-tts", async () => {
+  describe('validation', () => {
+    test('rejects invalid kitten model', async () => {
       const result = await runCommand(
-        ["src/cli/create-cli.ts", "tts", STABLE_TTS_MD_PATH, "--kitten-tts", "kitten-tts-mini", "--elevenlabs-tts", "eleven_flash_v2_5"],
+        ['src/cli/create-cli.ts', 'tts', STABLE_TTS_MD_PATH, '--kitten-tts', 'invalid-model'],
       )
 
       expect(result.exitCode).not.toBe(0)
     })
 
-    test("rejects --kitten-tts with --openai-tts", async () => {
+    test('rejects invalid kitten speaker', async () => {
       const result = await runCommand(
-        ["src/cli/create-cli.ts", "tts", STABLE_TTS_MD_PATH, "--kitten-tts", "kitten-tts-mini", "--openai-tts", "gpt-4o-mini-tts"],
-      )
-
-      expect(result.exitCode).not.toBe(0)
-    })
-
-    test("rejects invalid kitten model", async () => {
-      const result = await runCommand(
-        ["src/cli/create-cli.ts", "tts", STABLE_TTS_MD_PATH, "--kitten-tts", "invalid-model"],
-      )
-
-      expect(result.exitCode).not.toBe(0)
-    })
-
-    test("rejects invalid kitten speaker", async () => {
-      const result = await runCommand(
-        ["src/cli/create-cli.ts", "tts", STABLE_TTS_MD_PATH, "--kitten-tts", "kitten-tts-mini", "--tts-speaker", "InvalidVoice"],
+        ['src/cli/create-cli.ts', 'tts', STABLE_TTS_MD_PATH, '--kitten-tts', 'kitten-tts-mini', '--kitten-voice', 'InvalidVoice'],
       )
 
       expect(result.exitCode).not.toBe(0)

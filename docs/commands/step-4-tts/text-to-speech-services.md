@@ -6,6 +6,7 @@ Generate speech audio from a local text file with a hosted TTS provider.
 
 - [Usage](#usage)
 - [Service Engines](#service-engines)
+- [Multi-Target Runs](#multi-target-runs)
 - [Examples](#examples)
 - [Flags](#flags)
 - [Output](#output)
@@ -28,7 +29,23 @@ bun as tts <input> [flags]
 | OpenAI | `--openai-tts <model>` | `gpt-4o-mini-tts` |
 | Gemini | `--gemini-tts <model>` | `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` |
 
-For hosted TTS usage, pass exactly one of these provider flags.
+You can combine multiple hosted TTS provider flags in the same command.
+
+Each provider flag accepts one model, so a single `tts` run can fan out across multiple providers, with one model per provider.
+
+Provider-specific voice flags only affect their matching target.
+
+## Multi-Target Runs
+
+```bash
+bun as tts input/1-tts.md \
+  --openai-tts gpt-4o-mini-tts \
+  --openai-voice alloy \
+  --gemini-tts gemini-2.5-flash-preview-tts \
+  --gemini-voice Kore
+```
+
+This generates one speech file per successful target from the same input text.
 
 ## Examples
 
@@ -38,6 +55,8 @@ bun as tts input/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts --gemini-voi
 bun as tts input/1-tts.md --groq-tts canopylabs/orpheus-v1-english --groq-voice hannah
 bun as tts input/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-voice <voice-id>
 bun as tts input/1-tts.md --minimax-tts speech-2.8-hd --minimax-tts-voice <voice-id>
+bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --gemini-tts gemini-2.5-flash-preview-tts
+bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --gemini-tts gemini-2.5-pro-preview-tts --groq-tts canopylabs/orpheus-v1-english
 ```
 
 ## Flags
@@ -58,10 +77,18 @@ bun as tts input/1-tts.md --minimax-tts speech-2.8-hd --minimax-tts-voice <voice
 
 ## Output
 
-Each standalone `tts` run writes:
+If exactly one TTS target succeeds, the run writes:
 - `speech.wav`
 - `metadata.json`
 
-`metadata.json` includes `tts`, `cost`, and `timing` sections.
+If multiple TTS targets succeed, the run writes:
+- `speech-<service>-<sanitized-model>.wav` for each successful target
+- `metadata.json`
+
+Examples:
+- `speech-openai-gpt-4o-mini-tts.wav`
+- `speech-gemini-gemini-2.5-flash-preview-tts.wav`
+
+`metadata.json` includes `tts`, `cost`, and `timing` sections. `tts` is a single object for one successful target and an array when multiple targets succeed.
 
 Service setup details are in [`text-to-speech-local.md#setup`](./text-to-speech-local.md#setup).

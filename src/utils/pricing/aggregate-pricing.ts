@@ -2,7 +2,8 @@ import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { isOcrCommand, isSttCommand } from '~/types'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
-import { estimateTtsCost } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
+import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
+import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import { estimateImageCost } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCost } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
@@ -197,22 +198,22 @@ const estimateTtsCharacterCountFromPrompts = async (opts: RuntimeOptions): Promi
   return Math.max(0, Math.round(estimatedOutputTokens * ESTIMATED_TTS_CHARACTERS_PER_TOKEN))
 }
 
-const buildTtsEstimate = (opts: RuntimeOptions, characterCount: number): TtsStepEstimate | null => {
+const buildTtsEstimates = (opts: RuntimeOptions, characterCount: number): TtsStepEstimate[] => {
   const normalizedCharacterCount = Math.max(0, Math.floor(characterCount))
-  const cost = estimateTtsCost(opts, normalizedCharacterCount)
-  if (!cost) return null
-  const estimation = getTtsEstimation(cost.provider, cost.model)
-  return {
-    step: 'tts',
-    provider: cost.provider,
-    model: cost.model,
-    ...(cost.costPer1kCharactersCents !== undefined ? { costPer1kCharactersCents: cost.costPer1kCharactersCents } : {}),
-    ...(cost.inputCostPer1MCharactersCents !== undefined ? { inputCostPer1MCharactersCents: cost.inputCostPer1MCharactersCents } : {}),
-    ...(cost.outputCostPer1MCharactersCents !== undefined ? { outputCostPer1MCharactersCents: cost.outputCostPer1MCharactersCents } : {}),
-    characterCount: cost.characterCount,
-    totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
-    costMultiplier: estimation.costMultiplier,
-  }
+  return estimateTtsCosts(opts, normalizedCharacterCount).map((cost) => {
+    const estimation = getTtsEstimation(cost.provider, cost.model)
+    return {
+      step: 'tts' as const,
+      provider: cost.provider,
+      model: cost.model,
+      ...(cost.costPer1kCharactersCents !== undefined ? { costPer1kCharactersCents: cost.costPer1kCharactersCents } : {}),
+      ...(cost.inputCostPer1MCharactersCents !== undefined ? { inputCostPer1MCharactersCents: cost.inputCostPer1MCharactersCents } : {}),
+      ...(cost.outputCostPer1MCharactersCents !== undefined ? { outputCostPer1MCharactersCents: cost.outputCostPer1MCharactersCents } : {}),
+      characterCount: cost.characterCount,
+      totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
+      costMultiplier: estimation.costMultiplier,
+    }
+  })
 }
 
 const buildImageEstimate = (opts: RuntimeOptions): ImageStepEstimate | null => {
@@ -288,6 +289,7 @@ export const buildAggregatedPriceEstimate = async (
 ): Promise<AggregatedPriceEstimate> => {
   const steps: StepEstimate[] = []
   let totalEstimatedCost = 0
+  const notes: string[] = []
 
   if (isSttCommand(command) || command === 'write') {
     const stt = await buildSttEstimate(resolvedTarget, opts)
@@ -314,11 +316,22 @@ export const buildAggregatedPriceEstimate = async (
       }
     }
 
-    const estimatedTtsCharacterCount = await estimateTtsCharacterCountFromPrompts(opts)
-    const tts = buildTtsEstimate(opts, estimatedTtsCharacterCount)
-    if (tts) {
-      steps.push(tts)
-      totalEstimatedCost += tts.totalCost
+    const selectedTtsTargets = collectTtsTargets(opts)
+    if (selectedTtsTargets.length > 0) {
+      if (llmEstimates.length === 1) {
+        const estimatedTtsCharacterCount = await estimateTtsCharacterCountFromPrompts(opts)
+        const ttsEstimates = buildTtsEstimates(opts, estimatedTtsCharacterCount)
+        for (const tts of ttsEstimates) {
+          steps.push(tts)
+          totalEstimatedCost += tts.totalCost
+        }
+      } else {
+        notes.push(
+          llmEstimates.length > 1
+            ? `TTS estimate omitted: step 4 only runs when write produces exactly one summary, but ${llmEstimates.length} LLM providers are selected.`
+            : 'TTS estimate omitted: step 4 only runs when write produces exactly one summary, and this run skips summary generation.'
+        )
+      }
     }
 
     const image = buildImageEstimate(opts)
@@ -341,8 +354,8 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'tts') {
-    const tts = buildTtsEstimate(opts, typeof characterCount === 'number' ? characterCount : 0)
-    if (tts) {
+    const ttsEstimates = buildTtsEstimates(opts, typeof characterCount === 'number' ? characterCount : 0)
+    for (const tts of ttsEstimates) {
       steps.push(tts)
       totalEstimatedCost += tts.totalCost
     }
@@ -372,5 +385,9 @@ export const buildAggregatedPriceEstimate = async (
     }
   }
 
-  return { steps, totalEstimatedCost }
+  return {
+    steps,
+    totalEstimatedCost,
+    ...(notes.length > 0 ? { notes } : {})
+  }
 }

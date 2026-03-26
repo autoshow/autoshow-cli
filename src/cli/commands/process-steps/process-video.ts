@@ -1,4 +1,4 @@
-import type { ProcessingOptions, Step1Metadata, VideoMetadata, Step3Metadata, Step7MusicMetadata, AggregatedPriceEstimate } from '~/types'
+import type { ProcessingOptions, Step1Metadata, VideoMetadata, Step3Metadata, Step4Metadata, Step7MusicMetadata, AggregatedPriceEstimate } from '~/types'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
@@ -11,11 +11,27 @@ import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { StructuredRunResult } from './step-3-write/structured-output/types'
 import { runTts } from './step-4-tts/run-tts'
+import { collectTtsTargets, sanitizeTtsModelName } from './step-4-tts/tts-targets'
 import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
 import { runMusicGen } from './step-7-music/run-music-gen'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+
+const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
+
+const buildSpeechArtifactMap = (metadata: Step4Metadata[]): Record<string, string> => {
+  if (metadata.length === 1) {
+    return { speech: metadata[0]!.audioFileName }
+  }
+
+  return Object.fromEntries(
+    metadata.map((entry) => [
+      `speech-${entry.ttsService}-${sanitizeTtsModelName(entry.ttsModel)}`,
+      entry.audioFileName
+    ])
+  )
+}
 
 export const processVideo = async (options: ProcessingOptions, precomputedMetadata?: VideoMetadata, preflightEstimate?: AggregatedPriceEstimate): Promise<string> => {
   const processStart = Date.now()
@@ -59,26 +75,20 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     step3Results = step3RunResults.map((result) => result.metadata)
   }
 
-  let step4Metadata = null
+  let step4Metadata: Step4Metadata[] | null = null
   let step5Metadata = null
   let step6Metadata = null
   let step7Metadata: Step7MusicMetadata | null = null
   let ttsCharacterCount: number | undefined
-  const ttsRequested = !!(
-    processingOptions.kittenTtsModel ||
-    processingOptions.elevenlabsTtsModel ||
-    processingOptions.minimaxTtsModel ||
-    processingOptions.groqTtsModel ||
-    processingOptions.openaiTtsModel ||
-    processingOptions.geminiTtsModel
-  )
+  const ttsTargets = collectTtsTargets(processingOptions)
+  const ttsRequested = ttsTargets.length > 0
   const imageRequested = !!(processingOptions.geminiImageModel || processingOptions.openaiImageModel || processingOptions.minimaxImageModel)
   const musicRequested = !!(processingOptions.elevenlabsMusicModel || processingOptions.minimaxMusicModel)
   const videoGenRequested = !!(processingOptions.soraVideoModel || processingOptions.geminiVideoModel || processingOptions.minimaxVideoModel)
 
   if ((ttsRequested || imageRequested || musicRequested || videoGenRequested) && step3Results.length > 0) {
     if (step3Results.length > 1) {
-      if (ttsRequested) l.warn(`TTS skipped: cannot determine which of ${step3Results.length} LLM outputs to synthesize`)
+      if (ttsRequested) l.warn(`TTS skipped: step 4 only runs when write produces exactly one summary, but ${step3Results.length} LLM outputs were generated`)
       if (imageRequested) l.warn(`Image gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
       if (musicRequested) l.warn(`Music gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
       if (videoGenRequested) l.warn(`Video gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
@@ -128,19 +138,8 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
           : processingOptions.minimaxModel ? processingOptions.minimaxModel
             : processingOptions.llamaModel
 
-  const ttsService = processingOptions.kittenTtsModel ? 'kitten'
-    : processingOptions.elevenlabsTtsModel ? 'elevenlabs'
-      : processingOptions.minimaxTtsModel ? 'minimax'
-        : processingOptions.groqTtsModel ? 'groq'
-          : processingOptions.openaiTtsModel ? 'openai'
-            : processingOptions.geminiTtsModel ? 'gemini'
-              : undefined
-  const ttsModel = processingOptions.kittenTtsModel
-    || processingOptions.elevenlabsTtsModel
-    || processingOptions.minimaxTtsModel
-    || processingOptions.groqTtsModel
-    || processingOptions.openaiTtsModel
-    || processingOptions.geminiTtsModel
+  const attemptedTtsTargets = step3Results.length === 1 ? ttsTargets : []
+  const ttsEstimateTargets = attemptedTtsTargets.map((target) => ({ service: target.service, model: target.model }))
   const llmInputTokenCount = step3Results.length > 0
     ? step3Results.reduce((sum, s3) => sum + s3.inputTokenCount, 0)
     : undefined
@@ -164,8 +163,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
       llmInputTokenCount,
       llmOutputTokenCount,
       skipLLM: processingOptions.skipLLM,
-      ttsService,
-      ttsModel,
+      ttsTargets: ttsEstimateTargets,
       ttsCharacterCount,
       geminiImageModel: processingOptions.geminiImageModel,
       openaiImageModel: processingOptions.openaiImageModel,
@@ -204,8 +202,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     llmInputTokenCount,
     llmOutputTokenCount,
     skipLLM: processingOptions.skipLLM,
-    ttsService,
-    ttsModel,
+    ttsTargets: ttsEstimateTargets,
     ttsCharacterCount,
     ...(step5Metadata
       ? {
@@ -248,7 +245,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     step1: step1Metadata,
     step2: transcriptionResult.metadata,
     ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
-    ...(step4Metadata ? { step4: step4Metadata } : {}),
+    ...(step4Metadata ? { step4: serializeOneOrMany(step4Metadata) } : {}),
     ...(step5Metadata ? { step5: step5Metadata } : {}),
     ...(step6Metadata ? { step6: step6Metadata } : {}),
     ...(step7Metadata ? { step7: step7Metadata } : {}),
@@ -298,12 +295,15 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   }
 
   if (step4Metadata) {
-    stepSummaries.push({
-      label: 'TTS',
-      providerModel: `${step4Metadata.ttsService}/${step4Metadata.ttsModel}`,
-      processingTime: step4Metadata.processingTime,
-      cost: actual.steps.find(s => s.step === 'tts')?.cost ?? 0
-    })
+    const ttsSteps = actual.steps.filter(s => s.step === 'tts')
+    for (const [index, step4] of step4Metadata.entries()) {
+      stepSummaries.push({
+        label: 'TTS',
+        providerModel: `${step4.ttsService}/${step4.ttsModel}`,
+        processingTime: step4.processingTime,
+        cost: ttsSteps[index]?.cost ?? 0
+      })
+    }
   }
 
   if (step5Metadata) {
@@ -344,7 +344,9 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
       artifactFiles[`summary-${r.llmModel}`] = r.outputFileName
     }
   }
-  if (step4Metadata) artifactFiles['speech'] = 'speech.wav'
+  if (step4Metadata) {
+    Object.assign(artifactFiles, buildSpeechArtifactMap(step4Metadata))
+  }
   if (step5Metadata) artifactFiles['image'] = step5Metadata.imageFileName
   if (step6Metadata) artifactFiles['video'] = step6Metadata.videoFileName
   if (step7Metadata) artifactFiles['music'] = step7Metadata.musicFileName

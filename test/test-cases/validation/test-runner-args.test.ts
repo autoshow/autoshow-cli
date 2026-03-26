@@ -62,21 +62,4 @@ describe('test-runner args', () => {
     expect(() => parseRunnerArgs(['bun', 'test/test-runner.ts', '--budget', 'abc'])).toThrow()
   })
 
-  test('rejects removed --tier flag', () => {
-    expect(() => parseRunnerArgs(['bun', 'test/test-runner.ts', '--tier', 'api'])).toThrow('--tier has been removed')
-  })
-
-  test('rejects removed --api flag', () => {
-    expect(() => parseRunnerArgs(['bun', 'test/test-runner.ts', '--api'])).toThrow('--api has been removed')
-  })
-
-  test('rejects removed --api-cheap flag', () => {
-    expect(() => parseRunnerArgs(['bun', 'test/test-runner.ts', '--api-cheap'])).toThrow('--api-cheap has been removed')
-  })
-
-  test('ignores legacy --timestamps without forwarding it to bun test', () => {
-    const parsed = parseRunnerArgs(['bun', 'test/test-runner.ts', '--timestamps', '--bail'])
-
-    expect(parsed.passthroughArgs).toEqual(['--bail'])
-  })
 })

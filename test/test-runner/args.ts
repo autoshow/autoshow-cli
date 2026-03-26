@@ -21,14 +21,7 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
 
     switch (arg) {
       case '--cleanup':            cleanupAfterRun = true; break
-      case '--tier':
-        throw new Error('Error: --tier has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.')
-      case '--api':
-        throw new Error('Error: --api has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.')
-      case '--api-cheap':
-        throw new Error('Error: --api-cheap has been removed. Run bun t <file-or-dir>... and use --test-price or --budget on that selection.')
       case '--test-price':         priceMode = true; break
-      case '--timestamps':         break
       case '--budget': {
         const value = argv[++i]
         if (!value) {

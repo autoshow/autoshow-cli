@@ -116,7 +116,10 @@ const copyMetadataToArtifacts = async (outputDir: string | null): Promise<void> 
 
 const SUBPROCESS_TIMEOUT = 900000
 
-export type RunCommandOptions = { testName?: string }
+export type RunCommandOptions = {
+  testName?: string
+  env?: Record<string, string | undefined>
+}
 
 export type RunCommandResult = {
   exitCode: number
@@ -152,7 +155,12 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
   const commandLogPath = process.env['AUTOSHOW_TEST_COMMAND_LOG'] || 'test_debug.log'
   const metricsLogPath = process.env['AUTOSHOW_TEST_METRICS_LOG']
 
-  const proc = Bun.spawn(['bun', ...args], { stdout: 'pipe', stderr: 'pipe' })
+  const env = {
+    ...process.env,
+    ...(opts?.env ?? {})
+  }
+
+  const proc = Bun.spawn(['bun', ...args], { stdout: 'pipe', stderr: 'pipe', env })
   const timer = setTimeout(() => {
     try {
       process.kill(-proc.pid, 'SIGTERM')

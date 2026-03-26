@@ -10,6 +10,7 @@ Generate speech audio from a local text file with Kitten TTS.
 - [Service Environment](#service-environment)
 - [Usage](#usage)
 - [Local Engine](#local-engine)
+- [Multi-Target Runs](#multi-target-runs)
 - [Examples](#examples)
 - [Flags](#flags)
 - [Output](#output)
@@ -63,11 +64,26 @@ bun as tts <input> [flags]
 
 If no engine flag is provided, `tts` defaults to Kitten TTS with `kitten-tts-nano-0.8-int8`.
 
+You can also combine Kitten TTS with hosted TTS provider flags in the same command. Each provider flag still accepts one model.
+
+## Multi-Target Runs
+
+```bash
+bun as tts input/1-tts.md \
+  --kitten-tts kitten-tts-mini \
+  --kitten-voice Luna \
+  --openai-tts gpt-4o-mini-tts \
+  --openai-voice alloy
+```
+
+This generates one speech file per successful target from the same input text.
+
 ## Examples
 
 ```bash
-bun as tts input/1-tts.md --kitten-tts kitten-tts-mini --tts-speaker Jasper
+bun as tts input/1-tts.md --kitten-tts kitten-tts-mini --kitten-voice Jasper
 bun as tts input/1-tts.md
+bun as tts input/1-tts.md --kitten-tts kitten-tts-mini --openai-tts gpt-4o-mini-tts
 ```
 
 ## Flags
@@ -75,16 +91,24 @@ bun as tts input/1-tts.md
 | Flag | Description |
 |------|-------------|
 | `--kitten-tts <model>` | Select the Kitten model |
-| `--tts-speaker <name>` | Select the Kitten speaker |
+| `--kitten-voice <name>` | Select the Kitten speaker |
 | `--price` | Show the estimate and exit |
 
 ## Output
 
-Each standalone `tts` run writes:
+If exactly one TTS target succeeds, the run writes:
 - `speech.wav`
 - `metadata.json`
 
-`metadata.json` includes `tts`, `cost`, and `timing` sections.
+If multiple TTS targets succeed, the run writes:
+- `speech-<service>-<sanitized-model>.wav` for each successful target
+- `metadata.json`
+
+Examples:
+- `speech-kitten-kitten-tts-mini.wav`
+- `speech-openai-gpt-4o-mini-tts.wav`
+
+`metadata.json` includes `tts`, `cost`, and `timing` sections. `tts` is a single object for one successful target and an array when multiple targets succeed.
 
 ## Local Tests
 
@@ -107,7 +131,7 @@ Covers:
 - Kitten runtime environment checks
 - synthesis with `kitten-tts-micro`, `kitten-tts-mini`, `kitten-tts-nano`, and `kitten-tts-nano-0.8-int8`
 - speaker selection
-- mutual exclusion with hosted TTS flags
+- multi-provider standalone runs with Kitten plus hosted TTS
 - invalid Kitten model and invalid speaker rejection
 
 ### Related Setup Coverage

@@ -24,7 +24,7 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
 
 - `bun t` always runs the sample/setup preflight before test discovery: `setup --step sample`, fallback `setup`, then `sample --out input/samples --verify-only`, and finally fixture regeneration if verification fails.
 - Test discovery comes from `test/test-cases/**/*.test.ts`.
-- Selection is path-based only. `--tier` and `--api` have been removed.
+- Selection is path-based only.
 - `--test-price` and `--budget <whole-number-cents>` operate on the same selected paths as normal test mode.
 - Each run writes artifacts under `./test-output/YYYY-MM-DD_HH-MM-SS_test-run/`, including `runner.log`, `commands.log`, `metrics.ndjson`, `metadata/`, and `report.json`. Normal test mode also writes `junit.xml`, `e2e-report.json`, and `model-calibration.json`.
 - `--cleanup` removes the run directory after a successful run. In normal test mode it also sets `AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0`, which deletes per-test `./output/` directories as tests finish.

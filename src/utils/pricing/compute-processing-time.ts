@@ -60,6 +60,7 @@ type ComputeEstimatedProcessingTimesInput = {
   llmInputTokenCount?: number | undefined
   llmOutputTokenCount?: number | undefined
   skipLLM?: boolean | undefined
+  ttsTargets?: Array<{ service: Step4Metadata['ttsService'], model: string }> | undefined
   ttsService?: Step4Metadata['ttsService'] | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
@@ -79,7 +80,7 @@ type ComputeActualProcessingTimesInput = {
   audioDurationSeconds?: number | undefined
   step2?: Step2Metadata | ExtractionMetadata | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
-  step4?: Step4Metadata | undefined
+  step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | undefined
   step6?: Step6VideoMetadata | undefined
   step7?: Step7MusicMetadata | undefined
@@ -134,13 +135,19 @@ export const computeEstimatedProcessingTimes = (
     })
   }
 
-  if (input.ttsService && input.ttsModel) {
-    const estimation = getTtsEstimation(input.ttsService, input.ttsModel)
+  const ttsTargets = input.ttsTargets && input.ttsTargets.length > 0
+    ? input.ttsTargets
+    : input.ttsService && input.ttsModel
+      ? [{ service: input.ttsService, model: input.ttsModel }]
+      : []
+
+  for (const ttsTarget of ttsTargets) {
+    const estimation = getTtsEstimation(ttsTarget.service, ttsTarget.model)
     const characterCount = Math.max(0, input.ttsCharacterCount ?? 0)
     steps.push({
       step: 'tts',
-      provider: input.ttsService,
-      model: input.ttsModel,
+      provider: ttsTarget.service,
+      model: ttsTarget.model,
       processingTimeMs: roundMs((characterCount / 1000) * estimation.msPer1KChars),
       inputMetric: 'characters',
       inputValue: characterCount,
@@ -244,15 +251,21 @@ export const computeActualProcessingTimes = (
     })
   }
 
-  if (input.step4 && typeof input.ttsCharacterCount === 'number') {
-    steps.push({
-      step: 'tts',
-      provider: input.step4.ttsService,
-      model: input.step4.ttsModel,
-      processingTimeMs: roundMs(input.step4.processingTime),
-      inputMetric: 'characters',
-      inputValue: input.ttsCharacterCount,
-    })
+  const step4Array = input.step4
+    ? Array.isArray(input.step4) ? input.step4 : [input.step4]
+    : []
+
+  if (step4Array.length > 0 && typeof input.ttsCharacterCount === 'number') {
+    for (const step4 of step4Array) {
+      steps.push({
+        step: 'tts',
+        provider: step4.ttsService,
+        model: step4.ttsModel,
+        processingTimeMs: roundMs(step4.processingTime),
+        inputMetric: 'characters',
+        inputValue: input.ttsCharacterCount,
+      })
+    }
   }
 
   if (input.step5) {

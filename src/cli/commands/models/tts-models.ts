@@ -45,7 +45,7 @@ export const validateKittenTtsModel = (model: string): KittenTtsModel => {
 export const validateKittenTtsSpeaker = (speaker: string): string => {
   if (!SUPPORTED_KITTEN_TTS_VOICES.includes(speaker)) {
     throw CLIUsageError(
-      `Invalid --tts-speaker "${speaker}" for Kitten TTS. Allowed values: ${formatAllowedValues(SUPPORTED_KITTEN_TTS_VOICES)}`
+      `Invalid --kitten-voice "${speaker}" for Kitten TTS. Allowed values: ${formatAllowedValues(SUPPORTED_KITTEN_TTS_VOICES)}`
     )
   }
   return speaker

@@ -246,6 +246,39 @@ export const processBatch = async (
   }
 
   l.info(`Batch complete: ${ok} succeeded, ${fail} failed`)
+
+  // Rewrite info.json with actual metadata from processed items
+  try {
+    const entries = await readdir(batchDir, { withFileTypes: true })
+    const subdirs = entries.filter(e => e.isDirectory()).map(e => e.name)
+    const updatedEntries: Array<{ url: string, title: string, channel: string, duration: string, publishedAt?: string }> = []
+
+    for (const sub of subdirs) {
+      const metaPath = `${batchDir}/${sub}/metadata.json`
+      if (await fileExists(metaPath)) {
+        try {
+          const raw = JSON.parse(await Bun.file(metaPath).text())
+          const step1 = raw.step1 ?? raw
+          updatedEntries.push({
+            url: step1.url ?? step1.filePath ?? '',
+            title: step1.title ?? 'Untitled',
+            channel: step1.author ?? step1.channel ?? 'Unknown',
+            duration: step1.duration ?? 'Unknown',
+            ...(step1.publishDate ? { publishedAt: step1.publishDate } : {})
+          })
+        } catch {
+          // skip malformed metadata files
+        }
+      }
+    }
+
+    if (updatedEntries.length > 0) {
+      await writeFile(`${batchDir}/info.json`, JSON.stringify(updatedEntries, null, 2))
+    }
+  } catch {
+    // keep original info.json if update fails
+  }
+
   return { ok, fail }
 }
 

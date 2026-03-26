@@ -272,7 +272,7 @@ export const buildOptsFromFlags = (
       return []
     })(),
     ttsSpeaker: (() => {
-      const raw = readStringFlag(mergedFlags, 'tts-speaker', DEFAULT_KITTEN_TTS_SPEAKER)
+      const raw = readStringFlag(mergedFlags, 'kitten-voice', DEFAULT_KITTEN_TTS_SPEAKER)
       if (kittenTtsModelValue !== undefined) {
         const speaker = raw === 'Ryan' ? DEFAULT_KITTEN_TTS_SPEAKER : raw
         return validateKittenTtsSpeaker(speaker)

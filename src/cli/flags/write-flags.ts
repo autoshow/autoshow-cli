@@ -72,7 +72,7 @@ const withHelpGroup = (flags: ClercFlagsDefinition, group: WriteHelpFlagGroup): 
 }
 
 const writeTtsFlags = {
-  'tts-speaker': {
+  'kitten-voice': {
     description: 'Kitten TTS speaker: Bella|Jasper|Luna|Bruno|Rosie|Hugo|Kiki|Leo',
     type: String,
     default: 'Jasper'

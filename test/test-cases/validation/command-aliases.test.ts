@@ -71,7 +71,7 @@ test('voice alias resolves to tts help', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
-  expect(result.stdout).toContain('--tts-speaker')
+  expect(result.stdout).toContain('--kitten-voice')
   expect(result.stdout).toContain('--openai-tts')
 })
 

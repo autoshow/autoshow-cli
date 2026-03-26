@@ -77,7 +77,7 @@ Pass any provider, model, or generation flag to persist it as a default:
 ```bash
 bun as config --openai gpt-5.2
 bun as config --whisper large
-bun as config --kitten-tts kitten-tts-mini --tts-speaker Jasper
+bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-usd 1.00
 bun as config --no-structured --structured-compat-retries 3
@@ -215,7 +215,7 @@ Full JSON shape of `config/autoshow.json`:
 | `groqTts` | `--groq-tts` | Groq TTS model |
 | `openaiTts` | `--openai-tts` | OpenAI TTS model |
 | `geminiTts` | `--gemini-tts` | Gemini TTS model |
-| `ttsSpeaker` | `--tts-speaker` | Kitten speaker name |
+| `ttsSpeaker` | `--kitten-voice` | Kitten speaker name |
 | `groqVoice` | `--groq-voice` | Groq voice ID |
 | `elevenlabsVoice` | `--elevenlabs-voice` | ElevenLabs voice ID |
 | `openaiVoice` | `--openai-voice` | OpenAI TTS voice ID |

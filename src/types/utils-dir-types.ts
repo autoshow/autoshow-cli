@@ -228,4 +228,5 @@ export type StepEstimate =
 export type AggregatedPriceEstimate = {
   steps: StepEstimate[]
   totalEstimatedCost: number
+  notes?: string[]
 }

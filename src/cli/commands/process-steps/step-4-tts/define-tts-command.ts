@@ -3,16 +3,7 @@ import { ttsFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { runTts } from './run-tts'
-import {
-  validateKittenTtsModel,
-  validateElevenlabsTtsModel,
-  validateMinimaxTtsModel,
-  validateGroqTtsModel,
-  validateOpenAITtsModel,
-  validateGeminiTtsModel,
-  validateGroqTtsVoice,
-  validateKittenTtsSpeaker
-} from '~/cli/commands/models/model-options'
+import { collectTtsTargets, getTtsArtifactFileName, sanitizeTtsModelName } from './tts-targets'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
@@ -21,9 +12,22 @@ import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-d
 import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
+import type { Step4Metadata } from '~/types'
 
-const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
-const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
+const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
+
+const buildSpeechArtifactMap = (metadata: Step4Metadata[]): Record<string, string> => {
+  if (metadata.length === 1) {
+    return { audio: metadata[0]!.audioFileName }
+  }
+
+  return Object.fromEntries(
+    metadata.map((entry) => [
+      `speech-${entry.ttsService}-${sanitizeTtsModelName(entry.ttsModel)}`,
+      entry.audioFileName
+    ])
+  )
+}
 
 export const ttsCommand = defineCommand({
   name: 'tts',
@@ -48,30 +52,19 @@ export const ttsCommand = defineCommand({
     throw CLIUsageError(`Input file is empty: ${inputPath}`)
   }
 
-  const kittenModelRaw = typeof flags['kitten-tts'] === 'string' ? flags['kitten-tts'] : undefined
-  const elevenlabsModelRaw = typeof flags['elevenlabs-tts'] === 'string' ? flags['elevenlabs-tts'] : undefined
-  const minimaxModelRaw = typeof flags['minimax-tts'] === 'string' ? flags['minimax-tts'] : undefined
-  const minimaxVoiceRaw = typeof flags['minimax-tts-voice'] === 'string' ? flags['minimax-tts-voice'] : undefined
-  const groqModelRaw = typeof flags['groq-tts'] === 'string' ? flags['groq-tts'] : undefined
-  const groqVoiceRaw = typeof flags['groq-voice'] === 'string' ? flags['groq-voice'] : undefined
-  const openaiModelRaw = typeof flags['openai-tts'] === 'string' ? flags['openai-tts'] : undefined
-  const openaiVoiceRaw = typeof flags['openai-voice'] === 'string' ? flags['openai-voice'] : undefined
-  const geminiModelRaw = typeof flags['gemini-tts'] === 'string' ? flags['gemini-tts'] : undefined
-  const geminiVoiceRaw = typeof flags['gemini-voice'] === 'string' ? flags['gemini-voice'] : undefined
-
-  const engineCount = [kittenModelRaw, elevenlabsModelRaw, minimaxModelRaw, groqModelRaw, openaiModelRaw, geminiModelRaw].filter(Boolean).length
-  if (engineCount > 1) {
-    throw CLIUsageError('Cannot use more than one TTS engine at the same time (--kitten-tts, --elevenlabs-tts, --minimax-tts, --groq-tts, --openai-tts, --gemini-tts)')
-  }
-
   const configPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
   const resolvedConfigPath = await resolveConfigPath(configPathOverride)
   const config = await loadConfig(resolvedConfigPath)
   const maxCents = config.pricing?.maxCents ?? (config.pricing?.maxUsd !== undefined ? config.pricing.maxUsd * 100 : undefined)
-  const ttsOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' })
-  const { shouldExit } = await runPreflight('tts', inputPath, ttsOpts, maxCents, text.length)
+  const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' })
+  const targets = collectTtsTargets(ttsOptions)
+
+  const { shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, text.length)
   if (shouldExit) {
-    l.report.expectedOutput('./output/<timestamp>_<label>/', ['speech.wav', 'metadata.json'])
+    l.report.expectedOutput(
+      './output/<timestamp>_<label>/',
+      [...targets.map((target) => getTtsArtifactFileName(target, targets.length === 1)), 'metadata.json']
+    )
     return
   }
 
@@ -81,67 +74,15 @@ export const ttsCommand = defineCommand({
   await ensureDirectory(outputDir)
   l.info(`Output directory: ${outputDir}`)
 
-  let ttsOptions: Parameters<typeof runTts>[2]
-
-  if (kittenModelRaw || engineCount === 0) {
-    const model = validateKittenTtsModel(kittenModelRaw ?? DEFAULT_KITTEN_TTS_MODEL)
-
-    const rawSpeaker = typeof flags['tts-speaker'] === 'string' ? flags['tts-speaker'] : DEFAULT_KITTEN_TTS_SPEAKER
-    const speakerRaw = rawSpeaker === 'Ryan' ? DEFAULT_KITTEN_TTS_SPEAKER : rawSpeaker
-    const speaker = validateKittenTtsSpeaker(speakerRaw)
-
-    ttsOptions = {
-      kittenTtsModel: model,
-      ttsSpeaker: speaker
-    }
-  } else if (elevenlabsModelRaw) {
-    const model = validateElevenlabsTtsModel(elevenlabsModelRaw)
-    const voiceIdRaw = typeof flags['elevenlabs-voice'] === 'string' ? flags['elevenlabs-voice'].trim() : undefined
-
-    ttsOptions = {
-      elevenlabsTtsModel: model,
-      elevenlabsVoiceId: voiceIdRaw && voiceIdRaw.length > 0 ? voiceIdRaw : undefined
-    }
-  } else if (minimaxModelRaw) {
-    const model = validateMinimaxTtsModel(minimaxModelRaw)
-    ttsOptions = {
-      minimaxTtsModel: model,
-      minimaxTtsVoice: minimaxVoiceRaw
-    }
-  } else if (groqModelRaw) {
-    const model = validateGroqTtsModel(groqModelRaw)
-    const voiceRaw = groqVoiceRaw?.trim()
-    const voice = voiceRaw && voiceRaw.length > 0 ? validateGroqTtsVoice(voiceRaw) : undefined
-    ttsOptions = {
-      groqTtsModel: model,
-      groqVoiceId: voice
-    }
-  } else if (openaiModelRaw) {
-    const model = validateOpenAITtsModel(openaiModelRaw)
-    const voiceRaw = openaiVoiceRaw?.trim()
-    ttsOptions = {
-      openaiTtsModel: model,
-      openaiVoiceId: voiceRaw && voiceRaw.length > 0 ? voiceRaw : undefined
-    }
-  } else if (geminiModelRaw) {
-    const model = validateGeminiTtsModel(geminiModelRaw)
-    const voiceRaw = geminiVoiceRaw?.trim()
-    ttsOptions = {
-      geminiTtsModel: model,
-      geminiVoiceId: voiceRaw && voiceRaw.length > 0 ? voiceRaw : undefined
-    }
-  } else {
-    throw new Error('Unreachable TTS engine selection')
-  }
-
-  const { audioPath, metadata } = await runWithLogContext({ step: 'step-4-tts' }, async () =>
+  const { metadata } = await runWithLogContext({ step: 'step-4-tts' }, async () =>
     await runTts(text, outputDir, ttsOptions)
   )
 
-  const ttsService = metadata.ttsService
-  const ttsModel = metadata.ttsModel
-
-  const estimated = computeEstimatedCosts({ ttsService, ttsModel, ttsCharacterCount: text.length })
+  const estimatedTtsTargets = targets.map((target) => ({ service: target.service, model: target.model }))
+  const estimated = computeEstimatedCosts({
+    ttsTargets: estimatedTtsTargets,
+    ttsCharacterCount: text.length
+  })
   const actual = computeActualCosts({
     step4: metadata,
     ttsCharacterCount: text.length
@@ -149,8 +90,7 @@ export const ttsCommand = defineCommand({
   const cost = { estimated, actual }
   const timing = {
     estimated: computeEstimatedProcessingTimes({
-      ttsService,
-      ttsModel,
+      ttsTargets: estimatedTtsTargets,
       ttsCharacterCount: text.length,
     }),
     actual: computeActualProcessingTimes({
@@ -160,11 +100,24 @@ export const ttsCommand = defineCommand({
   }
 
   const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ tts: metadata, cost, timing }, null, 2))
+  await Bun.write(metadataPath, JSON.stringify({ tts: serializeOneOrMany(metadata), cost, timing }, null, 2))
 
+  const ttsSteps = actual.steps.filter((step) => step.step === 'tts')
   l.report.complete(
     outputDir,
-    { audio: audioPath.split('/').pop() as string, metadata: 'metadata.json' },
-    { metrics: { chunks: String(metadata.chunkCount), approxDuration: `${(metadata.audioFileSize / (metadata.chunkCount * 1000)).toFixed(1)}s` } }
+    {
+      ...buildSpeechArtifactMap(metadata),
+      metadata: 'metadata.json'
+    },
+    {
+      steps: metadata.map((entry, index) => ({
+        label: 'TTS',
+        providerModel: `${entry.ttsService}/${entry.ttsModel}`,
+        processingTime: entry.processingTime,
+        cost: ttsSteps[index]?.cost ?? 0
+      })),
+      totalTimeMs: metadata.reduce((sum, entry) => sum + entry.processingTime, 0),
+      totalCost: actual.totalCost
+    }
   )
 })

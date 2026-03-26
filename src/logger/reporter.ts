@@ -112,7 +112,8 @@ export const createReporter = (logger: Logger): Reporter => {
     estimate: (estimate) => {
       const obj = {
         steps: estimate.steps.map(formatStepEstimate),
-        totalEstimatedCost: formatCost(estimate.totalEstimatedCost)
+        totalEstimatedCost: formatCost(estimate.totalEstimatedCost),
+        ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
       }
       logger.write('info', `Cost Estimate:\n${JSON.stringify(obj, null, 2)}`, { category: 'pricing' })
     },
