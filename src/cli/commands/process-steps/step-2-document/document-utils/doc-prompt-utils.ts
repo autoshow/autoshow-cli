@@ -9,12 +9,14 @@ export const buildDocumentPrompt = (
 ): string => {
   const taskInstruction = instruction ?? `- Write a one-sentence description and a one-paragraph summary.\n- Keep the one-sentence description under 180 characters.\n- Keep the summary roughly 100-200 words.\n- Add section headings that capture the major topics in order.`
 
-  const docInfo = [
-    `Document Title: ${metadata.title || 'Unknown'}`,
-    `Document Format: ${metadata.format}`,
-    `Page Count: ${metadata.pageCount}`,
-    metadata.author ? `Author: ${metadata.author}` : ''
+  const frontmatterFields = [
+    `title: "${metadata.title || 'Unknown'}"`,
+    `format: "${metadata.format}"`,
+    `pageCount: ${metadata.pageCount}`,
+    metadata.author ? `author: "${metadata.author}"` : '',
   ].filter(Boolean).join('\n')
 
-  return `${DOCUMENT_PREAMBLE}\n\n${taskInstruction}\n\n${docInfo}\n\nDocument Text:\n${text}`
+  const frontmatter = `---\n${frontmatterFields}\n---`
+
+  return `${frontmatter}\n\n${DOCUMENT_PREAMBLE}\n\n${taskInstruction}\n\nDocument Text:\n${text}`
 }

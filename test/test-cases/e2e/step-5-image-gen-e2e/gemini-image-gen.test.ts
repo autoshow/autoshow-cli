@@ -14,11 +14,16 @@ defineImageServiceTest({
   envVarKey: 'GEMINI_API_KEY',
 })
 
-test('rejects multiple image providers', async () => {
+test('--price allows Gemini with another image provider', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1-mini', '--imagen-count', '2', '--price'],
   )
-  expect(result.exitCode).not.toBe(0)
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('"provider": "gemini"')
+  expect(result.stdout).toContain('"provider": "openai"')
+  expect(result.stdout).toContain('generated-image-gemini-imagen-4.0-generate-001.png')
+  expect(result.stdout).toContain('generated-image-gemini-imagen-4.0-generate-001-2.png')
+  expect(result.stdout).toContain('generated-image-openai-gpt-image-1-mini.png')
 })
 
 test('rejects --image-size for imagen-4.0-fast-generate-001', async () => {

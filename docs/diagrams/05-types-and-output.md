@@ -137,7 +137,7 @@ src/types/
 │  ├── ProcessingOptions    url|filePath, whisper/llama/openai models, ...     │
 │  ├── VideoMetadata        title, duration, author, url, publishDate, ...     │
 │  ├── YtDlpVideoInfo       raw yt-dlp JSON output                             │
-│  ├── Step1Metadata        videoUrl, videoTitle, channelTitle, audioFileName  │
+│  ├── Step1Metadata        VideoMetadata & { audioFileName, audioFileSize }  │
 │  ├── DocumentMetadata     title, author, pageCount, format, fileSize         │
 │  └── DetectResult         'pdf'|'epub'|'image'|'docx'|'pptx'|'xlsx'|'odf'    │
 │                                                                              │
@@ -165,7 +165,8 @@ src/types/
 │                                                                              │
 │  Step 5 (Image Gen):                                                         │
 │  └── Step5Metadata        imageService (ImageProvider), imageModel,          │
-│       processingTime, imageFileName, imageFileSize, imageWidth, imageHeight  │
+│       processingTime, imageCount, imageFileName, imageFileNames[],           │
+│       imageFileSize, imageWidth, imageHeight                                 │
 │                                                                              │
 │  Step 6 (Video Gen):                                                         │
 │  └── Step6VideoMetadata   videoGenService (VideoProvider), videoGenModel,    │

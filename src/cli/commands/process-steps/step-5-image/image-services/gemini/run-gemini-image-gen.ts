@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 import { mkdir } from 'node:fs/promises'
+import { basename } from 'node:path'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
 import type { GeminiImageModel } from '~/cli/commands/models/model-options'
@@ -107,7 +108,8 @@ export const runGeminiImageGen = async (
     imageModel: options.model,
     processingTime,
     imageCount: imagePaths.length,
-    imageFileName: primaryPath.split('/').pop() ?? 'generated-image.png',
+    imageFileName: basename(primaryPath),
+    imageFileNames: imagePaths.map((imagePath) => basename(imagePath)),
     imageFileSize,
     imageWidth: undefined,
     imageHeight: undefined

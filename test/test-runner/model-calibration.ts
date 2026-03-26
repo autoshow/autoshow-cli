@@ -270,7 +270,10 @@ const getLegacyTimingSteps = (metadata: Record<string, unknown>): Map<string, { 
     ...toRecordArray(metadata['step4']),
     ...toRecordArray(metadata['tts'])
   ]
-  const step5 = isRecord(metadata['step5']) ? metadata['step5'] : isRecord(metadata['image']) ? metadata['image'] : null
+  const step5Entries = [
+    ...toRecordArray(metadata['step5']),
+    ...toRecordArray(metadata['image'])
+  ]
   const step6 = isRecord(metadata['step6']) ? metadata['step6'] : isRecord(metadata['video']) ? metadata['video'] : null
   const step7 = isRecord(metadata['step7']) ? metadata['step7'] : isRecord(metadata['music']) ? metadata['music'] : null
 
@@ -323,11 +326,16 @@ const getLegacyTimingSteps = (metadata: Record<string, unknown>): Map<string, { 
     }
   }
 
-  if (step5 && typeof step5['imageService'] === 'string' && typeof step5['imageModel'] === 'string') {
+  for (const step5 of step5Entries) {
+    if (typeof step5['imageService'] !== 'string' || typeof step5['imageModel'] !== 'string') {
+      continue
+    }
+
     const normalized = normalizeStepShape('image', step5['imageService'], step5['imageModel'])
     const processingTimeMs = toFiniteNumber(step5['processingTime'])
+    const imageCount = normalizeUnitValue('image', 'images', toFiniteNumber(step5['imageCount']))
     if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: 1 })
+      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: imageCount })
     }
   }
 

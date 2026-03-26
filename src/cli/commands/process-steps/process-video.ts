@@ -1,4 +1,4 @@
-import type { ProcessingOptions, Step1Metadata, VideoMetadata, Step3Metadata, Step4Metadata, Step7MusicMetadata, AggregatedPriceEstimate } from '~/types'
+import type { ProcessingOptions, Step1Metadata, VideoMetadata, Step3Metadata, Step4Metadata, Step5Metadata, Step7MusicMetadata, AggregatedPriceEstimate } from '~/types'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
@@ -12,6 +12,7 @@ import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { StructuredRunResult } from './step-3-write/structured-output/types'
 import { runTts } from './step-4-tts/run-tts'
 import { collectTtsTargets, sanitizeTtsModelName } from './step-4-tts/tts-targets'
+import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } from './step-5-image/image-targets'
 import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
 import { runMusicGen } from './step-7-music/run-music-gen'
@@ -65,24 +66,25 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
       const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
         exampleFormat: processingOptions.structured === false ? 'markdown' : 'json'
       })
-      const promptContent = buildPrompt(metadata, transcriptionResult.result, instruction)
+      const promptContent = buildPrompt(metadata, transcriptionResult.result, instruction, step1Metadata.slug)
       await Bun.write(promptPath, promptContent)
     })
   } else {
     step3RunResults = await runWithLogContext({ step: 'step-3-write' }, async () =>
-      await runLLM(metadata, transcriptionResult.result, processingOptions)
+      await runLLM(metadata, transcriptionResult.result, processingOptions, step1Metadata.slug)
     )
     step3Results = step3RunResults.map((result) => result.metadata)
   }
 
   let step4Metadata: Step4Metadata[] | null = null
-  let step5Metadata = null
+  let step5Metadata: Step5Metadata[] | null = null
   let step6Metadata = null
   let step7Metadata: Step7MusicMetadata | null = null
   let ttsCharacterCount: number | undefined
   const ttsTargets = collectTtsTargets(processingOptions)
+  const imageTargets = collectImageTargets(processingOptions)
   const ttsRequested = ttsTargets.length > 0
-  const imageRequested = !!(processingOptions.geminiImageModel || processingOptions.openaiImageModel || processingOptions.minimaxImageModel)
+  const imageRequested = imageTargets.length > 0
   const musicRequested = !!(processingOptions.elevenlabsMusicModel || processingOptions.minimaxMusicModel)
   const videoGenRequested = !!(processingOptions.soraVideoModel || processingOptions.geminiVideoModel || processingOptions.minimaxVideoModel)
 
@@ -139,7 +141,13 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
             : processingOptions.llamaModel
 
   const attemptedTtsTargets = step3Results.length === 1 ? ttsTargets : []
+  const attemptedImageTargets = step3Results.length === 1 ? imageTargets : []
   const ttsEstimateTargets = attemptedTtsTargets.map((target) => ({ service: target.service, model: target.model }))
+  const imageEstimateTargets = attemptedImageTargets.map((target) => ({
+    service: target.service,
+    model: target.model,
+    count: getExpectedImageCount(target, processingOptions)
+  }))
   const llmInputTokenCount = step3Results.length > 0
     ? step3Results.reduce((sum, s3) => sum + s3.inputTokenCount, 0)
     : undefined
@@ -165,10 +173,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
       skipLLM: processingOptions.skipLLM,
       ttsTargets: ttsEstimateTargets,
       ttsCharacterCount,
-      geminiImageModel: processingOptions.geminiImageModel,
-      openaiImageModel: processingOptions.openaiImageModel,
-      minimaxImageModel: processingOptions.minimaxImageModel,
-      imagenCount: processingOptions.imagenCount,
+      imageTargets: imageEstimateTargets,
       soraVideoModel: processingOptions.soraVideoModel,
       geminiVideoModel: processingOptions.geminiVideoModel,
       minimaxVideoModel: processingOptions.minimaxVideoModel,
@@ -204,13 +209,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     skipLLM: processingOptions.skipLLM,
     ttsTargets: ttsEstimateTargets,
     ttsCharacterCount,
-    ...(step5Metadata
-      ? {
-          imageService: step5Metadata.imageService,
-          imageModel: step5Metadata.imageModel,
-          imageCount: processingOptions.imagenCount ?? 1,
-        }
-      : {}),
+    ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
     ...(step6Metadata
       ? {
           videoService: step6Metadata.videoGenService,
@@ -246,7 +245,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     step2: transcriptionResult.metadata,
     ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
     ...(step4Metadata ? { step4: serializeOneOrMany(step4Metadata) } : {}),
-    ...(step5Metadata ? { step5: step5Metadata } : {}),
+    ...(step5Metadata ? { step5: serializeOneOrMany(step5Metadata) } : {}),
     ...(step6Metadata ? { step6: step6Metadata } : {}),
     ...(step7Metadata ? { step7: step7Metadata } : {}),
     cost,
@@ -307,12 +306,15 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   }
 
   if (step5Metadata) {
-    stepSummaries.push({
-      label: 'Image',
-      providerModel: `${step5Metadata.imageService}/${step5Metadata.imageModel}`,
-      processingTime: step5Metadata.processingTime,
-      cost: actual.steps.find(s => s.step === 'image')?.cost ?? 0
-    })
+    const imageSteps = actual.steps.filter(s => s.step === 'image')
+    for (const [index, step5] of step5Metadata.entries()) {
+      stepSummaries.push({
+        label: 'Image',
+        providerModel: `${step5.imageService}/${step5.imageModel}`,
+        processingTime: step5.processingTime,
+        cost: imageSteps[index]?.cost ?? 0
+      })
+    }
   }
 
   if (step6Metadata) {
@@ -347,7 +349,9 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   if (step4Metadata) {
     Object.assign(artifactFiles, buildSpeechArtifactMap(step4Metadata))
   }
-  if (step5Metadata) artifactFiles['image'] = step5Metadata.imageFileName
+  if (step5Metadata) {
+    Object.assign(artifactFiles, buildImageArtifactMap(step5Metadata))
+  }
   if (step6Metadata) artifactFiles['video'] = step6Metadata.videoFileName
   if (step7Metadata) artifactFiles['music'] = step7Metadata.musicFileName
   artifactFiles['prompt'] = 'prompt.md'

@@ -64,6 +64,7 @@ type ComputeEstimatedProcessingTimesInput = {
   ttsService?: Step4Metadata['ttsService'] | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
+  imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number }> | undefined
   imageService?: Step5Metadata['imageService'] | undefined
   imageModel?: string | undefined
   imageCount?: number | undefined
@@ -81,7 +82,7 @@ type ComputeActualProcessingTimesInput = {
   step2?: Step2Metadata | ExtractionMetadata | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
-  step5?: Step5Metadata | undefined
+  step5?: Step5Metadata | Step5Metadata[] | undefined
   step6?: Step6VideoMetadata | undefined
   step7?: Step7MusicMetadata | undefined
   ttsCharacterCount?: number | undefined
@@ -154,13 +155,19 @@ export const computeEstimatedProcessingTimes = (
     })
   }
 
-  if (input.imageService && input.imageModel) {
-    const estimation = getImageEstimation(input.imageService, input.imageModel)
-    const imageCount = Math.max(1, input.imageCount ?? 1)
+  const imageTargets = input.imageTargets && input.imageTargets.length > 0
+    ? input.imageTargets
+    : input.imageService && input.imageModel
+      ? [{ service: input.imageService, model: input.imageModel, count: Math.max(1, input.imageCount ?? 1) }]
+      : []
+
+  for (const imageTarget of imageTargets) {
+    const estimation = getImageEstimation(imageTarget.service, imageTarget.model)
+    const imageCount = Math.max(1, imageTarget.count)
     steps.push({
       step: 'image',
-      provider: input.imageService,
-      model: input.imageModel,
+      provider: imageTarget.service,
+      model: imageTarget.model,
       processingTimeMs: roundMs(imageCount * estimation.msPerImage),
       inputMetric: 'images',
       inputValue: imageCount,
@@ -268,14 +275,18 @@ export const computeActualProcessingTimes = (
     }
   }
 
-  if (input.step5) {
+  const step5Array = input.step5
+    ? Array.isArray(input.step5) ? input.step5 : [input.step5]
+    : []
+
+  for (const step5 of step5Array) {
     steps.push({
       step: 'image',
-      provider: input.step5.imageService,
-      model: input.step5.imageModel,
-      processingTimeMs: roundMs(input.step5.processingTime),
+      provider: step5.imageService,
+      model: step5.imageModel,
+      processingTimeMs: roundMs(step5.processingTime),
       inputMetric: 'images',
-      inputValue: input.step5.imageCount,
+      inputValue: step5.imageCount,
     })
   }
 

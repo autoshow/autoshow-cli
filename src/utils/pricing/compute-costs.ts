@@ -30,6 +30,7 @@ import {
   getVideoEstimation,
   getVideoModelMeta,
 } from '~/cli/commands/models/model-loader'
+import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCost } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 
@@ -97,7 +98,7 @@ type ComputeActualCostsInput = {
   step2?: Step2Metadata | ExtractionMetadata | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
-  step5?: Step5Metadata | undefined
+  step5?: Step5Metadata | Step5Metadata[] | undefined
   step6?: Step6VideoMetadata | undefined
   step7?: Step7MusicMetadata | undefined
   ttsCharacterCount?: number | undefined
@@ -193,13 +194,17 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     }
   }
 
-  if (input.step5) {
-    const imageCount = Math.max(1, input.step5.imageCount)
-    const cost = getImageCost(input.step5.imageService, input.step5.imageModel) * imageCount
+  const step5Array = input.step5
+    ? Array.isArray(input.step5) ? input.step5 : [input.step5]
+    : []
+
+  for (const step5 of step5Array) {
+    const imageCount = Math.max(1, step5.imageCount)
+    const cost = getImageCost(step5.imageService, step5.imageModel) * imageCount
     steps.push({
       step: 'image',
-      provider: input.step5.imageService,
-      model: input.step5.imageModel,
+      provider: step5.imageService,
+      model: step5.imageModel,
       cost,
       inputMetric: 'images',
       inputValue: imageCount
@@ -276,6 +281,7 @@ type ComputeEstimatedCostsInput = {
   ttsService?: string | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
+  imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number }> | undefined
   geminiImageModel?: string | undefined
   openaiImageModel?: string | undefined
   minimaxImageModel?: string | undefined
@@ -410,17 +416,34 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     })
   }
 
-  const imageModel = input.geminiImageModel || input.openaiImageModel || input.minimaxImageModel
-  if (imageModel) {
-    const imageService = input.geminiImageModel ? 'gemini'
-      : input.openaiImageModel ? 'openai'
-        : 'minimax'
-    const count = imageService === 'gemini' ? (input.imagenCount ?? 1) : 1
-    const costPerImageCents = getImageCost(imageService, imageModel)
-    const estimation = getImageEstimation(imageService, imageModel)
-    const cost = applyCostMultiplier(costPerImageCents * count, estimation.costMultiplier)
+  const imageEstimates = input.imageTargets && input.imageTargets.length > 0
+    ? input.imageTargets.map((target) => {
+        const costPerImageCents = getImageCost(target.service, target.model)
+        return {
+          provider: target.service,
+          model: target.model,
+          imageCount: Math.max(1, target.count),
+          totalCost: costPerImageCents * Math.max(1, target.count)
+        }
+      })
+    : estimateImageCosts({
+        geminiImageModel: input.geminiImageModel,
+        openaiImageModel: input.openaiImageModel,
+        minimaxImageModel: input.minimaxImageModel,
+        imagenCount: input.imagenCount
+      })
+
+  for (const imageEstimate of imageEstimates) {
+    const estimation = getImageEstimation(imageEstimate.provider, imageEstimate.model)
+    const cost = applyCostMultiplier(imageEstimate.totalCost, estimation.costMultiplier)
     totalCost += cost
-    steps.push({ step: 'image', provider: imageService, model: imageModel, cost, costMultiplier: estimation.costMultiplier })
+    steps.push({
+      step: 'image',
+      provider: imageEstimate.provider,
+      model: imageEstimate.model,
+      cost,
+      costMultiplier: estimation.costMultiplier
+    })
   }
 
   const hasVideo = input.soraVideoModel || input.geminiVideoModel || input.minimaxVideoModel

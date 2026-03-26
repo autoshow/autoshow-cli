@@ -181,16 +181,11 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
   const audioFileSize = audioFile.size
   const audioFileName = audioPath.split('/').pop() || 'audio.wav'
 
+  const slug = audioFileName.replace(/\.[^.]+$/, '')
+
   const metadata: Step1Metadata = {
-    videoUrl: videoMetadata.url,
-    videoTitle: videoMetadata.title,
-    ...(videoMetadata.publishDate !== undefined ? { videoPublishDate: videoMetadata.publishDate } : {}),
-    ...(videoMetadata.thumbnail !== undefined ? { videoThumbnail: videoMetadata.thumbnail } : {}),
-    channelTitle: videoMetadata.author,
-    ...(videoMetadata.channelUrl !== undefined ? { channelUrl: videoMetadata.channelUrl } : {}),
-    duration: videoMetadata.duration,
-    ...(videoMetadata.description.length > 0 ? { videoDescription: videoMetadata.description } : {}),
-    ...(videoMetadata.chapters !== undefined && videoMetadata.chapters.length > 0 ? { videoChapters: videoMetadata.chapters } : {}),
+    ...videoMetadata,
+    slug,
     audioFileName,
     audioFileSize
   }

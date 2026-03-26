@@ -73,7 +73,8 @@ const markdownFallback = '# Summary\n\n(No output generated)\n'
 export const runLLM = async (
   meta: VideoMetadata,
   tr: TranscriptionResult,
-  options: LLMOptions
+  options: LLMOptions,
+  slug?: string
 ): Promise<StructuredRunResult[]> => {
   const structuredEnabled = options.structured !== false
   const targets = collectTargets(options)
@@ -96,7 +97,7 @@ export const runLLM = async (
 
   const prompt = options.promptBuilder
     ? options.promptBuilder(instruction)
-    : buildPromptFromUtils(meta, tr, instruction)
+    : buildPromptFromUtils(meta, tr, instruction, slug)
   const promptPath = `${options.outputDir}/prompt.md`
   await Bun.write(promptPath, prompt)
 

@@ -12,8 +12,8 @@ type Step1Metadata = {
   format?: string
   pageCount?: number
   fileSize?: number
-  videoTitle?: string
-  channelTitle?: string
+  title?: string
+  author?: string
 }
 
 export type Metadata = {
@@ -74,8 +74,8 @@ const parseMetadata = (value: unknown): Metadata => {
     withDefined(step1, 'format', asString(step1Record['format']))
     withDefined(step1, 'pageCount', asNumber(step1Record['pageCount']))
     withDefined(step1, 'fileSize', asNumber(step1Record['fileSize']))
-    withDefined(step1, 'videoTitle', asString(step1Record['videoTitle']))
-    withDefined(step1, 'channelTitle', asString(step1Record['channelTitle']))
+    withDefined(step1, 'title', asString(step1Record['title']))
+    withDefined(step1, 'author', asString(step1Record['author']))
     output.step1 = step1
   }
   if ('step2' in root) {

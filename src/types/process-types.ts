@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import type { OutputFormat } from './cli-types'
-import type { MusicProvider, TtsProvider, VideoProvider } from './provider-types'
+import type { ImageProvider, MusicProvider, TtsProvider, VideoProvider } from './provider-types'
 
 export const ProcessingOptionsSchema = v.pipe(
   v.object({
@@ -99,16 +99,8 @@ export const VideoMetadataSchema = v.object({
   chapters: v.optional(v.array(VideoChapterSchema), undefined)
 })
 
-export type Step1Metadata = {
-  videoUrl: string
-  videoTitle: string
-  videoPublishDate?: string
-  videoThumbnail?: string
-  channelTitle: string
-  channelUrl?: string
-  duration: string
-  videoDescription?: string
-  videoChapters?: Array<{ startTime: number, endTime: number, title: string }>
+export type Step1Metadata = VideoMetadata & {
+  slug: string
   audioFileName: string
   audioFileSize: number
 }
@@ -461,11 +453,12 @@ export const TtsScriptOutputSchema = v.object({
 })
 
 export type Step5Metadata = {
-  imageService: 'gemini' | 'openai' | 'minimax'
+  imageService: ImageProvider
   imageModel: string
   processingTime: number
   imageCount: number
   imageFileName: string
+  imageFileNames: string[]
   imageFileSize: number
   imageWidth: number | undefined
   imageHeight: number | undefined

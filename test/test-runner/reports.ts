@@ -209,7 +209,10 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
   const step4Entries = toRecordArray(metadata['step4'])
   const musicEntries = toRecordArray(metadata['music'])
   const ttsEntries = toRecordArray(metadata['tts'])
-  const imageEntries = toRecordArray(metadata['image'])
+  const imageEntries = [
+    ...toRecordArray(metadata['step5']),
+    ...toRecordArray(metadata['image'])
+  ]
   const videoEntries = toRecordArray(metadata['video'])
 
   pushPair(

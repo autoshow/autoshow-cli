@@ -25,7 +25,7 @@ bun as image <prompt> [flags]
 | OpenAI | `--openai-image <model>` | `gpt-image-1.5`, `gpt-image-1`, `gpt-image-1-mini` |
 | MiniMax | `--minimax-image <model>` | `image-01` |
 
-Only one provider flag may be active at a time.
+You can combine multiple provider flags in one run. Each selected provider generates its own output file set.
 
 ## Examples
 
@@ -42,8 +42,11 @@ bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --imag
 # MiniMax
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01 --image-aspect-ratio 16:9
 
+# Multi-provider
+bun as image "a sunset over the lake" --gemini-image imagen-4.0-generate-001 --openai-image gpt-image-1-mini --imagen-count 2
+
 # Price preflight
-bun as image "a sunset" --openai-image gpt-image-1 --price
+bun as image "a sunset" --openai-image gpt-image-1 --minimax-image image-01 --price
 ```
 
 ## Flags
@@ -68,8 +71,9 @@ Standalone `image` runs always write `metadata.json`, and the generated image fi
 - Gemini: `generated-image.png`, plus `generated-image-2.png`, `generated-image-3.png`, and so on when multiple images are returned
 - OpenAI: `generated-image.<format>` where the default format is `png`
 - MiniMax: `generated-image.jpeg`
+- Multi-provider runs rename each provider output to include the provider and model, such as `generated-image-openai-gpt-image-1-mini.png` or `generated-image-gemini-imagen-4.0-generate-001-2.png`
 
-`metadata.json` includes `image`, `cost`, and `timing` sections.
+`metadata.json` includes `image`, `cost`, and `timing` sections. The `image` field is a single object for one provider and an array when multiple providers are selected. Each image metadata object includes both `imageFileName` and `imageFileNames`.
 
 ## Notes
 

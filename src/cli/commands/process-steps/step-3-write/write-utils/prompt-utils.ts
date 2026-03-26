@@ -6,7 +6,8 @@ export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. It doe
 export const buildPrompt = (
   metadata: VideoMetadata,
   transcription: TranscriptionResult,
-  instruction?: string
+  instruction?: string,
+  slug?: string
 ): string => {
   const taskInstruction = instruction ?? `- Write a one-sentence description of the transcript and a one-paragraph summary.
   - The one-sentence description shouldn't exceed 180 characters (roughly 30 words).
@@ -34,13 +35,20 @@ Format the output like so:
 
     A comprehensive introduction providing readers with the main themes and concepts explored throughout the chapter. The content highlights significant points discussed in detail and explores their broader implications and practical relevance. Connections are made between concepts, emphasizing interrelationships and potential impacts on various fields or current challenges. The chapter sets a clear foundation for understanding the subsequent discussions.`
 
-  const videoInfo = `
-Video Title: ${metadata.title}
-Video URL: ${metadata.url}
-${metadata.author ? `Author: ${metadata.author}` : ''}
-${metadata.duration ? `Duration: ${metadata.duration}` : ''}
-`
-  
+  const frontmatterFields = [
+    `title: "${metadata.title}"`,
+    slug ? `slug: "${slug}"` : '',
+    `duration: "${metadata.duration}"`,
+    metadata.author ? `author: "${metadata.author}"` : '',
+    `url: "${metadata.url}"`,
+    metadata.publishDate ? `publishDate: "${metadata.publishDate}"` : '',
+    metadata.thumbnail ? `thumbnail: "${metadata.thumbnail}"` : '',
+    metadata.channelUrl ? `channelUrl: "${metadata.channelUrl}"` : '',
+    metadata.description ? `description: "${metadata.description}"` : '',
+  ].filter(Boolean).join('\n')
+
+  const frontmatter = `---\n${frontmatterFields}\n---`
+
   const hasSpeakers = transcription.segments.some(seg => seg.speaker)
   if (hasSpeakers) {
     const uniqueSpeakers = new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
@@ -54,11 +62,11 @@ ${metadata.duration ? `Duration: ${metadata.duration}` : ''}
     })
     .join('\n')
 
-  return `${TRANSCRIPT_PREAMBLE}
+  return `${frontmatter}
+
+${TRANSCRIPT_PREAMBLE}
 
 ${taskInstruction}
-
-${videoInfo}
 
 Transcript:
 ${transcriptWithTimestamps}`

@@ -21,11 +21,15 @@ defineImageServiceTest({
   envVarKey: 'OPENAI_API_KEY',
 })
 
-test('rejects multiple image providers', async () => {
+test('--price allows multiple image providers and reports each image step', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1', '--minimax-image', 'image-01'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1-mini', '--minimax-image', 'image-01', '--price'],
   )
-  expect(result.exitCode).not.toBe(0)
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('"provider": "openai"')
+  expect(result.stdout).toContain('"provider": "minimax"')
+  expect(result.stdout).toContain('generated-image-openai-gpt-image-1-mini.png')
+  expect(result.stdout).toContain('generated-image-minimax-image-01.jpeg')
 })
 
 describe('openai image format options', () => {

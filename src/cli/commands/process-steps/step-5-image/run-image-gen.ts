@@ -1,84 +1,114 @@
-import type { ProcessingOptions, Step5Metadata } from '~/types'
-import type { ImageProvider } from '~/types'
-import { CLIUsageError } from '~/utils/error-handler'
-import { type GeminiImageModel, type MinimaxImageModel, type OpenAIImageModel, supportsGeminiImageSize, validateGeminiImageModel, validateMinimaxImageModel, validateOpenAIImageModel } from '~/cli/commands/models/model-options'
-import { assertNever } from '~/utils/validate/assert-never'
-import { ensureGeminiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
-import { ensureOpenAIImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
-import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
-import { runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
-import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
+import { mkdir, rename, rm } from 'node:fs/promises'
+import { basename } from 'node:path'
+import type { Step5Metadata } from '~/types'
+import * as l from '~/logger'
+import {
+  type ImageGenOptions,
+  type ImageTarget,
+  collectImageTargets,
+  getImageArtifactFileNames,
+  sanitizeImageModelName,
+} from './image-targets'
 
-type ImageGenOptions = Pick<
-  ProcessingOptions,
-  | 'geminiImageModel'
-  | 'openaiImageModel'
-  | 'minimaxImageModel'
-  | 'imageAspectRatio'
-  | 'imageSize'
-  | 'imageQuality'
-  | 'imageFormat'
-  | 'imageBackground'
-  | 'imagenCount'
->
+const getTargetWorkspaceDir = (outputDir: string, target: ImageTarget): string =>
+  `${outputDir}/.image-tmp-${target.service}-${sanitizeImageModelName(target.model)}`
 
-const resolveImageEngine = (options: ImageGenOptions): ImageProvider => {
-  const hasGemini = typeof options.geminiImageModel === 'string' && options.geminiImageModel.length > 0
-  const hasOpenAI = typeof options.openaiImageModel === 'string' && options.openaiImageModel.length > 0
-  const hasMinimax = typeof options.minimaxImageModel === 'string' && options.minimaxImageModel.length > 0
+const finalizeTargetArtifacts = async (
+  outputDir: string,
+  target: ImageTarget,
+  imagePaths: string[],
+  metadata: Step5Metadata,
+  singleTarget: boolean
+): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
+  const sourceFileNames = imagePaths.map((imagePath) => basename(imagePath))
+  const finalFileNames = getImageArtifactFileNames(target, sourceFileNames, singleTarget)
+  const finalImagePaths: string[] = []
 
-  const providerCount = [hasGemini, hasOpenAI, hasMinimax].filter(Boolean).length
-  if (providerCount > 1) {
-    throw CLIUsageError('Cannot use more than one image provider at the same time (--gemini-image, --openai-image, --minimax-image)')
+  for (const [index, imagePath] of imagePaths.entries()) {
+    const finalFileName = finalFileNames[index]
+    if (!finalFileName) {
+      continue
+    }
+
+    const finalPath = singleTarget ? imagePath : `${outputDir}/${finalFileName}`
+    if (!singleTarget) {
+      await rename(imagePath, finalPath)
+    }
+    finalImagePaths.push(finalPath)
   }
 
-  if (hasGemini) return 'gemini'
-  if (hasOpenAI) return 'openai'
-  if (hasMinimax) return 'minimax'
-  throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, or --minimax-image.')
+  const primaryPath = finalImagePaths[0]
+  if (!primaryPath) {
+    throw new Error(`No finalized image artifacts were produced for ${target.service}/${target.model}`)
+  }
+
+  return {
+    imagePaths: finalImagePaths,
+    metadata: {
+      ...metadata,
+      imageCount: finalImagePaths.length,
+      imageFileName: finalFileNames[0] ?? metadata.imageFileName,
+      imageFileNames: finalFileNames,
+      imageFileSize: Bun.file(primaryPath).size,
+    }
+  }
+}
+
+export const runImageTargets = async (
+  targets: ImageTarget[],
+  prompt: string,
+  outputDir: string,
+  options: ImageGenOptions
+): Promise<{ imagePaths: string[], metadata: Step5Metadata[] }> => {
+  const successes: Array<{ imagePaths: string[], metadata: Step5Metadata }> = []
+  const failedTargets: string[] = []
+  const singleTarget = targets.length === 1
+
+  for (const target of targets) {
+    const workspaceDir = singleTarget ? outputDir : getTargetWorkspaceDir(outputDir, target)
+
+    try {
+      if (!singleTarget) {
+        await mkdir(workspaceDir, { recursive: true })
+      }
+
+      const { imagePaths, metadata } = await target.run(prompt, workspaceDir, options)
+      successes.push(await finalizeTargetArtifacts(outputDir, target, imagePaths, metadata, singleTarget))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      l.error(`Failed to run image target ${target.service}/${target.model}: ${message}`)
+      failedTargets.push(`${target.service}/${target.model}: ${message}`)
+    } finally {
+      if (!singleTarget) {
+        await rm(workspaceDir, { recursive: true, force: true })
+      }
+    }
+  }
+
+  if (successes.length === 0) {
+    const details = failedTargets.length > 0 ? failedTargets.join('; ') : 'No provider produced images'
+    throw new Error(`No image outputs were generated. ${details}`)
+  }
+
+  if (failedTargets.length > 0) {
+    l.warn(`Image run completed with partial failures: ${failedTargets.join('; ')}`)
+  }
+
+  return {
+    imagePaths: successes.flatMap((entry) => entry.imagePaths),
+    metadata: successes.map((entry) => entry.metadata)
+  }
 }
 
 export const runImageGen = async (
   prompt: string,
   outputDir: string,
   options: ImageGenOptions
-): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
-
-  const engine = resolveImageEngine(options)
-
-  if (engine === 'gemini') {
-    const model: GeminiImageModel = validateGeminiImageModel(options.geminiImageModel as string)
-    if (typeof options.imageSize === 'string' && options.imageSize.length > 0 && !supportsGeminiImageSize(model)) {
-      throw CLIUsageError(`--image-size is not supported by Gemini image model "${model}"`)
-    }
-    await ensureGeminiImageGenSetup()
-    return await runGeminiImageGen(prompt, outputDir, {
-      model,
-      aspectRatio: options.imageAspectRatio,
-      imageSize: options.imageSize,
-      imagenCount: options.imagenCount
-    })
+): Promise<{ imagePaths: string[], metadata: Step5Metadata[] }> => {
+  const targets = collectImageTargets(options)
+  if (targets.length === 0) {
+    throw new Error('No image provider configured')
   }
 
-  if (engine === 'openai') {
-    const model: OpenAIImageModel = validateOpenAIImageModel(options.openaiImageModel as string)
-    await ensureOpenAIImageGenSetup()
-    return await runOpenAIImageGen(prompt, outputDir, {
-      model,
-      size: options.imageSize,
-      quality: options.imageQuality,
-      outputFormat: options.imageFormat,
-      background: options.imageBackground
-    })
-  }
-
-  if (engine === 'minimax') {
-    const model: MinimaxImageModel = validateMinimaxImageModel(options.minimaxImageModel as string)
-    return await runMinimaxImageGen(prompt, outputDir, {
-      model,
-      aspectRatio: options.imageAspectRatio
-    })
-  }
-
-  assertNever(engine)
+  return await runImageTargets(targets, prompt, outputDir, options)
 }

@@ -4,7 +4,7 @@ import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
-import { estimateImageCost } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
+import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCost } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-duration'
@@ -216,23 +216,25 @@ const buildTtsEstimates = (opts: RuntimeOptions, characterCount: number): TtsSte
   })
 }
 
-const buildImageEstimate = (opts: RuntimeOptions): ImageStepEstimate | null => {
+const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
   const hasImage = opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel
-  if (!hasImage) return null
-  const estimate = estimateImageCost({
+  if (!hasImage) return []
+
+  return estimateImageCosts({
     geminiImageModel: opts.geminiImageModel,
     openaiImageModel: opts.openaiImageModel,
     minimaxImageModel: opts.minimaxImageModel,
     imagenCount: opts.imagenCount
+  }).map((estimate) => {
+    const estimation = getImageEstimation(estimate.provider, estimate.model)
+    return {
+      step: 'image' as const,
+      provider: estimate.provider,
+      model: estimate.model,
+      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+      costMultiplier: estimation.costMultiplier,
+    }
   })
-  const estimation = getImageEstimation(estimate.provider, estimate.model)
-  return {
-    step: 'image',
-    provider: estimate.provider,
-    model: estimate.model,
-    totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-    costMultiplier: estimation.costMultiplier,
-  }
 }
 
 const buildVideoEstimate = (opts: RuntimeOptions): VideoStepEstimate | null => {
@@ -334,8 +336,8 @@ export const buildAggregatedPriceEstimate = async (
       }
     }
 
-    const image = buildImageEstimate(opts)
-    if (image) {
+    const images = buildImageEstimates(opts)
+    for (const image of images) {
       steps.push(image)
       totalEstimatedCost += image.totalCost
     }
@@ -362,8 +364,8 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'image') {
-    const image = buildImageEstimate(opts)
-    if (image) {
+    const images = buildImageEstimates(opts)
+    for (const image of images) {
       steps.push(image)
       totalEstimatedCost += image.totalCost
     }
