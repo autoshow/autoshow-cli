@@ -69,7 +69,7 @@ output/YYYY-MM-DD_HH-MM-SS_title/
 ```text
 output/YYYY-MM-DD_HH-MM-SS_batch-label/
   source.json
-  info.json
+  info.json   # consolidated per-item metadata.json payloads
   YYYY-MM-DD_HH-MM-SS_item/
     <artifacts for that item>
 ```

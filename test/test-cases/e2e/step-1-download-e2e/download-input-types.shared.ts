@@ -201,6 +201,9 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
 
     expect(await fileExists(`${batchDir}/source.json`)).toBe(true)
     expect(await fileExists(`${batchDir}/info.json`)).toBe(true)
+    const info = await Bun.file(`${batchDir}/info.json`).json()
+    expect(Array.isArray(info)).toBe(true)
+    const infoEntries = Array.isArray(info) ? info : []
 
     const source = parseBatchSource(await Bun.file(`${batchDir}/source.json`).json())
     expect(source.sourceKind).toBe(tc.expectedSourceKind)
@@ -226,6 +229,9 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
     }
 
     expect(await fileExists(`${firstItemDir}/metadata.json`)).toBe(true)
+    expect(infoEntries.length).toBe(itemDirs.length)
+    const rawMetadata = await Bun.file(`${firstItemDir}/metadata.json`).json()
+    expect(infoEntries[0]).toEqual(rawMetadata)
     const metadata = parseMetadata(await Bun.file(`${firstItemDir}/metadata.json`).json())
     expect(metadata.step1).toBeDefined()
     await assertDownloadOnlyArtifacts(firstItemDir, metadata)

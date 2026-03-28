@@ -68,7 +68,7 @@ bun as video "a cinematic mountain sunrise" --sora-video sora-2
 - `video`: [video](./commands/step-6-video/text-to-video-services.md)
 - `music`: [music](./commands/step-7-music/text-to-music-services.md)
 - `config`: [config](./commands/config/config.md)
-- `links`: fetch provider documentation
+- `links`: [links](./commands/links/links.md)
 
 ## Selection Guide
 

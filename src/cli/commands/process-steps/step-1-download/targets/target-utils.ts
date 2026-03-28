@@ -9,6 +9,8 @@ import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions } from '~/
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
+type BatchManifestEntry = Record<string, unknown>
+
 const DOCUMENT_EXTENSIONS = [
   '.pdf', '.epub', '.docx', '.pptx', '.xlsx', '.odt', '.ods', '.odp',
   '.mobi', '.azw3', '.azw', '.fb2', '.lit', '.cbz', '.rtf', '.csv'
@@ -143,6 +145,23 @@ const runWithSemaphore = async <T>(
   }
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const readBatchManifestEntry = async (outputDir: string): Promise<BatchManifestEntry | null> => {
+  const metadataPath = `${outputDir}/metadata.json`
+  if (!await fileExists(metadataPath)) {
+    return null
+  }
+
+  try {
+    const raw = JSON.parse(await Bun.file(metadataPath).text()) as unknown
+    return isRecord(raw) ? raw : null
+  } catch {
+    return null
+  }
+}
+
 export const processBatch = async (
   items: string[],
   batchLabel: string,
@@ -175,7 +194,7 @@ export const processBatch = async (
     await writeFile(`${batchDir}/source.json`, JSON.stringify(sourceData, null, 2))
   }
 
-  let infoEntries: Array<{ url: string, title: string, channel: string, duration: string, publishedAt?: string }>
+  let infoEntries: BatchManifestEntry[]
   if (runOpts.selectedItems && runOpts.selectedItems.length > 0) {
     infoEntries = runOpts.selectedItems.map(i => ({
       url: i.url,
@@ -201,6 +220,7 @@ export const processBatch = async (
   const concurrency = Math.max(1, runOpts.concurrency ?? 1)
   let ok = 0
   let fail = 0
+  const finalInfoEntries = [...infoEntries]
 
   if (concurrency === 1) {
 
@@ -208,9 +228,13 @@ export const processBatch = async (
         const item = items[index] as string
         l.info(`Processing ${index + 1}/${items.length}: ${item}`)
         try {
-          await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
+          const processed = await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
             await processSingleTarget(command, item, batchDir, opts)
           )
+          const manifestEntry = processed?.outputDir ? await readBatchManifestEntry(processed.outputDir) : null
+          if (manifestEntry) {
+            finalInfoEntries[index] = manifestEntry
+          }
           ok++
           l.success(`Done ${index + 1}/${items.length}`)
         } catch (error) {
@@ -227,16 +251,21 @@ export const processBatch = async (
       items.map((item, index) =>
         runWithSemaphore(concurrency, sem, async () => {
           l.info(`Processing ${index + 1}/${items.length}: ${item}`)
-          await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
+          const processed = await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
             await processSingleTarget(command, item, batchDir, opts)
           )
+          const manifestEntry = processed?.outputDir ? await readBatchManifestEntry(processed.outputDir) : null
           l.success(`Done ${index + 1}/${items.length}`)
+          return manifestEntry
         })
       )
     )
-    for (const r of results) {
+    for (const [index, r] of results.entries()) {
       if (r.status === 'fulfilled') {
         ok++
+        if (r.value) {
+          finalInfoEntries[index] = r.value
+        }
       } else {
         fail++
         const message = r.reason instanceof Error ? r.reason.message : String(r.reason)
@@ -246,38 +275,7 @@ export const processBatch = async (
   }
 
   l.info(`Batch complete: ${ok} succeeded, ${fail} failed`)
-
-  // Rewrite info.json with actual metadata from processed items
-  try {
-    const entries = await readdir(batchDir, { withFileTypes: true })
-    const subdirs = entries.filter(e => e.isDirectory()).map(e => e.name)
-    const updatedEntries: Array<{ url: string, title: string, channel: string, duration: string, publishedAt?: string }> = []
-
-    for (const sub of subdirs) {
-      const metaPath = `${batchDir}/${sub}/metadata.json`
-      if (await fileExists(metaPath)) {
-        try {
-          const raw = JSON.parse(await Bun.file(metaPath).text())
-          const step1 = raw.step1 ?? raw
-          updatedEntries.push({
-            url: step1.url ?? step1.filePath ?? '',
-            title: step1.title ?? 'Untitled',
-            channel: step1.author ?? step1.channel ?? 'Unknown',
-            duration: step1.duration ?? 'Unknown',
-            ...(step1.publishDate ? { publishedAt: step1.publishDate } : {})
-          })
-        } catch {
-          // skip malformed metadata files
-        }
-      }
-    }
-
-    if (updatedEntries.length > 0) {
-      await writeFile(`${batchDir}/info.json`, JSON.stringify(updatedEntries, null, 2))
-    }
-  } catch {
-    // keep original info.json if update fails
-  }
+  await writeFile(`${batchDir}/info.json`, JSON.stringify(finalInfoEntries, null, 2))
 
   return { ok, fail }
 }

@@ -23,7 +23,7 @@ import { isDocumentByExtension, isLikelyUrl } from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import type { InputKind } from '~/types'
+import type { BatchItemProcessResult, InputKind } from '~/types'
 
 
 const MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
@@ -488,7 +488,7 @@ const processMetadataMedia = async (
   target: string,
   save: boolean,
   baseDir: string
-): Promise<void> => {
+): Promise<BatchItemProcessResult> => {
   const isUrl = isLikelyUrl(target)
   const exists = await fileExists(target)
 
@@ -521,6 +521,7 @@ const processMetadataMedia = async (
   if (save) {
     l.report.complete(outputDir, { metadata: 'metadata.json' })
   }
+  return { outputDir }
 }
 
 const processMetadataDocument = async (
@@ -528,7 +529,7 @@ const processMetadataDocument = async (
   save: boolean,
   baseDir: string,
   password?: string
-): Promise<void> => {
+): Promise<BatchItemProcessResult> => {
   const detectedFormat = await detectDocumentFormat(target)
   if (!detectedFormat) {
     throw CLIUsageError(`Unsupported document format: ${target}`)
@@ -565,6 +566,7 @@ const processMetadataDocument = async (
   if (save) {
     l.report.complete(outputDir, { metadata: 'metadata.json' })
   }
+  return { outputDir }
 }
 
 const processDownloadMedia = async (
@@ -635,7 +637,7 @@ export const processSingleTarget = async (
   baseDir: string,
   opts: RuntimeOptions,
   preflightEstimate?: AggregatedPriceEstimate
-): Promise<void> => {
+): Promise<BatchItemProcessResult | void> => {
   const displayCommand = canonicalizeProcessCommand(command)
 
   if (command === 'metadata') {
@@ -644,14 +646,12 @@ export const processSingleTarget = async (
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          await processMetadataDocument(downloaded.filePath, opts.save, baseDir, opts.password)
+          return await processMetadataDocument(downloaded.filePath, opts.save, baseDir, opts.password)
         } finally {
           await downloaded.cleanup()
         }
-        return
       }
-      await processMetadataMedia(item, opts.save, baseDir)
-      return
+      return await processMetadataMedia(item, opts.save, baseDir)
     }
 
     const exists = await fileExists(item)
@@ -662,11 +662,10 @@ export const processSingleTarget = async (
     const isDocExt = isDocumentByExtension(item)
     const detected = isDocExt ? await detectDocumentFormat(item) : null
     if (isDocExt || detected !== null) {
-      await processMetadataDocument(item, opts.save, baseDir, opts.password)
+      return await processMetadataDocument(item, opts.save, baseDir, opts.password)
     } else {
-      await processMetadataMedia(item, opts.save, baseDir)
+      return await processMetadataMedia(item, opts.save, baseDir)
     }
-    return
   }
 
   if (command === 'download') {
@@ -675,14 +674,12 @@ export const processSingleTarget = async (
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          await processDownloadDocument(downloaded.filePath, baseDir, opts)
+          return await processDownloadDocument(downloaded.filePath, baseDir, opts)
         } finally {
           await downloaded.cleanup()
         }
-        return
       }
-      await processDownloadMedia(item, baseDir)
-      return
+      return await processDownloadMedia(item, baseDir)
     }
 
     const exists = await fileExists(item)
@@ -693,11 +690,10 @@ export const processSingleTarget = async (
     const isDocExt = isDocumentByExtension(item)
     const detected = isDocExt ? await detectDocumentFormat(item) : null
     if (isDocExt || detected !== null) {
-      await processDownloadDocument(item, baseDir, opts)
+      return await processDownloadDocument(item, baseDir, opts)
     } else {
-      await processDownloadMedia(item, baseDir)
+      return await processDownloadMedia(item, baseDir)
     }
-    return
   }
 
   if (isLikelyUrl(item)) {
@@ -710,22 +706,21 @@ export const processSingleTarget = async (
       const downloaded = await downloadDocumentUrlToTempFile(item)
       try {
         if (isOcrCommand(command)) {
-          await processExtractSingle(downloaded.filePath, baseDir, opts)
+          return await processExtractSingle(downloaded.filePath, baseDir, opts)
         } else {
-          await runDocumentWrite(downloaded.filePath, baseDir, opts)
+          return await runDocumentWrite(downloaded.filePath, baseDir, opts)
         }
       } finally {
         await downloaded.cleanup()
       }
-      return
     }
 
     if (isOcrCommand(command)) {
       throw CLIUsageError(`Unsupported ocr input "${item}". Use a direct document URL or local file.`)
     }
 
-    await processMediaSingle(item, baseDir, opts, preflightEstimate)
-    return
+    const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)
+    return { outputDir: result.outputDir }
   }
 
   const exists = await fileExists(item)
@@ -742,20 +737,19 @@ export const processSingleTarget = async (
       l.warn(`Skipping non-document file in ocr mode: ${item}`)
       return
     }
-    await processExtractSingle(item, baseDir, opts)
-    return
+    return await processExtractSingle(item, baseDir, opts)
   }
 
   if (command === 'write' && kind === 'local_document') {
-    await runDocumentWrite(item, baseDir, opts)
-    return
+    return await runDocumentWrite(item, baseDir, opts)
   }
 
   if (isSttCommand(command) && kind === 'local_document') {
     throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
   }
 
-  await processMediaSingle(item, baseDir, opts, preflightEstimate)
+  const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)
+  return { outputDir: result.outputDir }
 }
 
 export const handleSingleTarget = async (

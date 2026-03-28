@@ -43,7 +43,11 @@ export type BatchItemProcessor = (
   item: string,
   batchDir: string,
   opts: RuntimeOptions
-) => Promise<void>
+) => Promise<BatchItemProcessResult | void>
+
+export type BatchItemProcessResult = {
+  outputDir: string
+}
 
 export type BatchRunOptions = {
   source?: BatchSource

@@ -202,7 +202,7 @@ Batch runs produce:
 ```text
 ./output/
   YYYY-MM-DD_HH-MM-SS_label/
-    info.json
+    info.json                  # consolidated per-item metadata.json payloads
     YYYY-MM-DD_HH-MM-SS_item-title/
       ...
 ```

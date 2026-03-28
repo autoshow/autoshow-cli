@@ -58,7 +58,7 @@ output/
     │
     │  ── Batch Processing ──
     └── output/YYYY-MM-DD_HH-MM-SS_<batch-label>/
-        ├── info.json               # Batch manifest
+        ├── info.json               # Consolidated per-item metadata.json payloads
         └── YYYY-MM-DD_HH-MM-SS_<item-title>/
             └── (individual item output files)
 ```
