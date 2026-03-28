@@ -1,214 +1,177 @@
 # autoshow-bun-cli
 
-CLI tool for processing media and documents with transcription, extraction, and write workflows on Bun.
+Bun-native CLI for turning media, documents, and text prompts into metadata, downloads, transcripts, OCR extracts, summaries, and generated speech, images, video, or music.
+
+It supports both local and API-backed engines across STT, OCR, LLM, TTS, image, video, and music workflows. Defaults can be persisted in `config/autoshow.json`, and runnable commands perform cost preflight before execution.
+
+For command-specific details, use `bun as help <command>` or browse the docs in [`docs/`](./docs/).
 
 ## Quick Start
 
 ```bash
 bun install
+bun as setup --doctor
 bun as setup
 ```
 
-Top 4 workflows:
+- `setup --doctor` verifies prerequisites, API keys, and config without installing anything.
+- Local workflows can run without service API keys; service-backed commands require the relevant provider credentials.
+
+## Common Workflows
 
 ```bash
-# 1) Collect metadata only (default command, no download)
+# Metadata only (default command, no download)
 bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
-# 2) Transcribe media only (creates transcription + prompt, no summary)
+# Download only
+bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
+
+# Transcription only
 bun as stt "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
-# 3) Full write pipeline for media (transcription + prompt + summary)
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --llama ggml-org/gemma-3-4b-it-GGUF
+# Full write pipeline: download/extract/transcribe + summary output
+bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.2
 
-# 4) Document OCR/extraction only
-bun as ocr "input/1-document.pdf" --out json
+# Document OCR / extraction
+bun as ocr input/1-document.pdf --out json
+
+# Standalone text-to-speech from local text
+bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts
+
+# Prompt-driven generation
+bun as image "a dramatic fox portrait in snow" --minimax-image image-01
+bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-fast-generate-preview
+bun as music "an ambient piano instrumental" --minimax-music music-2.5
+
+# Fetch curated provider docs into docs/links/bun-links.md
+bun as links --openai
 ```
 
-## Canonical Usage
+## Command Map
+
+| Area | Commands |
+|------|----------|
+| Inspect and process | `metadata`, `download`, `ocr`, `stt`, `write` |
+| Generate | `tts`, `image`, `video`, `music` |
+| Utilities | `config`, `setup`, `sample`, `models`, `links` |
+
+High-value notes:
+
+- `bun as <input>` is shorthand for `bun as metadata <input>`.
+- `write` is the central orchestration command. It can summarize transcripts or extracted documents, write markdown or structured JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
+- `models` lets you pre-download local runtimes without running inference, for example `bun as models tiny` or `bun as models ggml-org/gemma-3-270m-it-GGUF`.
+- `metadata` aliases: `meta`, `info`
+- `download` alias: `dl`
+- `stt` aliases: `transcribe`, `transcript`, `transcription`
+- `ocr` aliases: `extract`, `document`
+- `tts` alias: `voice`
+- `write` aliases: `llm`, `llms`
+- `sample` alias: `samples`
+
+## Usage Basics
 
 Use command-first order for all examples and scripts:
 
 ```bash
-bun as <command> [parameters] [flags]
-bun as <input> [flags]              # root shorthand (equivalent to metadata)
-bun as --help                       # global help
-bun as --help write                 # show help for write
-bun as <command> --help             # command help
-bun as help <command>               # targeted help (preferred)
-bun as --version                    # version
-bun as setup --doctor               # check prerequisites and config
+bun as <command> [input] [flags]
+bun as <input>              # shorthand for metadata
+bun as help <command>       # preferred targeted help
+bun as <command> --help
+bun as --version
 ```
 
-Unsupported argument orders (fail with usage errors):
+- Use `bun as stt <input> --whisper tiny`, not `bun as --whisper tiny stt <input>`.
+- Inputs can be URLs, local files, directories, `.md`/`.txt` URL lists, or prompt strings for `image`, `video`, and `music`.
+- If an input begins with `-`, end flag parsing first: `bun as write -- -myfile`.
+- If the literal input collides with a command name, use the explicit command form: `bun as metadata setup`.
+
+### Batch Inputs
+
+Batch mode is selected from the input type rather than a separate subcommand:
 
 ```bash
-bun as --whisper stt <input>
+# Newline-delimited URLs
+bun as write input/2-urls.md
+
+# Process files plus 2-urls.md inside the directory
+bun as stt input
+
+# Process only local files in a non-input directory
+bun as ocr /tmp/job/files
 ```
 
-Use instead:
+Common batch controls:
+
+- `--batch-limit`
+- `--batch-all`
+- `--batch-order newest|oldest`
+- `--batch-concurrency`
+
+## Config, Pricing, and Logging
+
+Persistent defaults live in `config/autoshow.json`. You can save provider choices, model defaults, prompts, structured-output settings, extract options, voices, batch settings, and pricing thresholds.
 
 ```bash
-bun as stt <input> --whisper tiny
+bun as config --show
+bun as config --openai gpt-5.2 --batch-limit 20 --max-cents 50
+bun as config --structured --structured-compat-retries 3
+bun as config --reset
 ```
 
-## Logging Controls
+Pricing and budget behavior:
 
-Control log output with CLI flags or environment variables:
+- Runnable commands estimate cost before execution.
+- `--price` and `--dry-run` are equivalent estimate-only modes.
+- `--allow-over-budget` overrides a configured hard budget for a single run.
+- `--config-path` lets you use an alternate config file on any command.
+- Selected bare provider flags expand to default models when omitted. For example, `--openai` uses `gpt-5.2`, `--groq-stt` uses `whisper-large-v3-turbo`, and `--minimax-image` uses `image-01`.
+
+`write` uses structured JSON output by default when the chosen provider supports it. Use `--md-output` or `--no-structured` when you want markdown-only output.
+
+Logging controls:
 
 ```bash
-# CLI flags (override env vars)
-bun as write input/1-audio.mp3 --verbose   # debug-level logging
-bun as write input/1-audio.mp3 --quiet     # errors only
-bun as write input/1-audio.mp3 --json      # structured JSON output
-```
+# CLI flags
+bun as write input/1-audio.mp3 --verbose
+bun as write input/1-audio.mp3 --quiet
+bun as write input/1-audio.mp3 --json
 
-```bash
 # Environment variables
 AUTOSHOW_LOG_FORMAT=auto   # auto | human | json | both
 AUTOSHOW_LOG_LEVEL=info    # debug | info | success | warn | error
 ```
 
-- `--verbose` sets log level to `debug`, `--quiet` sets it to `error`, `--json` switches to JSON output.
 - `AUTOSHOW_LOG_FORMAT=auto` uses JSON logs when `NODE_ENV=production`, otherwise human-readable logs.
-- `AUTOSHOW_LOG_FORMAT=both` emits both human and JSON log streams.
-- Secrets and credentials are redacted from logger output automatically.
+- Secrets and credentials are redacted from logger output.
 
-## Commands
+## Output Layout
 
-### metadata
+Most artifact-producing runs write a timestamped directory under `output/` with `metadata.json` plus the files for the steps that actually ran.
 
-Collect and display metadata for media or documents without downloading. Default command. Aliases: `meta`, `info`.
+Typical artifacts include:
 
-```bash
-bun as "URL"                              # default command
-bun as metadata "URL"                     # explicit
-bun as metadata "URL" --save              # save metadata.json to disk
-bun as metadata "/path/to/local-file.ext"
-bun as metadata "/path/to/document.pdf" --password secret
-```
+- downloaded media or normalized documents
+- `prompt.md`
+- `transcription.txt`
+- extracted text or OCR output
+- `text.json` or `text.md`
+- generated speech, image, video, or music files
+- `metadata.json`
 
-### stt
+Batch runs also write `info.json`, and some structured remote sources add `source.json`.
 
-Download audio and transcribe only (creates `prompt.md`, skips summary). Alias: `transcribe`.
+Notable exceptions:
 
-```bash
-bun as stt "URL"
-bun as stt "/path/to/local-file.ext"
-bun as stt "/path/to/2-urls.md"
-bun as stt "/path/to/media-directory"
-bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize
-```
+- `metadata` only writes `metadata.json` when `--save` is used
+- `links` writes to `docs/links/bun-links.md`
+- utility commands such as `config`, `setup`, `sample`, and `models` do not use the `output/` run-directory pattern
 
-### write
-
-Download audio, transcribe, and generate summary artifacts:
+## Development
 
 ```bash
-bun as write "URL" [flags]
-bun as write "/path/to/local-file.ext" [flags]
-bun as write "/path/to/2-urls.md" [flags]
-bun as write "/path/to/media-directory" [flags]
+bun run check
+bun t
 ```
 
-Examples:
-
-```bash
-bun as write "input/1-audio.mp3"
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.2
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --whisper tiny --llama ggml-org/gemma-3-4b-it-GGUF
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --reverb --reverb-verbatimicity 1.0 --llama ggml-org/Phi-4-GGUF
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --split --llama ggml-org/gemma-3-4b-it-GGUF
-```
-
-### tts
-
-Generate speech from local markdown/txt files:
-
-```bash
-bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts
-bun as tts input/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts
-bun as tts input/1-tts.md --kitten-tts kitten-tts-mini --openai-tts gpt-4o-mini-tts
-```
-
-### ocr
-
-Extract text from PDF/EPUB/image files. Alias: `extract`.
-
-```bash
-bun as ocr input/document.epub
-bun as ocr input/scanned.pdf --lang eng+fra
-bun as ocr input/encrypted.pdf --password secret
-bun as ocr input/1-document.png --lang eng
-```
-
-### setup
-
-Install system/runtime dependencies used by the CLI:
-
-```bash
-bun as setup
-```
-
-### Doctor
-
-Check prerequisites, API keys, and configuration without installing anything:
-
-```bash
-bun as setup --doctor
-```
-
-### Dry Run
-
-Preview what a command would do without executing:
-
-```bash
-bun as write input/1-audio.mp3 --openai gpt-5.2 --dry-run
-bun as stt input/1-audio.mp3 --elevenlabs-stt scribe_v2 --dry-run
-```
-
-`--dry-run` is equivalent to `--price` — it shows the cost estimate and expected output files, then exits.
-
-## Root Shorthand and Collisions
-
-- `bun as <input>` is shorthand for `bun as metadata <input>`.
-- `bun as setup` resolves to the `setup` command, not an input named `setup`.
-- If the literal input is `setup`, use `bun as metadata setup`.
-
-If an input starts with `-`, end flag parsing with `--`:
-
-```bash
-bun as write -- -myfile
-```
-
-## Batch Input Detection
-
-Create `input/2-urls.md` as newline-delimited URLs:
-
-```text
-https://www.youtube.com/watch?v=MORMZXEaONk
-https://www.youtube.com/watch?v=u1-WHqATSQU
-```
-
-Batch behavior is selected from the input type:
-
-- URL-list file (`.md`/`.txt`) such as `bun as write input/2-urls.md` processes URLs from that file.
-- Directory named `input` such as `bun as stt input` or `bun as write /tmp/job/input` processes local files plus `2-urls.md` in that directory.
-- Any other directory such as `bun as stt /tmp/job/files` processes local files only.
-- `urls`, `files`, and `input` are no longer reserved aliases; they are treated as normal paths/tokens.
-
-Batch runs produce:
-
-```text
-./output/
-  YYYY-MM-DD_HH-MM-SS_label/
-    info.json                  # consolidated per-item metadata.json payloads
-    YYYY-MM-DD_HH-MM-SS_item-title/
-      ...
-```
-
-## Testing
-
-```bash
-bun test
-```
+- `bun t` uses the repo's custom test runner and performs setup/sample preflight, so run `bun as setup` first if local dependencies are missing.
+- `bun as sample --verify-only` validates the deterministic fixture set used by tests.

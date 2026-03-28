@@ -58,7 +58,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 | Area | What it does |
 |------|--------------|
 | Metadata | Collect and display metadata without downloading (`metadata`, aliases: `meta`, `info`) |
-| Download | Fetch or normalize media/documents and collect metadata only |
+| Download | Fetch or normalize media/documents, then stop after download + metadata |
 | OCR | Document OCR and text extraction (`ocr`, alias: `extract`) |
 | STT | Audio/video transcription plus prompt artifact (`stt`, alias: `transcribe`) |
 | Write | Full download/ocr/stt + prompt + summary pipeline |
@@ -66,7 +66,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 | Image | Generate images from text prompts |
 | Video | Generate videos from text prompts |
 | Music | Generate music from text prompts |
-| Config | Persist defaults for providers, prompts, batch/extract settings, post-processing, and budgets |
+| Config | Inspect, reset, or persist defaults for providers, prompts, batch/extract settings, post-processing, and budgets |
 | Setup | Install local runtimes and verify prerequisites with `--doctor` |
 | Models | Download Whisper model IDs or llama.cpp repo IDs without running inference |
 | Sample | Generate and validate deterministic fixtures for testing and validation |
@@ -75,14 +75,15 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 ### High-value behaviors
 
 - `bun as <input>` is a root shorthand for `bun as metadata <input>`.
-- Command aliases are normalized up front, including `meta`, `info`, `dl`, `model`, `stt`, `transcript`, `transcription`, `document`, `ocr`, `voice`, `llm`, `llms`, and `samples`.
-- Bare provider flags expand to default models across STT, LLM, TTS, image, video, and music. Examples: `--openai` becomes `--openai gpt-5.2`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, and `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`.
+- Command aliases are normalized up front, including `meta`, `info`, `dl`, `model`, `transcribe`, `transcript`, `transcription`, `extract`, `document`, `voice`, `llm`, `llms`, and `samples`.
+- Selected bare provider flags expand to default models when the next token is omitted. Examples: `--openai` becomes `--openai gpt-5.2`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, `--minimax-image` becomes `--minimax-image image-01`, `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`, and `--minimax-music` becomes `--minimax-music music-2.5`.
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - Runnable commands run an automatic cost preflight before execution.
-- `--price` (or `--dry-run`) prints the aggregated estimate and expected output files, then exits.
+- `--price` (or `--dry-run`) prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting.
 - `write` can run multiple LLM providers in one invocation and will write provider-specific artifacts for each result.
 - Post-generation steps on `write` run in parallel after step 3, but only when there is exactly one LLM output to consume.
 - `links` can fetch all curated docs or a provider/section subset and writes the combined markdown to `docs/links/bun-links.md`.
+- Global runtime flags include `--config-path` for alternate config files plus `--verbose`, `--quiet/-q`, and `--json` for log-output control.
 
 ### Quick start
 
@@ -125,11 +126,17 @@ It does not just summarize transcripts. It can:
 
 ### Outputs and metadata
 
-Every meaningful run writes:
+Artifact-producing processing and generation runs typically write:
 
 - one timestamped output directory
 - one `metadata.json`
 - the primary artifacts for the steps that actually ran
+
+Notable exceptions:
+
+- `metadata` logs to the terminal by default and only writes `metadata.json` when `--save` is used
+- `links` writes to `docs/links/bun-links.md` instead of an `output/` run directory
+- utility commands like `config`, `setup`, `sample`, and `models` do not follow the artifact-directory pattern
 
 Metadata records:
 
@@ -149,9 +156,9 @@ AutoShow exposes 14 workflow/support commands, plus `help`, `version`, and the r
 | `setup` | install runtimes and verify tools | none |
 | `sample` | generate or validate fixtures | none |
 | `models` | download a Whisper model or llama repo | model ID |
-| `config` | inspect or persist defaults | none |
+| `config` | inspect, reset, or persist defaults | none |
 | `links` | fetch provider documentation | provider/section filters |
-| `download` | metadata-only acquisition | URL, file, directory, list |
+| `download` | download/normalization without OCR, STT, or write | URL, file, directory, list |
 | `ocr` | document/image extraction (`extract` alias) | URL, file, directory, list |
 | `stt` | media transcription only (`transcribe` alias) | URL, file, directory, list |
 | `write` | full pipeline orchestration | URL, file, directory, list |
@@ -196,7 +203,7 @@ Notable behavior:
 
 - EPUB defaults to native chapter extraction when no OCR engine is requested.
 - EPUB inspect modes are available through `--epub-bun` and `--epub-calibre`, and they write structured EPUB payloads into `metadata.json`.
-- MOBI / AZW3 / FB2 / LIT are normalized through Calibre before downstream extraction.
+- MOBI / AZW3 / AZW / FB2 / LIT are normalized through Calibre before downstream extraction.
 - Office formats attempt native ZIP/XML extraction first, then fall back to OCR when quality heuristics fail.
 - CSV is treated as raw text, not OCR.
 
@@ -306,12 +313,17 @@ Key behaviors:
 Example capabilities:
 
 ```bash
+bun as config --show
 bun as config --openai gpt-5.2
 bun as config --whisper large-v3-turbo
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --structured --structured-compat-retries 3
 bun as config --max-cents 50
+bun as config --reset
+bun as config --show --config-path /tmp/as-config.json
 ```
+
+The same global `--config-path` override works on every command, not just `config`.
 
 ### Pricing and budget enforcement
 
@@ -343,7 +355,7 @@ Important setup coverage includes:
 - local document OCR dependencies
 - Kitten TTS environment and default local model download
 - provider-specific setup hooks for supported STT, TTS, image, and music services
-- `bun as setup --doctor` checks for core tools, API keys, config presence, and config validity
+- `bun as setup --doctor` checks for core tools, API keys, config presence, config validity, and the active Bun version
 
 There are also targeted setup substeps such as:
 
@@ -378,9 +390,9 @@ Common output artifacts include:
 - `prompt.md`
 - `transcription.txt`
 - extracted text or OCR output in the requested format
-- `text.json` or `text.md`
-- `speech.wav`
-- `generated-image.*`
+- `text.json`, `text.md`, or provider/model-specific variants such as `text-<model>.json`
+- `speech.wav` or provider/model-specific variants such as `speech-<service>-<model>.wav`
+- `generated-image.*`, including provider/model-scoped filenames on multi-provider runs
 - `generated-video.mp4`
 - `generated-music.mp3`
 - `metadata.json`
