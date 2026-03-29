@@ -3,11 +3,6 @@ import { defineVideoServiceTest } from '../../../test-utils/define-video-service
 import { runCommand } from '../../../test-utils/test-helpers'
 
 defineVideoServiceTest({
-  models: ['sora-2', 'sora-2-pro'],
-  cliFlag: '--sora-video',
-})
-
-defineVideoServiceTest({
   models: ['veo-3.1-fast-generate-preview', 'veo-3.1-generate-preview'],
   cliFlag: '--gemini-video',
 })
@@ -21,7 +16,7 @@ test('requires a provider flag', async () => {
 
 test('rejects multiple providers', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--sora-video', 'sora-2', '--gemini-video', 'veo-3.1-generate-preview'],
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3'],
   )
   expect(result.exitCode).not.toBe(0)
 })

@@ -1,32 +1,10 @@
 import type { MinimaxVideoModel } from '~/cli/commands/models/model-options'
-import type { SoraSeconds, SoraSize, GeminiDurationSeconds, GeminiResolution, MinimaxResolution, MinimaxApiResolution, MinimaxDurationSeconds } from '~/types'
+import type { GeminiDurationSeconds, GeminiResolution, MinimaxResolution, MinimaxApiResolution, MinimaxDurationSeconds } from '~/types'
 
 
 export const clampVideoDuration = (duration: number | undefined): number => {
   if (typeof duration !== 'number' || !Number.isFinite(duration)) return 4
   return Math.min(120, Math.max(1, Math.floor(duration)))
-}
-
-export const normalizeSoraSeconds = (duration: number | undefined): SoraSeconds => {
-  const d = clampVideoDuration(duration)
-  if (d <= 4) return '4'
-  if (d <= 8) return '8'
-  return '12'
-}
-
-export const parseSoraSeconds = (seconds: SoraSeconds): 4 | 8 | 12 => {
-  const parsed = Number.parseInt(seconds, 10)
-  if (parsed === 4 || parsed === 8 || parsed === 12) {
-    return parsed
-  }
-  return 4
-}
-
-export const normalizeSoraSize = (size: string | undefined): SoraSize => {
-  if (size === '720x1280' || size === '1280x720' || size === '1024x1792' || size === '1792x1024') {
-    return size
-  }
-  return '720x1280'
 }
 
 export const normalizeGeminiDuration = (duration: number | undefined): GeminiDurationSeconds => {

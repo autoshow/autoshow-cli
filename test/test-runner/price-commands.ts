@@ -211,8 +211,6 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   ]),
 
   ...exact('test/test-cases/e2e/step-6-video-gen-e2e/video-gen.test.ts', [
-    command('video-sora-sora-2', 'video-sora-sora-2', ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--sora-video', 'sora-2', '--price']),
-    command('video-sora-sora-2-pro', 'video-sora-sora-2-pro', ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--sora-video', 'sora-2-pro', '--price']),
     command('video-gemini-veo-3.1-fast-generate-preview', 'video-gemini-veo-3.1-fast-generate-preview', ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-fast-generate-preview', '--price']),
     command('video-gemini-veo-3.1-generate-preview', 'video-gemini-veo-3.1-generate-preview', ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--price']),
   ]),

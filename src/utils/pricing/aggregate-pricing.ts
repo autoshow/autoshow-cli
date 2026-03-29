@@ -238,10 +238,9 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
 }
 
 const buildVideoEstimate = (opts: RuntimeOptions): VideoStepEstimate | null => {
-  const hasVideo = opts.soraVideoModel || opts.geminiVideoModel || opts.minimaxVideoModel
+  const hasVideo = opts.geminiVideoModel || opts.minimaxVideoModel
   if (!hasVideo) return null
   const estimate = estimateVideoCost({
-    soraVideoModel: opts.soraVideoModel,
     geminiVideoModel: opts.geminiVideoModel,
     minimaxVideoModel: opts.minimaxVideoModel,
     videoDuration: opts.videoDuration,

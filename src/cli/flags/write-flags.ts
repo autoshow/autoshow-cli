@@ -6,7 +6,6 @@ import {
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
-  SUPPORTED_SORA_VIDEO_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
@@ -33,7 +32,6 @@ const MINIMAX_TTS_MODELS_DESCRIPTION = `MiniMax TTS model: ${SUPPORTED_MINIMAX_T
 const GROQ_TTS_MODELS_DESCRIPTION = `Groq TTS model: ${SUPPORTED_GROQ_TTS_MODELS.join('|')}`
 const OPENAI_TTS_MODELS_DESCRIPTION = `OpenAI TTS model: ${SUPPORTED_OPENAI_TTS_MODELS.join('|')}`
 const GEMINI_TTS_MODELS_DESCRIPTION = `Gemini TTS model: ${SUPPORTED_GEMINI_TTS_MODELS.join('|')}`
-const SORA_VIDEO_MODELS_DESCRIPTION = `OpenAI Sora video model: ${SUPPORTED_SORA_VIDEO_MODELS.join('|')}`
 const GEMINI_VIDEO_MODELS_DESCRIPTION = `Gemini Veo video model: ${SUPPORTED_GEMINI_VIDEO_MODELS.join('|')}`
 const MINIMAX_VIDEO_MODELS_DESCRIPTION = `MiniMax video model: ${SUPPORTED_MINIMAX_VIDEO_MODELS.join('|')}`
 const ELEVENLABS_MUSIC_MODELS_DESCRIPTION = `ElevenLabs music model: ${SUPPORTED_ELEVENLABS_MUSIC_MODELS.join('|')}`
@@ -124,10 +122,6 @@ const writeTtsFlags = {
 } as const satisfies ClercFlagsDefinition
 
 const writeVideoModelFlags = {
-  'sora-video': {
-    description: `Enable video generation on LLM output. ${SORA_VIDEO_MODELS_DESCRIPTION}`,
-    type: String
-  },
   'gemini-video': {
     description: `Enable video generation on LLM output. ${GEMINI_VIDEO_MODELS_DESCRIPTION}`,
     type: String

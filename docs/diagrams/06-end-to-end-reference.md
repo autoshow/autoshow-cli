@@ -70,7 +70,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  API Keys                                                                    │
 │  ├── OPENAI_API_KEY                  Required for --openai, --openai-stt,    │
-│  │                                   --openai-tts, --sora-video models       │
+│  │                                   --openai-tts models                     │
 │  ├── GROQ_API_KEY                    Required for --groq, --groq-stt,        │
 │  │                                   --groq-tts models                       │
 │  ├── ANTHROPIC_API_KEY               Required for --anthropic models         │

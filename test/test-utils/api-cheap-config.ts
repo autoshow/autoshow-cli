@@ -64,12 +64,8 @@ const pickCheapestVideoSelection = (
   const durations = serviceConfig.billedDurations && serviceConfig.billedDurations.length > 0
     ? serviceConfig.billedDurations
     : [4]
-  const sizes = provider === 'sora'
-    ? serviceConfig.sizes && serviceConfig.sizes.length > 0 ? serviceConfig.sizes : ['720x1280']
-    : [undefined]
-  const resolutions = provider === 'sora'
-    ? [undefined]
-    : serviceConfig.resolutions && serviceConfig.resolutions.length > 0 ? serviceConfig.resolutions : ['720p']
+  const sizes = [undefined]
+  const resolutions = serviceConfig.resolutions && serviceConfig.resolutions.length > 0 ? serviceConfig.resolutions : ['720p']
 
   let best: VideoSelection | null = null
 
@@ -77,23 +73,17 @@ const pickCheapestVideoSelection = (
     for (const duration of durations) {
       for (const size of sizes) {
         for (const resolution of resolutions) {
-          const estimate = provider === 'sora'
+          const estimate = provider === 'gemini'
             ? estimateVideoCost({
-              soraVideoModel: model,
+              geminiVideoModel: model,
               videoDuration: duration,
-              videoSize: size
+              videoResolution: resolution
             })
-            : provider === 'gemini'
-              ? estimateVideoCost({
-                geminiVideoModel: model,
-                videoDuration: duration,
-                videoResolution: resolution
-              })
-              : estimateVideoCost({
-                minimaxVideoModel: model,
-                videoDuration: duration,
-                videoResolution: resolution
-              })
+            : estimateVideoCost({
+              minimaxVideoModel: model,
+              videoDuration: duration,
+              videoResolution: resolution
+            })
 
           const candidate: VideoSelection = {
             provider,
@@ -262,7 +252,6 @@ export const buildApiCheapSelections = () => {
   ]
 
   const videoSelections = [
-    pickCheapestVideoSelection('sora', registry),
     pickCheapestVideoSelection('gemini', registry),
     pickCheapestVideoSelection('minimax', registry)
   ]
@@ -386,10 +375,7 @@ export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
       String(selection.duration)
     ]
 
-    if (selection.provider === 'sora') {
-      args.push('--sora-video', selection.model)
-      if (selection.size) args.push('--video-size', selection.size)
-    } else if (selection.provider === 'gemini') {
+    if (selection.provider === 'gemini') {
       args.push('--gemini-video', selection.model)
       if (selection.resolution) args.push('--video-resolution', selection.resolution)
     } else {

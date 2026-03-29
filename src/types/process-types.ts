@@ -66,7 +66,6 @@ export const ProcessingOptionsSchema = v.pipe(
     musicLyricsFile: v.optional(v.string(), undefined),
     musicInstrumental: v.optional(v.boolean(), undefined),
 
-    soraVideoModel: v.optional(v.string(), undefined),
     geminiVideoModel: v.optional(v.string(), undefined),
     minimaxVideoModel: v.optional(v.string(), undefined),
     videoDuration: v.optional(v.number(), undefined),

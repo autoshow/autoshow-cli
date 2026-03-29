@@ -286,7 +286,6 @@ type ComputeEstimatedCostsInput = {
   openaiImageModel?: string | undefined
   minimaxImageModel?: string | undefined
   imagenCount?: number | undefined
-  soraVideoModel?: string | undefined
   geminiVideoModel?: string | undefined
   minimaxVideoModel?: string | undefined
   videoDuration?: number | undefined
@@ -446,10 +445,9 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     })
   }
 
-  const hasVideo = input.soraVideoModel || input.geminiVideoModel || input.minimaxVideoModel
+  const hasVideo = input.geminiVideoModel || input.minimaxVideoModel
   if (hasVideo) {
     const estimate = estimateVideoCost({
-      soraVideoModel: input.soraVideoModel,
       geminiVideoModel: input.geminiVideoModel,
       minimaxVideoModel: input.minimaxVideoModel,
       videoDuration: input.videoDuration,

@@ -107,8 +107,8 @@ src/cli/commands/process-steps/process-video.ts
                                         │   --gemini-tts)              │
                                         │  Step 5: Image (--gemini-    │
                                         │   image, --openai-image, ...)│
-                                        │  Step 6: Video (--sora-video,│
-                                        │   --gemini-video, ...)       │
+                                        │  Step 6: Video (--gemini-    │
+                                        │   video, --minimax-video...) │
                                         │  Step 7: Music (--elevenlabs-│
                                         │   music, --minimax-music)    │
                                         └──────────────────────────────┘

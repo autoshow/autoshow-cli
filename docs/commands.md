@@ -49,7 +49,7 @@ bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-0
 bun as music "an ambient piano instrumental with soft strings" --minimax-music music-2.5
 
 # video generation
-bun as video "a cinematic mountain sunrise" --sora-video sora-2
+bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview
 ```
 
 ## Command Map

@@ -17,7 +17,7 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 
 Current coverage:
 - invalid model rejection via `defineVideoServiceTest`
-- `--price` coverage for Sora, Gemini Veo, and MiniMax model IDs
+- `--price` coverage for Gemini Veo and MiniMax model IDs
 - explicit validation that `video` requires a provider flag
 - explicit validation that multiple providers are rejected
 
@@ -33,6 +33,5 @@ bun t test/test-cases/e2e/step-6-video-gen-e2e/minimax-video-gen.test.ts --budge
 There are currently no full provider-generation e2e video tests. Video coverage is limited to validation and `--price` preflight.
 
 Provider env keys:
-- `OPENAI_API_KEY`
 - `GEMINI_API_KEY`
 - `MINIMAX_API_KEY`

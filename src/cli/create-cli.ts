@@ -183,7 +183,6 @@ const BARE_FLAG_DEFAULTS: Record<string, string> = {
   '--minimax-tts': 'speech-2.8-turbo',
   '--minimax-music': 'music-2.5',
   '--minimax-image': 'image-01',
-  '--sora-video': 'sora-2',
   '--gemini-video': 'veo-3.1-fast-generate-preview',
   '--minimax-video': 'MiniMax-Hailuo-2.3'
 }

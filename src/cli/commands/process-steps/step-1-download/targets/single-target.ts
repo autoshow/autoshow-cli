@@ -448,7 +448,6 @@ const processMediaSingle = async (
     musicDuration: llmDefaults.musicDuration,
     musicLyricsFile: llmDefaults.musicLyricsFile,
     musicInstrumental: llmDefaults.musicInstrumental,
-    soraVideoModel: llmDefaults.soraVideoModel,
     geminiVideoModel: llmDefaults.geminiVideoModel,
     minimaxVideoModel: llmDefaults.minimaxVideoModel,
     videoDuration: llmDefaults.videoDuration,

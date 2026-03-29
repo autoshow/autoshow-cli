@@ -20,8 +20,7 @@ import {
   SUPPORTED_MINIMAX_VIDEO_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
   SUPPORTED_OPENAI_STT_MODELS,
-  SUPPORTED_OPENAI_TTS_MODELS,
-  SUPPORTED_SORA_VIDEO_MODELS
+  SUPPORTED_OPENAI_TTS_MODELS
 } from '~/cli/commands/models/model-options'
 import type { MusicProvider, TtsProvider, VideoProvider } from '~/types/provider-types'
 
@@ -45,12 +44,9 @@ export type MinimaxMusicModel = typeof SUPPORTED_MINIMAX_MUSIC_MODELS[number]
 export type GeminiImageModel = typeof SUPPORTED_GEMINI_IMAGE_MODELS[number]
 export type OpenAIImageModel = typeof SUPPORTED_OPENAI_IMAGE_MODELS[number]
 export type MinimaxImageModel = typeof SUPPORTED_MINIMAX_IMAGE_MODELS[number]
-export type SoraVideoModel = typeof SUPPORTED_SORA_VIDEO_MODELS[number]
 export type GeminiVideoModel = typeof SUPPORTED_GEMINI_VIDEO_MODELS[number]
 export type MinimaxVideoModel = typeof SUPPORTED_MINIMAX_VIDEO_MODELS[number]
 
-export type SoraSeconds = '4' | '8' | '12'
-export type SoraSize = '720x1280' | '1280x720' | '1024x1792' | '1792x1024'
 export type GeminiDurationSeconds = 4 | 6 | 8
 export type GeminiResolution = '720p' | '1080p'
 export type MinimaxResolution = '720p' | '1080p'
@@ -159,7 +155,6 @@ export type EstimateMusicCostOptions = {
 }
 
 export type EstimateVideoCostOptions = {
-  soraVideoModel?: string | undefined
   geminiVideoModel?: string | undefined
   minimaxVideoModel?: string | undefined
   videoDuration?: number | undefined

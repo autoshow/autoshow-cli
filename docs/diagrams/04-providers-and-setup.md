@@ -154,7 +154,6 @@ bun as setup → src/cli/commands/process-steps/step-0-setup/setup-orchestrator/
 | `image --gemini-image` | `GEMINI_API_KEY` |
 | `image --openai-image` | `OPENAI_API_KEY` |
 | `image --minimax-image` | `MINIMAX_API_KEY` |
-| `video --sora-video` | `OPENAI_API_KEY` |
 | `video --gemini-video` | `GEMINI_API_KEY` |
 | `video --minimax-video` | `MINIMAX_API_KEY` |
 | `music --elevenlabs-music` | `ELEVENLABS_API_KEY` |

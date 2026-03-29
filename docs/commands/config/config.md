@@ -240,7 +240,6 @@ Full JSON shape of `config/autoshow.json`:
 
 | Field | Flag | Description |
 |-------|------|-------------|
-| `soraVideo` | `--sora-video` | Sora video model |
 | `geminiVideo` | `--gemini-video` | Gemini Veo model |
 | `minimaxVideo` | `--minimax-video` | MiniMax video model |
 | `videoDuration` | `--video-duration` | Duration in seconds |
@@ -411,7 +410,6 @@ Notable findings from the full pricing comparison:
 
 - Groq LLM (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) is priced at $0 — the cheapest service LLM is genuinely free
 - MiniMax image at $0.0035/image is roughly 6× cheaper than the next cheapest (OpenAI `gpt-image-1-mini` at $0.02/image)
-- MiniMax T2V-01 video at $0.19/6-second block vs Sora at $0.28/second — Sora is approximately 8× more expensive per second
 - MiniMax music at $0.15/track vs ElevenLabs at $0.28/minute — MiniMax is cheaper for typical track lengths
 - Groq STT `whisper-large-v3-turbo` at $0.04/hr vs `whisper-large-v3` at $0.111/hr — turbo is 2.8× cheaper for comparable quality
 

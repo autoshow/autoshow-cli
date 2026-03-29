@@ -1,36 +1,4 @@
 {
-  "sora": {
-    "description": "OpenAI Sora video generation",
-    "type": "api",
-    "sizes": [
-      "720x1280",
-      "1280x720",
-      "1024x1792",
-      "1792x1024"
-    ],
-    "billedDurations": [
-      4,
-      8,
-      12
-    ],
-    "models": {
-      "sora-2": {
-        "description": "Sora 2 — standard video generation",
-        "baseCostPerSecondUSD": 0.28,
-        "baseCostPerSecondCents": 28,
-        "largeSizeMultiplier": 1.3
-      },
-      "sora-2-pro": {
-        "description": "Sora 2 Pro — high quality video generation",
-        "baseCostPerSecondUSD": 0.46,
-        "baseCostPerSecondCents": 46,
-        "baseJobFeeUSD": 0.8,
-        "baseJobFeeCents": 80,
-        "standardSizeMultiplier": 1.1,
-        "largeSizeMultiplier": 1.35
-      }
-    }
-  },
   "gemini": {
     "description": "Google Veo video generation",
     "type": "api",

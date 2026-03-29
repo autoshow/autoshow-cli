@@ -28,7 +28,7 @@ describe("llama qwen", () => {
     await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 
     const result = await runCommand(
-      ["src/cli/create-cli.ts", STABLE_LOCAL_AUDIO_PATH, "--llama", model],
+      ["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, "--llama", model],
       { testName: llamaTestName },
     )
 

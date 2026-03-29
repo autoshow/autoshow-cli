@@ -36,7 +36,7 @@ bun as <command> <input> [flags]
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, OpenAI, Gemini)
    - Step 5: Image generation - optional (Gemini, OpenAI DALL-E, MiniMax)
-   - Step 6: Video generation - optional (Sora, Gemini Veo, MiniMax)
+   - Step 6: Video generation - optional (Gemini Veo, MiniMax)
    - Step 7: Music generation - optional (ElevenLabs, MiniMax)
 
 4. **Output** (`output/`)

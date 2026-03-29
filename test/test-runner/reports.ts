@@ -85,7 +85,6 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--openai-image': { service: 'openai', kind: 'image' },
   '--gemini-image': { service: 'gemini', kind: 'image' },
   '--minimax-image': { service: 'minimax', kind: 'image' },
-  '--sora-video': { service: 'sora', kind: 'video' },
   '--gemini-video': { service: 'gemini', kind: 'video' },
   '--minimax-video': { service: 'minimax', kind: 'video' },
   '--elevenlabs-music': { service: 'elevenlabs', kind: 'music' },
@@ -104,7 +103,6 @@ const KNOWN_SERVICE_HINTS: Array<{ pattern: RegExp, service: string }> = [
   { pattern: /\bwhisper\b/i, service: 'whisper' },
   { pattern: /\bllama\b/i, service: 'llama.cpp' },
   { pattern: /\bkitten\b/i, service: 'kitten' },
-  { pattern: /\bsora\b/i, service: 'sora' },
 ]
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -346,7 +344,7 @@ const inferTestKind = (testCase: ParsedJunitCase): string | null => {
   if (/\bextract\b/i.test(testCase.name)) return 'extract'
   if (/\btts\b/i.test(testCase.name) || /speech\.wav/i.test(testCase.name)) return 'tts'
   if (/\bimage\b/i.test(testCase.name) || /generated-image/i.test(testCase.name)) return 'image'
-  if (/\bvideo\b/i.test(testCase.name) || /\bsora\b/i.test(testCase.name) || /\bveo\b/i.test(testCase.name)) return 'video'
+  if (/\bvideo\b/i.test(testCase.name) || /\bveo\b/i.test(testCase.name)) return 'video'
   if (/\bmusic\b/i.test(testCase.name) || /generated music/i.test(testCase.name)) return 'music'
   if (/uses cheapest model/i.test(testCase.name)) return 'write'
   return null

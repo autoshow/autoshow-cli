@@ -57,7 +57,6 @@ const ImageDefaultsSchema = v.object({
 })
 
 const VideoDefaultsSchema = v.object({
-  soraVideo: v.optional(v.string(), undefined),
   geminiVideo: v.optional(v.string(), undefined),
   minimaxVideo: v.optional(v.string(), undefined),
   videoDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),

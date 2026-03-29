@@ -2,8 +2,7 @@ import { test, expect } from 'bun:test'
 import { runCommand } from './test-helpers'
 import { budgetedTest } from './budget'
 
-const providerFromCliFlag = (cliFlag: string): 'sora' | 'gemini' | 'minimax' => {
-  if (cliFlag === '--sora-video') return 'sora'
+const providerFromCliFlag = (cliFlag: string): 'gemini' | 'minimax' => {
   if (cliFlag === '--gemini-video') return 'gemini'
   return 'minimax'
 }

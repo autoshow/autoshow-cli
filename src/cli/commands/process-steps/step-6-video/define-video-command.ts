@@ -3,7 +3,7 @@ import { videoGenFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { runVideoGen } from './run-video-gen'
-import { validateSoraVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
+import { validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
@@ -22,19 +22,17 @@ export const videoCommand = defineCommand({
   const prompt = ctx.parameters.prompt
   const flags = ctx.flags
 
-  const soraModelRaw = typeof flags['sora-video'] === 'string' ? flags['sora-video'] : undefined
   const geminiModelRaw = typeof flags['gemini-video'] === 'string' ? flags['gemini-video'] : undefined
   const minimaxModelRaw = typeof flags['minimax-video'] === 'string' ? flags['minimax-video'] : undefined
 
-  const providerCount = [soraModelRaw, geminiModelRaw, minimaxModelRaw].filter(Boolean).length
+  const providerCount = [geminiModelRaw, minimaxModelRaw].filter(Boolean).length
   if (providerCount > 1) {
-    throw CLIUsageError('Cannot use more than one video provider at the same time (--sora-video, --gemini-video, --minimax-video)')
+    throw CLIUsageError('Cannot use more than one video provider at the same time (--gemini-video, --minimax-video)')
   }
   if (providerCount === 0) {
-    throw CLIUsageError('Specify a video generation provider: --sora-video <model>, --gemini-video <model>, or --minimax-video <model>')
+    throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
   }
 
-  if (soraModelRaw) validateSoraVideoModel(soraModelRaw)
   if (geminiModelRaw) validateGeminiVideoModel(geminiModelRaw)
   if (minimaxModelRaw) validateMinimaxVideoModel(minimaxModelRaw)
 
@@ -63,7 +61,6 @@ export const videoCommand = defineCommand({
 
   const { videoPath, metadata } = await runWithLogContext({ step: 'step-6-video' }, async () =>
     await runVideoGen(prompt, outputDir, {
-      soraVideoModel: soraModelRaw,
       geminiVideoModel: geminiModelRaw,
       minimaxVideoModel: minimaxModelRaw,
       videoDuration,
@@ -74,7 +71,6 @@ export const videoCommand = defineCommand({
   )
 
   const estimated = computeEstimatedCosts({
-    soraVideoModel: soraModelRaw,
     geminiVideoModel: geminiModelRaw,
     minimaxVideoModel: minimaxModelRaw,
     videoDuration,

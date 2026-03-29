@@ -5,7 +5,7 @@ const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'openai-stt', 'mistral
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
-const VIDEO_PROVIDER_FLAGS = ['sora-video', 'gemini-video', 'minimax-video'] as const
+const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
 
 export const extractExplicitFlags = (argv: string[]): Set<string> => {
@@ -119,7 +119,6 @@ export const mergeConfigIntoRawFlags = (
   if (d.post?.video) {
     const hasExplicitVideoProvider = hasExplicitFlagInGroup(VIDEO_PROVIDER_FLAGS)
     if (!hasExplicitVideoProvider) {
-      injectStr('sora-video', d.post.video.soraVideo)
       injectStr('gemini-video', d.post.video.geminiVideo)
       injectStr('minimax-video', d.post.video.minimaxVideo)
     }
@@ -201,7 +200,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'image-format':      ['defaults', 'post', 'image', 'imageFormat'],
   'image-background':  ['defaults', 'post', 'image', 'imageBackground'],
   'imagen-count':      ['defaults', 'post', 'image', 'imagenCount'],
-  'sora-video':        ['defaults', 'post', 'video', 'soraVideo'],
   'gemini-video':      ['defaults', 'post', 'video', 'geminiVideo'],
   'minimax-video':     ['defaults', 'post', 'video', 'minimaxVideo'],
   'video-duration':    ['defaults', 'post', 'video', 'videoDuration'],

@@ -69,7 +69,7 @@ const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): 
   if (opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel) {
     files.push('generated-image.png')
   }
-  if (opts.soraVideoModel || opts.geminiVideoModel || opts.minimaxVideoModel) {
+  if (opts.geminiVideoModel || opts.minimaxVideoModel) {
     files.push('Video file')
   }
   if (opts.elevenlabsMusicModel || opts.minimaxMusicModel) {

@@ -97,7 +97,6 @@ export type RuntimeOptions = {
   musicLyricsFile: string | undefined
   musicInstrumental: boolean | undefined
 
-  soraVideoModel: string | undefined
   geminiVideoModel: string | undefined
   minimaxVideoModel: string | undefined
   videoDuration: number | undefined

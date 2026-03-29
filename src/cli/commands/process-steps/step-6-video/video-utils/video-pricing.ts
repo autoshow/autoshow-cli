@@ -1,57 +1,15 @@
-import { type GeminiVideoModel, type MinimaxVideoModel, type SoraVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel, validateSoraVideoModel } from '~/cli/commands/models/model-options'
+import { type GeminiVideoModel, type MinimaxVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
 import { getVideoModelMeta } from '~/cli/commands/models/model-loader'
 import {
-  clampVideoDuration,
   normalizeGeminiDuration,
   normalizeGeminiResolution,
   normalizeMinimaxDuration,
   normalizeMinimaxResolution,
-  normalizeSoraSeconds,
-  normalizeSoraSize,
   isMinimaxHailuoModel
 } from './video-normalization'
 import type { VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
 import * as l from '~/logger'
 
-
-const estimateSora2Cost = (duration: number | undefined, size: string | undefined): VideoCostEstimate => {
-  const meta = getVideoModelMeta('sora', 'sora-2')
-  const billedDurationSeconds = Number.parseInt(normalizeSoraSeconds(duration), 10)
-  const normalizedSize = normalizeSoraSize(size)
-  const sizeMultiplier = (normalizedSize === '1024x1792' || normalizedSize === '1792x1024')
-    ? (meta?.largeSizeMultiplier ?? 1.3) : 1
-  const costPerSecond = (meta?.baseCostPerSecondCents ?? 28) * sizeMultiplier
-
-  return {
-    provider: 'sora',
-    model: 'sora-2',
-    durationSeconds: clampVideoDuration(duration),
-    billedDurationSeconds,
-    costPerSecond,
-    totalCost: costPerSecond * billedDurationSeconds,
-    note: `Approximate estimate using ${normalizedSize} tier pricing`
-  }
-}
-
-const estimateSora2ProCost = (duration: number | undefined, size: string | undefined): VideoCostEstimate => {
-  const meta = getVideoModelMeta('sora', 'sora-2-pro')
-  const billedDurationSeconds = Number.parseInt(normalizeSoraSeconds(duration), 10)
-  const normalizedSize = normalizeSoraSize(size)
-  const sizeMultiplier = (normalizedSize === '1024x1792' || normalizedSize === '1792x1024')
-    ? (meta?.largeSizeMultiplier ?? 1.35) : (meta?.standardSizeMultiplier ?? 1.1)
-  const baseJobFeeCents = meta?.baseJobFeeCents ?? 80
-  const costPerSecond = (meta?.baseCostPerSecondCents ?? 46) * sizeMultiplier
-
-  return {
-    provider: 'sora',
-    model: 'sora-2-pro',
-    durationSeconds: clampVideoDuration(duration),
-    billedDurationSeconds,
-    costPerSecond,
-    totalCost: baseJobFeeCents + (costPerSecond * billedDurationSeconds),
-    note: `Approximate estimate includes ${normalizedSize} resolution multiplier and pro base fee`
-  }
-}
 
 const estimateVeo31GeneratePreviewCost = (duration: number | undefined, resolution: string | undefined): VideoCostEstimate => {
   const meta = getVideoModelMeta('gemini', 'veo-3.1-generate-preview')
@@ -125,13 +83,6 @@ const estimateMinimaxCost = (model: MinimaxVideoModel, options: EstimateVideoCos
   }
 }
 
-const estimateSoraCost = (model: SoraVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
-  if (model === 'sora-2') {
-    return estimateSora2Cost(options.videoDuration, options.videoSize)
-  }
-  return estimateSora2ProCost(options.videoDuration, options.videoSize)
-}
-
 const estimateGeminiCost = (model: GeminiVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
   if (model === 'veo-3.1-generate-preview') {
     return estimateVeo31GeneratePreviewCost(options.videoDuration, options.videoResolution)
@@ -140,20 +91,13 @@ const estimateGeminiCost = (model: GeminiVideoModel, options: EstimateVideoCostO
 }
 
 export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostEstimate => {
-  const soraModelRaw = options.soraVideoModel
   const geminiModelRaw = options.geminiVideoModel
   const minimaxModelRaw = options.minimaxVideoModel
-  const hasSora = typeof soraModelRaw === 'string' && soraModelRaw.length > 0
   const hasGemini = typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0
   const hasMinimax = typeof minimaxModelRaw === 'string' && minimaxModelRaw.length > 0
 
-  if ([hasSora, hasGemini, hasMinimax].filter(Boolean).length > 1) {
+  if ([hasGemini, hasMinimax].filter(Boolean).length > 1) {
     throw new Error('Cannot estimate video cost when multiple providers are selected')
-  }
-
-  if (hasSora) {
-    const model = validateSoraVideoModel(soraModelRaw)
-    return estimateSoraCost(model, options)
   }
 
   if (hasGemini) {
@@ -166,7 +110,7 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
     return estimateMinimaxCost(model, options)
   }
 
-  return estimateSora2Cost(options.videoDuration, options.videoSize)
+  return estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution)
 }
 
 export const logVideoEstimate = (estimate: VideoCostEstimate): void => {

@@ -121,8 +121,8 @@ describe('test runner price evaluation', () => {
   test('skipped entries are ranked from highest to lowest cost', () => {
     const evaluation = evaluatePriceObservations('Selected paths: step-6-video-gen-e2e', [
       {
-        name: 'video-sora-sora-2',
-        key: 'video-sora-sora-2',
+        name: 'video-gemini-veo-3.1-generate-preview',
+        key: 'video-gemini-veo-3.1-generate-preview',
         args: ['cmd-a'],
         exitCode: 0,
         durationMs: 10,
@@ -153,12 +153,12 @@ describe('test runner price evaluation', () => {
     ], 2)
 
     expect(evaluation.budgetSummary?.skipKeys).toEqual([
-      'video-sora-sora-2',
+      'video-gemini-veo-3.1-generate-preview',
       'image-openai-gpt-image-1',
       'write-openai-gpt-5.2',
     ])
     expect(evaluation.budgetSummary?.skippedEntries).toEqual([
-      { key: 'video-sora-sora-2', selectedCostCents: 25 },
+      { key: 'video-gemini-veo-3.1-generate-preview', selectedCostCents: 25 },
       { key: 'image-openai-gpt-image-1', selectedCostCents: 7 },
       { key: 'write-openai-gpt-5.2', selectedCostCents: 3 },
     ])

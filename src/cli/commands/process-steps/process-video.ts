@@ -86,7 +86,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   const ttsRequested = ttsTargets.length > 0
   const imageRequested = imageTargets.length > 0
   const musicRequested = !!(processingOptions.elevenlabsMusicModel || processingOptions.minimaxMusicModel)
-  const videoGenRequested = !!(processingOptions.soraVideoModel || processingOptions.geminiVideoModel || processingOptions.minimaxVideoModel)
+  const videoGenRequested = !!(processingOptions.geminiVideoModel || processingOptions.minimaxVideoModel)
 
   if ((ttsRequested || imageRequested || musicRequested || videoGenRequested) && step3Results.length > 0) {
     if (step3Results.length > 1) {
@@ -174,7 +174,6 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
       ttsTargets: ttsEstimateTargets,
       ttsCharacterCount,
       imageTargets: imageEstimateTargets,
-      soraVideoModel: processingOptions.soraVideoModel,
       geminiVideoModel: processingOptions.geminiVideoModel,
       minimaxVideoModel: processingOptions.minimaxVideoModel,
       videoDuration: processingOptions.videoDuration,

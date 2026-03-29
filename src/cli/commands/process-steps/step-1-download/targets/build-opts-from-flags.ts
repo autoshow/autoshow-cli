@@ -26,7 +26,6 @@ import {
   validateGeminiImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
-  validateSoraVideoModel,
   validateGeminiVideoModel,
   validateMinimaxVideoModel
 } from '~/cli/commands/models/model-options'
@@ -346,10 +345,6 @@ export const buildOptsFromFlags = (
     })(),
     musicLyricsFile: readOptionalStringFlag(mergedFlags, 'music-lyrics-file'),
     musicInstrumental: readBooleanFlag(mergedFlags, 'music-instrumental'),
-    soraVideoModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'sora-video')
-      return v === undefined ? undefined : validateSoraVideoModel(v)
-    })(),
     geminiVideoModel: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'gemini-video')
       return v === undefined ? undefined : validateGeminiVideoModel(v)

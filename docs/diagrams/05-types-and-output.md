@@ -31,7 +31,7 @@ output/
     ├── text.md                     # local or legacy markdown write output
     ├── speech.wav                  # (if --kitten-tts/--elevenlabs-tts/... set)
     ├── generated-image.*           # (if --gemini-image/--openai-image/... set)
-    ├── generated-video.mp4         # (if --sora-video/--gemini-video/... set)
+    ├── generated-video.mp4         # (if --gemini-video/--minimax-video/... set)
     ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music set)
     ├── metadata.json               # { step1, step2, step3[, step4, step5, step6, step7] }
     │
@@ -114,7 +114,7 @@ src/types/
 │    imagenCount,                                                              │
 │    elevenlabsMusicModel, minimaxMusicModel, musicDuration,                   │
 │    musicLyricsFile, musicInstrumental,                                       │
-│    soraVideoModel, geminiVideoModel, minimaxVideoModel,                      │
+│    geminiVideoModel, minimaxVideoModel,                                      │
 │    videoDuration, videoSize, videoAspectRatio, videoResolution,              │
 │    prompts                                                                   │
 │  }                                                                           │
@@ -126,7 +126,7 @@ src/types/
 │  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|                    │
 │                  'openai'|'gemini'                                           │
 │  ImageProvider = 'gemini'|'openai'|'minimax'                                 │
-│  VideoProvider = 'sora'|'gemini'|'minimax'                                   │
+│  VideoProvider = 'gemini'|'minimax'                                          │
 │  MusicProvider = 'elevenlabs'|'minimax'                                      │
 └──────────────────────────────────────────────────────────────────────────────┘
 

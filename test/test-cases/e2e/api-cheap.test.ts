@@ -258,10 +258,7 @@ describe('api-cheap', () => {
       test(videoTestName, async () => {
         const args = ['src/cli/create-cli.ts', 'video', VIDEO_PROMPT, '--price', '--video-duration', String(selection.duration)]
 
-        if (selection.provider === 'sora') {
-          args.push('--sora-video', selection.model)
-          if (selection.size) args.push('--video-size', selection.size)
-        } else if (selection.provider === 'gemini') {
+        if (selection.provider === 'gemini') {
           args.push('--gemini-video', selection.model)
           if (selection.resolution) args.push('--video-resolution', selection.resolution)
         } else {
