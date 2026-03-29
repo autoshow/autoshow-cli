@@ -31,6 +31,7 @@ export type RuntimeOptions = {
   geminiModel: string | undefined
   anthropicModel: string | undefined
   minimaxModel: string | undefined
+  grokModel: string | undefined
   whisperModel: string
   groqSttModel: string | undefined
   elevenlabsSttModel: string | undefined

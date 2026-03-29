@@ -9,7 +9,8 @@ import {
   SUPPORTED_OPENAI_STT_MODELS,
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROQ_MODELS,
-  SUPPORTED_GEMINI_MODELS
+  SUPPORTED_GEMINI_MODELS,
+  SUPPORTED_GROK_MODELS
 } from '~/cli/commands/models/model-options'
 
 const LLAMA_MODELS_DESCRIPTION = `llama.cpp model ID (${SUPPORTED_LLAMA_MODELS.length} supported; see docs/commands/03-write.md)`
@@ -114,7 +115,7 @@ export const llmProviderFlags = {
     type: String
   },
   openai: {
-    description: 'OpenAI model: gpt-5.2|gpt-5.1|gpt-5.2-pro',
+    description: 'OpenAI model: gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano',
     type: String
   },
   groq: {
@@ -122,7 +123,7 @@ export const llmProviderFlags = {
     type: String
   },
   anthropic: {
-    description: 'Anthropic model: claude-sonnet-4-6|claude-opus-4-6',
+    description: 'Anthropic model: claude-sonnet-4-6|claude-opus-4-6|claude-haiku-4-5',
     type: String
   },
   gemini: {
@@ -131,6 +132,10 @@ export const llmProviderFlags = {
   },
   minimax: {
     description: `MiniMax model: ${SUPPORTED_MINIMAX_MODELS.join('|')}`,
+    type: String
+  },
+  grok: {
+    description: `Grok model: ${SUPPORTED_GROK_MODELS.join('|')}`,
     type: String
   }
 } as const satisfies ClercFlagsDefinition

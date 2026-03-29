@@ -7,6 +7,7 @@ bun t \
   test/test-cases/e2e/step-3-write-e2e/write-services/gemini/gemini-models.test.ts \
   test/test-cases/e2e/step-3-write-e2e/write-services/groq/groq-models.test.ts \
   test/test-cases/e2e/step-3-write-e2e/write-services/minimax/minimax-models.test.ts \
+  test/test-cases/e2e/step-3-write-e2e/write-services/grok/grok-models.test.ts \
   test/test-cases/e2e/step-3-write-e2e/write-services/write-subcommand-services.test.ts
 ```
 
@@ -31,6 +32,7 @@ bun t test/test-cases/e2e/step-3-write-e2e/write-services/anthropic/anthropic-mo
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/gemini/gemini-models.test.ts
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/groq/groq-models.test.ts
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/minimax/minimax-models.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-services/grok/grok-models.test.ts
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/write-subcommand-services.test.ts
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/openai/ --test-price
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/write-subcommand-services.test.ts --budget 25

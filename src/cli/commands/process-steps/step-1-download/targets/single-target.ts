@@ -126,6 +126,7 @@ const hasExplicitLlmProvider = (opts: RuntimeOptions): boolean => {
     opts.geminiModel,
     opts.anthropicModel,
     opts.minimaxModel,
+    opts.grokModel,
     opts.llamaModel
   ].some((model) => typeof model === 'string' && model.length > 0)
 }
@@ -204,7 +205,9 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
             ? (llmConfig.anthropicModel as string)
             : llmConfig.useMinimax
               ? (llmConfig.minimaxModel as string)
-              : (llmConfig.llamaModel as string)
+              : llmConfig.grokModel
+                ? (llmConfig.grokModel as string)
+                : (llmConfig.llamaModel as string)
     const llmService: Step3Metadata['llmService'] = llmConfig.useOpenAI
       ? 'openai'
       : llmConfig.useGroq
@@ -215,7 +218,9 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
             ? 'anthropic'
             : llmConfig.useMinimax
               ? 'minimax'
-              : 'llama.cpp'
+              : llmConfig.grokModel
+                ? 'grok'
+                : 'llama.cpp'
     const step3: Step3Metadata = {
       llmService,
       llmModel,
@@ -410,6 +415,7 @@ const processMediaSingle = async (
     geminiModel: llmConfig.geminiModel,
     anthropicModel: llmConfig.anthropicModel,
     minimaxModel: llmConfig.minimaxModel,
+    grokModel: llmConfig.grokModel,
     outputDir: baseDir,
     useReverb: llmDefaults.useReverb,
     useOpenAI: llmConfig.useOpenAI,

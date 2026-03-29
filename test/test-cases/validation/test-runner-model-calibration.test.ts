@@ -18,7 +18,7 @@ describe('test runner model calibration', () => {
           description: 'OpenAI language models',
           type: 'api',
           models: {
-            'gpt-5.1': {
+            'gpt-5.4': {
               description: 'GPT-5.1',
               inputCostPer1MUSD: 2,
               inputCostPer1MCents: 200,
@@ -36,7 +36,7 @@ describe('test runner model calibration', () => {
       const metadata = {
         step3: {
           llmService: 'openai',
-          llmModel: 'gpt-5.1',
+          llmModel: 'gpt-5.4',
           processingTime: 2000,
           inputTokenCount: 100,
           outputTokenCount: 100,
@@ -52,7 +52,7 @@ describe('test runner model calibration', () => {
               {
                 step: 'llm',
                 provider: 'openai',
-                model: 'gpt-5.1',
+                model: 'gpt-5.4',
                 cost: 0.4,
                 costMultiplier: 1,
                 estimatedInputTokens: 100,
@@ -66,7 +66,7 @@ describe('test runner model calibration', () => {
               {
                 step: 'llm',
                 provider: 'openai',
-                model: 'gpt-5.1',
+                model: 'gpt-5.4',
                 cost: 0.2,
                 inputMetric: 'tokens',
                 inputValue: 200,
@@ -83,7 +83,7 @@ describe('test runner model calibration', () => {
       expect(report.updates[0]).toMatchObject({
         kind: 'llm',
         service: 'openai',
-        model: 'gpt-5.1',
+        model: 'gpt-5.4',
         costSamples: 1,
         timeSamples: 1,
         oldCostMultiplier: 1,
@@ -96,7 +96,7 @@ describe('test runner model calibration', () => {
       })
 
       const updated = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>
-      const estimation = ((((updated['openai'] as Record<string, unknown>)['models'] as Record<string, unknown>)['gpt-5.1'] as Record<string, unknown>)['estimation'] as Record<string, unknown>)
+      const estimation = ((((updated['openai'] as Record<string, unknown>)['models'] as Record<string, unknown>)['gpt-5.4'] as Record<string, unknown>)['estimation'] as Record<string, unknown>)
       expect(estimation['costMultiplier']).toBe(0.825)
       expect(estimation['msPer1KTokens']).toBe(13250)
     } finally {

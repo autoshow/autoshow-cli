@@ -75,7 +75,7 @@ bun as config --reset
 Pass any provider, model, or generation flag to persist it as a default:
 
 ```bash
-bun as config --openai gpt-5.2
+bun as config --openai gpt-5.4
 bun as config --whisper large
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
 bun as config --batch-limit 20 --batch-order oldest
@@ -92,7 +92,7 @@ bun as config --show
 ```
 
 ```bash
-bun as config --openai gpt-5.2 --whisper large
+bun as config --openai gpt-5.4 --whisper large
 ```
 
 ```bash
@@ -129,9 +129,9 @@ Full JSON shape of `config/autoshow.json`:
     },
     "llm": {
       "llama": "ggml-org/gemma-3-270m-it-GGUF",
-      "openai": "gpt-5.2",
+      "openai": "gpt-5.4",
       "groq": "openai/gpt-oss-20b",
-      "gemini": "gemini-3-flash-preview",
+      "gemini": "gemini-3.1-flash-lite-preview",
       "anthropic": "claude-sonnet-4-6",
       "minimax": "MiniMax-M2.5",
       "structured": true,
@@ -201,6 +201,7 @@ Full JSON shape of `config/autoshow.json`:
 | `gemini` | `--gemini` | Default Gemini model |
 | `anthropic` | `--anthropic` | Default Anthropic model |
 | `minimax` | `--minimax` | Default MiniMax model |
+| `grok` | `--grok` | Default Grok model |
 | `structured` | `--structured` / `--no-structured` | Default structured output mode for write/root |
 | `structuredStrict` | `--structured-strict` / `--no-structured-strict` | Default strict structured mode when supported (OpenAI/Groq) |
 | `structuredCompatRetries` | `--structured-compat-retries` | Default compat-mode retry budget |
@@ -307,7 +308,7 @@ To show the estimate and exit without running the pipeline, pass `--price` or `-
 
 ```bash
 bun as write input/audio.mp3 --price
-bun as write input/audio.mp3 --openai gpt-5.2 --dry-run
+bun as write input/audio.mp3 --openai gpt-5.4 --dry-run
 ```
 
 ## Budget enforcement
@@ -353,7 +354,7 @@ Cost Estimate
 ────────────────────────────────────────────────────────────
   STT      whisper/large
            Cost: $0.0000
-  LLM      openai/gpt-5.2
+  LLM      openai/gpt-5.4
            Rate: $2.00/1M input, $8.00/1M output
            Est. tokens: 1000 input, 2300 output
            Est. cost: $0.0204
@@ -385,12 +386,12 @@ bun as config \
 
 ### All-service cheapest
 
-The cheapest paid API option per step. MiniMax dominates four of six categories. Groq LLM is priced at $0.
+The cheapest paid API option per step. MiniMax dominates four of six categories.
 
 | Step | Provider | Model | Cost |
 |------|----------|-------|------|
 | STT | Groq | `whisper-large-v3-turbo` | $0.04/hr |
-| LLM | Groq | `openai/gpt-oss-20b` | $0.00/1M tokens |
+| LLM | Groq | `openai/gpt-oss-20b` | $0.075/1M input, $0.30/1M output |
 | TTS | MiniMax | `speech-2.8-turbo` | $0.06/1K chars |
 | Image | MiniMax | `image-01` | $0.0035/image |
 | Video | MiniMax | `T2V-01` | $0.19/6-second block |
@@ -408,7 +409,7 @@ bun as config \
 
 Notable findings from the full pricing comparison:
 
-- Groq LLM (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) is priced at $0 — the cheapest service LLM is genuinely free
+- Groq LLM (`openai/gpt-oss-20b`) at $0.075/1M input, $0.30/1M output is the cheapest paid service LLM
 - MiniMax image at $0.0035/image is roughly 6× cheaper than the next cheapest (OpenAI `gpt-image-1-mini` at $0.02/image)
 - MiniMax music at $0.15/track vs ElevenLabs at $0.28/minute — MiniMax is cheaper for typical track lengths
 - Groq STT `whisper-large-v3-turbo` at $0.04/hr vs `whisper-large-v3` at $0.111/hr — turbo is 2.8× cheaper for comparable quality

@@ -11,9 +11,10 @@ export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
   const useGeminiArg = opts.useGemini && !!opts.geminiModel
   const useAnthropicArg = opts.useAnthropic && !!opts.anthropicModel
   const useMinimaxArg = !!opts.minimaxModel
+  const useGrokArg = !!opts.grokModel
   const useLlamaArg = !!opts.llamaModel
 
-  const anySelected = useOpenAIArg || useGroqArg || useGeminiArg || useAnthropicArg || useMinimaxArg || useLlamaArg
+  const anySelected = useOpenAIArg || useGroqArg || useGeminiArg || useAnthropicArg || useMinimaxArg || useGrokArg || useLlamaArg
 
   return {
     useOpenAI: useOpenAIArg,
@@ -31,5 +32,6 @@ export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
     geminiModel: useGeminiArg ? opts.geminiModel : undefined,
     anthropicModel: useAnthropicArg ? opts.anthropicModel : undefined,
     minimaxModel: useMinimaxArg ? opts.minimaxModel : undefined,
+    grokModel: useGrokArg ? opts.grokModel : undefined,
   }
 }

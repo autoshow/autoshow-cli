@@ -23,8 +23,8 @@ describe('test runner price evaluation', () => {
   test('applies budget decisions at the budget-key level using the max variant cost', () => {
     const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/openai', [
       {
-        name: 'write-openai-gpt-5.2',
-        key: 'write-openai-gpt-5.2',
+        name: 'write-openai-gpt-5.4',
+        key: 'write-openai-gpt-5.4',
         args: ['cmd-a'],
         exitCode: 0,
         durationMs: 10,
@@ -33,8 +33,8 @@ describe('test runner price evaluation', () => {
         budgetSkippable: true,
       },
       {
-        name: 'write-openai-gpt-5.2',
-        key: 'write-openai-gpt-5.2',
+        name: 'write-openai-gpt-5.4',
+        key: 'write-openai-gpt-5.4',
         args: ['cmd-b'],
         exitCode: 0,
         durationMs: 12,
@@ -43,8 +43,8 @@ describe('test runner price evaluation', () => {
         budgetSkippable: true,
       },
       {
-        name: 'write-openai-gpt-5.1',
-        key: 'write-openai-gpt-5.1',
+        name: 'write-openai-gpt-5.4-mini',
+        key: 'write-openai-gpt-5.4-mini',
         args: ['cmd-c'],
         exitCode: 0,
         durationMs: 9,
@@ -63,10 +63,10 @@ describe('test runner price evaluation', () => {
       commandsSkipped: 1,
       commandsFailed: 0,
       runnableEstimatedCostCents: 1.5,
-      skipKeys: ['write-openai-gpt-5.2'],
+      skipKeys: ['write-openai-gpt-5.4'],
       skippedEntries: [
         {
-          key: 'write-openai-gpt-5.2',
+          key: 'write-openai-gpt-5.4',
           selectedCostCents: 3,
         },
       ],
@@ -77,8 +77,8 @@ describe('test runner price evaluation', () => {
   test('budget summary ignores report-only commands while still reporting their cost', () => {
     const evaluation = evaluatePriceObservations('Selected paths: api-cheap.test.ts', [
       {
-        name: 'write-openai-gpt-5.2',
-        key: 'write-openai-gpt-5.2',
+        name: 'write-openai-gpt-5.4',
+        key: 'write-openai-gpt-5.4',
         args: ['cmd-a'],
         exitCode: 0,
         durationMs: 10,
@@ -107,10 +107,10 @@ describe('test runner price evaluation', () => {
       commandsSkipped: 1,
       commandsFailed: 0,
       runnableEstimatedCostCents: 0,
-      skipKeys: ['write-openai-gpt-5.2'],
+      skipKeys: ['write-openai-gpt-5.4'],
       skippedEntries: [
         {
-          key: 'write-openai-gpt-5.2',
+          key: 'write-openai-gpt-5.4',
           selectedCostCents: 3,
         },
       ],
@@ -141,8 +141,8 @@ describe('test runner price evaluation', () => {
         budgetSkippable: true,
       },
       {
-        name: 'write-openai-gpt-5.2',
-        key: 'write-openai-gpt-5.2',
+        name: 'write-openai-gpt-5.4',
+        key: 'write-openai-gpt-5.4',
         args: ['cmd-c'],
         exitCode: 0,
         durationMs: 10,
@@ -155,20 +155,20 @@ describe('test runner price evaluation', () => {
     expect(evaluation.budgetSummary?.skipKeys).toEqual([
       'video-gemini-veo-3.1-generate-preview',
       'image-openai-gpt-image-1',
-      'write-openai-gpt-5.2',
+      'write-openai-gpt-5.4',
     ])
     expect(evaluation.budgetSummary?.skippedEntries).toEqual([
       { key: 'video-gemini-veo-3.1-generate-preview', selectedCostCents: 25 },
       { key: 'image-openai-gpt-image-1', selectedCostCents: 7 },
-      { key: 'write-openai-gpt-5.2', selectedCostCents: 3 },
+      { key: 'write-openai-gpt-5.4', selectedCostCents: 3 },
     ])
   })
 
   test('price report totals exclude skipped commands and include path-based budget metadata', () => {
     const results: PriceCommandResult[] = [
       {
-        name: 'write-openai-gpt-5.1',
-        key: 'write-openai-gpt-5.1',
+        name: 'write-openai-gpt-5.4-mini',
+        key: 'write-openai-gpt-5.4-mini',
         args: ['cmd-a'],
         status: 'passed',
         exitCode: 0,
@@ -177,8 +177,8 @@ describe('test runner price evaluation', () => {
         failureMessage: null,
       },
       {
-        name: 'write-openai-gpt-5.2',
-        key: 'write-openai-gpt-5.2',
+        name: 'write-openai-gpt-5.4',
+        key: 'write-openai-gpt-5.4',
         args: ['cmd-b'],
         status: 'skipped',
         exitCode: 0,
@@ -215,9 +215,9 @@ describe('test runner price evaluation', () => {
       commandsSkipped: 1,
       commandsFailed: 1,
       runnableEstimatedCostCents: 1.5,
-      skipKeys: ['write-openai-gpt-5.2'],
+      skipKeys: ['write-openai-gpt-5.4'],
       skippedEntries: [
-        { key: 'write-openai-gpt-5.2', selectedCostCents: 3 },
+        { key: 'write-openai-gpt-5.4', selectedCostCents: 3 },
       ],
     }
 
@@ -241,9 +241,9 @@ describe('test runner price evaluation', () => {
     expect(report.run['budgetCents']).toBe(2)
     expect(report.run['budgetPreflightSuite']).toBe('Selected paths: step-3-write-e2e/write-services/openai')
     expect(report.run['budgetPreflightSkipped']).toBe(1)
-    expect(report.run['budgetSkipKeys']).toEqual(['write-openai-gpt-5.2'])
+    expect(report.run['budgetSkipKeys']).toEqual(['write-openai-gpt-5.4'])
     expect(report.run['budgetSkippedEntries']).toEqual([
-      { key: 'write-openai-gpt-5.2', selectedCostCents: 3 },
+      { key: 'write-openai-gpt-5.4', selectedCostCents: 3 },
     ])
   })
 })

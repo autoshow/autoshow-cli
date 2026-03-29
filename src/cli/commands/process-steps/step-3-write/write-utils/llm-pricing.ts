@@ -27,6 +27,16 @@ export const estimateLlmRates = (llmConfig: ResolvedLLMConfig): LlmRateEstimate[
     }
   }
 
+  if (llmConfig.grokModel) {
+    const cost = getLlmCost('grok', llmConfig.grokModel)
+    estimates.push({
+      provider: 'grok',
+      model: llmConfig.grokModel,
+      inputCostPer1MCents: cost?.inputCostPer1MCents ?? 0,
+      outputCostPer1MCents: cost?.outputCostPer1MCents ?? 0
+    })
+  }
+
   if (llmConfig.llamaModel) {
     const cost = getLlmCost('llama', llmConfig.llamaModel)
     estimates.push({

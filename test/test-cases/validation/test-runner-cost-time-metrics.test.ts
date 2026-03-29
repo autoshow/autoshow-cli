@@ -62,8 +62,8 @@ describe('test runner cost/time metrics', () => {
     const metrics: ParsedCommandMetric[] = [
       {
         source: 'runCommand',
-        command: 'bun src/cli/create-cli.ts write input.mp3 --openai gpt-5.1',
-        args: ['src/cli/create-cli.ts', 'write', 'input.mp3', '--openai', 'gpt-5.1'],
+        command: 'bun src/cli/create-cli.ts write input.mp3 --openai gpt-5.4',
+        args: ['src/cli/create-cli.ts', 'write', 'input.mp3', '--openai', 'gpt-5.4'],
         exitCode: 0,
         durationMs: 2400,
         outputDir: 'output/2026-03-19_00-00-00_example',
@@ -133,7 +133,7 @@ describe('test runner cost/time metrics', () => {
         name: 'example test',
         status: 'passed',
         serviceName: 'openai',
-        modelName: 'gpt-5.1',
+        modelName: 'gpt-5.4',
         estimatedDurationMs: 2200,
         actualDurationMs: 2500,
         estimatedProcessingTimeMs: 1400,

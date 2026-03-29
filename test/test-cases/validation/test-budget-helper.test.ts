@@ -4,10 +4,10 @@ import { shouldSkipBudgetKey } from '../../test-utils/budget'
 describe('budget helper', () => {
   test('returns true for configured skip keys', () => {
     const previous = process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS']
-    process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS'] = JSON.stringify(['write-openai-gpt-5.2'])
+    process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS'] = JSON.stringify(['write-openai-gpt-5.4'])
     try {
-      expect(shouldSkipBudgetKey('write-openai-gpt-5.2')).toBe(true)
-      expect(shouldSkipBudgetKey('write-openai-gpt-5.1')).toBe(false)
+      expect(shouldSkipBudgetKey('write-openai-gpt-5.4')).toBe(true)
+      expect(shouldSkipBudgetKey('write-openai-gpt-5.4-mini')).toBe(false)
     } finally {
       if (previous === undefined) {
         delete process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS']
@@ -21,7 +21,7 @@ describe('budget helper', () => {
     const previous = process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS']
     process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS'] = 'not-json'
     try {
-      expect(shouldSkipBudgetKey('write-openai-gpt-5.2')).toBe(false)
+      expect(shouldSkipBudgetKey('write-openai-gpt-5.4')).toBe(false)
     } finally {
       if (previous === undefined) {
         delete process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS']

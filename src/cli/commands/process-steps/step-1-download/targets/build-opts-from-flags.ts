@@ -6,6 +6,7 @@ import {
   validateGeminiModel,
   validateAnthropicModel,
   validateMinimaxModel,
+  validateGrokModel,
   validateWhisperModel,
   validateElevenlabsSttModel,
   validateGroqSttModel,
@@ -198,6 +199,8 @@ export const buildOptsFromFlags = (
   const anthropicModel = anthropicModelFlag === undefined ? undefined : validateAnthropicModel(anthropicModelFlag)
   const minimaxModelFlag = readOptionalStringFlag(mergedFlags, 'minimax')
   const minimaxModel = minimaxModelFlag === undefined ? undefined : validateMinimaxModel(minimaxModelFlag)
+  const grokModelFlag = readOptionalStringFlag(mergedFlags, 'grok')
+  const grokModel = grokModelFlag === undefined ? undefined : validateGrokModel(grokModelFlag)
   const kittenTtsModelFlag = readOptionalStringFlag(mergedFlags, 'kitten-tts')
   const elevenlabsTtsModelFlag = readOptionalStringFlag(mergedFlags, 'elevenlabs-tts')
   const minimaxTtsModelFlag = readOptionalStringFlag(mergedFlags, 'minimax-tts')
@@ -227,6 +230,7 @@ export const buildOptsFromFlags = (
     geminiModel,
     anthropicModel,
     minimaxModel,
+    grokModel,
     whisperModel,
     groqSttModel,
     elevenlabsSttModel,

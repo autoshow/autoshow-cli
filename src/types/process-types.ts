@@ -19,6 +19,7 @@ export const ProcessingOptionsSchema = v.pipe(
     geminiModel: v.optional(v.string(), undefined),
     anthropicModel: v.optional(v.string(), undefined),
     minimaxModel: v.optional(v.string(), undefined),
+    grokModel: v.optional(v.string(), undefined),
     outputDir: v.string(),
     useReverb: v.optional(v.boolean(), undefined),
     reverbVerbatimicity: v.optional(v.number(), undefined),
@@ -423,7 +424,7 @@ export const LlamaResponseSchema = v.object({
 })
 
 export type Step3Metadata = {
-  llmService: 'llama.cpp' | 'openai' | 'groq' | 'gemini' | 'anthropic' | 'minimax'
+  llmService: 'llama.cpp' | 'openai' | 'groq' | 'gemini' | 'anthropic' | 'minimax' | 'grok'
   llmModel: string
   processingTime: number
   inputTokenCount: number

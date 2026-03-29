@@ -25,7 +25,7 @@ bun as stt input/1-audio.mp3 --groq-stt whisper-large-v3
 bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize
 
 # full pipeline (download/transcribe + LLM write)
-bun as write input/1-audio.mp3 --openai gpt-5.2
+bun as write input/1-audio.mp3 --openai gpt-5.4
 
 # root shorthand for metadata (default command)
 bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
@@ -86,7 +86,7 @@ Most runtime commands support `--price` (or `--dry-run`) to print estimated cost
 ```bash
 bun as stt input/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
 bun as stt input/1-audio.mp3 --groq-stt whisper-large-v3 --price
-bun as write input/1-audio.mp3 --openai gpt-5.2 --price
+bun as write input/1-audio.mp3 --openai gpt-5.4 --price
 bun as tts input/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --price

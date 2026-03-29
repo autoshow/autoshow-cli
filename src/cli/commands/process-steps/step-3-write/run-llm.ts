@@ -8,6 +8,7 @@ import { runOpenAIModel } from './write-services/openai/run-openai'
 import { runGeminiModel } from './write-services/gemini/run-gemini'
 import { runAnthropicModel } from './write-services/anthropic/run-anthropic'
 import { runMinimaxModel } from './write-services/minimax/run-minimax'
+import { runGrokModel } from './write-services/grok/run-grok'
 import type { LLMTarget } from '~/types'
 import { resolveStructuredMode, shouldApplyStrictMode } from './structured-output/capabilities'
 import { buildStructuredInstructionSuffix, resolveStructuredSchema } from './structured-output/schema-resolver'
@@ -27,6 +28,7 @@ type LLMOptions = Pick<ProcessingOptions,
   | 'useAnthropic'
   | 'anthropicModel'
   | 'minimaxModel'
+  | 'grokModel'
   | 'llamaModel'
   | 'structured'
   | 'structuredStrict'
@@ -59,6 +61,10 @@ const collectTargets = (options: LLMOptions): LLMTarget[] => {
 
   if (options.minimaxModel) {
     targets.push({ service: 'minimax', label: 'MiniMax', model: options.minimaxModel, run: runMinimaxModel })
+  }
+
+  if (options.grokModel) {
+    targets.push({ service: 'grok', label: 'Grok', model: options.grokModel, run: runGrokModel })
   }
 
   if (options.llamaModel) {

@@ -31,6 +31,7 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
     llmConfig.geminiModel,
     llmConfig.anthropicModel,
     llmConfig.minimaxModel,
+    llmConfig.grokModel,
     llmConfig.llamaModel
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
@@ -57,6 +58,7 @@ const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): 
     || opts.useGemini
     || opts.useAnthropic
     || opts.minimaxModel
+    || opts.grokModel
   )
   const summaryFile = opts.structured && hasNonLlamaLlmProvider ? 'text.json' : 'text.md'
   const files = ['Audio file', 'transcription.txt', summaryFile]
@@ -80,7 +82,7 @@ const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): 
   return files
 }
 
-const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'llama', 'mistral'] as const
+const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'llama', 'mistral'] as const
 
 const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, doubleDashArgs: string[] = []): boolean => {
   const inParsedFlags = TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.some((key) => flags[key] !== undefined)
@@ -156,7 +158,7 @@ export const handleProcessTarget = async (
   const displayCommand = canonicalizeProcessCommand(command)
 
   if (isSttCommand(command) && hasTranscribeUnsupportedLLMFlags(rawFlags, doubleDash)) {
-    throw CLIUsageError('LLM provider flags are not supported with "stt" (--openai, --groq, --gemini, --anthropic, --minimax, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.')
+    throw CLIUsageError('LLM provider flags are not supported with "stt" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.')
   }
 
   let resolvedTarget: string

@@ -54,9 +54,9 @@ bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music musi
 bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5 --price
 
 # Write pipeline
-bun as write input/1-audio.mp3 --openai gpt-5.2 --elevenlabs-music music_v1 --music-duration 20
+bun as write input/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
 bun as write input/1-audio.mp3 --minimax-music music-2.5 --music-lyrics-file input/1-tts.md
-bun as write input/1-audio.mp3 --openai gpt-5.2 --elevenlabs-music music_v1 --minimax-music music-2.5
+bun as write input/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.5
 bun as write input/1-audio.mp3 --minimax-music music-2.5 --price
 ```
 

@@ -64,8 +64,8 @@ const EXPECTED_BUDGET_KEYS = [
   'video-minimax-T2V-01-Director',
   'write-anthropic-claude-opus-4-6',
   'write-anthropic-claude-sonnet-4-6',
-  'write-gemini-gemini-3-flash-preview',
-  'write-gemini-gemini-3-pro-preview',
+  'write-gemini-gemini-3.1-flash-lite-preview',
+  'write-gemini-gemini-3.1-pro-preview',
   'write-groq-openai/gpt-oss-120b',
   'write-groq-openai/gpt-oss-20b',
   'write-llama-gemma-3-270m',
@@ -73,9 +73,10 @@ const EXPECTED_BUDGET_KEYS = [
   'write-llama-qwen3-0.6b-document',
   'write-minimax-MiniMax-M2.5',
   'write-minimax-MiniMax-M2.5-highspeed',
-  'write-openai-gpt-5.1',
-  'write-openai-gpt-5.2',
-  'write-openai-gpt-5.2-pro',
+  'write-openai-gpt-5.4',
+  'write-openai-gpt-5.4-mini',
+  'write-openai-gpt-5.4-nano',
+  'write-openai-gpt-5.4-pro',
 ].sort()
 
 describe('test runner price selection', () => {
@@ -102,9 +103,10 @@ describe('test runner price selection', () => {
 
     expect(resolved.suiteName).toBe('Selected paths: step-3-write-e2e/write-services/openai')
     expect(resolved.commands.map(command => command.key).sort()).toEqual([
-      'write-openai-gpt-5.1',
-      'write-openai-gpt-5.2',
-      'write-openai-gpt-5.2-pro',
+      'write-openai-gpt-5.4',
+      'write-openai-gpt-5.4-mini',
+      'write-openai-gpt-5.4-nano',
+      'write-openai-gpt-5.4-pro',
     ])
   })
 
@@ -124,9 +126,10 @@ describe('test runner price selection', () => {
       'transcribe-whisper-medium',
       'transcribe-whisper-small',
       'transcribe-whisper-tiny',
-      'write-openai-gpt-5.1',
-      'write-openai-gpt-5.2',
-      'write-openai-gpt-5.2-pro',
+      'write-openai-gpt-5.4',
+      'write-openai-gpt-5.4-mini',
+      'write-openai-gpt-5.4-nano',
+      'write-openai-gpt-5.4-pro',
     ])
   })
 

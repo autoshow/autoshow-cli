@@ -105,7 +105,7 @@ test('write with elevenlabs music pipeline', async () => {
   }
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/1-audio.mp3', '--openai', 'gpt-5.2', '--elevenlabs-music', 'music_v1', '--music-duration', '20'],
+    ['src/cli/create-cli.ts', 'write', 'input/1-audio.mp3', '--openai', 'gpt-5.4', '--elevenlabs-music', 'music_v1', '--music-duration', '20'],
   )
   expect(result.exitCode).toBe(0)
 })

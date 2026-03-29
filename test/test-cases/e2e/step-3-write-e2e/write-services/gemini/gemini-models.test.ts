@@ -1,8 +1,8 @@
 import { defineLLMWriteTest } from "../../../../../test-utils/define-llm-write-test"
 
 const GEMINI_MODELS = [
-  "gemini-3-flash-preview",
-  "gemini-3-pro-preview",
+  "gemini-3.1-pro-preview",
+  "gemini-3.1-flash-lite-preview",
 ] as const
 
 for (const model of GEMINI_MODELS) {

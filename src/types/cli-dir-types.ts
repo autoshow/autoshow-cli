@@ -68,6 +68,7 @@ export type ResolvedLLMConfig = {
   geminiModel: string | undefined
   anthropicModel: string | undefined
   minimaxModel: string | undefined
+  grokModel: string | undefined
 }
 
 export type InputKind =

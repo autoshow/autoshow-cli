@@ -93,6 +93,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).not.toMatch(/--gemini(\s|$)/)
   expect(result.stdout).not.toMatch(/--anthropic(\s|$)/)
   expect(result.stdout).not.toMatch(/--minimax(\s|$)/)
+  expect(result.stdout).not.toMatch(/--grok(\s|$)/)
   expect(result.stdout).not.toMatch(/--llama(\s|$)/)
 })
 
@@ -165,7 +166,7 @@ test('stt rejects LLM provider flags with usage error code 2', async () => {
     'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--openai',
-    'gpt-5.2'
+    'gpt-5.4'
   ])
 
   expect(result.exitCode).toBe(2)
@@ -178,6 +179,18 @@ test('stt rejects MiniMax LLM flag with usage error code 2', async () => {
     STABLE_LOCAL_AUDIO_PATH,
     '--minimax',
     'MiniMax-M2.5'
+  ])
+
+  expect(result.exitCode).toBe(2)
+})
+
+test('stt rejects Grok LLM flag with usage error code 2', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--grok',
+    'grok-4.20-reasoning'
   ])
 
   expect(result.exitCode).toBe(2)
@@ -222,6 +235,17 @@ test('CLI invalid MiniMax model exits with usage error code 2', async () => {
     STABLE_LOCAL_AUDIO_PATH,
     '--minimax',
     'MiniMax-M3'
+  ])
+
+  expect(result.exitCode).toBe(2)
+})
+
+test('CLI invalid Grok model exits with usage error code 2', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--grok',
+    'grok-3'
   ])
 
   expect(result.exitCode).toBe(2)

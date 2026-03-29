@@ -21,10 +21,10 @@ describe('write subcommand with services', () => {
 
   const serviceCases = [
     {
-      testName: 'write input/1-audio.mp3 --openai gpt-5.2',
+      testName: 'write input/1-audio.mp3 --openai gpt-5.4',
       envVar: 'OPENAI_API_KEY',
-      args: ['--openai', 'gpt-5.2'],
-      expectedModel: 'gpt-5.2',
+      args: ['--openai', 'gpt-5.4'],
+      expectedModel: 'gpt-5.4',
       expectedService: 'openai',
     },
     {
@@ -35,10 +35,10 @@ describe('write subcommand with services', () => {
       expectedService: 'anthropic',
     },
     {
-      testName: 'write input/1-audio.mp3 --gemini gemini-3-flash-preview',
+      testName: 'write input/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview',
       envVar: 'GEMINI_API_KEY',
-      args: ['--gemini', 'gemini-3-flash-preview'],
-      expectedModel: 'gemini-3-flash-preview',
+      args: ['--gemini', 'gemini-3.1-flash-lite-preview'],
+      expectedModel: 'gemini-3.1-flash-lite-preview',
       expectedService: 'gemini',
     },
     {
@@ -54,6 +54,13 @@ describe('write subcommand with services', () => {
       args: ['--minimax', 'MiniMax-M2.5'],
       expectedModel: 'MiniMax-M2.5',
       expectedService: 'minimax',
+    },
+    {
+      testName: 'write input/1-audio.mp3 --grok grok-4.20-reasoning',
+      envVar: 'XAI_API_KEY',
+      args: ['--grok', 'grok-4.20-reasoning'],
+      expectedModel: 'grok-4.20-reasoning',
+      expectedService: 'grok',
     },
   ] as const
 
@@ -99,9 +106,9 @@ describe('write subcommand with services', () => {
 })
 
 describe('write subcommand --price', () => {
-  budgetedTest('write-openai-gpt-5.2', 'write input/1-audio.mp3 --openai gpt-5.2 --price', async () => {
+  budgetedTest('write-openai-gpt-5.4', 'write input/1-audio.mp3 --openai gpt-5.4 --price', async () => {
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.2', '--price'
+      'src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4', '--price'
     ])
 
     expect(result.exitCode).toBe(0)

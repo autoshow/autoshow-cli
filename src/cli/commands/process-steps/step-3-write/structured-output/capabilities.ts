@@ -24,6 +24,10 @@ const CAPABILITIES: Record<LLMService, ProviderStructuredCapability> = {
     nativeStructuredOutput: false,
     strictMode: false
   },
+  'grok': {
+    nativeStructuredOutput: true,
+    strictMode: true
+  },
   'llama.cpp': {
     nativeStructuredOutput: false,
     strictMode: false

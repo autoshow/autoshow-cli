@@ -97,7 +97,7 @@ src/types/
 │  RuntimeOptions {                                                            │
 │    useReverb, useOpenAI, useGemini, useAnthropic,                            │
 │    llamaModel, openaiModel, groqModel, geminiModel,                          │
-│    anthropicModel, minimaxModel,                                             │
+│    anthropicModel, minimaxModel, grokModel,                                  │
 │    whisperModel, groqSttModel, elevenlabsSttModel, openaiSttModel,           │
 │    mistralSttModel, assemblyaiSttModel,                                      │
 │    diarizationSpeakerCount,                                                  │
@@ -156,7 +156,7 @@ src/types/
 │                                                                              │
 │  Step 3 (LLM):                                                               │
 │  ├── Step3Metadata        llmService, llmModel, time, in/out tokens          │
-│  │    llmService: 'llama.cpp'|'openai'|'groq'|'gemini'|'anthropic'|'minimax'│
+│  │    llmService: 'llama.cpp'|'openai'|'groq'|'gemini'|'anthropic'|'minimax'|'grok'│
 │  └── LlamaResponseSchema  llama.cpp HTTP response format                     │
 │                                                                              │
 │  Step 4 (TTS):                                                               │

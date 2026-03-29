@@ -147,6 +147,7 @@ const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = new Set<string>([
   '--gemini',
   '--anthropic',
   '--minimax',
+  '--grok',
   '--llama'
 ])
 
@@ -162,16 +163,17 @@ const validateSttFlagCompatibility = (argv: string[]): void => {
 
   const usedUnsupportedFlags = argv.filter((token) => TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.has(token))
   if (usedUnsupportedFlags.length > 0) {
-    throw CLIUsageError('LLM provider flags are not supported with "stt" (--openai, --groq, --gemini, --anthropic, --minimax, --llama). Use: bun as write <input> [flags]')
+    throw CLIUsageError('LLM provider flags are not supported with "stt" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --llama). Use: bun as write <input> [flags]')
   }
 }
 
 const BARE_FLAG_DEFAULTS: Record<string, string> = {
-  '--openai':    'gpt-5.2',
+  '--openai':    'gpt-5.4',
   '--groq':      'openai/gpt-oss-20b',
-  '--gemini':    'gemini-3-flash-preview',
+  '--gemini':    'gemini-3.1-flash-lite-preview',
   '--anthropic': 'claude-sonnet-4-6',
   '--minimax':   'MiniMax-M2.5',
+  '--grok':      'grok-4.20-reasoning',
   '--llama':     'ggml-org/gemma-3-270m-it-GGUF',
   '--elevenlabs-stt': 'scribe_v2',
   '--groq-stt': 'whisper-large-v3-turbo',

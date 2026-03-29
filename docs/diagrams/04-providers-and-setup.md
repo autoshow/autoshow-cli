@@ -15,37 +15,39 @@ src/cli/commands/process-steps/step-3-write/run-llm.ts
 
 collectTargets() checks all flags - multiple providers can run sequentially:
 
-  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-  │ --gemini │  │--anthropic│  │ --openai │  │  --groq  │  │--minimax │  │  --llama │
-  │ flag set?│  │ flag set? │  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│
-  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
-      yes             yes           yes            yes            yes            yes
-       |               |             |              |              |              |
-       v               v             v              v              v              v
-  ┌────────┐    ┌──────────┐   ┌────────┐    ┌────────┐    ┌────────┐    ┌─────────────┐
-  │ Gemini │    │Anthropic │   │ OpenAI │    │  Groq  │    │MiniMax │    │  llama.cpp  │
-  │  (API) │    │  (API)   │   │  (API) │    │  (API) │    │  (API) │    │  (local)    │
-  └───┬────┘    └────┬─────┘   └───┬────┘    └───┬────┘    └───┬────┘    └──────┬──────┘
-      └───────────────┴────────────┴─────────────┴─────────────┴─────────────────┘
+  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+  │ --gemini │  │--anthropic│  │ --openai │  │  --groq  │  │--minimax │  │  --grok  │  │  --llama │
+  │ flag set?│  │ flag set? │  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│
+  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
+      yes             yes           yes            yes            yes            yes            yes
+       |               |             |              |              |              |              |
+       v               v             v              v              v              v              v
+  ┌────────┐    ┌──────────┐   ┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐    ┌─────────────┐
+  │ Gemini │    │Anthropic │   │ OpenAI │    │  Groq  │    │MiniMax │    │  Grok  │    │  llama.cpp  │
+  │  (API) │    │  (API)   │   │  (API) │    │  (API) │    │  (API) │    │  (API) │    │  (local)    │
+  └───┬────┘    └────┬─────┘   └───┬────┘    └───┬────┘    └───┬────┘    └───┬────┘    └──────┬──────┘
+      └───────────────┴────────────┴─────────────┴─────────────┴─────────────┴─────────────────┘
                                    |
                                    v
   ┌──────────────────────────────────────────────────────────────┐
   │  Model Options                                               │
   │                                                              │
   │  Gemini:                                                     │
-  │  ├── gemini-3-flash-preview                                  │
-  │  ├── gemini-3-pro-preview                                    │
+  │  ├── gemini-3.1-pro-preview                                  │
+  │  └── gemini-3.1-flash-lite-preview                           │
   │  Requires: GEMINI_API_KEY                                    │
   │                                                              │
   │  Anthropic:                                                  │
   │  ├── claude-opus-4-6                                         │
-  │  └── claude-sonnet-4-6                                       │
+  │  ├── claude-sonnet-4-6                                       │
+  │  └── claude-haiku-4-5                                        │
   │  Requires: ANTHROPIC_API_KEY                                 │
   │                                                              │
   │  OpenAI:                                                     │
-  │  ├── gpt-5.2                                                 │
-  │  ├── gpt-5.2-pro                                             │
-  │  └── gpt-5.1                                                 │
+  │  ├── gpt-5.4                                                 │
+  │  ├── gpt-5.4-pro                                             │
+  │  ├── gpt-5.4-mini                                            │
+  │  └── gpt-5.4-nano                                            │
   │  Requires: OPENAI_API_KEY                                    │
   │  Uses: /v1/responses (Responses API)                         │
   │                                                              │
@@ -58,6 +60,11 @@ collectTargets() checks all flags - multiple providers can run sequentially:
   │  ├── MiniMax-M2.5                                            │
   │  └── MiniMax-M2.5-highspeed                                  │
   │  Requires: MINIMAX_API_KEY                                   │
+  │                                                              │
+  │  Grok (--grok flag, xAI Grok LLM):                           │
+  │  ├── grok-4.20-reasoning                                     │
+  │  └── grok-4.20-non-reasoning                                 │
+  │  Requires: XAI_API_KEY                                       │
   │                                                              │
   │  llama.cpp (local inference):                                │
   │  ├── ggml-org/gemma-3-270m-it-GGUF                           │
@@ -145,6 +152,7 @@ bun as setup → src/cli/commands/process-steps/step-0-setup/setup-orchestrator/
 | `transcribe --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
 | `extract` | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`) |
 | `write` (media) | All of `transcribe` + llama.cpp (or LLM API key) |
+| `write --grok` | `XAI_API_KEY` |
 | `write` (document) | All of `extract` + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |

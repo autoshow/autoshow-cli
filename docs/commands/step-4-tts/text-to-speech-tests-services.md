@@ -37,8 +37,9 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/openai-tts.test.ts --test-
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/minimax-tts.test.ts --budget 25
 ```
 
-`kitten-tts-pipeline.test.ts` covers the root `write` pipeline with Groq for step 3 plus Kitten TTS for step 4.
-
-`kitten-tts-pipeline.test.ts` currently does not have mapped `--test-price` or `--budget` coverage.
+`kitten-tts-pipeline.test.ts` covers:
+- the root `write` pipeline with Groq for step 3 plus Kitten TTS for step 4
+- `--price` behavior when multiple LLM providers are selected (TTS estimate omitted)
+- multi-provider write runs that emit one speech artifact per TTS target (Kitten + OpenAI TTS)
 
 Service setup details are in [`text-to-speech-local.md#setup`](./text-to-speech-local.md#setup).

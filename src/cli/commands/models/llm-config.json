@@ -3,37 +3,48 @@
     "description": "OpenAI language models",
     "type": "api",
     "models": {
-      "gpt-5.2": {
-        "description": "GPT-5.2 — flagship model",
-        "inputCostPer1MUSD": 2,
-        "inputCostPer1MCents": 200,
-        "outputCostPer1MUSD": 8,
-        "outputCostPer1MCents": 800,
+      "gpt-5.4": {
+        "description": "GPT-5.4 — flagship model",
+        "inputCostPer1MUSD": 2.5,
+        "inputCostPer1MCents": 250,
+        "outputCostPer1MUSD": 15,
+        "outputCostPer1MCents": 1500,
         "estimation": {
           "costMultiplier": 0.1509,
           "msPer1KTokens": 7500
         }
       },
-      "gpt-5.2-pro": {
-        "description": "GPT-5.2 Pro — extended thinking",
-        "inputCostPer1MUSD": 10,
-        "inputCostPer1MCents": 1000,
-        "outputCostPer1MUSD": 40,
-        "outputCostPer1MCents": 4000,
+      "gpt-5.4-pro": {
+        "description": "GPT-5.4 Pro — extended thinking",
+        "inputCostPer1MUSD": 30,
+        "inputCostPer1MCents": 3000,
+        "outputCostPer1MUSD": 180,
+        "outputCostPer1MCents": 18000,
         "estimation": {
           "costMultiplier": 0.1587,
           "msPer1KTokens": 72246
         }
       },
-      "gpt-5.1": {
-        "description": "GPT-5.1 — previous generation flagship",
-        "inputCostPer1MUSD": 2,
-        "inputCostPer1MCents": 200,
-        "outputCostPer1MUSD": 8,
-        "outputCostPer1MCents": 800,
+      "gpt-5.4-mini": {
+        "description": "GPT-5.4 Mini — fast and affordable",
+        "inputCostPer1MUSD": 0.75,
+        "inputCostPer1MCents": 75,
+        "outputCostPer1MUSD": 4.5,
+        "outputCostPer1MCents": 450,
         "estimation": {
-          "costMultiplier": 0.239,
-          "msPer1KTokens": 7872
+          "costMultiplier": 0.1509,
+          "msPer1KTokens": 5000
+        }
+      },
+      "gpt-5.4-nano": {
+        "description": "GPT-5.4 Nano — smallest and fastest",
+        "inputCostPer1MUSD": 0.2,
+        "inputCostPer1MCents": 20,
+        "outputCostPer1MUSD": 1.25,
+        "outputCostPer1MCents": 125,
+        "estimation": {
+          "costMultiplier": 0.1509,
+          "msPer1KTokens": 3000
         }
       }
     }
@@ -70,23 +81,23 @@
     "description": "Google Gemini language models",
     "type": "api",
     "models": {
-      "gemini-3-pro-preview": {
-        "description": "Gemini 3 Pro — advanced reasoning",
-        "inputCostPer1MUSD": 1.25,
-        "inputCostPer1MCents": 125,
-        "outputCostPer1MUSD": 10,
-        "outputCostPer1MCents": 1000,
+      "gemini-3.1-pro-preview": {
+        "description": "Gemini 3.1 Pro — most intelligent model",
+        "inputCostPer1MUSD": 2,
+        "inputCostPer1MCents": 200,
+        "outputCostPer1MUSD": 12,
+        "outputCostPer1MCents": 1200,
         "estimation": {
           "costMultiplier": 0.1909,
           "msPer1KTokens": 47113
         }
       },
-      "gemini-3-flash-preview": {
-        "description": "Gemini 3 Flash — fast and efficient",
-        "inputCostPer1MUSD": 0.15,
-        "inputCostPer1MCents": 15,
-        "outputCostPer1MUSD": 0.6,
-        "outputCostPer1MCents": 60,
+      "gemini-3.1-flash-lite-preview": {
+        "description": "Gemini 3.1 Flash-Lite — cost-efficient workhorse",
+        "inputCostPer1MUSD": 0.25,
+        "inputCostPer1MCents": 25,
+        "outputCostPer1MUSD": 1.5,
+        "outputCostPer1MCents": 150,
         "estimation": {
           "costMultiplier": 0.1846,
           "msPer1KTokens": 20492
@@ -119,6 +130,17 @@
           "costMultiplier": 0.133,
           "msPer1KTokens": 13968
         }
+      },
+      "claude-haiku-4-5": {
+        "description": "Claude Haiku 4.5 — fast and affordable",
+        "inputCostPer1MUSD": 1,
+        "inputCostPer1MCents": 100,
+        "outputCostPer1MUSD": 5,
+        "outputCostPer1MCents": 500,
+        "estimation": {
+          "costMultiplier": 0.133,
+          "msPer1KTokens": 5000
+        }
       }
     }
   },
@@ -139,6 +161,26 @@
         "inputCostPer1MCents": 60,
         "outputCostPer1MUSD": 2.4,
         "outputCostPer1MCents": 240
+      }
+    }
+  },
+  "grok": {
+    "description": "xAI Grok language models",
+    "type": "api",
+    "models": {
+      "grok-4.20-reasoning": {
+        "description": "Grok 4.2 — reasoning model",
+        "inputCostPer1MUSD": 2,
+        "inputCostPer1MCents": 200,
+        "outputCostPer1MUSD": 6,
+        "outputCostPer1MCents": 600
+      },
+      "grok-4.20-non-reasoning": {
+        "description": "Grok 4.2 — non-reasoning model",
+        "inputCostPer1MUSD": 2,
+        "inputCostPer1MCents": 200,
+        "outputCostPer1MUSD": 6,
+        "outputCostPer1MCents": 600
       }
     }
   },

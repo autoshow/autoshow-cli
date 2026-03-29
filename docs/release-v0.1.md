@@ -76,7 +76,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 
 - `bun as <input>` is a root shorthand for `bun as metadata <input>`.
 - Command aliases are normalized up front, including `meta`, `info`, `dl`, `model`, `transcribe`, `transcript`, `transcription`, `extract`, `document`, `voice`, `llm`, `llms`, and `samples`.
-- Selected bare provider flags expand to default models when the next token is omitted. Examples: `--openai` becomes `--openai gpt-5.2`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, `--minimax-image` becomes `--minimax-image image-01`, `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`, and `--minimax-music` becomes `--minimax-music music-2.5`.
+- Selected bare provider flags expand to default models when the next token is omitted. Examples: `--openai` becomes `--openai gpt-5.4`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, `--minimax-image` becomes `--minimax-image image-01`, `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`, `--grok` becomes `--grok grok-4.20-reasoning`, and `--minimax-music` becomes `--minimax-music music-2.5`.
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - Runnable commands run an automatic cost preflight before execution.
 - `--price` (or `--dry-run`) prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting.
@@ -98,7 +98,7 @@ bun as setup
 bun as stt input/1-audio.mp3
 
 # full media pipeline with service LLM
-bun as write input/1-audio.mp3 --openai gpt-5.2
+bun as write input/1-audio.mp3 --openai gpt-5.4
 
 # document OCR/extraction
 bun as ocr input/1-document.pdf --out json
@@ -213,10 +213,10 @@ Notable behavior:
 |------|---------------|-----------------|
 | STT | Whisper.cpp, Reverb | Groq, ElevenLabs, OpenAI, Mistral, AssemblyAI |
 | Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing | Mistral OCR |
-| LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax |
+| LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok |
 | TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini |
 | Image | none | Gemini, OpenAI, MiniMax |
-| Video | none | OpenAI Sora, Gemini Veo, MiniMax |
+| Video | none | Gemini Veo, MiniMax |
 | Music | none | ElevenLabs, MiniMax |
 
 ### Supported model families in the live flag registry
@@ -232,11 +232,12 @@ Notable behavior:
 | AssemblyAI STT | `universal-2`, `universal-3-pro` |
 | Mistral OCR | `mistral-ocr-latest`, `mistral-ocr-2512` |
 | llama.cpp | `ggml-org/gemma-3-270m-it-GGUF`, `ggml-org/Qwen3-0.6B-GGUF` |
-| OpenAI LLM | `gpt-5.2`, `gpt-5.1`, `gpt-5.2-pro` |
+| OpenAI LLM | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Groq LLM | `openai/gpt-oss-20b`, `openai/gpt-oss-120b` |
-| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
-| Gemini LLM | `gemini-3-flash-preview`, `gemini-3-pro-preview` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-haiku-4-5` |
+| Gemini LLM | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
 | MiniMax LLM | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
+| Grok LLM | `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |
 | Kitten TTS | `kitten-tts-mini`, `kitten-tts-micro`, `kitten-tts-nano`, `kitten-tts-nano-0.8-int8` |
 | ElevenLabs TTS | `eleven_flash_v2_5`, `eleven_turbo_v2_5`, `eleven_v3` |
 | MiniMax TTS | `speech-2.8-turbo`, `speech-2.8-hd` |
@@ -246,7 +247,6 @@ Notable behavior:
 | Gemini image | `imagen-4.0-fast-generate-001`, `gemini-3-pro-image-preview`, `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001` |
 | OpenAI image | `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5` |
 | MiniMax image | `image-01` |
-| Sora video | `sora-2`, `sora-2-pro` |
 | Gemini video | `veo-3.1-fast-generate-preview`, `veo-3.1-generate-preview` |
 | MiniMax video | `T2V-01`, `T2V-01-Director`, `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-02` |
 | ElevenLabs music | `music_v1` |
@@ -314,7 +314,7 @@ Example capabilities:
 
 ```bash
 bun as config --show
-bun as config --openai gpt-5.2
+bun as config --openai gpt-5.4
 bun as config --whisper large-v3-turbo
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --structured --structured-compat-retries 3

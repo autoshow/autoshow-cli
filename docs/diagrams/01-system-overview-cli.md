@@ -33,7 +33,7 @@ bun as <command> <input> [flags]
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
    - Step 2: Transcribe (Whisper/Groq/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR)
-   - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax)
+   - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, OpenAI, Gemini)
    - Step 5: Image generation - optional (Gemini, OpenAI DALL-E, MiniMax)
    - Step 6: Video generation - optional (Gemini Veo, MiniMax)
@@ -51,7 +51,7 @@ src/cli/create-cli.ts
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  expandBareModelFlags()                                                      │
-│  - Fills default model when bare flag used (--openai → --openai gpt-5.2)    │
+│  - Fills default model when bare flag used (--openai → --openai gpt-5.4)    │
 │  expandPromptArgs()                                                          │
 │  - Allows multiple --prompt values (--prompt chapters summary)               │
 │  normalizeCommandAliases()                                                   │
@@ -142,11 +142,12 @@ src/cli/flags/
 ┌─────────────────────────────────────────────────────────────┐
 │  llmProviderFlags (part of mediaFlags)                     │
 │  ├── --llama MODEL       llama.cpp model ID                │
-│  ├── --openai MODEL      gpt-5.2|gpt-5.2-pro|gpt-5.1       │
+│  ├── --openai MODEL      gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano│
 │  ├── --groq MODEL        openai/gpt-oss-20b|openai/gpt-oss-120b│
-│  ├── --anthropic MODEL   claude-opus-4-6|claude-sonnet-4-6 │
-│  ├── --gemini MODEL      gemini-3-flash-preview|gemini-3-pro-preview│
-│  └── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
+│  ├── --anthropic MODEL   claude-opus-4-6|claude-sonnet-4-6|claude-haiku-4-5│
+│  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
+│  ├── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
+│  └── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐

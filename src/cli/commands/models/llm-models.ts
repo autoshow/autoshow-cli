@@ -6,9 +6,10 @@ export type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
 const formatAllowedValues = (values: readonly string[]): string => values.join(', ')
 
 export const SUPPORTED_OPENAI_MODELS = [
-  'gpt-5.2',
-  'gpt-5.1',
-  'gpt-5.2-pro'
+  'gpt-5.4',
+  'gpt-5.4-pro',
+  'gpt-5.4-mini',
+  'gpt-5.4-nano'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_GROQ_MODELS = [
@@ -28,18 +29,24 @@ const normalizeGroqModel = (model: string): string => {
 }
 
 export const SUPPORTED_GEMINI_MODELS = [
-  'gemini-3-flash-preview',
-  'gemini-3-pro-preview',
+  'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite-preview',
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_ANTHROPIC_MODELS = [
   'claude-sonnet-4-6',
   'claude-opus-4-6',
+  'claude-haiku-4-5',
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_MINIMAX_MODELS = [
   'MiniMax-M2.5',
   'MiniMax-M2.5-highspeed'
+] as const satisfies readonly string[]
+
+export const SUPPORTED_GROK_MODELS = [
+  'grok-4.20-reasoning',
+  'grok-4.20-non-reasoning'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_LLAMA_MODELS = [
@@ -97,6 +104,16 @@ export const validateMinimaxModel = (model: string): MinimaxModel => {
   }
 
   return model as MinimaxModel
+}
+
+export const validateGrokModel = (model: string): string => {
+  if (!SUPPORTED_GROK_MODELS.includes(model as typeof SUPPORTED_GROK_MODELS[number])) {
+    throw CLIUsageError(
+      `Invalid --grok model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_GROK_MODELS)}`
+    )
+  }
+
+  return model
 }
 
 export const validateLlamaModel = (model: string): string => {

@@ -43,7 +43,7 @@ bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview -
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --price
 
 # Write pipeline
-bun as write "https://youtube.com/..." --gemini gemini-3-flash-preview --gemini-video veo-3.1-fast-generate-preview
+bun as write "https://youtube.com/..." --gemini gemini-3.1-flash-lite-preview --gemini-video veo-3.1-fast-generate-preview
 bun as write "https://youtube.com/..." --gemini-video veo-3.1-fast-generate-preview --price
 ```
 
