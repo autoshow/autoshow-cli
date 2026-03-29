@@ -8,14 +8,11 @@ import type { EstimateMusicCostOptions, MusicCostEstimate } from '~/types'
 const formatRate = (amount: number): string => `${amount.toFixed(2)}¢`
 const DEFAULT_ELEVENLABS_MUSIC_DURATION_SECONDS = 180
 
-export const estimateMusicCost = (options: EstimateMusicCostOptions): MusicCostEstimate | null => {
+export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCostEstimate[] => {
+  const results: MusicCostEstimate[] = []
+
   const hasElevenlabs = typeof options.elevenlabsMusicModel === 'string' && options.elevenlabsMusicModel.length > 0
   const hasMinimax = typeof options.minimaxMusicModel === 'string' && options.minimaxMusicModel.length > 0
-  const providerCount = [hasElevenlabs, hasMinimax].filter(Boolean).length
-
-  if (providerCount > 1) {
-    throw new Error('Cannot estimate music cost when multiple providers are selected')
-  }
 
   if (hasElevenlabs) {
     const model = validateElevenlabsMusicModel(options.elevenlabsMusicModel as string)
@@ -32,7 +29,7 @@ export const estimateMusicCost = (options: EstimateMusicCostOptions): MusicCostE
       throw new Error(`Invalid music duration: ${durationSeconds}`)
     }
 
-    return {
+    results.push({
       provider: 'elevenlabs',
       model,
       totalCost: ratePerMinute * (durationSeconds / 60),
@@ -40,7 +37,7 @@ export const estimateMusicCost = (options: EstimateMusicCostOptions): MusicCostE
       note: options.musicDuration !== undefined
         ? `Estimated using ${formatRate(ratePerMinute)}/minute (business-tier starting rate)`
         : `Estimated using default ${DEFAULT_ELEVENLABS_MUSIC_DURATION_SECONDS}s duration at ${formatRate(ratePerMinute)}/minute`
-    }
+    })
   }
 
   if (hasMinimax) {
@@ -55,7 +52,7 @@ export const estimateMusicCost = (options: EstimateMusicCostOptions): MusicCostE
     }
 
     const lyricsCost = lyricsSource === 'generated' ? lyricsAddonCost : 0
-    return {
+    results.push({
       provider: 'minimax',
       model,
       totalCost: baseCost + lyricsCost,
@@ -63,8 +60,8 @@ export const estimateMusicCost = (options: EstimateMusicCostOptions): MusicCostE
       note: lyricsSource === 'generated'
         ? `Includes ${formatRate(lyricsAddonCost)} lyrics generation add-on`
         : 'Assumes provided lyrics; no lyrics-generation add-on'
-    }
+    })
   }
 
-  return null
+  return results
 }

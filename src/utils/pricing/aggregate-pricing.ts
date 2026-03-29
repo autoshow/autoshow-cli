@@ -5,7 +5,7 @@ import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/writ
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
-import { estimateMusicCost } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
+import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-duration'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-stt/stt-utils/elevenlabs-stt-pricing'
@@ -257,29 +257,30 @@ const buildVideoEstimate = (opts: RuntimeOptions): VideoStepEstimate | null => {
   }
 }
 
-const buildMusicEstimate = (opts: RuntimeOptions): MusicStepEstimate | null => {
+const buildMusicEstimates = (opts: RuntimeOptions): MusicStepEstimate[] => {
   const hasMusic = opts.elevenlabsMusicModel || opts.minimaxMusicModel
-  if (!hasMusic) return null
+  if (!hasMusic) return []
 
-  const estimate = estimateMusicCost({
+  const estimates = estimateMusicCosts({
     elevenlabsMusicModel: opts.elevenlabsMusicModel,
     minimaxMusicModel: opts.minimaxMusicModel,
     musicDuration: opts.musicDuration,
     musicLyricsFile: opts.musicLyricsFile,
     musicInstrumental: opts.musicInstrumental
   })
-  if (!estimate) return null
-  const estimation = getMusicEstimation(estimate.provider, estimate.model)
 
-  return {
-    step: 'music',
-    provider: estimate.provider,
-    model: estimate.model,
-    lyricsSource: estimate.lyricsSource,
-    totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-    costMultiplier: estimation.costMultiplier,
-    ...(estimate.note !== undefined ? { note: estimate.note } : {})
-  }
+  return estimates.map((estimate) => {
+    const estimation = getMusicEstimation(estimate.provider, estimate.model)
+    return {
+      step: 'music',
+      provider: estimate.provider,
+      model: estimate.model,
+      lyricsSource: estimate.lyricsSource,
+      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+      costMultiplier: estimation.costMultiplier,
+      ...(estimate.note !== undefined ? { note: estimate.note } : {})
+    }
+  })
 }
 
 export const buildAggregatedPriceEstimate = async (
@@ -347,8 +348,7 @@ export const buildAggregatedPriceEstimate = async (
       totalEstimatedCost += video.totalCost
     }
 
-    const music = buildMusicEstimate(opts)
-    if (music) {
+    for (const music of buildMusicEstimates(opts)) {
       steps.push(music)
       totalEstimatedCost += music.totalCost
     }
@@ -379,8 +379,7 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'music') {
-    const music = buildMusicEstimate(opts)
-    if (music) {
+    for (const music of buildMusicEstimates(opts)) {
       steps.push(music)
       totalEstimatedCost += music.totalCost
     }

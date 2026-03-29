@@ -26,11 +26,11 @@ test('requires a music provider flag', async () => {
   expect(result.exitCode).not.toBe(0)
 })
 
-test('rejects multiple music providers', async () => {
+test('--price with both providers shows two cost rows and per-provider filenames', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--elevenlabs-music', 'music_v1', '--minimax-music', 'music-2.5'],
+    ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--elevenlabs-music', 'music_v1', '--minimax-music', 'music-2.5', '--price'],
   )
-  expect(result.exitCode).not.toBe(0)
+  expect(result.exitCode).toBe(0)
 })
 
 test('music_v1 generates cinematic orchestral music', async () => {

@@ -80,14 +80,7 @@
       "https://developers.openai.com/api/docs/guides/structured-outputs.md",
       "https://developers.openai.com/api/docs/guides/migrate-to-responses.md",
       "https://developers.openai.com/api/reference/resources/responses/methods/create/index.md",
-      "https://developers.openai.com/api/reference/resources/responses/methods/retrieve/index.md",
-      "https://developers.openai.com/api/reference/resources/responses/methods/delete/index.md",
-      "https://developers.openai.com/api/reference/resources/responses/subresources/input_items/methods/list/index.md",
-      "https://developers.openai.com/api/reference/resources/responses/subresources/input_tokens/methods/count/index.md",
-      "https://developers.openai.com/api/reference/resources/responses/methods/cancel/index.md",
-      "https://developers.openai.com/api/reference/resources/responses/methods/compact/index.md",
-      "https://developers.openai.com/api/docs/guides/embeddings.md",
-      "https://developers.openai.com/api/reference/resources/embeddings/methods/create/index.md"
+      "https://developers.openai.com/api/docs/guides/embeddings.md"
     ],
     "TTS": [
       "https://developers.openai.com/api/docs/guides/audio.md",

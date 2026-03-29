@@ -1,61 +1,86 @@
-import type { ProcessingOptions, Step7MusicMetadata } from '~/types'
-import type { MusicProvider } from '~/types'
-import { type ElevenlabsMusicModel, type MinimaxMusicModel, validateElevenlabsMusicModel, validateMinimaxMusicModel } from '~/cli/commands/models/model-options'
-import { assertNever } from '~/utils/validate/assert-never'
-import { ensureElevenLabsMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
-import { ensureMinimaxMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
-import { runElevenLabsMusicGen } from './music-services/elevenlabs/run-elevenlabs-music-gen'
-import { runMinimaxMusicGen } from './music-services/minimax/run-minimax-music-gen'
+import { mkdir, rename, rm } from 'node:fs/promises'
+import type { Step7MusicMetadata } from '~/types'
+import * as l from '~/logger'
+import {
+  type MusicGenOptions,
+  type MusicTarget,
+  collectMusicTargets,
+  getMusicArtifactFileName,
+  sanitizeMusicModelName,
+} from './music-targets'
 
-type MusicGenOptions = Pick<
-  ProcessingOptions,
-  'elevenlabsMusicModel' | 'minimaxMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental'
->
+const getTargetWorkspaceDir = (outputDir: string, target: MusicTarget): string =>
+  `${outputDir}/.music-tmp-${target.service}-${sanitizeMusicModelName(target.model)}`
 
-const resolveMusicProvider = (options: MusicGenOptions): MusicProvider => {
-  const hasElevenlabs = typeof options.elevenlabsMusicModel === 'string' && options.elevenlabsMusicModel.length > 0
-  const hasMinimax = typeof options.minimaxMusicModel === 'string' && options.minimaxMusicModel.length > 0
+export const runMusicTargets = async (
+  targets: MusicTarget[],
+  prompt: string,
+  outputDir: string,
+): Promise<{ musicPaths: string[], metadata: Step7MusicMetadata[] }> => {
+  const successes: Array<{ musicPath: string, metadata: Step7MusicMetadata }> = []
+  const failedTargets: string[] = []
+  const singleTarget = targets.length === 1
 
-  const providerCount = [hasElevenlabs, hasMinimax].filter(Boolean).length
-  if (providerCount > 1) {
-    throw new Error('Cannot use more than one music provider at the same time (--elevenlabs-music, --minimax-music)')
+  for (const target of targets) {
+    const workspaceDir = singleTarget ? outputDir : getTargetWorkspaceDir(outputDir, target)
+
+    try {
+      if (!singleTarget) {
+        await mkdir(workspaceDir, { recursive: true })
+      }
+
+      const { musicPath, metadata } = await target.run(prompt, workspaceDir)
+
+      if (singleTarget) {
+        successes.push({ musicPath, metadata })
+      } else {
+        const finalFileName = getMusicArtifactFileName(target, singleTarget)
+        const finalPath = `${outputDir}/${finalFileName}`
+        await rename(musicPath, finalPath)
+        successes.push({
+          musicPath: finalPath,
+          metadata: {
+            ...metadata,
+            musicFileName: finalFileName,
+            musicFileSize: Bun.file(finalPath).size,
+          }
+        })
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      l.error(`Failed to run music target ${target.service}/${target.model}: ${message}`)
+      failedTargets.push(`${target.service}/${target.model}: ${message}`)
+    } finally {
+      if (!singleTarget) {
+        await rm(workspaceDir, { recursive: true, force: true })
+      }
+    }
   }
-  if (providerCount === 0) {
-    throw new Error('Specify a music generation provider: --elevenlabs-music <model> or --minimax-music <model>')
+
+  if (successes.length === 0) {
+    const details = failedTargets.length > 0 ? failedTargets.join('; ') : 'No provider produced music'
+    throw new Error(`No music outputs were generated. ${details}`)
   }
 
-  if (hasElevenlabs) return 'elevenlabs'
-  return 'minimax'
+  if (failedTargets.length > 0) {
+    l.warn(`Music run completed with partial failures: ${failedTargets.join('; ')}`)
+  }
+
+  return {
+    musicPaths: successes.map((entry) => entry.musicPath),
+    metadata: successes.map((entry) => entry.metadata),
+  }
 }
 
 export const runMusicGen = async (
   prompt: string,
   outputDir: string,
   options: MusicGenOptions
-): Promise<{ musicPath: string, metadata: Step7MusicMetadata }> => {
-
-  const provider = resolveMusicProvider(options)
-
-  if (provider === 'elevenlabs') {
-    const model: ElevenlabsMusicModel = validateElevenlabsMusicModel(options.elevenlabsMusicModel as string)
-    await ensureElevenLabsMusicGenSetup()
-    return await runElevenLabsMusicGen(prompt, outputDir, {
-      model,
-      durationSeconds: options.musicDuration,
-      forceInstrumental: options.musicInstrumental
-    })
+): Promise<{ musicPaths: string[], metadata: Step7MusicMetadata[] }> => {
+  const targets = collectMusicTargets(options)
+  if (targets.length === 0) {
+    throw new Error('Specify a music generation provider: --elevenlabs-music <model> or --minimax-music <model>')
   }
 
-  if (provider === 'minimax') {
-    const model: MinimaxMusicModel = validateMinimaxMusicModel(options.minimaxMusicModel as string)
-    await ensureMinimaxMusicGenSetup()
-    return await runMinimaxMusicGen(prompt, outputDir, {
-      model,
-      durationSeconds: options.musicDuration,
-      lyricsFile: options.musicLyricsFile,
-      forceInstrumental: options.musicInstrumental
-    })
-  }
-
-  assertNever(provider)
+  return await runMusicTargets(targets, prompt, outputDir)
 }

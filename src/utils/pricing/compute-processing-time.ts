@@ -71,6 +71,7 @@ type ComputeEstimatedProcessingTimesInput = {
   videoService?: Step6VideoMetadata['videoGenService'] | undefined
   videoModel?: string | undefined
   videoDurationSeconds?: number | undefined
+  musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicService?: Step7MusicMetadata['musicService'] | undefined
   musicModel?: string | undefined
   musicDurationSeconds?: number | undefined
@@ -84,7 +85,7 @@ type ComputeActualProcessingTimesInput = {
   step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | Step5Metadata[] | undefined
   step6?: Step6VideoMetadata | undefined
-  step7?: Step7MusicMetadata | undefined
+  step7?: Step7MusicMetadata | Step7MusicMetadata[] | undefined
   ttsCharacterCount?: number | undefined
 }
 
@@ -186,16 +187,24 @@ export const computeEstimatedProcessingTimes = (
     })
   }
 
-  if (input.musicService && input.musicModel && typeof input.musicDurationSeconds === 'number') {
-    const estimation = getMusicEstimation(input.musicService, input.musicModel)
-    steps.push({
-      step: 'music',
-      provider: input.musicService,
-      model: input.musicModel,
-      processingTimeMs: roundMs(input.musicDurationSeconds * estimation.msPerSecond),
-      inputMetric: 'durationSeconds',
-      inputValue: input.musicDurationSeconds,
-    })
+  const musicTargets = input.musicTargets && input.musicTargets.length > 0
+    ? input.musicTargets
+    : input.musicService && input.musicModel
+      ? [{ service: input.musicService, model: input.musicModel, durationSeconds: input.musicDurationSeconds }]
+      : []
+
+  for (const musicTarget of musicTargets) {
+    if (typeof musicTarget.durationSeconds === 'number') {
+      const estimation = getMusicEstimation(musicTarget.service, musicTarget.model)
+      steps.push({
+        step: 'music',
+        provider: musicTarget.service,
+        model: musicTarget.model,
+        processingTimeMs: roundMs(musicTarget.durationSeconds * estimation.msPerSecond),
+        inputMetric: 'durationSeconds',
+        inputValue: musicTarget.durationSeconds,
+      })
+    }
   }
 
   return {
@@ -306,18 +315,21 @@ export const computeActualProcessingTimes = (
   }
 
   if (input.step7) {
-    steps.push({
-      step: 'music',
-      provider: input.step7.musicService,
-      model: input.step7.musicModel,
-      processingTimeMs: roundMs(input.step7.processingTime),
-      ...(typeof input.step7.musicDurationMs === 'number'
-        ? {
-            inputMetric: 'durationSeconds',
-            inputValue: input.step7.musicDurationMs / 1000,
-          }
-        : {}),
-    })
+    const step7Items = Array.isArray(input.step7) ? input.step7 : [input.step7]
+    for (const item of step7Items) {
+      steps.push({
+        step: 'music',
+        provider: item.musicService,
+        model: item.musicModel,
+        processingTimeMs: roundMs(item.processingTime),
+        ...(typeof item.musicDurationMs === 'number'
+          ? {
+              inputMetric: 'durationSeconds',
+              inputValue: item.musicDurationMs / 1000,
+            }
+          : {}),
+      })
+    }
   }
 
   return {

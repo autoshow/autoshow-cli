@@ -16,6 +16,7 @@ import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } fro
 import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
 import { runMusicGen } from './step-7-music/run-music-gen'
+import { buildMusicArtifactMap, collectMusicTargets } from './step-7-music/music-targets'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 
@@ -79,13 +80,14 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   let step4Metadata: Step4Metadata[] | null = null
   let step5Metadata: Step5Metadata[] | null = null
   let step6Metadata = null
-  let step7Metadata: Step7MusicMetadata | null = null
+  let step7Metadata: Step7MusicMetadata[] | null = null
   let ttsCharacterCount: number | undefined
   const ttsTargets = collectTtsTargets(processingOptions)
   const imageTargets = collectImageTargets(processingOptions)
+  const musicTargets = collectMusicTargets(processingOptions)
   const ttsRequested = ttsTargets.length > 0
   const imageRequested = imageTargets.length > 0
-  const musicRequested = !!(processingOptions.elevenlabsMusicModel || processingOptions.minimaxMusicModel)
+  const musicRequested = musicTargets.length > 0
   const videoGenRequested = !!(processingOptions.geminiVideoModel || processingOptions.minimaxVideoModel)
 
   if ((ttsRequested || imageRequested || musicRequested || videoGenRequested) && step3Results.length > 0) {
@@ -142,6 +144,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
 
   const attemptedTtsTargets = step3Results.length === 1 ? ttsTargets : []
   const attemptedImageTargets = step3Results.length === 1 ? imageTargets : []
+  const attemptedMusicTargets = step3Results.length === 1 ? musicTargets : []
   const ttsEstimateTargets = attemptedTtsTargets.map((target) => ({ service: target.service, model: target.model }))
   const imageEstimateTargets = attemptedImageTargets.map((target) => ({
     service: target.service,
@@ -216,13 +219,13 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
           videoDurationSeconds: step6Metadata.videoDuration,
         }
       : {}),
-    ...(step7Metadata
+    ...(attemptedMusicTargets.length > 0
       ? {
-          musicService: step7Metadata.musicService,
-          musicModel: step7Metadata.musicModel,
-          musicDurationSeconds: typeof step7Metadata.musicDurationMs === 'number'
-            ? step7Metadata.musicDurationMs / 1000
-            : undefined,
+          musicTargets: attemptedMusicTargets.map((t) => ({
+            service: t.service,
+            model: t.model,
+            ...(processingOptions.musicDuration !== undefined ? { durationSeconds: processingOptions.musicDuration } : {})
+          }))
         }
       : {}),
   })
@@ -246,7 +249,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     ...(step4Metadata ? { step4: serializeOneOrMany(step4Metadata) } : {}),
     ...(step5Metadata ? { step5: serializeOneOrMany(step5Metadata) } : {}),
     ...(step6Metadata ? { step6: step6Metadata } : {}),
-    ...(step7Metadata ? { step7: step7Metadata } : {}),
+    ...(step7Metadata ? { step7: serializeOneOrMany(step7Metadata) } : {}),
     cost,
     ...(timing ? { timing } : {}),
   }
@@ -326,11 +329,14 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   }
 
   if (step7Metadata) {
-    stepSummaries.push({
-      label: 'Music',
-      providerModel: `${step7Metadata.musicService}/${step7Metadata.musicModel}`,
-      processingTime: step7Metadata.processingTime,
-      cost: actual.steps.find(s => s.step === 'music')?.cost ?? 0
+    const musicSteps = actual.steps.filter(s => s.step === 'music')
+    step7Metadata.forEach((m, i) => {
+      stepSummaries.push({
+        label: 'Music',
+        providerModel: `${m.musicService}/${m.musicModel}`,
+        processingTime: m.processingTime,
+        cost: musicSteps[i]?.cost ?? 0
+      })
     })
   }
 
@@ -352,7 +358,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     Object.assign(artifactFiles, buildImageArtifactMap(step5Metadata))
   }
   if (step6Metadata) artifactFiles['video'] = step6Metadata.videoFileName
-  if (step7Metadata) artifactFiles['music'] = step7Metadata.musicFileName
+  if (step7Metadata) Object.assign(artifactFiles, buildMusicArtifactMap(step7Metadata))
   artifactFiles['prompt'] = 'prompt.md'
   artifactFiles['metadata'] = 'metadata.json'
   l.report.complete(outputDir, artifactFiles, { steps: stepSummaries, totalTimeMs: totalTime, totalCost: actual.totalCost })

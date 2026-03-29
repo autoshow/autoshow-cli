@@ -11,7 +11,7 @@
         "outputCostPer1MCents": 800,
         "estimation": {
           "costMultiplier": 0.1509,
-          "msPer1KTokens": 8626
+          "msPer1KTokens": 7500
         }
       },
       "gpt-5.2-pro": {
@@ -154,7 +154,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 1767
+          "msPer1KTokens": 3424
         }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {

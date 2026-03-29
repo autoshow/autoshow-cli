@@ -32,7 +32,7 @@ import {
 } from '~/cli/commands/models/model-loader'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
-import { estimateMusicCost } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
+import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 
 export const parseDurationToSeconds = (duration: string): number => {
   if (!duration || duration === 'Unknown') return 0
@@ -100,7 +100,7 @@ type ComputeActualCostsInput = {
   step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | Step5Metadata[] | undefined
   step6?: Step6VideoMetadata | undefined
-  step7?: Step7MusicMetadata | undefined
+  step7?: Step7MusicMetadata | Step7MusicMetadata[] | undefined
   ttsCharacterCount?: number | undefined
 }
 
@@ -234,27 +234,30 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   }
 
   if (input.step7) {
-    const meta = getMusicModelMeta(input.step7.musicService, input.step7.musicModel)
-    let cost = 0
-    if (meta) {
-      if (typeof meta.costPerTrackCents === 'number') {
-        cost = meta.costPerTrackCents
-        if (input.step7.lyricsSource === 'generated' && typeof meta.lyricsCostPerTrackCents === 'number') {
-          cost += meta.lyricsCostPerTrackCents
+    const step7Items = Array.isArray(input.step7) ? input.step7 : [input.step7]
+    for (const item of step7Items) {
+      const meta = getMusicModelMeta(item.musicService, item.musicModel)
+      let cost = 0
+      if (meta) {
+        if (typeof meta.costPerTrackCents === 'number') {
+          cost = meta.costPerTrackCents
+          if (item.lyricsSource === 'generated' && typeof meta.lyricsCostPerTrackCents === 'number') {
+            cost += meta.lyricsCostPerTrackCents
+          }
+        } else if (typeof meta.costPerMinuteCents === 'number' && typeof item.musicDurationMs === 'number') {
+          cost = meta.costPerMinuteCents * (item.musicDurationMs / 60000)
         }
-      } else if (typeof meta.costPerMinuteCents === 'number' && typeof input.step7.musicDurationMs === 'number') {
-        cost = meta.costPerMinuteCents * (input.step7.musicDurationMs / 60000)
       }
+      steps.push({
+        step: 'music',
+        provider: item.musicService,
+        model: item.musicModel,
+        cost,
+        ...(typeof item.musicDurationMs === 'number'
+          ? { inputMetric: 'durationMs' as const, inputValue: item.musicDurationMs }
+          : { inputMetric: 'tracks' as const, inputValue: 1 })
+      })
     }
-    steps.push({
-      step: 'music',
-      provider: input.step7.musicService,
-      model: input.step7.musicModel,
-      cost,
-      ...(typeof input.step7.musicDurationMs === 'number'
-        ? { inputMetric: 'durationMs' as const, inputValue: input.step7.musicDurationMs }
-        : { inputMetric: 'tracks' as const, inputValue: 1 })
-    })
   }
 
   const totalCost = steps.reduce((sum, s) => sum + s.cost, 0)
@@ -462,14 +465,14 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
 
   const hasMusic = input.elevenlabsMusicModel || input.minimaxMusicModel
   if (hasMusic) {
-    const estimate = estimateMusicCost({
+    const estimates = estimateMusicCosts({
       elevenlabsMusicModel: input.elevenlabsMusicModel,
       minimaxMusicModel: input.minimaxMusicModel,
       musicDuration: input.musicDuration,
       musicLyricsFile: input.musicLyricsFile,
       musicInstrumental: input.musicInstrumental
     })
-    if (estimate) {
+    for (const estimate of estimates) {
       const estimation = getMusicEstimation(estimate.provider, estimate.model)
       const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
       totalCost += cost

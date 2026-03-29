@@ -129,3 +129,43 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write --price with minimax mus
   )
   expect(result.exitCode).toBe(0)
 })
+
+test('multi-provider run produces per-provider filenames and array metadata', async () => {
+  const hasElevenlabs = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
+  const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
+  if (!hasElevenlabs || !hasMinimax) {
+    console.log('Skipping: ELEVENLABS_API_KEY and MINIMAX_API_KEY both required')
+    return
+  }
+
+  await cleanupTestOutput(MUSIC_GEN_TITLE)
+
+  const result = await runCommand(
+    [
+      'src/cli/create-cli.ts',
+      'music',
+      'chill lo-fi beat',
+      '--elevenlabs-music', 'music_v1',
+      '--minimax-music', 'music-2.5',
+      '--music-duration', '15',
+    ],
+  )
+
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = await findLatestDirectory(MUSIC_GEN_TITLE)
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/generated-music-elevenlabs-music_v1.mp3`)).toBe(true)
+    expect(await fileExists(`${outputDir}/generated-music-minimax-music-2.5.mp3`)).toBe(true)
+
+    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      music?: Array<{ musicService?: string; musicModel?: string }>
+    }
+    expect(Array.isArray(metadata.music)).toBe(true)
+    const musicArr = metadata.music ?? []
+    expect(musicArr.some(m => m.musicService === 'elevenlabs')).toBe(true)
+    expect(musicArr.some(m => m.musicService === 'minimax')).toBe(true)
+  }
+})

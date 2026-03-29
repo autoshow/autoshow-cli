@@ -17,9 +17,10 @@ For cost-capped runs, append `--budget <whole-number-cents>` (for example `--bud
 
 Current coverage comes from the two provider suites:
 - invalid model rejection
-- `--price` coverage
+- `--price` coverage (single-provider and multi-provider)
 - real provider generation when the required API key is configured
-- provider-selection validation (`music` requires a provider and rejects multiple providers)
+- provider-selection validation (`music` requires at least one provider)
+- multi-provider run producing per-provider filenames and array metadata (requires both API keys)
 
 Additional write-pipeline coverage currently lives in `minimax-music-gen.test.ts`:
 - `write --price` with MiniMax music
