@@ -50,6 +50,9 @@ bun as music "an ambient piano instrumental with soft strings" --minimax-music m
 
 # video generation
 bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview
+
+# video generation with both providers
+bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3
 ```
 
 ## Command Map
@@ -93,4 +96,6 @@ bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as image "a sunset" --openai-image gpt-image-1 --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --price
+bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --price
+bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --price
 ```

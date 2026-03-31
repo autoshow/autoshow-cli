@@ -1,117 +1,171 @@
 # Plan: Multi-Service Video Generation
 
-**Goal**: Allow `--gemini-video` and `--minimax-video` to be used together in the same `video` command invocation, matching the multi-provider behavior already present for LLMs, TTS, Images, and Music.
+**Goal**: Allow `--gemini-video` and `--minimax-video` to be used together in the same `video` invocation, matching the multi-provider behavior already present for LLMs, TTS, Images, and Music.
 
-Video is currently the only generation step locked to a single provider. A `providerCount > 1` guard throws a `CLIUsageError` in both `define-video-command.ts` and `run-video-gen.ts`. The fix mirrors the music step's pattern exactly.
+Video is currently locked to a single provider by guard logic in step-6 command/runtime code, and pricing/timing estimate paths still assume exactly one video target.
 
 ---
 
-## Phase 1 — New `video-targets.ts` module
+## Findings From Current Code
 
-Create `src/cli/commands/process-steps/step-6-video/video-targets.ts` modelled directly on `src/cli/commands/process-steps/step-7-music/music-targets.ts`.
+- `runVideoGen` is shared by both the standalone `video` command and the full pipeline in `process-video.ts`, so changing its return shape requires updates in both call sites.
+- `estimateVideoCost(...)` throws when both video providers are set, which would break preflight (`--price`) and estimated-cost computation unless estimate paths are widened.
+- `computeEstimatedProcessingTimes(...)` currently only accepts one video target (`videoService` + `videoModel`), so estimated timing needs a multi-target path similar to existing music handling.
 
-Contents:
+---
 
-- **`VideoGenOptions`** — `Pick<ProcessingOptions, 'geminiVideoModel' | 'minimaxVideoModel' | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'>`
-- **`VideoTarget`** — `{ service: VideoProvider, model: string, run: (prompt: string, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }> }`
-- **`sanitizeVideoModelName(model)`** — same `replace(/[/\\:*?"<>|]/g, '-')` regex used by music and image
-- **`getVideoArtifactFileName(target, singleTarget)`**
-  - single: `generated-video.mp4`
-  - multi: `generated-video-{service}-{sanitizedModel}.mp4`
-- **`buildVideoArtifactMap(metadata[])`**
+## Phase 1 — Add `video-targets.ts`
+
+Create `src/cli/commands/process-steps/step-6-video/video-targets.ts` modeled on `step-7-music/music-targets.ts`.
+
+Include:
+
+- `VideoGenOptions` as `Pick<ProcessingOptions, 'geminiVideoModel' | 'minimaxVideoModel' | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'>`
+- `VideoTarget` as `{ service: VideoProvider, model: string, run: (prompt, outputDir) => Promise<{ videoPath, metadata }> }`
+- `sanitizeVideoModelName(model)` using `replace(/[/\\:*?"<>|]/g, '-')`
+- `getVideoArtifactFileName(target, singleTarget)`:
+  - single target: `generated-video.mp4`
+  - multi target: `generated-video-{service}-{sanitizedModel}.mp4`
+- `buildVideoArtifactMap(metadata[])`:
   - single: `{ video: metadata[0].videoFileName }`
   - multi: keyed by `video-{service}-{sanitizedModel}`
-- **`collectVideoTargets(options)`** — pushes a gemini target if `geminiVideoModel` is present, pushes a minimax target if `minimaxVideoModel` is present; each target's `run` closure delegates to the existing `runGeminiVideoGen` / `runMinimaxVideoGen` service functions, same as `resolveVideoEngine` + dispatch does today
+- `collectVideoTargets(options)` that validates model strings and returns one target per configured provider
 
 ---
 
 ## Phase 2 — Rewrite `run-video-gen.ts`
 
-*Depends on Phase 1.*
+Depends on Phase 1.
 
-Replace the `resolveVideoEngine` single-dispatch pattern with:
+Replace single-dispatch (`resolveVideoEngine`) with target iteration, mirroring `runMusicTargets`:
 
-- **`runVideoTargets(targets, prompt, outputDir)`** — mirrors `runMusicTargets` exactly:
-  - Tmp workspace dirs per target when `!singleTarget`
-  - Per-target error isolation with `failedTargets[]` accumulator
-  - Artifact rename + `getVideoArtifactFileName` on success
-  - Logs partial failures with `l.warn`; throws if zero successes
-  - Returns `{ videoPaths: string[], metadata: Step6VideoMetadata[] }`
-- **`runVideoGen(prompt, outputDir, options)`** — calls `collectVideoTargets`, throws if empty, calls `runVideoTargets`
-- Remove `resolveVideoEngine` and the `assertNever` import
-
----
-
-## Phase 3 — Widen `step6` in pricing utilities
-
-*No dependency on Phases 1–2; can be done in parallel.*
-
-**`src/utils/pricing/compute-costs.ts`** (line ~102):
-
-```ts
-// Before
-step6?: Step6VideoMetadata | undefined
-
-// After
-step6?: Step6VideoMetadata | Step6VideoMetadata[] | undefined
-```
-
-Wrap the existing `if (input.step6)` block in the same array-iteration pattern already used for `step7` in that file.
-
-**`src/utils/pricing/compute-processing-time.ts`** (line ~87):
-
-Same type widening and same array-iteration wrapper on the `if (input.step6)` block.
+- Add `runVideoTargets(targets, prompt, outputDir)`:
+  - per-target temp workspaces for multi-target runs
+  - per-target error isolation + `failedTargets[]`
+  - rename artifacts via `getVideoArtifactFileName(...)`
+  - warn on partial failure; throw when zero successes
+  - return `{ videoPaths: string[], metadata: Step6VideoMetadata[] }`
+- Update `runVideoGen(...)` to call `collectVideoTargets(...)`, validate non-empty, and delegate to `runVideoTargets(...)`
+- Remove `resolveVideoEngine` and `assertNever`
 
 ---
 
-## Phase 4 — Update `define-video-command.ts`
+## Phase 3 — Widen Actual Cost/Timing For `step6`
 
-*Depends on Phases 1, 2, and 3.*
+No dependency on Phases 1-2.
 
-- **Remove** the `providerCount > 1` guard (and the `providerCount === 0` guard, which moves into `collectVideoTargets` via the empty-array throw in `runVideoGen`)
-- **Import** `collectVideoTargets`, `buildVideoArtifactMap`, `getVideoArtifactFileName` from `./video-targets`
-- **Add** local `serializeOneOrMany` (same 1-liner as `define-music-command.ts`):
-  ```ts
-  const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
-  ```
-- **Update preflight** `expectedOutput` to list per-target file names (mirror music command)
-- **Update** `runVideoGen` call to use the new `{ videoPaths, metadata }` return shape
-- **Update** `computeActualCosts({ step6: metadata })` — pass array
-- **Update** `computeActualProcessingTimes({ step6: metadata })` — pass array
-- **Update** `metadata.json` write: `{ video: serializeOneOrMany(metadata), cost, timing }`
-- **Update** `l.report.complete` to use `buildVideoArtifactMap(metadata)` and a per-entry `steps` array (mirror music command)
+`src/utils/pricing/compute-costs.ts`:
+
+- Widen `ComputeActualCostsInput.step6` to `Step6VideoMetadata | Step6VideoMetadata[] | undefined`
+- Replace scalar `if (input.step6)` logic with array iteration, matching the existing `step7` pattern
+
+`src/utils/pricing/compute-processing-time.ts`:
+
+- Widen `ComputeActualProcessingTimesInput.step6` to `Step6VideoMetadata | Step6VideoMetadata[] | undefined`
+- Replace scalar `if (input.step6)` logic with array iteration, matching the existing `step7` pattern
+
+---
+
+## Phase 4 — Widen Estimated Video Pricing Paths
+
+No dependency on Phases 1-3.
+
+`src/cli/commands/process-steps/step-6-video/video-utils/video-pricing.ts`:
+
+- Add `estimateVideoCosts(options): VideoCostEstimate[]` that returns one estimate per selected provider
+- Keep `estimateVideoCost(...)` for single-provider call sites (service runners), but implement/guard it so multi-provider usage does not leak into estimate aggregation paths
+
+`src/utils/pricing/aggregate-pricing.ts`:
+
+- Replace `buildVideoEstimate(...)` with `buildVideoEstimates(...)` returning `VideoStepEstimate[]`
+- Update both `command === 'video'` and `command === 'write'` estimate assembly to append all video estimates
+
+`src/utils/pricing/compute-costs.ts` (estimated side):
+
+- Replace scalar video estimate branch with iteration over `estimateVideoCosts(...)`
+- Push one estimated `video` step per provider
+
+This phase prevents preflight and estimated-cost crashes when both video providers are selected.
+
+---
+
+## Phase 5 — Widen Estimated Video Timing Paths
+
+Depends on Phase 4.
+
+`src/utils/pricing/compute-processing-time.ts`:
+
+- Add `videoTargets?: Array<{ service, model, durationSeconds?: number }>` to `ComputeEstimatedProcessingTimesInput`
+- Use the same fallback pattern as music:
+  - prefer `videoTargets` when provided
+  - otherwise fall back to legacy `videoService`/`videoModel`/`videoDurationSeconds`
+- Emit one `video` timing step per target
+
+---
+
+## Phase 6 — Update Step Entry Points
+
+Depends on Phases 1-5.
+
+### `src/cli/commands/process-steps/step-6-video/define-video-command.ts`
+
+- Remove only the mutual-exclusion guard (`providerCount > 1`)
+- Keep explicit missing-provider usage error behavior via `collectVideoTargets(...)` + `CLIUsageError` before preflight (matching the music command UX)
+- Preflight expected output should list per-target video filenames (`getVideoArtifactFileName(...)`) + `metadata.json`
+- Update `runVideoGen(...)` consumption to `{ videoPaths, metadata }`
+- Update actual cost/timing calls to pass `step6: metadata` array
+- Update estimated timing call to pass `videoTargets` derived from selected targets (not a single service/model)
+- Write metadata as `{ video: serializeOneOrMany(metadata), cost, timing }`
+- Update completion report to:
+  - artifacts from `buildVideoArtifactMap(metadata)`
+  - per-provider `steps` entries (provider/model, time, cost)
+
+### `src/cli/commands/process-steps/process-video.ts`
+
+- Import video target helpers (`collectVideoTargets`, `buildVideoArtifactMap`)
+- Update local `step6Metadata` handling to array semantics
+- Update actual cost/timing calls to pass array `step6`
+- Update estimated timing call to pass `videoTargets`
+- Serialize metadata `step6` with scalar-or-array behavior (`serializeOneOrMany`)
+- Expand report step summaries to one video row per successful provider
+- Use `buildVideoArtifactMap(step6Metadata)` for artifacts (single key for one success, provider-keyed map for multi)
 
 ---
 
 ## Relevant Files
 
-| File | Action | Reference |
+| File | Action | Why |
 |---|---|---|
-| `src/cli/commands/process-steps/step-6-video/video-targets.ts` | **CREATE** | `step-7-music/music-targets.ts` |
-| `src/cli/commands/process-steps/step-6-video/run-video-gen.ts` | **REWRITE** | `step-7-music/run-music-gen.ts` |
-| `src/cli/commands/process-steps/step-6-video/define-video-command.ts` | **UPDATE** | `step-7-music/define-music-command.ts` |
-| `src/utils/pricing/compute-costs.ts` | **UPDATE** (~line 102) | `step7` array pattern in same file |
-| `src/utils/pricing/compute-processing-time.ts` | **UPDATE** (~line 87) | `step7` array pattern in same file |
-| `src/types/process-types.ts` | **NO CHANGE** | — |
+| `src/cli/commands/process-steps/step-6-video/video-targets.ts` | CREATE | Provider collection + filename/artifact helpers |
+| `src/cli/commands/process-steps/step-6-video/run-video-gen.ts` | REWRITE | Multi-target execution and error isolation |
+| `src/cli/commands/process-steps/step-6-video/define-video-command.ts` | UPDATE | CLI flow, preflight output, metadata/report shape |
+| `src/cli/commands/process-steps/process-video.ts` | UPDATE | Full pipeline compatibility with new runVideoGen shape |
+| `src/cli/commands/process-steps/step-6-video/video-utils/video-pricing.ts` | UPDATE | Multi-provider estimate helper |
+| `src/utils/pricing/aggregate-pricing.ts` | UPDATE | Preflight estimate supports multiple video entries |
+| `src/utils/pricing/compute-costs.ts` | UPDATE | Actual + estimated video arrays |
+| `src/utils/pricing/compute-processing-time.ts` | UPDATE | Actual + estimated video arrays |
+| `src/types/process-types.ts` | NO CHANGE | `Step6VideoMetadata` remains single-entry type |
 
-`Step6VideoMetadata` itself is not changed — same design as `Step7MusicMetadata`: single-entry per item, array lives at the caller level.
+`Step6VideoMetadata` remains unchanged (single generated artifact entry); array semantics stay at caller level.
 
 ---
 
 ## Verification
 
-1. **`bun run typecheck`** — zero new type errors
-2. **Single-provider** — `autoshow video --gemini-video <model> "prompt"` produces `generated-video.mp4` and `metadata.json` with a scalar `video` key (backward-compatible output)
-3. **Multi-provider** — `autoshow video --gemini-video <model> --minimax-video <model> "prompt"` produces two renamed files (`generated-video-gemini-*.mp4`, `generated-video-minimax-*.mp4`) and `metadata.json` with an array `video` key
-4. **Partial failure** — one provider fails, the other succeeds; a warning is logged, no crash; the single-success result is written as scalar
-5. **Preflight / dry-run** — expected file list shows per-provider names when multiple targets are active
-6. **Costs + timing** — `metadata.json` `cost.actual.steps` and `timing.actual.steps` each contain one entry per provider
+1. `bun run typecheck` passes with no new errors.
+2. Single-provider `video` command keeps backward-compatible artifacts (`generated-video.mp4`) and scalar `metadata.video`.
+3. Multi-provider `video` command writes provider-suffixed artifacts and array `metadata.video`.
+4. Partial failure behavior: one provider failure still yields success output for surviving provider, with warning logged.
+5. `video --price` with both providers does not throw and shows two video estimate steps.
+6. `video` command completion report includes one step per successful provider and correct per-provider cost/time pairing.
+7. Full pipeline run (where step 6 executes) supports both providers and writes provider-aware step6 artifacts + metadata.
+8. `metadata.cost.actual.steps` and `metadata.timing.actual.steps` include one video entry per successful provider.
 
 ---
 
 ## Decisions
 
-- **No new flags** — existing `--gemini-video` and `--minimax-video` flags already accept model name strings; removing the mutual-exclusion guard is the only flag-level change required
-- **No parallelism** — all multi-target steps in the codebase use sequential `for...of` loops with per-target error isolation; video follows the same convention
-- **No batch-file video support** — out of scope; that is a separate concern
-- **`Step6VideoMetadata` type unchanged** — single-entry-per-item design is consistent with `Step7MusicMetadata`
+- No new flags: existing `--gemini-video` and `--minimax-video` are sufficient.
+- No parallelism: keep sequential per-target execution, consistent with other multi-target generation steps.
+- No batch-file video expansion: out of scope for this change.
+- Preserve `Step6VideoMetadata` shape: multi-target behavior is represented as one-or-many metadata entries at the command/pipeline layer.

@@ -19,7 +19,7 @@ Current coverage:
 - invalid model rejection via `defineVideoServiceTest`
 - `--price` coverage for Gemini Veo and MiniMax model IDs
 - explicit validation that `video` requires a provider flag
-- explicit validation that multiple providers are rejected
+- multi-provider acceptance (`--gemini-video` + `--minimax-video` together exits 0)
 
 ```bash
 bun t test/test-cases/e2e/step-6-video-gen-e2e/video-gen.test.ts

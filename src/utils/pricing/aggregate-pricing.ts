@@ -6,7 +6,7 @@ import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-ut
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
-import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
+import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-duration'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-stt/stt-utils/elevenlabs-stt-pricing'
 import {
@@ -237,24 +237,26 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
   })
 }
 
-const buildVideoEstimate = (opts: RuntimeOptions): VideoStepEstimate | null => {
+const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
   const hasVideo = opts.geminiVideoModel || opts.minimaxVideoModel
-  if (!hasVideo) return null
-  const estimate = estimateVideoCost({
+  if (!hasVideo) return []
+
+  return estimateVideoCosts({
     geminiVideoModel: opts.geminiVideoModel,
     minimaxVideoModel: opts.minimaxVideoModel,
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
     videoResolution: opts.videoResolution
+  }).map((estimate) => {
+    const estimation = getVideoEstimation(estimate.provider, estimate.model)
+    return {
+      step: 'video' as const,
+      provider: estimate.provider,
+      model: estimate.model,
+      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+      costMultiplier: estimation.costMultiplier,
+    }
   })
-  const estimation = getVideoEstimation(estimate.provider, estimate.model)
-  return {
-    step: 'video',
-    provider: estimate.provider,
-    model: estimate.model,
-    totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-    costMultiplier: estimation.costMultiplier,
-  }
 }
 
 const buildMusicEstimates = (opts: RuntimeOptions): MusicStepEstimate[] => {
@@ -342,8 +344,7 @@ export const buildAggregatedPriceEstimate = async (
       totalEstimatedCost += image.totalCost
     }
 
-    const video = buildVideoEstimate(opts)
-    if (video) {
+    for (const video of buildVideoEstimates(opts)) {
       steps.push(video)
       totalEstimatedCost += video.totalCost
     }
@@ -371,8 +372,7 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'video') {
-    const video = buildVideoEstimate(opts)
-    if (video) {
+    for (const video of buildVideoEstimates(opts)) {
       steps.push(video)
       totalEstimatedCost += video.totalCost
     }

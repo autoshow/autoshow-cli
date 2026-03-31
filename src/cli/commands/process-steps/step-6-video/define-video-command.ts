@@ -3,7 +3,7 @@ import { videoGenFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { runVideoGen } from './run-video-gen'
-import { validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
+import { collectVideoTargets, buildVideoArtifactMap, getVideoArtifactFileName } from './video-targets'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
@@ -12,6 +12,9 @@ import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-d
 import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
+import type { Step6VideoMetadata } from '~/types'
+
+const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
 
 export const videoCommand = defineCommand({
   name: 'video',
@@ -31,18 +34,6 @@ export const videoCommand = defineCommand({
   const geminiModelRaw = typeof flags['gemini-video'] === 'string' ? flags['gemini-video'] : undefined
   const minimaxModelRaw = typeof flags['minimax-video'] === 'string' ? flags['minimax-video'] : undefined
 
-  const providerCount = [geminiModelRaw, minimaxModelRaw].filter(Boolean).length
-  if (providerCount > 1) {
-    throw CLIUsageError('Cannot use more than one video provider at the same time (--gemini-video, --minimax-video)')
-  }
-  if (providerCount === 0) {
-    throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
-  }
-
-  if (geminiModelRaw) validateGeminiVideoModel(geminiModelRaw)
-  if (minimaxModelRaw) validateMinimaxVideoModel(minimaxModelRaw)
-
-
   const videoDurationRaw = typeof flags['video-duration'] === 'string' ? parseInt(flags['video-duration'], 10) : undefined
   const videoDuration = Number.isFinite(videoDurationRaw) ? videoDurationRaw : undefined
   const videoSize = typeof flags['video-size'] === 'string' ? flags['video-size'] : undefined
@@ -54,9 +45,26 @@ export const videoCommand = defineCommand({
   const videoConfig = await loadConfig(videoConfigPath)
   const videoMaxCents = videoConfig.pricing?.maxCents ?? (videoConfig.pricing?.maxUsd !== undefined ? videoConfig.pricing.maxUsd * 100 : undefined)
   const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
+
+  const videoTargets = collectVideoTargets({
+    geminiVideoModel: geminiModelRaw,
+    minimaxVideoModel: minimaxModelRaw,
+    videoDuration,
+    videoSize,
+    videoAspectRatio,
+    videoResolution
+  })
+  if (videoTargets.length === 0) {
+    throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
+  }
+
   const { shouldExit: videoShouldExit } = await runPreflight('video', prompt, videoOpts, videoMaxCents)
   if (videoShouldExit) {
-    l.report.expectedOutput('./output/<timestamp>_video-gen/', ['Video file', 'metadata.json'])
+    const singleTarget = videoTargets.length === 1
+    l.report.expectedOutput('./output/<timestamp>_video-gen/', [
+      ...videoTargets.map((t) => getVideoArtifactFileName(t, singleTarget)),
+      'metadata.json'
+    ])
     return
   }
 
@@ -65,7 +73,7 @@ export const videoCommand = defineCommand({
   await ensureDirectory(outputDir)
   l.info(`Output directory: ${outputDir}`)
 
-  const { videoPath, metadata } = await runWithLogContext({ step: 'step-6-video' }, async () =>
+  const { metadata } = await runWithLogContext({ step: 'step-6-video' }, async () =>
     await runVideoGen(prompt, outputDir, {
       geminiVideoModel: geminiModelRaw,
       minimaxVideoModel: minimaxModelRaw,
@@ -76,6 +84,11 @@ export const videoCommand = defineCommand({
     })
   )
 
+  const estimatedVideoTargets = videoTargets.map((target) => ({
+    service: target.service,
+    model: target.model,
+    ...(videoDuration !== undefined ? { durationSeconds: videoDuration } : {})
+  }))
   const estimated = computeEstimatedCosts({
     geminiVideoModel: geminiModelRaw,
     minimaxVideoModel: minimaxModelRaw,
@@ -87,15 +100,30 @@ export const videoCommand = defineCommand({
   const cost = { estimated, actual }
   const timing = {
     estimated: computeEstimatedProcessingTimes({
-      videoService: metadata.videoGenService,
-      videoModel: metadata.videoGenModel,
-      videoDurationSeconds: metadata.videoDuration,
+      videoTargets: estimatedVideoTargets,
     }),
     actual: computeActualProcessingTimes({ step6: metadata }),
   }
 
   const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ video: metadata, cost, timing }, null, 2))
+  await Bun.write(metadataPath, JSON.stringify({ video: serializeOneOrMany(metadata), cost, timing }, null, 2))
 
-  l.report.complete(outputDir, { video: videoPath.split('/').pop() as string, metadata: 'metadata.json' })
+  const videoSteps = actual.steps.filter((step) => step.step === 'video')
+  l.report.complete(
+    outputDir,
+    {
+      ...buildVideoArtifactMap(metadata),
+      metadata: 'metadata.json'
+    },
+    {
+      steps: metadata.map((entry: Step6VideoMetadata, index: number) => ({
+        label: 'Video',
+        providerModel: `${entry.videoGenService}/${entry.videoGenModel}`,
+        processingTime: entry.processingTime,
+        cost: videoSteps[index]?.cost ?? 0
+      })),
+      totalTimeMs: metadata.reduce((sum, entry) => sum + entry.processingTime, 0),
+      totalCost: actual.totalCost
+    }
+  )
 })

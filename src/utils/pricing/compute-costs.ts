@@ -31,7 +31,7 @@ import {
   getVideoModelMeta,
 } from '~/cli/commands/models/model-loader'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
-import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
+import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 
 export const parseDurationToSeconds = (duration: string): number => {
@@ -99,7 +99,7 @@ type ComputeActualCostsInput = {
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | Step5Metadata[] | undefined
-  step6?: Step6VideoMetadata | undefined
+  step6?: Step6VideoMetadata | Step6VideoMetadata[] | undefined
   step7?: Step7MusicMetadata | Step7MusicMetadata[] | undefined
   ttsCharacterCount?: number | undefined
 }
@@ -211,10 +211,14 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     })
   }
 
-  if (input.step6) {
-    const meta = getVideoModelMeta(input.step6.videoGenService, input.step6.videoGenModel)
+  const step6Array = input.step6
+    ? Array.isArray(input.step6) ? input.step6 : [input.step6]
+    : []
+
+  for (const s6 of step6Array) {
+    const meta = getVideoModelMeta(s6.videoGenService, s6.videoGenModel)
     let cost = 0
-    const videoDuration = input.step6.videoDuration ?? 0
+    const videoDuration = s6.videoDuration ?? 0
     if (meta) {
       if (meta.blockSizeSec && (meta.blockCost720pCents || meta.blockCost1080pCents)) {
         const blockCount = Math.max(1, Math.ceil(videoDuration / meta.blockSizeSec))
@@ -225,8 +229,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     }
     steps.push({
       step: 'video',
-      provider: input.step6.videoGenService,
-      model: input.step6.videoGenModel,
+      provider: s6.videoGenService,
+      model: s6.videoGenModel,
       cost,
       inputMetric: 'durationSeconds',
       inputValue: videoDuration
@@ -448,15 +452,14 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     })
   }
 
-  const hasVideo = input.geminiVideoModel || input.minimaxVideoModel
-  if (hasVideo) {
-    const estimate = estimateVideoCost({
-      geminiVideoModel: input.geminiVideoModel,
-      minimaxVideoModel: input.minimaxVideoModel,
-      videoDuration: input.videoDuration,
-      videoSize: input.videoSize,
-      videoResolution: input.videoResolution
-    })
+  const videoEstimates = estimateVideoCosts({
+    geminiVideoModel: input.geminiVideoModel,
+    minimaxVideoModel: input.minimaxVideoModel,
+    videoDuration: input.videoDuration,
+    videoSize: input.videoSize,
+    videoResolution: input.videoResolution
+  })
+  for (const estimate of videoEstimates) {
     const estimation = getVideoEstimation(estimate.provider, estimate.model)
     const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
     totalCost += cost

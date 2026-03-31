@@ -1,4 +1,4 @@
-import type { ProcessingOptions, Step1Metadata, VideoMetadata, Step3Metadata, Step4Metadata, Step5Metadata, Step7MusicMetadata, AggregatedPriceEstimate } from '~/types'
+import type { ProcessingOptions, Step1Metadata, VideoMetadata, Step3Metadata, Step4Metadata, Step5Metadata, Step6VideoMetadata, Step7MusicMetadata, AggregatedPriceEstimate } from '~/types'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
@@ -15,6 +15,7 @@ import { collectTtsTargets, sanitizeTtsModelName } from './step-4-tts/tts-target
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } from './step-5-image/image-targets'
 import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
+import { buildVideoArtifactMap } from './step-6-video/video-targets'
 import { runMusicGen } from './step-7-music/run-music-gen'
 import { buildMusicArtifactMap, collectMusicTargets } from './step-7-music/music-targets'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
@@ -79,7 +80,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
 
   let step4Metadata: Step4Metadata[] | null = null
   let step5Metadata: Step5Metadata[] | null = null
-  let step6Metadata = null
+  let step6Metadata: Step6VideoMetadata[] | null = null
   let step7Metadata: Step7MusicMetadata[] | null = null
   let ttsCharacterCount: number | undefined
   const ttsTargets = collectTtsTargets(processingOptions)
@@ -212,11 +213,13 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     ttsTargets: ttsEstimateTargets,
     ttsCharacterCount,
     ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
-    ...(step6Metadata
+    ...(step6Metadata && step6Metadata.length > 0
       ? {
-          videoService: step6Metadata.videoGenService,
-          videoModel: step6Metadata.videoGenModel,
-          videoDurationSeconds: step6Metadata.videoDuration,
+          videoTargets: step6Metadata.map((m) => ({
+            service: m.videoGenService,
+            model: m.videoGenModel,
+            ...(typeof m.videoDuration === 'number' ? { durationSeconds: m.videoDuration } : {})
+          }))
         }
       : {}),
     ...(attemptedMusicTargets.length > 0
@@ -248,7 +251,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
     ...(step4Metadata ? { step4: serializeOneOrMany(step4Metadata) } : {}),
     ...(step5Metadata ? { step5: serializeOneOrMany(step5Metadata) } : {}),
-    ...(step6Metadata ? { step6: step6Metadata } : {}),
+    ...(step6Metadata ? { step6: serializeOneOrMany(step6Metadata) } : {}),
     ...(step7Metadata ? { step7: serializeOneOrMany(step7Metadata) } : {}),
     cost,
     ...(timing ? { timing } : {}),
@@ -320,12 +323,15 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   }
 
   if (step6Metadata) {
-    stepSummaries.push({
-      label: 'Video',
-      providerModel: `${step6Metadata.videoGenService}/${step6Metadata.videoGenModel}`,
-      processingTime: step6Metadata.processingTime,
-      cost: actual.steps.find(s => s.step === 'video')?.cost ?? 0
-    })
+    const videoSteps = actual.steps.filter(s => s.step === 'video')
+    for (const [index, m] of step6Metadata.entries()) {
+      stepSummaries.push({
+        label: 'Video',
+        providerModel: `${m.videoGenService}/${m.videoGenModel}`,
+        processingTime: m.processingTime,
+        cost: videoSteps[index]?.cost ?? 0
+      })
+    }
   }
 
   if (step7Metadata) {
@@ -357,7 +363,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   if (step5Metadata) {
     Object.assign(artifactFiles, buildImageArtifactMap(step5Metadata))
   }
-  if (step6Metadata) artifactFiles['video'] = step6Metadata.videoFileName
+  if (step6Metadata) Object.assign(artifactFiles, buildVideoArtifactMap(step6Metadata))
   if (step7Metadata) Object.assign(artifactFiles, buildMusicArtifactMap(step7Metadata))
   artifactFiles['prompt'] = 'prompt.md'
   artifactFiles['metadata'] = 'metadata.json'

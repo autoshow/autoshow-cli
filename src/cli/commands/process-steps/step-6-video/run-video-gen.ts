@@ -1,63 +1,85 @@
-import type { ProcessingOptions, Step6VideoMetadata } from '~/types'
-import type { VideoProvider } from '~/types'
-import { type GeminiVideoModel, type MinimaxVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
-import { assertNever } from '~/utils/validate/assert-never'
-import { runGeminiVideoGen } from './video-services/gemini/run-gemini-video-gen'
-import { runMinimaxVideoGen } from './video-services/minimax/run-minimax-video-gen'
+import { mkdir, rename, rm } from 'node:fs/promises'
+import type { Step6VideoMetadata } from '~/types'
+import * as l from '~/logger'
+import {
+  type VideoGenOptions,
+  type VideoTarget,
+  collectVideoTargets,
+  getVideoArtifactFileName,
+  sanitizeVideoModelName,
+} from './video-targets'
 
-type VideoGenOptions = Pick<
-  ProcessingOptions,
-  'geminiVideoModel' | 'minimaxVideoModel' | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'
->
+const getTargetWorkspaceDir = (outputDir: string, target: VideoTarget): string =>
+  `${outputDir}/.video-tmp-${target.service}-${sanitizeVideoModelName(target.model)}`
 
-const resolveVideoEngine = (options: VideoGenOptions): VideoProvider => {
-  const hasGemini = typeof options.geminiVideoModel === 'string' && options.geminiVideoModel.length > 0
-  const hasMinimax = typeof options.minimaxVideoModel === 'string' && options.minimaxVideoModel.length > 0
+export const runVideoTargets = async (
+  targets: VideoTarget[],
+  prompt: string,
+  outputDir: string,
+): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
+  const successes: Array<{ videoPath: string, metadata: Step6VideoMetadata }> = []
+  const failedTargets: string[] = []
+  const singleTarget = targets.length === 1
 
-  const providerCount = [hasGemini, hasMinimax].filter(Boolean).length
-  if (providerCount > 1) {
-    throw new Error('Cannot use more than one video provider at the same time (--gemini-video, --minimax-video)')
+  for (const target of targets) {
+    const workspaceDir = singleTarget ? outputDir : getTargetWorkspaceDir(outputDir, target)
+
+    try {
+      if (!singleTarget) {
+        await mkdir(workspaceDir, { recursive: true })
+      }
+
+      const { videoPath, metadata } = await target.run(prompt, workspaceDir)
+
+      if (singleTarget) {
+        successes.push({ videoPath, metadata })
+      } else {
+        const finalFileName = getVideoArtifactFileName(target, singleTarget)
+        const finalPath = `${outputDir}/${finalFileName}`
+        await rename(videoPath, finalPath)
+        successes.push({
+          videoPath: finalPath,
+          metadata: {
+            ...metadata,
+            videoFileName: finalFileName,
+            videoFileSize: Bun.file(finalPath).size,
+          }
+        })
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      l.error(`Failed to run video target ${target.service}/${target.model}: ${message}`)
+      failedTargets.push(`${target.service}/${target.model}: ${message}`)
+    } finally {
+      if (!singleTarget) {
+        await rm(workspaceDir, { recursive: true, force: true })
+      }
+    }
   }
 
-  if (hasGemini) return 'gemini'
-  if (hasMinimax) return 'minimax'
-  throw new Error('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
+  if (successes.length === 0) {
+    const details = failedTargets.length > 0 ? failedTargets.join('; ') : 'No provider produced video'
+    throw new Error(`No video outputs were generated. ${details}`)
+  }
+
+  if (failedTargets.length > 0) {
+    l.warn(`Video run completed with partial failures: ${failedTargets.join('; ')}`)
+  }
+
+  return {
+    videoPaths: successes.map((entry) => entry.videoPath),
+    metadata: successes.map((entry) => entry.metadata),
+  }
 }
 
 export const runVideoGen = async (
   prompt: string,
   outputDir: string,
   options: VideoGenOptions
-): Promise<{ videoPath: string, metadata: Step6VideoMetadata }> => {
-
-  const engine = resolveVideoEngine(options)
-
-  if (engine === 'gemini') {
-    const modelRaw = options.geminiVideoModel
-    if (!modelRaw) {
-      throw new Error('Missing Gemini model')
-    }
-    const model: GeminiVideoModel = validateGeminiVideoModel(modelRaw)
-    return await runGeminiVideoGen(prompt, outputDir, {
-      model,
-      aspectRatio: options.videoAspectRatio,
-      resolution: options.videoResolution,
-      durationSeconds: options.videoDuration
-    })
+): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
+  const targets = collectVideoTargets(options)
+  if (targets.length === 0) {
+    throw new Error('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
   }
-
-  if (engine === 'minimax') {
-    const modelRaw = options.minimaxVideoModel
-    if (!modelRaw) {
-      throw new Error('Missing MiniMax model')
-    }
-    const model: MinimaxVideoModel = validateMinimaxVideoModel(modelRaw)
-    return await runMinimaxVideoGen(prompt, outputDir, {
-      model,
-      durationSeconds: options.videoDuration,
-      resolution: options.videoResolution
-    })
-  }
-
-  assertNever(engine)
+  return await runVideoTargets(targets, prompt, outputDir)
 }

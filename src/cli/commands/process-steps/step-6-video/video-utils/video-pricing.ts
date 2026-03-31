@@ -90,15 +90,36 @@ const estimateGeminiCost = (model: GeminiVideoModel, options: EstimateVideoCostO
   return estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution)
 }
 
-export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostEstimate => {
+export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCostEstimate[] => {
   const geminiModelRaw = options.geminiVideoModel
   const minimaxModelRaw = options.minimaxVideoModel
   const hasGemini = typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0
   const hasMinimax = typeof minimaxModelRaw === 'string' && minimaxModelRaw.length > 0
 
-  if ([hasGemini, hasMinimax].filter(Boolean).length > 1) {
-    throw new Error('Cannot estimate video cost when multiple providers are selected')
+  const estimates: VideoCostEstimate[] = []
+
+  if (hasGemini) {
+    const model = validateGeminiVideoModel(geminiModelRaw)
+    estimates.push(estimateGeminiCost(model, options))
   }
+
+  if (hasMinimax) {
+    const model = validateMinimaxVideoModel(minimaxModelRaw)
+    estimates.push(estimateMinimaxCost(model, options))
+  }
+
+  if (estimates.length === 0) {
+    estimates.push(estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution))
+  }
+
+  return estimates
+}
+
+export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostEstimate => {
+  const geminiModelRaw = options.geminiVideoModel
+  const minimaxModelRaw = options.minimaxVideoModel
+  const hasGemini = typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0
+  const hasMinimax = typeof minimaxModelRaw === 'string' && minimaxModelRaw.length > 0
 
   if (hasGemini) {
     const model = validateGeminiVideoModel(geminiModelRaw)

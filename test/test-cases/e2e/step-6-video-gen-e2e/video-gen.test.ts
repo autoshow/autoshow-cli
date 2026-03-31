@@ -14,9 +14,9 @@ test('requires a provider flag', async () => {
   expect(result.exitCode).not.toBe(0)
 })
 
-test('rejects multiple providers', async () => {
+test('accepts multiple providers', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3'],
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3', '--price'],
   )
-  expect(result.exitCode).not.toBe(0)
+  expect(result.exitCode).toBe(0)
 })
