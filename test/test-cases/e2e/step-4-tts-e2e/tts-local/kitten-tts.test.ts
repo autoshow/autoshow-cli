@@ -127,10 +127,10 @@ describe('kitten-tts', () => {
       ])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('"provider": "kitten"')
-      expect(result.stdout).toContain('"provider": "openai"')
-      expect(result.stdout).toContain('speech-kitten-kitten-tts-mini.wav')
-      expect(result.stdout).toContain('speech-openai-gpt-4o-mini-tts.wav')
+      expect(result.stderr).toContain('"provider": "kitten"')
+      expect(result.stderr).toContain('"provider": "openai"')
+      expect(result.stderr).toContain('speech-kitten-kitten-tts-mini.wav')
+      expect(result.stderr).toContain('speech-openai-gpt-4o-mini-tts.wav')
     })
 
     test('multi-provider run succeeds when one local and one API target are both available', async () => {

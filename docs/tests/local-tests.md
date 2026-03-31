@@ -7,6 +7,11 @@ For API-backed and networked coverage, see [Service Tests](service-tests.md).
 ## Quick Start
 
 ```bash
+# run all local tests
+bun t test/test-cases/local/ test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/step-2-extract-e2e/extract-local/ test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/ test/test-cases/e2e/step-3-write-e2e/write-local/ test/test-cases/e2e/step-4-tts-e2e/tts-local/
+```
+
+```bash
 # sample and local fixture coverage
 bun t test/test-cases/local/sample/sample-generate.test.ts
 
