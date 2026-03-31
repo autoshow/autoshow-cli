@@ -2,77 +2,41 @@ import { test, expect } from 'bun:test'
 import { runCommand, STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 
-test('CLI invalid whisper model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--whisper',
-    'whisper-large-v4'
-  ])
+const invalidCliCases: Array<{ label: string; args: string[] }> = [
+  { label: 'CLI invalid whisper model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'whisper-large-v4'] },
+  { label: 'CLI invalid ElevenLabs STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--elevenlabs-stt', 'scribe_v3'] },
+  { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
+  { label: 'CLI invalid OpenAI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai-stt', 'gpt-4o-transcribe'] },
+  { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
+  { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
+  { label: 'stt rejects invalid speaker-count with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
+  { label: 'stt rejects multiple STT engines with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--reverb', '--elevenlabs-stt', 'scribe_v2'] },
+  { label: 'stt rejects groq-stt with another STT engine', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v3', '--elevenlabs-stt', 'scribe_v2'] },
+  { label: 'stt rejects LLM provider flags with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4'] },
+  { label: 'stt rejects MiniMax LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
+  { label: 'stt rejects Grok LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-4.20-reasoning'] },
+  { label: 'CLI short GPT OSS model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--openai', '20b'] },
+  { label: 'CLI invalid llama model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--llama', 'ggml-org/unknown-llama-model'] },
+  { label: 'CLI invalid anthropic model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--anthropic', 'claude-3-opus'] },
+  { label: 'CLI invalid MiniMax model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M3'] },
+  { label: 'CLI invalid Grok model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-3'] },
+  { label: 'CLI invalid ElevenLabs TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--elevenlabs-tts', 'eleven_v4', '--elevenlabs-voice', 'voice_123'] },
+  { label: 'CLI invalid MiniMax TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--minimax-tts', 'speech-3.0-hd'] },
+  { label: 'CLI invalid Groq TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--groq-tts', 'canopylabs/orpheus-v2-english'] },
+  { label: 'CLI invalid OpenAI TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--openai-tts', 'tts-1'] },
+  { label: 'CLI invalid Gemini TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--gemini-tts', 'gemini-2.5-flash-tts'] },
+  { label: 'CLI invalid MiniMax image model exits with usage error code 2', args: ['image', 'a sunset', '--minimax-image', 'image-02'] },
+  { label: 'CLI invalid MiniMax video model exits with usage error code 2', args: ['video', 'a sunset', '--minimax-video', 'MiniMax-Hailuo-2.4'] },
+  { label: 'CLI invalid ElevenLabs music model exits with usage error code 2', args: ['music', 'an ambient piano song', '--elevenlabs-music', 'music_v2'] },
+  { label: 'CLI invalid MiniMax music model exits with usage error code 2', args: ['music', 'an ambient piano song', '--minimax-music', 'music-2.0'] },
+]
 
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid ElevenLabs STT model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--elevenlabs-stt',
-    'scribe_v3'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid Groq STT model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--groq-stt',
-    'whisper-large-v4'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid OpenAI STT model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--openai-stt',
-    'gpt-4o-transcribe'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid Mistral STT model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--mistral-stt',
-    'voxtral-mini-2507'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid Mistral OCR model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'ocr',
-    'input/1-document.pdf',
-    '--mistral-ocr',
-    'mistral-ocr-2505'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
+for (const { label, args } of invalidCliCases) {
+  test(label, async () => {
+    const result = await runCommand(['src/cli/create-cli.ts', ...args])
+    expect(result.exitCode).toBe(2)
+  })
+}
 
 test('stt help excludes LLM provider flags and includes prompt flag', async () => {
   const result = await runCommand([
@@ -121,198 +85,6 @@ test('setup help includes calibre step', async () => {
   expect(result.stdout).toContain('calibre')
 })
 
-test('stt rejects invalid speaker-count with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--speaker-count',
-    '0'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('stt rejects multiple STT engines with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--reverb',
-    '--elevenlabs-stt',
-    'scribe_v2'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('stt rejects groq-stt with another STT engine', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--groq-stt',
-    'whisper-large-v3',
-    '--elevenlabs-stt',
-    'scribe_v2'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('stt rejects LLM provider flags with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--openai',
-    'gpt-5.4'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('stt rejects MiniMax LLM flag with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--minimax',
-    'MiniMax-M2.5'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('stt rejects Grok LLM flag with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--grok',
-    'grok-4.20-reasoning'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI short GPT OSS model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--openai',
-    '20b'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid llama model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--llama',
-    'ggml-org/unknown-llama-model'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid anthropic model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--anthropic',
-    'claude-3-opus'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid MiniMax model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--minimax',
-    'MiniMax-M3'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid Grok model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--grok',
-    'grok-3'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid ElevenLabs TTS model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    'input/1-tts.md',
-    '--elevenlabs-tts',
-    'eleven_v4',
-    '--elevenlabs-voice',
-    'voice_123'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid MiniMax TTS model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    'input/1-tts.md',
-    '--minimax-tts',
-    'speech-3.0-hd'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid Groq TTS model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    'input/1-tts.md',
-    '--groq-tts',
-    'canopylabs/orpheus-v2-english'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid OpenAI TTS model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    'input/1-tts.md',
-    '--openai-tts',
-    'tts-1'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid Gemini TTS model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    'input/1-tts.md',
-    '--gemini-tts',
-    'gemini-2.5-flash-tts'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
 test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -324,54 +96,6 @@ test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () =
   ])
 
   expect(result.exitCode).toBe(0)
-})
-
-test('CLI invalid MiniMax image model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'image',
-    'a sunset',
-    '--minimax-image',
-    'image-02'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid MiniMax video model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'video',
-    'a sunset',
-    '--minimax-video',
-    'MiniMax-Hailuo-2.4'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid ElevenLabs music model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'music',
-    'an ambient piano song',
-    '--elevenlabs-music',
-    'music_v2'
-  ])
-
-  expect(result.exitCode).toBe(2)
-})
-
-test('CLI invalid MiniMax music model exits with usage error code 2', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'music',
-    'an ambient piano song',
-    '--minimax-music',
-    'music-2.0'
-  ])
-
-  expect(result.exitCode).toBe(2)
 })
 
 test('buildOptsFromFlags maps --openai-voice to openaiVoiceId', () => {

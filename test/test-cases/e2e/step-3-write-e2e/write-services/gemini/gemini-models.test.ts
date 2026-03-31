@@ -1,15 +1,11 @@
 import { defineLLMWriteTest } from "../../../../../test-utils/define-llm-write-test"
 
-const GEMINI_MODELS = [
-  "gemini-3.1-pro-preview",
-  "gemini-3.1-flash-lite-preview",
-] as const
-
-for (const model of GEMINI_MODELS) {
-  defineLLMWriteTest({
-    model,
-    cliFlag: "--gemini",
-    llmService: "gemini",
-    requiresEnvVar: { key: "GEMINI_API_KEY", description: "Gemini API" },
-  })
-}
+defineLLMWriteTest({
+  models: [
+    "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-lite-preview",
+  ],
+  cliFlag: "--gemini",
+  llmService: "gemini",
+  requiresEnvVar: { key: "GEMINI_API_KEY", description: "Gemini API" },
+})

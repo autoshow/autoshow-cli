@@ -12,6 +12,9 @@ export const normalizeRepoPath = (path: string | null | undefined): string | nul
 
 export const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
+export const getFiniteNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+
 export const parseCommandEstimatedTotal = (text: string): number | null => {
   const clean = stripAnsi(text)
   const re = /(Suite total estimated cost|Total estimated cost):\s*(?:\$([0-9]+(?:\.[0-9]+)?)|([0-9]+(?:\.[0-9]+)?)¢)|"totalEstimatedCost":\s*"([0-9]+(?:\.[0-9]+)?)¢"/g

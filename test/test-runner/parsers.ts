@@ -4,7 +4,7 @@ import type {
   ParsedJunitCase,
   TestStatus
 } from '../../src/types/tests-dir-types'
-import { decodeXml, normalizeRepoPath, parseXmlAttributes } from './utils'
+import { decodeXml, normalizeRepoPath, parseXmlAttributes, getFiniteNumber } from './utils'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null
@@ -41,27 +41,15 @@ export const readMetrics = async (path: string): Promise<ParsedCommandMetric[]> 
       }
 
       const callerFile = normalizeRepoPath(typeof parsedRaw['callerFile'] === 'string' ? parsedRaw['callerFile'] : null)
-      const callerLine = typeof parsedRaw['callerLine'] === 'number' && Number.isFinite(parsedRaw['callerLine'])
-        ? parsedRaw['callerLine']
-        : null
-      const callerColumn = typeof parsedRaw['callerColumn'] === 'number' && Number.isFinite(parsedRaw['callerColumn'])
-        ? parsedRaw['callerColumn']
-        : null
+      const callerLine = getFiniteNumber(parsedRaw['callerLine'])
+      const callerColumn = getFiniteNumber(parsedRaw['callerColumn'])
       const outputDir = typeof parsedRaw['outputDir'] === 'string' && parsedRaw['outputDir'].length > 0 ? parsedRaw['outputDir'] : null
       const at = typeof parsedRaw['at'] === 'string' ? parsedRaw['at'] : null
       const testName = typeof parsedRaw['testName'] === 'string' ? parsedRaw['testName'] : null
-      const estimatedCostCents = typeof parsedRaw['estimatedCostCents'] === 'number' && Number.isFinite(parsedRaw['estimatedCostCents'])
-        ? parsedRaw['estimatedCostCents']
-        : null
-      const actualCostCents = typeof parsedRaw['actualCostCents'] === 'number' && Number.isFinite(parsedRaw['actualCostCents'])
-        ? parsedRaw['actualCostCents']
-        : null
-      const estimatedProcessingTimeMs = typeof parsedRaw['estimatedProcessingTimeMs'] === 'number' && Number.isFinite(parsedRaw['estimatedProcessingTimeMs'])
-        ? parsedRaw['estimatedProcessingTimeMs']
-        : null
-      const actualProcessingTimeMs = typeof parsedRaw['actualProcessingTimeMs'] === 'number' && Number.isFinite(parsedRaw['actualProcessingTimeMs'])
-        ? parsedRaw['actualProcessingTimeMs']
-        : null
+      const estimatedCostCents = getFiniteNumber(parsedRaw['estimatedCostCents'])
+      const actualCostCents = getFiniteNumber(parsedRaw['actualCostCents'])
+      const estimatedProcessingTimeMs = getFiniteNumber(parsedRaw['estimatedProcessingTimeMs'])
+      const actualProcessingTimeMs = getFiniteNumber(parsedRaw['actualProcessingTimeMs'])
 
       out.push({
         source,

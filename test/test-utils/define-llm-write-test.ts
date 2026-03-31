@@ -22,12 +22,12 @@ const isGeminiTransientUnavailable = (output: string): boolean => {
 }
 
 export const defineLLMWriteTest = ({
-  model,
+  models,
   cliFlag,
   llmService,
   requiresEnvVar
 }: {
-  model: string
+  models: readonly string[]
   cliFlag: string
   llmService: string
   requiresEnvVar?: { key: string, description: string }
@@ -40,7 +40,8 @@ export const defineLLMWriteTest = ({
     await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   })
 
-  const budgetKey = `write-${llmService}-${model}`
+  for (const model of models) {
+    const budgetKey = `write-${llmService}-${model}`
   budgetedTest(budgetKey, `${model} model generates summary`, async () => {
     if (requiresEnvVar && !await hasConfiguredEnvVar(requiresEnvVar.key)) {
       console.log(`Skipping: ${requiresEnvVar.key} is required for ${requiresEnvVar.description}`)
@@ -93,4 +94,5 @@ export const defineLLMWriteTest = ({
       expect(metadata.step3?.llmService).toBe(llmService)
     }
   })
+  }
 }
