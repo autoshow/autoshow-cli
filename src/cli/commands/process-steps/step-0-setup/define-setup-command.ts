@@ -11,7 +11,14 @@ const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whi
 export const setupCommand = defineCommand({
   name: 'setup',
   description: 'Install local dependencies and required tools',
-  flags: setupFlags
+  flags: setupFlags,
+  help: {
+    examples: [
+      ['bun as setup', 'Install all dependencies'],
+      ['bun as setup --doctor', 'Check prerequisites without installing'],
+      ['bun as setup --step whisper-binary --force-redownload', 'Reinstall whisper binary']
+    ]
+  }
 }, async (ctx) => {
   if (ctx.flags.doctor) {
     await runDoctor()

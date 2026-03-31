@@ -80,7 +80,7 @@ export const createHumanSink = (): LogSink => {
         console.error(message, ...filteredArgs)
         return
       default:
-        console.log(message, ...filteredArgs)
+        console.error(message, ...filteredArgs)
     }
   }
 }

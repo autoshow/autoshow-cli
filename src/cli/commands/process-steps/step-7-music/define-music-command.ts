@@ -20,7 +20,13 @@ export const musicCommand = defineCommand({
   name: 'music',
   description: 'Generate music from a text prompt',
   parameters: [{ key: '<prompt>', description: 'Text prompt for music generation' }],
-  flags: musicGenFlags
+  flags: musicGenFlags,
+  help: {
+    examples: [
+      ['bun as music output/text.md --elevenlabs-music', 'Generate music from summary'],
+      ['bun as music output/text.md --minimax-music --music-duration 30', 'Generate 30s music with MiniMax']
+    ]
+  }
 }, async (ctx) => {
   const prompt = ctx.parameters.prompt
   const flags = ctx.flags

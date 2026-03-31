@@ -8,7 +8,14 @@ export const transcribeCommand = defineCommand({
   name: 'stt',
   description: 'Download audio and run speech-to-text only',
   parameters: inputParameter,
-  flags: transcribeFlags
+  flags: transcribeFlags,
+  help: {
+    examples: [
+      ['bun as stt https://youtube.com/watch?v=abc', 'Transcribe with default whisper tiny model'],
+      ['bun as stt file.mp3 --groq-stt', 'Transcribe with Groq Whisper API'],
+      ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with speaker diarization']
+    ]
+  }
 }, async (ctx) => {
   await handleProcessTarget('stt', ctx.parameters.input, ctx.flags, ctx.rawParsed.doubleDash)
 })

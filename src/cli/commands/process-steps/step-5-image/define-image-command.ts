@@ -20,7 +20,13 @@ export const imageCommand = defineCommand({
   name: 'image',
   description: 'Generate an image from a text prompt',
   parameters: [{ key: '<prompt>', description: 'Text prompt for image generation' }],
-  flags: imageGenFlags
+  flags: imageGenFlags,
+  help: {
+    examples: [
+      ['bun as image output/text.md --gemini-image', 'Generate image from summary with Gemini'],
+      ['bun as image output/text.md --openai-image --image-size 1024x1024', 'Generate with OpenAI']
+    ]
+  }
 }, async (ctx) => {
   const prompt = ctx.parameters.prompt
   const flags = ctx.flags

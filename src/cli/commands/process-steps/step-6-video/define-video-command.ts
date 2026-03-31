@@ -17,7 +17,13 @@ export const videoCommand = defineCommand({
   name: 'video',
   description: 'Generate a video from a text prompt',
   parameters: [{ key: '<prompt>', description: 'Text prompt for video generation' }],
-  flags: videoGenFlags
+  flags: videoGenFlags,
+  help: {
+    examples: [
+      ['bun as video output/text.md --gemini-video', 'Generate video from summary with Gemini Veo'],
+      ['bun as video output/text.md --minimax-video', 'Generate video with MiniMax Hailuo']
+    ]
+  }
 }, async (ctx) => {
   const prompt = ctx.parameters.prompt
   const flags = ctx.flags

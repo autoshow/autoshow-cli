@@ -8,7 +8,13 @@ export const metadataCommand = defineCommand({
   name: 'metadata',
   description: 'Collect and display metadata for media or document without downloading',
   parameters: inputParameter,
-  flags: metadataFlags
+  flags: metadataFlags,
+  help: {
+    examples: [
+      ['bun as metadata https://youtube.com/watch?v=abc', 'Get metadata for a YouTube video'],
+      ['bun as metadata ./input/2-urls.md --batch-all', 'Get metadata for all URLs in a file']
+    ]
+  }
 }, async (ctx) => {
   await handleProcessTarget('metadata', ctx.parameters.input, ctx.flags, ctx.rawParsed.doubleDash)
 })

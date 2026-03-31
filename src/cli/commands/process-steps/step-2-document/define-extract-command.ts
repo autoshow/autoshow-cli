@@ -10,7 +10,14 @@ export const extractCommand = defineCommand({
   name: 'ocr',
   description: 'Extract text from PDF, EPUB, and image files',
   parameters: inputParameter,
-  flags: extractCommandFlags
+  flags: extractCommandFlags,
+  help: {
+    examples: [
+      ['bun as ocr document.pdf', 'Extract text from PDF with Tesseract'],
+      ['bun as ocr document.pdf --mistral-ocr', 'Extract with Mistral OCR API'],
+      ['bun as ocr book.epub --lang eng+fra', 'Extract from EPUB with multilingual OCR']
+    ]
+  }
 }, async (ctx) => {
   const engineCount = [ctx.flags.ocrmypdf, ctx.flags['paddle-ocr'], ctx.flags['mistral-ocr']].filter(Boolean).length
   if (engineCount > 1) {

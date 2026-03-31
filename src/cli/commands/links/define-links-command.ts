@@ -181,5 +181,10 @@ const runLinks = async (): Promise<void> => {
 
 export const linksCommand = defineCommand({
   name: 'links',
-  description: 'Fetch provider documentation markdown and write a combined file'
+  description: 'Fetch provider documentation markdown and write a combined file',
+  help: {
+    examples: [
+      ['bun as links', 'Fetch all provider documentation']
+    ]
+  }
 }, runLinks)

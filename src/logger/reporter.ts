@@ -1,6 +1,7 @@
 import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/aggregate-pricing'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration } from '~/logger/formatters'
+import { emitResult } from '~/logger/result-emitter'
 import type { Logger } from '~/logger/types'
 
 export type StepTimingCost = {
@@ -100,6 +101,44 @@ const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCo
   }
 }
 
+const rawStepEstimate = (estimate: StepEstimate): Record<string, string | number> => {
+  const base = { step: estimate.step, provider: estimate.provider, model: estimate.model }
+
+  switch (estimate.step) {
+    case 'stt':
+      return { ...base, provider: formatSttProvider(estimate.provider), totalCostCents: estimate.totalCost }
+    case 'llm': {
+      const entry: Record<string, string | number> = {
+        ...base,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
+        totalCostCents: estimate.totalCost
+      }
+      if (typeof estimate.estimatedInputTokens === 'number') entry['estInputTokens'] = estimate.estimatedInputTokens
+      if (typeof estimate.estimatedOutputTokens === 'number') entry['estOutputTokens'] = estimate.estimatedOutputTokens
+      return entry
+    }
+    case 'extract': {
+      const entry: Record<string, string | number> = { ...base, totalCostCents: estimate.totalCost }
+      if (typeof estimate.pageCount === 'number') entry['pages'] = estimate.pageCount
+      return entry
+    }
+    case 'tts': {
+      const entry: Record<string, string | number> = { ...base, totalCostCents: estimate.totalCost }
+      if (typeof estimate.characterCount === 'number') entry['characters'] = estimate.characterCount
+      return entry
+    }
+    case 'image':
+      return { ...base, totalCostCents: estimate.totalCost }
+    case 'video':
+      return { ...base, totalCostCents: estimate.totalCost }
+    case 'music':
+      return { ...base, totalCostCents: estimate.totalCost }
+    default:
+      assertNever(estimate)
+  }
+}
+
 export const createReporter = (logger: Logger): Reporter => {
   return {
     expectedOutput: (outputDir, files) => {
@@ -116,6 +155,15 @@ export const createReporter = (logger: Logger): Reporter => {
         ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
       }
       logger.write('info', `Cost Estimate:\n${JSON.stringify(obj, null, 2)}`, { category: 'pricing' })
+
+      emitResult({
+        dryRun: true,
+        estimate: {
+          steps: estimate.steps.map(rawStepEstimate),
+          totalEstimatedCostCents: estimate.totalEstimatedCost,
+          ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
+        }
+      })
     },
     complete: (outputDir, files, options) => {
       logger.write('info', `Output directory: ${outputDir}`, { category: 'artifact' })
@@ -134,6 +182,30 @@ export const createReporter = (logger: Logger): Reporter => {
         result['total'] = total
       }
       logger.write('info', JSON.stringify(result, null, 2), { category: 'artifact' })
+
+      const resultData: Record<string, unknown> = {
+        dryRun: false,
+        outputDir,
+        files: Object.fromEntries(
+          Object.entries(files).map(([key, name]) => [key, `${outputDir}/${name}`])
+        )
+      }
+      if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
+        resultData['timing'] = {
+          totalMs: options.totalTimeMs,
+          steps: options.steps.map(s => ({
+            label: s.label,
+            ...(s.providerModel ? { providerModel: s.providerModel } : {}),
+            processingTimeMs: s.processingTime,
+            costCents: s.cost
+          })),
+          totalCostCents: options.totalCost
+        }
+      }
+      if (options?.metrics !== undefined) {
+        resultData['metrics'] = options.metrics
+      }
+      emitResult(resultData)
     }
   }
 }

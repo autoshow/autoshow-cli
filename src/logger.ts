@@ -3,6 +3,7 @@ import { runWithLogContext } from '~/logger/context-store'
 import { createReporter, type Reporter, type StepTimingCost } from '~/logger/reporter'
 import { createHumanSink } from '~/logger/sinks/human-sink'
 import { createJsonSink } from '~/logger/sinks/json-sink'
+import { enableJsonResult, emitResult, isJsonResultActive } from '~/logger/result-emitter'
 import type { LogContext, Logger, LogLevel, LogSink } from '~/logger/types'
 import { LOG_LEVELS } from '~/logger/types'
 
@@ -11,6 +12,7 @@ export { createHumanSink } from '~/logger/sinks/human-sink'
 export { createJsonSink } from '~/logger/sinks/json-sink'
 export { runWithLogContext }
 export { createReporter }
+export { emitResult, isJsonResultActive }
 export { CLIUsageError, isLoggerUsageError, usageError } from '~/logger/usage-error'
 export type { Logger, LogEvent, LogLevel, LogCategory, LogContext, LogMetadata, LogSink, LogSinkEvent, LogWriteOptions } from '~/logger/types'
 export type { Reporter, StepTimingCost }
@@ -110,20 +112,23 @@ export const reconfigureLogger = (opts: ReconfigureOptions): void => {
 
   if (opts.json) {
     formatOverride = 'json'
+    enableJsonResult()
   }
 
   if (minLevel === undefined && formatOverride === undefined) {
     return
   }
 
-  activeLogger = attachReport(createLogger({
-    context: baseContext,
-    minLevel: minLevel ?? parseMinLogLevel(process.env['AUTOSHOW_LOG_LEVEL']),
-    sinks: createConfiguredSinks(formatOverride)
-  }))
+  const newSinks = createConfiguredSinks(formatOverride)
+  activeLogger.config.sinks.length = 0
+  activeLogger.config.sinks.push(...newSinks)
+  if (minLevel !== undefined) {
+    activeLogger.config.minLevel = minLevel
+  }
 }
 
 export const l: GlobalLogger = {
+  get config() { return activeLogger.config },
   get report() { return activeLogger.report },
   write: (...args) => activeLogger.write(...args),
   debug: (...args) => activeLogger.debug(...args),

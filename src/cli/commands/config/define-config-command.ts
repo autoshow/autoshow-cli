@@ -8,7 +8,14 @@ import * as l from '~/logger'
 export const configCommand = defineCommand({
   name: 'config',
   description: 'View or set default CLI options saved to config/autoshow.json',
-  flags: configCommandFlags
+  flags: configCommandFlags,
+  help: {
+    examples: [
+      ['bun as config --show', 'Print current config'],
+      ['bun as config --openai gpt-5.4 --whisper base', 'Set default LLM and STT model'],
+      ['bun as config --reset', 'Clear all saved config']
+    ]
+  }
 }, async (ctx) => {
   const flags = ctx.flags
   const configPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined

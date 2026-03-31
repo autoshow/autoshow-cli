@@ -33,7 +33,13 @@ export const ttsCommand = defineCommand({
   name: 'tts',
   description: 'Generate speech audio from a text file (.md or .txt)',
   parameters: [{ key: '<input>', description: 'Path to .md or .txt file' }],
-  flags: ttsFlags
+  flags: ttsFlags,
+  help: {
+    examples: [
+      ['bun as tts output/text.md --kitten-tts', 'Generate speech with local Kitten TTS'],
+      ['bun as tts output/text.md --elevenlabs-tts', 'Generate speech with ElevenLabs']
+    ]
+  }
 }, async (ctx) => {
   const inputPath = ctx.parameters.input
   const flags = ctx.flags

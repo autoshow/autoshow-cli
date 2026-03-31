@@ -8,7 +8,13 @@ export const downloadCommand = defineCommand({
   name: 'download',
   description: 'Download media or document and collect metadata only',
   parameters: inputParameter,
-  flags: downloadFlags
+  flags: downloadFlags,
+  help: {
+    examples: [
+      ['bun as download https://youtube.com/watch?v=abc', 'Download audio from a URL'],
+      ['bun as download ./input/2-urls.md --batch-limit 3', 'Download first 3 items from a URL list']
+    ]
+  }
 }, async (ctx) => {
   await handleProcessTarget('download', ctx.parameters.input, ctx.flags, ctx.rawParsed.doubleDash)
 })

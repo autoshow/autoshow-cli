@@ -14,7 +14,13 @@ import type { ToolName } from './tools'
 export const sampleCommand = defineCommand({
   name: 'sample',
   description: 'Generate and validate deterministic fixture files for all supported formats',
-  flags: sampleFlags
+  flags: sampleFlags,
+  help: {
+    examples: [
+      ['bun as sample', 'Generate all fixture files'],
+      ['bun as sample --verify-only', 'Validate existing fixtures without regenerating']
+    ]
+  }
 }, async (ctx) => {
   const outDir = resolve(ctx.flags.out as string)
   const refresh = ctx.flags.refresh as boolean

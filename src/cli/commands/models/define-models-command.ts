@@ -25,4 +25,10 @@ export const modelsCommand = defineCommand({
   name: 'models',
   description: 'Download a model without running inference (llama.cpp repo ID or whisper model ID)',
   parameters: [{ key: '<model>', description: 'llama repo (e.g. ggml-org/gemma-3-270m-it-GGUF) or whisper model (e.g. tiny)' }],
+  help: {
+    examples: [
+      ['bun as models ggml-org/gemma-3-270m-it-GGUF', 'Download a llama.cpp model'],
+      ['bun as models base', 'Download whisper base model']
+    ]
+  }
 }, runLlamaModelDownload)

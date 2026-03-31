@@ -13,7 +13,8 @@ import {
   type LogLevel,
   type LogSink,
   type LogSinkEvent,
-  type LogWriteOptions
+  type LogWriteOptions,
+  type MutableLoggerConfig
 } from '~/logger/types'
 
 const ansiReset = '\x1b[0m'
@@ -99,12 +100,14 @@ const writeSinkFailure = (error: unknown): void => {
 export const createLogger = (options: CreateLoggerOptions = {}): Logger => {
   const runId = options.runId ?? createRunId()
   const baseContext = options.context ?? {}
-  const minLevel = options.minLevel ?? 'info'
-  const sinks = options.sinks ? [...options.sinks] : []
+  const config: MutableLoggerConfig = {
+    sinks: options.sinks ? [...options.sinks] : [],
+    minLevel: options.minLevel ?? 'info'
+  }
   let sinkFailureReported = false
 
   const emit = (event: LogSinkEvent): void => {
-    for (const sink of sinks) {
+    for (const sink of config.sinks) {
       try {
         sink(event)
       } catch (error) {
@@ -117,13 +120,14 @@ export const createLogger = (options: CreateLoggerOptions = {}): Logger => {
   }
 
   const write = (level: LogLevel, message: string, writeOptions?: LogWriteOptions): void => {
-    if (!shouldEmitLevel(level, minLevel)) {
+    if (!shouldEmitLevel(level, config.minLevel)) {
       return
     }
     emit(makeSinkEvent(level, message, runId, baseContext, writeOptions))
   }
 
   const logger: Logger = {
+    config,
     write,
     debug: (message, ...args) => {
       write('debug', message, { args })
@@ -157,8 +161,8 @@ export const createLogger = (options: CreateLoggerOptions = {}): Logger => {
       return createLogger({
         runId,
         context: { ...baseContext, ...context },
-        sinks,
-        minLevel
+        sinks: config.sinks,
+        minLevel: config.minLevel
       })
     }
   }

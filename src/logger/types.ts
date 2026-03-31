@@ -53,6 +53,11 @@ export type LogSinkEvent = LogEvent & {
 
 export type LogSink = (event: LogSinkEvent) => void
 
+export type MutableLoggerConfig = {
+  sinks: LogSink[]
+  minLevel: LogLevel
+}
+
 export type CreateLoggerOptions = {
   runId?: string
   context?: LogContext
@@ -70,4 +75,5 @@ export interface Logger {
   warn: BaseLogFn
   error: (message: string, errorObj?: unknown) => void
   withContext: (context: LogContext) => Logger
+  config: MutableLoggerConfig
 }
