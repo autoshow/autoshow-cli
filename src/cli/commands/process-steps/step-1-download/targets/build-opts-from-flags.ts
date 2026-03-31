@@ -152,6 +152,11 @@ export const buildOptsFromFlags = (
   const ddArgs = parseDoubleDashArgs(doubleDashArgs)
 
   const mergedFlags: Record<string, unknown> = { ...ddArgs, ...flags }
+  const readValidated = <T>(key: string, validator: (v: string) => T): T | undefined => {
+    const v = readOptionalStringFlag(mergedFlags, key)
+    return v === undefined ? undefined : validator(v)
+  }
+
   const jsonOutput = readBooleanFlag(mergedFlags, 'json-output')
   const mdOutput = readBooleanFlag(mergedFlags, 'md-output')
 
@@ -163,44 +168,19 @@ export const buildOptsFromFlags = (
   const normalizedOut: OutputFormat = outputFormat === 'text' || outputFormat === 'tsv' || outputFormat === 'hocr' ? outputFormat : 'json'
 
   const whisperModel = validateWhisperModel(readStringFlag(mergedFlags, 'whisper', 'tiny'))
-  const groqSttModel = (() => {
-    const v = readOptionalStringFlag(mergedFlags, 'groq-stt')
-    return v === undefined ? undefined : validateGroqSttModel(v)
-  })()
-  const elevenlabsSttModel = (() => {
-    const v = readOptionalStringFlag(mergedFlags, 'elevenlabs-stt')
-    return v === undefined ? undefined : validateElevenlabsSttModel(v)
-  })()
-  const openaiSttModel = (() => {
-    const v = readOptionalStringFlag(mergedFlags, 'openai-stt')
-    return v === undefined ? undefined : validateOpenAISttModel(v)
-  })()
-  const mistralSttModel = (() => {
-    const v = readOptionalStringFlag(mergedFlags, 'mistral-stt')
-    return v === undefined ? undefined : validateMistralSttModel(v)
-  })()
-  const assemblyaiSttModel = (() => {
-    const v = readOptionalStringFlag(mergedFlags, 'assemblyai-stt')
-    return v === undefined ? undefined : validateAssemblyaiSttModel(v)
-  })()
-  const mistralOcrModel = (() => {
-    const v = readOptionalStringFlag(mergedFlags, 'mistral-ocr')
-    return v === undefined ? undefined : validateMistralOcrModel(v)
-  })()
-  const llamaModelFlag = readOptionalStringFlag(mergedFlags, 'llama')
-  const llamaModel = llamaModelFlag === undefined ? undefined : validateLlamaModel(llamaModelFlag)
-  const openaiModelFlag = readOptionalStringFlag(mergedFlags, 'openai')
-  const openaiModel = openaiModelFlag === undefined ? undefined : validateOpenAIModel(openaiModelFlag)
-  const groqModelFlag = readOptionalStringFlag(mergedFlags, 'groq')
-  const groqModel = groqModelFlag === undefined ? undefined : validateGroqModel(groqModelFlag)
-  const geminiModelFlag = readOptionalStringFlag(mergedFlags, 'gemini')
-  const geminiModel = geminiModelFlag === undefined ? undefined : validateGeminiModel(geminiModelFlag)
-  const anthropicModelFlag = readOptionalStringFlag(mergedFlags, 'anthropic')
-  const anthropicModel = anthropicModelFlag === undefined ? undefined : validateAnthropicModel(anthropicModelFlag)
-  const minimaxModelFlag = readOptionalStringFlag(mergedFlags, 'minimax')
-  const minimaxModel = minimaxModelFlag === undefined ? undefined : validateMinimaxModel(minimaxModelFlag)
-  const grokModelFlag = readOptionalStringFlag(mergedFlags, 'grok')
-  const grokModel = grokModelFlag === undefined ? undefined : validateGrokModel(grokModelFlag)
+  const groqSttModel = readValidated('groq-stt', validateGroqSttModel)
+  const elevenlabsSttModel = readValidated('elevenlabs-stt', validateElevenlabsSttModel)
+  const openaiSttModel = readValidated('openai-stt', validateOpenAISttModel)
+  const mistralSttModel = readValidated('mistral-stt', validateMistralSttModel)
+  const assemblyaiSttModel = readValidated('assemblyai-stt', validateAssemblyaiSttModel)
+  const mistralOcrModel = readValidated('mistral-ocr', validateMistralOcrModel)
+  const llamaModel = readValidated('llama', validateLlamaModel)
+  const openaiModel = readValidated('openai', validateOpenAIModel)
+  const groqModel = readValidated('groq', validateGroqModel)
+  const geminiModel = readValidated('gemini', validateGeminiModel)
+  const anthropicModel = readValidated('anthropic', validateAnthropicModel)
+  const minimaxModel = readValidated('minimax', validateMinimaxModel)
+  const grokModel = readValidated('grok', validateGrokModel)
   const kittenTtsModelFlag = readOptionalStringFlag(mergedFlags, 'kitten-tts')
   const elevenlabsTtsModelFlag = readOptionalStringFlag(mergedFlags, 'elevenlabs-tts')
   const minimaxTtsModelFlag = readOptionalStringFlag(mergedFlags, 'minimax-tts')
@@ -282,18 +262,10 @@ export const buildOptsFromFlags = (
       }
       return raw
     })(),
-    kittenTtsModel: (() => {
-      return kittenTtsModelValue === undefined ? undefined : validateKittenTtsModel(kittenTtsModelValue)
-    })(),
-    groqTtsModel: (() => {
-      return groqTtsModelFlag === undefined ? undefined : validateGroqTtsModel(groqTtsModelFlag)
-    })(),
-    openaiTtsModel: (() => {
-      return openaiTtsModelFlag === undefined ? undefined : validateOpenAITtsModel(openaiTtsModelFlag)
-    })(),
-    geminiTtsModel: (() => {
-      return geminiTtsModelFlag === undefined ? undefined : validateGeminiTtsModel(geminiTtsModelFlag)
-    })(),
+    kittenTtsModel: kittenTtsModelValue === undefined ? undefined : validateKittenTtsModel(kittenTtsModelValue),
+    groqTtsModel: groqTtsModelFlag === undefined ? undefined : validateGroqTtsModel(groqTtsModelFlag),
+    openaiTtsModel: openaiTtsModelFlag === undefined ? undefined : validateOpenAITtsModel(openaiTtsModelFlag),
+    geminiTtsModel: geminiTtsModelFlag === undefined ? undefined : validateGeminiTtsModel(geminiTtsModelFlag),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
@@ -302,26 +274,13 @@ export const buildOptsFromFlags = (
     })(),
     openaiVoiceId: readOptionalStringFlag(mergedFlags, 'openai-voice'),
     geminiVoiceId: readOptionalStringFlag(mergedFlags, 'gemini-voice'),
-    elevenlabsTtsModel: (() => {
-      return elevenlabsTtsModelFlag === undefined ? undefined : validateElevenlabsTtsModel(elevenlabsTtsModelFlag)
-    })(),
-    minimaxTtsModel: (() => {
-      return minimaxTtsModelFlag === undefined ? undefined : validateMinimaxTtsModel(minimaxTtsModelFlag)
-    })(),
+    elevenlabsTtsModel: elevenlabsTtsModelFlag === undefined ? undefined : validateElevenlabsTtsModel(elevenlabsTtsModelFlag),
+    minimaxTtsModel: minimaxTtsModelFlag === undefined ? undefined : validateMinimaxTtsModel(minimaxTtsModelFlag),
     minimaxTtsVoice: readOptionalStringFlag(mergedFlags, 'minimax-tts-voice'),
     elevenlabsVoiceId: readOptionalStringFlag(mergedFlags, 'elevenlabs-voice'),
-    geminiImageModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'gemini-image')
-      return v === undefined ? undefined : validateGeminiImageModel(v)
-    })(),
-    openaiImageModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'openai-image')
-      return v === undefined ? undefined : validateOpenAIImageModel(v)
-    })(),
-    minimaxImageModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'minimax-image')
-      return v === undefined ? undefined : validateMinimaxImageModel(v)
-    })(),
+    geminiImageModel: readValidated('gemini-image', validateGeminiImageModel),
+    openaiImageModel: readValidated('openai-image', validateOpenAIImageModel),
+    minimaxImageModel: readValidated('minimax-image', validateMinimaxImageModel),
     imageAspectRatio: readOptionalStringFlag(mergedFlags, 'image-aspect-ratio'),
     imageSize: readOptionalStringFlag(mergedFlags, 'image-size'),
     imageQuality: readOptionalStringFlag(mergedFlags, 'image-quality'),
@@ -333,14 +292,8 @@ export const buildOptsFromFlags = (
       const n = parseInt(v, 10)
       return Number.isFinite(n) ? n : undefined
     })(),
-    elevenlabsMusicModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'elevenlabs-music')
-      return v === undefined ? undefined : validateElevenlabsMusicModel(v)
-    })(),
-    minimaxMusicModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'minimax-music')
-      return v === undefined ? undefined : validateMinimaxMusicModel(v)
-    })(),
+    elevenlabsMusicModel: readValidated('elevenlabs-music', validateElevenlabsMusicModel),
+    minimaxMusicModel: readValidated('minimax-music', validateMinimaxMusicModel),
     musicDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'music-duration')
       if (v === undefined) return undefined
@@ -349,14 +302,8 @@ export const buildOptsFromFlags = (
     })(),
     musicLyricsFile: readOptionalStringFlag(mergedFlags, 'music-lyrics-file'),
     musicInstrumental: readBooleanFlag(mergedFlags, 'music-instrumental'),
-    geminiVideoModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'gemini-video')
-      return v === undefined ? undefined : validateGeminiVideoModel(v)
-    })(),
-    minimaxVideoModel: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'minimax-video')
-      return v === undefined ? undefined : validateMinimaxVideoModel(v)
-    })(),
+    geminiVideoModel: readValidated('gemini-video', validateGeminiVideoModel),
+    minimaxVideoModel: readValidated('minimax-video', validateMinimaxVideoModel),
     videoDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'video-duration')
       if (v === undefined) return undefined

@@ -1,7 +1,7 @@
 import { mkdir, rm } from 'node:fs/promises'
 import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/logger'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { parseWhisperJson, extractWhisperWords } from './parse-whisper-output'
 import { fileExists, exec } from '~/utils/cli-utils'
 import { resolve } from 'node:path'
@@ -131,9 +131,7 @@ export const runWhisperTranscribe = async (
     if (segmentNumber && totalSegments) {
       l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
     }
-    const formattedTranscriptPath = `${outputBase}.txt`
-    const formattedText = segments.map(seg => `[${seg.start}] ${seg.text}`).join('\n')
-    await Bun.write(formattedTranscriptPath, formattedText)
+    await Bun.write(`${outputBase}.txt`, formatTranscriptText(segments))
     const metadata: Step2Metadata = {
       transcriptionService: 'whisper',
       transcriptionModel: transcriptionModelDescriptor,

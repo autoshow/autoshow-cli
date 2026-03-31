@@ -2,22 +2,25 @@ import * as v from 'valibot'
 import type { Step4Metadata } from '~/types'
 import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
+import { splitTextIntoChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { exec } from '~/utils/cli-utils'
 import type { MinimaxTtsModel } from '~/cli/commands/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'
+import {
+  MinimaxBaseRespSchema,
+  ensureMinimaxBaseRespSuccess,
+  parseMinimaxJsonResponse,
+  isMinimaxTaskSuccess,
+  isMinimaxTaskFailure
+} from '~/utils/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const MINIMAX_DEFAULT_VOICE_ID = 'English_expressive_narrator'
 const MAX_CHARS_PER_CHUNK = 50_000
 const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS = 10 * 60_000
-
-const MinimaxBaseRespSchema = v.object({
-  status_code: v.optional(v.number(), undefined),
-  status_msg: v.optional(v.string(), undefined)
-})
 
 const MinimaxCreateResponseSchema = v.object({
   task_id: v.union([v.string(), v.number()]),
@@ -38,75 +41,8 @@ const MinimaxQueryResponseSchema = v.object({
   base_resp: v.optional(MinimaxBaseRespSchema, undefined)
 })
 
-const splitTextIntoChunks = (text: string, maxChars: number): string[] => {
-  const chunks: string[] = []
-  let remaining = text.trim()
-
-  while (remaining.length > maxChars) {
-    let splitAt = remaining.lastIndexOf('\n', maxChars)
-    if (splitAt < Math.floor(maxChars * 0.5)) {
-      splitAt = remaining.lastIndexOf(' ', maxChars)
-    }
-    if (splitAt < Math.floor(maxChars * 0.5)) {
-      splitAt = maxChars
-    }
-
-    const chunk = remaining.slice(0, splitAt).trim()
-    if (chunk.length > 0) {
-      chunks.push(chunk)
-    }
-    remaining = remaining.slice(splitAt).trim()
-  }
-
-  if (remaining.length > 0) {
-    chunks.push(remaining)
-  }
-
-  return chunks
-}
-
-const parseJsonResponse = async (response: Response, context: string): Promise<unknown> => {
-  const text = await response.text()
-  if (!text.trim()) {
-    throw new Error(`Empty response body for ${context}`)
-  }
-
-  try {
-    return JSON.parse(text) as unknown
-  } catch (error) {
-    throw new Error(`Invalid JSON for ${context}: ${error instanceof Error ? error.message : String(error)}`)
-  }
-}
-
-const ensureSuccessStatusCode = (
-  baseResp: { status_code?: number | undefined, status_msg?: string | undefined } | undefined,
-  context: string
-): void => {
-  if (baseResp?.status_code !== undefined && baseResp.status_code !== 0) {
-    throw new Error(`${context} failed (${baseResp.status_code}): ${baseResp.status_msg ?? 'Unknown error'}`)
-  }
-}
-
 const readTaskStatus = (query: v.InferOutput<typeof MinimaxQueryResponseSchema>): string | number | undefined => {
   return query.data?.status ?? query.status
-}
-
-const isTaskSuccess = (status: string | number | undefined): boolean => {
-  if (status === 2 || status === '2') return true
-  if (typeof status === 'string') {
-    const normalized = status.trim().toLowerCase()
-    return normalized === 'success' || normalized === 'succeeded' || normalized === 'completed'
-  }
-  return false
-}
-
-const isTaskFailure = (status: string | number | undefined): boolean => {
-  if (status === 3 || status === '3') return true
-  if (typeof status === 'string') {
-    const normalized = status.trim().toLowerCase()
-    return normalized === 'fail' || normalized === 'failed' || normalized === 'error'
-  }
-  return false
 }
 
 const extractFileId = (
@@ -256,10 +192,10 @@ export const runMinimaxTts = async (
 
     const createTaskData = validateData(
       MinimaxCreateResponseSchema,
-      await parseJsonResponse(createTaskResponse, 'MiniMax TTS create task response'),
+      await parseMinimaxJsonResponse(createTaskResponse, 'MiniMax TTS create task response'),
       'MiniMax TTS create task response'
     )
-    ensureSuccessStatusCode(createTaskData.base_resp, 'MiniMax TTS task creation')
+    ensureMinimaxBaseRespSuccess(createTaskData.base_resp, 'MiniMax TTS task creation')
 
     const taskId = String(createTaskData.task_id)
 
@@ -283,16 +219,16 @@ export const runMinimaxTts = async (
 
         const data = validateData(
           MinimaxQueryResponseSchema,
-          await parseJsonResponse(queryResponse, 'MiniMax TTS query task response'),
+          await parseMinimaxJsonResponse(queryResponse, 'MiniMax TTS query task response'),
           'MiniMax TTS query task response'
         )
-        ensureSuccessStatusCode(data.base_resp, 'MiniMax TTS task query')
+        ensureMinimaxBaseRespSuccess(data.base_resp, 'MiniMax TTS task query')
         return data
       },
-      isDone: (data) => isTaskSuccess(readTaskStatus(data)),
+      isDone: (data) => isMinimaxTaskSuccess(readTaskStatus(data)),
       isFailed: (data) => {
         const status = readTaskStatus(data)
-        if (isTaskFailure(status)) {
+        if (isMinimaxTaskFailure(status)) {
           return { failed: true, reason: data.error_message ?? data.base_resp?.status_msg ?? 'Unknown error' }
         }
         return { failed: false }

@@ -1,55 +1,11 @@
-import * as v from 'valibot'
 import type { Step4Metadata } from '~/types'
 import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { exec } from '~/utils/cli-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
-import { validateDataSafe } from '~/utils/validate/validation'
 import { ELEVENLABS_DEFAULT_VOICE_ID, type ElevenlabsTtsModel } from '~/cli/commands/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-
-const ElevenLabsErrorSchema = v.object({
-  detail: v.optional(v.union([
-    v.string(),
-    v.object({
-      message: v.optional(v.string(), undefined)
-    })
-  ]), undefined),
-  message: v.optional(v.string(), undefined),
-  error: v.optional(v.string(), undefined)
-})
-
-const readElevenLabsError = async (response: Response): Promise<string> => {
-  const raw = await response.text()
-  if (!raw.trim()) {
-    return `HTTP ${response.status}`
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    const validated = validateDataSafe(ElevenLabsErrorSchema, parsed, 'ElevenLabs error response')
-    if (!validated) {
-      return raw
-    }
-
-    if (typeof validated.detail === 'string' && validated.detail.trim().length > 0) {
-      return validated.detail
-    }
-    if (validated.detail && typeof validated.detail === 'object' && typeof validated.detail.message === 'string') {
-      return validated.detail.message
-    }
-    if (typeof validated.message === 'string' && validated.message.trim().length > 0) {
-      return validated.message
-    }
-    if (typeof validated.error === 'string' && validated.error.trim().length > 0) {
-      return validated.error
-    }
-
-    return raw
-  } catch {
-    return raw
-  }
-}
+import { readElevenLabsError } from '~/utils/elevenlabs-utils'
 
 export const runElevenLabsTts = async (
   text: string,

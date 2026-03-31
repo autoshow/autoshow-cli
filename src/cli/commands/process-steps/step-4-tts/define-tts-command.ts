@@ -9,12 +9,11 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
+import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { Step4Metadata } from '~/types'
-
-const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
+import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 
 const buildSpeechArtifactMap = (metadata: Step4Metadata[]): Record<string, string> => {
   if (metadata.length === 1) {
@@ -61,7 +60,7 @@ export const ttsCommand = defineCommand({
   const configPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
   const resolvedConfigPath = await resolveConfigPath(configPathOverride)
   const config = await loadConfig(resolvedConfigPath)
-  const maxCents = config.pricing?.maxCents ?? (config.pricing?.maxUsd !== undefined ? config.pricing.maxUsd * 100 : undefined)
+  const maxCents = resolveMaxCents(config.pricing)
   const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' })
   const targets = collectTtsTargets(ttsOptions)
 

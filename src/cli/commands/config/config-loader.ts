@@ -47,3 +47,6 @@ export const loadConfig = async (configPath: string): Promise<AutoshowConfig> =>
   const validated = validateDataSafe(AutoshowConfigSchema, parsed, 'autoshow config')
   return validated ?? {}
 }
+
+export const resolveMaxCents = (pricing: AutoshowConfig['pricing']): number | undefined =>
+  pricing?.maxCents ?? (pricing?.maxUsd !== undefined ? pricing.maxUsd * 100 : undefined)

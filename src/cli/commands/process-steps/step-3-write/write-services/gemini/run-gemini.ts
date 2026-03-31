@@ -5,29 +5,7 @@ import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
-
-const parseStatusFromGeminiError = (error: unknown): number | undefined => {
-  if (error && typeof error === 'object') {
-    if ('status' in error && typeof error.status === 'number') {
-      return error.status
-    }
-    if ('code' in error && typeof error.code === 'number') {
-      return error.code
-    }
-  }
-
-  if (error instanceof Error) {
-    const codeMatch = /"code"\s*:\s*(\d{3})/.exec(error.message)
-    if (codeMatch) {
-      const parsed = Number.parseInt(codeMatch[1] as string, 10)
-      if (Number.isFinite(parsed)) {
-        return parsed
-      }
-    }
-  }
-
-  return undefined
-}
+import { parseStatusFromGeminiError } from '~/utils/gemini-utils'
 
 export const runGeminiModel = async (
   prompt: string,

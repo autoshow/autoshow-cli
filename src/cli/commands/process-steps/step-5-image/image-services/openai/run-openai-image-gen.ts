@@ -3,16 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
 import type { OpenAIImageModel } from '~/cli/commands/models/model-options'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
-
-const getClientConfig = (): { apiKey: string, baseURL?: string } => {
-  const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY environment variable is required')
-  }
-  const baseURL = readEnv('OPENAI_BASE_URL')
-  return baseURL ? { apiKey, baseURL } : { apiKey }
-}
+import { getOpenAIClientConfig } from '~/utils/openai-utils'
 
 export const runOpenAIImageGen = async (
   prompt: string,
@@ -27,7 +18,7 @@ export const runOpenAIImageGen = async (
 ): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
   l.info(`Running OpenAI image model: ${options.model}`)
 
-  const config = getClientConfig()
+  const config = getOpenAIClientConfig()
   const client = new OpenAI({ apiKey: config.apiKey, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
   const startTime = Date.now()

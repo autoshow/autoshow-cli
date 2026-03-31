@@ -1,6 +1,7 @@
 /**
  * Shared utilities for transcription engines (steps 2 and 3).
  */
+import type { TranscriptionSegment } from '~/types'
 
 /** Word-count approximation for token counting. */
 export const countTokens = (text: string): number => {
@@ -37,4 +38,105 @@ export const appendToken = (current: string, token: string): string => {
     return `${current}${token}`
   }
   return `${current} ${token}`
+}
+
+/** Build transcription output base path from outputDir and optional segment number. */
+export const buildTranscriptionOutputBase = (outputDir: string, segmentNumber: number | undefined): string => {
+  const suffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
+  return `${outputDir}/transcription${suffix}`
+}
+
+/** Format transcript segments to the standard [HH:MM:SS] [speaker] text line format. */
+export const formatTranscriptText = (segments: TranscriptionSegment[]): string => {
+  return segments.map(seg => {
+    const speakerPrefix = seg.speaker ? `[${seg.speaker}] ` : ''
+    return `[${seg.start}] ${speakerPrefix}${seg.text}`
+  }).join('\n')
+}
+
+/** Resolve final segments and final text, creating a single-segment fallback when needed. */
+export const resolveTranscriptionOutput = (
+  segments: TranscriptionSegment[],
+  text: string,
+  offsetSeconds: number
+): { finalSegments: TranscriptionSegment[], finalText: string } => {
+  const finalSegments = segments.length > 0
+    ? segments
+    : [{ start: toTimestamp(offsetSeconds), end: toTimestamp(offsetSeconds), text }]
+  const finalText = text.length > 0 ? text : finalSegments.map(seg => seg.text).join(' ').trim()
+  return { finalSegments, finalText }
+}
+
+/** Format a speaker id (string or number) to a display label. */
+export const formatSpeakerLabel = (speakerId: string | number | undefined): string | undefined => {
+  if (speakerId === undefined) return undefined
+  if (typeof speakerId === 'number') return `speaker-${speakerId}`
+  const trimmed = speakerId.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+/** Build TranscriptionSegment[] from a normalized word list using the standard flush-on-punctuation algorithm. */
+export const buildSegmentsFromWords = (
+  words: ReadonlyArray<{ start: number, end: number, text: string, speaker?: string | undefined }>,
+  offsetSeconds: number
+): TranscriptionSegment[] => {
+  const segments: TranscriptionSegment[] = []
+  const maxWordsPerSegment = 35
+  const minWordsForPunctuationBreak = 18
+
+  let currentText = ''
+  let currentWordCount = 0
+  let segmentStart: number | null = null
+  let segmentEnd: number | null = null
+  let currentSpeaker: string | undefined
+
+  const flush = (): void => {
+    const text = currentText.trim()
+    if (text.length === 0) {
+      currentText = ''
+      currentWordCount = 0
+      segmentStart = null
+      segmentEnd = null
+      currentSpeaker = undefined
+      return
+    }
+
+    const start = segmentStart ?? 0
+    const end = segmentEnd ?? start
+    segments.push({
+      start: toTimestamp(start + offsetSeconds),
+      end: toTimestamp(end + offsetSeconds),
+      text,
+      ...(currentSpeaker ? { speaker: currentSpeaker } : {})
+    })
+
+    currentText = ''
+    currentWordCount = 0
+    segmentStart = null
+    segmentEnd = null
+    currentSpeaker = undefined
+  }
+
+  for (const word of words) {
+    const token = word.text
+    if (token.length === 0) continue
+
+    if (segmentStart === null) segmentStart = word.start
+    segmentEnd = word.end
+
+    currentText = appendToken(currentText, token)
+    currentWordCount += 1
+
+    if (currentSpeaker === undefined && word.speaker !== undefined) {
+      currentSpeaker = word.speaker
+    }
+
+    const punctuationBreak = /[.!?]$/.test(token) && currentWordCount >= minWordsForPunctuationBreak
+    const sizeBreak = currentWordCount >= maxWordsPerSegment
+
+    if (punctuationBreak || sizeBreak) flush()
+  }
+
+  flush()
+  return segments
 }

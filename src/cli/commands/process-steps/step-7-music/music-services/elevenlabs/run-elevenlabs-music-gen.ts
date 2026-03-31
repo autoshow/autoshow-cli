@@ -1,57 +1,13 @@
-import * as v from 'valibot'
 import type { Step7MusicMetadata } from '~/types'
 import * as l from '~/logger'
 import type { ElevenlabsMusicModel } from '~/cli/commands/models/model-options'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
-import { validateDataSafe } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { readElevenLabsError } from '~/utils/elevenlabs-utils'
 
 const ELEVENLABS_MIN_DURATION_MS = 3000
 const ELEVENLABS_MAX_DURATION_MS = 600000
 const REQUEST_TIMEOUT_MS = 10 * 60_000
-
-const ElevenLabsErrorSchema = v.object({
-  detail: v.optional(v.union([
-    v.string(),
-    v.object({
-      message: v.optional(v.string(), undefined)
-    })
-  ]), undefined),
-  message: v.optional(v.string(), undefined),
-  error: v.optional(v.string(), undefined)
-})
-
-const readElevenLabsError = async (response: Response): Promise<string> => {
-  const raw = await response.text()
-  if (!raw.trim()) {
-    return `HTTP ${response.status}`
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    const validated = validateDataSafe(ElevenLabsErrorSchema, parsed, 'ElevenLabs music error response')
-    if (!validated) {
-      return raw
-    }
-
-    if (typeof validated.detail === 'string' && validated.detail.trim().length > 0) {
-      return validated.detail
-    }
-    if (validated.detail && typeof validated.detail === 'object' && typeof validated.detail.message === 'string') {
-      return validated.detail.message
-    }
-    if (typeof validated.message === 'string' && validated.message.trim().length > 0) {
-      return validated.message
-    }
-    if (typeof validated.error === 'string' && validated.error.trim().length > 0) {
-      return validated.error
-    }
-
-    return raw
-  } catch {
-    return raw
-  }
-}
 
 const normalizeMusicDurationMs = (durationSeconds: number | undefined): number | undefined => {
   if (durationSeconds === undefined) {

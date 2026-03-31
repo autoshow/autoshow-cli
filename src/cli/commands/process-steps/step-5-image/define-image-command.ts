@@ -9,12 +9,11 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
+import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { Step5Metadata } from '~/types'
-
-const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
+import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 
 export const imageCommand = defineCommand({
   name: 'image',
@@ -34,7 +33,7 @@ export const imageCommand = defineCommand({
   const imageConfigPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
   const imageConfigPath = await resolveConfigPath(imageConfigPathOverride)
   const imageConfig = await loadConfig(imageConfigPath)
-  const imageMaxCents = imageConfig.pricing?.maxCents ?? (imageConfig.pricing?.maxUsd !== undefined ? imageConfig.pricing.maxUsd * 100 : undefined)
+  const imageMaxCents = resolveMaxCents(imageConfig.pricing)
   const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
   const imageTargets = collectImageTargets(imageOpts)
   if (imageTargets.length === 0) {

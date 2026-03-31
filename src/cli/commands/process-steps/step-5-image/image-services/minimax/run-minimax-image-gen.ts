@@ -4,13 +4,9 @@ import type { Step5Metadata } from '~/types'
 import type { MinimaxImageModel } from '~/cli/commands/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
+import { MinimaxBaseRespSchema } from '~/utils/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
-
-const MinimaxBaseRespSchema = v.object({
-  status_code: v.optional(v.number(), undefined),
-  status_msg: v.optional(v.string(), undefined)
-})
 
 const MinimaxImageDataSchema = v.object({
   image_base64: v.optional(v.array(v.string()), undefined),

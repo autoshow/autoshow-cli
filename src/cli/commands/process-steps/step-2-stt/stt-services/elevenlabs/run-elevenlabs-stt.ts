@@ -7,7 +7,7 @@ import type {
 } from '~/types'
 import { ElevenLabsSttResponseSchema } from '~/types'
 import * as l from '~/logger'
-import { countTokens, toTimestamp, parseSeconds, appendToken } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
@@ -26,16 +26,6 @@ const appendElevenLabsDiarizationOptions = (
 
   form.append('diarize', 'true')
   form.append('num_speakers', String(speakerCount))
-}
-
-const formatSpeaker = (speakerId: string | number | undefined): string | undefined => {
-  if (speakerId === undefined) {
-    return undefined
-  }
-  if (typeof speakerId === 'number') {
-    return `speaker-${speakerId}`
-  }
-  return speakerId.trim().length > 0 ? speakerId : undefined
 }
 
 const textFromWords = (words: ElevenLabsSttResponse['words']): string => {
@@ -79,7 +69,7 @@ const segmentsFromApiSegments = (
       start: toTimestamp(start),
       end: toTimestamp(end),
       text,
-      ...(segment.speaker_id !== undefined ? { speaker: formatSpeaker(segment.speaker_id) } : {})
+      ...(segment.speaker_id !== undefined ? { speaker: formatSpeakerLabel(segment.speaker_id) } : {})
     })
   }
 
@@ -93,79 +83,19 @@ const segmentsFromWords = (
   if (!words) {
     return []
   }
-
-  const segments: TranscriptionSegment[] = []
-  const maxWordsPerSegment = 35
-  const minWordsForPunctuationBreak = 18
-
-  let currentText = ''
-  let currentWordCount = 0
-  let segmentStart: number | null = null
-  let segmentEnd: number | null = null
-  let currentSpeaker: string | undefined
-
-  const flush = (): void => {
-    const text = currentText.trim()
-    if (text.length === 0) {
-      currentText = ''
-      currentWordCount = 0
-      segmentStart = null
-      segmentEnd = null
-      currentSpeaker = undefined
-      return
-    }
-
-    const start = segmentStart ?? 0
-    const end = segmentEnd ?? start
-    segments.push({
-      start: toTimestamp(start + offsetSeconds),
-      end: toTimestamp(end + offsetSeconds),
-      text,
-      ...(currentSpeaker ? { speaker: currentSpeaker } : {})
+  const normalized = words
+    .map(w => {
+      const start = parseSeconds(w.start) ?? 0
+      const rawEnd = parseSeconds(w.end)
+      return {
+        start,
+        end: rawEnd !== null ? rawEnd : start,
+        text: (w.text ?? w.word ?? '').trim(),
+        speaker: formatSpeakerLabel(w.speaker_id)
+      }
     })
-
-    currentText = ''
-    currentWordCount = 0
-    segmentStart = null
-    segmentEnd = null
-    currentSpeaker = undefined
-  }
-
-  for (const word of words) {
-    const token = (word.text ?? word.word ?? '').trim()
-    if (token.length === 0) {
-      continue
-    }
-
-    const start = parseSeconds(word.start)
-    const end = parseSeconds(word.end)
-
-    if (segmentStart === null && start !== null) {
-      segmentStart = start
-    }
-    if (end !== null) {
-      segmentEnd = end
-    } else if (start !== null) {
-      segmentEnd = start
-    }
-
-    currentText = appendToken(currentText, token)
-    currentWordCount += 1
-
-    if (currentSpeaker === undefined) {
-      currentSpeaker = formatSpeaker(word.speaker_id)
-    }
-
-    const punctuationBreak = /[.!?]$/.test(token) && currentWordCount >= minWordsForPunctuationBreak
-    const sizeBreak = currentWordCount >= maxWordsPerSegment
-
-    if (punctuationBreak || sizeBreak) {
-      flush()
-    }
-  }
-
-  flush()
-  return segments
+    .filter(w => w.text.length > 0)
+  return buildSegmentsFromWords(normalized, offsetSeconds)
 }
 
 export const runElevenLabsTranscribe = async (
@@ -194,8 +124,7 @@ export const runElevenLabsTranscribe = async (
 
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
-  const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
-  const outputBase = `${outputDir}/transcription${segmentSuffix}`
+  const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
   const form = new FormData()
   form.append('model_id', modelName)
@@ -225,24 +154,10 @@ export const runElevenLabsTranscribe = async (
   const segmentsFromWordTiming = segmentsFromWords(payload.words, offsetSeconds)
   const segments = segmentsFromApi.length > 0 ? segmentsFromApi : segmentsFromWordTiming
 
-  const finalSegments = segments.length > 0
-    ? segments
-    : [{
-        start: toTimestamp(offsetSeconds),
-        end: toTimestamp(offsetSeconds),
-        text
-      }]
-
-  const finalText = text.length > 0
-    ? text
-    : finalSegments.map(seg => seg.text).join(' ').trim()
+  const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
 
   const formattedTranscriptPath = `${outputBase}.txt`
-  const formattedText = finalSegments.map(seg => {
-    const speakerPrefix = seg.speaker ? `[${seg.speaker}] ` : ''
-    return `[${seg.start}] ${speakerPrefix}${seg.text}`
-  }).join('\n')
-  await Bun.write(formattedTranscriptPath, formattedText)
+  await Bun.write(formattedTranscriptPath, formatTranscriptText(finalSegments))
 
   const processingTime = Date.now() - startTime
   const metadata: Step2Metadata = {

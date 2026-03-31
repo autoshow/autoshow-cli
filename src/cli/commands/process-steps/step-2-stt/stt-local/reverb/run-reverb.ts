@@ -1,7 +1,7 @@
 import { readdir, rm } from 'node:fs/promises'
 import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/logger'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { parseReverbWithSpeakers, parseReverbTextOutput } from './parse-reverb-output'
 import { exec } from '~/utils/cli-utils'
 import { getHuggingFaceToken, runDiarization, mergeASRWithDiarization, findCTMFile } from './run-reverb-diarization'
@@ -252,13 +252,7 @@ export const runReverbTranscribe = async (
   const processingTime = Date.now() - startTime
   const tokenCount = countTokens(transcription.text)
   const outputBase = `${outputDir}/transcription${segmentSuffix}`
-  const formattedTranscript = transcription.segments
-    .map(seg => {
-      const speakerPrefix = seg.speaker ? `[${seg.speaker}] ` : ''
-      return `[${seg.start}] ${speakerPrefix}${seg.text}`
-    })
-    .join('\n')
-  await Bun.write(`${outputBase}.txt`, formattedTranscript)
+  await Bun.write(`${outputBase}.txt`, formatTranscriptText(transcription.segments))
   await cleanupIntermediateFiles(resultDir)
   if (segmentNumber && totalSegments) {
     l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)

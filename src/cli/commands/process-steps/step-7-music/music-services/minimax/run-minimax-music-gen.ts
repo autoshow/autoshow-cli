@@ -5,15 +5,16 @@ import type { MinimaxMusicModel } from '~/cli/commands/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'
+import {
+  MinimaxBaseRespSchema,
+  ensureMinimaxBaseRespSuccess,
+  parseMinimaxJsonResponse,
+  isMinimaxTaskSuccess
+} from '~/utils/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS = 10 * 60_000
-
-const MinimaxBaseRespSchema = v.object({
-  status_code: v.optional(v.number(), undefined),
-  status_msg: v.optional(v.string(), undefined)
-})
 
 const MinimaxLyricsResponseSchema = v.object({
   song_title: v.optional(v.string(), undefined),
@@ -37,41 +38,10 @@ const MinimaxMusicResponseSchema = v.object({
   base_resp: v.optional(MinimaxBaseRespSchema, undefined)
 })
 
-const parseJsonResponse = async (response: Response, context: string): Promise<unknown> => {
-  const text = await response.text()
-  if (!text.trim()) {
-    throw new Error(`Empty response body for ${context}`)
-  }
-
-  try {
-    return JSON.parse(text) as unknown
-  } catch (error) {
-    throw new Error(`Invalid JSON for ${context}: ${error instanceof Error ? error.message : String(error)}`)
-  }
-}
-
-const ensureBaseRespSuccess = (
-  baseResp: { status_code?: number | undefined, status_msg?: string | undefined } | undefined,
-  context: string
-): void => {
-  if (baseResp?.status_code !== undefined && baseResp.status_code !== 0) {
-    throw new Error(`${context} failed (${baseResp.status_code}): ${baseResp.status_msg ?? 'Unknown error'}`)
-  }
-}
-
 const readMusicStatus = (
   payload: v.InferOutput<typeof MinimaxMusicResponseSchema>
 ): string | number | undefined => {
   return payload.data?.status
-}
-
-const isMusicComplete = (status: string | number | undefined): boolean => {
-  if (status === 2 || status === '2') return true
-  if (typeof status === 'string') {
-    const normalized = status.trim().toLowerCase()
-    return normalized === 'success' || normalized === 'succeeded' || normalized === 'completed'
-  }
-  return false
 }
 
 const isMusicInProgress = (status: string | number | undefined): boolean => {
@@ -121,10 +91,10 @@ const generateLyrics = async (
 
   const parsed = validateData(
     MinimaxLyricsResponseSchema,
-    await parseJsonResponse(response, 'MiniMax lyrics generation response'),
+    await parseMinimaxJsonResponse(response, 'MiniMax lyrics generation response'),
     'MiniMax lyrics generation response'
   )
-  ensureBaseRespSuccess(parsed.base_resp, 'MiniMax lyrics generation')
+  ensureMinimaxBaseRespSuccess(parsed.base_resp, 'MiniMax lyrics generation')
 
   const lyrics = parsed.lyrics?.trim()
   if (!lyrics) {
@@ -169,10 +139,10 @@ const requestMusicGeneration = async (
 
   const parsed = validateData(
     MinimaxMusicResponseSchema,
-    await parseJsonResponse(response, 'MiniMax music generation response'),
+    await parseMinimaxJsonResponse(response, 'MiniMax music generation response'),
     'MiniMax music generation response'
   )
-  ensureBaseRespSuccess(parsed.base_resp, 'MiniMax music generation')
+  ensureMinimaxBaseRespSuccess(parsed.base_resp, 'MiniMax music generation')
   return parsed
 }
 
@@ -197,13 +167,13 @@ const pollMusicGeneration = async (
     },
     isDone: (result) => {
       const status = readMusicStatus(result)
-      if (isMusicComplete(status)) return true
+      if (isMinimaxTaskSuccess(status)) return true
       if (!isMusicInProgress(status) && result.data?.audio) return true
       return false
     },
     isFailed: (result) => {
       const status = readMusicStatus(result)
-      if (!isMusicInProgress(status) && !isMusicComplete(status) && !result.data?.audio) {
+      if (!isMusicInProgress(status) && !isMinimaxTaskSuccess(status) && !result.data?.audio) {
         return { failed: true, reason: result.base_resp?.status_msg ?? 'Unknown error' }
       }
       return { failed: false }

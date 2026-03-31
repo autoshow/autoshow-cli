@@ -9,12 +9,11 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
+import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { Step7MusicMetadata } from '~/types'
-
-const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
+import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 
 export const musicCommand = defineCommand({
   name: 'music',
@@ -39,7 +38,7 @@ export const musicCommand = defineCommand({
   const musicConfigPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
   const musicConfigPath = await resolveConfigPath(musicConfigPathOverride)
   const musicConfig = await loadConfig(musicConfigPath)
-  const musicMaxCents = musicConfig.pricing?.maxCents ?? (musicConfig.pricing?.maxUsd !== undefined ? musicConfig.pricing.maxUsd * 100 : undefined)
+  const musicMaxCents = resolveMaxCents(musicConfig.pricing)
   const musicOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
 
   const musicTargets = collectMusicTargets(musicOpts)

@@ -1,21 +1,10 @@
 import OpenAI from 'openai'
 import * as l from '~/logger'
 import type { Step3Metadata } from '~/types'
-import { readEnvFallback, readEnv } from '~/utils/validate/env-utils'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
-
-const getClientConfig = (): { apiKey: string, baseURL?: string } => {
-  const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
-  if (!apiKey) {
-    l.error(`OPENAI_API_KEY not found in environment`)
-    throw new Error('OPENAI_API_KEY environment variable is required')
-  }
-
-  const baseURL = readEnv('OPENAI_BASE_URL')
-  return baseURL ? { apiKey, baseURL } : { apiKey }
-}
+import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { getOpenAIClientConfig } from '~/utils/openai-utils'
 
 export const runOpenAIModel = async (
   prompt: string,
@@ -23,7 +12,7 @@ export const runOpenAIModel = async (
   structuredOpts?: StructuredRequestOptions
 ): Promise<{ result: string, metadata: Step3Metadata }> => {
   try {
-    const config = getClientConfig()
+    const config = getOpenAIClientConfig()
     const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
     const apiCall = (): Promise<string> => withRetry(
@@ -74,7 +63,7 @@ export const runOpenAIModel = async (
 
 export const checkOpenAIHealth = async (): Promise<boolean> => {
   try {
-    const config = getClientConfig()
+    const config = getOpenAIClientConfig()
     const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
     await client.models.list()

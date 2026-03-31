@@ -6,7 +6,7 @@ import type {
 } from '~/types'
 import { AssemblyAiTranscriptResponseSchema } from '~/types'
 import * as l from '~/logger'
-import { countTokens, toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
@@ -45,8 +45,7 @@ export const runAssemblyAiTranscribe = async (
 
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
-  const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
-  const outputBase = `${outputDir}/transcription${segmentSuffix}`
+  const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
   const baseURL = readEnv('ASSEMBLYAI_BASE_URL') ?? 'https://api.assemblyai.com'
   const headers = {
@@ -148,71 +147,21 @@ export const runAssemblyAiTranscribe = async (
       })
     }
   } else if (transcript.words && transcript.words.length > 0) {
-    let currentText = ''
-    let currentStart: number | null = null
-    let currentEnd: number | null = null
-    let currentSpeaker: string | undefined
-    let wordCount = 0
-    const maxWordsPerSegment = 35
-    const minWordsForPunctuationBreak = 18
-
-    const flush = (): void => {
-      const text = currentText.trim()
-      if (text.length === 0) {
-        currentText = ''
-        wordCount = 0
-        currentStart = null
-        currentEnd = null
-        currentSpeaker = undefined
-        return
-      }
-      segments.push({
-        start: toTimestamp((currentStart ?? 0) / 1000 + offsetSeconds),
-        end: toTimestamp((currentEnd ?? currentStart ?? 0) / 1000 + offsetSeconds),
-        text,
-        ...(currentSpeaker ? { speaker: currentSpeaker } : {})
-      })
-      currentText = ''
-      wordCount = 0
-      currentStart = null
-      currentEnd = null
-      currentSpeaker = undefined
-    }
-
-    for (const word of transcript.words) {
-      if (currentStart === null) currentStart = word.start
-      currentEnd = word.end
-      currentText += (currentText.length > 0 ? ' ' : '') + word.text
-      wordCount++
-      if (currentSpeaker === undefined) currentSpeaker = formatSpeaker(word.speaker)
-
-      const punctuationBreak = /[.!?]$/.test(word.text) && wordCount >= minWordsForPunctuationBreak
-      const sizeBreak = wordCount >= maxWordsPerSegment
-
-      if (punctuationBreak || sizeBreak) flush()
-    }
-    flush()
+    const normalized = transcript.words.map(w => ({
+      start: w.start / 1000,
+      end: w.end / 1000,
+      text: w.text,
+      speaker: formatSpeaker(w.speaker)
+    }))
+    segments.push(...buildSegmentsFromWords(normalized, offsetSeconds))
   }
 
   const text = (transcript.text ?? '').trim()
-  const finalText = text.length > 0
-    ? text
-    : segments.map(seg => seg.text).join(' ').trim()
 
-  const finalSegments = segments.length > 0
-    ? segments
-    : [{
-        start: toTimestamp(offsetSeconds),
-        end: toTimestamp(offsetSeconds),
-        text: finalText
-      }]
+  const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
 
   const formattedTranscriptPath = `${outputBase}.txt`
-  const formattedText = finalSegments.map(seg => {
-    const speakerPrefix = seg.speaker ? `[${seg.speaker}] ` : ''
-    return `[${seg.start}] ${speakerPrefix}${seg.text}`
-  }).join('\n')
-  await Bun.write(formattedTranscriptPath, formattedText)
+  await Bun.write(formattedTranscriptPath, formatTranscriptText(finalSegments))
 
   const processingTime = Date.now() - startTime
   const metadata: Step2Metadata = {

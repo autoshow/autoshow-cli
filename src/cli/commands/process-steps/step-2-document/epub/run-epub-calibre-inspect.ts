@@ -3,12 +3,9 @@ import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import { exec } from '~/utils/cli-utils'
 import { ensureCalibreDocumentTools, calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
-import { inspectEpubWithReader } from './inspect-core'
+import { inspectEpubWithReader, normalizeEntryPath } from './inspect-core'
 import type { EpubContentEntry, EpubContentReader, EpubInspectOutput } from './types'
 
-const normalizeEntryPath = (value: string): string => {
-  return value.replace(/\\/g, '/').replace(/^\.?\//, '')
-}
 
 const walkFiles = async (rootDir: string): Promise<EpubContentEntry[]> => {
   const entries: EpubContentEntry[] = []

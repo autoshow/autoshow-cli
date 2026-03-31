@@ -7,15 +7,16 @@ import { validateData } from '~/utils/validate/validation'
 import * as l from '~/logger'
 import { normalizeMinimaxDurationForApi, normalizeMinimaxResolutionForApi } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
+import {
+  MinimaxBaseRespSchema,
+  ensureMinimaxBaseRespSuccess,
+  isMinimaxTaskSuccess,
+  isMinimaxTaskFailure
+} from '~/utils/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = 10 * 60_000
-
-const MinimaxBaseRespSchema = v.object({
-  status_code: v.optional(v.number(), undefined),
-  status_msg: v.optional(v.string(), undefined)
-})
 
 const MinimaxCreateVideoResponseSchema = v.object({
   task_id: v.union([v.string(), v.number()]),
@@ -45,38 +46,6 @@ const MinimaxRetrieveFileResponseSchema = v.object({
 
 const readTaskStatus = (query: v.InferOutput<typeof MinimaxQueryVideoResponseSchema>): string | number | undefined => {
   return query.data?.status ?? query.status
-}
-
-const isTaskSuccess = (status: string | number | undefined): boolean => {
-  if (status === 2 || status === '2') return true
-  if (typeof status === 'string') {
-    const normalized = status.trim().toLowerCase()
-    return normalized === 'success' || normalized === 'succeeded' || normalized === 'completed'
-  }
-  return false
-}
-
-const isTaskFailed = (status: string | number | undefined): boolean => {
-  if (status === 3 || status === '3') return true
-  if (typeof status === 'string') {
-    const normalized = status.trim().toLowerCase()
-    return normalized === 'fail' || normalized === 'failed' || normalized === 'error'
-  }
-  return false
-}
-
-const extractFileId = (query: v.InferOutput<typeof MinimaxQueryVideoResponseSchema>): string | undefined => {
-  const raw = query.data?.file_id ?? query.file_id
-  return raw === undefined ? undefined : String(raw)
-}
-
-const ensureBaseRespSuccess = (
-  baseResp: { status_code?: number | undefined, status_msg?: string | undefined } | undefined,
-  context: string
-): void => {
-  if (baseResp?.status_code !== undefined && baseResp.status_code !== 0) {
-    throw new Error(`${context} failed (${baseResp.status_code}): ${baseResp.status_msg ?? 'Unknown error'}`)
-  }
 }
 
 export const runMinimaxVideoGen = async (
@@ -127,7 +96,7 @@ export const runMinimaxVideoGen = async (
     await createResp.json() as unknown,
     'MiniMax video generation create response'
   )
-  ensureBaseRespSuccess(createData.base_resp, 'MiniMax video generation create request')
+  ensureMinimaxBaseRespSuccess(createData.base_resp, 'MiniMax video generation create request')
 
   const taskId = String(createData.task_id)
 
@@ -154,23 +123,26 @@ export const runMinimaxVideoGen = async (
         await queryResp.json() as unknown,
         'MiniMax video generation query response'
       )
-      ensureBaseRespSuccess(data.base_resp, 'MiniMax video generation query')
+      ensureMinimaxBaseRespSuccess(data.base_resp, 'MiniMax video generation query')
 
       const status = readTaskStatus(data)
       l.info(`MiniMax video status: ${status ?? 'processing'}`)
       return data
     },
-    isDone: (data) => isTaskSuccess(readTaskStatus(data)),
+    isDone: (data) => isMinimaxTaskSuccess(readTaskStatus(data)),
     isFailed: (data) => {
       const status = readTaskStatus(data)
-      if (isTaskFailed(status)) {
+      if (isMinimaxTaskFailure(status)) {
         return { failed: true, reason: data.data?.error_message ?? data.error_message ?? data.base_resp?.status_msg ?? 'Unknown error' }
       }
       return { failed: false }
     }
   })
 
-  const fileId = extractFileId(queryData)
+  const fileId = (() => {
+    const raw = queryData.data?.file_id ?? queryData.file_id
+    return raw === undefined ? undefined : String(raw)
+  })()
   if (!fileId) {
     throw new Error('MiniMax video generation succeeded but no file_id was returned')
   }
@@ -193,7 +165,7 @@ export const runMinimaxVideoGen = async (
     await retrieveResp.json() as unknown,
     'MiniMax video file retrieve response'
   )
-  ensureBaseRespSuccess(retrieveData.base_resp, 'MiniMax video file retrieve')
+  ensureMinimaxBaseRespSuccess(retrieveData.base_resp, 'MiniMax video file retrieve')
 
   const downloadResp = await fetch(retrieveData.file.download_url)
   if (!downloadResp.ok) {

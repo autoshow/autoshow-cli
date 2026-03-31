@@ -20,8 +20,7 @@ import { runMusicGen } from './step-7-music/run-music-gen'
 import { buildMusicArtifactMap, collectMusicTargets } from './step-7-music/music-targets'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-
-const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
+import { serializeOneOrMany } from './target-runner'
 
 const buildSpeechArtifactMap = (metadata: Step4Metadata[]): Record<string, string> => {
   if (metadata.length === 1) {

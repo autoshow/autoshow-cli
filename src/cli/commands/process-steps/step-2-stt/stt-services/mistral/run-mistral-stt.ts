@@ -2,20 +2,9 @@ import { basename } from 'node:path'
 import type { Step2Metadata, TranscriptionResult, TranscriptionSegment, DiarizationOptions } from '~/types'
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
-import { countTokens, toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
-
-const formatSpeaker = (speakerId: string | number | undefined): string | undefined => {
-  if (speakerId === undefined) {
-    return undefined
-  }
-  if (typeof speakerId === 'number') {
-    return `speaker-${speakerId}`
-  }
-  const trimmed = speakerId.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}
 
 const readSpeakerId = (segment: {
   speaker_id?: string | number | undefined
@@ -52,7 +41,7 @@ const toSegments = (
       start: toTimestamp(segment.start + offsetSeconds),
       end: toTimestamp(segment.end + offsetSeconds),
       text,
-      ...(speakerId !== undefined ? { speaker: formatSpeaker(speakerId) } : {})
+      ...(speakerId !== undefined ? { speaker: formatSpeakerLabel(speakerId) } : {})
     })
   }
   return parsed
@@ -81,8 +70,7 @@ export const runMistralStt = async (
 
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
-  const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
-  const outputBase = `${outputDir}/transcription${segmentSuffix}`
+  const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
   const fileBuffer = Buffer.from(await Bun.file(audioPath).arrayBuffer())
 
   const form = new FormData()
@@ -121,11 +109,7 @@ export const runMistralStt = async (
       }]
 
   const formattedTranscriptPath = `${outputBase}.txt`
-  const formattedText = finalSegments.map(seg => {
-    const speakerPrefix = seg.speaker ? `[${seg.speaker}] ` : ''
-    return `[${seg.start}] ${speakerPrefix}${seg.text}`
-  }).join('\n')
-  await Bun.write(formattedTranscriptPath, formattedText)
+  await Bun.write(formattedTranscriptPath, formatTranscriptText(finalSegments))
 
   const processingTime = Date.now() - startTime
   const metadata: Step2Metadata = {

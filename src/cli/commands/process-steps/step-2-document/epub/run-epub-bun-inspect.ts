@@ -1,5 +1,5 @@
 import { inflateRawSync } from 'node:zlib'
-import { inspectEpubWithReader } from './inspect-core'
+import { inspectEpubWithReader, normalizeEntryPath } from './inspect-core'
 import type { EpubContentEntry, EpubContentReader, EpubInspectOutput } from './types'
 
 type ZipEntry = {
@@ -13,11 +13,6 @@ type ZipEntry = {
 const EOCD_SIG = 0x06054b50
 const CD_SIG = 0x02014b50
 const LFH_SIG = 0x04034b50
-
-const normalizeEntryPath = (value: string): string => {
-  const normalized = value.replace(/\\/g, '/').replace(/^\.?\//, '')
-  return normalized
-}
 
 const findEocd = (buffer: Buffer): number => {
   const limit = Math.max(0, buffer.length - 65557)

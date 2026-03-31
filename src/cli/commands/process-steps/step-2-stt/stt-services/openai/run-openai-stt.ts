@@ -2,9 +2,9 @@ import OpenAI from 'openai'
 import * as v from 'valibot'
 import type { Step2Metadata, TranscriptionResult, TranscriptionSegment, DiarizationOptions } from '~/types'
 import * as l from '~/logger'
-import { countTokens, toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { validateData } from '~/utils/validate/validation'
+import { getOpenAIClientConfig } from '~/utils/openai-utils'
 
 const OpenAIDiarizedSegmentSchema = v.object({
   id: v.optional(v.string(), undefined),
@@ -21,15 +21,6 @@ const OpenAIDiarizedResponseSchema = v.object({
   task: v.optional(v.string(), undefined),
   segments: v.array(OpenAIDiarizedSegmentSchema)
 })
-
-const getClientConfig = (): { apiKey: string, baseURL?: string } => {
-  const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY environment variable is required for OpenAI transcription')
-  }
-  const baseURL = readEnv('OPENAI_BASE_URL')
-  return baseURL ? { apiKey, baseURL } : { apiKey }
-}
 
 const buildKnownSpeakerNames = (speakerCount: number | undefined): string[] | undefined => {
   if (speakerCount === undefined) {
@@ -93,13 +84,12 @@ export const runOpenAIStt = async (
     l.info(`OpenAI diarization speaker-count hint: ${knownSpeakerNames.length}`)
   }
 
-  const config = getClientConfig()
+  const config = getOpenAIClientConfig()
   const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
-  const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
-  const outputBase = `${outputDir}/transcription${segmentSuffix}`
+  const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
   let rawPayload: unknown
   try {
@@ -127,24 +117,10 @@ export const runOpenAIStt = async (
   const segments = toSegments(payload.segments, offsetSeconds)
   const text = payload.text.trim()
 
-  const finalSegments = segments.length > 0
-    ? segments
-    : [{
-        start: toTimestamp(offsetSeconds),
-        end: toTimestamp(offsetSeconds),
-        text
-      }]
-
-  const finalText = text.length > 0
-    ? text
-    : finalSegments.map(seg => seg.text).join(' ').trim()
+  const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
 
   const formattedTranscriptPath = `${outputBase}.txt`
-  const formattedText = finalSegments.map(seg => {
-    const speakerPrefix = seg.speaker ? `[${seg.speaker}] ` : ''
-    return `[${seg.start}] ${speakerPrefix}${seg.text}`
-  }).join('\n')
-  await Bun.write(formattedTranscriptPath, formattedText)
+  await Bun.write(formattedTranscriptPath, formatTranscriptText(finalSegments))
 
   const processingTime = Date.now() - startTime
   const metadata: Step2Metadata = {

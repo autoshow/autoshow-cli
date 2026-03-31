@@ -4,25 +4,17 @@ import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { OPENAI_DEFAULT_TTS_VOICE, type OpenAITtsModel } from '~/cli/commands/models/model-options'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
+import { getOpenAIClientConfig } from '~/utils/openai-utils'
 
 const MAX_CHARS_PER_CHUNK = 4000
-
-const getClientConfig = (): { apiKey: string, baseURL?: string } => {
-  const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY environment variable is required for OpenAI TTS')
-  }
-  const baseURL = readEnv('OPENAI_BASE_URL')
-  return baseURL ? { apiKey, baseURL } : { apiKey }
-}
 
 export const runOpenAITts = async (
   text: string,
   outputDir: string,
   options: { model: OpenAITtsModel, voiceId?: string | undefined }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
-  const config = getClientConfig()
+  const config = getOpenAIClientConfig()
   const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
   const voiceId = options.voiceId?.trim() || readEnv('OPENAI_TTS_VOICE') || OPENAI_DEFAULT_TTS_VOICE
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)

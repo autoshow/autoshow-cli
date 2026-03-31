@@ -2,10 +2,12 @@ import { GoogleGenAI } from '@google/genai'
 import type { Step4Metadata } from '~/types'
 import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
+import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { exec } from '~/utils/cli-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { GEMINI_DEFAULT_TTS_VOICE, type GeminiTtsModel } from '~/cli/commands/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
+import { parseStatusFromGeminiError } from '~/utils/gemini-utils'
 
 const MAX_CHARS_PER_CHUNK = 4000
 
@@ -13,56 +15,6 @@ type GeminiInlineAudioInfo = {
   ext: string
   isRawPcm: boolean
   sampleRate: number
-}
-
-const parseStatusFromGeminiError = (error: unknown): number | undefined => {
-  if (error && typeof error === 'object') {
-    if ('status' in error && typeof error.status === 'number') {
-      return error.status
-    }
-    if ('code' in error && typeof error.code === 'number') {
-      return error.code
-    }
-  }
-
-  if (error instanceof Error) {
-    const codeMatch = /"code"\s*:\s*(\d{3})/.exec(error.message)
-    if (codeMatch) {
-      const parsed = Number.parseInt(codeMatch[1] as string, 10)
-      if (Number.isFinite(parsed)) {
-        return parsed
-      }
-    }
-  }
-
-  return undefined
-}
-
-const splitTextIntoChunks = (text: string, maxChars: number): string[] => {
-  const chunks: string[] = []
-  let remaining = text.trim()
-
-  while (remaining.length > maxChars) {
-    let splitAt = remaining.lastIndexOf('\n', maxChars)
-    if (splitAt < Math.floor(maxChars * 0.5)) {
-      splitAt = remaining.lastIndexOf(' ', maxChars)
-    }
-    if (splitAt < Math.floor(maxChars * 0.5)) {
-      splitAt = maxChars
-    }
-
-    const chunk = remaining.slice(0, splitAt).trim()
-    if (chunk.length > 0) {
-      chunks.push(chunk)
-    }
-    remaining = remaining.slice(splitAt).trim()
-  }
-
-  if (remaining.length > 0) {
-    chunks.push(remaining)
-  }
-
-  return chunks
 }
 
 const parseGeminiInlineAudioInfo = (mimeType: string | undefined): GeminiInlineAudioInfo => {
@@ -85,49 +37,6 @@ const parseGeminiInlineAudioInfo = (mimeType: string | undefined): GeminiInlineA
   if (normalized.includes('aac')) return { ext: 'aac', isRawPcm: false, sampleRate }
   if (normalized.includes('flac')) return { ext: 'flac', isRawPcm: false, sampleRate }
   return { ext: 'wav', isRawPcm: false, sampleRate }
-}
-
-const concatAndConvertToWav = async (chunkPaths: string[], outputDir: string): Promise<string> => {
-  const wavPath = `${outputDir}/speech.wav`
-
-  if (chunkPaths.length === 1) {
-    const ffmpeg = await exec('ffmpeg', [
-      '-i', chunkPaths[0] as string,
-      '-ar', '16000',
-      '-ac', '1',
-      '-c:a', 'pcm_s16le',
-      '-y',
-      wavPath
-    ])
-    if (ffmpeg.exitCode !== 0) {
-      throw new Error(`Failed to convert Gemini audio to WAV: ${ffmpeg.stderr.trim()}`)
-    }
-    return wavPath
-  }
-
-  const concatListPath = `${outputDir}/speech-gemini-chunks.txt`
-  const concatList = chunkPaths
-    .map(path => `file '${path.replace(/'/g, `'\\''`)}'`)
-    .join('\n')
-  await Bun.write(concatListPath, `${concatList}\n`)
-
-  const ffmpeg = await exec('ffmpeg', [
-    '-f', 'concat',
-    '-safe', '0',
-    '-i', concatListPath,
-    '-ar', '16000',
-    '-ac', '1',
-    '-c:a', 'pcm_s16le',
-    '-y',
-    wavPath
-  ])
-
-  if (ffmpeg.exitCode !== 0) {
-    throw new Error(`Failed to concatenate Gemini audio chunks: ${ffmpeg.stderr.trim()}`)
-  }
-
-  await Bun.$`rm -f ${concatListPath}`.quiet().nothrow()
-  return wavPath
 }
 
 export const runGeminiTts = async (
@@ -257,7 +166,7 @@ export const runGeminiTts = async (
     throw new Error('Gemini TTS returned no audio data')
   }
 
-  const audioPath = await concatAndConvertToWav(chunkPaths, outputDir)
+  const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Gemini')
   for (const chunkPath of chunkPaths) {
     await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
   }

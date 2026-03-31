@@ -18,7 +18,7 @@ import { handleSingleTarget, processSingleTarget } from './single-target'
 import { tryResolveBatchSource } from './batch/batch-router'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
+import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/config/config-merge'
 import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
@@ -202,7 +202,7 @@ export const handleProcessTarget = async (
     }
   }
 
-  const maxCents = config.pricing?.maxCents ?? (config.pricing?.maxUsd !== undefined ? config.pricing.maxUsd * 100 : undefined)
+  const maxCents = resolveMaxCents(config.pricing)
 
   if (opts.price) {
     const targets = await resolvePriceTargets(command, resolvedTarget, opts)

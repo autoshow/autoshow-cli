@@ -9,12 +9,11 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { runPreflight } from '~/utils/pricing/preflight'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
+import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { Step6VideoMetadata } from '~/types'
-
-const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items
+import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 
 export const videoCommand = defineCommand({
   name: 'video',
@@ -43,7 +42,7 @@ export const videoCommand = defineCommand({
   const videoConfigPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
   const videoConfigPath = await resolveConfigPath(videoConfigPathOverride)
   const videoConfig = await loadConfig(videoConfigPath)
-  const videoMaxCents = videoConfig.pricing?.maxCents ?? (videoConfig.pricing?.maxUsd !== undefined ? videoConfig.pricing.maxUsd * 100 : undefined)
+  const videoMaxCents = resolveMaxCents(videoConfig.pricing)
   const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
 
   const videoTargets = collectVideoTargets({

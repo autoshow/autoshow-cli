@@ -59,3 +59,5 @@ export const runTargets = async <TTarget extends TargetBase, TResult>(
 
   return successes
 }
+
+export const serializeOneOrMany = <T,>(items: T[]): T | T[] => items.length === 1 ? items[0] as T : items

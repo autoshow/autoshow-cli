@@ -32,6 +32,9 @@ const normalizeRelPath = (value: string): string => {
   return normalized.startsWith('./') ? normalized.slice(2) : normalized
 }
 
+export const normalizeEntryPath = (value: string): string =>
+  value.replace(/\\/g, '/').replace(/^\.?\//, '')
+
 const resolvePackageHref = (packagePath: string, href: string): string => {
   const cleanHref = href.split('#')[0]?.trim() ?? ''
   if (!cleanHref) return ''
