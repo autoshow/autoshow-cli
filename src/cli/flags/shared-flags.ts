@@ -12,14 +12,7 @@ import {
   SUPPORTED_GEMINI_MODELS,
   SUPPORTED_GROK_MODELS
 } from '~/cli/commands/models/model-options'
-
-const LLAMA_MODELS_DESCRIPTION = `llama.cpp model ID (${SUPPORTED_LLAMA_MODELS.length} supported; see docs/commands/03-write.md)`
-const ELEVENLABS_STT_MODELS_DESCRIPTION = `ElevenLabs STT model: ${SUPPORTED_ELEVENLABS_STT_MODELS.join('|')}`
-const OPENAI_STT_MODELS_DESCRIPTION = `OpenAI STT model: ${SUPPORTED_OPENAI_STT_MODELS.join('|')}`
-const MISTRAL_STT_MODELS_DESCRIPTION = `Mistral STT model: ${SUPPORTED_MISTRAL_STT_MODELS.join('|')}`
-const ASSEMBLYAI_STT_MODELS_DESCRIPTION = `AssemblyAI STT model: ${SUPPORTED_ASSEMBLYAI_STT_MODELS.join('|')}`
-const MISTRAL_OCR_MODELS_DESCRIPTION = `Mistral OCR model: ${SUPPORTED_MISTRAL_OCR_MODELS.join('|')}`
-const GEMINI_MODELS_DESCRIPTION = `Gemini model: ${SUPPORTED_GEMINI_MODELS.join('|')}`
+import { buildModelDescription } from '~/cli/commands/models/model-validation'
 
 export const priceFlag = {
   price: {
@@ -78,7 +71,7 @@ export const transcriptionFlags = {
     default: '0.5'
   },
   'elevenlabs-stt': {
-    description: ELEVENLABS_STT_MODELS_DESCRIPTION,
+    description: buildModelDescription('ElevenLabs STT model', SUPPORTED_ELEVENLABS_STT_MODELS),
     type: String
   },
   'groq-stt': {
@@ -86,15 +79,15 @@ export const transcriptionFlags = {
     type: String
   },
   'openai-stt': {
-    description: OPENAI_STT_MODELS_DESCRIPTION,
+    description: buildModelDescription('OpenAI STT model', SUPPORTED_OPENAI_STT_MODELS),
     type: String
   },
   'mistral-stt': {
-    description: MISTRAL_STT_MODELS_DESCRIPTION,
+    description: buildModelDescription('Mistral STT model', SUPPORTED_MISTRAL_STT_MODELS),
     type: String
   },
   'assemblyai-stt': {
-    description: ASSEMBLYAI_STT_MODELS_DESCRIPTION,
+    description: buildModelDescription('AssemblyAI STT model', SUPPORTED_ASSEMBLYAI_STT_MODELS),
     type: String
   },
   'speaker-count': {
@@ -111,7 +104,7 @@ export const transcriptionFlags = {
 
 export const llmProviderFlags = {
   llama: {
-    description: LLAMA_MODELS_DESCRIPTION,
+    description: `llama.cpp model ID (${SUPPORTED_LLAMA_MODELS.length} supported; see docs/commands/03-write.md)`,
     type: String
   },
   openai: {
@@ -127,7 +120,7 @@ export const llmProviderFlags = {
     type: String
   },
   gemini: {
-    description: GEMINI_MODELS_DESCRIPTION,
+    description: buildModelDescription('Gemini model', SUPPORTED_GEMINI_MODELS),
     type: String
   },
   minimax: {
@@ -216,7 +209,7 @@ export const extractFlags = {
     negatable: false
   },
   'mistral-ocr': {
-    description: MISTRAL_OCR_MODELS_DESCRIPTION,
+    description: buildModelDescription('Mistral OCR model', SUPPORTED_MISTRAL_OCR_MODELS),
     type: String
   }
 } as const satisfies ClercFlagsDefinition

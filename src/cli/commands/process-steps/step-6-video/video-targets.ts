@@ -1,5 +1,6 @@
 import type { VideoProvider, ProcessingOptions, Step6VideoMetadata } from '~/types'
 import { type GeminiVideoModel, type MinimaxVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
+import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { runGeminiVideoGen } from './video-services/gemini/run-gemini-video-gen'
 import { runMinimaxVideoGen } from './video-services/minimax/run-minimax-video-gen'
 
@@ -14,8 +15,7 @@ export type VideoTarget = {
   run: (prompt: string, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }>
 }
 
-export const sanitizeVideoModelName = (model: string): string =>
-  model.replace(/[/\\:*?"<>|]/g, '-')
+export const sanitizeVideoModelName = sanitizeModelName
 
 export const getVideoArtifactFileName = (
   target: Pick<VideoTarget, 'service' | 'model'>,

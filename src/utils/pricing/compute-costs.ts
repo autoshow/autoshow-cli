@@ -1,3 +1,4 @@
+import { toArray } from '~/utils/text-utils'
 import type {
   Step1Metadata,
   Step2Metadata,
@@ -93,6 +94,11 @@ const isExtractionMetadata = (metadata: Step2Metadata | ExtractionMetadata): met
 
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
 
+const computeSttHourlyCost = (service: string, model: string, durationSeconds: number): number => {
+  const sttCost = getSttCost(service, model)
+  return (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
+}
+
 type ComputeActualCostsInput = {
   step1?: Step1Metadata | undefined
   step2?: Step2Metadata | ExtractionMetadata | undefined
@@ -127,25 +133,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     const model = resolveTranscriptionModel(input.step2)
     let cost = 0
 
-    if (service === 'whisper') {
-      const sttCost = getSttCost('whisper', model)
-      cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
-    } else if (service === 'groq') {
-      const sttCost = getSttCost('groq', model)
-      cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
-    } else if (service === 'elevenlabs') {
-      const sttCost = getSttCost('elevenlabs', model)
-      cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
-    } else if (service === 'openai') {
-      const sttCost = getSttCost('openai', model)
-      cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
-    } else if (service === 'mistral') {
-      const sttCost = getSttCost('mistral', model)
-      cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
-    } else if (service === 'assemblyai') {
-      const sttCost = getSttCost('assemblyai', model)
-      cost = (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
-    }
+    cost = computeSttHourlyCost(service, model, durationSeconds)
 
     steps.push({
       step: 'stt',
@@ -157,28 +145,22 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     })
   }
 
-  const step3Array = input.step3
-    ? Array.isArray(input.step3) ? input.step3 : [input.step3]
-    : []
-
-  for (const s3 of step3Array) {
-    const registryService = s3.llmService === 'llama.cpp' ? 'llama' : s3.llmService
-    const rates = getLlmCost(registryService, s3.llmModel)
-    const inputCost = (s3.inputTokenCount / 1e6) * (rates?.inputCostPer1MCents ?? 0)
-    const outputCost = (s3.outputTokenCount / 1e6) * (rates?.outputCostPer1MCents ?? 0)
+  for (const step3Entry of toArray(input.step3)) {
+    const registryService = step3Entry.llmService === 'llama.cpp' ? 'llama' : step3Entry.llmService
+    const rates = getLlmCost(registryService, step3Entry.llmModel)
+    const inputCost = (step3Entry.inputTokenCount / 1e6) * (rates?.inputCostPer1MCents ?? 0)
+    const outputCost = (step3Entry.outputTokenCount / 1e6) * (rates?.outputCostPer1MCents ?? 0)
     steps.push({
       step: 'llm',
-      provider: s3.llmService,
-      model: s3.llmModel,
+      provider: step3Entry.llmService,
+      model: step3Entry.llmModel,
       cost: inputCost + outputCost,
       inputMetric: 'tokens',
-      inputValue: s3.inputTokenCount + s3.outputTokenCount
+      inputValue: step3Entry.inputTokenCount + step3Entry.outputTokenCount
     })
   }
 
-  const step4Array = input.step4
-    ? Array.isArray(input.step4) ? input.step4 : [input.step4]
-    : []
+  const step4Array = toArray(input.step4)
 
   if (step4Array.length > 0 && typeof input.ttsCharacterCount === 'number') {
     for (const step4 of step4Array) {
@@ -194,11 +176,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     }
   }
 
-  const step5Array = input.step5
-    ? Array.isArray(input.step5) ? input.step5 : [input.step5]
-    : []
-
-  for (const step5 of step5Array) {
+  for (const step5 of toArray(input.step5)) {
     const imageCount = Math.max(1, step5.imageCount)
     const cost = getImageCost(step5.imageService, step5.imageModel) * imageCount
     steps.push({
@@ -211,14 +189,10 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     })
   }
 
-  const step6Array = input.step6
-    ? Array.isArray(input.step6) ? input.step6 : [input.step6]
-    : []
-
-  for (const s6 of step6Array) {
-    const meta = getVideoModelMeta(s6.videoGenService, s6.videoGenModel)
+  for (const step6Entry of toArray(input.step6)) {
+    const meta = getVideoModelMeta(step6Entry.videoGenService, step6Entry.videoGenModel)
     let cost = 0
-    const videoDuration = s6.videoDuration ?? 0
+    const videoDuration = step6Entry.videoDuration ?? 0
     if (meta) {
       if (meta.blockSizeSec && (meta.blockCost720pCents || meta.blockCost1080pCents)) {
         const blockCount = Math.max(1, Math.ceil(videoDuration / meta.blockSizeSec))
@@ -229,8 +203,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     }
     steps.push({
       step: 'video',
-      provider: s6.videoGenService,
-      model: s6.videoGenModel,
+      provider: step6Entry.videoGenService,
+      model: step6Entry.videoGenModel,
       cost,
       inputMetric: 'durationSeconds',
       inputValue: videoDuration
@@ -238,27 +212,26 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   }
 
   if (input.step7) {
-    const step7Items = Array.isArray(input.step7) ? input.step7 : [input.step7]
-    for (const item of step7Items) {
-      const meta = getMusicModelMeta(item.musicService, item.musicModel)
+    for (const step7Entry of toArray(input.step7)) {
+      const meta = getMusicModelMeta(step7Entry.musicService, step7Entry.musicModel)
       let cost = 0
       if (meta) {
         if (typeof meta.costPerTrackCents === 'number') {
           cost = meta.costPerTrackCents
-          if (item.lyricsSource === 'generated' && typeof meta.lyricsCostPerTrackCents === 'number') {
+          if (step7Entry.lyricsSource === 'generated' && typeof meta.lyricsCostPerTrackCents === 'number') {
             cost += meta.lyricsCostPerTrackCents
           }
-        } else if (typeof meta.costPerMinuteCents === 'number' && typeof item.musicDurationMs === 'number') {
-          cost = meta.costPerMinuteCents * (item.musicDurationMs / 60000)
+        } else if (typeof meta.costPerMinuteCents === 'number' && typeof step7Entry.musicDurationMs === 'number') {
+          cost = meta.costPerMinuteCents * (step7Entry.musicDurationMs / 60000)
         }
       }
       steps.push({
         step: 'music',
-        provider: item.musicService,
-        model: item.musicModel,
+        provider: step7Entry.musicService,
+        model: step7Entry.musicModel,
         cost,
-        ...(typeof item.musicDurationMs === 'number'
-          ? { inputMetric: 'durationMs' as const, inputValue: item.musicDurationMs }
+        ...(typeof step7Entry.musicDurationMs === 'number'
+          ? { inputMetric: 'durationMs' as const, inputValue: step7Entry.musicDurationMs }
           : { inputMetric: 'tracks' as const, inputValue: 1 })
       })
     }
@@ -312,42 +285,25 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
 
   if (input.useReverb) {
     steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
-  } else if (input.elevenlabsSttModel) {
-    const sttCost = getSttCost('elevenlabs', input.elevenlabsSttModel)
-    const estimation = getSttEstimation('elevenlabs', input.elevenlabsSttModel)
-    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    totalCost += cost
-    steps.push({ step: 'stt', provider: 'elevenlabs', model: input.elevenlabsSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
-  } else if (input.groqSttModel) {
-    const sttCost = getSttCost('groq', input.groqSttModel)
-    const estimation = getSttEstimation('groq', input.groqSttModel)
-    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    totalCost += cost
-    steps.push({ step: 'stt', provider: 'groq', model: input.groqSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
-  } else if (input.openaiSttModel) {
-    const sttCost = getSttCost('openai', input.openaiSttModel)
-    const estimation = getSttEstimation('openai', input.openaiSttModel)
-    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    totalCost += cost
-    steps.push({ step: 'stt', provider: 'openai', model: input.openaiSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
-  } else if (input.mistralSttModel) {
-    const sttCost = getSttCost('mistral', input.mistralSttModel)
-    const estimation = getSttEstimation('mistral', input.mistralSttModel)
-    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    totalCost += cost
-    steps.push({ step: 'stt', provider: 'mistral', model: input.mistralSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
-  } else if (input.assemblyaiSttModel) {
-    const sttCost = getSttCost('assemblyai', input.assemblyaiSttModel)
-    const estimation = getSttEstimation('assemblyai', input.assemblyaiSttModel)
-    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    totalCost += cost
-    steps.push({ step: 'stt', provider: 'assemblyai', model: input.assemblyaiSttModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
-  } else if (input.whisperModel) {
-    const sttCost = getSttCost('whisper', input.whisperModel)
-    const estimation = getSttEstimation('whisper', input.whisperModel)
-    const cost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    totalCost += cost
-    steps.push({ step: 'stt', provider: 'whisper', model: input.whisperModel, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
+  } else {
+    const STT_FIELD_MAP = [
+      { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
+      { field: 'groqSttModel' as const, provider: 'groq' },
+      { field: 'openaiSttModel' as const, provider: 'openai' },
+      { field: 'mistralSttModel' as const, provider: 'mistral' },
+      { field: 'assemblyaiSttModel' as const, provider: 'assemblyai' },
+      { field: 'whisperModel' as const, provider: 'whisper' },
+    ]
+    for (const { field, provider } of STT_FIELD_MAP) {
+      const model = input[field]
+      if (typeof model === 'string' && model.length > 0) {
+        const estimation = getSttEstimation(provider, model)
+        const cost = applyCostMultiplier(computeSttHourlyCost(provider, model, durationSeconds), estimation.costMultiplier)
+        totalCost += cost
+        steps.push({ step: 'stt', provider, model, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
+        break
+      }
+    }
   }
 
   if (input.mistralOcrModel && typeof input.extractPageCount === 'number') {

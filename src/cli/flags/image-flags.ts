@@ -4,23 +4,20 @@ import {
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS
 } from '~/cli/commands/models/model-options'
+import { buildModelDescription } from '~/cli/commands/models/model-validation'
 import { priceFlag } from './shared-flags'
-
-const GEMINI_IMAGE_MODELS_DESCRIPTION = `Gemini image model: ${SUPPORTED_GEMINI_IMAGE_MODELS.join('|')}`
-const MINIMAX_IMAGE_MODELS_DESCRIPTION = `MiniMax image model: ${SUPPORTED_MINIMAX_IMAGE_MODELS.join('|')}`
-const OPENAI_IMAGE_MODELS_DESCRIPTION = `OpenAI image model: ${SUPPORTED_OPENAI_IMAGE_MODELS.join('|')}`
 
 export const imageGenFlags = {
   'gemini-image': {
-    description: GEMINI_IMAGE_MODELS_DESCRIPTION,
+    description: buildModelDescription('Gemini image model', SUPPORTED_GEMINI_IMAGE_MODELS),
     type: String
   },
   'openai-image': {
-    description: OPENAI_IMAGE_MODELS_DESCRIPTION,
+    description: buildModelDescription('OpenAI image model', SUPPORTED_OPENAI_IMAGE_MODELS),
     type: String
   },
   'minimax-image': {
-    description: MINIMAX_IMAGE_MODELS_DESCRIPTION,
+    description: buildModelDescription('MiniMax image model', SUPPORTED_MINIMAX_IMAGE_MODELS),
     type: String
   },
   'image-aspect-ratio': {

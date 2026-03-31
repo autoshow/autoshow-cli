@@ -45,10 +45,12 @@ export const loadEnvFile = async (): Promise<void> => {
       const trimmedLine = line.trim()
       if (trimmedLine && !trimmedLine.startsWith('#')) {
         const [key, ...valueParts] = trimmedLine.split('=')
-        if (key) {
-          const value = valueParts.join('=').replace(/^["']|["']$/g, '')
-          process.env[key.trim()] = value.trim()
+        if (!key || valueParts.length === 0) {
+          l.warn(`Skipping malformed .env line: ${trimmedLine.slice(0, 40)}${trimmedLine.length > 40 ? '...' : ''}`)
+          return
         }
+        const value = valueParts.join('=').replace(/^["']|["']$/g, '')
+        process.env[key.trim()] = value.trim()
       }
     })
     envFileLoaded = true

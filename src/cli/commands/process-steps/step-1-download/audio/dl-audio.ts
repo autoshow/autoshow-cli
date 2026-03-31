@@ -5,17 +5,17 @@ import { downloadVideo } from './yt-utils'
 import { commandExists, exec } from '~/utils/cli-utils'
 import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
 import { sanitizeTitleSlug } from './metadata-utils'
+import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import type { DownloadAudioOptions } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 
 
-const DIRECT_MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
 let ytDlpVersionVerified = false
 
 const isDirectMediaUrl = (url: string): boolean => {
   try {
     const pathname = new URL(url).pathname.toLowerCase()
-    return DIRECT_MEDIA_EXTENSIONS.some(ext => pathname.endsWith(ext))
+    return MEDIA_EXTENSIONS.some(ext => pathname.endsWith(ext))
   } catch {
     return false
   }

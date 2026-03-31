@@ -1,10 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as l from '~/logger'
 import type { Step3Metadata } from '~/types'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
+import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 
 const MINIMAX_ANTHROPIC_BASE_URL = 'https://api.minimax.io/anthropic'
 
@@ -26,10 +26,7 @@ export const runMinimaxModel = async (
       maxRetries: 0
     })
 
-    const inputTokenCount = countTokens(prompt)
-    const startTime = Date.now()
-
-    const responseText = await withRetry(
+    const apiCall = (): Promise<string> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName: 'minimax-llm' },
       async (signal) => {
         const timeoutSignal = AbortSignal.timeout(1800000)
@@ -57,20 +54,8 @@ export const runMinimaxModel = async (
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
     )
 
-    const processingTime = Date.now() - startTime
-    const outputTokenCount = countTokens(responseText)
-
-    const metadata: Step3Metadata = {
-      llmService: 'minimax',
-      llmModel: model,
-      processingTime,
-      inputTokenCount,
-      outputTokenCount,
-      outputFileName: '',
-      outputFormat: structuredOpts ? 'json' : 'markdown',
-      structuredMode: structuredOpts?.modeHint ?? 'off',
-      structuredPresetNames: []
-    }
+    const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)
+    const metadata = buildStep3Metadata('minimax', model, { processingTime, inputTokenCount, outputTokenCount }, structuredOpts)
 
     return { result: responseText, metadata }
   } catch (error) {

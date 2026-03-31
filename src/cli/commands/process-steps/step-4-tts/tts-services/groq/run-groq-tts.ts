@@ -2,7 +2,7 @@ import * as v from 'valibot'
 import type { Step4Metadata } from '~/types'
 import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { exec } from '~/utils/cli-utils'
+import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { GROQ_DEFAULT_TTS_VOICE, type GroqTtsModel, validateGroqTtsVoice } from '~/cli/commands/models/model-options'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
@@ -16,33 +16,6 @@ const GroqErrorSchema = v.object({
   }), undefined),
   message: v.optional(v.string(), undefined)
 })
-
-const splitTextIntoChunks = (text: string, maxChars: number): string[] => {
-  const chunks: string[] = []
-  let remaining = text.trim()
-
-  while (remaining.length > maxChars) {
-    let splitAt = remaining.lastIndexOf('\n', maxChars)
-    if (splitAt < Math.floor(maxChars * 0.5)) {
-      splitAt = remaining.lastIndexOf(' ', maxChars)
-    }
-    if (splitAt < Math.floor(maxChars * 0.5)) {
-      splitAt = maxChars
-    }
-
-    const chunk = remaining.slice(0, splitAt).trim()
-    if (chunk.length > 0) {
-      chunks.push(chunk)
-    }
-    remaining = remaining.slice(splitAt).trim()
-  }
-
-  if (remaining.length > 0) {
-    chunks.push(remaining)
-  }
-
-  return chunks
-}
 
 const readGroqError = async (response: Response): Promise<string> => {
   const raw = await response.text()
@@ -67,49 +40,6 @@ const readGroqError = async (response: Response): Promise<string> => {
   } catch {
     return raw
   }
-}
-
-const concatAndConvertToWav = async (chunkPaths: string[], outputDir: string): Promise<string> => {
-  const wavPath = `${outputDir}/speech.wav`
-
-  if (chunkPaths.length === 1) {
-    const ffmpeg = await exec('ffmpeg', [
-      '-i', chunkPaths[0] as string,
-      '-ar', '16000',
-      '-ac', '1',
-      '-c:a', 'pcm_s16le',
-      '-y',
-      wavPath
-    ])
-    if (ffmpeg.exitCode !== 0) {
-      throw new Error(`Failed to convert Groq audio to WAV: ${ffmpeg.stderr.trim()}`)
-    }
-    return wavPath
-  }
-
-  const concatListPath = `${outputDir}/speech-groq-chunks.txt`
-  const concatList = chunkPaths
-    .map(path => `file '${path.replace(/'/g, `'\\''`)}'`)
-    .join('\n')
-  await Bun.write(concatListPath, `${concatList}\n`)
-
-  const ffmpeg = await exec('ffmpeg', [
-    '-f', 'concat',
-    '-safe', '0',
-    '-i', concatListPath,
-    '-ar', '16000',
-    '-ac', '1',
-    '-c:a', 'pcm_s16le',
-    '-y',
-    wavPath
-  ])
-
-  if (ffmpeg.exitCode !== 0) {
-    throw new Error(`Failed to concatenate Groq audio chunks: ${ffmpeg.stderr.trim()}`)
-  }
-
-  await Bun.$`rm -f ${concatListPath}`.quiet().nothrow()
-  return wavPath
 }
 
 export const runGroqTts = async (
@@ -171,7 +101,7 @@ export const runGroqTts = async (
     chunkPaths.push(chunkPath)
   }
 
-  const audioPath = await concatAndConvertToWav(chunkPaths, outputDir)
+  const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Groq')
   for (const chunkPath of chunkPaths) {
     await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
   }

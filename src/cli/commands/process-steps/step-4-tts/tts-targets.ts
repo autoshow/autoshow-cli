@@ -27,6 +27,7 @@ import { runMinimaxTts } from './tts-services/minimax/run-minimax-tts'
 import { runGroqTts } from './tts-services/groq/run-groq-tts'
 import { runOpenAITts } from './tts-services/openai/run-openai-tts'
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
+import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import * as l from '~/logger'
 
 const KITTEN_PYTHON_VERSION = '3.12'
@@ -87,8 +88,7 @@ const ensureKittenSetup = async (): Promise<void> => {
   }
 }
 
-export const sanitizeTtsModelName = (model: string): string =>
-  model.replace(/[/\\:*?"<>|]/g, '-')
+export const sanitizeTtsModelName = sanitizeModelName
 
 export const getTtsArtifactFileName = (
   target: Pick<TtsTarget, 'service' | 'model'> | Pick<Step4Metadata, 'ttsService' | 'ttsModel'>,

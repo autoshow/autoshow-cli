@@ -3,7 +3,7 @@ import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
-import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, type VideoMetadata, type TranscriptionResult } from '~/types'
+import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
 import { ensureDirectory, fileExists, writeFile } from '~/utils/cli-utils'
@@ -19,14 +19,14 @@ import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
 import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
-import { isDocumentByExtension, isLikelyUrl } from './target-utils'
+import { isDocumentByExtension, isLikelyUrl, MEDIA_EXTENSIONS } from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { estimateTokens } from '~/utils/text-utils'
 import type { BatchItemProcessResult, InputKind } from '~/types'
 
 
-const MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
 const isMediaByExtension = (path: string): boolean => {
   const lower = path.toLowerCase()
   return MEDIA_EXTENSIONS.some(ext => lower.endsWith(ext))
@@ -106,8 +106,13 @@ const downloadDocumentUrlToTempFile = async (
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-doc-url-'))
   const ext = extensionFromUrl(url)
   const filePath = join(tempDir, `document${ext}`)
-  const bytes = await response.arrayBuffer()
-  await Bun.write(filePath, bytes)
+  try {
+    const bytes = await response.arrayBuffer()
+    await Bun.write(filePath, bytes)
+  } catch (err) {
+    await rm(tempDir, { recursive: true, force: true })
+    throw err
+  }
 
   return {
     filePath,
@@ -116,8 +121,6 @@ const downloadDocumentUrlToTempFile = async (
     }
   }
 }
-
-const estimateTokens = (text: string): number => text.split(/\s+/).filter(Boolean).length
 
 const hasExplicitLlmProvider = (opts: RuntimeOptions): boolean => {
   return [
@@ -177,6 +180,62 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   return extractionOpts
 }
 
+type WriteDocumentOutputMetadataOptions = {
+  step1: DocumentMetadata
+  step2: ExtractionMetadata
+  step3: Step3Metadata | Step3Metadata[]
+  mistralOcrModel: string | undefined
+  extractPageCount: number
+  llmService: string
+  llmModel: string
+  llmInputTokenCount: number
+  llmOutputTokenCount: number
+  artifactFiles: Record<string, string>
+}
+
+const writeDocumentOutputMetadata = async (
+  outputDir: string,
+  params: WriteDocumentOutputMetadataOptions
+): Promise<void> => {
+  const { step1, step2, step3, mistralOcrModel, extractPageCount, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles } = params
+
+  const estimated = computeEstimatedCosts({
+    mistralOcrModel,
+    extractPageCount,
+    llmService,
+    llmModel,
+    llmInputTokenCount,
+    llmOutputTokenCount,
+    skipLLM: false
+  })
+  const actual = computeActualCosts({ step2, step3 })
+  const cost = { estimated, actual }
+
+  const estimatedTiming = computeEstimatedProcessingTimes({
+    mistralOcrModel,
+    extractPageCount,
+    llmService: llmService as Step3Metadata['llmService'],
+    llmModel,
+    llmInputTokenCount,
+    llmOutputTokenCount,
+    skipLLM: false,
+  })
+  const actualTiming = computeActualProcessingTimes({ step1, step2, step3 })
+  const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+    ? { estimated: estimatedTiming, actual: actualTiming }
+    : undefined
+
+  await writeFile(`${outputDir}/metadata.json`, JSON.stringify({
+    step1,
+    step2,
+    step3,
+    cost,
+    ...(timing ? { timing } : {}),
+  }, null, 2))
+
+  l.report.complete(outputDir, artifactFiles)
+}
+
 const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOptions): Promise<{ outputDir: string }> => {
   const llmConfig = resolveLLMDefaults(opts)
   const extraction = await processDocument(target, buildExtractionCallOpts(target, baseDir, opts))
@@ -195,32 +254,8 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
     const summaryPath = `${extraction.outputDir}/text.md`
     await Bun.write(summaryPath, summary)
 
-    const llmModel = llmConfig.useOpenAI
-      ? (llmConfig.openaiModel as string)
-      : llmConfig.useGroq
-        ? (llmConfig.groqModel as string)
-        : llmConfig.useGemini
-          ? (llmConfig.geminiModel as string)
-          : llmConfig.useAnthropic
-            ? (llmConfig.anthropicModel as string)
-            : llmConfig.useMinimax
-              ? (llmConfig.minimaxModel as string)
-              : llmConfig.grokModel
-                ? (llmConfig.grokModel as string)
-                : (llmConfig.llamaModel as string)
-    const llmService: Step3Metadata['llmService'] = llmConfig.useOpenAI
-      ? 'openai'
-      : llmConfig.useGroq
-        ? 'groq'
-        : llmConfig.useGemini
-          ? 'gemini'
-          : llmConfig.useAnthropic
-            ? 'anthropic'
-            : llmConfig.useMinimax
-              ? 'minimax'
-              : llmConfig.grokModel
-                ? 'grok'
-                : 'llama.cpp'
+    const llmService: Step3Metadata['llmService'] = (llmConfig.llmService ?? 'llama.cpp') as Step3Metadata['llmService']
+    const llmModel = llmConfig.llmModel ?? (llmConfig.llamaModel as string)
     const step3: Step3Metadata = {
       llmService,
       llmModel,
@@ -233,45 +268,18 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
       structuredPresetNames: []
     }
 
-    const estimated = computeEstimatedCosts({
+    await writeDocumentOutputMetadata(extraction.outputDir, {
+      step1: extraction.step1Metadata,
+      step2: extraction.step2Metadata,
+      step3,
       mistralOcrModel: opts.mistralOcrModel,
       extractPageCount: extraction.step1Metadata.pageCount,
       llmService,
       llmModel,
       llmInputTokenCount: step3.inputTokenCount,
       llmOutputTokenCount: step3.outputTokenCount,
-      skipLLM: false
+      artifactFiles: { prompt: 'prompt.md', summary: 'text.md', metadata: 'metadata.json' }
     })
-    const actual = computeActualCosts({ step2: extraction.step2Metadata, step3 })
-    const cost = { estimated, actual }
-
-    const estimatedTiming = computeEstimatedProcessingTimes({
-      mistralOcrModel: opts.mistralOcrModel,
-      extractPageCount: extraction.step1Metadata.pageCount,
-      llmService,
-      llmModel,
-      llmInputTokenCount: step3.inputTokenCount,
-      llmOutputTokenCount: step3.outputTokenCount,
-      skipLLM: false,
-    })
-    const actualTiming = computeActualProcessingTimes({
-      step1: extraction.step1Metadata,
-      step2: extraction.step2Metadata,
-      step3,
-    })
-    const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
-      ? { estimated: estimatedTiming, actual: actualTiming }
-      : undefined
-
-    await writeFile(`${extraction.outputDir}/metadata.json`, JSON.stringify({
-      step1: extraction.step1Metadata,
-      step2: extraction.step2Metadata,
-      step3,
-      cost,
-      ...(timing ? { timing } : {}),
-    }, null, 2))
-
-    l.report.complete(extraction.outputDir, { prompt: 'prompt.md', summary: 'text.md', metadata: 'metadata.json' })
     return { outputDir: extraction.outputDir }
   }
 
@@ -315,49 +323,11 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
     throw new Error('No LLM outputs generated for document write')
   }
 
-  const step3Serialized = step3Results.length === 1 ? step3Results[0] : step3Results
+  const step3Serialized: Step3Metadata | Step3Metadata[] = step3Results.length === 1 ? step3Results[0]! : step3Results
   const llmInputTokenCount = step3Results.reduce((sum, item) => sum + item.inputTokenCount, 0)
   const llmOutputTokenCount = step3Results.reduce((sum, item) => sum + item.outputTokenCount, 0)
   const llmService = step3Results[0]?.llmService ?? 'llama.cpp'
   const llmModel = step3Results[0]?.llmModel ?? (llmConfig.llamaModel ?? 'unknown')
-
-  const estimated = computeEstimatedCosts({
-    mistralOcrModel: opts.mistralOcrModel,
-    extractPageCount: extraction.step1Metadata.pageCount,
-    llmService,
-    llmModel,
-    llmInputTokenCount,
-    llmOutputTokenCount,
-    skipLLM: false
-  })
-  const actual = computeActualCosts({ step2: extraction.step2Metadata, step3: step3Serialized })
-  const cost = { estimated, actual }
-
-  const estimatedTiming = computeEstimatedProcessingTimes({
-    mistralOcrModel: opts.mistralOcrModel,
-    extractPageCount: extraction.step1Metadata.pageCount,
-    llmService,
-    llmModel,
-    llmInputTokenCount,
-    llmOutputTokenCount,
-    skipLLM: false,
-  })
-  const actualTiming = computeActualProcessingTimes({
-    step1: extraction.step1Metadata,
-    step2: extraction.step2Metadata,
-    step3: step3Serialized,
-  })
-  const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
-    ? { estimated: estimatedTiming, actual: actualTiming }
-    : undefined
-
-  await writeFile(`${extraction.outputDir}/metadata.json`, JSON.stringify({
-    step1: extraction.step1Metadata,
-    step2: extraction.step2Metadata,
-    step3: step3Serialized,
-    cost,
-    ...(timing ? { timing } : {}),
-  }, null, 2))
 
   const artifactFiles: Record<string, string> = {
     prompt: 'prompt.md',
@@ -370,7 +340,19 @@ const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOp
       artifactFiles[`summary-${step3.llmModel}`] = step3.outputFileName
     }
   }
-  l.report.complete(extraction.outputDir, artifactFiles)
+
+  await writeDocumentOutputMetadata(extraction.outputDir, {
+    step1: extraction.step1Metadata,
+    step2: extraction.step2Metadata,
+    step3: step3Serialized,
+    mistralOcrModel: opts.mistralOcrModel,
+    extractPageCount: extraction.step1Metadata.pageCount,
+    llmService,
+    llmModel,
+    llmInputTokenCount,
+    llmOutputTokenCount,
+    artifactFiles
+  })
   return { outputDir: extraction.outputDir }
 }
 

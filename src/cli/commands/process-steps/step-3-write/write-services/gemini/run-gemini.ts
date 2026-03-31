@@ -1,10 +1,10 @@
 import { GoogleGenAI } from '@google/genai'
 import * as l from '~/logger'
 import type { Step3Metadata } from '~/types'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
+import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 
 const parseStatusFromGeminiError = (error: unknown): number | undefined => {
   if (error && typeof error === 'object') {
@@ -43,10 +43,7 @@ export const runGeminiModel = async (
 
     const ai = new GoogleGenAI({ apiKey })
 
-    const inputTokenCount = countTokens(prompt)
-    const startTime = Date.now()
-
-    const responseText = await withRetry(
+    const apiCall = (): Promise<string> => withRetry(
       {
         retryClass: 'runtime_http_create_conservative',
         operationName: 'gemini-llm',
@@ -92,20 +89,8 @@ export const runGeminiModel = async (
       }
     )
 
-    const processingTime = Date.now() - startTime
-    const outputTokenCount = countTokens(responseText)
-
-    const metadata: Step3Metadata = {
-      llmService: 'gemini',
-      llmModel: model,
-      processingTime,
-      inputTokenCount,
-      outputTokenCount,
-      outputFileName: '',
-      outputFormat: structuredOpts ? 'json' : 'markdown',
-      structuredMode: structuredOpts?.modeHint ?? 'off',
-      structuredPresetNames: []
-    }
+    const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)
+    const metadata = buildStep3Metadata('gemini', model, { processingTime, inputTokenCount, outputTokenCount }, structuredOpts)
 
     return { result: responseText, metadata }
   } catch (error) {

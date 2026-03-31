@@ -3,18 +3,16 @@ import {
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS
 } from '~/cli/commands/models/model-options'
+import { buildModelDescription } from '~/cli/commands/models/model-validation'
 import { priceFlag } from './shared-flags'
-
-const GEMINI_VIDEO_MODELS_DESCRIPTION = `Gemini Veo video model: ${SUPPORTED_GEMINI_VIDEO_MODELS.join('|')}`
-const MINIMAX_VIDEO_MODELS_DESCRIPTION = `MiniMax video model: ${SUPPORTED_MINIMAX_VIDEO_MODELS.join('|')}`
 
 export const videoGenFlags = {
   'gemini-video': {
-    description: GEMINI_VIDEO_MODELS_DESCRIPTION,
+    description: buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS),
     type: String
   },
   'minimax-video': {
-    description: MINIMAX_VIDEO_MODELS_DESCRIPTION,
+    description: buildModelDescription('MiniMax video model', SUPPORTED_MINIMAX_VIDEO_MODELS),
     type: String
   },
   'video-duration': {

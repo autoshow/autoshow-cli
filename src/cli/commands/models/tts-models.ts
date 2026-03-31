@@ -1,3 +1,4 @@
+import { createModelValidator, formatAllowedValues } from '~/cli/commands/models/model-validation'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   getKittenHfRepo,
@@ -22,8 +23,6 @@ export type {
   GeminiTtsModel
 } from '~/types'
 
-const formatAllowedValues = (values: readonly string[]): string => values.join(', ')
-
 export const SUPPORTED_KITTEN_TTS_MODELS = [
   'kitten-tts-mini',
   'kitten-tts-micro',
@@ -33,14 +32,7 @@ export const SUPPORTED_KITTEN_TTS_MODELS = [
 
 export const SUPPORTED_KITTEN_TTS_VOICES = getKittenVoices()
 
-export const validateKittenTtsModel = (model: string): KittenTtsModel => {
-  if (!SUPPORTED_KITTEN_TTS_MODELS.includes(model as KittenTtsModel)) {
-    throw CLIUsageError(
-      `Invalid --kitten-tts model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_KITTEN_TTS_MODELS)}`
-    )
-  }
-  return model as KittenTtsModel
-}
+export const validateKittenTtsModel = createModelValidator<KittenTtsModel>(SUPPORTED_KITTEN_TTS_MODELS, 'kitten-tts')
 
 export const validateKittenTtsSpeaker = (speaker: string): string => {
   if (!SUPPORTED_KITTEN_TTS_VOICES.includes(speaker)) {
@@ -65,28 +57,14 @@ export const SUPPORTED_ELEVENLABS_TTS_MODELS = [
 
 export const ELEVENLABS_DEFAULT_VOICE_ID = 'hpp4J3VqNfWAUOO0d1Us'
 
-export const validateElevenlabsTtsModel = (model: string): ElevenlabsTtsModel => {
-  if (!SUPPORTED_ELEVENLABS_TTS_MODELS.includes(model as ElevenlabsTtsModel)) {
-    throw CLIUsageError(
-      `Invalid --elevenlabs-tts model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_ELEVENLABS_TTS_MODELS)}`
-    )
-  }
-  return model as ElevenlabsTtsModel
-}
+export const validateElevenlabsTtsModel = createModelValidator<ElevenlabsTtsModel>(SUPPORTED_ELEVENLABS_TTS_MODELS, 'elevenlabs-tts')
 
 export const SUPPORTED_MINIMAX_TTS_MODELS = [
   'speech-2.8-turbo',
   'speech-2.8-hd'
 ] as const satisfies readonly string[]
 
-export const validateMinimaxTtsModel = (model: string): MinimaxTtsModel => {
-  if (!SUPPORTED_MINIMAX_TTS_MODELS.includes(model as MinimaxTtsModel)) {
-    throw CLIUsageError(
-      `Invalid --minimax-tts model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_MINIMAX_TTS_MODELS)}`
-    )
-  }
-  return model as MinimaxTtsModel
-}
+export const validateMinimaxTtsModel = createModelValidator<MinimaxTtsModel>(SUPPORTED_MINIMAX_TTS_MODELS, 'minimax-tts')
 
 export const SUPPORTED_GROQ_TTS_MODELS = [
   'canopylabs/orpheus-v1-english'
@@ -95,14 +73,7 @@ export const SUPPORTED_GROQ_TTS_MODELS = [
 export const SUPPORTED_GROQ_TTS_VOICES = getGroqTtsVoices()
 export const GROQ_DEFAULT_TTS_VOICE = 'troy'
 
-export const validateGroqTtsModel = (model: string): GroqTtsModel => {
-  if (!SUPPORTED_GROQ_TTS_MODELS.includes(model as GroqTtsModel)) {
-    throw CLIUsageError(
-      `Invalid --groq-tts model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_GROQ_TTS_MODELS)}`
-    )
-  }
-  return model as GroqTtsModel
-}
+export const validateGroqTtsModel = createModelValidator<GroqTtsModel>(SUPPORTED_GROQ_TTS_MODELS, 'groq-tts')
 
 export const validateGroqTtsVoice = (voice: string): string => {
   if (!SUPPORTED_GROQ_TTS_VOICES.includes(voice)) {
@@ -119,14 +90,7 @@ export const SUPPORTED_OPENAI_TTS_MODELS = [
 
 export const OPENAI_DEFAULT_TTS_VOICE = 'alloy'
 
-export const validateOpenAITtsModel = (model: string): OpenAITtsModel => {
-  if (!SUPPORTED_OPENAI_TTS_MODELS.includes(model as OpenAITtsModel)) {
-    throw CLIUsageError(
-      `Invalid --openai-tts model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_OPENAI_TTS_MODELS)}`
-    )
-  }
-  return model as OpenAITtsModel
-}
+export const validateOpenAITtsModel = createModelValidator<OpenAITtsModel>(SUPPORTED_OPENAI_TTS_MODELS, 'openai-tts')
 
 export const SUPPORTED_GEMINI_TTS_MODELS = [
   'gemini-2.5-flash-preview-tts',
@@ -135,11 +99,4 @@ export const SUPPORTED_GEMINI_TTS_MODELS = [
 
 export const GEMINI_DEFAULT_TTS_VOICE = 'Kore'
 
-export const validateGeminiTtsModel = (model: string): GeminiTtsModel => {
-  if (!SUPPORTED_GEMINI_TTS_MODELS.includes(model as GeminiTtsModel)) {
-    throw CLIUsageError(
-      `Invalid --gemini-tts model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_GEMINI_TTS_MODELS)}`
-    )
-  }
-  return model as GeminiTtsModel
-}
+export const validateGeminiTtsModel = createModelValidator<GeminiTtsModel>(SUPPORTED_GEMINI_TTS_MODELS, 'gemini-tts')

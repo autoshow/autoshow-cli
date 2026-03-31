@@ -33,5 +33,21 @@ export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
     anthropicModel: useAnthropicArg ? opts.anthropicModel : undefined,
     minimaxModel: useMinimaxArg ? opts.minimaxModel : undefined,
     grokModel: useGrokArg ? opts.grokModel : undefined,
+    llmService: useOpenAIArg ? 'openai'
+      : useGroqArg ? 'groq'
+        : useGeminiArg ? 'gemini'
+          : useAnthropicArg ? 'anthropic'
+            : useMinimaxArg ? 'minimax'
+              : useGrokArg ? 'grok'
+                : (useLlamaArg || !anySelected) ? 'llama.cpp'
+                  : undefined,
+    llmModel: useOpenAIArg ? opts.openaiModel
+      : useGroqArg ? opts.groqModel
+        : useGeminiArg ? opts.geminiModel
+          : useAnthropicArg ? opts.anthropicModel
+            : useMinimaxArg ? opts.minimaxModel
+              : useGrokArg ? opts.grokModel
+                : useLlamaArg ? opts.llamaModel
+                  : DEFAULT_LLAMA_MODEL,
   }
 }

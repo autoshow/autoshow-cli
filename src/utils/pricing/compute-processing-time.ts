@@ -1,3 +1,4 @@
+import { toArray } from '~/utils/text-utils'
 import {
   getExtractEstimation,
   getImageEstimation,
@@ -260,11 +261,7 @@ export const computeActualProcessingTimes = (
     })
   }
 
-  const step3Array = input.step3
-    ? Array.isArray(input.step3) ? input.step3 : [input.step3]
-    : []
-
-  for (const step3 of step3Array) {
+  for (const step3 of toArray(input.step3)) {
     const tokenCount = step3.inputTokenCount + step3.outputTokenCount
     steps.push({
       step: 'llm',
@@ -276,9 +273,7 @@ export const computeActualProcessingTimes = (
     })
   }
 
-  const step4Array = input.step4
-    ? Array.isArray(input.step4) ? input.step4 : [input.step4]
-    : []
+  const step4Array = toArray(input.step4)
 
   if (step4Array.length > 0 && typeof input.ttsCharacterCount === 'number') {
     for (const step4 of step4Array) {
@@ -293,11 +288,7 @@ export const computeActualProcessingTimes = (
     }
   }
 
-  const step5Array = input.step5
-    ? Array.isArray(input.step5) ? input.step5 : [input.step5]
-    : []
-
-  for (const step5 of step5Array) {
+  for (const step5 of toArray(input.step5)) {
     steps.push({
       step: 'image',
       provider: step5.imageService,
@@ -308,11 +299,7 @@ export const computeActualProcessingTimes = (
     })
   }
 
-  const step6Array = input.step6
-    ? Array.isArray(input.step6) ? input.step6 : [input.step6]
-    : []
-
-  for (const s6 of step6Array) {
+  for (const s6 of toArray(input.step6)) {
     steps.push({
       step: 'video',
       provider: s6.videoGenService,
@@ -328,8 +315,7 @@ export const computeActualProcessingTimes = (
   }
 
   if (input.step7) {
-    const step7Items = Array.isArray(input.step7) ? input.step7 : [input.step7]
-    for (const item of step7Items) {
+    for (const item of toArray(input.step7)) {
       steps.push({
         step: 'music',
         provider: item.musicService,

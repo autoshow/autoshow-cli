@@ -99,12 +99,15 @@ const buildWget2Args = (req: DownloadRequest, profile: DownloadProfile): string[
   return args
 }
 
-const getFileSize = async (path: string): Promise<number> => {
+const getFileSize = async (path: string): Promise<number | null> => {
   try {
     const s = await stat(path)
     return s.size
-  } catch {
-    return 0
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return null
+    }
+    throw error
   }
 }
 
@@ -113,17 +116,20 @@ const buildFetchHeaders = (req: DownloadRequest): Record<string, string> | undef
   return req.headers
 }
 
-const runBunFetchFile = async (req: DownloadRequest): Promise<void> => {
+const fetchWithDefaults = async (req: DownloadRequest): Promise<Response> => {
   const response = await fetch(req.url, {
     headers: buildFetchHeaders(req),
     signal: AbortSignal.timeout(BUN_FETCH_TIMEOUT_MS),
     redirect: 'follow'
   })
-
   if (!response.ok) {
     throw new Error(`bun-fetch download failed: HTTP ${response.status} ${response.statusText}`)
   }
+  return response
+}
 
+const runBunFetchFile = async (req: DownloadRequest): Promise<void> => {
+  const response = await fetchWithDefaults(req)
   const buffer = await response.arrayBuffer()
   await Bun.write(req.destination, buffer)
 }
@@ -141,16 +147,7 @@ const runBunFetchPipeToTar = async (req: DownloadRequest): Promise<{ exitCode: n
   const tempArchivePath = join(tempRoot, 'archive.tar.gz')
 
   try {
-    const response = await fetch(req.url, {
-      headers: buildFetchHeaders(req),
-      signal: AbortSignal.timeout(BUN_FETCH_TIMEOUT_MS),
-      redirect: 'follow'
-    })
-
-    if (!response.ok) {
-      throw new Error(`bun-fetch download failed: HTTP ${response.status} ${response.statusText}`)
-    }
-
+    const response = await fetchWithDefaults(req)
     const buffer = await response.arrayBuffer()
     await Bun.write(tempArchivePath, buffer)
 
@@ -172,16 +169,7 @@ const runBunFetchScriptInstaller = async (req: DownloadRequest): Promise<{ exitC
   const tempFile = join(tempRoot, 'installer.sh')
 
   try {
-    const response = await fetch(req.url, {
-      headers: buildFetchHeaders(req),
-      signal: AbortSignal.timeout(BUN_FETCH_TIMEOUT_MS),
-      redirect: 'follow'
-    })
-
-    if (!response.ok) {
-      throw new Error(`bun-fetch download failed: HTTP ${response.status} ${response.statusText}`)
-    }
-
+    const response = await fetchWithDefaults(req)
     const buffer = await response.arrayBuffer()
     await Bun.write(tempFile, buffer)
 
@@ -321,7 +309,7 @@ export const downloadFile = async (req: DownloadRequest): Promise<DownloadResult
 
   await runFileDownload(req, profile)
 
-  const bytes = await getFileSize(req.destination)
+  const bytes = (await getFileSize(req.destination)) ?? 0
 
   if (req.expectedMinBytes !== undefined && bytes < req.expectedMinBytes) {
     throw new Error(`Downloaded file too small: ${bytes} bytes (expected >= ${req.expectedMinBytes})`)

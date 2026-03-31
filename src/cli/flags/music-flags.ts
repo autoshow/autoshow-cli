@@ -3,18 +3,16 @@ import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS
 } from '~/cli/commands/models/model-options'
+import { buildModelDescription } from '~/cli/commands/models/model-validation'
 import { priceFlag } from './shared-flags'
-
-const ELEVENLABS_MUSIC_MODELS_DESCRIPTION = `ElevenLabs music model: ${SUPPORTED_ELEVENLABS_MUSIC_MODELS.join('|')}`
-const MINIMAX_MUSIC_MODELS_DESCRIPTION = `MiniMax music model: ${SUPPORTED_MINIMAX_MUSIC_MODELS.join('|')}`
 
 export const musicGenFlags = {
   'elevenlabs-music': {
-    description: ELEVENLABS_MUSIC_MODELS_DESCRIPTION,
+    description: buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS),
     type: String
   },
   'minimax-music': {
-    description: MINIMAX_MUSIC_MODELS_DESCRIPTION,
+    description: buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS),
     type: String
   },
   'music-duration': {

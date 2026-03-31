@@ -42,38 +42,34 @@ const generateSilentVideo = async (outPath: string, format: string): Promise<voi
 
 // ─── Document generation helpers ──────────────────────────────────────────
 
-// HTML → PDF/ODT (LibreOffice Writer handles HTML natively for these)
-const generateFromHtmlDirect = async (outPath: string, ext: string): Promise<void> => {
-  const tmpDir = await mkdtemp(join(tmpdir(), 'autoshow-sample-'))
-  try {
-    const tmpHtml = join(tmpDir, 'source.html')
-    await Bun.write(tmpHtml, '<html><body><p>Sample document for testing.</p></body></html>')
-    const result = await exec('soffice', ['--headless', '--convert-to', ext, '--outdir', tmpDir, tmpHtml])
-    if (result.exitCode !== 0) {
-      throw new Error(`LibreOffice HTML→${ext} failed: ${result.stderr}`)
-    }
-    await rename(join(tmpDir, `source.${ext}`), outPath)
-  } finally {
-    await rm(tmpDir, { recursive: true, force: true })
-  }
-}
+const SAMPLE_HTML = '<html><body><p>Sample document for testing.</p></body></html>'
 
-// HTML → ODT → DOCX/EPUB (two-step: Writer can export these from ODT reliably)
-const generateWriterFormat = async (outPath: string, ext: string): Promise<void> => {
+const generateViaLibreOffice = async (
+  outPath: string,
+  targetExt: string,
+  sourceExt: string,
+  sourceContent: string,
+  intermediateExt?: string
+): Promise<void> => {
   const tmpDir = await mkdtemp(join(tmpdir(), 'autoshow-sample-'))
   try {
-    const tmpHtml = join(tmpDir, 'source.html')
-    await Bun.write(tmpHtml, '<html><body><p>Sample document for testing.</p></body></html>')
-    const odtResult = await exec('soffice', ['--headless', '--convert-to', 'odt', '--outdir', tmpDir, tmpHtml])
-    if (odtResult.exitCode !== 0) {
-      throw new Error(`LibreOffice HTML→ODT failed: ${odtResult.stderr}`)
+    const srcFile = join(tmpDir, `source.${sourceExt}`)
+    await Bun.write(srcFile, sourceContent)
+
+    let convertFrom = srcFile
+    if (intermediateExt) {
+      const intResult = await exec('soffice', ['--headless', '--convert-to', intermediateExt, '--outdir', tmpDir, srcFile])
+      if (intResult.exitCode !== 0) {
+        throw new Error(`LibreOffice ${sourceExt}→${intermediateExt} failed: ${intResult.stderr}`)
+      }
+      convertFrom = join(tmpDir, `source.${intermediateExt}`)
     }
-    const tmpOdt = join(tmpDir, 'source.odt')
-    const result = await exec('soffice', ['--headless', '--convert-to', ext, '--outdir', tmpDir, tmpOdt])
+
+    const result = await exec('soffice', ['--headless', '--convert-to', targetExt, '--outdir', tmpDir, convertFrom])
     if (result.exitCode !== 0) {
-      throw new Error(`LibreOffice ODT→${ext} failed: ${result.stderr}`)
+      throw new Error(`LibreOffice ${intermediateExt ?? sourceExt}→${targetExt} failed: ${result.stderr}`)
     }
-    await rename(join(tmpDir, `source.${ext}`), outPath)
+    await rename(join(tmpDir, `source.${targetExt}`), outPath)
   } finally {
     await rm(tmpDir, { recursive: true, force: true })
   }
@@ -89,21 +85,6 @@ const MINIMAL_FODS = `<?xml version="1.0" encoding="UTF-8"?>
 </table:table>
 </office:spreadsheet></office:body></office:document>`
 
-const generateCalcFormat = async (outPath: string, ext: string): Promise<void> => {
-  const tmpDir = await mkdtemp(join(tmpdir(), 'autoshow-sample-'))
-  try {
-    const tmpFods = join(tmpDir, 'source.fods')
-    await Bun.write(tmpFods, MINIMAL_FODS)
-    const result = await exec('soffice', ['--headless', '--convert-to', ext, '--outdir', tmpDir, tmpFods])
-    if (result.exitCode !== 0) {
-      throw new Error(`LibreOffice FODS→${ext} failed: ${result.stderr}`)
-    }
-    await rename(join(tmpDir, `source.${ext}`), outPath)
-  } finally {
-    await rm(tmpDir, { recursive: true, force: true })
-  }
-}
-
 // FODP (flat-XML presentation) → ODP/PPTX (LibreOffice Impress handles FODP natively)
 const MINIMAL_FODP = `<?xml version="1.0" encoding="UTF-8"?>
 <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.presentation">
@@ -114,21 +95,6 @@ const MINIMAL_FODP = `<?xml version="1.0" encoding="UTF-8"?>
 </draw:frame>
 </draw:page>
 </office:presentation></office:body></office:document>`
-
-const generateImpressFormat = async (outPath: string, ext: string): Promise<void> => {
-  const tmpDir = await mkdtemp(join(tmpdir(), 'autoshow-sample-'))
-  try {
-    const tmpFodp = join(tmpDir, 'source.fodp')
-    await Bun.write(tmpFodp, MINIMAL_FODP)
-    const result = await exec('soffice', ['--headless', '--convert-to', ext, '--outdir', tmpDir, tmpFodp])
-    if (result.exitCode !== 0) {
-      throw new Error(`LibreOffice FODP→${ext} failed: ${result.stderr}`)
-    }
-    await rename(join(tmpDir, `source.${ext}`), outPath)
-  } finally {
-    await rm(tmpDir, { recursive: true, force: true })
-  }
-}
 
 const generateCsvFromScratch = async (outPath: string): Promise<void> => {
   const content = 'id,name,value\n1,alpha,100\n2,beta,200\n3,gamma,300\n'
@@ -337,19 +303,19 @@ export const generateFixture = async (
         break
       case 'pdf':
       case 'odt':
-        await generateFromHtmlDirect(filePath, format)
+        await generateViaLibreOffice(filePath, format, 'html', SAMPLE_HTML)
         break
       case 'epub':
       case 'docx':
-        await generateWriterFormat(filePath, format)
+        await generateViaLibreOffice(filePath, format, 'html', SAMPLE_HTML, 'odt')
         break
       case 'ods':
       case 'xlsx':
-        await generateCalcFormat(filePath, format)
+        await generateViaLibreOffice(filePath, format, 'fods', MINIMAL_FODS)
         break
       case 'odp':
       case 'pptx':
-        await generateImpressFormat(filePath, format)
+        await generateViaLibreOffice(filePath, format, 'fodp', MINIMAL_FODP)
         break
       case 'rtf':
         await generateRtfFromScratch(filePath)

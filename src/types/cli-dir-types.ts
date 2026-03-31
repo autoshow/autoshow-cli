@@ -69,6 +69,8 @@ export type ResolvedLLMConfig = {
   anthropicModel: string | undefined
   minimaxModel: string | undefined
   grokModel: string | undefined
+  llmService: string | undefined
+  llmModel: string | undefined
 }
 
 export type InputKind =

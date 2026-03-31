@@ -1,70 +1,45 @@
-import { mkdir, rename, rm } from 'node:fs/promises'
+import { rename } from 'node:fs/promises'
 import type { Step7MusicMetadata } from '~/types'
-import * as l from '~/logger'
+import { sanitizeModelName, runTargets } from '~/cli/commands/process-steps/target-runner'
 import {
   type MusicGenOptions,
   type MusicTarget,
   collectMusicTargets,
   getMusicArtifactFileName,
-  sanitizeMusicModelName,
 } from './music-targets'
 
-const getTargetWorkspaceDir = (outputDir: string, target: MusicTarget): string =>
-  `${outputDir}/.music-tmp-${target.service}-${sanitizeMusicModelName(target.model)}`
+type MusicResult = { musicPath: string, metadata: Step7MusicMetadata }
 
 export const runMusicTargets = async (
   targets: MusicTarget[],
   prompt: string,
   outputDir: string,
 ): Promise<{ musicPaths: string[], metadata: Step7MusicMetadata[] }> => {
-  const successes: Array<{ musicPath: string, metadata: Step7MusicMetadata }> = []
-  const failedTargets: string[] = []
-  const singleTarget = targets.length === 1
+  const successes = await runTargets<MusicTarget, MusicResult>({
+    targets,
+    outputDir,
+    stepLabel: 'music',
+    noProviderMessage: 'No provider produced music',
+    getWorkspaceDir: (dir, target) =>
+      `${dir}/.music-tmp-${target.service}-${sanitizeModelName(target.model)}`,
+    runTarget: async (target, workspaceDir) =>
+      target.run(prompt, workspaceDir),
+    finalizeTarget: async (target, result, singleTarget) => {
+      if (singleTarget) return result
 
-  for (const target of targets) {
-    const workspaceDir = singleTarget ? outputDir : getTargetWorkspaceDir(outputDir, target)
-
-    try {
-      if (!singleTarget) {
-        await mkdir(workspaceDir, { recursive: true })
+      const finalFileName = getMusicArtifactFileName(target, singleTarget)
+      const finalPath = `${outputDir}/${finalFileName}`
+      await rename(result.musicPath, finalPath)
+      return {
+        musicPath: finalPath,
+        metadata: {
+          ...result.metadata,
+          musicFileName: finalFileName,
+          musicFileSize: Bun.file(finalPath).size,
+        }
       }
-
-      const { musicPath, metadata } = await target.run(prompt, workspaceDir)
-
-      if (singleTarget) {
-        successes.push({ musicPath, metadata })
-      } else {
-        const finalFileName = getMusicArtifactFileName(target, singleTarget)
-        const finalPath = `${outputDir}/${finalFileName}`
-        await rename(musicPath, finalPath)
-        successes.push({
-          musicPath: finalPath,
-          metadata: {
-            ...metadata,
-            musicFileName: finalFileName,
-            musicFileSize: Bun.file(finalPath).size,
-          }
-        })
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      l.error(`Failed to run music target ${target.service}/${target.model}: ${message}`)
-      failedTargets.push(`${target.service}/${target.model}: ${message}`)
-    } finally {
-      if (!singleTarget) {
-        await rm(workspaceDir, { recursive: true, force: true })
-      }
-    }
-  }
-
-  if (successes.length === 0) {
-    const details = failedTargets.length > 0 ? failedTargets.join('; ') : 'No provider produced music'
-    throw new Error(`No music outputs were generated. ${details}`)
-  }
-
-  if (failedTargets.length > 0) {
-    l.warn(`Music run completed with partial failures: ${failedTargets.join('; ')}`)
-  }
+    },
+  })
 
   return {
     musicPaths: successes.map((entry) => entry.musicPath),

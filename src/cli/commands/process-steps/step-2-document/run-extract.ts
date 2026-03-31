@@ -27,14 +27,13 @@ import type { ZipXmlFormat } from '~/types'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-document/document-services/mistral-ocr/mistral'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
 import { isOfficeTextUsable } from './document-utils/page-triage'
+import { estimateTokens } from '~/utils/text-utils'
 
 const ZIP_XML_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'] as const)
 const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
 const isZipXmlFormat = (f: string): f is ZipXmlFormat => ZIP_XML_FORMATS.has(f as ZipXmlFormat)
 
 type LocalExtractOcrEngine = Exclude<ExtractOcrEngine, 'mistral-ocr'>
-
-const estimateTokens = (text: string): number => text.split(/\s+/).filter(Boolean).length
 
 const buildCombinedText = (pages: PageResult[], pageSeparator: string): string => {
   return pages
@@ -52,20 +51,20 @@ const zipXmlPageToPageResult = (p: ZipXmlPage): PageResult => ({
 const runZipXmlExtract = async (filePath: string, format: ZipXmlFormat): Promise<{ pages: PageResult[], extractionMethod: string }> => {
   switch (format) {
     case 'docx': {
-      const r = await extractDocx(filePath)
-      return { pages: r.pages.map(zipXmlPageToPageResult), extractionMethod: 'docx' }
+      const docxResult = await extractDocx(filePath)
+      return { pages: docxResult.pages.map(zipXmlPageToPageResult), extractionMethod: 'docx' }
     }
     case 'pptx': {
-      const r = await extractPptx(filePath)
-      return { pages: r.pages.map(zipXmlPageToPageResult), extractionMethod: 'pptx' }
+      const pptxResult = await extractPptx(filePath)
+      return { pages: pptxResult.pages.map(zipXmlPageToPageResult), extractionMethod: 'pptx' }
     }
     case 'xlsx': {
-      const r = await extractXlsx(filePath)
-      return { pages: r.pages.map(zipXmlPageToPageResult), extractionMethod: 'xlsx' }
+      const xlsxResult = await extractXlsx(filePath)
+      return { pages: xlsxResult.pages.map(zipXmlPageToPageResult), extractionMethod: 'xlsx' }
     }
     case 'odf': {
-      const r = await extractOdf(filePath)
-      return { pages: r.pages.map(zipXmlPageToPageResult), extractionMethod: 'odf' }
+      const odfResult = await extractOdf(filePath)
+      return { pages: odfResult.pages.map(zipXmlPageToPageResult), extractionMethod: 'odf' }
     }
   }
 }

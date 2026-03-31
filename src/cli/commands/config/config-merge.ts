@@ -35,122 +35,96 @@ export const mergeConfigIntoRawFlags = (
 
   const hasExplicitFlagInGroup = (group: readonly string[]): boolean => group.some(flag => explicitFlags.has(flag))
 
-  const injectStr = (flagName: string, value: string | undefined): void => {
-    if (value !== undefined && !explicitFlags.has(flagName)) {
-      merged[flagName] = value
-    }
+  const inject = (flagName: string, value: unknown): void => {
+    if (value === undefined || explicitFlags.has(flagName)) return
+    merged[flagName] = typeof value === 'number' ? String(value) : value
   }
 
-  const injectNum = (flagName: string, value: number | undefined): void => {
-    if (value !== undefined && !explicitFlags.has(flagName)) {
-      merged[flagName] = String(value)
-    }
-  }
-
-  const injectBool = (flagName: string, value: boolean | undefined): void => {
-    if (value !== undefined && !explicitFlags.has(flagName)) {
-      merged[flagName] = value
-    }
+  const injectProviderGroup = (group: readonly string[], entries: [string, unknown][]): void => {
+    if (hasExplicitFlagInGroup(group)) return
+    for (const [flag, val] of entries) inject(flag, val)
   }
 
   if (d.stt) {
-    injectStr('whisper', d.stt.whisper)
-    const hasExplicitSttProvider = hasExplicitFlagInGroup(STT_PROVIDER_FLAGS)
-    if (!hasExplicitSttProvider) {
-      injectStr('groq-stt', d.stt.groqStt)
-      injectStr('elevenlabs-stt', d.stt.elevenlabsStt)
-      injectStr('openai-stt', d.stt.openaiStt)
-      injectStr('mistral-stt', d.stt.mistralStt)
-      injectStr('assemblyai-stt', d.stt.assemblyaiStt)
-    }
-    injectNum('speaker-count', d.stt.speakerCount)
-    injectBool('split', d.stt.split)
-    injectNum('reverb-verbatimicity', d.stt.reverbVerbatimicity)
+    inject('whisper', d.stt.whisper)
+    injectProviderGroup(STT_PROVIDER_FLAGS, [
+      ['groq-stt', d.stt.groqStt], ['elevenlabs-stt', d.stt.elevenlabsStt],
+      ['openai-stt', d.stt.openaiStt], ['mistral-stt', d.stt.mistralStt],
+      ['assemblyai-stt', d.stt.assemblyaiStt],
+    ])
+    inject('speaker-count', d.stt.speakerCount)
+    inject('split', d.stt.split)
+    inject('reverb-verbatimicity', d.stt.reverbVerbatimicity)
   }
 
   if (d.llm) {
-    const hasExplicitLlmProvider = hasExplicitFlagInGroup(LLM_PROVIDER_FLAGS)
-    if (!hasExplicitLlmProvider) {
-      injectStr('llama', d.llm.llama)
-      injectStr('openai', d.llm.openai)
-      injectStr('groq', d.llm.groq)
-      injectStr('gemini', d.llm.gemini)
-      injectStr('anthropic', d.llm.anthropic)
-      injectStr('minimax', d.llm.minimax)
-    }
-    injectBool('structured', d.llm.structured)
-    injectBool('structured-strict', d.llm.structuredStrict)
-    injectNum('structured-compat-retries', d.llm.structuredCompatRetries)
+    injectProviderGroup(LLM_PROVIDER_FLAGS, [
+      ['llama', d.llm.llama], ['openai', d.llm.openai], ['groq', d.llm.groq],
+      ['gemini', d.llm.gemini], ['anthropic', d.llm.anthropic], ['minimax', d.llm.minimax],
+    ])
+    inject('structured', d.llm.structured)
+    inject('structured-strict', d.llm.structuredStrict)
+    inject('structured-compat-retries', d.llm.structuredCompatRetries)
   }
 
   if (d.post?.tts) {
-    const hasExplicitTtsProvider = hasExplicitFlagInGroup(TTS_PROVIDER_FLAGS)
-    if (!hasExplicitTtsProvider) {
-      injectStr('kitten-tts', d.post.tts.kittenTts)
-      injectStr('elevenlabs-tts', d.post.tts.elevenlabsTts)
-      injectStr('minimax-tts', d.post.tts.minimaxTts)
-      injectStr('groq-tts', d.post.tts.groqTts)
-      injectStr('openai-tts', d.post.tts.openaiTts)
-      injectStr('gemini-tts', d.post.tts.geminiTts)
-    }
-    injectStr('kitten-voice', d.post.tts.ttsSpeaker)
-    injectStr('groq-voice', d.post.tts.groqVoice)
-    injectStr('openai-voice', d.post.tts.openaiVoice)
-    injectStr('gemini-voice', d.post.tts.geminiVoice)
-    injectStr('elevenlabs-voice', d.post.tts.elevenlabsVoice)
-    injectStr('minimax-tts-voice', d.post.tts.minimaxTtsVoice)
+    injectProviderGroup(TTS_PROVIDER_FLAGS, [
+      ['kitten-tts', d.post.tts.kittenTts], ['elevenlabs-tts', d.post.tts.elevenlabsTts],
+      ['minimax-tts', d.post.tts.minimaxTts], ['groq-tts', d.post.tts.groqTts],
+      ['openai-tts', d.post.tts.openaiTts], ['gemini-tts', d.post.tts.geminiTts],
+    ])
+    inject('kitten-voice', d.post.tts.ttsSpeaker)
+    inject('groq-voice', d.post.tts.groqVoice)
+    inject('openai-voice', d.post.tts.openaiVoice)
+    inject('gemini-voice', d.post.tts.geminiVoice)
+    inject('elevenlabs-voice', d.post.tts.elevenlabsVoice)
+    inject('minimax-tts-voice', d.post.tts.minimaxTtsVoice)
   }
 
   if (d.post?.image) {
-    const hasExplicitImageProvider = hasExplicitFlagInGroup(IMAGE_PROVIDER_FLAGS)
-    if (!hasExplicitImageProvider) {
-      injectStr('gemini-image', d.post.image.geminiImage)
-      injectStr('openai-image', d.post.image.openaiImage)
-      injectStr('minimax-image', d.post.image.minimaxImage)
-    }
-    injectStr('image-aspect-ratio', d.post.image.imageAspectRatio)
-    injectStr('image-size', d.post.image.imageSize)
-    injectStr('image-quality', d.post.image.imageQuality)
-    injectStr('image-format', d.post.image.imageFormat)
-    injectStr('image-background', d.post.image.imageBackground)
-    injectNum('imagen-count', d.post.image.imagenCount)
+    injectProviderGroup(IMAGE_PROVIDER_FLAGS, [
+      ['gemini-image', d.post.image.geminiImage], ['openai-image', d.post.image.openaiImage],
+      ['minimax-image', d.post.image.minimaxImage],
+    ])
+    inject('image-aspect-ratio', d.post.image.imageAspectRatio)
+    inject('image-size', d.post.image.imageSize)
+    inject('image-quality', d.post.image.imageQuality)
+    inject('image-format', d.post.image.imageFormat)
+    inject('image-background', d.post.image.imageBackground)
+    inject('imagen-count', d.post.image.imagenCount)
   }
 
   if (d.post?.video) {
-    const hasExplicitVideoProvider = hasExplicitFlagInGroup(VIDEO_PROVIDER_FLAGS)
-    if (!hasExplicitVideoProvider) {
-      injectStr('gemini-video', d.post.video.geminiVideo)
-      injectStr('minimax-video', d.post.video.minimaxVideo)
-    }
-    injectNum('video-duration', d.post.video.videoDuration)
-    injectStr('video-size', d.post.video.videoSize)
-    injectStr('video-aspect-ratio', d.post.video.videoAspectRatio)
-    injectStr('video-resolution', d.post.video.videoResolution)
+    injectProviderGroup(VIDEO_PROVIDER_FLAGS, [
+      ['gemini-video', d.post.video.geminiVideo], ['minimax-video', d.post.video.minimaxVideo],
+    ])
+    inject('video-duration', d.post.video.videoDuration)
+    inject('video-size', d.post.video.videoSize)
+    inject('video-aspect-ratio', d.post.video.videoAspectRatio)
+    inject('video-resolution', d.post.video.videoResolution)
   }
 
   if (d.post?.music) {
-    const hasExplicitMusicProvider = hasExplicitFlagInGroup(MUSIC_PROVIDER_FLAGS)
-    if (!hasExplicitMusicProvider) {
-      injectStr('elevenlabs-music', d.post.music.elevenlabsMusic)
-      injectStr('minimax-music', d.post.music.minimaxMusic)
-    }
-    injectNum('music-duration', d.post.music.musicDuration)
+    injectProviderGroup(MUSIC_PROVIDER_FLAGS, [
+      ['elevenlabs-music', d.post.music.elevenlabsMusic], ['minimax-music', d.post.music.minimaxMusic],
+    ])
+    inject('music-duration', d.post.music.musicDuration)
   }
 
   if (d.extract) {
-    injectStr('lang', d.extract.lang)
-    injectStr('out', d.extract.out)
-    injectNum('dpi', d.extract.dpi)
-    injectNum('psm', d.extract.psm)
-    injectNum('oem', d.extract.oem)
-    injectNum('rotate', d.extract.rotate)
-    injectStr('mistral-ocr', d.extract.mistralOcr)
+    inject('lang', d.extract.lang)
+    inject('out', d.extract.out)
+    inject('dpi', d.extract.dpi)
+    inject('psm', d.extract.psm)
+    inject('oem', d.extract.oem)
+    inject('rotate', d.extract.rotate)
+    inject('mistral-ocr', d.extract.mistralOcr)
   }
 
   if (d.batch) {
-    injectNum('batch-limit', d.batch.limit)
-    injectStr('batch-order', d.batch.order)
-    injectNum('batch-concurrency', d.batch.concurrency)
+    inject('batch-limit', d.batch.limit)
+    inject('batch-order', d.batch.order)
+    inject('batch-concurrency', d.batch.concurrency)
   }
 
   if (d.prompts && d.prompts.length > 0 && !explicitFlags.has('prompt')) {

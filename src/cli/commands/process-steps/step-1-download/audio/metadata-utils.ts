@@ -2,6 +2,7 @@ import * as l from '~/logger'
 import { validateData, validateDataSafe } from '~/utils/validate/validation'
 import { exec, loadEnvFile } from '~/utils/cli-utils'
 import { YtDlpVideoInfoSchema, VideoMetadataSchema, type VideoMetadata, type YtDlpVideoInfo } from '~/types'
+import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 
 export const getVideoInfo = async (url: string): Promise<YtDlpVideoInfo | null> => {
   try {
@@ -173,12 +174,10 @@ export const extractLocalFileMetadata = async (filePath: string): Promise<VideoM
   }
 }
 
-const DIRECT_MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
-
 const isDirectMediaUrl = (url: string): boolean => {
   try {
     const pathname = new URL(url).pathname.toLowerCase()
-    return DIRECT_MEDIA_EXTENSIONS.some(ext => pathname.endsWith(ext))
+    return MEDIA_EXTENSIONS.some(ext => pathname.endsWith(ext))
   } catch {
     return false
   }

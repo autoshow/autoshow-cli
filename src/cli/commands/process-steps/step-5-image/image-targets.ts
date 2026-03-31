@@ -13,6 +13,7 @@ import {
 } from '~/cli/commands/models/model-options'
 import { ensureGeminiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { ensureOpenAIImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
+import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
 import { runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
 import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
@@ -36,8 +37,7 @@ export type ImageTarget = {
   run: (prompt: string, outputDir: string, opts: ImageGenOptions) => Promise<{ imagePaths: string[], metadata: Step5Metadata }>
 }
 
-export const sanitizeImageModelName = (model: string): string =>
-  model.replace(/[/\\:*?"<>|]/g, '-')
+export const sanitizeImageModelName = sanitizeModelName
 
 const normalizeOpenAIImageExtension = (format: string | undefined): string => {
   if (format === 'jpeg') {

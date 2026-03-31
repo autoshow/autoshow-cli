@@ -27,6 +27,18 @@ export type { StepEstimate, AggregatedPriceEstimate } from '~/types'
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
 
+const buildCloudSttEstimate = async (
+  provider: string,
+  model: string,
+  resolvedTarget: string
+): Promise<SttStepEstimate> => {
+  const durationSeconds = await resolveSttInputDurationSeconds(resolvedTarget)
+  const sttCost = getSttCost(provider, model)
+  const estimation = getSttEstimation(provider, model)
+  const totalCost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
+  return { step: 'stt', provider, model, durationSeconds, totalCost, costMultiplier: estimation.costMultiplier }
+}
+
 const buildSttEstimate = async (
   resolvedTarget: string,
   opts: RuntimeOptions
@@ -52,14 +64,7 @@ const buildSttEstimate = async (
   }
 
   if (hasWhisper && opts.useReverb) {
-    return {
-      step: 'stt',
-      provider: 'reverb',
-      model: 'reverb',
-      durationSeconds: 0,
-      totalCost: 0,
-      costMultiplier: 1,
-    }
+    return { step: 'stt', provider: 'reverb', model: 'reverb', durationSeconds: 0, totalCost: 0, costMultiplier: 1 }
   }
 
   if (hasElevenlabs) {
@@ -67,75 +72,13 @@ const buildSttEstimate = async (
     const rate = estimateElevenlabsSttRate(opts.elevenlabsSttModel as string)
     const estimation = getSttEstimation('elevenlabs', opts.elevenlabsSttModel as string)
     const totalCost = applyCostMultiplier((durationSeconds / 3600) * rate.costPerHourCents, estimation.costMultiplier)
-    return {
-      step: 'stt',
-      provider: 'elevenlabs',
-      model: rate.model,
-      durationSeconds,
-      totalCost,
-      costMultiplier: estimation.costMultiplier,
-    }
+    return { step: 'stt', provider: 'elevenlabs', model: rate.model, durationSeconds, totalCost, costMultiplier: estimation.costMultiplier }
   }
 
-  if (hasGroq) {
-    const durationSeconds = await resolveSttInputDurationSeconds(resolvedTarget)
-    const sttCost = getSttCost('groq', opts.groqSttModel as string)
-    const estimation = getSttEstimation('groq', opts.groqSttModel as string)
-    const totalCost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    return {
-      step: 'stt',
-      provider: 'groq',
-      model: opts.groqSttModel as string,
-      durationSeconds,
-      totalCost,
-      costMultiplier: estimation.costMultiplier,
-    }
-  }
-
-  if (hasOpenAI) {
-    const durationSeconds = await resolveSttInputDurationSeconds(resolvedTarget)
-    const sttCost = getSttCost('openai', opts.openaiSttModel as string)
-    const estimation = getSttEstimation('openai', opts.openaiSttModel as string)
-    const totalCost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    return {
-      step: 'stt',
-      provider: 'openai',
-      model: opts.openaiSttModel as string,
-      durationSeconds,
-      totalCost,
-      costMultiplier: estimation.costMultiplier,
-    }
-  }
-
-  if (hasMistral) {
-    const durationSeconds = await resolveSttInputDurationSeconds(resolvedTarget)
-    const sttCost = getSttCost('mistral', opts.mistralSttModel as string)
-    const estimation = getSttEstimation('mistral', opts.mistralSttModel as string)
-    const totalCost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    return {
-      step: 'stt',
-      provider: 'mistral',
-      model: opts.mistralSttModel as string,
-      durationSeconds,
-      totalCost,
-      costMultiplier: estimation.costMultiplier,
-    }
-  }
-
-  if (hasAssemblyAi) {
-    const durationSeconds = await resolveSttInputDurationSeconds(resolvedTarget)
-    const sttCost = getSttCost('assemblyai', opts.assemblyaiSttModel as string)
-    const estimation = getSttEstimation('assemblyai', opts.assemblyaiSttModel as string)
-    const totalCost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
-    return {
-      step: 'stt',
-      provider: 'assemblyai',
-      model: opts.assemblyaiSttModel as string,
-      durationSeconds,
-      totalCost,
-      costMultiplier: estimation.costMultiplier,
-    }
-  }
+  if (hasGroq) return buildCloudSttEstimate('groq', opts.groqSttModel as string, resolvedTarget)
+  if (hasOpenAI) return buildCloudSttEstimate('openai', opts.openaiSttModel as string, resolvedTarget)
+  if (hasMistral) return buildCloudSttEstimate('mistral', opts.mistralSttModel as string, resolvedTarget)
+  if (hasAssemblyAi) return buildCloudSttEstimate('assemblyai', opts.assemblyaiSttModel as string, resolvedTarget)
 
   return null
 }

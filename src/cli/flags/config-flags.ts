@@ -1,4 +1,5 @@
-import type { ClercFlagDefinitionValue, ClercFlagsDefinition } from 'clerc'
+import type { ClercFlagsDefinition } from 'clerc'
+import { withHelpGroup } from './flag-utils'
 import {
   transcriptionFlags,
   llmProviderFlags,
@@ -28,28 +29,6 @@ export const CONFIG_COMMAND_HELP_FLAG_GROUPS = [
   ['step-7-music', 'Step 7 - Music']
 ] as const
 
-type ConfigHelpFlagGroup = (typeof CONFIG_COMMAND_HELP_FLAG_GROUPS)[number][0]
-
-const withHelpGroup = (flags: ClercFlagsDefinition, group: ConfigHelpFlagGroup): ClercFlagsDefinition => {
-  const grouped: ClercFlagsDefinition = {}
-  for (const [name, definition] of Object.entries(flags)) {
-    const flagDefinition = definition as ClercFlagDefinitionValue
-    if (typeof flagDefinition === 'function' || Array.isArray(flagDefinition)) {
-      grouped[name] = flagDefinition
-      continue
-    }
-
-    const existingHelp = (flagDefinition as { help?: Record<string, unknown> }).help
-    grouped[name] = {
-      ...(flagDefinition as object),
-      help: {
-        ...(typeof existingHelp === 'object' && existingHelp !== null ? existingHelp : {}),
-        group
-      }
-    } as ClercFlagDefinitionValue
-  }
-  return grouped
-}
 
 const configFlags = {
   show: {

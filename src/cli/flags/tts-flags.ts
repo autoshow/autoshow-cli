@@ -7,14 +7,8 @@ import {
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS
 } from '~/cli/commands/models/model-options'
+import { buildModelDescription } from '~/cli/commands/models/model-validation'
 import { priceFlag } from './shared-flags'
-
-const KITTEN_TTS_MODELS_DESCRIPTION = `Kitten TTS model: ${SUPPORTED_KITTEN_TTS_MODELS.join('|')}`
-const ELEVENLABS_TTS_MODELS_DESCRIPTION = `ElevenLabs TTS model: ${SUPPORTED_ELEVENLABS_TTS_MODELS.join('|')}`
-const MINIMAX_TTS_MODELS_DESCRIPTION = `MiniMax TTS model: ${SUPPORTED_MINIMAX_TTS_MODELS.join('|')}`
-const GROQ_TTS_MODELS_DESCRIPTION = `Groq TTS model: ${SUPPORTED_GROQ_TTS_MODELS.join('|')}`
-const OPENAI_TTS_MODELS_DESCRIPTION = `OpenAI TTS model: ${SUPPORTED_OPENAI_TTS_MODELS.join('|')}`
-const GEMINI_TTS_MODELS_DESCRIPTION = `Gemini TTS model: ${SUPPORTED_GEMINI_TTS_MODELS.join('|')}`
 
 export const ttsFlags = {
   'kitten-voice': {
@@ -23,27 +17,27 @@ export const ttsFlags = {
     default: 'Jasper'
   },
   'kitten-tts': {
-    description: KITTEN_TTS_MODELS_DESCRIPTION,
+    description: buildModelDescription('Kitten TTS model', SUPPORTED_KITTEN_TTS_MODELS),
     type: String
   },
   'elevenlabs-tts': {
-    description: ELEVENLABS_TTS_MODELS_DESCRIPTION,
+    description: buildModelDescription('ElevenLabs TTS model', SUPPORTED_ELEVENLABS_TTS_MODELS),
     type: String
   },
   'minimax-tts': {
-    description: MINIMAX_TTS_MODELS_DESCRIPTION,
+    description: buildModelDescription('MiniMax TTS model', SUPPORTED_MINIMAX_TTS_MODELS),
     type: String
   },
   'groq-tts': {
-    description: GROQ_TTS_MODELS_DESCRIPTION,
+    description: buildModelDescription('Groq TTS model', SUPPORTED_GROQ_TTS_MODELS),
     type: String
   },
   'openai-tts': {
-    description: OPENAI_TTS_MODELS_DESCRIPTION,
+    description: buildModelDescription('OpenAI TTS model', SUPPORTED_OPENAI_TTS_MODELS),
     type: String
   },
   'gemini-tts': {
-    description: GEMINI_TTS_MODELS_DESCRIPTION,
+    description: buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS),
     type: String
   },
   'minimax-tts-voice': {

@@ -1,10 +1,10 @@
 import OpenAI from 'openai'
 import * as l from '~/logger'
 import type { Step3Metadata } from '~/types'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnvFallback, readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
+import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 
 const getClientConfig = (): { apiKey: string, baseURL?: string } => {
   const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
@@ -26,10 +26,7 @@ export const runOpenAIModel = async (
     const config = getClientConfig()
     const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
-    const inputTokenCount = countTokens(prompt)
-    const startTime = Date.now()
-
-    const responseText = await withRetry(
+    const apiCall = (): Promise<string> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName: 'openai-llm' },
       async (signal) => {
         const timeoutSignal = AbortSignal.timeout(1800000)
@@ -65,20 +62,8 @@ export const runOpenAIModel = async (
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
     )
 
-    const processingTime = Date.now() - startTime
-    const outputTokenCount = countTokens(responseText)
-
-    const metadata: Step3Metadata = {
-      llmService: 'openai',
-      llmModel: model,
-      processingTime,
-      inputTokenCount,
-      outputTokenCount,
-      outputFileName: '',
-      outputFormat: structuredOpts ? 'json' : 'markdown',
-      structuredMode: structuredOpts?.modeHint ?? 'off',
-      structuredPresetNames: []
-    }
+    const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)
+    const metadata = buildStep3Metadata('openai', model, { processingTime, inputTokenCount, outputTokenCount }, structuredOpts)
 
     return { result: responseText, metadata }
   } catch (error) {

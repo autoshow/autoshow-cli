@@ -1,10 +1,11 @@
 import OpenAI from 'openai'
 import * as l from '~/logger'
 import type { Step3Metadata } from '~/types'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
+import { isStructuredFallbackError } from '~/cli/commands/process-steps/step-3-write/write-utils/structured-error-utils'
+import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 
 const getGrokClientConfig = (): { apiKey: string, baseURL: string } => {
   const apiKey = readEnvFallback('XAI_API_KEY')
@@ -17,45 +18,6 @@ const getGrokClientConfig = (): { apiKey: string, baseURL: string } => {
   return { apiKey, baseURL }
 }
 
-const toRecord = (value: unknown): Record<string, unknown> | undefined =>
-  typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined
-
-const getStringField = (obj: Record<string, unknown> | undefined, key: string): string | undefined => {
-  if (!obj) return undefined
-  const value = obj[key]
-  return typeof value === 'string' ? value : undefined
-}
-
-const getNumberField = (obj: Record<string, unknown> | undefined, key: string): number | undefined => {
-  if (!obj) return undefined
-  const value = obj[key]
-  return typeof value === 'number' ? value : undefined
-}
-
-const isStructuredFallbackError = (error: unknown): boolean => {
-  const root = toRecord(error)
-  const nested = toRecord(root?.['error'])
-
-  const status = getNumberField(root, 'status')
-  if (status !== 400 && status !== 422) return false
-
-  const code = getStringField(root, 'code') ?? getStringField(nested, 'code')
-  const param = getStringField(nested, 'param')
-  const message = (getStringField(root, 'message') ?? '').toLowerCase()
-  const nestedMessage = (getStringField(nested, 'message') ?? '').toLowerCase()
-  const combinedMessage = `${message} ${nestedMessage}`
-
-  if (code === 'json_validate_failed') return true
-  if (param === 'response_format') return true
-
-  return (
-    combinedMessage.includes('response_format') ||
-    combinedMessage.includes('json schema') ||
-    combinedMessage.includes('failed to validate json') ||
-    combinedMessage.includes('generated json does not match')
-  )
-}
-
 export const runGrokModel = async (
   prompt: string,
   model: string,
@@ -65,10 +27,7 @@ export const runGrokModel = async (
     const config = getGrokClientConfig()
     const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL, maxRetries: 0 })
 
-    const inputTokenCount = countTokens(prompt)
-    const startTime = Date.now()
-
-    const responseText = await withRetry(
+    const apiCall = (): Promise<string> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName: 'grok-llm' },
       async (signal) => {
         const timeoutSignal = AbortSignal.timeout(1800000)
@@ -120,20 +79,8 @@ export const runGrokModel = async (
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
     )
 
-    const processingTime = Date.now() - startTime
-    const outputTokenCount = countTokens(responseText)
-
-    const metadata: Step3Metadata = {
-      llmService: 'grok',
-      llmModel: model,
-      processingTime,
-      inputTokenCount,
-      outputTokenCount,
-      outputFileName: '',
-      outputFormat: structuredOpts ? 'json' : 'markdown',
-      structuredMode: structuredOpts?.modeHint ?? 'off',
-      structuredPresetNames: []
-    }
+    const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)
+    const metadata = buildStep3Metadata('grok', model, { processingTime, inputTokenCount, outputTokenCount }, structuredOpts)
 
     return { result: responseText, metadata }
   } catch (error) {

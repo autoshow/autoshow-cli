@@ -1,4 +1,5 @@
-import type { ClercFlagDefinitionValue, ClercFlagsDefinition } from 'clerc'
+import type { ClercFlagsDefinition } from 'clerc'
+import { withHelpGroup } from './flag-utils'
 import {
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
@@ -11,6 +12,7 @@ import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS
 } from '~/cli/commands/models/model-options'
+import { buildModelDescription } from '~/cli/commands/models/model-validation'
 import {
   transcriptionFlags,
   llmProviderFlags,
@@ -26,49 +28,6 @@ import { imageGenFlags } from './image-flags'
 import { musicGenFlags } from './music-flags'
 import { videoGenFlags } from './video-flags'
 
-const KITTEN_TTS_MODELS_DESCRIPTION = `Kitten TTS model: ${SUPPORTED_KITTEN_TTS_MODELS.join('|')}`
-const ELEVENLABS_TTS_MODELS_DESCRIPTION = `ElevenLabs TTS model: ${SUPPORTED_ELEVENLABS_TTS_MODELS.join('|')}`
-const MINIMAX_TTS_MODELS_DESCRIPTION = `MiniMax TTS model: ${SUPPORTED_MINIMAX_TTS_MODELS.join('|')}`
-const GROQ_TTS_MODELS_DESCRIPTION = `Groq TTS model: ${SUPPORTED_GROQ_TTS_MODELS.join('|')}`
-const OPENAI_TTS_MODELS_DESCRIPTION = `OpenAI TTS model: ${SUPPORTED_OPENAI_TTS_MODELS.join('|')}`
-const GEMINI_TTS_MODELS_DESCRIPTION = `Gemini TTS model: ${SUPPORTED_GEMINI_TTS_MODELS.join('|')}`
-const GEMINI_VIDEO_MODELS_DESCRIPTION = `Gemini Veo video model: ${SUPPORTED_GEMINI_VIDEO_MODELS.join('|')}`
-const MINIMAX_VIDEO_MODELS_DESCRIPTION = `MiniMax video model: ${SUPPORTED_MINIMAX_VIDEO_MODELS.join('|')}`
-const ELEVENLABS_MUSIC_MODELS_DESCRIPTION = `ElevenLabs music model: ${SUPPORTED_ELEVENLABS_MUSIC_MODELS.join('|')}`
-const MINIMAX_MUSIC_MODELS_DESCRIPTION = `MiniMax music model: ${SUPPORTED_MINIMAX_MUSIC_MODELS.join('|')}`
-
-type WriteHelpFlagGroup =
-  | 'pricing'
-  | 'step-1-download'
-  | 'step-2-stt'
-  | 'step-2-document'
-  | 'step-3-write'
-  | 'step-4-tts'
-  | 'step-5-image'
-  | 'step-6-video'
-  | 'step-7-music'
-
-const withHelpGroup = (flags: ClercFlagsDefinition, group: WriteHelpFlagGroup): ClercFlagsDefinition => {
-  const grouped: ClercFlagsDefinition = {}
-  for (const [name, definition] of Object.entries(flags)) {
-    const flagDefinition = definition as ClercFlagDefinitionValue
-    if (typeof flagDefinition === 'function' || Array.isArray(flagDefinition)) {
-      grouped[name] = flagDefinition
-      continue
-    }
-
-    const existingHelp = (flagDefinition as { help?: Record<string, unknown> }).help
-    grouped[name] = {
-      ...(flagDefinition as object),
-      help: {
-        ...(typeof existingHelp === 'object' && existingHelp !== null ? existingHelp : {}),
-        group
-      }
-    } as ClercFlagDefinitionValue
-  }
-  return grouped
-}
-
 const writeTtsFlags = {
   'kitten-voice': {
     description: 'Kitten TTS speaker: Bella|Jasper|Luna|Bruno|Rosie|Hugo|Kiki|Leo',
@@ -76,27 +35,27 @@ const writeTtsFlags = {
     default: 'Jasper'
   },
   'kitten-tts': {
-    description: `Enable Kitten TTS on LLM output. ${KITTEN_TTS_MODELS_DESCRIPTION}`,
+    description: `Enable Kitten TTS on LLM output. ${buildModelDescription('Kitten TTS model', SUPPORTED_KITTEN_TTS_MODELS)}`,
     type: String
   },
   'elevenlabs-tts': {
-    description: `Enable ElevenLabs TTS on LLM output. ${ELEVENLABS_TTS_MODELS_DESCRIPTION}`,
+    description: `Enable ElevenLabs TTS on LLM output. ${buildModelDescription('ElevenLabs TTS model', SUPPORTED_ELEVENLABS_TTS_MODELS)}`,
     type: String
   },
   'minimax-tts': {
-    description: `Enable MiniMax TTS on LLM output. ${MINIMAX_TTS_MODELS_DESCRIPTION}`,
+    description: `Enable MiniMax TTS on LLM output. ${buildModelDescription('MiniMax TTS model', SUPPORTED_MINIMAX_TTS_MODELS)}`,
     type: String
   },
   'groq-tts': {
-    description: `Enable Groq TTS on LLM output. ${GROQ_TTS_MODELS_DESCRIPTION}`,
+    description: `Enable Groq TTS on LLM output. ${buildModelDescription('Groq TTS model', SUPPORTED_GROQ_TTS_MODELS)}`,
     type: String
   },
   'openai-tts': {
-    description: `Enable OpenAI TTS on LLM output. ${OPENAI_TTS_MODELS_DESCRIPTION}`,
+    description: `Enable OpenAI TTS on LLM output. ${buildModelDescription('OpenAI TTS model', SUPPORTED_OPENAI_TTS_MODELS)}`,
     type: String
   },
   'gemini-tts': {
-    description: `Enable Gemini TTS on LLM output. ${GEMINI_TTS_MODELS_DESCRIPTION}`,
+    description: `Enable Gemini TTS on LLM output. ${buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS)}`,
     type: String
   },
   'minimax-tts-voice': {
@@ -123,22 +82,22 @@ const writeTtsFlags = {
 
 const writeVideoModelFlags = {
   'gemini-video': {
-    description: `Enable video generation on LLM output. ${GEMINI_VIDEO_MODELS_DESCRIPTION}`,
+    description: `Enable video generation on LLM output. ${buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS)}`,
     type: String
   },
   'minimax-video': {
-    description: `Enable video generation on LLM output. ${MINIMAX_VIDEO_MODELS_DESCRIPTION}`,
+    description: `Enable video generation on LLM output. ${buildModelDescription('MiniMax video model', SUPPORTED_MINIMAX_VIDEO_MODELS)}`,
     type: String
   }
 } as const satisfies ClercFlagsDefinition
 
 const writeMusicModelFlags = {
   'elevenlabs-music': {
-    description: `Enable music generation on LLM output. ${ELEVENLABS_MUSIC_MODELS_DESCRIPTION}`,
+    description: `Enable music generation on LLM output. ${buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS)}`,
     type: String
   },
   'minimax-music': {
-    description: `Enable music generation on LLM output. ${MINIMAX_MUSIC_MODELS_DESCRIPTION}`,
+    description: `Enable music generation on LLM output. ${buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS)}`,
     type: String
   },
   'music-duration': {

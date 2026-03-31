@@ -11,12 +11,12 @@ export { buildOptsFromFlags } from './build-opts-from-flags'
 
 type BatchManifestEntry = Record<string, unknown>
 
-const DOCUMENT_EXTENSIONS = [
+export const DOCUMENT_EXTENSIONS = [
   '.pdf', '.epub', '.docx', '.pptx', '.xlsx', '.odt', '.ods', '.odp',
   '.mobi', '.azw3', '.azw', '.fb2', '.lit', '.cbz', '.rtf', '.csv'
 ]
-const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.bmp', '.gif']
-const MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
+export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.bmp', '.gif']
+export const MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
 const URL_LIST_EXTENSIONS = ['.md', '.txt']
 
 export const isLikelyUrl = (input: string): boolean => {

@@ -7,10 +7,7 @@ import { getAudioDuration } from './audio-splitter'
 import { fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import * as l from '~/logger'
-
-const DOCUMENT_EXTENSIONS = ['.pdf', '.epub', '.docx', '.pptx', '.xlsx', '.odt', '.ods', '.odp']
-const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff']
-const DIRECT_MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
+import { DOCUMENT_EXTENSIONS, IMAGE_EXTENSIONS, MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 
 const isLikelyUrl = (input: string): boolean => {
   try {
@@ -29,7 +26,7 @@ const hasKnownExtension = (pathOrUrl: string, extensions: readonly string[]): bo
 const isDirectMediaUrl = (url: string): boolean => {
   try {
     const pathname = new URL(url).pathname.toLowerCase()
-    return hasKnownExtension(pathname, DIRECT_MEDIA_EXTENSIONS)
+    return hasKnownExtension(pathname, MEDIA_EXTENSIONS)
   } catch {
     return false
   }

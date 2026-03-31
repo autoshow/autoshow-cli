@@ -1,9 +1,7 @@
-import { CLIUsageError } from '~/utils/error-handler'
 import { getLlamaDownloadRepo } from '~/cli/commands/models/model-loader'
+import { createModelValidator } from '~/cli/commands/models/model-validation'
 import type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
 export type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
-
-const formatAllowedValues = (values: readonly string[]): string => values.join(', ')
 
 export const SUPPORTED_OPENAI_MODELS = [
   'gpt-5.4',
@@ -54,77 +52,17 @@ export const SUPPORTED_LLAMA_MODELS = [
   'ggml-org/Qwen3-0.6B-GGUF'
 ] as const satisfies readonly string[]
 
-export const validateOpenAIModel = (model: string): string => {
-  if (!SUPPORTED_OPENAI_MODELS.includes(model as typeof SUPPORTED_OPENAI_MODELS[number])) {
-    throw CLIUsageError(
-      `Invalid --openai model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_OPENAI_MODELS)}`
-    )
-  }
+const _validateOpenAI = createModelValidator(SUPPORTED_OPENAI_MODELS, 'openai')
+export const validateOpenAIModel = (model: string): string => _validateOpenAI(model)
 
-  return model
-}
+const _validateGroqRaw = createModelValidator<GroqModel>(SUPPORTED_GROQ_MODELS, 'groq')
+export const validateGroqModel = (model: string): GroqModel => _validateGroqRaw(normalizeGroqModel(model))
 
-export const validateGroqModel = (model: string): GroqModel => {
-  const normalizedModel = normalizeGroqModel(model)
-
-  if (!SUPPORTED_GROQ_MODELS.includes(normalizedModel as GroqModel)) {
-    throw CLIUsageError(
-      `Invalid --groq model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_GROQ_MODELS)}`
-    )
-  }
-
-  return normalizedModel as GroqModel
-}
-
-export const validateGeminiModel = (model: string): string => {
-  if (!SUPPORTED_GEMINI_MODELS.includes(model as typeof SUPPORTED_GEMINI_MODELS[number])) {
-    throw CLIUsageError(
-      `Invalid --gemini model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_GEMINI_MODELS)}`
-    )
-  }
-
-  return model
-}
-
-export const validateAnthropicModel = (model: string): AnthropicModel => {
-  if (!SUPPORTED_ANTHROPIC_MODELS.includes(model as AnthropicModel)) {
-    throw CLIUsageError(
-      `Invalid --anthropic model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_ANTHROPIC_MODELS)}`
-    )
-  }
-
-  return model as AnthropicModel
-}
-
-export const validateMinimaxModel = (model: string): MinimaxModel => {
-  if (!SUPPORTED_MINIMAX_MODELS.includes(model as MinimaxModel)) {
-    throw CLIUsageError(
-      `Invalid --minimax model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_MINIMAX_MODELS)}`
-    )
-  }
-
-  return model as MinimaxModel
-}
-
-export const validateGrokModel = (model: string): string => {
-  if (!SUPPORTED_GROK_MODELS.includes(model as typeof SUPPORTED_GROK_MODELS[number])) {
-    throw CLIUsageError(
-      `Invalid --grok model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_GROK_MODELS)}`
-    )
-  }
-
-  return model
-}
-
-export const validateLlamaModel = (model: string): string => {
-  if (!SUPPORTED_LLAMA_MODELS.includes(model as typeof SUPPORTED_LLAMA_MODELS[number])) {
-    throw CLIUsageError(
-      `Invalid --llama model "${model}". Allowed values: ${formatAllowedValues(SUPPORTED_LLAMA_MODELS)}`
-    )
-  }
-
-  return model
-}
+export const validateGeminiModel = createModelValidator(SUPPORTED_GEMINI_MODELS, 'gemini')
+export const validateAnthropicModel = createModelValidator<AnthropicModel>(SUPPORTED_ANTHROPIC_MODELS, 'anthropic')
+export const validateMinimaxModel = createModelValidator<MinimaxModel>(SUPPORTED_MINIMAX_MODELS, 'minimax')
+export const validateGrokModel = createModelValidator(SUPPORTED_GROK_MODELS, 'grok')
+export const validateLlamaModel = createModelValidator(SUPPORTED_LLAMA_MODELS, 'llama')
 
 export const resolveLlamaDownloadRepo = (model: string): string => {
   return getLlamaDownloadRepo(model) || model
