@@ -108,7 +108,14 @@ const dispatchTranscribe = async (
   options: ProcessingOptions,
   diarizationOptions: DiarizationOptions | undefined,
   segmentNumber?: number,
-  totalSegments?: number
+  totalSegments?: number,
+  whisperProgress?:
+    | {
+      segmentStartSeconds: number
+      segmentDurationSeconds: number
+      totalDurationSeconds: number
+    }
+    | undefined
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   if (engine === 'reverb') {
     return await runReverbTranscribe(audioPath, outputDir, {
@@ -144,6 +151,9 @@ const dispatchTranscribe = async (
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
+      segmentStartSeconds: whisperProgress?.segmentStartSeconds,
+      segmentDurationSeconds: whisperProgress?.segmentDurationSeconds,
+      totalDurationSeconds: whisperProgress?.totalDurationSeconds,
       preserveJson: true
     })
   }
@@ -209,18 +219,22 @@ export const transcribe = async (
   }
 
   if (options.split) {
-    const segmentPaths = await splitAudioFile(audioPath, options.outputDir, 10)
+    const segmentDescriptors = await splitAudioFile(audioPath, options.outputDir, 10)
+    const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
 
     const segmentResults: Array<{ result: TranscriptionResult, metadata: Step2Metadata }> = []
 
-    for (let i = 0; i < segmentPaths.length; i++) {
-      const segmentPath = segmentPaths[i]!
-      const segmentNumber = i + 1
-      const offsetMinutes = i * 10
+    for (let i = 0; i < segmentDescriptors.length; i++) {
+      const segmentDescriptor = segmentDescriptors[i]!
+      const offsetMinutes = segmentDescriptor.startSeconds / 60
 
       const segmentData = await dispatchTranscribe(
-        engine, segmentPath, options.outputDir, offsetMinutes,
-        options, diarizationOptions, segmentNumber, segmentPaths.length
+        engine, segmentDescriptor.path, options.outputDir, offsetMinutes,
+        options, diarizationOptions, segmentDescriptor.segmentNumber, segmentDescriptor.totalSegments, {
+          segmentStartSeconds: segmentDescriptor.startSeconds,
+          segmentDurationSeconds: segmentDescriptor.durationSeconds,
+          totalDurationSeconds
+        }
       )
 
       segmentResults.push(segmentData)

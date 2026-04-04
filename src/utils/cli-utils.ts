@@ -4,10 +4,77 @@ import * as l from '../logger'
 let envFileLoaded = false
 let lastEnvPath = ''
 
+const readStreamText = async (
+  stream: ReadableStream<Uint8Array> | null,
+  onLine?: (line: string) => void
+): Promise<string> => {
+  if (!stream) {
+    return ''
+  }
+
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+  let fullText = ''
+  let pending = ''
+
+  const flushLines = (chunk: string, allowPartial: boolean): void => {
+    if (!onLine || chunk.length === 0) {
+      return
+    }
+
+    pending += chunk
+
+    while (true) {
+      const lineBreakIndex = pending.search(/[\r\n]/)
+      if (lineBreakIndex < 0) {
+        break
+      }
+
+      const line = pending.slice(0, lineBreakIndex)
+      let nextIndex = lineBreakIndex + 1
+      if (pending[lineBreakIndex] === '\r' && pending[nextIndex] === '\n') {
+        nextIndex++
+      }
+      pending = pending.slice(nextIndex)
+      onLine(line)
+    }
+
+    if (allowPartial && pending.length > 0) {
+      onLine(pending)
+      pending = ''
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+
+      const chunk = decoder.decode(value, { stream: true })
+      fullText += chunk
+      flushLines(chunk, false)
+    }
+
+    const trailing = decoder.decode()
+    fullText += trailing
+    flushLines(trailing, true)
+  } finally {
+    reader.releaseLock()
+  }
+
+  return fullText
+}
+
 export const exec = async (
   command: string,
   args: string[] = [],
-  opts?: { env?: Record<string, string | undefined> }
+  opts?: {
+    env?: Record<string, string | undefined>
+    onStdoutLine?: (line: string) => void
+    onStderrLine?: (line: string) => void
+  }
 ): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
   const env = opts?.env ? { ...process.env, ...opts.env } : undefined
   const proc = Bun.spawn([command, ...args], {
@@ -16,8 +83,8 @@ export const exec = async (
     ...(env ? { env: env as Record<string, string | undefined> } : {})
   })
   const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
+    readStreamText(proc.stdout, opts?.onStdoutLine),
+    readStreamText(proc.stderr, opts?.onStderrLine),
     proc.exited
   ])
   return { stdout, stderr, exitCode }

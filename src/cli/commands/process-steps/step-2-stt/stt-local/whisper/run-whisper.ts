@@ -3,15 +3,73 @@ import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/logger'
 import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { parseWhisperJson, extractWhisperWords } from './parse-whisper-output'
-import { fileExists, exec } from '~/utils/cli-utils'
+import { fileExists } from '~/utils/cli-utils'
 import { resolve } from 'node:path'
 import { whisperBinaryPath, whisperModelsDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
 import { pollUntil } from '~/utils/retries'
+import { formatWhisperProgressMessage, parseWhisperProgressPercent } from './whisper-progress'
 
 const WHISPER_JSON_WAIT_TIMEOUT_MS = 3000
 const WHISPER_JSON_WAIT_POLL_MS = 100
 
 const coremlEncoderLookupCache = new Map<string, Promise<string | null>>()
+
+const readStreamText = async (
+  stream: ReadableStream<Uint8Array> | null,
+  options?: { onLine?: (line: string) => void }
+): Promise<string> => {
+  if (!stream) {
+    return ''
+  }
+
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+  let fullText = ''
+  let pendingLine = ''
+
+  const flushPendingLines = (chunk: string, allowPartial: boolean): void => {
+    if (!options?.onLine || chunk.length === 0) {
+      return
+    }
+
+    pendingLine += chunk
+
+    while (true) {
+      const lineBreakIndex = pendingLine.indexOf('\n')
+      if (lineBreakIndex < 0) {
+        break
+      }
+      const line = pendingLine.slice(0, lineBreakIndex).replace(/\r$/, '')
+      pendingLine = pendingLine.slice(lineBreakIndex + 1)
+      options.onLine(line)
+    }
+
+    if (allowPartial && pendingLine.length > 0) {
+      options.onLine(pendingLine.replace(/\r$/, ''))
+      pendingLine = ''
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      const chunk = decoder.decode(value, { stream: true })
+      fullText += chunk
+      flushPendingLines(chunk, false)
+    }
+
+    const trailing = decoder.decode()
+    fullText += trailing
+    flushPendingLines(trailing, true)
+  } finally {
+    reader.releaseLock()
+  }
+
+  return fullText
+}
 
 const detectCoreMLEncoder = async (modelName: string): Promise<string | null> => {
   const cached = coremlEncoderLookupCache.get(modelName)
@@ -57,10 +115,22 @@ export const runWhisperTranscribe = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    segmentStartSeconds?: number | undefined
+    segmentDurationSeconds?: number | undefined
+    totalDurationSeconds?: number | undefined
     preserveJson?: boolean | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments, preserveJson = false } = options
+  const {
+    model: modelName,
+    segmentOffsetMinutes = 0,
+    segmentNumber,
+    totalSegments,
+    segmentStartSeconds,
+    segmentDurationSeconds,
+    totalDurationSeconds,
+    preserveJson = false
+  } = options
   try {
     if (segmentNumber && totalSegments) {
       l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with model: ${modelName}`)
@@ -73,13 +143,50 @@ export const runWhisperTranscribe = async (
     await mkdir(outputDirAbs, { recursive: true })
     const outputBase = resolve(outputDirAbs, `transcription${segmentSuffix}`)
     const coreMLEncoderPath = await detectCoreMLEncoder(modelName)
-    const result = await exec(whisperBinary, [
+    const whisperArgs = [
       '-m', modelPath,
       '-f', audioPath,
       '-ml', '1',
+      '-np',
+      '-pp',
       '-of', outputBase,
       '-ojf'
+    ]
+    const proc = Bun.spawn([whisperBinary, ...whisperArgs], {
+      stdout: 'pipe',
+      stderr: 'pipe'
+    })
+
+    let lastLoggedProgress: number | null = null
+    l.info(formatWhisperProgressMessage(0, {
+      segmentNumber,
+      totalSegments,
+      segmentStartSeconds,
+      segmentDurationSeconds,
+      totalDurationSeconds
+    }))
+    lastLoggedProgress = 0
+    const [stdout, stderr, exitCode] = await Promise.all([
+      readStreamText(proc.stdout),
+      readStreamText(proc.stderr, {
+        onLine: (line) => {
+          const progressPercent = parseWhisperProgressPercent(line)
+          if (progressPercent === null || progressPercent === lastLoggedProgress) {
+            return
+          }
+          lastLoggedProgress = progressPercent
+          l.info(formatWhisperProgressMessage(progressPercent, {
+            segmentNumber,
+            totalSegments,
+            segmentStartSeconds,
+            segmentDurationSeconds,
+            totalDurationSeconds
+          }))
+        }
+      }),
+      proc.exited
     ])
+    const result = { stdout, stderr, exitCode }
     if (result.exitCode !== 0) {
       throw new Error(`Whisper transcription failed: ${result.stderr}`)
     }

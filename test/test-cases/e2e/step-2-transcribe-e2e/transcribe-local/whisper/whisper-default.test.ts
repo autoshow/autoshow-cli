@@ -2,6 +2,8 @@ import { expect, beforeAll, afterAll } from 'bun:test'
 import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_LOCAL_AUDIO_PATH, STABLE_LOCAL_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../../test-utils/budget'
 
+const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
+
 beforeAll(async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 })
@@ -20,6 +22,7 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
   )
 
   expect(result.exitCode).toBe(0)
+  expect(stripAnsi(result.stderr)).toContain('Whisper progress [')
 
   const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
@@ -95,6 +98,7 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
   )
 
   expect(result.exitCode).toBe(0)
+  expect(stripAnsi(result.stderr)).toContain('Whisper progress [')
 
   const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()

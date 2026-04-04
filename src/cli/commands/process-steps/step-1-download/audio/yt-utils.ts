@@ -1,6 +1,18 @@
 import * as l from '~/logger'
 import { exec, loadEnvFile } from '~/utils/cli-utils'
 
+const isProgressLine = (line: string): boolean => {
+  return line.startsWith('[download]') || line.startsWith('[ExtractAudio]')
+}
+
+const relayYtDlpLine = (line: string): void => {
+  const clean = line.trim()
+  if (!clean || !isProgressLine(clean)) {
+    return
+  }
+  l.info(clean)
+}
+
 const buildAndroidClientArgs = async (url: string, outputDir: string): Promise<string[]> => {
   await loadEnvFile()
 
@@ -16,7 +28,10 @@ const buildAndroidClientArgs = async (url: string, outputDir: string): Promise<s
     `${outputDir}/%(title)s.%(ext)s`,
     '--restrict-filenames',
     '--no-playlist',
-    '--progress'
+    '--progress',
+    '--newline',
+    '--progress-delta',
+    '1'
   ]
 
   if (acceptLanguage) {
@@ -47,7 +62,11 @@ const findDownloadedAudio = async (outputDir: string): Promise<string> => {
 export const downloadVideo = async (url: string, outputDir: string): Promise<string> => {
   try {
     const args = await buildAndroidClientArgs(url, outputDir)
-    const result = await exec('yt-dlp', args)
+    l.info('Downloading audio with yt-dlp')
+    const result = await exec('yt-dlp', args, {
+      onStdoutLine: relayYtDlpLine,
+      onStderrLine: relayYtDlpLine
+    })
 
     if (result.exitCode !== 0) {
       const details = (result.stderr || result.stdout || 'unknown yt-dlp error').trim()
@@ -56,6 +75,7 @@ export const downloadVideo = async (url: string, outputDir: string): Promise<str
       throw new Error(message)
     }
 
+    l.success('yt-dlp download complete')
     return await findDownloadedAudio(outputDir)
   } catch (error) {
     const details = error instanceof Error ? error.message : String(error)

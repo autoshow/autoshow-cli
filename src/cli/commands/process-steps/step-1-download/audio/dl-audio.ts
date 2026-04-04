@@ -46,7 +46,8 @@ export const convertToWav = async (inputPath: string, outputDir: string, removeO
     const inputFilename = inputPath.split('/').pop() || 'audio'
     const outputFilename = inputFilename.replace(/\.[^/.]+$/, '.wav')
     const wavPath = `${outputDir}/${outputFilename}`
-    
+
+    l.info(`Converting audio to WAV: ${inputFilename}`)
     const result = await exec('ffmpeg', [
       '-i', inputPath,
       '-ar', '16000',
@@ -59,11 +60,12 @@ export const convertToWav = async (inputPath: string, outputDir: string, removeO
     if (result.exitCode !== 0) {
       throw new Error(`Failed to convert to WAV: ${result.stderr}`)
     }
-    
+
     if (removeOriginal) {
       await Bun.$`rm -f ${inputPath}`.quiet()
     }
-    
+
+    l.success(`WAV ready: ${outputFilename}`)
     return wavPath
   } catch (error) {
     l.error(`Failed to convert to WAV`, error)
@@ -143,9 +145,10 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
   if (options.filePath) {
     audioPath = await convertToWav(options.filePath, options.outputDir, false)
   } else if (options.directDownload) {
-
+    l.info('Downloading direct audio URL')
     audioPath = await downloadDirectAudioUrl(options.url as string, options.outputDir)
   } else if (isDirectMediaUrl(options.url as string)) {
+    l.info('Downloading direct media URL')
     const mediaPath = await downloadDirectMediaUrl(options.url as string, options.outputDir)
     const downloadedFile = Bun.file(mediaPath)
     if (downloadedFile.size < 1000) {
