@@ -66,7 +66,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 | Image | Generate images from text prompts |
 | Video | Generate videos from text prompts |
 | Music | Generate music from text prompts |
-| Config | Inspect, reset, or persist defaults for providers, prompts, batch/extract settings, post-processing, and budgets |
+| Config | Inspect, reset, or persist selected provider/model defaults, prompts, batch/extract settings, post-processing, and budgets |
 | Setup | Install local runtimes and verify prerequisites with `--doctor` |
 | Models | Download Whisper model IDs or llama.cpp repo IDs without running inference |
 | Sample | Generate and validate deterministic fixtures for testing and validation |
@@ -300,8 +300,8 @@ Key behaviors:
 
 `config/autoshow.json` can persist defaults for:
 
-- STT engines and models
-- LLM engines and models
+- selected STT model defaults
+- selected LLM model defaults
 - structured output settings like `structured`, `structured-strict`, and compat retries
 - TTS, image, video, and music post-processing defaults
 - voice and speaker overrides
@@ -334,7 +334,7 @@ Supported behaviors:
 - automatic estimate logging before execution
 - `--price` or `--dry-run` for estimate-only mode
 - per-target and multi-target suite price previews
-- `--max-cents` and `--max-usd` for hard budgets
+- configured `max-cents` and `max-usd` hard budgets, typically set through `bun as config`
 - `--allow-over-budget` for one-off overrides
 
 ## Setup, Runtime, And Output Layout
