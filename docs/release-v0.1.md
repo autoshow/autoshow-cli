@@ -57,7 +57,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 
 | Area | What it does |
 |------|--------------|
-| Metadata | Collect and display metadata without downloading (`metadata`, aliases: `meta`, `info`) |
+| Metadata | Collect and display metadata without downloading, as JSON by default or frontmatter YAML with `--markdown` (`metadata`, aliases: `meta`, `info`) |
 | Download | Fetch or normalize media/documents, then stop after download + metadata |
 | OCR | Document OCR and text extraction (`ocr`, alias: `extract`) |
 | STT | Audio/video transcription plus prompt artifact (`stt`, alias: `transcribe`) |
@@ -76,6 +76,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 
 - `bun as <input>` is a root shorthand for `bun as metadata <input>`.
 - Command aliases are normalized up front, including `meta`, `info`, `dl`, `model`, `transcribe`, `transcript`, `transcription`, `extract`, `document`, `voice`, `llm`, `llms`, and `samples`.
+- `metadata` prints JSON by default and can emit Markdown frontmatter YAML with `--markdown`.
 - Selected bare provider flags expand to default models when the next token is omitted. Examples: `--openai` becomes `--openai gpt-5.4`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, `--minimax-image` becomes `--minimax-image image-01`, `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`, `--grok` becomes `--grok grok-4.20-reasoning`, and `--minimax-music` becomes `--minimax-music music-2.5`.
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - Runnable commands run an automatic cost preflight before execution.
@@ -93,6 +94,9 @@ bun as setup --doctor
 
 # install local runtimes and verify core tools
 bun as setup
+
+# metadata as Markdown frontmatter YAML
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 
 # stt only
 bun as stt input/1-audio.mp3
@@ -134,7 +138,7 @@ Artifact-producing processing and generation runs typically write:
 
 Notable exceptions:
 
-- `metadata` logs to the terminal by default and only writes `metadata.json` when `--save` is used
+- `metadata` logs to the terminal by default, `metadata --save` reports `metadata.json`, and `metadata --markdown --save` also reports `metadata.md`
 - `links` writes to `docs/links/bun-links.md` instead of an `output/` run directory
 - utility commands like `config`, `setup`, `sample`, and `models` do not follow the artifact-directory pattern
 
@@ -396,6 +400,7 @@ Common output artifacts include:
 - `generated-video.mp4`
 - `generated-music.mp3`
 - `metadata.json`
+- `metadata.md` for `metadata --markdown --save`
 
 Batch runs additionally write:
 

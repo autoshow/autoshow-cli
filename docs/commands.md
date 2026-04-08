@@ -33,6 +33,9 @@ bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
 # metadata with save
 bun as --save "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
+# metadata as Markdown frontmatter YAML
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
+
 # document OCR/extraction only
 bun as ocr input/1-document.pdf
 

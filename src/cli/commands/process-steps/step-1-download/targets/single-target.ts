@@ -14,6 +14,7 @@ import { processDocument } from '~/cli/commands/process-steps/process-document'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-document/document-utils/doc-prompt-utils'
+import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
@@ -471,9 +472,38 @@ const processExtractSingle = async (target: string, baseDir: string, opts: Runti
   return { outputDir: extraction.outputDir }
 }
 
+const writeMetadataTerminalOutput = (metadata: Record<string, unknown>, markdown: boolean): void => {
+  if (markdown) {
+    process.stdout.write(formatMetadataAsFrontmatter(metadata) + '\n')
+    return
+  }
+
+  console.log(JSON.stringify(metadata, null, 2))
+}
+
+const writeSavedMetadataArtifacts = async (
+  outputDir: string,
+  metadata: Record<string, unknown>,
+  markdown: boolean,
+  save: boolean
+): Promise<void> => {
+  const metadataPath = `${outputDir}/metadata.json`
+  await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
+
+  const artifactFiles: Record<string, string> = { metadata: 'metadata.json' }
+  if (save && markdown) {
+    await Bun.write(`${outputDir}/metadata.md`, formatMetadataAsFrontmatter(metadata))
+    artifactFiles['metadataMarkdown'] = 'metadata.md'
+  }
+
+  if (save) {
+    l.report.complete(outputDir, artifactFiles)
+  }
+}
+
 const processMetadataMedia = async (
   target: string,
-  save: boolean,
+  opts: RuntimeOptions,
   baseDir: string
 ): Promise<BatchItemProcessResult> => {
   const isUrl = isLikelyUrl(target)
@@ -497,23 +527,19 @@ const processMetadataMedia = async (
     ...(meta.description?.length ? { description: meta.description } : {})
   }
 
-  console.log(JSON.stringify(metadata, null, 2))
+  writeMetadataTerminalOutput(metadata, opts.markdown)
 
   const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
   const uniqueDirName = createUniqueDirectoryName(meta.title)
   const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
   await ensureDirectory(outputDir)
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
-  if (save) {
-    l.report.complete(outputDir, { metadata: 'metadata.json' })
-  }
+  await writeSavedMetadataArtifacts(outputDir, metadata, opts.markdown, opts.save)
   return { outputDir }
 }
 
 const processMetadataDocument = async (
   target: string,
-  save: boolean,
+  opts: RuntimeOptions,
   baseDir: string,
   password?: string
 ): Promise<BatchItemProcessResult> => {
@@ -542,17 +568,13 @@ const processMetadataDocument = async (
     fileSize: stats.size
   }
 
-  console.log(JSON.stringify(metadata, null, 2))
+  writeMetadataTerminalOutput(metadata, opts.markdown)
 
   const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
   const uniqueDirName = createUniqueDirectoryName(title)
   const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
   await ensureDirectory(outputDir)
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
-  if (save) {
-    l.report.complete(outputDir, { metadata: 'metadata.json' })
-  }
+  await writeSavedMetadataArtifacts(outputDir, metadata, opts.markdown, opts.save)
   return { outputDir }
 }
 
@@ -633,12 +655,12 @@ export const processSingleTarget = async (
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          return await processMetadataDocument(downloaded.filePath, opts.save, baseDir, opts.password)
+          return await processMetadataDocument(downloaded.filePath, opts, baseDir, opts.password)
         } finally {
           await downloaded.cleanup()
         }
       }
-      return await processMetadataMedia(item, opts.save, baseDir)
+      return await processMetadataMedia(item, opts, baseDir)
     }
 
     const exists = await fileExists(item)
@@ -649,9 +671,9 @@ export const processSingleTarget = async (
     const isDocExt = isDocumentByExtension(item)
     const detected = isDocExt ? await detectDocumentFormat(item) : null
     if (isDocExt || detected !== null) {
-      return await processMetadataDocument(item, opts.save, baseDir, opts.password)
+      return await processMetadataDocument(item, opts, baseDir, opts.password)
     } else {
-      return await processMetadataMedia(item, opts.save, baseDir)
+      return await processMetadataMedia(item, opts, baseDir)
     }
   }
 

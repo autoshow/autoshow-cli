@@ -314,6 +314,7 @@ export const buildOptsFromFlags = (
     videoAspectRatio: readOptionalStringFlag(mergedFlags, 'video-aspect-ratio'),
     videoResolution: readOptionalStringFlag(mergedFlags, 'video-resolution'),
 
+    markdown: readBooleanFlag(mergedFlags, 'markdown'),
     save: readBooleanFlag(mergedFlags, 'save'),
   }
 }

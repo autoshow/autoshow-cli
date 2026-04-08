@@ -23,6 +23,9 @@ bun as setup
 # Metadata only (default command, no download)
 bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
+# Metadata as Markdown frontmatter YAML
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
+
 # Download only
 bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
@@ -157,12 +160,13 @@ Typical artifacts include:
 - `text.json` or `text.md`
 - generated speech, image, video, or music files
 - `metadata.json`
+- `metadata.md` for `metadata --markdown --save`
 
 Batch runs also write `info.json`, and some structured remote sources add `source.json`.
 
 Notable exceptions:
 
-- `metadata` only writes `metadata.json` when `--save` is used
+- `metadata --save` reports `metadata.json`, and `metadata --markdown --save` also reports `metadata.md`
 - `links` writes to `docs/links/bun-links.md`
 - utility commands such as `config`, `setup`, `sample`, and `models` do not use the `output/` run-directory pattern
 

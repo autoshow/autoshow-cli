@@ -41,7 +41,8 @@ bun as <input>               # root shorthand
 ## Flags
 
 ```text
---save               Save metadata.json to disk (default: log to terminal only)
+--markdown           Output metadata as Markdown frontmatter YAML
+--save               Save metadata.json to disk (and metadata.md with --markdown)
 --password           Password for encrypted PDFs
 --batch-limit        Batch: number of items to process (default 5)
 --batch-all          Batch: process all items
@@ -51,7 +52,9 @@ bun as <input>               # root shorthand
 
 ## Output
 
-By default, metadata is printed to the terminal as JSON and no files are created.
+By default, metadata is printed to the terminal as JSON.
+
+With `--markdown`, the same metadata is printed as Markdown frontmatter YAML.
 
 **Terminal output (default)**
 
@@ -67,13 +70,35 @@ By default, metadata is printed to the terminal as JSON and no files are created
 }
 ```
 
+**Terminal output with `--markdown`**
+
+```md
+---
+title: 'My Video Title'
+duration: '12:34'
+author: 'Channel Name'
+url: 'https://www.youtube.com/watch?v=...'
+publishDate: '2025-07-22'
+thumbnail: 'https://i.ytimg.com/vi/.../maxresdefault.jpg'
+channelUrl: 'https://www.youtube.com/channel/...'
+---
+```
+
 **With `--save` flag**
 
-When `--save` is provided, metadata is also written to a timestamped output directory:
+When `--save` is provided, metadata artifacts are written to a timestamped output directory:
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_title/
   metadata.json
+```
+
+With `--save --markdown`, the same directory also includes:
+
+```text
+output/YYYY-MM-DD_HH-MM-SS_title/
+  metadata.json
+  metadata.md
 ```
 
 **Document metadata example**
@@ -103,6 +128,12 @@ bun as meta "https://www.youtube.com/watch?v=u1-WHqATSQU"
 # Display and save metadata to disk
 bun as --save "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
+# Display metadata as Markdown frontmatter YAML
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
+
+# Display and save both metadata.json and metadata.md
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown --save
+
 # Local media file metadata
 bun as metadata input/1-audio.mp3
 
@@ -130,14 +161,14 @@ bun as metadata input/2-urls.md --batch-all --save
    - `yt-dlp --dump-json` for streaming URLs (YouTube, Twitch, TikTok) — no actual download
    - `ffprobe` for local media files — extracts duration and title from filename
    - URL path parsing for direct media URLs
-2. Prints the collected `VideoMetadata` (title, duration, author, URL, publish date, thumbnail, chapters) as JSON
+2. Prints the collected `VideoMetadata` (title, duration, author, URL, publish date, thumbnail, chapters) as JSON by default, or as Markdown frontmatter YAML with `--markdown`
 
 **Document inputs (PDFs, EPUBs, etc.)**
 
 1. Calls `detectDocumentFormat()` for format identification via magic bytes
 2. For PDF/EPUB, calls `getDocumentInfo()` via `mutool` to extract title, author, and page count
 3. Collects file size via `stat`
-4. Prints the document metadata as JSON
+4. Prints the document metadata as JSON by default, or as Markdown frontmatter YAML with `--markdown`
 
 For remote document URLs, the file is temporarily downloaded for inspection and cleaned up afterward. No permanent files are created unless `--save` is used.
 

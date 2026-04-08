@@ -105,5 +105,6 @@ export type RuntimeOptions = {
   videoAspectRatio: string | undefined
   videoResolution: string | undefined
 
+  markdown: boolean
   save: boolean
 }

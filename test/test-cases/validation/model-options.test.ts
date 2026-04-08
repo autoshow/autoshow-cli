@@ -85,6 +85,18 @@ test('setup help includes calibre step', async () => {
   expect(result.stdout).toContain('calibre')
 })
 
+test('metadata help includes markdown output flag', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'metadata',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--markdown')
+  expect(result.stdout).toContain('Markdown frontmatter YAML')
+})
+
 test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -132,6 +144,14 @@ test('buildOptsFromFlags maps --md-output to markdown output', () => {
   })
 
   expect(opts.structured).toBe(false)
+})
+
+test('buildOptsFromFlags maps --markdown for metadata output', () => {
+  const opts = buildOptsFromFlags(true, {
+    'markdown': true
+  })
+
+  expect(opts.markdown).toBe(true)
 })
 
 test('buildOptsFromFlags rejects conflicting output mode flags', () => {

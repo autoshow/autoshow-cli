@@ -38,7 +38,10 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
 
 const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): string[] => {
   if (command === 'metadata') {
-    return opts.save ? ['metadata.json'] : ['metadata (logged to terminal)']
+    if (!opts.save) {
+      return [opts.markdown ? 'metadata (logged to terminal as Markdown frontmatter YAML)' : 'metadata (logged to terminal)']
+    }
+    return opts.markdown ? ['metadata.json', 'metadata.md'] : ['metadata.json']
   }
   if (command === 'download') {
     return ['Audio or document file', 'metadata.json']
