@@ -137,8 +137,8 @@ src/types/
 │  ├── ProcessingOptions    url|filePath, whisper/llama/openai models, ...     │
 │  ├── VideoMetadata        title, duration, author, url, publishDate, ...     │
 │  ├── YtDlpVideoInfo       raw yt-dlp JSON output                             │
-│  ├── Step1Metadata        VideoMetadata & { audioFileName, audioFileSize }  │
-│  ├── DocumentMetadata     title, author, pageCount, format, fileSize         │
+│  ├── Step1Metadata        VideoMetadata & { slug, audioFileName, audioFileSize } │
+│  ├── DocumentMetadata     title, slug, author, pageCount, format, fileSize   │
 │  └── DetectResult         'pdf'|'epub'|'image'|'docx'|'pptx'|'xlsx'|'odf'    │
 │                                                                              │
 │  Step 2 (Transcribe/Extract):                                                │

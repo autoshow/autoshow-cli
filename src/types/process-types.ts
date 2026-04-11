@@ -216,6 +216,7 @@ export const ExtractionMetadataSchema = v.object({
 
 export const DocumentMetadataSchema = v.object({
   title: v.optional(v.string(), undefined),
+  slug: v.string(),
   author: v.optional(v.string(), undefined),
   pageCount: v.number(),
   format: v.picklist([

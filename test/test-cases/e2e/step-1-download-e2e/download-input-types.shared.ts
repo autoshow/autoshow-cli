@@ -14,6 +14,7 @@ type Step1Metadata = {
   fileSize?: number
   title?: string
   author?: string
+  slug?: string
 }
 
 export type Metadata = {
@@ -76,6 +77,7 @@ const parseMetadata = (value: unknown): Metadata => {
     withDefined(step1, 'fileSize', asNumber(step1Record['fileSize']))
     withDefined(step1, 'title', asString(step1Record['title']))
     withDefined(step1, 'author', asString(step1Record['author']))
+    withDefined(step1, 'slug', asString(step1Record['slug']))
     output.step1 = step1
   }
   if ('step2' in root) {

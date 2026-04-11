@@ -107,6 +107,7 @@ output/YYYY-MM-DD_HH-MM-SS_title/
 {
   "format": "pdf",
   "title": "Document Title",
+  "slug": "1-document",
   "author": "Author Name",
   "pageCount": 42,
   "fileSize": 1234567
@@ -161,14 +162,16 @@ bun as metadata input/2-urls.md --batch-all --save
    - `yt-dlp --dump-json` for streaming URLs (YouTube, Twitch, TikTok) — no actual download
    - `ffprobe` for local media files — extracts duration and title from filename
    - URL path parsing for direct media URLs
-2. Prints the collected `VideoMetadata` (title, duration, author, URL, publish date, thumbnail, chapters) as JSON by default, or as Markdown frontmatter YAML with `--markdown`
+2. Derives a `slug` from the input filename when one exists, otherwise falls back to a title-based slug
+3. Prints the collected metadata (title, slug, duration, author, URL, publish date, thumbnail, chapters) as JSON by default, or as Markdown frontmatter YAML with `--markdown`
 
 **Document inputs (PDFs, EPUBs, etc.)**
 
 1. Calls `detectDocumentFormat()` for format identification via magic bytes
 2. For PDF/EPUB, calls `getDocumentInfo()` via `mutool` to extract title, author, and page count
-3. Collects file size via `stat`
-4. Prints the document metadata as JSON by default, or as Markdown frontmatter YAML with `--markdown`
+3. Derives a `slug` from the original filename when one exists, otherwise falls back to a title-based slug
+4. Collects file size via `stat`
+5. Prints the document metadata as JSON by default, or as Markdown frontmatter YAML with `--markdown`
 
 For remote document URLs, the file is temporarily downloaded for inspection and cleaned up afterward. No permanent files are created unless `--save` is used.
 

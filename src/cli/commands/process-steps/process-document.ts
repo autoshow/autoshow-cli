@@ -10,10 +10,12 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { downloadDocument } from './step-1-download/document/dl-document'
 import { runExtract } from './step-2-document/run-extract'
 import { runWithLogContext } from '~/logger'
+import type { Step1SourceRef } from './step-1-download/audio/metadata-utils'
 
 export const processDocument = async (
   filePath: string,
-  rawOpts: Partial<ExtractionOptions>
+  rawOpts: Partial<ExtractionOptions>,
+  sourceRef?: Step1SourceRef
 ): Promise<ProcessDocumentOutput> => {
   const opts = validateData(ExtractionOptionsSchema, {
     filePath,
@@ -37,7 +39,7 @@ export const processDocument = async (
   }, 'document extraction options')
 
   const prepared = await runWithLogContext({ step: 'step-1-download' }, async () =>
-    await downloadDocument(filePath, opts.outputDir, opts.password)
+    await downloadDocument(filePath, opts.outputDir, opts.password, sourceRef)
   )
 
   const { outputDir, step1Metadata, effectiveFilePath, tempCleanup } = prepared

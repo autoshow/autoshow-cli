@@ -1,5 +1,5 @@
 import { basename, join, resolve as pathResolve } from 'node:path'
-import { mkdtemp, rm, stat } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
@@ -7,12 +7,16 @@ import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, ty
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
 import { ensureDirectory, fileExists, writeFile } from '~/utils/cli-utils'
-import { createUniqueDirectoryName, extractSourceMetadata } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
+import {
+  buildMediaStep1Slug,
+  createUniqueDirectoryName,
+  extractSourceMetadata,
+  type Step1SourceRef
+} from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audio/dl-audio'
-import { downloadDocument } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
+import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
 import { processDocument } from '~/cli/commands/process-steps/process-document'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
-import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-document/document-utils/doc-prompt-utils'
 import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
@@ -237,9 +241,14 @@ const writeDocumentOutputMetadata = async (
   l.report.complete(outputDir, artifactFiles)
 }
 
-const runDocumentWrite = async (target: string, baseDir: string, opts: RuntimeOptions): Promise<{ outputDir: string }> => {
+const runDocumentWrite = async (
+  target: string,
+  baseDir: string,
+  opts: RuntimeOptions,
+  sourceRef?: Step1SourceRef
+): Promise<{ outputDir: string }> => {
   const llmConfig = resolveLLMDefaults(opts)
-  const extraction = await processDocument(target, buildExtractionCallOpts(target, baseDir, opts))
+  const extraction = await processDocument(target, buildExtractionCallOpts(target, baseDir, opts), sourceRef)
 
   const useLegacyFallback = opts.structured === false && !hasExplicitLlmProvider(opts)
   if (useLegacyFallback) {
@@ -468,8 +477,13 @@ const processMediaSingle = async (
   return { outputDir: outDir, info: baseInfo }
 }
 
-const processExtractSingle = async (target: string, baseDir: string, opts: RuntimeOptions): Promise<{ outputDir: string }> => {
-  const extraction = await processDocument(target, buildExtractionCallOpts(target, baseDir, opts))
+const processExtractSingle = async (
+  target: string,
+  baseDir: string,
+  opts: RuntimeOptions,
+  sourceRef?: Step1SourceRef
+): Promise<{ outputDir: string }> => {
+  const extraction = await processDocument(target, buildExtractionCallOpts(target, baseDir, opts), sourceRef)
   l.success(`Extraction complete: ${extraction.outputDir}`)
   return { outputDir: extraction.outputDir }
 }
@@ -516,9 +530,11 @@ const processMetadataMedia = async (
   if (!isUrl && exists) src.filePath = target
 
   const meta = await extractSourceMetadata(src)
+  const slug = buildMediaStep1Slug(src, meta)
 
   const metadata = {
     title: meta.title,
+    slug,
     duration: meta.duration,
     author: meta.author,
     url: meta.url,
@@ -543,41 +559,39 @@ const processMetadataDocument = async (
   target: string,
   opts: RuntimeOptions,
   baseDir: string,
-  password?: string
+  password?: string,
+  sourceRef?: Step1SourceRef
 ): Promise<BatchItemProcessResult> => {
-  const detectedFormat = await detectDocumentFormat(target)
-  if (!detectedFormat) {
-    throw CLIUsageError(`Unsupported document format: ${target}`)
+  const prepared = await prepareDocumentMetadata(target, password, sourceRef)
+  try {
+    const step1 = prepared.step1Metadata
+    const title = step1.title ?? basename(target).replace(/\.[^.]+$/, '')
+    const metadata = {
+      ...(step1.title ? { title: step1.title } : {}),
+      slug: step1.slug,
+      ...(step1.author ? { author: step1.author } : {}),
+      pageCount: step1.pageCount,
+      format: step1.format,
+      fileSize: step1.fileSize,
+      ...(step1.sourceFormat ? { sourceFormat: step1.sourceFormat } : {}),
+      ...(step1.normalizedFormat ? { normalizedFormat: step1.normalizedFormat } : {}),
+      ...(step1.conversionChain ? { conversionChain: step1.conversionChain } : {}),
+      ...(step1.metadataSchemaVersion ? { metadataSchemaVersion: step1.metadataSchemaVersion } : {})
+    }
+
+    writeMetadataTerminalOutput(metadata, opts.markdown)
+
+    const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+    const uniqueDirName = createUniqueDirectoryName(title)
+    const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+    await ensureDirectory(outputDir)
+    await writeSavedMetadataArtifacts(outputDir, metadata, opts.markdown, opts.save)
+    return { outputDir }
+  } finally {
+    if (prepared.tempCleanup) {
+      await prepared.tempCleanup()
+    }
   }
-
-  let pageCount = 1
-  let title = basename(target).replace(/\.[^.]+$/, '')
-  let author: string | undefined
-
-  if (detectedFormat === 'pdf' || detectedFormat === 'epub') {
-    const info = await getDocumentInfo(target, password)
-    pageCount = Math.max(1, info.pageCount)
-    if (info.title?.length) title = info.title
-    if (info.author?.length) author = info.author
-  }
-
-  const stats = await stat(target)
-  const metadata = {
-    format: detectedFormat,
-    title,
-    ...(author ? { author } : {}),
-    pageCount,
-    fileSize: stats.size
-  }
-
-  writeMetadataTerminalOutput(metadata, opts.markdown)
-
-  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
-  const uniqueDirName = createUniqueDirectoryName(title)
-  const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
-  await ensureDirectory(outputDir)
-  await writeSavedMetadataArtifacts(outputDir, metadata, opts.markdown, opts.save)
-  return { outputDir }
 }
 
 const processDownloadMedia = async (
@@ -624,22 +638,28 @@ const processDownloadMedia = async (
 const processDownloadDocument = async (
   target: string,
   baseDir: string,
-  opts: RuntimeOptions
+  opts: RuntimeOptions,
+  sourceRef?: Step1SourceRef
 ): Promise<{ outputDir: string }> => {
   const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
-  const prepared = await downloadDocument(target, effectiveBaseDir, opts.password)
+  const prepared = await downloadDocument(target, effectiveBaseDir, opts.password, sourceRef)
+  try {
+    const cost = {
+      estimated: { totalCost: 0, steps: [] as never[] },
+      actual: { totalCost: 0, steps: [] as never[] }
+    }
 
-  const cost = {
-    estimated: { totalCost: 0, steps: [] as never[] },
-    actual: { totalCost: 0, steps: [] as never[] }
+    const metadataPath = `${prepared.outputDir}/metadata.json`
+    await Bun.write(metadataPath, JSON.stringify({ step1: prepared.step1Metadata, cost }, null, 2))
+
+    l.report.complete(prepared.outputDir, { metadata: 'metadata.json' })
+
+    return { outputDir: prepared.outputDir }
+  } finally {
+    if (prepared.tempCleanup) {
+      await prepared.tempCleanup()
+    }
   }
-
-  const metadataPath = `${prepared.outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ step1: prepared.step1Metadata, cost }, null, 2))
-
-  l.report.complete(prepared.outputDir, { metadata: 'metadata.json' })
-
-  return { outputDir: prepared.outputDir }
 }
 
 export const processSingleTarget = async (
@@ -657,7 +677,7 @@ export const processSingleTarget = async (
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          return await processMetadataDocument(downloaded.filePath, opts, baseDir, opts.password)
+          return await processMetadataDocument(downloaded.filePath, opts, baseDir, opts.password, { url: item })
         } finally {
           await downloaded.cleanup()
         }
@@ -685,7 +705,7 @@ export const processSingleTarget = async (
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          return await processDownloadDocument(downloaded.filePath, baseDir, opts)
+          return await processDownloadDocument(downloaded.filePath, baseDir, opts, { url: item })
         } finally {
           await downloaded.cleanup()
         }
@@ -714,16 +734,16 @@ export const processSingleTarget = async (
         throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
       }
 
-      const downloaded = await downloadDocumentUrlToTempFile(item)
-      try {
-        if (isOcrCommand(command)) {
-          return await processExtractSingle(downloaded.filePath, baseDir, opts)
-        } else {
-          return await runDocumentWrite(downloaded.filePath, baseDir, opts)
+        const downloaded = await downloadDocumentUrlToTempFile(item)
+        try {
+          if (isOcrCommand(command)) {
+            return await processExtractSingle(downloaded.filePath, baseDir, opts, { url: item })
+          } else {
+            return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item })
+          }
+        } finally {
+          await downloaded.cleanup()
         }
-      } finally {
-        await downloaded.cleanup()
-      }
     }
 
     if (isOcrCommand(command)) {

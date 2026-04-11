@@ -4,6 +4,7 @@ import { fileExists, runCommand } from '../../test-utils/test-helpers'
 const DIRECT_MEDIA_URL = 'https://example.com/audio.mp3'
 const EXPECTED_FRONTMATTER = `---
 title: 'audio'
+slug: 'audio'
 duration: 'Unknown'
 author: 'Unknown'
 url: 'https://example.com/audio.mp3'
@@ -46,6 +47,7 @@ test('metadata --markdown --save writes metadata.json and metadata.md', async ()
   const savedMarkdown = await Bun.file(markdownPath).text()
 
   expect(savedJson.step1?.['title']).toBe('audio')
+  expect(savedJson.step1?.['slug']).toBe('audio')
   expect(savedJson.step1?.['url']).toBe(DIRECT_MEDIA_URL)
   expect(savedMarkdown).toBe(EXPECTED_FRONTMATTER)
   expect(result.stdout.startsWith(EXPECTED_FRONTMATTER)).toBe(true)

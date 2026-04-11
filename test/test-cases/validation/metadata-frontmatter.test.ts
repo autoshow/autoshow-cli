@@ -4,6 +4,7 @@ import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0
 test('renders flat media metadata as frontmatter', () => {
   const result = formatMetadataAsFrontmatter({
     title: 'Episode 1',
+    slug: 'Episode 1',
     duration: '12:34',
     author: 'Channel Name',
     url: 'https://example.com/audio.mp3',
@@ -12,6 +13,7 @@ test('renders flat media metadata as frontmatter', () => {
   expect(result).toBe(
     `---
 title: 'Episode 1'
+slug: 'Episode 1'
 duration: '12:34'
 author: 'Channel Name'
 url: 'https://example.com/audio.mp3'

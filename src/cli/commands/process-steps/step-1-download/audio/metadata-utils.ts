@@ -4,6 +4,11 @@ import { exec, loadEnvFile } from '~/utils/cli-utils'
 import { YtDlpVideoInfoSchema, VideoMetadataSchema, type VideoMetadata, type YtDlpVideoInfo } from '~/types'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 
+export type Step1SourceRef = {
+  url?: string
+  filePath?: string
+}
+
 export const getVideoInfo = async (url: string): Promise<YtDlpVideoInfo | null> => {
   try {
     await loadEnvFile()
@@ -121,6 +126,60 @@ export const sanitizeTitleSlug = (title: string, maxLength = 200): string =>
     .replace(/[\s_]+/g, '-')
     .replace(/-+/g, '-')
     .substring(0, maxLength)
+
+const stripFinalExtension = (value: string): string =>
+  value.replace(/\.[^.]+$/, '')
+
+const tryDecodeUrlSegment = (segment: string): string => {
+  try {
+    return decodeURIComponent(segment)
+  } catch {
+    return segment
+  }
+}
+
+export const getSourceBasenameWithoutExtension = (source: Step1SourceRef): string | undefined => {
+  if (source.filePath) {
+    const filename = source.filePath.split(/[\\/]/).pop()?.trim()
+    if (!filename) return undefined
+    const withoutExtension = stripFinalExtension(filename)
+    return withoutExtension.length > 0 ? withoutExtension : filename
+  }
+
+  if (!source.url) {
+    return undefined
+  }
+
+  try {
+    const pathname = new URL(source.url).pathname
+    const encodedFilename = pathname.split('/').filter(Boolean).pop()
+    if (!encodedFilename || !encodedFilename.includes('.')) {
+      return undefined
+    }
+    const filename = tryDecodeUrlSegment(encodedFilename).trim()
+    if (!filename) return undefined
+    const withoutExtension = stripFinalExtension(filename)
+    return withoutExtension.length > 0 ? withoutExtension : undefined
+  } catch {
+    return undefined
+  }
+}
+
+export const buildMediaStep1Slug = (
+  source: Step1SourceRef,
+  metadata: Pick<VideoMetadata, 'title' | 'publishDate'>
+): string => {
+  const rawBasename = getSourceBasenameWithoutExtension(source)
+  if (rawBasename) {
+    return rawBasename
+  }
+
+  const datePrefix = metadata.publishDate ? `${metadata.publishDate}-` : ''
+  return `${datePrefix}${sanitizeTitleSlug(metadata.title, 180)}`
+}
+
+export const buildDocumentStep1Slug = (source: Step1SourceRef, title: string): string =>
+  getSourceBasenameWithoutExtension(source) ?? sanitizeTitleSlug(title, 180)
 
 export const createUniqueDirectoryName = (title: string): string => {
   const now = new Date()

@@ -37,6 +37,8 @@ bun as dl <input>          # alias
 
 MOBI, AZW3, FB2, and LIT inputs are normalized to EPUB through Calibre during step 1. The source format and conversion chain are recorded in `metadata.json`.
 
+Step-1 metadata also includes `slug`, which is derived from the original filename without its final extension when available.
+
 ## Flags
 
 ```text

@@ -5,7 +5,11 @@ import { tmpdir } from 'node:os'
 import { ensureDirectory, exec } from '~/utils/cli-utils'
 import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
 import { validateData } from '~/utils/validate/validation'
-import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
+import {
+  buildDocumentStep1Slug,
+  createUniqueDirectoryName,
+  type Step1SourceRef
+} from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { DocumentMetadataSchema, type PreparedDocument } from '~/types'
 import { detectDocumentFormat } from './detect-format'
 import { getDocumentInfo } from './mutool-utils'
@@ -73,12 +77,13 @@ const defaultOutputDir = (baseDir: string, filePath: string): string => {
   return `${baseDir}/${createUniqueDirectoryName(title)}`
 }
 
-export const downloadDocument = async (
-  filePath: string,
-  baseOutputDir: string,
-  password?: string
-): Promise<PreparedDocument> => {
+type PreparedDocumentMetadata = Pick<PreparedDocument, 'step1Metadata' | 'effectiveFilePath' | 'tempCleanup'>
 
+export const prepareDocumentMetadata = async (
+  filePath: string,
+  password?: string,
+  sourceRef?: Step1SourceRef
+): Promise<PreparedDocumentMetadata> => {
   const source = Bun.file(filePath)
   if (!(await source.exists())) {
     throw new Error(`File does not exist: ${filePath}`)
@@ -138,6 +143,7 @@ export const downloadDocument = async (
 
   const step1MetadataPayload: {
     title?: string
+    slug: string
     author?: string
     pageCount: number
     format: DocFormat
@@ -146,6 +152,7 @@ export const downloadDocument = async (
     normalizedFormat?: string
     conversionChain?: string[]
   } = {
+    slug: buildDocumentStep1Slug(sourceRef ?? { filePath }, title),
     pageCount,
     format: effectiveFormat,
     fileSize: sourceStats.size
@@ -161,13 +168,25 @@ export const downloadDocument = async (
 
   const step1Metadata = validateData(DocumentMetadataSchema, step1MetadataPayload, 'document metadata')
 
+  return {
+    step1Metadata,
+    ...(effectiveFilePath ? { effectiveFilePath } : {}),
+    ...(tempCleanup ? { tempCleanup } : {})
+  }
+}
+
+export const downloadDocument = async (
+  filePath: string,
+  baseOutputDir: string,
+  password?: string,
+  sourceRef?: Step1SourceRef
+): Promise<PreparedDocument> => {
+  const prepared = await prepareDocumentMetadata(filePath, password, sourceRef)
   const outputDir = defaultOutputDir(baseOutputDir, filePath)
   await ensureDirectory(outputDir)
 
   return {
     outputDir,
-    step1Metadata,
-    ...(effectiveFilePath ? { effectiveFilePath } : {}),
-    ...(tempCleanup ? { tempCleanup } : {})
+    ...prepared
   }
 }

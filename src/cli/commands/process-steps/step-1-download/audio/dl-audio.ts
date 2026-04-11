@@ -4,7 +4,7 @@ import * as l from '~/logger'
 import { downloadVideo } from './yt-utils'
 import { commandExists, exec } from '~/utils/cli-utils'
 import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
-import { sanitizeTitleSlug } from './metadata-utils'
+import { buildMediaStep1Slug, sanitizeTitleSlug } from './metadata-utils'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import type { DownloadAudioOptions } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
@@ -184,7 +184,10 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
   const audioFileSize = audioFile.size
   const audioFileName = audioPath.split('/').pop() || 'audio.wav'
 
-  const slug = audioFileName.replace(/\.[^.]+$/, '')
+  const slug = buildMediaStep1Slug({
+    ...(options.filePath ? { filePath: options.filePath } : {}),
+    ...(options.url ? { url: options.url } : {})
+  }, videoMetadata)
 
   const metadata: Step1Metadata = {
     ...videoMetadata,
