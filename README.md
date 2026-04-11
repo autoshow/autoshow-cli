@@ -17,6 +17,16 @@ bun as setup
 - `setup --doctor` verifies prerequisites, API keys, and config without installing anything.
 - Local workflows can run without service API keys; service-backed commands require the relevant provider credentials.
 
+### YouTube Auth After Setup
+
+If YouTube starts challenging `yt-dlp` requests with a bot-check or sign-in prompt, follow the exact browser-profile or `cookies.txt` setup commands in [docs/cookies.md](./docs/cookies.md).
+
+Short version:
+
+- `YTDLP_COOKIES_FROM_BROWSER=chrome` is the easiest path when yt-dlp can read your logged-in browser profile.
+- `YTDLP_COOKIES=/absolute/path/to/cookies.txt` is the fallback when you want a dedicated Netscape cookie jar.
+- `YTDLP_COOKIES` wins when it is set and readable; otherwise AutoShow uses `YTDLP_COOKIES_FROM_BROWSER`.
+
 ## Common Workflows
 
 ```bash
@@ -56,13 +66,14 @@ bun as links --openai
 |------|----------|
 | Inspect and process | `metadata`, `download`, `ocr`, `stt`, `write` |
 | Generate | `tts`, `image`, `video`, `music` |
-| Utilities | `config`, `setup`, `sample`, `models`, `links` |
+| Utilities | `config`, `cache`, `setup`, `sample`, `models`, `links` |
 
 High-value notes:
 
 - `bun as <input>` is shorthand for `bun as metadata <input>`.
 - `write` is the central orchestration command. It can summarize transcripts or extracted documents, write markdown or structured JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
 - `models` lets you pre-download local runtimes without running inference, for example `bun as models tiny` or `bun as models ggml-org/gemma-3-270m-it-GGUF`.
+- If YouTube starts blocking `yt-dlp`, follow [docs/cookies.md](./docs/cookies.md) to configure `YTDLP_COOKIES_FROM_BROWSER` or `YTDLP_COOKIES`.
 - `metadata` aliases: `meta`, `info`
 - `download` alias: `dl`
 - `stt` aliases: `transcribe`, `transcript`, `transcription`

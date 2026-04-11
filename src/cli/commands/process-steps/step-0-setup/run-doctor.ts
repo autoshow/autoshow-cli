@@ -1,4 +1,6 @@
+import { inspectYtDlpAuthState } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-options'
 import { commandExists } from '~/utils/cli-utils'
+import { loadEnvFile } from '~/utils/cli-utils'
 import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
 import * as l from '~/logger'
 
@@ -24,6 +26,8 @@ const checkEnvVar = (label: string, envVar: string): CheckResult => {
 }
 
 export const runDoctor = async (): Promise<void> => {
+  await loadEnvFile()
+
   const checks: CheckResult[] = []
 
   checks.push(checkCommand('yt-dlp', 'yt-dlp'))
@@ -68,8 +72,33 @@ export const runDoctor = async (): Promise<void> => {
     if (!check.ok) hasFailure = true
   }
 
+  const youtubeStatus = await inspectYtDlpAuthState()
+  l.info('')
+  l.info('YouTube cookies')
+  l.info(`INFO: mode — ${youtubeStatus.configuredMode}`)
+
+  if (youtubeStatus.configuredMode === 'cookies-file') {
+    const cookieDetail = youtubeStatus.resolvedCookiesPath ?? youtubeStatus.cookiesPath ?? 'not configured'
+    if (youtubeStatus.cookiesReadable === true) {
+      l.success(`OK: cookies file — ${cookieDetail}`)
+    } else {
+      l.warn(`MISSING: cookies file — ${cookieDetail}`)
+      hasFailure = true
+    }
+  } else if (youtubeStatus.configuredMode === 'cookies-from-browser') {
+    l.success('OK: cookies source — browser import via YTDLP_COOKIES_FROM_BROWSER')
+  } else {
+    l.info('INFO: cookies source — not configured')
+  }
+
+  if (youtubeStatus.warning) {
+    l.warn(youtubeStatus.warning)
+    hasFailure = true
+  }
+
   if (hasFailure) {
     l.info('')
     l.info("Run 'bun as setup' to install missing tools")
+    l.info('See docs/cookies.md for YouTube cookie setup')
   }
 }

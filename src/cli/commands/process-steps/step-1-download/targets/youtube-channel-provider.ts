@@ -1,10 +1,8 @@
-
-
 import type { BatchSource, BatchItem } from './batch/batch-types'
-import { exec, loadEnvFile } from '~/utils/cli-utils'
+import { exec } from '~/utils/cli-utils'
 import * as l from '~/logger'
 import type { YtDlpFlatEntry } from '~/types'
-
+import { buildYtDlpFailureMessage, buildYtDlpListArgs, type YtDlpListOptions } from '../audio/yt-dlp-options'
 
 const YOUTUBE_CHANNEL_PATH_PATTERNS = [
   /^\/@[^/]+\/?$/,
@@ -47,26 +45,12 @@ const ensureAbsoluteYoutubeUrl = (idOrUrl: string): string => {
   return `https://www.youtube.com/watch?v=${idOrUrl}`
 }
 
-const buildYtListArgs = (
+export const buildYoutubeChannelListArgs = async (
   url: string,
-  opts: { limit: number; all: boolean; order: 'newest' | 'oldest' }
-): string[] => {
-  const args = ['--flat-playlist', '--dump-json', '--no-warnings', '--ignore-errors']
-
-  if (!opts.all) {
-    args.push('--playlist-end', String(Math.max(1, opts.limit)))
-  }
-
-  if (opts.order === 'oldest') {
-    args.push('--playlist-reverse')
-  }
-
-  args.push(url)
-  return args
-}
+  opts: YtDlpListOptions & { limit: number; all: boolean; order: 'newest' | 'oldest' }
+): Promise<string[]> => await buildYtDlpListArgs(url, opts)
 
 const parseUploadDate = (uploadDate: string | undefined): string | undefined => {
-
   if (!uploadDate || uploadDate.length !== 8) return undefined
   return `${uploadDate.slice(0, 4)}-${uploadDate.slice(4, 6)}-${uploadDate.slice(6, 8)}`
 }
@@ -99,14 +83,13 @@ export const tryEnumerateYoutubeChannel = async (
 ): Promise<BatchSource | null> => {
   if (!isYoutubeChannelUrl(url)) return null
 
-  await loadEnvFile()
   l.info(`Enumerating YouTube channel/playlist: ${url}`)
 
-  const args = buildYtListArgs(url, batchOpts)
+  const args = await buildYoutubeChannelListArgs(url, batchOpts)
   const res = await exec('yt-dlp', args)
 
   if (res.exitCode !== 0) {
-    l.warn(`yt-dlp failed to enumerate ${url}`)
+    l.warn(buildYtDlpFailureMessage('list', res.stderr || res.stdout || `failed to enumerate ${url}`))
     return null
   }
 

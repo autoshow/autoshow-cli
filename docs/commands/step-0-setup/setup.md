@@ -7,6 +7,7 @@ Install local runtimes and prerequisite tools. Sample fixture generation is hand
 - [Step Setup Docs](#step-setup-docs)
 - [Global Setup Command](#global-setup-command)
 - [Doctor](#doctor)
+- [YouTube Cookies](#youtube-cookies)
 - [Targeted Setup Steps](#targeted-setup-steps)
 - [Sample Fixtures](#sample-fixtures)
 
@@ -37,6 +38,21 @@ bun as setup --doctor
 ```
 
 Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys, config file validity, and Bun version.
+
+Doctor also reports YouTube cookie state separately:
+
+- active mode: `cookies-file`, `cookies-from-browser`, or `none`
+- cookie-file readability when `YTDLP_COOKIES` is configured
+
+## YouTube Cookies
+
+If YouTube starts challenging anonymous `yt-dlp` requests, configure cookies using the step-by-step guide in [docs/cookies.md](../../cookies.md).
+
+The same precedence rules apply everywhere in the CLI:
+
+1. `YTDLP_COOKIES` wins when it is set and readable.
+2. Otherwise `YTDLP_COOKIES_FROM_BROWSER` is used.
+3. If `YTDLP_COOKIES` is set but unreadable, AutoShow warns and does not fall back silently.
 
 ## Targeted Setup Steps
 

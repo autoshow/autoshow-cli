@@ -175,6 +175,8 @@ bun as metadata input/2-urls.md --batch-all --save
 
 For remote document URLs, the file is temporarily downloaded for inspection and cleaned up afterward. No permanent files are created unless `--save` is used.
 
+For YouTube inputs, `metadata` honors the same `yt-dlp` environment overrides as `download`, including `YTDLP_COOKIES_FROM_BROWSER`, `YTDLP_COOKIES`, and `YTDLP_EXTRACTOR_ARGS`.
+
 ## Processing Step Layout
 
 Runtime processing steps and shared routing live under:

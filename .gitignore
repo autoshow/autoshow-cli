@@ -23,6 +23,7 @@ output/
 plans/**/*.md
 Library/
 runtime/
+runtime/auth/
 test-output
 new-llm-*.md
 TODO.md

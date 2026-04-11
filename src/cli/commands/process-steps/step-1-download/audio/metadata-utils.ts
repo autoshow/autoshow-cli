@@ -1,8 +1,9 @@
 import * as l from '~/logger'
 import { validateData, validateDataSafe } from '~/utils/validate/validation'
-import { exec, loadEnvFile } from '~/utils/cli-utils'
+import { exec } from '~/utils/cli-utils'
 import { YtDlpVideoInfoSchema, VideoMetadataSchema, type VideoMetadata, type YtDlpVideoInfo } from '~/types'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
+import { buildYtDlpFailureMessage, buildYtDlpMetadataArgs } from './yt-dlp-options'
 
 export type Step1SourceRef = {
   url?: string
@@ -11,32 +12,25 @@ export type Step1SourceRef = {
 
 export const getVideoInfo = async (url: string): Promise<YtDlpVideoInfo | null> => {
   try {
-    await loadEnvFile()
-    
-    const args = [
-      '--dump-json',
-      '--no-playlist',
-      '--quiet',
-      url
-    ]
-    
+    const args = await buildYtDlpMetadataArgs(url)
+
     const result = await exec('yt-dlp', args)
-    
+
     if (result.exitCode !== 0) {
-      l.warn(`Failed to fetch video info from yt-dlp`)
+      l.warn(buildYtDlpFailureMessage('metadata', result.stderr || result.stdout || 'unknown yt-dlp error'))
       return null
     }
-    
+
     const parsed = JSON.parse(result.stdout)
     const validated = validateDataSafe(YtDlpVideoInfoSchema, parsed, 'yt-dlp video info')
-    
+
     if (!validated) {
       l.debug(`Video info validation failed, using raw data`)
       return parsed as YtDlpVideoInfo
     }
-    
+
     return validated
-    
+
   } catch (error) {
     l.error(`Failed to get video info`, error)
     return null

@@ -1,11 +1,12 @@
 import * as v from 'valibot'
 import * as l from '~/logger'
-import { exec, loadEnvFile } from '~/utils/cli-utils'
+import { exec } from '~/utils/cli-utils'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { isOcrCommand } from '~/types'
 import { isLikelyUrl, processBatch } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { validateDataSafe } from '~/utils/validate/validation'
+import { buildYtDlpListArgs, buildYtDlpFailureMessage } from '../audio/yt-dlp-options'
 
 const YtDlpPlaylistItemSchema = v.object({
   webpage_url: v.optional(v.string(), undefined),
@@ -28,13 +29,15 @@ const isYoutubeUrl = (s: string): boolean => {
   }
 }
 
+export const buildYoutubeCollectionListArgs = async (url: string): Promise<string[]> =>
+  await buildYtDlpListArgs(url, { all: true, order: 'newest' })
+
 const getYoutubeCollectionItems = async (url: string): Promise<string[]> => {
   try {
-    await loadEnvFile()
-    const args = ['--flat-playlist', '--dump-json', '--no-warnings', '--ignore-errors', url]
+    const args = await buildYoutubeCollectionListArgs(url)
     const res = await exec('yt-dlp', args)
     if (res.exitCode !== 0) {
-      l.warn(`yt-dlp failed to list items`)
+      l.warn(buildYtDlpFailureMessage('list', res.stderr || res.stdout || 'unknown yt-dlp error'))
       return []
     }
     const lines = res.stdout.split('\n').map((s: string) => s.trim()).filter((s: string) => s.length > 0)

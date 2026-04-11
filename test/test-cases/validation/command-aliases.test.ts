@@ -86,8 +86,20 @@ test('download-llama no longer resolves to the models command', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
-  expect(result.stdout).toContain('Default command (equivalent to write <input>)')
+  expect(result.stdout).toContain('Default command (equivalent to metadata <input>)')
   expect(result.stdout).not.toContain('Download a model without running inference')
+})
+
+test('removed auth command points to docs/cookies.md', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'auth',
+    'youtube'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(result.stderr).toContain('The "auth" command was removed.')
+  expect(result.stderr).toContain('docs/cookies.md')
 })
 
 test('top-level help groups commands into the expected sections and order', async () => {
@@ -112,13 +124,14 @@ test('top-level help groups commands into the expected sections and order', asyn
   const processingSection = output.slice(processingIndex)
 
   expectOrderedFragments(coreSection, [
-    '(root)    Default command (equivalent to write <input>)',
+    '(root)    Default command (equivalent to metadata <input>)',
     'version   Prints current version',
     'help      Show help'
   ])
 
   expectOrderedFragments(setupSection, [
     'config    View or set default CLI options saved to config/autoshow.json',
+    'cache     Manage the persistent STT media cache',
     'setup     Install local dependencies and required tools',
     'sample    Generate and validate deterministic fixture files for all supported formats',
     'models    Download a model without running inference (llama.cpp repo ID or whisper model ID)',
@@ -126,6 +139,7 @@ test('top-level help groups commands into the expected sections and order', asyn
   ])
 
   expectOrderedFragments(processingSection, [
+    'metadata  Collect and display metadata for media or document without downloading',
     'download  Download media or document and collect metadata only',
     'ocr       Extract text from PDF, EPUB, and image files',
     'stt       Download audio and run speech-to-text only',

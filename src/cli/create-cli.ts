@@ -282,6 +282,7 @@ const createCli = () => {
 const main = async (): Promise<void> => {
   const argv = normalizeCommandHelpShortcut(normalizeCommandAliases(expandPromptArgs(expandBareModelFlags(Bun.argv.slice(2)))))
   validateSttFlagCompatibility(argv)
+  const removedAuthCommandMessage = 'The "auth" command was removed. See docs/cookies.md for YouTube cookie setup.'
   const parseCli = async (parseArgv: string[]): Promise<void> => {
     if (shouldPatchHelpConsole(parseArgv)) {
       await withPatchedHelpConsole(async () => {
@@ -302,6 +303,9 @@ const main = async (): Promise<void> => {
       }
 
       const maybeCommand = rest[0]
+      if (maybeCommand === 'auth') {
+        throw CLIUsageError(removedAuthCommandMessage)
+      }
       const canonicalCommand = maybeCommand ? normalizeKnownCommandName(maybeCommand) : null
       if (canonicalCommand) {
         await parseCli(['help', canonicalCommand])
@@ -315,6 +319,10 @@ const main = async (): Promise<void> => {
     if (first === '--version' || first === '-v' || first === '-V') {
       await parseCli(['--version'])
       return
+    }
+
+    if (first === 'auth') {
+      throw CLIUsageError(removedAuthCommandMessage)
     }
 
     if (first !== '--' && first!.startsWith('-')) {

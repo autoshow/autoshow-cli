@@ -1,5 +1,6 @@
 import * as l from '~/logger'
-import { exec, loadEnvFile } from '~/utils/cli-utils'
+import { exec } from '~/utils/cli-utils'
+import { buildYtDlpDownloadArgs, buildYtDlpFailureMessage } from './yt-dlp-options'
 
 const isProgressLine = (line: string): boolean => {
   return line.startsWith('[download]') || line.startsWith('[ExtractAudio]')
@@ -11,41 +12,6 @@ const relayYtDlpLine = (line: string): void => {
     return
   }
   l.info(clean)
-}
-
-const buildAndroidClientArgs = async (url: string, outputDir: string): Promise<string[]> => {
-  await loadEnvFile()
-
-  const acceptLanguage = process.env['YTDLP_ACCEPT_LANGUAGE']
-  const userAgent = process.env['YTDLP_USER_AGENT']
-  const noCheckCerts = String(process.env['YTDLP_NO_CHECK_CERTS'] || '').toLowerCase() === 'true'
-
-  const args: string[] = [
-    '--extract-audio',
-    '--audio-format',
-    'mp3',
-    '--output',
-    `${outputDir}/%(title)s.%(ext)s`,
-    '--restrict-filenames',
-    '--no-playlist',
-    '--progress',
-    '--newline',
-    '--progress-delta',
-    '1'
-  ]
-
-  if (acceptLanguage) {
-    args.push('--add-header', `Accept-Language: ${acceptLanguage}`)
-  }
-  if (userAgent) {
-    args.push('--user-agent', userAgent)
-  }
-  if (noCheckCerts) {
-    args.push('--no-check-certificates')
-  }
-
-  args.push('--extractor-args', 'youtube:player_client=android', url)
-  return args
 }
 
 const findDownloadedAudio = async (outputDir: string): Promise<string> => {
@@ -61,7 +27,7 @@ const findDownloadedAudio = async (outputDir: string): Promise<string> => {
 
 export const downloadVideo = async (url: string, outputDir: string): Promise<string> => {
   try {
-    const args = await buildAndroidClientArgs(url, outputDir)
+    const args = await buildYtDlpDownloadArgs(url, outputDir)
     l.info('Downloading audio with yt-dlp')
     const result = await exec('yt-dlp', args, {
       onStdoutLine: relayYtDlpLine,
@@ -69,8 +35,8 @@ export const downloadVideo = async (url: string, outputDir: string): Promise<str
     })
 
     if (result.exitCode !== 0) {
-      const details = (result.stderr || result.stdout || 'unknown yt-dlp error').trim()
-      const message = `yt-dlp download failed using youtube:player_client=android. ${details}`
+      const details = result.stderr || result.stdout || 'unknown yt-dlp error'
+      const message = buildYtDlpFailureMessage('download', details)
       l.error(message)
       throw new Error(message)
     }
@@ -79,12 +45,9 @@ export const downloadVideo = async (url: string, outputDir: string): Promise<str
     return await findDownloadedAudio(outputDir)
   } catch (error) {
     const details = error instanceof Error ? error.message : String(error)
-    if (details.startsWith('yt-dlp download failed using youtube:player_client=android.')) {
+    if (details.startsWith('yt-dlp download failed.')) {
       throw error instanceof Error ? error : new Error(details)
     }
-
-    const message = `yt-dlp download failed using youtube:player_client=android. ${details}`
-    l.error(message)
-    throw new Error(message)
+    throw error instanceof Error ? error : new Error(details)
   }
 }

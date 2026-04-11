@@ -92,6 +92,9 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  yt-dlp Configuration                                                        │
 │  ├── YTDLP_ACCEPT_LANGUAGE           Custom Accept-Language header           │
 │  ├── YTDLP_USER_AGENT                Custom user agent string                │
+│  ├── YTDLP_COOKIES_FROM_BROWSER      Import browser cookies for yt-dlp       │
+│  ├── YTDLP_COOKIES                   Path to exported yt-dlp cookies.txt     │
+│  ├── YTDLP_EXTRACTOR_ARGS            Raw yt-dlp extractor args override      │
 │  └── YTDLP_NO_CHECK_CERTS            Disable TLS certificate verification    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
