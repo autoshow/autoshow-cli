@@ -34,7 +34,7 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
 
   const segmentDescriptors: AudioSegmentDescriptor[] = []
 
-  const tasks = Array.from({ length: totalSegments }, (_, i) => i).map(async (i) => {
+  for (let i = 0; i < totalSegments; i++) {
     const startTime = i * segmentDurationSeconds
     const segmentPath = `${segmentsDir}/segment_${String(i + 1).padStart(3, '0')}.wav`
 
@@ -55,20 +55,13 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
     }
 
     l.success(`Segment ${i + 1}/${totalSegments} created`)
-    return {
+    segmentDescriptors.push({
       path: segmentPath,
       segmentNumber: i + 1,
       totalSegments,
       startSeconds: startTime,
       durationSeconds: Math.min(segmentDurationSeconds, Math.max(0, totalDuration - startTime))
-    } satisfies AudioSegmentDescriptor
-  })
-
-  for (let i = 0; i < tasks.length; i++) {
-    const segmentDescriptor = await tasks[i]
-    if (segmentDescriptor) {
-      segmentDescriptors.push(segmentDescriptor)
-    }
+    } satisfies AudioSegmentDescriptor)
   }
 
   return segmentDescriptors

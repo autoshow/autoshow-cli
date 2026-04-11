@@ -8,6 +8,7 @@ import { runOpenAIStt } from './stt-services/openai/run-openai-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
+import { formatTranscriptText } from './stt-utils/transcription-utils'
 import { fileExists } from '~/utils/cli-utils'
 import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
@@ -28,6 +29,40 @@ const TRANSCRIBE_ENGINE_CAPABILITIES = {
   assemblyai: { supportsSpeakerCountHint: true },
   whisper: { supportsSpeakerCountHint: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
+
+const SPLIT_SEGMENT_DURATION_MINUTES = 10
+export const GROQ_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < (1024 * 1024)) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < (1024 * 1024 * 1024)) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+export const shouldSplitTranscriptionInput = (
+  engine: TranscribeEngine,
+  audioFileSizeBytes: number,
+  splitRequested: boolean
+): boolean => {
+  if (splitRequested) {
+    return true
+  }
+
+  return engine === 'groq' && audioFileSizeBytes > GROQ_MAX_ATTACHMENT_BYTES
+}
+
+export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
+  if (error instanceof Error) {
+    return error.message.includes('(413)') || /payload too large/i.test(error.message)
+  }
+
+  if (typeof error === 'string') {
+    return error.includes('(413)') || /payload too large/i.test(error)
+  }
+
+  return false
+}
 
 const resolveTranscribeEngine = (options: ProcessingOptions): TranscribeEngine => {
   const hasReverb = options.useReverb === true
@@ -191,6 +226,54 @@ const dispatchTranscribe = async (
   assertNever(engine)
 }
 
+const runSplitTranscription = async (
+  engine: TranscribeEngine,
+  audioPath: string,
+  options: ProcessingOptions,
+  diarizationOptions: DiarizationOptions | undefined
+): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
+  const segmentDescriptors = await splitAudioFile(audioPath, options.outputDir, SPLIT_SEGMENT_DURATION_MINUTES)
+  const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
+
+  const segmentResults: Array<{ result: TranscriptionResult, metadata: Step2Metadata }> = []
+
+  for (let i = 0; i < segmentDescriptors.length; i++) {
+    const segmentDescriptor = segmentDescriptors[i]!
+    const offsetMinutes = segmentDescriptor.startSeconds / 60
+
+    const segmentData = await dispatchTranscribe(
+      engine, segmentDescriptor.path, options.outputDir, offsetMinutes,
+      options, diarizationOptions, segmentDescriptor.segmentNumber, segmentDescriptor.totalSegments, {
+        segmentStartSeconds: segmentDescriptor.startSeconds,
+        segmentDurationSeconds: segmentDescriptor.durationSeconds,
+        totalDurationSeconds
+      }
+    )
+
+    segmentResults.push(segmentData)
+  }
+
+  const combinedResult = {
+    text: segmentResults.map(s => s.result.text).join(' '),
+    segments: segmentResults.flatMap(s => s.result.segments)
+  }
+
+  await Bun.write(`${options.outputDir}/transcription.txt`, formatTranscriptText(combinedResult.segments))
+
+  const totalProcessingTime = segmentResults.reduce((sum, s) => sum + s.metadata.processingTime, 0)
+  const totalTokenCount = segmentResults.reduce((sum, s) => sum + s.metadata.tokenCount, 0)
+
+  const combinedMetadata: Step2Metadata = {
+    transcriptionService: segmentResults[0]!.metadata.transcriptionService,
+    transcriptionModel: segmentResults[0]!.metadata.transcriptionModel,
+    transcriptionModelName: segmentResults[0]!.metadata.transcriptionModelName,
+    processingTime: totalProcessingTime,
+    tokenCount: totalTokenCount
+  }
+
+  return { result: combinedResult, metadata: combinedMetadata }
+}
+
 export const transcribe = async (
   audioPath: string,
   options: ProcessingOptions
@@ -218,56 +301,24 @@ export const transcribe = async (
     await ensureWhisperSetup(options.whisperModel)
   }
 
-  if (options.split) {
-    const segmentDescriptors = await splitAudioFile(audioPath, options.outputDir, 10)
-    const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
-
-    const segmentResults: Array<{ result: TranscriptionResult, metadata: Step2Metadata }> = []
-
-    for (let i = 0; i < segmentDescriptors.length; i++) {
-      const segmentDescriptor = segmentDescriptors[i]!
-      const offsetMinutes = segmentDescriptor.startSeconds / 60
-
-      const segmentData = await dispatchTranscribe(
-        engine, segmentDescriptor.path, options.outputDir, offsetMinutes,
-        options, diarizationOptions, segmentDescriptor.segmentNumber, segmentDescriptor.totalSegments, {
-          segmentStartSeconds: segmentDescriptor.startSeconds,
-          segmentDurationSeconds: segmentDescriptor.durationSeconds,
-          totalDurationSeconds
-        }
-      )
-
-      segmentResults.push(segmentData)
+  const audioFileSize = Bun.file(audioPath).size
+  if (shouldSplitTranscriptionInput(engine, audioFileSize, options.split === true)) {
+    if (engine === 'groq' && options.split !== true) {
+      const inputFilename = audioPath.split('/').pop() || 'audio'
+      l.warn(`Groq file uploads are capped at ${formatBytes(GROQ_MAX_ATTACHMENT_BYTES)}; ${inputFilename} is ${formatBytes(audioFileSize)}. Splitting into ${SPLIT_SEGMENT_DURATION_MINUTES}-minute segments automatically`)
     }
 
-    const combinedResult = {
-      text: segmentResults.map(s => s.result.text).join(' '),
-      segments: segmentResults.flatMap(s => s.result.segments)
-    }
-
-    const finalTranscriptPath = `${options.outputDir}/transcription.txt`
-    const formattedTranscript = combinedResult.segments
-      .map(seg => {
-        const speakerPrefix = seg.speaker ? `[${seg.speaker}] ` : ''
-        return `[${seg.start}] ${speakerPrefix}${seg.text}`
-      })
-      .join('\n')
-
-    await Bun.write(finalTranscriptPath, formattedTranscript)
-
-    const totalProcessingTime = segmentResults.reduce((sum, s) => sum + s.metadata.processingTime, 0)
-    const totalTokenCount = segmentResults.reduce((sum, s) => sum + s.metadata.tokenCount, 0)
-
-    const combinedMetadata: Step2Metadata = {
-      transcriptionService: segmentResults[0]!.metadata.transcriptionService,
-      transcriptionModel: segmentResults[0]!.metadata.transcriptionModel,
-      transcriptionModelName: segmentResults[0]!.metadata.transcriptionModelName,
-      processingTime: totalProcessingTime,
-      tokenCount: totalTokenCount
-    }
-
-    return { result: combinedResult, metadata: combinedMetadata }
+    return await runSplitTranscription(engine, audioPath, options, diarizationOptions)
   }
 
-  return await dispatchTranscribe(engine, audioPath, options.outputDir, 0, options, diarizationOptions)
+  try {
+    return await dispatchTranscribe(engine, audioPath, options.outputDir, 0, options, diarizationOptions)
+  } catch (error) {
+    if (engine === 'groq' && options.split !== true && isPayloadTooLargeTranscriptionError(error)) {
+      l.warn(`Groq rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)
+      return await runSplitTranscription(engine, audioPath, options, diarizationOptions)
+    }
+
+    throw error
+  }
 }
