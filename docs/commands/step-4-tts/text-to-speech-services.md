@@ -38,7 +38,7 @@ Provider-specific voice flags only affect their matching target.
 ## Multi-Target Runs
 
 ```bash
-bun as tts input/1-tts.md \
+bun as tts input/examples/document/1-tts.md \
   --openai-tts gpt-4o-mini-tts \
   --openai-voice alloy \
   --gemini-tts gemini-2.5-flash-preview-tts \
@@ -50,13 +50,13 @@ This generates one speech file per successful target from the same input text.
 ## Examples
 
 ```bash
-bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
-bun as tts input/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts --gemini-voice Kore
-bun as tts input/1-tts.md --groq-tts canopylabs/orpheus-v1-english --groq-voice hannah
-bun as tts input/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-voice <voice-id>
-bun as tts input/1-tts.md --minimax-tts speech-2.8-hd --minimax-tts-voice <voice-id>
-bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --gemini-tts gemini-2.5-flash-preview-tts
-bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --gemini-tts gemini-2.5-pro-preview-tts --groq-tts canopylabs/orpheus-v1-english
+bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
+bun as tts input/examples/document/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts --gemini-voice Kore
+bun as tts input/examples/document/1-tts.md --groq-tts canopylabs/orpheus-v1-english --groq-voice hannah
+bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-voice <voice-id>
+bun as tts input/examples/document/1-tts.md --minimax-tts speech-2.8-hd --minimax-tts-voice <voice-id>
+bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts --gemini-tts gemini-2.5-flash-preview-tts
+bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts --gemini-tts gemini-2.5-pro-preview-tts --groq-tts canopylabs/orpheus-v1-english
 ```
 
 ## Flags

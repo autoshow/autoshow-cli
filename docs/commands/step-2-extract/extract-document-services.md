@@ -37,11 +37,11 @@ Current Mistral OCR models:
 ## Examples
 
 ```bash
-bun as ocr input/1-document.pdf --mistral-ocr mistral-ocr-latest
-bun as ocr input/1-document.jpg --mistral-ocr mistral-ocr-2512
-bun as ocr input/1-document.epub --mistral-ocr mistral-ocr-2512
-bun as ocr input/1-document.docx --mistral-ocr mistral-ocr-latest
-bun as ocr input/1-document.pdf --mistral-ocr mistral-ocr-latest --price
+bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-latest
+bun as ocr input/examples/document/1-document.jpg --mistral-ocr mistral-ocr-2512
+bun as ocr input/examples/document/1-epub.epub --mistral-ocr mistral-ocr-2512
+bun as ocr input/examples/document/1-docx.docx --mistral-ocr mistral-ocr-latest
+bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-latest --price
 ```
 
 ## Standalone `ocr` Flags

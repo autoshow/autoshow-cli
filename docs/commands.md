@@ -16,16 +16,16 @@ AutoShow currently exposes 13 named commands plus the root shorthand. `bun as <i
 bun as setup
 
 # stt only (no LLM summary)
-bun as stt input/1-audio.mp3
+bun as stt input/examples/audio/1-audio.mp3
 
 # stt with Groq STT
-bun as stt input/1-audio.mp3 --groq-stt whisper-large-v3
+bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 
 # stt with OpenAI STT
-bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize
+bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize
 
 # full pipeline (download/transcribe + LLM write)
-bun as write input/1-audio.mp3 --openai gpt-5.4
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 
 # root shorthand for metadata (default command)
 bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
@@ -37,13 +37,13 @@ bun as --save "https://www.youtube.com/watch?v=u1-WHqATSQU"
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 
 # document OCR/extraction only
-bun as ocr input/1-document.pdf
+bun as ocr input/examples/document/1-document.pdf
 
 # text-to-speech from local markdown/txt
-bun as tts input/1-tts.md --kitten-tts kitten-tts-mini
+bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-mini
 
 # text-to-speech with Gemini
-bun as tts input/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts
+bun as tts input/examples/document/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts
 
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
@@ -90,12 +90,12 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 Most runtime commands support `--price` (or `--dry-run`) to print estimated cost and exit:
 
 ```bash
-bun as stt input/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
-bun as stt input/1-audio.mp3 --groq-stt whisper-large-v3 --price
-bun as write input/1-audio.mp3 --openai gpt-5.4 --price
-bun as tts input/1-tts.md --elevenlabs-tts eleven_v3 --price
-bun as tts input/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
-bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts --price
+bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
+bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
+bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --price
+bun as tts input/examples/document/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
+bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as image "a sunset" --openai-image gpt-image-1 --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --price

@@ -38,7 +38,7 @@ bun as setup --step sample
 PaddleOCR can also be prepared lazily on first use:
 
 ```bash
-bun as ocr input/1-document.pdf --paddle-ocr
+bun as ocr input/examples/document/1-document.pdf --paddle-ocr
 ```
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms if the Calibre CLI tools are missing.
@@ -112,28 +112,28 @@ Rules:
 
 ```bash
 # Default PDF extraction
-bun as ocr input/1-document.pdf
+bun as ocr input/examples/document/1-document.pdf
 
 # JSON output
-bun as ocr input/1-document.pdf --out json
+bun as ocr input/examples/document/1-document.pdf --out json
 
 # EPUB chapter extraction
-bun as ocr input/1-document.epub
+bun as ocr input/examples/document/1-epub.epub
 
 # EPUB OCR path
-bun as ocr input/1-document.epub --ocrmypdf
+bun as ocr input/examples/document/1-epub.epub --ocrmypdf
 
 # Ebook normalized through Calibre first
 bun as ocr input/1-document.mobi
 
 # Local image OCR
-bun as ocr input/1-document.png --paddle-ocr
+bun as ocr input/examples/document/1-document.png --paddle-ocr
 
 # Structured EPUB inspect with Bun
-bun as ocr input/1-document.epub --epub-bun --out json
+bun as ocr input/examples/document/1-epub.epub --epub-bun --out json
 
 # Structured EPUB inspect with Calibre
-bun as ocr input/1-document.epub --epub-calibre --out json
+bun as ocr input/examples/document/1-epub.epub --epub-calibre --out json
 ```
 
 ## Standalone `ocr` Flags

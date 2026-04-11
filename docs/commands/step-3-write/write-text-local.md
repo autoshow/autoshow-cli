@@ -69,13 +69,13 @@ Current local llama.cpp models in the project config:
 
 ```bash
 # Local write pipeline with llama.cpp
-bun as write input/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF
+bun as write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF
 
 # Document input + local summary
-bun as write input/1-document.pdf --llama ggml-org/Qwen3-0.6B-GGUF
+bun as write input/examples/document/1-document.pdf --llama ggml-org/Qwen3-0.6B-GGUF
 
 # Multiple prompts
-bun as write input/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary
+bun as write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary
 ```
 
 ## Prompts

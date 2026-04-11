@@ -6,9 +6,9 @@ type ExtractMetadata = {
   step2?: { extractionMethod?: string; totalPages?: number; epub?: Record<string, unknown> }
 }
 
-const pdfInput = 'input/1-document.pdf'
-const epubInput = 'input/1-epub.epub'
-const imageInput = 'input/1-document.png'
+const pdfInput = 'input/examples/document/1-document.pdf'
+const epubInput = 'input/examples/document/1-epub.epub'
+const imageInput = 'input/examples/document/1-document.png'
 const paddleOcrPython = 'runtime/bin/paddle-ocr/bin/python'
 
 beforeAll(async () => {

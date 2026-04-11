@@ -46,7 +46,7 @@ bun as music "lo-fi chillhop with soft piano and vinyl texture" --elevenlabs-mus
 
 # MiniMax
 bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5
-bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5 --music-lyrics-file input/1-tts.md
+bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5 --music-lyrics-file input/examples/document/1-tts.md
 bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5 --price
 
 # Both providers at once
@@ -54,10 +54,10 @@ bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music musi
 bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5 --price
 
 # Write pipeline
-bun as write input/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
-bun as write input/1-audio.mp3 --minimax-music music-2.5 --music-lyrics-file input/1-tts.md
-bun as write input/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.5
-bun as write input/1-audio.mp3 --minimax-music music-2.5 --price
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
+bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.5 --music-lyrics-file input/examples/document/1-tts.md
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.5
+bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.5 --price
 ```
 
 ## Environment

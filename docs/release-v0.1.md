@@ -99,16 +99,16 @@ bun as setup
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 
 # stt only
-bun as stt input/1-audio.mp3
+bun as stt input/examples/audio/1-audio.mp3
 
 # full media pipeline with service LLM
-bun as write input/1-audio.mp3 --openai gpt-5.4
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 
 # document OCR/extraction
-bun as ocr input/1-document.pdf --out json
+bun as ocr input/examples/document/1-document.pdf --out json
 
 # standalone text-to-speech
-bun as tts input/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
+bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
 
 # standalone image generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01

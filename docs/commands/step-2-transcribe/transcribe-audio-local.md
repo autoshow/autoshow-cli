@@ -93,19 +93,19 @@ If no engine flag is provided, `stt` uses Whisper with the default `tiny` model.
 
 ```bash
 # Default local Whisper
-bun as stt input/1-audio.mp3
+bun as stt input/examples/audio/1-audio.mp3
 
 # Larger Whisper model
-bun as stt input/1-audio.mp3 --whisper large-v3-turbo
+bun as stt input/examples/audio/1-audio.mp3 --whisper large-v3-turbo
 
 # Reverb with explicit verbatimicity
-bun as stt input/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
+bun as stt input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
 
 # Split a long media file into 10-minute chunks first
-bun as stt input/2-video.mp4 --whisper large-v3-turbo --split
+bun as stt input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
 
 # Batch from a URL list
-bun as stt input/2-urls.md --batch-limit 5
+bun as stt input/examples/document/2-urls.md --batch-limit 5
 ```
 
 ## Flags

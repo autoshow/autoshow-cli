@@ -23,7 +23,7 @@ describe('write subcommand with llama', () => {
     await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   })
 
-  budgetedTest('write-llama-qwen3-0.6b', 'write input/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF', async () => {
+  budgetedTest('write-llama-qwen3-0.6b', 'write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF', async () => {
     await stopLlamaServer()
 
     const result = await runCommand(
@@ -50,7 +50,7 @@ describe('write subcommand with llama', () => {
     }
   })
 
-  budgetedTest('write-llama-qwen3-0.6b', 'write input/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary', async () => {
+  budgetedTest('write-llama-qwen3-0.6b', 'write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary', async () => {
     await stopLlamaServer()
     await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 
@@ -96,12 +96,12 @@ describe('write subcommand with document input', () => {
     await cleanupDocOutput()
   })
 
-  budgetedTest('write-llama-qwen3-0.6b-document', 'write input/1-document.pdf --llama ggml-org/Qwen3-0.6B-GGUF', async () => {
+  budgetedTest('write-llama-qwen3-0.6b-document', 'write input/examples/document/1-document.pdf --llama ggml-org/Qwen3-0.6B-GGUF', async () => {
     await stopLlamaServer()
     await cleanupDocOutput()
 
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'write', 'input/1-document.pdf', '--llama', 'ggml-org/Qwen3-0.6B-GGUF'],
+      ['src/cli/create-cli.ts', 'write', 'input/examples/document/1-document.pdf', '--llama', 'ggml-org/Qwen3-0.6B-GGUF'],
     )
 
     expect(result.exitCode).toBe(0)

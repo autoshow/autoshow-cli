@@ -83,10 +83,10 @@ output/YYYY-MM-DD_HH-MM-SS_batch-label/
 bun as download https://www.youtube.com/watch?v=u1-WHqATSQU
 
 # Download a local audio file
-bun as download input/1-audio.mp3
+bun as download input/examples/audio/1-audio.mp3
 
 # Download document metadata from a local PDF
-bun as download input/1-document.pdf
+bun as download input/examples/document/1-document.pdf
 
 # Download 3 latest episodes from an RSS feed
 bun as download https://example.com/feed --batch-limit 3
@@ -95,7 +95,7 @@ bun as download https://example.com/feed --batch-limit 3
 bun as download https://www.youtube.com/@channelname --batch-limit 2
 
 # Download all items from a URL list
-bun as dl input/2-urls.md --batch-all
+bun as dl input/examples/document/2-urls.md --batch-all
 ```
 
 ## Setup and Environment

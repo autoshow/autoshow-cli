@@ -24,7 +24,7 @@ describe('stt batch preflight', () => {
     const inputListPath = join(tempDir, 'inputs.md')
     const configPath = join(tempDir, 'autoshow.json')
 
-    await writeFile(inputListPath, `${resolve('input/1-audio.mp3')}\n`)
+    await writeFile(inputListPath, `${resolve('input/examples/audio/1-audio.mp3')}\n`)
     await writeFile(configPath, JSON.stringify({ pricing: { maxCents: 0 } }, null, 2))
 
     const result = await runCommand([
@@ -51,7 +51,7 @@ describe('stt batch preflight', () => {
     const notePath = join(tempDir, 'note.md')
 
     await writeFile(notePath, '# not audio\n')
-    await writeFile(inputListPath, `${resolve('input/1-audio.mp3')}\n${notePath}\n`)
+    await writeFile(inputListPath, `${resolve('input/examples/audio/1-audio.mp3')}\n${notePath}\n`)
     await writeFile(configPath, JSON.stringify({}, null, 2))
 
     const result = await runCommand([

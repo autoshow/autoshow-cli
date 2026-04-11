@@ -35,28 +35,28 @@ You can select multiple LLM providers in one run. Each provider executes sequent
 
 ```bash
 # OpenAI
-bun as write input/1-audio.mp3 --openai gpt-5.4
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 
 # Anthropic
-bun as write input/1-audio.mp3 --anthropic claude-sonnet-4-6
+bun as write input/examples/audio/1-audio.mp3 --anthropic claude-sonnet-4-6
 
 # Gemini
-bun as write input/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview
+bun as write input/examples/audio/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview
 
 # Groq
-bun as write input/1-audio.mp3 --groq openai/gpt-oss-20b
+bun as write input/examples/audio/1-audio.mp3 --groq openai/gpt-oss-20b
 
 # MiniMax
-bun as write input/1-audio.mp3 --minimax MiniMax-M2.5
+bun as write input/examples/audio/1-audio.mp3 --minimax MiniMax-M2.5
 
 # Grok
-bun as write input/1-audio.mp3 --grok grok-4.20-reasoning
+bun as write input/examples/audio/1-audio.mp3 --grok grok-4.20-reasoning
 
 # Multi-provider run
-bun as write input/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b
 
 # Price preflight
-bun as write input/1-audio.mp3 --openai gpt-5.4 --price
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 ```
 
 ## Prompts

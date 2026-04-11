@@ -34,24 +34,24 @@ Only one hosted STT provider flag may be active at a time.
 
 ```bash
 # Groq
-bun as stt input/1-audio.mp3 --groq-stt whisper-large-v3
+bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 
 # ElevenLabs with a speaker-count hint
-bun as stt input/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 3
+bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 3
 
 # OpenAI with known speaker references
-bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize \
+bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize \
   --speaker-name Host --speaker-reference clips/host.mp3 \
   --speaker-name Guest --speaker-reference clips/guest.mp3
 
 # Mistral
-bun as stt input/1-audio.mp3 --mistral-stt voxtral-mini-2602
+bun as stt input/examples/audio/1-audio.mp3 --mistral-stt voxtral-mini-2602
 
 # AssemblyAI with a speaker-count hint
-bun as stt input/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
+bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
 
 # Price preflight
-bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
+bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
 ```
 
 ## Flags

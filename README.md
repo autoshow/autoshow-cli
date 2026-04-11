@@ -46,10 +46,10 @@ bun as stt "https://www.youtube.com/watch?v=u1-WHqATSQU"
 bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.2
 
 # Document OCR / extraction
-bun as ocr input/1-document.pdf --out json
+bun as ocr input/examples/document/1-document.pdf --out json
 
 # Standalone text-to-speech from local text
-bun as tts input/1-tts.md --openai-tts gpt-4o-mini-tts
+bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts
 
 # Prompt-driven generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
@@ -105,7 +105,7 @@ Batch mode is selected from the input type rather than a separate subcommand:
 
 ```bash
 # Newline-delimited URLs
-bun as write input/2-urls.md
+bun as write input/examples/document/2-urls.md
 
 # Process files plus 2-urls.md inside the directory
 bun as stt input
@@ -146,9 +146,9 @@ Logging controls:
 
 ```bash
 # CLI flags
-bun as write input/1-audio.mp3 --verbose
-bun as write input/1-audio.mp3 --quiet
-bun as write input/1-audio.mp3 --json
+bun as write input/examples/audio/1-audio.mp3 --verbose
+bun as write input/examples/audio/1-audio.mp3 --quiet
+bun as write input/examples/audio/1-audio.mp3 --json
 
 # Environment variables
 AUTOSHOW_LOG_FORMAT=auto   # auto | human | json | both

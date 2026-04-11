@@ -8,9 +8,9 @@ import {
   runCommand
 } from '../../test-utils/test-helpers'
 
-const SHORT_AUDIO_PATH = 'input/0-audio-short.mp3'
+const SHORT_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
 const SHORT_AUDIO_TITLE = '0-audio-short'
-const SHORT_TTS_PATH = 'input/0-tts-short.txt'
+const SHORT_TTS_PATH = 'input/examples/document/0-tts-short.txt'
 const SHORT_TTS_TITLE = '0-tts-short'
 const IMAGE_GEN_TITLE = 'image-gen'
 const IMAGE_PROMPT = 'a tiny red dot on white background'

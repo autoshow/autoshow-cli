@@ -25,8 +25,8 @@ export const defineOCRServiceTest = ({
   imageExtractionMethod?: string
   envVarKey: string
 }): void => {
-  const pdfInput = 'input/1-document.pdf'
-  const imageInput = 'input/1-document.png'
+  const pdfInput = 'input/examples/document/1-document.pdf'
+  const imageInput = 'input/examples/document/1-document.png'
 
   beforeAll(async () => {
     await ensurePageImageFixture(imageInput)

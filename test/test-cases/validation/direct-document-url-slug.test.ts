@@ -5,7 +5,7 @@ import { rm } from 'node:fs/promises'
 import { runCommand } from '../../test-utils/test-helpers'
 
 test('download direct document URL derives step1 slug from the original URL filename', async () => {
-  const pdfBytes = await Bun.file('input/1-document.pdf').bytes()
+  const pdfBytes = await Bun.file('input/examples/document/1-document.pdf').bytes()
   const server = createServer((req, res) => {
     if (req.url === '/Quarterly%20Report.v1.pdf') {
       res.statusCode = 200

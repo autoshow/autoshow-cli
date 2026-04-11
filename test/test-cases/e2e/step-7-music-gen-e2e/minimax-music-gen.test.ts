@@ -13,7 +13,7 @@ const MUSIC_GEN_TITLE = 'music-gen'
 
 defineMusicServiceTest({
   models: [
-    { model: 'music-2.5', prompt: 'uplifting indie rock with bright guitars', extraArgs: ['--music-lyrics-file', 'input/0-tts-short.txt'] },
+    { model: 'music-2.5', prompt: 'uplifting indie rock with bright guitars', extraArgs: ['--music-lyrics-file', 'input/examples/document/0-tts-short.txt'] },
   ],
   cliFlag: '--minimax-music',
   musicService: 'minimax',
@@ -37,7 +37,7 @@ budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop music', a
       '--minimax-music',
       'music-2.5',
       '--music-lyrics-file',
-      'input/1-tts.md'
+      'input/examples/document/1-tts.md'
     ],
   )
 
@@ -69,7 +69,7 @@ budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop with lyri
   await cleanupTestOutput(MUSIC_GEN_TITLE)
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'indie pop, nostalgic summer road trip vibe', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/1-tts.md'],
+    ['src/cli/create-cli.ts', 'music', 'indie pop, nostalgic summer road trip vibe', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/examples/document/1-tts.md'],
   )
 
   expect(result.exitCode).toBe(0)
@@ -105,7 +105,7 @@ test('write with elevenlabs music pipeline', async () => {
   }
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/1-audio.mp3', '--openai', 'gpt-5.4', '--elevenlabs-music', 'music_v1', '--music-duration', '20'],
+    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4', '--elevenlabs-music', 'music_v1', '--music-duration', '20'],
   )
   expect(result.exitCode).toBe(0)
 })
@@ -118,14 +118,14 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and l
   }
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/1-audio.mp3', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/1-tts.md'],
+    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/examples/document/1-tts.md'],
   )
   expect(result.exitCode).toBe(0)
 })
 
 budgetedTest('music-pipeline-minimax-music-2.5', 'write --price with minimax music estimate', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
+    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
   )
   expect(result.exitCode).toBe(0)
 })

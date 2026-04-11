@@ -287,8 +287,8 @@ export const dedupePriceCommands = (commands: ApiCheapPriceCommand[]): ApiCheapP
 }
 
 export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
-  const shortAudioPath = 'input/0-audio-short.mp3'
-  const shortTtsPath = 'input/0-tts-short.txt'
+  const shortAudioPath = 'input/examples/audio/0-audio-short.mp3'
+  const shortTtsPath = 'input/examples/document/0-tts-short.txt'
   const imagePrompt = 'a tiny red dot on white background'
   const videoPrompt = 'a static shot of a tiny red dot on white background'
 
@@ -392,7 +392,7 @@ export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
   for (const selection of extractSelections) {
     commands.push({
       name: `extract-${selection.service}-${selection.model}`,
-      args: ['src/cli/create-cli.ts', 'ocr', 'input/1-document.pdf', selection.flag, selection.model, '--price']
+      args: ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', selection.flag, selection.model, '--price']
     })
   }
 

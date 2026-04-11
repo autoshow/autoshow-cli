@@ -2,7 +2,7 @@ import { expect, beforeAll, afterAll } from 'bun:test'
 import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_LOCAL_AUDIO_PATH, STABLE_LOCAL_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../../test-utils/budget'
 
-const videoInputPath = 'input/2-video.mp4'
+const videoInputPath = 'input/examples/video/2-video.mp4'
 const videoTitleSuffix = '2-video'
 
 const cleanupVideoOutput = async () => {

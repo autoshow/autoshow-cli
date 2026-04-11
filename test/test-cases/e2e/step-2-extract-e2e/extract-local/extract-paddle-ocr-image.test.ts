@@ -7,7 +7,7 @@ type ExtractMetadata = {
   step2?: { extractionMethod?: string; totalPages?: number }
 }
 
-const imageInput = 'input/1-document.png'
+const imageInput = 'input/examples/document/1-document.png'
 const paddleOcrPython = 'runtime/bin/paddle-ocr/bin/python'
 
 beforeAll(async () => {

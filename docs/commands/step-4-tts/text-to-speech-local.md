@@ -69,7 +69,7 @@ You can also combine Kitten TTS with hosted TTS provider flags in the same comma
 ## Multi-Target Runs
 
 ```bash
-bun as tts input/1-tts.md \
+bun as tts input/examples/document/1-tts.md \
   --kitten-tts kitten-tts-mini \
   --kitten-voice Luna \
   --openai-tts gpt-4o-mini-tts \
@@ -81,9 +81,9 @@ This generates one speech file per successful target from the same input text.
 ## Examples
 
 ```bash
-bun as tts input/1-tts.md --kitten-tts kitten-tts-mini --kitten-voice Jasper
-bun as tts input/1-tts.md
-bun as tts input/1-tts.md --kitten-tts kitten-tts-mini --openai-tts gpt-4o-mini-tts
+bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-mini --kitten-voice Jasper
+bun as tts input/examples/document/1-tts.md
+bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-mini --openai-tts gpt-4o-mini-tts
 ```
 
 ## Flags

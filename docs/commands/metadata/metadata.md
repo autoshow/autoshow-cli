@@ -136,13 +136,13 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown --save
 
 # Local media file metadata
-bun as metadata input/1-audio.mp3
+bun as metadata input/examples/audio/1-audio.mp3
 
 # Document metadata from a local PDF
-bun as metadata input/1-document.pdf
+bun as metadata input/examples/document/1-document.pdf
 
 # Encrypted PDF metadata
-bun as metadata input/encrypted.pdf --password secret
+bun as metadata input/examples/document/protected.pdf --password secret
 
 # Batch metadata for latest 3 episodes from an RSS feed
 bun as metadata https://example.com/feed --batch-limit 3
@@ -151,7 +151,7 @@ bun as metadata https://example.com/feed --batch-limit 3
 bun as meta https://www.youtube.com/@channelname --batch-limit 5
 
 # Batch metadata from a URL list, save all to disk
-bun as metadata input/2-urls.md --batch-all --save
+bun as metadata input/examples/document/2-urls.md --batch-all --save
 ```
 
 ## How It Works

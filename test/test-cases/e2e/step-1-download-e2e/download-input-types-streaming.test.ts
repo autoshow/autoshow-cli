@@ -36,7 +36,7 @@ const singleCases: SingleCase[] = [
 const batchCases: BatchCase[] = [
   {
     name: 'download URL list of streaming URLs input',
-    input: 'input/2-urls.md',
+    input: 'input/examples/document/2-urls.md',
     extraArgs: ['--batch-limit', '1'],
     expectedSourceKind: 'url_list',
     expectedSelectedCount: 1,
