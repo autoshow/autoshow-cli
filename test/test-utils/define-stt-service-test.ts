@@ -1,14 +1,18 @@
-import { test, expect, beforeAll, afterAll } from 'bun:test'
+import { expect } from 'bun:test'
 import {
-  runCommand,
   fileExists,
-  findLatestDirectory,
   cleanupTestOutput,
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE,
-  hasConfiguredEnvVar
 } from './test-helpers'
 import { budgetedTest } from './budget'
+import {
+  defineInvalidModelTest,
+  definePriceEstimateTest,
+  runCommandAndExpectOutputDir,
+  shouldSkipMissingEnv,
+  withOutputLifecycle
+} from './service-test-kit'
 
 export const defineSTTServiceTest = ({
   models,
@@ -25,37 +29,36 @@ export const defineSTTServiceTest = ({
   envVarDescription: string
   extraArgs?: string[]
 }): void => {
-  beforeAll(async () => {
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
-  })
+  withOutputLifecycle(STABLE_LOCAL_AUDIO_TITLE)
 
-  afterAll(async () => {
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
-  })
-
-  test(`rejects invalid ${sttService} model`, async () => {
-    const result = await runCommand([
-      'src/cli/create-cli.ts',
-      'stt',
-      STABLE_LOCAL_AUDIO_PATH,
-      cliFlag,
-      'invalid-model'
-    ])
-    expect(result.exitCode).not.toBe(0)
-  })
+  defineInvalidModelTest(`rejects invalid ${sttService} model`, [
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    cliFlag,
+    'invalid-model'
+  ])
 
   for (const model of models) {
     const budgetKey = `transcribe-${sttService}-${model}`
 
+    definePriceEstimateTest(budgetKey, `${sttService} ${model} --price prints estimate`, [
+      'src/cli/create-cli.ts',
+      'stt',
+      STABLE_LOCAL_AUDIO_PATH,
+      cliFlag,
+      model,
+      '--price'
+    ])
+
     budgetedTest(budgetKey, `${sttService} ${model} transcribes local audio`, async () => {
-      if (!await hasConfiguredEnvVar(envVarKey)) {
-        console.log(`Skipping: ${envVarKey} is required for ${envVarDescription}`)
+      if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} is required for ${envVarDescription}`)) {
         return
       }
 
       await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 
-      const result = await runCommand([
+      const outputDir = await runCommandAndExpectOutputDir(STABLE_LOCAL_AUDIO_TITLE, [
         'src/cli/create-cli.ts',
         'stt',
         STABLE_LOCAL_AUDIO_PATH,
@@ -63,11 +66,6 @@ export const defineSTTServiceTest = ({
         model,
         ...(extraArgs ?? [])
       ])
-
-      expect(result.exitCode).toBe(0)
-
-      const outputDir = await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
-      expect(outputDir).not.toBeNull()
 
       if (outputDir) {
         const transcriptExists = await fileExists(`${outputDir}/transcription.txt`)
@@ -89,19 +87,6 @@ export const defineSTTServiceTest = ({
         const summaryExists = await fileExists(`${outputDir}/text.md`)
         expect(summaryExists).toBe(false)
       }
-    })
-
-    budgetedTest(budgetKey, `${sttService} ${model} --price prints estimate`, async () => {
-      const result = await runCommand([
-        'src/cli/create-cli.ts',
-        'stt',
-        STABLE_LOCAL_AUDIO_PATH,
-        cliFlag,
-        model,
-        '--price'
-      ])
-
-      expect(result.exitCode).toBe(0)
     })
   }
 }

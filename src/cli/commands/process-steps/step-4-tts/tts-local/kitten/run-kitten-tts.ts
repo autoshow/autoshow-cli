@@ -3,6 +3,7 @@ import type { Step4Metadata } from '~/types'
 import { TtsScriptOutputSchema } from '~/types'
 import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
+import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
 import { kittenTtsUvEnvDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
@@ -87,22 +88,12 @@ export const runKittenTts = async (
     }
   }
 
-  const processingTime = Date.now() - startTime
-
-  const audioFile = Bun.file(audioPath)
-  const audioFileSize = audioFile.size
-
-  l.success(`Speech saved to ${audioPath}`)
-
-  const metadata: Step4Metadata = {
-    ttsService: 'kitten',
-    ttsModel: options.model,
+  return finalizeTtsRun({
+    service: 'kitten',
+    model: options.model,
     speaker: options.speaker,
-    processingTime,
-    audioFileName: 'speech.wav',
-    audioFileSize,
-    chunkCount
-  }
-
-  return { audioPath, metadata }
+    audioPath,
+    chunkCount,
+    startTime
+  })
 }

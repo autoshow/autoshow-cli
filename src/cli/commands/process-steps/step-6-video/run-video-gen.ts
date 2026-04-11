@@ -1,6 +1,5 @@
-import { rename } from 'node:fs/promises'
 import type { Step6VideoMetadata } from '~/types'
-import { sanitizeModelName, runTargets } from '~/cli/commands/process-steps/target-runner'
+import { runSingleFileTargets } from '~/cli/commands/process-steps/target-runner'
 import {
   type VideoGenOptions,
   type VideoTarget,
@@ -8,41 +7,31 @@ import {
   getVideoArtifactFileName,
 } from './video-targets'
 
-type VideoResult = { videoPath: string, metadata: Step6VideoMetadata }
-
 export const runVideoTargets = async (
   targets: VideoTarget[],
   prompt: string,
   outputDir: string,
 ): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
-  const successes = await runTargets<VideoTarget, VideoResult>({
+  const successes = await runSingleFileTargets<VideoTarget, Step6VideoMetadata>({
     targets,
     outputDir,
     stepLabel: 'video',
     noProviderMessage: 'No provider produced video',
-    getWorkspaceDir: (dir, target) =>
-      `${dir}/.video-tmp-${target.service}-${sanitizeModelName(target.model)}`,
     runTarget: async (target, workspaceDir) =>
-      target.run(prompt, workspaceDir),
-    finalizeTarget: async (target, result, singleTarget) => {
-      if (singleTarget) return result
-
-      const finalFileName = getVideoArtifactFileName(target, singleTarget)
-      const finalPath = `${outputDir}/${finalFileName}`
-      await rename(result.videoPath, finalPath)
+      target.run(prompt, workspaceDir).then(({ videoPath, metadata }) => ({ filePath: videoPath, metadata })),
+    workspacePrefix: '.video-tmp',
+    getArtifactFileName: getVideoArtifactFileName,
+    finalizeMetadata: (metadata, finalFileName, finalPath) => {
       return {
-        videoPath: finalPath,
-        metadata: {
-          ...result.metadata,
-          videoFileName: finalFileName,
-          videoFileSize: Bun.file(finalPath).size,
-        }
+        ...metadata,
+        videoFileName: finalFileName,
+        videoFileSize: Bun.file(finalPath).size,
       }
     },
   })
 
   return {
-    videoPaths: successes.map((entry) => entry.videoPath),
+    videoPaths: successes.map((entry) => entry.filePath),
     metadata: successes.map((entry) => entry.metadata),
   }
 }

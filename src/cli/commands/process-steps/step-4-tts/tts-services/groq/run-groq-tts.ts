@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 import type { Step4Metadata } from '~/types'
-import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { GROQ_DEFAULT_TTS_VOICE, type GroqTtsModel, validateGroqTtsVoice } from '~/cli/commands/models/model-options'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
@@ -106,20 +106,12 @@ export const runGroqTts = async (
     await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
   }
 
-  const processingTime = Date.now() - startTime
-  const audioFile = Bun.file(audioPath)
-
-  l.success(`Speech saved to ${audioPath}`)
-
-  const metadata: Step4Metadata = {
-    ttsService: 'groq',
-    ttsModel: options.model,
+  return finalizeTtsRun({
+    service: 'groq',
+    model: options.model,
     speaker: voice,
-    processingTime,
-    audioFileName: 'speech.wav',
-    audioFileSize: audioFile.size,
-    chunkCount: chunks.length
-  }
-
-  return { audioPath, metadata }
+    audioPath,
+    chunkCount: chunks.length,
+    startTime
+  })
 }

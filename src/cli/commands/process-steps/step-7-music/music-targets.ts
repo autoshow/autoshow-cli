@@ -2,7 +2,7 @@ import type { MusicProvider, ProcessingOptions, Step7MusicMetadata } from '~/typ
 import { type ElevenlabsMusicModel, type MinimaxMusicModel, validateElevenlabsMusicModel, validateMinimaxMusicModel } from '~/cli/commands/models/model-options'
 import { ensureElevenLabsMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { ensureMinimaxMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
-import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
+import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import { runElevenLabsMusicGen } from './music-services/elevenlabs/run-elevenlabs-music-gen'
 import { runMinimaxMusicGen } from './music-services/minimax/run-minimax-music-gen'
 
@@ -17,28 +17,24 @@ export type MusicTarget = {
   run: (prompt: string, outputDir: string) => Promise<{ musicPath: string, metadata: Step7MusicMetadata }>
 }
 
-export const sanitizeMusicModelName = sanitizeModelName
-
 export const getMusicArtifactFileName = (
   target: Pick<MusicTarget, 'service' | 'model'>,
   singleTarget: boolean
-): string => {
-  if (singleTarget) return 'generated-music.mp3'
-  return `generated-music-${target.service}-${sanitizeMusicModelName(target.model)}.mp3`
-}
+): string =>
+  getSingleFileArtifactName(target, singleTarget, {
+    singleFileName: 'generated-music.mp3',
+    multiFilePrefix: 'generated-music',
+    extension: 'mp3'
+  })
 
-export const buildMusicArtifactMap = (metadata: Step7MusicMetadata[]): Record<string, string> => {
-  if (metadata.length === 1) {
-    return { music: metadata[0]!.musicFileName }
-  }
-
-  return Object.fromEntries(
-    metadata.map((entry) => [
-      `music-${entry.musicService}-${sanitizeMusicModelName(entry.musicModel)}`,
-      entry.musicFileName
-    ])
-  )
-}
+export const buildMusicArtifactMap = (metadata: Step7MusicMetadata[]): Record<string, string> =>
+  buildSingleArtifactMap(metadata, {
+    singleKey: 'music',
+    multiKeyPrefix: 'music',
+    getService: (entry) => entry.musicService,
+    getModel: (entry) => entry.musicModel,
+    getFileName: (entry) => entry.musicFileName
+  });
 
 export const collectMusicTargets = (options: MusicGenOptions): MusicTarget[] => {
   const targets: MusicTarget[] = []

@@ -1,13 +1,13 @@
 import { GoogleGenAI } from '@google/genai'
 import type { Step4Metadata } from '~/types'
-import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { withRetry } from '~/utils/retries'
 import { GEMINI_DEFAULT_TTS_VOICE, type GeminiTtsModel } from '~/cli/commands/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
-import { parseStatusFromGeminiError } from '~/utils/gemini-utils'
+import { classifyGeminiRetry } from '~/utils/gemini-utils'
 
 const MAX_CHARS_PER_CHUNK = 4000
 
@@ -90,23 +90,7 @@ export const runGeminiTts = async (
           }
         })
       },
-      (error) => {
-        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative')
-        if (decision.shouldRetry) {
-          return decision
-        }
-
-        const status = parseStatusFromGeminiError(error)
-        if (status !== undefined && (status === 408 || status === 425 || status === 429 || status >= 500)) {
-          return {
-            shouldRetry: true,
-            delayMs: 0,
-            reason: `retryable status ${status}`
-          }
-        }
-
-        return decision
-      }
+      classifyGeminiRetry
     )
 
     const parts = response.candidates?.[0]?.content?.parts ?? []
@@ -171,20 +155,12 @@ export const runGeminiTts = async (
     await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
   }
 
-  const processingTime = Date.now() - startTime
-  const audioFile = Bun.file(audioPath)
-
-  l.success(`Speech saved to ${audioPath}`)
-
-  const metadata: Step4Metadata = {
-    ttsService: 'gemini',
-    ttsModel: options.model,
+  return finalizeTtsRun({
+    service: 'gemini',
+    model: options.model,
     speaker: voiceId,
-    processingTime,
-    audioFileName: 'speech.wav',
-    audioFileSize: audioFile.size,
-    chunkCount: chunkPaths.length
-  }
-
-  return { audioPath, metadata }
+    audioPath,
+    chunkCount: chunkPaths.length,
+    startTime
+  })
 }

@@ -7,13 +7,9 @@ import { buildImageArtifactMap, collectImageTargets, getExpectedImageArtifactFil
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { ensureDirectory } from '~/utils/cli-utils'
-import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
+import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
-import type { Step5Metadata } from '~/types'
-import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 
 export const imageCommand = defineCommand({
   name: 'image',
@@ -30,10 +26,7 @@ export const imageCommand = defineCommand({
   const prompt = ctx.parameters.prompt
   const flags = ctx.flags
 
-  const imageConfigPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
-  const imageConfigPath = await resolveConfigPath(imageConfigPathOverride)
-  const imageConfig = await loadConfig(imageConfigPath)
-  const imageMaxCents = resolveMaxCents(imageConfig.pricing)
+  const imageMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
   const imageTargets = collectImageTargets(imageOpts)
   if (imageTargets.length === 0) {
@@ -52,10 +45,7 @@ export const imageCommand = defineCommand({
     return
   }
 
-  const uniqueDirName = createUniqueDirectoryName('image-gen')
-  const outputDir = `./output/${uniqueDirName}`
-  await ensureDirectory(outputDir)
-  l.info(`Output directory: ${outputDir}`)
+  const outputDir = await createGenerationOutputDir('image-gen')
 
   const { metadata } = await runWithLogContext({ step: 'step-5-image' }, async () =>
     await runImageGen(prompt, outputDir, imageOpts)
@@ -78,10 +68,8 @@ export const imageCommand = defineCommand({
     actual: computeActualProcessingTimes({ step5: metadata }),
   }
 
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ image: serializeOneOrMany(metadata), cost, timing }, null, 2))
+  await writeGenerationMetadata(outputDir, 'image', metadata, cost, timing)
 
-  const imageSteps = actual.steps.filter((step) => step.step === 'image')
   l.report.complete(
     outputDir,
     {
@@ -89,12 +77,14 @@ export const imageCommand = defineCommand({
       metadata: 'metadata.json'
     },
     {
-      steps: metadata.map((entry: Step5Metadata, index: number) => ({
-        label: 'Image',
-        providerModel: `${entry.imageService}/${entry.imageModel}`,
-        processingTime: entry.processingTime,
-        cost: imageSteps[index]?.cost ?? 0
-      })),
+      steps: buildProviderStepSummaries(
+        'Image',
+        'image',
+        metadata,
+        actual.steps,
+        (entry) => `${entry.imageService}/${entry.imageModel}`,
+        (entry) => entry.processingTime
+      ),
       totalTimeMs: metadata.reduce((sum, entry) => sum + entry.processingTime, 0),
       totalCost: actual.totalCost
     }

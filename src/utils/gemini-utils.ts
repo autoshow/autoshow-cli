@@ -1,3 +1,6 @@
+import type { RetryDecision } from '~/types'
+import { classifyFetchRetry } from '~/utils/retries'
+
 export const parseStatusFromGeminiError = (error: unknown): number | undefined => {
   if (error && typeof error === 'object') {
     if ('status' in error && typeof error.status === 'number') {
@@ -19,4 +22,22 @@ export const parseStatusFromGeminiError = (error: unknown): number | undefined =
   }
 
   return undefined
+}
+
+export const classifyGeminiRetry = (error: unknown): RetryDecision => {
+  const decision = classifyFetchRetry(error, 'runtime_http_create_conservative')
+  if (decision.shouldRetry) {
+    return decision
+  }
+
+  const status = parseStatusFromGeminiError(error)
+  if (status !== undefined && (status === 408 || status === 425 || status === 429 || status >= 500)) {
+    return {
+      shouldRetry: true,
+      delayMs: 0,
+      reason: `retryable status ${status}`
+    }
+  }
+
+  return decision
 }

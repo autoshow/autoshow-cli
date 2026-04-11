@@ -7,13 +7,9 @@ import { buildMusicArtifactMap, collectMusicTargets, getMusicArtifactFileName } 
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { ensureDirectory } from '~/utils/cli-utils'
-import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
+import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
-import type { Step7MusicMetadata } from '~/types'
-import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 
 export const musicCommand = defineCommand({
   name: 'music',
@@ -35,10 +31,7 @@ export const musicCommand = defineCommand({
   const musicLyricsFile = typeof flags['music-lyrics-file'] === 'string' ? flags['music-lyrics-file'] : undefined
   const musicInstrumental = flags['music-instrumental'] === true
 
-  const musicConfigPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
-  const musicConfigPath = await resolveConfigPath(musicConfigPathOverride)
-  const musicConfig = await loadConfig(musicConfigPath)
-  const musicMaxCents = resolveMaxCents(musicConfig.pricing)
+  const musicMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const musicOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
 
   const musicTargets = collectMusicTargets(musicOpts)
@@ -57,10 +50,7 @@ export const musicCommand = defineCommand({
     return
   }
 
-  const uniqueDirName = createUniqueDirectoryName('music-gen')
-  const outputDir = `./output/${uniqueDirName}`
-  await ensureDirectory(outputDir)
-  l.info(`Output directory: ${outputDir}`)
+  const outputDir = await createGenerationOutputDir('music-gen')
 
   const { metadata } = await runWithLogContext({ step: 'step-7-music' }, async () =>
     await runMusicGen(prompt, outputDir, musicOpts)
@@ -87,10 +77,8 @@ export const musicCommand = defineCommand({
     actual: computeActualProcessingTimes({ step7: metadata }),
   }
 
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ music: serializeOneOrMany(metadata), cost, timing }, null, 2))
+  await writeGenerationMetadata(outputDir, 'music', metadata, cost, timing)
 
-  const musicSteps = actual.steps.filter((step) => step.step === 'music')
   l.report.complete(
     outputDir,
     {
@@ -98,12 +86,14 @@ export const musicCommand = defineCommand({
       metadata: 'metadata.json'
     },
     {
-      steps: metadata.map((entry: Step7MusicMetadata, index: number) => ({
-        label: 'Music',
-        providerModel: `${entry.musicService}/${entry.musicModel}`,
-        processingTime: entry.processingTime,
-        cost: musicSteps[index]?.cost ?? 0
-      })),
+      steps: buildProviderStepSummaries(
+        'Music',
+        'music',
+        metadata,
+        actual.steps,
+        (entry) => `${entry.musicService}/${entry.musicModel}`,
+        (entry) => entry.processingTime
+      ),
       totalTimeMs: metadata.reduce((sum, entry) => sum + entry.processingTime, 0),
       totalCost: actual.totalCost
     }

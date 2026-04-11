@@ -3,30 +3,13 @@ import { ttsFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { runTts } from './run-tts'
-import { collectTtsTargets, getTtsArtifactFileName, sanitizeTtsModelName } from './tts-targets'
+import { buildTtsArtifactMap, collectTtsTargets, getTtsArtifactFileName } from './tts-targets'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { ensureDirectory } from '~/utils/cli-utils'
-import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
+import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
-import type { Step4Metadata } from '~/types'
-import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
-
-const buildSpeechArtifactMap = (metadata: Step4Metadata[]): Record<string, string> => {
-  if (metadata.length === 1) {
-    return { audio: metadata[0]!.audioFileName }
-  }
-
-  return Object.fromEntries(
-    metadata.map((entry) => [
-      `speech-${entry.ttsService}-${sanitizeTtsModelName(entry.ttsModel)}`,
-      entry.audioFileName
-    ])
-  )
-}
 
 export const ttsCommand = defineCommand({
   name: 'tts',
@@ -57,10 +40,7 @@ export const ttsCommand = defineCommand({
     throw CLIUsageError(`Input file is empty: ${inputPath}`)
   }
 
-  const configPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
-  const resolvedConfigPath = await resolveConfigPath(configPathOverride)
-  const config = await loadConfig(resolvedConfigPath)
-  const maxCents = resolveMaxCents(config.pricing)
+  const maxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' })
   const targets = collectTtsTargets(ttsOptions)
 
@@ -74,10 +54,7 @@ export const ttsCommand = defineCommand({
   }
 
   const baseName = inputPath.replace(/\.[^/.]+$/, '').split('/').pop() || 'tts'
-  const uniqueDirName = createUniqueDirectoryName(baseName)
-  const outputDir = `./output/${uniqueDirName}`
-  await ensureDirectory(outputDir)
-  l.info(`Output directory: ${outputDir}`)
+  const outputDir = await createGenerationOutputDir(baseName)
 
   const { metadata } = await runWithLogContext({ step: 'step-4-tts' }, async () =>
     await runTts(text, outputDir, ttsOptions)
@@ -104,23 +81,23 @@ export const ttsCommand = defineCommand({
     }),
   }
 
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ tts: serializeOneOrMany(metadata), cost, timing }, null, 2))
+  await writeGenerationMetadata(outputDir, 'tts', metadata, cost, timing)
 
-  const ttsSteps = actual.steps.filter((step) => step.step === 'tts')
   l.report.complete(
     outputDir,
     {
-      ...buildSpeechArtifactMap(metadata),
+      ...buildTtsArtifactMap(metadata, 'audio'),
       metadata: 'metadata.json'
     },
     {
-      steps: metadata.map((entry, index) => ({
-        label: 'TTS',
-        providerModel: `${entry.ttsService}/${entry.ttsModel}`,
-        processingTime: entry.processingTime,
-        cost: ttsSteps[index]?.cost ?? 0
-      })),
+      steps: buildProviderStepSummaries(
+        'TTS',
+        'tts',
+        metadata,
+        actual.steps,
+        (entry) => `${entry.ttsService}/${entry.ttsModel}`,
+        (entry) => entry.processingTime
+      ),
       totalTimeMs: metadata.reduce((sum, entry) => sum + entry.processingTime, 0),
       totalCost: actual.totalCost
     }

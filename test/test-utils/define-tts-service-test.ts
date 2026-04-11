@@ -1,14 +1,18 @@
-import { test, expect, beforeAll, afterAll } from 'bun:test'
+import { expect } from 'bun:test'
 import {
-  runCommand,
   fileExists,
-  findLatestDirectory,
   cleanupTestOutput,
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
-  hasConfiguredEnvVar
 } from './test-helpers'
 import { budgetedTest } from './budget'
+import {
+  defineInvalidModelTest,
+  definePriceEstimateTest,
+  runCommandAndExpectOutputDir,
+  shouldSkipMissingEnv,
+  withOutputLifecycle
+} from './service-test-kit'
 
 export const defineTTSServiceTest = ({
   models,
@@ -27,37 +31,40 @@ export const defineTTSServiceTest = ({
   extraArgs?: string[]
   resolveExpectedSpeaker?: () => Promise<string>
 }): void => {
-  beforeAll(async () => {
-    await cleanupTestOutput(STABLE_TTS_MD_TITLE)
-  })
+  withOutputLifecycle(STABLE_TTS_MD_TITLE)
 
-  afterAll(async () => {
-    await cleanupTestOutput(STABLE_TTS_MD_TITLE)
-  })
+  defineInvalidModelTest(`rejects invalid ${ttsService} model`, [
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    cliFlag,
+    'invalid-model'
+  ])
 
-  test(`rejects invalid ${ttsService} model`, async () => {
-    const result = await runCommand([
+  for (const model of models) {
+    const budgetKey = `tts-${ttsService}-${model}`
+
+    definePriceEstimateTest(budgetKey, `--price prints estimate for ${model}`, [
       'src/cli/create-cli.ts',
       'tts',
       STABLE_TTS_MD_PATH,
       cliFlag,
-      'invalid-model'
+      model,
+      '--price'
     ])
-    expect(result.exitCode).not.toBe(0)
-  })
+  }
 
   for (const model of models) {
     const budgetKey = `tts-${ttsService}-${model}`
 
     budgetedTest(budgetKey, `${model} generates speech.wav`, async () => {
-      if (!await hasConfiguredEnvVar(envVarKey)) {
-        console.log(`Skipping: ${envVarKey} is required for ${envVarDescription}`)
+      if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} is required for ${envVarDescription}`)) {
         return
       }
 
       await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 
-      const result = await runCommand([
+      const outputDir = await runCommandAndExpectOutputDir(STABLE_TTS_MD_TITLE, [
         'src/cli/create-cli.ts',
         'tts',
         STABLE_TTS_MD_PATH,
@@ -65,11 +72,6 @@ export const defineTTSServiceTest = ({
         model,
         ...(extraArgs ?? [])
       ])
-
-      expect(result.exitCode).toBe(0)
-
-      const outputDir = await findLatestDirectory(STABLE_TTS_MD_TITLE)
-      expect(outputDir).not.toBeNull()
 
       if (outputDir) {
         const audioExists = await fileExists(`${outputDir}/speech.wav`)
@@ -89,19 +91,6 @@ export const defineTTSServiceTest = ({
         }
         expect(metadata.tts?.audioFileName).toBe('speech.wav')
       }
-    })
-
-    budgetedTest(budgetKey, `--price prints estimate for ${model}`, async () => {
-      const result = await runCommand([
-        'src/cli/create-cli.ts',
-        'tts',
-        STABLE_TTS_MD_PATH,
-        cliFlag,
-        model,
-        '--price'
-      ])
-
-      expect(result.exitCode).toBe(0)
     })
   }
 }

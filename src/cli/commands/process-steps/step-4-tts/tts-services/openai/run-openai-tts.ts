@@ -1,8 +1,8 @@
 import OpenAI from 'openai'
 import type { Step4Metadata } from '~/types'
-import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { OPENAI_DEFAULT_TTS_VOICE, type OpenAITtsModel } from '~/cli/commands/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { getOpenAIClientConfig } from '~/utils/openai-utils'
@@ -53,20 +53,12 @@ export const runOpenAITts = async (
     await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
   }
 
-  const processingTime = Date.now() - startTime
-  const audioFile = Bun.file(audioPath)
-
-  l.success(`Speech saved to ${audioPath}`)
-
-  const metadata: Step4Metadata = {
-    ttsService: 'openai',
-    ttsModel: options.model,
+  return finalizeTtsRun({
+    service: 'openai',
+    model: options.model,
     speaker: voiceId,
-    processingTime,
-    audioFileName: 'speech.wav',
-    audioFileSize: audioFile.size,
-    chunkCount: chunks.length
-  }
-
-  return { audioPath, metadata }
+    audioPath,
+    chunkCount: chunks.length,
+    startTime
+  })
 }

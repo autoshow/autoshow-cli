@@ -1,14 +1,13 @@
-import { expect, beforeAll, afterAll } from "bun:test"
+import { expect } from "bun:test"
 import {
   runCommand,
   fileExists,
   findLatestDirectory,
-  cleanupTestOutput,
-  hasConfiguredEnvVar,
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE,
 } from "./test-helpers"
 import { budgetedTest } from './budget'
+import { shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
@@ -32,19 +31,12 @@ export const defineLLMWriteTest = ({
   llmService: string
   requiresEnvVar?: { key: string, description: string }
 }): void => {
-  beforeAll(async () => {
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
-  })
-
-  afterAll(async () => {
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
-  })
+  withOutputLifecycle(STABLE_LOCAL_AUDIO_TITLE)
 
   for (const model of models) {
     const budgetKey = `write-${llmService}-${model}`
   budgetedTest(budgetKey, `${model} model generates summary`, async () => {
-    if (requiresEnvVar && !await hasConfiguredEnvVar(requiresEnvVar.key)) {
-      console.log(`Skipping: ${requiresEnvVar.key} is required for ${requiresEnvVar.description}`)
+    if (requiresEnvVar && await shouldSkipMissingEnv(requiresEnvVar.key, `${requiresEnvVar.key} is required for ${requiresEnvVar.description}`)) {
       return
     }
 
@@ -69,7 +61,7 @@ export const defineLLMWriteTest = ({
 
     expect(result.exitCode).toBe(0)
 
-    const outputDir = await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {

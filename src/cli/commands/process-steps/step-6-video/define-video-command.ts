@@ -7,13 +7,9 @@ import { collectVideoTargets, buildVideoArtifactMap, getVideoArtifactFileName } 
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { ensureDirectory } from '~/utils/cli-utils'
-import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
+import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
-import type { Step6VideoMetadata } from '~/types'
-import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 
 export const videoCommand = defineCommand({
   name: 'video',
@@ -39,10 +35,7 @@ export const videoCommand = defineCommand({
   const videoAspectRatio = typeof flags['video-aspect-ratio'] === 'string' ? flags['video-aspect-ratio'] : undefined
   const videoResolution = typeof flags['video-resolution'] === 'string' ? flags['video-resolution'] : undefined
 
-  const videoConfigPathOverride = typeof flags['config-path'] === 'string' ? flags['config-path'] : undefined
-  const videoConfigPath = await resolveConfigPath(videoConfigPathOverride)
-  const videoConfig = await loadConfig(videoConfigPath)
-  const videoMaxCents = resolveMaxCents(videoConfig.pricing)
+  const videoMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
 
   const videoTargets = collectVideoTargets({
@@ -67,10 +60,7 @@ export const videoCommand = defineCommand({
     return
   }
 
-  const uniqueDirName = createUniqueDirectoryName('video-gen')
-  const outputDir = `./output/${uniqueDirName}`
-  await ensureDirectory(outputDir)
-  l.info(`Output directory: ${outputDir}`)
+  const outputDir = await createGenerationOutputDir('video-gen')
 
   const { metadata } = await runWithLogContext({ step: 'step-6-video' }, async () =>
     await runVideoGen(prompt, outputDir, {
@@ -104,10 +94,8 @@ export const videoCommand = defineCommand({
     actual: computeActualProcessingTimes({ step6: metadata }),
   }
 
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ video: serializeOneOrMany(metadata), cost, timing }, null, 2))
+  await writeGenerationMetadata(outputDir, 'video', metadata, cost, timing)
 
-  const videoSteps = actual.steps.filter((step) => step.step === 'video')
   l.report.complete(
     outputDir,
     {
@@ -115,12 +103,14 @@ export const videoCommand = defineCommand({
       metadata: 'metadata.json'
     },
     {
-      steps: metadata.map((entry: Step6VideoMetadata, index: number) => ({
-        label: 'Video',
-        providerModel: `${entry.videoGenService}/${entry.videoGenModel}`,
-        processingTime: entry.processingTime,
-        cost: videoSteps[index]?.cost ?? 0
-      })),
+      steps: buildProviderStepSummaries(
+        'Video',
+        'video',
+        metadata,
+        actual.steps,
+        (entry) => `${entry.videoGenService}/${entry.videoGenModel}`,
+        (entry) => entry.processingTime
+      ),
       totalTimeMs: metadata.reduce((sum, entry) => sum + entry.processingTime, 0),
       totalCost: actual.totalCost
     }

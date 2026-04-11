@@ -11,29 +11,17 @@ import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { StructuredRunResult } from './step-3-write/structured-output/types'
 import { runTts } from './step-4-tts/run-tts'
-import { collectTtsTargets, sanitizeTtsModelName } from './step-4-tts/tts-targets'
+import { buildTtsArtifactMap, collectTtsTargets } from './step-4-tts/tts-targets'
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } from './step-5-image/image-targets'
 import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
 import { buildVideoArtifactMap } from './step-6-video/video-targets'
 import { runMusicGen } from './step-7-music/run-music-gen'
 import { buildMusicArtifactMap, collectMusicTargets } from './step-7-music/music-targets'
+import { buildProviderStepSummaries } from './generation-command-utils'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
-
-const buildSpeechArtifactMap = (metadata: Step4Metadata[]): Record<string, string> => {
-  if (metadata.length === 1) {
-    return { speech: metadata[0]!.audioFileName }
-  }
-
-  return Object.fromEntries(
-    metadata.map((entry) => [
-      `speech-${entry.ttsService}-${sanitizeTtsModelName(entry.ttsModel)}`,
-      entry.audioFileName
-    ])
-  )
-}
 
 export const processVideo = async (options: ProcessingOptions, precomputedMetadata?: VideoMetadata, preflightEstimate?: AggregatedPriceEstimate): Promise<string> => {
   const processStart = Date.now()
@@ -286,63 +274,58 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   ]
 
   if (step3Results.length > 0) {
-    const llmSteps = actual.steps.filter(s => s.step === 'llm')
-    for (const [i, s3] of step3Results.entries()) {
-      stepSummaries.push({
-        label: 'LLM',
-        providerModel: `${s3.llmService}/${s3.llmModel}`,
-        processingTime: s3.processingTime,
-        cost: llmSteps[i]?.cost ?? 0
-      })
-    }
+    stepSummaries.push(...buildProviderStepSummaries(
+      'LLM',
+      'llm',
+      step3Results,
+      actual.steps,
+      (entry) => `${entry.llmService}/${entry.llmModel}`,
+      (entry) => entry.processingTime
+    ))
   }
 
   if (step4Metadata) {
-    const ttsSteps = actual.steps.filter(s => s.step === 'tts')
-    for (const [index, step4] of step4Metadata.entries()) {
-      stepSummaries.push({
-        label: 'TTS',
-        providerModel: `${step4.ttsService}/${step4.ttsModel}`,
-        processingTime: step4.processingTime,
-        cost: ttsSteps[index]?.cost ?? 0
-      })
-    }
+    stepSummaries.push(...buildProviderStepSummaries(
+      'TTS',
+      'tts',
+      step4Metadata,
+      actual.steps,
+      (entry) => `${entry.ttsService}/${entry.ttsModel}`,
+      (entry) => entry.processingTime
+    ))
   }
 
   if (step5Metadata) {
-    const imageSteps = actual.steps.filter(s => s.step === 'image')
-    for (const [index, step5] of step5Metadata.entries()) {
-      stepSummaries.push({
-        label: 'Image',
-        providerModel: `${step5.imageService}/${step5.imageModel}`,
-        processingTime: step5.processingTime,
-        cost: imageSteps[index]?.cost ?? 0
-      })
-    }
+    stepSummaries.push(...buildProviderStepSummaries(
+      'Image',
+      'image',
+      step5Metadata,
+      actual.steps,
+      (entry) => `${entry.imageService}/${entry.imageModel}`,
+      (entry) => entry.processingTime
+    ))
   }
 
   if (step6Metadata) {
-    const videoSteps = actual.steps.filter(s => s.step === 'video')
-    for (const [index, m] of step6Metadata.entries()) {
-      stepSummaries.push({
-        label: 'Video',
-        providerModel: `${m.videoGenService}/${m.videoGenModel}`,
-        processingTime: m.processingTime,
-        cost: videoSteps[index]?.cost ?? 0
-      })
-    }
+    stepSummaries.push(...buildProviderStepSummaries(
+      'Video',
+      'video',
+      step6Metadata,
+      actual.steps,
+      (entry) => `${entry.videoGenService}/${entry.videoGenModel}`,
+      (entry) => entry.processingTime
+    ))
   }
 
   if (step7Metadata) {
-    const musicSteps = actual.steps.filter(s => s.step === 'music')
-    step7Metadata.forEach((m, i) => {
-      stepSummaries.push({
-        label: 'Music',
-        providerModel: `${m.musicService}/${m.musicModel}`,
-        processingTime: m.processingTime,
-        cost: musicSteps[i]?.cost ?? 0
-      })
-    })
+    stepSummaries.push(...buildProviderStepSummaries(
+      'Music',
+      'music',
+      step7Metadata,
+      actual.steps,
+      (entry) => `${entry.musicService}/${entry.musicModel}`,
+      (entry) => entry.processingTime
+    ))
   }
 
   const artifactFiles: Record<string, string> = {
@@ -357,7 +340,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     }
   }
   if (step4Metadata) {
-    Object.assign(artifactFiles, buildSpeechArtifactMap(step4Metadata))
+    Object.assign(artifactFiles, buildTtsArtifactMap(step4Metadata))
   }
   if (step5Metadata) {
     Object.assign(artifactFiles, buildImageArtifactMap(step5Metadata))

@@ -1,12 +1,10 @@
-import { expect, beforeAll, afterAll } from 'bun:test'
+import { expect } from 'bun:test'
 import {
-  runCommand,
-  findLatestDirectory,
   cleanupTestOutput,
   ensurePageImageFixture,
-  hasConfiguredEnvVar
 } from './test-helpers'
 import { budgetedTest } from './budget'
+import { runCommandAndExpectOutputDir, shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
 
 const extractServiceFromFlag = (cliFlag: string): string => {
   return cliFlag.replace(/^--/, '').replace(/-ocr$/, '')
@@ -28,13 +26,8 @@ export const defineOCRServiceTest = ({
   const pdfInput = 'input/examples/document/1-document.pdf'
   const imageInput = 'input/examples/document/1-document.png'
 
-  beforeAll(async () => {
+  withOutputLifecycle('1-document', async () => {
     await ensurePageImageFixture(imageInput)
-    await cleanupTestOutput('1-document')
-  })
-
-  afterAll(async () => {
-    await cleanupTestOutput('1-document')
   })
 
   for (const model of models) {
@@ -42,17 +35,13 @@ export const defineOCRServiceTest = ({
     const budgetKey = `extract-${service}-${model}`
 
     budgetedTest(budgetKey, `extract PDF with ${cliFlag} ${model}`, async () => {
-      if (!await hasConfiguredEnvVar(envVarKey)) {
+      if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} not configured`)) {
         return
       }
 
       await cleanupTestOutput('1-document')
 
-      const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, cliFlag, model])
-      expect(result.exitCode).toBe(0)
-
-      const outputDir = await findLatestDirectory('1-document')
-      expect(outputDir).not.toBeNull()
+      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'ocr', pdfInput, cliFlag, model])
       if (!outputDir) return
 
       const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
@@ -62,18 +51,14 @@ export const defineOCRServiceTest = ({
     })
 
     budgetedTest(budgetKey, `extract image with ${cliFlag} ${model}`, async () => {
-      if (!await hasConfiguredEnvVar(envVarKey)) {
+      if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} not configured`)) {
         return
       }
 
       await ensurePageImageFixture(imageInput)
       await cleanupTestOutput('1-document')
 
-      const result = await runCommand(['src/cli/create-cli.ts', 'ocr', imageInput, cliFlag, model])
-      expect(result.exitCode).toBe(0)
-
-      const outputDir = await findLatestDirectory('1-document')
-      expect(outputDir).not.toBeNull()
+      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'ocr', imageInput, cliFlag, model])
       if (!outputDir) return
 
       const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {

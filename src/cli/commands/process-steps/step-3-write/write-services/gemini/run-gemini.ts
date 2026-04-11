@@ -2,10 +2,10 @@ import { GoogleGenAI } from '@google/genai'
 import * as l from '~/logger'
 import type { Step3Metadata } from '~/types'
 import { readEnv } from '~/utils/validate/env-utils'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { withRetry } from '~/utils/retries'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
-import { parseStatusFromGeminiError } from '~/utils/gemini-utils'
+import { classifyGeminiRetry } from '~/utils/gemini-utils'
 
 export const runGeminiModel = async (
   prompt: string,
@@ -48,23 +48,7 @@ export const runGeminiModel = async (
         }
         return text
       },
-      (error) => {
-        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative')
-        if (decision.shouldRetry) {
-          return decision
-        }
-
-        const status = parseStatusFromGeminiError(error)
-        if (status !== undefined && (status === 408 || status === 425 || status === 429 || status >= 500)) {
-          return {
-            shouldRetry: true,
-            delayMs: 0,
-            reason: `retryable status ${status}`
-          }
-        }
-
-        return decision
-      }
+      classifyGeminiRetry
     )
 
     const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)

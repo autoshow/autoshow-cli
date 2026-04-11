@@ -1,6 +1,6 @@
 import type { Step4Metadata } from '~/types'
-import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
+import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { ELEVENLABS_DEFAULT_VOICE_ID, type ElevenlabsTtsModel } from '~/cli/commands/models/model-options'
@@ -77,21 +77,12 @@ export const runElevenLabsTts = async (
 
   await Bun.$`rm -f ${tempAudioPath}`.quiet().nothrow()
 
-  const processingTime = Date.now() - startTime
-  const audioFile = Bun.file(audioPath)
-  const audioFileSize = audioFile.size
-
-  l.success(`Speech saved to ${audioPath}`)
-
-  const metadata: Step4Metadata = {
-    ttsService: 'elevenlabs',
-    ttsModel: options.model,
+  return finalizeTtsRun({
+    service: 'elevenlabs',
+    model: options.model,
     speaker: voiceId,
-    processingTime,
-    audioFileName: 'speech.wav',
-    audioFileSize,
-    chunkCount: 1
-  }
-
-  return { audioPath, metadata }
+    audioPath,
+    chunkCount: 1,
+    startTime
+  })
 }

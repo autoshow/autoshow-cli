@@ -1,6 +1,4 @@
-import { test, expect } from 'bun:test'
-import { runCommand } from './test-helpers'
-import { budgetedTest } from './budget'
+import { defineInvalidModelTest, definePriceEstimateTest } from './service-test-kit'
 
 const providerFromCliFlag = (cliFlag: string): 'gemini' | 'minimax' => {
   if (cliFlag === '--gemini-video') return 'gemini'
@@ -14,30 +12,24 @@ export const defineVideoServiceTest = ({
   models: readonly string[]
   cliFlag: string
 }): void => {
-  test(`rejects invalid model for ${cliFlag}`, async () => {
-    const result = await runCommand([
-      'src/cli/create-cli.ts',
-      'video',
-      'a cinematic mountain sunrise',
-      cliFlag,
-      'invalid-model'
-    ])
-    expect(result.exitCode).not.toBe(0)
-  })
+  defineInvalidModelTest(`rejects invalid model for ${cliFlag}`, [
+    'src/cli/create-cli.ts',
+    'video',
+    'a cinematic mountain sunrise',
+    cliFlag,
+    'invalid-model'
+  ])
 
   for (const model of models) {
     const provider = providerFromCliFlag(cliFlag)
     const budgetKey = `video-${provider}-${model}`
-    budgetedTest(budgetKey, `${model} --price prints estimate`, async () => {
-      const result = await runCommand([
-        'src/cli/create-cli.ts',
-        'video',
-        'a cinematic mountain sunrise',
-        cliFlag,
-        model,
-        '--price'
-      ])
-      expect(result.exitCode).toBe(0)
-    })
+    definePriceEstimateTest(budgetKey, `${model} --price prints estimate`, [
+      'src/cli/create-cli.ts',
+      'video',
+      'a cinematic mountain sunrise',
+      cliFlag,
+      model,
+      '--price'
+    ])
   }
 }

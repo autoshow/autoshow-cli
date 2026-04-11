@@ -27,7 +27,7 @@ import { runMinimaxTts } from './tts-services/minimax/run-minimax-tts'
 import { runGroqTts } from './tts-services/groq/run-groq-tts'
 import { runOpenAITts } from './tts-services/openai/run-openai-tts'
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
-import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
+import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import * as l from '~/logger'
 
 const KITTEN_PYTHON_VERSION = '3.12'
@@ -88,22 +88,35 @@ const ensureKittenSetup = async (): Promise<void> => {
   }
 }
 
-export const sanitizeTtsModelName = sanitizeModelName
+const toTtsArtifactTarget = (
+  target: Pick<TtsTarget, 'service' | 'model'> | Pick<Step4Metadata, 'ttsService' | 'ttsModel'>
+): { service: string, model: string } =>
+  'service' in target
+    ? target
+    : { service: target.ttsService, model: target.ttsModel }
 
 export const getTtsArtifactFileName = (
   target: Pick<TtsTarget, 'service' | 'model'> | Pick<Step4Metadata, 'ttsService' | 'ttsModel'>,
   singleTarget: boolean
 ): string => {
-  if (singleTarget) {
-    return 'speech.wav'
-  }
-
-  if ('service' in target) {
-    return `speech-${target.service}-${sanitizeTtsModelName(target.model)}.wav`
-  }
-
-  return `speech-${target.ttsService}-${sanitizeTtsModelName(target.ttsModel)}.wav`
+  return getSingleFileArtifactName(toTtsArtifactTarget(target), singleTarget, {
+    singleFileName: 'speech.wav',
+    multiFilePrefix: 'speech',
+    extension: 'wav'
+  })
 }
+
+export const buildTtsArtifactMap = (
+  metadata: Step4Metadata[],
+  singleKey = 'speech'
+): Record<string, string> =>
+  buildSingleArtifactMap(metadata, {
+    singleKey,
+    multiKeyPrefix: 'speech',
+    getService: (entry) => entry.ttsService,
+    getModel: (entry) => entry.ttsModel,
+    getFileName: (entry) => entry.audioFileName
+  })
 
 export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const targets: TtsTarget[] = []
