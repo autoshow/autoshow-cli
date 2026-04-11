@@ -13,6 +13,8 @@ export const ProcessingOptionsSchema = v.pipe(
     mistralSttModel: v.optional(v.string(), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
     diarizationSpeakerCount: v.optional(v.number(), undefined),
+    diarizationSpeakerNames: v.optional(v.array(v.string()), undefined),
+    diarizationSpeakerReferences: v.optional(v.array(v.string()), undefined),
     llamaModel: v.optional(v.string(), undefined),
     openaiModel: v.optional(v.string(), undefined),
     groqModel: v.optional(v.string(), undefined),
@@ -274,6 +276,8 @@ export type TranscriptionResult = {
 
 export type DiarizationOptions = {
   speakerCount?: number | undefined
+  knownSpeakerNames?: string[] | undefined
+  knownSpeakerReferencePaths?: string[] | undefined
 }
 
 export type Step2Metadata = {

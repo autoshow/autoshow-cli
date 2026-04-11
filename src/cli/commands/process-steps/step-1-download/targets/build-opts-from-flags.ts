@@ -103,6 +103,18 @@ const readOptionalStringFlag = (flags: Record<string, unknown>, key: string): st
   return undefined
 }
 
+const readOptionalStringArrayFlag = (flags: Record<string, unknown>, key: string): string[] | undefined => {
+  const value = flags[key]
+  if (Array.isArray(value)) {
+    const values = value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+    return values.length > 0 ? values : undefined
+  }
+  if (typeof value === 'string' && value.length > 0) {
+    return [value]
+  }
+  return undefined
+}
+
 const readBooleanFlag = (flags: Record<string, unknown>, key: string): boolean => {
   return flags[key] === true
 }
@@ -218,6 +230,8 @@ export const buildOptsFromFlags = (
     mistralSttModel,
     assemblyaiSttModel,
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
+    diarizationSpeakerNames: readOptionalStringArrayFlag(mergedFlags, 'speaker-name'),
+    diarizationSpeakerReferences: readOptionalStringArrayFlag(mergedFlags, 'speaker-reference'),
     price: readBooleanFlag(mergedFlags, 'price') || readBooleanFlag(mergedFlags, 'dry-run'),
     allowOverBudget: readBooleanFlag(mergedFlags, 'allow-over-budget'),
     reverbVerbatimicity: parseFloatWithDefault(readOptionalStringFlag(mergedFlags, 'reverb-verbatimicity'), 0.5),

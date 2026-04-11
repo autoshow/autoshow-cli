@@ -48,6 +48,7 @@ export type TranscribeEngine = 'reverb' | 'elevenlabs' | 'groq' | 'openai' | 'mi
 
 export type TranscribeEngineCapabilities = {
   supportsSpeakerCountHint: boolean
+  supportsKnownSpeakerReferences: boolean
 }
 
 export type DownloadInfo = {

@@ -39,6 +39,8 @@ export type RuntimeOptions = {
   mistralSttModel: string | undefined
   assemblyaiSttModel: string | undefined
   diarizationSpeakerCount: number | undefined
+  diarizationSpeakerNames: string[] | undefined
+  diarizationSpeakerReferences: string[] | undefined
   price: boolean
   allowOverBudget: boolean
   reverbVerbatimicity: number

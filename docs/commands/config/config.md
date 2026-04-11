@@ -187,7 +187,7 @@ Full JSON shape of `config/autoshow.json`:
 | `openaiStt` | `--openai-stt` | Default OpenAI STT model |
 | `mistralStt` | `--mistral-stt` | Default Mistral STT model |
 | `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model |
-| `speakerCount` | `--speaker-count` | Diarization speaker count hint |
+| `speakerCount` | `--speaker-count` | Diarization speaker count hint for ElevenLabs and AssemblyAI |
 | `split` | `--split` | Split audio into 10-minute chunks |
 | `reverbVerbatimicity` | `--reverb-verbatimicity` | Reverb output style (0–1) |
 

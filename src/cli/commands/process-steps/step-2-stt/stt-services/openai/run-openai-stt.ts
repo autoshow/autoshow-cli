@@ -5,6 +5,7 @@ import * as l from '~/logger'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { validateData } from '~/utils/validate/validation'
 import { getOpenAIClientConfig } from '~/utils/openai-utils'
+import { CLIUsageError } from '~/utils/error-handler'
 
 const OpenAIDiarizedSegmentSchema = v.object({
   id: v.optional(v.string(), undefined),
@@ -22,24 +23,45 @@ const OpenAIDiarizedResponseSchema = v.object({
   segments: v.array(OpenAIDiarizedSegmentSchema)
 })
 
-const buildKnownSpeakerNames = (speakerCount: number | undefined): string[] | undefined => {
-  if (speakerCount === undefined) {
+const inferReferenceMimeType = (referencePath: string): string => {
+  const lower = referencePath.toLowerCase()
+  if (lower.endsWith('.mp3')) return 'audio/mpeg'
+  if (lower.endsWith('.wav')) return 'audio/wav'
+  if (lower.endsWith('.m4a')) return 'audio/mp4'
+  if (lower.endsWith('.mp4')) return 'audio/mp4'
+  if (lower.endsWith('.flac')) return 'audio/flac'
+  if (lower.endsWith('.ogg')) return 'audio/ogg'
+  if (lower.endsWith('.webm')) return 'audio/webm'
+  return 'application/octet-stream'
+}
+
+const toKnownSpeakerReferenceDataUrl = async (referencePath: string): Promise<string> => {
+  if (referencePath.startsWith('data:')) {
+    return referencePath
+  }
+
+  const file = Bun.file(referencePath)
+  if (!await file.exists()) {
+    throw CLIUsageError(`OpenAI speaker reference "${referencePath}" was not found.`)
+  }
+
+  const bytes = Buffer.from(await file.arrayBuffer())
+  const mimeType = file.type || inferReferenceMimeType(referencePath)
+  return `data:${mimeType};base64,${bytes.toString('base64')}`
+}
+
+const resolveKnownSpeakerReferences = async (diarizationOptions: DiarizationOptions | undefined): Promise<string[] | undefined> => {
+  const references = diarizationOptions?.knownSpeakerReferencePaths
+  if (!references || references.length === 0) {
     return undefined
   }
 
-  if (!Number.isInteger(speakerCount) || speakerCount < 1) {
-    throw new Error(`Invalid speaker count ${speakerCount} for OpenAI STT. Expected a positive integer.`)
+  const dataUrls: string[] = []
+  for (const reference of references) {
+    dataUrls.push(await toKnownSpeakerReferenceDataUrl(reference))
   }
 
-  return Array.from({ length: speakerCount }, (_, index) => `SPEAKER_${String(index + 1).padStart(2, '0')}`)
-}
-
-const shouldRetryWithoutKnownSpeakerNames = (error: unknown): boolean => {
-  if (!error || typeof error !== 'object') {
-    return false
-  }
-  const message = 'message' in error && typeof error.message === 'string' ? error.message : ''
-  return message.includes('Known speaker names and references must have the same number of items')
+  return dataUrls
 }
 
 const toSegments = (segments: v.InferOutput<typeof OpenAIDiarizedResponseSchema>['segments'], offsetSeconds: number): TranscriptionSegment[] => {
@@ -75,13 +97,14 @@ export const runOpenAIStt = async (
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments, diarizationOptions } = options
-  const knownSpeakerNames = buildKnownSpeakerNames(diarizationOptions?.speakerCount)
+  const knownSpeakerNames = diarizationOptions?.knownSpeakerNames
+  const knownSpeakerReferences = await resolveKnownSpeakerReferences(diarizationOptions)
 
   if (segmentNumber && totalSegments) {
     l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with OpenAI model: ${modelName}`)
   }
-  if (knownSpeakerNames) {
-    l.info(`OpenAI diarization speaker-count hint: ${knownSpeakerNames.length}`)
+  if (knownSpeakerNames && knownSpeakerReferences) {
+    l.info(`OpenAI diarization known speakers: ${knownSpeakerNames.join(', ')}`)
   }
 
   const config = getOpenAIClientConfig()
@@ -91,27 +114,14 @@ export const runOpenAIStt = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
-  let rawPayload: unknown
-  try {
-    rawPayload = await client.audio.transcriptions.create({
-      file: Bun.file(audioPath),
-      model: modelName,
-      response_format: 'diarized_json',
-      chunking_strategy: 'auto',
-      ...(knownSpeakerNames ? { known_speaker_names: knownSpeakerNames } : {})
-    })
-  } catch (error) {
-    if (!knownSpeakerNames || !shouldRetryWithoutKnownSpeakerNames(error)) {
-      throw error
-    }
-    l.warn('OpenAI diarization rejected known_speaker_names without references; retrying transcription without speaker-name hints')
-    rawPayload = await client.audio.transcriptions.create({
-      file: Bun.file(audioPath),
-      model: modelName,
-      response_format: 'diarized_json',
-      chunking_strategy: 'auto'
-    })
-  }
+  const rawPayload = await client.audio.transcriptions.create({
+    file: Bun.file(audioPath),
+    model: modelName,
+    response_format: 'diarized_json',
+    chunking_strategy: 'auto',
+    ...(knownSpeakerNames ? { known_speaker_names: knownSpeakerNames } : {}),
+    ...(knownSpeakerReferences ? { known_speaker_references: knownSpeakerReferences } : {})
+  })
 
   const payload = validateData(OpenAIDiarizedResponseSchema, rawPayload, 'OpenAI diarized transcription response')
   const segments = toSegments(payload.segments, offsetSeconds)

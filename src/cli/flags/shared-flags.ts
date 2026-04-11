@@ -91,8 +91,16 @@ export const transcriptionFlags = {
     type: String
   },
   'speaker-count': {
-    description: 'Diarization speaker-count hint for supported STT services (example: ElevenLabs/OpenAI)',
+    description: 'Diarization speaker-count hint for supported STT services (example: ElevenLabs/AssemblyAI)',
     type: String
+  },
+  'speaker-name': {
+    description: 'OpenAI diarization known speaker name. Repeat with matching --speaker-reference entries (up to 4)',
+    type: [String] as [StringConstructor]
+  },
+  'speaker-reference': {
+    description: 'OpenAI diarization reference clip path or data URL. Repeat in the same order as --speaker-name',
+    type: [String] as [StringConstructor]
   },
   split: {
     description: 'Split audio into 10-minute segments for transcription',

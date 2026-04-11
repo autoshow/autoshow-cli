@@ -19,19 +19,34 @@ import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-st
 import { reverbUvEnvDir, reverbModelPath, reverbConfigPath, whisperBinaryPath, whisperModelsDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
 import { assertNever } from '~/utils/validate/assert-never'
 import type { TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
+import { CLIUsageError } from '~/utils/error-handler'
 
 const TRANSCRIBE_ENGINE_CAPABILITIES = {
-  reverb: { supportsSpeakerCountHint: false },
-  elevenlabs: { supportsSpeakerCountHint: true },
-  groq: { supportsSpeakerCountHint: false },
-  openai: { supportsSpeakerCountHint: true },
-  mistral: { supportsSpeakerCountHint: false },
-  assemblyai: { supportsSpeakerCountHint: true },
-  whisper: { supportsSpeakerCountHint: false }
+  reverb: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  elevenlabs: { supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
+  groq: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  openai: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
+  mistral: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  assemblyai: { supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
+  whisper: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
 
 const SPLIT_SEGMENT_DURATION_MINUTES = 10
 export const GROQ_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+export const OPENAI_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+
+const AUTO_SPLIT_ATTACHMENT_CAP_BYTES: Partial<Record<TranscribeEngine, number>> = {
+  groq: GROQ_MAX_ATTACHMENT_BYTES,
+  openai: OPENAI_MAX_ATTACHMENT_BYTES
+}
+
+const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
+  'elevenlabs',
+  'groq',
+  'openai',
+  'mistral',
+  'assemblyai'
+])
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`
@@ -49,19 +64,32 @@ export const shouldSplitTranscriptionInput = (
     return true
   }
 
-  return engine === 'groq' && audioFileSizeBytes > GROQ_MAX_ATTACHMENT_BYTES
+  const attachmentCapBytes = AUTO_SPLIT_ATTACHMENT_CAP_BYTES[engine]
+  return attachmentCapBytes !== undefined && audioFileSizeBytes > attachmentCapBytes
 }
 
 export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
   if (error instanceof Error) {
-    return error.message.includes('(413)') || /payload too large/i.test(error.message)
+    return error.message.includes('(413)') || /payload too large|request size limit exceeded/i.test(error.message)
   }
 
   if (typeof error === 'string') {
-    return error.includes('(413)') || /payload too large/i.test(error)
+    return error.includes('(413)') || /payload too large|request size limit exceeded/i.test(error)
   }
 
   return false
+}
+
+export const shouldRetrySplitTranscriptionAfterError = (
+  engine: TranscribeEngine,
+  splitRequested: boolean,
+  error: unknown
+): boolean => {
+  if (splitRequested) {
+    return false
+  }
+
+  return SPLIT_RETRY_ON_TOO_LARGE_ENGINES.has(engine) && isPayloadTooLargeTranscriptionError(error)
 }
 
 const resolveTranscribeEngine = (options: ProcessingOptions): TranscribeEngine => {
@@ -113,26 +141,66 @@ const ensureWhisperSetup = async (model: string): Promise<void> => {
   }
 }
 
-const resolveDiarizationOptions = (
-  options: ProcessingOptions,
+type DiarizationFlagOptions = Pick<
+  ProcessingOptions,
+  'diarizationSpeakerCount' | 'diarizationSpeakerNames' | 'diarizationSpeakerReferences'
+>
+
+export const resolveDiarizationOptions = (
+  options: DiarizationFlagOptions,
   engine: TranscribeEngine
 ): DiarizationOptions | undefined => {
   const speakerCount = options.diarizationSpeakerCount
-  if (speakerCount === undefined) {
-    return undefined
+  const speakerNames = options.diarizationSpeakerNames
+  const speakerReferences = options.diarizationSpeakerReferences
+  const hasKnownSpeakerNames = speakerNames !== undefined && speakerNames.length > 0
+  const hasKnownSpeakerReferences = speakerReferences !== undefined && speakerReferences.length > 0
+
+  if (hasKnownSpeakerNames !== hasKnownSpeakerReferences) {
+    throw CLIUsageError('OpenAI diarization requires matching --speaker-name and --speaker-reference values.')
+  }
+
+  if (speakerNames && speakerReferences) {
+    if (speakerNames.length !== speakerReferences.length) {
+      throw CLIUsageError(`OpenAI diarization requires the same number of --speaker-name and --speaker-reference values (received ${speakerNames.length} names and ${speakerReferences.length} references).`)
+    }
+
+    if (speakerNames.length > 4) {
+      throw CLIUsageError(`OpenAI diarization supports at most 4 known speakers (received ${speakerNames.length}).`)
+    }
   }
 
   const capabilities = TRANSCRIBE_ENGINE_CAPABILITIES[engine]
+  const diarizationOptions: DiarizationOptions = {}
+
+  if (speakerNames && speakerReferences) {
+    if (!capabilities.supportsKnownSpeakerReferences) {
+      throw CLIUsageError(`--speaker-name and --speaker-reference are only supported with OpenAI diarization right now; received ${engine}.`)
+    }
+
+    diarizationOptions.knownSpeakerNames = speakerNames
+    diarizationOptions.knownSpeakerReferencePaths = speakerReferences
+  }
+
+  if (speakerCount === undefined) {
+    return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
+  }
+
   if (!capabilities.supportsSpeakerCountHint) {
     if (engine === 'mistral') {
       l.warn(`Ignoring --speaker-count=${speakerCount} for Mistral because speaker-count hints are unsupported; enabling diarization without a count hint`)
-      return {}
+      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : {}
+    }
+    if (engine === 'openai') {
+      l.warn(`Ignoring --speaker-count=${speakerCount} for OpenAI because count-only diarization hints are unsupported; use --speaker-name with matching --speaker-reference clips instead`)
+      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
     }
     l.warn(`Ignoring --speaker-count=${speakerCount} because the ${engine} transcription engine does not support speaker-count hints`)
-    return undefined
+    return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
   }
 
-  return { speakerCount }
+  diarizationOptions.speakerCount = speakerCount
+  return diarizationOptions
 }
 
 const dispatchTranscribe = async (
@@ -303,9 +371,10 @@ export const transcribe = async (
 
   const audioFileSize = Bun.file(audioPath).size
   if (shouldSplitTranscriptionInput(engine, audioFileSize, options.split === true)) {
-    if (engine === 'groq' && options.split !== true) {
+    const attachmentCapBytes = AUTO_SPLIT_ATTACHMENT_CAP_BYTES[engine]
+    if (options.split !== true && attachmentCapBytes !== undefined) {
       const inputFilename = audioPath.split('/').pop() || 'audio'
-      l.warn(`Groq file uploads are capped at ${formatBytes(GROQ_MAX_ATTACHMENT_BYTES)}; ${inputFilename} is ${formatBytes(audioFileSize)}. Splitting into ${SPLIT_SEGMENT_DURATION_MINUTES}-minute segments automatically`)
+      l.warn(`${engine[0]!.toUpperCase()}${engine.slice(1)} file uploads are capped at ${formatBytes(attachmentCapBytes)}; ${inputFilename} is ${formatBytes(audioFileSize)}. Splitting into ${SPLIT_SEGMENT_DURATION_MINUTES}-minute segments automatically`)
     }
 
     return await runSplitTranscription(engine, audioPath, options, diarizationOptions)
@@ -314,8 +383,8 @@ export const transcribe = async (
   try {
     return await dispatchTranscribe(engine, audioPath, options.outputDir, 0, options, diarizationOptions)
   } catch (error) {
-    if (engine === 'groq' && options.split !== true && isPayloadTooLargeTranscriptionError(error)) {
-      l.warn(`Groq rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)
+    if (shouldRetrySplitTranscriptionAfterError(engine, options.split === true, error)) {
+      l.warn(`${engine[0]!.toUpperCase()}${engine.slice(1)} rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)
       return await runSplitTranscription(engine, audioPath, options, diarizationOptions)
     }
 

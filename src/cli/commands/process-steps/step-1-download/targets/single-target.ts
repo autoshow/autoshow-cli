@@ -392,6 +392,8 @@ const processMediaSingle = async (
     mistralSttModel: llmDefaults.mistralSttModel,
     assemblyaiSttModel: llmDefaults.assemblyaiSttModel,
     diarizationSpeakerCount: llmDefaults.diarizationSpeakerCount,
+    diarizationSpeakerNames: llmDefaults.diarizationSpeakerNames,
+    diarizationSpeakerReferences: llmDefaults.diarizationSpeakerReferences,
     llamaModel: llmConfig.llamaModel,
     openaiModel: llmConfig.openaiModel,
     groqModel: llmConfig.groqModel,

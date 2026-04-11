@@ -39,8 +39,10 @@ bun as stt input/1-audio.mp3 --groq-stt whisper-large-v3
 # ElevenLabs with a speaker-count hint
 bun as stt input/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 3
 
-# OpenAI with a speaker-count hint
-bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --speaker-count 2
+# OpenAI with known speaker references
+bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize \
+  --speaker-name Host --speaker-reference clips/host.mp3 \
+  --speaker-name Guest --speaker-reference clips/guest.mp3
 
 # Mistral
 bun as stt input/1-audio.mp3 --mistral-stt voxtral-mini-2602
@@ -62,6 +64,8 @@ bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
 | `--mistral-stt <model>` | Select the Mistral STT model |
 | `--assemblyai-stt <model>` | Select the AssemblyAI STT model |
 | `--speaker-count <n>` | Speaker-count hint for providers that support it |
+| `--speaker-name <name...>` | OpenAI known speaker names. Repeat in the same order as `--speaker-reference` |
+| `--speaker-reference <path...>` | OpenAI known speaker reference clips or data URLs. Repeat in the same order as `--speaker-name` |
 | `--prompt <name...>` | Named prompt(s) from `src/prompts/prompts.json` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
@@ -71,7 +75,9 @@ bun as stt input/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
 
 ## Notes
 
-- OpenAI, ElevenLabs, and AssemblyAI use `--speaker-count` as a real diarization hint.
+- ElevenLabs and AssemblyAI use `--speaker-count` as a real diarization hint.
+- OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
+- OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
 - Groq ignores `--speaker-count`.
 - Mistral enables diarization but does not support speaker-count hints, so `--speaker-count` is ignored there.
 - Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).

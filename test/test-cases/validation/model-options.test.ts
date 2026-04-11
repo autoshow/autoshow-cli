@@ -48,6 +48,8 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--prompt')
   expect(result.stdout).toContain('--speaker-count')
+  expect(result.stdout).toContain('--speaker-name')
+  expect(result.stdout).toContain('--speaker-reference')
   expect(result.stdout).toContain('--price')
   expect(result.stdout).toContain('--elevenlabs-stt')
   expect(result.stdout).toContain('--groq-stt')
@@ -144,6 +146,16 @@ test('buildOptsFromFlags maps --md-output to markdown output', () => {
   })
 
   expect(opts.structured).toBe(false)
+})
+
+test('buildOptsFromFlags maps repeated OpenAI speaker hint flags', () => {
+  const opts = buildOptsFromFlags(false, {
+    'speaker-name': ['Host', 'Guest'],
+    'speaker-reference': ['clips/host.mp3', 'clips/guest.mp3']
+  })
+
+  expect(opts.diarizationSpeakerNames).toEqual(['Host', 'Guest'])
+  expect(opts.diarizationSpeakerReferences).toEqual(['clips/host.mp3', 'clips/guest.mp3'])
 })
 
 test('buildOptsFromFlags maps --markdown for metadata output', () => {

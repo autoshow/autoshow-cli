@@ -3,8 +3,41 @@ import type { Step2Metadata, TranscriptionResult, TranscriptionSegment, Diarizat
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
+
+type MistralHttpError = Error & {
+  status: number
+  headers: Headers
+}
+
+const buildMistralForm = (audioPath: string, fileBytes: Uint8Array, modelName: string): FormData => {
+  const form = new FormData()
+  form.append('model', modelName)
+  form.append('file', new Blob([fileBytes]), basename(audioPath))
+  form.append('timestamp_granularities[]', 'segment')
+  form.append('diarize', 'true')
+  return form
+}
+
+const toMistralHttpError = (response: Response, errText: string): MistralHttpError => {
+  return Object.assign(
+    new Error(`Mistral transcription failed (${response.status}): ${errText}`),
+    {
+      status: response.status,
+      headers: response.headers
+    }
+  )
+}
+
+const unwrapRetryCause = (error: unknown): never => {
+  if (error instanceof Error && error.cause instanceof Error) {
+    throw error.cause
+  }
+
+  throw error
+}
 
 const readSpeakerId = (segment: {
   speaker_id?: string | number | undefined
@@ -71,26 +104,33 @@ export const runMistralStt = async (
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
-  const fileBuffer = Buffer.from(await Bun.file(audioPath).arrayBuffer())
-
-  const form = new FormData()
-  form.append('model', modelName)
-  form.append('file', new Blob([fileBuffer]), basename(audioPath))
-  form.append('timestamp_granularities[]', 'segment')
-  form.append('diarize', 'true')
+  const fileBytes = new Uint8Array(await Bun.file(audioPath).arrayBuffer())
   const baseURL = readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1'
-  const response = await fetch(`${baseURL}/audio/transcriptions`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: form
-  })
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`Mistral transcription failed (${response.status}): ${errText}`)
+
+  let rawPayload: unknown
+  try {
+    rawPayload = await withRetry(
+      { retryClass: 'runtime_http_create_conservative', operationName: 'mistral-stt' },
+      async () => {
+        const response = await fetch(`${baseURL}/audio/transcriptions`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: buildMistralForm(audioPath, fileBytes, modelName)
+        })
+
+        if (!response.ok) {
+          throw toMistralHttpError(response, await response.text())
+        }
+
+        return await response.json()
+      },
+      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+    )
+  } catch (error) {
+    unwrapRetryCause(error)
   }
-  const rawPayload: unknown = await response.json()
 
   const payload = validateData(MistralTranscriptionResponseSchema, rawPayload, 'Mistral STT response')
   const segments = toSegments(payload.segments ?? [], offsetSeconds)

@@ -13,7 +13,8 @@ export const transcribeCommand = defineCommand({
     examples: [
       ['bun as stt https://youtube.com/watch?v=abc', 'Transcribe with default whisper tiny model'],
       ['bun as stt file.mp3 --groq-stt', 'Transcribe with Groq Whisper API'],
-      ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with speaker diarization']
+      ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with speaker diarization'],
+      ['bun as stt file.mp3 --openai-stt gpt-4o-transcribe-diarize --speaker-name Host --speaker-reference clips/host.mp3 --speaker-name Guest --speaker-reference clips/guest.mp3', 'Transcribe with OpenAI known speaker references']
     ]
   }
 }, async (ctx) => {
