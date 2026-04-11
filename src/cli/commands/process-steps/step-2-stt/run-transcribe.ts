@@ -20,6 +20,7 @@ import { reverbUvEnvDir, reverbModelPath, reverbConfigPath, whisperBinaryPath, w
 import { assertNever } from '~/utils/validate/assert-never'
 import type { TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
+import type { SttTarget } from './stt-targets'
 
 const TRANSCRIBE_ENGINE_CAPABILITIES = {
   reverb: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
@@ -203,24 +204,62 @@ export const resolveDiarizationOptions = (
   return diarizationOptions
 }
 
+type WhisperProgressWindow = {
+  segmentStartSeconds: number
+  segmentDurationSeconds: number
+  totalDurationSeconds: number
+}
+
+type TranscribeTargetOptions = {
+  split?: boolean | undefined
+  reverbVerbatimicity?: number | undefined
+  sttSegmentConcurrency?: number | undefined
+}
+
+type IndexedTranscriptionChunk = {
+  segmentIndex: number
+  data: { result: TranscriptionResult, metadata: Step2Metadata }
+}
+
+export const ensureTranscribeTargetSetup = async (
+  target: Pick<SttTarget, 'service' | 'model'>
+): Promise<void> => {
+  if (target.service === 'reverb') {
+    await ensureReverbSetup()
+    return
+  }
+  if (target.service === 'elevenlabs') {
+    await ensureElevenLabsSttSetup()
+    return
+  }
+  if (target.service === 'openai') {
+    await ensureOpenAISttSetup()
+    return
+  }
+  if (target.service === 'mistral') {
+    await ensureMistralSttSetup()
+    return
+  }
+  if (target.service === 'assemblyai') {
+    await ensureAssemblyAiSttSetup()
+    return
+  }
+  if (target.service === 'whisper') {
+    await ensureWhisperSetup(target.model)
+  }
+}
+
 const dispatchTranscribe = async (
-  engine: TranscribeEngine,
+  target: SttTarget,
   audioPath: string,
   outputDir: string,
   segmentOffsetMinutes: number,
-  options: ProcessingOptions,
-  diarizationOptions: DiarizationOptions | undefined,
+  options: TranscribeTargetOptions,
   segmentNumber?: number,
   totalSegments?: number,
-  whisperProgress?:
-    | {
-      segmentStartSeconds: number
-      segmentDurationSeconds: number
-      totalDurationSeconds: number
-    }
-    | undefined
+  whisperProgress?: WhisperProgressWindow | undefined
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  if (engine === 'reverb') {
+  if (target.service === 'reverb') {
     return await runReverbTranscribe(audioPath, outputDir, {
       segmentOffsetMinutes,
       segmentNumber,
@@ -229,28 +268,28 @@ const dispatchTranscribe = async (
     })
   }
 
-  if (engine === 'elevenlabs') {
+  if (target.service === 'elevenlabs') {
     return await runElevenLabsTranscribe(audioPath, outputDir, {
-      model: options.elevenlabsSttModel as string,
+      model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
-      diarizationOptions
+      diarizationOptions: target.diarizationOptions
     })
   }
 
-  if (engine === 'groq') {
+  if (target.service === 'groq') {
     return await runGroqTranscribe(audioPath, outputDir, {
-      model: options.groqSttModel as string,
+      model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments
     })
   }
 
-  if (engine === 'whisper') {
+  if (target.service === 'whisper') {
     return await runWhisperTranscribe(audioPath, outputDir, {
-      model: options.whisperModel,
+      model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
@@ -261,133 +300,191 @@ const dispatchTranscribe = async (
     })
   }
 
-  if (engine === 'openai') {
+  if (target.service === 'openai') {
     return await runOpenAIStt(audioPath, outputDir, {
-      model: options.openaiSttModel as string,
+      model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
-      diarizationOptions
+      diarizationOptions: target.diarizationOptions
     })
   }
 
-  if (engine === 'mistral') {
+  if (target.service === 'mistral') {
     return await runMistralStt(audioPath, outputDir, {
-      model: options.mistralSttModel as string,
+      model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
-      diarizationOptions
+      diarizationOptions: target.diarizationOptions
     })
   }
 
-  if (engine === 'assemblyai') {
+  if (target.service === 'assemblyai') {
     return await runAssemblyAiTranscribe(audioPath, outputDir, {
-      model: options.assemblyaiSttModel as string,
+      model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
-      diarizationOptions
+      diarizationOptions: target.diarizationOptions
     })
   }
 
-  assertNever(engine)
+  assertNever(target.service)
 }
 
-const runSplitTranscription = async (
-  engine: TranscribeEngine,
-  audioPath: string,
-  options: ProcessingOptions,
-  diarizationOptions: DiarizationOptions | undefined
-): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const segmentDescriptors = await splitAudioFile(audioPath, options.outputDir, SPLIT_SEGMENT_DURATION_MINUTES)
-  const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
+export const resolveEffectiveSegmentConcurrency = (
+  target: Pick<SttTarget, 'local'>,
+  requestedConcurrency: number | undefined
+): number => target.local ? 1 : Math.max(1, requestedConcurrency ?? 2)
 
-  const segmentResults: Array<{ result: TranscriptionResult, metadata: Step2Metadata }> = []
-
-  for (let i = 0; i < segmentDescriptors.length; i++) {
-    const segmentDescriptor = segmentDescriptors[i]!
-    const offsetMinutes = segmentDescriptor.startSeconds / 60
-
-    const segmentData = await dispatchTranscribe(
-      engine, segmentDescriptor.path, options.outputDir, offsetMinutes,
-      options, diarizationOptions, segmentDescriptor.segmentNumber, segmentDescriptor.totalSegments, {
-        segmentStartSeconds: segmentDescriptor.startSeconds,
-        segmentDurationSeconds: segmentDescriptor.durationSeconds,
-        totalDurationSeconds
-      }
-    )
-
-    segmentResults.push(segmentData)
-  }
+export const mergeSplitTranscriptionChunks = (
+  chunks: IndexedTranscriptionChunk[]
+): { result: TranscriptionResult, metadata: Step2Metadata } => {
+  const orderedChunks = [...chunks].sort((left, right) => left.segmentIndex - right.segmentIndex)
+  const segmentResults = orderedChunks.map((entry) => entry.data)
 
   const combinedResult = {
     text: segmentResults.map(s => s.result.text).join(' '),
     segments: segmentResults.flatMap(s => s.result.segments)
   }
 
-  await Bun.write(`${options.outputDir}/transcription.txt`, formatTranscriptText(combinedResult.segments))
-
   const totalProcessingTime = segmentResults.reduce((sum, s) => sum + s.metadata.processingTime, 0)
   const totalTokenCount = segmentResults.reduce((sum, s) => sum + s.metadata.tokenCount, 0)
 
-  const combinedMetadata: Step2Metadata = {
-    transcriptionService: segmentResults[0]!.metadata.transcriptionService,
-    transcriptionModel: segmentResults[0]!.metadata.transcriptionModel,
-    transcriptionModelName: segmentResults[0]!.metadata.transcriptionModelName,
-    processingTime: totalProcessingTime,
-    tokenCount: totalTokenCount
+  return {
+    result: combinedResult,
+    metadata: {
+      transcriptionService: segmentResults[0]!.metadata.transcriptionService,
+      transcriptionModel: segmentResults[0]!.metadata.transcriptionModel,
+      transcriptionModelName: segmentResults[0]!.metadata.transcriptionModelName,
+      processingTime: totalProcessingTime,
+      tokenCount: totalTokenCount
+    }
+  }
+}
+
+const runSplitTranscription = async (
+  target: SttTarget,
+  audioPath: string,
+  outputDir: string,
+  options: TranscribeTargetOptions
+): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
+  const segmentDescriptors = await splitAudioFile(audioPath, outputDir, SPLIT_SEGMENT_DURATION_MINUTES)
+  const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
+  const segmentConcurrency = resolveEffectiveSegmentConcurrency(target, options.sttSegmentConcurrency)
+  const results: IndexedTranscriptionChunk[] = []
+  let nextIndex = 0
+  let failure: unknown
+
+  const runWorker = async (): Promise<void> => {
+    while (failure === undefined) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      if (currentIndex >= segmentDescriptors.length) {
+        return
+      }
+
+      const segmentDescriptor = segmentDescriptors[currentIndex]!
+      const offsetMinutes = segmentDescriptor.startSeconds / 60
+
+      try {
+        const data = await dispatchTranscribe(
+          target,
+          segmentDescriptor.path,
+          outputDir,
+          offsetMinutes,
+          options,
+          segmentDescriptor.segmentNumber,
+          segmentDescriptor.totalSegments,
+          {
+            segmentStartSeconds: segmentDescriptor.startSeconds,
+            segmentDurationSeconds: segmentDescriptor.durationSeconds,
+            totalDurationSeconds
+          }
+        )
+        results.push({ segmentIndex: currentIndex, data })
+      } catch (error) {
+        failure = error
+        return
+      }
+    }
   }
 
-  return { result: combinedResult, metadata: combinedMetadata }
+  await Promise.all(
+    Array.from({ length: Math.min(segmentConcurrency, segmentDescriptors.length) }, async () => {
+      await runWorker()
+    })
+  )
+
+  if (failure !== undefined) {
+    throw failure
+  }
+
+  const combined = mergeSplitTranscriptionChunks(results)
+  await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(combined.result.segments))
+  return combined
+}
+
+export const transcribeTarget = async (
+  audioPath: string,
+  outputDir: string,
+  target: SttTarget,
+  options: TranscribeTargetOptions
+): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
+  await ensureTranscribeTargetSetup(target)
+
+  const audioFileSize = Bun.file(audioPath).size
+  if (shouldSplitTranscriptionInput(target.service, audioFileSize, options.split === true)) {
+    const attachmentCapBytes = AUTO_SPLIT_ATTACHMENT_CAP_BYTES[target.service]
+    if (options.split !== true && attachmentCapBytes !== undefined) {
+      const inputFilename = audioPath.split('/').pop() || 'audio'
+      l.warn(`${target.service[0]!.toUpperCase()}${target.service.slice(1)} file uploads are capped at ${formatBytes(attachmentCapBytes)}; ${inputFilename} is ${formatBytes(audioFileSize)}. Splitting into ${SPLIT_SEGMENT_DURATION_MINUTES}-minute segments automatically`)
+    }
+
+    return await runSplitTranscription(target, audioPath, outputDir, options)
+  }
+
+  try {
+    return await dispatchTranscribe(target, audioPath, outputDir, 0, options)
+  } catch (error) {
+    if (shouldRetrySplitTranscriptionAfterError(target.service, options.split === true, error)) {
+      l.warn(`${target.service[0]!.toUpperCase()}${target.service.slice(1)} rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)
+      return await runSplitTranscription(target, audioPath, outputDir, options)
+    }
+
+    throw error
+  }
 }
 
 export const transcribe = async (
   audioPath: string,
   options: ProcessingOptions
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-
   const engine = resolveTranscribeEngine(options)
   const diarizationOptions = resolveDiarizationOptions(options, engine)
-
-  if (engine === 'reverb') {
-    await ensureReverbSetup()
-  }
-  if (engine === 'elevenlabs') {
-    await ensureElevenLabsSttSetup()
-  }
-  if (engine === 'openai') {
-    await ensureOpenAISttSetup()
-  }
-  if (engine === 'mistral') {
-    await ensureMistralSttSetup()
-  }
-  if (engine === 'assemblyai') {
-    await ensureAssemblyAiSttSetup()
-  }
-  if (engine === 'whisper') {
-    await ensureWhisperSetup(options.whisperModel)
-  }
-
-  const audioFileSize = Bun.file(audioPath).size
-  if (shouldSplitTranscriptionInput(engine, audioFileSize, options.split === true)) {
-    const attachmentCapBytes = AUTO_SPLIT_ATTACHMENT_CAP_BYTES[engine]
-    if (options.split !== true && attachmentCapBytes !== undefined) {
-      const inputFilename = audioPath.split('/').pop() || 'audio'
-      l.warn(`${engine[0]!.toUpperCase()}${engine.slice(1)} file uploads are capped at ${formatBytes(attachmentCapBytes)}; ${inputFilename} is ${formatBytes(audioFileSize)}. Splitting into ${SPLIT_SEGMENT_DURATION_MINUTES}-minute segments automatically`)
-    }
-
-    return await runSplitTranscription(engine, audioPath, options, diarizationOptions)
+  const target: SttTarget = {
+    service: engine,
+    model: engine === 'reverb'
+      ? 'reverb'
+      : engine === 'whisper'
+        ? options.whisperModel
+        : engine === 'elevenlabs'
+          ? options.elevenlabsSttModel as string
+          : engine === 'groq'
+            ? options.groqSttModel as string
+            : engine === 'openai'
+              ? options.openaiSttModel as string
+              : engine === 'mistral'
+                ? options.mistralSttModel as string
+                : options.assemblyaiSttModel as string,
+    local: engine === 'reverb' || engine === 'whisper',
+    diarizationOptions
   }
 
-  try {
-    return await dispatchTranscribe(engine, audioPath, options.outputDir, 0, options, diarizationOptions)
-  } catch (error) {
-    if (shouldRetrySplitTranscriptionAfterError(engine, options.split === true, error)) {
-      l.warn(`${engine[0]!.toUpperCase()}${engine.slice(1)} rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)
-      return await runSplitTranscription(engine, audioPath, options, diarizationOptions)
-    }
-
-    throw error
-  }
+  return await transcribeTarget(audioPath, options.outputDir, target, {
+    split: options.split,
+    reverbVerbatimicity: options.reverbVerbatimicity,
+    sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency
+  })
 }

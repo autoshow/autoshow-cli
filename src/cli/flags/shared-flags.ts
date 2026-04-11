@@ -107,6 +107,38 @@ export const transcriptionFlags = {
     type: Boolean,
     default: false,
     negatable: false
+  },
+  'stt-provider-concurrency': {
+    description: 'STT: max cloud providers running in parallel for one item (default 2)',
+    type: String,
+    default: '2'
+  },
+  'stt-local-concurrency': {
+    description: 'STT: max local providers running in parallel for one item (default 1)',
+    type: String,
+    default: '1'
+  },
+  'stt-segment-concurrency': {
+    description: 'STT: max split segments in flight per provider (default 2; local clamps to 1)',
+    type: String,
+    default: '2'
+  },
+  'stt-preflight-concurrency': {
+    description: 'STT: max duration probes running in parallel during preflight (default 4)',
+    type: String,
+    default: '4'
+  },
+  'refresh-cache': {
+    description: 'STT: rebuild cache entries touched by this run',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'no-cache': {
+    description: 'STT: bypass media cache for this run',
+    type: Boolean,
+    default: false,
+    negatable: false
   }
 } as const satisfies ClercFlagsDefinition
 

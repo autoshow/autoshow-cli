@@ -48,28 +48,7 @@ export const extractVideoMetadata = async (url: string): Promise<VideoMetadata> 
     const videoInfo = await getVideoInfo(url)
     
     if (videoInfo) {
-      const uploadDate = videoInfo.upload_date ? formatUploadDate(videoInfo.upload_date) : undefined
-
-      const chapters = videoInfo.chapters?.flatMap(ch => {
-        if (typeof ch.start_time !== 'number' || typeof ch.end_time !== 'number' || typeof ch.title !== 'string') return []
-        return [{ startTime: ch.start_time, endTime: ch.end_time, title: ch.title }]
-      })
-
-      const metadata: VideoMetadata = {
-        title: videoInfo.title || 'Unknown Title',
-        duration: videoInfo.duration ? formatDuration(videoInfo.duration) : 'Unknown',
-        author: videoInfo.uploader || videoInfo.channel || 'Unknown',
-        description: videoInfo.description || '',
-        url,
-        publishDate: uploadDate,
-        thumbnail: videoInfo.thumbnail,
-        channelUrl: videoInfo.channel_url,
-        ...(chapters !== undefined && chapters.length > 0 ? { chapters } : {})
-      }
-      
-      const validated = validateData(VideoMetadataSchema, metadata, 'video metadata')
-      
-      return validated
+      return buildVideoMetadataFromInfo(url, videoInfo)
     }
     
     return getFallbackMetadata(url)
@@ -79,7 +58,7 @@ export const extractVideoMetadata = async (url: string): Promise<VideoMetadata> 
   }
 }
 
-const formatUploadDate = (dateString: string): string => {
+export const formatUploadDate = (dateString: string): string => {
   if (!dateString || dateString.length !== 8) {
     return dateString
   }
@@ -91,7 +70,7 @@ const formatUploadDate = (dateString: string): string => {
   return `${year}-${month}-${day}`
 }
 
-const formatDuration = (seconds: number): string => {
+export const formatDuration = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
@@ -116,6 +95,30 @@ const getFallbackMetadata = (url: string): VideoMetadata => {
   }
   
   return validateData(VideoMetadataSchema, fallback, 'fallback video metadata')
+}
+
+export const buildVideoMetadataFromInfo = (
+  url: string,
+  videoInfo: YtDlpVideoInfo
+): VideoMetadata => {
+  const uploadDate = videoInfo.upload_date ? formatUploadDate(videoInfo.upload_date) : undefined
+
+  const chapters = videoInfo.chapters?.flatMap(ch => {
+    if (typeof ch.start_time !== 'number' || typeof ch.end_time !== 'number' || typeof ch.title !== 'string') return []
+    return [{ startTime: ch.start_time, endTime: ch.end_time, title: ch.title }]
+  })
+
+  return validateData(VideoMetadataSchema, {
+    title: videoInfo.title || 'Unknown Title',
+    duration: videoInfo.duration ? formatDuration(videoInfo.duration) : 'Unknown',
+    author: videoInfo.uploader || videoInfo.channel || 'Unknown',
+    description: videoInfo.description || '',
+    url,
+    publishDate: uploadDate,
+    thumbnail: videoInfo.thumbnail,
+    channelUrl: videoInfo.channel_url,
+    ...(chapters !== undefined && chapters.length > 0 ? { chapters } : {})
+  }, 'video metadata')
 }
 
 export const sanitizeTitleSlug = (title: string, maxLength = 200): string =>
@@ -233,7 +236,7 @@ export const extractLocalFileMetadata = async (filePath: string): Promise<VideoM
   }
 }
 
-const isDirectMediaUrl = (url: string): boolean => {
+export const isDirectMediaUrl = (url: string): boolean => {
   try {
     const pathname = new URL(url).pathname.toLowerCase()
     return MEDIA_EXTENSIONS.some(ext => pathname.endsWith(ext))

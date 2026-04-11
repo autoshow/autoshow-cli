@@ -22,6 +22,7 @@ export type BatchOrder = 'newest' | 'oldest'
 
 export type RuntimeOptions = {
   useReverb: boolean
+  whisperExplicit: boolean
   useOpenAI: boolean
   useGemini: boolean
   useAnthropic: boolean
@@ -41,6 +42,12 @@ export type RuntimeOptions = {
   diarizationSpeakerCount: number | undefined
   diarizationSpeakerNames: string[] | undefined
   diarizationSpeakerReferences: string[] | undefined
+  sttProviderConcurrency: number
+  sttLocalConcurrency: number
+  sttSegmentConcurrency: number
+  sttPreflightConcurrency: number
+  refreshCache: boolean
+  noCache: boolean
   price: boolean
   allowOverBudget: boolean
   reverbVerbatimicity: number

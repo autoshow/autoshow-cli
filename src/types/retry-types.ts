@@ -17,6 +17,7 @@ export type RetryContext = {
   retryClass: RetryClass
   operationName: string
   policy?: Partial<RetryPolicy>
+  timeoutMs?: number
 }
 
 export type RetryDecision = {

@@ -24,6 +24,7 @@ export const knownCommands = new Set<string>([
   ...PROCESS_COMMANDS,
   ...Object.keys(COMMAND_ALIASES),
   'config',
+  'cache',
   'setup',
   'sample',
   'samples',

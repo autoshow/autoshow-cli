@@ -3,6 +3,8 @@ import {
   GROQ_MAX_ATTACHMENT_BYTES,
   OPENAI_MAX_ATTACHMENT_BYTES,
   isPayloadTooLargeTranscriptionError,
+  mergeSplitTranscriptionChunks,
+  resolveEffectiveSegmentConcurrency,
   resolveDiarizationOptions,
   shouldRetrySplitTranscriptionAfterError,
   shouldSplitTranscriptionInput
@@ -112,5 +114,75 @@ describe('resolveDiarizationOptions', () => {
       diarizationSpeakerNames: ['Host'],
       diarizationSpeakerReferences: ['clips/host.mp3']
     }, 'elevenlabs')).toThrow('only supported with OpenAI diarization')
+  })
+})
+
+describe('resolveEffectiveSegmentConcurrency', () => {
+  test('clamps local providers to 1 even when a higher value is requested', () => {
+    expect(resolveEffectiveSegmentConcurrency({ local: true }, 4)).toBe(1)
+  })
+
+  test('preserves requested concurrency for cloud providers', () => {
+    expect(resolveEffectiveSegmentConcurrency({ local: false }, 4)).toBe(4)
+  })
+})
+
+describe('mergeSplitTranscriptionChunks', () => {
+  test('merges split results deterministically regardless of completion order', () => {
+    const merged = mergeSplitTranscriptionChunks([
+      {
+        segmentIndex: 2,
+        data: {
+          result: {
+            text: 'third',
+            segments: [{ start: '00:00:20', end: '00:00:29', text: 'third' }]
+          },
+          metadata: {
+            transcriptionService: 'groq',
+            transcriptionModel: 'whisper-large-v3-turbo',
+            transcriptionModelName: 'whisper-large-v3-turbo',
+            processingTime: 300,
+            tokenCount: 3
+          }
+        }
+      },
+      {
+        segmentIndex: 0,
+        data: {
+          result: {
+            text: 'first',
+            segments: [{ start: '00:00:00', end: '00:00:09', text: 'first' }]
+          },
+          metadata: {
+            transcriptionService: 'groq',
+            transcriptionModel: 'whisper-large-v3-turbo',
+            transcriptionModelName: 'whisper-large-v3-turbo',
+            processingTime: 100,
+            tokenCount: 1
+          }
+        }
+      },
+      {
+        segmentIndex: 1,
+        data: {
+          result: {
+            text: 'second',
+            segments: [{ start: '00:00:10', end: '00:00:19', text: 'second' }]
+          },
+          metadata: {
+            transcriptionService: 'groq',
+            transcriptionModel: 'whisper-large-v3-turbo',
+            transcriptionModelName: 'whisper-large-v3-turbo',
+            processingTime: 200,
+            tokenCount: 2
+          }
+        }
+      }
+    ])
+
+    expect(merged.result.text).toBe('first second third')
+    expect(merged.result.segments.map((segment) => segment.text)).toEqual(['first', 'second', 'third'])
+    expect(merged.metadata.processingTime).toBe(600)
+    expect(merged.metadata.tokenCount).toBe(6)
   })
 })

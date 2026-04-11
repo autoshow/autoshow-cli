@@ -86,9 +86,13 @@ export const tryHandleYoutubeCollectionTarget = async (
   }
 
   l.info(`Detected YouTube collection URL, processing ${items.length} videos`)
-  const { fail } = await processBatch(items, 'youtube_collection', command, opts, processSingleTarget)
+  const { fail, failureExitCode } = await processBatch(items, 'youtube_collection', command, opts, processSingleTarget)
   if (items.length > 0 && fail === items.length) {
-    throw new Error(`Batch processing failed for ${fail} item(s)`)
+    const error = new Error(`Batch processing failed for ${fail} item(s)`)
+    if (failureExitCode !== undefined) {
+      ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
+    }
+    throw error
   }
 
   return true

@@ -1,0 +1,564 @@
+import { mkdir, rm } from 'node:fs/promises'
+import { basename, join } from 'node:path'
+import * as l from '~/logger'
+import { runWithLogContext } from '~/logger'
+import type { StepTimingCost } from '~/logger'
+import { ensureDirectory } from '~/utils/cli-utils'
+import type { AggregatedPriceEstimate, RuntimeOptions, RetryClass, Step2Metadata, TranscriptionResult } from '~/types'
+import { getSttEstimation } from '~/cli/commands/models/model-loader'
+import { createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
+import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
+import { resolvePromptNames } from '~/prompts/prompt-loader'
+import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
+import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
+import { transcribeTarget } from './step-2-stt/run-transcribe'
+import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { classifyFetchRetry } from '~/utils/retries'
+
+type PreparedSttMedia = Awaited<ReturnType<typeof prepareSttMedia>>
+
+type ProviderFailure = {
+  index: number
+  service: string
+  model: string
+  message: string
+  retryable: boolean
+  stage?: string | undefined
+  status?: number | undefined
+}
+
+type ProviderSuccess = {
+  target: SttTarget
+  metadata: Step2Metadata
+  result: TranscriptionResult
+  relativeDir?: string | undefined
+}
+
+type ProviderErrorLike = Error & {
+  cause?: unknown
+  headers?: Headers
+  retryClass?: RetryClass
+  stage?: string
+  status?: number
+}
+
+const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
+  value instanceof Error
+
+const collectErrorChain = (error: unknown): ProviderErrorLike[] => {
+  const chain: ProviderErrorLike[] = []
+  const seen = new Set<unknown>()
+  let current: unknown = error
+
+  while (isProviderErrorLike(current) && !seen.has(current)) {
+    chain.push(current)
+    seen.add(current)
+    current = current.cause
+  }
+
+  return chain
+}
+
+const resolveFailureMessage = (
+  chain: ProviderErrorLike[],
+  error: unknown
+): string => {
+  if (chain.length === 0) {
+    return error instanceof Error ? error.message : String(error)
+  }
+
+  const outer = chain[0] as ProviderErrorLike
+  const deepest = chain[chain.length - 1] as ProviderErrorLike
+  if (deepest.name === 'AbortError') {
+    return outer.message
+  }
+
+  return deepest.message || outer.message
+}
+
+export const classifySttProviderFailure = (
+  error: unknown
+): Omit<ProviderFailure, 'index' | 'service' | 'model'> => {
+  const chain = collectErrorChain(error)
+  const message = resolveFailureMessage(chain, error)
+  const deepest = chain[chain.length - 1]
+  const retryClass = chain.find((entry) => typeof entry.retryClass === 'string')?.retryClass
+  const status = chain.find((entry) => typeof entry.status === 'number')?.status
+  const headers = chain.find((entry) => entry.headers instanceof Headers)?.headers
+  const stage = chain.find((entry) => typeof entry.stage === 'string')?.stage
+
+  let retryable = false
+  if (retryClass) {
+    const retryCandidate = Object.assign(
+      deepest instanceof Error ? deepest : new Error(message),
+      {
+        ...(typeof status === 'number' ? { status } : {}),
+        ...(headers instanceof Headers ? { headers } : {})
+      }
+    )
+    retryable = classifyFetchRetry(
+      retryCandidate,
+      retryClass,
+      { retryAbortOnConservative: true }
+    ).shouldRetry
+  } else if (typeof status === 'number') {
+    retryable = classifyFetchRetry(
+      Object.assign(new Error(message), {
+        status,
+        ...(headers instanceof Headers ? { headers } : {})
+      }),
+      'runtime_http_read',
+      { retryAbortOnConservative: true }
+    ).shouldRetry
+  }
+
+  return {
+    message,
+    retryable,
+    ...(stage ? { stage } : {}),
+    ...(typeof status === 'number' ? { status } : {})
+  }
+}
+
+const formatProviderFailure = (failure: ProviderFailure): string => {
+  const context = [
+    failure.stage ? `stage=${failure.stage}` : undefined,
+    typeof failure.status === 'number' ? `status=${failure.status}` : undefined,
+    failure.retryable ? 'retryable=true' : undefined
+  ].filter((entry): entry is string => typeof entry === 'string')
+
+  return context.length > 0
+    ? `${failure.service}/${failure.model} (${context.join(', ')}): ${failure.message}`
+    : `${failure.service}/${failure.model}: ${failure.message}`
+}
+
+export const filterSttPreflightEstimate = (
+  estimate: AggregatedPriceEstimate
+): AggregatedPriceEstimate => {
+  const steps = estimate.steps.filter((step) => step.step === 'stt')
+  return {
+    steps,
+    totalEstimatedCost: steps.reduce((sum, step) => sum + step.totalCost, 0)
+  }
+}
+
+const resolveSttEstimatedCosts = (
+  preflightEstimate: AggregatedPriceEstimate | undefined,
+  targets: SttTarget[],
+  durationSeconds: number
+) => preflightEstimate
+  ? preflightToEstimated(filterSttPreflightEstimate(preflightEstimate))
+  : computeEstimatedCosts({
+      sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
+      audioDurationSeconds: durationSeconds
+    })
+
+export const prioritizeCloudSttTargetIndices = (targets: SttTarget[]): number[] =>
+  targets
+    .map((target, index) => ({ target, index }))
+    .filter((entry) => !entry.target.local)
+    .sort((left, right) => {
+      const leftAssemblyPriority = left.target.service === 'assemblyai' ? 1 : 0
+      const rightAssemblyPriority = right.target.service === 'assemblyai' ? 1 : 0
+      if (leftAssemblyPriority !== rightAssemblyPriority) {
+        return rightAssemblyPriority - leftAssemblyPriority
+      }
+
+      const leftEstimate = getSttEstimation(left.target.service, left.target.model).msPerSecond
+      const rightEstimate = getSttEstimation(right.target.service, right.target.model).msPerSecond
+      if (leftEstimate !== rightEstimate) {
+        return rightEstimate - leftEstimate
+      }
+
+      return left.index - right.index
+    })
+    .map((entry) => entry.index)
+
+const buildAcquireSummary = (
+  itemLabel: string,
+  prepared: PreparedSttMedia
+): string => {
+  const sourceMedia = prepared.cache.sourceMedia === 'skipped'
+    ? 'skipped'
+    : `${prepared.cache.sourceMedia}${prepared.timings.sourceMediaMs !== undefined ? `(${prepared.timings.sourceMediaMs}ms)` : ''}`
+  const wav16k = prepared.cache.wav16k === 'skipped'
+    ? 'skipped'
+    : `${prepared.cache.wav16k}${prepared.timings.wav16kMs !== undefined ? `(${prepared.timings.wav16kMs}ms)` : ''}`
+  return `stt-acquire item=${itemLabel} sourceMedia=${sourceMedia} wav16k=${wav16k}`
+}
+
+const resolveTargetAudioPath = (
+  target: SttTarget,
+  prepared: PreparedSttMedia
+): string => {
+  if (target.local) {
+    const wavPath = prepared.executionArtifacts.wav16kPath
+    if (!wavPath) {
+      throw new Error(`Missing wav16k artifact for local STT target ${target.service}/${target.model}`)
+    }
+    return wavPath
+  }
+
+  const sourceMediaPath = prepared.executionArtifacts.sourceMediaPath
+  if (!sourceMediaPath) {
+    const wavFallbackPath = prepared.executionArtifacts.wav16kPath
+    if (wavFallbackPath) {
+      return wavFallbackPath
+    }
+    throw new Error(`Missing source_media artifact for cloud STT target ${target.service}/${target.model}`)
+  }
+
+  return sourceMediaPath
+}
+
+const runTargetPool = async (
+  indices: number[],
+  concurrency: number,
+  worker: (index: number) => Promise<void>
+): Promise<void> => {
+  const normalizedConcurrency = Math.max(1, concurrency)
+  let next = 0
+
+  const runWorker = async (): Promise<void> => {
+    while (true) {
+      const current = next
+      next += 1
+      if (current >= indices.length) {
+        return
+      }
+      await worker(indices[current] as number)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(normalizedConcurrency, indices.length) }, async () => {
+      await runWorker()
+    })
+  )
+}
+
+const buildPromptFile = async (
+  outputDir: string,
+  metadata: PreparedSttMedia['metadata'],
+  transcription: TranscriptionResult,
+  slug: string,
+  options: Pick<RuntimeOptions, 'prompts' | 'structured'>
+): Promise<void> => {
+  const instruction = await resolvePromptNames(options.prompts ?? [], {
+    exampleFormat: options.structured === false ? 'markdown' : 'json'
+  })
+  const promptContent = buildPrompt(metadata, transcription, instruction, slug)
+  await Bun.write(`${outputDir}/prompt.md`, promptContent)
+}
+
+export const selectPrimaryPromptProvider = (
+  successes: Array<ProviderSuccess | undefined>
+): ProviderSuccess | undefined =>
+  successes.find((entry): entry is ProviderSuccess => entry !== undefined)
+
+const buildSingleStepSummaries = (
+  acquisitionTimeMs: number,
+  step2Metadata: Step2Metadata,
+  actualCost: ReturnType<typeof computeActualCosts>
+): StepTimingCost[] => [
+  {
+    label: 'Download',
+    processingTime: acquisitionTimeMs,
+    cost: 0
+  },
+  {
+    label: 'Transcribe',
+    providerModel: `${step2Metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : step2Metadata.transcriptionService}/${step2Metadata.transcriptionModelName ?? step2Metadata.transcriptionModel}`,
+    processingTime: step2Metadata.processingTime,
+    cost: actualCost.steps.find((step) => step.step === 'stt')?.cost ?? 0
+  }
+]
+
+const createAllProvidersFailedError = (failures: ProviderFailure[]): Error => {
+  const error = new Error(failures.map(formatProviderFailure).join('; '))
+  ;(error as Error & { exitCode?: number }).exitCode = 2
+  return error
+}
+
+export const processStt = async (
+  source: { url?: string, filePath?: string },
+  baseDir: string,
+  options: RuntimeOptions,
+  preflightEstimate?: AggregatedPriceEstimate
+): Promise<string> => {
+  const processStart = Date.now()
+  const targets = collectSttTargets(options)
+  const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const metadata = await resolveSttSourceMetadata(source)
+  const outputDir = join(outputBaseDir, createUniqueDirectoryName(metadata.title))
+  await ensureDirectory(outputDir)
+
+  let prepared: Awaited<ReturnType<typeof prepareSttMedia>> | undefined
+
+  try {
+    const acquisitionStartedAt = Date.now()
+    prepared = await runWithLogContext({ step: 'step-1-download' }, async () =>
+      await prepareSttMedia({
+        source,
+        targets,
+        outputDir,
+        noCache: options.noCache,
+        refreshCache: options.refreshCache
+      })
+    )
+    const acquisitionTimeMs = Date.now() - acquisitionStartedAt
+    l.info(buildAcquireSummary(prepared.step1Metadata.slug, prepared))
+
+    if (targets.length === 1) {
+      const target = targets[0] as SttTarget
+      const audioPath = resolveTargetAudioPath(target, prepared)
+      const transcription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
+        await transcribeTarget(audioPath, outputDir, target, {
+          split: options.split,
+          reverbVerbatimicity: options.reverbVerbatimicity,
+          sttSegmentConcurrency: options.sttSegmentConcurrency
+        })
+      )
+
+      await buildPromptFile(outputDir, prepared.metadata, transcription.result, prepared.step1Metadata.slug, {
+        prompts: options.prompts,
+        structured: options.structured
+      })
+
+      const estimated = resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds)
+      const actual = computeActualCosts({
+        step1: prepared.step1Metadata,
+        step2: transcription.metadata
+      })
+      const cost = { estimated, actual }
+      const estimatedTiming = computeEstimatedProcessingTimes({
+        sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
+        audioDurationSeconds: prepared.durationSeconds
+      })
+      const actualTiming = computeActualProcessingTimes({
+        audioDurationSeconds: prepared.durationSeconds,
+        step2: transcription.metadata
+      })
+      const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+        ? { estimated: estimatedTiming, actual: actualTiming }
+        : undefined
+
+      const metadataJson = JSON.stringify({
+        step1: prepared.step1Metadata,
+        step2: transcription.metadata,
+        cost,
+        ...(timing ? { timing } : {})
+      }, null, 2)
+      await Bun.write(`${outputDir}/metadata.json`, metadataJson)
+      l.info(`Metadata:\n${metadataJson}`)
+
+      const artifactFiles: Record<string, string> = {
+        audio: prepared.step1Metadata.audioFileName,
+        transcript: 'transcription.txt',
+        prompt: 'prompt.md',
+        metadata: 'metadata.json'
+      }
+
+      l.report.complete(outputDir, artifactFiles, {
+        steps: buildSingleStepSummaries(acquisitionTimeMs, transcription.metadata, actual),
+        totalTimeMs: Date.now() - processStart,
+        totalCost: actual.totalCost
+      })
+
+      return outputDir
+    }
+
+    const providersDir = join(outputDir, 'providers')
+    await mkdir(providersDir, { recursive: true })
+    const successes: Array<ProviderSuccess | undefined> = new Array(targets.length)
+    const failuresByIndex = new Map<number, ProviderFailure>()
+
+    const runTargetAtIndex = async (
+      index: number,
+      attempt: 'initial' | 'recovery' = 'initial'
+    ): Promise<void> => {
+      const target = targets[index] as SttTarget
+      const providerDirName = getSttTargetDirectoryName(target)
+      const providerDir = join(providersDir, providerDirName)
+      const relativeDir = `providers/${providerDirName}`
+      if (attempt === 'recovery') {
+        await rm(providerDir, { recursive: true, force: true })
+      }
+      await mkdir(providerDir, { recursive: true })
+
+      try {
+        const audioPath = resolveTargetAudioPath(target, prepared as PreparedSttMedia)
+        const transcription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
+          await transcribeTarget(audioPath, providerDir, target, {
+            split: options.split,
+            reverbVerbatimicity: options.reverbVerbatimicity,
+            sttSegmentConcurrency: options.sttSegmentConcurrency
+          })
+        )
+        await Bun.write(join(providerDir, 'metadata.json'), JSON.stringify(transcription.metadata, null, 2))
+        successes[index] = {
+          target,
+          metadata: transcription.metadata,
+          result: transcription.result,
+          relativeDir
+        }
+        failuresByIndex.delete(index)
+      } catch (error) {
+        failuresByIndex.set(index, {
+          index,
+          service: target.service,
+          model: target.model,
+          ...classifySttProviderFailure(error)
+        })
+      }
+    }
+
+    const localIndices = targets
+      .map((target, index) => ({ target, index }))
+      .filter((entry) => entry.target.local)
+      .map((entry) => entry.index)
+    const cloudIndices = prioritizeCloudSttTargetIndices(targets)
+
+    await Promise.all([
+      runTargetPool(localIndices, options.sttLocalConcurrency, runTargetAtIndex),
+      runTargetPool(cloudIndices, options.sttProviderConcurrency, runTargetAtIndex)
+    ])
+
+    const recoveryIndices = [...failuresByIndex.values()]
+      .filter((failure) => failure.retryable)
+      .map((failure) => failure.index)
+
+    if (recoveryIndices.length > 0) {
+      l.warn(`Retrying ${recoveryIndices.length} transient STT provider failure(s) serially: ${recoveryIndices.map((index) => `${targets[index]!.service}/${targets[index]!.model}`).join(', ')}`)
+      await runTargetPool(recoveryIndices, 1, async (index) => {
+        await runTargetAtIndex(index, 'recovery')
+      })
+    }
+
+    const successfulProviders = successes.filter((entry): entry is ProviderSuccess => entry !== undefined)
+    const failures = [...failuresByIndex.values()].sort((left, right) => left.index - right.index)
+    if (successfulProviders.length === 0) {
+      await rm(providersDir, { recursive: true, force: true })
+      throw createAllProvidersFailedError(failures)
+    }
+
+    const promptSource = selectPrimaryPromptProvider(successes)
+    if (promptSource) {
+      await buildPromptFile(outputDir, prepared.metadata, promptSource.result, prepared.step1Metadata.slug, {
+        prompts: options.prompts,
+        structured: options.structured
+      })
+    }
+
+    const estimated = resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds)
+    const actual = computeActualCosts({
+      step1: prepared.step1Metadata,
+      step2: successfulProviders.map((entry) => entry.metadata)
+    })
+    const cost = {
+      estimated,
+      actual,
+      aggregate: {
+        estimatedTotalCost: estimated.totalCost,
+        actualTotalCost: actual.totalCost
+      }
+    }
+    const estimatedTiming = computeEstimatedProcessingTimes({
+      sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
+      audioDurationSeconds: prepared.durationSeconds
+    })
+    const actualTiming = computeActualProcessingTimes({
+      audioDurationSeconds: prepared.durationSeconds,
+      step2: successfulProviders.map((entry) => entry.metadata)
+    })
+    const timing = {
+      estimated: estimatedTiming,
+      actual: actualTiming,
+      aggregate: {
+        wallTimeMs: Date.now() - processStart,
+        providers: successfulProviders.map((entry) => ({
+          service: entry.metadata.transcriptionService,
+          model: entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel,
+          processingTimeMs: entry.metadata.processingTime
+        }))
+      }
+    }
+
+    const metadataJson = JSON.stringify({
+      step1: prepared.step1Metadata,
+      step2: successfulProviders.map((entry) => entry.metadata),
+      cost,
+      timing,
+      cache: {
+        sourceMedia: prepared.cache.sourceMedia,
+        wav16k: prepared.cache.wav16k
+      },
+      ...(failures.length > 0
+        ? {
+            errors: failures.map((entry) => ({
+              service: entry.service,
+              model: entry.model,
+              message: entry.message,
+              ...(entry.stage ? { stage: entry.stage } : {}),
+              ...(typeof entry.status === 'number' ? { status: entry.status } : {}),
+              retryable: entry.retryable
+            }))
+          }
+        : {})
+    }, null, 2)
+    await Bun.write(`${outputDir}/metadata.json`, metadataJson)
+    l.info(`Metadata:\n${metadataJson}`)
+
+    const artifactFiles: Record<string, string> = {
+      prompt: 'prompt.md',
+      metadata: 'metadata.json'
+    }
+    if (prepared.outputArtifacts.sourceMediaPath) {
+      artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
+    } else {
+      artifactFiles['audio'] = prepared.step1Metadata.audioFileName
+    }
+    if (prepared.outputArtifacts.wav16kPath) {
+      artifactFiles['audio-wav'] = basename(prepared.outputArtifacts.wav16kPath)
+    }
+    for (const entry of successfulProviders) {
+      const dir = entry.relativeDir as string
+      const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel}`
+      artifactFiles[`transcript-${key}`] = `${dir}/transcription.txt`
+      artifactFiles[`metadata-${key}`] = `${dir}/metadata.json`
+    }
+
+    const stepSummaries: StepTimingCost[] = [
+      {
+        label: 'Download',
+        processingTime: acquisitionTimeMs,
+        cost: 0
+      },
+      ...successfulProviders.map((entry) => ({
+        label: 'Transcribe',
+        providerModel: `${entry.metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : entry.metadata.transcriptionService}/${entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel}`,
+        processingTime: entry.metadata.processingTime,
+        cost: actual.steps.find((step) =>
+          step.step === 'stt'
+          && step.provider === entry.metadata.transcriptionService
+          && step.model === (entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel)
+        )?.cost ?? 0
+      }))
+    ]
+
+    l.report.complete(outputDir, artifactFiles, {
+      steps: stepSummaries,
+      totalTimeMs: Date.now() - processStart,
+      totalCost: actual.totalCost
+    })
+
+    if (failures.length > 0) {
+      l.warn(`stt run completed with partial failures: ${failures.map(formatProviderFailure).join('; ')}`)
+    }
+
+    return outputDir
+  } finally {
+    await prepared?.cleanup?.()
+  }
+}

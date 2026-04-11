@@ -55,6 +55,12 @@ export const mergeConfigIntoRawFlags = (
     inject('speaker-count', d.stt.speakerCount)
     inject('split', d.stt.split)
     inject('reverb-verbatimicity', d.stt.reverbVerbatimicity)
+    inject('stt-provider-concurrency', d.stt.providerConcurrency)
+    inject('stt-local-concurrency', d.stt.localConcurrency)
+    inject('stt-segment-concurrency', d.stt.segmentConcurrency)
+    inject('stt-preflight-concurrency', d.stt.preflightConcurrency)
+    inject('refresh-cache', d.stt.refreshCache)
+    inject('no-cache', d.stt.noCache)
   }
 
   if (d.llm) {
@@ -144,6 +150,12 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'speaker-count':     ['defaults', 'stt', 'speakerCount'],
   'split':             ['defaults', 'stt', 'split'],
   'reverb-verbatimicity': ['defaults', 'stt', 'reverbVerbatimicity'],
+  'stt-provider-concurrency': ['defaults', 'stt', 'providerConcurrency'],
+  'stt-local-concurrency': ['defaults', 'stt', 'localConcurrency'],
+  'stt-segment-concurrency': ['defaults', 'stt', 'segmentConcurrency'],
+  'stt-preflight-concurrency': ['defaults', 'stt', 'preflightConcurrency'],
+  'refresh-cache':     ['defaults', 'stt', 'refreshCache'],
+  'no-cache':          ['defaults', 'stt', 'noCache'],
   'llama':             ['defaults', 'llm', 'llama'],
   'openai':            ['defaults', 'llm', 'openai'],
   'groq':              ['defaults', 'llm', 'groq'],
@@ -217,7 +229,8 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
   const numericFlags = new Set([
     'speaker-count', 'reverb-verbatimicity', 'imagen-count', 'video-duration',
     'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'batch-limit', 'batch-concurrency',
-    'max-cents', 'max-usd', 'structured-compat-retries'
+    'max-cents', 'max-usd', 'structured-compat-retries',
+    'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency'
   ])
   if (numericFlags.has(flagName)) {
     const n = Number(rawValue)

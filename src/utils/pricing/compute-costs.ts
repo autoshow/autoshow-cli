@@ -101,7 +101,7 @@ const computeSttHourlyCost = (service: string, model: string, durationSeconds: n
 
 type ComputeActualCostsInput = {
   step1?: Step1Metadata | undefined
-  step2?: Step2Metadata | ExtractionMetadata | undefined
+  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | Step5Metadata[] | undefined
@@ -113,7 +113,7 @@ type ComputeActualCostsInput = {
 export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBreakdown => {
   const steps: StepCostEntry[] = []
 
-  if (input.step2 && isExtractionMetadata(input.step2) && input.step2.extractionMethod.includes('mistral-ocr') && input.step2.ocrModel) {
+  if (input.step2 && !Array.isArray(input.step2) && isExtractionMetadata(input.step2) && input.step2.extractionMethod.includes('mistral-ocr') && input.step2.ocrModel) {
     const extractPricing = getExtractPricing('mistral', input.step2.ocrModel)
     const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
     const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
@@ -127,7 +127,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     })
   }
 
-  if (input.step1 && input.step2 && !isExtractionMetadata(input.step2)) {
+  if (input.step1 && input.step2 && !Array.isArray(input.step2) && !isExtractionMetadata(input.step2)) {
     const durationSeconds = parseDurationToSeconds(input.step1.duration)
     const service = input.step2.transcriptionService
     const model = resolveTranscriptionModel(input.step2)
@@ -143,6 +143,22 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       inputMetric: 'durationSeconds',
       inputValue: durationSeconds
     })
+  }
+
+  if (input.step1 && Array.isArray(input.step2)) {
+    const durationSeconds = parseDurationToSeconds(input.step1.duration)
+    for (const step2Entry of input.step2) {
+      const service = step2Entry.transcriptionService
+      const model = resolveTranscriptionModel(step2Entry)
+      steps.push({
+        step: 'stt',
+        provider: service,
+        model,
+        cost: computeSttHourlyCost(service, model, durationSeconds),
+        inputMetric: 'durationSeconds',
+        inputValue: durationSeconds
+      })
+    }
   }
 
   for (const step3Entry of toArray(input.step3)) {
@@ -242,6 +258,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
 }
 
 type ComputeEstimatedCostsInput = {
+  sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
   whisperModel?: string | undefined
   groqSttModel?: string | undefined
   elevenlabsSttModel?: string | undefined
@@ -283,7 +300,21 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   let totalCost = 0
   const durationSeconds = input.audioDurationSeconds ?? 0
 
-  if (input.useReverb) {
+  const explicitSttTargets = input.sttTargets ?? []
+
+  if (explicitSttTargets.length > 0) {
+    for (const target of explicitSttTargets) {
+      if (target.service === 'reverb') {
+        steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
+        continue
+      }
+
+      const estimation = getSttEstimation(target.service, target.model)
+      const cost = applyCostMultiplier(computeSttHourlyCost(target.service, target.model, durationSeconds), estimation.costMultiplier)
+      totalCost += cost
+      steps.push({ step: 'stt', provider: target.service, model: target.model, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
+    }
+  } else if (input.useReverb) {
     steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
   } else {
     const STT_FIELD_MAP = [

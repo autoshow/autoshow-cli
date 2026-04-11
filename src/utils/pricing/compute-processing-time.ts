@@ -51,6 +51,7 @@ const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
 }
 
 type ComputeEstimatedProcessingTimesInput = {
+  sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
   transcriptionService?: Step2Metadata['transcriptionService'] | undefined
   transcriptionModel?: string | undefined
   audioDurationSeconds?: number | undefined
@@ -82,7 +83,7 @@ type ComputeEstimatedProcessingTimesInput = {
 type ComputeActualProcessingTimesInput = {
   step1?: DocumentMetadata | undefined
   audioDurationSeconds?: number | undefined
-  step2?: Step2Metadata | ExtractionMetadata | undefined
+  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | Step5Metadata[] | undefined
@@ -96,7 +97,22 @@ export const computeEstimatedProcessingTimes = (
 ): EstimatedTimingBreakdown => {
   const steps: TimingStepEntry[] = []
 
-  if (
+  if (input.sttTargets && input.sttTargets.length > 0 && typeof input.audioDurationSeconds === 'number') {
+    for (const target of input.sttTargets) {
+      if (target.service === 'reverb') {
+        continue
+      }
+      const estimation = getSttEstimation(target.service, target.model)
+      steps.push({
+        step: 'stt',
+        provider: target.service,
+        model: target.model,
+        processingTimeMs: roundMs(input.audioDurationSeconds * estimation.msPerSecond),
+        inputMetric: 'durationSeconds',
+        inputValue: input.audioDurationSeconds,
+      })
+    }
+  } else if (
     input.transcriptionService
     && input.transcriptionModel
     && input.transcriptionService !== 'reverb'
@@ -228,7 +244,26 @@ export const computeActualProcessingTimes = (
 ): ActualTimingBreakdown => {
   const steps: TimingStepEntry[] = []
 
-  if (input.step2 && isTranscriptionMetadata(input.step2)) {
+  if (Array.isArray(input.step2)) {
+    for (const step2Entry of input.step2) {
+      const model = resolveTranscriptionModel(step2Entry)
+      steps.push({
+        step: 'stt',
+        provider: step2Entry.transcriptionService,
+        model,
+        processingTimeMs: roundMs(step2Entry.processingTime),
+        ...(typeof input.audioDurationSeconds === 'number'
+          ? {
+              inputMetric: 'durationSeconds' as const,
+              inputValue: input.audioDurationSeconds,
+            }
+          : {
+              inputMetric: 'tokens' as const,
+              inputValue: step2Entry.tokenCount,
+            }),
+      })
+    }
+  } else if (input.step2 && isTranscriptionMetadata(input.step2)) {
     const model = resolveTranscriptionModel(input.step2)
     steps.push({
       step: 'stt',

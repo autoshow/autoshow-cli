@@ -27,6 +27,12 @@ const isUsageError = (error: unknown): boolean => {
 }
 
 export const normalizeExitCode = (error: unknown): number => {
+  if (error instanceof Error && 'exitCode' in error) {
+    const exitCode = (error as Error & { exitCode?: unknown }).exitCode
+    if (typeof exitCode === 'number' && Number.isFinite(exitCode) && exitCode > 0) {
+      return exitCode
+    }
+  }
   return isUsageError(error) ? 2 : 1
 }
 

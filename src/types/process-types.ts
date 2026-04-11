@@ -114,6 +114,7 @@ const YtDlpChapterSchema = v.object({
 })
 
 export const YtDlpVideoInfoSchema = v.object({
+  id: v.optional(v.string(), undefined),
   title: v.optional(v.string(), undefined),
   duration: v.optional(v.number(), undefined),
   uploader: v.optional(v.string(), undefined),

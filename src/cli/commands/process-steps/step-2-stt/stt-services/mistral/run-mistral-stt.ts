@@ -1,5 +1,5 @@
 import { basename } from 'node:path'
-import type { Step2Metadata, TranscriptionResult, TranscriptionSegment, DiarizationOptions } from '~/types'
+import type { Step2Metadata, TranscriptionResult, TranscriptionSegment, DiarizationOptions, RetryClass } from '~/types'
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
@@ -7,9 +7,13 @@ import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
+const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
+
 type MistralHttpError = Error & {
   status: number
   headers: Headers
+  stage?: 'transcribe'
+  retryClass?: RetryClass
 }
 
 const buildMistralForm = (audioPath: string, fileBytes: Uint8Array, modelName: string): FormData => {
@@ -26,17 +30,28 @@ const toMistralHttpError = (response: Response, errText: string): MistralHttpErr
     new Error(`Mistral transcription failed (${response.status}): ${errText}`),
     {
       status: response.status,
-      headers: response.headers
+      headers: response.headers,
+      stage: 'transcribe' as const,
+      retryClass: 'runtime_http_create_conservative' as const
     }
   )
 }
 
-const unwrapRetryCause = (error: unknown): never => {
+const throwMistralErrorWithContext = (
+  error: unknown,
+  stage: 'transcribe',
+  retryClass: RetryClass
+): never => {
   if (error instanceof Error && error.cause instanceof Error) {
+    ;(error.cause as MistralHttpError).stage = stage
+    ;(error.cause as MistralHttpError).retryClass = retryClass
     throw error.cause
   }
 
-  throw error
+  const source = error instanceof Error ? error : new Error(String(error))
+  ;(source as MistralHttpError).stage = stage
+  ;(source as MistralHttpError).retryClass = retryClass
+  throw source
 }
 
 const readSpeakerId = (segment: {
@@ -110,14 +125,20 @@ export const runMistralStt = async (
   let rawPayload: unknown
   try {
     rawPayload = await withRetry(
-      { retryClass: 'runtime_http_create_conservative', operationName: 'mistral-stt' },
-      async () => {
+      {
+        retryClass: 'runtime_http_create_conservative',
+        operationName: 'mistral-stt',
+        policy: { maxAttempts: 4 },
+        timeoutMs: REQUEST_TIMEOUT_MS
+      },
+      async (signal) => {
         const response = await fetch(`${baseURL}/audio/transcriptions`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiKey}`
           },
-          body: buildMistralForm(audioPath, fileBytes, modelName)
+          body: buildMistralForm(audioPath, fileBytes, modelName),
+          signal: signal ?? null
         })
 
         if (!response.ok) {
@@ -126,10 +147,10 @@ export const runMistralStt = async (
 
         return await response.json()
       },
-      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
     )
   } catch (error) {
-    unwrapRetryCause(error)
+    throwMistralErrorWithContext(error, 'transcribe', 'runtime_http_create_conservative')
   }
 
   const payload = validateData(MistralTranscriptionResponseSchema, rawPayload, 'Mistral STT response')

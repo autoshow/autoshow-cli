@@ -8,6 +8,8 @@ import { fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import * as l from '~/logger'
 import { DOCUMENT_EXTENSIONS, IMAGE_EXTENSIONS, MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
+import { prepareSttMedia } from '../stt-media-cache'
+import type { SttTarget } from '../stt-targets'
 
 const isLikelyUrl = (input: string): boolean => {
   try {
@@ -86,7 +88,10 @@ const resolveByTemporaryDownload = async (
   }
 }
 
-export const resolveSttInputDurationSeconds = async (input: string): Promise<number> => {
+export const resolveSttInputDurationSeconds = async (
+  input: string,
+  targets?: SttTarget[] | undefined
+): Promise<number> => {
   if (!isLikelyUrl(input)) {
     const exists = await fileExists(input)
     if (!exists) {
@@ -99,6 +104,20 @@ export const resolveSttInputDurationSeconds = async (input: string): Promise<num
     const localDuration = await tryProbeDurationSeconds(input)
     if (localDuration !== null) {
       return localDuration
+    }
+
+    if (targets && targets.length > 0) {
+      const prepared = await prepareSttMedia({
+        source: { filePath: input },
+        targets
+      })
+      try {
+        if (prepared.durationSeconds > 0) {
+          return prepared.durationSeconds
+        }
+      } finally {
+        await prepared.cleanup?.()
+      }
     }
 
     return await resolveByTemporaryDownload({ filePath: input }, 'local-media')
@@ -119,6 +138,20 @@ export const resolveSttInputDurationSeconds = async (input: string): Promise<num
   const probedDuration = await tryProbeDurationSeconds(input)
   if (probedDuration !== null) {
     return probedDuration
+  }
+
+  if (targets && targets.length > 0) {
+    const prepared = await prepareSttMedia({
+      source: { url: input },
+      targets
+    })
+    try {
+      if (prepared.durationSeconds > 0) {
+        return prepared.durationSeconds
+      }
+    } finally {
+      await prepared.cleanup?.()
+    }
   }
 
   return await resolveByTemporaryDownload({ url: input }, 'remote-media')

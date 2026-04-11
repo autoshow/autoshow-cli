@@ -23,8 +23,12 @@ export const handleDirectoryTargetBatch = async (
   }
 
   const label = includeUrlsFromInputDir ? 'input' : 'files'
-  const { ok, fail } = await processBatch(all, label, command, opts, processSingleTarget)
+  const { ok, fail, failureExitCode } = await processBatch(all, label, command, opts, processSingleTarget)
   if (ok === 0 && fail > 0) {
-    throw new Error(`Batch processing failed for ${fail} item(s)`)
+    const error = new Error(`Batch processing failed for ${fail} item(s)`)
+    if (failureExitCode !== undefined) {
+      ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
+    }
+    throw error
   }
 }

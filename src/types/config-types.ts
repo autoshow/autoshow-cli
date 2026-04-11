@@ -14,7 +14,13 @@ const SttDefaultsSchema = v.object({
   assemblyaiStt: v.optional(v.string(), undefined),
   speakerCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   split: v.optional(v.boolean(), undefined),
-  reverbVerbatimicity: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(1)), undefined)
+  reverbVerbatimicity: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(1)), undefined),
+  providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  segmentConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  preflightConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  refreshCache: v.optional(v.boolean(), undefined),
+  noCache: v.optional(v.boolean(), undefined)
 })
 
 const LlmDefaultsSchema = v.object({

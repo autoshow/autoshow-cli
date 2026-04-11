@@ -5,6 +5,7 @@ import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
 import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
+import { processStt } from '~/cli/commands/process-steps/process-stt'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
 import { ensureDirectory, fileExists, writeFile } from '~/utils/cli-utils'
 import {
@@ -750,6 +751,10 @@ export const processSingleTarget = async (
       throw CLIUsageError(`Unsupported ocr input "${item}". Use a direct document URL or local file.`)
     }
 
+    if (isSttCommand(command)) {
+      return { outputDir: await processStt({ url: item }, baseDir, opts, preflightEstimate) }
+    }
+
     const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)
     return { outputDir: result.outputDir }
   }
@@ -777,6 +782,10 @@ export const processSingleTarget = async (
 
   if (isSttCommand(command) && kind === 'local_document') {
     throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
+  }
+
+  if (isSttCommand(command)) {
+    return { outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate) }
   }
 
   const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)

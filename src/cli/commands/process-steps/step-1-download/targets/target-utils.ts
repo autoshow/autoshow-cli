@@ -169,7 +169,7 @@ export const processBatch = async (
   opts: RuntimeOptions,
   processSingleTarget: BatchItemProcessor,
   runOpts: BatchRunOptions = {}
-): Promise<{ ok: number, fail: number }> => {
+): Promise<{ ok: number, fail: number, failureExitCode?: number }> => {
   if (items.length === 0) {
     l.warn('No inputs to process')
     return { ok: 0, fail: 0 }
@@ -220,7 +220,26 @@ export const processBatch = async (
   const concurrency = Math.max(1, runOpts.concurrency ?? 1)
   let ok = 0
   let fail = 0
+  let failureExitCode: number | undefined
+  let hasMixedFailureCodes = false
   const finalInfoEntries = [...infoEntries]
+
+  const recordFailureExitCode = (error: unknown): void => {
+    const exitCode = error instanceof Error && 'exitCode' in error
+      ? (error as Error & { exitCode?: unknown }).exitCode
+      : undefined
+    if (typeof exitCode !== 'number' || !Number.isFinite(exitCode) || exitCode < 1) {
+      hasMixedFailureCodes = true
+      return
+    }
+    if (failureExitCode === undefined) {
+      failureExitCode = exitCode
+      return
+    }
+    if (failureExitCode !== exitCode) {
+      hasMixedFailureCodes = true
+    }
+  }
 
   if (concurrency === 1) {
 
@@ -239,6 +258,7 @@ export const processBatch = async (
           l.success(`Done ${index + 1}/${items.length}`)
         } catch (error) {
         fail++
+        recordFailureExitCode(error)
         const message = error instanceof Error ? error.message : String(error)
         l.error(`Failed ${index + 1}/${items.length}: ${message}`)
       }
@@ -268,6 +288,7 @@ export const processBatch = async (
         }
       } else {
         fail++
+        recordFailureExitCode(r.reason)
         const message = r.reason instanceof Error ? r.reason.message : String(r.reason)
         l.error(`Batch item failed: ${message}`)
       }
@@ -277,7 +298,11 @@ export const processBatch = async (
   l.info(`Batch complete: ${ok} succeeded, ${fail} failed`)
   await writeFile(`${batchDir}/info.json`, JSON.stringify(finalInfoEntries, null, 2))
 
-  return { ok, fail }
+  return {
+    ok,
+    fail,
+    ...(!hasMixedFailureCodes && failureExitCode !== undefined ? { failureExitCode } : {})
+  }
 }
 
 export const isDirectoryPath = async (path: string): Promise<boolean> => {

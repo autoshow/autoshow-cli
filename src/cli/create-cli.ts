@@ -1,6 +1,7 @@
 import { Clerc, defaultFormatters, helpPlugin, versionPlugin } from 'clerc'
 import { rootCommand } from './define-root-command'
 import { configCommand } from './commands/config/define-config-command'
+import { cacheCommand } from './commands/cache/define-cache-command'
 import { metadataCommand } from '~/cli/commands/process-steps/step-0-metadata/define-metadata-command'
 import { downloadCommand } from '~/cli/commands/process-steps/step-1-download/define-download-command'
 import { transcribeCommand } from '~/cli/commands/process-steps/step-2-stt/define-transcribe-command'
@@ -87,6 +88,7 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   version: 'core',
   help: 'core',
   config: 'setup',
+  cache: 'setup',
   setup: 'setup',
   sample: 'setup',
   models: 'setup',
@@ -105,6 +107,7 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
 const COMMAND_DEFINITIONS = [
   rootCommand,
   configCommand,
+  cacheCommand,
   setupCommand,
   sampleCommand,
   modelsCommand,

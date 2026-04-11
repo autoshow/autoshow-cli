@@ -86,6 +86,14 @@ describe('classifyFetchRetry', () => {
     expect(decision.shouldRetry).toBe(false)
   })
 
+  test('can retry abort on conservative class when explicitly enabled', () => {
+    const error = new DOMException('signal aborted', 'AbortError')
+    const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', {
+      retryAbortOnConservative: true
+    })
+    expect(decision.shouldRetry).toBe(true)
+  })
+
   test('retries abort on non-conservative class', () => {
     const error = new DOMException('signal aborted', 'AbortError')
     const decision = classifyFetchRetry(error, 'runtime_http_read')
@@ -173,6 +181,29 @@ describe('withRetry', () => {
       )
     ).rejects.toThrow()
     expect(attempts).toBe(1)
+  })
+
+  test('passes a timeout-backed abort signal when timeoutMs is configured', async () => {
+    await expect(
+      withRetry(
+        {
+          operationName: 'timeout-op',
+          retryClass: 'runtime_http_read',
+          timeoutMs: 5,
+          policy: { maxAttempts: 1, baseDelayMs: 0, maxDelayMs: 0, jitter: false, exponential: false }
+        },
+        async (signal) => await new Promise((_resolve, reject) => {
+          if (!signal) {
+            reject(new Error('missing signal'))
+            return
+          }
+
+          signal.addEventListener('abort', () => {
+            reject(signal.reason ?? new DOMException('signal aborted', 'AbortError'))
+          }, { once: true })
+        })
+      )
+    ).rejects.toThrow('timeout-op failed after 1 attempts')
   })
 })
 

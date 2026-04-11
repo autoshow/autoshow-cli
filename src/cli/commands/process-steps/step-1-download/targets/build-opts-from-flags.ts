@@ -159,7 +159,8 @@ export const buildOptsFromFlags = (
   skipLLM: boolean,
   flags: Record<string, unknown>,
   doubleDashArgs: string[] = [],
-  defaults: BuildOptsDefaults = {}
+  defaults: BuildOptsDefaults = {},
+  explicitFlags: Set<string> = new Set()
 ): RuntimeOptions => {
   const ddArgs = parseDoubleDashArgs(doubleDashArgs)
 
@@ -213,6 +214,7 @@ export const buildOptsFromFlags = (
 
   return {
     useReverb: readBooleanFlag(mergedFlags, 'reverb'),
+    whisperExplicit: explicitFlags.has('whisper'),
     useOpenAI: openaiModel !== undefined,
     useGemini: geminiModel !== undefined,
     useAnthropic: anthropicModel !== undefined,
@@ -232,6 +234,12 @@ export const buildOptsFromFlags = (
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
     diarizationSpeakerNames: readOptionalStringArrayFlag(mergedFlags, 'speaker-name'),
     diarizationSpeakerReferences: readOptionalStringArrayFlag(mergedFlags, 'speaker-reference'),
+    sttProviderConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-provider-concurrency'), 2)),
+    sttLocalConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-local-concurrency'), 1)),
+    sttSegmentConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-segment-concurrency'), 2)),
+    sttPreflightConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-preflight-concurrency'), 4)),
+    refreshCache: readBooleanFlag(mergedFlags, 'refresh-cache'),
+    noCache: readBooleanFlag(mergedFlags, 'no-cache'),
     price: readBooleanFlag(mergedFlags, 'price') || readBooleanFlag(mergedFlags, 'dry-run'),
     allowOverBudget: readBooleanFlag(mergedFlags, 'allow-over-budget'),
     reverbVerbatimicity: parseFloatWithDefault(readOptionalStringFlag(mergedFlags, 'reverb-verbatimicity'), 0.5),

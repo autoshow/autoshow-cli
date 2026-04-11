@@ -1,6 +1,7 @@
 import { test, expect } from 'bun:test'
 import { runCommand, STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 
 const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid whisper model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'whisper-large-v4'] },
@@ -10,16 +11,15 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
   { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
   { label: 'stt rejects invalid speaker-count with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
-  { label: 'stt rejects multiple STT engines with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--reverb', '--elevenlabs-stt', 'scribe_v2'] },
-  { label: 'stt rejects groq-stt with another STT engine', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v3', '--elevenlabs-stt', 'scribe_v2'] },
   { label: 'stt rejects LLM provider flags with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4'] },
   { label: 'stt rejects MiniMax LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
   { label: 'stt rejects Grok LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-4.20-reasoning'] },
-  { label: 'CLI short GPT OSS model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--openai', '20b'] },
-  { label: 'CLI invalid llama model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--llama', 'ggml-org/unknown-llama-model'] },
-  { label: 'CLI invalid anthropic model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--anthropic', 'claude-3-opus'] },
-  { label: 'CLI invalid MiniMax model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M3'] },
-  { label: 'CLI invalid Grok model exits with usage error code 2', args: [STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-3'] },
+  { label: 'write rejects explicit whisper with another STT engine', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'tiny', '--elevenlabs-stt', 'scribe_v2'] },
+  { label: 'CLI invalid OpenAI model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--openai', 'not-a-real-openai-model'] },
+  { label: 'CLI invalid llama model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'not-a-real-llama-model'] },
+  { label: 'CLI invalid anthropic model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--anthropic', 'not-a-real-anthropic-model'] },
+  { label: 'CLI invalid MiniMax model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'not-a-real-minimax-model'] },
+  { label: 'CLI invalid Grok model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--grok', 'not-a-real-grok-model'] },
   { label: 'CLI invalid ElevenLabs TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--elevenlabs-tts', 'eleven_v4', '--elevenlabs-voice', 'voice_123'] },
   { label: 'CLI invalid MiniMax TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--minimax-tts', 'speech-3.0-hd'] },
   { label: 'CLI invalid Groq TTS model exits with usage error code 2', args: ['tts', 'input/1-tts.md', '--groq-tts', 'canopylabs/orpheus-v2-english'] },
@@ -55,6 +55,12 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--groq-stt')
   expect(result.stdout).toContain('--openai-stt')
   expect(result.stdout).toContain('--mistral-stt')
+  expect(result.stdout).toContain('--stt-provider-concurrency')
+  expect(result.stdout).toContain('--stt-local-concurrency')
+  expect(result.stdout).toContain('--stt-segment-concurrency')
+  expect(result.stdout).toContain('--stt-preflight-concurrency')
+  expect(result.stdout).toContain('--refresh-cache')
+  expect(result.stdout).toContain('--no-cache')
   expect(result.stdout).not.toMatch(/--openai(\s|$)/)
   expect(result.stdout).not.toMatch(/--gemini(\s|$)/)
   expect(result.stdout).not.toMatch(/--anthropic(\s|$)/)
@@ -156,6 +162,67 @@ test('buildOptsFromFlags maps repeated OpenAI speaker hint flags', () => {
 
   expect(opts.diarizationSpeakerNames).toEqual(['Host', 'Guest'])
   expect(opts.diarizationSpeakerReferences).toEqual(['clips/host.mp3', 'clips/guest.mp3'])
+})
+
+test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
+  const opts = buildOptsFromFlags(false, {
+    'stt-provider-concurrency': '3',
+    'stt-local-concurrency': '2',
+    'stt-segment-concurrency': '4',
+    'stt-preflight-concurrency': '5',
+    'refresh-cache': true,
+    'no-cache': true
+  })
+
+  expect(opts.sttProviderConcurrency).toBe(3)
+  expect(opts.sttLocalConcurrency).toBe(2)
+  expect(opts.sttSegmentConcurrency).toBe(4)
+  expect(opts.sttPreflightConcurrency).toBe(5)
+  expect(opts.refreshCache).toBe(true)
+  expect(opts.noCache).toBe(true)
+})
+
+test('collectSttTargets includes whisper only when explicitly requested alongside other providers', () => {
+  const opts = buildOptsFromFlags(false, {
+    whisper: 'base',
+    'assemblyai-stt': 'universal-2'
+  }, [], {}, new Set(['whisper', 'assemblyai-stt']))
+
+  expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
+    'assemblyai:universal-2',
+    'whisper:base'
+  ])
+})
+
+test('stt accepts multiple STT providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--elevenlabs-stt',
+    'scribe_v2',
+    '--assemblyai-stt',
+    'universal-2',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('cache command accepts prune and clear actions', async () => {
+  const pruneResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'cache',
+    'prune'
+  ])
+  const clearResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'cache',
+    'clear'
+  ])
+
+  expect(pruneResult.exitCode).toBe(0)
+  expect(clearResult.exitCode).toBe(0)
 })
 
 test('buildOptsFromFlags maps --markdown for metadata output', () => {

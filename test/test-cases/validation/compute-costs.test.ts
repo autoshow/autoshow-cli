@@ -79,6 +79,24 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(sttSteps[0]?.provider).toBe('elevenlabs')
   })
 
+  test('sttTargets emits one STT step per selected provider', () => {
+    const result = computeEstimatedCosts({
+      sttTargets: [
+        { service: 'elevenlabs', model: 'scribe_v2' },
+        { service: 'assemblyai', model: 'universal-2' },
+        { service: 'whisper', model: 'tiny' }
+      ],
+      audioDurationSeconds: 60
+    })
+
+    const sttSteps = result.steps.filter(s => s.step === 'stt')
+    expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
+      'elevenlabs:scribe_v2',
+      'assemblyai:universal-2',
+      'whisper:tiny'
+    ])
+  })
+
   test('no STT step when no model set and useReverb is false', () => {
     const result = computeEstimatedCosts({ audioDurationSeconds: 60 })
     const sttSteps = result.steps.filter(s => s.step === 'stt')
@@ -112,5 +130,43 @@ describe('computeActualCosts STT', () => {
     expect(sttStep?.provider).toBe('whisper')
     expect(sttStep?.model).toBe('large-v3-turbo')
     expect(typeof sttStep?.cost).toBe('number')
+  })
+
+  test('computes one actual STT cost step per provider metadata entry', () => {
+    const result = computeActualCosts({
+      step1: {
+        url: 'https://example.com/audio.mp3',
+        duration: '1:00',
+        title: 'Test',
+        description: '',
+        author: '',
+        slug: 'test',
+        audioFileName: 'test.mp3',
+        audioFileSize: 0
+      },
+      step2: [
+        {
+          transcriptionService: 'elevenlabs',
+          transcriptionModel: 'scribe_v2',
+          transcriptionModelName: 'scribe_v2',
+          processingTime: 500,
+          tokenCount: 100
+        },
+        {
+          transcriptionService: 'assemblyai',
+          transcriptionModel: 'universal-2',
+          transcriptionModelName: 'universal-2',
+          processingTime: 600,
+          tokenCount: 120
+        }
+      ]
+    })
+
+    const sttSteps = result.steps.filter((step) => step.step === 'stt')
+    expect(sttSteps).toHaveLength(2)
+    expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
+      'elevenlabs:scribe_v2',
+      'assemblyai:universal-2'
+    ])
   })
 })

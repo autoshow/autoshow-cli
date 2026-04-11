@@ -9,6 +9,7 @@ import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/mu
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-duration'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-stt/stt-utils/elevenlabs-stt-pricing'
+import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import {
   getExtractEstimation,
   getImageEstimation,
@@ -30,57 +31,65 @@ const applyCostMultiplier = (cost: number, multiplier: number): number => cost *
 const buildCloudSttEstimate = async (
   provider: string,
   model: string,
-  resolvedTarget: string
+  durationSeconds: number
 ): Promise<SttStepEstimate> => {
-  const durationSeconds = await resolveSttInputDurationSeconds(resolvedTarget)
   const sttCost = getSttCost(provider, model)
   const estimation = getSttEstimation(provider, model)
   const totalCost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
   return { step: 'stt', provider, model, durationSeconds, totalCost, costMultiplier: estimation.costMultiplier }
 }
 
-const buildSttEstimate = async (
+const buildSttEstimates = async (
   resolvedTarget: string,
   opts: RuntimeOptions
-): Promise<SttStepEstimate | null> => {
-  const hasElevenlabs = !!opts.elevenlabsSttModel
-  const hasGroq = !!opts.groqSttModel
-  const hasOpenAI = !!opts.openaiSttModel
-  const hasMistral = !!opts.mistralSttModel
-  const hasAssemblyAi = !!opts.assemblyaiSttModel
-  const hasWhisper = !hasElevenlabs && !hasGroq && !hasOpenAI && !hasMistral && !hasAssemblyAi
+): Promise<SttStepEstimate[]> => {
+  const targets = collectSttTargets(opts)
+  if (targets.length === 0) {
+    return []
+  }
 
-  if (hasWhisper && !opts.useReverb) {
-    const sttCost = getSttCost('whisper', opts.whisperModel)
-    const estimation = getSttEstimation('whisper', opts.whisperModel)
-    return {
-      step: 'stt',
-      provider: 'whisper',
-      model: opts.whisperModel,
-      durationSeconds: 0,
-      totalCost: applyCostMultiplier(sttCost.costPerHourCents ?? 0, estimation.costMultiplier),
-      costMultiplier: estimation.costMultiplier,
+  const needsDuration = targets.some((target) => target.service !== 'whisper' && target.service !== 'reverb')
+  const durationSeconds = needsDuration ? await resolveSttInputDurationSeconds(resolvedTarget, targets) : 0
+  const estimates: SttStepEstimate[] = []
+
+  for (const target of targets) {
+    if (target.service === 'reverb') {
+      estimates.push({ step: 'stt', provider: 'reverb', model: 'reverb', durationSeconds: 0, totalCost: 0, costMultiplier: 1 })
+      continue
     }
+
+    if (target.service === 'whisper') {
+      const sttCost = getSttCost('whisper', target.model)
+      const estimation = getSttEstimation('whisper', target.model)
+      estimates.push({
+        step: 'stt',
+        provider: 'whisper',
+        model: target.model,
+        durationSeconds: 0,
+        totalCost: applyCostMultiplier(sttCost.costPerHourCents ?? 0, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+      })
+      continue
+    }
+
+    if (target.service === 'elevenlabs') {
+      const rate = estimateElevenlabsSttRate(target.model)
+      const estimation = getSttEstimation('elevenlabs', target.model)
+      estimates.push({
+        step: 'stt',
+        provider: 'elevenlabs',
+        model: rate.model,
+        durationSeconds,
+        totalCost: applyCostMultiplier((durationSeconds / 3600) * rate.costPerHourCents, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier
+      })
+      continue
+    }
+
+    estimates.push(await buildCloudSttEstimate(target.service, target.model, durationSeconds))
   }
 
-  if (hasWhisper && opts.useReverb) {
-    return { step: 'stt', provider: 'reverb', model: 'reverb', durationSeconds: 0, totalCost: 0, costMultiplier: 1 }
-  }
-
-  if (hasElevenlabs) {
-    const durationSeconds = await resolveSttInputDurationSeconds(resolvedTarget)
-    const rate = estimateElevenlabsSttRate(opts.elevenlabsSttModel as string)
-    const estimation = getSttEstimation('elevenlabs', opts.elevenlabsSttModel as string)
-    const totalCost = applyCostMultiplier((durationSeconds / 3600) * rate.costPerHourCents, estimation.costMultiplier)
-    return { step: 'stt', provider: 'elevenlabs', model: rate.model, durationSeconds, totalCost, costMultiplier: estimation.costMultiplier }
-  }
-
-  if (hasGroq) return buildCloudSttEstimate('groq', opts.groqSttModel as string, resolvedTarget)
-  if (hasOpenAI) return buildCloudSttEstimate('openai', opts.openaiSttModel as string, resolvedTarget)
-  if (hasMistral) return buildCloudSttEstimate('mistral', opts.mistralSttModel as string, resolvedTarget)
-  if (hasAssemblyAi) return buildCloudSttEstimate('assemblyai', opts.assemblyaiSttModel as string, resolvedTarget)
-
-  return null
+  return estimates
 }
 
 const buildExtractEstimate = async (
@@ -239,8 +248,7 @@ export const buildAggregatedPriceEstimate = async (
   const notes: string[] = []
 
   if (isSttCommand(command) || command === 'write') {
-    const stt = await buildSttEstimate(resolvedTarget, opts)
-    if (stt) {
+    for (const stt of await buildSttEstimates(resolvedTarget, opts)) {
       steps.push(stt)
       totalEstimatedCost += stt.totalCost
     }

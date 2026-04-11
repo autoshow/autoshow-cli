@@ -3,13 +3,35 @@ import type {
   TranscriptionResult,
   TranscriptionSegment,
   ElevenLabsSttResponse,
-  DiarizationOptions
+  DiarizationOptions,
+  RetryClass
 } from '~/types'
 import { ElevenLabsSttResponseSchema } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
+import { withRetry, classifyFetchRetry } from '~/utils/retries'
+
+const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
+
+type ElevenLabsHttpError = Error & {
+  status: number
+  headers: Headers
+  stage?: 'transcribe'
+  retryClass?: RetryClass
+}
+
+const attachElevenLabsErrorContext = (
+  error: unknown,
+  stage: 'transcribe',
+  retryClass: RetryClass
+): never => {
+  const source = error instanceof Error ? error : new Error(String(error))
+  ;(source as ElevenLabsHttpError).stage = stage
+  ;(source as ElevenLabsHttpError).retryClass = retryClass
+  throw source
+}
 
 const appendElevenLabsDiarizationOptions = (
   form: FormData,
@@ -132,20 +154,45 @@ export const runElevenLabsTranscribe = async (
   appendElevenLabsDiarizationOptions(form, diarizationOptions)
 
   const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
-  const response = await fetch(`${baseURL}/speech-to-text`, {
-    method: 'POST',
-    headers: {
-      'xi-api-key': apiKey,
-    },
-    body: form
-  })
+  let rawPayload: unknown
+  try {
+    rawPayload = await withRetry(
+      {
+        retryClass: 'runtime_http_create_conservative',
+        operationName: 'elevenlabs-stt',
+        policy: { maxAttempts: 4 },
+        timeoutMs: REQUEST_TIMEOUT_MS
+      },
+      async (signal) => {
+      const response = await fetch(`${baseURL}/speech-to-text`, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+        },
+        body: form,
+        signal: signal ?? null
+      })
 
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`ElevenLabs transcription failed (${response.status}): ${errText}`)
+        if (!response.ok) {
+          const errText = await response.text()
+          throw Object.assign(
+            new Error(`ElevenLabs transcription failed (${response.status}): ${errText}`),
+            {
+              status: response.status,
+              headers: response.headers,
+              stage: 'transcribe',
+              retryClass: 'runtime_http_create_conservative'
+            } satisfies Pick<ElevenLabsHttpError, 'status' | 'headers' | 'stage' | 'retryClass'>
+          )
+        }
+
+      return await response.json()
+      },
+      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+    )
+  } catch (error) {
+    attachElevenLabsErrorContext(error, 'transcribe', 'runtime_http_create_conservative')
   }
-
-  const rawPayload: unknown = await response.json()
   const payload = validateData(ElevenLabsSttResponseSchema, rawPayload, 'ElevenLabs STT response')
 
   const text = (payload.text ?? '').trim() || textFromWords(payload.words)

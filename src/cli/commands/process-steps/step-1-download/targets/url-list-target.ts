@@ -46,14 +46,18 @@ export const processResolvedInputListBatch = async (
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<void> => {
-  const { ok, fail } = await processBatch(resolvedBatch.selectedUrls, 'inputs', command, opts, processSingleTarget, {
+  const { ok, fail, failureExitCode } = await processBatch(resolvedBatch.selectedUrls, 'inputs', command, opts, processSingleTarget, {
     source: resolvedBatch.source,
     selectedItems: resolvedBatch.selectedItems,
     concurrency: opts.batchConcurrency,
     totalCount: resolvedBatch.totalCount
   })
   if (ok === 0 && fail > 0) {
-    throw new Error(`Batch processing failed for ${fail} item(s)`)
+    const error = new Error(`Batch processing failed for ${fail} item(s)`)
+    if (failureExitCode !== undefined) {
+      ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
+    }
+    throw error
   }
 }
 

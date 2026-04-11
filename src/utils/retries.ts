@@ -83,7 +83,7 @@ const isNetworkError = (error: unknown): boolean => {
   return false
 }
 
-const isAbortError = (error: unknown): boolean => {
+export const isAbortError = (error: unknown): boolean => {
   if (error instanceof DOMException && error.name === 'AbortError') return true
   if (error instanceof Error && error.name === 'AbortError') return true
   return false
@@ -105,12 +105,20 @@ const getHeadersFromError = (error: unknown): Headers | undefined => {
   return undefined
 }
 
-export const classifyFetchRetry = (error: unknown, retryClass: RetryClass): RetryDecision => {
+export type ClassifyFetchRetryOptions = {
+  retryAbortOnConservative?: boolean
+}
+
+export const classifyFetchRetry = (
+  error: unknown,
+  retryClass: RetryClass,
+  options: ClassifyFetchRetryOptions = {}
+): RetryDecision => {
   const noRetry = (reason: string): RetryDecision => ({ shouldRetry: false, delayMs: 0, reason })
   const doRetry = (delayMs: number, reason: string): RetryDecision => ({ shouldRetry: true, delayMs, reason })
 
   if (isAbortError(error)) {
-    if (retryClass === 'runtime_http_create_conservative') {
+    if (retryClass === 'runtime_http_create_conservative' && options.retryAbortOnConservative !== true) {
       return noRetry('abort/timeout on conservative request')
     }
     return doRetry(0, 'abort/timeout')
@@ -169,12 +177,10 @@ export const withRetry = async <T>(
 
   for (let attempt = 0; attempt < policy.maxAttempts; attempt++) {
     try {
-      const isConservative = ctx.retryClass === 'runtime_http_create_conservative'
-      if (isConservative) {
-        const controller = new AbortController()
-        return await operation(controller.signal)
-      }
-      return await operation()
+      const signal = typeof ctx.timeoutMs === 'number'
+        ? AbortSignal.timeout(ctx.timeoutMs)
+        : undefined
+      return await operation(signal)
     } catch (error) {
       lastError = error
 
@@ -204,6 +210,18 @@ export const withRetry = async <T>(
   const elapsed = Date.now() - startedAt
   const enrichedMessage = `${ctx.operationName} failed after ${policy.maxAttempts} attempts (${elapsed}ms elapsed)`
   const enrichedError = new Error(enrichedMessage, { cause: lastError })
+  ;(enrichedError as Error & { retryClass?: RetryClass }).retryClass = ctx.retryClass
+
+  if (lastError && typeof lastError === 'object') {
+    const lastErrorWithMeta = lastError as Record<string, unknown>
+    for (const key of ['status', 'headers', 'stage', 'retryClass'] as const) {
+      const value = lastErrorWithMeta[key]
+      if (value !== undefined) {
+        ;(enrichedError as Error & Record<string, unknown>)[key] = value
+      }
+    }
+  }
+
   throw enrichedError
 }
 

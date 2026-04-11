@@ -23,6 +23,33 @@ import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/co
 import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
+import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+
+const runWithConcurrency = async <T,>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<void>
+): Promise<void> => {
+  const normalizedConcurrency = Math.max(1, concurrency)
+  let nextIndex = 0
+
+  const runWorker = async (): Promise<void> => {
+    while (true) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      if (currentIndex >= items.length) {
+        return
+      }
+      await worker(items[currentIndex] as T, currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(normalizedConcurrency, items.length) }, async () => {
+      await runWorker()
+    })
+  )
+}
 
 const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   const llmConfig = resolveLLMDefaults(opts)
@@ -37,7 +64,7 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
 
-const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): string[] => {
+export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): string[] => {
   if (command === 'metadata') {
     if (!opts.save) {
       return [opts.markdown ? 'metadata (logged to terminal as Markdown frontmatter YAML)' : 'metadata (logged to terminal)']
@@ -54,7 +81,9 @@ const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): 
     return ['Extracted text', 'metadata.json']
   }
   if (isSttCommand(command)) {
-    return ['Audio file', 'transcription.txt', 'prompt.md', 'metadata.json']
+    return collectSttTargets(opts).length > 1
+      ? ['Shared audio artifact(s)', 'providers/<service>-<model>/transcription.txt', 'prompt.md', 'metadata.json']
+      : ['Audio file', 'transcription.txt', 'prompt.md', 'metadata.json']
   }
   const hasNonLlamaLlmProvider = !!(
     opts.useOpenAI
@@ -179,15 +208,14 @@ const reportSuitePriceEstimate = async (
   l.info(`Calculating suite price estimate across ${targets.length} target(s)`)
 
   let suiteTotalEstimatedCost = 0
+  const concurrency = isSttCommand(command) ? opts.sttPreflightConcurrency : 1
 
-  for (let index = 0; index < targets.length; index++) {
-    const item = targets[index] as string
+  await runWithConcurrency(targets, concurrency, async (item, index) => {
     l.info(`Price check ${index + 1}/${targets.length}: ${item}`)
-
     const estimate = await buildAggregatedPriceEstimate(command, item, opts, undefined)
     l.report.estimate(estimate)
     suiteTotalEstimatedCost += estimate.totalEstimatedCost
-  }
+  })
 
   l.info('')
   l.info(`Suite Cost Summary`)
@@ -198,6 +226,11 @@ const reportSuitePriceEstimate = async (
 }
 
 const formatCents = (amount: number): string => `${amount.toFixed(4)}¢`
+
+export const shouldRunCommandPreflight = (
+  opts: Pick<RuntimeOptions, 'price'>,
+  maxCents: number | undefined
+): boolean => opts.price || maxCents !== undefined
 
 export const handleProcessTarget = async (
   command: ProcessCommand,
@@ -229,10 +262,16 @@ export const handleProcessTarget = async (
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
 
-  const opts = buildOptsFromFlags(isSttCommand(command) || command === 'download' || command === 'metadata', mergedFlags, doubleDash)
+  const opts = buildOptsFromFlags(
+    isSttCommand(command) || command === 'download' || command === 'metadata',
+    mergedFlags,
+    doubleDash,
+    {},
+    explicitFlags
+  )
 
-  if (command === 'write' || isSttCommand(command)) {
-    const sttEngineCount = [opts.useReverb, opts.elevenlabsSttModel, opts.groqSttModel, opts.openaiSttModel, opts.mistralSttModel, opts.assemblyaiSttModel].filter(Boolean).length
+  if (command === 'write') {
+    const sttEngineCount = [opts.useReverb, opts.whisperExplicit, opts.elevenlabsSttModel, opts.groqSttModel, opts.openaiSttModel, opts.mistralSttModel, opts.assemblyaiSttModel].filter(Boolean).length
     if (sttEngineCount > 1) {
       throw CLIUsageError('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
     }
@@ -255,6 +294,7 @@ export const handleProcessTarget = async (
   const maxCents = resolveMaxCents(config.pricing)
   const plan = await resolveProcessTargetPlan(command, resolvedTarget, opts)
   const preflightTargets = getPlanTargets(plan)
+  const shouldRunPreflight = shouldRunCommandPreflight(opts, maxCents)
 
   if (opts.price) {
     if (preflightTargets.length === 0) {
@@ -273,19 +313,21 @@ export const handleProcessTarget = async (
   }
 
   let singleEstimate: AggregatedPriceEstimate | undefined
-  if (preflightTargets.length === 1) {
-    const { estimate, shouldExit } = await runPreflight(command, preflightTargets[0] as string, opts, maxCents, undefined)
-    singleEstimate = estimate
-    if (shouldExit) return
-  } else if (preflightTargets.length > 1) {
-    const suiteTotalEstimatedCost = await reportSuitePriceEstimate(command, preflightTargets, opts)
-    if (maxCents !== undefined && suiteTotalEstimatedCost > maxCents) {
-      if (!opts.allowOverBudget) {
-        throw CLIUsageError(
-          `Estimated suite cost ${formatCents(suiteTotalEstimatedCost)} exceeds configured budget ${formatCents(maxCents)}. Use --allow-over-budget to proceed.`
-        )
+  if (shouldRunPreflight) {
+    if (preflightTargets.length === 1) {
+      const { estimate, shouldExit } = await runPreflight(command, preflightTargets[0] as string, opts, maxCents, undefined)
+      singleEstimate = estimate
+      if (shouldExit) return
+    } else if (preflightTargets.length > 1) {
+      const suiteTotalEstimatedCost = await reportSuitePriceEstimate(command, preflightTargets, opts)
+      if (maxCents !== undefined && suiteTotalEstimatedCost > maxCents) {
+        if (!opts.allowOverBudget) {
+          throw CLIUsageError(
+            `Estimated suite cost ${formatCents(suiteTotalEstimatedCost)} exceeds configured budget ${formatCents(maxCents)}. Use --allow-over-budget to proceed.`
+          )
+        }
+        l.warn(`Estimated suite cost ${formatCents(suiteTotalEstimatedCost)} exceeds budget ${formatCents(maxCents)} — continuing because --allow-over-budget is set.`)
       }
-      l.warn(`Estimated suite cost ${formatCents(suiteTotalEstimatedCost)} exceeds budget ${formatCents(maxCents)} — continuing because --allow-over-budget is set.`)
     }
   }
 
@@ -300,7 +342,7 @@ export const handleProcessTarget = async (
 
   if (plan.kind === 'resolved_batch') {
     const resolved = plan.resolvedBatch
-    const { ok, fail } = await processBatch(
+    const { ok, fail, failureExitCode } = await processBatch(
       resolved.selectedUrls,
       resolved.source.title ?? resolved.source.sourceKind,
       command,
@@ -314,16 +356,24 @@ export const handleProcessTarget = async (
       }
     )
     if (ok === 0 && fail > 0) {
-      throw new Error(`Batch processing failed for all ${fail} item(s)`)
+      const error = new Error(`Batch processing failed for all ${fail} item(s)`)
+      if (failureExitCode !== undefined) {
+        ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
+      }
+      throw error
     }
     return
   }
 
   if (plan.kind === 'youtube_collection') {
     l.info(`Detected YouTube collection URL, processing ${plan.targets.length} videos`)
-    const { fail } = await processBatch(plan.targets, 'youtube_collection', command, opts, processSingleTarget)
+    const { fail, failureExitCode } = await processBatch(plan.targets, 'youtube_collection', command, opts, processSingleTarget)
     if (plan.targets.length > 0 && fail === plan.targets.length) {
-      throw new Error(`Batch processing failed for ${fail} item(s)`)
+      const error = new Error(`Batch processing failed for ${fail} item(s)`)
+      if (failureExitCode !== undefined) {
+        ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
+      }
+      throw error
     }
     return
   }
