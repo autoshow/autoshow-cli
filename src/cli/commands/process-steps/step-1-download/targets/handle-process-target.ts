@@ -11,9 +11,9 @@ import {
   processBatch,
   readInputList
 } from './target-utils'
-import { handleInputListTargetBatch } from './url-list-target'
+import { processResolvedInputListBatch, resolveInputListBatch } from './url-list-target'
 import { handleDirectoryTargetBatch } from './directory-target'
-import { resolveYoutubeCollectionItems, tryHandleYoutubeCollectionTarget } from './youtube-collection-target'
+import { resolveYoutubeCollectionItems } from './youtube-collection-target'
 import { handleSingleTarget, processSingleTarget } from './single-target'
 import { tryResolveBatchSource } from './batch/batch-router'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
@@ -22,6 +22,7 @@ import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/c
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/config/config-merge'
 import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
+import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
 
 const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   const llmConfig = resolveLLMDefaults(opts)
@@ -106,11 +107,18 @@ const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, double
   return false
 }
 
-const resolvePriceTargets = async (
+type ResolvedProcessTargetPlan =
+  | { kind: 'directory', targets: string[] }
+  | { kind: 'input_list', resolvedBatch: ResolvedBatch }
+  | { kind: 'resolved_batch', resolvedBatch: ResolvedBatch }
+  | { kind: 'youtube_collection', targets: string[] }
+  | { kind: 'single', target: string }
+
+const resolveProcessTargetPlan = async (
   command: ProcessCommand,
   resolvedTarget: string,
   opts: RuntimeOptions
-): Promise<string[]> => {
+): Promise<ResolvedProcessTargetPlan> => {
   const topLevel = await classifyTopLevelTarget(resolvedTarget)
 
   if (topLevel.kind === 'directory') {
@@ -128,29 +136,68 @@ const resolvePriceTargets = async (
     if (all.length === 0) {
       l.warn(`No inputs found in ${resolvedTarget}`)
     }
-    return all
+    return { kind: 'directory', targets: all }
   }
 
   if (topLevel.kind === 'input_list') {
-    const items = await readInputList(resolvedTarget)
-    if (items.length === 0) {
-      throw CLIUsageError(`No valid inputs found in ${resolvedTarget}. Provide newline-delimited URLs or local file paths in a .md or .txt file.`)
+    return {
+      kind: 'input_list',
+      resolvedBatch: await resolveInputListBatch(resolvedTarget, opts)
     }
-    return items
   }
 
   const resolved = await tryResolveBatchSource(resolvedTarget, command, opts)
   if (resolved) {
-    return resolved.selectedUrls
+    return { kind: 'resolved_batch', resolvedBatch: resolved }
   }
 
   const youtubeCollectionItems = await resolveYoutubeCollectionItems(resolvedTarget, command)
   if (youtubeCollectionItems) {
-    return youtubeCollectionItems
+    return { kind: 'youtube_collection', targets: youtubeCollectionItems }
   }
 
-  return [resolvedTarget]
+  return { kind: 'single', target: resolvedTarget }
 }
+
+const getPlanTargets = (plan: ResolvedProcessTargetPlan): string[] => {
+  if (plan.kind === 'directory' || plan.kind === 'youtube_collection') {
+    return plan.targets
+  }
+
+  if (plan.kind === 'input_list' || plan.kind === 'resolved_batch') {
+    return plan.resolvedBatch.selectedUrls
+  }
+
+  return [plan.target]
+}
+
+const reportSuitePriceEstimate = async (
+  command: ProcessCommand,
+  targets: string[],
+  opts: RuntimeOptions
+): Promise<number> => {
+  l.info(`Calculating suite price estimate across ${targets.length} target(s)`)
+
+  let suiteTotalEstimatedCost = 0
+
+  for (let index = 0; index < targets.length; index++) {
+    const item = targets[index] as string
+    l.info(`Price check ${index + 1}/${targets.length}: ${item}`)
+
+    const estimate = await buildAggregatedPriceEstimate(command, item, opts, undefined)
+    l.report.estimate(estimate)
+    suiteTotalEstimatedCost += estimate.totalEstimatedCost
+  }
+
+  l.info('')
+  l.info(`Suite Cost Summary`)
+  l.info(`  Commands checked: ${targets.length}`)
+  l.info(`  Suite total estimated cost: ${suiteTotalEstimatedCost.toFixed(5)}¢`)
+
+  return suiteTotalEstimatedCost
+}
+
+const formatCents = (amount: number): string => `${amount.toFixed(4)}¢`
 
 export const handleProcessTarget = async (
   command: ProcessCommand,
@@ -206,56 +253,53 @@ export const handleProcessTarget = async (
   }
 
   const maxCents = resolveMaxCents(config.pricing)
+  const plan = await resolveProcessTargetPlan(command, resolvedTarget, opts)
+  const preflightTargets = getPlanTargets(plan)
 
   if (opts.price) {
-    const targets = await resolvePriceTargets(command, resolvedTarget, opts)
-    if (targets.length === 0) {
+    if (preflightTargets.length === 0) {
       return
     }
 
-    if (targets.length === 1) {
-      const estimate = await buildAggregatedPriceEstimate(command, targets[0] as string, opts, undefined)
+    if (preflightTargets.length === 1) {
+      const estimate = await buildAggregatedPriceEstimate(command, preflightTargets[0] as string, opts, undefined)
       l.report.estimate(estimate)
       l.report.expectedOutput('./output/<timestamp>_<label>/', buildExpectedFilesList(command, opts))
       return
     }
 
-    l.info(`Calculating suite price estimate across ${targets.length} target(s)`)
-
-    let suiteTotalEstimatedCost = 0
-
-    for (let index = 0; index < targets.length; index++) {
-      const item = targets[index] as string
-      l.info(`Price check ${index + 1}/${targets.length}: ${item}`)
-
-      const estimate = await buildAggregatedPriceEstimate(command, item, opts, undefined)
-      l.report.estimate(estimate)
-      suiteTotalEstimatedCost += estimate.totalEstimatedCost
-    }
-
-    l.info('')
-    l.info(`Suite Cost Summary`)
-    l.info(`  Commands checked: ${targets.length}`)
-    l.info(`  Suite total estimated cost: ${suiteTotalEstimatedCost.toFixed(5)}¢`)
+    await reportSuitePriceEstimate(command, preflightTargets, opts)
     return
   }
 
-  const { estimate, shouldExit } = await runPreflight(command, resolvedTarget, opts, maxCents, undefined)
-  if (shouldExit) return
+  let singleEstimate: AggregatedPriceEstimate | undefined
+  if (preflightTargets.length === 1) {
+    const { estimate, shouldExit } = await runPreflight(command, preflightTargets[0] as string, opts, maxCents, undefined)
+    singleEstimate = estimate
+    if (shouldExit) return
+  } else if (preflightTargets.length > 1) {
+    const suiteTotalEstimatedCost = await reportSuitePriceEstimate(command, preflightTargets, opts)
+    if (maxCents !== undefined && suiteTotalEstimatedCost > maxCents) {
+      if (!opts.allowOverBudget) {
+        throw CLIUsageError(
+          `Estimated suite cost ${formatCents(suiteTotalEstimatedCost)} exceeds configured budget ${formatCents(maxCents)}. Use --allow-over-budget to proceed.`
+        )
+      }
+      l.warn(`Estimated suite cost ${formatCents(suiteTotalEstimatedCost)} exceeds budget ${formatCents(maxCents)} — continuing because --allow-over-budget is set.`)
+    }
+  }
 
-  const topLevel = await classifyTopLevelTarget(resolvedTarget)
-
-  if (topLevel.kind === 'directory') {
+  if (plan.kind === 'directory') {
     await handleDirectoryTargetBatch(resolvedTarget, command, opts)
     return
   }
-  if (topLevel.kind === 'input_list') {
-    await handleInputListTargetBatch(resolvedTarget, command, opts)
+  if (plan.kind === 'input_list') {
+    await processResolvedInputListBatch(plan.resolvedBatch, command, opts)
     return
   }
 
-  const resolved = await tryResolveBatchSource(resolvedTarget, command, opts)
-  if (resolved) {
+  if (plan.kind === 'resolved_batch') {
+    const resolved = plan.resolvedBatch
     const { ok, fail } = await processBatch(
       resolved.selectedUrls,
       resolved.source.title ?? resolved.source.sourceKind,
@@ -275,9 +319,14 @@ export const handleProcessTarget = async (
     return
   }
 
-  if (await tryHandleYoutubeCollectionTarget(resolvedTarget, command, opts)) {
+  if (plan.kind === 'youtube_collection') {
+    l.info(`Detected YouTube collection URL, processing ${plan.targets.length} videos`)
+    const { fail } = await processBatch(plan.targets, 'youtube_collection', command, opts, processSingleTarget)
+    if (plan.targets.length > 0 && fail === plan.targets.length) {
+      throw new Error(`Batch processing failed for ${fail} item(s)`)
+    }
     return
   }
 
-  await handleSingleTarget(resolvedTarget, command, opts, estimate)
+  await handleSingleTarget(resolvedTarget, command, opts, singleEstimate)
 }

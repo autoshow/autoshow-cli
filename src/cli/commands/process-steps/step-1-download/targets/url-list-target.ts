@@ -1,15 +1,20 @@
 import * as l from '~/logger'
-import type { ProcessCommand, RuntimeOptions } from '~/types'
+import type { BatchItem, ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { selectBatchItems } from './batch/batch-select'
 
-export const handleInputListTargetBatch = async (
+const buildInputListBatchItems = (items: string[]): BatchItem[] =>
+  items.map((item, index) => ({
+    id: String(index + 1),
+    url: item
+  }))
+
+export const resolveInputListBatch = async (
   resolvedTarget: string,
-  command: ProcessCommand,
   opts: RuntimeOptions
-): Promise<void> => {
+): Promise<ResolvedBatch> => {
   l.info(`Reading inputs from ${resolvedTarget}`)
   const items = await readInputList(resolvedTarget)
   if (items.length === 0) {
@@ -21,26 +26,42 @@ export const handleInputListTargetBatch = async (
     all: opts.batchAll,
     order: opts.batchOrder
   }
-  const batchItems = items.map((item, index) => ({
-    id: String(index + 1),
-    url: item
-  }))
-  const selectedItems = selectBatchItems(batchItems, batchOpts)
-  const selectedUrls = selectedItems.map(item => item.url)
+  const selectedItems = selectBatchItems(buildInputListBatchItems(items), batchOpts)
 
-  const source = {
-    sourceKind: 'url_list' as const,
-    sourceUrl: resolvedTarget,
-    title: 'Input list',
-    items: selectedItems
-  }
-  const { ok, fail } = await processBatch(selectedUrls, 'inputs', command, opts, processSingleTarget, {
-    source,
+  return {
+    source: {
+      sourceKind: 'url_list',
+      sourceUrl: resolvedTarget,
+      title: 'Input list',
+      items: selectedItems
+    },
+    selectedUrls: selectedItems.map(item => item.url),
     selectedItems,
-    concurrency: opts.batchConcurrency,
     totalCount: items.length
+  }
+}
+
+export const processResolvedInputListBatch = async (
+  resolvedBatch: ResolvedBatch,
+  command: ProcessCommand,
+  opts: RuntimeOptions
+): Promise<void> => {
+  const { ok, fail } = await processBatch(resolvedBatch.selectedUrls, 'inputs', command, opts, processSingleTarget, {
+    source: resolvedBatch.source,
+    selectedItems: resolvedBatch.selectedItems,
+    concurrency: opts.batchConcurrency,
+    totalCount: resolvedBatch.totalCount
   })
   if (ok === 0 && fail > 0) {
     throw new Error(`Batch processing failed for ${fail} item(s)`)
   }
+}
+
+export const handleInputListTargetBatch = async (
+  resolvedTarget: string,
+  command: ProcessCommand,
+  opts: RuntimeOptions
+): Promise<void> => {
+  const resolvedBatch = await resolveInputListBatch(resolvedTarget, opts)
+  await processResolvedInputListBatch(resolvedBatch, command, opts)
 }
