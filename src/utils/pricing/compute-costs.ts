@@ -92,6 +92,39 @@ const isExtractionMetadata = (metadata: Step2Metadata | ExtractionMetadata): met
   return 'extractionMethod' in metadata
 }
 
+const resolveExtractionProviderModel = (
+  metadata: ExtractionMetadata
+): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('mistral-ocr')) {
+    return {
+      provider: 'mistral',
+      model: metadata.ocrModel ?? 'mistral-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('paddle-ocr')) {
+    return {
+      provider: 'paddle-ocr',
+      model: 'paddle-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('ocrmypdf')) {
+    return {
+      provider: 'ocrmypdf',
+      model: 'ocrmypdf'
+    }
+  }
+  if (metadata.extractionMethod.includes('tesseract')) {
+    return {
+      provider: 'tesseract',
+      model: 'tesseract'
+    }
+  }
+  return {
+    provider: 'extract',
+    model: metadata.extractionMethod
+  }
+}
+
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
 
 const computeSttHourlyCost = (service: string, model: string, durationSeconds: number): number => {
@@ -101,7 +134,7 @@ const computeSttHourlyCost = (service: string, model: string, durationSeconds: n
 
 type ComputeActualCostsInput = {
   step1?: Step1Metadata | undefined
-  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | undefined
+  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | Step5Metadata[] | undefined
@@ -145,7 +178,24 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     })
   }
 
-  if (input.step1 && Array.isArray(input.step2)) {
+  if (Array.isArray(input.step2) && input.step2.every(isExtractionMetadata)) {
+    for (const step2Entry of input.step2) {
+      const { provider, model } = resolveExtractionProviderModel(step2Entry)
+      const cost = provider === 'mistral' && step2Entry.ocrModel
+        ? (step2Entry.totalPages / 1000) * (getExtractPricing('mistral', step2Entry.ocrModel).costPer1kPagesCents ?? 0)
+        : 0
+      steps.push({
+        step: 'extract',
+        provider,
+        model,
+        cost,
+        inputMetric: 'pages',
+        inputValue: step2Entry.totalPages,
+      })
+    }
+  }
+
+  if (input.step1 && Array.isArray(input.step2) && !input.step2.every(isExtractionMetadata)) {
     const durationSeconds = parseDurationToSeconds(input.step1.duration)
     for (const step2Entry of input.step2) {
       const service = step2Entry.transcriptionService

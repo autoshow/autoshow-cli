@@ -188,7 +188,7 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
 
 type WriteDocumentOutputMetadataOptions = {
   step1: DocumentMetadata
-  step2: ExtractionMetadata
+  step2: ExtractionMetadata | ExtractionMetadata[]
   step3: Step3Metadata | Step3Metadata[]
   mistralOcrModel: string | undefined
   extractPageCount: number
@@ -197,13 +197,14 @@ type WriteDocumentOutputMetadataOptions = {
   llmInputTokenCount: number
   llmOutputTokenCount: number
   artifactFiles: Record<string, string>
+  errors?: Array<{ service: string, model: string, message: string }> | undefined
 }
 
 const writeDocumentOutputMetadata = async (
   outputDir: string,
   params: WriteDocumentOutputMetadataOptions
 ): Promise<void> => {
-  const { step1, step2, step3, mistralOcrModel, extractPageCount, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles } = params
+  const { step1, step2, step3, mistralOcrModel, extractPageCount, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles, errors } = params
 
   const estimated = computeEstimatedCosts({
     mistralOcrModel,
@@ -237,6 +238,7 @@ const writeDocumentOutputMetadata = async (
     step3,
     cost,
     ...(timing ? { timing } : {}),
+    ...(errors && errors.length > 0 ? { errors } : {}),
   }, null, 2))
 
   l.report.complete(outputDir, artifactFiles)
@@ -289,7 +291,8 @@ const runDocumentWrite = async (
       llmModel,
       llmInputTokenCount: step3.inputTokenCount,
       llmOutputTokenCount: step3.outputTokenCount,
-      artifactFiles: { prompt: 'prompt.md', summary: 'text.md', metadata: 'metadata.json' }
+      artifactFiles: { prompt: 'prompt.md', summary: 'text.md', metadata: 'metadata.json' },
+      ...(extraction.step2Errors ? { errors: extraction.step2Errors } : {})
     })
     return { outputDir: extraction.outputDir }
   }
@@ -362,7 +365,8 @@ const runDocumentWrite = async (
     llmModel,
     llmInputTokenCount,
     llmOutputTokenCount,
-    artifactFiles
+    artifactFiles,
+    ...(extraction.step2Errors ? { errors: extraction.step2Errors } : {})
   })
   return { outputDir: extraction.outputDir }
 }
@@ -460,7 +464,11 @@ const processMediaSingle = async (
 
   const options: ProcessingOptions = validateData(ProcessingOptionsSchema, baseOptions, 'processing options')
 
-  const outDir = await processVideo(options, meta, preflightEstimate)
+  const outDir = await processVideo(options, meta, preflightEstimate, {
+    sttProviderConcurrency: llmDefaults.sttProviderConcurrency,
+    sttLocalConcurrency: llmDefaults.sttLocalConcurrency,
+    sttSegmentConcurrency: llmDefaults.sttSegmentConcurrency,
+  })
   const baseInfo: { url: string, title: string, channel: string, duration: string, channelUrl?: string, publishDate?: string } = {
     url: srcUrl,
     title: meta.title,

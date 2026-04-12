@@ -19,11 +19,6 @@ export const extractCommand = defineCommand({
     ]
   }
 }, async (ctx) => {
-  const engineCount = [ctx.flags.ocrmypdf, ctx.flags['paddle-ocr'], ctx.flags['mistral-ocr']].filter(Boolean).length
-  if (engineCount > 1) {
-    throw CLIUsageError('Cannot use more than one extract OCR engine at the same time (--ocrmypdf, --paddle-ocr, --mistral-ocr)')
-  }
-
   const epubInspectCount = [ctx.flags['epub-bun'], ctx.flags['epub-calibre']].filter(Boolean).length
   if (epubInspectCount > 1) {
     throw CLIUsageError('Cannot use both EPUB inspect engines at the same time (--epub-bun, --epub-calibre)')

@@ -14,7 +14,6 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'stt rejects LLM provider flags with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4'] },
   { label: 'stt rejects MiniMax LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
   { label: 'stt rejects Grok LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-4.20-reasoning'] },
-  { label: 'write rejects explicit whisper with another STT engine', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'tiny', '--elevenlabs-stt', 'scribe_v2'] },
   { label: 'CLI invalid OpenAI model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--openai', 'not-a-real-openai-model'] },
   { label: 'CLI invalid llama model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'not-a-real-llama-model'] },
   { label: 'CLI invalid anthropic model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--anthropic', 'not-a-real-anthropic-model'] },
@@ -203,6 +202,66 @@ test('stt accepts multiple STT providers in price mode', async () => {
     'scribe_v2',
     '--assemblyai-stt',
     'universal-2',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('write accepts multiple STT providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--whisper',
+    'tiny',
+    '--assemblyai-stt',
+    'universal-2',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('write accepts multiple music providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--elevenlabs-music',
+    'music_v1',
+    '--minimax-music',
+    'music-2.5',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('ocr accepts multiple OCR providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'ocr',
+    'input/examples/document/1-document.pdf',
+    '--paddle-ocr',
+    '--mistral-ocr',
+    'mistral-ocr-latest',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('write accepts multiple OCR providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    'input/examples/document/1-document.pdf',
+    '--paddle-ocr',
+    '--mistral-ocr',
+    'mistral-ocr-latest',
+    '--openai',
+    'gpt-5.4',
     '--price'
   ])
 

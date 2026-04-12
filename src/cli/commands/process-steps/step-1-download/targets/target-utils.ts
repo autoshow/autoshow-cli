@@ -38,6 +38,18 @@ export const isDocumentByExtension = (path: string): boolean => {
   return [...DOCUMENT_EXTENSIONS, ...IMAGE_EXTENSIONS].some(ext => lower.endsWith(ext))
 }
 
+export const isLikelyDocumentTarget = (target: string): boolean => {
+  if (isLikelyUrl(target)) {
+    try {
+      return isDocumentByExtension(new URL(target).pathname)
+    } catch {
+      return false
+    }
+  }
+
+  return isDocumentByExtension(target)
+}
+
 export const collectInputFiles = async (dir: string): Promise<string[]> => {
   const files: string[] = []
 

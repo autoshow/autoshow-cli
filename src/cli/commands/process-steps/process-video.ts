@@ -1,11 +1,27 @@
-import type { ProcessingOptions, Step1Metadata, VideoMetadata, Step3Metadata, Step4Metadata, Step5Metadata, Step6VideoMetadata, Step7MusicMetadata, AggregatedPriceEstimate } from '~/types'
+import { mkdir, rm } from 'node:fs/promises'
+import type {
+  ProcessingOptions,
+  Step1Metadata,
+  VideoMetadata,
+  Step3Metadata,
+  Step4Metadata,
+  Step5Metadata,
+  Step6VideoMetadata,
+  Step7MusicMetadata,
+  AggregatedPriceEstimate,
+  RuntimeOptions,
+  Step2Metadata,
+  TranscriptionResult,
+} from '~/types'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { downloadAudio } from './step-1-download/audio/dl-audio'
-import { transcribe } from './step-2-stt/run-transcribe'
+import { transcribe, transcribeTarget } from './step-2-stt/run-transcribe'
+import { formatTranscriptText } from './step-2-stt/stt-utils/transcription-utils'
+import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
 import { runLLM } from './step-3-write/run-llm'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
@@ -22,8 +38,49 @@ import { buildProviderStepSummaries } from './generation-command-utils'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
+import { classifySttProviderFailure, prioritizeCloudSttTargetIndices, selectPrimaryPromptProvider } from './process-stt'
 
-export const processVideo = async (options: ProcessingOptions, precomputedMetadata?: VideoMetadata, preflightEstimate?: AggregatedPriceEstimate): Promise<string> => {
+type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
+
+type SttProviderSuccess = {
+  target: SttTarget
+  metadata: Step2Metadata
+  result: TranscriptionResult
+  relativeDir?: string | undefined
+}
+
+const runTargetPool = async (
+  indices: number[],
+  concurrency: number,
+  worker: (index: number) => Promise<void>
+): Promise<void> => {
+  const normalizedConcurrency = Math.max(1, concurrency)
+  let nextIndex = 0
+
+  const runWorker = async (): Promise<void> => {
+    while (true) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      if (currentIndex >= indices.length) {
+        return
+      }
+      await worker(indices[currentIndex] as number)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(normalizedConcurrency, indices.length) }, async () => {
+      await runWorker()
+    })
+  )
+}
+
+export const processVideo = async (
+  options: ProcessingOptions,
+  precomputedMetadata?: VideoMetadata,
+  preflightEstimate?: AggregatedPriceEstimate,
+  runtimeOptions?: ProcessVideoRuntimeOptions
+): Promise<string> => {
   const processStart = Date.now()
   const metadata = precomputedMetadata ?? await extractSourceMetadata({
     ...(options.url !== undefined ? { url: options.url } : {}),
@@ -43,9 +100,97 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   )
   const step1Time = Date.now() - step1Start
   const step1Metadata: Step1Metadata = downloadMetadata
-  const transcriptionResult = await runWithLogContext({ step: 'step-2-stt' }, async () =>
-    await transcribe(audioPath, processingOptions)
-  )
+  const sttTargets = collectSttTargets(processingOptions as unknown as RuntimeOptions)
+  let transcriptionResult: { result: TranscriptionResult, metadata: Step2Metadata | Step2Metadata[] }
+  let successfulSttProviders: SttProviderSuccess[] = []
+  let sttFailures: Array<{
+    service: string
+    model: string
+    message: string
+    retryable: boolean
+    stage?: string | undefined
+    status?: number | undefined
+  }> = []
+
+  if (sttTargets.length === 1) {
+    const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
+      await transcribe(audioPath, processingOptions)
+    )
+    transcriptionResult = singleTranscription
+    successfulSttProviders = [{
+      target: sttTargets[0] as SttTarget,
+      metadata: singleTranscription.metadata,
+      result: singleTranscription.result
+    }]
+  } else {
+    const providersDir = `${outputDir}/providers`
+    await mkdir(providersDir, { recursive: true })
+
+    const successes: Array<SttProviderSuccess | undefined> = new Array(sttTargets.length)
+    const failuresByIndex = new Map<number, typeof sttFailures[number]>()
+
+    const runTargetAtIndex = async (index: number): Promise<void> => {
+      const target = sttTargets[index] as SttTarget
+      const providerDirName = getSttTargetDirectoryName(target)
+      const providerDir = `${providersDir}/${providerDirName}`
+      await mkdir(providerDir, { recursive: true })
+
+      try {
+        const providerTranscription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
+          await transcribeTarget(audioPath, providerDir, target, {
+            split: processingOptions.split,
+            reverbVerbatimicity: processingOptions.reverbVerbatimicity,
+            sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
+          })
+        )
+        await Bun.write(`${providerDir}/metadata.json`, JSON.stringify(providerTranscription.metadata, null, 2))
+        successes[index] = {
+          target,
+          metadata: providerTranscription.metadata,
+          result: providerTranscription.result,
+          relativeDir: `providers/${providerDirName}`
+        }
+        failuresByIndex.delete(index)
+      } catch (error) {
+        await rm(providerDir, { recursive: true, force: true })
+        failuresByIndex.set(index, {
+          service: target.service,
+          model: target.model,
+          ...classifySttProviderFailure(error)
+        })
+      }
+    }
+
+    const localIndices = sttTargets
+      .map((target, index) => ({ target, index }))
+      .filter((entry) => entry.target.local)
+      .map((entry) => entry.index)
+    const cloudIndices = prioritizeCloudSttTargetIndices(sttTargets)
+
+    await Promise.all([
+      runTargetPool(localIndices, runtimeOptions?.sttLocalConcurrency ?? 1, runTargetAtIndex),
+      runTargetPool(cloudIndices, runtimeOptions?.sttProviderConcurrency ?? 2, runTargetAtIndex)
+    ])
+
+    successfulSttProviders = successes.filter((entry): entry is SttProviderSuccess => entry !== undefined)
+    sttFailures = [...failuresByIndex.values()]
+
+    if (successfulSttProviders.length === 0) {
+      await rm(providersDir, { recursive: true, force: true })
+      throw new Error(sttFailures.map((failure) => `${failure.service}/${failure.model}: ${failure.message}`).join('; '))
+    }
+
+    const promptSource = selectPrimaryPromptProvider(successes)
+    if (!promptSource) {
+      throw new Error('No successful transcription provider available for the write pipeline')
+    }
+
+    await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(promptSource.result.segments))
+    transcriptionResult = {
+      result: promptSource.result,
+      metadata: successfulSttProviders.map((entry) => entry.metadata)
+    }
+  }
   
   let step3RunResults: StructuredRunResult[] = []
   let step3Results: Step3Metadata[] = []
@@ -145,17 +290,15 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   const llmOutputTokenCount = step3Results.length > 0
     ? step3Results.reduce((sum, s3) => sum + s3.outputTokenCount, 0)
     : undefined
+  const selectedSttTargets = sttTargets.map((target) => ({
+    service: target.service,
+    model: target.model
+  }))
 
   const estimated = preflightEstimate
     ? preflightToEstimated(preflightEstimate)
     : computeEstimatedCosts({
-      whisperModel: processingOptions.whisperModel,
-      groqSttModel: processingOptions.groqSttModel,
-      elevenlabsSttModel: processingOptions.elevenlabsSttModel,
-      openaiSttModel: processingOptions.openaiSttModel,
-      mistralSttModel: processingOptions.mistralSttModel,
-      assemblyaiSttModel: processingOptions.assemblyaiSttModel,
-      useReverb: processingOptions.useReverb,
+      sttTargets: selectedSttTargets,
       audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
       llmService,
       llmModel,
@@ -189,8 +332,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
 
   const cost = { estimated, actual }
   const estimatedTiming = computeEstimatedProcessingTimes({
-    transcriptionService: transcriptionResult.metadata.transcriptionService,
-    transcriptionModel: transcriptionResult.metadata.transcriptionModelName ?? transcriptionResult.metadata.transcriptionModel,
+    sttTargets: selectedSttTargets,
     audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
     llmService,
     llmModel,
@@ -234,7 +376,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
 
   const processingMetadata = {
     step1: step1Metadata,
-    step2: transcriptionResult.metadata,
+    step2: serializeOneOrMany(Array.isArray(transcriptionResult.metadata) ? transcriptionResult.metadata : [transcriptionResult.metadata]),
     ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
     ...(step4Metadata ? { step4: serializeOneOrMany(step4Metadata) } : {}),
     ...(step5Metadata ? { step5: serializeOneOrMany(step5Metadata) } : {}),
@@ -242,6 +384,7 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     ...(step7Metadata ? { step7: serializeOneOrMany(step7Metadata) } : {}),
     cost,
     ...(timing ? { timing } : {}),
+    ...(sttFailures.length > 0 ? { errors: sttFailures } : {}),
   }
   const metadataPath = `${outputDir}/metadata.json`
   const metadataJson = JSON.stringify(processingMetadata, null, 2)
@@ -249,29 +392,34 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   l.info(`Metadata:\n${metadataJson}`)
 
   const totalTime = Date.now() - processStart
+  const step2Entries = Array.isArray(transcriptionResult.metadata)
+    ? transcriptionResult.metadata
+    : [transcriptionResult.metadata]
 
   const stepSummaries: StepTimingCost[] = [
     {
       label: 'Download',
       processingTime: step1Time,
       cost: 0
-    },
-    {
-      label: 'Transcribe',
-      providerModel: (() => {
-        const { transcriptionService, transcriptionModel, transcriptionModelName } = transcriptionResult.metadata
-        const displayService = transcriptionService === 'whisper' ? 'whisper.cpp' : transcriptionService
-        const displayModel = transcriptionService === 'whisper'
-          ? (transcriptionModelName ?? processingOptions.whisperModel ?? transcriptionModel)
-          : transcriptionService === 'reverb'
-            ? 'reverb'
-            : (transcriptionModelName ?? transcriptionModel)
-        return `${displayService}/${displayModel}`
-      })(),
-      processingTime: transcriptionResult.metadata.processingTime,
-      cost: actual.steps.find(s => s.step === 'stt')?.cost ?? 0
     }
   ]
+
+  stepSummaries.push(...buildProviderStepSummaries(
+    'Transcribe',
+    'stt',
+    step2Entries,
+    actual.steps,
+    (entry) => {
+      const displayService = entry.transcriptionService === 'whisper' ? 'whisper.cpp' : entry.transcriptionService
+      const displayModel = entry.transcriptionService === 'whisper'
+        ? (entry.transcriptionModelName ?? processingOptions.whisperModel ?? entry.transcriptionModel)
+        : entry.transcriptionService === 'reverb'
+          ? 'reverb'
+          : (entry.transcriptionModelName ?? entry.transcriptionModel)
+      return `${displayService}/${displayModel}`
+    },
+    (entry) => entry.processingTime
+  ))
 
   if (step3Results.length > 0) {
     stepSummaries.push(...buildProviderStepSummaries(
@@ -332,6 +480,16 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
     audio: step1Metadata.audioFileName,
     transcript: 'transcription.txt'
   }
+  if (successfulSttProviders.length > 1) {
+    for (const provider of successfulSttProviders) {
+      if (!provider.relativeDir) {
+        continue
+      }
+      const key = `${provider.metadata.transcriptionService}-${provider.metadata.transcriptionModelName ?? provider.metadata.transcriptionModel}`
+      artifactFiles[`transcript-${key}`] = `${provider.relativeDir}/transcription.txt`
+      artifactFiles[`metadata-${key}`] = `${provider.relativeDir}/metadata.json`
+    }
+  }
   if (step3Results.length === 1) {
     artifactFiles['summary'] = step3Results[0]?.outputFileName ?? 'text.md'
   } else if (step3Results.length > 1) {
@@ -350,6 +508,10 @@ export const processVideo = async (options: ProcessingOptions, precomputedMetada
   artifactFiles['prompt'] = 'prompt.md'
   artifactFiles['metadata'] = 'metadata.json'
   l.report.complete(outputDir, artifactFiles, { steps: stepSummaries, totalTimeMs: totalTime, totalCost: actual.totalCost })
+
+  if (sttFailures.length > 0) {
+    l.warn(`write run completed with partial STT failures: ${sttFailures.map((failure) => `${failure.service}/${failure.model}: ${failure.message}`).join('; ')}`)
+  }
 
   return outputDir
 }

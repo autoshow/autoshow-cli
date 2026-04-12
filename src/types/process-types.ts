@@ -247,7 +247,12 @@ export type PreparedDocument = {
 export type ProcessDocumentOutput = {
   result: ExtractionResult
   step1Metadata: DocumentMetadata
-  step2Metadata: ExtractionMetadata
+  step2Metadata: ExtractionMetadata | ExtractionMetadata[]
+  step2Errors?: Array<{
+    service: string
+    model: string
+    message: string
+  }> | undefined
   outputDir: string
 }
 

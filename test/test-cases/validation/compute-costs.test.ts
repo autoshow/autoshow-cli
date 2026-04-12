@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { parseDurationToSeconds, computeEstimatedCosts, computeActualCosts } from '~/utils/pricing/compute-costs'
+import { computeActualProcessingTimes } from '~/utils/pricing/compute-processing-time'
 
 describe('parseDurationToSeconds', () => {
   test('returns 0 for empty string', () => {
@@ -167,6 +168,78 @@ describe('computeActualCosts STT', () => {
     expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'elevenlabs:scribe_v2',
       'assemblyai:universal-2'
+    ])
+  })
+})
+
+describe('computeActualCosts extract routing', () => {
+  test('computes one actual extract step per extraction metadata entry', () => {
+    const result = computeActualCosts({
+      step2: [
+        {
+          extractionMethod: 'pdf+ocrmypdf',
+          totalPages: 4,
+          ocrPages: 4,
+          textPages: 0,
+          processingTime: 1200,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 100
+        },
+        {
+          extractionMethod: 'mistral-ocr',
+          totalPages: 4,
+          ocrPages: 4,
+          textPages: 0,
+          processingTime: 800,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 100,
+          ocrModel: 'mistral-ocr-latest'
+        }
+      ]
+    })
+
+    const extractSteps = result.steps.filter((step) => step.step === 'extract')
+    expect(extractSteps).toHaveLength(2)
+    expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
+      'ocrmypdf:ocrmypdf',
+      'mistral:mistral-ocr-latest'
+    ])
+  })
+
+  test('computes actual extract timing for extraction metadata arrays', () => {
+    const result = computeActualProcessingTimes({
+      step2: [
+        {
+          extractionMethod: 'pdf+paddle-ocr',
+          totalPages: 3,
+          ocrPages: 3,
+          textPages: 0,
+          processingTime: 900,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 90
+        },
+        {
+          extractionMethod: 'mistral-ocr',
+          totalPages: 3,
+          ocrPages: 3,
+          textPages: 0,
+          processingTime: 700,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 90,
+          ocrModel: 'mistral-ocr-latest'
+        }
+      ]
+    })
+
+    const extractSteps = result.steps.filter((step) => step.step === 'extract')
+    expect(extractSteps).toHaveLength(2)
+    expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
+      'paddle-ocr:paddle-ocr',
+      'mistral:mistral-ocr-latest'
     ])
   })
 })

@@ -34,6 +34,39 @@ const isExtractionMetadata = (value: unknown): value is ExtractionMetadata => {
   return typeof value === 'object' && value !== null && 'extractionMethod' in value
 }
 
+const resolveExtractionProviderModel = (
+  metadata: ExtractionMetadata
+): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('mistral-ocr')) {
+    return {
+      provider: 'mistral',
+      model: metadata.ocrModel ?? 'mistral-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('paddle-ocr')) {
+    return {
+      provider: 'paddle-ocr',
+      model: 'paddle-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('ocrmypdf')) {
+    return {
+      provider: 'ocrmypdf',
+      model: 'ocrmypdf'
+    }
+  }
+  if (metadata.extractionMethod.includes('tesseract')) {
+    return {
+      provider: 'tesseract',
+      model: 'tesseract'
+    }
+  }
+  return {
+    provider: 'extract',
+    model: metadata.extractionMethod
+  }
+}
+
 const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
   if (typeof metadata.transcriptionModelName === 'string' && metadata.transcriptionModelName.length > 0) {
     return metadata.transcriptionModelName
@@ -83,7 +116,7 @@ type ComputeEstimatedProcessingTimesInput = {
 type ComputeActualProcessingTimesInput = {
   step1?: DocumentMetadata | undefined
   audioDurationSeconds?: number | undefined
-  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | undefined
+  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
   step5?: Step5Metadata | Step5Metadata[] | undefined
@@ -245,23 +278,37 @@ export const computeActualProcessingTimes = (
   const steps: TimingStepEntry[] = []
 
   if (Array.isArray(input.step2)) {
-    for (const step2Entry of input.step2) {
-      const model = resolveTranscriptionModel(step2Entry)
-      steps.push({
-        step: 'stt',
-        provider: step2Entry.transcriptionService,
-        model,
-        processingTimeMs: roundMs(step2Entry.processingTime),
-        ...(typeof input.audioDurationSeconds === 'number'
-          ? {
-              inputMetric: 'durationSeconds' as const,
-              inputValue: input.audioDurationSeconds,
-            }
-          : {
-              inputMetric: 'tokens' as const,
-              inputValue: step2Entry.tokenCount,
-            }),
-      })
+    if (input.step2.every(isExtractionMetadata)) {
+      for (const step2Entry of input.step2) {
+        const { provider, model } = resolveExtractionProviderModel(step2Entry)
+        steps.push({
+          step: 'extract',
+          provider,
+          model,
+          processingTimeMs: roundMs(step2Entry.processingTime),
+          inputMetric: 'pages',
+          inputValue: step2Entry.totalPages,
+        })
+      }
+    } else {
+      for (const step2Entry of input.step2) {
+        const model = resolveTranscriptionModel(step2Entry)
+        steps.push({
+          step: 'stt',
+          provider: step2Entry.transcriptionService,
+          model,
+          processingTimeMs: roundMs(step2Entry.processingTime),
+          ...(typeof input.audioDurationSeconds === 'number'
+            ? {
+                inputMetric: 'durationSeconds' as const,
+                inputValue: input.audioDurationSeconds,
+              }
+            : {
+                inputMetric: 'tokens' as const,
+                inputValue: step2Entry.tokenCount,
+              }),
+        })
+      }
     }
   } else if (input.step2 && isTranscriptionMetadata(input.step2)) {
     const model = resolveTranscriptionModel(input.step2)
@@ -283,13 +330,12 @@ export const computeActualProcessingTimes = (
   } else if (
     input.step2
     && isExtractionMetadata(input.step2)
-    && input.step2.extractionMethod.includes('mistral-ocr')
-    && typeof input.step2.ocrModel === 'string'
   ) {
+    const { provider, model } = resolveExtractionProviderModel(input.step2)
     steps.push({
       step: 'extract',
-      provider: 'mistral',
-      model: input.step2.ocrModel,
+      provider,
+      model,
       processingTimeMs: roundMs(input.step2.processingTime),
       inputMetric: 'pages',
       inputValue: input.step2.totalPages,

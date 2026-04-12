@@ -8,6 +8,7 @@ import {
   collectInputFiles,
   isDocumentByExtension,
   isInputDirectoryPath,
+  isLikelyDocumentTarget,
   processBatch,
   readInputList
 } from './target-utils'
@@ -24,6 +25,7 @@ import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { collectExplicitExtractTargets } from '~/cli/commands/process-steps/step-2-document/extract-targets'
 
 const runWithConcurrency = async <T,>(
   items: T[],
@@ -64,7 +66,7 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
 
-export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions): string[] => {
+export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions, resolvedTarget?: string): string[] => {
   if (command === 'metadata') {
     if (!opts.save) {
       return [opts.markdown ? 'metadata (logged to terminal as Markdown frontmatter YAML)' : 'metadata (logged to terminal)']
@@ -77,6 +79,9 @@ export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOpt
   if (isOcrCommand(command)) {
     if (opts.useEpubBun || opts.useEpubCalibre) {
       return ['metadata.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)']
+    }
+    if (collectExplicitExtractTargets(opts).length > 1) {
+      return ['Extracted text', 'providers/<service>-<model>/extraction.txt', 'metadata.json']
     }
     return ['Extracted text', 'metadata.json']
   }
@@ -94,7 +99,20 @@ export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOpt
     || opts.grokModel
   )
   const summaryFile = opts.structured && hasNonLlamaLlmProvider ? 'text.json' : 'text.md'
+  const documentWrite = command === 'write' && typeof resolvedTarget === 'string' && isLikelyDocumentTarget(resolvedTarget)
+  if (documentWrite) {
+    const files = ['Extracted text', summaryFile]
+    if (collectExplicitExtractTargets(opts).length > 1) {
+      files.push('providers/<service>-<model>/extraction.txt')
+    }
+    files.push('prompt.md')
+    files.push('metadata.json')
+    return files
+  }
   const files = ['Audio file', 'transcription.txt', summaryFile]
+  if (collectSttTargets(opts).length > 1) {
+    files.push('providers/<service>-<model>/transcription.txt')
+  }
   const ttsTargets = collectTtsTargets(opts)
   if (ttsTargets.length > 0 && getEffectiveLlmOutputCount(opts) === 1) {
     for (const target of ttsTargets) {
@@ -270,27 +288,6 @@ export const handleProcessTarget = async (
     explicitFlags
   )
 
-  if (command === 'write') {
-    const sttEngineCount = [opts.useReverb, opts.whisperExplicit, opts.elevenlabsSttModel, opts.groqSttModel, opts.openaiSttModel, opts.mistralSttModel, opts.assemblyaiSttModel].filter(Boolean).length
-    if (sttEngineCount > 1) {
-      throw CLIUsageError('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
-    }
-  }
-
-  if (isOcrCommand(command) || command === 'write') {
-    const ocrEngineCount = [opts.useOcrmypdf, opts.usePaddleOcr, opts.mistralOcrModel].filter(Boolean).length
-    if (ocrEngineCount > 1) {
-      throw CLIUsageError('Cannot use more than one extract OCR engine at the same time (--ocrmypdf, --paddle-ocr, --mistral-ocr)')
-    }
-  }
-
-  if (command === 'write') {
-    const musicProviderCount = [opts.elevenlabsMusicModel, opts.minimaxMusicModel].filter(Boolean).length
-    if (musicProviderCount > 1) {
-      throw CLIUsageError('Cannot use more than one music provider at the same time (--elevenlabs-music, --minimax-music)')
-    }
-  }
-
   const maxCents = resolveMaxCents(config.pricing)
   const plan = await resolveProcessTargetPlan(command, resolvedTarget, opts)
   const preflightTargets = getPlanTargets(plan)
@@ -304,7 +301,7 @@ export const handleProcessTarget = async (
     if (preflightTargets.length === 1) {
       const estimate = await buildAggregatedPriceEstimate(command, preflightTargets[0] as string, opts, undefined)
       l.report.estimate(estimate)
-      l.report.expectedOutput('./output/<timestamp>_<label>/', buildExpectedFilesList(command, opts))
+      l.report.expectedOutput('./output/<timestamp>_<label>/', buildExpectedFilesList(command, opts, preflightTargets[0] as string))
       return
     }
 

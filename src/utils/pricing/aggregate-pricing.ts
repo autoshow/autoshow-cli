@@ -23,6 +23,7 @@ import {
 import { estimateMistralOcrCost } from '~/cli/commands/process-steps/step-2-document/document-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import type { SttStepEstimate, ExtractStepEstimate, LlmStepEstimate, TtsStepEstimate, ImageStepEstimate, MusicStepEstimate, VideoStepEstimate, StepEstimate, AggregatedPriceEstimate } from '~/types'
+import { isLikelyDocumentTarget } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 export type { StepEstimate, AggregatedPriceEstimate } from '~/types'
 
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
@@ -247,14 +248,16 @@ export const buildAggregatedPriceEstimate = async (
   let totalEstimatedCost = 0
   const notes: string[] = []
 
-  if (isSttCommand(command) || command === 'write') {
+  const documentWrite = command === 'write' && isLikelyDocumentTarget(resolvedTarget)
+
+  if (isSttCommand(command) || (command === 'write' && !documentWrite)) {
     for (const stt of await buildSttEstimates(resolvedTarget, opts)) {
       steps.push(stt)
       totalEstimatedCost += stt.totalCost
     }
   }
 
-  if (isOcrCommand(command)) {
+  if (isOcrCommand(command) || documentWrite) {
     const extract = await buildExtractEstimate(resolvedTarget, opts)
     if (extract) {
       steps.push(extract)
