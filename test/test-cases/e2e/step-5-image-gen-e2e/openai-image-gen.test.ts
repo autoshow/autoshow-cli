@@ -25,11 +25,12 @@ test('--price allows multiple image providers and reports each image step', asyn
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1-mini', '--minimax-image', 'image-01', '--price'],
   )
+  const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
-  expect(result.stdout).toContain('"provider": "openai"')
-  expect(result.stdout).toContain('"provider": "minimax"')
-  expect(result.stdout).toContain('generated-image-openai-gpt-image-1-mini.png')
-  expect(result.stdout).toContain('generated-image-minimax-image-01.jpeg')
+  expect(output).toContain('"provider": "openai"')
+  expect(output).toContain('"provider": "minimax"')
+  expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')
+  expect(output).toContain('generated-image-minimax-image-01.jpeg')
 })
 
 describe('openai image format options', () => {

@@ -39,6 +39,7 @@ describe("kitten-tts pipeline", () => {
       const result = await runCommand(
         [
           "src/cli/create-cli.ts",
+          "write",
           STABLE_LOCAL_AUDIO_PATH,
           "--groq", "openai/gpt-oss-20b",
           "--kitten-tts", model,
@@ -48,7 +49,7 @@ describe("kitten-tts pipeline", () => {
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
       expect(outputDir).not.toBeNull()
 
       if (outputDir) {
@@ -101,12 +102,13 @@ describe("kitten-tts pipeline", () => {
         'gpt-4o-mini-tts',
         '--price'
       ])
+      const output = `${result.stdout}\n${result.stderr}`
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('TTS estimate omitted')
-      expect(result.stdout).not.toContain('"step": "tts"')
-      expect(result.stdout).not.toContain('speech-kitten-kitten-tts-mini.wav')
-      expect(result.stdout).not.toContain('speech-openai-gpt-4o-mini-tts.wav')
+      expect(output).toContain('TTS estimate omitted')
+      expect(output).not.toContain('"step": "tts"')
+      expect(output).not.toContain('speech-kitten-kitten-tts-mini.wav')
+      expect(output).not.toContain('speech-openai-gpt-4o-mini-tts.wav')
     })
 
     test('write can emit multiple speech artifacts from one summary', async () => {

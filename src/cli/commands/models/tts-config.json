@@ -70,7 +70,7 @@
         "costPer1kCharsCents": 6,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 18095
+          "msPer1KChars": 13400
         }
       },
       "eleven_turbo_v2_5": {
@@ -91,12 +91,20 @@
       "speech-2.8-hd": {
         "description": "speech-2.8-hd — high quality synthesis",
         "costPer1kCharsUSD": 0.1,
-        "costPer1kCharsCents": 10
+        "costPer1kCharsCents": 10,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 63061
+        }
       },
       "speech-2.8-turbo": {
         "description": "speech-2.8-turbo — low latency synthesis",
         "costPer1kCharsUSD": 0.06,
-        "costPer1kCharsCents": 6
+        "costPer1kCharsCents": 6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 78672
+        }
       }
     }
   },
@@ -137,7 +145,7 @@
         "outputCostPer1MCharsCents": 1200,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 22194
+          "msPer1KChars": 19655
         }
       }
     }
@@ -152,7 +160,7 @@
         "costPer1kCharsCents": 0.05,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 82884
+          "msPer1KChars": 69461
         }
       },
       "gemini-2.5-pro-preview-tts": {

@@ -18,12 +18,13 @@ test('--price allows Gemini with another image provider', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1-mini', '--imagen-count', '2', '--price'],
   )
+  const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
-  expect(result.stdout).toContain('"provider": "gemini"')
-  expect(result.stdout).toContain('"provider": "openai"')
-  expect(result.stdout).toContain('generated-image-gemini-imagen-4.0-generate-001.png')
-  expect(result.stdout).toContain('generated-image-gemini-imagen-4.0-generate-001-2.png')
-  expect(result.stdout).toContain('generated-image-openai-gpt-image-1-mini.png')
+  expect(output).toContain('"provider": "gemini"')
+  expect(output).toContain('"provider": "openai"')
+  expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001.png')
+  expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001-2.png')
+  expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')
 })
 
 test('rejects --image-size for imagen-4.0-fast-generate-001', async () => {

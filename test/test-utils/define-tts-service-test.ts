@@ -1,6 +1,8 @@
 import { expect } from 'bun:test'
 import {
+  runCommand,
   fileExists,
+  findLatestDirectory,
   cleanupTestOutput,
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
@@ -9,10 +11,20 @@ import { budgetedTest } from './budget'
 import {
   defineInvalidModelTest,
   definePriceEstimateTest,
-  runCommandAndExpectOutputDir,
   shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
+
+const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
+
+const isTransientMinimaxTtsFailure = (output: string): boolean => {
+  const clean = stripAnsi(output)
+  return (
+    /minimax-tts-chunk-\d+: deadline exceeded/i.test(clean) ||
+    /MiniMax TTS (task creation|task query|download) failed \((408|425|429|500|502|503|504)\)/i.test(clean) ||
+    /fetch failed|network error|econnreset|econnrefused|etimedout|socket hang up|dns/i.test(clean)
+  )
+}
 
 export const defineTTSServiceTest = ({
   models,
@@ -64,14 +76,37 @@ export const defineTTSServiceTest = ({
 
       await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 
-      const outputDir = await runCommandAndExpectOutputDir(STABLE_TTS_MD_TITLE, [
+      const args = [
         'src/cli/create-cli.ts',
         'tts',
         STABLE_TTS_MD_PATH,
         cliFlag,
         model,
         ...(extraArgs ?? [])
-      ])
+      ]
+      let result = await runCommand(args)
+
+      if (result.exitCode !== 0 && ttsService === 'minimax') {
+        const combinedOutput = `${result.stdout}\n${result.stderr}`
+        if (isTransientMinimaxTtsFailure(combinedOutput)) {
+          console.log(`Retrying once after transient MiniMax TTS error for ${model}`)
+          await Bun.sleep(2_000)
+          result = await runCommand(args)
+
+          if (result.exitCode !== 0) {
+            const retryOutput = `${result.stdout}\n${result.stderr}`
+            if (isTransientMinimaxTtsFailure(retryOutput)) {
+              console.log(`Skipping: MiniMax transient TTS error persisted for ${model}`)
+              return
+            }
+          }
+        }
+      }
+
+      expect(result.exitCode).toBe(0)
+
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+      expect(outputDir).not.toBeNull()
 
       if (outputDir) {
         const audioExists = await fileExists(`${outputDir}/speech.wav`)

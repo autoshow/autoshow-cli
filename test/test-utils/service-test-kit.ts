@@ -54,7 +54,7 @@ export const runCommandAndExpectOutputDir = async (
   const result = await runCommand(args)
   expect(result.exitCode).toBe(0)
 
-  const outputDir = await findLatestDirectory(title)
+  const outputDir = result.outputDir ?? await findLatestDirectory(title)
   expect(outputDir).not.toBeNull()
   return outputDir
 }

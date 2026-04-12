@@ -55,7 +55,7 @@
         "costPerImageCents": 8,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 19793
+          "msPerImage": 24452
         }
       },
       "gpt-image-1": {
@@ -64,7 +64,7 @@
         "costPerImageCents": 4,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 45363
+          "msPerImage": 40590
         }
       },
       "gpt-image-1-mini": {
@@ -73,7 +73,7 @@
         "costPerImageCents": 2,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 9347
+          "msPerImage": 10640
         }
       }
     }
@@ -85,7 +85,11 @@
       "image-01": {
         "description": "image-01 — text-to-image generation",
         "costPerImageUSD": 0.0035,
-        "costPerImageCents": 0.35
+        "costPerImageCents": 0.35,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 15710
+        }
       }
     }
   }
