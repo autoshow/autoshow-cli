@@ -3,6 +3,7 @@ import type { AggregatedPriceEstimate, RuntimeOptions } from '~/types'
 import { buildExpectedFilesList, shouldRunCommandPreflight } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import {
   classifySttProviderFailure,
+  filterEstimatedSttCosts,
   filterSttPreflightEstimate,
   prioritizeCloudSttTargetIndices,
   selectPrimaryPromptProvider,
@@ -45,6 +46,21 @@ describe('STT runtime helpers', () => {
       totalEstimatedCost: 10,
       steps: [
         { step: 'stt', provider: 'mistral', model: 'voxtral-mini-latest', durationSeconds: 60, totalCost: 10, costMultiplier: 1 }
+      ]
+    })
+  })
+
+  test('filters estimated STT costs down to STT steps only', () => {
+    expect(filterEstimatedSttCosts({
+      totalCost: 65,
+      steps: [
+        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-latest', cost: 10, costMultiplier: 1, durationSeconds: 60 },
+        { step: 'video', provider: 'gemini', model: 'veo-3.1-fast-generate-preview', cost: 55, costMultiplier: 1 }
+      ]
+    })).toEqual({
+      totalCost: 10,
+      steps: [
+        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-latest', cost: 10, costMultiplier: 1, durationSeconds: 60 }
       ]
     })
   })

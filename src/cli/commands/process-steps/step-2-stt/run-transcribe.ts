@@ -49,6 +49,16 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
   'assemblyai'
 ])
 
+const warnedMessages = new Set<string>()
+
+const warnOnce = (message: string): void => {
+  if (warnedMessages.has(message)) {
+    return
+  }
+  warnedMessages.add(message)
+  l.warn(message)
+}
+
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < (1024 * 1024)) return `${(bytes / 1024).toFixed(1)} KB`
@@ -189,14 +199,14 @@ export const resolveDiarizationOptions = (
 
   if (!capabilities.supportsSpeakerCountHint) {
     if (engine === 'mistral') {
-      l.warn(`Ignoring --speaker-count=${speakerCount} for Mistral because speaker-count hints are unsupported; enabling diarization without a count hint`)
+      warnOnce(`Ignoring --speaker-count=${speakerCount} for Mistral because speaker-count hints are unsupported; enabling diarization without a count hint`)
       return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : {}
     }
     if (engine === 'openai') {
-      l.warn(`Ignoring --speaker-count=${speakerCount} for OpenAI because count-only diarization hints are unsupported; use --speaker-name with matching --speaker-reference clips instead`)
+      warnOnce(`Ignoring --speaker-count=${speakerCount} for OpenAI because count-only diarization hints are unsupported; use --speaker-name with matching --speaker-reference clips instead`)
       return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
     }
-    l.warn(`Ignoring --speaker-count=${speakerCount} because the ${engine} transcription engine does not support speaker-count hints`)
+    warnOnce(`Ignoring --speaker-count=${speakerCount} because the ${engine} transcription engine does not support speaker-count hints`)
     return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
   }
 

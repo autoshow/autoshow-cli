@@ -100,6 +100,8 @@ type StepSummaryEntry = {
   cost: string
 }
 
+const HUMAN_PRIMARY_ARTIFACT_KEYS = ['prompt', 'metadata', 'audio', 'audio-wav', 'transcript'] as const
+
 const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCost: number) => {
   const entries: StepSummaryEntry[] = steps.map(step => ({
     label: step.label,
@@ -111,6 +113,34 @@ const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCo
     steps: entries,
     total: { time: formatDuration(totalTimeMs), cost: formatCost(totalCost) }
   }
+}
+
+const buildHumanArtifactSummary = (outputDir: string, files: Record<string, string>): Record<string, unknown> => {
+  const artifacts = Object.fromEntries(
+    HUMAN_PRIMARY_ARTIFACT_KEYS
+      .flatMap((key) => {
+        const file = files[key]
+        return file ? [[key, `${outputDir}/${file}`] as const] : []
+      })
+  )
+
+  const providerFiles = Object.entries(files).filter(([, file]) => file.startsWith('providers/'))
+  const providerTranscripts = providerFiles.filter(([key]) => key.startsWith('transcript-')).length
+  const providerMetadata = providerFiles.filter(([key]) => key.startsWith('metadata-')).length
+
+  const summary: Record<string, unknown> = {}
+  if (Object.keys(artifacts).length > 0) {
+    summary['artifacts'] = artifacts
+  }
+  if (providerFiles.length > 0) {
+    summary['providers'] = {
+      dir: `${outputDir}/providers`,
+      transcripts: providerTranscripts,
+      metadata: providerMetadata
+    }
+  }
+
+  return summary
 }
 
 export const createReporter = (logger: Logger): Reporter => {
@@ -142,11 +172,7 @@ export const createReporter = (logger: Logger): Reporter => {
     complete: (outputDir, files, options) => {
       logger.write('info', `Output directory: ${outputDir}`, { category: 'artifact' })
       logger.write('success', 'Complete!', { category: 'artifact' })
-      const result: Record<string, unknown> = {
-        files: Object.fromEntries(
-          Object.entries(files).map(([key, name]) => [key, `${outputDir}/${name}`])
-        )
-      }
+      const result: Record<string, unknown> = buildHumanArtifactSummary(outputDir, files)
       if (options?.metrics !== undefined) {
         result['metrics'] = options.metrics
       }

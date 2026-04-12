@@ -275,6 +275,23 @@ const buildSingleStepSummaries = (
   }
 ]
 
+export const filterEstimatedSttCosts = (
+  estimate: ReturnType<typeof computeEstimatedCosts>
+): ReturnType<typeof computeEstimatedCosts> => {
+  const steps = estimate.steps.filter((step) => step.step === 'stt')
+  return {
+    totalCost: steps.reduce((sum, step) => sum + step.cost, 0),
+    steps
+  }
+}
+
+const writeSttMetadata = async (outputDir: string, metadataJson: string): Promise<void> => {
+  const metadataPath = `${outputDir}/metadata.json`
+  await Bun.write(metadataPath, metadataJson)
+  l.info(`Metadata file: ${metadataPath}`)
+  l.debug(`Metadata:\n${metadataJson}`)
+}
+
 const createAllProvidersFailedError = (failures: ProviderFailure[]): Error => {
   const error = new Error(failures.map(formatProviderFailure).join('; '))
   ;(error as Error & { exitCode?: number }).exitCode = 2
@@ -326,7 +343,7 @@ export const processStt = async (
         structured: options.structured
       })
 
-      const estimated = resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds)
+      const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds))
       const actual = computeActualCosts({
         step1: prepared.step1Metadata,
         step2: transcription.metadata
@@ -350,8 +367,7 @@ export const processStt = async (
         cost,
         ...(timing ? { timing } : {})
       }, null, 2)
-      await Bun.write(`${outputDir}/metadata.json`, metadataJson)
-      l.info(`Metadata:\n${metadataJson}`)
+      await writeSttMetadata(outputDir, metadataJson)
 
       const artifactFiles: Record<string, string> = {
         audio: prepared.step1Metadata.audioFileName,
@@ -451,7 +467,7 @@ export const processStt = async (
       })
     }
 
-    const estimated = resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds)
+    const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds))
     const actual = computeActualCosts({
       step1: prepared.step1Metadata,
       step2: successfulProviders.map((entry) => entry.metadata)
@@ -507,8 +523,7 @@ export const processStt = async (
           }
         : {})
     }, null, 2)
-    await Bun.write(`${outputDir}/metadata.json`, metadataJson)
-    l.info(`Metadata:\n${metadataJson}`)
+    await writeSttMetadata(outputDir, metadataJson)
 
     const artifactFiles: Record<string, string> = {
       prompt: 'prompt.md',
