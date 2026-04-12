@@ -40,14 +40,14 @@ export const defineLLMWriteTest = ({
       return
     }
 
-    let result = await runCommand(["src/cli/create-cli.ts", STABLE_LOCAL_AUDIO_PATH, cliFlag, model])
+    let result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, cliFlag, model])
 
     if (result.exitCode !== 0 && llmService === 'gemini') {
       const combinedOutput = `${result.stdout}\n${result.stderr}`
       if (isGeminiTransientUnavailable(combinedOutput)) {
         console.log(`Retrying once after transient Gemini availability error for ${model}`)
         await Bun.sleep(2_000)
-        result = await runCommand(["src/cli/create-cli.ts", STABLE_LOCAL_AUDIO_PATH, cliFlag, model])
+        result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, cliFlag, model])
 
         if (result.exitCode !== 0) {
           const retryOutput = `${result.stdout}\n${result.stderr}`

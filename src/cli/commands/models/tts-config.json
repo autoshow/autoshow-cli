@@ -28,7 +28,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 37876
+          "msPer1KChars": 105714
         }
       },
       "kitten-tts-nano": {
@@ -37,7 +37,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 21910
+          "msPer1KChars": 24555
         }
       },
       "kitten-tts-nano-0.8-int8": {
