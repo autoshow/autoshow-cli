@@ -5,6 +5,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { selectBatchItems } from './batch/batch-select'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/stt-batch'
 
 const buildInputListBatchItems = (items: string[]): BatchItem[] =>
   items.map((item, index) => ({
@@ -47,6 +48,17 @@ export const processResolvedInputListBatch = async (
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<void> => {
+  if (isSttCommand(command)) {
+    const result = await runSttBatch(resolvedBatch.selectedUrls, 'inputs', opts, {
+      source: resolvedBatch.source,
+      selectedItems: resolvedBatch.selectedItems,
+      concurrency: opts.batchConcurrency,
+      totalCount: resolvedBatch.totalCount
+    })
+    throwIfSttBatchIncomplete(result)
+    return
+  }
+
   const { ok, incomplete, fail, failureExitCode } = await processBatch(resolvedBatch.selectedUrls, 'inputs', command, opts, processSingleTarget, {
     source: resolvedBatch.source,
     selectedItems: resolvedBatch.selectedItems,

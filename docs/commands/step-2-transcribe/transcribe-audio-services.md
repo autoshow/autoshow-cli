@@ -116,9 +116,12 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
 - In multi-item batch mode with more than one hosted STT provider active, `--stt-provider-concurrency` is treated as an upper bound and the effective hosted-provider concurrency is auto-clamped to `1` per item for reliability.
-- Multi-provider STT items are only considered complete when every requested provider succeeded. If any provider is still missing, the run exits non-zero, keeps all successful provider outputs, and records `completionStatus`, `requestedProviders`, `providerStates`, and `missingProviders` in `metadata.json`.
+- Multi-item multi-provider STT batches now do one automatic retry-only backfill sweep in the same invocation. Retryable missing provider outputs are rerun from the batch manifest before the command exits.
+- If a provider hits a clearly permanent provider-wide failure during a batch, later file/provider pairs are marked as `skipped` instead of being retried blindly for every remaining item.
+- Multi-provider STT items are only considered complete when every requested provider succeeded. If any provider is still missing after automatic backfill, the run exits non-zero, keeps all successful provider outputs, and records `completionStatus`, `requestedProviders`, `providerStates`, and `missingProviders` in `metadata.json`.
 - Batch `info.json` entries now include each item's `outputDir` and the same completion fields so missing provider/file pairs can be resumed later.
-- Failed providers keep `providers/<service>-<model>/error.json`, and validation-style failures also keep `raw-response.json` for debugging.
+- Failed providers keep `providers/<service>-<model>/error.json`, and validation-style failures also keep `raw-response.json` for debugging. Skipped providers also write a local `error.json` explaining which earlier provider failure blocked the attempt.
 - `--resume-missing-from` takes a batch directory produced by a prior STT batch run. With no provider flags, it reuses the original requested provider set. If provider flags are supplied, they must be a subset of the original requested providers.
 - `--resume-missing-from` does not take a positional input and does not support `--price` / `--dry-run`.
+- Incomplete STT batches still exit with code `2`, but they are reported as operational batch failures rather than CLI usage errors.
 - Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).

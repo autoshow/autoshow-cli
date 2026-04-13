@@ -15,7 +15,7 @@ import { setupCommand } from '~/cli/commands/process-steps/step-0-setup/define-s
 import { sampleCommand } from '~/cli/commands/sample/define-sample-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
-import { CLIUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
+import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { modelsCommand } from '~/cli/commands/models/define-models-command'
 import { linksCommand } from '~/cli/commands/links/define-links-command'
 import * as l from '~/logger'
@@ -43,12 +43,12 @@ import {
 } from '~/cli/help-colors'
 
 const cliErrorHandler = (error: unknown): void => {
-  const exitCode = normalizeExitCode(error)
-  if (exitCode === 2) {
+  if (isUsageError(error)) {
     l.error(`Usage error: ${usageMessage(error)}`)
     process.exit(2)
   }
 
+  const exitCode = normalizeExitCode(error)
   l.error('Command failed', error)
 
   const ERROR_HINTS: Record<string, string> = {
@@ -69,7 +69,7 @@ const cliErrorHandler = (error: unknown): void => {
     }
   }
 
-  process.exit(1)
+  process.exit(exitCode)
 }
 
 const CLI_VERSION = (await import('../../package.json')).version as string

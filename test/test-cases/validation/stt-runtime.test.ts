@@ -8,6 +8,7 @@ import {
   prioritizeCloudSttTargetIndices,
   resolveEffectiveSttProviderConcurrency,
   selectPrimaryPromptProvider,
+  shouldBlockSttProviderForBatch,
 } from '~/cli/commands/process-steps/process-stt'
 import type { SttTarget } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { getSttEstimation } from '~/cli/commands/models/model-loader'
@@ -190,6 +191,30 @@ describe('STT runtime helpers', () => {
     expect(failure.retryable).toBe(false)
     expect(failure.stage).toBe('transcribe')
     expect(failure.status).toBe(400)
+  })
+
+  test('blocks a provider batch-wide for auth failures', () => {
+    expect(shouldBlockSttProviderForBatch({
+      message: 'Mistral transcription failed (401): unauthorized',
+      retryable: false,
+      stage: 'transcribe',
+      status: 401
+    })).toBe(true)
+  })
+
+  test('blocks a provider batch-wide for missing setup errors', () => {
+    expect(shouldBlockSttProviderForBatch({
+      message: 'MISTRAL_API_KEY environment variable is required for Mistral transcription',
+      retryable: false
+    })).toBe(true)
+  })
+
+  test('does not block a provider batch-wide for pair-local validation failures', () => {
+    expect(shouldBlockSttProviderForBatch({
+      message: 'Invalid data structure for Soniox transcript response: {"tokens":["Invalid type: Expected Array but received Object"]}',
+      retryable: false,
+      stage: 'transcript'
+    })).toBe(false)
   })
 
   test('treats Bun socket-closed transport failures as retryable STT provider failures', () => {

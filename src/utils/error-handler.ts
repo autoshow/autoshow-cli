@@ -12,10 +12,10 @@ export const CLIUsageError = (message: string): Error => {
   return error
 }
 
-const isCLIUsageError = (error: unknown): boolean =>
+export const isCLIUsageError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'CLIUsageError'
 
-const isUsageError = (error: unknown): boolean => {
+export const isUsageError = (error: unknown): boolean => {
   return (
     isCLIUsageError(error) ||
     error instanceof NoSuchCommandError ||

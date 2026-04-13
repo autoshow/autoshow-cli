@@ -6,6 +6,7 @@ import { validateData } from '~/utils/validate/validation'
 import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
+import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/stt-batch-coordinator'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
 import { ensureDirectory, fileExists, writeFile } from '~/utils/cli-utils'
 import {
@@ -678,7 +679,8 @@ export const processSingleTarget = async (
   item: string,
   baseDir: string,
   opts: RuntimeOptions,
-  preflightEstimate?: AggregatedPriceEstimate
+  preflightEstimate?: AggregatedPriceEstimate,
+  runOptions?: { sttBatchCoordinator?: SttBatchCoordinator | undefined }
 ): Promise<BatchItemProcessResult | void> => {
   const displayCommand = canonicalizeProcessCommand(command)
 
@@ -762,7 +764,11 @@ export const processSingleTarget = async (
     }
 
     if (isSttCommand(command)) {
-      return { outputDir: await processStt({ url: item }, baseDir, opts, preflightEstimate) }
+      return {
+        outputDir: await processStt({ url: item }, baseDir, opts, preflightEstimate, {
+          ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {})
+        })
+      }
     }
 
     const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)
@@ -795,7 +801,11 @@ export const processSingleTarget = async (
   }
 
   if (isSttCommand(command)) {
-    return { outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate) }
+    return {
+      outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate, {
+        ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {})
+      })
+    }
   }
 
   const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)

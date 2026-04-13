@@ -3,6 +3,7 @@ import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { isOcrCommand, isSttCommand } from '~/types'
 import { collectInputFiles, isDocumentByExtension, isInputDirectoryPath, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/stt-batch'
 
 export const handleDirectoryTargetBatch = async (
   resolvedTarget: string,
@@ -23,6 +24,14 @@ export const handleDirectoryTargetBatch = async (
   }
 
   const label = includeUrlsFromInputDir ? 'input' : 'files'
+  if (isSttCommand(command)) {
+    const result = await runSttBatch(all, label, opts, {
+      concurrency: opts.batchConcurrency
+    })
+    throwIfSttBatchIncomplete(result)
+    return
+  }
+
   const { ok, incomplete, fail, failureExitCode } = await processBatch(all, label, command, opts, processSingleTarget, {
     concurrency: opts.batchConcurrency
   })

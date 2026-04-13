@@ -26,6 +26,7 @@ import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/proces
 import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume-stt-batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch'
 import { collectExplicitExtractTargets } from '~/cli/commands/process-steps/step-2-document/extract-targets'
 
 const runWithConcurrency = async <T,>(
@@ -374,6 +375,22 @@ export const handleProcessTarget = async (
 
   if (plan.kind === 'resolved_batch') {
     const resolved = plan.resolvedBatch
+    if (isSttCommand(command)) {
+      const result = await runSttBatch(
+        resolved.selectedUrls,
+        resolved.source.title ?? resolved.source.sourceKind,
+        opts,
+        {
+          source: resolved.source,
+          selectedItems: resolved.selectedItems,
+          concurrency: opts.batchConcurrency,
+          totalCount: resolved.totalCount
+        }
+      )
+      throwIfSttBatchIncomplete(result)
+      return
+    }
+
     const { ok, incomplete, fail, failureExitCode } = await processBatch(
       resolved.selectedUrls,
       resolved.source.title ?? resolved.source.sourceKind,
@@ -400,6 +417,12 @@ export const handleProcessTarget = async (
 
   if (plan.kind === 'youtube_collection') {
     l.info(`Detected YouTube collection URL, processing ${plan.targets.length} videos`)
+    if (isSttCommand(command)) {
+      const result = await runSttBatch(plan.targets, 'youtube_collection', opts)
+      throwIfSttBatchIncomplete(result)
+      return
+    }
+
     const { incomplete, fail, failureExitCode } = await processBatch(plan.targets, 'youtube_collection', command, opts, processSingleTarget)
     if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && plan.targets.length > 0 && fail === plan.targets.length)) {
       const problemCount = isSttCommand(command) ? incomplete + fail : fail

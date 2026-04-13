@@ -12,6 +12,7 @@ import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
 import { getTranscribeEngineCapabilities, transcribeTarget } from './step-2-stt/run-transcribe'
+import { SttBatchCoordinator, type SttBatchBlockedProviderReason } from './step-2-stt/stt-batch-coordinator'
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { classifyFetchRetry } from '~/utils/retries'
@@ -26,6 +27,7 @@ export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local'
 export type SttRecordedProviderError = {
   message: string
   retryable: boolean
+  skipped?: boolean | undefined
   stage?: string | undefined
   status?: number | undefined
   errorFile?: string | undefined
@@ -37,7 +39,7 @@ export type SttProviderState = {
   model: string
   local: boolean
   artifactDir: string
-  status: 'succeeded' | 'missing' | 'failed'
+  status: 'succeeded' | 'missing' | 'failed' | 'skipped'
   attempts: number
   retryable?: boolean | undefined
   lastError?: SttRecordedProviderError | undefined
@@ -71,6 +73,7 @@ type ProcessSttRunOptions = {
   outputDir?: string | undefined
   requestedTargets?: SttTarget[] | undefined
   targetsToRun?: SttTarget[] | undefined
+  batchCoordinator?: SttBatchCoordinator | undefined
 }
 
 type PromptSelectionCandidate = ProviderSuccess
@@ -89,6 +92,19 @@ const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
 
 const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/
 const STT_RECOVERY_MAX_PASSES = 3
+const BATCH_BLOCKING_AUTH_STATUS_CODES = new Set([401, 403])
+const BATCH_BLOCKING_MODEL_ERROR_CODES = new Set([400, 404, 422])
+const BATCH_BLOCKING_MODEL_MESSAGE_PATTERNS = [
+  /\bmodel\b.*\b(not found|does not exist|unsupported|not supported|unknown|invalid|unrecognized)\b/i,
+  /\b(not found|does not exist|unsupported|not supported|unknown|invalid|unrecognized)\b.*\bmodel\b/i,
+  /\bendpoint\b.*\bnot found\b/i,
+  /\bspeaker reference\b.*\bnot found\b/i
+]
+const BATCH_BLOCKING_SETUP_MESSAGE_PATTERNS = [
+  /\benvironment variable\b.*\brequired\b/i,
+  /\bapi[_ -]?key\b.*\b(required|not set|missing)\b/i,
+  /\bcredentials?\b.*\b(required|missing|invalid)\b/i
+]
 
 const emittedInfoMessages = new Set<string>()
 const emittedWarnMessages = new Set<string>()
@@ -186,6 +202,32 @@ export const classifySttProviderFailure = (
   }
 }
 
+export const shouldBlockSttProviderForBatch = (
+  failure: Pick<ProviderFailure, 'message' | 'retryable' | 'stage' | 'status'>
+): boolean => {
+  if (failure.retryable) {
+    return false
+  }
+
+  if (BATCH_BLOCKING_SETUP_MESSAGE_PATTERNS.some((pattern) => pattern.test(failure.message))) {
+    return true
+  }
+
+  if (typeof failure.status === 'number' && BATCH_BLOCKING_AUTH_STATUS_CODES.has(failure.status)) {
+    return true
+  }
+
+  const isProviderConfigStage = failure.stage === undefined
+    || failure.stage === 'transcribe'
+    || failure.stage === 'create'
+    || failure.stage === 'upload'
+
+  return isProviderConfigStage
+    && typeof failure.status === 'number'
+    && BATCH_BLOCKING_MODEL_ERROR_CODES.has(failure.status)
+    && BATCH_BLOCKING_MODEL_MESSAGE_PATTERNS.some((pattern) => pattern.test(failure.message))
+}
+
 const extractProviderRawResponse = (error: unknown): unknown =>
   collectErrorChain(error).find((entry) => entry.rawResponse !== undefined)?.rawResponse
 
@@ -228,6 +270,24 @@ const writeProviderFailureArtifacts = async (
     errorFile,
     ...(rawResponseFile ? { rawResponseFile } : {})
   }
+}
+
+const writeSkippedProviderArtifact = async (
+  providerDir: string,
+  reason: SttBatchBlockedProviderReason
+): Promise<Pick<ProviderFailure, 'errorFile'>> => {
+  const errorFile = 'error.json'
+  await Bun.write(join(providerDir, errorFile), JSON.stringify({
+    service: reason.service,
+    model: reason.model,
+    message: reason.message,
+    retryable: reason.retryable,
+    skipped: true,
+    ...(reason.stage ? { stage: reason.stage } : {}),
+    ...(typeof reason.status === 'number' ? { status: reason.status } : {})
+  }, null, 2))
+
+  return { errorFile }
 }
 
 type EffectiveSttProviderConcurrency = {
@@ -347,9 +407,12 @@ const toRequestedProvider = (target: SttTarget): SttRequestedProvider => ({
   ...(target.diarizationOptions ? { diarizationOptions: target.diarizationOptions } : {})
 })
 
-const toRecordedProviderError = (failure: Omit<ProviderFailure, 'index' | 'service' | 'model'>): SttRecordedProviderError => ({
+const toRecordedProviderError = (
+  failure: Omit<ProviderFailure, 'index' | 'service' | 'model'> & { skipped?: boolean | undefined }
+): SttRecordedProviderError => ({
   message: failure.message,
   retryable: failure.retryable,
+  ...(failure.skipped === true ? { skipped: true } : {}),
   ...(failure.stage ? { stage: failure.stage } : {}),
   ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
   ...(failure.errorFile ? { errorFile: failure.errorFile } : {}),
@@ -423,7 +486,7 @@ const parseStoredProviderState = (value: unknown): SttProviderState | undefined 
     return undefined
   }
 
-  if (value['status'] !== 'succeeded' && value['status'] !== 'missing' && value['status'] !== 'failed') {
+  if (value['status'] !== 'succeeded' && value['status'] !== 'missing' && value['status'] !== 'failed' && value['status'] !== 'skipped') {
     return undefined
   }
 
@@ -435,6 +498,7 @@ const parseStoredProviderState = (value: unknown): SttProviderState | undefined 
     ? {
         message: value['lastError']['message'],
         retryable: value['lastError']['retryable'] === true,
+        ...(value['lastError']['skipped'] === true ? { skipped: true } : {}),
         ...(typeof value['lastError']['stage'] === 'string' ? { stage: value['lastError']['stage'] } : {}),
         ...(typeof value['lastError']['status'] === 'number' ? { status: value['lastError']['status'] } : {}),
         ...(typeof value['lastError']['errorFile'] === 'string' ? { errorFile: value['lastError']['errorFile'] } : {}),
@@ -606,6 +670,7 @@ const buildMetadataErrorEntries = (providerStates: SttProviderState[]): Array<Re
       service: state.service,
       model: state.model,
       message: state.lastError?.message,
+      ...(state.status === 'skipped' ? { skipped: true } : {}),
       ...(state.lastError?.stage ? { stage: state.lastError.stage } : {}),
       ...(typeof state.lastError?.status === 'number' ? { status: state.lastError.status } : {}),
       retryable: state.lastError?.retryable === true,
@@ -934,7 +999,38 @@ export const processStt = async (
     const failuresByIndex = new Map<number, ProviderFailure>()
     const providerStateMap = new Map(existingRun.providerStates)
     const providerConcurrency = resolveEffectiveSttProviderConcurrency(options, requestedTargets)
+    const batchCoordinator = runOptions.batchCoordinator
     logEffectiveProviderConcurrency(providerConcurrency, options.batchConcurrency)
+
+    const markTargetSkipped = async (
+      index: number,
+      reason: SttBatchBlockedProviderReason
+    ): Promise<void> => {
+      const target = requestedTargets[index] as SttTarget
+      const providerDir = join(providersDir, getSttTargetDirectoryName(target))
+      const relativeDir = getProviderArtifactDir(target)
+      const targetKey = getTargetKey(target)
+      await mkdir(providerDir, { recursive: true })
+      const skippedArtifacts = await writeSkippedProviderArtifact(providerDir, reason)
+      providerStateMap.set(targetKey, {
+        service: target.service,
+        model: target.model,
+        local: target.local,
+        artifactDir: relativeDir,
+        status: 'skipped',
+        attempts: providerStateMap.get(targetKey)?.attempts ?? 0,
+        retryable: reason.retryable,
+        lastError: toRecordedProviderError({
+          message: reason.message,
+          retryable: reason.retryable,
+          skipped: true,
+          ...(reason.stage ? { stage: reason.stage } : {}),
+          ...(typeof reason.status === 'number' ? { status: reason.status } : {}),
+          errorFile: `${relativeDir}/${skippedArtifacts.errorFile}`
+        } as Omit<ProviderFailure, 'index' | 'service' | 'model'>)
+      })
+      failuresByIndex.delete(index)
+    }
 
     const runTargetAtIndex = async (
       index: number,
@@ -945,6 +1041,15 @@ export const processStt = async (
       const providerDir = join(providersDir, providerDirName)
       const relativeDir = getProviderArtifactDir(target)
       const targetKey = getTargetKey(target)
+      const providerDecision = batchCoordinator
+        ? await batchCoordinator.beforeProviderAttempt(target)
+        : { action: 'run' as const }
+
+      if (providerDecision.action === 'skip') {
+        await markTargetSkipped(index, providerDecision.reason)
+        return
+      }
+
       const nextAttemptCount = (providerStateMap.get(targetKey)?.attempts ?? 0) + 1
 
       providerStateMap.set(targetKey, {
@@ -977,6 +1082,7 @@ export const processStt = async (
           result: transcription.result,
           relativeDir
         }
+        batchCoordinator?.reportProviderResult(target)
         providerStateMap.set(targetKey, {
           service: target.service,
           model: target.model,
@@ -1000,6 +1106,19 @@ export const processStt = async (
         } catch (artifactError) {
           l.warn(`Failed to write STT provider diagnostics for ${target.service}/${target.model}: ${artifactError instanceof Error ? artifactError.message : String(artifactError)}`)
         }
+
+        const batchBlockedFailure = shouldBlockSttProviderForBatch(failure)
+          ? {
+              service: target.service,
+              model: target.model,
+              local: target.local,
+              message: failure.message,
+              retryable: failure.retryable,
+              ...(failure.stage ? { stage: failure.stage } : {}),
+              ...(typeof failure.status === 'number' ? { status: failure.status } : {})
+            } satisfies SttBatchBlockedProviderReason
+          : undefined
+        batchCoordinator?.reportProviderResult(target, batchBlockedFailure)
 
         providerStateMap.set(targetKey, {
           service: target.service,
@@ -1034,27 +1153,29 @@ export const processStt = async (
       runTargetPool(cloudIndices, providerConcurrency.effective, runTargetAtIndex)
     ])
 
-    for (let pass = 1; pass <= STT_RECOVERY_MAX_PASSES; pass++) {
-      const recoveryIndices = [...failuresByIndex.values()]
-        .filter((failure) => failure.retryable)
-        .map((failure) => failure.index)
+    if (!batchCoordinator) {
+      for (let pass = 1; pass <= STT_RECOVERY_MAX_PASSES; pass++) {
+        const recoveryIndices = [...failuresByIndex.values()]
+          .filter((failure) => failure.retryable)
+          .map((failure) => failure.index)
 
-      if (recoveryIndices.length === 0) {
-        break
-      }
-
-      let recoveredCount = 0
-      l.warn(`Retrying ${recoveryIndices.length} transient STT provider failure(s) serially (pass ${pass}/${STT_RECOVERY_MAX_PASSES}): ${recoveryIndices.map((index) => `${requestedTargets[index]!.service}/${requestedTargets[index]!.model}`).join(', ')}`)
-      await runTargetPool(recoveryIndices, 1, async (index) => {
-        const hadFailure = failuresByIndex.has(index)
-        await runTargetAtIndex(index, 'recovery')
-        if (hadFailure && !failuresByIndex.has(index)) {
-          recoveredCount += 1
+        if (recoveryIndices.length === 0) {
+          break
         }
-      })
 
-      if (recoveredCount === 0) {
-        break
+        let recoveredCount = 0
+        l.warn(`Retrying ${recoveryIndices.length} transient STT provider failure(s) serially (pass ${pass}/${STT_RECOVERY_MAX_PASSES}): ${recoveryIndices.map((index) => `${requestedTargets[index]!.service}/${requestedTargets[index]!.model}`).join(', ')}`)
+        await runTargetPool(recoveryIndices, 1, async (index) => {
+          const hadFailure = failuresByIndex.has(index)
+          await runTargetAtIndex(index, 'recovery')
+          if (hadFailure && !failuresByIndex.has(index)) {
+            recoveredCount += 1
+          }
+        })
+
+        if (recoveredCount === 0) {
+          break
+        }
       }
     }
 

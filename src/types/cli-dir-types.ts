@@ -54,6 +54,7 @@ export type BatchProcessResult = {
   partial: number
   incomplete: number
   fail: number
+  batchDir?: string
   failureExitCode?: number
 }
 

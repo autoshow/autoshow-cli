@@ -486,6 +486,7 @@ export const processBatch = async (
     partial,
     incomplete,
     fail,
+    batchDir,
     ...(!hasMixedFailureCodes && failureExitCode !== undefined ? { failureExitCode } : {})
   }
 }

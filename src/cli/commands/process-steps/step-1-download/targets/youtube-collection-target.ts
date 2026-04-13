@@ -7,6 +7,7 @@ import { isLikelyUrl, processBatch } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { validateDataSafe } from '~/utils/validate/validation'
 import { buildYtDlpListArgs, buildYtDlpFailureMessage } from '../audio/yt-dlp-options'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/stt-batch'
 
 const YtDlpPlaylistItemSchema = v.object({
   webpage_url: v.optional(v.string(), undefined),
@@ -89,6 +90,12 @@ export const tryHandleYoutubeCollectionTarget = async (
   }
 
   l.info(`Detected YouTube collection URL, processing ${items.length} videos`)
+  if (isSttCommand(command)) {
+    const result = await runSttBatch(items, 'youtube_collection', opts)
+    throwIfSttBatchIncomplete(result)
+    return true
+  }
+
   const { incomplete, fail, failureExitCode } = await processBatch(items, 'youtube_collection', command, opts, processSingleTarget)
   if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && items.length > 0 && fail === items.length)) {
     const problemCount = isSttCommand(command) ? incomplete + fail : fail
