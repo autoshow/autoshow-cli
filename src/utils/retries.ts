@@ -76,7 +76,10 @@ const isNetworkError = (error: unknown): boolean => {
       msg.includes('econnreset') ||
       msg.includes('econnrefused') ||
       msg.includes('etimedout') ||
+      msg.includes('socket connection was closed unexpectedly') ||
+      msg.includes('socket connection') ||
       msg.includes('socket hang up') ||
+      msg.includes('closed unexpectedly') ||
       msg.includes('dns')
     )
   }

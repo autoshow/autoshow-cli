@@ -192,6 +192,19 @@ describe('STT runtime helpers', () => {
     expect(failure.status).toBe(400)
   })
 
+  test('treats Bun socket-closed transport failures as retryable STT provider failures', () => {
+    const failure = classifySttProviderFailure(Object.assign(
+      new Error('The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()'),
+      {
+        stage: 'transcribe',
+        retryClass: 'runtime_http_create_conservative'
+      }
+    ))
+
+    expect(failure.retryable).toBe(true)
+    expect(failure.stage).toBe('transcribe')
+  })
+
   test('treats conservative timeout failures as retryable for STT providers', () => {
     const failure = classifySttProviderFailure(Object.assign(
       new Error('elevenlabs-stt failed after 4 attempts (1200ms elapsed)'),

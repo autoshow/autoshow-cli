@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { processStt } from '~/cli/commands/process-steps/process-stt'
+import { isSttPartialCompletionError, processStt } from '~/cli/commands/process-steps/process-stt'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 
@@ -128,13 +128,37 @@ describe('processStt partial failure diagnostics', () => {
       'no-cache': true
     })
 
-    const outputDir = await processStt({ filePath: STABLE_LOCAL_AUDIO_PATH }, outputRoot, opts)
-    const sonioxDir = `${outputDir}/providers/soniox-stt-async-v4`
+    let outputDir: string | undefined
+    try {
+      await processStt({ filePath: STABLE_LOCAL_AUDIO_PATH }, outputRoot, opts)
+      throw new Error('Expected processStt to throw on incomplete multi-provider output')
+    } catch (error) {
+      expect(isSttPartialCompletionError(error)).toBe(true)
+      if (!isSttPartialCompletionError(error)) {
+        throw error
+      }
+      outputDir = error.outputDir
+      expect(error.completionStatus).toBe('incomplete')
+      expect(error.missingProviders).toEqual([
+        expect.objectContaining({
+          service: 'soniox',
+          model: 'stt-async-v4'
+        })
+      ])
+    }
+
+    expect(outputDir).toBeDefined()
+    const resolvedOutputDir = outputDir as string
+    const sonioxDir = `${resolvedOutputDir}/providers/soniox-stt-async-v4`
 
     const errorJson = await Bun.file(`${sonioxDir}/error.json`).json() as Record<string, unknown>
     const rawResponseJson = await Bun.file(`${sonioxDir}/raw-response.json`).json() as Record<string, unknown>
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+    const metadata = await Bun.file(`${resolvedOutputDir}/metadata.json`).json() as {
       step2: Array<{ transcriptionService: string }>
+      completionStatus: string
+      requestedProviders: Array<Record<string, unknown>>
+      providerStates: Array<Record<string, unknown>>
+      missingProviders: Array<Record<string, unknown>>
       errors: Array<Record<string, unknown>>
     }
 
@@ -150,6 +174,27 @@ describe('processStt partial failure diagnostics', () => {
     })
 
     expect(metadata.step2).toHaveLength(1)
+    expect(metadata.completionStatus).toBe('incomplete')
+    expect(metadata.requestedProviders).toHaveLength(2)
+    expect(metadata.providerStates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        service: 'mistral',
+        model: 'voxtral-mini-latest',
+        status: 'succeeded'
+      }),
+      expect.objectContaining({
+        service: 'soniox',
+        model: 'stt-async-v4',
+        status: 'failed',
+        artifactDir: 'providers/soniox-stt-async-v4'
+      })
+    ]))
+    expect(metadata.missingProviders).toEqual([
+      expect.objectContaining({
+        service: 'soniox',
+        model: 'stt-async-v4'
+      })
+    ])
     expect(metadata.step2[0]?.transcriptionService).toBe('mistral')
     expect(metadata.errors).toEqual([
       expect.objectContaining({

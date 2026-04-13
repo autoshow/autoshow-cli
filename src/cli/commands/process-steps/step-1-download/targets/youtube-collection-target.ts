@@ -2,7 +2,7 @@ import * as v from 'valibot'
 import * as l from '~/logger'
 import { exec } from '~/utils/cli-utils'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isOcrCommand } from '~/types'
+import { isOcrCommand, isSttCommand } from '~/types'
 import { isLikelyUrl, processBatch } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { validateDataSafe } from '~/utils/validate/validation'
@@ -89,9 +89,10 @@ export const tryHandleYoutubeCollectionTarget = async (
   }
 
   l.info(`Detected YouTube collection URL, processing ${items.length} videos`)
-  const { fail, failureExitCode } = await processBatch(items, 'youtube_collection', command, opts, processSingleTarget)
-  if (items.length > 0 && fail === items.length) {
-    const error = new Error(`Batch processing failed for ${fail} item(s)`)
+  const { incomplete, fail, failureExitCode } = await processBatch(items, 'youtube_collection', command, opts, processSingleTarget)
+  if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && items.length > 0 && fail === items.length)) {
+    const problemCount = isSttCommand(command) ? incomplete + fail : fail
+    const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
     if (failureExitCode !== undefined) {
       ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
     }

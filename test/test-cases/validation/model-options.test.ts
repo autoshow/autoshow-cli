@@ -213,6 +213,7 @@ test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
     'stt-local-concurrency': '2',
     'stt-segment-concurrency': '4',
     'stt-preflight-concurrency': '5',
+    'resume-missing-from': './output/batch-1',
     'refresh-cache': true,
     'no-cache': true
   })
@@ -221,6 +222,7 @@ test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
   expect(opts.sttLocalConcurrency).toBe(2)
   expect(opts.sttSegmentConcurrency).toBe(4)
   expect(opts.sttPreflightConcurrency).toBe(5)
+  expect(opts.resumeMissingFrom).toBe('./output/batch-1')
   expect(opts.refreshCache).toBe(true)
   expect(opts.noCache).toBe(true)
 })

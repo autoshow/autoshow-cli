@@ -1,6 +1,6 @@
 import * as l from '~/logger'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isOcrCommand } from '~/types'
+import { isOcrCommand, isSttCommand } from '~/types'
 import { collectInputFiles, isDocumentByExtension, isInputDirectoryPath, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 
@@ -23,11 +23,12 @@ export const handleDirectoryTargetBatch = async (
   }
 
   const label = includeUrlsFromInputDir ? 'input' : 'files'
-  const { ok, fail, failureExitCode } = await processBatch(all, label, command, opts, processSingleTarget, {
+  const { ok, incomplete, fail, failureExitCode } = await processBatch(all, label, command, opts, processSingleTarget, {
     concurrency: opts.batchConcurrency
   })
-  if (ok === 0 && fail > 0) {
-    const error = new Error(`Batch processing failed for ${fail} item(s)`)
+  if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && ok === 0 && fail > 0)) {
+    const problemCount = isSttCommand(command) ? incomplete + fail : fail
+    const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
     if (failureExitCode !== undefined) {
       ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
     }

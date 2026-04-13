@@ -14,6 +14,7 @@ Download audio and transcribe it with the hosted STT providers. Alias: `transcri
 
 ```bash
 bun as stt [input] [flags]
+bun as stt --resume-missing-from <batch-dir> [provider flags]
 ```
 
 The input routing is the same as local `stt`: direct media URLs, streaming URLs, local media files, URL lists, directories, feeds, and YouTube channels are all supported.
@@ -30,7 +31,7 @@ The input routing is the same as local `stt`: direct media URLs, streaming URLs,
 | Mistral | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
 | AssemblyAI | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
 
-Only one hosted STT provider flag may be active at execution time. In `--price` mode, multiple provider flags can be combined to compare estimates.
+You can combine multiple hosted STT provider flags in one execution. Each selected provider writes its own transcript and metadata under `providers/<service>-<model>/`.
 
 ## Examples
 
@@ -64,6 +65,22 @@ bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2
 # AssemblyAI with an optional speaker-count hint
 bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
 
+# Multi-provider batch
+bun as stt input/ajc --batch-all \
+  --batch-concurrency 3 \
+  --elevenlabs-stt scribe_v2 \
+  --deepgram-stt nova-3 \
+  --soniox-stt stt-async-v4 \
+  --assemblyai-stt universal-3-pro \
+  --mistral-stt voxtral-mini-latest \
+  --speaker-count 2
+
+# Resume only the missing provider outputs from an earlier batch
+bun as stt --resume-missing-from output/2026-04-12_22-37-12-852_files
+
+# Resume only a subset of the originally requested providers
+bun as stt --resume-missing-from output/2026-04-12_22-37-12-852_files --deepgram-stt nova-3
+
 # Price preflight
 bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
 ```
@@ -88,6 +105,7 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 | `--batch-order <newest|oldest>` | Choose batch ordering |
 | `--batch-concurrency <n>` | Process batch items concurrently |
 | `--stt-provider-concurrency <n>` | Per-item cloud provider concurrency upper bound; auto-clamped to `1` in multi-item multi-provider batch runs |
+| `--resume-missing-from <batch-dir>` | Reuse an existing STT batch directory and rerun only the missing provider outputs |
 | `--price` | Show the aggregated estimate and exit |
 
 ## Notes
@@ -98,5 +116,9 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
 - In multi-item batch mode with more than one hosted STT provider active, `--stt-provider-concurrency` is treated as an upper bound and the effective hosted-provider concurrency is auto-clamped to `1` per item for reliability.
+- Multi-provider STT items are only considered complete when every requested provider succeeded. If any provider is still missing, the run exits non-zero, keeps all successful provider outputs, and records `completionStatus`, `requestedProviders`, `providerStates`, and `missingProviders` in `metadata.json`.
+- Batch `info.json` entries now include each item's `outputDir` and the same completion fields so missing provider/file pairs can be resumed later.
 - Failed providers keep `providers/<service>-<model>/error.json`, and validation-style failures also keep `raw-response.json` for debugging.
+- `--resume-missing-from` takes a batch directory produced by a prior STT batch run. With no provider flags, it reuses the original requested provider set. If provider flags are supplied, they must be a subset of the original requested providers.
+- `--resume-missing-from` does not take a positional input and does not support `--price` / `--dry-run`.
 - Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).

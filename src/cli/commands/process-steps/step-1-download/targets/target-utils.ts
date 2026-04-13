@@ -4,8 +4,9 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import type { ProcessCommand, RuntimeOptions } from '~/types'
-import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions } from '~/types'
+import { isSttCommand, type ProcessCommand, type RuntimeOptions } from '~/types'
+import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions, BatchProcessResult } from '~/types'
+import { isSttPartialCompletionError } from '~/cli/commands/process-steps/process-stt'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
@@ -42,6 +43,12 @@ export const formatBatchCompletionSummary = (
   fail: number
 ): string =>
   `Batch complete: ${ok} completed (${ok - partial} full, ${partial} partial, ${fail} failed)`
+
+export const formatSttBatchCompletionSummary = (
+  ok: number,
+  incomplete: number,
+  fail: number
+): string => `Batch complete: ${ok} full, ${incomplete} incomplete, ${fail} failed`
 
 export const formatBatchPartialFailureSummary = (
   entries: BatchManifestErrorEntry[]
@@ -230,6 +237,29 @@ const readBatchManifestEntry = async (outputDir: string): Promise<BatchManifestE
   }
 }
 
+const attachOutputDir = (
+  manifestEntry: BatchManifestEntry | null,
+  outputDir: string
+): BatchManifestEntry =>
+  manifestEntry
+    ? { ...manifestEntry, outputDir }
+    : { outputDir }
+
+const getBatchManifestCompletionStatus = (
+  entry: BatchManifestEntry | null
+): 'full' | 'incomplete' | 'failed' | undefined => {
+  if (!entry) {
+    return undefined
+  }
+
+  const completionStatus = entry['completionStatus']
+  if (completionStatus === 'full' || completionStatus === 'incomplete' || completionStatus === 'failed') {
+    return completionStatus
+  }
+
+  return undefined
+}
+
 export const processBatch = async (
   items: string[],
   batchLabel: string,
@@ -237,10 +267,10 @@ export const processBatch = async (
   opts: RuntimeOptions,
   processSingleTarget: BatchItemProcessor,
   runOpts: BatchRunOptions = {}
-): Promise<{ ok: number, fail: number, failureExitCode?: number }> => {
+): Promise<BatchProcessResult> => {
   if (items.length === 0) {
     l.warn('No inputs to process')
-    return { ok: 0, fail: 0 }
+    return { ok: 0, partial: 0, incomplete: 0, fail: 0 }
   }
 
   if (typeof runOpts.totalCount === 'number' && runOpts.totalCount > items.length) {
@@ -288,6 +318,7 @@ export const processBatch = async (
   const concurrency = Math.max(1, runOpts.concurrency ?? 1)
   let ok = 0
   let partial = 0
+  let incomplete = 0
   let fail = 0
   let failureExitCode: number | undefined
   let hasMixedFailureCodes = false
@@ -311,29 +342,89 @@ export const processBatch = async (
     }
   }
 
+  const executeBatchItem = async (
+    item: string,
+    index: number
+  ): Promise<{
+    manifestEntry: BatchManifestEntry | null
+    errorCount: number
+    status: 'ok' | 'partial' | 'incomplete' | 'failed'
+    failureError?: unknown
+  }> => {
+    try {
+      const processed = await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
+        await processSingleTarget(command, item, batchDir, opts)
+      )
+      const manifestEntry = processed?.outputDir
+        ? attachOutputDir(await readBatchManifestEntry(processed.outputDir), processed.outputDir)
+        : null
+      const errorCount = getBatchManifestErrorCount(manifestEntry)
+
+      if (isSttCommand(command)) {
+        const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : 'full')
+        if (completionStatus === 'full') {
+          l.success(`Done ${index + 1}/${items.length}`)
+          return { manifestEntry, errorCount, status: 'ok' }
+        }
+
+        if (completionStatus === 'failed') {
+          l.error(`Failed ${index + 1}/${items.length}: no STT provider outputs completed`)
+          return { manifestEntry, errorCount, status: 'failed' }
+        }
+
+        l.warn(`Incomplete ${index + 1}/${items.length} (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
+        return { manifestEntry, errorCount, status: 'incomplete' }
+      }
+
+      if (errorCount > 0) {
+        l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
+        return { manifestEntry, errorCount, status: 'partial' }
+      }
+
+      l.success(`Done ${index + 1}/${items.length}`)
+      return { manifestEntry, errorCount, status: 'ok' }
+    } catch (error) {
+      if (isSttCommand(command) && isSttPartialCompletionError(error)) {
+        const manifestEntry = attachOutputDir(await readBatchManifestEntry(error.outputDir), error.outputDir)
+        const errorCount = getBatchManifestErrorCount(manifestEntry)
+        if (error.completionStatus === 'failed') {
+          l.error(`Failed ${index + 1}/${items.length}: ${error.message}`)
+          return { manifestEntry, errorCount, status: 'failed', failureError: error }
+        }
+
+        l.warn(`Incomplete ${index + 1}/${items.length} (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
+        return { manifestEntry, errorCount, status: 'incomplete', failureError: error }
+      }
+
+      throw error
+    }
+  }
+
   if (concurrency === 1) {
 
     for (let index = 0; index < items.length; index++) {
-        const item = items[index] as string
-        l.info(`Processing ${index + 1}/${items.length}: ${item}`)
-        try {
-          const processed = await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
-            await processSingleTarget(command, item, batchDir, opts)
-          )
-          const manifestEntry = processed?.outputDir ? await readBatchManifestEntry(processed.outputDir) : null
-          const errorCount = getBatchManifestErrorCount(manifestEntry)
-          if (manifestEntry) {
-            finalInfoEntries[index] = manifestEntry
-          }
-          partialFailureEntries.push(...getBatchManifestErrors(manifestEntry))
+      const item = items[index] as string
+      l.info(`Processing ${index + 1}/${items.length}: ${item}`)
+      try {
+        const result = await executeBatchItem(item, index)
+        if (result.manifestEntry) {
+          finalInfoEntries[index] = result.manifestEntry
+        }
+        partialFailureEntries.push(...getBatchManifestErrors(result.manifestEntry))
+
+        if (result.status === 'ok') {
           ok++
-          if (errorCount > 0) {
-            partial++
-            l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
-          } else {
-            l.success(`Done ${index + 1}/${items.length}`)
-          }
-        } catch (error) {
+        } else if (result.status === 'partial') {
+          ok++
+          partial++
+        } else if (result.status === 'incomplete') {
+          incomplete++
+          recordFailureExitCode(result.failureError)
+        } else {
+          fail++
+          recordFailureExitCode(result.failureError)
+        }
+      } catch (error) {
         fail++
         recordFailureExitCode(error)
         const message = error instanceof Error ? error.message : String(error)
@@ -348,29 +439,28 @@ export const processBatch = async (
       items.map((item, index) =>
         runWithSemaphore(concurrency, sem, async () => {
           l.info(`Processing ${index + 1}/${items.length}: ${item}`)
-          const processed = await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
-            await processSingleTarget(command, item, batchDir, opts)
-          )
-          const manifestEntry = processed?.outputDir ? await readBatchManifestEntry(processed.outputDir) : null
-          const errorCount = getBatchManifestErrorCount(manifestEntry)
-          if (errorCount > 0) {
-            l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
-          } else {
-            l.success(`Done ${index + 1}/${items.length}`)
-          }
-          return { manifestEntry, errorCount }
+          return await executeBatchItem(item, index)
         })
       )
     )
     for (const [index, r] of results.entries()) {
       if (r.status === 'fulfilled') {
-        ok++
         if (r.value.manifestEntry) {
           finalInfoEntries[index] = r.value.manifestEntry
         }
         partialFailureEntries.push(...getBatchManifestErrors(r.value.manifestEntry))
-        if (r.value.errorCount > 0) {
+
+        if (r.value.status === 'ok') {
+          ok++
+        } else if (r.value.status === 'partial') {
+          ok++
           partial++
+        } else if (r.value.status === 'incomplete') {
+          incomplete++
+          recordFailureExitCode(r.value.failureError)
+        } else {
+          fail++
+          recordFailureExitCode(r.value.failureError)
         }
       } else {
         fail++
@@ -386,11 +476,15 @@ export const processBatch = async (
     l.warn(partialFailureSummary)
   }
 
-  l.info(formatBatchCompletionSummary(ok, partial, fail))
+  l.info(isSttCommand(command)
+    ? formatSttBatchCompletionSummary(ok, incomplete, fail)
+    : formatBatchCompletionSummary(ok, partial, fail))
   await writeFile(`${batchDir}/info.json`, JSON.stringify(finalInfoEntries, null, 2))
 
   return {
     ok,
+    partial,
+    incomplete,
     fail,
     ...(!hasMixedFailureCodes && failureExitCode !== undefined ? { failureExitCode } : {})
   }

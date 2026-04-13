@@ -49,6 +49,14 @@ export type BatchItemProcessResult = {
   outputDir: string
 }
 
+export type BatchProcessResult = {
+  ok: number
+  partial: number
+  incomplete: number
+  fail: number
+  failureExitCode?: number
+}
+
 export type BatchRunOptions = {
   source?: BatchSource
   selectedItems?: BatchItem[]

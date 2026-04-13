@@ -15,12 +15,37 @@ import { getTranscribeEngineCapabilities, transcribeTarget } from './step-2-stt/
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { classifyFetchRetry } from '~/utils/retries'
+import { CLIUsageError } from '~/utils/error-handler'
 
 type PreparedSttMedia = Awaited<ReturnType<typeof prepareSttMedia>>
 
+export type SttCompletionStatus = 'full' | 'incomplete' | 'failed'
+
+export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local' | 'diarizationOptions'>
+
+export type SttRecordedProviderError = {
+  message: string
+  retryable: boolean
+  stage?: string | undefined
+  status?: number | undefined
+  errorFile?: string | undefined
+  rawResponseFile?: string | undefined
+}
+
+export type SttProviderState = {
+  service: SttTarget['service']
+  model: string
+  local: boolean
+  artifactDir: string
+  status: 'succeeded' | 'missing' | 'failed'
+  attempts: number
+  retryable?: boolean | undefined
+  lastError?: SttRecordedProviderError | undefined
+}
+
 type ProviderFailure = {
   index: number
-  service: string
+  service: SttTarget['service']
   model: string
   message: string
   retryable: boolean
@@ -37,6 +62,17 @@ type ProviderSuccess = {
   relativeDir?: string | undefined
 }
 
+type ExistingSttRun = {
+  successes: Array<ProviderSuccess | undefined>
+  providerStates: Map<string, SttProviderState>
+}
+
+type ProcessSttRunOptions = {
+  outputDir?: string | undefined
+  requestedTargets?: SttTarget[] | undefined
+  targetsToRun?: SttTarget[] | undefined
+}
+
 type PromptSelectionCandidate = ProviderSuccess
 
 type ProviderErrorLike = Error & {
@@ -50,6 +86,9 @@ type ProviderErrorLike = Error & {
 
 const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
   value instanceof Error
+
+const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/
+const STT_RECOVERY_MAX_PASSES = 3
 
 const emittedInfoMessages = new Set<string>()
 const emittedWarnMessages = new Set<string>()
@@ -277,6 +316,303 @@ const formatProviderFailure = (failure: ProviderFailure): string => {
     : `${failure.service}/${failure.model}: ${failure.message}`
 }
 
+const STT_SERVICES = new Set<SttTarget['service']>([
+  'whisper',
+  'reverb',
+  'deepgram',
+  'elevenlabs',
+  'soniox',
+  'groq',
+  'openai',
+  'mistral',
+  'assemblyai'
+])
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isSttService = (value: unknown): value is SttTarget['service'] =>
+  typeof value === 'string' && STT_SERVICES.has(value as SttTarget['service'])
+
+const getTargetKey = (target: Pick<SttTarget, 'service' | 'model'>): string =>
+  `${target.service}:${target.model}`
+
+const getProviderArtifactDir = (target: Pick<SttTarget, 'service' | 'model'>): string =>
+  `providers/${getSttTargetDirectoryName(target)}`
+
+const toRequestedProvider = (target: SttTarget): SttRequestedProvider => ({
+  service: target.service,
+  model: target.model,
+  local: target.local,
+  ...(target.diarizationOptions ? { diarizationOptions: target.diarizationOptions } : {})
+})
+
+const toRecordedProviderError = (failure: Omit<ProviderFailure, 'index' | 'service' | 'model'>): SttRecordedProviderError => ({
+  message: failure.message,
+  retryable: failure.retryable,
+  ...(failure.stage ? { stage: failure.stage } : {}),
+  ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+  ...(failure.errorFile ? { errorFile: failure.errorFile } : {}),
+  ...(failure.rawResponseFile ? { rawResponseFile: failure.rawResponseFile } : {})
+})
+
+const parseTranscriptText = (text: string): TranscriptionResult => {
+  const segments: TranscriptionResult['segments'] = []
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim()
+    if (line.length === 0) {
+      continue
+    }
+
+    const match = line.match(TRANSCRIPT_LINE_PATTERN)
+    if (!match) {
+      continue
+    }
+
+    const segmentText = (match[3] ?? '').trim()
+    if (segmentText.length === 0) {
+      continue
+    }
+
+    segments.push({
+      start: match[1] as string,
+      end: match[1] as string,
+      text: segmentText,
+      ...(typeof match[2] === 'string' && match[2].trim().length > 0
+        ? { speaker: match[2].trim() }
+        : {})
+    })
+  }
+
+  if (segments.length === 0) {
+    const trimmed = text.trim()
+    return {
+      text: trimmed,
+      segments: trimmed.length > 0
+        ? [{ start: '00:00:00', end: '00:00:00', text: trimmed }]
+        : []
+    }
+  }
+
+  return {
+    text: segments.map((segment) => segment.text).join(' ').trim(),
+    segments
+  }
+}
+
+const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => {
+  if (!isRecord(value) || !isSttService(value['transcriptionService']) || typeof value['transcriptionModel'] !== 'string') {
+    return undefined
+  }
+
+  if (typeof value['processingTime'] !== 'number' || typeof value['tokenCount'] !== 'number') {
+    return undefined
+  }
+
+  return {
+    transcriptionService: value['transcriptionService'],
+    transcriptionModel: value['transcriptionModel'],
+    ...(typeof value['transcriptionModelName'] === 'string' ? { transcriptionModelName: value['transcriptionModelName'] } : {}),
+    processingTime: value['processingTime'],
+    tokenCount: value['tokenCount']
+  }
+}
+
+const parseStoredProviderState = (value: unknown): SttProviderState | undefined => {
+  if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
+    return undefined
+  }
+
+  if (value['status'] !== 'succeeded' && value['status'] !== 'missing' && value['status'] !== 'failed') {
+    return undefined
+  }
+
+  if (typeof value['artifactDir'] !== 'string' || typeof value['attempts'] !== 'number') {
+    return undefined
+  }
+
+  const lastError = isRecord(value['lastError']) && typeof value['lastError']['message'] === 'string'
+    ? {
+        message: value['lastError']['message'],
+        retryable: value['lastError']['retryable'] === true,
+        ...(typeof value['lastError']['stage'] === 'string' ? { stage: value['lastError']['stage'] } : {}),
+        ...(typeof value['lastError']['status'] === 'number' ? { status: value['lastError']['status'] } : {}),
+        ...(typeof value['lastError']['errorFile'] === 'string' ? { errorFile: value['lastError']['errorFile'] } : {}),
+        ...(typeof value['lastError']['rawResponseFile'] === 'string' ? { rawResponseFile: value['lastError']['rawResponseFile'] } : {})
+      } satisfies SttRecordedProviderError
+    : undefined
+
+  return {
+    service: value['service'],
+    model: value['model'],
+    local: value['local'] === true,
+    artifactDir: value['artifactDir'],
+    status: value['status'],
+    attempts: value['attempts'],
+    ...(typeof value['retryable'] === 'boolean' ? { retryable: value['retryable'] } : {}),
+    ...(lastError ? { lastError } : {})
+  }
+}
+
+const readExistingSttRun = async (
+  outputDir: string,
+  requestedTargets: SttTarget[]
+): Promise<ExistingSttRun> => {
+  const providerStates = new Map<string, SttProviderState>()
+  const successes: Array<ProviderSuccess | undefined> = new Array(requestedTargets.length)
+  const metadataPath = join(outputDir, 'metadata.json')
+  if (!await Bun.file(metadataPath).exists()) {
+    return { successes, providerStates }
+  }
+
+  let raw: unknown
+  try {
+    raw = await Bun.file(metadataPath).json()
+  } catch {
+    return { successes, providerStates }
+  }
+
+  if (!isRecord(raw)) {
+    return { successes, providerStates }
+  }
+
+  const providerStateValues = Array.isArray(raw['providerStates']) ? raw['providerStates'] : []
+  for (const value of providerStateValues) {
+    const parsed = parseStoredProviderState(value)
+    if (!parsed) {
+      continue
+    }
+    providerStates.set(getTargetKey(parsed), parsed)
+  }
+
+  const storedStep2Values = Array.isArray(raw['step2'])
+    ? raw['step2']
+    : raw['step2'] === undefined
+      ? []
+      : [raw['step2']]
+
+  const storedStep2Metadata = storedStep2Values
+    .map(parseStoredStep2Metadata)
+    .filter((entry): entry is Step2Metadata => entry !== undefined)
+
+  await Promise.all(requestedTargets.map(async (target, index) => {
+    const metadata = storedStep2Metadata.find((entry) =>
+      entry.transcriptionService === target.service
+      && (entry.transcriptionModelName ?? entry.transcriptionModel) === target.model
+    )
+    if (!metadata) {
+      return
+    }
+
+    const transcriptPath = join(outputDir, getProviderArtifactDir(target), 'transcription.txt')
+    const transcriptText = await Bun.file(transcriptPath).text().catch(() => '')
+    successes[index] = {
+      target,
+      metadata,
+      result: parseTranscriptText(transcriptText),
+      relativeDir: getProviderArtifactDir(target)
+    }
+  }))
+
+  return {
+    successes,
+    providerStates
+  }
+}
+
+const buildProviderStates = (
+  requestedTargets: SttTarget[],
+  successes: Array<ProviderSuccess | undefined>,
+  failuresByIndex: Map<number, ProviderFailure>,
+  existingStates: Map<string, SttProviderState>
+): SttProviderState[] =>
+  requestedTargets.map((target, index) => {
+    const key = getTargetKey(target)
+    const existing = existingStates.get(key)
+    const failure = failuresByIndex.get(index)
+    const success = successes[index]
+
+    if (success) {
+      return {
+        service: target.service,
+        model: target.model,
+        local: target.local,
+        artifactDir: getProviderArtifactDir(target),
+        status: 'succeeded',
+        attempts: existing?.attempts ?? 0
+      }
+    }
+
+    if (failure) {
+      return {
+        service: target.service,
+        model: target.model,
+        local: target.local,
+        artifactDir: getProviderArtifactDir(target),
+        status: 'failed',
+        attempts: existing?.attempts ?? 0,
+        retryable: failure.retryable,
+        lastError: toRecordedProviderError({
+          message: failure.message,
+          retryable: failure.retryable,
+          ...(failure.stage ? { stage: failure.stage } : {}),
+          ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+          ...(failure.errorFile ? { errorFile: `${getProviderArtifactDir(target)}/${failure.errorFile}` } : {}),
+          ...(failure.rawResponseFile ? { rawResponseFile: `${getProviderArtifactDir(target)}/${failure.rawResponseFile}` } : {})
+        })
+      }
+    }
+
+    return {
+      service: target.service,
+      model: target.model,
+      local: target.local,
+      artifactDir: getProviderArtifactDir(target),
+      status: existing?.status ?? 'missing',
+      attempts: existing?.attempts ?? 0,
+      ...(existing?.retryable !== undefined ? { retryable: existing.retryable } : {}),
+      ...(existing?.lastError ? { lastError: existing.lastError } : {})
+    }
+  })
+
+const resolveCompletionStatus = (
+  requestedTargets: SttTarget[],
+  successes: Array<ProviderSuccess | undefined>
+): SttCompletionStatus => {
+  const successCount = successes.filter((entry) => entry !== undefined).length
+  if (successCount === 0) {
+    return 'failed'
+  }
+  return successCount === requestedTargets.length ? 'full' : 'incomplete'
+}
+
+const buildMissingProviders = (
+  providerStates: SttProviderState[],
+  requestedTargets: SttTarget[]
+): SttRequestedProvider[] => {
+  const missingKeys = new Set(providerStates
+    .filter((state) => state.status !== 'succeeded')
+    .map((state) => getTargetKey(state)))
+
+  return requestedTargets
+    .filter((target) => missingKeys.has(getTargetKey(target)))
+    .map(toRequestedProvider)
+}
+
+const buildMetadataErrorEntries = (providerStates: SttProviderState[]): Array<Record<string, unknown>> =>
+  providerStates
+    .filter((state) => state.lastError !== undefined)
+    .map((state) => ({
+      service: state.service,
+      model: state.model,
+      message: state.lastError?.message,
+      ...(state.lastError?.stage ? { stage: state.lastError.stage } : {}),
+      ...(typeof state.lastError?.status === 'number' ? { status: state.lastError.status } : {}),
+      retryable: state.lastError?.retryable === true,
+      ...(state.lastError?.errorFile ? { errorFile: state.lastError.errorFile } : {}),
+      ...(state.lastError?.rawResponseFile ? { rawResponseFile: state.lastError.rawResponseFile } : {})
+    }))
+
 export const filterSttPreflightEstimate = (
   estimate: AggregatedPriceEstimate
 ): AggregatedPriceEstimate => {
@@ -454,23 +790,44 @@ const writeSttMetadata = async (outputDir: string, metadataJson: string): Promis
   l.debug(`Metadata:\n${metadataJson}`)
 }
 
-const createAllProvidersFailedError = (failures: ProviderFailure[]): Error => {
-  const error = new Error(failures.map(formatProviderFailure).join('; '))
-  ;(error as Error & { exitCode?: number }).exitCode = 2
-  return error
+export class SttPartialCompletionError extends Error {
+  outputDir: string
+  completionStatus: SttCompletionStatus
+  missingProviders: SttRequestedProvider[]
+  exitCode: number
+
+  constructor(
+    outputDir: string,
+    completionStatus: SttCompletionStatus,
+    missingProviders: SttRequestedProvider[],
+    message: string
+  ) {
+    super(message)
+    this.name = 'SttPartialCompletionError'
+    this.outputDir = outputDir
+    this.completionStatus = completionStatus
+    this.missingProviders = missingProviders
+    this.exitCode = 2
+  }
 }
+
+export const isSttPartialCompletionError = (error: unknown): error is SttPartialCompletionError =>
+  error instanceof SttPartialCompletionError
 
 export const processStt = async (
   source: { url?: string, filePath?: string },
   baseDir: string,
   options: RuntimeOptions,
-  preflightEstimate?: AggregatedPriceEstimate
+  preflightEstimate?: AggregatedPriceEstimate,
+  runOptions: ProcessSttRunOptions = {}
 ): Promise<string> => {
   const processStart = Date.now()
-  const targets = collectSttTargets(options)
+  const requestedTargets = runOptions.requestedTargets ?? collectSttTargets(options)
+  const targetsToRun = runOptions.targetsToRun ?? requestedTargets
+  const targetsToRunKeys = new Set(targetsToRun.map((target) => getTargetKey(target)))
   const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
   const metadata = await resolveSttSourceMetadata(source)
-  const outputDir = join(outputBaseDir, createUniqueDirectoryName(metadata.title))
+  const outputDir = runOptions.outputDir ?? join(outputBaseDir, createUniqueDirectoryName(metadata.title))
   await ensureDirectory(outputDir)
 
   let prepared: Awaited<ReturnType<typeof prepareSttMedia>> | undefined
@@ -480,7 +837,7 @@ export const processStt = async (
     prepared = await runWithLogContext({ step: 'step-1-download' }, async () =>
       await prepareSttMedia({
         source,
-        targets,
+        targets: requestedTargets,
         outputDir,
         noCache: options.noCache,
         refreshCache: options.refreshCache
@@ -488,10 +845,14 @@ export const processStt = async (
     )
     const acquisitionTimeMs = Date.now() - acquisitionStartedAt
     l.info(buildAcquireSummary(prepared.step1Metadata.slug, prepared))
-    logSpeakerCountHintSummary(targets, options.diarizationSpeakerCount)
+    logSpeakerCountHintSummary(requestedTargets, options.diarizationSpeakerCount)
 
-    if (targets.length === 1) {
-      const target = targets[0] as SttTarget
+    if (requestedTargets.length === 1) {
+      if (runOptions.outputDir) {
+        throw CLIUsageError('--resume-missing-from currently supports only STT batches that originally requested multiple providers.')
+      }
+
+      const target = requestedTargets[0] as SttTarget
       const audioPath = resolveTargetAudioPath(target, prepared)
       const transcription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
         await transcribeTarget(audioPath, outputDir, target, {
@@ -508,14 +869,14 @@ export const processStt = async (
         requestedSpeakerCount: target.diarizationOptions?.speakerCount
       })
 
-      const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds))
+      const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, prepared.durationSeconds))
       const actual = computeActualCosts({
         step1: prepared.step1Metadata,
         step2: transcription.metadata
       })
       const cost = { estimated, actual }
       const estimatedTiming = computeEstimatedProcessingTimes({
-        sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
+        sttTargets: requestedTargets.map((entry) => ({ service: entry.service, model: entry.model })),
         audioDurationSeconds: prepared.durationSeconds
       })
       const actualTiming = computeActualProcessingTimes({
@@ -529,6 +890,17 @@ export const processStt = async (
       const metadataJson = JSON.stringify({
         step1: prepared.step1Metadata,
         step2: transcription.metadata,
+        completionStatus: 'full' as SttCompletionStatus,
+        requestedProviders: requestedTargets.map(toRequestedProvider),
+        providerStates: [{
+          service: target.service,
+          model: target.model,
+          local: target.local,
+          artifactDir: '.',
+          status: 'succeeded',
+          attempts: 1
+        }],
+        missingProviders: [],
         cost,
         ...(timing ? { timing } : {})
       }, null, 2)
@@ -552,19 +924,38 @@ export const processStt = async (
 
     const providersDir = join(outputDir, 'providers')
     await mkdir(providersDir, { recursive: true })
-    const successes: Array<ProviderSuccess | undefined> = new Array(targets.length)
+    const existingRun = runOptions.outputDir
+      ? await readExistingSttRun(outputDir, requestedTargets)
+      : {
+          successes: new Array<ProviderSuccess | undefined>(requestedTargets.length),
+          providerStates: new Map<string, SttProviderState>()
+        } satisfies ExistingSttRun
+    const successes: Array<ProviderSuccess | undefined> = existingRun.successes
     const failuresByIndex = new Map<number, ProviderFailure>()
-    const providerConcurrency = resolveEffectiveSttProviderConcurrency(options, targets)
+    const providerStateMap = new Map(existingRun.providerStates)
+    const providerConcurrency = resolveEffectiveSttProviderConcurrency(options, requestedTargets)
     logEffectiveProviderConcurrency(providerConcurrency, options.batchConcurrency)
 
     const runTargetAtIndex = async (
       index: number,
       attempt: 'initial' | 'recovery' = 'initial'
     ): Promise<void> => {
-      const target = targets[index] as SttTarget
+      const target = requestedTargets[index] as SttTarget
       const providerDirName = getSttTargetDirectoryName(target)
       const providerDir = join(providersDir, providerDirName)
-      const relativeDir = `providers/${providerDirName}`
+      const relativeDir = getProviderArtifactDir(target)
+      const targetKey = getTargetKey(target)
+      const nextAttemptCount = (providerStateMap.get(targetKey)?.attempts ?? 0) + 1
+
+      providerStateMap.set(targetKey, {
+        service: target.service,
+        model: target.model,
+        local: target.local,
+        artifactDir: relativeDir,
+        status: 'missing',
+        attempts: nextAttemptCount
+      })
+
       if (attempt === 'recovery') {
         await rm(providerDir, { recursive: true, force: true })
       }
@@ -586,6 +977,14 @@ export const processStt = async (
           result: transcription.result,
           relativeDir
         }
+        providerStateMap.set(targetKey, {
+          service: target.service,
+          model: target.model,
+          local: target.local,
+          artifactDir: relativeDir,
+          status: 'succeeded',
+          attempts: nextAttemptCount
+        })
         failuresByIndex.delete(index)
       } catch (error) {
         const failure: ProviderFailure = {
@@ -602,37 +1001,69 @@ export const processStt = async (
           l.warn(`Failed to write STT provider diagnostics for ${target.service}/${target.model}: ${artifactError instanceof Error ? artifactError.message : String(artifactError)}`)
         }
 
+        providerStateMap.set(targetKey, {
+          service: target.service,
+          model: target.model,
+          local: target.local,
+          artifactDir: relativeDir,
+          status: 'failed',
+          attempts: nextAttemptCount,
+          retryable: failure.retryable,
+          lastError: toRecordedProviderError({
+            message: failure.message,
+            retryable: failure.retryable,
+            ...(failure.stage ? { stage: failure.stage } : {}),
+            ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+            ...(failure.errorFile ? { errorFile: `${relativeDir}/${failure.errorFile}` } : {}),
+            ...(failure.rawResponseFile ? { rawResponseFile: `${relativeDir}/${failure.rawResponseFile}` } : {})
+          })
+        })
         failuresByIndex.set(index, failure)
       }
     }
 
-    const localIndices = targets
+    const localIndices = requestedTargets
       .map((target, index) => ({ target, index }))
-      .filter((entry) => entry.target.local)
+      .filter((entry) => entry.target.local && targetsToRunKeys.has(getTargetKey(entry.target)))
       .map((entry) => entry.index)
-    const cloudIndices = prioritizeCloudSttTargetIndices(targets)
+    const cloudIndices = prioritizeCloudSttTargetIndices(requestedTargets)
+      .filter((index) => targetsToRunKeys.has(getTargetKey(requestedTargets[index] as SttTarget)))
 
     await Promise.all([
       runTargetPool(localIndices, options.sttLocalConcurrency, runTargetAtIndex),
       runTargetPool(cloudIndices, providerConcurrency.effective, runTargetAtIndex)
     ])
 
-    const recoveryIndices = [...failuresByIndex.values()]
-      .filter((failure) => failure.retryable)
-      .map((failure) => failure.index)
+    for (let pass = 1; pass <= STT_RECOVERY_MAX_PASSES; pass++) {
+      const recoveryIndices = [...failuresByIndex.values()]
+        .filter((failure) => failure.retryable)
+        .map((failure) => failure.index)
 
-    if (recoveryIndices.length > 0) {
-      l.warn(`Retrying ${recoveryIndices.length} transient STT provider failure(s) serially: ${recoveryIndices.map((index) => `${targets[index]!.service}/${targets[index]!.model}`).join(', ')}`)
+      if (recoveryIndices.length === 0) {
+        break
+      }
+
+      let recoveredCount = 0
+      l.warn(`Retrying ${recoveryIndices.length} transient STT provider failure(s) serially (pass ${pass}/${STT_RECOVERY_MAX_PASSES}): ${recoveryIndices.map((index) => `${requestedTargets[index]!.service}/${requestedTargets[index]!.model}`).join(', ')}`)
       await runTargetPool(recoveryIndices, 1, async (index) => {
+        const hadFailure = failuresByIndex.has(index)
         await runTargetAtIndex(index, 'recovery')
+        if (hadFailure && !failuresByIndex.has(index)) {
+          recoveredCount += 1
+        }
       })
+
+      if (recoveredCount === 0) {
+        break
+      }
     }
 
     const successfulProviders = successes.filter((entry): entry is ProviderSuccess => entry !== undefined)
     const failures = [...failuresByIndex.values()].sort((left, right) => left.index - right.index)
-    if (successfulProviders.length === 0) {
-      throw createAllProvidersFailedError(failures)
-    }
+    const completionStatus = resolveCompletionStatus(requestedTargets, successes)
+    const providerStates = buildProviderStates(requestedTargets, successes, failuresByIndex, providerStateMap)
+    const missingProviders = buildMissingProviders(providerStates, requestedTargets)
+    const metadataErrors = buildMetadataErrorEntries(providerStates)
 
     const promptSource = selectPrimaryPromptProvider(successes)
     if (promptSource) {
@@ -644,7 +1075,7 @@ export const processStt = async (
       })
     }
 
-    const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds))
+    const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, prepared.durationSeconds))
     const actual = computeActualCosts({
       step1: prepared.step1Metadata,
       step2: successfulProviders.map((entry) => entry.metadata)
@@ -658,7 +1089,7 @@ export const processStt = async (
       }
     }
     const estimatedTiming = computeEstimatedProcessingTimes({
-      sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
+      sttTargets: requestedTargets.map((entry) => ({ service: entry.service, model: entry.model })),
       audioDurationSeconds: prepared.durationSeconds
     })
     const actualTiming = computeActualProcessingTimes({
@@ -681,39 +1112,18 @@ export const processStt = async (
     const metadataJson = JSON.stringify({
       step1: prepared.step1Metadata,
       step2: successfulProviders.map((entry) => entry.metadata),
+      completionStatus,
+      requestedProviders: requestedTargets.map(toRequestedProvider),
+      providerStates,
+      missingProviders,
       cost,
       timing,
       cache: {
         sourceMedia: prepared.cache.sourceMedia
       },
-      ...(failures.length > 0
-        ? {
-            errors: failures.map((entry) => ({
-              service: entry.service,
-              model: entry.model,
-              message: entry.message,
-              ...(entry.stage ? { stage: entry.stage } : {}),
-              ...(typeof entry.status === 'number' ? { status: entry.status } : {}),
-              retryable: entry.retryable,
-              ...(entry.errorFile ? { errorFile: `providers/${getSttTargetDirectoryName({ service: entry.service as SttTarget['service'], model: entry.model })}/${entry.errorFile}` } : {}),
-              ...(entry.rawResponseFile ? { rawResponseFile: `providers/${getSttTargetDirectoryName({ service: entry.service as SttTarget['service'], model: entry.model })}/${entry.rawResponseFile}` } : {})
-            }))
-          }
-        : {})
+      ...(metadataErrors.length > 0 ? { errors: metadataErrors } : {})
     }, null, 2)
     await writeSttMetadata(outputDir, metadataJson)
-
-    const artifactFiles: Record<string, string> = {
-      prompt: 'prompt.md',
-      metadata: 'metadata.json'
-    }
-    artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
-    for (const entry of successfulProviders) {
-      const dir = entry.relativeDir as string
-      const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel}`
-      artifactFiles[`transcript-${key}`] = `${dir}/transcription.txt`
-      artifactFiles[`metadata-${key}`] = `${dir}/metadata.json`
-    }
 
     const stepSummaries: StepTimingCost[] = [
       {
@@ -733,26 +1143,52 @@ export const processStt = async (
       }))
     ]
 
-    l.report.complete(outputDir, artifactFiles, {
-      metrics: {
-        providersRequested: targets.length,
-        providersSucceeded: successfulProviders.length,
-        providersFailed: failures.length,
-        partial: failures.length > 0,
-        ...(promptSource
-          ? { promptSource: buildProviderModelLabel(promptSource.metadata) }
-          : {})
-      },
-      steps: stepSummaries,
-      totalTimeMs: Date.now() - processStart,
-      totalCost: actual.totalCost
-    })
+    if (completionStatus === 'full') {
+      const artifactFiles: Record<string, string> = {
+        prompt: 'prompt.md',
+        metadata: 'metadata.json'
+      }
+      artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
+      for (const entry of successfulProviders) {
+        const dir = entry.relativeDir as string
+        const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel}`
+        artifactFiles[`transcript-${key}`] = `${dir}/transcription.txt`
+        artifactFiles[`metadata-${key}`] = `${dir}/metadata.json`
+      }
 
+      l.report.complete(outputDir, artifactFiles, {
+        metrics: {
+          providersRequested: requestedTargets.length,
+          providersSucceeded: successfulProviders.length,
+          providersFailed: 0,
+          partial: false,
+          completionStatus,
+          ...(promptSource
+            ? { promptSource: buildProviderModelLabel(promptSource.metadata) }
+            : {})
+        },
+        steps: stepSummaries,
+        totalTimeMs: Date.now() - processStart,
+        totalCost: actual.totalCost
+      })
+
+      return outputDir
+    }
+
+    l.warn(`stt run incomplete: completionStatus=${completionStatus}, missingProviders=${missingProviders.map(formatSttTargetLabel).join(', ')}`)
     if (failures.length > 0) {
       l.warn(`stt run completed with partial failures: ${failures.map(formatProviderFailure).join('; ')}`)
     }
+    l.warn(`Output directory preserved for retry/backfill: ${outputDir}`)
 
-    return outputDir
+    throw new SttPartialCompletionError(
+      outputDir,
+      completionStatus,
+      missingProviders,
+      completionStatus === 'failed'
+        ? `All requested STT providers failed: ${failures.map(formatProviderFailure).join('; ')}`
+        : `Missing STT provider outputs: ${missingProviders.map(formatSttTargetLabel).join(', ')}`
+    )
   } finally {
     await prepared?.cleanup?.()
   }

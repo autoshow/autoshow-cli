@@ -25,6 +25,7 @@ import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume-stt-batch'
 import { collectExplicitExtractTargets } from '~/cli/commands/process-steps/step-2-document/extract-targets'
 
 const runWithConcurrency = async <T,>(
@@ -134,6 +135,17 @@ export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOpt
 }
 
 const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'llama', 'mistral'] as const
+const STT_PROVIDER_SELECTION_FLAGS = [
+  'whisper',
+  'reverb',
+  'elevenlabs-stt',
+  'deepgram-stt',
+  'soniox-stt',
+  'groq-stt',
+  'openai-stt',
+  'mistral-stt',
+  'assemblyai-stt'
+] as const
 
 const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, doubleDashArgs: string[] = []): boolean => {
   const inParsedFlags = TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.some((key) => flags[key] !== undefined)
@@ -262,18 +274,6 @@ export const handleProcessTarget = async (
     throw CLIUsageError('LLM provider flags are not supported with "stt" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.')
   }
 
-  let resolvedTarget: string
-  if (typeof target === 'string' && target.length > 0) {
-    resolvedTarget = target
-  } else if (doubleDash.length === 1) {
-    resolvedTarget = doubleDash[0] as string
-  } else if (doubleDash.length > 1) {
-    throw CLIUsageError(`Too many positional inputs for "${displayCommand}": ${doubleDash.join(' ')}. Run: bun as help ${displayCommand}`)
-  } else {
-    throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
-  }
-
-
   const configPathOverride = typeof rawFlags['config-path'] === 'string' ? rawFlags['config-path'] : undefined
   const resolvedConfigPath = await resolveConfigPath(configPathOverride)
   const config = await loadConfig(resolvedConfigPath)
@@ -289,6 +289,41 @@ export const handleProcessTarget = async (
   )
 
   const maxCents = resolveMaxCents(config.pricing)
+  const hasExplicitResumeTargetSelection = STT_PROVIDER_SELECTION_FLAGS.some((flag) => explicitFlags.has(flag))
+
+  if (opts.resumeMissingFrom) {
+    if (!isSttCommand(command)) {
+      throw CLIUsageError('--resume-missing-from is only supported with "stt".')
+    }
+    if ((typeof target === 'string' && target.length > 0) || doubleDash.length > 0) {
+      throw CLIUsageError('--resume-missing-from does not accept a positional input.')
+    }
+    if (opts.price) {
+      throw CLIUsageError('--resume-missing-from does not support --price or --dry-run.')
+    }
+    if (maxCents !== undefined) {
+      l.warn('Skipping budget preflight for --resume-missing-from')
+    }
+
+    await resumeSttMissingFromBatchDir(
+      opts.resumeMissingFrom,
+      opts,
+      hasExplicitResumeTargetSelection ? collectSttTargets(opts) : undefined
+    )
+    return
+  }
+
+  let resolvedTarget: string
+  if (typeof target === 'string' && target.length > 0) {
+    resolvedTarget = target
+  } else if (doubleDash.length === 1) {
+    resolvedTarget = doubleDash[0] as string
+  } else if (doubleDash.length > 1) {
+    throw CLIUsageError(`Too many positional inputs for "${displayCommand}": ${doubleDash.join(' ')}. Run: bun as help ${displayCommand}`)
+  } else {
+    throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
+  }
+
   const plan = await resolveProcessTargetPlan(command, resolvedTarget, opts)
   const preflightTargets = getPlanTargets(plan)
   const shouldRunPreflight = shouldRunCommandPreflight(opts, maxCents)
@@ -339,7 +374,7 @@ export const handleProcessTarget = async (
 
   if (plan.kind === 'resolved_batch') {
     const resolved = plan.resolvedBatch
-    const { ok, fail, failureExitCode } = await processBatch(
+    const { ok, incomplete, fail, failureExitCode } = await processBatch(
       resolved.selectedUrls,
       resolved.source.title ?? resolved.source.sourceKind,
       command,
@@ -352,8 +387,9 @@ export const handleProcessTarget = async (
         totalCount: resolved.totalCount
       }
     )
-    if (ok === 0 && fail > 0) {
-      const error = new Error(`Batch processing failed for all ${fail} item(s)`)
+    if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && ok === 0 && fail > 0)) {
+      const problemCount = isSttCommand(command) ? incomplete + fail : fail
+      const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
       if (failureExitCode !== undefined) {
         ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
       }
@@ -364,9 +400,10 @@ export const handleProcessTarget = async (
 
   if (plan.kind === 'youtube_collection') {
     l.info(`Detected YouTube collection URL, processing ${plan.targets.length} videos`)
-    const { fail, failureExitCode } = await processBatch(plan.targets, 'youtube_collection', command, opts, processSingleTarget)
-    if (plan.targets.length > 0 && fail === plan.targets.length) {
-      const error = new Error(`Batch processing failed for ${fail} item(s)`)
+    const { incomplete, fail, failureExitCode } = await processBatch(plan.targets, 'youtube_collection', command, opts, processSingleTarget)
+    if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && plan.targets.length > 0 && fail === plan.targets.length)) {
+      const problemCount = isSttCommand(command) ? incomplete + fail : fail
+      const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
       if (failureExitCode !== undefined) {
         ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
       }

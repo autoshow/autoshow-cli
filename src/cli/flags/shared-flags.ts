@@ -138,6 +138,10 @@ export const transcriptionFlags = {
     type: String,
     default: '4'
   },
+  'resume-missing-from': {
+    description: 'STT: reuse an existing batch directory and rerun only missing provider outputs',
+    type: String
+  },
   'refresh-cache': {
     description: 'STT: rebuild cache entries touched by this run',
     type: Boolean,

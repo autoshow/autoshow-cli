@@ -1,5 +1,6 @@
 import * as l from '~/logger'
 import type { BatchItem, ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
+import { isSttCommand } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
@@ -46,14 +47,15 @@ export const processResolvedInputListBatch = async (
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<void> => {
-  const { ok, fail, failureExitCode } = await processBatch(resolvedBatch.selectedUrls, 'inputs', command, opts, processSingleTarget, {
+  const { ok, incomplete, fail, failureExitCode } = await processBatch(resolvedBatch.selectedUrls, 'inputs', command, opts, processSingleTarget, {
     source: resolvedBatch.source,
     selectedItems: resolvedBatch.selectedItems,
     concurrency: opts.batchConcurrency,
     totalCount: resolvedBatch.totalCount
   })
-  if (ok === 0 && fail > 0) {
-    const error = new Error(`Batch processing failed for ${fail} item(s)`)
+  if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && ok === 0 && fail > 0)) {
+    const problemCount = isSttCommand(command) ? incomplete + fail : fail
+    const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
     if (failureExitCode !== undefined) {
       ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
     }
