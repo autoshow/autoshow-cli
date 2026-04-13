@@ -36,15 +36,15 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
 
   for (let i = 0; i < totalSegments; i++) {
     const startTime = i * segmentDurationSeconds
-    const segmentPath = `${segmentsDir}/segment_${String(i + 1).padStart(3, '0')}.wav`
+    const segmentPath = `${segmentsDir}/segment_${String(i + 1).padStart(3, '0')}.mp3`
 
     const result = await exec('ffmpeg', [
       '-i', audioPath,
       '-ss', String(startTime),
       '-t', String(segmentDurationSeconds),
-      '-acodec', 'pcm_s16le',
-      '-ar', '16000',
-      '-ac', '1',
+      '-vn',
+      '-codec:a', 'libmp3lame',
+      '-q:a', '2',
       '-y',
       segmentPath
     ])

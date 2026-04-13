@@ -3,11 +3,17 @@ import * as l from '~/logger'
 
 export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
 
+export type BuildPromptOptions = {
+  promptSourceProvider?: string | undefined
+  requestedSpeakerCount?: number | undefined
+}
+
 export const buildPrompt = (
   metadata: VideoMetadata,
   transcription: TranscriptionResult,
   instruction?: string,
-  slug?: string
+  slug?: string,
+  options?: BuildPromptOptions
 ): string => {
   const taskInstruction = instruction ?? `- Write a one-sentence description of the transcript and a one-paragraph summary.
   - The one-sentence description shouldn't exceed 180 characters (roughly 30 words).
@@ -52,7 +58,14 @@ Format the output like so:
   const hasSpeakers = transcription.segments.some(seg => seg.speaker)
   if (hasSpeakers) {
     const uniqueSpeakers = new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
-    l.info(`Including speaker diarization in prompt (${uniqueSpeakers.size} speakers)`)
+    const details = [
+      `${uniqueSpeakers.size} detected speaker${uniqueSpeakers.size === 1 ? '' : 's'}`,
+      typeof options?.requestedSpeakerCount === 'number'
+        ? `requested hint: ${options.requestedSpeakerCount}`
+        : undefined,
+      options?.promptSourceProvider ? `source: ${options.promptSourceProvider}` : undefined
+    ].filter((entry): entry is string => typeof entry === 'string')
+    l.info(`Including speaker diarization in prompt (${details.join('; ')})`)
   }
   
   const transcriptWithTimestamps = transcription.segments

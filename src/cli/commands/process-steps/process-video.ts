@@ -18,10 +18,10 @@ import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
-import { downloadAudio } from './step-1-download/audio/dl-audio'
-import { transcribe, transcribeTarget } from './step-2-stt/run-transcribe'
+import { transcribeTarget } from './step-2-stt/run-transcribe'
 import { formatTranscriptText } from './step-2-stt/stt-utils/transcription-utils'
 import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
+import { prepareSttMedia } from './step-2-stt/stt-media-cache'
 import { runLLM } from './step-3-write/run-llm'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
@@ -94,13 +94,8 @@ export const processVideo = async (
     ...options,
     outputDir
   }
-  const step1Start = Date.now()
-  const { audioPath, metadata: downloadMetadata } = await runWithLogContext({ step: 'step-1-download' }, async () =>
-    await downloadAudio(processingOptions, metadata)
-  )
-  const step1Time = Date.now() - step1Start
-  const step1Metadata: Step1Metadata = downloadMetadata
   const sttTargets = collectSttTargets(processingOptions as unknown as RuntimeOptions)
+  let preparedSttMedia: Awaited<ReturnType<typeof prepareSttMedia>> | undefined
   let transcriptionResult: { result: TranscriptionResult, metadata: Step2Metadata | Step2Metadata[] }
   let successfulSttProviders: SttProviderSuccess[] = []
   let sttFailures: Array<{
@@ -112,103 +107,125 @@ export const processVideo = async (
     status?: number | undefined
   }> = []
 
-  if (sttTargets.length === 1) {
-    const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
-      await transcribe(audioPath, processingOptions)
+  try {
+    const step1Start = Date.now()
+    preparedSttMedia = await runWithLogContext({ step: 'step-1-download' }, async () =>
+      await prepareSttMedia({
+        source: {
+          ...(options.url !== undefined ? { url: options.url } : {}),
+          ...(options.filePath !== undefined ? { filePath: options.filePath } : {})
+        },
+        targets: sttTargets,
+        outputDir
+      })
     )
-    transcriptionResult = singleTranscription
-    successfulSttProviders = [{
-      target: sttTargets[0] as SttTarget,
-      metadata: singleTranscription.metadata,
-      result: singleTranscription.result
-    }]
-  } else {
-    const providersDir = `${outputDir}/providers`
-    await mkdir(providersDir, { recursive: true })
+    const step1Time = Date.now() - step1Start
+    const step1Metadata: Step1Metadata = preparedSttMedia.step1Metadata
+    const sourceMetadata = preparedSttMedia.metadata
+    const audioPath = preparedSttMedia.executionArtifacts.sourceMediaPath
 
-    const successes: Array<SttProviderSuccess | undefined> = new Array(sttTargets.length)
-    const failuresByIndex = new Map<number, typeof sttFailures[number]>()
-
-    const runTargetAtIndex = async (index: number): Promise<void> => {
-      const target = sttTargets[index] as SttTarget
-      const providerDirName = getSttTargetDirectoryName(target)
-      const providerDir = `${providersDir}/${providerDirName}`
-      await mkdir(providerDir, { recursive: true })
-
-      try {
-        const providerTranscription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
-          await transcribeTarget(audioPath, providerDir, target, {
-            split: processingOptions.split,
-            reverbVerbatimicity: processingOptions.reverbVerbatimicity,
-            sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
-          })
-        )
-        await Bun.write(`${providerDir}/metadata.json`, JSON.stringify(providerTranscription.metadata, null, 2))
-        successes[index] = {
-          target,
-          metadata: providerTranscription.metadata,
-          result: providerTranscription.result,
-          relativeDir: `providers/${providerDirName}`
-        }
-        failuresByIndex.delete(index)
-      } catch (error) {
-        await rm(providerDir, { recursive: true, force: true })
-        failuresByIndex.set(index, {
-          service: target.service,
-          model: target.model,
-          ...classifySttProviderFailure(error)
+    if (sttTargets.length === 1) {
+      const target = sttTargets[0] as SttTarget
+      const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
+        await transcribeTarget(audioPath, outputDir, target, {
+          split: processingOptions.split,
+          reverbVerbatimicity: processingOptions.reverbVerbatimicity,
+          sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
         })
+      )
+      transcriptionResult = singleTranscription
+      successfulSttProviders = [{
+        target,
+        metadata: singleTranscription.metadata,
+        result: singleTranscription.result
+      }]
+    } else {
+      const providersDir = `${outputDir}/providers`
+      await mkdir(providersDir, { recursive: true })
+
+      const successes: Array<SttProviderSuccess | undefined> = new Array(sttTargets.length)
+      const failuresByIndex = new Map<number, typeof sttFailures[number]>()
+
+      const runTargetAtIndex = async (index: number): Promise<void> => {
+        const target = sttTargets[index] as SttTarget
+        const providerDirName = getSttTargetDirectoryName(target)
+        const providerDir = `${providersDir}/${providerDirName}`
+        await mkdir(providerDir, { recursive: true })
+
+        try {
+          const providerTranscription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
+            await transcribeTarget(audioPath, providerDir, target, {
+              split: processingOptions.split,
+              reverbVerbatimicity: processingOptions.reverbVerbatimicity,
+              sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
+            })
+          )
+          await Bun.write(`${providerDir}/metadata.json`, JSON.stringify(providerTranscription.metadata, null, 2))
+          successes[index] = {
+            target,
+            metadata: providerTranscription.metadata,
+            result: providerTranscription.result,
+            relativeDir: `providers/${providerDirName}`
+          }
+          failuresByIndex.delete(index)
+        } catch (error) {
+          await rm(providerDir, { recursive: true, force: true })
+          failuresByIndex.set(index, {
+            service: target.service,
+            model: target.model,
+            ...classifySttProviderFailure(error)
+          })
+        }
+      }
+
+      const localIndices = sttTargets
+        .map((target, index) => ({ target, index }))
+        .filter((entry) => entry.target.local)
+        .map((entry) => entry.index)
+      const cloudIndices = prioritizeCloudSttTargetIndices(sttTargets)
+
+      await Promise.all([
+        runTargetPool(localIndices, runtimeOptions?.sttLocalConcurrency ?? 1, runTargetAtIndex),
+        runTargetPool(cloudIndices, runtimeOptions?.sttProviderConcurrency ?? 2, runTargetAtIndex)
+      ])
+
+      successfulSttProviders = successes.filter((entry): entry is SttProviderSuccess => entry !== undefined)
+      sttFailures = [...failuresByIndex.values()]
+
+      if (successfulSttProviders.length === 0) {
+        await rm(providersDir, { recursive: true, force: true })
+        throw new Error(sttFailures.map((failure) => `${failure.service}/${failure.model}: ${failure.message}`).join('; '))
+      }
+
+      const promptSource = selectPrimaryPromptProvider(successes)
+      if (!promptSource) {
+        throw new Error('No successful transcription provider available for the write pipeline')
+      }
+
+      await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(promptSource.result.segments))
+      transcriptionResult = {
+        result: promptSource.result,
+        metadata: successfulSttProviders.map((entry) => entry.metadata)
       }
     }
 
-    const localIndices = sttTargets
-      .map((target, index) => ({ target, index }))
-      .filter((entry) => entry.target.local)
-      .map((entry) => entry.index)
-    const cloudIndices = prioritizeCloudSttTargetIndices(sttTargets)
-
-    await Promise.all([
-      runTargetPool(localIndices, runtimeOptions?.sttLocalConcurrency ?? 1, runTargetAtIndex),
-      runTargetPool(cloudIndices, runtimeOptions?.sttProviderConcurrency ?? 2, runTargetAtIndex)
-    ])
-
-    successfulSttProviders = successes.filter((entry): entry is SttProviderSuccess => entry !== undefined)
-    sttFailures = [...failuresByIndex.values()]
-
-    if (successfulSttProviders.length === 0) {
-      await rm(providersDir, { recursive: true, force: true })
-      throw new Error(sttFailures.map((failure) => `${failure.service}/${failure.model}: ${failure.message}`).join('; '))
-    }
-
-    const promptSource = selectPrimaryPromptProvider(successes)
-    if (!promptSource) {
-      throw new Error('No successful transcription provider available for the write pipeline')
-    }
-
-    await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(promptSource.result.segments))
-    transcriptionResult = {
-      result: promptSource.result,
-      metadata: successfulSttProviders.map((entry) => entry.metadata)
-    }
-  }
-  
-  let step3RunResults: StructuredRunResult[] = []
-  let step3Results: Step3Metadata[] = []
-  if (processingOptions.skipLLM) {
-    await runWithLogContext({ step: 'step-3-write' }, async () => {
-      const promptPath = `${outputDir}/prompt.md`
-      const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
-        exampleFormat: processingOptions.structured === false ? 'markdown' : 'json'
+    let step3RunResults: StructuredRunResult[] = []
+    let step3Results: Step3Metadata[] = []
+    if (processingOptions.skipLLM) {
+      await runWithLogContext({ step: 'step-3-write' }, async () => {
+        const promptPath = `${outputDir}/prompt.md`
+        const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
+          exampleFormat: processingOptions.structured === false ? 'markdown' : 'json'
+        })
+        const promptContent = buildPrompt(sourceMetadata, transcriptionResult.result, instruction, step1Metadata.slug)
+        await Bun.write(promptPath, promptContent)
       })
-      const promptContent = buildPrompt(metadata, transcriptionResult.result, instruction, step1Metadata.slug)
-      await Bun.write(promptPath, promptContent)
-    })
-  } else {
-    step3RunResults = await runWithLogContext({ step: 'step-3-write' }, async () =>
-      await runLLM(metadata, transcriptionResult.result, processingOptions, step1Metadata.slug)
-    )
-    step3Results = step3RunResults.map((result) => result.metadata)
-  }
+    } else {
+      step3RunResults = await runWithLogContext({ step: 'step-3-write' }, async () =>
+        await runLLM(sourceMetadata, transcriptionResult.result, processingOptions, step1Metadata.slug)
+      )
+      step3Results = step3RunResults.map((result) => result.metadata)
+    }
 
   let step4Metadata: Step4Metadata[] | null = null
   let step5Metadata: Step5Metadata[] | null = null
@@ -513,5 +530,8 @@ export const processVideo = async (
     l.warn(`write run completed with partial STT failures: ${sttFailures.map((failure) => `${failure.service}/${failure.model}: ${failure.message}`).join('; ')}`)
   }
 
-  return outputDir
+    return outputDir
+  } finally {
+    await preparedSttMedia?.cleanup?.()
+  }
 }

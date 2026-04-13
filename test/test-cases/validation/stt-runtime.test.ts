@@ -123,6 +123,42 @@ describe('STT runtime helpers', () => {
     expect(selected?.result.text).toBe('second provider transcript')
   })
 
+  test('prefers a successful provider that honored the requested diarization hint for the root prompt', () => {
+    const selected = selectPrimaryPromptProvider([
+      {
+        target: { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: {} },
+        metadata: {
+          transcriptionService: 'mistral',
+          transcriptionModel: 'voxtral-mini-latest',
+          transcriptionModelName: 'voxtral-mini-latest',
+          processingTime: 123,
+          tokenCount: 10
+        },
+        result: {
+          text: 'first provider transcript',
+          segments: [{ start: '00:00:00', end: '00:00:01', text: 'first provider transcript', speaker: 'speaker-1' }]
+        }
+      },
+      {
+        target: { service: 'assemblyai', model: 'universal-3-pro', local: false, diarizationOptions: { speakerCount: 2 } },
+        metadata: {
+          transcriptionService: 'assemblyai',
+          transcriptionModel: 'universal-3-pro',
+          transcriptionModelName: 'universal-3-pro',
+          processingTime: 99,
+          tokenCount: 8
+        },
+        result: {
+          text: 'later provider transcript',
+          segments: [{ start: '00:00:00', end: '00:00:01', text: 'later provider transcript', speaker: 'speaker-1' }]
+        }
+      }
+    ])
+
+    expect(selected?.metadata.transcriptionService).toBe('assemblyai')
+    expect(selected?.result.text).toBe('later provider transcript')
+  })
+
   test('classifies retryable STT provider failures with status metadata', () => {
     const failure = classifySttProviderFailure(Object.assign(
       new Error('AssemblyAI upload failed (503): unavailable'),

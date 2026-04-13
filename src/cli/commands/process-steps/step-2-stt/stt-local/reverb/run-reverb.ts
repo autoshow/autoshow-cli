@@ -7,6 +7,7 @@ import { exec } from '~/utils/cli-utils'
 import { getHuggingFaceToken, runDiarization, mergeASRWithDiarization, findCTMFile } from './run-reverb-diarization'
 import { reverbUvEnvDir, reverbModelDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
 import { pollUntil } from '~/utils/retries'
+import { prepareLocalSttInput } from '../local-audio-normalize'
 
 let detectedGpuSupportPromise: Promise<boolean> | null = null
 
@@ -158,77 +159,85 @@ export const runReverbTranscribe = async (
   const segmentOffset = options.segmentOffsetMinutes || 0
   const segmentNumber = options.segmentNumber
   const totalSegments = options.totalSegments
+  let preparedInput: Awaited<ReturnType<typeof prepareLocalSttInput>> | undefined
   if (segmentNumber && totalSegments) {
     l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Reverb ASR (diarization model: ${version})`)
   } else {
     l.info(`Transcribing with Reverb ASR (diarization model: ${version})`)
   }
-  const startTime = Date.now()
-  const verbatimicity = options.reverbVerbatimicity ?? 0.5
-  l.info(`Verbatimicity level: ${verbatimicity}`)
-  const hasGpu = await detectGpuSupport()
-  const device = hasGpu ? '0' : '-1'
-  l.info(`Using device: ${hasGpu ? 'GPU' : 'CPU'}`)
-  const uvEnvDir = reverbUvEnvDir
-  const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
-  const resultDir = `${outputDir}/reverb-output${segmentSuffix}`
-  await Bun.$`mkdir -p ${resultDir}`.quiet()
-  const checkpointPath = `${reverbModelDir}/reverb_asr_v1.pt`
-  const configPath = `${reverbModelDir}/config.yaml`
-  const args = [
-    'run', '-p', `${uvEnvDir}/bin/python`, '-m', 'wenet.bin.recognize_wav',
-    '--config', `${configPath}`,
-    '--checkpoint', `${checkpointPath}`,
-    '--audio_file', audioPath,
-    '--result_dir', resultDir,
-    '--verbatimicity', verbatimicity.toString(),
-    '--gpu', device
-  ]
-  const hfToken = getHuggingFaceToken()
-  const result = await exec('uv', args)
-  if (result.stderr) {
-    const stderrLines = result.stderr.split('\n').filter((line: string) => line.trim())
-    let hasError = false
-    stderrLines.forEach((line: string) => {
-      if (line.includes('ERROR') || line.includes('error') || line.includes('Error')) {
-        l.error(`Reverb error: ${line}`)
-        hasError = true
-      } else if (line.includes('Traceback') || line.includes('File "')) {
-        l.error(`Reverb traceback: ${line}`)
-        hasError = true
+  try {
+    const startTime = Date.now()
+    const verbatimicity = options.reverbVerbatimicity ?? 0.5
+    l.info(`Verbatimicity level: ${verbatimicity}`)
+    const hasGpu = await detectGpuSupport()
+    const device = hasGpu ? '0' : '-1'
+    l.info(`Using device: ${hasGpu ? 'GPU' : 'CPU'}`)
+    const uvEnvDir = reverbUvEnvDir
+    const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
+    const resultDir = `${outputDir}/reverb-output${segmentSuffix}`
+    await Bun.$`mkdir -p ${resultDir}`.quiet()
+    preparedInput = await prepareLocalSttInput(audioPath, 'autoshow-reverb-')
+    const checkpointPath = `${reverbModelDir}/reverb_asr_v1.pt`
+    const configPath = `${reverbModelDir}/config.yaml`
+    const args = [
+      'run', '-p', `${uvEnvDir}/bin/python`, '-m', 'wenet.bin.recognize_wav',
+      '--config', `${configPath}`,
+      '--checkpoint', `${checkpointPath}`,
+      '--audio_file', preparedInput.audioPath,
+      '--result_dir', resultDir,
+      '--verbatimicity', verbatimicity.toString(),
+      '--gpu', device
+    ]
+    const hfToken = getHuggingFaceToken()
+    const result = await exec('uv', args)
+    if (result.stderr) {
+      const stderrLines = result.stderr.split('\n').filter((line: string) => line.trim())
+      let hasError = false
+      stderrLines.forEach((line: string) => {
+        if (line.includes('ERROR') || line.includes('error') || line.includes('Error')) {
+          l.error(`Reverb error: ${line}`)
+          hasError = true
+        } else if (line.includes('Traceback') || line.includes('File "')) {
+          l.error(`Reverb traceback: ${line}`)
+          hasError = true
+        }
+      })
+      if (hasError && result.exitCode !== 0) {
+        throw new Error(`Reverb transcription failed with errors`)
       }
-    })
-    if (hasError && result.exitCode !== 0) {
-      throw new Error(`Reverb transcription failed with errors`)
     }
-  }
-  if (result.stdout && result.stdout.includes('Traceback')) {
-    l.error(`Python error detected in stdout`)
-    const lines = result.stdout.split('\n')
-    lines.forEach((line: string) => {
-      if (line.trim()) l.error(`${line}`)
-    })
-    throw new Error('Reverb transcription failed with Python error')
-  }
-  if (result.exitCode !== 0) {
-    l.error(`Reverb transcription failed with exit code ${result.exitCode}`)
-    throw new Error(`Reverb transcription failed with exit code ${result.exitCode}`)
-  }
-  await waitForReverbResultFiles(resultDir)
-  let transcription: TranscriptionResult
-  let ctmPath: string | null = null
-  if (hfToken) {
-    ctmPath = await findCTMFile(resultDir)
-    if (ctmPath) {
-      const rttmPath = await runDiarization(audioPath, hfToken, resultDir)
-      if (rttmPath) {
-        const jsonOutputPath = `${outputDir}/transcription${segmentSuffix}.json`
-        const diarizedData = await mergeASRWithDiarization(ctmPath, rttmPath, jsonOutputPath)
-        if (diarizedData) {
-          l.success(`Successfully performed speaker diarization with ${version}`)
-          await Bun.$`rm -f ${jsonOutputPath}`.quiet()
-          l.success(`Deleted intermediary JSON file: ${jsonOutputPath}`)
-          transcription = parseReverbWithSpeakers(diarizedData, segmentOffset)
+    if (result.stdout && result.stdout.includes('Traceback')) {
+      l.error(`Python error detected in stdout`)
+      const lines = result.stdout.split('\n')
+      lines.forEach((line: string) => {
+        if (line.trim()) l.error(`${line}`)
+      })
+      throw new Error('Reverb transcription failed with Python error')
+    }
+    if (result.exitCode !== 0) {
+      l.error(`Reverb transcription failed with exit code ${result.exitCode}`)
+      throw new Error(`Reverb transcription failed with exit code ${result.exitCode}`)
+    }
+    await waitForReverbResultFiles(resultDir)
+    let transcription: TranscriptionResult
+    let ctmPath: string | null = null
+    if (hfToken) {
+      ctmPath = await findCTMFile(resultDir)
+      if (ctmPath) {
+        const rttmPath = await runDiarization(preparedInput.audioPath, hfToken, resultDir)
+        if (rttmPath) {
+          const jsonOutputPath = `${outputDir}/transcription${segmentSuffix}.json`
+          const diarizedData = await mergeASRWithDiarization(ctmPath, rttmPath, jsonOutputPath)
+          if (diarizedData) {
+            l.success(`Successfully performed speaker diarization with ${version}`)
+            await Bun.$`rm -f ${jsonOutputPath}`.quiet()
+            l.success(`Deleted intermediary JSON file: ${jsonOutputPath}`)
+            transcription = parseReverbWithSpeakers(diarizedData, segmentOffset)
+          } else {
+            const textContent = await findAndReadOutputFile(resultDir)
+            if (!textContent) throw new Error('Reverb transcription produced no readable output')
+            transcription = parseReverbTextOutput(textContent, segmentOffset)
+          }
         } else {
           const textContent = await findAndReadOutputFile(resultDir)
           if (!textContent) throw new Error('Reverb transcription produced no readable output')
@@ -244,36 +253,34 @@ export const runReverbTranscribe = async (
       if (!textContent) throw new Error('Reverb transcription produced no readable output')
       transcription = parseReverbTextOutput(textContent, segmentOffset)
     }
-  } else {
-    const textContent = await findAndReadOutputFile(resultDir)
-    if (!textContent) throw new Error('Reverb transcription produced no readable output')
-    transcription = parseReverbTextOutput(textContent, segmentOffset)
+    const processingTime = Date.now() - startTime
+    const tokenCount = countTokens(transcription.text)
+    const outputBase = `${outputDir}/transcription${segmentSuffix}`
+    await Bun.write(`${outputBase}.txt`, formatTranscriptText(transcription.segments))
+    await cleanupIntermediateFiles(resultDir)
+    if (segmentNumber && totalSegments) {
+      l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    } else {
+      l.success(`Reverb transcription completed in ${processingTime}ms`)
+    }
+    l.info(`Saved transcript to ${outputBase}.txt`)
+    l.info(`Total transcribed text length: ${transcription.text.length} characters`)
+    const hasSpeakers = transcription.segments.some(seg => seg.speaker)
+    if (hasSpeakers) {
+      const speakerSet = new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
+      l.success(`Identified ${speakerSet.size} speakers in transcription`)
+    }
+    const transcriptionModelDescriptor = `${checkpointPath} | ${configPath} | diarization:${version}`
+    l.info(`Recording transcription model: ${transcriptionModelDescriptor}`)
+    const metadata: Step2Metadata = {
+      transcriptionService: 'reverb',
+      transcriptionModel: transcriptionModelDescriptor,
+      transcriptionModelName: 'reverb',
+      processingTime,
+      tokenCount
+    }
+    return { result: transcription, metadata }
+  } finally {
+    await preparedInput?.cleanup()
   }
-  const processingTime = Date.now() - startTime
-  const tokenCount = countTokens(transcription.text)
-  const outputBase = `${outputDir}/transcription${segmentSuffix}`
-  await Bun.write(`${outputBase}.txt`, formatTranscriptText(transcription.segments))
-  await cleanupIntermediateFiles(resultDir)
-  if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
-  } else {
-    l.success(`Reverb transcription completed in ${processingTime}ms`)
-  }
-  l.info(`Saved transcript to ${outputBase}.txt`)
-  l.info(`Total transcribed text length: ${transcription.text.length} characters`)
-  const hasSpeakers = transcription.segments.some(seg => seg.speaker)
-  if (hasSpeakers) {
-    const speakerSet = new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
-    l.success(`Identified ${speakerSet.size} speakers in transcription`)
-  }
-  const transcriptionModelDescriptor = `${checkpointPath} | ${configPath} | diarization:${version}`
-  l.info(`Recording transcription model: ${transcriptionModelDescriptor}`)
-  const metadata: Step2Metadata = {
-    transcriptionService: 'reverb',
-    transcriptionModel: transcriptionModelDescriptor,
-    transcriptionModelName: 'reverb',
-    processingTime,
-    tokenCount
-  }
-  return { result: transcription, metadata }
 }

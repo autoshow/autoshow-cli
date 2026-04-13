@@ -8,6 +8,7 @@ import { resolve } from 'node:path'
 import { whisperBinaryPath, whisperModelsDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
 import { pollUntil } from '~/utils/retries'
 import { formatWhisperProgressMessage, parseWhisperProgressPercent } from './whisper-progress'
+import { prepareLocalSttInput } from '../local-audio-normalize'
 
 const WHISPER_JSON_WAIT_TIMEOUT_MS = 3000
 const WHISPER_JSON_WAIT_POLL_MS = 100
@@ -131,6 +132,8 @@ export const runWhisperTranscribe = async (
     totalDurationSeconds,
     preserveJson = false
   } = options
+  let preparedInput: Awaited<ReturnType<typeof prepareLocalSttInput>> | undefined
+
   try {
     if (segmentNumber && totalSegments) {
       l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with model: ${modelName}`)
@@ -142,10 +145,11 @@ export const runWhisperTranscribe = async (
     const outputDirAbs = resolve(outputDir)
     await mkdir(outputDirAbs, { recursive: true })
     const outputBase = resolve(outputDirAbs, `transcription${segmentSuffix}`)
+    preparedInput = await prepareLocalSttInput(audioPath, 'autoshow-whisper-')
     const coreMLEncoderPath = await detectCoreMLEncoder(modelName)
     const whisperArgs = [
       '-m', modelPath,
-      '-f', audioPath,
+      '-f', preparedInput.audioPath,
       '-ml', '1',
       '-np',
       '-pp',
@@ -253,5 +257,7 @@ export const runWhisperTranscribe = async (
   } catch (error) {
     l.error(`Failed to transcribe audio`, error)
     throw error
+  } finally {
+    await preparedInput?.cleanup()
   }
 }

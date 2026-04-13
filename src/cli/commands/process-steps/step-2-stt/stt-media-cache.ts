@@ -20,7 +20,7 @@ import { commandExists, exec, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
 import type { SttTarget } from './stt-targets'
 
-type CacheArtifactStatus = 'hit' | 'miss' | 'skipped'
+type CacheArtifactStatus = 'hit' | 'miss'
 
 type CacheArtifactRecord = {
   fileName: string
@@ -33,14 +33,12 @@ type MediaCacheEntry = {
   metadataSchemaVersion: number
   artifactVersions: {
     source_media: number
-    wav16k_mono: number
   }
   durationSeconds?: number | undefined
   createdAt: string
   lastAccessedAt: string
   artifacts?: {
     source_media?: CacheArtifactRecord | undefined
-    wav16k_mono?: CacheArtifactRecord | undefined
   } | undefined
 }
 
@@ -63,42 +61,26 @@ export type PreparedSttMedia = {
   step1Metadata: Step1Metadata
   durationSeconds: number
   executionArtifacts: {
-    sourceMediaPath?: string | undefined
-    wav16kPath?: string | undefined
+    sourceMediaPath: string
   }
   outputArtifacts: {
-    sourceMediaPath?: string | undefined
-    wav16kPath?: string | undefined
+    sourceMediaPath: string
   }
   cache: {
     sourceMedia: CacheArtifactStatus
-    wav16k: CacheArtifactStatus
   }
   timings: {
     sourceMediaMs?: number | undefined
-    wav16kMs?: number | undefined
   }
   cleanup?: (() => Promise<void>) | undefined
 }
 
 const METADATA_SCHEMA_VERSION = 1
-const SOURCE_MEDIA_ARTIFACT_VERSION = 1
-const WAV16K_ARTIFACT_VERSION = 1
+const SOURCE_MEDIA_ARTIFACT_VERSION = 2
 const DEFAULT_CACHE_MAX_GB = 20
 const DEFAULT_CACHE_MAX_AGE_DAYS = 30
 const LOCK_WAIT_MS = 50
 const LOCK_TIMEOUT_MS = 30000
-const CLOUD_FRIENDLY_EXTENSIONS = new Set([
-  '.mp3',
-  '.m4a',
-  '.mp4',
-  '.wav',
-  '.webm',
-  '.ogg',
-  '.opus',
-  '.aac',
-  '.flac'
-])
 
 const sleep = async (ms: number): Promise<void> =>
   await new Promise((resolvePromise) => setTimeout(resolvePromise, ms))
@@ -222,21 +204,6 @@ const ensureMediaTooling = async (needsYtDlp: boolean): Promise<void> => {
   }
 }
 
-const transcodeToWav16kMono = async (inputPath: string, outputPath: string): Promise<void> => {
-  const result = await exec('ffmpeg', [
-    '-i', inputPath,
-    '-ar', '16000',
-    '-ac', '1',
-    '-c:a', 'pcm_s16le',
-    '-y',
-    outputPath
-  ])
-
-  if (result.exitCode !== 0) {
-    throw new Error(`Failed to build wav16k_mono artifact: ${result.stderr}`)
-  }
-}
-
 const transcodeToMp3 = async (inputPath: string, outputPath: string): Promise<void> => {
   const result = await exec('ffmpeg', [
     '-i', inputPath,
@@ -261,25 +228,14 @@ const fetchDirectMedia = async (url: string, outputPath: string): Promise<void> 
   await Bun.write(outputPath, bytes)
 }
 
-const cloudFriendlyExtension = (filePath: string): string | null => {
-  const extension = extname(filePath).toLowerCase()
-  return CLOUD_FRIENDLY_EXTENSIONS.has(extension) ? extension : null
-}
-
 const stageSourceMediaArtifact = async (
   source: { url?: string, filePath?: string },
   workspaceDir: string
 ): Promise<string> => {
+  const stagedPath = join(workspaceDir, 'source_media.mp3')
+
   if (source.filePath) {
     const absoluteFilePath = resolve(source.filePath)
-    const preferredExtension = cloudFriendlyExtension(absoluteFilePath)
-    if (preferredExtension) {
-      const stagedPath = join(workspaceDir, `source_media${preferredExtension}`)
-      await copyFile(absoluteFilePath, stagedPath)
-      return stagedPath
-    }
-
-    const stagedPath = join(workspaceDir, 'source_media.mp3')
     await transcodeToMp3(absoluteFilePath, stagedPath)
     return stagedPath
   }
@@ -287,35 +243,17 @@ const stageSourceMediaArtifact = async (
   const url = source.url as string
   if (isDirectMediaUrl(url)) {
     const pathname = new URL(url).pathname
-    const directExtension = cloudFriendlyExtension(pathname)
-    const directSuffix = directExtension ?? (extname(pathname).toLowerCase() || '.bin')
-    const stagedPath = join(workspaceDir, `downloaded${directSuffix}`)
-    await fetchDirectMedia(url, stagedPath)
-
-    const friendlyExtension = cloudFriendlyExtension(stagedPath)
-    if (friendlyExtension) {
-      const finalPath = join(workspaceDir, `source_media${friendlyExtension}`)
-      await rename(stagedPath, finalPath)
-      return finalPath
-    }
-
-    const transcodedPath = join(workspaceDir, 'source_media.mp3')
-    await transcodeToMp3(stagedPath, transcodedPath)
-    return transcodedPath
+    const directSuffix = extname(pathname).toLowerCase() || '.bin'
+    const downloadedPath = join(workspaceDir, `downloaded${directSuffix}`)
+    await fetchDirectMedia(url, downloadedPath)
+    await transcodeToMp3(downloadedPath, stagedPath)
+    return stagedPath
   }
 
   await ensureMediaTooling(true)
   const downloadedPath = await downloadVideo(url, workspaceDir)
-  const downloadedExtension = cloudFriendlyExtension(downloadedPath)
-  if (downloadedExtension) {
-    const finalPath = join(workspaceDir, `source_media${downloadedExtension}`)
-    await rename(downloadedPath, finalPath)
-    return finalPath
-  }
-
-  const transcodedPath = join(workspaceDir, 'source_media.mp3')
-  await transcodeToMp3(downloadedPath, transcodedPath)
-  return transcodedPath
+  await transcodeToMp3(downloadedPath, stagedPath)
+  return stagedPath
 }
 
 const resolveCacheLookup = async (
@@ -406,50 +344,27 @@ export const resolveSttSourceMetadata = async (
 const buildPrimaryOutputPaths = (
   metadata: VideoMetadata,
   outputDir: string | undefined,
-  targets: SttTarget[],
-  sourceMediaExecutionPath: string | undefined,
-  wavExecutionPath: string | undefined
+  sourceMediaExecutionPath: string
 ): {
-  sourceMediaPath?: string | undefined
-  wav16kPath?: string | undefined
+  sourceMediaPath: string
   primaryFilePath: string
 } => {
   const slugTitle = sanitizeTitleSlug(metadata.title, 180)
   const datePrefix = metadata.publishDate ? `${metadata.publishDate}-` : ''
   const baseName = `${datePrefix}${slugTitle}`
-  const multiTarget = targets.length > 1
-  const hasLocalTarget = targets.some((target) => target.local)
 
   if (!outputDir) {
-    const primaryFilePath = multiTarget
-      ? (sourceMediaExecutionPath ?? wavExecutionPath)
-      : (wavExecutionPath ?? sourceMediaExecutionPath)
-    if (!primaryFilePath) {
-      throw new Error('No STT artifacts were prepared')
-    }
     return {
-      primaryFilePath,
-      ...(sourceMediaExecutionPath ? { sourceMediaPath: sourceMediaExecutionPath } : {}),
-      ...(wavExecutionPath ? { wav16kPath: wavExecutionPath } : {})
+      primaryFilePath: sourceMediaExecutionPath,
+      sourceMediaPath: sourceMediaExecutionPath
     }
   }
 
-  const sourceMediaPath = multiTarget && sourceMediaExecutionPath
-    ? join(outputDir, `${baseName}${extname(sourceMediaExecutionPath)}`)
-    : undefined
-  const wav16kPath = (hasLocalTarget || !multiTarget) && wavExecutionPath
-    ? join(outputDir, `${baseName}.wav`)
-    : undefined
-  const primaryFilePath = wav16kPath ?? sourceMediaPath ?? wavExecutionPath ?? sourceMediaExecutionPath
-
-  if (!primaryFilePath) {
-    throw new Error('No STT artifacts were prepared')
-  }
+  const sourceMediaPath = join(outputDir, `${baseName}${extname(sourceMediaExecutionPath)}`)
 
   return {
-    primaryFilePath,
-    ...(sourceMediaPath ? { sourceMediaPath } : {}),
-    ...(wav16kPath ? { wav16kPath } : {})
+    primaryFilePath: sourceMediaPath,
+    sourceMediaPath
   }
 }
 
@@ -495,8 +410,7 @@ const buildEmptyEntry = (cacheKey: string, weakFingerprint: boolean): MediaCache
     weakFingerprint,
     metadataSchemaVersion: METADATA_SCHEMA_VERSION,
     artifactVersions: {
-      source_media: SOURCE_MEDIA_ARTIFACT_VERSION,
-      wav16k_mono: WAV16K_ARTIFACT_VERSION
+      source_media: SOURCE_MEDIA_ARTIFACT_VERSION
     },
     createdAt: now,
     lastAccessedAt: now,
@@ -582,12 +496,7 @@ export const clearMediaCache = async (): Promise<void> => {
 export const prepareSttMedia = async (
   options: AcquireArtifactOptions
 ): Promise<PreparedSttMedia> => {
-  const { source, targets, outputDir, noCache = false, refreshCache = false } = options
-  const multiTarget = targets.length > 1
-  const hasLocalTarget = targets.some((target) => target.local)
-  const hasCloudTarget = targets.some((target) => !target.local)
-  const needsSourceMedia = hasCloudTarget || multiTarget
-  const needsWav16k = hasLocalTarget || (!multiTarget && outputDir !== undefined)
+  const { source, outputDir, noCache = false, refreshCache = false } = options
 
   const cacheLookup = await resolveCacheLookup(source)
   if (cacheLookup.weakFingerprint) {
@@ -597,43 +506,24 @@ export const prepareSttMedia = async (
   const buildUncached = async (): Promise<PreparedSttMedia> => {
     const workspaceDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-acquire-'))
     const timings: PreparedSttMedia['timings'] = {}
-    let sourceMediaExecutionPath: string | undefined
-    let wavExecutionPath: string | undefined
-    let sourceMediaStatus: CacheArtifactStatus = needsSourceMedia ? 'miss' : 'skipped'
-    let wavStatus: CacheArtifactStatus = needsWav16k ? 'miss' : 'skipped'
+    const sourceMediaStatus: CacheArtifactStatus = 'miss'
 
     try {
       await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
 
-      if (needsSourceMedia) {
-        const startedAt = Date.now()
-        sourceMediaExecutionPath = await stageSourceMediaArtifact(source, workspaceDir)
-        timings.sourceMediaMs = Date.now() - startedAt
-        l.info(`cache.bypass artifact=source_media`)
-      }
-
-      if (needsWav16k) {
-        const startedAt = Date.now()
-        const wavSourcePath = sourceMediaExecutionPath ?? await stageSourceMediaArtifact(source, workspaceDir)
-        wavExecutionPath = join(workspaceDir, 'wav16k_mono.wav')
-        await transcodeToWav16kMono(wavSourcePath, wavExecutionPath)
-        timings.wav16kMs = Date.now() - startedAt
-        l.info(`cache.bypass artifact=wav16k_mono`)
-      }
+      const startedAt = Date.now()
+      const sourceMediaExecutionPath = await stageSourceMediaArtifact(source, workspaceDir)
+      timings.sourceMediaMs = Date.now() - startedAt
+      l.info(`cache.bypass artifact=source_media`)
 
       const outputPaths = buildPrimaryOutputPaths(
         cacheLookup.metadata,
         outputDir,
-        targets,
-        sourceMediaExecutionPath,
-        wavExecutionPath
+        sourceMediaExecutionPath
       )
 
-      if (outputPaths.sourceMediaPath && sourceMediaExecutionPath) {
+      if (outputPaths.sourceMediaPath !== sourceMediaExecutionPath) {
         await materializeOutputArtifact(sourceMediaExecutionPath, outputPaths.sourceMediaPath)
-      }
-      if (outputPaths.wav16kPath && wavExecutionPath) {
-        await materializeOutputArtifact(wavExecutionPath, outputPaths.wav16kPath)
       }
 
       const primaryStats = await stat(outputPaths.primaryFilePath)
@@ -643,23 +533,20 @@ export const prepareSttMedia = async (
         audioFileName: basename(outputPaths.primaryFilePath),
         audioFileSize: primaryStats.size
       }
-      const durationSeconds = await probeDurationSeconds(sourceMediaExecutionPath ?? wavExecutionPath, cacheLookup.metadata)
+      const durationSeconds = await probeDurationSeconds(sourceMediaExecutionPath, cacheLookup.metadata)
 
       return {
         metadata: cacheLookup.metadata,
         step1Metadata,
         durationSeconds,
         executionArtifacts: {
-          ...(sourceMediaExecutionPath ? { sourceMediaPath: sourceMediaExecutionPath } : {}),
-          ...(wavExecutionPath ? { wav16kPath: wavExecutionPath } : {})
+          sourceMediaPath: sourceMediaExecutionPath
         },
         outputArtifacts: {
-          ...(outputPaths.sourceMediaPath ? { sourceMediaPath: outputPaths.sourceMediaPath } : {}),
-          ...(outputPaths.wav16kPath ? { wav16kPath: outputPaths.wav16kPath } : {})
+          sourceMediaPath: outputPaths.sourceMediaPath
         },
         cache: {
-          sourceMedia: sourceMediaStatus,
-          wav16k: wavStatus
+          sourceMedia: sourceMediaStatus
         },
         timings,
         cleanup: async () => {
@@ -691,80 +578,61 @@ export const prepareSttMedia = async (
       await writeFile(entryMetadataPath, JSON.stringify(cacheLookup.metadata, null, 2))
 
       let sourceMediaExecutionPath = getEntryArtifactPath(cacheLookup.cacheKey, entry.artifacts?.source_media)
-      let wavExecutionPath = getEntryArtifactPath(cacheLookup.cacheKey, entry.artifacts?.wav16k_mono)
-      let sourceMediaStatus: CacheArtifactStatus = needsSourceMedia ? 'hit' : 'skipped'
-      let wavStatus: CacheArtifactStatus = needsWav16k ? 'hit' : 'skipped'
+      let sourceMediaStatus: CacheArtifactStatus = 'hit'
 
       const sourceMediaValid = sourceMediaExecutionPath
         && !refreshCache
-        && entry.artifactVersions.source_media === SOURCE_MEDIA_ARTIFACT_VERSION
+        && entry.artifactVersions?.source_media === SOURCE_MEDIA_ARTIFACT_VERSION
         && await Bun.file(sourceMediaExecutionPath).exists()
-      if (needsSourceMedia && !sourceMediaValid) {
-        sourceMediaStatus = entry.artifacts?.source_media ? 'miss' : 'miss'
+      if (!sourceMediaValid) {
+        sourceMediaStatus = 'miss'
         const startedAt = Date.now()
         const workspaceDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-source-'))
         try {
           await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
           const builtSourcePath = await stageSourceMediaArtifact(source, workspaceDir)
-          const finalPath = join(entryDir, basename(builtSourcePath))
+          const finalPath = join(entryDir, 'source_media.mp3')
+          await rm(finalPath, { force: true })
+          await rm(join(entryDir, 'wav16k_mono.wav'), { force: true })
+          if (sourceMediaExecutionPath && sourceMediaExecutionPath !== finalPath) {
+            await rm(sourceMediaExecutionPath, { force: true })
+          }
           await publishArtifact(finalPath, async () => builtSourcePath)
           const artifactStats = await stat(finalPath)
           sourceMediaExecutionPath = finalPath
           entry.artifacts = {
-            ...(entry.artifacts ?? {}),
             source_media: {
               fileName: basename(finalPath),
               size: artifactStats.size
             }
           }
-          entry.artifactVersions.source_media = SOURCE_MEDIA_ARTIFACT_VERSION
+          entry.artifactVersions = {
+            source_media: SOURCE_MEDIA_ARTIFACT_VERSION
+          }
           timings.sourceMediaMs = Date.now() - startedAt
           l.info(`${refreshCache ? 'cache.rebuild' : 'cache.miss'} artifact=source_media key=${cacheLookup.cacheKey}`)
         } finally {
           await rm(workspaceDir, { recursive: true, force: true })
         }
-      } else if (needsSourceMedia && sourceMediaExecutionPath) {
+      } else if (sourceMediaExecutionPath) {
         l.info(`cache.hit artifact=source_media key=${cacheLookup.cacheKey}`)
       }
 
-      const wavValid = wavExecutionPath
-        && !refreshCache
-        && entry.artifactVersions.wav16k_mono === WAV16K_ARTIFACT_VERSION
-        && await Bun.file(wavExecutionPath).exists()
-      if (needsWav16k && !wavValid) {
-        wavStatus = entry.artifacts?.wav16k_mono ? 'miss' : 'miss'
-        const startedAt = Date.now()
-        const workspaceDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-wav-'))
-        try {
-          await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
-          const wavSourcePath = sourceMediaExecutionPath ?? await stageSourceMediaArtifact(source, workspaceDir)
-          const builtWavPath = join(workspaceDir, 'wav16k_mono.wav')
-          await transcodeToWav16kMono(wavSourcePath, builtWavPath)
-          const finalPath = join(entryDir, 'wav16k_mono.wav')
-          await publishArtifact(finalPath, async () => builtWavPath)
-          const artifactStats = await stat(finalPath)
-          wavExecutionPath = finalPath
-          entry.artifacts = {
-            ...(entry.artifacts ?? {}),
-            wav16k_mono: {
-              fileName: basename(finalPath),
-              size: artifactStats.size
-            }
-          }
-          entry.artifactVersions.wav16k_mono = WAV16K_ARTIFACT_VERSION
-          timings.wav16kMs = Date.now() - startedAt
-          l.info(`${refreshCache ? 'cache.rebuild' : 'cache.miss'} artifact=wav16k_mono key=${cacheLookup.cacheKey}`)
-        } finally {
-          await rm(workspaceDir, { recursive: true, force: true })
-        }
-      } else if (needsWav16k && wavExecutionPath) {
-        l.info(`cache.hit artifact=wav16k_mono key=${cacheLookup.cacheKey}`)
+      if (!sourceMediaExecutionPath) {
+        throw new Error('No STT artifacts were prepared')
       }
 
-      const durationProbePath = sourceMediaExecutionPath ?? wavExecutionPath
+      await rm(join(entryDir, 'wav16k_mono.wav'), { force: true })
+      entry.artifacts = entry.artifacts?.source_media
+        ? { source_media: entry.artifacts.source_media }
+        : {}
+      entry.artifactVersions = {
+        source_media: SOURCE_MEDIA_ARTIFACT_VERSION
+      }
+
       entry.durationSeconds = entry.durationSeconds && entry.durationSeconds > 0
         ? entry.durationSeconds
-        : await probeDurationSeconds(durationProbePath, cacheLookup.metadata)
+        : await probeDurationSeconds(sourceMediaExecutionPath, cacheLookup.metadata)
       entry.lastAccessedAt = new Date().toISOString()
       entry.metadataSchemaVersion = METADATA_SCHEMA_VERSION
       await writeEntryJson(cacheLookup.cacheKey, entry)
@@ -773,16 +641,11 @@ export const prepareSttMedia = async (
       const outputPaths = buildPrimaryOutputPaths(
         cacheLookup.metadata,
         outputDir,
-        targets,
-        sourceMediaExecutionPath,
-        wavExecutionPath
+        sourceMediaExecutionPath
       )
 
-      if (outputPaths.sourceMediaPath && sourceMediaExecutionPath) {
+      if (outputPaths.sourceMediaPath !== sourceMediaExecutionPath) {
         await materializeOutputArtifact(sourceMediaExecutionPath, outputPaths.sourceMediaPath)
-      }
-      if (outputPaths.wav16kPath && wavExecutionPath) {
-        await materializeOutputArtifact(wavExecutionPath, outputPaths.wav16kPath)
       }
 
       const primaryStats = await stat(outputPaths.primaryFilePath)
@@ -800,16 +663,13 @@ export const prepareSttMedia = async (
         step1Metadata,
         durationSeconds: entry.durationSeconds ?? 0,
         executionArtifacts: {
-          ...(sourceMediaExecutionPath ? { sourceMediaPath: sourceMediaExecutionPath } : {}),
-          ...(wavExecutionPath ? { wav16kPath: wavExecutionPath } : {})
+          sourceMediaPath: sourceMediaExecutionPath
         },
         outputArtifacts: {
-          ...(outputPaths.sourceMediaPath ? { sourceMediaPath: outputPaths.sourceMediaPath } : {}),
-          ...(outputPaths.wav16kPath ? { wav16kPath: outputPaths.wav16kPath } : {})
+          sourceMediaPath: outputPaths.sourceMediaPath
         },
         cache: {
-          sourceMedia: sourceMediaStatus,
-          wav16k: wavStatus
+          sourceMedia: sourceMediaStatus
         },
         timings
       }

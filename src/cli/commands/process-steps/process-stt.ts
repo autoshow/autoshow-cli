@@ -35,6 +35,8 @@ type ProviderSuccess = {
   relativeDir?: string | undefined
 }
 
+type PromptSelectionCandidate = ProviderSuccess
+
 type ProviderErrorLike = Error & {
   cause?: unknown
   headers?: Headers
@@ -179,36 +181,15 @@ const buildAcquireSummary = (
   itemLabel: string,
   prepared: PreparedSttMedia
 ): string => {
-  const sourceMedia = prepared.cache.sourceMedia === 'skipped'
-    ? 'skipped'
-    : `${prepared.cache.sourceMedia}${prepared.timings.sourceMediaMs !== undefined ? `(${prepared.timings.sourceMediaMs}ms)` : ''}`
-  const wav16k = prepared.cache.wav16k === 'skipped'
-    ? 'skipped'
-    : `${prepared.cache.wav16k}${prepared.timings.wav16kMs !== undefined ? `(${prepared.timings.wav16kMs}ms)` : ''}`
-  return `stt-acquire item=${itemLabel} sourceMedia=${sourceMedia} wav16k=${wav16k}`
+  const sourceMedia = `${prepared.cache.sourceMedia}${prepared.timings.sourceMediaMs !== undefined ? `(${prepared.timings.sourceMediaMs}ms)` : ''}`
+  return `stt-acquire item=${itemLabel} sourceMedia=${sourceMedia}`
 }
 
 const resolveTargetAudioPath = (
-  target: SttTarget,
+  _target: SttTarget,
   prepared: PreparedSttMedia
 ): string => {
-  if (target.local) {
-    const wavPath = prepared.executionArtifacts.wav16kPath
-    if (!wavPath) {
-      throw new Error(`Missing wav16k artifact for local STT target ${target.service}/${target.model}`)
-    }
-    return wavPath
-  }
-
   const sourceMediaPath = prepared.executionArtifacts.sourceMediaPath
-  if (!sourceMediaPath) {
-    const wavFallbackPath = prepared.executionArtifacts.wav16kPath
-    if (wavFallbackPath) {
-      return wavFallbackPath
-    }
-    throw new Error(`Missing source_media artifact for cloud STT target ${target.service}/${target.model}`)
-  }
-
   return sourceMediaPath
 }
 
@@ -238,24 +219,61 @@ const runTargetPool = async (
   )
 }
 
+const buildProviderModelLabel = (
+  metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel' | 'transcriptionModelName'>
+): string =>
+  `${metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : metadata.transcriptionService}/${metadata.transcriptionModelName ?? metadata.transcriptionModel}`
+
 const buildPromptFile = async (
   outputDir: string,
   metadata: PreparedSttMedia['metadata'],
   transcription: TranscriptionResult,
   slug: string,
-  options: Pick<RuntimeOptions, 'prompts' | 'structured'>
+  options: Pick<RuntimeOptions, 'prompts' | 'structured'> & {
+    promptSourceProvider?: string | undefined
+    requestedSpeakerCount?: number | undefined
+  }
 ): Promise<void> => {
   const instruction = await resolvePromptNames(options.prompts ?? [], {
     exampleFormat: options.structured === false ? 'markdown' : 'json'
   })
-  const promptContent = buildPrompt(metadata, transcription, instruction, slug)
+  const promptContent = buildPrompt(metadata, transcription, instruction, slug, {
+    promptSourceProvider: options.promptSourceProvider,
+    requestedSpeakerCount: options.requestedSpeakerCount
+  })
   await Bun.write(`${outputDir}/prompt.md`, promptContent)
 }
 
 export const selectPrimaryPromptProvider = (
   successes: Array<ProviderSuccess | undefined>
-): ProviderSuccess | undefined =>
-  successes.find((entry): entry is ProviderSuccess => entry !== undefined)
+): ProviderSuccess | undefined => {
+  const candidates = successes
+    .map((entry, index) => ({ entry, index }))
+    .filter((entry): entry is { entry: PromptSelectionCandidate, index: number } => entry.entry !== undefined)
+
+  if (candidates.length === 0) {
+    return undefined
+  }
+
+  const scoreCandidate = (candidate: PromptSelectionCandidate): number => {
+    const hasSpeakerLabels = candidate.result.segments.some((segment) =>
+      typeof segment.speaker === 'string' && segment.speaker.length > 0
+    )
+    const honorsRequestedDiarization = candidate.target.diarizationOptions?.speakerCount !== undefined
+      || (candidate.target.diarizationOptions?.knownSpeakerNames?.length ?? 0) > 0
+
+    return (hasSpeakerLabels ? 2 : 0) + (honorsRequestedDiarization ? 1 : 0)
+  }
+
+  return candidates
+    .sort((left, right) => {
+      const scoreDiff = scoreCandidate(right.entry) - scoreCandidate(left.entry)
+      if (scoreDiff !== 0) {
+        return scoreDiff
+      }
+      return left.index - right.index
+    })[0]?.entry
+}
 
 const buildSingleStepSummaries = (
   acquisitionTimeMs: number,
@@ -340,7 +358,9 @@ export const processStt = async (
 
       await buildPromptFile(outputDir, prepared.metadata, transcription.result, prepared.step1Metadata.slug, {
         prompts: options.prompts,
-        structured: options.structured
+        structured: options.structured,
+        promptSourceProvider: buildProviderModelLabel(transcription.metadata),
+        requestedSpeakerCount: target.diarizationOptions?.speakerCount
       })
 
       const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, targets, prepared.durationSeconds))
@@ -463,7 +483,9 @@ export const processStt = async (
     if (promptSource) {
       await buildPromptFile(outputDir, prepared.metadata, promptSource.result, prepared.step1Metadata.slug, {
         prompts: options.prompts,
-        structured: options.structured
+        structured: options.structured,
+        promptSourceProvider: buildProviderModelLabel(promptSource.metadata),
+        requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount
       })
     }
 
@@ -507,8 +529,7 @@ export const processStt = async (
       cost,
       timing,
       cache: {
-        sourceMedia: prepared.cache.sourceMedia,
-        wav16k: prepared.cache.wav16k
+        sourceMedia: prepared.cache.sourceMedia
       },
       ...(failures.length > 0
         ? {
@@ -529,14 +550,7 @@ export const processStt = async (
       prompt: 'prompt.md',
       metadata: 'metadata.json'
     }
-    if (prepared.outputArtifacts.sourceMediaPath) {
-      artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
-    } else {
-      artifactFiles['audio'] = prepared.step1Metadata.audioFileName
-    }
-    if (prepared.outputArtifacts.wav16kPath) {
-      artifactFiles['audio-wav'] = basename(prepared.outputArtifacts.wav16kPath)
-    }
+    artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
     for (const entry of successfulProviders) {
       const dir = entry.relativeDir as string
       const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel}`
@@ -552,7 +566,7 @@ export const processStt = async (
       },
       ...successfulProviders.map((entry) => ({
         label: 'Transcribe',
-        providerModel: `${entry.metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : entry.metadata.transcriptionService}/${entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel}`,
+        providerModel: buildProviderModelLabel(entry.metadata),
         processingTime: entry.metadata.processingTime,
         cost: actual.steps.find((step) =>
           step.step === 'stt'
@@ -563,6 +577,14 @@ export const processStt = async (
     ]
 
     l.report.complete(outputDir, artifactFiles, {
+      metrics: {
+        providersRequested: String(targets.length),
+        providersSucceeded: String(successfulProviders.length),
+        providersFailed: String(failures.length),
+        ...(promptSource
+          ? { promptSource: buildProviderModelLabel(promptSource.metadata) }
+          : {})
+      },
       steps: stepSummaries,
       totalTimeMs: Date.now() - processStart,
       totalCost: actual.totalCost

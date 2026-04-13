@@ -11,6 +11,27 @@ export { buildOptsFromFlags } from './build-opts-from-flags'
 
 type BatchManifestEntry = Record<string, unknown>
 
+export const getBatchManifestErrorCount = (entry: BatchManifestEntry | null): number => {
+  if (!entry) {
+    return 0
+  }
+
+  const errors = entry['errors']
+  return Array.isArray(errors) ? errors.length : 0
+}
+
+export const formatBatchCompletionSummary = (
+  ok: number,
+  partial: number,
+  fail: number
+): string => {
+  if (partial > 0) {
+    return `Batch complete: ${ok - partial} succeeded, ${partial} partial, ${fail} failed`
+  }
+
+  return `Batch complete: ${ok} succeeded, ${fail} failed`
+}
+
 export const DOCUMENT_EXTENSIONS = [
   '.pdf', '.epub', '.docx', '.pptx', '.xlsx', '.odt', '.ods', '.odp',
   '.mobi', '.azw3', '.azw', '.fb2', '.lit', '.cbz', '.rtf', '.csv'
@@ -231,6 +252,7 @@ export const processBatch = async (
 
   const concurrency = Math.max(1, runOpts.concurrency ?? 1)
   let ok = 0
+  let partial = 0
   let fail = 0
   let failureExitCode: number | undefined
   let hasMixedFailureCodes = false
@@ -263,11 +285,17 @@ export const processBatch = async (
             await processSingleTarget(command, item, batchDir, opts)
           )
           const manifestEntry = processed?.outputDir ? await readBatchManifestEntry(processed.outputDir) : null
+          const errorCount = getBatchManifestErrorCount(manifestEntry)
           if (manifestEntry) {
             finalInfoEntries[index] = manifestEntry
           }
           ok++
-          l.success(`Done ${index + 1}/${items.length}`)
+          if (errorCount > 0) {
+            partial++
+            l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
+          } else {
+            l.success(`Done ${index + 1}/${items.length}`)
+          }
         } catch (error) {
         fail++
         recordFailureExitCode(error)
@@ -287,16 +315,24 @@ export const processBatch = async (
             await processSingleTarget(command, item, batchDir, opts)
           )
           const manifestEntry = processed?.outputDir ? await readBatchManifestEntry(processed.outputDir) : null
-          l.success(`Done ${index + 1}/${items.length}`)
-          return manifestEntry
+          const errorCount = getBatchManifestErrorCount(manifestEntry)
+          if (errorCount > 0) {
+            l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
+          } else {
+            l.success(`Done ${index + 1}/${items.length}`)
+          }
+          return { manifestEntry, errorCount }
         })
       )
     )
     for (const [index, r] of results.entries()) {
       if (r.status === 'fulfilled') {
         ok++
-        if (r.value) {
-          finalInfoEntries[index] = r.value
+        if (r.value.manifestEntry) {
+          finalInfoEntries[index] = r.value.manifestEntry
+        }
+        if (r.value.errorCount > 0) {
+          partial++
         }
       } else {
         fail++
@@ -307,7 +343,7 @@ export const processBatch = async (
     }
   }
 
-  l.info(`Batch complete: ${ok} succeeded, ${fail} failed`)
+  l.info(formatBatchCompletionSummary(ok, partial, fail))
   await writeFile(`${batchDir}/info.json`, JSON.stringify(finalInfoEntries, null, 2))
 
   return {
