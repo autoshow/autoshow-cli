@@ -194,3 +194,194 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
     outputDir
   }))
 })
+
+test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before creating new work', async () => {
+  const batchDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-runtime-'))
+  tempDirs.push(batchDir)
+
+  const outputDir = join(batchDir, '2026-04-13_partial-runtime-item')
+  const mistralDir = join(outputDir, 'providers', 'mistral-voxtral-mini-latest')
+  const sonioxDir = join(outputDir, 'providers', 'soniox-stt-async-v4')
+  await mkdir(mistralDir, { recursive: true })
+  await mkdir(sonioxDir, { recursive: true })
+
+  await Bun.write(join(mistralDir, 'transcription.txt'), '[00:00:00] [speaker-1] Existing Mistral transcript')
+  await Bun.write(join(mistralDir, 'metadata.json'), JSON.stringify({
+    transcriptionService: 'mistral',
+    transcriptionModel: 'voxtral-mini-latest',
+    transcriptionModelName: 'voxtral-mini-latest',
+    processingTime: 100,
+    tokenCount: 3
+  }, null, 2))
+
+  await Bun.write(join(sonioxDir, 'metadata.json'), JSON.stringify({
+    transcriptionService: 'soniox',
+    transcriptionModel: 'stt-async-v4',
+    transcriptionModelName: 'stt-async-v4',
+    processingTime: 10,
+    tokenCount: 0,
+    timings: {
+      createMs: 10,
+      createCount: 1
+    },
+    runtime: {
+      mode: 'fresh',
+      stage: 'polling',
+      remoteJobId: 'tx-existing',
+      remoteAssetId: 'file-existing',
+      createCompletedAt: '2026-04-13T00:00:00.000Z'
+    }
+  }, null, 2))
+
+  const rootMetadata = {
+    step1: {
+      title: 'resume-runtime-test',
+      duration: '00:00:10',
+      author: 'Local',
+      description: '',
+      url: `file://${resolve(STABLE_LOCAL_AUDIO_PATH)}`,
+      slug: 'resume-runtime-test',
+      audioFileName: 'resume-runtime-test.mp3',
+      audioFileSize: 1234
+    },
+    step2: [
+      {
+        transcriptionService: 'mistral',
+        transcriptionModel: 'voxtral-mini-latest',
+        transcriptionModelName: 'voxtral-mini-latest',
+        processingTime: 100,
+        tokenCount: 3
+      }
+    ],
+    completionStatus: 'incomplete',
+    requestedProviders: [
+      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
+    ],
+    providerStates: [
+      {
+        service: 'mistral',
+        model: 'voxtral-mini-latest',
+        local: false,
+        artifactDir: 'providers/mistral-voxtral-mini-latest',
+        status: 'succeeded',
+        attempts: 1
+      },
+      {
+        service: 'soniox',
+        model: 'stt-async-v4',
+        local: false,
+        artifactDir: 'providers/soniox-stt-async-v4',
+        status: 'failed',
+        attempts: 1,
+        retryable: true,
+        lastError: {
+          message: 'timed out waiting for completion',
+          retryable: true
+        }
+      }
+    ],
+    missingProviders: [
+      { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
+    ],
+    errors: [
+      {
+        service: 'soniox',
+        model: 'stt-async-v4',
+        message: 'timed out waiting for completion',
+        retryable: true
+      }
+    ]
+  }
+
+  await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify(rootMetadata, null, 2))
+  await Bun.write(join(batchDir, 'info.json'), JSON.stringify([
+    {
+      ...rootMetadata,
+      outputDir
+    }
+  ], null, 2))
+
+  process.env['SONIOX_API_KEY'] = 'soniox-test-key'
+  process.env['SONIOX_BASE_URL'] = 'https://soniox.test'
+
+  let uploadCalls = 0
+  let createCalls = 0
+  let statusCalls = 0
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input)
+    const method = init?.method ?? 'GET'
+
+    if (url === 'https://soniox.test/v1/files' && method === 'POST') {
+      uploadCalls += 1
+      return new Response(JSON.stringify({ id: 'file-new' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions' && method === 'POST') {
+      createCalls += 1
+      return new Response(JSON.stringify({ id: 'tx-new', status: 'queued' }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions/tx-existing' && method === 'GET') {
+      statusCalls += 1
+      return new Response(JSON.stringify({
+        id: 'tx-existing',
+        status: 'completed'
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions/tx-existing/transcript' && method === 'GET') {
+      return new Response(JSON.stringify({
+        id: 'tx-existing',
+        text: 'Resumed Soniox transcript.',
+        tokens: [
+          { text: 'Resumed Soniox transcript.', start_ms: 0, end_ms: 1000, speaker: 0 }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions/tx-existing' && method === 'DELETE') {
+      return new Response(null, { status: 204 })
+    }
+
+    if (url === 'https://soniox.test/v1/files/file-existing' && method === 'DELETE') {
+      return new Response(null, { status: 204 })
+    }
+
+    throw new Error(`Unexpected request: ${method} ${url}`)
+  }) as unknown as typeof fetch
+
+  const opts = buildOptsFromFlags(false, {
+    'no-cache': true
+  })
+
+  await resumeSttMissingFromBatchDir(batchDir, opts)
+
+  expect(uploadCalls).toBe(0)
+  expect(createCalls).toBe(0)
+  expect(statusCalls).toBeGreaterThanOrEqual(1)
+  expect(await Bun.file(join(outputDir, 'providers', 'soniox-stt-async-v4', 'transcription.txt')).exists()).toBe(true)
+
+  const updatedProviderMetadata = await Bun.file(join(outputDir, 'providers', 'soniox-stt-async-v4', 'metadata.json')).json() as Record<string, unknown>
+  expect(updatedProviderMetadata['runtime']).toEqual(expect.objectContaining({
+    mode: 'resumed',
+    remoteJobId: 'tx-existing'
+  }))
+
+  const updatedMetadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+  expect(updatedMetadata['completionStatus']).toBe('full')
+  expect(Array.isArray(updatedMetadata['step2'])).toBe(true)
+  expect((updatedMetadata['step2'] as unknown[])).toHaveLength(2)
+})

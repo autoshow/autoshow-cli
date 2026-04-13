@@ -6,6 +6,7 @@ export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. It doe
 export type BuildPromptOptions = {
   promptSourceProvider?: string | undefined
   requestedSpeakerCount?: number | undefined
+  suppressDiarizationLog?: boolean | undefined
 }
 
 export const buildPrompt = (
@@ -65,7 +66,9 @@ Format the output like so:
         : undefined,
       options?.promptSourceProvider ? `source: ${options.promptSourceProvider}` : undefined
     ].filter((entry): entry is string => typeof entry === 'string')
-    l.info(`Including speaker diarization in prompt (${details.join('; ')})`)
+    if (options?.suppressDiarizationLog !== true) {
+      l.info(`Including speaker diarization in prompt (${details.join('; ')})`)
+    }
   }
   
   const transcriptWithTimestamps = transcription.segments

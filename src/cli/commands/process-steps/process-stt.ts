@@ -12,6 +12,7 @@ import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
 import { getTranscribeEngineCapabilities, transcribeTarget } from './step-2-stt/run-transcribe'
+import { parseStep2RuntimeMetadata } from './step-2-stt/stt-utils/async-stt-job-runner'
 import {
   describeSttBatchProviderSlotLimits,
   SttBatchCoordinator,
@@ -326,7 +327,8 @@ const writeSkippedProviderArtifact = async (
     retryable: reason.retryable,
     skipped: true,
     ...(reason.stage ? { stage: reason.stage } : {}),
-    ...(typeof reason.status === 'number' ? { status: reason.status } : {})
+    ...(typeof reason.status === 'number' ? { status: reason.status } : {}),
+    ...(reason.degraded === true ? { degraded: true } : {})
   }, null, 2))
 
   return { errorFile }
@@ -394,7 +396,7 @@ const logEffectiveProviderConcurrency = (
   }
 
   if (coordinatedAcrossBatch) {
-    logInfoOnce(`STT batch scheduler active: itemProviderConcurrency=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}, providerSlots=${describeSttBatchProviderSlotLimits(targets)}`)
+    logInfoOnce(`STT batch scheduler active: itemProviderConcurrency=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}, providerSlots=${describeSttBatchProviderSlotLimits(targets, batchConcurrency)}`)
     return
   }
 
@@ -506,14 +508,19 @@ const STT_TIMING_KEYS = [
   'transcribeMs',
   'uploadMs',
   'createMs',
+  'createCount',
   'pollMs',
   'pollSleepMs',
+  'pollCount',
   'transcriptMs',
   'remoteProcessingMs',
   'cleanupMs',
   'requestCount',
   'retryCount',
-  'rateLimitCount'
+  'rateLimitCount',
+  'blockedCount',
+  'degradedCount',
+  'backfillCount'
 ] as const satisfies readonly (keyof Step2TimingMetadata)[]
 
 const parseStoredStep2Timings = (value: unknown): Step2TimingMetadata | undefined => {
@@ -571,6 +578,7 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
   }
 
   const timings = parseStoredStep2Timings(value['timings'])
+  const runtime = parseStep2RuntimeMetadata(value['runtime'])
 
   return {
     transcriptionService: value['transcriptionService'],
@@ -578,7 +586,8 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
     ...(typeof value['transcriptionModelName'] === 'string' ? { transcriptionModelName: value['transcriptionModelName'] } : {}),
     processingTime: value['processingTime'],
     tokenCount: value['tokenCount'],
-    ...(timings ? { timings } : {})
+    ...(timings ? { timings } : {}),
+    ...(runtime ? { runtime } : {})
   }
 }
 
@@ -932,9 +941,11 @@ const selectCoordinatedCloudTarget = async (
         const decision = batchCoordinator.tryReserveProvider(requestedTargets[candidate.index] as SttTarget)
         if (decision.action === 'run') {
           pendingIndices.delete(candidate.index)
+          const queueWaitMs = Date.now() - waitStartedAt
+          batchCoordinator.noteProviderQueueWait(requestedTargets[candidate.index] as SttTarget, queueWaitMs)
           return {
             index: candidate.index,
-            queueWaitMs: Date.now() - waitStartedAt
+            queueWaitMs
           }
         }
 
@@ -1009,6 +1020,7 @@ const buildPromptFile = async (
   options: Pick<RuntimeOptions, 'prompts' | 'structured'> & {
     promptSourceProvider?: string | undefined
     requestedSpeakerCount?: number | undefined
+    suppressDiarizationLog?: boolean | undefined
   }
 ): Promise<void> => {
   const instruction = await resolvePromptNames(options.prompts ?? [], {
@@ -1016,9 +1028,24 @@ const buildPromptFile = async (
   })
   const promptContent = buildPrompt(metadata, transcription, instruction, slug, {
     promptSourceProvider: options.promptSourceProvider,
-    requestedSpeakerCount: options.requestedSpeakerCount
+    requestedSpeakerCount: options.requestedSpeakerCount,
+    suppressDiarizationLog: options.suppressDiarizationLog
   })
   await Bun.write(`${outputDir}/prompt.md`, promptContent)
+}
+
+export const scorePromptSelectionCandidate = (
+  candidate: PromptSelectionCandidate
+): number => {
+  const hasSpeakerLabels = candidate.result.segments.some((segment) =>
+    typeof segment.speaker === 'string' && segment.speaker.length > 0
+  )
+  const hasRequestedDiarizationHint = candidate.target.diarizationOptions?.speakerCount !== undefined
+    || (candidate.target.diarizationOptions?.knownSpeakerNames?.length ?? 0) > 0
+  const hasDiarizationEnabled = candidate.target.diarizationOptions?.enabled === true
+    || hasRequestedDiarizationHint
+
+  return (hasSpeakerLabels ? 2 : 0) + (hasRequestedDiarizationHint ? 2 : 0) + (hasDiarizationEnabled ? 1 : 0)
 }
 
 export const selectPrimaryPromptProvider = (
@@ -1032,21 +1059,9 @@ export const selectPrimaryPromptProvider = (
     return undefined
   }
 
-  const scoreCandidate = (candidate: PromptSelectionCandidate): number => {
-    const hasSpeakerLabels = candidate.result.segments.some((segment) =>
-      typeof segment.speaker === 'string' && segment.speaker.length > 0
-    )
-    const hasRequestedDiarizationHint = candidate.target.diarizationOptions?.speakerCount !== undefined
-      || (candidate.target.diarizationOptions?.knownSpeakerNames?.length ?? 0) > 0
-    const hasDiarizationEnabled = candidate.target.diarizationOptions?.enabled === true
-      || hasRequestedDiarizationHint
-
-    return (hasSpeakerLabels ? 2 : 0) + (hasRequestedDiarizationHint ? 2 : 0) + (hasDiarizationEnabled ? 1 : 0)
-  }
-
   return candidates
     .sort((left, right) => {
-      const scoreDiff = scoreCandidate(right.entry) - scoreCandidate(left.entry)
+      const scoreDiff = scorePromptSelectionCandidate(right.entry) - scorePromptSelectionCandidate(left.entry)
       if (scoreDiff !== 0) {
         return scoreDiff
       }
@@ -1240,6 +1255,7 @@ export const processStt = async (
     let promptRefreshChain = Promise.resolve()
     let promptRefreshError: unknown
     let lastPromptSourceKey: string | undefined
+    let lastPromptScore = -1
 
     const queuePromptRefresh = (): void => {
       promptRefreshChain = promptRefreshChain
@@ -1254,7 +1270,8 @@ export const processStt = async (
           }
 
           const promptSourceKey = getTargetKey(promptSource.target)
-          if (promptSourceKey === lastPromptSourceKey) {
+          const promptScore = scorePromptSelectionCandidate(promptSource)
+          if (promptSourceKey === lastPromptSourceKey || promptScore <= lastPromptScore) {
             return
           }
 
@@ -1262,9 +1279,11 @@ export const processStt = async (
             prompts: options.prompts,
             structured: options.structured,
             promptSourceProvider: buildProviderModelLabel(promptSource.metadata),
-            requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount
+            requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount,
+            suppressDiarizationLog: coordinatedAcrossBatch
           })
           lastPromptSourceKey = promptSourceKey
+          lastPromptScore = promptScore
         })
         .catch((error) => {
           promptRefreshError = error
@@ -1329,11 +1348,30 @@ export const processStt = async (
         await mkdir(providerDir, { recursive: true })
 
         const audioPath = resolveTargetAudioPath(target, prepared as PreparedSttMedia)
+        if (runOptions.outputDir) {
+          batchCoordinator?.noteBackfill(target)
+        }
+        let asyncJobReady = false
         const transcription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
           await transcribeTarget(audioPath, providerDir, target, {
             split: options.split,
             reverbVerbatimicity: options.reverbVerbatimicity,
-            sttSegmentConcurrency: options.sttSegmentConcurrency
+            sttSegmentConcurrency: options.sttSegmentConcurrency,
+            audioDurationSeconds: preparedMedia.durationSeconds,
+            runMode: runOptions.outputDir ? 'backfill' : 'initial',
+            asyncLifecycle: batchCoordinator
+              ? {
+                  onJobReady: async () => {
+                    if (asyncJobReady) {
+                      return
+                    }
+                    asyncJobReady = true
+                    batchCoordinator.releaseProviderSlot(target, { warmupSuccess: true })
+                  },
+                  withPollSlot: async <T,>(fn: () => Promise<T>): Promise<T> =>
+                    await batchCoordinator.withPollSlot(target, fn)
+                }
+              : undefined
           })
         )
         const metadataWithQueueTiming = withMergedStep2Timings(
@@ -1348,7 +1386,7 @@ export const processStt = async (
           relativeDir
         }
         queuePromptRefresh()
-        batchCoordinator?.reportProviderResult(target)
+        batchCoordinator?.reportProviderSuccess(target)
         providerStateMap.set(targetKey, {
           service: target.service,
           model: target.model,
@@ -1381,10 +1419,11 @@ export const processStt = async (
               message: failure.message,
               retryable: failure.retryable,
               ...(failure.stage ? { stage: failure.stage } : {}),
-              ...(typeof failure.status === 'number' ? { status: failure.status } : {})
+              ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+              degraded: false
             } satisfies SttBatchBlockedProviderReason
           : undefined
-        batchCoordinator?.reportProviderResult(target, {
+        batchCoordinator?.reportProviderFailure(target, failure, {
           blockedReason: batchBlockedFailure,
           cooldownMs: resolveTransientProviderCooldownMs(failure)
         })
@@ -1494,6 +1533,7 @@ export const processStt = async (
       audioDurationSeconds: prepared.durationSeconds,
       step2: successfulProviders.map((entry) => entry.metadata)
     })
+    const schedulerSnapshot = batchCoordinator?.getSchedulerSnapshot()
     const timing = {
       estimated: estimatedTiming,
       actual: actualTiming,
@@ -1503,12 +1543,18 @@ export const processStt = async (
           hostedProviderCount: providerConcurrency.hostedProviderCount,
           itemProviderConcurrency: providerConcurrency.effective,
           coordinatedAcrossBatch,
-          ...(coordinatedAcrossBatch ? { providerSlots: describeSttBatchProviderSlotLimits(requestedTargets) } : {})
+          ...(coordinatedAcrossBatch
+            ? {
+                providerSlots: describeSttBatchProviderSlotLimits(requestedTargets, options.batchConcurrency),
+                ...(schedulerSnapshot ? { providerStats: schedulerSnapshot.providers } : {})
+              }
+            : {})
         },
         providers: successfulProviders.map((entry) => ({
           service: entry.metadata.transcriptionService,
           model: entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel,
-          processingTimeMs: entry.metadata.processingTime
+          processingTimeMs: entry.metadata.processingTime,
+          ...(entry.metadata.timings ? { timings: entry.metadata.timings } : {})
         }))
       }
     }

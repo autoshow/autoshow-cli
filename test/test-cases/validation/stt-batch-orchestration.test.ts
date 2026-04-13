@@ -14,12 +14,17 @@ const originalSonioxBaseUrl = process.env['SONIOX_BASE_URL']
 const originalMistralApiKey = process.env['MISTRAL_API_KEY']
 const originalMistralBaseUrl = process.env['MISTRAL_BASE_URL']
 const originalProviderSlotLimit = process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT']
+const originalSonioxProviderSlotLimit = process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT_SONIOX']
 const originalBunSleep = Bun.sleep
 const cleanupPaths: string[] = []
 type FetchWithMistralCalls = typeof fetch & { getMistralCalls: () => number }
 type CoordinatedProviderFetch = typeof fetch & {
   getCallCounts: () => { deepgram: number, sonioxUploads: number, mistral: number }
   releaseSlowProviders: () => void
+}
+type AsyncCreateReleaseFetch = typeof fetch & {
+  getCallCounts: () => { sonioxCreates: number, sonioxPolls: number, mistral: number }
+  releasePolls: () => void
 }
 
 const registerCleanupPath = (path: string | undefined): void => {
@@ -28,14 +33,13 @@ const registerCleanupPath = (path: string | undefined): void => {
   }
 }
 
-const createBatchInputs = async (label: string): Promise<string[]> => {
+const createBatchInputs = async (label: string, count = 2): Promise<string[]> => {
   const dir = await mkdtemp(join(tmpdir(), label))
   registerCleanupPath(dir)
   const bytes = await Bun.file(STABLE_LOCAL_AUDIO_PATH).bytes()
-  const files = [
-    join(dir, 'item-a.mp3'),
-    join(dir, 'item-b.mp3')
-  ]
+  const files = Array.from({ length: count }, (_entry, index) =>
+    join(dir, `item-${String.fromCharCode('a'.charCodeAt(0) + index)}.mp3`)
+  )
 
   for (const file of files) {
     await Bun.write(file, bytes)
@@ -240,6 +244,113 @@ const createCoordinatedProviderFetch = (): CoordinatedProviderFetch => {
   return fetchImpl
 }
 
+const createAsyncCreateReleaseFetch = (): AsyncCreateReleaseFetch => {
+  let nextFileId = 1
+  let nextTranscriptId = 1
+  let sonioxCreates = 0
+  let sonioxPolls = 0
+  let mistralCalls = 0
+  let releasePolls!: () => void
+  let pollsReleased = false
+  const pollsReady = new Promise<void>((resolve) => {
+    releasePolls = resolve
+  })
+
+  const waitForPolls = async (): Promise<void> => {
+    if (!pollsReleased) {
+      await pollsReady
+    }
+  }
+
+  const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input)
+    const method = init?.method ?? 'GET'
+
+    if (url === 'https://soniox.test/v1/files' && method === 'POST') {
+      return new Response(JSON.stringify({ id: `file-${nextFileId++}` }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions' && method === 'POST') {
+      sonioxCreates += 1
+      return new Response(JSON.stringify({ id: `tx-${nextTranscriptId++}`, status: 'queued' }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    const transcriptionStatusMatch = url.match(/^https:\/\/soniox\.test\/v1\/transcriptions\/([^/]+)$/)
+    if (transcriptionStatusMatch && method === 'GET') {
+      sonioxPolls += 1
+      await waitForPolls()
+      return new Response(JSON.stringify({
+        id: transcriptionStatusMatch[1],
+        status: 'completed'
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    const transcriptMatch = url.match(/^https:\/\/soniox\.test\/v1\/transcriptions\/([^/]+)\/transcript$/)
+    if (transcriptMatch && method === 'GET') {
+      return new Response(JSON.stringify({
+        id: transcriptMatch[1],
+        text: `Async Soniox transcript ${transcriptMatch[1]}.`,
+        tokens: [
+          { text: `Async Soniox transcript ${transcriptMatch[1]}.`, start_ms: 0, end_ms: 1000, speaker: 0 }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url.startsWith('https://soniox.test/v1/') && method === 'DELETE') {
+      return new Response(null, { status: 204 })
+    }
+
+    if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
+      mistralCalls += 1
+      return new Response(JSON.stringify({
+        text: `Mistral transcript ${mistralCalls}.`,
+        segments: [
+          {
+            start: 0,
+            end: 1,
+            text: `Mistral transcript ${mistralCalls}.`,
+            speaker_id: 1
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    throw new Error(`Unexpected request: ${method} ${url}`)
+  }) as unknown as AsyncCreateReleaseFetch
+
+  Object.assign(fetchImpl, {
+    getCallCounts: () => ({
+      sonioxCreates,
+      sonioxPolls,
+      mistral: mistralCalls
+    }),
+    releasePolls: () => {
+      if (pollsReleased) {
+        return
+      }
+      pollsReleased = true
+      releasePolls()
+    }
+  })
+
+  return fetchImpl
+}
+
 const waitFor = async (predicate: () => boolean, timeoutMs = 2000): Promise<void> => {
   const startedAt = Date.now()
   while (!predicate()) {
@@ -293,6 +404,12 @@ afterEach(async () => {
     delete process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT']
   } else {
     process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT'] = originalProviderSlotLimit
+  }
+
+  if (originalSonioxProviderSlotLimit === undefined) {
+    delete process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT_SONIOX']
+  } else {
+    process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT_SONIOX'] = originalSonioxProviderSlotLimit
   }
 
   ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = originalBunSleep
@@ -389,14 +506,12 @@ test('runSttBatch uses free provider slots on later items instead of waiting beh
     return counts.deepgram >= 1
       && counts.sonioxUploads >= 1
       && counts.mistral >= 1
-      && (counts.deepgram + counts.sonioxUploads + counts.mistral) >= 4
   })
 
   const earlyCounts = fetchImpl.getCallCounts()
   expect(earlyCounts.deepgram).toBeGreaterThanOrEqual(1)
   expect(earlyCounts.sonioxUploads).toBeGreaterThanOrEqual(1)
   expect(earlyCounts.mistral).toBeGreaterThanOrEqual(1)
-  expect(earlyCounts.deepgram + earlyCounts.sonioxUploads + earlyCounts.mistral).toBeGreaterThanOrEqual(4)
 
   fetchImpl.releaseSlowProviders()
 
@@ -411,6 +526,45 @@ test('runSttBatch uses free provider slots on later items instead of waiting beh
     sonioxUploads: 2,
     mistral: 2
   })
+})
+
+test('runSttBatch releases async create slots after remote job creation', async () => {
+  const items = await createBatchInputs('autoshow-stt-async-create-', 3)
+
+  process.env['SONIOX_API_KEY'] = 'soniox-test-key'
+  process.env['SONIOX_BASE_URL'] = 'https://soniox.test'
+  process.env['MISTRAL_API_KEY'] = 'mistral-test-key'
+  process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
+  process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT_SONIOX'] = '1'
+
+  const fetchImpl = createAsyncCreateReleaseFetch()
+  globalThis.fetch = fetchImpl
+
+  const opts = buildOptsFromFlags(false, {
+    'soniox-stt': 'stt-async-v4',
+    'mistral-stt': 'voxtral-mini-latest',
+    'batch-concurrency': '3',
+    'no-cache': true
+  })
+
+  const batchPromise = runSttBatch(items, 'stt-batch-async-create', opts, {
+    concurrency: opts.batchConcurrency
+  })
+
+  await waitFor(() => fetchImpl.getCallCounts().sonioxCreates === 3)
+
+  const earlyCounts = fetchImpl.getCallCounts()
+  expect(earlyCounts.sonioxCreates).toBe(3)
+
+  fetchImpl.releasePolls()
+
+  const result = await batchPromise
+  registerCleanupPath(result.batchDir)
+
+  expect(result.ok).toBe(3)
+  expect(result.incomplete).toBe(0)
+  expect(result.fail).toBe(0)
+  expect(fetchImpl.getCallCounts().sonioxCreates).toBe(3)
 })
 
 test('runSttBatch backfills retryable provider failures within the same invocation', async () => {

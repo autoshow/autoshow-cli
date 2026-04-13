@@ -1,7 +1,7 @@
 import * as l from '~/logger'
 import type { BatchProcessResult, BatchRunOptions, RuntimeOptions } from '~/types'
 import { collectSttTargets } from './stt-targets'
-import { SttBatchCoordinator } from './stt-batch-coordinator'
+import { formatSttBatchSchedulerSummary, SttBatchCoordinator } from './stt-batch-coordinator'
 import { runResumeSttMissingFromBatchDir } from './resume-stt-batch'
 import { processBatch } from '../step-1-download/targets/target-utils'
 import { processSingleTarget } from '../step-1-download/targets/single-target'
@@ -38,7 +38,7 @@ export const runSttBatch = async (
   runOpts: BatchRunOptions = {}
 ): Promise<BatchProcessResult> => {
   const coordinator = shouldEnableCoordinator(items, opts)
-    ? new SttBatchCoordinator()
+    ? new SttBatchCoordinator({ batchConcurrency: opts.batchConcurrency })
     : undefined
 
   let result = await processBatch(
@@ -60,6 +60,13 @@ export const runSttBatch = async (
       maxPasses: 2,
       ignoreUnresumableEntries: true
     })
+  }
+
+  if (coordinator) {
+    const summary = formatSttBatchSchedulerSummary(coordinator.getSchedulerSnapshot())
+    if (summary) {
+      l.info(`STT batch scheduler summary: ${summary}`)
+    }
   }
 
   return result

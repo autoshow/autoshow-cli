@@ -295,14 +295,35 @@ export type Step2TimingMetadata = {
   transcribeMs?: number | undefined
   uploadMs?: number | undefined
   createMs?: number | undefined
+  createCount?: number | undefined
   pollMs?: number | undefined
   pollSleepMs?: number | undefined
+  pollCount?: number | undefined
   transcriptMs?: number | undefined
   remoteProcessingMs?: number | undefined
   cleanupMs?: number | undefined
   requestCount?: number | undefined
   retryCount?: number | undefined
   rateLimitCount?: number | undefined
+  blockedCount?: number | undefined
+  degradedCount?: number | undefined
+  backfillCount?: number | undefined
+}
+
+export type Step2RuntimeMetadata = {
+  mode: 'fresh' | 'resumed'
+  stage: 'created' | 'polling' | 'completed' | 'cleanup-pending' | 'cleanup-complete'
+  remoteJobId: string
+  remoteAssetId?: string | undefined
+  remoteAssetUrl?: string | undefined
+  createCompletedAt?: string | undefined
+  lastPollAt?: string | undefined
+  completedAt?: string | undefined
+  cleanupCompletedAt?: string | undefined
+  cleanup?: {
+    remoteJobDeleted?: boolean | undefined
+    remoteAssetDeleted?: boolean | undefined
+  } | undefined
 }
 
 export type Step2Metadata = {
@@ -312,6 +333,7 @@ export type Step2Metadata = {
   processingTime: number
   tokenCount: number
   timings?: Step2TimingMetadata | undefined
+  runtime?: Step2RuntimeMetadata | undefined
 }
 
 export const MistralTranscriptionSegmentSchema = v.object({

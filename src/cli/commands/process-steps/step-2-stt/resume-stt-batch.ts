@@ -5,7 +5,7 @@ import * as l from '~/logger'
 import type { BatchProcessResult, RuntimeOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processStt, type SttCompletionStatus, isSttPartialCompletionError } from '~/cli/commands/process-steps/process-stt'
-import { SttBatchCoordinator } from './stt-batch-coordinator'
+import { formatSttBatchSchedulerSummary, SttBatchCoordinator } from './stt-batch-coordinator'
 import type { SttTarget } from './stt-targets'
 
 type ResumeBatchEntry = {
@@ -332,7 +332,7 @@ const runResumePass = async (
   ))
 
   const batchCoordinator = parsedEntries.filter((entry) => entry !== undefined).length > 1
-    ? new SttBatchCoordinator()
+    ? new SttBatchCoordinator({ batchConcurrency: opts.batchConcurrency })
     : undefined
 
   let full = 0
@@ -430,6 +430,13 @@ const runResumePass = async (
       .sort((left, right) => left[0].localeCompare(right[0]))
       .map(([label, count]) => `${label} x${count}`)
       .join(', ')}`)
+  }
+
+  if (batchCoordinator) {
+    const summary = formatSttBatchSchedulerSummary(batchCoordinator.getSchedulerSnapshot())
+    if (summary) {
+      l.info(`STT batch backfill scheduler summary: ${summary}`)
+    }
   }
 
   l.info(formatResumeSummary(full, incomplete, failed))

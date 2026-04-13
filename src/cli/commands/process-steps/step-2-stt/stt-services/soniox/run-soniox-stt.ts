@@ -5,6 +5,7 @@ import type {
   SonioxTranscriptResponse,
   SonioxTranscriptionStatus,
   Step2Metadata,
+  Step2RuntimeMetadata,
   TranscriptionResult,
   TranscriptionSegment
 } from '~/types'
@@ -21,6 +22,12 @@ import {
   formatTranscriptText,
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import {
+  pollAsyncSttJobUntilComplete,
+  readPersistedAsyncSttRuntime,
+  writeAsyncSttProgressMetadata,
+  type AsyncSttLifecycleHooks
+} from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -29,7 +36,6 @@ const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
 const INITIAL_POLL_INTERVAL_MS = 1000
 const MAX_POLL_INTERVAL_MS = 10000
-const DEFAULT_POLL_DEADLINE_MS = 30 * 60 * 1000
 const SILENCE_BREAK_MS = 1500
 const MIN_SENTENCE_SEGMENT_CHARS = 80
 const MAX_SEGMENT_CHARS = 220
@@ -40,17 +46,6 @@ type SonioxHttpError = Error & {
   stage?: 'upload' | 'create' | 'poll' | 'transcript'
   retryClass?: RetryClass
   rawResponse?: unknown
-}
-
-const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
-
-const parsePositiveIntegerEnv = (key: string, fallback: number): number => {
-  const parsed = Number.parseInt(process.env[key] ?? '', 10)
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return fallback
-  }
-
-  return parsed
 }
 
 const buildSonioxUrl = (baseURL: string, path: string): string => new URL(path, baseURL).toString()
@@ -355,7 +350,7 @@ const deleteTranscription = async (
   baseURL: string,
   apiKey: string,
   transcriptionId: string
-): Promise<void> => {
+): Promise<boolean> => {
   try {
     const response = await fetch(buildSonioxUrl(baseURL, `/v1/transcriptions/${transcriptionId}`), {
       method: 'DELETE',
@@ -366,9 +361,12 @@ const deleteTranscription = async (
 
     if (!response.ok && response.status !== 404) {
       l.warn(`Soniox cleanup failed for transcription ${transcriptionId} (${response.status})`)
+      return false
     }
+    return true
   } catch (error) {
     l.warn(`Soniox cleanup failed for transcription ${transcriptionId}: ${error instanceof Error ? error.message : String(error)}`)
+    return false
   }
 }
 
@@ -376,7 +374,7 @@ const deleteFile = async (
   baseURL: string,
   apiKey: string,
   fileId: string
-): Promise<void> => {
+): Promise<boolean> => {
   try {
     const response = await fetch(buildSonioxUrl(baseURL, `/v1/files/${fileId}`), {
       method: 'DELETE',
@@ -387,9 +385,12 @@ const deleteFile = async (
 
     if (!response.ok && response.status !== 404) {
       l.warn(`Soniox cleanup failed for file ${fileId} (${response.status})`)
+      return false
     }
+    return true
   } catch (error) {
     l.warn(`Soniox cleanup failed for file ${fileId}: ${error instanceof Error ? error.message : String(error)}`)
+    return false
   }
 }
 
@@ -491,6 +492,9 @@ export const runSonioxStt = async (
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
     diarizationOptions?: DiarizationOptions | undefined
+    audioDurationSeconds?: number | undefined
+    runMode?: 'initial' | 'backfill' | undefined
+    lifecycle?: AsyncSttLifecycleHooks | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const apiKey = readEnvFallback('SONIOX_API_KEY')
@@ -498,7 +502,16 @@ export const runSonioxStt = async (
     throw new Error('SONIOX_API_KEY environment variable is required for Soniox transcription')
   }
 
-  const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments, diarizationOptions } = options
+  const {
+    model: modelName,
+    segmentOffsetMinutes = 0,
+    segmentNumber,
+    totalSegments,
+    diarizationOptions,
+    audioDurationSeconds,
+    runMode,
+    lifecycle
+  } = options
   if (segmentNumber && totalSegments) {
     l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Soniox model: ${modelName}`)
   }
@@ -511,15 +524,14 @@ export const runSonioxStt = async (
   let createMs = 0
   let pollMs = 0
   let pollSleepMs = 0
+  let createCount = 0
+  let pollCount = 0
   let transcriptMs = 0
   let requestCount = 0
   let retryCount = 0
   let rateLimitCount = 0
   let metadata: Step2Metadata | undefined
-  const pollDeadlineMs = parsePositiveIntegerEnv(
-    'AUTOSHOW_STT_POLL_DEADLINE_MS_SONIOX',
-    parsePositiveIntegerEnv('AUTOSHOW_STT_POLL_DEADLINE_MS', DEFAULT_POLL_DEADLINE_MS)
-  )
+  const backfillCount = runMode === 'backfill' ? 1 : 0
   const requestMetrics = {
     onRequest: () => {
       requestCount += 1
@@ -532,44 +544,127 @@ export const runSonioxStt = async (
     }
   }
 
-  let fileId: string | undefined
-  let transcriptionId: string | undefined
+  let runtime = await readPersistedAsyncSttRuntime(outputDir, {
+    transcriptionService: 'soniox',
+    transcriptionModel: modelName
+  })
+  let fileId = runtime?.remoteAssetId
+  let transcriptionId = runtime?.remoteJobId
+  let jobReadyNotified = false
+
+  const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
+    transcriptionService: 'soniox',
+    transcriptionModel: modelName,
+    transcriptionModelName: modelName,
+    processingTime: Date.now() - startTime,
+    tokenCount: 0,
+    timings: {
+      ...(uploadMs > 0 ? { uploadMs } : {}),
+      ...(createMs > 0 ? { createMs } : {}),
+      ...(createCount > 0 ? { createCount } : {}),
+      ...(pollMs > 0 ? { pollMs } : {}),
+      ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
+      ...(pollCount > 0 ? { pollCount } : {}),
+      ...(transcriptMs > 0 ? { transcriptMs } : {}),
+      ...(requestCount > 0 ? { requestCount } : {}),
+      ...(retryCount > 0 ? { retryCount } : {}),
+      ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
+      ...(backfillCount > 0 ? { backfillCount } : {})
+    },
+    runtime: nextRuntime
+  })
+
+  const persistProgressMetadata = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
+    runtime = nextRuntime
+    await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(nextRuntime))
+  }
+
+  const notifyJobReady = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
+    if (jobReadyNotified) {
+      return
+    }
+    jobReadyNotified = true
+    await lifecycle?.onJobReady?.(nextRuntime)
+  }
 
   try {
-    const uploadStartedAt = Date.now()
-    fileId = await uploadAudio(baseURL, apiKey, audioPath, requestMetrics)
-    uploadMs += Date.now() - uploadStartedAt
-    const createStartedAt = Date.now()
-    transcriptionId = await createTranscription(baseURL, apiKey, modelName, fileId, diarizationOptions, requestMetrics)
-    createMs += Date.now() - createStartedAt
-
-    l.info(`Soniox transcription created: ${transcriptionId}, polling for completion...`)
-
-    let pollDelayMs = INITIAL_POLL_INTERVAL_MS
-    const pollDeadlineAt = Date.now() + pollDeadlineMs
-    while (true) {
-      const remainingBeforeSleep = pollDeadlineAt - Date.now()
-      if (remainingBeforeSleep <= 0) {
-        buildPollingDeadlineError(transcriptionId, pollDeadlineMs)
+    if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
+      runtime = {
+        ...runtime,
+        mode: 'resumed',
+        stage: 'polling'
       }
+      transcriptionId = runtime.remoteJobId
+      fileId = runtime.remoteAssetId
+      await persistProgressMetadata(runtime)
+      await notifyJobReady(runtime)
+    } else {
+      const uploadStartedAt = Date.now()
+      fileId = await uploadAudio(baseURL, apiKey, audioPath, requestMetrics)
+      uploadMs += Date.now() - uploadStartedAt
+      const createStartedAt = Date.now()
+      transcriptionId = await createTranscription(baseURL, apiKey, modelName, fileId, diarizationOptions, requestMetrics)
+      createMs += Date.now() - createStartedAt
+      createCount += 1
 
-      const sleepStartedAt = Date.now()
-      await sleep(Math.min(pollDelayMs, remainingBeforeSleep))
-      pollSleepMs += Date.now() - sleepStartedAt
-      const pollStartedAt = Date.now()
-      const pollResult = await pollTranscription(baseURL, apiKey, transcriptionId, requestMetrics)
-      pollMs += Date.now() - pollStartedAt
-      if (pollResult.status.status === 'completed') {
-        break
+      const createdRuntime: Step2RuntimeMetadata = {
+        mode: 'fresh',
+        stage: 'polling',
+        remoteJobId: transcriptionId,
+        remoteAssetId: fileId,
+        createCompletedAt: new Date().toISOString()
       }
-      if (pollResult.status.status === 'error') {
-        throw new Error(`Soniox transcription failed: ${pollResult.status.error_message ?? pollResult.status.error_type ?? 'unknown error'}`)
-      }
-
-      pollDelayMs = pollResult.retryAfterMs !== null
-        ? Math.min(MAX_POLL_INTERVAL_MS, Math.max(INITIAL_POLL_INTERVAL_MS, pollResult.retryAfterMs))
-        : Math.min(MAX_POLL_INTERVAL_MS, pollDelayMs * 2)
+      await persistProgressMetadata(createdRuntime)
+      await notifyJobReady(createdRuntime)
     }
+
+    if (!transcriptionId) {
+      throw new Error('Soniox transcription creation did not produce a transcription id')
+    }
+    const activeTranscriptionId = transcriptionId
+    l.info(`Soniox transcription created: ${activeTranscriptionId}, polling for completion...`)
+
+    const pollResult = await pollAsyncSttJobUntilComplete({
+      jobId: activeTranscriptionId,
+      initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
+      maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
+      audioDurationSeconds,
+      envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_SONIOX',
+      buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
+      poll: async () => {
+        const pollStartedAt = Date.now()
+        const result = await pollTranscription(baseURL, apiKey, activeTranscriptionId, requestMetrics)
+        pollMs += Date.now() - pollStartedAt
+        return {
+          status: result.status,
+          retryAfterMs: result.retryAfterMs
+        }
+      },
+      isComplete: (status) => status.status === 'completed',
+      isFailed: (status) =>
+        status.status === 'error'
+          ? `Soniox transcription failed: ${status.error_message ?? status.error_type ?? 'unknown error'}`
+          : undefined,
+      onProgress: async () => {
+        await persistProgressMetadata({
+          ...(runtime ?? {
+            mode: 'fresh',
+            stage: 'polling',
+            remoteJobId: activeTranscriptionId
+          }),
+          mode: runtime?.mode ?? 'fresh',
+          stage: 'polling',
+          remoteJobId: activeTranscriptionId,
+          ...(fileId ? { remoteAssetId: fileId } : {}),
+          ...(runtime?.createCompletedAt ? { createCompletedAt: runtime.createCompletedAt } : {}),
+          lastPollAt: new Date().toISOString()
+        })
+      },
+      withPollSlot: lifecycle?.withPollSlot
+    })
+
+    pollSleepMs += pollResult.pollSleepMs
+    pollCount += pollResult.pollCount
 
     const transcriptStartedAt = Date.now()
     const transcript = await getTranscriptionTranscript(baseURL, apiKey, transcriptionId, requestMetrics)
@@ -590,24 +685,42 @@ export const runSonioxStt = async (
 
     const processingTime = Date.now() - startTime
     const remoteProcessingMs = Math.max(0, processingTime - uploadMs - createMs - pollMs - transcriptMs)
+    const completedRuntime: Step2RuntimeMetadata = {
+      ...(runtime ?? {
+        mode: 'fresh',
+        stage: 'completed',
+        remoteJobId: activeTranscriptionId
+      }),
+      mode: runtime?.mode ?? 'fresh',
+      stage: 'completed',
+      remoteJobId: activeTranscriptionId,
+      ...(fileId ? { remoteAssetId: fileId } : {}),
+      ...(runtime?.createCompletedAt ? { createCompletedAt: runtime.createCompletedAt } : {}),
+      ...(runtime?.lastPollAt ? { lastPollAt: runtime.lastPollAt } : {}),
+      completedAt: new Date().toISOString()
+    }
     metadata = {
       transcriptionService: 'soniox',
       transcriptionModel: modelName,
       transcriptionModelName: modelName,
       processingTime,
       tokenCount: countTokens(text),
+      runtime: completedRuntime,
       ...((uploadMs > 0 || createMs > 0 || pollMs > 0 || pollSleepMs > 0 || transcriptMs > 0 || remoteProcessingMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0)
         ? {
             timings: {
               ...(uploadMs > 0 ? { uploadMs } : {}),
               ...(createMs > 0 ? { createMs } : {}),
+              ...(createCount > 0 ? { createCount } : {}),
               ...(pollMs > 0 ? { pollMs } : {}),
               ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
+              ...(pollCount > 0 ? { pollCount } : {}),
               ...(transcriptMs > 0 ? { transcriptMs } : {}),
               ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
               ...(requestCount > 0 ? { requestCount } : {}),
               ...(retryCount > 0 ? { retryCount } : {}),
-              ...(rateLimitCount > 0 ? { rateLimitCount } : {})
+              ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
+              ...(backfillCount > 0 ? { backfillCount } : {})
             }
           }
         : {})
@@ -625,11 +738,13 @@ export const runSonioxStt = async (
     return { result, metadata }
   } finally {
     const cleanupStartedAt = Date.now()
+    let remoteJobDeleted = false
+    let remoteAssetDeleted = false
     if (transcriptionId) {
-      await deleteTranscription(baseURL, apiKey, transcriptionId)
+      remoteJobDeleted = await deleteTranscription(baseURL, apiKey, transcriptionId)
     }
     if (fileId) {
-      await deleteFile(baseURL, apiKey, fileId)
+      remoteAssetDeleted = await deleteFile(baseURL, apiKey, fileId)
     }
     const cleanupMs = Date.now() - cleanupStartedAt
     if (metadata && cleanupMs > 0) {
@@ -643,6 +758,26 @@ export const runSonioxStt = async (
           + (metadata.timings?.pollMs ?? 0)
           + (metadata.timings?.transcriptMs ?? 0)
           + cleanupMs))
+      }
+      metadata.runtime = {
+        ...(metadata.runtime ?? {
+          mode: runtime?.mode ?? 'fresh',
+          stage: 'cleanup-complete',
+          remoteJobId: transcriptionId ?? ''
+        }),
+        mode: metadata.runtime?.mode ?? runtime?.mode ?? 'fresh',
+        stage: 'cleanup-complete',
+        remoteJobId: metadata.runtime?.remoteJobId ?? transcriptionId ?? '',
+        ...((metadata.runtime?.remoteAssetId ?? fileId) ? { remoteAssetId: metadata.runtime?.remoteAssetId ?? fileId } : {}),
+        ...(metadata.runtime?.createCompletedAt ? { createCompletedAt: metadata.runtime.createCompletedAt } : {}),
+        ...(metadata.runtime?.lastPollAt ? { lastPollAt: metadata.runtime.lastPollAt } : {}),
+        ...(metadata.runtime?.completedAt ? { completedAt: metadata.runtime.completedAt } : {}),
+        cleanupCompletedAt: new Date().toISOString(),
+        cleanup: {
+          ...(metadata.runtime?.cleanup ?? {}),
+          ...(transcriptionId ? { remoteJobDeleted } : {}),
+          ...(fileId ? { remoteAssetDeleted } : {})
+        }
       }
     }
   }

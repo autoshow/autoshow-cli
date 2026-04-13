@@ -25,6 +25,7 @@ import { assertNever } from '~/utils/validate/assert-never'
 import type { TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { SttTarget } from './stt-targets'
+import type { AsyncSttLifecycleHooks } from './stt-utils/async-stt-job-runner'
 
 export const TRANSCRIBE_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
@@ -222,6 +223,9 @@ type TranscribeTargetOptions = {
   split?: boolean | undefined
   reverbVerbatimicity?: number | undefined
   sttSegmentConcurrency?: number | undefined
+  audioDurationSeconds?: number | undefined
+  runMode?: 'initial' | 'backfill' | undefined
+  asyncLifecycle?: AsyncSttLifecycleHooks | undefined
 }
 
 type IndexedTranscriptionChunk = {
@@ -339,7 +343,10 @@ const dispatchTranscribe = async (
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
-      diarizationOptions: target.diarizationOptions
+      diarizationOptions: target.diarizationOptions,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
     })
   }
 
@@ -391,7 +398,10 @@ const dispatchTranscribe = async (
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
-      diarizationOptions: target.diarizationOptions
+      diarizationOptions: target.diarizationOptions,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
     })
   }
 
@@ -461,7 +471,10 @@ const runSplitTranscription = async (
           segmentDescriptor.path,
           outputDir,
           offsetMinutes,
-          options,
+          {
+            ...options,
+            audioDurationSeconds: segmentDescriptor.durationSeconds
+          },
           segmentDescriptor.segmentNumber,
           segmentDescriptor.totalSegments,
           {
@@ -509,7 +522,10 @@ export const transcribeTarget = async (
       l.warn(`${target.service[0]!.toUpperCase()}${target.service.slice(1)} file uploads are capped at ${formatBytes(attachmentCapBytes)}; ${inputFilename} is ${formatBytes(audioFileSize)}. Splitting into ${SPLIT_SEGMENT_DURATION_MINUTES}-minute segments automatically`)
     }
 
-    return await runSplitTranscription(target, audioPath, outputDir, options)
+    return await runSplitTranscription(target, audioPath, outputDir, {
+      ...options,
+      asyncLifecycle: undefined
+    })
   }
 
   try {
@@ -517,7 +533,10 @@ export const transcribeTarget = async (
   } catch (error) {
     if (shouldRetrySplitTranscriptionAfterError(target.service, options.split === true, error)) {
       l.warn(`${target.service[0]!.toUpperCase()}${target.service.slice(1)} rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)
-      return await runSplitTranscription(target, audioPath, outputDir, options)
+      return await runSplitTranscription(target, audioPath, outputDir, {
+        ...options,
+        asyncLifecycle: undefined
+      })
     }
 
     throw error
@@ -551,6 +570,7 @@ export const transcribe = async (
   return await transcribeTarget(audioPath, options.outputDir, target, {
     split: options.split,
     reverbVerbatimicity: options.reverbVerbatimicity,
-    sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency
+    sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency,
+    runMode: 'initial'
   })
 }
