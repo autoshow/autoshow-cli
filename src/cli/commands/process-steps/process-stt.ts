@@ -578,9 +578,9 @@ export const processStt = async (
 
     l.report.complete(outputDir, artifactFiles, {
       metrics: {
-        providersRequested: String(targets.length),
-        providersSucceeded: String(successfulProviders.length),
-        providersFailed: String(failures.length),
+        providersRequested: targets.length,
+        providersSucceeded: successfulProviders.length,
+        providersFailed: failures.length,
         ...(promptSource
           ? { promptSource: buildProviderModelLabel(promptSource.metadata) }
           : {})

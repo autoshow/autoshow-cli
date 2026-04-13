@@ -1,7 +1,7 @@
 import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/aggregate-pricing'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration } from '~/logger/formatters'
-import { emitResult } from '~/logger/result-emitter'
+import { emitResult, isJsonResultActive } from '~/logger/result-emitter'
 import type { Logger } from '~/logger/types'
 
 export type StepTimingCost = {
@@ -11,8 +11,10 @@ export type StepTimingCost = {
   cost: number
 }
 
+export type ReporterMetricValue = string | number | boolean | null
+
 export type CompleteOptions = {
-  metrics?: Record<string, string>
+  metrics?: Record<string, ReporterMetricValue>
   steps?: StepTimingCost[]
   totalTimeMs?: number
   totalCost?: number
@@ -100,6 +102,8 @@ type StepSummaryEntry = {
   cost: string
 }
 
+type DetailedCompletionSummary = Record<string, unknown>
+
 const HUMAN_PRIMARY_ARTIFACT_KEYS = ['prompt', 'metadata', 'audio', 'transcript'] as const
 
 const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCost: number) => {
@@ -143,6 +147,128 @@ const buildHumanArtifactSummary = (outputDir: string, files: Record<string, stri
   return summary
 }
 
+const formatMetricValue = (value: ReporterMetricValue): string => {
+  if (value === null) {
+    return 'null'
+  }
+
+  return String(value)
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const formatKeyValueLine = (label: string, entries: Array<[string, unknown]>): string | undefined => {
+  if (entries.length === 0) {
+    return undefined
+  }
+
+  return `${label}: ${entries.map(([key, value]) => `${key}=${String(value)}`).join(', ')}`
+}
+
+export const buildHumanCompletionMessages = (
+  outputDir: string,
+  files: Record<string, string>,
+  options?: CompleteOptions
+): string[] => {
+  const summary = buildHumanArtifactSummary(outputDir, files)
+  const lines: string[] = []
+  const artifacts = summary['artifacts']
+  const providers = summary['providers']
+
+  if (isRecord(artifacts)) {
+    const artifactsLine = formatKeyValueLine('Artifacts', Object.entries(artifacts))
+    if (artifactsLine) {
+      lines.push(artifactsLine)
+    }
+  }
+
+  if (isRecord(providers)) {
+    const providersLine = formatKeyValueLine('Providers', Object.entries(providers))
+    if (providersLine) {
+      lines.push(providersLine)
+    }
+  }
+
+  if (options?.metrics !== undefined) {
+    const metricsLine = formatKeyValueLine(
+      'Metrics',
+      Object.entries(options.metrics).map(([key, value]) => [key, formatMetricValue(value)])
+    )
+    if (metricsLine) {
+      lines.push(metricsLine)
+    }
+  }
+
+  if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
+    const { steps, total } = formatStepSummary(options.steps, options.totalTimeMs, options.totalCost)
+    for (const step of steps) {
+      lines.push(
+        `Step: ${step.label}${step.providerModel ? ` ${step.providerModel}` : ''}, time=${step.time}, cost=${step.cost}`
+      )
+    }
+    lines.push(`Total: time=${total.time}, cost=${total.cost}`)
+  }
+
+  return lines
+}
+
+const buildDetailedCompletionSummary = (
+  outputDir: string,
+  files: Record<string, string>,
+  options?: CompleteOptions
+): DetailedCompletionSummary => {
+  const result: DetailedCompletionSummary = buildHumanArtifactSummary(outputDir, files)
+  if (options?.metrics !== undefined) {
+    result['metrics'] = options.metrics
+  }
+  if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
+    const { steps: summarySteps, total } = formatStepSummary(options.steps, options.totalTimeMs, options.totalCost)
+    result['steps'] = summarySteps
+    result['total'] = total
+  }
+  return result
+}
+
+export const buildCompleteResultData = (
+  outputDir: string,
+  files: Record<string, string>,
+  options?: CompleteOptions
+): Record<string, unknown> => {
+  const resultData: Record<string, unknown> = {
+    dryRun: false,
+    outputDir,
+    files: Object.fromEntries(
+      Object.entries(files).map(([key, name]) => [key, `${outputDir}/${name}`])
+    )
+  }
+  if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
+    resultData['timing'] = {
+      totalMs: options.totalTimeMs,
+      steps: options.steps.map(s => ({
+        label: s.label,
+        ...(s.providerModel ? { providerModel: s.providerModel } : {}),
+        processingTimeMs: s.processingTime,
+        costCents: s.cost
+      })),
+      totalCostCents: options.totalCost
+    }
+  }
+  if (options?.metrics !== undefined) {
+    resultData['metrics'] = options.metrics
+  }
+  return resultData
+}
+
+const shouldLogDetailedCompletionSummary = (logger: Logger): boolean => {
+  if (logger.config.minLevel === 'debug' || isJsonResultActive()) {
+    return true
+  }
+
+  const format = process.env['AUTOSHOW_LOG_FORMAT']?.trim().toLowerCase()
+  return format === 'json' || format === 'both'
+}
+
 export const createReporter = (logger: Logger): Reporter => {
   return {
     expectedOutput: (outputDir, files) => {
@@ -172,40 +298,16 @@ export const createReporter = (logger: Logger): Reporter => {
     complete: (outputDir, files, options) => {
       logger.write('info', `Output directory: ${outputDir}`, { category: 'artifact' })
       logger.write('success', 'Complete!', { category: 'artifact' })
-      const result: Record<string, unknown> = buildHumanArtifactSummary(outputDir, files)
-      if (options?.metrics !== undefined) {
-        result['metrics'] = options.metrics
-      }
-      if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
-        const { steps: summarySteps, total } = formatStepSummary(options.steps, options.totalTimeMs, options.totalCost)
-        result['steps'] = summarySteps
-        result['total'] = total
-      }
-      logger.write('info', JSON.stringify(result, null, 2), { category: 'artifact' })
-
-      const resultData: Record<string, unknown> = {
-        dryRun: false,
-        outputDir,
-        files: Object.fromEntries(
-          Object.entries(files).map(([key, name]) => [key, `${outputDir}/${name}`])
-        )
-      }
-      if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
-        resultData['timing'] = {
-          totalMs: options.totalTimeMs,
-          steps: options.steps.map(s => ({
-            label: s.label,
-            ...(s.providerModel ? { providerModel: s.providerModel } : {}),
-            processingTimeMs: s.processingTime,
-            costCents: s.cost
-          })),
-          totalCostCents: options.totalCost
+      if (shouldLogDetailedCompletionSummary(logger)) {
+        const detailedSummary = buildDetailedCompletionSummary(outputDir, files, options)
+        logger.write('info', JSON.stringify(detailedSummary, null, 2), { category: 'artifact' })
+      } else {
+        for (const line of buildHumanCompletionMessages(outputDir, files, options)) {
+          logger.write('info', line, { category: 'artifact' })
         }
       }
-      if (options?.metrics !== undefined) {
-        resultData['metrics'] = options.metrics
-      }
-      emitResult(resultData)
+
+      emitResult(buildCompleteResultData(outputDir, files, options))
     }
   }
 }

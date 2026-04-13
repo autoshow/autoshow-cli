@@ -43,6 +43,24 @@ const getMessageColor = (event: LogSinkEvent): string => {
   return levelColorMap[event.level]
 }
 
+const getBatchItemPrefix = (event: LogSinkEvent): string => {
+  const itemIndex = event.context?.['itemIndex']
+  const itemCount = event.context?.['itemCount']
+
+  if (
+    typeof itemIndex === 'number'
+    && Number.isFinite(itemIndex)
+    && typeof itemCount === 'number'
+    && Number.isFinite(itemCount)
+    && itemIndex >= 1
+    && itemCount >= itemIndex
+  ) {
+    return `[${itemIndex}/${itemCount}] `
+  }
+
+  return ''
+}
+
 const getLevelSymbol = (level: LogSinkEvent['level']): string => {
   switch (level) {
     case 'info':
@@ -63,8 +81,9 @@ const formatMessage = (event: LogSinkEvent): string => {
   const symbol = getLevelSymbol(event.level)
   const levelColor = levelColorMap[event.level]
   const levelPrefix = symbol.length > 0 ? `${colorText(symbol, levelColor)} ` : ''
+  const batchPrefix = colorText(getBatchItemPrefix(event), timestampColor)
   const message = event.indent ? `${logIndent}${event.message}` : event.message
-  return `${timestamp} ${levelPrefix}${colorText(message, getMessageColor(event))}`
+  return `${timestamp} ${levelPrefix}${batchPrefix}${colorText(message, getMessageColor(event))}`
 }
 
 export const createHumanSink = (): LogSink => {
