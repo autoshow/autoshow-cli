@@ -259,10 +259,12 @@ export const selectPrimaryPromptProvider = (
     const hasSpeakerLabels = candidate.result.segments.some((segment) =>
       typeof segment.speaker === 'string' && segment.speaker.length > 0
     )
-    const honorsRequestedDiarization = candidate.target.diarizationOptions?.speakerCount !== undefined
+    const hasRequestedDiarizationHint = candidate.target.diarizationOptions?.speakerCount !== undefined
       || (candidate.target.diarizationOptions?.knownSpeakerNames?.length ?? 0) > 0
+    const hasDiarizationEnabled = candidate.target.diarizationOptions?.enabled === true
+      || hasRequestedDiarizationHint
 
-    return (hasSpeakerLabels ? 2 : 0) + (honorsRequestedDiarization ? 1 : 0)
+    return (hasSpeakerLabels ? 2 : 0) + (hasRequestedDiarizationHint ? 2 : 0) + (hasDiarizationEnabled ? 1 : 0)
   }
 
   return candidates

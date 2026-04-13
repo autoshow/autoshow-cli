@@ -1,0 +1,19 @@
+import * as l from '~/logger'
+import { readEnvFallback } from '~/utils/validate/env-utils'
+
+export const setupSonioxStt = async (): Promise<void> => {
+  const apiKey = readEnvFallback('SONIOX_API_KEY')
+  if (apiKey) {
+    l.success('SONIOX_API_KEY found — Soniox transcription ready')
+  } else {
+    l.warn('SONIOX_API_KEY not set — Soniox transcription will not work until set')
+    l.info('Set SONIOX_API_KEY environment variable to use Soniox transcription')
+  }
+}
+
+export const ensureSonioxSttSetup = async (): Promise<void> => {
+  const apiKey = readEnvFallback('SONIOX_API_KEY')
+  if (!apiKey) {
+    throw new Error('SONIOX_API_KEY environment variable is required for Soniox transcription')
+  }
+}

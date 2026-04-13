@@ -37,17 +37,20 @@ const appendElevenLabsDiarizationOptions = (
   form: FormData,
   diarizationOptions: DiarizationOptions | undefined
 ): void => {
+  const diarizationEnabled = diarizationOptions?.enabled === true || diarizationOptions?.speakerCount !== undefined
   const speakerCount = diarizationOptions?.speakerCount
-  if (speakerCount === undefined) {
+  if (!diarizationEnabled) {
     return
   }
 
-  if (!Number.isInteger(speakerCount) || speakerCount < 1 || speakerCount > 32) {
-    throw new Error(`Invalid speaker count ${speakerCount} for ElevenLabs. Expected an integer from 1 to 32.`)
-  }
-
   form.append('diarize', 'true')
-  form.append('num_speakers', String(speakerCount))
+  if (speakerCount !== undefined) {
+    if (!Number.isInteger(speakerCount) || speakerCount < 1 || speakerCount > 32) {
+      throw new Error(`Invalid speaker count ${speakerCount} for ElevenLabs. Expected an integer from 1 to 32.`)
+    }
+
+    form.append('num_speakers', String(speakerCount))
+  }
 }
 
 const textFromWords = (words: ElevenLabsSttResponse['words']): string => {

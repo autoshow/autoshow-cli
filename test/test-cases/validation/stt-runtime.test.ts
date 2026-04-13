@@ -126,7 +126,7 @@ describe('STT runtime helpers', () => {
   test('prefers a successful provider that honored the requested diarization hint for the root prompt', () => {
     const selected = selectPrimaryPromptProvider([
       {
-        target: { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: {} },
+        target: { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
         metadata: {
           transcriptionService: 'mistral',
           transcriptionModel: 'voxtral-mini-latest',
@@ -140,7 +140,7 @@ describe('STT runtime helpers', () => {
         }
       },
       {
-        target: { service: 'assemblyai', model: 'universal-3-pro', local: false, diarizationOptions: { speakerCount: 2 } },
+        target: { service: 'assemblyai', model: 'universal-3-pro', local: false, diarizationOptions: { enabled: true, speakerCount: 2 } },
         metadata: {
           transcriptionService: 'assemblyai',
           transcriptionModel: 'universal-3-pro',

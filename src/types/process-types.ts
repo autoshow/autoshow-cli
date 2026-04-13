@@ -9,6 +9,7 @@ export const ProcessingOptionsSchema = v.pipe(
     whisperModel: v.string(),
     groqSttModel: v.optional(v.string(), undefined),
     elevenlabsSttModel: v.optional(v.string(), undefined),
+    sonioxSttModel: v.optional(v.string(), undefined),
     openaiSttModel: v.optional(v.string(), undefined),
     mistralSttModel: v.optional(v.string(), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
@@ -283,13 +284,14 @@ export type TranscriptionResult = {
 }
 
 export type DiarizationOptions = {
+  enabled?: boolean | undefined
   speakerCount?: number | undefined
   knownSpeakerNames?: string[] | undefined
   knownSpeakerReferencePaths?: string[] | undefined
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
   transcriptionModel: string
   transcriptionModelName?: string | undefined
   processingTime: number
@@ -450,10 +452,45 @@ export const DeepgramResponseSchema = v.object({
   })
 })
 
+export const SonioxFileResponseSchema = v.object({
+  id: v.string()
+})
+
+export const SonioxTranscriptionStatusSchema = v.object({
+  id: v.string(),
+  status: v.picklist(['queued', 'processing', 'completed', 'error']),
+  model: v.optional(v.string(), undefined),
+  filename: v.optional(v.string(), undefined),
+  enable_speaker_diarization: v.optional(v.boolean(), undefined),
+  enable_language_identification: v.optional(v.boolean(), undefined),
+  audio_duration_ms: v.optional(v.nullable(v.number()), undefined),
+  error_type: v.optional(v.nullable(v.string()), undefined),
+  error_message: v.optional(v.nullable(v.string()), undefined)
+})
+
+export const SonioxTranscriptTokenSchema = v.object({
+  text: v.string(),
+  start_ms: v.optional(v.number(), undefined),
+  end_ms: v.optional(v.number(), undefined),
+  confidence: v.optional(v.number(), undefined),
+  speaker: v.optional(v.union([v.string(), v.number()]), undefined),
+  language: v.optional(v.string(), undefined),
+  translation_status: v.optional(v.string(), undefined)
+})
+
+export const SonioxTranscriptResponseSchema = v.object({
+  id: v.string(),
+  text: v.string(),
+  tokens: v.array(SonioxTranscriptTokenSchema)
+})
+
 export type WhisperJsonOutput = v.InferOutput<typeof WhisperJsonOutputSchema>
 export type ElevenLabsSttResponse = v.InferOutput<typeof ElevenLabsSttResponseSchema>
 export type AssemblyAiTranscriptResponse = v.InferOutput<typeof AssemblyAiTranscriptResponseSchema>
 export type DeepgramResponse = v.InferOutput<typeof DeepgramResponseSchema>
+export type SonioxFileResponse = v.InferOutput<typeof SonioxFileResponseSchema>
+export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscriptionStatusSchema>
+export type SonioxTranscriptResponse = v.InferOutput<typeof SonioxTranscriptResponseSchema>
 
 export const LlamaResponseSchema = v.object({
   choices: v.array(v.object({

@@ -40,15 +40,19 @@ afterEach(async () => {
 })
 
 describe('runElevenLabsTranscribe', () => {
-  test('retries a transient 502 response and succeeds on the next attempt', async () => {
+  test('retries a transient 502 response and succeeds on the next attempt with diarization enabled by default', async () => {
     const { audioPath, outputDir } = await createAudioFixture()
     process.env['ELEVENLABS_API_KEY'] = 'test-key'
     process.env['ELEVENLABS_BASE_URL'] = 'https://elevenlabs.test/v1'
 
     let attempts = 0
-    globalThis.fetch = (async (input: string | URL | Request) => {
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
       attempts += 1
       expect(input).toBe('https://elevenlabs.test/v1/speech-to-text')
+      const body = init?.body
+      expect(body).toBeInstanceOf(FormData)
+      expect((body as FormData).get('diarize')).toBe('true')
+      expect((body as FormData).get('num_speakers')).toBeNull()
 
       if (attempts === 1) {
         return new Response('bad gateway', {
@@ -81,7 +85,8 @@ describe('runElevenLabsTranscribe', () => {
 
     const { result, metadata } = await runElevenLabsTranscribe(audioPath, outputDir, {
       model: 'scribe_v2',
-      segmentOffsetMinutes: 0
+      segmentOffsetMinutes: 0,
+      diarizationOptions: { enabled: true }
     })
 
     expect(attempts).toBe(2)

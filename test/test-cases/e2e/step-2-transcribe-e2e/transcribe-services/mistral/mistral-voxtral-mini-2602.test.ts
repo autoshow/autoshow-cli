@@ -6,5 +6,4 @@ defineSTTServiceTest({
   sttService: 'mistral',
   envVarKey: 'MISTRAL_API_KEY',
   envVarDescription: 'Mistral transcription',
-  extraArgs: ['--speaker-count', '2'],
 })

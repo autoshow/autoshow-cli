@@ -5,6 +5,7 @@ import { runReverbTranscribe } from './stt-local/reverb/run-reverb'
 import { runGroqTranscribe } from './stt-services/groq/run-whisper-groq'
 import { runElevenLabsTranscribe } from './stt-services/elevenlabs/run-elevenlabs-stt'
 import { runDeepgramTranscribe } from './stt-services/deepgram/run-deepgram-stt'
+import { runSonioxStt } from './stt-services/soniox/run-soniox-stt'
 import { runOpenAIStt } from './stt-services/openai/run-openai-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
@@ -15,6 +16,7 @@ import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-st
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/elevenlabs'
 import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/deepgram'
+import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/soniox/soniox'
 import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
@@ -25,14 +27,15 @@ import { CLIUsageError } from '~/utils/error-handler'
 import type { SttTarget } from './stt-targets'
 
 const TRANSCRIBE_ENGINE_CAPABILITIES = {
-  reverb: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  elevenlabs: { supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  deepgram: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  groq: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  openai: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
-  mistral: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  assemblyai: { supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  whisper: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false }
+  reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
+  deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  groq: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  openai: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
+  mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
+  whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
 
 const SPLIT_SEGMENT_DURATION_MINUTES = 10
@@ -111,19 +114,21 @@ const resolveTranscribeEngine = (options: ProcessingOptions): TranscribeEngine =
   const hasReverb = options.useReverb === true
   const hasElevenlabs = typeof options.elevenlabsSttModel === 'string' && options.elevenlabsSttModel.length > 0
   const hasDeepgram = typeof options.deepgramSttModel === 'string' && options.deepgramSttModel.length > 0
+  const hasSoniox = typeof options.sonioxSttModel === 'string' && options.sonioxSttModel.length > 0
   const hasGroq = typeof options.groqSttModel === 'string' && options.groqSttModel.length > 0
   const hasOpenAI = typeof options.openaiSttModel === 'string' && options.openaiSttModel.length > 0
   const hasMistral = typeof options.mistralSttModel === 'string' && options.mistralSttModel.length > 0
   const hasAssemblyAi = typeof options.assemblyaiSttModel === 'string' && options.assemblyaiSttModel.length > 0
 
-  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi].filter(Boolean).length
+  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi].filter(Boolean).length
   if (engineCount > 1) {
-    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
+    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
   }
 
   if (hasReverb) return 'reverb'
   if (hasElevenlabs) return 'elevenlabs'
   if (hasDeepgram) return 'deepgram'
+  if (hasSoniox) return 'soniox'
   if (hasGroq) return 'groq'
   if (hasOpenAI) return 'openai'
   if (hasMistral) return 'mistral'
@@ -188,7 +193,9 @@ export const resolveDiarizationOptions = (
   }
 
   const capabilities = TRANSCRIBE_ENGINE_CAPABILITIES[engine]
-  const diarizationOptions: DiarizationOptions = {}
+  const diarizationOptions: DiarizationOptions = capabilities.diarizationByDefault
+    ? { enabled: true }
+    : {}
 
   if (speakerNames && speakerReferences) {
     if (!capabilities.supportsKnownSpeakerReferences) {
@@ -206,11 +213,15 @@ export const resolveDiarizationOptions = (
   if (!capabilities.supportsSpeakerCountHint) {
     if (engine === 'mistral') {
       warnOnce(`Ignoring --speaker-count=${speakerCount} for Mistral because speaker-count hints are unsupported; enabling diarization without a count hint`)
-      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : {}
+      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
     }
     if (engine === 'deepgram') {
       warnOnce(`Ignoring --speaker-count=${speakerCount} for Deepgram because speaker-count hints are unsupported; enabling diarization without a count hint`)
-      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : {}
+      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
+    }
+    if (engine === 'soniox') {
+      warnOnce(`Ignoring --speaker-count=${speakerCount} for Soniox because speaker-count hints are unsupported; enabling diarization without a count hint`)
+      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
     }
     if (engine === 'openai') {
       warnOnce(`Ignoring --speaker-count=${speakerCount} for OpenAI because count-only diarization hints are unsupported; use --speaker-name with matching --speaker-reference clips instead`)
@@ -254,6 +265,10 @@ export const ensureTranscribeTargetSetup = async (
   }
   if (target.service === 'deepgram') {
     await ensureDeepgramSttSetup()
+    return
+  }
+  if (target.service === 'soniox') {
+    await ensureSonioxSttSetup()
     return
   }
   if (target.service === 'openai') {
@@ -308,6 +323,16 @@ const dispatchTranscribe = async (
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments
+    })
+  }
+
+  if (target.service === 'soniox') {
+    return await runSonioxStt(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      diarizationOptions: target.diarizationOptions
     })
   }
 
@@ -496,23 +521,20 @@ export const transcribe = async (
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const engine = resolveTranscribeEngine(options)
   const diarizationOptions = resolveDiarizationOptions(options, engine)
+  const model = (() => {
+    if (engine === 'reverb') return 'reverb'
+    if (engine === 'whisper') return options.whisperModel
+    if (engine === 'elevenlabs') return options.elevenlabsSttModel as string
+    if (engine === 'deepgram') return options.deepgramSttModel as string
+    if (engine === 'soniox') return options.sonioxSttModel as string
+    if (engine === 'groq') return options.groqSttModel as string
+    if (engine === 'openai') return options.openaiSttModel as string
+    if (engine === 'mistral') return options.mistralSttModel as string
+    return options.assemblyaiSttModel as string
+  })()
   const target: SttTarget = {
     service: engine,
-    model: engine === 'reverb'
-      ? 'reverb'
-      : engine === 'whisper'
-        ? options.whisperModel
-        : engine === 'elevenlabs'
-          ? options.elevenlabsSttModel as string
-          : engine === 'deepgram'
-            ? options.deepgramSttModel as string
-          : engine === 'groq'
-            ? options.groqSttModel as string
-            : engine === 'openai'
-              ? options.openaiSttModel as string
-              : engine === 'mistral'
-                ? options.mistralSttModel as string
-                : options.assemblyaiSttModel as string,
+    model,
     local: engine === 'reverb' || engine === 'whisper',
     diarizationOptions
   }

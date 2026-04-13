@@ -118,6 +118,10 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/deepgram/', [
     command('transcribe-deepgram-nova-3', 'transcribe-deepgram-nova-3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deepgram-stt', 'nova-3', '--price']),
   ]),
+  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/soniox/', [
+    command('transcribe-soniox-stt-async-v4', 'transcribe-soniox-stt-async-v4', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v4', '--price']),
+    command('transcribe-soniox-stt-async-v3', 'transcribe-soniox-stt-async-v3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v3', '--price']),
+  ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/elevenlabs/', [
     command('transcribe-elevenlabs-scribe_v2', 'transcribe-elevenlabs-scribe_v2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--elevenlabs-stt', 'scribe_v2', '--price']),
   ]),

@@ -3,6 +3,7 @@ import {
   SUPPORTED_LLAMA_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
+  SUPPORTED_SONIOX_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
@@ -79,6 +80,10 @@ export const transcriptionFlags = {
     description: buildModelDescription('Deepgram STT model', SUPPORTED_DEEPGRAM_STT_MODELS),
     type: String
   },
+  'soniox-stt': {
+    description: buildModelDescription('Soniox STT model', SUPPORTED_SONIOX_STT_MODELS),
+    type: String
+  },
   'groq-stt': {
     description: `Groq Whisper STT model (API, billed): ${SUPPORTED_GROQ_STT_MODELS.join('|')}`,
     type: String
@@ -96,7 +101,7 @@ export const transcriptionFlags = {
     type: String
   },
   'speaker-count': {
-    description: 'Diarization speaker-count hint for supported STT services (example: ElevenLabs/AssemblyAI)',
+    description: 'Optional diarization speaker-count hint for supported STT services (example: ElevenLabs/AssemblyAI)',
     type: String
   },
   'speaker-name': {

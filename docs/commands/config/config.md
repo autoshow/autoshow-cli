@@ -186,10 +186,11 @@ Full JSON shape of `config/autoshow.json`:
 | `groqStt` | `--groq-stt` | Default Groq STT model |
 | `elevenlabsStt` | `--elevenlabs-stt` | Default ElevenLabs STT model |
 | `deepgramStt` | `--deepgram-stt` | Default Deepgram STT model |
+| `sonioxStt` | `--soniox-stt` | Default Soniox STT model |
 | `openaiStt` | `--openai-stt` | Default OpenAI STT model |
 | `mistralStt` | `--mistral-stt` | Default Mistral STT model |
 | `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model |
-| `speakerCount` | `--speaker-count` | Diarization speaker count hint for ElevenLabs and AssemblyAI; Deepgram and Mistral ignore it |
+| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for ElevenLabs and AssemblyAI; Deepgram, Soniox, Mistral, and OpenAI ignore count-only hints |
 | `split` | `--split` | Split audio into 10-minute chunks |
 | `reverbVerbatimicity` | `--reverb-verbatimicity` | Reverb output style (0–1) |
 

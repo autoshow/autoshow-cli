@@ -4,6 +4,7 @@ import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
+  SUPPORTED_SONIOX_STT_MODELS,
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
@@ -30,6 +31,7 @@ export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
 export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
 export type ElevenlabsSttModel = typeof SUPPORTED_ELEVENLABS_STT_MODELS[number]
+export type SonioxSttModel = typeof SUPPORTED_SONIOX_STT_MODELS[number]
 export type GroqSttModel = typeof SUPPORTED_GROQ_STT_MODELS[number]
 export type OpenAISttModel = typeof SUPPORTED_OPENAI_STT_MODELS[number]
 export type MistralSttModel = typeof SUPPORTED_MISTRAL_STT_MODELS[number]

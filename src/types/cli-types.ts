@@ -36,6 +36,7 @@ export type RuntimeOptions = {
   whisperModel: string
   groqSttModel: string | undefined
   elevenlabsSttModel: string | undefined
+  sonioxSttModel: string | undefined
   openaiSttModel: string | undefined
   mistralSttModel: string | undefined
   assemblyaiSttModel: string | undefined

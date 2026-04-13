@@ -43,6 +43,15 @@ export const collectSttTargets = (options: RuntimeOptions): SttTarget[] => {
     })
   }
 
+  if (options.sonioxSttModel) {
+    targets.push({
+      service: 'soniox',
+      model: options.sonioxSttModel,
+      local: false,
+      diarizationOptions: resolveDiarizationOptions(options, 'soniox')
+    })
+  }
+
   if (options.groqSttModel) {
     targets.push({
       service: 'groq',

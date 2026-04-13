@@ -78,6 +78,30 @@
       }
     }
   },
+  "soniox": {
+    "description": "Soniox cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "stt-async-v4": {
+        "description": "Async v4 — diarized asynchronous transcription with token timestamps",
+        "costPerHourUSD": 0.1,
+        "costPerHourCents": 10,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 240
+        }
+      },
+      "stt-async-v3": {
+        "description": "Async v3 compatibility alias routed to v4 by Soniox",
+        "costPerHourUSD": 0.1,
+        "costPerHourCents": 10,
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 240
+        }
+      }
+    }
+  },
   "elevenlabs": {
     "description": "ElevenLabs Scribe cloud STT",
     "type": "api",

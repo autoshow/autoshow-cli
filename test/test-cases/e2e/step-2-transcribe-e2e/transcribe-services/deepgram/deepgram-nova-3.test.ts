@@ -6,5 +6,4 @@ defineSTTServiceTest({
   sttService: 'deepgram',
   envVarKey: 'DEEPGRAM_API_KEY',
   envVarDescription: 'Deepgram transcription',
-  extraArgs: ['--speaker-count', '2'],
 })

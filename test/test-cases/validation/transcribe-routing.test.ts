@@ -88,6 +88,7 @@ describe('resolveDiarizationOptions', () => {
       diarizationSpeakerNames: ['Host', 'Guest'],
       diarizationSpeakerReferences: ['clips/host.mp3', 'clips/guest.mp3']
     }, 'openai')).toEqual({
+      enabled: true,
       knownSpeakerNames: ['Host', 'Guest'],
       knownSpeakerReferencePaths: ['clips/host.mp3', 'clips/guest.mp3']
     })
@@ -98,7 +99,7 @@ describe('resolveDiarizationOptions', () => {
       diarizationSpeakerCount: 3,
       diarizationSpeakerNames: undefined,
       diarizationSpeakerReferences: undefined
-    }, 'assemblyai')).toEqual({ speakerCount: 3 })
+    }, 'assemblyai')).toEqual({ enabled: true, speakerCount: 3 })
   })
 
   test('ignores speaker-count for Deepgram while keeping diarization enabled', () => {
@@ -106,7 +107,23 @@ describe('resolveDiarizationOptions', () => {
       diarizationSpeakerCount: 2,
       diarizationSpeakerNames: undefined,
       diarizationSpeakerReferences: undefined
-    }, 'deepgram')).toEqual({})
+    }, 'deepgram')).toEqual({ enabled: true })
+  })
+
+  test('ignores speaker-count for Soniox while keeping diarization enabled', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2,
+      diarizationSpeakerNames: undefined,
+      diarizationSpeakerReferences: undefined
+    }, 'soniox')).toEqual({ enabled: true })
+  })
+
+  test('enables diarization by default for diarized ElevenLabs models', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: undefined,
+      diarizationSpeakerNames: undefined,
+      diarizationSpeakerReferences: undefined
+    }, 'elevenlabs')).toEqual({ enabled: true })
   })
 
   test('rejects OpenAI speaker names without matching references', () => {

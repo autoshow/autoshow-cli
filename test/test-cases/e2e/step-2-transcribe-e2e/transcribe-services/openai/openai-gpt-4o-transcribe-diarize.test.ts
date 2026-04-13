@@ -6,5 +6,4 @@ defineSTTServiceTest({
   sttService: 'openai',
   envVarKey: 'OPENAI_API_KEY',
   envVarDescription: 'OpenAI transcription',
-  extraArgs: ['--speaker-count', '2'],
 })

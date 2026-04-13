@@ -25,6 +25,7 @@ The input routing is the same as local `stt`: direct media URLs, streaming URLs,
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3`, `whisper-large-v3-turbo` |
 | ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
 | Deepgram | `--deepgram-stt <model>` | `nova-3` |
+| Soniox | `--soniox-stt <model>` | `stt-async-v4`, `stt-async-v3` |
 | OpenAI | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
 | Mistral | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
 | AssemblyAI | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
@@ -37,11 +38,17 @@ Only one hosted STT provider flag may be active at execution time. In `--price` 
 # Groq
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 
-# ElevenLabs with a speaker-count hint
+# ElevenLabs with diarization
+bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2
+
+# ElevenLabs with an optional speaker-count hint
 bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 3
 
 # Deepgram with diarization always enabled
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
+
+# Soniox with diarization always enabled
+bun as stt input/examples/audio/1-audio.mp3 --soniox-stt stt-async-v4
 
 # OpenAI with known speaker references
 bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize \
@@ -51,7 +58,10 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 # Mistral
 bun as stt input/examples/audio/1-audio.mp3 --mistral-stt voxtral-mini-2602
 
-# AssemblyAI with a speaker-count hint
+# AssemblyAI with diarization
+bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2
+
+# AssemblyAI with an optional speaker-count hint
 bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
 
 # Price preflight
@@ -65,6 +75,7 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 | `--groq-stt <model>` | Select a Groq Whisper model |
 | `--elevenlabs-stt <model>` | Select the ElevenLabs STT model |
 | `--deepgram-stt <model>` | Select the Deepgram STT model |
+| `--soniox-stt <model>` | Select the Soniox STT model |
 | `--openai-stt <model>` | Select the OpenAI STT model |
 | `--mistral-stt <model>` | Select the Mistral STT model |
 | `--assemblyai-stt <model>` | Select the AssemblyAI STT model |
@@ -80,8 +91,10 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 
 ## Notes
 
-- ElevenLabs and AssemblyAI use `--speaker-count` as a real diarization hint.
+- Diarization is enabled by default for ElevenLabs, Deepgram, Soniox, AssemblyAI, Mistral, and OpenAI diarized STT models.
+- ElevenLabs and AssemblyAI use `--speaker-count` as an optional diarization hint.
 - Deepgram always requests diarization and ignores `--speaker-count`.
+- Soniox always requests diarization and ignores `--speaker-count`.
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
 - Groq ignores `--speaker-count`.

@@ -6,5 +6,4 @@ defineSTTServiceTest({
   sttService: 'assemblyai',
   envVarKey: 'ASSEMBLYAI_API_KEY',
   envVarDescription: 'AssemblyAI transcription',
-  extraArgs: ['--speaker-count', '2'],
 })

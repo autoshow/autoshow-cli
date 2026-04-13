@@ -44,9 +44,10 @@ export type OpenAITranscriptionDiarizedResponse = {
   segments?: unknown
 }
 
-export type TranscribeEngine = 'reverb' | 'deepgram' | 'elevenlabs' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'whisper'
+export type TranscribeEngine = 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'whisper'
 
 export type TranscribeEngineCapabilities = {
+  diarizationByDefault: boolean
   supportsSpeakerCountHint: boolean
   supportsKnownSpeakerReferences: boolean
 }

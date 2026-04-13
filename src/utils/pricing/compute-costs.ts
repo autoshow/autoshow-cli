@@ -313,6 +313,7 @@ type ComputeEstimatedCostsInput = {
   groqSttModel?: string | undefined
   elevenlabsSttModel?: string | undefined
   deepgramSttModel?: string | undefined
+  sonioxSttModel?: string | undefined
   openaiSttModel?: string | undefined
   mistralSttModel?: string | undefined
   assemblyaiSttModel?: string | undefined
@@ -371,6 +372,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     const STT_FIELD_MAP = [
       { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
       { field: 'deepgramSttModel' as const, provider: 'deepgram' },
+      { field: 'sonioxSttModel' as const, provider: 'soniox' },
       { field: 'groqSttModel' as const, provider: 'groq' },
       { field: 'openaiSttModel' as const, provider: 'openai' },
       { field: 'mistralSttModel' as const, provider: 'mistral' },

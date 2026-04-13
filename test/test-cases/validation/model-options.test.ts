@@ -7,6 +7,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid whisper model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'whisper-large-v4'] },
   { label: 'CLI invalid ElevenLabs STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--elevenlabs-stt', 'scribe_v3'] },
   { label: 'CLI invalid Deepgram STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', 'nova-4'] },
+  { label: 'CLI invalid Soniox STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v2'] },
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
   { label: 'CLI invalid OpenAI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai-stt', 'gpt-4o-transcribe'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
@@ -53,6 +54,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--price')
   expect(result.stdout).toContain('--elevenlabs-stt')
   expect(result.stdout).toContain('--deepgram-stt')
+  expect(result.stdout).toContain('--soniox-stt')
   expect(result.stdout).toContain('--groq-stt')
   expect(result.stdout).toContain('--openai-stt')
   expect(result.stdout).toContain('--mistral-stt')
@@ -131,6 +133,18 @@ test('CLI bare Deepgram STT flag is accepted in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('CLI bare Soniox STT flag is accepted in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--soniox-stt',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
 test('buildOptsFromFlags maps --openai-voice to openaiVoiceId', () => {
   const opts = buildOptsFromFlags(false, {
     'openai-tts': 'gpt-4o-mini-tts',
@@ -147,6 +161,14 @@ test('buildOptsFromFlags maps --deepgram-stt to deepgramSttModel', () => {
   })
 
   expect(opts.deepgramSttModel).toBe('nova-3')
+})
+
+test('buildOptsFromFlags maps --soniox-stt to sonioxSttModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'soniox-stt': 'stt-async-v4'
+  })
+
+  expect(opts.sonioxSttModel).toBe('stt-async-v4')
 })
 
 test('buildOptsFromFlags maps --gemini-voice to geminiVoiceId', () => {
@@ -226,7 +248,38 @@ test('collectSttTargets includes Deepgram targets with ignored speaker-count hin
       service: 'deepgram',
       model: 'nova-3',
       local: false,
-      diarizationOptions: {}
+      diarizationOptions: { enabled: true }
+    }
+  ])
+})
+
+test('collectSttTargets includes Soniox targets with ignored speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'soniox-stt': 'stt-async-v4',
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'soniox',
+      model: 'stt-async-v4',
+      local: false,
+      diarizationOptions: { enabled: true }
+    }
+  ])
+})
+
+test('collectSttTargets enables diarization for ElevenLabs without a speaker-count hint', () => {
+  const opts = buildOptsFromFlags(false, {
+    'elevenlabs-stt': 'scribe_v2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'elevenlabs',
+      model: 'scribe_v2',
+      local: false,
+      diarizationOptions: { enabled: true }
     }
   ])
 })

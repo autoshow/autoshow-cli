@@ -49,10 +49,10 @@ const readJsonObject = async (path: string): Promise<Record<string, unknown>> =>
 describe('api-cheap', () => {
   test('selects exactly one model per API service per modality', () => {
     expect(llmSelections).toHaveLength(5)
-    expect(sttSelections).toHaveLength(3)
+    expect(sttSelections).toHaveLength(4)
     expect(ttsSelections).toHaveLength(5)
     expect(imageSelections).toHaveLength(3)
-    expect(videoSelections).toHaveLength(3)
+    expect(videoSelections).toHaveLength(2)
   })
 
   describe('write (LLM)', () => {
@@ -126,9 +126,6 @@ describe('api-cheap', () => {
         await cleanupTestOutput(SHORT_AUDIO_TITLE)
 
         const args = ['src/cli/create-cli.ts', 'stt', SHORT_AUDIO_PATH, selection.flag, selection.model]
-        if (selection.service === 'elevenlabs') {
-          args.push('--speaker-count', '1')
-        }
 
         const result = await runCommand(args, { testName: sttTestName })
 

@@ -16,7 +16,6 @@ defineSTTServiceTest({
   sttService: 'elevenlabs',
   envVarKey: 'ELEVENLABS_API_KEY',
   envVarDescription: 'ElevenLabs transcription',
-  extraArgs: ['--speaker-count', '2'],
 })
 
 test('elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
