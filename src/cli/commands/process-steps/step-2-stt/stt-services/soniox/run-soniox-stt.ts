@@ -453,20 +453,31 @@ export const runSonioxStt = async (
   const audioFile = Bun.file(audioPath)
   const audioBytes = new Uint8Array(await audioFile.arrayBuffer())
   const mimeType = inferSonioxMimeType(audioPath, audioFile.type)
+  let uploadMs = 0
+  let createMs = 0
+  let pollMs = 0
+  let transcriptMs = 0
+  let metadata: Step2Metadata | undefined
 
   let fileId: string | undefined
   let transcriptionId: string | undefined
 
   try {
+    const uploadStartedAt = Date.now()
     fileId = await uploadAudio(baseURL, apiKey, audioPath, audioBytes, mimeType)
+    uploadMs += Date.now() - uploadStartedAt
+    const createStartedAt = Date.now()
     transcriptionId = await createTranscription(baseURL, apiKey, modelName, fileId, diarizationOptions)
+    createMs += Date.now() - createStartedAt
 
     l.info(`Soniox transcription created: ${transcriptionId}, polling for completion...`)
 
     let pollDelayMs = INITIAL_POLL_INTERVAL_MS
     while (true) {
       await sleep(pollDelayMs)
+      const pollStartedAt = Date.now()
       const pollResult = await pollTranscription(baseURL, apiKey, transcriptionId)
+      pollMs += Date.now() - pollStartedAt
       if (pollResult.status.status === 'completed') {
         break
       }
@@ -479,7 +490,9 @@ export const runSonioxStt = async (
         : Math.min(MAX_POLL_INTERVAL_MS, pollDelayMs * 2)
     }
 
+    const transcriptStartedAt = Date.now()
     const transcript = await getTranscriptionTranscript(baseURL, apiKey, transcriptionId)
+    transcriptMs += Date.now() - transcriptStartedAt
     const text = transcript.text.trim().length > 0
       ? transcript.text.trim()
       : transcript.tokens.map((token) => token.text).join('').trim()
@@ -495,31 +508,48 @@ export const runSonioxStt = async (
     await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
 
     const processingTime = Date.now() - startTime
-    const metadata: Step2Metadata = {
+    metadata = {
       transcriptionService: 'soniox',
       transcriptionModel: modelName,
       transcriptionModelName: modelName,
       processingTime,
-      tokenCount: countTokens(text)
+      tokenCount: countTokens(text),
+      ...((uploadMs > 0 || createMs > 0 || pollMs > 0 || transcriptMs > 0)
+        ? {
+            timings: {
+              ...(uploadMs > 0 ? { uploadMs } : {}),
+              ...(createMs > 0 ? { createMs } : {}),
+              ...(pollMs > 0 ? { pollMs } : {}),
+              ...(transcriptMs > 0 ? { transcriptMs } : {})
+            }
+          }
+        : {})
     }
 
     if (segmentNumber && totalSegments) {
       l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
     }
 
-    return {
-      result: {
-        text,
-        segments: finalSegments
-      },
-      metadata
+    const result: TranscriptionResult = {
+      text,
+      segments: finalSegments
     }
+
+    return { result, metadata }
   } finally {
+    const cleanupStartedAt = Date.now()
     if (transcriptionId) {
       await deleteTranscription(baseURL, apiKey, transcriptionId)
     }
     if (fileId) {
       await deleteFile(baseURL, apiKey, fileId)
+    }
+    const cleanupMs = Date.now() - cleanupStartedAt
+    if (metadata && cleanupMs > 0) {
+      metadata.timings = {
+        ...(metadata.timings ?? {}),
+        cleanupMs
+      }
     }
   }
 }

@@ -245,7 +245,7 @@ describe('STT runtime helpers', () => {
     expect(failure.message).toContain('failed after 4 attempts')
   })
 
-  test('auto-throttles cloud provider concurrency for multi-item batch STT runs', () => {
+  test('preserves requested cloud provider concurrency for multi-item batch STT runs', () => {
     expect(resolveEffectiveSttProviderConcurrency({
       batchConcurrency: 3,
       sttProviderConcurrency: 2
@@ -255,8 +255,7 @@ describe('STT runtime helpers', () => {
       { local: true }
     ])).toEqual({
       requested: 2,
-      effective: 1,
-      autoThrottled: true,
+      effective: 2,
       hostedProviderCount: 2
     })
   })
@@ -271,7 +270,6 @@ describe('STT runtime helpers', () => {
     ])).toEqual({
       requested: 3,
       effective: 3,
-      autoThrottled: false,
       hostedProviderCount: 2
     })
   })

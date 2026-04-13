@@ -59,6 +59,25 @@ afterEach(async () => {
 })
 
 describe('audio normalization', () => {
+  test('prepareSttMedia keeps local mp3 inputs byte-identical on the source-media fast path', async () => {
+    const tempDir = await createTempDir()
+    const outputDir = join(tempDir, 'output')
+
+    const prepared = await prepareSttMedia({
+      source: { filePath: SAMPLE_AUDIO_PATH },
+      targets: [CLOUD_STT_TARGET],
+      outputDir,
+      noCache: true
+    })
+
+    try {
+      expect(await Bun.file(prepared.executionArtifacts.sourceMediaPath).bytes()).toEqual(await Bun.file(SAMPLE_AUDIO_PATH).bytes())
+      expect(await Bun.file(prepared.outputArtifacts.sourceMediaPath).bytes()).toEqual(await Bun.file(SAMPLE_AUDIO_PATH).bytes())
+    } finally {
+      await prepared.cleanup?.()
+    }
+  })
+
   test('prepareSttMedia normalizes local mp4 inputs to source_media.mp3', async () => {
     const tempDir = await createTempDir()
     const inputPath = join(tempDir, 'input.mp4')

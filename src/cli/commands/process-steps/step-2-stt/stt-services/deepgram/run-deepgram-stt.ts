@@ -163,9 +163,11 @@ export const runDeepgramTranscribe = async (
   const audioBuffer = await file.arrayBuffer()
   const mimeType = inferDeepgramMimeType(audioPath, file.type)
   const baseURL = readEnv('DEEPGRAM_BASE_URL') ?? 'https://api.deepgram.com'
+  let transcribeMs = 0
 
   let rawPayload: unknown
   try {
+    const transcribeStartedAt = Date.now()
     rawPayload = await withRetry(
       {
         retryClass: 'runtime_http_create_conservative',
@@ -201,6 +203,7 @@ export const runDeepgramTranscribe = async (
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
     )
+    transcribeMs += Date.now() - transcribeStartedAt
   } catch (error) {
     attachDeepgramErrorContext(error, 'transcribe', 'runtime_http_create_conservative')
   }
@@ -223,7 +226,8 @@ export const runDeepgramTranscribe = async (
     transcriptionModel: modelName,
     transcriptionModelName: modelName,
     processingTime,
-    tokenCount: countTokens(finalText)
+    tokenCount: countTokens(finalText),
+    ...(transcribeMs > 0 ? { timings: { transcribeMs } } : {})
   }
 
   if (segmentNumber && totalSegments) {

@@ -88,6 +88,9 @@ export const runAssemblyAiTranscribe = async (
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
+  let uploadMs = 0
+  let createMs = 0
+  let pollMs = 0
 
   const baseURL = readEnv('ASSEMBLYAI_BASE_URL') ?? 'https://api.assemblyai.com'
   const headers = {
@@ -98,6 +101,7 @@ export const runAssemblyAiTranscribe = async (
   const fileBuffer = await Bun.file(audioPath).arrayBuffer()
   let uploadResult: unknown
   try {
+    const uploadStartedAt = Date.now()
     uploadResult = await withRetry(
       {
         retryClass: 'runtime_http_create_conservative',
@@ -133,6 +137,7 @@ export const runAssemblyAiTranscribe = async (
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
     )
+    uploadMs += Date.now() - uploadStartedAt
   } catch (error) {
     attachAssemblyAiErrorContext(error, 'upload', 'runtime_http_create_conservative')
   }
@@ -153,6 +158,7 @@ export const runAssemblyAiTranscribe = async (
 
   let createResult: unknown
   try {
+    const createStartedAt = Date.now()
     createResult = await withRetry(
       {
         retryClass: 'runtime_http_create_conservative',
@@ -185,6 +191,7 @@ export const runAssemblyAiTranscribe = async (
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
     )
+    createMs += Date.now() - createStartedAt
   } catch (error) {
     attachAssemblyAiErrorContext(error, 'create', 'runtime_http_create_conservative')
   }
@@ -203,6 +210,7 @@ export const runAssemblyAiTranscribe = async (
 
     let pollResult!: { payload: unknown, retryAfterMs: number | null }
     try {
+      const pollStartedAt = Date.now()
       pollResult = await withRetry(
         {
           retryClass: 'runtime_http_read',
@@ -237,6 +245,7 @@ export const runAssemblyAiTranscribe = async (
         },
         (error) => classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
       )
+      pollMs += Date.now() - pollStartedAt
     } catch (error) {
       attachAssemblyAiErrorContext(error, 'poll', 'runtime_http_read')
     }
@@ -296,7 +305,16 @@ export const runAssemblyAiTranscribe = async (
     transcriptionModel: modelName,
     transcriptionModelName: modelName,
     processingTime,
-    tokenCount: countTokens(finalText)
+    tokenCount: countTokens(finalText),
+    ...((uploadMs > 0 || createMs > 0 || pollMs > 0)
+      ? {
+          timings: {
+            ...(uploadMs > 0 ? { uploadMs } : {}),
+            ...(createMs > 0 ? { createMs } : {}),
+            ...(pollMs > 0 ? { pollMs } : {})
+          }
+        }
+      : {})
   }
 
   if (segmentNumber && totalSegments) {

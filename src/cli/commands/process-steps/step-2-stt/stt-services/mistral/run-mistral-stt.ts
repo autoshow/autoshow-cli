@@ -121,9 +121,11 @@ export const runMistralStt = async (
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
   const fileBytes = new Uint8Array(await Bun.file(audioPath).arrayBuffer())
   const baseURL = readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1'
+  let transcribeMs = 0
 
   let rawPayload: unknown
   try {
+    const transcribeStartedAt = Date.now()
     rawPayload = await withRetry(
       {
         retryClass: 'runtime_http_create_conservative',
@@ -149,6 +151,7 @@ export const runMistralStt = async (
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
     )
+    transcribeMs += Date.now() - transcribeStartedAt
   } catch (error) {
     throwMistralErrorWithContext(error, 'transcribe', 'runtime_http_create_conservative')
   }
@@ -178,7 +181,8 @@ export const runMistralStt = async (
     transcriptionModel: modelName,
     transcriptionModelName: modelName,
     processingTime,
-    tokenCount: countTokens(text)
+    tokenCount: countTokens(text),
+    ...(transcribeMs > 0 ? { timings: { transcribeMs } } : {})
   }
 
   if (segmentNumber && totalSegments) {

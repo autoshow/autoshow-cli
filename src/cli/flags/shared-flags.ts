@@ -119,7 +119,7 @@ export const transcriptionFlags = {
     negatable: false
   },
   'stt-provider-concurrency': {
-    description: 'STT: max cloud providers running in parallel for one item (default 2; auto-clamped to 1 in multi-item multi-provider batch runs)',
+    description: 'STT: max cloud providers running in parallel for one item (default 2; batch scheduler still honors this cap in multi-item multi-provider runs)',
     type: String,
     default: '2'
   },

@@ -104,7 +104,7 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 | `--batch-all` | Process all batch items |
 | `--batch-order <newest|oldest>` | Choose batch ordering |
 | `--batch-concurrency <n>` | Process batch items concurrently |
-| `--stt-provider-concurrency <n>` | Per-item cloud provider concurrency upper bound; auto-clamped to `1` in multi-item multi-provider batch runs |
+| `--stt-provider-concurrency <n>` | Per-item cloud provider concurrency upper bound; in multi-item multi-provider batches the scheduler still honors this cap while also limiting each provider/model to one in-flight item at a time |
 | `--resume-missing-from <batch-dir>` | Reuse an existing STT batch directory and rerun only the missing provider outputs |
 | `--price` | Show the aggregated estimate and exit |
 
@@ -115,10 +115,11 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 - Deepgram, Soniox, Mistral, Groq, local engines, and count-only OpenAI diarization ignore `--speaker-count`; the CLI now emits one aggregated warning that lists which selected providers honor the hint and which ignore it.
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
-- In multi-item batch mode with more than one hosted STT provider active, `--stt-provider-concurrency` is treated as an upper bound and the effective hosted-provider concurrency is auto-clamped to `1` per item for reliability.
+- In multi-item batch mode with more than one hosted STT provider active, the batch scheduler keeps one in-flight item per provider/model and uses free provider slots across items before waiting behind a busy provider. `--stt-provider-concurrency` remains the per-item upper bound.
 - Multi-item multi-provider STT batches now do one automatic retry-only backfill sweep in the same invocation. Retryable missing provider outputs are rerun from the batch manifest before the command exits.
 - If a provider hits a clearly permanent provider-wide failure during a batch, later file/provider pairs are marked as `skipped` instead of being retried blindly for every remaining item.
 - Multi-provider STT items are only considered complete when every requested provider succeeded. If any provider is still missing after automatic backfill, the run exits non-zero, keeps all successful provider outputs, and records `completionStatus`, `requestedProviders`, `providerStates`, and `missingProviders` in `metadata.json`.
+- Provider metadata now includes additive STT timing fields such as scheduler queue wait, upload/create/poll, transcript fetch, and cleanup where the provider exposes those phases.
 - Batch `info.json` entries now include each item's `outputDir` and the same completion fields so missing provider/file pairs can be resumed later.
 - Failed providers keep `providers/<service>-<model>/error.json`, and validation-style failures also keep `raw-response.json` for debugging. Skipped providers also write a local `error.json` explaining which earlier provider failure blocked the attempt.
 - `--resume-missing-from` takes a batch directory produced by a prior STT batch run. With no provider flags, it reuses the original requested provider set. If provider flags are supplied, they must be a subset of the original requested providers.

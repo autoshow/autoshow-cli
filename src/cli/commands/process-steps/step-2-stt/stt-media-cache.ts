@@ -76,7 +76,7 @@ export type PreparedSttMedia = {
 }
 
 const METADATA_SCHEMA_VERSION = 1
-const SOURCE_MEDIA_ARTIFACT_VERSION = 2
+const SOURCE_MEDIA_ARTIFACT_VERSION = 3
 const DEFAULT_CACHE_MAX_GB = 20
 const DEFAULT_CACHE_MAX_AGE_DAYS = 30
 const LOCK_WAIT_MS = 50
@@ -219,6 +219,9 @@ const transcodeToMp3 = async (inputPath: string, outputPath: string): Promise<vo
   }
 }
 
+const isMp3InputPath = (filePath: string): boolean =>
+  /\.(mp3|mpga)$/i.test(filePath)
+
 const fetchDirectMedia = async (url: string, outputPath: string): Promise<void> => {
   const response = await fetch(url, { redirect: 'follow' })
   if (!response.ok) {
@@ -236,7 +239,11 @@ const stageSourceMediaArtifact = async (
 
   if (source.filePath) {
     const absoluteFilePath = resolve(source.filePath)
-    await transcodeToMp3(absoluteFilePath, stagedPath)
+    if (isMp3InputPath(absoluteFilePath)) {
+      await copyFile(absoluteFilePath, stagedPath)
+    } else {
+      await transcodeToMp3(absoluteFilePath, stagedPath)
+    }
     return stagedPath
   }
 

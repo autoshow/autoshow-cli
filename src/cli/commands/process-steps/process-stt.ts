@@ -4,7 +4,7 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
-import type { AggregatedPriceEstimate, RuntimeOptions, RetryClass, Step2Metadata, TranscriptionResult } from '~/types'
+import type { AggregatedPriceEstimate, RuntimeOptions, RetryClass, Step2Metadata, Step2TimingMetadata, TranscriptionResult } from '~/types'
 import { getSttEstimation } from '~/cli/commands/models/model-loader'
 import { createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
@@ -293,7 +293,6 @@ const writeSkippedProviderArtifact = async (
 type EffectiveSttProviderConcurrency = {
   requested: number
   effective: number
-  autoThrottled: boolean
   hostedProviderCount: number
 }
 
@@ -303,12 +302,10 @@ export const resolveEffectiveSttProviderConcurrency = (
 ): EffectiveSttProviderConcurrency => {
   const requested = Math.max(1, options.sttProviderConcurrency)
   const hostedProviderCount = targets.filter((target) => !target.local).length
-  const autoThrottled = options.batchConcurrency > 1 && hostedProviderCount > 1 && requested > 1
 
   return {
     requested,
-    effective: autoThrottled ? 1 : requested,
-    autoThrottled,
+    effective: requested,
     hostedProviderCount
   }
 }
@@ -346,22 +343,19 @@ const logSpeakerCountHintSummary = (
 
 const logEffectiveProviderConcurrency = (
   resolution: EffectiveSttProviderConcurrency,
-  batchConcurrency: number
+  batchConcurrency: number,
+  coordinatedAcrossBatch: boolean
 ): void => {
   if (resolution.hostedProviderCount <= 1) {
     return
   }
 
-  const message = resolution.autoThrottled
-    ? `STT cloud provider concurrency auto-throttled: requested=${resolution.requested}, effective=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}`
-    : `STT cloud provider concurrency: requested=${resolution.requested}, effective=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}`
-
-  if (resolution.autoThrottled) {
-    logWarnOnce(message)
+  if (coordinatedAcrossBatch) {
+    logInfoOnce(`STT batch scheduler active: itemProviderConcurrency=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}, providerSlotsPerTarget=1`)
     return
   }
 
-  logInfoOnce(message)
+  logInfoOnce(`STT cloud provider concurrency: requested=${resolution.requested}, effective=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}`)
 }
 
 const formatProviderFailure = (failure: ProviderFailure): string => {
@@ -463,6 +457,61 @@ const parseTranscriptText = (text: string): TranscriptionResult => {
   }
 }
 
+const STT_TIMING_KEYS = [
+  'queueWaitMs',
+  'transcribeMs',
+  'uploadMs',
+  'createMs',
+  'pollMs',
+  'transcriptMs',
+  'cleanupMs'
+] as const satisfies readonly (keyof Step2TimingMetadata)[]
+
+const parseStoredStep2Timings = (value: unknown): Step2TimingMetadata | undefined => {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const timings: Step2TimingMetadata = {}
+  for (const key of STT_TIMING_KEYS) {
+    if (typeof value[key] === 'number' && Number.isFinite(value[key])) {
+      timings[key] = value[key]
+    }
+  }
+
+  return Object.keys(timings).length > 0 ? timings : undefined
+}
+
+const mergeStep2Timings = (
+  ...values: Array<Step2TimingMetadata | undefined>
+): Step2TimingMetadata | undefined => {
+  const merged: Step2TimingMetadata = {}
+
+  for (const key of STT_TIMING_KEYS) {
+    const total = values.reduce((sum, value) => sum + (value?.[key] ?? 0), 0)
+    if (total > 0) {
+      merged[key] = total
+    }
+  }
+
+  return Object.keys(merged).length > 0 ? merged : undefined
+}
+
+const withMergedStep2Timings = (
+  metadata: Step2Metadata,
+  timings: Step2TimingMetadata | undefined
+): Step2Metadata => {
+  const mergedTimings = mergeStep2Timings(metadata.timings, timings)
+  if (!mergedTimings) {
+    return metadata
+  }
+
+  return {
+    ...metadata,
+    timings: mergedTimings
+  }
+}
+
 const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => {
   if (!isRecord(value) || !isSttService(value['transcriptionService']) || typeof value['transcriptionModel'] !== 'string') {
     return undefined
@@ -472,12 +521,15 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
     return undefined
   }
 
+  const timings = parseStoredStep2Timings(value['timings'])
+
   return {
     transcriptionService: value['transcriptionService'],
     transcriptionModel: value['transcriptionModel'],
     ...(typeof value['transcriptionModelName'] === 'string' ? { transcriptionModelName: value['transcriptionModelName'] } : {}),
     processingTime: value['processingTime'],
-    tokenCount: value['tokenCount']
+    tokenCount: value['tokenCount'],
+    ...(timings ? { timings } : {})
   }
 }
 
@@ -762,6 +814,95 @@ const runTargetPool = async (
   )
 }
 
+const selectCoordinatedCloudTarget = async (
+  indices: number[],
+  pendingIndices: Set<number>,
+  requestedTargets: SttTarget[],
+  batchCoordinator: SttBatchCoordinator,
+  onSkip: (index: number, reason: SttBatchBlockedProviderReason) => Promise<void>
+): Promise<{ index: number, queueWaitMs: number } | undefined> => {
+  const waitStartedAt = Date.now()
+
+  while (pendingIndices.size > 0) {
+    const deferredTargets: SttTarget[] = []
+    let skippedAny = false
+
+    for (const index of indices) {
+      if (!pendingIndices.has(index)) {
+        continue
+      }
+
+      const target = requestedTargets[index] as SttTarget
+      const decision = batchCoordinator.tryReserveProvider(target)
+
+      if (decision.action === 'run') {
+        pendingIndices.delete(index)
+        return {
+          index,
+          queueWaitMs: Date.now() - waitStartedAt
+        }
+      }
+
+      if (decision.action === 'skip') {
+        pendingIndices.delete(index)
+        skippedAny = true
+        await onSkip(index, decision.reason)
+        continue
+      }
+
+      deferredTargets.push(target)
+    }
+
+    if (skippedAny) {
+      continue
+    }
+
+    if (deferredTargets.length === 0) {
+      return undefined
+    }
+
+    await batchCoordinator.waitForAvailability(deferredTargets)
+  }
+
+  return undefined
+}
+
+const runCoordinatedCloudTargetPool = async (
+  indices: number[],
+  concurrency: number,
+  requestedTargets: SttTarget[],
+  batchCoordinator: SttBatchCoordinator,
+  onSkip: (index: number, reason: SttBatchBlockedProviderReason) => Promise<void>,
+  worker: (index: number, queueWaitMs: number) => Promise<void>
+): Promise<void> => {
+  const pendingIndices = new Set(indices)
+  const normalizedConcurrency = Math.max(1, concurrency)
+
+  const runWorker = async (): Promise<void> => {
+    while (true) {
+      const nextTarget = await selectCoordinatedCloudTarget(
+        indices,
+        pendingIndices,
+        requestedTargets,
+        batchCoordinator,
+        onSkip
+      )
+
+      if (!nextTarget) {
+        return
+      }
+
+      await worker(nextTarget.index, nextTarget.queueWaitMs)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(normalizedConcurrency, indices.length) }, async () => {
+      await runWorker()
+    })
+  )
+}
+
 const buildProviderModelLabel = (
   metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel' | 'transcriptionModelName'>
 ): string =>
@@ -1000,7 +1141,8 @@ export const processStt = async (
     const providerStateMap = new Map(existingRun.providerStates)
     const providerConcurrency = resolveEffectiveSttProviderConcurrency(options, requestedTargets)
     const batchCoordinator = runOptions.batchCoordinator
-    logEffectiveProviderConcurrency(providerConcurrency, options.batchConcurrency)
+    const coordinatedAcrossBatch = batchCoordinator !== undefined && options.batchConcurrency > 1
+    logEffectiveProviderConcurrency(providerConcurrency, options.batchConcurrency, coordinatedAcrossBatch)
 
     const markTargetSkipped = async (
       index: number,
@@ -1034,22 +1176,14 @@ export const processStt = async (
 
     const runTargetAtIndex = async (
       index: number,
-      attempt: 'initial' | 'recovery' = 'initial'
+      attempt: 'initial' | 'recovery' = 'initial',
+      queueWaitMs = 0
     ): Promise<void> => {
       const target = requestedTargets[index] as SttTarget
       const providerDirName = getSttTargetDirectoryName(target)
       const providerDir = join(providersDir, providerDirName)
       const relativeDir = getProviderArtifactDir(target)
       const targetKey = getTargetKey(target)
-      const providerDecision = batchCoordinator
-        ? await batchCoordinator.beforeProviderAttempt(target)
-        : { action: 'run' as const }
-
-      if (providerDecision.action === 'skip') {
-        await markTargetSkipped(index, providerDecision.reason)
-        return
-      }
-
       const nextAttemptCount = (providerStateMap.get(targetKey)?.attempts ?? 0) + 1
 
       providerStateMap.set(targetKey, {
@@ -1061,12 +1195,12 @@ export const processStt = async (
         attempts: nextAttemptCount
       })
 
-      if (attempt === 'recovery') {
-        await rm(providerDir, { recursive: true, force: true })
-      }
-      await mkdir(providerDir, { recursive: true })
-
       try {
+        if (attempt === 'recovery') {
+          await rm(providerDir, { recursive: true, force: true })
+        }
+        await mkdir(providerDir, { recursive: true })
+
         const audioPath = resolveTargetAudioPath(target, prepared as PreparedSttMedia)
         const transcription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
           await transcribeTarget(audioPath, providerDir, target, {
@@ -1075,10 +1209,14 @@ export const processStt = async (
             sttSegmentConcurrency: options.sttSegmentConcurrency
           })
         )
-        await Bun.write(join(providerDir, 'metadata.json'), JSON.stringify(transcription.metadata, null, 2))
+        const metadataWithQueueTiming = withMergedStep2Timings(
+          transcription.metadata,
+          queueWaitMs > 0 ? { queueWaitMs } : undefined
+        )
+        await Bun.write(join(providerDir, 'metadata.json'), JSON.stringify(metadataWithQueueTiming, null, 2))
         successes[index] = {
           target,
-          metadata: transcription.metadata,
+          metadata: metadataWithQueueTiming,
           result: transcription.result,
           relativeDir
         }
@@ -1150,7 +1288,16 @@ export const processStt = async (
 
     await Promise.all([
       runTargetPool(localIndices, options.sttLocalConcurrency, runTargetAtIndex),
-      runTargetPool(cloudIndices, providerConcurrency.effective, runTargetAtIndex)
+      batchCoordinator
+        ? runCoordinatedCloudTargetPool(
+            cloudIndices,
+            providerConcurrency.effective,
+            requestedTargets,
+            batchCoordinator,
+            markTargetSkipped,
+            async (index, queueWaitMs) => await runTargetAtIndex(index, 'initial', queueWaitMs)
+          )
+        : runTargetPool(cloudIndices, providerConcurrency.effective, runTargetAtIndex)
     ])
 
     if (!batchCoordinator) {
@@ -1222,6 +1369,12 @@ export const processStt = async (
       actual: actualTiming,
       aggregate: {
         wallTimeMs: Date.now() - processStart,
+        scheduler: {
+          hostedProviderCount: providerConcurrency.hostedProviderCount,
+          itemProviderConcurrency: providerConcurrency.effective,
+          coordinatedAcrossBatch,
+          ...(coordinatedAcrossBatch ? { providerSlotsPerTarget: 1 } : {})
+        },
         providers: successfulProviders.map((entry) => ({
           service: entry.metadata.transcriptionService,
           model: entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel,

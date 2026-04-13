@@ -157,8 +157,10 @@ export const runElevenLabsTranscribe = async (
   appendElevenLabsDiarizationOptions(form, diarizationOptions)
 
   const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
+  let transcribeMs = 0
   let rawPayload: unknown
   try {
+    const transcribeStartedAt = Date.now()
     rawPayload = await withRetry(
       {
         retryClass: 'runtime_http_create_conservative',
@@ -193,6 +195,7 @@ export const runElevenLabsTranscribe = async (
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
     )
+    transcribeMs += Date.now() - transcribeStartedAt
   } catch (error) {
     attachElevenLabsErrorContext(error, 'transcribe', 'runtime_http_create_conservative')
   }
@@ -215,7 +218,8 @@ export const runElevenLabsTranscribe = async (
     transcriptionModel: modelName,
     transcriptionModelName: modelName,
     processingTime,
-    tokenCount: countTokens(finalText)
+    tokenCount: countTokens(finalText),
+    ...(transcribeMs > 0 ? { timings: { transcribeMs } } : {})
   }
 
   if (segmentNumber && totalSegments) {

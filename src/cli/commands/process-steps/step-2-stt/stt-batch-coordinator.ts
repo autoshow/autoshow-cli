@@ -13,13 +13,20 @@ export type SttBatchBlockedProviderReason = {
 export type SttBatchAttemptDecision =
   | { action: 'run' }
   | { action: 'skip', reason: SttBatchBlockedProviderReason }
+  | { action: 'defer' }
+
+type AvailabilityWaiter = {
+  resolved: boolean
+  notify: () => void
+}
 
 type ProviderState = {
-  cleared: boolean
-  probeInFlight: boolean
+  activeCount: number
   blockedReason?: SttBatchBlockedProviderReason | undefined
-  waiters: Array<() => void>
+  waiters: AvailabilityWaiter[]
 }
+
+const PROVIDER_SLOT_LIMIT = 1
 
 const getTargetKey = (target: Pick<SttTarget, 'service' | 'model'>): string =>
   `${target.service}:${target.model}`
@@ -39,7 +46,7 @@ const cloneBlockedReason = (
 const wakeWaiters = (state: ProviderState): void => {
   const waiters = state.waiters.splice(0)
   for (const waiter of waiters) {
-    waiter()
+    waiter.notify()
   }
 }
 
@@ -51,8 +58,7 @@ export class SttBatchCoordinator {
     let state = this.#providerStates.get(key)
     if (!state) {
       state = {
-        cleared: false,
-        probeInFlight: false,
+        activeCount: 0,
         waiters: []
       }
       this.#providerStates.set(key, state)
@@ -60,52 +66,84 @@ export class SttBatchCoordinator {
     return state
   }
 
-  async beforeProviderAttempt(target: SttTarget): Promise<SttBatchAttemptDecision> {
-    const state = this.#getState(target)
+  tryReserveProvider(target: SttTarget): SttBatchAttemptDecision {
+    if (target.local) {
+      return { action: 'run' }
+    }
 
-    while (true) {
-      if (state.blockedReason) {
-        return {
-          action: 'skip',
-          reason: cloneBlockedReason(state.blockedReason)
+    const state = this.#getState(target)
+    if (state.blockedReason) {
+      return {
+        action: 'skip',
+        reason: cloneBlockedReason(state.blockedReason)
+      }
+    }
+
+    if (state.activeCount < PROVIDER_SLOT_LIMIT) {
+      state.activeCount += 1
+      return { action: 'run' }
+    }
+
+    return { action: 'defer' }
+  }
+
+  async waitForAvailability(targets: SttTarget[]): Promise<void> {
+    const uniqueTargets = targets.filter((target, index) =>
+      targets.findIndex((candidate) =>
+        candidate.service === target.service && candidate.model === target.model
+      ) === index
+    )
+
+    if (uniqueTargets.length === 0) {
+      return
+    }
+
+    for (const target of uniqueTargets) {
+      const state = this.#getState(target)
+      if (state.blockedReason || state.activeCount < PROVIDER_SLOT_LIMIT) {
+        return
+      }
+    }
+
+    await new Promise<void>((resolve) => {
+      const waiter: AvailabilityWaiter = {
+        resolved: false,
+        notify: () => {
+          if (waiter.resolved) {
+            return
+          }
+          waiter.resolved = true
+          for (const target of uniqueTargets) {
+            const state = this.#getState(target)
+            state.waiters = state.waiters.filter((entry) => entry !== waiter)
+          }
+          resolve()
         }
       }
 
-      if (target.local || state.cleared) {
-        return { action: 'run' }
+      for (const target of uniqueTargets) {
+        this.#getState(target).waiters.push(waiter)
       }
-
-      if (!state.probeInFlight) {
-        state.probeInFlight = true
-        return { action: 'run' }
-      }
-
-      await new Promise<void>((resolve) => {
-        state.waiters.push(resolve)
-      })
-    }
+    })
   }
 
   reportProviderResult(
     target: SttTarget,
     blockedReason?: SttBatchBlockedProviderReason | undefined
   ): void {
-    const state = this.#getState(target)
-
-    if (blockedReason && !state.blockedReason) {
-      state.blockedReason = cloneBlockedReason(blockedReason)
-    } else if (!state.blockedReason) {
-      state.cleared = true
-    }
-
-    if (state.probeInFlight) {
-      state.probeInFlight = false
-      wakeWaiters(state)
+    if (target.local) {
       return
     }
 
-    if (blockedReason) {
-      wakeWaiters(state)
+    const state = this.#getState(target)
+    if (state.activeCount > 0) {
+      state.activeCount -= 1
     }
+
+    if (blockedReason && !state.blockedReason) {
+      state.blockedReason = cloneBlockedReason(blockedReason)
+    }
+
+    wakeWaiters(state)
   }
 }

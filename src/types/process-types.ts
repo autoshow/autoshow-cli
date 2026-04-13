@@ -290,12 +290,23 @@ export type DiarizationOptions = {
   knownSpeakerReferencePaths?: string[] | undefined
 }
 
+export type Step2TimingMetadata = {
+  queueWaitMs?: number | undefined
+  transcribeMs?: number | undefined
+  uploadMs?: number | undefined
+  createMs?: number | undefined
+  pollMs?: number | undefined
+  transcriptMs?: number | undefined
+  cleanupMs?: number | undefined
+}
+
 export type Step2Metadata = {
   transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
   transcriptionModel: string
   transcriptionModelName?: string | undefined
   processingTime: number
   tokenCount: number
+  timings?: Step2TimingMetadata | undefined
 }
 
 export const MistralTranscriptionSegmentSchema = v.object({
