@@ -87,16 +87,16 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 | `--batch-all` | Process all batch items |
 | `--batch-order <newest|oldest>` | Choose batch ordering |
 | `--batch-concurrency <n>` | Process batch items concurrently |
+| `--stt-provider-concurrency <n>` | Per-item cloud provider concurrency upper bound; auto-clamped to `1` in multi-item multi-provider batch runs |
 | `--price` | Show the aggregated estimate and exit |
 
 ## Notes
 
 - Diarization is enabled by default for ElevenLabs, Deepgram, Soniox, AssemblyAI, Mistral, and OpenAI diarized STT models.
 - ElevenLabs and AssemblyAI use `--speaker-count` as an optional diarization hint.
-- Deepgram always requests diarization and ignores `--speaker-count`.
-- Soniox always requests diarization and ignores `--speaker-count`.
+- Deepgram, Soniox, Mistral, Groq, local engines, and count-only OpenAI diarization ignore `--speaker-count`; the CLI now emits one aggregated warning that lists which selected providers honor the hint and which ignore it.
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
-- Groq ignores `--speaker-count`.
-- Mistral enables diarization but does not support speaker-count hints, so `--speaker-count` is ignored there.
+- In multi-item batch mode with more than one hosted STT provider active, `--stt-provider-concurrency` is treated as an upper bound and the effective hosted-provider concurrency is auto-clamped to `1` per item for reliability.
+- Failed providers keep `providers/<service>-<model>/error.json`, and validation-style failures also keep `raw-response.json` for debugging.
 - Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).

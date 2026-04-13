@@ -101,7 +101,7 @@ export const transcriptionFlags = {
     type: String
   },
   'speaker-count': {
-    description: 'Optional diarization speaker-count hint for supported STT services (example: ElevenLabs/AssemblyAI)',
+    description: 'Optional diarization speaker-count hint for supported STT services; unsupported providers report one aggregated warning at runtime',
     type: String
   },
   'speaker-name': {
@@ -119,7 +119,7 @@ export const transcriptionFlags = {
     negatable: false
   },
   'stt-provider-concurrency': {
-    description: 'STT: max cloud providers running in parallel for one item (default 2)',
+    description: 'STT: max cloud providers running in parallel for one item (default 2; auto-clamped to 1 in multi-item multi-provider batch runs)',
     type: String,
     default: '2'
   },

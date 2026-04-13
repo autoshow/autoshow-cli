@@ -10,6 +10,11 @@ import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions } from '~/
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
 type BatchManifestEntry = Record<string, unknown>
+type BatchManifestErrorEntry = {
+  service?: string
+  model?: string
+  message?: string
+}
 
 export const getBatchManifestErrorCount = (entry: BatchManifestEntry | null): number => {
   if (!entry) {
@@ -20,16 +25,46 @@ export const getBatchManifestErrorCount = (entry: BatchManifestEntry | null): nu
   return Array.isArray(errors) ? errors.length : 0
 }
 
+export const getBatchManifestErrors = (entry: BatchManifestEntry | null): BatchManifestErrorEntry[] => {
+  if (!entry) {
+    return []
+  }
+
+  const errors = entry['errors']
+  return Array.isArray(errors)
+    ? errors.filter((value): value is BatchManifestErrorEntry => typeof value === 'object' && value !== null)
+    : []
+}
+
 export const formatBatchCompletionSummary = (
   ok: number,
   partial: number,
   fail: number
-): string => {
-  if (partial > 0) {
-    return `Batch complete: ${ok - partial} succeeded, ${partial} partial, ${fail} failed`
+): string =>
+  `Batch complete: ${ok} completed (${ok - partial} full, ${partial} partial, ${fail} failed)`
+
+export const formatBatchPartialFailureSummary = (
+  entries: BatchManifestErrorEntry[]
+): string | undefined => {
+  const counts = new Map<string, number>()
+
+  for (const entry of entries) {
+    if (typeof entry.service !== 'string' || typeof entry.model !== 'string') {
+      continue
+    }
+
+    const key = `${entry.service}/${entry.model}`
+    counts.set(key, (counts.get(key) ?? 0) + 1)
   }
 
-  return `Batch complete: ${ok} succeeded, ${fail} failed`
+  if (counts.size === 0) {
+    return undefined
+  }
+
+  return `Partial provider failures: ${[...counts.entries()]
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([label, count]) => `${label} x${count}`)
+    .join(', ')}`
 }
 
 export const DOCUMENT_EXTENSIONS = [
@@ -257,6 +292,7 @@ export const processBatch = async (
   let failureExitCode: number | undefined
   let hasMixedFailureCodes = false
   const finalInfoEntries = [...infoEntries]
+  const partialFailureEntries: BatchManifestErrorEntry[] = []
 
   const recordFailureExitCode = (error: unknown): void => {
     const exitCode = error instanceof Error && 'exitCode' in error
@@ -289,6 +325,7 @@ export const processBatch = async (
           if (manifestEntry) {
             finalInfoEntries[index] = manifestEntry
           }
+          partialFailureEntries.push(...getBatchManifestErrors(manifestEntry))
           ok++
           if (errorCount > 0) {
             partial++
@@ -331,6 +368,7 @@ export const processBatch = async (
         if (r.value.manifestEntry) {
           finalInfoEntries[index] = r.value.manifestEntry
         }
+        partialFailureEntries.push(...getBatchManifestErrors(r.value.manifestEntry))
         if (r.value.errorCount > 0) {
           partial++
         }
@@ -341,6 +379,11 @@ export const processBatch = async (
         l.error(`Batch item failed: ${message}`)
       }
     }
+  }
+
+  const partialFailureSummary = formatBatchPartialFailureSummary(partialFailureEntries)
+  if (partialFailureSummary) {
+    l.warn(partialFailureSummary)
   }
 
   l.info(formatBatchCompletionSummary(ok, partial, fail))

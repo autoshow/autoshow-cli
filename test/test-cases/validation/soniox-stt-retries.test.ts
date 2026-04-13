@@ -91,8 +91,8 @@ describe('runSonioxStt', () => {
           id: 'tx-1',
           text: 'Hello there. General Kenobi.',
           tokens: [
-            { text: 'Hello there.', start_ms: 0, end_ms: 1200, speaker: 0, confidence: 0.95 },
-            { text: ' General Kenobi.', start_ms: 1300, end_ms: 2500, speaker: 1, confidence: 0.98 }
+            { text: 'Hello there.', start_ms: 0, end_ms: 1200, speaker: 0, confidence: 0.95, language: null, translation_status: null },
+            { text: ' General Kenobi.', start_ms: 1300, end_ms: 2500, speaker: 1, confidence: 0.98, is_audio_event: null }
           ]
         }), {
           status: 200,

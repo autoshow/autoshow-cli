@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { formatBatchCompletionSummary, getBatchManifestErrorCount } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
+import {
+  formatBatchCompletionSummary,
+  formatBatchPartialFailureSummary,
+  getBatchManifestErrorCount
+} from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 
 describe('batch summary helpers', () => {
   test('counts manifest errors when a batch item completed with partial failures', () => {
@@ -15,7 +19,15 @@ describe('batch summary helpers', () => {
   })
 
   test('formats batch completion summaries with an explicit partial count', () => {
-    expect(formatBatchCompletionSummary(3, 1, 0)).toBe('Batch complete: 2 succeeded, 1 partial, 0 failed')
-    expect(formatBatchCompletionSummary(3, 0, 0)).toBe('Batch complete: 3 succeeded, 0 failed')
+    expect(formatBatchCompletionSummary(3, 1, 0)).toBe('Batch complete: 3 completed (2 full, 1 partial, 0 failed)')
+    expect(formatBatchCompletionSummary(3, 0, 0)).toBe('Batch complete: 3 completed (3 full, 0 partial, 0 failed)')
+  })
+
+  test('groups partial provider failures by service/model', () => {
+    expect(formatBatchPartialFailureSummary([
+      { service: 'soniox', model: 'stt-async-v4', message: 'bad schema' },
+      { service: 'soniox', model: 'stt-async-v4', message: 'bad schema' },
+      { service: 'mistral', model: 'voxtral-mini-latest', message: '503' }
+    ])).toBe('Partial provider failures: mistral/voxtral-mini-latest x1, soniox/stt-async-v4 x2')
   })
 })

@@ -11,7 +11,7 @@ import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
-import { transcribeTarget } from './step-2-stt/run-transcribe'
+import { getTranscribeEngineCapabilities, transcribeTarget } from './step-2-stt/run-transcribe'
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { classifyFetchRetry } from '~/utils/retries'
@@ -26,6 +26,8 @@ type ProviderFailure = {
   retryable: boolean
   stage?: string | undefined
   status?: number | undefined
+  errorFile?: string | undefined
+  rawResponseFile?: string | undefined
 }
 
 type ProviderSuccess = {
@@ -43,10 +45,32 @@ type ProviderErrorLike = Error & {
   retryClass?: RetryClass
   stage?: string
   status?: number
+  rawResponse?: unknown
 }
 
 const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
   value instanceof Error
+
+const emittedInfoMessages = new Set<string>()
+const emittedWarnMessages = new Set<string>()
+
+const logInfoOnce = (message: string): void => {
+  if (emittedInfoMessages.has(message)) {
+    return
+  }
+
+  emittedInfoMessages.add(message)
+  l.info(message)
+}
+
+const logWarnOnce = (message: string): void => {
+  if (emittedWarnMessages.has(message)) {
+    return
+  }
+
+  emittedWarnMessages.add(message)
+  l.warn(message)
+}
 
 const collectErrorChain = (error: unknown): ProviderErrorLike[] => {
   const chain: ProviderErrorLike[] = []
@@ -121,6 +145,124 @@ export const classifySttProviderFailure = (
     ...(stage ? { stage } : {}),
     ...(typeof status === 'number' ? { status } : {})
   }
+}
+
+const extractProviderRawResponse = (error: unknown): unknown =>
+  collectErrorChain(error).find((entry) => entry.rawResponse !== undefined)?.rawResponse
+
+const toDiagnosticJson = (value: unknown): string => {
+  try {
+    const json = JSON.stringify(value, null, 2)
+    if (typeof json === 'string') {
+      return json
+    }
+  } catch {
+  }
+
+  return JSON.stringify({ value: String(value) }, null, 2)
+}
+
+const writeProviderFailureArtifacts = async (
+  providerDir: string,
+  failure: Omit<ProviderFailure, 'index'>,
+  rawResponse: unknown
+): Promise<Pick<ProviderFailure, 'errorFile' | 'rawResponseFile'>> => {
+  const errorFile = 'error.json'
+  let rawResponseFile: string | undefined
+
+  if (rawResponse !== undefined) {
+    rawResponseFile = 'raw-response.json'
+    await Bun.write(join(providerDir, rawResponseFile), toDiagnosticJson(rawResponse))
+  }
+
+  await Bun.write(join(providerDir, errorFile), JSON.stringify({
+    service: failure.service,
+    model: failure.model,
+    message: failure.message,
+    retryable: failure.retryable,
+    ...(failure.stage ? { stage: failure.stage } : {}),
+    ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+    ...(rawResponseFile ? { rawResponseFile } : {})
+  }, null, 2))
+
+  return {
+    errorFile,
+    ...(rawResponseFile ? { rawResponseFile } : {})
+  }
+}
+
+type EffectiveSttProviderConcurrency = {
+  requested: number
+  effective: number
+  autoThrottled: boolean
+  hostedProviderCount: number
+}
+
+export const resolveEffectiveSttProviderConcurrency = (
+  options: Pick<RuntimeOptions, 'batchConcurrency' | 'sttProviderConcurrency'>,
+  targets: Pick<SttTarget, 'local'>[]
+): EffectiveSttProviderConcurrency => {
+  const requested = Math.max(1, options.sttProviderConcurrency)
+  const hostedProviderCount = targets.filter((target) => !target.local).length
+  const autoThrottled = options.batchConcurrency > 1 && hostedProviderCount > 1 && requested > 1
+
+  return {
+    requested,
+    effective: autoThrottled ? 1 : requested,
+    autoThrottled,
+    hostedProviderCount
+  }
+}
+
+const formatSttTargetLabel = (target: Pick<SttTarget, 'service' | 'model'>): string =>
+  `${target.service === 'whisper' ? 'whisper.cpp' : target.service}/${target.model}`
+
+const logSpeakerCountHintSummary = (
+  targets: SttTarget[],
+  requestedSpeakerCount: number | undefined
+): void => {
+  if (requestedSpeakerCount === undefined || targets.length === 0) {
+    return
+  }
+
+  const honored = targets
+    .filter((target) => getTranscribeEngineCapabilities(target.service).supportsSpeakerCountHint)
+    .map(formatSttTargetLabel)
+  const ignored = targets
+    .filter((target) => !getTranscribeEngineCapabilities(target.service).supportsSpeakerCountHint)
+    .map(formatSttTargetLabel)
+
+  if (ignored.length === 0) {
+    return
+  }
+
+  const message = [
+    `Using --speaker-count=${requestedSpeakerCount} for STT diarization`,
+    `honored=${honored.length > 0 ? honored.join(', ') : 'none'}`,
+    `ignored=${ignored.join(', ')}`
+  ].join('; ')
+
+  logWarnOnce(message)
+}
+
+const logEffectiveProviderConcurrency = (
+  resolution: EffectiveSttProviderConcurrency,
+  batchConcurrency: number
+): void => {
+  if (resolution.hostedProviderCount <= 1) {
+    return
+  }
+
+  const message = resolution.autoThrottled
+    ? `STT cloud provider concurrency auto-throttled: requested=${resolution.requested}, effective=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}`
+    : `STT cloud provider concurrency: requested=${resolution.requested}, effective=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}`
+
+  if (resolution.autoThrottled) {
+    logWarnOnce(message)
+    return
+  }
+
+  logInfoOnce(message)
 }
 
 const formatProviderFailure = (failure: ProviderFailure): string => {
@@ -346,6 +488,7 @@ export const processStt = async (
     )
     const acquisitionTimeMs = Date.now() - acquisitionStartedAt
     l.info(buildAcquireSummary(prepared.step1Metadata.slug, prepared))
+    logSpeakerCountHintSummary(targets, options.diarizationSpeakerCount)
 
     if (targets.length === 1) {
       const target = targets[0] as SttTarget
@@ -411,6 +554,8 @@ export const processStt = async (
     await mkdir(providersDir, { recursive: true })
     const successes: Array<ProviderSuccess | undefined> = new Array(targets.length)
     const failuresByIndex = new Map<number, ProviderFailure>()
+    const providerConcurrency = resolveEffectiveSttProviderConcurrency(options, targets)
+    logEffectiveProviderConcurrency(providerConcurrency, options.batchConcurrency)
 
     const runTargetAtIndex = async (
       index: number,
@@ -443,12 +588,21 @@ export const processStt = async (
         }
         failuresByIndex.delete(index)
       } catch (error) {
-        failuresByIndex.set(index, {
+        const failure: ProviderFailure = {
           index,
           service: target.service,
           model: target.model,
           ...classifySttProviderFailure(error)
-        })
+        }
+        const rawResponse = extractProviderRawResponse(error)
+
+        try {
+          Object.assign(failure, await writeProviderFailureArtifacts(providerDir, failure, rawResponse))
+        } catch (artifactError) {
+          l.warn(`Failed to write STT provider diagnostics for ${target.service}/${target.model}: ${artifactError instanceof Error ? artifactError.message : String(artifactError)}`)
+        }
+
+        failuresByIndex.set(index, failure)
       }
     }
 
@@ -460,7 +614,7 @@ export const processStt = async (
 
     await Promise.all([
       runTargetPool(localIndices, options.sttLocalConcurrency, runTargetAtIndex),
-      runTargetPool(cloudIndices, options.sttProviderConcurrency, runTargetAtIndex)
+      runTargetPool(cloudIndices, providerConcurrency.effective, runTargetAtIndex)
     ])
 
     const recoveryIndices = [...failuresByIndex.values()]
@@ -477,7 +631,6 @@ export const processStt = async (
     const successfulProviders = successes.filter((entry): entry is ProviderSuccess => entry !== undefined)
     const failures = [...failuresByIndex.values()].sort((left, right) => left.index - right.index)
     if (successfulProviders.length === 0) {
-      await rm(providersDir, { recursive: true, force: true })
       throw createAllProvidersFailedError(failures)
     }
 
@@ -541,7 +694,9 @@ export const processStt = async (
               message: entry.message,
               ...(entry.stage ? { stage: entry.stage } : {}),
               ...(typeof entry.status === 'number' ? { status: entry.status } : {}),
-              retryable: entry.retryable
+              retryable: entry.retryable,
+              ...(entry.errorFile ? { errorFile: `providers/${getSttTargetDirectoryName({ service: entry.service as SttTarget['service'], model: entry.model })}/${entry.errorFile}` } : {}),
+              ...(entry.rawResponseFile ? { rawResponseFile: `providers/${getSttTargetDirectoryName({ service: entry.service as SttTarget['service'], model: entry.model })}/${entry.rawResponseFile}` } : {})
             }))
           }
         : {})
@@ -583,6 +738,7 @@ export const processStt = async (
         providersRequested: targets.length,
         providersSucceeded: successfulProviders.length,
         providersFailed: failures.length,
+        partial: failures.length > 0,
         ...(promptSource
           ? { promptSource: buildProviderModelLabel(promptSource.metadata) }
           : {})

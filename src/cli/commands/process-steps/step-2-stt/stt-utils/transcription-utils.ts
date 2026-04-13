@@ -68,8 +68,8 @@ export const resolveTranscriptionOutput = (
 }
 
 /** Format a speaker id (string or number) to a display label. */
-export const formatSpeakerLabel = (speakerId: string | number | undefined): string | undefined => {
-  if (speakerId === undefined) return undefined
+export const formatSpeakerLabel = (speakerId: string | number | null | undefined): string | undefined => {
+  if (speakerId === undefined || speakerId === null) return undefined
   if (typeof speakerId === 'number') return `speaker-${speakerId}`
   const trimmed = speakerId.trim()
   return trimmed.length > 0 ? trimmed : undefined

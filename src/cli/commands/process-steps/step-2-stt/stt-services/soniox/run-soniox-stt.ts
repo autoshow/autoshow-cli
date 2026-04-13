@@ -38,6 +38,7 @@ type SonioxHttpError = Error & {
   headers: Headers
   stage?: 'upload' | 'create' | 'poll' | 'transcript'
   retryClass?: RetryClass
+  rawResponse?: unknown
 }
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
@@ -89,6 +90,19 @@ const attachSonioxErrorContext = (
   throw source
 }
 
+const attachSonioxValidationContext = (
+  error: unknown,
+  stage: 'upload' | 'create' | 'poll' | 'transcript',
+  retryClass: RetryClass,
+  rawResponse: unknown
+): never => {
+  const source = error instanceof Error ? error : new Error(String(error))
+  ;(source as SonioxHttpError).stage = stage
+  ;(source as SonioxHttpError).retryClass = retryClass
+  ;(source as SonioxHttpError).rawResponse = rawResponse
+  throw source
+}
+
 const buildUploadForm = (
   audioPath: string,
   bytes: Uint8Array,
@@ -137,7 +151,13 @@ const uploadAudio = async (
     attachSonioxErrorContext(error, 'upload', 'runtime_http_create_conservative')
   }
 
-  const payload = validateData(SonioxFileResponseSchema, rawPayload, 'Soniox upload response')
+  let payload!: { id: string }
+  try {
+    payload = validateData(SonioxFileResponseSchema, rawPayload, 'Soniox upload response')
+  } catch (error) {
+    attachSonioxValidationContext(error, 'upload', 'runtime_http_create_conservative', rawPayload)
+  }
+
   return payload.id
 }
 
@@ -186,7 +206,13 @@ const createTranscription = async (
     attachSonioxErrorContext(error, 'create', 'runtime_http_create_conservative')
   }
 
-  const payload = validateData(SonioxTranscriptionStatusSchema, rawPayload, 'Soniox transcription create response')
+  let payload!: SonioxTranscriptionStatus
+  try {
+    payload = validateData(SonioxTranscriptionStatusSchema, rawPayload, 'Soniox transcription create response')
+  } catch (error) {
+    attachSonioxValidationContext(error, 'create', 'runtime_http_create_conservative', rawPayload)
+  }
+
   return payload.id
 }
 
@@ -228,9 +254,16 @@ const pollTranscription = async (
     attachSonioxErrorContext(error, 'poll', 'runtime_http_read')
   }
 
+  let status!: SonioxTranscriptionStatus
+  try {
+    status = validateData(SonioxTranscriptionStatusSchema, pollResult.payload, 'Soniox transcription status')
+  } catch (error) {
+    attachSonioxValidationContext(error, 'poll', 'runtime_http_read', pollResult.payload)
+  }
+
   return {
     retryAfterMs: pollResult.retryAfterMs,
-    status: validateData(SonioxTranscriptionStatusSchema, pollResult.payload, 'Soniox transcription status')
+    status
   }
 }
 
@@ -269,7 +302,11 @@ const getTranscriptionTranscript = async (
     attachSonioxErrorContext(error, 'transcript', 'runtime_http_read')
   }
 
-  return validateData(SonioxTranscriptResponseSchema, rawPayload, 'Soniox transcript response')
+  try {
+    return validateData(SonioxTranscriptResponseSchema, rawPayload, 'Soniox transcript response')
+  } catch (error) {
+    return attachSonioxValidationContext(error, 'transcript', 'runtime_http_read', rawPayload)
+  }
 }
 
 const deleteTranscription = async (

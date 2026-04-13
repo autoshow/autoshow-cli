@@ -26,7 +26,7 @@ import type { TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { SttTarget } from './stt-targets'
 
-const TRANSCRIBE_ENGINE_CAPABILITIES = {
+export const TRANSCRIBE_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
   deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
@@ -55,16 +55,6 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
   'mistral',
   'assemblyai'
 ])
-
-const warnedMessages = new Set<string>()
-
-const warnOnce = (message: string): void => {
-  if (warnedMessages.has(message)) {
-    return
-  }
-  warnedMessages.add(message)
-  l.warn(message)
-}
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`
@@ -168,6 +158,10 @@ type DiarizationFlagOptions = Pick<
   'diarizationSpeakerCount' | 'diarizationSpeakerNames' | 'diarizationSpeakerReferences'
 >
 
+export const getTranscribeEngineCapabilities = (
+  engine: TranscribeEngine
+): TranscribeEngineCapabilities => TRANSCRIBE_ENGINE_CAPABILITIES[engine]
+
 export const resolveDiarizationOptions = (
   options: DiarizationFlagOptions,
   engine: TranscribeEngine
@@ -211,23 +205,6 @@ export const resolveDiarizationOptions = (
   }
 
   if (!capabilities.supportsSpeakerCountHint) {
-    if (engine === 'mistral') {
-      warnOnce(`Ignoring --speaker-count=${speakerCount} for Mistral because speaker-count hints are unsupported; enabling diarization without a count hint`)
-      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
-    }
-    if (engine === 'deepgram') {
-      warnOnce(`Ignoring --speaker-count=${speakerCount} for Deepgram because speaker-count hints are unsupported; enabling diarization without a count hint`)
-      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
-    }
-    if (engine === 'soniox') {
-      warnOnce(`Ignoring --speaker-count=${speakerCount} for Soniox because speaker-count hints are unsupported; enabling diarization without a count hint`)
-      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
-    }
-    if (engine === 'openai') {
-      warnOnce(`Ignoring --speaker-count=${speakerCount} for OpenAI because count-only diarization hints are unsupported; use --speaker-name with matching --speaker-reference clips instead`)
-      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
-    }
-    warnOnce(`Ignoring --speaker-count=${speakerCount} because the ${engine} transcription engine does not support speaker-count hints`)
     return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
   }
 

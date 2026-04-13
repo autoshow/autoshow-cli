@@ -473,9 +473,10 @@ export const SonioxTranscriptTokenSchema = v.object({
   start_ms: v.optional(v.number(), undefined),
   end_ms: v.optional(v.number(), undefined),
   confidence: v.optional(v.number(), undefined),
-  speaker: v.optional(v.union([v.string(), v.number()]), undefined),
-  language: v.optional(v.string(), undefined),
-  translation_status: v.optional(v.string(), undefined)
+  speaker: v.optional(v.nullable(v.union([v.string(), v.number()])), undefined),
+  language: v.optional(v.nullable(v.string()), undefined),
+  is_audio_event: v.optional(v.nullable(v.boolean()), undefined),
+  translation_status: v.optional(v.nullable(v.string()), undefined)
 })
 
 export const SonioxTranscriptResponseSchema = v.object({

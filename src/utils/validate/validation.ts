@@ -1,6 +1,19 @@
 import * as v from 'valibot'
 import * as l from '~/logger'
 
+const formatValidationIssues = (issues: { nested?: unknown }): string => {
+  const nested = issues.nested
+  if (nested === undefined) {
+    return 'unknown validation error'
+  }
+
+  if (typeof nested === 'string') {
+    return nested
+  }
+
+  return JSON.stringify(nested)
+}
+
 export const validateData = <T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
   schema: T,
   data: unknown,
@@ -10,7 +23,7 @@ export const validateData = <T extends v.BaseSchema<unknown, unknown, v.BaseIssu
 
   if (!result.success) {
     l.error(`Validation failed for ${context}`)
-    throw new Error(`Invalid data structure for ${context}: ${v.flatten(result.issues).nested}`)
+    throw new Error(`Invalid data structure for ${context}: ${formatValidationIssues(v.flatten(result.issues))}`)
   }
 
   return result.output

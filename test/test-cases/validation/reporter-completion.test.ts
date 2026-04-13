@@ -16,6 +16,7 @@ describe('reporter completion output', () => {
         providersRequested: 4,
         providersSucceeded: 4,
         providersFailed: 0,
+        partial: false,
         promptSource: 'elevenlabs/scribe_v2'
       },
       steps: [
@@ -29,7 +30,7 @@ describe('reporter completion output', () => {
     expect(lines).toEqual([
       'Artifacts: prompt=output/run/prompt.md, metadata=output/run/metadata.json, audio=output/run/audio.mp3',
       'Providers: dir=output/run/providers, transcripts=1, metadata=1',
-      'Metrics: providersRequested=4, providersSucceeded=4, providersFailed=0, promptSource=elevenlabs/scribe_v2',
+      'Metrics: providersRequested=4, providersSucceeded=4, providersFailed=0, partial=false, promptSource=elevenlabs/scribe_v2',
       'Step: Download, time=12.9s, cost=0.00000¢',
       'Step: Transcribe elevenlabs/scribe_v2, time=1m 27s, cost=17.01944¢',
       'Total: time=1m 48s, cost=92.21444¢'

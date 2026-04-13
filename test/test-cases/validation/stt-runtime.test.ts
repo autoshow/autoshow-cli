@@ -6,6 +6,7 @@ import {
   filterEstimatedSttCosts,
   filterSttPreflightEstimate,
   prioritizeCloudSttTargetIndices,
+  resolveEffectiveSttProviderConcurrency,
   selectPrimaryPromptProvider,
 } from '~/cli/commands/process-steps/process-stt'
 import type { SttTarget } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
@@ -204,5 +205,36 @@ describe('STT runtime helpers', () => {
     expect(failure.retryable).toBe(true)
     expect(failure.stage).toBe('transcribe')
     expect(failure.message).toContain('failed after 4 attempts')
+  })
+
+  test('auto-throttles cloud provider concurrency for multi-item batch STT runs', () => {
+    expect(resolveEffectiveSttProviderConcurrency({
+      batchConcurrency: 3,
+      sttProviderConcurrency: 2
+    } as RuntimeOptions, [
+      { local: false },
+      { local: false },
+      { local: true }
+    ])).toEqual({
+      requested: 2,
+      effective: 1,
+      autoThrottled: true,
+      hostedProviderCount: 2
+    })
+  })
+
+  test('preserves requested cloud provider concurrency outside multi-item batch mode', () => {
+    expect(resolveEffectiveSttProviderConcurrency({
+      batchConcurrency: 1,
+      sttProviderConcurrency: 3
+    } as RuntimeOptions, [
+      { local: false },
+      { local: false }
+    ])).toEqual({
+      requested: 3,
+      effective: 3,
+      autoThrottled: false,
+      hostedProviderCount: 2
+    })
   })
 })
