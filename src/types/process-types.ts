@@ -12,6 +12,7 @@ export const ProcessingOptionsSchema = v.pipe(
     openaiSttModel: v.optional(v.string(), undefined),
     mistralSttModel: v.optional(v.string(), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
+    deepgramSttModel: v.optional(v.string(), undefined),
     diarizationSpeakerCount: v.optional(v.number(), undefined),
     diarizationSpeakerNames: v.optional(v.array(v.string()), undefined),
     diarizationSpeakerReferences: v.optional(v.array(v.string()), undefined),
@@ -288,7 +289,7 @@ export type DiarizationOptions = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'elevenlabs' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
   transcriptionModel: string
   transcriptionModelName?: string | undefined
   processingTime: number
@@ -417,9 +418,42 @@ export const AssemblyAiTranscriptResponseSchema = v.object({
   error: v.optional(v.nullable(v.string()), undefined)
 })
 
+export const DeepgramWordSchema = v.object({
+  word: v.optional(v.string(), undefined),
+  punctuated_word: v.optional(v.string(), undefined),
+  start: v.optional(v.number(), undefined),
+  end: v.optional(v.number(), undefined),
+  speaker: v.optional(v.number(), undefined)
+})
+
+export const DeepgramAlternativeSchema = v.object({
+  transcript: v.optional(v.string(), undefined),
+  words: v.optional(v.array(DeepgramWordSchema), undefined)
+})
+
+export const DeepgramChannelSchema = v.object({
+  alternatives: v.optional(v.array(DeepgramAlternativeSchema), undefined)
+})
+
+export const DeepgramUtteranceSchema = v.object({
+  start: v.number(),
+  end: v.number(),
+  transcript: v.string(),
+  speaker: v.number(),
+  words: v.optional(v.array(DeepgramWordSchema), undefined)
+})
+
+export const DeepgramResponseSchema = v.object({
+  results: v.object({
+    channels: v.array(DeepgramChannelSchema),
+    utterances: v.optional(v.array(DeepgramUtteranceSchema), undefined)
+  })
+})
+
 export type WhisperJsonOutput = v.InferOutput<typeof WhisperJsonOutputSchema>
 export type ElevenLabsSttResponse = v.InferOutput<typeof ElevenLabsSttResponseSchema>
 export type AssemblyAiTranscriptResponse = v.InferOutput<typeof AssemblyAiTranscriptResponseSchema>
+export type DeepgramResponse = v.InferOutput<typeof DeepgramResponseSchema>
 
 export const LlamaResponseSchema = v.object({
   choices: v.array(v.object({

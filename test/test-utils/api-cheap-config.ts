@@ -148,7 +148,7 @@ const pickCheapestExtractModel = (
 export const buildApiCheapSelections = () => {
   const registry = getModelRegistry()
 
-  const pickCheapestSttModel = (service: 'elevenlabs' | 'openai'): string => {
+  const pickCheapestSttModel = (service: 'elevenlabs' | 'openai' | 'deepgram'): string => {
     const serviceConfig = registry.stt[service]
     if (!serviceConfig) {
       throw new Error(`Missing STT service config: ${service}`)
@@ -233,6 +233,7 @@ export const buildApiCheapSelections = () => {
 
   const sttSelections = [
     { service: 'elevenlabs', flag: '--elevenlabs-stt', envVar: 'ELEVENLABS_API_KEY', model: pickCheapestSttModel('elevenlabs') },
+    { service: 'deepgram', flag: '--deepgram-stt', envVar: 'DEEPGRAM_API_KEY', model: pickCheapestSttModel('deepgram') },
     { service: 'openai', flag: '--openai-stt', envVar: 'OPENAI_API_KEY', model: pickCheapestSttModel('openai') },
     { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: groqWhisperModel }
   ]

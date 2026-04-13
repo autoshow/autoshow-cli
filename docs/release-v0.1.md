@@ -77,7 +77,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 - `bun as <input>` is a root shorthand for `bun as metadata <input>`.
 - Command aliases are normalized up front, including `meta`, `info`, `dl`, `model`, `transcribe`, `transcript`, `transcription`, `extract`, `document`, `voice`, `llm`, `llms`, and `samples`.
 - `metadata` prints JSON by default and can emit Markdown frontmatter YAML with `--markdown`.
-- Selected bare provider flags expand to default models when the next token is omitted. Examples: `--openai` becomes `--openai gpt-5.4`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, `--minimax-image` becomes `--minimax-image image-01`, `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`, `--grok` becomes `--grok grok-4.20-reasoning`, and `--minimax-music` becomes `--minimax-music music-2.5`.
+- Selected bare provider flags expand to default models when the next token is omitted. Examples: `--openai` becomes `--openai gpt-5.4`, `--groq-stt` becomes `--groq-stt whisper-large-v3-turbo`, `--deepgram-stt` becomes `--deepgram-stt nova-3`, `--elevenlabs-tts` becomes `--elevenlabs-tts eleven_v3`, `--minimax-image` becomes `--minimax-image image-01`, `--gemini-video` becomes `--gemini-video veo-3.1-fast-generate-preview`, `--grok` becomes `--grok grok-4.20-reasoning`, and `--minimax-music` becomes `--minimax-music music-2.5`.
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - Runnable commands run an automatic cost preflight before execution.
 - `--price` (or `--dry-run`) prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting.
@@ -215,7 +215,7 @@ Notable behavior:
 
 | Step | Local engines | Service engines |
 |------|---------------|-----------------|
-| STT | Whisper.cpp, Reverb | Groq, ElevenLabs, OpenAI, Mistral, AssemblyAI |
+| STT | Whisper.cpp, Reverb | Groq, ElevenLabs, Deepgram, OpenAI, Mistral, AssemblyAI |
 | Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing | Mistral OCR |
 | LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok |
 | TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini |
@@ -231,6 +231,7 @@ Notable behavior:
 | Reverb | fixed local engine |
 | Groq STT | `whisper-large-v3-turbo`, `whisper-large-v3` |
 | ElevenLabs STT | `scribe_v2` |
+| Deepgram STT | `nova-3` |
 | OpenAI STT | `gpt-4o-transcribe-diarize` |
 | Mistral STT | `voxtral-mini-latest`, `voxtral-mini-2602` |
 | AssemblyAI STT | `universal-2`, `universal-3-pro` |

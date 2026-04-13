@@ -4,6 +4,7 @@ import { runWhisperTranscribe } from './stt-local/whisper/run-whisper'
 import { runReverbTranscribe } from './stt-local/reverb/run-reverb'
 import { runGroqTranscribe } from './stt-services/groq/run-whisper-groq'
 import { runElevenLabsTranscribe } from './stt-services/elevenlabs/run-elevenlabs-stt'
+import { runDeepgramTranscribe } from './stt-services/deepgram/run-deepgram-stt'
 import { runOpenAIStt } from './stt-services/openai/run-openai-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
@@ -13,6 +14,7 @@ import { fileExists } from '~/utils/cli-utils'
 import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/elevenlabs'
+import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/deepgram'
 import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
@@ -25,6 +27,7 @@ import type { SttTarget } from './stt-targets'
 const TRANSCRIBE_ENGINE_CAPABILITIES = {
   reverb: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   elevenlabs: { supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
+  deepgram: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   groq: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   openai: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
   mistral: { supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
@@ -43,6 +46,7 @@ const AUTO_SPLIT_ATTACHMENT_CAP_BYTES: Partial<Record<TranscribeEngine, number>>
 
 const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
   'elevenlabs',
+  'deepgram',
   'groq',
   'openai',
   'mistral',
@@ -106,18 +110,20 @@ export const shouldRetrySplitTranscriptionAfterError = (
 const resolveTranscribeEngine = (options: ProcessingOptions): TranscribeEngine => {
   const hasReverb = options.useReverb === true
   const hasElevenlabs = typeof options.elevenlabsSttModel === 'string' && options.elevenlabsSttModel.length > 0
+  const hasDeepgram = typeof options.deepgramSttModel === 'string' && options.deepgramSttModel.length > 0
   const hasGroq = typeof options.groqSttModel === 'string' && options.groqSttModel.length > 0
   const hasOpenAI = typeof options.openaiSttModel === 'string' && options.openaiSttModel.length > 0
   const hasMistral = typeof options.mistralSttModel === 'string' && options.mistralSttModel.length > 0
   const hasAssemblyAi = typeof options.assemblyaiSttModel === 'string' && options.assemblyaiSttModel.length > 0
 
-  const engineCount = [hasReverb, hasElevenlabs, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi].filter(Boolean).length
+  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi].filter(Boolean).length
   if (engineCount > 1) {
-    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
+    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
   }
 
   if (hasReverb) return 'reverb'
   if (hasElevenlabs) return 'elevenlabs'
+  if (hasDeepgram) return 'deepgram'
   if (hasGroq) return 'groq'
   if (hasOpenAI) return 'openai'
   if (hasMistral) return 'mistral'
@@ -202,6 +208,10 @@ export const resolveDiarizationOptions = (
       warnOnce(`Ignoring --speaker-count=${speakerCount} for Mistral because speaker-count hints are unsupported; enabling diarization without a count hint`)
       return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : {}
     }
+    if (engine === 'deepgram') {
+      warnOnce(`Ignoring --speaker-count=${speakerCount} for Deepgram because speaker-count hints are unsupported; enabling diarization without a count hint`)
+      return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : {}
+    }
     if (engine === 'openai') {
       warnOnce(`Ignoring --speaker-count=${speakerCount} for OpenAI because count-only diarization hints are unsupported; use --speaker-name with matching --speaker-reference clips instead`)
       return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
@@ -240,6 +250,10 @@ export const ensureTranscribeTargetSetup = async (
   }
   if (target.service === 'elevenlabs') {
     await ensureElevenLabsSttSetup()
+    return
+  }
+  if (target.service === 'deepgram') {
+    await ensureDeepgramSttSetup()
     return
   }
   if (target.service === 'openai') {
@@ -285,6 +299,15 @@ const dispatchTranscribe = async (
       segmentNumber,
       totalSegments,
       diarizationOptions: target.diarizationOptions
+    })
+  }
+
+  if (target.service === 'deepgram') {
+    return await runDeepgramTranscribe(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments
     })
   }
 
@@ -481,6 +504,8 @@ export const transcribe = async (
         ? options.whisperModel
         : engine === 'elevenlabs'
           ? options.elevenlabsSttModel as string
+          : engine === 'deepgram'
+            ? options.deepgramSttModel as string
           : engine === 'groq'
             ? options.groqSttModel as string
             : engine === 'openai'

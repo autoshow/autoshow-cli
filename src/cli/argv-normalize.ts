@@ -53,6 +53,7 @@ export const BARE_FLAG_DEFAULTS: Record<string, string> = {
   '--grok':      'grok-4.20-reasoning',
   '--llama':     'ggml-org/gemma-3-270m-it-GGUF',
   '--elevenlabs-stt': 'scribe_v2',
+  '--deepgram-stt': 'nova-3',
   '--groq-stt': 'whisper-large-v3-turbo',
   '--openai-stt': 'gpt-4o-transcribe-diarize',
   '--elevenlabs-tts': 'eleven_v3',

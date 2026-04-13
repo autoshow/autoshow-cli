@@ -120,6 +120,7 @@ Full JSON shape of `config/autoshow.json`:
       "whisper": "tiny",
       "groqStt": "whisper-large-v3-turbo",
       "elevenlabsStt": "scribe_v2",
+      "deepgramStt": "nova-3",
       "openaiStt": "gpt-4o-transcribe-diarize",
       "mistralStt": "voxtral-mini-latest",
       "assemblyaiStt": "universal-2",
@@ -184,10 +185,11 @@ Full JSON shape of `config/autoshow.json`:
 | `whisper` | `--whisper` | Default Whisper model |
 | `groqStt` | `--groq-stt` | Default Groq STT model |
 | `elevenlabsStt` | `--elevenlabs-stt` | Default ElevenLabs STT model |
+| `deepgramStt` | `--deepgram-stt` | Default Deepgram STT model |
 | `openaiStt` | `--openai-stt` | Default OpenAI STT model |
 | `mistralStt` | `--mistral-stt` | Default Mistral STT model |
 | `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model |
-| `speakerCount` | `--speaker-count` | Diarization speaker count hint for ElevenLabs and AssemblyAI |
+| `speakerCount` | `--speaker-count` | Diarization speaker count hint for ElevenLabs and AssemblyAI; Deepgram and Mistral ignore it |
 | `split` | `--split` | Split audio into 10-minute chunks |
 | `reverbVerbatimicity` | `--reverb-verbatimicity` | Reverb output style (0–1) |
 

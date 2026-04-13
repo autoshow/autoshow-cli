@@ -3,6 +3,7 @@ import {
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
+  SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
@@ -27,6 +28,7 @@ import type { MusicProvider, TtsProvider, VideoProvider } from '~/types/provider
 export type GroqModel = typeof SUPPORTED_GROQ_MODELS[number]
 export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
+export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
 export type ElevenlabsSttModel = typeof SUPPORTED_ELEVENLABS_STT_MODELS[number]
 export type GroqSttModel = typeof SUPPORTED_GROQ_STT_MODELS[number]
 export type OpenAISttModel = typeof SUPPORTED_OPENAI_STT_MODELS[number]

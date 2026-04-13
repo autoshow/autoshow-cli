@@ -3,6 +3,7 @@
 ```bash
 bun t \
   test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/assemblyai-models.test.ts \
+  test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/deepgram/deepgram-nova-3.test.ts \
   test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/groq/groq-whisper-models.test.ts \
   test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/elevenlabs/elevenlabs-scribe-v2.test.ts \
   test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/openai/openai-gpt-4o-transcribe-diarize.test.ts \
@@ -27,11 +28,13 @@ Each provider file uses the shared `defineSTTServiceTest` helper, which currentl
 
 ```bash
 bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/assemblyai-models.test.ts
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/deepgram/deepgram-nova-3.test.ts
 bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/elevenlabs/elevenlabs-scribe-v2.test.ts
 bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/groq/groq-whisper-models.test.ts
 bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/mistral/mistral-voxtral-mini-2602.test.ts
 bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/openai/openai-gpt-4o-transcribe-diarize.test.ts
 bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/ --test-price
+bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/deepgram/ --test-price
 bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/openai/ --budget 25
 ```
 

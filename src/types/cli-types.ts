@@ -39,6 +39,7 @@ export type RuntimeOptions = {
   openaiSttModel: string | undefined
   mistralSttModel: string | undefined
   assemblyaiSttModel: string | undefined
+  deepgramSttModel: string | undefined
   diarizationSpeakerCount: number | undefined
   diarizationSpeakerNames: string[] | undefined
   diarizationSpeakerReferences: string[] | undefined

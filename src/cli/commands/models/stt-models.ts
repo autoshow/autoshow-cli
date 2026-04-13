@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/models/model-validation'
-import type { ElevenlabsSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
-export type { ElevenlabsSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
+import type { DeepgramSttModel, ElevenlabsSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
+export type { DeepgramSttModel, ElevenlabsSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',
@@ -12,6 +12,10 @@ export const SUPPORTED_WHISPER_MODELS = [
 
 export const SUPPORTED_ELEVENLABS_STT_MODELS = [
   'scribe_v2'
+] as const satisfies readonly string[]
+
+export const SUPPORTED_DEEPGRAM_STT_MODELS = [
+  'nova-3'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_GROQ_STT_MODELS = [
@@ -35,6 +39,7 @@ export const SUPPORTED_ASSEMBLYAI_STT_MODELS = [
 
 export const validateWhisperModel = createModelValidator(SUPPORTED_WHISPER_MODELS, 'whisper', 'This flag uses local whisper.cpp models.')
 export const validateElevenlabsSttModel = createModelValidator<ElevenlabsSttModel>(SUPPORTED_ELEVENLABS_STT_MODELS, 'elevenlabs-stt')
+export const validateDeepgramSttModel = createModelValidator<DeepgramSttModel>(SUPPORTED_DEEPGRAM_STT_MODELS, 'deepgram-stt')
 export const validateGroqSttModel = createModelValidator<GroqSttModel>(SUPPORTED_GROQ_STT_MODELS, 'groq-stt', 'This flag only accepts Groq Whisper API models.')
 export const validateOpenAISttModel = createModelValidator<OpenAISttModel>(SUPPORTED_OPENAI_STT_MODELS, 'openai-stt')
 export const validateMistralSttModel = createModelValidator<MistralSttModel>(SUPPORTED_MISTRAL_STT_MODELS, 'mistral-stt')

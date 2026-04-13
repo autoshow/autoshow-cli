@@ -34,6 +34,15 @@ export const collectSttTargets = (options: RuntimeOptions): SttTarget[] => {
     })
   }
 
+  if (options.deepgramSttModel) {
+    targets.push({
+      service: 'deepgram',
+      model: options.deepgramSttModel,
+      local: false,
+      diarizationOptions: resolveDiarizationOptions(options, 'deepgram')
+    })
+  }
+
   if (options.groqSttModel) {
     targets.push({
       service: 'groq',

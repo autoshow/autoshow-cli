@@ -402,6 +402,7 @@ const processMediaSingle = async (
     whisperModel: llmDefaults.whisperModel,
     groqSttModel: llmDefaults.groqSttModel,
     elevenlabsSttModel: llmDefaults.elevenlabsSttModel,
+    deepgramSttModel: llmDefaults.deepgramSttModel,
     openaiSttModel: llmDefaults.openaiSttModel,
     mistralSttModel: llmDefaults.mistralSttModel,
     assemblyaiSttModel: llmDefaults.assemblyaiSttModel,

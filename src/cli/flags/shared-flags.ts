@@ -2,6 +2,7 @@ import type { ClercFlagsDefinition } from 'clerc'
 import {
   SUPPORTED_LLAMA_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
+  SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
@@ -72,6 +73,10 @@ export const transcriptionFlags = {
   },
   'elevenlabs-stt': {
     description: buildModelDescription('ElevenLabs STT model', SUPPORTED_ELEVENLABS_STT_MODELS),
+    type: String
+  },
+  'deepgram-stt': {
+    description: buildModelDescription('Deepgram STT model', SUPPORTED_DEEPGRAM_STT_MODELS),
     type: String
   },
   'groq-stt': {

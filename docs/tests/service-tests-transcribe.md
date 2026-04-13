@@ -10,7 +10,7 @@ bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/
 
 ## Current Coverage
 
-- Provider-specific suites live under `test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/`, `elevenlabs/`, `groq/`, `mistral/`, and `openai/`.
+- Provider-specific suites live under `test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/`, `deepgram/`, `elevenlabs/`, `groq/`, `mistral/`, and `openai/`.
 - These suites cover invalid model rejection, `--price` output, and real transcription when the required API key is configured.
 - Step 2 hosted coverage is selected cleanly by directory because the service suites now live under the explicit `transcribe-services/` subfolder.
 

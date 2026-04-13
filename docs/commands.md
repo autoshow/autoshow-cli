@@ -21,6 +21,9 @@ bun as stt input/examples/audio/1-audio.mp3
 # stt with Groq STT
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 
+# stt with Deepgram STT
+bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
+
 # stt with OpenAI STT
 bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize
 
@@ -91,6 +94,7 @@ Most runtime commands support `--price` (or `--dry-run`) to print estimated cost
 
 ```bash
 bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
+bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --price

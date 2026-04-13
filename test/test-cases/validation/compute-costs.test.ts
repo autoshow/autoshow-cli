@@ -45,6 +45,12 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('whisper-large-v3-turbo')
   })
 
+  test('deepgramSttModel routes to deepgram', () => {
+    const result = computeEstimatedCosts({ deepgramSttModel: 'nova-3', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('deepgram')
+    expect(result.steps[0]?.model).toBe('nova-3')
+  })
+
   test('openaiSttModel routes to openai', () => {
     const result = computeEstimatedCosts({ openaiSttModel: 'gpt-4o-mini-transcribe', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('openai')
@@ -119,17 +125,17 @@ describe('computeActualCosts STT', () => {
         audioFileSize: 0
       },
       step2: {
-        transcriptionService: 'whisper',
-        transcriptionModel: 'large-v3-turbo',
-        transcriptionModelName: 'large-v3-turbo',
+        transcriptionService: 'deepgram',
+        transcriptionModel: 'nova-3',
+        transcriptionModelName: 'nova-3',
         processingTime: 5000,
         tokenCount: 150
       }
     })
     const sttStep = result.steps.find(s => s.step === 'stt')
     expect(sttStep).toBeDefined()
-    expect(sttStep?.provider).toBe('whisper')
-    expect(sttStep?.model).toBe('large-v3-turbo')
+    expect(sttStep?.provider).toBe('deepgram')
+    expect(sttStep?.model).toBe('nova-3')
     expect(typeof sttStep?.cost).toBe('number')
   })
 

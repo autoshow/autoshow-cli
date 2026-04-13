@@ -64,6 +64,7 @@ describe('shouldRetrySplitTranscriptionAfterError', () => {
   test('retries hosted upload engines when the provider rejects the payload as too large', () => {
     const error = new Error('Mistral transcription failed (413): {"message":"Request size limit exceeded"}')
     expect(shouldRetrySplitTranscriptionAfterError('mistral', false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError('deepgram', false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError('openai', false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError('groq', false, error)).toBe(true)
   })
@@ -98,6 +99,14 @@ describe('resolveDiarizationOptions', () => {
       diarizationSpeakerNames: undefined,
       diarizationSpeakerReferences: undefined
     }, 'assemblyai')).toEqual({ speakerCount: 3 })
+  })
+
+  test('ignores speaker-count for Deepgram while keeping diarization enabled', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2,
+      diarizationSpeakerNames: undefined,
+      diarizationSpeakerReferences: undefined
+    }, 'deepgram')).toEqual({})
   })
 
   test('rejects OpenAI speaker names without matching references', () => {

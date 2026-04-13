@@ -9,6 +9,7 @@ import {
   validateGrokModel,
   validateWhisperModel,
   validateElevenlabsSttModel,
+  validateDeepgramSttModel,
   validateGroqSttModel,
   validateOpenAISttModel,
   validateMistralSttModel,
@@ -183,6 +184,7 @@ export const buildOptsFromFlags = (
   const whisperModel = validateWhisperModel(readStringFlag(mergedFlags, 'whisper', 'tiny'))
   const groqSttModel = readValidated('groq-stt', validateGroqSttModel)
   const elevenlabsSttModel = readValidated('elevenlabs-stt', validateElevenlabsSttModel)
+  const deepgramSttModel = readValidated('deepgram-stt', validateDeepgramSttModel)
   const openaiSttModel = readValidated('openai-stt', validateOpenAISttModel)
   const mistralSttModel = readValidated('mistral-stt', validateMistralSttModel)
   const assemblyaiSttModel = readValidated('assemblyai-stt', validateAssemblyaiSttModel)
@@ -228,6 +230,7 @@ export const buildOptsFromFlags = (
     whisperModel,
     groqSttModel,
     elevenlabsSttModel,
+    deepgramSttModel,
     openaiSttModel,
     mistralSttModel,
     assemblyaiSttModel,

@@ -39,6 +39,21 @@
       }
     }
   },
+  "deepgram": {
+    "description": "Deepgram cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "nova-3": {
+        "description": "Nova-3 — diarization-inclusive pre-recorded transcription",
+        "costPerHourUSD": 0.582,
+        "costPerHourCents": 58.2,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 200
+        }
+      }
+    }
+  },
   "groq": {
     "description": "Groq cloud speech-to-text",
     "type": "api",
