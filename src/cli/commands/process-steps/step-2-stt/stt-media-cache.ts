@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto'
+import { constants as fsConstants } from 'node:fs'
 import {
   copyFile,
+  link,
   mkdir,
   mkdtemp,
   readFile,
@@ -79,11 +81,44 @@ const METADATA_SCHEMA_VERSION = 1
 const SOURCE_MEDIA_ARTIFACT_VERSION = 3
 const DEFAULT_CACHE_MAX_GB = 20
 const DEFAULT_CACHE_MAX_AGE_DAYS = 30
+const DEFAULT_STT_ACQUIRE_CONCURRENCY = 2
 const LOCK_WAIT_MS = 50
 const LOCK_TIMEOUT_MS = 30000
 
+const sourceMediaAcquireQueue: Array<() => void> = []
+let activeSourceMediaAcquireCount = 0
+
 const sleep = async (ms: number): Promise<void> =>
   await new Promise((resolvePromise) => setTimeout(resolvePromise, ms))
+
+const parsePositiveIntegerEnv = (key: string, fallback: number): number => {
+  const value = Number.parseInt(process.env[key] ?? '', 10)
+  if (!Number.isFinite(value) || value < 1) {
+    return fallback
+  }
+
+  return value
+}
+
+const getSourceMediaAcquireConcurrency = (): number =>
+  Math.max(1, parsePositiveIntegerEnv('AUTOSHOW_STT_ACQUIRE_CONCURRENCY', DEFAULT_STT_ACQUIRE_CONCURRENCY))
+
+const withSourceMediaAcquireSlot = async <T,>(fn: () => Promise<T>): Promise<T> => {
+  const maxConcurrency = getSourceMediaAcquireConcurrency()
+  if (activeSourceMediaAcquireCount >= maxConcurrency) {
+    await new Promise<void>((resolve) => {
+      sourceMediaAcquireQueue.push(resolve)
+    })
+  }
+
+  activeSourceMediaAcquireCount += 1
+  try {
+    return await fn()
+  } finally {
+    activeSourceMediaAcquireCount = Math.max(0, activeSourceMediaAcquireCount - 1)
+    sourceMediaAcquireQueue.shift()?.()
+  }
+}
 
 const isStreamingUrl = (url: string): boolean => {
   try {
@@ -390,7 +425,25 @@ const materializeOutputArtifact = async (
   destinationPath: string
 ): Promise<void> => {
   await ensureDirectory(dirname(destinationPath))
-  await copyFile(sourcePath, destinationPath)
+  await rm(destinationPath, { force: true })
+
+  try {
+    await link(sourcePath, destinationPath)
+    return
+  } catch (error) {
+    const code = error instanceof Error && 'code' in error
+      ? (error as Error & { code?: string }).code
+      : undefined
+    if (code !== 'EXDEV' && code !== 'EMLINK' && code !== 'EPERM' && code !== 'EACCES' && code !== 'EBUSY') {
+      throw error
+    }
+  }
+
+  try {
+    await copyFile(sourcePath, destinationPath, fsConstants.COPYFILE_FICLONE)
+  } catch {
+    await copyFile(sourcePath, destinationPath)
+  }
 }
 
 const probeDurationSeconds = async (
@@ -516,11 +569,14 @@ export const prepareSttMedia = async (
     const sourceMediaStatus: CacheArtifactStatus = 'miss'
 
     try {
-      await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
+      const sourceMediaExecutionPath = await withSourceMediaAcquireSlot(async () => {
+        await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
 
-      const startedAt = Date.now()
-      const sourceMediaExecutionPath = await stageSourceMediaArtifact(source, workspaceDir)
-      timings.sourceMediaMs = Date.now() - startedAt
+        const startedAt = Date.now()
+        const stagedPath = await stageSourceMediaArtifact(source, workspaceDir)
+        timings.sourceMediaMs = Date.now() - startedAt
+        return stagedPath
+      })
       l.info(`cache.bypass artifact=source_media`)
 
       const outputPaths = buildPrimaryOutputPaths(
@@ -593,11 +649,15 @@ export const prepareSttMedia = async (
         && await Bun.file(sourceMediaExecutionPath).exists()
       if (!sourceMediaValid) {
         sourceMediaStatus = 'miss'
-        const startedAt = Date.now()
         const workspaceDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-source-'))
         try {
-          await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
-          const builtSourcePath = await stageSourceMediaArtifact(source, workspaceDir)
+          const builtSourcePath = await withSourceMediaAcquireSlot(async () => {
+            await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
+            const startedAt = Date.now()
+            const stagedPath = await stageSourceMediaArtifact(source, workspaceDir)
+            timings.sourceMediaMs = Date.now() - startedAt
+            return stagedPath
+          })
           const finalPath = join(entryDir, 'source_media.mp3')
           await rm(finalPath, { force: true })
           await rm(join(entryDir, 'wav16k_mono.wav'), { force: true })
@@ -616,7 +676,6 @@ export const prepareSttMedia = async (
           entry.artifactVersions = {
             source_media: SOURCE_MEDIA_ARTIFACT_VERSION
           }
-          timings.sourceMediaMs = Date.now() - startedAt
           l.info(`${refreshCache ? 'cache.rebuild' : 'cache.miss'} artifact=source_media key=${cacheLookup.cacheKey}`)
         } finally {
           await rm(workspaceDir, { recursive: true, force: true })

@@ -245,6 +245,21 @@ describe('STT runtime helpers', () => {
     expect(failure.message).toContain('failed after 4 attempts')
   })
 
+  test('treats polling deadline failures as retryable for STT providers', () => {
+    const failure = classifySttProviderFailure(Object.assign(
+      new Error('AssemblyAI timed out waiting for transcription completion for tx-123 (deadline exceeded after 1800000ms)'),
+      {
+        stage: 'poll',
+        retryClass: 'runtime_http_read',
+        retryable: true
+      }
+    ))
+
+    expect(failure.retryable).toBe(true)
+    expect(failure.stage).toBe('poll')
+    expect(failure.message).toContain('deadline exceeded')
+  })
+
   test('preserves requested cloud provider concurrency for multi-item batch STT runs', () => {
     expect(resolveEffectiveSttProviderConcurrency({
       batchConcurrency: 3,

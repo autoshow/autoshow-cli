@@ -13,6 +13,7 @@ const originalSonioxApiKey = process.env['SONIOX_API_KEY']
 const originalSonioxBaseUrl = process.env['SONIOX_BASE_URL']
 const originalMistralApiKey = process.env['MISTRAL_API_KEY']
 const originalMistralBaseUrl = process.env['MISTRAL_BASE_URL']
+const originalProviderSlotLimit = process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT']
 const originalBunSleep = Bun.sleep
 const cleanupPaths: string[] = []
 type FetchWithMistralCalls = typeof fetch & { getMistralCalls: () => number }
@@ -288,6 +289,12 @@ afterEach(async () => {
     process.env['MISTRAL_BASE_URL'] = originalMistralBaseUrl
   }
 
+  if (originalProviderSlotLimit === undefined) {
+    delete process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT']
+  } else {
+    process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT'] = originalProviderSlotLimit
+  }
+
   ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = originalBunSleep
 
   await Promise.all(cleanupPaths.splice(0).map(async (path) => {
@@ -302,6 +309,7 @@ test('runSttBatch blocks a permanently failing provider and marks later items as
   process.env['SONIOX_BASE_URL'] = 'https://soniox.test'
   process.env['MISTRAL_API_KEY'] = 'mistral-test-key'
   process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
+  process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT'] = '1'
 
   const fetchImpl = createSonioxSuccessFetch(() =>
     new Response(JSON.stringify({ detail: 'Unauthorized' }), {
@@ -378,15 +386,17 @@ test('runSttBatch uses free provider slots on later items instead of waiting beh
 
   await waitFor(() => {
     const counts = fetchImpl.getCallCounts()
-    return counts.deepgram === 1 && counts.sonioxUploads === 1 && counts.mistral === 1
+    return counts.deepgram >= 1
+      && counts.sonioxUploads >= 1
+      && counts.mistral >= 1
+      && (counts.deepgram + counts.sonioxUploads + counts.mistral) >= 4
   })
 
   const earlyCounts = fetchImpl.getCallCounts()
-  expect(earlyCounts).toEqual({
-    deepgram: 1,
-    sonioxUploads: 1,
-    mistral: 1
-  })
+  expect(earlyCounts.deepgram).toBeGreaterThanOrEqual(1)
+  expect(earlyCounts.sonioxUploads).toBeGreaterThanOrEqual(1)
+  expect(earlyCounts.mistral).toBeGreaterThanOrEqual(1)
+  expect(earlyCounts.deepgram + earlyCounts.sonioxUploads + earlyCounts.mistral).toBeGreaterThanOrEqual(4)
 
   fetchImpl.releaseSlowProviders()
 

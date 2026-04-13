@@ -296,8 +296,13 @@ export type Step2TimingMetadata = {
   uploadMs?: number | undefined
   createMs?: number | undefined
   pollMs?: number | undefined
+  pollSleepMs?: number | undefined
   transcriptMs?: number | undefined
+  remoteProcessingMs?: number | undefined
   cleanupMs?: number | undefined
+  requestCount?: number | undefined
+  retryCount?: number | undefined
+  rateLimitCount?: number | undefined
 }
 
 export type Step2Metadata = {

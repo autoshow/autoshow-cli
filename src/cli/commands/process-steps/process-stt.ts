@@ -12,10 +12,14 @@ import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
 import { getTranscribeEngineCapabilities, transcribeTarget } from './step-2-stt/run-transcribe'
-import { SttBatchCoordinator, type SttBatchBlockedProviderReason } from './step-2-stt/stt-batch-coordinator'
+import {
+  describeSttBatchProviderSlotLimits,
+  SttBatchCoordinator,
+  type SttBatchBlockedProviderReason
+} from './step-2-stt/stt-batch-coordinator'
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import { classifyFetchRetry } from '~/utils/retries'
+import { classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
 import { CLIUsageError } from '~/utils/error-handler'
 
 type PreparedSttMedia = Awaited<ReturnType<typeof prepareSttMedia>>
@@ -30,6 +34,7 @@ export type SttRecordedProviderError = {
   skipped?: boolean | undefined
   stage?: string | undefined
   status?: number | undefined
+  retryAfterMs?: number | undefined
   errorFile?: string | undefined
   rawResponseFile?: string | undefined
 }
@@ -53,6 +58,7 @@ type ProviderFailure = {
   retryable: boolean
   stage?: string | undefined
   status?: number | undefined
+  retryAfterMs?: number | undefined
   errorFile?: string | undefined
   rawResponseFile?: string | undefined
 }
@@ -84,6 +90,7 @@ type ProviderErrorLike = Error & {
   retryClass?: RetryClass
   stage?: string
   status?: number
+  retryable?: boolean
   rawResponse?: unknown
 }
 
@@ -108,6 +115,7 @@ const BATCH_BLOCKING_SETUP_MESSAGE_PATTERNS = [
 
 const emittedInfoMessages = new Set<string>()
 const emittedWarnMessages = new Set<string>()
+const RETRYABLE_DEADLINE_MESSAGE_PATTERN = /\bdeadline exceeded\b|\btimed out waiting for transcription completion\b/i
 
 const logInfoOnce = (message: string): void => {
   if (emittedInfoMessages.has(message)) {
@@ -168,9 +176,15 @@ export const classifySttProviderFailure = (
   const status = chain.find((entry) => typeof entry.status === 'number')?.status
   const headers = chain.find((entry) => entry.headers instanceof Headers)?.headers
   const stage = chain.find((entry) => typeof entry.stage === 'string')?.stage
+  const explicitRetryable = chain.find((entry) => typeof entry.retryable === 'boolean')?.retryable
+  const retryAfterMs = parseRetryAfterMs(headers)
 
   let retryable = false
-  if (retryClass) {
+  if (explicitRetryable !== undefined) {
+    retryable = explicitRetryable
+  } else if (RETRYABLE_DEADLINE_MESSAGE_PATTERN.test(message)) {
+    retryable = true
+  } else if (retryClass) {
     const retryCandidate = Object.assign(
       deepest instanceof Error ? deepest : new Error(message),
       {
@@ -198,8 +212,35 @@ export const classifySttProviderFailure = (
     message,
     retryable,
     ...(stage ? { stage } : {}),
-    ...(typeof status === 'number' ? { status } : {})
+    ...(typeof status === 'number' ? { status } : {}),
+    ...(typeof retryAfterMs === 'number' ? { retryAfterMs } : {})
   }
+}
+
+const resolveTransientProviderCooldownMs = (
+  failure: Pick<ProviderFailure, 'retryable' | 'status' | 'retryAfterMs' | 'stage' | 'message'>
+): number | undefined => {
+  if (!failure.retryable) {
+    return undefined
+  }
+
+  if (typeof failure.retryAfterMs === 'number' && failure.retryAfterMs > 0) {
+    return failure.retryAfterMs
+  }
+
+  if (failure.status === 429) {
+    return 30_000
+  }
+
+  if (typeof failure.status === 'number' && failure.status >= 500) {
+    return 10_000
+  }
+
+  if (failure.stage === 'poll' || RETRYABLE_DEADLINE_MESSAGE_PATTERN.test(failure.message)) {
+    return 15_000
+  }
+
+  return 5_000
 }
 
 export const shouldBlockSttProviderForBatch = (
@@ -263,6 +304,7 @@ const writeProviderFailureArtifacts = async (
     retryable: failure.retryable,
     ...(failure.stage ? { stage: failure.stage } : {}),
     ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+    ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
     ...(rawResponseFile ? { rawResponseFile } : {})
   }, null, 2))
 
@@ -344,14 +386,15 @@ const logSpeakerCountHintSummary = (
 const logEffectiveProviderConcurrency = (
   resolution: EffectiveSttProviderConcurrency,
   batchConcurrency: number,
-  coordinatedAcrossBatch: boolean
+  coordinatedAcrossBatch: boolean,
+  targets: SttTarget[]
 ): void => {
   if (resolution.hostedProviderCount <= 1) {
     return
   }
 
   if (coordinatedAcrossBatch) {
-    logInfoOnce(`STT batch scheduler active: itemProviderConcurrency=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}, providerSlotsPerTarget=1`)
+    logInfoOnce(`STT batch scheduler active: itemProviderConcurrency=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}, providerSlots=${describeSttBatchProviderSlotLimits(targets)}`)
     return
   }
 
@@ -409,6 +452,7 @@ const toRecordedProviderError = (
   ...(failure.skipped === true ? { skipped: true } : {}),
   ...(failure.stage ? { stage: failure.stage } : {}),
   ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+  ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
   ...(failure.errorFile ? { errorFile: failure.errorFile } : {}),
   ...(failure.rawResponseFile ? { rawResponseFile: failure.rawResponseFile } : {})
 })
@@ -463,8 +507,13 @@ const STT_TIMING_KEYS = [
   'uploadMs',
   'createMs',
   'pollMs',
+  'pollSleepMs',
   'transcriptMs',
-  'cleanupMs'
+  'remoteProcessingMs',
+  'cleanupMs',
+  'requestCount',
+  'retryCount',
+  'rateLimitCount'
 ] as const satisfies readonly (keyof Step2TimingMetadata)[]
 
 const parseStoredStep2Timings = (value: unknown): Step2TimingMetadata | undefined => {
@@ -553,6 +602,7 @@ const parseStoredProviderState = (value: unknown): SttProviderState | undefined 
         ...(value['lastError']['skipped'] === true ? { skipped: true } : {}),
         ...(typeof value['lastError']['stage'] === 'string' ? { stage: value['lastError']['stage'] } : {}),
         ...(typeof value['lastError']['status'] === 'number' ? { status: value['lastError']['status'] } : {}),
+        ...(typeof value['lastError']['retryAfterMs'] === 'number' ? { retryAfterMs: value['lastError']['retryAfterMs'] } : {}),
         ...(typeof value['lastError']['errorFile'] === 'string' ? { errorFile: value['lastError']['errorFile'] } : {}),
         ...(typeof value['lastError']['rawResponseFile'] === 'string' ? { rawResponseFile: value['lastError']['rawResponseFile'] } : {})
       } satisfies SttRecordedProviderError
@@ -673,6 +723,7 @@ const buildProviderStates = (
           retryable: failure.retryable,
           ...(failure.stage ? { stage: failure.stage } : {}),
           ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+          ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
           ...(failure.errorFile ? { errorFile: `${getProviderArtifactDir(target)}/${failure.errorFile}` } : {}),
           ...(failure.rawResponseFile ? { rawResponseFile: `${getProviderArtifactDir(target)}/${failure.rawResponseFile}` } : {})
         })
@@ -725,6 +776,7 @@ const buildMetadataErrorEntries = (providerStates: SttProviderState[]): Array<Re
       ...(state.status === 'skipped' ? { skipped: true } : {}),
       ...(state.lastError?.stage ? { stage: state.lastError.stage } : {}),
       ...(typeof state.lastError?.status === 'number' ? { status: state.lastError.status } : {}),
+      ...(typeof state.lastError?.retryAfterMs === 'number' ? { retryAfterMs: state.lastError.retryAfterMs } : {}),
       retryable: state.lastError?.retryable === true,
       ...(state.lastError?.errorFile ? { errorFile: state.lastError.errorFile } : {}),
       ...(state.lastError?.rawResponseFile ? { rawResponseFile: state.lastError.rawResponseFile } : {})
@@ -825,32 +877,73 @@ const selectCoordinatedCloudTarget = async (
 
   while (pendingIndices.size > 0) {
     const deferredTargets: SttTarget[] = []
+    const runnableCandidates: Array<{
+      index: number
+      activeCount: number
+      slotLimit: number
+      priority: number
+    }> = []
     let skippedAny = false
 
-    for (const index of indices) {
+    for (const [priority, index] of indices.entries()) {
       if (!pendingIndices.has(index)) {
         continue
       }
 
       const target = requestedTargets[index] as SttTarget
-      const decision = batchCoordinator.tryReserveProvider(target)
+      const availability = batchCoordinator.peekProviderAvailability(target)
 
-      if (decision.action === 'run') {
-        pendingIndices.delete(index)
-        return {
-          index,
-          queueWaitMs: Date.now() - waitStartedAt
-        }
-      }
-
-      if (decision.action === 'skip') {
+      if (availability.action === 'skip') {
         pendingIndices.delete(index)
         skippedAny = true
-        await onSkip(index, decision.reason)
+        await onSkip(index, availability.reason)
+        continue
+      }
+
+      if (availability.action === 'run') {
+        runnableCandidates.push({
+          index,
+          activeCount: availability.activeCount,
+          slotLimit: availability.slotLimit,
+          priority
+        })
         continue
       }
 
       deferredTargets.push(target)
+    }
+
+    if (runnableCandidates.length > 0) {
+      runnableCandidates.sort((left, right) => {
+        const leftUtilization = left.activeCount / left.slotLimit
+        const rightUtilization = right.activeCount / right.slotLimit
+        if (leftUtilization !== rightUtilization) {
+          return leftUtilization - rightUtilization
+        }
+
+        if (left.activeCount !== right.activeCount) {
+          return left.activeCount - right.activeCount
+        }
+
+        return left.priority - right.priority
+      })
+
+      for (const candidate of runnableCandidates) {
+        const decision = batchCoordinator.tryReserveProvider(requestedTargets[candidate.index] as SttTarget)
+        if (decision.action === 'run') {
+          pendingIndices.delete(candidate.index)
+          return {
+            index: candidate.index,
+            queueWaitMs: Date.now() - waitStartedAt
+          }
+        }
+
+        if (decision.action === 'skip') {
+          pendingIndices.delete(candidate.index)
+          skippedAny = true
+          await onSkip(candidate.index, decision.reason)
+        }
+      }
     }
 
     if (skippedAny) {
@@ -1142,7 +1235,41 @@ export const processStt = async (
     const providerConcurrency = resolveEffectiveSttProviderConcurrency(options, requestedTargets)
     const batchCoordinator = runOptions.batchCoordinator
     const coordinatedAcrossBatch = batchCoordinator !== undefined && options.batchConcurrency > 1
-    logEffectiveProviderConcurrency(providerConcurrency, options.batchConcurrency, coordinatedAcrossBatch)
+    const preparedMedia = prepared as PreparedSttMedia
+    logEffectiveProviderConcurrency(providerConcurrency, options.batchConcurrency, coordinatedAcrossBatch, requestedTargets)
+    let promptRefreshChain = Promise.resolve()
+    let promptRefreshError: unknown
+    let lastPromptSourceKey: string | undefined
+
+    const queuePromptRefresh = (): void => {
+      promptRefreshChain = promptRefreshChain
+        .then(async () => {
+          if (promptRefreshError !== undefined) {
+            return
+          }
+
+          const promptSource = selectPrimaryPromptProvider(successes)
+          if (!promptSource) {
+            return
+          }
+
+          const promptSourceKey = getTargetKey(promptSource.target)
+          if (promptSourceKey === lastPromptSourceKey) {
+            return
+          }
+
+          await buildPromptFile(outputDir, preparedMedia.metadata, promptSource.result, preparedMedia.step1Metadata.slug, {
+            prompts: options.prompts,
+            structured: options.structured,
+            promptSourceProvider: buildProviderModelLabel(promptSource.metadata),
+            requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount
+          })
+          lastPromptSourceKey = promptSourceKey
+        })
+        .catch((error) => {
+          promptRefreshError = error
+        })
+    }
 
     const markTargetSkipped = async (
       index: number,
@@ -1220,6 +1347,7 @@ export const processStt = async (
           result: transcription.result,
           relativeDir
         }
+        queuePromptRefresh()
         batchCoordinator?.reportProviderResult(target)
         providerStateMap.set(targetKey, {
           service: target.service,
@@ -1256,7 +1384,10 @@ export const processStt = async (
               ...(typeof failure.status === 'number' ? { status: failure.status } : {})
             } satisfies SttBatchBlockedProviderReason
           : undefined
-        batchCoordinator?.reportProviderResult(target, batchBlockedFailure)
+        batchCoordinator?.reportProviderResult(target, {
+          blockedReason: batchBlockedFailure,
+          cooldownMs: resolveTransientProviderCooldownMs(failure)
+        })
 
         providerStateMap.set(targetKey, {
           service: target.service,
@@ -1271,6 +1402,7 @@ export const processStt = async (
             retryable: failure.retryable,
             ...(failure.stage ? { stage: failure.stage } : {}),
             ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+            ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
             ...(failure.errorFile ? { errorFile: `${relativeDir}/${failure.errorFile}` } : {}),
             ...(failure.rawResponseFile ? { rawResponseFile: `${relativeDir}/${failure.rawResponseFile}` } : {})
           })
@@ -1333,15 +1465,13 @@ export const processStt = async (
     const missingProviders = buildMissingProviders(providerStates, requestedTargets)
     const metadataErrors = buildMetadataErrorEntries(providerStates)
 
-    const promptSource = selectPrimaryPromptProvider(successes)
-    if (promptSource) {
-      await buildPromptFile(outputDir, prepared.metadata, promptSource.result, prepared.step1Metadata.slug, {
-        prompts: options.prompts,
-        structured: options.structured,
-        promptSourceProvider: buildProviderModelLabel(promptSource.metadata),
-        requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount
-      })
+    queuePromptRefresh()
+    await promptRefreshChain
+    if (promptRefreshError !== undefined) {
+      throw promptRefreshError
     }
+
+    const promptSource = selectPrimaryPromptProvider(successes)
 
     const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, prepared.durationSeconds))
     const actual = computeActualCosts({
@@ -1373,7 +1503,7 @@ export const processStt = async (
           hostedProviderCount: providerConcurrency.hostedProviderCount,
           itemProviderConcurrency: providerConcurrency.effective,
           coordinatedAcrossBatch,
-          ...(coordinatedAcrossBatch ? { providerSlotsPerTarget: 1 } : {})
+          ...(coordinatedAcrossBatch ? { providerSlots: describeSttBatchProviderSlotLimits(requestedTargets) } : {})
         },
         providers: successfulProviders.map((entry) => ({
           service: entry.metadata.transcriptionService,

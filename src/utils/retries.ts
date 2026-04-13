@@ -177,6 +177,7 @@ export const withRetry = async <T>(
   const policy = getRetryPolicy(ctx.retryClass, ctx.policy)
   const startedAt = Date.now()
   let lastError: unknown
+  let retried = false
 
   for (let attempt = 0; attempt < policy.maxAttempts; attempt++) {
     try {
@@ -193,16 +194,21 @@ export const withRetry = async <T>(
       if (classifier) {
         const decision = classifier(error)
         if (!decision.shouldRetry) {
+          if (!retried) {
+            throw error
+          }
           break
         }
 
         if (decision.delayMs > 0) {
+          retried = true
           l.warn(`${ctx.operationName}: attempt ${attempt + 1}/${policy.maxAttempts} failed (${decision.reason}), retrying in ${decision.delayMs}ms`)
           await Bun.sleep(decision.delayMs)
           continue
         }
       }
 
+      retried = true
       const delay = computeDelay(attempt, policy.baseDelayMs, policy.maxDelayMs, policy.exponential, policy.jitter)
       const reason = error instanceof Error ? error.message : String(error)
       l.warn(`${ctx.operationName}: attempt ${attempt + 1}/${policy.maxAttempts} failed (${reason}), retrying in ${Math.round(delay)}ms`)

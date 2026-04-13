@@ -16,6 +16,7 @@ const INITIAL_POLL_INTERVAL_MS = 1000
 const MAX_POLL_INTERVAL_MS = 10000
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
+const DEFAULT_POLL_DEADLINE_MS = 30 * 60 * 1000
 
 type AssemblyAiHttpError = Error & {
   status: number
@@ -30,6 +31,15 @@ const formatSpeaker = (speaker: string | undefined): string | undefined => {
 }
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
+
+const parsePositiveIntegerEnv = (key: string, fallback: number): number => {
+  const parsed = Number.parseInt(process.env[key] ?? '', 10)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback
+  }
+
+  return parsed
+}
 
 const parseRetryAfterMs = (headers: Headers): number | null => {
   const retryAfter = headers.get('retry-after')
@@ -59,6 +69,26 @@ const attachAssemblyAiErrorContext = (
   ;(source as AssemblyAiHttpError).stage = stage
   ;(source as AssemblyAiHttpError).retryClass = retryClass
   throw source
+}
+
+const getErrorStatus = (error: unknown): number | undefined =>
+  error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
+    ? (error as { status: number }).status
+    : undefined
+
+const buildPollingDeadlineError = (
+  transcriptId: string,
+  pollDeadlineMs: number
+): never => {
+  const error = Object.assign(
+    new Error(`AssemblyAI timed out waiting for transcription completion for ${transcriptId} (deadline exceeded after ${pollDeadlineMs}ms)`),
+    {
+      stage: 'poll',
+      retryClass: 'runtime_http_read' as RetryClass,
+      retryable: true
+    }
+  )
+  throw error
 }
 
 export const runAssemblyAiTranscribe = async (
@@ -91,6 +121,14 @@ export const runAssemblyAiTranscribe = async (
   let uploadMs = 0
   let createMs = 0
   let pollMs = 0
+  let pollSleepMs = 0
+  let requestCount = 0
+  let retryCount = 0
+  let rateLimitCount = 0
+  const pollDeadlineMs = parsePositiveIntegerEnv(
+    'AUTOSHOW_STT_POLL_DEADLINE_MS_ASSEMBLYAI',
+    parsePositiveIntegerEnv('AUTOSHOW_STT_POLL_DEADLINE_MS', DEFAULT_POLL_DEADLINE_MS)
+  )
 
   const baseURL = readEnv('ASSEMBLYAI_BASE_URL') ?? 'https://api.assemblyai.com'
   const headers = {
@@ -98,7 +136,7 @@ export const runAssemblyAiTranscribe = async (
     'content-type': 'application/json'
   }
 
-  const fileBuffer = await Bun.file(audioPath).arrayBuffer()
+  const audioFile = Bun.file(audioPath)
   let uploadResult: unknown
   try {
     const uploadStartedAt = Date.now()
@@ -110,13 +148,14 @@ export const runAssemblyAiTranscribe = async (
         timeoutMs: REQUEST_TIMEOUT_MS
       },
       async (signal) => {
+      requestCount += 1
       const uploadResponse = await fetch(`${baseURL}/v2/upload`, {
         method: 'POST',
         headers: {
           'authorization': apiKey,
           'content-type': 'application/octet-stream'
         },
-        body: fileBuffer,
+        body: audioFile,
         signal: signal ?? null
       })
 
@@ -135,7 +174,16 @@ export const runAssemblyAiTranscribe = async (
 
       return await uploadResponse.json()
       },
-      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          retryCount += 1
+          if (getErrorStatus(error) === 429) {
+            rateLimitCount += 1
+          }
+        }
+        return decision
+      }
     )
     uploadMs += Date.now() - uploadStartedAt
   } catch (error) {
@@ -167,6 +215,7 @@ export const runAssemblyAiTranscribe = async (
         timeoutMs: REQUEST_TIMEOUT_MS
       },
       async (signal) => {
+      requestCount += 1
       const createResponse = await fetch(`${baseURL}/v2/transcript`, {
         method: 'POST',
         headers,
@@ -189,7 +238,16 @@ export const runAssemblyAiTranscribe = async (
 
       return await createResponse.json()
       },
-      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          retryCount += 1
+          if (getErrorStatus(error) === 429) {
+            rateLimitCount += 1
+          }
+        }
+        return decision
+      }
     )
     createMs += Date.now() - createStartedAt
   } catch (error) {
@@ -205,8 +263,16 @@ export const runAssemblyAiTranscribe = async (
 
   let pollPayload: unknown
   let pollDelayMs = INITIAL_POLL_INTERVAL_MS
+  const pollDeadlineAt = Date.now() + pollDeadlineMs
   while (true) {
-    await sleep(pollDelayMs)
+    const remainingBeforeSleep = pollDeadlineAt - Date.now()
+    if (remainingBeforeSleep <= 0) {
+      buildPollingDeadlineError(transcriptId, pollDeadlineMs)
+    }
+
+    const sleepStartedAt = Date.now()
+    await sleep(Math.min(pollDelayMs, remainingBeforeSleep))
+    pollSleepMs += Date.now() - sleepStartedAt
 
     let pollResult!: { payload: unknown, retryAfterMs: number | null }
     try {
@@ -219,6 +285,7 @@ export const runAssemblyAiTranscribe = async (
           timeoutMs: POLL_REQUEST_TIMEOUT_MS
         },
         async (signal) => {
+        requestCount += 1
         const pollResponse = await fetch(`${baseURL}/v2/transcript/${transcriptId}`, {
           method: 'GET',
           headers: { 'authorization': apiKey },
@@ -243,7 +310,16 @@ export const runAssemblyAiTranscribe = async (
           retryAfterMs: parseRetryAfterMs(pollResponse.headers)
         }
         },
-        (error) => classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
+        (error) => {
+          const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
+          if (decision.shouldRetry) {
+            retryCount += 1
+            if (getErrorStatus(error) === 429) {
+              rateLimitCount += 1
+            }
+          }
+          return decision
+        }
       )
       pollMs += Date.now() - pollStartedAt
     } catch (error) {
@@ -300,18 +376,24 @@ export const runAssemblyAiTranscribe = async (
   await Bun.write(formattedTranscriptPath, formatTranscriptText(finalSegments))
 
   const processingTime = Date.now() - startTime
+  const remoteProcessingMs = Math.max(0, processingTime - uploadMs - createMs - pollMs)
   const metadata: Step2Metadata = {
     transcriptionService: 'assemblyai',
     transcriptionModel: modelName,
     transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(finalText),
-    ...((uploadMs > 0 || createMs > 0 || pollMs > 0)
+    ...((uploadMs > 0 || createMs > 0 || pollMs > 0 || pollSleepMs > 0 || remoteProcessingMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0)
       ? {
           timings: {
             ...(uploadMs > 0 ? { uploadMs } : {}),
             ...(createMs > 0 ? { createMs } : {}),
-            ...(pollMs > 0 ? { pollMs } : {})
+            ...(pollMs > 0 ? { pollMs } : {}),
+            ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
+            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
+            ...(requestCount > 0 ? { requestCount } : {}),
+            ...(retryCount > 0 ? { retryCount } : {}),
+            ...(rateLimitCount > 0 ? { rateLimitCount } : {})
           }
         }
       : {})

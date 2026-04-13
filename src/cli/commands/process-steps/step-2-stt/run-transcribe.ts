@@ -235,8 +235,13 @@ const STT_TIMING_KEYS = [
   'uploadMs',
   'createMs',
   'pollMs',
+  'pollSleepMs',
   'transcriptMs',
-  'cleanupMs'
+  'remoteProcessingMs',
+  'cleanupMs',
+  'requestCount',
+  'retryCount',
+  'rateLimitCount'
 ] as const satisfies readonly (keyof Step2TimingMetadata)[]
 
 const mergeStep2Timings = (

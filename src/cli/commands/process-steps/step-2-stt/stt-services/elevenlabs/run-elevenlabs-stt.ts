@@ -22,6 +22,11 @@ type ElevenLabsHttpError = Error & {
   retryClass?: RetryClass
 }
 
+const getErrorStatus = (error: unknown): number | undefined =>
+  error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
+    ? (error as { status: number }).status
+    : undefined
+
 const attachElevenLabsErrorContext = (
   error: unknown,
   stage: 'transcribe',
@@ -151,13 +156,11 @@ export const runElevenLabsTranscribe = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
-  const form = new FormData()
-  form.append('model_id', modelName)
-  form.append('file', Bun.file(audioPath))
-  appendElevenLabsDiarizationOptions(form, diarizationOptions)
-
   const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
   let transcribeMs = 0
+  let requestCount = 0
+  let retryCount = 0
+  let rateLimitCount = 0
   let rawPayload: unknown
   try {
     const transcribeStartedAt = Date.now()
@@ -169,6 +172,12 @@ export const runElevenLabsTranscribe = async (
         timeoutMs: REQUEST_TIMEOUT_MS
       },
       async (signal) => {
+        requestCount += 1
+        const form = new FormData()
+        form.append('model_id', modelName)
+        form.append('file', Bun.file(audioPath))
+        appendElevenLabsDiarizationOptions(form, diarizationOptions)
+
       const response = await fetch(`${baseURL}/speech-to-text`, {
         method: 'POST',
         headers: {
@@ -191,9 +200,18 @@ export const runElevenLabsTranscribe = async (
           )
         }
 
-      return await response.json()
+        return await response.json()
       },
-      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          retryCount += 1
+          if (getErrorStatus(error) === 429) {
+            rateLimitCount += 1
+          }
+        }
+        return decision
+      }
     )
     transcribeMs += Date.now() - transcribeStartedAt
   } catch (error) {
@@ -213,13 +231,24 @@ export const runElevenLabsTranscribe = async (
   await Bun.write(formattedTranscriptPath, formatTranscriptText(finalSegments))
 
   const processingTime = Date.now() - startTime
+  const remoteProcessingMs = Math.max(0, processingTime - transcribeMs)
   const metadata: Step2Metadata = {
     transcriptionService: 'elevenlabs',
     transcriptionModel: modelName,
     transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(finalText),
-    ...(transcribeMs > 0 ? { timings: { transcribeMs } } : {})
+    ...((transcribeMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0 || remoteProcessingMs > 0)
+      ? {
+          timings: {
+            ...(transcribeMs > 0 ? { transcribeMs } : {}),
+            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
+            ...(requestCount > 0 ? { requestCount } : {}),
+            ...(retryCount > 0 ? { retryCount } : {}),
+            ...(rateLimitCount > 0 ? { rateLimitCount } : {})
+          }
+        }
+      : {})
   }
 
   if (segmentNumber && totalSegments) {

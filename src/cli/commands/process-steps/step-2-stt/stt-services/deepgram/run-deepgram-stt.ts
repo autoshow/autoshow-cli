@@ -27,6 +27,11 @@ type DeepgramHttpError = Error & {
 type DeepgramAlternative = NonNullable<DeepgramResponse['results']['channels'][number]['alternatives']>[number]
 type DeepgramWords = DeepgramAlternative['words']
 
+const getErrorStatus = (error: unknown): number | undefined =>
+  error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
+    ? (error as { status: number }).status
+    : undefined
+
 const attachDeepgramErrorContext = (
   error: unknown,
   stage: 'transcribe',
@@ -160,10 +165,12 @@ export const runDeepgramTranscribe = async (
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
   const file = Bun.file(audioPath)
-  const audioBuffer = await file.arrayBuffer()
   const mimeType = inferDeepgramMimeType(audioPath, file.type)
   const baseURL = readEnv('DEEPGRAM_BASE_URL') ?? 'https://api.deepgram.com'
   let transcribeMs = 0
+  let requestCount = 0
+  let retryCount = 0
+  let rateLimitCount = 0
 
   let rawPayload: unknown
   try {
@@ -176,13 +183,14 @@ export const runDeepgramTranscribe = async (
         timeoutMs: REQUEST_TIMEOUT_MS
       },
       async (signal) => {
+        requestCount += 1
         const response = await fetch(buildDeepgramUrl(baseURL, modelName), {
           method: 'POST',
           headers: {
             Authorization: `Token ${apiKey}`,
             'Content-Type': mimeType
           },
-          body: audioBuffer,
+          body: file,
           signal: signal ?? null
         })
 
@@ -201,7 +209,16 @@ export const runDeepgramTranscribe = async (
 
         return await response.json()
       },
-      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          retryCount += 1
+          if (getErrorStatus(error) === 429) {
+            rateLimitCount += 1
+          }
+        }
+        return decision
+      }
     )
     transcribeMs += Date.now() - transcribeStartedAt
   } catch (error) {
@@ -221,13 +238,24 @@ export const runDeepgramTranscribe = async (
   await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
 
   const processingTime = Date.now() - startTime
+  const remoteProcessingMs = Math.max(0, processingTime - transcribeMs)
   const metadata: Step2Metadata = {
     transcriptionService: 'deepgram',
     transcriptionModel: modelName,
     transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(finalText),
-    ...(transcribeMs > 0 ? { timings: { transcribeMs } } : {})
+    ...((transcribeMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0 || remoteProcessingMs > 0)
+      ? {
+          timings: {
+            ...(transcribeMs > 0 ? { transcribeMs } : {}),
+            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
+            ...(requestCount > 0 ? { requestCount } : {}),
+            ...(retryCount > 0 ? { retryCount } : {}),
+            ...(rateLimitCount > 0 ? { rateLimitCount } : {})
+          }
+        }
+      : {})
   }
 
   if (segmentNumber && totalSegments) {
