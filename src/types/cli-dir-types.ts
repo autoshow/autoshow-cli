@@ -42,11 +42,13 @@ export type BatchItemProcessor = (
   command: ProcessCommand,
   item: string,
   batchDir: string,
-  opts: RuntimeOptions
+  opts: RuntimeOptions,
+  batchItem?: BatchItem
 ) => Promise<BatchItemProcessResult | void>
 
 export type BatchItemProcessResult = {
-  outputDir: string
+  outputDir?: string
+  manifestEntry?: Record<string, unknown>
 }
 
 export type BatchProcessResult = {

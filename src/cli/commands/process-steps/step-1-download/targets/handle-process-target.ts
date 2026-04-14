@@ -396,7 +396,8 @@ export const handleProcessTarget = async (
       resolved.source.title ?? resolved.source.sourceKind,
       command,
       opts,
-      processSingleTarget,
+      async (commandName, item, batchDir, batchOpts, batchItem) =>
+        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem),
       {
         source: resolved.source,
         selectedItems: resolved.selectedItems,
@@ -423,7 +424,14 @@ export const handleProcessTarget = async (
       return
     }
 
-    const { incomplete, fail, failureExitCode } = await processBatch(plan.targets, 'youtube_collection', command, opts, processSingleTarget)
+    const { incomplete, fail, failureExitCode } = await processBatch(
+      plan.targets,
+      'youtube_collection',
+      command,
+      opts,
+      async (commandName, item, batchDir, batchOpts, batchItem) =>
+        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem)
+    )
     if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && plan.targets.length > 0 && fail === plan.targets.length)) {
       const problemCount = isSttCommand(command) ? incomplete + fail : fail
       const error = new Error(`Batch processing failed for ${problemCount} item(s)`)

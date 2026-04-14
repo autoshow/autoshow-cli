@@ -59,12 +59,20 @@ export const processResolvedInputListBatch = async (
     return
   }
 
-  const { ok, incomplete, fail, failureExitCode } = await processBatch(resolvedBatch.selectedUrls, 'inputs', command, opts, processSingleTarget, {
-    source: resolvedBatch.source,
-    selectedItems: resolvedBatch.selectedItems,
-    concurrency: opts.batchConcurrency,
-    totalCount: resolvedBatch.totalCount
-  })
+  const { ok, incomplete, fail, failureExitCode } = await processBatch(
+    resolvedBatch.selectedUrls,
+    'inputs',
+    command,
+    opts,
+    async (commandName, item, batchDir, batchOpts, batchItem) =>
+      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem),
+    {
+      source: resolvedBatch.source,
+      selectedItems: resolvedBatch.selectedItems,
+      concurrency: opts.batchConcurrency,
+      totalCount: resolvedBatch.totalCount
+    }
+  )
   if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && ok === 0 && fail > 0)) {
     const problemCount = isSttCommand(command) ? incomplete + fail : fail
     const error = new Error(`Batch processing failed for ${problemCount} item(s)`)

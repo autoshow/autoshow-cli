@@ -78,6 +78,8 @@ export type RuntimeOptions = {
   batchAll: boolean
   batchOrder: BatchOrder
   batchConcurrency: number
+  keepOriginalMedia: boolean
+  flatBatch: boolean
 
   ttsSpeaker: string
 

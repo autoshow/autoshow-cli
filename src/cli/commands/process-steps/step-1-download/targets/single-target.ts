@@ -31,7 +31,7 @@ import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { estimateTokens } from '~/utils/text-utils'
-import type { BatchItemProcessResult, InputKind } from '~/types'
+import type { BatchItem, BatchItemProcessResult, InputKind } from '~/types'
 
 
 const isMediaByExtension = (path: string): boolean => {
@@ -529,10 +529,88 @@ const writeSavedMetadataArtifacts = async (
   }
 }
 
+const normalizeBatchItemPublishDate = (publishedAt?: string): string | undefined => {
+  if (!publishedAt || publishedAt.length === 0) {
+    return undefined
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(publishedAt)) {
+    return publishedAt
+  }
+
+  const parsed = new Date(publishedAt)
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined
+  }
+
+  const year = parsed.getUTCFullYear()
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const normalizeBatchItemDuration = (duration?: string): string | undefined => {
+  if (!duration || duration.length === 0) {
+    return undefined
+  }
+
+  if (duration.includes(':')) {
+    return duration
+  }
+
+  if (!/^\d+$/.test(duration)) {
+    return duration
+  }
+
+  const totalSeconds = Number.parseInt(duration, 10)
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) {
+    return duration
+  }
+
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+const mergeBatchItemMetadata = (
+  meta: VideoMetadata,
+  batchItem?: BatchItem
+): VideoMetadata => {
+  if (!batchItem) {
+    return meta
+  }
+
+  const publishDate = normalizeBatchItemPublishDate(batchItem.publishedAt)
+  const duration = normalizeBatchItemDuration(batchItem.duration)
+
+  return {
+    ...meta,
+    ...(batchItem.title ? { title: batchItem.title } : {}),
+    ...(batchItem.author ? { author: batchItem.author } : {}),
+    ...(duration ? { duration } : {}),
+    ...(publishDate ? { publishDate } : {})
+  }
+}
+
+const buildDownloadManifestEntry = (step1Metadata: Record<string, unknown>): Record<string, unknown> => ({
+  step1: step1Metadata,
+  cost: {
+    estimated: { totalCost: 0, steps: [] as never[] },
+    actual: { totalCost: 0, steps: [] as never[] }
+  }
+})
+
 const processMetadataMedia = async (
   target: string,
   opts: RuntimeOptions,
-  baseDir: string
+  baseDir: string,
+  batchItem?: BatchItem
 ): Promise<BatchItemProcessResult> => {
   const isUrl = isLikelyUrl(target)
   const exists = await fileExists(target)
@@ -541,7 +619,7 @@ const processMetadataMedia = async (
   if (isUrl) src.url = target
   if (!isUrl && exists) src.filePath = target
 
-  const meta = await extractSourceMetadata(src)
+  const meta = mergeBatchItemMetadata(await extractSourceMetadata(src), batchItem)
   const slug = buildMediaStep1Slug(src, meta)
 
   const metadata = {
@@ -608,8 +686,10 @@ const processMetadataDocument = async (
 
 const processDownloadMedia = async (
   target: string,
-  baseDir: string
-): Promise<{ outputDir: string }> => {
+  baseDir: string,
+  opts: RuntimeOptions,
+  batchItem?: BatchItem
+): Promise<BatchItemProcessResult> => {
   const isUrl = isLikelyUrl(target)
   const exists = await fileExists(target)
 
@@ -621,26 +701,30 @@ const processDownloadMedia = async (
     src.filePath = target
   }
 
-  const meta = await extractSourceMetadata(src)
+  const meta = mergeBatchItemMetadata(await extractSourceMetadata(src), batchItem)
   const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const useFlatBatchOutput = opts.flatBatch && baseDir.trim().length > 0
   const uniqueDirName = createUniqueDirectoryName(meta.title)
-  const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+  const outputDir = useFlatBatchOutput ? effectiveBaseDir : `${effectiveBaseDir}/${uniqueDirName}`
   await ensureDirectory(outputDir)
 
   const dlOpts = {
     ...(isUrl ? { url: target } : exists ? { filePath: target } : { url: target }),
-    outputDir
+    outputDir,
+    ...(batchItem?.directDownload ? { directDownload: true } : {}),
+    keepOriginalMedia: opts.keepOriginalMedia
   }
 
   const { metadata: step1Metadata } = await downloadAudio(dlOpts, meta)
+  const manifestEntry = buildDownloadManifestEntry(step1Metadata)
 
-  const cost = {
-    estimated: { totalCost: 0, steps: [] as never[] },
-    actual: { totalCost: 0, steps: [] as never[] }
+  if (useFlatBatchOutput) {
+    l.info(`Saved media file: ${step1Metadata.audioFileName}`)
+    return { manifestEntry }
   }
 
   const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ step1: step1Metadata, cost }, null, 2))
+  await Bun.write(metadataPath, JSON.stringify(manifestEntry, null, 2))
 
   l.report.complete(outputDir, { audio: step1Metadata.audioFileName, metadata: 'metadata.json' })
 
@@ -680,7 +764,8 @@ export const processSingleTarget = async (
   baseDir: string,
   opts: RuntimeOptions,
   preflightEstimate?: AggregatedPriceEstimate,
-  runOptions?: { sttBatchCoordinator?: SttBatchCoordinator | undefined }
+  runOptions?: { sttBatchCoordinator?: SttBatchCoordinator | undefined },
+  batchItem?: BatchItem
 ): Promise<BatchItemProcessResult | void> => {
   const displayCommand = canonicalizeProcessCommand(command)
 
@@ -695,7 +780,7 @@ export const processSingleTarget = async (
           await downloaded.cleanup()
         }
       }
-      return await processMetadataMedia(item, opts, baseDir)
+      return await processMetadataMedia(item, opts, baseDir, batchItem)
     }
 
     const exists = await fileExists(item)
@@ -708,7 +793,7 @@ export const processSingleTarget = async (
     if (isDocExt || detected !== null) {
       return await processMetadataDocument(item, opts, baseDir, opts.password)
     } else {
-      return await processMetadataMedia(item, opts, baseDir)
+      return await processMetadataMedia(item, opts, baseDir, batchItem)
     }
   }
 
@@ -723,7 +808,7 @@ export const processSingleTarget = async (
           await downloaded.cleanup()
         }
       }
-      return await processDownloadMedia(item, baseDir)
+      return await processDownloadMedia(item, baseDir, opts, batchItem)
     }
 
     const exists = await fileExists(item)
@@ -736,7 +821,7 @@ export const processSingleTarget = async (
     if (isDocExt || detected !== null) {
       return await processDownloadDocument(item, baseDir, opts)
     } else {
-      return await processDownloadMedia(item, baseDir)
+      return await processDownloadMedia(item, baseDir, opts, batchItem)
     }
   }
 

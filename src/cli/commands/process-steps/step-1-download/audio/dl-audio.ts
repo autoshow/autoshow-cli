@@ -1,4 +1,6 @@
-import { join } from 'node:path'
+import { copyFile, rename } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { basename, extname, join } from 'node:path'
 import type { Step1Metadata, VideoMetadata } from '~/types'
 import * as l from '~/logger'
 import { downloadVideo } from './yt-utils'
@@ -21,10 +23,72 @@ const isDirectMediaUrl = (url: string): boolean => {
   }
 }
 
+const createTempDownloadPath = (
+  outputDir: string,
+  prefix: string,
+  extension: string
+): string => join(outputDir, `${prefix}-${randomUUID()}${extension}`)
+
+const inferExtensionFromContentType = (contentType: string): string => (
+  contentType.includes('mpeg') ? '.mp3'
+    : contentType.includes('mp4') || contentType.includes('m4a') ? '.m4a'
+      : contentType.includes('ogg') ? '.ogg'
+        : contentType.includes('wav') ? '.wav'
+          : contentType.includes('aac') ? '.aac'
+            : '.mp3'
+)
+
+const buildPreferredMediaBaseName = (videoMetadata: VideoMetadata): string => {
+  const slugTitle = sanitizeTitleSlug(videoMetadata.title, 180) || 'audio'
+  const datePrefix = videoMetadata.publishDate ? `${videoMetadata.publishDate}-` : ''
+  return `${datePrefix}${slugTitle}`
+}
+
+const ensureUniqueOutputPath = async (
+  outputDir: string,
+  fileName: string,
+  existingPath?: string
+): Promise<string> => {
+  const extension = extname(fileName)
+  const baseName = extension.length > 0 ? fileName.slice(0, -extension.length) : fileName
+  let candidate = join(outputDir, fileName)
+  let counter = 2
+
+  while (candidate !== existingPath && await Bun.file(candidate).exists()) {
+    candidate = join(outputDir, `${baseName}-${counter}${extension}`)
+    counter++
+  }
+
+  return candidate
+}
+
+const finalizeDownloadedMedia = async (
+  sourcePath: string,
+  outputDir: string,
+  videoMetadata: VideoMetadata,
+  options: { copy?: boolean, fallbackExtension?: string } = {}
+): Promise<string> => {
+  const extension = (extname(sourcePath) || options.fallbackExtension || '.mp3').toLowerCase()
+  const preferredFileName = `${buildPreferredMediaBaseName(videoMetadata)}${extension}`
+  const finalPath = await ensureUniqueOutputPath(outputDir, preferredFileName, sourcePath)
+
+  if (sourcePath === finalPath) {
+    return sourcePath
+  }
+
+  if (options.copy) {
+    await copyFile(sourcePath, finalPath)
+  } else {
+    await rename(sourcePath, finalPath)
+  }
+
+  return finalPath
+}
+
 const downloadDirectMediaUrl = async (url: string, outputDir: string): Promise<string> => {
   const pathname = new URL(url).pathname
-  const filename = pathname.split('/').pop() || 'audio.mp3'
-  const dest = join(outputDir, filename)
+  const fileExtension = extname(pathname) || '.mp3'
+  const dest = createTempDownloadPath(outputDir, 'downloaded-media', fileExtension)
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error(`Failed to download ${url}: HTTP ${response.status}`)
@@ -116,14 +180,8 @@ const downloadDirectAudioUrl = async (url: string, outputDir: string): Promise<s
     throw new Error(`Expected audio from ${url}, got HTML (content-type: ${contentType})`)
   }
 
-  const ext = contentType.includes('mpeg') ? '.mp3'
-    : contentType.includes('mp4') || contentType.includes('m4a') ? '.m4a'
-    : contentType.includes('ogg') ? '.ogg'
-    : contentType.includes('wav') ? '.wav'
-    : contentType.includes('aac') ? '.aac'
-    : '.mp3'
-
-  const rawPath = `${outputDir}/raw_audio${ext}`
+  const ext = inferExtensionFromContentType(contentType)
+  const rawPath = createTempDownloadPath(outputDir, 'raw-audio', ext)
   const bytes = await resp.arrayBuffer()
   await Bun.write(rawPath, bytes)
 
@@ -132,7 +190,7 @@ const downloadDirectAudioUrl = async (url: string, outputDir: string): Promise<s
     throw new Error(`Downloaded file is too small (${rawFile.size} bytes), likely corrupted`)
   }
 
-  return await convertToWav(rawPath, outputDir, true)
+  return rawPath
 }
 
 export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata: VideoMetadata): Promise<{ audioPath: string, metadata: Step1Metadata }> => {
@@ -143,10 +201,17 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
   
   let audioPath = ''
   if (options.filePath) {
-    audioPath = await convertToWav(options.filePath, options.outputDir, false)
+    if (options.keepOriginalMedia) {
+      audioPath = await finalizeDownloadedMedia(options.filePath, options.outputDir, videoMetadata, { copy: true })
+    } else {
+      audioPath = await convertToWav(options.filePath, options.outputDir, false)
+    }
   } else if (options.directDownload) {
     l.info('Downloading direct audio URL')
-    audioPath = await downloadDirectAudioUrl(options.url as string, options.outputDir)
+    const rawPath = await downloadDirectAudioUrl(options.url as string, options.outputDir)
+    audioPath = options.keepOriginalMedia
+      ? await finalizeDownloadedMedia(rawPath, options.outputDir, videoMetadata)
+      : await convertToWav(rawPath, options.outputDir, true)
   } else if (isDirectMediaUrl(options.url as string)) {
     l.info('Downloading direct media URL')
     const mediaPath = await downloadDirectMediaUrl(options.url as string, options.outputDir)
@@ -154,7 +219,9 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     if (downloadedFile.size < 1000) {
       throw new Error('Downloaded file is empty or corrupted')
     }
-    audioPath = await convertToWav(mediaPath, options.outputDir, true)
+    audioPath = options.keepOriginalMedia
+      ? await finalizeDownloadedMedia(mediaPath, options.outputDir, videoMetadata)
+      : await convertToWav(mediaPath, options.outputDir, true)
   } else {
     if (!commandExists('yt-dlp')) {
       await setupYtDependencies()
@@ -166,23 +233,23 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     if (fileSize < 1000) {
       throw new Error('Downloaded file is empty or corrupted')
     }
-    audioPath = await convertToWav(videoPath, options.outputDir, true)
+    audioPath = options.keepOriginalMedia
+      ? await finalizeDownloadedMedia(videoPath, options.outputDir, videoMetadata)
+      : await convertToWav(videoPath, options.outputDir, true)
   }
   
-  const slugTitle = sanitizeTitleSlug(videoMetadata.title, 180)
-  const datePrefix = videoMetadata.publishDate ? `${videoMetadata.publishDate}-` : ''
-  const sanitizedAudioName = `${datePrefix}${slugTitle}.wav`
-  const sanitizedAudioPath = `${options.outputDir}/${sanitizedAudioName}`
-  if (audioPath !== sanitizedAudioPath) {
-    const mvResult = await Bun.$`mv ${audioPath} ${sanitizedAudioPath}`.quiet().nothrow()
-    if (mvResult.exitCode === 0) {
+  if (!options.keepOriginalMedia) {
+    const sanitizedAudioName = `${buildPreferredMediaBaseName(videoMetadata)}.wav`
+    const sanitizedAudioPath = await ensureUniqueOutputPath(options.outputDir, sanitizedAudioName, audioPath)
+    if (audioPath !== sanitizedAudioPath) {
+      await rename(audioPath, sanitizedAudioPath)
       audioPath = sanitizedAudioPath
     }
   }
 
   const audioFile = Bun.file(audioPath)
   const audioFileSize = audioFile.size
-  const audioFileName = audioPath.split('/').pop() || 'audio.wav'
+  const audioFileName = basename(audioPath) || 'audio.wav'
 
   const slug = buildMediaStep1Slug({
     ...(options.filePath ? { filePath: options.filePath } : {}),

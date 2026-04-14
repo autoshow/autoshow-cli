@@ -280,6 +280,7 @@ export const processBatch = async (
   const batchDirName = createUniqueDirectoryName(batchLabel)
   const batchDir = `./output/${batchDirName}`
   await ensureDirectory(batchDir)
+  l.info(`Output directory: ${batchDir}`)
 
   if (runOpts.source) {
     const sourceData = {
@@ -352,12 +353,15 @@ export const processBatch = async (
     failureError?: unknown
   }> => {
     try {
+      const batchItem = runOpts.selectedItems?.[index]
       const processed = await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
-        await processSingleTarget(command, item, batchDir, opts)
+        await processSingleTarget(command, item, batchDir, opts, batchItem)
       )
-      const manifestEntry = processed?.outputDir
-        ? attachOutputDir(await readBatchManifestEntry(processed.outputDir), processed.outputDir)
-        : null
+      const manifestEntry = processed?.manifestEntry
+        ? (processed.outputDir ? attachOutputDir(processed.manifestEntry, processed.outputDir) : processed.manifestEntry)
+        : processed?.outputDir
+          ? attachOutputDir(await readBatchManifestEntry(processed.outputDir), processed.outputDir)
+          : null
       const errorCount = getBatchManifestErrorCount(manifestEntry)
 
       if (isSttCommand(command)) {

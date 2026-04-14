@@ -96,7 +96,14 @@ export const tryHandleYoutubeCollectionTarget = async (
     return true
   }
 
-  const { incomplete, fail, failureExitCode } = await processBatch(items, 'youtube_collection', command, opts, processSingleTarget)
+  const { incomplete, fail, failureExitCode } = await processBatch(
+    items,
+    'youtube_collection',
+    command,
+    opts,
+    async (commandName, item, batchDir, batchOpts, batchItem) =>
+      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem)
+  )
   if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && items.length > 0 && fail === items.length)) {
     const problemCount = isSttCommand(command) ? incomplete + fail : fail
     const error = new Error(`Batch processing failed for ${problemCount} item(s)`)

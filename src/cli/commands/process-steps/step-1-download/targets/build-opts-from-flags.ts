@@ -277,6 +277,8 @@ export const buildOptsFromFlags = (
     batchAll: readBooleanFlag(mergedFlags, 'batch-all'),
     batchOrder: readBatchOrder(mergedFlags),
     batchConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'batch-concurrency'), 1)),
+    keepOriginalMedia: readBooleanFlag(mergedFlags, 'keep-original-media'),
+    flatBatch: readBooleanFlag(mergedFlags, 'flat-batch'),
     prompts: (() => {
       const v = mergedFlags['prompt']
       if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string' && s.length > 0)

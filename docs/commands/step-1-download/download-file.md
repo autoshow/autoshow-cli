@@ -43,6 +43,8 @@ Step-1 metadata also includes `slug`, which is derived from the original filenam
 
 ```text
 --password           Password for encrypted PDFs
+--keep-original-media  Keep downloaded media in its original format instead of converting to WAV
+--flat-batch         Batch download: place primary media files directly in the batch output directory
 --batch-limit        Batch: number of items to process (default 5)
 --batch-all          Batch: process all items
 --batch-order        Batch: item order newest|oldest (default newest)
@@ -76,6 +78,26 @@ output/YYYY-MM-DD_HH-MM-SS_batch-label/
     <artifacts for that item>
 ```
 
+**Batch inputs with `--flat-batch` on media downloads**
+
+```text
+output/YYYY-MM-DD_HH-MM-SS_batch-label/
+  source.json
+  info.json
+  <episode-1>.wav    # default
+  <episode-2>.wav
+```
+
+With `--keep-original-media --flat-batch`, the same batch directory keeps the original media extensions instead of converting to WAV:
+
+```text
+output/YYYY-MM-DD_HH-MM-SS_batch-label/
+  source.json
+  info.json
+  <episode-1>.mp3
+  <episode-2>.mp3
+```
+
 ## Examples
 
 ```bash
@@ -90,6 +112,9 @@ bun as download input/examples/document/1-document.pdf
 
 # Download 3 latest episodes from an RSS feed
 bun as download https://example.com/feed --batch-limit 3
+
+# Download every podcast episode MP3 into one batch directory
+bun as download https://example.com/feed --batch-all --keep-original-media --flat-batch
 
 # Download 2 latest videos from a YouTube channel
 bun as download https://www.youtube.com/@channelname --batch-limit 2

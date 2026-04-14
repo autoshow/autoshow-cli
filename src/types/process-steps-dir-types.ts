@@ -6,6 +6,7 @@ export type DownloadAudioOptions = {
   filePath?: string | undefined
   outputDir: string
   directDownload?: boolean | undefined
+  keepOriginalMedia?: boolean | undefined
 }
 
 export type EmbeddedJson = {
