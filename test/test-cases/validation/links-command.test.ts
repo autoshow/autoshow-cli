@@ -47,6 +47,35 @@ test('links collector treats a bare provider selection as all sections for that 
   expect(openAiLinks).toContain('https://developers.openai.com/api/docs/guides/video-generation.md')
 })
 
+test('links collector includes Speechmatics general and STT links', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--speechmatics'
+  ])
+  const speechmaticsLinks = collectLinks(parsed.serviceSelections, parsed.globalSections)
+
+  expect(speechmaticsLinks).toHaveLength(16)
+  expect(speechmaticsLinks).toContain('https://docs.speechmatics.com/get-started/authentication.md')
+  expect(speechmaticsLinks).toContain('https://docs.speechmatics.com/api-ref/batch/get-usage-statistics.md')
+})
+
+test('links collector includes Rev general and STT links', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--rev'
+  ])
+  const revLinks = collectLinks(parsed.serviceSelections, parsed.globalSections)
+
+  expect(revLinks).toHaveLength(13)
+  expect(revLinks).toContain('https://docs.rev.ai/get-started.md')
+  expect(revLinks).toContain('https://docs.rev.ai/api/asynchronous/reference.md')
+  expect(revLinks).toContain('https://docs.rev.ai/faq.md')
+})
+
 test('links command writes combined fetched markdown to a single file', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-links-'))
   tempDirs.push(tempDir)

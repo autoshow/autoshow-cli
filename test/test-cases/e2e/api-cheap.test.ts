@@ -49,7 +49,7 @@ const readJsonObject = async (path: string): Promise<Record<string, unknown>> =>
 describe('api-cheap', () => {
   test('selects exactly one model per API service per modality', () => {
     expect(llmSelections).toHaveLength(5)
-    expect(sttSelections).toHaveLength(4)
+    expect(sttSelections).toHaveLength(6)
     expect(ttsSelections).toHaveLength(5)
     expect(imageSelections).toHaveLength(3)
     expect(videoSelections).toHaveLength(2)

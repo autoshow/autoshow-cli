@@ -122,6 +122,10 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
     command('transcribe-soniox-stt-async-v4', 'transcribe-soniox-stt-async-v4', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v4', '--price']),
     command('transcribe-soniox-stt-async-v3', 'transcribe-soniox-stt-async-v3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v3', '--price']),
   ]),
+  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/speechmatics/', [
+    command('transcribe-speechmatics-standard', 'transcribe-speechmatics-standard', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--speechmatics-stt', 'standard', '--price']),
+    command('transcribe-speechmatics-enhanced', 'transcribe-speechmatics-enhanced', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--speechmatics-stt', 'enhanced', '--price']),
+  ]),
   ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/elevenlabs/', [
     command('transcribe-elevenlabs-scribe_v2', 'transcribe-elevenlabs-scribe_v2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--elevenlabs-stt', 'scribe_v2', '--price']),
   ]),

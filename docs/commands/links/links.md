@@ -59,7 +59,9 @@ Accepted provider selectors are the lowercase names below.
 | `--happyscribe` | `stt` |
 | `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
 | `--openai` | `general`, `stt`, `text`, `tts`, `image`, `video` |
+| `--rev` | `general`, `stt` |
 | `--soniox` | `stt` |
+| `--speechmatics` | `general`, `stt` |
 | `--supadata` | `stt` |
 
 ## Global sections

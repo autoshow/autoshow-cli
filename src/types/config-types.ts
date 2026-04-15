@@ -14,6 +14,7 @@ const SttDefaultsSchema = v.object({
   openaiStt: v.optional(v.string(), undefined),
   mistralStt: v.optional(v.string(), undefined),
   assemblyaiStt: v.optional(v.string(), undefined),
+  speechmaticsStt: v.optional(v.string(), undefined),
   speakerCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   split: v.optional(v.boolean(), undefined),
   reverbVerbatimicity: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(1)), undefined),

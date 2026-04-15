@@ -271,6 +271,47 @@
       "https://soniox.com/docs/stt/async/async-transcription.mdx"
     ]
   },
+  "Speechmatics": {
+    "General": [
+      "https://docs.speechmatics.com/get-started/authentication.md"
+    ],
+    "STT": [
+      "https://docs.speechmatics.com/speech-to-text/batch/quickstart.md",
+      "https://docs.speechmatics.com/speech-to-text/batch/input.md",
+      "https://docs.speechmatics.com/speech-to-text/batch/output.md",
+      "https://docs.speechmatics.com/speech-to-text/batch/limits.md",
+      "https://docs.speechmatics.com/speech-to-text/batch/batch-diarization.md",
+      "https://docs.speechmatics.com/speech-to-text/batch/speaker-identification.md",
+      "https://docs.speechmatics.com/speech-to-text/languages.md",
+      "https://docs.speechmatics.com/speech-to-text/features/diarization.md",
+      "https://docs.speechmatics.com/speech-to-text/features/speaker-identification.md",
+      "https://raw.githubusercontent.com/speechmatics/speechmatics-js-sdk/refs/heads/main/packages/batch-client/README.md",
+      "https://raw.githubusercontent.com/speechmatics/speechmatics-js-sdk/refs/heads/main/examples/nodejs/batch-example.ts",
+      "https://docs.speechmatics.com/api-ref/batch/create-a-new-job.md",
+      "https://docs.speechmatics.com/api-ref/batch/get-job-details.md",
+      "https://docs.speechmatics.com/api-ref/batch/get-the-transcript-for-a-transcription-job.md",
+      "https://docs.speechmatics.com/api-ref/batch/get-usage-statistics.md"
+    ]
+  },
+  "Rev": {
+    "General": [
+      "https://docs.rev.ai/get-started.md"
+    ],
+    "STT": [
+      "https://docs.rev.ai/api/features.md",
+      "https://docs.rev.ai/api/asynchronous.md",
+      "https://docs.rev.ai/api/asynchronous/get-started.md",
+      "https://docs.rev.ai/api/asynchronous/files.md",
+      "https://docs.rev.ai/api/asynchronous/webhooks.md",
+      "https://docs.rev.ai/api/asynchronous/transcribers.md",
+      "https://docs.rev.ai/api/asynchronous/reference.md",
+      "https://docs.rev.ai/api/asynchronous/best-practices.md",
+      "https://docs.rev.ai/sdk/node/get-started.md",
+      "https://docs.rev.ai/sdk/node/code-samples.md",
+      "https://docs.rev.ai/resources/code-samples/node.md",
+      "https://docs.rev.ai/faq.md"
+    ]
+  },
   "HappyScribe": {
     "STT": [
       "https://dev.happyscribe.com/sections/product/#style-guides-list-style-guides"

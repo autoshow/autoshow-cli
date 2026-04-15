@@ -44,6 +44,7 @@ export const runDoctor = async (): Promise<void> => {
   checks.push(checkEnvVar('ASSEMBLYAI_API_KEY', 'ASSEMBLYAI_API_KEY'))
   checks.push(checkEnvVar('DEEPGRAM_API_KEY', 'DEEPGRAM_API_KEY'))
   checks.push(checkEnvVar('SONIOX_API_KEY', 'SONIOX_API_KEY'))
+  checks.push(checkEnvVar('SPEECHMATICS_API_KEY', 'SPEECHMATICS_API_KEY'))
 
   const configPath = await resolveConfigPath()
   const configFile = Bun.file(configPath)

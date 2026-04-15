@@ -102,6 +102,22 @@
       }
     }
   },
+  "speechmatics": {
+    "description": "Speechmatics cloud batch speech-to-text",
+    "type": "api",
+    "models": {
+      "standard": {
+        "description": "Batch standard accuracy — faster turnaround with lower cost",
+        "costPerHourUSD": 0.45,
+        "costPerHourCents": 45
+      },
+      "enhanced": {
+        "description": "Batch enhanced accuracy — highest accuracy for file transcription",
+        "costPerHourUSD": 0.75,
+        "costPerHourCents": 75
+      }
+    }
+  },
   "elevenlabs": {
     "description": "ElevenLabs Scribe cloud STT",
     "type": "api",

@@ -651,7 +651,7 @@ test('runSttBatch backfills retryable provider failures within the same invocati
   }
 })
 
-test('runSttBatch performs a single automatic backfill sweep for retryable async provider failures', { timeout: 35_000 }, async () => {
+test('runSttBatch performs a single automatic backfill sweep for retryable async provider failures', async () => {
   const items = await createBatchInputs('autoshow-stt-assemblyai-backfill-')
 
   process.env['ASSEMBLYAI_API_KEY'] = 'assemblyai-test-key'
@@ -756,4 +756,4 @@ test('runSttBatch performs a single automatic backfill sweep for retryable async
       retryable: true
     }))
   }
-})
+}, 35_000)

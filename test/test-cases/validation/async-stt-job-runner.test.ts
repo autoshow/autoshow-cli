@@ -40,7 +40,7 @@ test('pollAsyncSttJobUntilComplete uses bounded resume probes for persisted asyn
   }) as typeof Bun.sleep
 
   let polls = 0
-  const totalWaitMs = ASYNC_STT_RESUME_PROBE_DELAYS_MS.reduce((sum, delayMs) => sum + delayMs, 0)
+  const totalWaitMs = ASYNC_STT_RESUME_PROBE_DELAYS_MS.reduce<number>((sum, delayMs) => sum + delayMs, 0)
 
   await expect(
     pollAsyncSttJobUntilComplete({

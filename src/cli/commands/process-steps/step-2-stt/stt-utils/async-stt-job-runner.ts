@@ -190,7 +190,7 @@ export const pollAsyncSttJobUntilComplete = async <TStatus>(
       }
     }
 
-    const totalWaitMs = ASYNC_STT_RESUME_PROBE_DELAYS_MS.reduce((sum, delayMs) => sum + delayMs, 0)
+    const totalWaitMs = ASYNC_STT_RESUME_PROBE_DELAYS_MS.reduce<number>((sum, delayMs) => sum + delayMs, 0)
     if (options.buildResumeProbeError) {
       options.buildResumeProbeError(options.jobId, ASYNC_STT_RESUME_PROBE_DELAYS_MS.length, totalWaitMs)
     }

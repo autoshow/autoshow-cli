@@ -15,6 +15,7 @@ import { setupReverb } from '../../step-2-stt/stt-local/reverb/reverb'
 import { setupElevenLabsStt } from '../../step-2-stt/stt-services/elevenlabs/elevenlabs'
 import { setupDeepgramStt } from '../../step-2-stt/stt-services/deepgram/deepgram'
 import { setupSonioxStt } from '../../step-2-stt/stt-services/soniox/soniox'
+import { setupSpeechmaticsStt } from '../../step-2-stt/stt-services/speechmatics/speechmatics'
 import { setupOpenAIStt } from '../../step-2-stt/stt-services/openai/openai'
 import { setupMistralStt } from '../../step-2-stt/stt-services/mistral/mistral'
 import { setupAssemblyAiStt } from '../../step-2-stt/stt-services/assemblyai/assemblyai'
@@ -226,6 +227,8 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupDeepgramStt)
 
   await withCompactSetup(setupSonioxStt)
+
+  await withCompactSetup(setupSpeechmaticsStt)
 
   await withCompactSetup(setupOpenAIStt)
 

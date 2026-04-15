@@ -314,6 +314,7 @@ type ComputeEstimatedCostsInput = {
   elevenlabsSttModel?: string | undefined
   deepgramSttModel?: string | undefined
   sonioxSttModel?: string | undefined
+  speechmaticsSttModel?: string | undefined
   openaiSttModel?: string | undefined
   mistralSttModel?: string | undefined
   assemblyaiSttModel?: string | undefined
@@ -373,6 +374,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
       { field: 'deepgramSttModel' as const, provider: 'deepgram' },
       { field: 'sonioxSttModel' as const, provider: 'soniox' },
+      { field: 'speechmaticsSttModel' as const, provider: 'speechmatics' },
       { field: 'groqSttModel' as const, provider: 'groq' },
       { field: 'openaiSttModel' as const, provider: 'openai' },
       { field: 'mistralSttModel' as const, provider: 'mistral' },

@@ -21,6 +21,7 @@ export const defineSTTServiceTest = ({
   envVarKey,
   envVarDescription,
   extraArgs,
+  timeoutMs,
 }: {
   models: readonly string[]
   cliFlag: string
@@ -28,6 +29,7 @@ export const defineSTTServiceTest = ({
   envVarKey: string
   envVarDescription: string
   extraArgs?: string[]
+  timeoutMs?: number
 }): void => {
   withOutputLifecycle(STABLE_LOCAL_AUDIO_TITLE)
 
@@ -87,6 +89,6 @@ export const defineSTTServiceTest = ({
         const summaryExists = await fileExists(`${outputDir}/text.md`)
         expect(summaryExists).toBe(false)
       }
-    })
+    }, timeoutMs)
   }
 }

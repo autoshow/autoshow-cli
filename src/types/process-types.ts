@@ -13,6 +13,7 @@ export const ProcessingOptionsSchema = v.pipe(
     openaiSttModel: v.optional(v.string(), undefined),
     mistralSttModel: v.optional(v.string(), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
+    speechmaticsSttModel: v.optional(v.string(), undefined),
     deepgramSttModel: v.optional(v.string(), undefined),
     diarizationSpeakerCount: v.optional(v.number(), undefined),
     diarizationSpeakerNames: v.optional(v.array(v.string()), undefined),
@@ -327,7 +328,7 @@ export type Step2RuntimeMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'speechmatics'
   transcriptionModel: string
   transcriptionModelName?: string | undefined
   processingTime: number
@@ -523,6 +524,61 @@ export const SonioxTranscriptResponseSchema = v.object({
   tokens: v.array(SonioxTranscriptTokenSchema)
 })
 
+export const SpeechmaticsJobErrorSchema = v.object({
+  type: v.optional(v.string(), undefined),
+  message: v.optional(v.string(), undefined)
+})
+
+export const SpeechmaticsJobSchema = v.object({
+  id: v.string(),
+  status: v.picklist(['running', 'done', 'rejected']),
+  created_at: v.optional(v.string(), undefined),
+  duration: v.optional(v.number(), undefined),
+  data_name: v.optional(v.string(), undefined),
+  error: v.optional(v.string(), undefined),
+  errors: v.optional(v.array(SpeechmaticsJobErrorSchema), undefined)
+})
+
+export const SpeechmaticsJobResponseSchema = v.object({
+  job: SpeechmaticsJobSchema
+})
+
+export const SpeechmaticsCreateJobResponseSchema = v.union([
+  v.object({
+    id: v.string()
+  }),
+  SpeechmaticsJobResponseSchema
+])
+
+export const SpeechmaticsTranscriptJobSchema = v.object({
+  id: v.string(),
+  created_at: v.optional(v.string(), undefined),
+  duration: v.optional(v.number(), undefined),
+  data_name: v.optional(v.string(), undefined)
+})
+
+export const SpeechmaticsTranscriptAlternativeSchema = v.object({
+  content: v.string(),
+  confidence: v.optional(v.number(), undefined),
+  language: v.optional(v.string(), undefined),
+  speaker: v.optional(v.string(), undefined)
+})
+
+export const SpeechmaticsTranscriptResultSchema = v.object({
+  type: v.string(),
+  start_time: v.number(),
+  end_time: v.number(),
+  is_eos: v.optional(v.boolean(), undefined),
+  channel: v.optional(v.string(), undefined),
+  alternatives: v.array(SpeechmaticsTranscriptAlternativeSchema)
+})
+
+export const SpeechmaticsTranscriptResponseSchema = v.object({
+  format: v.optional(v.string(), undefined),
+  job: v.optional(SpeechmaticsTranscriptJobSchema, undefined),
+  results: v.array(SpeechmaticsTranscriptResultSchema)
+})
+
 export type WhisperJsonOutput = v.InferOutput<typeof WhisperJsonOutputSchema>
 export type ElevenLabsSttResponse = v.InferOutput<typeof ElevenLabsSttResponseSchema>
 export type AssemblyAiTranscriptResponse = v.InferOutput<typeof AssemblyAiTranscriptResponseSchema>
@@ -530,6 +586,10 @@ export type DeepgramResponse = v.InferOutput<typeof DeepgramResponseSchema>
 export type SonioxFileResponse = v.InferOutput<typeof SonioxFileResponseSchema>
 export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscriptionStatusSchema>
 export type SonioxTranscriptResponse = v.InferOutput<typeof SonioxTranscriptResponseSchema>
+export type SpeechmaticsCreateJobResponse = v.InferOutput<typeof SpeechmaticsCreateJobResponseSchema>
+export type SpeechmaticsJob = v.InferOutput<typeof SpeechmaticsJobSchema>
+export type SpeechmaticsJobResponse = v.InferOutput<typeof SpeechmaticsJobResponseSchema>
+export type SpeechmaticsTranscriptResponse = v.InferOutput<typeof SpeechmaticsTranscriptResponseSchema>
 
 export const LlamaResponseSchema = v.object({
   choices: v.array(v.object({

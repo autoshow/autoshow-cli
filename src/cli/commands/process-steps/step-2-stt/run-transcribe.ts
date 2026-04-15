@@ -6,6 +6,7 @@ import { runGroqTranscribe } from './stt-services/groq/run-whisper-groq'
 import { runElevenLabsTranscribe } from './stt-services/elevenlabs/run-elevenlabs-stt'
 import { runDeepgramTranscribe } from './stt-services/deepgram/run-deepgram-stt'
 import { runSonioxStt } from './stt-services/soniox/run-soniox-stt'
+import { runSpeechmaticsStt } from './stt-services/speechmatics/run-speechmatics-stt'
 import { runOpenAIStt } from './stt-services/openai/run-openai-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
@@ -17,6 +18,7 @@ import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/elevenlabs'
 import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/deepgram'
 import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/soniox/soniox'
+import { ensureSpeechmaticsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/speechmatics/speechmatics'
 import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
@@ -32,6 +34,7 @@ export const TRANSCRIBE_ENGINE_CAPABILITIES = {
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
   deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
+  speechmatics: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   groq: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   openai: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
   mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
@@ -42,15 +45,18 @@ export const TRANSCRIBE_ENGINE_CAPABILITIES = {
 const SPLIT_SEGMENT_DURATION_MINUTES = 10
 export const GROQ_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
 export const OPENAI_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+export const SPEECHMATICS_MAX_ATTACHMENT_BYTES = 1 * 1024 * 1024 * 1024
 
 const AUTO_SPLIT_ATTACHMENT_CAP_BYTES: Partial<Record<TranscribeEngine, number>> = {
   groq: GROQ_MAX_ATTACHMENT_BYTES,
-  openai: OPENAI_MAX_ATTACHMENT_BYTES
+  openai: OPENAI_MAX_ATTACHMENT_BYTES,
+  speechmatics: SPEECHMATICS_MAX_ATTACHMENT_BYTES
 }
 
 const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
   'elevenlabs',
   'deepgram',
+  'speechmatics',
   'groq',
   'openai',
   'mistral',
@@ -106,20 +112,22 @@ const resolveTranscribeEngine = (options: ProcessingOptions): TranscribeEngine =
   const hasElevenlabs = typeof options.elevenlabsSttModel === 'string' && options.elevenlabsSttModel.length > 0
   const hasDeepgram = typeof options.deepgramSttModel === 'string' && options.deepgramSttModel.length > 0
   const hasSoniox = typeof options.sonioxSttModel === 'string' && options.sonioxSttModel.length > 0
+  const hasSpeechmatics = typeof options.speechmaticsSttModel === 'string' && options.speechmaticsSttModel.length > 0
   const hasGroq = typeof options.groqSttModel === 'string' && options.groqSttModel.length > 0
   const hasOpenAI = typeof options.openaiSttModel === 'string' && options.openaiSttModel.length > 0
   const hasMistral = typeof options.mistralSttModel === 'string' && options.mistralSttModel.length > 0
   const hasAssemblyAi = typeof options.assemblyaiSttModel === 'string' && options.assemblyaiSttModel.length > 0
 
-  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi].filter(Boolean).length
+  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasSpeechmatics, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi].filter(Boolean).length
   if (engineCount > 1) {
-    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
+    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --speechmatics-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
   }
 
   if (hasReverb) return 'reverb'
   if (hasElevenlabs) return 'elevenlabs'
   if (hasDeepgram) return 'deepgram'
   if (hasSoniox) return 'soniox'
+  if (hasSpeechmatics) return 'speechmatics'
   if (hasGroq) return 'groq'
   if (hasOpenAI) return 'openai'
   if (hasMistral) return 'mistral'
@@ -282,6 +290,10 @@ export const ensureTranscribeTargetSetup = async (
     await ensureSonioxSttSetup()
     return
   }
+  if (target.service === 'speechmatics') {
+    await ensureSpeechmaticsSttSetup()
+    return
+  }
   if (target.service === 'openai') {
     await ensureOpenAISttSetup()
     return
@@ -339,6 +351,19 @@ const dispatchTranscribe = async (
 
   if (target.service === 'soniox') {
     return await runSonioxStt(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      diarizationOptions: target.diarizationOptions,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
+    })
+  }
+
+  if (target.service === 'speechmatics') {
+    return await runSpeechmaticsStt(audioPath, outputDir, {
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
@@ -555,6 +580,7 @@ export const transcribe = async (
     if (engine === 'elevenlabs') return options.elevenlabsSttModel as string
     if (engine === 'deepgram') return options.deepgramSttModel as string
     if (engine === 'soniox') return options.sonioxSttModel as string
+    if (engine === 'speechmatics') return options.speechmaticsSttModel as string
     if (engine === 'groq') return options.groqSttModel as string
     if (engine === 'openai') return options.openaiSttModel as string
     if (engine === 'mistral') return options.mistralSttModel as string

@@ -8,6 +8,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid ElevenLabs STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--elevenlabs-stt', 'scribe_v3'] },
   { label: 'CLI invalid Deepgram STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', 'nova-4'] },
   { label: 'CLI invalid Soniox STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v2'] },
+  { label: 'CLI invalid Speechmatics STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', 'premium'] },
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
   { label: 'CLI invalid OpenAI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai-stt', 'gpt-4o-transcribe'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
@@ -55,6 +56,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--elevenlabs-stt')
   expect(result.stdout).toContain('--deepgram-stt')
   expect(result.stdout).toContain('--soniox-stt')
+  expect(result.stdout).toContain('--speechmatics-stt')
   expect(result.stdout).toContain('--groq-stt')
   expect(result.stdout).toContain('--openai-stt')
   expect(result.stdout).toContain('--mistral-stt')
@@ -145,6 +147,18 @@ test('CLI bare Soniox STT flag is accepted in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('CLI bare Speechmatics STT flag is accepted in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--speechmatics-stt',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
 test('buildOptsFromFlags maps --openai-voice to openaiVoiceId', () => {
   const opts = buildOptsFromFlags(false, {
     'openai-tts': 'gpt-4o-mini-tts',
@@ -169,6 +183,14 @@ test('buildOptsFromFlags maps --soniox-stt to sonioxSttModel', () => {
   })
 
   expect(opts.sonioxSttModel).toBe('stt-async-v4')
+})
+
+test('buildOptsFromFlags maps --speechmatics-stt to speechmaticsSttModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'speechmatics-stt': 'enhanced'
+  })
+
+  expect(opts.speechmaticsSttModel).toBe('enhanced')
 })
 
 test('buildOptsFromFlags maps --gemini-voice to geminiVoiceId', () => {

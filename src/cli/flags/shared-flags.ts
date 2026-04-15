@@ -4,6 +4,7 @@ import {
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_SONIOX_STT_MODELS,
+  SUPPORTED_SPEECHMATICS_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
@@ -82,6 +83,10 @@ export const transcriptionFlags = {
   },
   'soniox-stt': {
     description: buildModelDescription('Soniox STT model', SUPPORTED_SONIOX_STT_MODELS),
+    type: String
+  },
+  'speechmatics-stt': {
+    description: buildModelDescription('Speechmatics STT model', SUPPORTED_SPEECHMATICS_STT_MODELS),
     type: String
   },
   'groq-stt': {

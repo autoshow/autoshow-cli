@@ -142,6 +142,7 @@ const STT_PROVIDER_SELECTION_FLAGS = [
   'elevenlabs-stt',
   'deepgram-stt',
   'soniox-stt',
+  'speechmatics-stt',
   'groq-stt',
   'openai-stt',
   'mistral-stt',

@@ -27,6 +27,7 @@ The input routing is the same as local `stt`: direct media URLs, streaming URLs,
 | ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
 | Deepgram | `--deepgram-stt <model>` | `nova-3` |
 | Soniox | `--soniox-stt <model>` | `stt-async-v4`, `stt-async-v3` |
+| Speechmatics | `--speechmatics-stt <model>` | `standard`, `enhanced` |
 | OpenAI | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
 | Mistral | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
 | AssemblyAI | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
@@ -51,6 +52,12 @@ bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 # Soniox with diarization always enabled
 bun as stt input/examples/audio/1-audio.mp3 --soniox-stt stt-async-v4
 
+# Speechmatics with diarization always enabled
+bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt enhanced
+
+# Speechmatics bare flag defaults to enhanced
+bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt
+
 # OpenAI with known speaker references
 bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize \
   --speaker-name Host --speaker-reference clips/host.mp3 \
@@ -71,6 +78,7 @@ bun as stt input/ajc --batch-all \
   --elevenlabs-stt scribe_v2 \
   --deepgram-stt nova-3 \
   --soniox-stt stt-async-v4 \
+  --speechmatics-stt enhanced \
   --assemblyai-stt universal-3-pro \
   --mistral-stt voxtral-mini-latest \
   --speaker-count 2
@@ -93,6 +101,7 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 | `--elevenlabs-stt <model>` | Select the ElevenLabs STT model |
 | `--deepgram-stt <model>` | Select the Deepgram STT model |
 | `--soniox-stt <model>` | Select the Soniox STT model |
+| `--speechmatics-stt <model>` | Select the Speechmatics STT model |
 | `--openai-stt <model>` | Select the OpenAI STT model |
 | `--mistral-stt <model>` | Select the Mistral STT model |
 | `--assemblyai-stt <model>` | Select the AssemblyAI STT model |
@@ -110,9 +119,11 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 
 ## Notes
 
-- Diarization is enabled by default for ElevenLabs, Deepgram, Soniox, AssemblyAI, Mistral, and OpenAI diarized STT models.
+- Diarization is enabled by default for ElevenLabs, Deepgram, Soniox, Speechmatics, AssemblyAI, Mistral, and OpenAI diarized STT models.
 - ElevenLabs and AssemblyAI use `--speaker-count` as an optional diarization hint.
-- Deepgram, Soniox, Mistral, Groq, local engines, and count-only OpenAI diarization ignore `--speaker-count`; the CLI now emits one aggregated warning that lists which selected providers honor the hint and which ignore it.
+- Speechmatics always sends `language: "auto"` and `diarization: "speaker"`, so no extra language flag is required and speaker labels use Speechmatics native IDs such as `S1`, `S2`, and `UU`.
+- Set `SPEECHMATICS_API_KEY` to enable the provider. `SPEECHMATICS_BASE_URL` is optional and defaults to `https://eu1.asr.api.speechmatics.com`.
+- Deepgram, Soniox, Speechmatics, Mistral, Groq, local engines, and count-only OpenAI diarization ignore `--speaker-count`; the CLI now emits one aggregated warning that lists which selected providers honor the hint and which ignore it.
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
 - In multi-item batch mode with more than one hosted STT provider active, the batch scheduler keeps one in-flight item per provider/model and uses free provider slots across items before waiting behind a busy provider. `--stt-provider-concurrency` remains the per-item upper bound.

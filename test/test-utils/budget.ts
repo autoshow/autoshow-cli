@@ -28,11 +28,12 @@ export const shouldSkipBudgetKey = (key: string): boolean => {
 export const budgetedTest = (
   budgetKey: string,
   name: string,
-  fn: () => void | Promise<void>
+  fn: () => void | Promise<void>,
+  timeoutMs?: number
 ): void => {
   if (shouldSkipBudgetKey(budgetKey)) {
-    test.skip(name, fn)
+    test.skip(name, fn, timeoutMs)
     return
   }
-  test(name, fn)
+  test(name, fn, timeoutMs)
 }

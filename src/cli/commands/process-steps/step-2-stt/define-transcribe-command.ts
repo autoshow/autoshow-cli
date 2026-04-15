@@ -15,6 +15,7 @@ export const transcribeCommand = defineCommand({
       ['bun as stt file.mp3 --groq-stt', 'Transcribe with Groq Whisper API'],
       ['bun as stt file.mp3 --deepgram-stt', 'Transcribe with Deepgram Nova-3'],
       ['bun as stt file.mp3 --soniox-stt', 'Transcribe with Soniox async diarization'],
+      ['bun as stt file.mp3 --speechmatics-stt', 'Transcribe with Speechmatics batch diarization'],
       ['bun as stt file.mp3 --elevenlabs-stt', 'Transcribe with ElevenLabs speaker diarization'],
       ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with ElevenLabs diarization and a speaker-count hint'],
       ['bun as stt file.mp3 --openai-stt gpt-4o-transcribe-diarize --speaker-name Host --speaker-reference clips/host.mp3 --speaker-name Guest --speaker-reference clips/guest.mp3', 'Transcribe with OpenAI known speaker references']

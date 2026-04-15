@@ -52,6 +52,15 @@ export const collectSttTargets = (options: RuntimeOptions): SttTarget[] => {
     })
   }
 
+  if (options.speechmaticsSttModel) {
+    targets.push({
+      service: 'speechmatics',
+      model: options.speechmaticsSttModel,
+      local: false,
+      diarizationOptions: resolveDiarizationOptions(options, 'speechmatics')
+    })
+  }
+
   if (options.groqSttModel) {
     targets.push({
       service: 'groq',

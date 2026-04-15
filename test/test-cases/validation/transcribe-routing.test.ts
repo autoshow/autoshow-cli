@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   GROQ_MAX_ATTACHMENT_BYTES,
   OPENAI_MAX_ATTACHMENT_BYTES,
+  SPEECHMATICS_MAX_ATTACHMENT_BYTES,
   isPayloadTooLargeTranscriptionError,
   mergeSplitTranscriptionChunks,
   resolveEffectiveSegmentConcurrency,
@@ -24,6 +25,10 @@ describe('shouldSplitTranscriptionInput', () => {
     expect(shouldSplitTranscriptionInput('openai', OPENAI_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
   })
 
+  test('auto-splits Speechmatics uploads above the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
+  })
+
   test('does not auto-split Groq uploads at or below the attachment cap', () => {
     expect(shouldSplitTranscriptionInput('groq', GROQ_MAX_ATTACHMENT_BYTES, false)).toBe(false)
     expect(shouldSplitTranscriptionInput('groq', GROQ_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
@@ -32,6 +37,11 @@ describe('shouldSplitTranscriptionInput', () => {
   test('does not auto-split OpenAI uploads at or below the attachment cap', () => {
     expect(shouldSplitTranscriptionInput('openai', OPENAI_MAX_ATTACHMENT_BYTES, false)).toBe(false)
     expect(shouldSplitTranscriptionInput('openai', OPENAI_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
+  })
+
+  test('does not auto-split Speechmatics uploads at or below the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
   })
 
   test('does not auto-split engines without a documented upload cap', () => {
@@ -67,6 +77,7 @@ describe('shouldRetrySplitTranscriptionAfterError', () => {
     expect(shouldRetrySplitTranscriptionAfterError('deepgram', false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError('openai', false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError('groq', false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError('speechmatics', false, error)).toBe(true)
   })
 
   test('does not retry when split mode was already requested', () => {
@@ -116,6 +127,14 @@ describe('resolveDiarizationOptions', () => {
       diarizationSpeakerNames: undefined,
       diarizationSpeakerReferences: undefined
     }, 'soniox')).toEqual({ enabled: true })
+  })
+
+  test('ignores speaker-count for Speechmatics while keeping diarization enabled', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2,
+      diarizationSpeakerNames: undefined,
+      diarizationSpeakerReferences: undefined
+    }, 'speechmatics')).toEqual({ enabled: true })
   })
 
   test('enables diarization by default for diarized ElevenLabs models', () => {
