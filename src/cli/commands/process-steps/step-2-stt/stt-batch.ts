@@ -3,7 +3,7 @@ import type { BatchProcessResult, BatchRunOptions, RuntimeOptions } from '~/type
 import { collectSttTargets } from './stt-targets'
 import { formatSttBatchSchedulerSummary, SttBatchCoordinator } from './stt-batch-coordinator'
 import { runResumeSttMissingFromBatchDir } from './resume-stt-batch'
-import { processBatch } from '../step-1-download/targets/target-utils'
+import { logSttBatchFinalSummary, processBatch } from '../step-1-download/targets/target-utils'
 import { processSingleTarget } from '../step-1-download/targets/single-target'
 
 export class SttBatchIncompleteError extends Error {
@@ -67,6 +67,10 @@ export const runSttBatch = async (
     if (summary) {
       l.info(`STT batch scheduler summary: ${summary}`)
     }
+  }
+
+  if (result.batchDir) {
+    await logSttBatchFinalSummary(result.batchDir)
   }
 
   return result

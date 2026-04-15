@@ -5,6 +5,7 @@ import {
   SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_SONIOX_STT_MODELS,
   SUPPORTED_SPEECHMATICS_STT_MODELS,
+  SUPPORTED_REV_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
@@ -89,6 +90,10 @@ export const transcriptionFlags = {
     description: buildModelDescription('Speechmatics STT model', SUPPORTED_SPEECHMATICS_STT_MODELS),
     type: String
   },
+  'rev-stt': {
+    description: buildModelDescription('Rev STT model', SUPPORTED_REV_STT_MODELS),
+    type: String
+  },
   'groq-stt': {
     description: `Groq Whisper STT model (API, billed): ${SUPPORTED_GROQ_STT_MODELS.join('|')}`,
     type: String
@@ -144,7 +149,7 @@ export const transcriptionFlags = {
     default: '4'
   },
   'resume-missing-from': {
-    description: 'STT: reuse an existing batch directory and rerun only missing provider outputs',
+    description: 'STT: reuse an existing batch directory and rerun only missing provider outputs; omit the path to auto-pick the newest resumable batch under ./output',
     type: String
   },
   'refresh-cache': {

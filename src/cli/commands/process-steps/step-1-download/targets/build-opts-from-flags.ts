@@ -12,6 +12,7 @@ import {
   validateDeepgramSttModel,
   validateSonioxSttModel,
   validateSpeechmaticsSttModel,
+  validateRevSttModel,
   validateGroqSttModel,
   validateOpenAISttModel,
   validateMistralSttModel,
@@ -189,6 +190,7 @@ export const buildOptsFromFlags = (
   const deepgramSttModel = readValidated('deepgram-stt', validateDeepgramSttModel)
   const sonioxSttModel = readValidated('soniox-stt', validateSonioxSttModel)
   const speechmaticsSttModel = readValidated('speechmatics-stt', validateSpeechmaticsSttModel)
+  const revSttModel = readValidated('rev-stt', validateRevSttModel)
   const openaiSttModel = readValidated('openai-stt', validateOpenAISttModel)
   const mistralSttModel = readValidated('mistral-stt', validateMistralSttModel)
   const assemblyaiSttModel = readValidated('assemblyai-stt', validateAssemblyaiSttModel)
@@ -237,6 +239,7 @@ export const buildOptsFromFlags = (
     deepgramSttModel,
     sonioxSttModel,
     speechmaticsSttModel,
+    revSttModel,
     openaiSttModel,
     mistralSttModel,
     assemblyaiSttModel,

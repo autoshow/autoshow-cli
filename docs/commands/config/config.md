@@ -121,6 +121,7 @@ Full JSON shape of `config/autoshow.json`:
       "groqStt": "whisper-large-v3-turbo",
       "elevenlabsStt": "scribe_v2",
       "deepgramStt": "nova-3",
+      "revStt": "machine",
       "speechmaticsStt": "enhanced",
       "openaiStt": "gpt-4o-transcribe-diarize",
       "mistralStt": "voxtral-mini-latest",
@@ -189,10 +190,11 @@ Full JSON shape of `config/autoshow.json`:
 | `deepgramStt` | `--deepgram-stt` | Default Deepgram STT model |
 | `sonioxStt` | `--soniox-stt` | Default Soniox STT model |
 | `speechmaticsStt` | `--speechmatics-stt` | Default Speechmatics STT model |
+| `revStt` | `--rev-stt` | Default Rev STT model |
 | `openaiStt` | `--openai-stt` | Default OpenAI STT model |
 | `mistralStt` | `--mistral-stt` | Default Mistral STT model |
 | `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model |
-| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for ElevenLabs and AssemblyAI; Deepgram, Soniox, Speechmatics, Mistral, and OpenAI ignore count-only hints |
+| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for ElevenLabs and AssemblyAI; Deepgram, Soniox, Speechmatics, Rev, Mistral, and OpenAI ignore count-only hints |
 | `split` | `--split` | Split audio into 10-minute chunks |
 | `reverbVerbatimicity` | `--reverb-verbatimicity` | Reverb output style (0–1) |
 

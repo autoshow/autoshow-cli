@@ -59,7 +59,8 @@ const cliErrorHandler = (error: unknown): void => {
     'ANTHROPIC_API_KEY': 'Set ANTHROPIC_API_KEY environment variable to use Anthropic Claude models',
     'MINIMAX_API_KEY': 'Set MINIMAX_API_KEY environment variable to use MiniMax models',
     'ELEVENLABS_API_KEY': 'Set ELEVENLABS_API_KEY environment variable to use ElevenLabs transcription/TTS/music',
-    'SPEECHMATICS_API_KEY': 'Set SPEECHMATICS_API_KEY environment variable to use Speechmatics transcription'
+    'SPEECHMATICS_API_KEY': 'Set SPEECHMATICS_API_KEY environment variable to use Speechmatics transcription',
+    'REVAI_ACCESS_TOKEN': 'Set REVAI_ACCESS_TOKEN environment variable to use Rev transcription'
   }
 
   if (error instanceof Error) {

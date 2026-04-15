@@ -56,6 +56,7 @@ export const BARE_FLAG_DEFAULTS: Record<string, string> = {
   '--deepgram-stt': 'nova-3',
   '--soniox-stt': 'stt-async-v4',
   '--speechmatics-stt': 'enhanced',
+  '--rev-stt': 'machine',
   '--groq-stt': 'whisper-large-v3-turbo',
   '--openai-stt': 'gpt-4o-transcribe-diarize',
   '--elevenlabs-tts': 'eleven_v3',

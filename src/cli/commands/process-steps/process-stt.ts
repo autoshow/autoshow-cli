@@ -421,6 +421,8 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'deepgram',
   'elevenlabs',
   'soniox',
+  'speechmatics',
+  'rev',
   'groq',
   'openai',
   'mistral',

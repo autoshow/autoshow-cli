@@ -37,6 +37,7 @@ export type RuntimeOptions = {
   groqSttModel: string | undefined
   elevenlabsSttModel: string | undefined
   sonioxSttModel: string | undefined
+  revSttModel: string | undefined
   openaiSttModel: string | undefined
   mistralSttModel: string | undefined
   assemblyaiSttModel: string | undefined

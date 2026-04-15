@@ -61,6 +61,15 @@ export const collectSttTargets = (options: RuntimeOptions): SttTarget[] => {
     })
   }
 
+  if (options.revSttModel) {
+    targets.push({
+      service: 'rev',
+      model: options.revSttModel,
+      local: false,
+      diarizationOptions: resolveDiarizationOptions(options, 'rev')
+    })
+  }
+
   if (options.groqSttModel) {
     targets.push({
       service: 'groq',

@@ -118,6 +118,15 @@
       }
     }
   },
+  "rev": {
+    "description": "Rev AI async cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "machine": {
+        "description": "Machine transcription via Rev async REST API with diarization enabled by default"
+      }
+    }
+  },
   "elevenlabs": {
     "description": "ElevenLabs Scribe cloud STT",
     "type": "api",

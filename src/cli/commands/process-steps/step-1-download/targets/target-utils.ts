@@ -10,11 +10,208 @@ import { isSttPartialCompletionError } from '~/cli/commands/process-steps/proces
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
-type BatchManifestEntry = Record<string, unknown>
+export type BatchManifestEntry = Record<string, unknown>
 type BatchManifestErrorEntry = {
   service?: string
   model?: string
   message?: string
+}
+
+type SttManifestProviderStatus = 'succeeded' | 'missing' | 'failed' | 'skipped'
+
+type SttManifestProviderSummary = {
+  label: string
+  status: SttManifestProviderStatus
+  message?: string
+}
+
+type SttBatchItemSummary = {
+  label: string
+  completionStatus: 'full' | 'incomplete' | 'failed'
+  providers: SttManifestProviderSummary[]
+}
+
+const formatSttProviderLabel = (service: string, model: string): string =>
+  `${service === 'whisper' ? 'whisper.cpp' : service}/${model}`
+
+const getBatchManifestTitle = (
+  entry: BatchManifestEntry,
+  fallbackIndex: number
+): string => {
+  const step1 = isRecord(entry['step1']) ? entry['step1'] : undefined
+  const titleCandidates = [
+    step1?.['title'],
+    step1?.['slug'],
+    entry['title']
+  ]
+
+  for (const candidate of titleCandidates) {
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate.trim()
+    }
+  }
+
+  const url = typeof step1?.['url'] === 'string'
+    ? step1['url']
+    : typeof entry['url'] === 'string'
+      ? entry['url']
+      : undefined
+  if (typeof url === 'string' && url.length > 0) {
+    try {
+      const parsed = new URL(url)
+      const leaf = basename(parsed.pathname).replace(/\.[^.]+$/, '')
+      if (leaf.length > 0) {
+        return leaf
+      }
+    } catch {
+    }
+  }
+
+  const outputDir = entry['outputDir']
+  if (typeof outputDir === 'string' && outputDir.trim().length > 0) {
+    return basename(outputDir)
+  }
+
+  return `item-${fallbackIndex + 1}`
+}
+
+const parseSttManifestProviderSummaries = (
+  entry: BatchManifestEntry
+): SttManifestProviderSummary[] => {
+  const providerStates = Array.isArray(entry['providerStates']) ? entry['providerStates'] : []
+  const summaries: SttManifestProviderSummary[] = []
+
+  for (const value of providerStates) {
+    if (!isRecord(value) || typeof value['service'] !== 'string' || typeof value['model'] !== 'string') {
+      continue
+    }
+
+    const status = value['status']
+    if (status !== 'succeeded' && status !== 'missing' && status !== 'failed' && status !== 'skipped') {
+      continue
+    }
+
+    const lastError = isRecord(value['lastError']) ? value['lastError'] : undefined
+    const message = typeof lastError?.['message'] === 'string' && lastError['message'].trim().length > 0
+      ? lastError['message'].trim()
+      : undefined
+
+    summaries.push({
+      label: formatSttProviderLabel(value['service'], value['model']),
+      status,
+      ...(message ? { message } : {})
+    })
+  }
+
+  return summaries
+}
+
+const summarizeSttBatchManifestEntries = (
+  entries: BatchManifestEntry[]
+): SttBatchItemSummary[] =>
+  entries.map((entry, index) => ({
+    label: getBatchManifestTitle(entry, index),
+    completionStatus: getBatchManifestCompletionStatus(entry)
+      ?? (getBatchManifestErrorCount(entry) > 0 ? 'incomplete' : 'full'),
+    providers: parseSttManifestProviderSummaries(entry)
+  }))
+
+const formatSttProviderSummaryLine = (
+  label: 'working' | 'failed' | 'skipped' | 'missing',
+  providers: SttManifestProviderSummary[]
+): string => {
+  if (label === 'working') {
+    return `working: ${providers.map((provider) => provider.label).join(', ')}`
+  }
+
+  return `${label}: ${providers.map((provider) =>
+    provider.message ? `${provider.label} — ${provider.message}` : provider.label
+  ).join('; ')}`
+}
+
+export const buildSttBatchFinalSummaryLines = (
+  entries: BatchManifestEntry[]
+): string[] => {
+  const summaries = summarizeSttBatchManifestEntries(entries)
+  if (summaries.length === 0) {
+    return []
+  }
+
+  const lines = ['STT final provider status by item:']
+  for (const [index, summary] of summaries.entries()) {
+    lines.push(`${index + 1}/${summaries.length} ${summary.label} [${summary.completionStatus}]`)
+
+    const working = summary.providers.filter((provider) => provider.status === 'succeeded')
+    const failed = summary.providers.filter((provider) => provider.status === 'failed')
+    const skipped = summary.providers.filter((provider) => provider.status === 'skipped')
+    const missing = summary.providers.filter((provider) => provider.status === 'missing')
+
+    if (working.length > 0) {
+      lines.push(formatSttProviderSummaryLine('working', working))
+    }
+    if (failed.length > 0) {
+      lines.push(formatSttProviderSummaryLine('failed', failed))
+    }
+    if (skipped.length > 0) {
+      lines.push(formatSttProviderSummaryLine('skipped', skipped))
+    }
+    if (missing.length > 0) {
+      lines.push(formatSttProviderSummaryLine('missing', missing))
+    }
+    if (summary.providers.length === 0) {
+      lines.push('providers: unavailable')
+    }
+  }
+
+  return lines
+}
+
+export const logSttBatchFinalSummary = async (batchDir: string): Promise<void> => {
+  const infoPath = `${batchDir}/info.json`
+  if (!await fileExists(infoPath)) {
+    return
+  }
+
+  let raw: unknown
+  try {
+    raw = JSON.parse(await Bun.file(infoPath).text()) as unknown
+  } catch {
+    return
+  }
+
+  if (!Array.isArray(raw)) {
+    return
+  }
+
+  const entries = raw.filter((value): value is BatchManifestEntry => isRecord(value))
+  const lines = buildSttBatchFinalSummaryLines(entries)
+  if (lines.length === 0) {
+    return
+  }
+
+  lines.forEach((line, index) => {
+    if (index === 0) {
+      l.info(line)
+      return
+    }
+
+    if (line.includes('[full]')) {
+      l.success(line)
+      return
+    }
+
+    if (line.includes('[failed]')) {
+      l.error(line)
+      return
+    }
+
+    if (line.includes('[incomplete]') || line.startsWith('failed:') || line.startsWith('skipped:') || line.startsWith('missing:')) {
+      l.warn(line)
+      return
+    }
+
+    l.info(line)
+  })
 }
 
 export const getBatchManifestErrorCount = (entry: BatchManifestEntry | null): number => {

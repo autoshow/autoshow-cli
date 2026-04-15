@@ -1,7 +1,7 @@
 import type { AutoshowConfig } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 
-const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt'] as const
+const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt'] as const
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
@@ -52,6 +52,7 @@ export const mergeConfigIntoRawFlags = (
       ['deepgram-stt', d.stt.deepgramStt],
       ['soniox-stt', d.stt.sonioxStt],
       ['speechmatics-stt', d.stt.speechmaticsStt],
+      ['rev-stt', d.stt.revStt],
       ['openai-stt', d.stt.openaiStt], ['mistral-stt', d.stt.mistralStt],
       ['assemblyai-stt', d.stt.assemblyaiStt],
     ])
@@ -150,6 +151,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'deepgram-stt':      ['defaults', 'stt', 'deepgramStt'],
   'soniox-stt':        ['defaults', 'stt', 'sonioxStt'],
   'speechmatics-stt':  ['defaults', 'stt', 'speechmaticsStt'],
+  'rev-stt':           ['defaults', 'stt', 'revStt'],
   'openai-stt':        ['defaults', 'stt', 'openaiStt'],
   'mistral-stt':       ['defaults', 'stt', 'mistralStt'],
   'assemblyai-stt':    ['defaults', 'stt', 'assemblyaiStt'],

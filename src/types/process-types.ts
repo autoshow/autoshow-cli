@@ -10,6 +10,7 @@ export const ProcessingOptionsSchema = v.pipe(
     groqSttModel: v.optional(v.string(), undefined),
     elevenlabsSttModel: v.optional(v.string(), undefined),
     sonioxSttModel: v.optional(v.string(), undefined),
+    revSttModel: v.optional(v.string(), undefined),
     openaiSttModel: v.optional(v.string(), undefined),
     mistralSttModel: v.optional(v.string(), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
@@ -328,7 +329,7 @@ export type Step2RuntimeMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'speechmatics'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
   transcriptionModel: string
   transcriptionModelName?: string | undefined
   processingTime: number
@@ -524,6 +525,30 @@ export const SonioxTranscriptResponseSchema = v.object({
   tokens: v.array(SonioxTranscriptTokenSchema)
 })
 
+export const RevJobSchema = v.object({
+  id: v.string(),
+  status: v.picklist(['in_progress', 'transcribed', 'failed']),
+  failure: v.optional(v.string(), undefined),
+  failure_detail: v.optional(v.string(), undefined)
+})
+
+export const RevTranscriptElementSchema = v.object({
+  type: v.picklist(['text', 'punct']),
+  value: v.string(),
+  ts: v.optional(v.number(), undefined),
+  end_ts: v.optional(v.number(), undefined),
+  confidence: v.optional(v.number(), undefined)
+})
+
+export const RevTranscriptMonologueSchema = v.object({
+  speaker: v.number(),
+  elements: v.array(RevTranscriptElementSchema)
+})
+
+export const RevTranscriptResponseSchema = v.object({
+  monologues: v.array(RevTranscriptMonologueSchema)
+})
+
 export const SpeechmaticsJobErrorSchema = v.object({
   type: v.optional(v.string(), undefined),
   message: v.optional(v.string(), undefined)
@@ -586,6 +611,8 @@ export type DeepgramResponse = v.InferOutput<typeof DeepgramResponseSchema>
 export type SonioxFileResponse = v.InferOutput<typeof SonioxFileResponseSchema>
 export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscriptionStatusSchema>
 export type SonioxTranscriptResponse = v.InferOutput<typeof SonioxTranscriptResponseSchema>
+export type RevJob = v.InferOutput<typeof RevJobSchema>
+export type RevTranscriptResponse = v.InferOutput<typeof RevTranscriptResponseSchema>
 export type SpeechmaticsCreateJobResponse = v.InferOutput<typeof SpeechmaticsCreateJobResponseSchema>
 export type SpeechmaticsJob = v.InferOutput<typeof SpeechmaticsJobSchema>
 export type SpeechmaticsJobResponse = v.InferOutput<typeof SpeechmaticsJobResponseSchema>

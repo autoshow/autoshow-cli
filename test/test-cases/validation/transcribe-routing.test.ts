@@ -137,6 +137,14 @@ describe('resolveDiarizationOptions', () => {
     }, 'speechmatics')).toEqual({ enabled: true })
   })
 
+  test('ignores speaker-count for Rev while keeping diarization enabled', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2,
+      diarizationSpeakerNames: undefined,
+      diarizationSpeakerReferences: undefined
+    }, 'rev')).toEqual({ enabled: true })
+  })
+
   test('enables diarization by default for diarized ElevenLabs models', () => {
     expect(resolveDiarizationOptions({
       diarizationSpeakerCount: undefined,

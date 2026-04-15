@@ -27,6 +27,7 @@ test('transcribe aliases resolve to stt help', async () => {
     expect(result.stdout).toContain('--openai-stt')
     expect(result.stdout).toContain('--deepgram-stt')
     expect(result.stdout).toContain('--speechmatics-stt')
+    expect(result.stdout).toContain('--rev-stt')
   }
 })
 
@@ -57,6 +58,7 @@ test('stt and ocr canonical commands expose their help output', async () => {
   expect(sttResult.stdout).toContain('--openai-stt')
   expect(sttResult.stdout).toContain('--deepgram-stt')
   expect(sttResult.stdout).toContain('--speechmatics-stt')
+  expect(sttResult.stdout).toContain('--rev-stt')
 
   const ocrResult = await runCommand([
     'src/cli/create-cli.ts',

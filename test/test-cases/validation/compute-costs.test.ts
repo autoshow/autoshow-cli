@@ -63,6 +63,13 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('enhanced')
   })
 
+  test('revSttModel routes to rev', () => {
+    const result = computeEstimatedCosts({ revSttModel: 'machine', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('rev')
+    expect(result.steps[0]?.model).toBe('machine')
+    expect(result.steps[0]?.cost).toBe(0)
+  })
+
   test('mistralSttModel routes to mistral', () => {
     const result = computeEstimatedCosts({ mistralSttModel: 'voxtral-mini-2507', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('mistral')
@@ -178,16 +185,24 @@ describe('computeActualCosts STT', () => {
           transcriptionModelName: 'enhanced',
           processingTime: 700,
           tokenCount: 140
+        },
+        {
+          transcriptionService: 'rev',
+          transcriptionModel: 'machine',
+          transcriptionModelName: 'machine',
+          processingTime: 800,
+          tokenCount: 160
         }
       ]
     })
 
     const sttSteps = result.steps.filter((step) => step.step === 'stt')
-    expect(sttSteps).toHaveLength(3)
+    expect(sttSteps).toHaveLength(4)
     expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'elevenlabs:scribe_v2',
       'assemblyai:universal-2',
-      'speechmatics:enhanced'
+      'speechmatics:enhanced',
+      'rev:machine'
     ])
   })
 })

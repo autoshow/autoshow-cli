@@ -5,6 +5,7 @@ import * as l from '~/logger'
 import type { BatchProcessResult, RuntimeOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processStt, type SttCompletionStatus, isSttPartialCompletionError } from '~/cli/commands/process-steps/process-stt'
+import { logSttBatchFinalSummary } from '../step-1-download/targets/target-utils'
 import { formatSttBatchSchedulerSummary, SttBatchCoordinator } from './stt-batch-coordinator'
 import type { SttTarget } from './stt-targets'
 
@@ -47,6 +48,7 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'elevenlabs',
   'soniox',
   'speechmatics',
+  'rev',
   'groq',
   'openai',
   'mistral',
@@ -107,6 +109,13 @@ const parseProviderStateMap = (entry: Record<string, unknown>): Map<string, Pars
   }
   return states
 }
+
+const parseStoredRequestedTargets = (
+  entry: Record<string, unknown>
+): SttTarget[] =>
+  Array.isArray(entry['requestedProviders'])
+    ? entry['requestedProviders'].map(parseRequestedProvider).filter((target): target is SttTarget => target !== undefined)
+    : []
 
 const parseSuccessfulProviderKeys = (entry: Record<string, unknown>): Set<string> => {
   const values = Array.isArray(entry['step2'])
@@ -242,9 +251,7 @@ const parseResumeEntry = async (
     throw CLIUsageError('Batch entry is missing outputDir and could not be matched to an STT output directory.')
   }
 
-  const storedRequestedTargets = Array.isArray(entry['requestedProviders'])
-    ? entry['requestedProviders'].map(parseRequestedProvider).filter((target): target is SttTarget => target !== undefined)
-    : []
+  const storedRequestedTargets = parseStoredRequestedTargets(entry)
 
   const requestedTargets = storedRequestedTargets.length > 0
     ? storedRequestedTargets
@@ -288,6 +295,105 @@ const parseResumeEntry = async (
   }
 }
 
+const loadResumeBatchInfoEntries = async (
+  batchDir: string
+): Promise<unknown[] | undefined> => {
+  const infoPath = join(batchDir, 'info.json')
+  if (!await Bun.file(infoPath).exists()) {
+    return undefined
+  }
+
+  try {
+    const rawInfo = await Bun.file(infoPath).json() as unknown
+    return Array.isArray(rawInfo) ? rawInfo : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const batchHasResumableWork = async (
+  batchDir: string,
+  selectedTargets: SttTarget[] | undefined
+): Promise<boolean> => {
+  const rawInfo = await loadResumeBatchInfoEntries(batchDir)
+  if (!rawInfo) {
+    return false
+  }
+
+  for (const entry of rawInfo) {
+    if (!isRecord(entry)) {
+      continue
+    }
+
+    const storedRequestedTargets = parseStoredRequestedTargets(entry)
+    if (storedRequestedTargets.length < 2) {
+      continue
+    }
+
+    try {
+      const parsedEntry = await parseResumeEntry(batchDir, entry, selectedTargets, {
+        retryableOnly: false,
+        ignoreUnresumableEntries: true
+      })
+      if (parsedEntry && parsedEntry.missingTargets.length > 0) {
+        return true
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return false
+}
+
+export const discoverLatestResumableSttBatchDir = async (
+  outputRootInput: string,
+  selectedTargets?: SttTarget[]
+): Promise<string | undefined> => {
+  const outputRoot = resolvePath(outputRootInput)
+
+  let batchNames: string[]
+  try {
+    const entries = await readdir(outputRoot, { withFileTypes: true })
+    batchNames = entries
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name)
+      .sort((left, right) => right.localeCompare(left))
+  } catch {
+    return undefined
+  }
+
+  for (const batchName of batchNames) {
+    const batchDir = join(outputRoot, batchName)
+    if (await batchHasResumableWork(batchDir, selectedTargets)) {
+      return batchDir
+    }
+  }
+
+  return undefined
+}
+
+export const resolveResumeSttBatchDir = async (
+  batchDirInput: string | undefined,
+  selectedTargets?: SttTarget[],
+  outputRootInput = './output'
+): Promise<string> => {
+  if (typeof batchDirInput === 'string' && batchDirInput.trim().length > 0) {
+    return batchDirInput
+  }
+
+  const discoveredBatchDir = await discoverLatestResumableSttBatchDir(outputRootInput, selectedTargets)
+  if (discoveredBatchDir) {
+    return discoveredBatchDir
+  }
+
+  if (selectedTargets && selectedTargets.length > 0) {
+    throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput} that matches the selected provider flags. Pass --resume-missing-from <batch-dir> explicitly.`)
+  }
+
+  throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput}. Pass --resume-missing-from <batch-dir> explicitly.`)
+}
+
 const formatResumeSummary = (
   full: number,
   incomplete: number,
@@ -323,8 +429,8 @@ const runResumePass = async (
     throw CLIUsageError(`Could not find batch manifest at ${infoPath}`)
   }
 
-  const rawInfo = await Bun.file(infoPath).json() as unknown
-  if (!Array.isArray(rawInfo)) {
+  const rawInfo = await loadResumeBatchInfoEntries(batchDir)
+  if (!rawInfo) {
     throw CLIUsageError(`Invalid batch manifest at ${infoPath}`)
   }
 
@@ -486,6 +592,9 @@ export const resumeSttMissingFromBatchDir = async (
   selectedTargets?: SttTarget[]
 ): Promise<void> => {
   const result = await runResumeSttMissingFromBatchDir(batchDirInput, opts, selectedTargets)
+  if (result.batchDir) {
+    await logSttBatchFinalSummary(result.batchDir)
+  }
   if (result.incomplete > 0 || result.fail > 0) {
     const error = new Error(`STT batch resume still has ${result.incomplete} incomplete and ${result.fail} failed item(s)`)
     ;(error as Error & { exitCode?: number }).exitCode = 2

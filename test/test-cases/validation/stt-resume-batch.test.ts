@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume-stt-batch'
+import { discoverLatestResumableSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume-stt-batch'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 
@@ -29,6 +29,216 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map(async (dir) => {
     await rm(dir, { recursive: true, force: true })
   }))
+})
+
+const createResumeDiscoveryBatch = async (
+  outputRoot: string,
+  batchName: string,
+  entry: Record<string, unknown>
+): Promise<string> => {
+  const batchDir = join(outputRoot, batchName)
+  const outputDir = join(batchDir, '2026-04-13_partial-item')
+  await mkdir(outputDir, { recursive: true })
+  await Bun.write(join(batchDir, 'info.json'), JSON.stringify([
+    {
+      ...entry,
+      outputDir
+    }
+  ], null, 2))
+  return batchDir
+}
+
+test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provider STT batch', async () => {
+  const outputRoot = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-discovery-'))
+  tempDirs.push(outputRoot)
+
+  const baseStep1 = {
+    title: 'resume-discovery',
+    duration: '00:00:10',
+    author: 'Local',
+    description: '',
+    url: `file://${resolve(STABLE_LOCAL_AUDIO_PATH)}`,
+    slug: 'resume-discovery',
+    audioFileName: 'resume-discovery.mp3',
+    audioFileSize: 1234
+  }
+
+  await createResumeDiscoveryBatch(outputRoot, '2026-04-16_09-00-00-000_files', {
+    step1: baseStep1,
+    step2: [],
+    completionStatus: 'failed',
+    requestedProviders: [
+      { service: 'rev', model: 'machine', local: false, diarizationOptions: { enabled: true } }
+    ],
+    providerStates: [
+      {
+        service: 'rev',
+        model: 'machine',
+        local: false,
+        status: 'failed',
+        retryable: true
+      }
+    ],
+    missingProviders: [
+      { service: 'rev', model: 'machine', local: false, diarizationOptions: { enabled: true } }
+    ]
+  })
+
+  await createResumeDiscoveryBatch(outputRoot, '2026-04-15_09-00-00-000_files', {
+    step1: baseStep1,
+    step2: [
+      {
+        transcriptionService: 'mistral',
+        transcriptionModel: 'voxtral-mini-latest',
+        transcriptionModelName: 'voxtral-mini-latest'
+      },
+      {
+        transcriptionService: 'soniox',
+        transcriptionModel: 'stt-async-v4',
+        transcriptionModelName: 'stt-async-v4'
+      }
+    ],
+    completionStatus: 'full',
+    requestedProviders: [
+      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
+    ],
+    providerStates: [
+      {
+        service: 'mistral',
+        model: 'voxtral-mini-latest',
+        local: false,
+        status: 'succeeded'
+      },
+      {
+        service: 'soniox',
+        model: 'stt-async-v4',
+        local: false,
+        status: 'succeeded'
+      }
+    ],
+    missingProviders: []
+  })
+
+  const expectedBatchDir = await createResumeDiscoveryBatch(outputRoot, '2026-04-14_09-00-00-000_files', {
+    step1: baseStep1,
+    step2: [
+      {
+        transcriptionService: 'mistral',
+        transcriptionModel: 'voxtral-mini-latest',
+        transcriptionModelName: 'voxtral-mini-latest'
+      }
+    ],
+    completionStatus: 'incomplete',
+    requestedProviders: [
+      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
+    ],
+    providerStates: [
+      {
+        service: 'mistral',
+        model: 'voxtral-mini-latest',
+        local: false,
+        status: 'succeeded'
+      },
+      {
+        service: 'soniox',
+        model: 'stt-async-v4',
+        local: false,
+        status: 'failed',
+        retryable: true
+      }
+    ],
+    missingProviders: [
+      { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
+    ]
+  })
+
+  expect(await discoverLatestResumableSttBatchDir(outputRoot)).toBe(expectedBatchDir)
+})
+
+test('discoverLatestResumableSttBatchDir skips newer incompatible batches when provider filters are supplied', async () => {
+  const outputRoot = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-discovery-provider-'))
+  tempDirs.push(outputRoot)
+
+  const baseStep1 = {
+    title: 'resume-discovery-provider',
+    duration: '00:00:10',
+    author: 'Local',
+    description: '',
+    url: `file://${resolve(STABLE_LOCAL_AUDIO_PATH)}`,
+    slug: 'resume-discovery-provider',
+    audioFileName: 'resume-discovery-provider.mp3',
+    audioFileSize: 1234
+  }
+
+  await createResumeDiscoveryBatch(outputRoot, '2026-04-16_09-00-00-000_files', {
+    step1: baseStep1,
+    step2: [],
+    completionStatus: 'failed',
+    requestedProviders: [
+      { service: 'deepgram', model: 'nova-3', local: false, diarizationOptions: { enabled: true } },
+      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } }
+    ],
+    providerStates: [
+      {
+        service: 'deepgram',
+        model: 'nova-3',
+        local: false,
+        status: 'failed',
+        retryable: true
+      },
+      {
+        service: 'mistral',
+        model: 'voxtral-mini-latest',
+        local: false,
+        status: 'missing',
+        retryable: true
+      }
+    ],
+    missingProviders: [
+      { service: 'deepgram', model: 'nova-3', local: false, diarizationOptions: { enabled: true } },
+      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } }
+    ]
+  })
+
+  const expectedBatchDir = await createResumeDiscoveryBatch(outputRoot, '2026-04-15_09-00-00-000_files', {
+    step1: baseStep1,
+    step2: [
+      {
+        transcriptionService: 'mistral',
+        transcriptionModel: 'voxtral-mini-latest',
+        transcriptionModelName: 'voxtral-mini-latest'
+      }
+    ],
+    completionStatus: 'incomplete',
+    requestedProviders: [
+      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'rev', model: 'machine', local: false, diarizationOptions: { enabled: true } }
+    ],
+    providerStates: [
+      {
+        service: 'mistral',
+        model: 'voxtral-mini-latest',
+        local: false,
+        status: 'succeeded'
+      },
+      {
+        service: 'rev',
+        model: 'machine',
+        local: false,
+        status: 'failed',
+        retryable: true
+      }
+    ],
+    missingProviders: [
+      { service: 'rev', model: 'machine', local: false, diarizationOptions: { enabled: true } }
+    ]
+  })
+
+  expect(await discoverLatestResumableSttBatchDir(outputRoot, [
+    { service: 'rev', model: 'machine', local: false, diarizationOptions: { enabled: true } }
+  ])).toBe(expectedBatchDir)
 })
 
 test('resumeSttMissingFromBatchDir reruns only missing providers into the existing outputDir', async () => {

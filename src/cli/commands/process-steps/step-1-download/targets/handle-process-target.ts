@@ -25,7 +25,7 @@ import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume-stt-batch'
+import { resolveResumeSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume-stt-batch'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch'
 import { collectExplicitExtractTargets } from '~/cli/commands/process-steps/step-2-document/extract-targets'
 
@@ -143,6 +143,7 @@ const STT_PROVIDER_SELECTION_FLAGS = [
   'deepgram-stt',
   'soniox-stt',
   'speechmatics-stt',
+  'rev-stt',
   'groq-stt',
   'openai-stt',
   'mistral-stt',
@@ -292,8 +293,9 @@ export const handleProcessTarget = async (
 
   const maxCents = resolveMaxCents(config.pricing)
   const hasExplicitResumeTargetSelection = STT_PROVIDER_SELECTION_FLAGS.some((flag) => explicitFlags.has(flag))
+  const resumeMissingFromRequested = explicitFlags.has('resume-missing-from') || opts.resumeMissingFrom !== undefined
 
-  if (opts.resumeMissingFrom) {
+  if (resumeMissingFromRequested) {
     if (!isSttCommand(command)) {
       throw CLIUsageError('--resume-missing-from is only supported with "stt".')
     }
@@ -307,10 +309,19 @@ export const handleProcessTarget = async (
       l.warn('Skipping budget preflight for --resume-missing-from')
     }
 
-    await resumeSttMissingFromBatchDir(
+    const selectedTargets = hasExplicitResumeTargetSelection ? collectSttTargets(opts) : undefined
+    const resumeBatchDir = await resolveResumeSttBatchDir(
       opts.resumeMissingFrom,
+      selectedTargets
+    )
+    if (opts.resumeMissingFrom === undefined) {
+      l.info(`Auto-discovered resumable STT batch: ${resumeBatchDir}`)
+    }
+
+    await resumeSttMissingFromBatchDir(
+      resumeBatchDir,
       opts,
-      hasExplicitResumeTargetSelection ? collectSttTargets(opts) : undefined
+      selectedTargets
     )
     return
   }

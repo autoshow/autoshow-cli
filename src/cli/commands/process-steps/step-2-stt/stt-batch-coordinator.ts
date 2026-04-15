@@ -98,7 +98,10 @@ const formatTargetLabel = (target: Pick<SttTarget, 'service' | 'model'>): string
   `${target.service === 'whisper' ? 'whisper.cpp' : target.service}/${target.model}`
 
 const isAsyncBatchProvider = (target: Pick<SttTarget, 'service'>): boolean =>
-  target.service === 'assemblyai' || target.service === 'soniox'
+  target.service === 'assemblyai'
+  || target.service === 'soniox'
+  || target.service === 'speechmatics'
+  || target.service === 'rev'
 
 const cloneBlockedReason = (
   reason: SttBatchBlockedProviderReason

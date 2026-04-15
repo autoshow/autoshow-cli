@@ -1,0 +1,10 @@
+import { defineSTTServiceTest } from '../../../../../test-utils/define-stt-service-test'
+
+defineSTTServiceTest({
+  models: ['machine'],
+  cliFlag: '--rev-stt',
+  sttService: 'rev',
+  envVarKey: 'REVAI_ACCESS_TOKEN',
+  envVarDescription: 'Rev transcription',
+  timeoutMs: 30_000,
+})
