@@ -13,6 +13,9 @@ const originalSonioxApiKey = process.env['SONIOX_API_KEY']
 const originalSonioxBaseUrl = process.env['SONIOX_BASE_URL']
 const originalMistralApiKey = process.env['MISTRAL_API_KEY']
 const originalMistralBaseUrl = process.env['MISTRAL_BASE_URL']
+const originalAssemblyAiApiKey = process.env['ASSEMBLYAI_API_KEY']
+const originalAssemblyAiBaseUrl = process.env['ASSEMBLYAI_BASE_URL']
+const originalAssemblyAiPollDeadline = process.env['AUTOSHOW_STT_POLL_DEADLINE_MS_ASSEMBLYAI']
 const originalProviderSlotLimit = process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT']
 const originalSonioxProviderSlotLimit = process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT_SONIOX']
 const originalBunSleep = Bun.sleep
@@ -400,6 +403,24 @@ afterEach(async () => {
     process.env['MISTRAL_BASE_URL'] = originalMistralBaseUrl
   }
 
+  if (originalAssemblyAiApiKey === undefined) {
+    delete process.env['ASSEMBLYAI_API_KEY']
+  } else {
+    process.env['ASSEMBLYAI_API_KEY'] = originalAssemblyAiApiKey
+  }
+
+  if (originalAssemblyAiBaseUrl === undefined) {
+    delete process.env['ASSEMBLYAI_BASE_URL']
+  } else {
+    process.env['ASSEMBLYAI_BASE_URL'] = originalAssemblyAiBaseUrl
+  }
+
+  if (originalAssemblyAiPollDeadline === undefined) {
+    delete process.env['AUTOSHOW_STT_POLL_DEADLINE_MS_ASSEMBLYAI']
+  } else {
+    process.env['AUTOSHOW_STT_POLL_DEADLINE_MS_ASSEMBLYAI'] = originalAssemblyAiPollDeadline
+  }
+
   if (originalProviderSlotLimit === undefined) {
     delete process.env['AUTOSHOW_STT_PROVIDER_SLOT_LIMIT']
   } else {
@@ -576,7 +597,7 @@ test('runSttBatch backfills retryable provider failures within the same invocati
   process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
 
   const fetchImpl = createSonioxSuccessFetch((callIndex) => {
-    if (callIndex <= 4) {
+    if (callIndex <= 2) {
       return new Response('<html><body><h1>502 Bad Gateway</h1></body></html>', {
         status: 502,
         headers: { 'content-type': 'text/html' }
@@ -613,7 +634,7 @@ test('runSttBatch backfills retryable provider failures within the same invocati
   })
   registerCleanupPath(result.batchDir)
 
-  expect(fetchImpl.getMistralCalls()).toBe(6)
+  expect(fetchImpl.getMistralCalls()).toBe(4)
   expect(result.ok).toBe(2)
   expect(result.incomplete).toBe(0)
   expect(result.fail).toBe(0)
@@ -627,5 +648,112 @@ test('runSttBatch backfills retryable provider failures within the same invocati
     expect(entry['completionStatus']).toBe('full')
     expect(Array.isArray(entry['missingProviders'])).toBe(true)
     expect((entry['missingProviders'] as unknown[])).toHaveLength(0)
+  }
+})
+
+test('runSttBatch performs a single automatic backfill sweep for retryable async provider failures', { timeout: 35_000 }, async () => {
+  const items = await createBatchInputs('autoshow-stt-assemblyai-backfill-')
+
+  process.env['ASSEMBLYAI_API_KEY'] = 'assemblyai-test-key'
+  process.env['ASSEMBLYAI_BASE_URL'] = 'https://assemblyai.test'
+  process.env['MISTRAL_API_KEY'] = 'mistral-test-key'
+  process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
+
+  let nextTranscriptId = 1
+  let assemblyAiCreates = 0
+  let assemblyAiPolls = 0
+  let mistralCalls = 0
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input)
+    const method = init?.method ?? 'GET'
+
+    if (url === 'https://assemblyai.test/v2/upload' && method === 'POST') {
+      return new Response(JSON.stringify({
+        upload_url: `https://cdn.assemblyai.test/audio-${nextTranscriptId}.wav`
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://assemblyai.test/v2/transcript' && method === 'POST') {
+      assemblyAiCreates += 1
+      return new Response(JSON.stringify({ id: `tx-${nextTranscriptId++}` }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url.startsWith('https://assemblyai.test/v2/transcript/')) {
+      assemblyAiPolls += 1
+      return new Response('temporary outage', {
+        status: 503,
+        headers: {
+          'content-type': 'text/plain',
+          'retry-after': '0'
+        }
+      })
+    }
+
+    if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
+      mistralCalls += 1
+      return new Response(JSON.stringify({
+        text: `Mistral transcript ${mistralCalls}.`,
+        segments: [
+          {
+            start: 0,
+            end: 1,
+            text: `Mistral transcript ${mistralCalls}.`,
+            speaker_id: 1
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    throw new Error(`Unexpected request: ${method} ${url}`)
+  }) as unknown as typeof fetch
+  ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async () => {}) as typeof Bun.sleep
+
+  const opts = buildOptsFromFlags(false, {
+    'assemblyai-stt': 'universal-3-pro',
+    'mistral-stt': 'voxtral-mini-latest',
+    'batch-concurrency': '2',
+    'no-cache': true
+  })
+
+  const result = await runSttBatch(items, 'stt-batch-assemblyai-backfill', opts, {
+    concurrency: opts.batchConcurrency
+  })
+  registerCleanupPath(result.batchDir)
+
+  expect(result.ok).toBe(0)
+  expect(result.incomplete).toBe(2)
+  expect(result.fail).toBe(0)
+  expect(assemblyAiCreates).toBe(2)
+  expect(assemblyAiPolls).toBe(24)
+  expect(mistralCalls).toBe(2)
+  expect(result.batchDir).toBeDefined()
+  if (!result.batchDir) {
+    return
+  }
+
+  const info = await Bun.file(join(result.batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+  for (const entry of info) {
+    expect(entry['completionStatus']).toBe('incomplete')
+    const assemblyAiState = Array.isArray(entry['providerStates'])
+      ? entry['providerStates'].find((state): state is Record<string, unknown> =>
+        typeof state === 'object'
+        && state !== null
+        && state['service'] === 'assemblyai')
+      : undefined
+
+    expect(assemblyAiState).toEqual(expect.objectContaining({
+      status: 'failed',
+      attempts: 2,
+      retryable: true
+    }))
   }
 })

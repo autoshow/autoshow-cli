@@ -57,7 +57,7 @@ export const runSttBatch = async (
     l.warn(`Starting automatic STT batch backfill for retryable missing providers: ${result.batchDir}`)
     result = await runResumeSttMissingFromBatchDir(result.batchDir, opts, undefined, {
       retryableOnly: true,
-      maxPasses: 2,
+      maxPasses: 1,
       ignoreUnresumableEntries: true
     })
   }

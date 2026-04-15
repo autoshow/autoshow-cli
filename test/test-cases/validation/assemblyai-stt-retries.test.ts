@@ -7,6 +7,7 @@ import { runAssemblyAiTranscribe } from '~/cli/commands/process-steps/step-2-stt
 const originalFetch = globalThis.fetch
 const originalApiKey = process.env['ASSEMBLYAI_API_KEY']
 const originalBaseUrl = process.env['ASSEMBLYAI_BASE_URL']
+const originalBunSleep = Bun.sleep
 const tempDirs: string[] = []
 
 const createAudioFixture = async (): Promise<{ audioPath: string, outputDir: string }> => {
@@ -21,6 +22,7 @@ const createAudioFixture = async (): Promise<{ audioPath: string, outputDir: str
 
 afterEach(async () => {
   globalThis.fetch = originalFetch
+  ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = originalBunSleep
 
   if (originalApiKey === undefined) {
     delete process.env['ASSEMBLYAI_API_KEY']
@@ -109,5 +111,81 @@ describe('runAssemblyAiTranscribe', () => {
     expect(result.text).toBe('Hello world')
     expect(metadata.transcriptionService).toBe('assemblyai')
     expect(metadata.transcriptionModel).toBe('universal-2')
+  })
+
+  test('reuses a persisted AssemblyAI job with bounded resume probes and no new transcript creation', async () => {
+    const { audioPath, outputDir } = await createAudioFixture()
+    process.env['ASSEMBLYAI_API_KEY'] = 'test-key'
+    process.env['ASSEMBLYAI_BASE_URL'] = 'https://assemblyai.test'
+
+    await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify({
+      transcriptionService: 'assemblyai',
+      transcriptionModel: 'universal-3-pro',
+      transcriptionModelName: 'universal-3-pro',
+      processingTime: 10,
+      tokenCount: 0,
+      runtime: {
+        mode: 'fresh',
+        stage: 'polling',
+        remoteJobId: 'tx-existing',
+        remoteAssetUrl: 'https://cdn.assemblyai.test/audio.wav',
+        createCompletedAt: '2026-04-14T00:00:00.000Z'
+      }
+    }, null, 2))
+
+    const slept: number[] = []
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (ms: number) => {
+      slept.push(ms)
+    }) as typeof Bun.sleep
+
+    let uploadAttempts = 0
+    let createAttempts = 0
+    let pollAttempts = 0
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url === 'https://assemblyai.test/v2/upload') {
+        uploadAttempts += 1
+        throw new Error('unexpected upload')
+      }
+
+      if (url === 'https://assemblyai.test/v2/transcript' && init?.method === 'POST') {
+        createAttempts += 1
+        throw new Error('unexpected create')
+      }
+
+      if (url === 'https://assemblyai.test/v2/transcript/tx-existing' && init?.method === 'GET') {
+        pollAttempts += 1
+        return new Response(JSON.stringify({
+          id: 'tx-existing',
+          status: 'processing'
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`)
+    }) as unknown as typeof fetch
+
+    await expect(
+      runAssemblyAiTranscribe(audioPath, outputDir, {
+        model: 'universal-3-pro',
+        segmentOffsetMinutes: 0,
+        runMode: 'backfill'
+      })
+    ).rejects.toThrow('still pending after 5 resume status checks')
+
+    expect(uploadAttempts).toBe(0)
+    expect(createAttempts).toBe(0)
+    expect(pollAttempts).toBe(5)
+    expect(slept).toEqual([30_000, 60_000, 120_000, 240_000])
+
+    const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+    expect(metadata['runtime']).toEqual(expect.objectContaining({
+      mode: 'resumed',
+      stage: 'polling',
+      remoteJobId: 'tx-existing'
+    }))
   })
 })

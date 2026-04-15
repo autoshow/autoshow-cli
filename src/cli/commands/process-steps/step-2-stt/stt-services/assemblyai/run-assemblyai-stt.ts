@@ -86,6 +86,22 @@ const buildPollingDeadlineError = (
   throw error
 }
 
+const buildResumeProbeError = (
+  transcriptId: string,
+  probeCount: number,
+  totalWaitMs: number
+): never => {
+  const error = Object.assign(
+    new Error(`AssemblyAI transcript ${transcriptId} is still pending after ${probeCount} resume status checks (${totalWaitMs}ms total backoff). Retry the command later.`),
+    {
+      stage: 'poll',
+      retryClass: 'runtime_http_read' as RetryClass,
+      retryable: true
+    }
+  )
+  throw error
+}
+
 export const runAssemblyAiTranscribe = async (
   audioPath: string,
   outputDir: string,
@@ -149,6 +165,7 @@ export const runAssemblyAiTranscribe = async (
   })
   let uploadUrl = runtime?.remoteAssetUrl
   let transcriptId = runtime?.remoteJobId
+  let resumedExistingTranscript = false
   let jobReadyNotified = false
 
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
@@ -186,6 +203,7 @@ export const runAssemblyAiTranscribe = async (
   }
 
   if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
+    resumedExistingTranscript = true
     runtime = {
       ...runtime,
       mode: 'resumed',
@@ -334,7 +352,7 @@ export const runAssemblyAiTranscribe = async (
     throw new Error('AssemblyAI transcript creation did not produce a transcript id')
   }
   const activeTranscriptId = transcriptId
-  l.info(`AssemblyAI transcript created: ${activeTranscriptId}, polling for completion...`)
+  l.info(`${resumedExistingTranscript ? 'AssemblyAI transcript resumed' : 'AssemblyAI transcript created'}: ${activeTranscriptId}, polling for completion...`)
 
   const pollResult = await pollAsyncSttJobUntilComplete({
     jobId: activeTranscriptId,
@@ -342,7 +360,9 @@ export const runAssemblyAiTranscribe = async (
     maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
     audioDurationSeconds,
     envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_ASSEMBLYAI',
+    pollMode: resumedExistingTranscript ? 'resume-probe' : 'fresh',
     buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
+    buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
     poll: async () => {
       let result!: { payload: unknown, retryAfterMs: number | null }
       try {

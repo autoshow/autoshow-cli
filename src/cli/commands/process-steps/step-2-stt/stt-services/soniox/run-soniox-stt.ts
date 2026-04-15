@@ -483,6 +483,22 @@ const buildPollingDeadlineError = (
   throw error
 }
 
+const buildResumeProbeError = (
+  transcriptionId: string,
+  probeCount: number,
+  totalWaitMs: number
+): never => {
+  const error = Object.assign(
+    new Error(`Soniox transcription ${transcriptionId} is still pending after ${probeCount} resume status checks (${totalWaitMs}ms total backoff). Retry the command later.`),
+    {
+      stage: 'poll',
+      retryClass: 'runtime_http_read' as RetryClass,
+      retryable: true
+    }
+  )
+  throw error
+}
+
 export const runSonioxStt = async (
   audioPath: string,
   outputDir: string,
@@ -550,6 +566,7 @@ export const runSonioxStt = async (
   })
   let fileId = runtime?.remoteAssetId
   let transcriptionId = runtime?.remoteJobId
+  let resumedExistingTranscription = false
   let jobReadyNotified = false
 
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
@@ -589,6 +606,7 @@ export const runSonioxStt = async (
 
   try {
     if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
+      resumedExistingTranscription = true
       runtime = {
         ...runtime,
         mode: 'resumed',
@@ -622,7 +640,7 @@ export const runSonioxStt = async (
       throw new Error('Soniox transcription creation did not produce a transcription id')
     }
     const activeTranscriptionId = transcriptionId
-    l.info(`Soniox transcription created: ${activeTranscriptionId}, polling for completion...`)
+    l.info(`${resumedExistingTranscription ? 'Soniox transcription resumed' : 'Soniox transcription created'}: ${activeTranscriptionId}, polling for completion...`)
 
     const pollResult = await pollAsyncSttJobUntilComplete({
       jobId: activeTranscriptionId,
@@ -630,7 +648,9 @@ export const runSonioxStt = async (
       maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
       audioDurationSeconds,
       envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_SONIOX',
+      pollMode: resumedExistingTranscription ? 'resume-probe' : 'fresh',
       buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
+      buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
       poll: async () => {
         const pollStartedAt = Date.now()
         const result = await pollTranscription(baseURL, apiKey, activeTranscriptionId, requestMetrics)

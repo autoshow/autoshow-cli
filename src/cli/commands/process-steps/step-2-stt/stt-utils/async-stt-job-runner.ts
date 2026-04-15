@@ -1,8 +1,9 @@
 import type { Step2Metadata, Step2RuntimeMetadata } from '~/types'
 
-const DEFAULT_POLL_DEADLINE_MS = 30 * 60 * 1000
-const MAX_POLL_DEADLINE_MS = 4 * 60 * 60 * 1000
-const POLL_DEADLINE_AUDIO_MULTIPLIER_MS = 8_000
+const DEFAULT_POLL_DEADLINE_MS = 10 * 60 * 1000
+const MAX_POLL_DEADLINE_MS = 30 * 60 * 1000
+const POLL_DEADLINE_AUDIO_MULTIPLIER_MS = 250
+export const ASYNC_STT_RESUME_PROBE_DELAYS_MS = [0, 30_000, 60_000, 120_000, 240_000] as const
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -119,6 +120,8 @@ export const resolveAsyncSttPollDeadlineMs = (
   )
 }
 
+export type AsyncSttPollMode = 'fresh' | 'resume-probe'
+
 export const withOptionalGate = async <T>(
   gate: ((fn: () => Promise<T>) => Promise<T>) | undefined,
   fn: () => Promise<T>
@@ -135,10 +138,12 @@ type AsyncSttPollLoopOptions<TStatus> = {
   maxPollIntervalMs: number
   audioDurationSeconds?: number | undefined
   envSpecificDeadlineKey: string
+  pollMode?: AsyncSttPollMode | undefined
   poll: () => Promise<{ status: TStatus, retryAfterMs: number | null }>
   isComplete: (status: TStatus) => boolean
   isFailed: (status: TStatus) => string | undefined
   buildDeadlineError: (jobId: string, pollDeadlineMs: number) => never
+  buildResumeProbeError?: ((jobId: string, probeCount: number, totalWaitMs: number) => never) | undefined
   onProgress?: ((status: TStatus) => Promise<void> | void) | undefined
   withPollSlot?: (<T>(fn: () => Promise<T>) => Promise<T>) | undefined
 }
@@ -146,6 +151,52 @@ type AsyncSttPollLoopOptions<TStatus> = {
 export const pollAsyncSttJobUntilComplete = async <TStatus>(
   options: AsyncSttPollLoopOptions<TStatus>
 ): Promise<{ status: TStatus, pollCount: number, pollSleepMs: number }> => {
+  const pollOnce = async (): Promise<{ status: TStatus, retryAfterMs: number | null }> => {
+    const runPoll = async (): Promise<{ status: TStatus, retryAfterMs: number | null }> =>
+      await options.poll()
+    const pollResult = options.withPollSlot
+      ? await options.withPollSlot(runPoll)
+      : await runPoll()
+    await options.onProgress?.(pollResult.status)
+
+    const failureReason = options.isFailed(pollResult.status)
+    if (failureReason) {
+      throw new Error(failureReason)
+    }
+
+    return pollResult
+  }
+
+  if (options.pollMode === 'resume-probe') {
+    let pollCount = 0
+    let pollSleepMs = 0
+
+    for (const delayMs of ASYNC_STT_RESUME_PROBE_DELAYS_MS) {
+      if (delayMs > 0) {
+        const sleepStartedAt = Date.now()
+        await Bun.sleep(delayMs)
+        pollSleepMs += Date.now() - sleepStartedAt
+      }
+
+      const pollResult = await pollOnce()
+      pollCount += 1
+
+      if (options.isComplete(pollResult.status)) {
+        return {
+          status: pollResult.status,
+          pollCount,
+          pollSleepMs
+        }
+      }
+    }
+
+    const totalWaitMs = ASYNC_STT_RESUME_PROBE_DELAYS_MS.reduce((sum, delayMs) => sum + delayMs, 0)
+    if (options.buildResumeProbeError) {
+      options.buildResumeProbeError(options.jobId, ASYNC_STT_RESUME_PROBE_DELAYS_MS.length, totalWaitMs)
+    }
+    options.buildDeadlineError(options.jobId, totalWaitMs)
+  }
+
   const pollDeadlineMs = resolveAsyncSttPollDeadlineMs(options.audioDurationSeconds, options.envSpecificDeadlineKey)
   const deadlineAt = Date.now() + pollDeadlineMs
   let pollDelayMs = options.initialPollIntervalMs
@@ -162,18 +213,8 @@ export const pollAsyncSttJobUntilComplete = async <TStatus>(
     await Bun.sleep(Math.min(pollDelayMs, remainingBeforeSleep))
     pollSleepMs += Date.now() - sleepStartedAt
 
-    const runPoll = async (): Promise<{ status: TStatus, retryAfterMs: number | null }> =>
-      await options.poll()
-    const pollResult = options.withPollSlot
-      ? await options.withPollSlot(runPoll)
-      : await runPoll()
+    const pollResult = await pollOnce()
     pollCount += 1
-    await options.onProgress?.(pollResult.status)
-
-    const failureReason = options.isFailed(pollResult.status)
-    if (failureReason) {
-      throw new Error(failureReason)
-    }
 
     if (options.isComplete(pollResult.status)) {
       return {
