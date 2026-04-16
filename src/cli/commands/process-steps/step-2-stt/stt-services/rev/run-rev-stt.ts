@@ -285,6 +285,32 @@ const normalizeTranscriptOutput = (
   }
 }
 
+const evidenceWordsFromTranscript = (
+  transcript: RevTranscriptResponse,
+  offsetSeconds: number
+) => transcript.monologues
+  .flatMap((monologue) => monologue.elements.map((element) => {
+    if ((element.type !== 'text' && element.type !== 'punct') || typeof element.ts !== 'number' || typeof element.end_ts !== 'number') {
+      return null
+    }
+
+    const text = element.value.trim()
+    if (text.length === 0) {
+      return null
+    }
+
+    return {
+      startSeconds: element.ts + offsetSeconds,
+      endSeconds: element.end_ts + offsetSeconds,
+      text,
+      normalized: text.toLowerCase(),
+      ...(formatSpeakerLabel(monologue.speaker) ? { speaker: formatSpeakerLabel(monologue.speaker) } : {}),
+      ...(typeof element.confidence === 'number' ? { confidence: element.confidence } : {}),
+      timingSource: 'native' as const
+    }
+  }))
+  .filter((word): word is NonNullable<typeof word> => word !== null)
+
 export const runRevStt = async (
   audioPath: string,
   outputDir: string,
@@ -579,6 +605,7 @@ export const runRevStt = async (
     }
 
     const transcriptOutput = normalizeTranscriptOutput(transcript, offsetSeconds)
+    const evidenceWords = evidenceWordsFromTranscript(transcript, offsetSeconds)
     const { finalSegments, finalText } = resolveTranscriptionOutput(
       transcriptOutput.segments,
       transcriptOutput.text,
@@ -622,7 +649,19 @@ export const runRevStt = async (
     return {
       result: {
         text: finalText,
-        segments: finalSegments
+        segments: finalSegments,
+        evidence: {
+          ...(evidenceWords.length > 0 ? {
+            words: evidenceWords
+          } : {}),
+          capabilities: {
+            hasNativeWordTiming: evidenceWords.length > 0,
+            hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
+            hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
+          },
+          timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+          rawResponse: transcript
+        }
       },
       metadata
     }

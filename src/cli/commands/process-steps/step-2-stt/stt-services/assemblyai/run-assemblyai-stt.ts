@@ -487,6 +487,15 @@ export const runAssemblyAiTranscribe = async (
   }
 
   const text = (transcript.text ?? '').trim()
+  const evidenceWords = transcript.words?.map((word) => ({
+    startSeconds: (word.start / 1000) + offsetSeconds,
+    endSeconds: (word.end / 1000) + offsetSeconds,
+    text: word.text,
+    normalized: word.text.toLowerCase(),
+    ...(formatSpeaker(word.speaker) ? { speaker: formatSpeaker(word.speaker) } : {}),
+    confidence: word.confidence,
+    timingSource: 'native' as const
+  })) ?? []
 
   const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
 
@@ -528,7 +537,19 @@ export const runAssemblyAiTranscribe = async (
   return {
     result: {
       text: finalText,
-      segments: finalSegments
+      segments: finalSegments,
+      evidence: {
+        ...(evidenceWords.length > 0 ? {
+          words: evidenceWords
+        } : {}),
+        capabilities: {
+          hasNativeWordTiming: evidenceWords.length > 0,
+          hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
+          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
+        },
+        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+        rawResponse: transcript
+      }
     },
     metadata
   }

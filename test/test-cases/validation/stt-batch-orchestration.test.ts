@@ -36,6 +36,11 @@ const registerCleanupPath = (path: string | undefined): void => {
   }
 }
 
+const readFetchRequest = (input: string | URL | Request, init?: RequestInit): { url: string, method: string } => ({
+  url: input instanceof Request ? input.url : String(input),
+  method: input instanceof Request ? input.method : init?.method ?? 'GET'
+})
+
 const createBatchInputs = async (label: string, count = 2): Promise<string[]> => {
   const dir = await mkdtemp(join(tmpdir(), label))
   registerCleanupPath(dir)
@@ -59,8 +64,7 @@ const createSonioxSuccessFetch = (
   let mistralCalls = 0
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = String(input)
-    const method = init?.method ?? 'GET'
+    const { url, method } = readFetchRequest(input, init)
 
     if (url === 'https://soniox.test/v1/files' && method === 'POST') {
       return new Response(JSON.stringify({ id: `file-${nextFileId++}` }), {
@@ -136,8 +140,7 @@ const createCoordinatedProviderFetch = (): CoordinatedProviderFetch => {
   }
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = String(input)
-    const method = init?.method ?? 'GET'
+    const { url, method } = readFetchRequest(input, init)
 
     if (url.startsWith('https://deepgram.test/v1/listen') && method === 'POST') {
       deepgramCalls += 1
@@ -211,13 +214,16 @@ const createCoordinatedProviderFetch = (): CoordinatedProviderFetch => {
     if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
       mistralCalls += 1
       return new Response(JSON.stringify({
+        model: 'voxtral-mini-latest',
         text: `Mistral transcript ${mistralCalls}.`,
+        language: null,
+        usage: {},
         segments: [
           {
             start: 0,
             end: 1,
             text: `Mistral transcript ${mistralCalls}.`,
-            speaker_id: 1
+            speaker_id: 'speaker_1'
           }
         ]
       }), {
@@ -266,8 +272,7 @@ const createAsyncCreateReleaseFetch = (): AsyncCreateReleaseFetch => {
   }
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = String(input)
-    const method = init?.method ?? 'GET'
+    const { url, method } = readFetchRequest(input, init)
 
     if (url === 'https://soniox.test/v1/files' && method === 'POST') {
       return new Response(JSON.stringify({ id: `file-${nextFileId++}` }), {
@@ -318,13 +323,16 @@ const createAsyncCreateReleaseFetch = (): AsyncCreateReleaseFetch => {
     if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
       mistralCalls += 1
       return new Response(JSON.stringify({
+        model: 'voxtral-mini-latest',
         text: `Mistral transcript ${mistralCalls}.`,
+        language: null,
+        usage: {},
         segments: [
           {
             start: 0,
             end: 1,
             text: `Mistral transcript ${mistralCalls}.`,
-            speaker_id: 1
+            speaker_id: 'speaker_1'
           }
         ]
       }), {
@@ -605,13 +613,16 @@ test('runSttBatch backfills retryable provider failures within the same invocati
     }
 
     return new Response(JSON.stringify({
+      model: 'voxtral-mini-latest',
       text: 'Recovered Mistral transcript.',
+      language: null,
+      usage: {},
       segments: [
         {
           start: 0,
           end: 1,
           text: 'Recovered Mistral transcript.',
-          speaker_id: 1
+          speaker_id: 'speaker_1'
         }
       ]
     }), {
@@ -664,8 +675,7 @@ test('runSttBatch performs a single automatic backfill sweep for retryable async
   let assemblyAiPolls = 0
   let mistralCalls = 0
   globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = String(input)
-    const method = init?.method ?? 'GET'
+    const { url, method } = readFetchRequest(input, init)
 
     if (url === 'https://assemblyai.test/v2/upload' && method === 'POST') {
       return new Response(JSON.stringify({
@@ -698,13 +708,16 @@ test('runSttBatch performs a single automatic backfill sweep for retryable async
     if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
       mistralCalls += 1
       return new Response(JSON.stringify({
+        model: 'voxtral-mini-latest',
         text: `Mistral transcript ${mistralCalls}.`,
+        language: null,
+        usage: {},
         segments: [
           {
             start: 0,
             end: 1,
             text: `Mistral transcript ${mistralCalls}.`,
-            speaker_id: 1
+            speaker_id: 'speaker_1'
           }
         ]
       }), {

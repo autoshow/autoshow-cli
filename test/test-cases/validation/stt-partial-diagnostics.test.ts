@@ -13,6 +13,11 @@ const originalMistralApiKey = process.env['MISTRAL_API_KEY']
 const originalMistralBaseUrl = process.env['MISTRAL_BASE_URL']
 const tempDirs: string[] = []
 
+const readFetchRequest = (input: string | URL | Request, init?: RequestInit): { url: string, method: string } => ({
+  url: input instanceof Request ? input.url : String(input),
+  method: input instanceof Request ? input.method : init?.method ?? 'GET'
+})
+
 afterEach(async () => {
   globalThis.fetch = originalFetch
 
@@ -56,8 +61,7 @@ describe('processStt partial failure diagnostics', () => {
     process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
 
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-      const url = String(input)
-      const method = init?.method ?? 'GET'
+      const { url, method } = readFetchRequest(input, init)
 
       if (url === 'https://soniox.test/v1/files' && method === 'POST') {
         return new Response(JSON.stringify({ id: 'file-1' }), {
@@ -104,13 +108,16 @@ describe('processStt partial failure diagnostics', () => {
 
       if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
         return new Response(JSON.stringify({
+          model: 'voxtral-mini-latest',
           text: 'Hello from Mistral',
+          language: null,
+          usage: {},
           segments: [
             {
               start: 0,
               end: 1.5,
               text: 'Hello from Mistral',
-              speaker_id: 1
+              speaker_id: 'speaker_1'
             }
           ]
         }), {

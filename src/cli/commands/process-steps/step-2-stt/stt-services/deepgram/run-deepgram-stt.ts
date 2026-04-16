@@ -140,6 +140,33 @@ const segmentsFromWords = (
   )
 }
 
+const evidenceWordsFromDeepgram = (
+  words: DeepgramWords | undefined,
+  offsetSeconds: number
+) => {
+  if (!words) {
+    return []
+  }
+
+  return words
+    .map((word) => {
+      const text = (word.punctuated_word ?? word.word ?? '').trim()
+      if (text.length === 0 || typeof word.start !== 'number' || typeof word.end !== 'number') {
+        return null
+      }
+
+      return {
+        startSeconds: word.start + offsetSeconds,
+        endSeconds: word.end + offsetSeconds,
+        text,
+        normalized: text.toLowerCase(),
+        ...(word.speaker !== undefined ? { speaker: formatSpeakerLabel(word.speaker) } : {}),
+        timingSource: 'native' as const
+      }
+    })
+    .filter((word): word is NonNullable<typeof word> => word !== null)
+}
+
 export const runDeepgramTranscribe = async (
   audioPath: string,
   outputDir: string,
@@ -239,6 +266,7 @@ export const runDeepgramTranscribe = async (
 
   const processingTime = Date.now() - startTime
   const remoteProcessingMs = Math.max(0, processingTime - transcribeMs)
+  const evidenceWords = evidenceWordsFromDeepgram(primaryAlternative?.words, offsetSeconds)
   const metadata: Step2Metadata = {
     transcriptionService: 'deepgram',
     transcriptionModel: modelName,
@@ -265,7 +293,19 @@ export const runDeepgramTranscribe = async (
   return {
     result: {
       text: finalText,
-      segments: finalSegments
+      segments: finalSegments,
+      evidence: {
+        ...(evidenceWords.length > 0 ? {
+          words: evidenceWords
+        } : {}),
+        capabilities: {
+          hasNativeWordTiming: evidenceWords.length > 0,
+          hasConfidence: false,
+          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
+        },
+        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+        rawResponse: payload
+      }
     },
     metadata
   }

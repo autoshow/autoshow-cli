@@ -128,6 +128,35 @@ const segmentsFromWords = (
   return buildSegmentsFromWords(normalized, offsetSeconds)
 }
 
+const evidenceWordsFromApi = (
+  words: ElevenLabsSttResponse['words'],
+  offsetSeconds: number
+) => {
+  if (!words) {
+    return []
+  }
+
+  return words
+    .map((word) => {
+      const text = (word.text ?? word.word ?? '').trim()
+      const start = parseSeconds(word.start)
+      const end = parseSeconds(word.end)
+      if (text.length === 0 || start === null || end === null) {
+        return null
+      }
+
+      return {
+        startSeconds: start + offsetSeconds,
+        endSeconds: end + offsetSeconds,
+        text,
+        normalized: text.toLowerCase(),
+        ...(word.speaker_id !== undefined ? { speaker: formatSpeakerLabel(word.speaker_id) } : {}),
+        timingSource: 'native' as const
+      }
+    })
+    .filter((word): word is NonNullable<typeof word> => word !== null)
+}
+
 export const runElevenLabsTranscribe = async (
   audioPath: string,
   outputDir: string,
@@ -224,6 +253,7 @@ export const runElevenLabsTranscribe = async (
   const segmentsFromApi = segmentsFromApiSegments(payload.segments, offsetSeconds)
   const segmentsFromWordTiming = segmentsFromWords(payload.words, offsetSeconds)
   const segments = segmentsFromApi.length > 0 ? segmentsFromApi : segmentsFromWordTiming
+  const evidenceWords = evidenceWordsFromApi(payload.words, offsetSeconds)
 
   const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
 
@@ -258,7 +288,19 @@ export const runElevenLabsTranscribe = async (
   return {
     result: {
       text: finalText,
-      segments: finalSegments
+      segments: finalSegments,
+      evidence: {
+        ...(evidenceWords.length > 0 ? {
+          words: evidenceWords
+        } : {}),
+        capabilities: {
+          hasNativeWordTiming: evidenceWords.length > 0,
+          hasConfidence: false,
+          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
+        },
+        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+        rawResponse: payload
+      }
     },
     metadata
   }

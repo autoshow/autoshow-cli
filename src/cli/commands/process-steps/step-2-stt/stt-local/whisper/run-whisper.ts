@@ -206,7 +206,8 @@ export const runWhisperTranscribe = async (
       )
     }
     const jsonText = await Bun.file(jsonFile).text()
-    const words = extractWhisperWords(jsonText)
+    const rawResponse = JSON.parse(jsonText) as unknown
+    let words = extractWhisperWords(jsonText)
     await Bun.write(`${outputBase}.words.json`, JSON.stringify(words))
     let { text, segments } = parseWhisperJson(jsonText)
     if (segmentOffsetMinutes > 0) {
@@ -229,6 +230,7 @@ export const runWhisperTranscribe = async (
         }
       })
       const shiftedWords = words.map(w => ({ ...w, start: w.start + offsetSeconds, end: w.end + offsetSeconds }))
+      words = shiftedWords
       await Bun.write(`${outputBase}.words.json`, JSON.stringify(shiftedWords))
     }
     if (!preserveJson) {
@@ -251,7 +253,26 @@ export const runWhisperTranscribe = async (
       tokenCount
     }
     return {
-      result: { text, segments },
+      result: {
+        text,
+        segments,
+        evidence: {
+          words: words.map((word) => ({
+            startSeconds: word.start,
+            endSeconds: word.end,
+            text: word.word,
+            normalized: word.word.toLowerCase(),
+            timingSource: 'native'
+          })),
+          capabilities: {
+            hasNativeWordTiming: true,
+            hasConfidence: false,
+            hasSpeakerLabels: false
+          },
+          timingQuality: 'native_word',
+          rawResponse
+        }
+      },
       metadata
     }
   } catch (error) {

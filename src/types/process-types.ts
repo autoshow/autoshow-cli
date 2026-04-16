@@ -280,9 +280,58 @@ export type TranscriptionSegment = {
   speaker?: string | undefined
 }
 
+export type TranscriptionEvidenceTimingSource = 'native' | 'interpolated'
+
+export type TranscriptionEvidenceSegment = {
+  startSeconds: number
+  endSeconds: number
+  text: string
+  speaker?: string | undefined
+  confidence?: number | undefined
+}
+
+export type TranscriptionEvidenceWord = {
+  startSeconds: number
+  endSeconds: number
+  text: string
+  normalized: string
+  speaker?: string | undefined
+  confidence?: number | undefined
+  timingSource: TranscriptionEvidenceTimingSource
+}
+
+export type TranscriptionEvidenceCapabilities = {
+  hasNativeWordTiming: boolean
+  hasConfidence: boolean
+  hasSpeakerLabels: boolean
+}
+
+export type TranscriptionEvidenceTimingQuality = 'native_word' | 'segment_interpolated' | 'coarse'
+
+export type TranscriptionEvidence = {
+  segments?: TranscriptionEvidenceSegment[] | undefined
+  words?: TranscriptionEvidenceWord[] | undefined
+  capabilities?: Partial<TranscriptionEvidenceCapabilities> | undefined
+  timingQuality?: TranscriptionEvidenceTimingQuality | undefined
+  rawResponse?: unknown
+}
+
+export type PersistedTranscriptionEvidence = {
+  service: string
+  model: string
+  label: string
+  transcriptText: string
+  segments: TranscriptionEvidenceSegment[]
+  words: TranscriptionEvidenceWord[]
+  capabilities: TranscriptionEvidenceCapabilities
+  timingQuality: TranscriptionEvidenceTimingQuality
+  speakerInventory: string[]
+}
+
 export type TranscriptionResult = {
   text: string
   segments: TranscriptionSegment[]
+  evidence?: TranscriptionEvidence | undefined
 }
 
 export type DiarizationOptions = {
@@ -338,25 +387,24 @@ export type Step2Metadata = {
   runtime?: Step2RuntimeMetadata | undefined
 }
 
-export const MistralTranscriptionSegmentSchema = v.object({
+export const MistralTranscriptionSegmentSchema = v.looseObject({
   start: v.number(),
   end: v.number(),
   text: v.string(),
-  speaker_id: v.optional(v.union([v.string(), v.number()]), undefined),
-  type: v.optional(v.string(), undefined),
-  additionalProperties: v.optional(v.record(v.string(), v.unknown()), undefined)
+  speakerId: v.optional(v.nullable(v.union([v.string(), v.number()])), undefined),
+  speaker_id: v.optional(v.nullable(v.union([v.string(), v.number()])), undefined),
+  type: v.optional(v.string(), undefined)
 })
 
-export const MistralTranscriptionResponseSchema = v.object({
+export const MistralTranscriptionResponseSchema = v.looseObject({
   model: v.optional(v.string(), undefined),
   text: v.optional(v.string(), undefined),
   language: v.optional(v.nullable(v.string()), undefined),
   segments: v.optional(v.array(MistralTranscriptionSegmentSchema), undefined),
-  usage: v.optional(v.object({
-    promptAudioSeconds: v.optional(v.number(), undefined),
-    additionalProperties: v.optional(v.record(v.string(), v.unknown()), undefined)
+  usage: v.optional(v.looseObject({
+    promptAudioSeconds: v.optional(v.nullable(v.number()), undefined),
+    prompt_audio_seconds: v.optional(v.nullable(v.number()), undefined)
   }), undefined),
-  additionalProperties: v.optional(v.record(v.string(), v.unknown()), undefined)
 })
 
 export const MistralOcrPageSchema = v.object({

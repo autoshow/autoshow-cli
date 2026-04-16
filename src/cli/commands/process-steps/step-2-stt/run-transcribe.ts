@@ -14,6 +14,7 @@ import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
 import { formatTranscriptText } from './stt-utils/transcription-utils'
+import { buildPersistedTranscriptionEvidence, mergeTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/transcription-evidence'
 import { fileExists } from '~/utils/cli-utils'
 import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
@@ -250,6 +251,20 @@ type IndexedTranscriptionChunk = {
   data: { result: TranscriptionResult, metadata: Step2Metadata }
 }
 
+const persistTranscriptionEvidenceArtifacts = async (
+  outputDir: string,
+  result: TranscriptionResult,
+  metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
+): Promise<void> => {
+  const evidence = buildPersistedTranscriptionEvidence(result, metadata)
+  await Bun.write(`${outputDir}/transcription.evidence.json`, `${JSON.stringify(evidence, null, 2)}\n`)
+
+  const rawResponse = serializeEvidenceRawResponse(result)
+  if (rawResponse !== null) {
+    await Bun.write(`${outputDir}/transcription.raw.json`, rawResponse)
+  }
+}
+
 export const ensureTranscribeTargetSetup = async (
   target: Pick<SttTarget, 'service' | 'model'>
 ): Promise<void> => {
@@ -442,7 +457,8 @@ export const mergeSplitTranscriptionChunks = (
 
   const combinedResult = {
     text: segmentResults.map(s => s.result.text).join(' '),
-    segments: segmentResults.flatMap(s => s.result.segments)
+    segments: segmentResults.flatMap(s => s.result.segments),
+    evidence: mergeTranscriptionEvidence(segmentResults.map((segment) => segment.result.evidence))
   }
 
   const totalProcessingTime = segmentResults.reduce((sum, s) => sum + s.metadata.processingTime, 0)
@@ -524,6 +540,7 @@ const runSplitTranscription = async (
 
   const combined = mergeSplitTranscriptionChunks(results)
   await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(combined.result.segments))
+  await persistTranscriptionEvidenceArtifacts(outputDir, combined.result, combined.metadata)
   return combined
 }
 
@@ -550,7 +567,9 @@ export const transcribeTarget = async (
   }
 
   try {
-    return await dispatchTranscribe(target, audioPath, outputDir, 0, options)
+    const transcription = await dispatchTranscribe(target, audioPath, outputDir, 0, options)
+    await persistTranscriptionEvidenceArtifacts(outputDir, transcription.result, transcription.metadata)
+    return transcription
   } catch (error) {
     if (shouldRetrySplitTranscriptionAfterError(target.service, options.split === true, error)) {
       l.warn(`${target.service[0]!.toUpperCase()}${target.service.slice(1)} rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)

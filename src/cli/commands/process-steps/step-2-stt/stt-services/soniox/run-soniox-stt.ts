@@ -700,6 +700,24 @@ export const runSonioxStt = async (
           end: toTimestamp(offsetSeconds),
           text
         }]
+    const evidenceWords = transcript.tokens
+      .map((token) => {
+        const textValue = token.text.trim()
+        if (textValue.length === 0 || typeof token.start_ms !== 'number' || typeof token.end_ms !== 'number') {
+          return null
+        }
+
+        return {
+          startSeconds: (token.start_ms / 1000) + offsetSeconds,
+          endSeconds: (token.end_ms / 1000) + offsetSeconds,
+          text: textValue,
+          normalized: textValue.toLowerCase(),
+          ...(formatSpeakerLabel(token.speaker) ? { speaker: formatSpeakerLabel(token.speaker) } : {}),
+          ...(typeof token.confidence === 'number' ? { confidence: token.confidence } : {}),
+          timingSource: 'native' as const
+        }
+      })
+      .filter((word): word is NonNullable<typeof word> => word !== null)
 
     await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
 
@@ -752,7 +770,19 @@ export const runSonioxStt = async (
 
     const result: TranscriptionResult = {
       text,
-      segments: finalSegments
+      segments: finalSegments,
+      evidence: {
+        ...(evidenceWords.length > 0 ? {
+          words: evidenceWords
+        } : {}),
+        capabilities: {
+          hasNativeWordTiming: evidenceWords.length > 0,
+          hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
+          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
+        },
+        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+        rawResponse: transcript
+      }
     }
 
     return { result, metadata }

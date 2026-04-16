@@ -95,7 +95,10 @@ const parseSttManifestProviderSummaries = (
       : undefined
 
     summaries.push({
-      label: formatSttTargetLabel({ service: value['service'], model: value['model'] }),
+      label: formatSttTargetLabel({
+        service: value['service'] as Parameters<typeof formatSttTargetLabel>[0]['service'],
+        model: value['model']
+      }),
       status,
       ...(message ? { message } : {})
     })

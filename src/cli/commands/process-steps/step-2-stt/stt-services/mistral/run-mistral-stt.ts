@@ -1,4 +1,6 @@
 import { basename } from 'node:path'
+import { Mistral } from '@mistralai/mistralai'
+import { ConnectionError, MistralError, RequestAbortedError, RequestTimeoutError } from '@mistralai/mistralai/models/errors'
 import type { Step2Metadata, TranscriptionResult, TranscriptionSegment, DiarizationOptions, RetryClass } from '~/types'
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
@@ -16,25 +18,45 @@ type MistralHttpError = Error & {
   retryClass?: RetryClass
 }
 
-const buildMistralForm = (audioPath: string, fileBytes: Uint8Array, modelName: string): FormData => {
-  const form = new FormData()
-  form.append('model', modelName)
-  form.append('file', new Blob([fileBytes]), basename(audioPath))
-  form.append('timestamp_granularities[]', 'segment')
-  form.append('diarize', 'true')
-  return form
-}
-
-const toMistralHttpError = (response: Response, errText: string): MistralHttpError => {
+const toMistralHttpError = (status: number, headers: Headers, errText: string): MistralHttpError => {
   return Object.assign(
-    new Error(`Mistral transcription failed (${response.status}): ${errText}`),
+    new Error(`Mistral transcription failed (${status}): ${errText}`),
     {
-      status: response.status,
-      headers: response.headers,
+      status,
+      headers,
       stage: 'transcribe' as const,
       retryClass: 'runtime_http_create_conservative' as const
     }
   )
+}
+
+const normalizeMistralServerURL = (serverURL: string): string => serverURL.replace(/\/v1\/?$/, '')
+
+const isMistralRetryWrapper = (error: unknown): error is Error & { cause: Error } =>
+  error instanceof Error
+  && error.cause instanceof Error
+  && error.message.startsWith('mistral-stt failed after ')
+
+const toRetryableMistralError = (error: unknown): Error => {
+  if (error instanceof MistralError) {
+    if (error.statusCode < 400) {
+      return error
+    }
+    const errText = error.body.length > 0 ? error.body : error.message
+    return toMistralHttpError(error.statusCode, error.headers, errText)
+  }
+
+  if (error instanceof RequestAbortedError || error instanceof RequestTimeoutError) {
+    const abortError = new Error(error.message)
+    abortError.name = 'AbortError'
+    return abortError
+  }
+
+  if (error instanceof ConnectionError) {
+    return new TypeError(error.message)
+  }
+
+  return error instanceof Error ? error : new Error(String(error))
 }
 
 const throwMistralErrorWithContext = (
@@ -42,7 +64,7 @@ const throwMistralErrorWithContext = (
   stage: 'transcribe',
   retryClass: RetryClass
 ): never => {
-  if (error instanceof Error && error.cause instanceof Error) {
+  if (isMistralRetryWrapper(error)) {
     ;(error.cause as MistralHttpError).stage = stage
     ;(error.cause as MistralHttpError).retryClass = retryClass
     throw error.cause
@@ -55,15 +77,14 @@ const throwMistralErrorWithContext = (
 }
 
 const readSpeakerId = (segment: {
-  speaker_id?: string | number | undefined
-  additionalProperties?: Record<string, unknown> | undefined
+  speakerId?: string | number | null | undefined
+  speaker_id?: string | number | null | undefined
 }): string | number | undefined => {
-  if (segment.speaker_id !== undefined) {
-    return segment.speaker_id
+  if (segment.speakerId !== undefined && segment.speakerId !== null) {
+    return segment.speakerId
   }
-  const fromAdditional = segment.additionalProperties?.['speaker_id']
-  if (typeof fromAdditional === 'string' || typeof fromAdditional === 'number') {
-    return fromAdditional
+  if (segment.speaker_id !== undefined && segment.speaker_id !== null) {
+    return segment.speaker_id
   }
   return undefined
 }
@@ -73,8 +94,8 @@ const toSegments = (
     start: number
     end: number
     text: string
-    speaker_id?: string | number | undefined
-    additionalProperties?: Record<string, unknown> | undefined
+    speakerId?: string | number | null | undefined
+    speaker_id?: string | number | null | undefined
   }>,
   offsetSeconds: number
 ): TranscriptionSegment[] => {
@@ -119,8 +140,14 @@ export const runMistralStt = async (
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
-  const fileBytes = new Uint8Array(await Bun.file(audioPath).arrayBuffer())
-  const baseURL = readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1'
+  const fileBytes = await Bun.file(audioPath).arrayBuffer()
+  const serverURL = normalizeMistralServerURL(readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1')
+  const client = new Mistral({
+    apiKey,
+    retryConfig: { strategy: 'none' },
+    timeoutMs: REQUEST_TIMEOUT_MS,
+    serverURL
+  })
   let transcribeMs = 0
 
   let rawPayload: unknown
@@ -134,20 +161,22 @@ export const runMistralStt = async (
         timeoutMs: REQUEST_TIMEOUT_MS
       },
       async (signal) => {
-        const response = await fetch(`${baseURL}/audio/transcriptions`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`
-          },
-          body: buildMistralForm(audioPath, fileBytes, modelName),
-          signal: signal ?? null
-        })
-
-        if (!response.ok) {
-          throw toMistralHttpError(response, await response.text())
+        try {
+          return await client.audio.transcriptions.complete(
+            {
+              model: modelName,
+              file: {
+                fileName: basename(audioPath),
+                content: fileBytes
+              },
+              diarize: true,
+              timestampGranularities: ['segment']
+            },
+            signal ? { signal } : undefined
+          )
+        } catch (error) {
+          throw toRetryableMistralError(error)
         }
-
-        return await response.json()
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
     )
@@ -192,7 +221,16 @@ export const runMistralStt = async (
   return {
     result: {
       text,
-      segments: finalSegments
+      segments: finalSegments,
+      evidence: {
+        capabilities: {
+          hasNativeWordTiming: false,
+          hasConfidence: false,
+          hasSpeakerLabels: finalSegments.some((segment) => segment.speaker !== undefined)
+        },
+        timingQuality: 'segment_interpolated',
+        rawResponse: payload
+      }
     },
     metadata
   }

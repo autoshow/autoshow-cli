@@ -9,6 +9,11 @@ const originalMistralApiKey = process.env['MISTRAL_API_KEY']
 const originalMistralBaseUrl = process.env['MISTRAL_BASE_URL']
 const tempDirs: string[] = []
 
+const readFetchRequest = (input: string | URL | Request, init?: RequestInit): { url: string, method: string } => ({
+  url: input instanceof Request ? input.url : String(input),
+  method: input instanceof Request ? input.method : init?.method ?? 'GET'
+})
+
 const createAudioFixture = async (): Promise<{ audioPath: string, outputDir: string }> => {
   const outputDir = await mkdtemp(join(tmpdir(), 'autoshow-mistral-stt-'))
   tempDirs.push(outputDir)
@@ -48,8 +53,9 @@ describe('runMistralStt', () => {
     let attempts = 0
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
       attempts += 1
-      expect(input).toBe('https://mistral.test/v1/audio/transcriptions')
-      expect(init?.method).toBe('POST')
+      const { url, method } = readFetchRequest(input, init)
+      expect(url).toBe('https://mistral.test/v1/audio/transcriptions')
+      expect(method).toBe('POST')
 
       if (attempts === 1) {
         return new Response('<html><body>bad gateway</body></html>', {
@@ -59,13 +65,16 @@ describe('runMistralStt', () => {
       }
 
       return new Response(JSON.stringify({
+        model: 'voxtral-mini-latest',
         text: 'Hello world',
+        language: null,
+        usage: {},
         segments: [
           {
             start: 0,
             end: 1.2,
             text: 'Hello world',
-            speaker_id: 1
+            speaker_id: 'speaker_1'
           }
         ]
       }), {
@@ -87,7 +96,7 @@ describe('runMistralStt', () => {
           start: '00:00:00',
           end: '00:00:01',
           text: 'Hello world',
-          speaker: 'speaker-1'
+          speaker: 'speaker_1'
         }
       ]
     })
@@ -95,7 +104,7 @@ describe('runMistralStt', () => {
     expect(metadata.transcriptionModel).toBe('voxtral-mini-latest')
 
     const transcript = await Bun.file(join(outputDir, 'transcription.txt')).text()
-    expect(transcript).toBe('[00:00:00] [speaker-1] Hello world')
+    expect(transcript).toBe('[00:00:00] [speaker_1] Hello world')
   })
 
   test('does not retry non-retryable 4xx responses', async () => {

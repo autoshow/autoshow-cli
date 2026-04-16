@@ -148,7 +148,16 @@ export const runOpenAIStt = async (
   return {
     result: {
       text: finalText,
-      segments: finalSegments
+      segments: finalSegments,
+      evidence: {
+        capabilities: {
+          hasNativeWordTiming: false,
+          hasConfidence: false,
+          hasSpeakerLabels: finalSegments.some((segment) => segment.speaker !== undefined)
+        },
+        timingQuality: 'segment_interpolated',
+        rawResponse: payload
+      }
     },
     metadata
   }

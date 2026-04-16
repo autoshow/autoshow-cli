@@ -330,6 +330,32 @@ const toTranscriptOutput = (
   }
 }
 
+const evidenceWordsFromTranscript = (
+  transcript: SpeechmaticsTranscriptResponse,
+  offsetSeconds: number
+) => transcript.results
+  .map((result) => {
+    if (result.type !== 'word' && result.type !== 'punctuation') {
+      return null
+    }
+
+    const alternative = result.alternatives[0]
+    if (!alternative || alternative.content.trim().length === 0) {
+      return null
+    }
+
+    return {
+      startSeconds: result.start_time + offsetSeconds,
+      endSeconds: result.end_time + offsetSeconds,
+      text: alternative.content,
+      normalized: alternative.content.toLowerCase(),
+      ...(typeof alternative.speaker === 'string' && alternative.speaker.length > 0 ? { speaker: alternative.speaker } : {}),
+      ...(typeof alternative.confidence === 'number' ? { confidence: alternative.confidence } : {}),
+      timingSource: 'native' as const
+    }
+  })
+  .filter((word): word is NonNullable<typeof word> => word !== null)
+
 export const runSpeechmaticsStt = async (
   audioPath: string,
   outputDir: string,
@@ -624,6 +650,7 @@ export const runSpeechmaticsStt = async (
     }
 
     const transcriptOutput = toTranscriptOutput(transcript, offsetSeconds)
+    const evidenceWords = evidenceWordsFromTranscript(transcript, offsetSeconds)
     const { finalSegments, finalText } = resolveTranscriptionOutput(
       transcriptOutput.segments,
       transcriptOutput.text,
@@ -667,7 +694,19 @@ export const runSpeechmaticsStt = async (
     return {
       result: {
         text: finalText,
-        segments: finalSegments
+        segments: finalSegments,
+        evidence: {
+          ...(evidenceWords.length > 0 ? {
+            words: evidenceWords
+          } : {}),
+          capabilities: {
+            hasNativeWordTiming: evidenceWords.length > 0,
+            hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
+            hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
+          },
+          timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+          rawResponse: transcript
+        }
       },
       metadata
     }

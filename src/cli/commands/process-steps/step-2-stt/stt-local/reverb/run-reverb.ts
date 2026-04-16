@@ -220,6 +220,7 @@ export const runReverbTranscribe = async (
     }
     await waitForReverbResultFiles(resultDir)
     let transcription: TranscriptionResult
+    let evidence: TranscriptionResult['evidence'] | undefined
     let ctmPath: string | null = null
     if (hfToken) {
       ctmPath = await findCTMFile(resultDir)
@@ -228,11 +229,54 @@ export const runReverbTranscribe = async (
         if (rttmPath) {
           const jsonOutputPath = `${outputDir}/transcription${segmentSuffix}.json`
           const diarizedData = await mergeASRWithDiarization(ctmPath, rttmPath, jsonOutputPath)
-          if (diarizedData) {
+          if (diarizedData && typeof diarizedData === 'object' && diarizedData !== null) {
             l.success(`Successfully performed speaker diarization with ${version}`)
+            const rawSegments = Array.isArray((diarizedData as Record<string, unknown>)['segments'])
+              ? (diarizedData as Record<string, unknown>)['segments'] as Array<Record<string, unknown>>
+              : []
+            const evidenceWords = rawSegments.flatMap((segment) => {
+              const segmentSpeaker = typeof segment['speaker'] === 'string' && segment['speaker'] !== 'UNKNOWN'
+                ? segment['speaker']
+                : undefined
+              const segmentWords = Array.isArray(segment['words']) ? segment['words'] : []
+              return segmentWords.flatMap((word) => {
+                if (typeof word !== 'object' || word === null) {
+                  return []
+                }
+
+                const token = word as Record<string, unknown>
+                if (typeof token['start'] !== 'number' || typeof token['end'] !== 'number' || typeof token['word'] !== 'string') {
+                  return []
+                }
+
+                const text = token['word'].trim()
+                if (text.length === 0) {
+                  return []
+                }
+
+                return [{
+                  startSeconds: token['start'],
+                  endSeconds: token['end'],
+                  text,
+                  normalized: text.toLowerCase(),
+                  ...(segmentSpeaker ? { speaker: segmentSpeaker } : {}),
+                  timingSource: 'native' as const
+                }]
+              })
+            })
             await Bun.$`rm -f ${jsonOutputPath}`.quiet()
             l.success(`Deleted intermediary JSON file: ${jsonOutputPath}`)
             transcription = parseReverbWithSpeakers(diarizedData, segmentOffset)
+            evidence = {
+              ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
+              capabilities: {
+                hasNativeWordTiming: evidenceWords.length > 0,
+                hasConfidence: false,
+                hasSpeakerLabels: transcription.segments.some((segment) => segment.speaker !== undefined)
+              },
+              timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+              rawResponse: diarizedData
+            }
           } else {
             const textContent = await findAndReadOutputFile(resultDir)
             if (!textContent) throw new Error('Reverb transcription produced no readable output')
@@ -279,7 +323,13 @@ export const runReverbTranscribe = async (
       processingTime,
       tokenCount
     }
-    return { result: transcription, metadata }
+    return {
+      result: {
+        ...transcription,
+        ...(evidence ? { evidence } : {})
+      },
+      metadata
+    }
   } finally {
     await preparedInput?.cleanup()
   }

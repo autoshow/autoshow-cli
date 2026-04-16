@@ -105,7 +105,16 @@ export const runGroqTranscribe = async (
   return {
     result: {
       text,
-      segments: finalSegments
+      segments: finalSegments,
+      evidence: {
+        capabilities: {
+          hasNativeWordTiming: false,
+          hasConfidence: false,
+          hasSpeakerLabels: false
+        },
+        timingQuality: 'segment_interpolated',
+        rawResponse: payload
+      }
     },
     metadata
   }
