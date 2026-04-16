@@ -19,26 +19,26 @@ Resume is fully STT-specific today:
 
 **Why first**: Nothing else works until OCR batches produce the state that resume needs to read.
 
-- After multi-provider `processDocument` runs (`process-document.ts:128-201`), persist per-item resume metadata into the batch `info.json` entry using the same field names STT uses: `completionStatus`, `requestedProviders`, `providerStates`, `missingProviders`.
-- Map `ExtractTarget` (`{ service, model }`) into `providerStates` entries with `service`, `model`, `artifactDir`, `status` (`succeeded` | `failed`), `attempts: 1`, and optional `lastError`.
+- After multi-provider `processOcr` runs (`process-ocr.ts:128-201`), persist per-item resume metadata into the batch `info.json` entry using the same field names STT uses: `completionStatus`, `requestedProviders`, `providerStates`, `missingProviders`.
+- Map `OcrTarget` (`{ service, model }`) into `providerStates` entries with `service`, `model`, `artifactDir`, `status` (`succeeded` | `failed`), `attempts: 1`, and optional `lastError`.
 - Mark the entry `completionStatus: 'incomplete'` when `failures.length > 0 && successes.length > 0`, `'failed'` when `successes.length === 0`, `'full'` otherwise.
 - Add an explicit `source` object (`{ filePath?, url? }`) so resume can reconstruct the input without depending on `step1` fields. For local files use the original path; for direct-document URLs use the pre-download URL.
 - Single-provider OCR runs (only one explicit target) should still write `completionStatus: 'full'` but skip `providerStates` — there is nothing to resume with one provider.
 
 ### 2. Extract the direct-document URL temp download helper
 
-- The temp download path in `single-target.ts` that fetches a document URL into a temp file before calling `processDocument` should be extracted into a shared helper (e.g., `step-1-download/document/resolve-document-source.ts`).
+- The temp download path in `single-target.ts` that fetches a document URL into a temp file before calling `processOcr` should be extracted into a shared helper (e.g., `step-1-download/document/resolve-document-source.ts`).
 - Both normal execution and resume need this path so they don't duplicate the "is this a URL? download it first" logic.
 
-### 3. Make `processDocument` accept resume-mode options
+### 3. Make `processOcr` accept resume-mode options
 
-Add an optional `resumeRun` parameter to `processDocument`:
+Add an optional `resumeRun` parameter to `processOcr`:
 
 ```typescript
 resumeRun?: {
   outputDir: string           // reuse existing output directory
-  requestedTargets: ExtractTarget[]  // original full set
-  targetsToRun: ExtractTarget[]      // subset to rerun now
+  requestedTargets: OcrTarget[]  // original full set
+  targetsToRun: OcrTarget[]      // subset to rerun now
 }
 ```
 
@@ -91,10 +91,10 @@ type ResumeManifestEntry = {
 
 ### 6. Add OCR resume adapter
 
-- Uses `collectExplicitExtractTargets` for provider subset selection (same as normal OCR flag parsing).
+- Uses `collectExplicitOcrTargets` for provider subset selection (same as normal OCR flag parsing).
 - Validates that the user's provider flags are a subset of the original batch's `requestedProviders`.
 - Only treats batches with more than one explicit OCR provider as resumable (single-provider runs have nothing to selectively resume).
-- Calls `processDocument` with the `resumeRun` parameter for each incomplete entry.
+- Calls `processOcr` with the `resumeRun` parameter for each incomplete entry.
 - Single-pass only in phase 1 (no multi-pass retry loop like STT has for async jobs).
 
 ### 7. Update the dispatch in `handle-process-target.ts`
@@ -166,7 +166,7 @@ if (resumeMissingRequested) {
 
 1. **Step 1** (emit metadata) — unblocks everything else, zero risk to existing behavior
 2. **Step 2** (extract URL helper) — small standalone refactor
-3. **Step 3** (processDocument resume mode) — can be developed and tested in isolation
+3. **Step 3** (processOcr resume mode) — can be developed and tested in isolation
 4. **Step 4** (shared module) — the new abstraction layer
 5. **Step 5** (STT adapter) — refactor existing code behind the adapter interface
 6. **Step 6** (OCR adapter) — first new consumer

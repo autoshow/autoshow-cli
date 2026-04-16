@@ -1,15 +1,15 @@
 import type { ExtractionOptions } from '~/types'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 
-export type ExtractTarget = {
+export type OcrTarget = {
   service: 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm'
   model: string
 }
 
-export const collectExplicitExtractTargets = (
+export const collectExplicitOcrTargets = (
   opts: Pick<ExtractionOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel'>
-): ExtractTarget[] => {
-  const targets: ExtractTarget[] = []
+): OcrTarget[] => {
+  const targets: OcrTarget[] = []
 
   if (opts.useOcrmypdf === true) {
     targets.push({
@@ -42,12 +42,12 @@ export const collectExplicitExtractTargets = (
   return targets
 }
 
-export const getExtractTargetDirectoryName = (target: ExtractTarget): string =>
+export const getOcrTargetDirectoryName = (target: OcrTarget): string =>
   `${sanitizeModelName(target.service)}-${sanitizeModelName(target.model)}`
 
 export const buildExtractionOptionsForTarget = (
   opts: ExtractionOptions,
-  target: ExtractTarget
+  target: OcrTarget
 ): ExtractionOptions => ({
   ...opts,
   useOcrmypdf: target.service === 'ocrmypdf' ? true : undefined,

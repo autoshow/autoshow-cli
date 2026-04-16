@@ -9,7 +9,7 @@ import {
   resolveDiarizationOptions,
   shouldRetrySplitTranscriptionAfterError,
   shouldSplitTranscriptionInput
-} from '~/cli/commands/process-steps/step-2-stt/run-transcribe'
+} from '~/cli/commands/process-steps/step-2-stt/run-stt'
 
 describe('shouldSplitTranscriptionInput', () => {
   test('respects explicit split mode for any engine', () => {

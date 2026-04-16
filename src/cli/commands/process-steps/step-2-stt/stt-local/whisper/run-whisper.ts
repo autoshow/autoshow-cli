@@ -1,7 +1,7 @@
 import { mkdir, rm } from 'node:fs/promises'
 import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/logger'
-import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { parseWhisperJson, extractWhisperWords } from './parse-whisper-output'
 import { fileExists } from '~/utils/cli-utils'
 import { resolve } from 'node:path'

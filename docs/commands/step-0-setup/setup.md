@@ -13,8 +13,8 @@ Install local runtimes and prerequisite tools. Sample fixture generation is hand
 
 ## Step Setup Docs
 
-- Step 2 Extract: [`extract-document-local.md#setup`](../step-2-extract/extract-document-local.md#setup)
-- Step 2 Transcribe: [`transcribe-audio-local.md#setup`](../step-2-transcribe/transcribe-audio-local.md#setup)
+- Step 2 OCR: [`ocr-document-local.md#setup`](../step-2-ocr/ocr-document-local.md#setup)
+- Step 2 STT: [`stt-audio-local.md#setup`](../step-2-stt/stt-audio-local.md#setup)
 - Step 3 Write: [`write-text-local.md#setup`](../step-3-write/write-text-local.md#setup)
 - Step 4 TTS: [`text-to-speech-local.md#setup`](../step-4-tts/text-to-speech-local.md#setup)
 - Step 5 Image: [`text-to-image-setup.md`](../step-5-image/text-to-image-setup.md)

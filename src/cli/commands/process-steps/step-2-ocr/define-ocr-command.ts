@@ -6,7 +6,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, or URL list (.md/.txt)' }] as const
 
-export const extractCommand = defineCommand({
+export const ocrCommand = defineCommand({
   name: 'ocr',
   description: 'Extract text from PDF, EPUB, and image files',
   parameters: inputParameter,

@@ -44,7 +44,7 @@ bun as ocr input/examples/document/1-document.pdf --paddle-ocr
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms if the Calibre CLI tools are missing.
 
-HTML/article extraction through `defuddle` is bundled and does not require extra setup. Hosted article backends (`firecrawl`, `glm-reader`) are documented in [`extract-document-services.md`](./extract-document-services.md).
+HTML/article extraction through `defuddle` is bundled and does not require extra setup. Hosted article backends (`firecrawl`, `glm-reader`) are documented in [`ocr-document-services.md`](./ocr-document-services.md).
 
 ### Tooling Notes
 
@@ -191,27 +191,27 @@ These are the flags currently exposed by the standalone `ocr` command:
 - Supported image formats: PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF.
 - HTML/article inputs default to the bundled `defuddle` backend and produce `html+defuddle` extraction metadata.
 - Office files use native ZIP/XML extraction first and only fall back to OCR when the extracted text quality is poor.
-- `--mistral-ocr`, `--glm-ocr`, and hosted article backends are documented separately in [`extract-document-services.md`](./extract-document-services.md).
+- `--mistral-ocr`, `--glm-ocr`, and hosted article backends are documented separately in [`ocr-document-services.md`](./ocr-document-services.md).
 - Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are currently exposed through `write`, not through standalone `ocr`.
 
 ## Local Tests
 
 ```bash
 bun t \
-  test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-options.test.ts \
-  test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts
+  test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-options.test.ts \
+  test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
 
 ### Validation / Price / Non-E2E
 
-No standalone local OCR validation or price file exists. Validation is mixed into `extract-options.test.ts`.
+No standalone local OCR validation or price file exists. Validation is mixed into `ocr-options.test.ts`.
 
 ### Core Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-options.test.ts
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-options.test.ts
 ```
 
 Current coverage in this file includes:
@@ -226,13 +226,13 @@ Current coverage in this file includes:
 - rejection of non-JSON `--out` in EPUB inspect mode
 - non-EPUB fallback when `--epub-bun` is passed
 
-`extract-options.test.ts` does not currently have mapped `--test-price` commands.
+`ocr-options.test.ts` does not currently have mapped `--test-price` commands.
 
 ### Heavier Local Paths
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts --budget 5
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --budget 5
 ```
 
 Covers PaddleOCR image extraction.

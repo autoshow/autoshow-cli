@@ -18,9 +18,9 @@ import {
 import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audio/dl-audio'
 import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
 import { prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
-import { processDocument } from '~/cli/commands/process-steps/process-document'
+import { processOcr } from '~/cli/commands/process-steps/process-ocr'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
-import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-document/document-utils/doc-prompt-utils'
+import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/doc-prompt-utils'
 import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { ExtractionOptions } from '~/types'
@@ -31,7 +31,7 @@ import { classifyUrlInput, isDocumentByExtension, isHtmlDocumentPath, isLikelyUr
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-document/document-utils/extract-pricing'
+import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 import { estimateTokens } from '~/utils/text-utils'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
 
@@ -345,7 +345,7 @@ const runDocumentWrite = async (
   preparedDocument?: PreparedDocument
 ): Promise<{ outputDir: string }> => {
   const llmConfig = resolveLLMDefaults(opts)
-  const extraction = await processDocument(
+  const extraction = await processOcr(
     target,
     buildExtractionCallOpts(target, baseDir, opts),
     sourceRef,
@@ -597,7 +597,7 @@ const processExtractSingle = async (
   sourceRef?: Step1SourceRef,
   preparedDocument?: PreparedDocument
 ): Promise<{ outputDir: string }> => {
-  const extraction = await processDocument(
+  const extraction = await processOcr(
     target,
     buildExtractionCallOpts(target, baseDir, opts),
     sourceRef,

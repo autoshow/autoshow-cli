@@ -1,11 +1,11 @@
-# Extract Tests (services)
+# OCR Tests (services)
 
 ```bash
 bun t \
-  test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts \
-  test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-ocr.test.ts \
-  test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-firecrawl.test.ts \
-  test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-reader.test.ts
+  test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts \
+  test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts \
+  test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts \
+  test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
@@ -32,9 +32,9 @@ That suite includes setup guards for missing `FIRECRAWL_API_KEY` and `GLM_API_KE
 ### Mistral OCR
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts --test-price
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts --budget 25
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts --test-price
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts --budget 25
 ```
 
 Covers:
@@ -46,9 +46,9 @@ Requires `MISTRAL_API_KEY`.
 ### GLM OCR
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-ocr.test.ts
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-ocr.test.ts --test-price
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-ocr.test.ts --budget 25
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts --test-price
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts --budget 25
 ```
 
 Covers:
@@ -60,9 +60,9 @@ Requires `GLM_API_KEY`.
 ### Firecrawl Article Extraction
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-firecrawl.test.ts
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-firecrawl.test.ts --test-price
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-firecrawl.test.ts --budget 25
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --test-price
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --budget 25
 ```
 
 Covers:
@@ -75,9 +75,9 @@ Requires `FIRECRAWL_API_KEY`.
 ### GLM Reader Article Extraction
 
 ```bash
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-reader.test.ts
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-reader.test.ts --test-price
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-reader.test.ts --budget 25
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --test-price
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --budget 25
 ```
 
 Covers:
@@ -87,4 +87,4 @@ Covers:
 
 Requires `GLM_API_KEY`.
 
-Service setup details are in [`extract-document-services.md#service-environment`](./extract-document-services.md#service-environment).
+Service setup details are in [`ocr-document-services.md#service-environment`](./ocr-document-services.md#service-environment).

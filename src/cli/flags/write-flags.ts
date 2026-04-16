@@ -120,9 +120,9 @@ const writeMusicModelFlags = {
 export const writeFlags = {
   ...withHelpGroup(batchFlags, 'step-1-download'),
   ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
-  ...withHelpGroup(extractFlags, 'step-2-document'),
-  ...withHelpGroup(advancedExtractFlags, 'step-2-document'),
-  ...withHelpGroup(articleFlags, 'step-2-document'),
+  ...withHelpGroup(extractFlags, 'step-2-ocr'),
+  ...withHelpGroup(advancedExtractFlags, 'step-2-ocr'),
+  ...withHelpGroup(articleFlags, 'step-2-ocr'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
   ...withHelpGroup(promptOutputFlags, 'step-3-write'),

@@ -28,7 +28,7 @@ import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { resolveResumeSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/stt-batch/resume-stt-batch'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch'
-import { collectExplicitExtractTargets } from '~/cli/commands/process-steps/step-2-document/extract-targets'
+import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
 
 const runWithConcurrency = async <T,>(
   items: T[],
@@ -88,7 +88,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     if (opts.useEpubBun || opts.useEpubCalibre) {
       return ['metadata.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)']
     }
-    if (!htmlArticleInput && collectExplicitExtractTargets(opts).length > 1) {
+    if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
       return ['Extracted text', 'providers/<service>-<model>/extraction.txt', 'metadata.json']
     }
     return ['Extracted text', 'metadata.json']
@@ -113,7 +113,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   if (documentWrite) {
     const files = ['Extracted text', summaryFile]
     const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
-    if (!htmlArticleInput && collectExplicitExtractTargets(opts).length > 1) {
+    if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
       files.push('providers/<service>-<model>/extraction.txt')
     }
     files.push('prompt.md')

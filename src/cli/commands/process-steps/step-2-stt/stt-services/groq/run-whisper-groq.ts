@@ -1,6 +1,6 @@
 import type { Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import * as l from '~/logger'
-import { countTokens, toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import type { GroqTranscriptionSegment, GroqTranscriptionResponse } from '~/types'
 

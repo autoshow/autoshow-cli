@@ -159,4 +159,4 @@ FIRECRAWL_API_URL=http://localhost:3002 bun as ocr https://ajcwebdev.com --url-b
 - GLM Reader cost is not estimated locally during `--price`.
 - Local `.html` / `.htm` inputs always use `defuddle` even if `--url-backend firecrawl` or `--url-backend glm-reader` is passed.
 - Standalone `ocr` does not expose the advanced Tesseract tuning flags; those are only available through `write`.
-- Local tool setup is in [`extract-document-local.md#setup`](./extract-document-local.md#setup).
+- Local tool setup is in [`ocr-document-local.md#setup`](./ocr-document-local.md#setup).

@@ -18,8 +18,8 @@ import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
-import { transcribeTarget } from './step-2-stt/run-transcribe'
-import { formatTranscriptText } from './step-2-stt/stt-utils/transcription-utils'
+import { sttTarget } from './step-2-stt/run-stt'
+import { formatTranscriptText } from './step-2-stt/stt-utils/stt-utils'
 import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
 import { prepareSttMedia } from './step-2-stt/stt-media-cache'
 import { runLLM } from './step-3-write/run-llm'
@@ -127,7 +127,7 @@ export const processVideo = async (
     if (sttTargets.length === 1) {
       const target = sttTargets[0] as SttTarget
       const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
-        await transcribeTarget(audioPath, outputDir, target, {
+        await sttTarget(audioPath, outputDir, target, {
           split: processingOptions.split,
           reverbVerbatimicity: processingOptions.reverbVerbatimicity,
           sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
@@ -154,7 +154,7 @@ export const processVideo = async (
 
         try {
           const providerTranscription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
-            await transcribeTarget(audioPath, providerDir, target, {
+            await sttTarget(audioPath, providerDir, target, {
               split: processingOptions.split,
               reverbVerbatimicity: processingOptions.reverbVerbatimicity,
               sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency

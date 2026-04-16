@@ -92,54 +92,54 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
     reportOnly('transcribe-youtube-channel-batch-1', ['src/cli/create-cli.ts', 'stt', 'https://www.youtube.com/@fireship', '--batch-limit', '1', '--whisper', 'tiny', '--price']),
   ]),
 
-  ...exact('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-default.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-default.test.ts', [
     command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'tiny', '--price']),
     command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'base', '--price']),
     command('transcribe-whisper-split', 'transcribe-whisper-split', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--split', '--whisper', 'tiny', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-models-price.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts', [
     command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'tiny', '--price']),
     command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'base', '--price']),
     command('transcribe-whisper-small', 'transcribe-whisper-small', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'small', '--price']),
     command('transcribe-whisper-medium', 'transcribe-whisper-medium', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'medium', '--price']),
     command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-large-v3-turbo.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-large-v3-turbo.test.ts', [
     command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
     command('transcribe-whisper-large-v3-turbo-split', 'transcribe-whisper-large-v3-turbo-split', ['src/cli/create-cli.ts', 'stt', 'input/examples/video/2-video.mp4', '--whisper', 'large-v3-turbo', '--split', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/', [
     command('transcribe-reverb', 'transcribe-reverb', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--reverb', '--reverb-verbatimicity', '0.5', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/assemblyai/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/assemblyai/', [
     command('transcribe-assemblyai-universal-2', 'transcribe-assemblyai-universal-2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-2', '--price']),
     command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/deepgram/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/deepgram/', [
     command('transcribe-deepgram-nova-3', 'transcribe-deepgram-nova-3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deepgram-stt', 'nova-3', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/soniox/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/soniox/', [
     command('transcribe-soniox-stt-async-v4', 'transcribe-soniox-stt-async-v4', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v4', '--price']),
     command('transcribe-soniox-stt-async-v3', 'transcribe-soniox-stt-async-v3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v3', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/speechmatics/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/speechmatics/', [
     command('transcribe-speechmatics-standard', 'transcribe-speechmatics-standard', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--speechmatics-stt', 'standard', '--price']),
     command('transcribe-speechmatics-enhanced', 'transcribe-speechmatics-enhanced', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--speechmatics-stt', 'enhanced', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/rev/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/rev/', [
     command('transcribe-rev-machine', 'transcribe-rev-machine', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--rev-stt', 'machine', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/elevenlabs/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/elevenlabs/', [
     command('transcribe-elevenlabs-scribe_v2', 'transcribe-elevenlabs-scribe_v2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--elevenlabs-stt', 'scribe_v2', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/groq/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/groq/', [
     command('transcribe-groq-whisper-large-v3', 'transcribe-groq-whisper-large-v3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--groq-stt', 'whisper-large-v3', '--price']),
     command('transcribe-groq-whisper-large-v3-turbo', 'transcribe-groq-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--groq-stt', 'whisper-large-v3-turbo', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/openai/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/openai/', [
     command('transcribe-openai-gpt-4o-transcribe-diarize', 'transcribe-openai-gpt-4o-transcribe-diarize', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--openai-stt', 'gpt-4o-transcribe-diarize', '--price']),
   ]),
-  ...prefix('test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/mistral/', [
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/mistral/', [
     command('transcribe-mistral-voxtral-mini-2602', 'transcribe-mistral-voxtral-mini-2602', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--mistral-stt', 'voxtral-mini-2602', '--price']),
     command('transcribe-mistral-voxtral-mini-latest', 'transcribe-mistral-voxtral-mini-latest', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--mistral-stt', 'voxtral-mini-latest', '--price']),
   ]),
@@ -246,20 +246,20 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
     command('music-pipeline-minimax-music-2.5', 'music-pipeline-minimax-music-2.5', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price']),
   ]),
 
-  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-mistral-ocr.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts', [
     command('extract-mistral-mistral-ocr-latest', 'extract-mistral-mistral-ocr-latest', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-latest', '--price']),
     command('extract-mistral-mistral-ocr-2512', 'extract-mistral-mistral-ocr-2512', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2512', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-ocr.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts', [
     command('extract-glm-glm-ocr', 'extract-glm-glm-ocr', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-firecrawl.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts', [
     command('extract-firecrawl-url', 'extract-firecrawl-url', ['src/cli/create-cli.ts', 'ocr', 'https://ajcwebdev.com', '--url-backend', 'firecrawl', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-reader.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts', [
     reportOnly('extract-glm-reader-url', ['src/cli/create-cli.ts', 'ocr', 'https://ajcwebdev.com', '--url-backend', 'glm-reader', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts', [
     command('extract-paddle-ocr-image', 'extract-paddle-ocr-image', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--paddle-ocr', '--price']),
   ]),
 ]

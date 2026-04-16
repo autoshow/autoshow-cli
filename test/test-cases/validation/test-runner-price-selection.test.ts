@@ -124,11 +124,11 @@ describe('test runner price selection', () => {
       await listAllTestFiles(),
       [
         'test/test-cases/e2e/step-3-write-e2e/write-services/openai/',
-        'test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/whisper-models-price.test.ts',
+        'test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts',
       ]
     )
 
-    expect(resolved.suiteName).toBe('Selected paths: step-3-write-e2e/write-services/openai, step-2-transcribe-e2e/transcribe-local/whisper/whisper-models-price.test.ts')
+    expect(resolved.suiteName).toBe('Selected paths: step-3-write-e2e/write-services/openai, step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts')
     expect(resolved.commands.map(command => command.key).sort()).toEqual([
       'transcribe-whisper-base',
       'transcribe-whisper-large-v3-turbo',

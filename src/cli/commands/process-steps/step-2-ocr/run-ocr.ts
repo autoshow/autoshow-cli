@@ -15,20 +15,20 @@ import {
   type ExtractOcrEngine,
   type PageResult
 } from '~/types'
-import { ensureTesseractSetup, ocrImage } from './document-utils/tesseract-utils'
-import { processPages } from './document-utils/page-processor'
-import { runOcrmypdf } from './document-local/ocrmypdf/run-ocrmypdf'
-import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './document-local/paddle-ocr/run-paddle-ocr'
-import { runMistralOcr } from './document-services/mistral-ocr/run-mistral-ocr'
-import { runGlmOcr } from './document-services/glm-ocr/run-glm-ocr'
+import { ensureTesseractSetup, ocrImage } from './ocr-utils/tesseract-utils'
+import { processPages } from './ocr-utils/page-processor'
+import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
+import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
+import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
+import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
 import { convertDocumentToPdf } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { extractDocx, extractPptx, extractXlsx, extractOdf, type ZipXmlPage } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ZipXmlFormat } from '~/types'
-import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-document/document-services/mistral-ocr/mistral'
-import { ensureGlmOcrSetup } from './document-services/glm-ocr/glm'
+import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
+import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
-import { isOfficeTextUsable } from './document-utils/page-triage'
+import { isOfficeTextUsable } from './ocr-utils/page-triage'
 import { estimateTokens } from '~/utils/text-utils'
 
 const ZIP_XML_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'] as const)
@@ -414,7 +414,7 @@ const runHostedOcr = async (
   throw CLIUsageError('Hosted OCR requested without a configured hosted OCR model.')
 }
 
-export const runExtract = async (
+export const runOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   opts: ExtractionOptions

@@ -13,8 +13,8 @@ import { runOpenAIStt } from './stt-services/openai/run-openai-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
-import { formatTranscriptText } from './stt-utils/transcription-utils'
-import { buildPersistedTranscriptionEvidence, mergeTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/transcription-evidence'
+import { formatTranscriptText } from './stt-utils/stt-utils'
+import { buildPersistedTranscriptionEvidence, mergeTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/stt-evidence'
 import { fileExists } from '~/utils/cli-utils'
 import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
@@ -33,7 +33,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import type { SttTarget } from './stt-targets'
 import type { AsyncSttLifecycleHooks } from './stt-utils/async-stt-job-runner'
 
-export const TRANSCRIBE_ENGINE_CAPABILITIES = {
+export const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
   deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
@@ -115,7 +115,7 @@ export const shouldRetrySplitTranscriptionAfterError = (
   return SPLIT_RETRY_ON_TOO_LARGE_ENGINES.has(engine) && isPayloadTooLargeTranscriptionError(error)
 }
 
-const resolveTranscribeEngine = (options: ProcessingOptions): TranscribeEngine => {
+const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
   const hasReverb = options.useReverb === true
   const hasElevenlabs = typeof options.elevenlabsSttModel === 'string' && options.elevenlabsSttModel.length > 0
   const hasDeepgram = typeof options.deepgramSttModel === 'string' && options.deepgramSttModel.length > 0
@@ -177,9 +177,9 @@ type DiarizationFlagOptions = Pick<
   'diarizationSpeakerCount' | 'diarizationSpeakerNames' | 'diarizationSpeakerReferences'
 >
 
-export const getTranscribeEngineCapabilities = (
+export const getSttEngineCapabilities = (
   engine: TranscribeEngine
-): TranscribeEngineCapabilities => TRANSCRIBE_ENGINE_CAPABILITIES[engine]
+): TranscribeEngineCapabilities => STT_ENGINE_CAPABILITIES[engine]
 
 export const resolveDiarizationOptions = (
   options: DiarizationFlagOptions,
@@ -205,7 +205,7 @@ export const resolveDiarizationOptions = (
     }
   }
 
-  const capabilities = TRANSCRIBE_ENGINE_CAPABILITIES[engine]
+  const capabilities = STT_ENGINE_CAPABILITIES[engine]
   const diarizationOptions: DiarizationOptions = capabilities.diarizationByDefault
     ? { enabled: true }
     : {}
@@ -237,7 +237,7 @@ type WhisperProgressWindow = {
   totalDurationSeconds: number
 }
 
-type TranscribeTargetOptions = {
+type SttTargetOptions = {
   split?: boolean | undefined
   reverbVerbatimicity?: number | undefined
   sttSegmentConcurrency?: number | undefined
@@ -265,7 +265,7 @@ const persistTranscriptionEvidenceArtifacts = async (
   }
 }
 
-export const ensureTranscribeTargetSetup = async (
+export const ensureSttTargetSetup = async (
   target: Pick<SttTarget, 'service' | 'model'>
 ): Promise<void> => {
   if (target.service === 'reverb') {
@@ -309,12 +309,12 @@ export const ensureTranscribeTargetSetup = async (
   }
 }
 
-const dispatchTranscribe = async (
+const dispatchStt = async (
   target: SttTarget,
   audioPath: string,
   outputDir: string,
   segmentOffsetMinutes: number,
-  options: TranscribeTargetOptions,
+  options: SttTargetOptions,
   segmentNumber?: number,
   totalSegments?: number,
   whisperProgress?: WhisperProgressWindow | undefined
@@ -482,7 +482,7 @@ const runSplitTranscription = async (
   target: SttTarget,
   audioPath: string,
   outputDir: string,
-  options: TranscribeTargetOptions
+  options: SttTargetOptions
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const segmentDescriptors = await splitAudioFile(audioPath, outputDir, SPLIT_SEGMENT_DURATION_MINUTES)
   const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
@@ -503,7 +503,7 @@ const runSplitTranscription = async (
       const offsetMinutes = segmentDescriptor.startSeconds / 60
 
       try {
-        const data = await dispatchTranscribe(
+        const data = await dispatchStt(
           target,
           segmentDescriptor.path,
           outputDir,
@@ -544,13 +544,13 @@ const runSplitTranscription = async (
   return combined
 }
 
-export const transcribeTarget = async (
+export const sttTarget = async (
   audioPath: string,
   outputDir: string,
   target: SttTarget,
-  options: TranscribeTargetOptions
+  options: SttTargetOptions
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  await ensureTranscribeTargetSetup(target)
+  await ensureSttTargetSetup(target)
 
   const audioFileSize = Bun.file(audioPath).size
   if (shouldSplitTranscriptionInput(target.service, audioFileSize, options.split === true)) {
@@ -567,7 +567,7 @@ export const transcribeTarget = async (
   }
 
   try {
-    const transcription = await dispatchTranscribe(target, audioPath, outputDir, 0, options)
+    const transcription = await dispatchStt(target, audioPath, outputDir, 0, options)
     await persistTranscriptionEvidenceArtifacts(outputDir, transcription.result, transcription.metadata)
     return transcription
   } catch (error) {
@@ -583,11 +583,11 @@ export const transcribeTarget = async (
   }
 }
 
-export const transcribe = async (
+export const stt = async (
   audioPath: string,
   options: ProcessingOptions
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const engine = resolveTranscribeEngine(options)
+  const engine = resolveSttEngine(options)
   const diarizationOptions = resolveDiarizationOptions(options, engine)
   const model = (() => {
     if (engine === 'reverb') return 'reverb'
@@ -609,7 +609,7 @@ export const transcribe = async (
     diarizationOptions
   }
 
-  return await transcribeTarget(audioPath, options.outputDir, target, {
+  return await sttTarget(audioPath, options.outputDir, target, {
     split: options.split,
     reverbVerbatimicity: options.reverbVerbatimicity,
     sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency,

@@ -11,7 +11,7 @@ import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { collectSttTargets, formatSttTargetLabel, getSttTargetDirectoryName, getSttTargetKey, type SttTarget } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
-import { getTranscribeEngineCapabilities, transcribeTarget } from './step-2-stt/run-transcribe'
+import { getSttEngineCapabilities, sttTarget } from './step-2-stt/run-stt'
 import { mergeStep2TimingMetadata } from './step-2-stt/stt-timing-metadata'
 import {
   buildMetadataErrorEntries,
@@ -339,10 +339,10 @@ const logSpeakerCountHintSummary = (
   }
 
   const honored = targets
-    .filter((target) => getTranscribeEngineCapabilities(target.service).supportsSpeakerCountHint)
+    .filter((target) => getSttEngineCapabilities(target.service).supportsSpeakerCountHint)
     .map(formatSttTargetLabel)
   const ignored = targets
-    .filter((target) => !getTranscribeEngineCapabilities(target.service).supportsSpeakerCountHint)
+    .filter((target) => !getSttEngineCapabilities(target.service).supportsSpeakerCountHint)
     .map(formatSttTargetLabel)
 
   if (ignored.length === 0) {
@@ -625,7 +625,7 @@ export const processStt = async (
       const target = requestedTargets[0] as SttTarget
       const audioPath = resolveTargetAudioPath(target, prepared)
       const transcription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
-        await transcribeTarget(audioPath, outputDir, target, {
+        await sttTarget(audioPath, outputDir, target, {
           split: options.split,
           reverbVerbatimicity: options.reverbVerbatimicity,
           sttSegmentConcurrency: options.sttSegmentConcurrency
@@ -809,7 +809,7 @@ export const processStt = async (
         }
         let asyncJobReady = false
         const transcription = await runWithLogContext({ step: 'step-2-stt', provider: providerDirName }, async () =>
-          await transcribeTarget(audioPath, providerDir, target, {
+          await sttTarget(audioPath, providerDir, target, {
             split: options.split,
             reverbVerbatimicity: options.reverbVerbatimicity,
             sttSegmentConcurrency: options.sttSegmentConcurrency,

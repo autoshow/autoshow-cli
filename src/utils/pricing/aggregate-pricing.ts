@@ -24,7 +24,7 @@ import {
   estimateFirecrawlScrapeCost,
   estimateGlmOcrCost,
   estimateMistralOcrCost
-} from '~/cli/commands/process-steps/step-2-document/document-utils/extract-pricing'
+} from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import type { SttStepEstimate, ExtractStepEstimate, LlmStepEstimate, TtsStepEstimate, ImageStepEstimate, MusicStepEstimate, VideoStepEstimate, StepEstimate, AggregatedPriceEstimate } from '~/types'
 import { isDocumentLikeTarget, isHtmlArticleTarget } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'

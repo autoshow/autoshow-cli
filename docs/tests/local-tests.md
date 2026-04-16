@@ -8,7 +8,7 @@ For API-backed and networked coverage, see [Service Tests](service-tests.md).
 
 ```bash
 # run all local tests
-bun t test/test-cases/local/ test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/step-2-extract-e2e/extract-local/ test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/ test/test-cases/e2e/step-3-write-e2e/write-local/ test/test-cases/e2e/step-4-tts-e2e/tts-local/
+bun t test/test-cases/local/ test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ test/test-cases/e2e/step-2-stt-e2e/stt-local/ test/test-cases/e2e/step-3-write-e2e/write-local/ test/test-cases/e2e/step-4-tts-e2e/tts-local/
 ```
 
 ```bash
@@ -16,8 +16,8 @@ bun t test/test-cases/local/ test/test-cases/e2e/step-1-download-e2e/download-in
 bun t test/test-cases/local/sample/sample-generate.test.ts
 
 # local STT coverage
-bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/
-bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/reverb.test.ts
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts
 
 # local write and TTS coverage
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/
@@ -48,10 +48,10 @@ AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0 bun t test/test-cases/e2e/step-4-tts-e2e/tts-
 |------|-------|-------|
 | Sample fixture generation | `test/test-cases/local/sample/sample-generate.test.ts` | Generates and verifies sample fixtures |
 | Download local file | `test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts` | Local input path coverage |
-| Extract options | `test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-options.test.ts` | Core local extract validation and routing coverage |
-| PaddleOCR image extraction | `test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts` | Heavier local OCR coverage |
-| Whisper | `test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/` | Includes default, split, model-price, and `large-v3-turbo` coverage |
-| Reverb | `test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/reverb.test.ts` | Heavier local STT coverage |
+| OCR options | `test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-options.test.ts` | Core local OCR validation and routing coverage |
+| PaddleOCR image extraction | `test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts` | Heavier local OCR coverage |
+| Whisper | `test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/` | Includes default, split, model-price, and `large-v3-turbo` coverage |
+| Reverb | `test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts` | Heavier local STT coverage |
 | Llama write | `test/test-cases/e2e/step-3-write-e2e/write-local/llama/`, `test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts` | Local llama.cpp audio and document flows |
 | Local TTS | `test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts` | Standalone Kitten TTS coverage |
 
@@ -60,12 +60,12 @@ AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0 bun t test/test-cases/e2e/step-4-tts-e2e/tts-
 Local price and budget commands are now path-based:
 
 ```bash
-bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/whisper/ --test-price
-bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-local/reverb/reverb.test.ts --test-price
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/ --test-price
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts --test-price
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts --test-price
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --budget 5
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --test-price --budget 5
-bun t test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts --budget 5
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --budget 5
 ```
 
 Notes:
@@ -78,7 +78,7 @@ Notes:
 - [Service Tests](service-tests.md)
 - [Sample Tests](../commands/sample/sample-tests.md)
 - [Setup Tests](../commands/step-0-setup/setup-tests.md)
-- [Extract Tests (Local)](../commands/step-2-extract/extract-document-local.md#local-tests)
-- [Transcribe Tests (Local)](../commands/step-2-transcribe/transcribe-audio-local.md#local-tests)
+- [OCR Tests (Local)](../commands/step-2-ocr/ocr-document-local.md#local-tests)
+- [STT Tests (Local)](../commands/step-2-stt/stt-audio-local.md#local-tests)
 - [Write Tests (Local)](../commands/step-3-write/write-text-local.md#local-tests)
 - [TTS Tests (Local)](../commands/step-4-tts/text-to-speech-local.md#local-tests)

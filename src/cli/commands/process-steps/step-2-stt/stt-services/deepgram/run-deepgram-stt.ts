@@ -10,7 +10,7 @@ import {
   formatTranscriptText,
   resolveTranscriptionOutput,
   toTimestamp
-} from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+} from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'

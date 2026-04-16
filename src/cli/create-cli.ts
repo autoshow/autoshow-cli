@@ -4,9 +4,9 @@ import { configCommand } from './commands/setup-and-utilities/config/define-conf
 import { cacheCommand } from './commands/setup-and-utilities/cache/define-cache-command'
 import { metadataCommand } from '~/cli/commands/process-steps/step-0-metadata/define-metadata-command'
 import { downloadCommand } from '~/cli/commands/process-steps/step-1-download/define-download-command'
-import { transcribeCommand } from '~/cli/commands/process-steps/step-2-stt/define-transcribe-command'
+import { sttCommand } from '~/cli/commands/process-steps/step-2-stt/define-stt-command'
 import { writeCommand } from '~/cli/commands/process-steps/step-3-write/define-write-command'
-import { extractCommand } from '~/cli/commands/process-steps/step-2-document/define-extract-command'
+import { ocrCommand } from '~/cli/commands/process-steps/step-2-ocr/define-ocr-command'
 import { ttsCommand } from '~/cli/commands/process-steps/step-4-tts/define-tts-command'
 import { imageCommand } from '~/cli/commands/process-steps/step-5-image/define-image-command'
 import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-music-command'
@@ -116,8 +116,8 @@ const COMMAND_DEFINITIONS = [
   linksCommand,
   metadataCommand,
   downloadCommand,
-  extractCommand,
-  transcribeCommand,
+  ocrCommand,
+  sttCommand,
   writeCommand,
   ttsCommand,
   imageCommand,

@@ -1,5 +1,5 @@
 import type { DiarizationOptions, RuntimeOptions, TranscribeEngine } from '~/types'
-import { resolveDiarizationOptions } from './run-transcribe'
+import { resolveDiarizationOptions } from './run-stt'
 
 export type SttTarget = {
   service: TranscribeEngine

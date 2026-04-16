@@ -1,6 +1,6 @@
 import { validateDataSafe } from '~/utils/validate/validation'
 import { ReverbOutputSchema, type TranscriptionResult, type TranscriptionSegment } from '~/types'
-import { toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import type { EmbeddedJson } from '~/types'
 
 export const formatTimestamp = toTimestamp

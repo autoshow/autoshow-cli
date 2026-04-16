@@ -8,7 +8,7 @@ import type {
 } from '~/types'
 import { AssemblyAiTranscriptResponseSchema } from '~/types'
 import * as l from '~/logger'
-import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,

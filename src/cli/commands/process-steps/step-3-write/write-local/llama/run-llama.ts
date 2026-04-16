@@ -1,7 +1,7 @@
 import * as l from '~/logger'
 import { pollUntil } from '~/utils/retries'
 import { resolveLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { validateData } from '~/utils/validate/validation'
 import { LlamaResponseSchema, type Step3Metadata } from '~/types'
 import { llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'

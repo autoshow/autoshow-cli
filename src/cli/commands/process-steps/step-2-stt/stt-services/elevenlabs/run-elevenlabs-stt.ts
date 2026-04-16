@@ -8,7 +8,7 @@ import type {
 } from '~/types'
 import { ElevenLabsSttResponseSchema } from '~/types'
 import * as l from '~/logger'
-import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'

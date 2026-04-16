@@ -1,5 +1,5 @@
 import { exec, commandExists } from '~/utils/cli-utils'
-import { setupExtractionOcr } from '../document-local/extract'
+import { setupExtractionOcr } from '../ocr-local/extract'
 import type { OcrOutputFormat, OcrResult } from '~/types'
 
 const parseTsvConfidence = (tsv: string): number | undefined => {

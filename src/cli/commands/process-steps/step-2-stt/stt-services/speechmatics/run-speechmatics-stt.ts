@@ -23,7 +23,7 @@ import {
   formatTranscriptText,
   resolveTranscriptionOutput,
   toTimestamp
-} from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+} from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,

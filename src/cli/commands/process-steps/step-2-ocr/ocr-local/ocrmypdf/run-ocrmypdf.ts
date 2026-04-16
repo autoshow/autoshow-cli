@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import * as l from '~/logger'
 import { exec } from '~/utils/cli-utils'
 import type { ExtractionOptions, PageResult } from '~/types'
-import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-document/document-local/ocrmypdf/ocrmypdf'
+import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.webp'])
 

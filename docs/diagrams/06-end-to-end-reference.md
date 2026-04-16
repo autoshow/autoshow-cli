@@ -44,8 +44,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
     |  ├── downloadAudio() → yt-dlp + ffmpeg → audio.wav
     |  └── Step1Metadata
     |
-    |  STEP 2: Transcribe
-    |  ├── transcribe(audioPath, options)
+    |  STEP 2: STT
+    |  ├── stt(audioPath, options)
     |  │   └── Whisper.cpp (small model) → transcription.txt
     |  └── { result: TranscriptionResult, metadata: Step2Metadata }
     |

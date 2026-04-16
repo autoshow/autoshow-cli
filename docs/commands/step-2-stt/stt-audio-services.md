@@ -190,4 +190,4 @@ Provider output directories now persist the canonical evidence consumed by this 
 - `--resume-missing` does not take a positional input and does not support `--price` / `--dry-run`.
 - Incomplete STT batches still exit with code `2`, but they are reported as operational batch failures rather than CLI usage errors.
 - Successful hosted STT provider runs now also persist `transcription.evidence.json`, and when native provider payloads are available they also persist `transcription.raw.json`.
-- Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).
+- Service setup details are in [`stt-audio-local.md#setup`](./stt-audio-local.md#setup).

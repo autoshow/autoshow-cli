@@ -12,16 +12,16 @@ import {
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from './step-1-download/document/dl-document'
-import { runExtract } from './step-2-document/run-extract'
+import { runOcr } from './step-2-ocr/run-ocr'
 import { runWithLogContext } from '~/logger'
 import type { Step1SourceRef } from './step-1-download/audio/metadata-utils'
 import {
   buildExtractionOptionsForTarget,
-  collectExplicitExtractTargets,
-  getExtractTargetDirectoryName,
-  type ExtractTarget
-} from './step-2-document/extract-targets'
-import { FIRECRAWL_PRICE_NOTE } from './step-2-document/document-utils/extract-pricing'
+  collectExplicitOcrTargets,
+  getOcrTargetDirectoryName,
+  type OcrTarget
+} from './step-2-ocr/ocr-targets'
+import { FIRECRAWL_PRICE_NOTE } from './step-2-ocr/ocr-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
@@ -159,7 +159,7 @@ const buildDocumentMetadataPayload = (
   }
 }
 
-export const processDocument = async (
+export const processOcr = async (
   filePath: string,
   rawOpts: Partial<ExtractionOptions>,
   sourceRef?: Step1SourceRef,
@@ -198,7 +198,7 @@ export const processDocument = async (
   const { outputDir, step1Metadata, effectiveFilePath, tempCleanup, web } = prepared
   const extractFilePath = effectiveFilePath ?? filePath
 
-  const explicitTargets = opts.preparedMarkdown ? [] : collectExplicitExtractTargets(opts)
+  const explicitTargets = opts.preparedMarkdown ? [] : collectExplicitOcrTargets(opts)
 
   try {
     if (explicitTargets.length > 1) {
@@ -206,14 +206,14 @@ export const processDocument = async (
       await mkdir(providersDir, { recursive: true })
 
       const successes: Array<{
-        target: ExtractTarget
+        target: OcrTarget
         result: ExtractionResult
         step2Metadata: ExtractionMetadata
       }> = []
       const failures: Array<{ service: string, model: string, message: string }> = []
 
       for (const target of explicitTargets) {
-        const providerDirName = getExtractTargetDirectoryName(target)
+        const providerDirName = getOcrTargetDirectoryName(target)
         const providerDir = `${providersDir}/${providerDirName}`
         await mkdir(providerDir, { recursive: true })
 
@@ -222,8 +222,8 @@ export const processDocument = async (
             ...opts,
             outputDir: providerDir
           }, target)
-          const extracted = await runWithLogContext({ step: 'step-2-document', provider: providerDirName }, async () =>
-            await runExtract(extractFilePath, step1Metadata, providerOpts)
+          const extracted = await runWithLogContext({ step: 'step-2-ocr', provider: providerDirName }, async () =>
+            await runOcr(extractFilePath, step1Metadata, providerOpts)
           )
 
           await writeExtractionArtifact(
@@ -277,8 +277,8 @@ export const processDocument = async (
       }
     }
 
-    const extracted = await runWithLogContext({ step: 'step-2-document' }, async () =>
-      await runExtract(extractFilePath, step1Metadata, opts)
+    const extracted = await runWithLogContext({ step: 'step-2-ocr' }, async () =>
+      await runOcr(extractFilePath, step1Metadata, opts)
     )
 
     await writeFile(

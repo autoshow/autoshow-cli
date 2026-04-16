@@ -130,9 +130,9 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
   (1) processVideo() with skipLLM=true
   (2) CLIUsageError: "Use: bun as ocr or bun as write"
   (3) processVideo() with full LLM pipeline
-  (4) processDocument() + buildDocumentPrompt() + LLM summary
+  (4) processOcr() + buildDocumentPrompt() + LLM summary
   (5) CLIUsageError: "Use a direct document URL or local file"
-  (6) processDocument() extraction only
+  (6) processOcr() extraction only
   (7) Skipped with warning: "non-document file in ocr mode"
 ```
 

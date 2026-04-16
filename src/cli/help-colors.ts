@@ -35,7 +35,7 @@ const HELP_GROUP_COLOR_BY_KEY: Readonly<Record<string, string>> = {
   pricing: 'goldenrod',
   'step-1-download': 'deepskyblue',
   'step-2-stt': 'dodgerblue',
-  'step-2-document': 'mediumseagreen',
+  'step-2-ocr': 'mediumseagreen',
   'step-3-write': 'cornflowerblue',
   'step-4-tts': 'darkorange',
   'step-5-image': 'hotpink',

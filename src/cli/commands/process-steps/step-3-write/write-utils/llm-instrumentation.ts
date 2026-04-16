@@ -1,5 +1,5 @@
 import type { Step3Metadata } from '~/types'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
 
 export const runWithLLMInstrumentation = async (

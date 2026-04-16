@@ -8,7 +8,7 @@ Shared `bun t` runner behavior, artifacts, cleanup, and path-based selection are
 
 ```bash
 # service command suites
-bun t test/test-cases/e2e/step-2-transcribe-e2e/transcribe-services/
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
 bun t test/test-cases/e2e/step-5-image-gen-e2e/
@@ -25,8 +25,8 @@ bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-chann
 
 - [Setup Service Tests](service-tests-setup.md)
 - [Download Service Tests](service-tests-download.md)
-- [Extract Service Tests](service-tests-extract.md)
-- [Transcribe Service Tests](service-tests-transcribe.md)
+- [OCR Service Tests](service-tests-ocr.md)
+- [STT Service Tests](service-tests-stt.md)
 - [Write Service Tests](service-tests-write.md)
 - [TTS Service Tests](service-tests-tts.md)
 - [Image Service Tests](service-tests-image.md)
@@ -45,8 +45,8 @@ bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-chann
 - [Local Tests](local-tests.md)
 - [Setup Tests](../commands/step-0-setup/setup-tests.md)
 - [Download Tests](../commands/step-1-download/download-file-tests.md)
-- [Extract Tests (Services)](../commands/step-2-extract/extract-document-tests-services.md)
-- [Transcribe Tests (Services)](../commands/step-2-transcribe/transcribe-audio-tests-services.md)
+- [OCR Tests (Services)](../commands/step-2-ocr/ocr-document-tests-services.md)
+- [STT Tests (Services)](../commands/step-2-stt/stt-audio-tests-services.md)
 - [Write Tests (Services)](../commands/step-3-write/write-text-tests-services.md)
 - [TTS Tests (Services)](../commands/step-4-tts/text-to-speech-tests-services.md)
 - [Image Tests (Services)](../commands/step-5-image/text-to-image-tests-services.md)

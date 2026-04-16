@@ -1,7 +1,7 @@
 import type { ClercFlagsDefinition } from 'clerc'
 import { transcriptionFlags, promptFlag, promptOutputFlags, batchFlags, priceFlag } from './shared-flags'
 
-export const transcribeFlags = {
+export const sttFlags = {
   ...transcriptionFlags,
   ...promptFlag,
   ...promptOutputFlags,

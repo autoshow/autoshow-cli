@@ -1,7 +1,7 @@
 import { readdir, rm } from 'node:fs/promises'
 import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/logger'
-import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/transcription-utils'
+import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { parseReverbWithSpeakers, parseReverbTextOutput } from './parse-reverb-output'
 import { exec } from '~/utils/cli-utils'
 import { getHuggingFaceToken, runDiarization, mergeASRWithDiarization, findCTMFile } from './run-reverb-diarization'

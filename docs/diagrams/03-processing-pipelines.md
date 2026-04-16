@@ -38,10 +38,10 @@ src/cli/commands/process-steps/process-video.ts
                                     |
                                     v
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                      STEP 2: Transcribe                                      │
-│       src/cli/commands/process-steps/step-2-stt/run-transcribe.ts           │
+│                      STEP 2: STT                                             │
+│       src/cli/commands/process-steps/step-2-stt/run-stt.ts           │
 │                                                                              │
-│  resolveTranscribeEngine() - picks exactly one engine:                       │
+│  resolveSttEngine() - picks exactly one engine:                              │
 │                                                                              │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐│
 │  │ --reverb   │ │--elevenlabs│ │--groq-stt  │ │--openai-stt│ │--mistral-  │ │--assemblyai- ││
@@ -128,7 +128,7 @@ src/cli/commands/process-steps/process-video.ts
 ## Document Processing Pipeline
 
 ```
-src/cli/commands/process-steps/process-document.ts
+src/cli/commands/process-steps/process-ocr.ts
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                      STEP 1: Download / Detect Document                      │
@@ -158,7 +158,7 @@ src/cli/commands/process-steps/process-document.ts
                                     v
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                      STEP 2: Extract Text                                    │
-│    src/cli/commands/process-steps/step-2-document/run-extract.ts            │
+│    src/cli/commands/process-steps/step-2-ocr/run-ocr.ts            │
 │                                                                              │
 │                       ┌──────────────────┐                                   │
 │                       │  Document Type?  │                                   │
