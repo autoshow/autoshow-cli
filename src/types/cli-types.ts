@@ -41,6 +41,7 @@ export type RuntimeOptions = {
   openaiSttModel: string | undefined
   mistralSttModel: string | undefined
   assemblyaiSttModel: string | undefined
+  gladiaSttModel: string | undefined
   speechmaticsSttModel: string | undefined
   deepgramSttModel: string | undefined
   diarizationSpeakerCount: number | undefined

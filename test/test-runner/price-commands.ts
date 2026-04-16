@@ -115,6 +115,9 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
     command('transcribe-assemblyai-universal-2', 'transcribe-assemblyai-universal-2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-2', '--price']),
     command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
   ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/gladia/', [
+    command('transcribe-gladia-default', 'transcribe-gladia-default', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--gladia-stt', 'default', '--price']),
+  ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/deepgram/', [
     command('transcribe-deepgram-nova-3', 'transcribe-deepgram-nova-3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deepgram-stt', 'nova-3', '--price']),
   ]),

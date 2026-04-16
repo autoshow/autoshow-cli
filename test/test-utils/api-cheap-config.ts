@@ -157,7 +157,7 @@ const pickCheapestExtractModel = (
 export const buildApiCheapSelections = () => {
   const registry = getModelRegistry()
 
-  const pickCheapestSttModel = (service: 'elevenlabs' | 'openai' | 'deepgram' | 'soniox' | 'speechmatics'): string => {
+  const pickCheapestSttModel = (service: 'elevenlabs' | 'openai' | 'deepgram' | 'soniox' | 'speechmatics' | 'gladia'): string => {
     const serviceConfig = registry.stt[service]
     if (!serviceConfig) {
       throw new Error(`Missing STT service config: ${service}`)
@@ -245,6 +245,7 @@ export const buildApiCheapSelections = () => {
     { service: 'deepgram', flag: '--deepgram-stt', envVar: 'DEEPGRAM_API_KEY', model: pickCheapestSttModel('deepgram') },
     { service: 'soniox', flag: '--soniox-stt', envVar: 'SONIOX_API_KEY', model: pickCheapestSttModel('soniox') },
     { service: 'speechmatics', flag: '--speechmatics-stt', envVar: 'SPEECHMATICS_API_KEY', model: pickCheapestSttModel('speechmatics') },
+    { service: 'gladia', flag: '--gladia-stt', envVar: 'GLADIA_API_KEY', model: pickCheapestSttModel('gladia') },
     { service: 'openai', flag: '--openai-stt', envVar: 'OPENAI_API_KEY', model: pickCheapestSttModel('openai') },
     { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: groqWhisperModel }
   ]

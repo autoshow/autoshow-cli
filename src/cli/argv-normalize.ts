@@ -59,6 +59,7 @@ export const BARE_FLAG_DEFAULTS: Record<string, string> = {
   '--rev-stt': 'machine',
   '--groq-stt': 'whisper-large-v3-turbo',
   '--openai-stt': 'gpt-4o-transcribe-diarize',
+  '--gladia-stt': 'default',
   '--elevenlabs-tts': 'eleven_v3',
   '--openai-tts': 'gpt-4o-mini-tts',
   '--gemini-tts': 'gemini-2.5-flash-preview-tts',

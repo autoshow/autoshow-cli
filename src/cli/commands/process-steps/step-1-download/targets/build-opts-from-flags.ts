@@ -17,6 +17,7 @@ import {
   validateOpenAISttModel,
   validateMistralSttModel,
   validateAssemblyaiSttModel,
+  validateGladiaSttModel,
   validateGlmOcrModel,
   validateMistralOcrModel,
   validateKittenTtsModel,
@@ -210,6 +211,7 @@ export const buildOptsFromFlags = (
   const openaiSttModel = readValidated('openai-stt', validateOpenAISttModel)
   const mistralSttModel = readValidated('mistral-stt', validateMistralSttModel)
   const assemblyaiSttModel = readValidated('assemblyai-stt', validateAssemblyaiSttModel)
+  const gladiaSttModel = readValidated('gladia-stt', validateGladiaSttModel)
   const mistralOcrModel = readValidated('mistral-ocr', validateMistralOcrModel)
   const glmOcrModel = readValidated('glm-ocr', validateGlmOcrModel)
   const llamaModel = readValidated('llama', validateLlamaModel)
@@ -263,6 +265,7 @@ export const buildOptsFromFlags = (
     openaiSttModel,
     mistralSttModel,
     assemblyaiSttModel,
+    gladiaSttModel,
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
     diarizationSpeakerNames: readOptionalStringArrayFlag(mergedFlags, 'speaker-name'),
     diarizationSpeakerReferences: readOptionalStringArrayFlag(mergedFlags, 'speaker-reference'),

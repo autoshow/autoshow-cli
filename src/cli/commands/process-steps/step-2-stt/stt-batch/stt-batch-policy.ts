@@ -36,6 +36,7 @@ export const isAsyncSttBatchProvider = (
   target: Pick<SttTarget, 'service'>
 ): boolean =>
   target.service === 'assemblyai'
+  || target.service === 'gladia'
   || target.service === 'soniox'
   || target.service === 'speechmatics'
   || target.service === 'rev'

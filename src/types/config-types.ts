@@ -15,6 +15,7 @@ const SttDefaultsSchema = v.object({
   openaiStt: v.optional(v.string(), undefined),
   mistralStt: v.optional(v.string(), undefined),
   assemblyaiStt: v.optional(v.string(), undefined),
+  gladiaStt: v.optional(v.string(), undefined),
   speechmaticsStt: v.optional(v.string(), undefined),
   speakerCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   split: v.optional(v.boolean(), undefined),

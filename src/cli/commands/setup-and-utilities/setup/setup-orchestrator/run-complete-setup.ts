@@ -20,6 +20,7 @@ import { setupRevStt } from '~/cli/commands/process-steps/step-2-stt/stt-service
 import { setupOpenAIStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { setupMistralStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
+import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
 import { setupCalibreDocumentTools } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
 import { setupExtractionOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/extract'
 import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
@@ -239,6 +240,8 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(async () => { await setupMistralStt(); await setupMistralOcr(); await setupGlmOcr() })
 
   await withCompactSetup(setupAssemblyAiStt)
+
+  await withCompactSetup(setupGladiaStt)
 
   await withCompactSetup(setupCalibreDocumentTools)
 

@@ -3,6 +3,7 @@
 ```bash
 bun t \
   test/test-cases/e2e/step-2-stt-e2e/stt-services/assemblyai/assemblyai-models.test.ts \
+  test/test-cases/e2e/step-2-stt-e2e/stt-services/gladia/gladia-models.test.ts \
   test/test-cases/e2e/step-2-stt-e2e/stt-services/deepgram/deepgram-nova-3.test.ts \
   test/test-cases/e2e/step-2-stt-e2e/stt-services/groq/groq-whisper-models.test.ts \
   test/test-cases/e2e/step-2-stt-e2e/stt-services/elevenlabs/elevenlabs-scribe-v2.test.ts \
@@ -31,6 +32,7 @@ Each provider file uses the shared `defineSTTServiceTest` helper, which currentl
 
 ```bash
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/assemblyai/assemblyai-models.test.ts
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/gladia/gladia-models.test.ts
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/deepgram/deepgram-nova-3.test.ts
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/elevenlabs/elevenlabs-scribe-v2.test.ts
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/groq/groq-whisper-models.test.ts
@@ -40,6 +42,7 @@ bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/rev/rev-machine.test.ts
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/soniox/soniox-models.test.ts
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/speechmatics/speechmatics-models.test.ts
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/assemblyai/ --test-price
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/gladia/ --test-price
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/deepgram/ --test-price
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/rev/ --test-price
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/soniox/ --test-price

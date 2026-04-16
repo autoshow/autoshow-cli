@@ -14,6 +14,7 @@ export const ProcessingOptionsSchema = v.pipe(
     openaiSttModel: v.optional(v.string(), undefined),
     mistralSttModel: v.optional(v.string(), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
+    gladiaSttModel: v.optional(v.string(), undefined),
     speechmaticsSttModel: v.optional(v.string(), undefined),
     deepgramSttModel: v.optional(v.string(), undefined),
     diarizationSpeakerCount: v.optional(v.number(), undefined),
@@ -406,7 +407,7 @@ export type Step2RuntimeMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia'
   transcriptionModel: string
   transcriptionModelName?: string | undefined
   processingTime: number
@@ -414,6 +415,75 @@ export type Step2Metadata = {
   timings?: Step2TimingMetadata | undefined
   runtime?: Step2RuntimeMetadata | undefined
 }
+
+export const GladiaWordSchema = v.object({
+  word: v.string(),
+  start: v.number(),
+  end: v.number(),
+  confidence: v.optional(v.number(), undefined),
+  speaker: v.optional(v.union([v.string(), v.number()]), undefined)
+})
+
+export const GladiaUtteranceSchema = v.object({
+  start: v.number(),
+  end: v.number(),
+  confidence: v.number(),
+  channel: v.optional(v.number(), undefined),
+  words: v.optional(v.array(GladiaWordSchema), undefined),
+  text: v.string(),
+  language: v.optional(v.string(), undefined),
+  speaker: v.optional(v.union([v.string(), v.number()]), undefined)
+})
+
+export const GladiaUploadAudioMetadataSchema = v.object({
+  id: v.string(),
+  filename: v.string(),
+  source: v.optional(v.string(), undefined),
+  extension: v.string(),
+  size: v.number(),
+  audio_duration: v.number(),
+  number_of_channels: v.number()
+})
+
+export const GladiaUploadResponseSchema = v.object({
+  audio_url: v.string(),
+  audio_metadata: GladiaUploadAudioMetadataSchema
+})
+
+export const GladiaCreateResponseSchema = v.object({
+  id: v.string(),
+  result_url: v.string()
+})
+
+export const GladiaTranscriptionResultSchema = v.looseObject({
+  full_transcript: v.optional(v.string(), undefined),
+  languages: v.optional(v.array(v.string()), undefined),
+  utterances: v.optional(v.array(GladiaUtteranceSchema), undefined)
+})
+
+export const GladiaDiarizationResultSchema = v.looseObject({
+  results: v.optional(v.array(GladiaUtteranceSchema), undefined)
+})
+
+export const GladiaStatusResponseSchema = v.looseObject({
+  id: v.string(),
+  status: v.picklist(['queued', 'processing', 'done', 'error']),
+  request_id: v.optional(v.string(), undefined),
+  created_at: v.optional(v.string(), undefined),
+  completed_at: v.optional(v.nullable(v.string()), undefined),
+  error_code: v.optional(v.nullable(v.number()), undefined),
+  message: v.optional(v.string(), undefined),
+  result: v.optional(v.nullable(v.looseObject({
+    metadata: v.optional(v.looseObject({
+      audio_duration: v.optional(v.number(), undefined),
+      number_of_distinct_channels: v.optional(v.number(), undefined),
+      billing_time: v.optional(v.number(), undefined),
+      transcription_time: v.optional(v.number(), undefined)
+    }), undefined),
+    transcription: v.optional(GladiaTranscriptionResultSchema, undefined),
+    diarization: v.optional(GladiaDiarizationResultSchema, undefined)
+  })), undefined)
+})
 
 export const MistralTranscriptionSegmentSchema = v.looseObject({
   start: v.number(),
@@ -713,6 +783,9 @@ export const SpeechmaticsTranscriptResponseSchema = v.object({
 export type WhisperJsonOutput = v.InferOutput<typeof WhisperJsonOutputSchema>
 export type ElevenLabsSttResponse = v.InferOutput<typeof ElevenLabsSttResponseSchema>
 export type AssemblyAiTranscriptResponse = v.InferOutput<typeof AssemblyAiTranscriptResponseSchema>
+export type GladiaUploadResponse = v.InferOutput<typeof GladiaUploadResponseSchema>
+export type GladiaCreateResponse = v.InferOutput<typeof GladiaCreateResponseSchema>
+export type GladiaStatusResponse = v.InferOutput<typeof GladiaStatusResponseSchema>
 export type DeepgramResponse = v.InferOutput<typeof DeepgramResponseSchema>
 export type SonioxFileResponse = v.InferOutput<typeof SonioxFileResponseSchema>
 export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscriptionStatusSchema>

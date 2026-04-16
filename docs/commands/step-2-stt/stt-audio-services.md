@@ -33,6 +33,7 @@ The input routing is the same as local `stt`: direct media URLs, streaming URLs,
 | OpenAI | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
 | Mistral | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
 | AssemblyAI | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
+| Gladia | `--gladia-stt <model>` | `default` |
 
 You can combine multiple hosted STT provider flags in one execution. Each selected provider writes its own transcript and metadata under `providers/<service>-<model>/`.
 
@@ -80,6 +81,15 @@ bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2
 # AssemblyAI with an optional speaker-count hint
 bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
 
+# Gladia with diarization
+bun as stt input/examples/audio/1-audio.mp3 --gladia-stt default
+
+# Gladia bare flag defaults to default
+bun as stt input/examples/audio/1-audio.mp3 --gladia-stt
+
+# Gladia with an exact speaker-count hint
+bun as stt input/examples/audio/1-audio.mp3 --gladia-stt default --speaker-count 2
+
 # Multi-provider batch
 bun as stt input/ajc --batch-all \
   --batch-concurrency 3 \
@@ -88,6 +98,7 @@ bun as stt input/ajc --batch-all \
   --soniox-stt stt-async-v4 \
   --speechmatics-stt enhanced \
   --assemblyai-stt universal-3-pro \
+  --gladia-stt default \
   --mistral-stt voxtral-mini-latest \
   --speaker-count 2
 
@@ -155,6 +166,7 @@ Provider output directories now persist the canonical evidence consumed by this 
 | `--openai-stt <model>` | Select the OpenAI STT model |
 | `--mistral-stt <model>` | Select the Mistral STT model |
 | `--assemblyai-stt <model>` | Select the AssemblyAI STT model |
+| `--gladia-stt <model>` | Select the Gladia STT model |
 | `--speaker-count <n>` | Speaker-count hint for providers that support it |
 | `--speaker-name <name...>` | OpenAI known speaker names. Repeat in the same order as `--speaker-reference` |
 | `--speaker-reference <path...>` | OpenAI known speaker reference clips or data URLs. Repeat in the same order as `--speaker-name` |
@@ -169,12 +181,16 @@ Provider output directories now persist the canonical evidence consumed by this 
 
 ## Notes
 
-- Diarization is enabled by default for ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, AssemblyAI, Mistral, and OpenAI diarized STT models.
-- ElevenLabs and AssemblyAI use `--speaker-count` as an optional diarization hint.
+- Diarization is enabled by default for ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, AssemblyAI, Gladia, Mistral, and OpenAI diarized STT models.
+- ElevenLabs, AssemblyAI, and Gladia use `--speaker-count` as an optional diarization hint.
 - Speechmatics always sends `language: "auto"` and `diarization: "speaker"`, so no extra language flag is required and speaker labels use Speechmatics native IDs such as `S1`, `S2`, and `UU`.
 - Rev uploads the already-downloaded local file as `multipart/form-data`, always uses the `machine` transcriber with `remove_disfluencies: true`, and deletes the remote job after terminal success or failure.
 - Set `REVAI_ACCESS_TOKEN` to enable the provider. `REVAI_BASE_URL` is optional and defaults to `https://api.rev.ai/speechtotext/v1`.
 - Set `SPEECHMATICS_API_KEY` to enable the provider. `SPEECHMATICS_BASE_URL` is optional and defaults to `https://eu1.asr.api.speechmatics.com`.
+- Set `GLADIA_API_KEY` to enable the provider. `GLADIA_BASE_URL` is optional and defaults to `https://api.gladia.io`.
+- Gladia uploads the local file first, then creates an async pre-recorded job and polls `GET /v2/pre-recorded/:id` until the status is `done`.
+- Gladia maps `--speaker-count` to `diarization_config.number_of_speakers`.
+- Current documented Gladia pre-recorded limits are 135 minutes per file, 1000 MB per upload, and 25 concurrent pre-recorded jobs on paid plans.
 - Deepgram, Soniox, Speechmatics, Rev, Mistral, Groq, local engines, and count-only OpenAI diarization ignore `--speaker-count`; the CLI now emits one aggregated warning that lists which selected providers honor the hint and which ignore it.
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.

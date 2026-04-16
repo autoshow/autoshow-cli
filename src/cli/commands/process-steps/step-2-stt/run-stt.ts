@@ -12,6 +12,7 @@ import { runRevStt } from './stt-services/rev/run-rev-stt'
 import { runOpenAIStt } from './stt-services/openai/run-openai-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
+import { runGladiaStt } from './stt-services/gladia/run-gladia-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
 import { formatTranscriptText } from './stt-utils/stt-utils'
 import { buildPersistedTranscriptionEvidence, mergeTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/stt-evidence'
@@ -26,6 +27,7 @@ import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-s
 import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
+import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
 import { reverbUvEnvDir, reverbModelPath, reverbConfigPath, whisperBinaryPath, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { assertNever } from '~/utils/validate/assert-never'
 import type { TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
@@ -44,6 +46,7 @@ export const STT_ENGINE_CAPABILITIES = {
   openai: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
   mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
   assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
+  gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
   whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
 
@@ -52,12 +55,14 @@ export const GROQ_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
 export const OPENAI_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
 export const SPEECHMATICS_MAX_ATTACHMENT_BYTES = 1 * 1024 * 1024 * 1024
 export const REV_MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024 * 1024
+export const GLADIA_MAX_ATTACHMENT_BYTES = 1000 * 1024 * 1024
 
 const AUTO_SPLIT_ATTACHMENT_CAP_BYTES: Partial<Record<TranscribeEngine, number>> = {
   groq: GROQ_MAX_ATTACHMENT_BYTES,
   openai: OPENAI_MAX_ATTACHMENT_BYTES,
   speechmatics: SPEECHMATICS_MAX_ATTACHMENT_BYTES,
-  rev: REV_MAX_ATTACHMENT_BYTES
+  rev: REV_MAX_ATTACHMENT_BYTES,
+  gladia: GLADIA_MAX_ATTACHMENT_BYTES
 }
 
 const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
@@ -68,7 +73,8 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
   'groq',
   'openai',
   'mistral',
-  'assemblyai'
+  'assemblyai',
+  'gladia'
 ])
 
 const formatBytes = (bytes: number): string => {
@@ -126,10 +132,11 @@ const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
   const hasOpenAI = typeof options.openaiSttModel === 'string' && options.openaiSttModel.length > 0
   const hasMistral = typeof options.mistralSttModel === 'string' && options.mistralSttModel.length > 0
   const hasAssemblyAi = typeof options.assemblyaiSttModel === 'string' && options.assemblyaiSttModel.length > 0
+  const hasGladia = typeof options.gladiaSttModel === 'string' && options.gladiaSttModel.length > 0
 
-  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasSpeechmatics, hasRev, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi].filter(Boolean).length
+  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasSpeechmatics, hasRev, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi, hasGladia].filter(Boolean).length
   if (engineCount > 1) {
-    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --speechmatics-stt, --rev-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt)')
+    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --speechmatics-stt, --rev-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt, --gladia-stt)')
   }
 
   if (hasReverb) return 'reverb'
@@ -142,6 +149,7 @@ const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
   if (hasOpenAI) return 'openai'
   if (hasMistral) return 'mistral'
   if (hasAssemblyAi) return 'assemblyai'
+  if (hasGladia) return 'gladia'
   return 'whisper'
 }
 
@@ -292,6 +300,9 @@ export const ensureSttTargetSetup = async (
     await ensureRevSttSetup()
     return
   }
+  if (target.service === 'groq') {
+    return
+  }
   if (target.service === 'openai') {
     await ensureOpenAISttSetup()
     return
@@ -304,9 +315,16 @@ export const ensureSttTargetSetup = async (
     await ensureAssemblyAiSttSetup()
     return
   }
+  if (target.service === 'gladia') {
+    await ensureGladiaSttSetup()
+    return
+  }
   if (target.service === 'whisper') {
     await ensureWhisperSetup(target.model)
+    return
   }
+
+  assertNever(target.service)
 }
 
 const dispatchStt = async (
@@ -430,6 +448,19 @@ const dispatchStt = async (
 
   if (target.service === 'assemblyai') {
     return await runAssemblyAiTranscribe(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      diarizationOptions: target.diarizationOptions,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
+    })
+  }
+
+  if (target.service === 'gladia') {
+    return await runGladiaStt(audioPath, outputDir, {
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
@@ -600,7 +631,8 @@ export const stt = async (
     if (engine === 'groq') return options.groqSttModel as string
     if (engine === 'openai') return options.openaiSttModel as string
     if (engine === 'mistral') return options.mistralSttModel as string
-    return options.assemblyaiSttModel as string
+    if (engine === 'assemblyai') return options.assemblyaiSttModel as string
+    return options.gladiaSttModel as string
   })()
   const target: SttTarget = {
     service: engine,

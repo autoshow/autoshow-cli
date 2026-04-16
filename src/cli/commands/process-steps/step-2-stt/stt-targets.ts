@@ -112,6 +112,15 @@ export const collectSttTargets = (options: RuntimeOptions): SttTarget[] => {
     })
   }
 
+  if (options.gladiaSttModel) {
+    targets.push({
+      service: 'gladia',
+      model: options.gladiaSttModel,
+      local: false,
+      diarizationOptions: resolveDiarizationOptions(options, 'gladia')
+    })
+  }
+
   if (options.whisperExplicit || targets.length === 0) {
     targets.push({
       service: 'whisper',

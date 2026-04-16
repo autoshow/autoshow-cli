@@ -17,6 +17,8 @@ export const sttCommand = defineCommand({
       ['bun as stt file.mp3 --soniox-stt', 'Transcribe with Soniox async diarization'],
       ['bun as stt file.mp3 --speechmatics-stt', 'Transcribe with Speechmatics batch diarization'],
       ['bun as stt file.mp3 --rev-stt', 'Transcribe with Rev async diarization'],
+      ['bun as stt file.mp3 --gladia-stt', 'Transcribe with Gladia pre-recorded diarization'],
+      ['bun as stt file.mp3 --gladia-stt --speaker-count 2', 'Transcribe with Gladia diarization and an exact speaker-count hint'],
       ['bun as stt --resume-missing', 'Resume the newest compatible incomplete STT batch under ./output'],
       ['bun as stt file.mp3 --elevenlabs-stt', 'Transcribe with ElevenLabs speaker diarization'],
       ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with ElevenLabs diarization and a speaker-count hint'],

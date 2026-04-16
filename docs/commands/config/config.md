@@ -126,6 +126,7 @@ Full JSON shape of `config/autoshow.json`:
       "openaiStt": "gpt-4o-transcribe-diarize",
       "mistralStt": "voxtral-mini-latest",
       "assemblyaiStt": "universal-2",
+      "gladiaStt": "default",
       "speakerCount": 2,
       "split": false,
       "reverbVerbatimicity": 0.5
@@ -194,7 +195,8 @@ Full JSON shape of `config/autoshow.json`:
 | `openaiStt` | `--openai-stt` | Default OpenAI STT model |
 | `mistralStt` | `--mistral-stt` | Default Mistral STT model |
 | `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model |
-| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for ElevenLabs and AssemblyAI; Deepgram, Soniox, Speechmatics, Rev, Mistral, and OpenAI ignore count-only hints |
+| `gladiaStt` | `--gladia-stt` | Default Gladia STT model |
+| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for ElevenLabs, AssemblyAI, and Gladia; Deepgram, Soniox, Speechmatics, Rev, Mistral, and OpenAI ignore count-only hints |
 | `split` | `--split` | Split audio into 10-minute chunks |
 | `reverbVerbatimicity` | `--reverb-verbatimicity` | Reverb output style (0–1) |
 

@@ -156,7 +156,8 @@ const STT_PROVIDER_SELECTION_FLAGS = [
   'groq-stt',
   'openai-stt',
   'mistral-stt',
-  'assemblyai-stt'
+  'assemblyai-stt',
+  'gladia-stt'
 ] as const
 
 const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, doubleDashArgs: string[] = []): boolean => {

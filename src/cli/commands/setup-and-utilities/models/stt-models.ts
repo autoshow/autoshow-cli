@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
-export type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
+import type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel } from '~/types'
+export type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel } from '~/types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',
@@ -51,6 +51,10 @@ export const SUPPORTED_ASSEMBLYAI_STT_MODELS = [
   'universal-3-pro'
 ] as const satisfies readonly string[]
 
+export const SUPPORTED_GLADIA_STT_MODELS = [
+  'default'
+] as const satisfies readonly string[]
+
 export const validateWhisperModel = createModelValidator(SUPPORTED_WHISPER_MODELS, 'whisper', 'This flag uses local whisper.cpp models.')
 export const validateElevenlabsSttModel = createModelValidator<ElevenlabsSttModel>(SUPPORTED_ELEVENLABS_STT_MODELS, 'elevenlabs-stt')
 export const validateDeepgramSttModel = createModelValidator<DeepgramSttModel>(SUPPORTED_DEEPGRAM_STT_MODELS, 'deepgram-stt')
@@ -61,3 +65,4 @@ export const validateGroqSttModel = createModelValidator<GroqSttModel>(SUPPORTED
 export const validateOpenAISttModel = createModelValidator<OpenAISttModel>(SUPPORTED_OPENAI_STT_MODELS, 'openai-stt')
 export const validateMistralSttModel = createModelValidator<MistralSttModel>(SUPPORTED_MISTRAL_STT_MODELS, 'mistral-stt')
 export const validateAssemblyaiSttModel = createModelValidator<AssemblyaiSttModel>(SUPPORTED_ASSEMBLYAI_STT_MODELS, 'assemblyai-stt')
+export const validateGladiaSttModel = createModelValidator<GladiaSttModel>(SUPPORTED_GLADIA_STT_MODELS, 'gladia-stt')

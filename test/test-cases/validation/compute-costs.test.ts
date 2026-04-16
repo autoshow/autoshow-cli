@@ -82,6 +82,12 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('best')
   })
 
+  test('gladiaSttModel routes to gladia', () => {
+    const result = computeEstimatedCosts({ gladiaSttModel: 'default', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('gladia')
+    expect(result.steps[0]?.model).toBe('default')
+  })
+
   test('whisperModel routes to whisper', () => {
     const result = computeEstimatedCosts({ whisperModel: 'large-v3-turbo', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('whisper')
@@ -104,6 +110,7 @@ describe('computeEstimatedCosts STT routing', () => {
       sttTargets: [
         { service: 'elevenlabs', model: 'scribe_v2' },
         { service: 'assemblyai', model: 'universal-2' },
+        { service: 'gladia', model: 'default' },
         { service: 'whisper', model: 'tiny' }
       ],
       audioDurationSeconds: 60
@@ -113,6 +120,7 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'elevenlabs:scribe_v2',
       'assemblyai:universal-2',
+      'gladia:default',
       'whisper:tiny'
     ])
   })

@@ -13,6 +13,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
   { label: 'CLI invalid OpenAI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai-stt', 'gpt-4o-transcribe'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
+  { label: 'CLI invalid Gladia STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', 'premium'] },
   { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
   { label: 'CLI invalid GLM OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr-v2'] },
   { label: 'stt rejects invalid speaker-count with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
@@ -63,6 +64,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--groq-stt')
   expect(result.stdout).toContain('--openai-stt')
   expect(result.stdout).toContain('--mistral-stt')
+  expect(result.stdout).toContain('--gladia-stt')
   expect(result.stdout).toContain('--stt-provider-concurrency')
   expect(result.stdout).toContain('--stt-local-concurrency')
   expect(result.stdout).toContain('--stt-segment-concurrency')
@@ -163,6 +165,18 @@ test('CLI bare Speechmatics STT flag is accepted in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('CLI bare Gladia STT flag is accepted in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--gladia-stt',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
 test('CLI bare Rev STT flag is accepted in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -235,6 +249,14 @@ test('buildOptsFromFlags maps --rev-stt to revSttModel', () => {
   })
 
   expect(opts.revSttModel).toBe('machine')
+})
+
+test('buildOptsFromFlags maps --gladia-stt to gladiaSttModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'gladia-stt': 'default'
+  })
+
+  expect(opts.gladiaSttModel).toBe('default')
 })
 
 test('buildOptsFromFlags maps --gemini-voice to geminiVoiceId', () => {
@@ -357,6 +379,22 @@ test('collectSttTargets includes Rev targets with ignored speaker-count hints', 
       model: 'machine',
       local: false,
       diarizationOptions: { enabled: true }
+    }
+  ])
+})
+
+test('collectSttTargets includes Gladia targets with speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'gladia-stt': 'default',
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'gladia',
+      model: 'default',
+      local: false,
+      diarizationOptions: { enabled: true, speakerCount: 2 }
     }
   ])
 })

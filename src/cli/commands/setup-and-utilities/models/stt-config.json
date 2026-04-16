@@ -204,5 +204,16 @@
         }
       }
     }
+  },
+  "gladia": {
+    "description": "Gladia cloud pre-recorded speech-to-text",
+    "type": "api",
+    "models": {
+      "default": {
+        "description": "Default pre-recorded STT — diarization-enabled async transcription",
+        "costPerHourUSD": 0.61,
+        "costPerHourCents": 61
+      }
+    }
   }
 }

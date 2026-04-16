@@ -33,6 +33,7 @@ const EXPECTED_BUDGET_KEYS = [
   'transcribe-assemblyai-universal-3-pro',
   'transcribe-deepgram-nova-3',
   'transcribe-elevenlabs-scribe_v2',
+  'transcribe-gladia-default',
   'transcribe-groq-whisper-large-v3',
   'transcribe-groq-whisper-large-v3-turbo',
   'transcribe-mistral-voxtral-mini-2602',

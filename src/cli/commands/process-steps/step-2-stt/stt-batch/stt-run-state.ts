@@ -66,7 +66,8 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'groq',
   'openai',
   'mistral',
-  'assemblyai'
+  'assemblyai',
+  'gladia'
 ])
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   GROQ_MAX_ATTACHMENT_BYTES,
+  GLADIA_MAX_ATTACHMENT_BYTES,
   OPENAI_MAX_ATTACHMENT_BYTES,
   SPEECHMATICS_MAX_ATTACHMENT_BYTES,
   isPayloadTooLargeTranscriptionError,
@@ -29,6 +30,10 @@ describe('shouldSplitTranscriptionInput', () => {
     expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
   })
 
+  test('auto-splits Gladia uploads above the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput('gladia', GLADIA_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
+  })
+
   test('does not auto-split Groq uploads at or below the attachment cap', () => {
     expect(shouldSplitTranscriptionInput('groq', GROQ_MAX_ATTACHMENT_BYTES, false)).toBe(false)
     expect(shouldSplitTranscriptionInput('groq', GROQ_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
@@ -42,6 +47,11 @@ describe('shouldSplitTranscriptionInput', () => {
   test('does not auto-split Speechmatics uploads at or below the attachment cap', () => {
     expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES, false)).toBe(false)
     expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
+  })
+
+  test('does not auto-split Gladia uploads at or below the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput('gladia', GLADIA_MAX_ATTACHMENT_BYTES, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput('gladia', GLADIA_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
   })
 
   test('does not auto-split engines without a documented upload cap', () => {
@@ -111,6 +121,14 @@ describe('resolveDiarizationOptions', () => {
       diarizationSpeakerNames: undefined,
       diarizationSpeakerReferences: undefined
     }, 'assemblyai')).toEqual({ enabled: true, speakerCount: 3 })
+  })
+
+  test('preserves speaker-count for Gladia', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2,
+      diarizationSpeakerNames: undefined,
+      diarizationSpeakerReferences: undefined
+    }, 'gladia')).toEqual({ enabled: true, speakerCount: 2 })
   })
 
   test('ignores speaker-count for Deepgram while keeping diarization enabled', () => {

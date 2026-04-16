@@ -6,6 +6,7 @@ import {
   SUPPORTED_SONIOX_STT_MODELS,
   SUPPORTED_SPEECHMATICS_STT_MODELS,
   SUPPORTED_REV_STT_MODELS,
+  SUPPORTED_GLADIA_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
@@ -109,6 +110,10 @@ export const transcriptionFlags = {
   },
   'assemblyai-stt': {
     description: buildModelDescription('AssemblyAI STT model', SUPPORTED_ASSEMBLYAI_STT_MODELS),
+    type: String
+  },
+  'gladia-stt': {
+    description: buildModelDescription('Gladia STT model', SUPPORTED_GLADIA_STT_MODELS),
     type: String
   },
   'speaker-count': {

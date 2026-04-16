@@ -71,6 +71,8 @@ Current local llama.cpp models in the project config:
 # Local write pipeline with llama.cpp
 bun as write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF
 
+bun as write input/examples/audio/1-audio.mp3 --llama unsloth/Qwen3.5-0.8B-GGUF
+
 # Document input + local summary
 bun as write input/examples/document/1-document.pdf --llama ggml-org/Qwen3-0.6B-GGUF
 

@@ -397,6 +397,7 @@ type ComputeEstimatedCostsInput = {
   openaiSttModel?: string | undefined
   mistralSttModel?: string | undefined
   assemblyaiSttModel?: string | undefined
+  gladiaSttModel?: string | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
   extractTargets?: Array<{
@@ -469,6 +470,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'openaiSttModel' as const, provider: 'openai' },
       { field: 'mistralSttModel' as const, provider: 'mistral' },
       { field: 'assemblyaiSttModel' as const, provider: 'assemblyai' },
+      { field: 'gladiaSttModel' as const, provider: 'gladia' },
       { field: 'whisperModel' as const, provider: 'whisper' },
     ]
     for (const { field, provider } of STT_FIELD_MAP) {
