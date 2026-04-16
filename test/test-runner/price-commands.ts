@@ -250,6 +250,15 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
     command('extract-mistral-mistral-ocr-latest', 'extract-mistral-mistral-ocr-latest', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-latest', '--price']),
     command('extract-mistral-mistral-ocr-2512', 'extract-mistral-mistral-ocr-2512', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2512', '--price']),
   ]),
+  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-ocr.test.ts', [
+    command('extract-glm-glm-ocr', 'extract-glm-glm-ocr', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr', '--price']),
+  ]),
+  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-firecrawl.test.ts', [
+    command('extract-firecrawl-url', 'extract-firecrawl-url', ['src/cli/create-cli.ts', 'ocr', 'https://ajcwebdev.com', '--url-backend', 'firecrawl', '--price']),
+  ]),
+  ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-services/extract-glm-reader.test.ts', [
+    reportOnly('extract-glm-reader-url', ['src/cli/create-cli.ts', 'ocr', 'https://ajcwebdev.com', '--url-backend', 'glm-reader', '--price']),
+  ]),
   ...exact('test/test-cases/e2e/step-2-extract-e2e/extract-local/extract-paddle-ocr-image.test.ts', [
     command('extract-paddle-ocr-image', 'extract-paddle-ocr-image', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--paddle-ocr', '--price']),
   ]),

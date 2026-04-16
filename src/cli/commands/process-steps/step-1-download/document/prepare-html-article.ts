@@ -8,6 +8,7 @@ import { ensureDirectory } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { DocumentMetadataSchema, type HtmlArticleBackend, type PreparedDocument, type WebArticleMetadata } from '~/types'
+import { runGlmReader } from './glm-reader'
 
 const HTML_FETCH_TIMEOUT_MS = 15000
 const FIRECRAWL_DEFAULT_API_URL = 'https://api.firecrawl.dev'
@@ -205,6 +206,10 @@ const ensureMeaningfulMarkdown = (
     )
   }
 
+  if (backend === 'glm-reader') {
+    throw new Error('GLM Reader returned empty article markdown.')
+  }
+
   throw new Error('Firecrawl returned empty article markdown.')
 }
 
@@ -356,6 +361,8 @@ export async function prepareHtmlArticle(
   if (!remote) {
     if (backend === 'firecrawl') {
       l.warn('Ignoring --url-backend firecrawl for local HTML inputs; using defuddle instead')
+    } else if (backend === 'glm-reader') {
+      l.warn('Ignoring --url-backend glm-reader for local HTML inputs; using defuddle instead')
     }
     resolvedBackend = 'defuddle'
   }
@@ -395,7 +402,7 @@ export async function prepareHtmlArticle(
       title = cleanString(parsed['title']) ?? fallbackTitleFromSource(source)
       author = cleanString(parsed['author'])
     }
-  } else {
+  } else if (resolvedBackend === 'firecrawl') {
     l.info('Using Firecrawl backend for article extraction')
     const firecrawlResult = await runFirecrawlScrape(source)
     const htmlFallback = await tryFetchRemoteHtml(source)
@@ -407,6 +414,16 @@ export async function prepareHtmlArticle(
     fileSize = htmlFallback?.fileSize ?? byteLength(markdown)
     title = firecrawlResult.web.title ?? fallbackTitleFromSource(source)
     author = firecrawlResult.web.author
+  } else {
+    l.info('Using GLM Reader backend for article extraction')
+    const glmResult = await runGlmReader(source)
+    const htmlFallback = await tryFetchRemoteHtml(source)
+
+    markdown = ensureMeaningfulMarkdown(glmResult.preparedMarkdown, 'glm-reader')
+    web = { ...glmResult.web }
+    if (sourceUrl) web.sourceUrl = sourceUrl
+    fileSize = htmlFallback?.fileSize ?? byteLength(markdown)
+    title = glmResult.web.title ?? fallbackTitleFromSource(source)
   }
 
   const step1Title = title ?? fallbackTitleFromSource(source)

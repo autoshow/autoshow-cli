@@ -14,6 +14,7 @@ import {
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
+  SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
@@ -41,6 +42,7 @@ export type OpenAISttModel = typeof SUPPORTED_OPENAI_STT_MODELS[number]
 export type MistralSttModel = typeof SUPPORTED_MISTRAL_STT_MODELS[number]
 export type AssemblyaiSttModel = typeof SUPPORTED_ASSEMBLYAI_STT_MODELS[number]
 export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
+export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
 export type KittenTtsModel = typeof SUPPORTED_KITTEN_TTS_MODELS[number]
 export type ElevenlabsTtsModel = typeof SUPPORTED_ELEVENLABS_TTS_MODELS[number]
 export type MinimaxTtsModel = typeof SUPPORTED_MINIMAX_TTS_MODELS[number]
@@ -211,12 +213,18 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type ExtractStepEstimate = ProviderModelBase<'mistral'> & {
+export type ExtractStepEstimate = ProviderModelBase<'mistral' | 'glm' | 'firecrawl'> & {
   step: 'extract'
-  costPer1kPagesCents: number
+  costPer1kPagesCents?: number
+  inputCostPer1MCents?: number
+  outputCostPer1MCents?: number
   pageCount?: number
+  promptTokens?: number
+  completionTokens?: number
   totalCost: number
   costMultiplier?: number
+  estimateType?: 'heuristic' | 'exact'
+  note?: string
 }
 
 export type StepEstimate =

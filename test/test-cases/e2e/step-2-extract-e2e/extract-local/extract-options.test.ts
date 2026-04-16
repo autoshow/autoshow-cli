@@ -93,6 +93,9 @@ for (const args of [
   ['--ocrmypdf', '--paddle-ocr'],
   ['--mistral-ocr', 'mistral-ocr-2512', '--ocrmypdf'],
   ['--mistral-ocr', 'mistral-ocr-2512', '--paddle-ocr'],
+  ['--glm-ocr', 'glm-ocr', '--ocrmypdf'],
+  ['--glm-ocr', 'glm-ocr', '--paddle-ocr'],
+  ['--glm-ocr', 'glm-ocr', '--mistral-ocr', 'mistral-ocr-2512'],
 ]) {
   test(`extract rejects conflicting flags: ${args.join(' ')}`, async () => {
     const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, ...args])
@@ -164,6 +167,16 @@ test('bun as ocr https://ajcwebdev.com --url-backend defuddle', async () => {
       await rm(outputDir, { recursive: true, force: true }).catch(() => {})
     }
   }
+})
+
+test('bun as ocr https://ajcwebdev.com --url-backend glm-reader --price', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'glm-reader', '--price'],
+    { testName: 'bun as ocr https://ajcwebdev.com --url-backend glm-reader --price' }
+  )
+
+  expect(result.exitCode).toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('GLM Reader cost is not estimated locally during preflight.')
 })
 
 test('extract EPUB with --epub-bun writes structured data into metadata.json only', async () => {

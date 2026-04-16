@@ -288,8 +288,23 @@ const getLegacyTimingSteps = (metadata: Record<string, unknown>): Map<string, { 
     if (normalized && processingTimeMs !== null) {
       out.set(buildStepKey(normalized), { processingTimeMs, unitValue: duration })
     }
-  } else if (step2 && typeof step2['extractionMethod'] === 'string' && String(step2['extractionMethod']).includes('mistral-ocr') && typeof step2['ocrModel'] === 'string') {
-    const normalized = normalizeStepShape('extract', 'mistral', step2['ocrModel'])
+  } else if (
+    step2
+    && typeof step2['ocrModel'] === 'string'
+    && (
+      typeof step2['ocrService'] === 'string'
+      || (typeof step2['extractionMethod'] === 'string' && (
+        String(step2['extractionMethod']).includes('mistral-ocr')
+        || String(step2['extractionMethod']).includes('glm-ocr')
+      ))
+    )
+  ) {
+    const extractService = typeof step2['ocrService'] === 'string'
+      ? step2['ocrService']
+      : String(step2['extractionMethod']).includes('glm-ocr')
+        ? 'glm'
+        : 'mistral'
+    const normalized = normalizeStepShape('extract', extractService, step2['ocrModel'])
     const processingTimeMs = getFiniteNumber(step2['processingTime'])
     const pageCount = getFiniteNumber(step2['totalPages'])
     if (normalized && processingTimeMs !== null) {

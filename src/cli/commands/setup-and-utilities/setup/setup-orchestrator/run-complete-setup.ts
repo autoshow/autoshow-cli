@@ -23,6 +23,7 @@ import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-stt/stt-
 import { setupCalibreDocumentTools } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
 import { setupExtractionOcr } from '~/cli/commands/process-steps/step-2-document/document-local/extract'
 import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-document/document-services/mistral-ocr/mistral'
+import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-document/document-services/glm-ocr/glm'
 import { setupKittenTts } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { setupGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
@@ -235,7 +236,7 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupOpenAIStt)
 
-  await withCompactSetup(async () => { await setupMistralStt(); await setupMistralOcr() })
+  await withCompactSetup(async () => { await setupMistralStt(); await setupMistralOcr(); await setupGlmOcr() })
 
   await withCompactSetup(setupAssemblyAiStt)
 

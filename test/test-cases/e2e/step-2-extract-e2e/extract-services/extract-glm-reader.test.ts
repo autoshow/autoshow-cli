@@ -11,19 +11,8 @@ type ExtractMetadata = {
 
 const articleUrl = 'https://ajcwebdev.com'
 
-budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-backend firecrawl --price', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'firecrawl', '--price'],
-    { testName: 'bun as ocr https://ajcwebdev.com --url-backend firecrawl --price' }
-  )
-
-  expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('"provider": "firecrawl"')
-  expect(`${result.stdout}\n${result.stderr}`).not.toContain('Firecrawl credits apply; exact cost is not estimated locally.')
-})
-
-budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-backend firecrawl', async () => {
-  if (await shouldSkipMissingEnv('FIRECRAWL_API_KEY', 'FIRECRAWL_API_KEY not configured')) {
+budgetedTest('extract-glm-reader-url', 'bun as ocr https://ajcwebdev.com --url-backend glm-reader', async () => {
+  if (await shouldSkipMissingEnv('GLM_API_KEY', 'GLM_API_KEY not configured')) {
     return
   }
 
@@ -31,8 +20,8 @@ budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-ba
 
   try {
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'firecrawl'],
-      { testName: 'bun as ocr https://ajcwebdev.com --url-backend firecrawl' }
+      ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'glm-reader'],
+      { testName: 'bun as ocr https://ajcwebdev.com --url-backend glm-reader' }
     )
     expect(result.exitCode).toBe(0)
 
@@ -44,7 +33,7 @@ budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-ba
 
     const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
     expect(metadata.step1?.format).toBe('html')
-    expect(metadata.step2?.extractionMethod).toBe('html+firecrawl')
+    expect(metadata.step2?.extractionMethod).toBe('html+glm-reader')
   } finally {
     if (outputDir && process.env['AUTOSHOW_TEST_PRESERVE_ARTIFACTS'] === '0') {
       await rm(outputDir, { recursive: true, force: true }).catch(() => {})

@@ -130,7 +130,7 @@ const pickCheapestVideoSelection = (
 }
 
 const pickCheapestExtractModel = (
-  service: 'mistral',
+  service: 'mistral' | 'glm',
   registry: ReturnType<typeof getModelRegistry>
 ): string => {
   const serviceConfig = registry.extract[service]
@@ -141,7 +141,16 @@ const pickCheapestExtractModel = (
   const models = Object.keys(serviceConfig.models)
   return pickCheapestModel(models, (model) => {
     const meta = serviceConfig.models[model]
-    return meta ? (meta.costPer1kPagesUSD ?? Number.POSITIVE_INFINITY) : Number.POSITIVE_INFINITY
+    if (!meta) {
+      return Number.POSITIVE_INFINITY
+    }
+    if (typeof meta.costPer1kPagesUSD === 'number') {
+      return meta.costPer1kPagesUSD
+    }
+    if (typeof meta.costPerMInputTokensUSD === 'number' && typeof meta.costPerMOutputTokensUSD === 'number') {
+      return meta.costPerMInputTokensUSD + meta.costPerMOutputTokensUSD
+    }
+    return Number.POSITIVE_INFINITY
   })
 }
 
@@ -260,7 +269,8 @@ export const buildApiCheapSelections = () => {
   ]
 
   const extractSelections = [
-    { service: 'mistral', flag: '--mistral-ocr', envVar: 'MISTRAL_API_KEY', model: pickCheapestExtractModel('mistral', registry) }
+    { service: 'mistral', flag: '--mistral-ocr', envVar: 'MISTRAL_API_KEY', model: pickCheapestExtractModel('mistral', registry) },
+    { service: 'glm', flag: '--glm-ocr', envVar: 'GLM_API_KEY', model: pickCheapestExtractModel('glm', registry) }
   ]
 
   return {

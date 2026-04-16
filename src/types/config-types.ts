@@ -88,7 +88,8 @@ const ExtractDefaultsSchema = v.object({
   psm: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), undefined),
   oem: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), undefined),
   rotate: v.optional(v.pipe(v.number(), v.integer()), undefined),
-  mistralOcr: v.optional(v.string(), undefined)
+  mistralOcr: v.optional(v.string(), undefined),
+  glmOcr: v.optional(v.string(), undefined)
 })
 
 const BatchDefaultsSchema = v.object({

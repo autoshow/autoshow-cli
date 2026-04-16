@@ -22,5 +22,33 @@
         }
       }
     }
+  },
+  "glm": {
+    "description": "ZhipuAI GLM cloud OCR",
+    "type": "api",
+    "models": {
+      "glm-ocr": {
+        "description": "GLM OCR",
+        "costPerMInputTokensUSD": 0.03,
+        "costPerMOutputTokensUSD": 0.03,
+        "costPerMInputTokensCents": 3,
+        "costPerMOutputTokensCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 1906
+        }
+      }
+    }
+  },
+  "firecrawl": {
+    "description": "Firecrawl hosted article extraction",
+    "type": "api",
+    "models": {
+      "firecrawl": {
+        "description": "Firecrawl /scrape markdown extraction estimated at the Standard plan effective credit rate",
+        "costPer1kPagesUSD": 0.83,
+        "costPer1kPagesCents": 83
+      }
+    }
   }
 }

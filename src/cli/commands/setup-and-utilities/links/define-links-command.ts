@@ -15,7 +15,13 @@ type RunLinksOptions = {
 }
 
 const data = modelLinks as ModelLinksData
-export const LINKS_OUTPUT_PATH = new URL('../../../../docs/links/bun-links.md', import.meta.url)
+export const LINKS_OUTPUT_DIR = new URL('../../../../../docs/links/', import.meta.url)
+
+const getDefaultOutputPath = (serviceSelections: Map<string, string[]>): URL => {
+  const services = [...serviceSelections.keys()]
+  const stem = services.length === 1 ? `${services[0]}-links` : 'bun-links'
+  return new URL(`${stem}.md`, LINKS_OUTPUT_DIR)
+}
 
 const serviceEntries = Object.entries(data)
 const serviceKeySet = new Set(serviceEntries.map(([serviceName]) => serviceName.toLowerCase()))
@@ -152,7 +158,7 @@ export const runLinksWithArgv = async (
     throw CLIUsageError('No documentation links matched the provided selections')
   }
 
-  const outputPath = options.outputPath ?? LINKS_OUTPUT_PATH
+  const outputPath = options.outputPath ?? getDefaultOutputPath(serviceSelections)
   const fetchImpl = options.fetchImpl ?? fetch
 
   l.info(`Fetching ${links.length} documentation URLs`)

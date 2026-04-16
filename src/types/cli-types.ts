@@ -73,9 +73,10 @@ export type RuntimeOptions = {
   useOcrmypdf: boolean
   usePaddleOcr: boolean
   mistralOcrModel: string | undefined
+  glmOcrModel: string | undefined
   useEpubBun: boolean
   useEpubCalibre: boolean
-  urlBackend: 'defuddle' | 'firecrawl'
+  urlBackend: 'defuddle' | 'firecrawl' | 'glm-reader'
   urlBackendExplicit: boolean
 
   batchLimit: number

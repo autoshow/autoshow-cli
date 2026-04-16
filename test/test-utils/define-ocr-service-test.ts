@@ -16,18 +16,24 @@ export const defineOCRServiceTest = ({
   extractionMethod,
   imageExtractionMethod,
   envVarKey,
+  imageInput = 'input/examples/document/1-document.png',
+  timeoutMs,
 }: {
   models: readonly string[]
   cliFlag: string
   extractionMethod: string
   imageExtractionMethod?: string
   envVarKey: string
+  imageInput?: string
+  timeoutMs?: number
 }): void => {
   const pdfInput = 'input/examples/document/1-document.pdf'
-  const imageInput = 'input/examples/document/1-document.png'
+  const usesGeneratedPngFixture = imageInput === 'input/examples/document/1-document.png'
 
   withOutputLifecycle('1-document', async () => {
-    await ensurePageImageFixture(imageInput)
+    if (usesGeneratedPngFixture) {
+      await ensurePageImageFixture(imageInput)
+    }
   })
 
   for (const model of models) {
@@ -48,14 +54,16 @@ export const defineOCRServiceTest = ({
         step2?: { extractionMethod?: string }
       }
       expect(metadata.step2?.extractionMethod).toBe(extractionMethod)
-    })
+    }, timeoutMs)
 
     budgetedTest(budgetKey, `extract image with ${cliFlag} ${model}`, async () => {
       if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} not configured`)) {
         return
       }
 
-      await ensurePageImageFixture(imageInput)
+      if (usesGeneratedPngFixture) {
+        await ensurePageImageFixture(imageInput)
+      }
       await cleanupTestOutput('1-document')
 
       const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'ocr', imageInput, cliFlag, model])
@@ -66,6 +74,6 @@ export const defineOCRServiceTest = ({
       }
       expect(metadata.step2?.extractionMethod).toBe(imageExtractionMethod ?? extractionMethod)
       expect(metadata.step2?.totalPages).toBe(1)
-    })
+    }, timeoutMs)
   }
 }

@@ -25,6 +25,7 @@ const ARTICLE_HTML = `<!doctype html>
     </article>
   </body>
 </html>`
+const GLM_READER_MARKDOWN = '# GLM Reader Title\n\nThis markdown came from the mocked GLM Reader service.'
 
 const cleanupPaths = new Set<string>()
 
@@ -83,6 +84,20 @@ const startClassificationServer = async () => {
         return
       }
       res.end(Buffer.from(pdfBytes))
+      return
+    }
+
+    if (req.url === '/api/paas/v4/reader' && req.method === 'POST') {
+      res.statusCode = 200
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({
+        reader_result: {
+          content: GLM_READER_MARKDOWN,
+          title: 'GLM Reader Title',
+          description: 'Mocked GLM Reader description.',
+          url: `http://${req.headers.host ?? '127.0.0.1'}/article`
+        }
+      }))
       return
     }
 
@@ -197,6 +212,52 @@ describe('HTML article inputs', () => {
     }
   })
 
+  test('runs remote article URLs through glm-reader when requested', async () => {
+    const server = await startClassificationServer()
+    try {
+      const address = server.address()
+      if (!address || typeof address === 'string') {
+        throw new Error('Failed to determine server port')
+      }
+
+      const baseUrl = `http://127.0.0.1:${address.port}`
+      const articleUrl = `${baseUrl}/article`
+      const result = await runCommand(
+        ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'glm-reader', '--out', 'text'],
+        {
+          testName: 'remote article uses glm-reader extraction path',
+          env: {
+            GLM_API_KEY: 'glm-test-key',
+            ZAI_BASE_URL: baseUrl
+          }
+        }
+      )
+
+      expect(result.exitCode).toBe(0)
+      expect(result.outputDir).not.toBeNull()
+      if (!result.outputDir) {
+        return
+      }
+
+      cleanupPaths.add(result.outputDir)
+      const metadata = await Bun.file(`${result.outputDir}/metadata.json`).json() as {
+        step1: { format?: string }
+        step2: { extractionMethod?: string }
+        web?: { title?: string; description?: string }
+      }
+      const extractionText = await Bun.file(`${result.outputDir}/extraction.txt`).text()
+
+      expect(metadata.step1.format).toBe('html')
+      expect(metadata.step2.extractionMethod).toBe('html+glm-reader')
+      expect(metadata.web?.title).toBe('GLM Reader Title')
+      expect(metadata.web?.description).toBe('Mocked GLM Reader description.')
+      expect(extractionText).toContain('This markdown came from the mocked GLM Reader service.')
+      expect(extractionText.startsWith('Page 1\n')).toBe(false)
+    } finally {
+      await stopServer(server)
+    }
+  })
+
   test('explicit --url-backend routes unresolved html URLs through article extraction instead of usage validation', async () => {
     const server = await startClassificationServer()
     try {
@@ -259,6 +320,63 @@ describe('HTML article inputs', () => {
     }
   })
 
+  test('prices glm-reader article URLs with a note instead of an extract step', async () => {
+    const server = await startClassificationServer()
+    try {
+      const address = server.address()
+      if (!address || typeof address === 'string') {
+        throw new Error('Failed to determine server port')
+      }
+
+      const articleUrl = `http://127.0.0.1:${address.port}/article`
+      const opts = buildOptsFromFlags(false, {
+        openai: 'gpt-5.4',
+        'glm-ocr': 'glm-ocr',
+        'url-backend': 'glm-reader'
+      }, [], {}, new Set(['openai', 'glm-ocr', 'url-backend']))
+
+      const estimate = await buildAggregatedPriceEstimate('write', articleUrl, opts)
+      expect(estimate.steps.some((step) => step.step === 'extract')).toBe(false)
+      expect(estimate.notes).toContain('GLM Reader cost is not estimated locally during preflight.')
+      expect(estimate.notes).toContain('OCR flags are ignored for HTML/article inputs.')
+    } finally {
+      await stopServer(server)
+    }
+  })
+
+  test('prices firecrawl article URLs as extract steps instead of note-only placeholders', async () => {
+    const server = await startClassificationServer()
+    try {
+      const address = server.address()
+      if (!address || typeof address === 'string') {
+        throw new Error('Failed to determine server port')
+      }
+
+      const articleUrl = `http://127.0.0.1:${address.port}/article`
+      const opts = buildOptsFromFlags(false, {
+        'url-backend': 'firecrawl'
+      }, [], {}, new Set(['url-backend']))
+
+      const estimate = await buildAggregatedPriceEstimate('ocr', articleUrl, opts)
+      const extractStep = estimate.steps.find((step) => step.step === 'extract')
+
+      expect(extractStep).toBeDefined()
+      expect(extractStep).toMatchObject({
+        step: 'extract',
+        provider: 'firecrawl',
+        model: 'firecrawl',
+        pageCount: 1,
+        costPer1kPagesCents: 83,
+        estimateType: 'exact'
+      })
+      expect(extractStep?.totalCost).toBeCloseTo(0.083, 6)
+      expect(extractStep?.note).toContain('Firecrawl Standard plan rate')
+      expect(estimate.notes ?? []).not.toContain('Firecrawl credits apply; exact cost is not estimated locally.')
+    } finally {
+      await stopServer(server)
+    }
+  })
+
   test('requires FIRECRAWL_API_KEY for hosted firecrawl article extraction', async () => {
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-firecrawl-'))
     cleanupPaths.add(tempDir)
@@ -285,5 +403,59 @@ describe('HTML article inputs', () => {
         process.env['FIRECRAWL_API_URL'] = originalApiUrl
       }
     }
+  })
+
+  test('requires GLM_API_KEY for hosted glm-reader article extraction', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-glm-reader-'))
+    cleanupPaths.add(tempDir)
+
+    const originalApiKey = process.env['GLM_API_KEY']
+    const originalBaseUrl = process.env['ZAI_BASE_URL']
+    delete process.env['GLM_API_KEY']
+    delete process.env['ZAI_BASE_URL']
+
+    try {
+      await expect(
+        prepareHtmlArticle('https://ajcwebdev.com', tempDir, 'glm-reader')
+      ).rejects.toThrow('GLM_API_KEY environment variable is required for GLM Reader')
+    } finally {
+      if (originalApiKey === undefined) {
+        delete process.env['GLM_API_KEY']
+      } else {
+        process.env['GLM_API_KEY'] = originalApiKey
+      }
+
+      if (originalBaseUrl === undefined) {
+        delete process.env['ZAI_BASE_URL']
+      } else {
+        process.env['ZAI_BASE_URL'] = originalBaseUrl
+      }
+    }
+  })
+
+  test('local html ignores glm-reader and falls back to defuddle', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-html-local-glm-'))
+    cleanupPaths.add(tempDir)
+
+    const htmlPath = join(tempDir, 'page.html')
+    await Bun.write(htmlPath, ARTICLE_HTML)
+
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'ocr', htmlPath, '--url-backend', 'glm-reader', '--out', 'text'],
+      { testName: 'local html ignores glm-reader backend' }
+    )
+
+    expect(result.exitCode).toBe(0)
+    expect(`${result.stdout}\n${result.stderr}`).toContain('Ignoring --url-backend glm-reader for local HTML inputs; using defuddle instead')
+    expect(result.outputDir).not.toBeNull()
+    if (!result.outputDir) {
+      return
+    }
+
+    cleanupPaths.add(result.outputDir)
+    const metadata = await Bun.file(`${result.outputDir}/metadata.json`).json() as {
+      step2: { extractionMethod?: string }
+    }
+    expect(metadata.step2.extractionMethod).toBe('html+defuddle')
   })
 })

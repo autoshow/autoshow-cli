@@ -41,6 +41,7 @@ test('extract aliases resolve to ocr help', async () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toContain('--mistral-ocr')
+    expect(result.stdout).toContain('--glm-ocr')
     expect(result.stdout).toContain('--epub-bun')
   }
 })
@@ -68,6 +69,7 @@ test('stt and ocr canonical commands expose their help output', async () => {
 
   expect(ocrResult.exitCode).toBe(0)
   expect(ocrResult.stdout).toContain('--mistral-ocr')
+  expect(ocrResult.stdout).toContain('--glm-ocr')
   expect(ocrResult.stdout).toContain('--epub-bun')
 })
 

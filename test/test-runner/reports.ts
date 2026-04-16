@@ -80,6 +80,7 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--assemblyai-stt': { service: 'assemblyai', kind: 'transcribe' },
   '--mistral-stt': { service: 'mistral', kind: 'transcribe' },
   '--mistral-ocr': { service: 'mistral', kind: 'extract' },
+  '--glm-ocr': { service: 'glm', kind: 'extract' },
   '--elevenlabs-tts': { service: 'elevenlabs', kind: 'tts' },
   '--minimax-tts': { service: 'minimax', kind: 'tts' },
   '--groq-tts': { service: 'groq', kind: 'tts' },
@@ -108,6 +109,8 @@ const KNOWN_SERVICE_HINTS: Array<{ pattern: RegExp, service: string }> = [
   { pattern: /\brev\b/i, service: 'rev' },
   { pattern: /\bassemblyai\b/i, service: 'assemblyai' },
   { pattern: /\bmistral\b/i, service: 'mistral' },
+  { pattern: /\bfirecrawl\b/i, service: 'firecrawl' },
+  { pattern: /\bglm(?:-reader)?\b/i, service: 'glm' },
   { pattern: /\bwhisper\b/i, service: 'whisper' },
   { pattern: /\bllama\b/i, service: 'llama.cpp' },
   { pattern: /\bkitten\b/i, service: 'kitten' },
@@ -194,6 +197,16 @@ const buildPairsFromMetricArgs = (metric: ParsedCommandMetric): ServiceModelPair
     const arg = metric.args[index]
     if (!arg) continue
 
+    if (arg === '--url-backend') {
+      const next = metric.args[index + 1]
+      if (next === 'firecrawl') {
+        pushPair(pairs, 'extract', 'firecrawl', 'firecrawl')
+      } else if (next === 'glm-reader') {
+        pushPair(pairs, 'extract', 'glm', 'glm-reader')
+      }
+      continue
+    }
+
     const flag = ARG_SERVICE_FLAGS[arg]
     if (!flag) continue
 
@@ -238,8 +251,20 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
       ? step2['ocrService']
       : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('mistral-ocr')
         ? 'mistral'
+        : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-ocr')
+          ? 'glm'
+          : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
+            ? 'glm'
+            : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('firecrawl')
+              ? 'firecrawl'
         : null,
-    typeof step2?.['ocrModel'] === 'string' ? step2['ocrModel'] : null
+    typeof step2?.['ocrModel'] === 'string'
+      ? step2['ocrModel']
+      : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
+        ? 'glm-reader'
+        : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('firecrawl')
+          ? 'firecrawl'
+          : null
   )
   for (const step3 of step3Entries) {
     pushPair(
@@ -384,6 +409,7 @@ const inferModelHints = (testCase: ParsedJunitCase): Set<string> => {
 
   addModelHint(models, name.match(/uses cheapest model (.+?)(?: at minimal cost settings)?$/i)?.[1])
   addModelHint(models, name.match(/with --mistral-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
+  addModelHint(models, name.match(/with --glm-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/^([A-Za-z0-9./_-]+) (?:model generates|generates|runs in parallel|uses cheapest model)/i)?.[1])
 
   for (const match of name.matchAll(/--[a-z-]+\s+([A-Za-z0-9./_-]+)/gi)) {

@@ -37,7 +37,7 @@ Check prerequisites, API keys, and configuration without installing anything:
 bun as setup --doctor
 ```
 
-Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys, config file validity, and Bun version.
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`), config file validity, and Bun version.
 
 Doctor also reports YouTube cookie state separately:
 

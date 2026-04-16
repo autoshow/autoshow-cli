@@ -28,6 +28,10 @@ const ExtractModelSchema = v.object({
   description: v.string(),
   costPer1kPagesUSD: v.optional(v.number(), undefined),
   costPer1kPagesCents: v.optional(v.number(), undefined),
+  costPerMInputTokensUSD: v.optional(v.number(), undefined),
+  costPerMInputTokensCents: v.optional(v.number(), undefined),
+  costPerMOutputTokensUSD: v.optional(v.number(), undefined),
+  costPerMOutputTokensCents: v.optional(v.number(), undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),
     msPerPage: v.optional(v.number(), undefined)
@@ -300,7 +304,14 @@ export const getSttEstimation = (service: string, model: string): SttEstimation 
   }
 }
 
-export const getExtractPricing = (service: string, model: string): { costPer1kPagesCents?: number } => {
+export const getExtractPricing = (
+  service: string,
+  model: string
+): {
+  costPer1kPagesCents?: number
+  inputCostPer1MCents?: number
+  outputCostPer1MCents?: number
+} => {
   const extractModel = getModelRegistry().extract[service]?.models[model]
   if (!extractModel) return {}
   return {
@@ -308,6 +319,16 @@ export const getExtractPricing = (service: string, model: string): { costPer1kPa
       ? { costPer1kPagesCents: extractModel.costPer1kPagesCents }
       : extractModel.costPer1kPagesUSD !== undefined
         ? { costPer1kPagesCents: extractModel.costPer1kPagesUSD * 100 }
+        : {}),
+    ...(extractModel.costPerMInputTokensCents !== undefined
+      ? { inputCostPer1MCents: extractModel.costPerMInputTokensCents }
+      : extractModel.costPerMInputTokensUSD !== undefined
+        ? { inputCostPer1MCents: extractModel.costPerMInputTokensUSD * 100 }
+        : {}),
+    ...(extractModel.costPerMOutputTokensCents !== undefined
+      ? { outputCostPer1MCents: extractModel.costPerMOutputTokensCents }
+      : extractModel.costPerMOutputTokensUSD !== undefined
+        ? { outputCostPer1MCents: extractModel.costPerMOutputTokensUSD * 100 }
         : {})
   }
 }

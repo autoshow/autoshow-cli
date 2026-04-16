@@ -37,10 +37,40 @@ const isExtractionMetadata = (value: unknown): value is ExtractionMetadata => {
 const resolveExtractionProviderModel = (
   metadata: ExtractionMetadata
 ): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('html+firecrawl')) {
+    return {
+      provider: 'firecrawl',
+      model: 'firecrawl'
+    }
+  }
+  if (metadata.extractionMethod.includes('html+glm-reader')) {
+    return {
+      provider: 'glm',
+      model: 'glm-reader'
+    }
+  }
+  if (metadata.ocrService === 'glm') {
+    return {
+      provider: 'glm',
+      model: metadata.ocrModel ?? 'glm-ocr'
+    }
+  }
+  if (metadata.ocrService === 'mistral') {
+    return {
+      provider: 'mistral',
+      model: metadata.ocrModel ?? 'mistral-ocr'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
       model: metadata.ocrModel ?? 'mistral-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('glm-ocr')) {
+    return {
+      provider: 'glm',
+      model: metadata.ocrModel ?? 'glm-ocr'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -89,6 +119,8 @@ type ComputeEstimatedProcessingTimesInput = {
   transcriptionModel?: string | undefined
   audioDurationSeconds?: number | undefined
   mistralOcrModel?: string | undefined
+  glmOcrModel?: string | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'firecrawl', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmService?: Step3Metadata['llmService'] | undefined
   llmModel?: string | undefined
@@ -162,15 +194,27 @@ export const computeEstimatedProcessingTimes = (
     })
   }
 
-  if (input.mistralOcrModel && typeof input.extractPageCount === 'number') {
-    const estimation = getExtractEstimation('mistral', input.mistralOcrModel)
+  const extractTargets = input.extractTargets && input.extractTargets.length > 0
+    ? input.extractTargets
+    : [
+        ...(input.mistralOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'mistral' as const, model: input.mistralOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount }]
+          : [])
+      ]
+
+  for (const target of extractTargets) {
+    const pageCount = Math.max(0, target.pageCount ?? input.extractPageCount ?? 0)
+    const estimation = getExtractEstimation(target.provider, target.model)
     steps.push({
       step: 'extract',
-      provider: 'mistral',
-      model: input.mistralOcrModel,
-      processingTimeMs: roundMs(input.extractPageCount * estimation.msPerPage),
+      provider: target.provider,
+      model: target.model,
+      processingTimeMs: roundMs(pageCount * estimation.msPerPage),
       inputMetric: 'pages',
-      inputValue: input.extractPageCount,
+      inputValue: pageCount,
     })
   }
 

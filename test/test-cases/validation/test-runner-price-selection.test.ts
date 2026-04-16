@@ -13,8 +13,10 @@ const uniqueBudgetKeys = [...new Set(
 )].sort()
 
 const EXPECTED_BUDGET_KEYS = [
+  'extract-firecrawl-url',
   'extract-mistral-mistral-ocr-2512',
   'extract-mistral-mistral-ocr-latest',
+  'extract-glm-glm-ocr',
   'extract-paddle-ocr-image',
   'image-gemini-gemini-3-pro-image-preview',
   'image-gemini-imagen-4.0-fast-generate-001',
@@ -36,7 +38,12 @@ const EXPECTED_BUDGET_KEYS = [
   'transcribe-mistral-voxtral-mini-2602',
   'transcribe-mistral-voxtral-mini-latest',
   'transcribe-openai-gpt-4o-transcribe-diarize',
+  'transcribe-rev-machine',
   'transcribe-reverb',
+  'transcribe-soniox-stt-async-v3',
+  'transcribe-soniox-stt-async-v4',
+  'transcribe-speechmatics-enhanced',
+  'transcribe-speechmatics-standard',
   'transcribe-whisper-base',
   'transcribe-whisper-large-v3-turbo',
   'transcribe-whisper-large-v3-turbo-split',

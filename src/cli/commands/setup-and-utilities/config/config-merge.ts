@@ -129,6 +129,7 @@ export const mergeConfigIntoRawFlags = (
     inject('oem', d.extract.oem)
     inject('rotate', d.extract.rotate)
     inject('mistral-ocr', d.extract.mistralOcr)
+    inject('glm-ocr', d.extract.glmOcr)
   }
 
   if (d.batch) {
@@ -210,6 +211,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'oem':               ['defaults', 'extract', 'oem'],
   'rotate':            ['defaults', 'extract', 'rotate'],
   'mistral-ocr':       ['defaults', 'extract', 'mistralOcr'],
+  'glm-ocr':           ['defaults', 'extract', 'glmOcr'],
   'batch-limit':       ['defaults', 'batch', 'limit'],
   'batch-order':       ['defaults', 'batch', 'order'],
   'batch-concurrency': ['defaults', 'batch', 'concurrency'],

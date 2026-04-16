@@ -14,11 +14,23 @@ export const extractCommand = defineCommand({
   help: {
     examples: [
       ['bun as ocr document.pdf', 'Extract text from PDF with Tesseract'],
-      ['bun as ocr document.pdf --mistral-ocr', 'Extract with Mistral OCR API'],
+      ['bun as ocr document.pdf --mistral-ocr mistral-ocr-latest', 'Extract with Mistral OCR API'],
+      ['bun as ocr document.pdf --glm-ocr glm-ocr', 'Extract with GLM OCR API'],
       ['bun as ocr book.epub --lang eng+fra', 'Extract from EPUB with multilingual OCR']
     ]
   }
 }, async (ctx) => {
+  const ocrEngineCount = [
+    ctx.flags['ocrmypdf'] === true,
+    ctx.flags['paddle-ocr'] === true,
+    typeof ctx.flags['mistral-ocr'] === 'string',
+    typeof ctx.flags['glm-ocr'] === 'string'
+  ].filter(Boolean).length
+
+  if (ocrEngineCount > 1 && ctx.flags['price'] !== true && ctx.flags['dry-run'] !== true) {
+    throw CLIUsageError('Use at most one standalone OCR engine flag at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr).')
+  }
+
   const epubInspectCount = [ctx.flags['epub-bun'], ctx.flags['epub-calibre']].filter(Boolean).length
   if (epubInspectCount > 1) {
     throw CLIUsageError('Cannot use both EPUB inspect engines at the same time (--epub-bun, --epub-calibre)')

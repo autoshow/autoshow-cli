@@ -14,6 +14,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid OpenAI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai-stt', 'gpt-4o-transcribe'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
   { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
+  { label: 'CLI invalid GLM OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr-v2'] },
   { label: 'stt rejects invalid speaker-count with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
   { label: 'stt rejects LLM provider flags with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4'] },
   { label: 'stt rejects MiniMax LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
@@ -76,7 +77,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).not.toMatch(/--llama(\s|$)/)
 })
 
-test('ocr help includes mistral-ocr flag', async () => {
+test('ocr help includes hosted OCR flags', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'ocr',
@@ -85,6 +86,7 @@ test('ocr help includes mistral-ocr flag', async () => {
 
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--mistral-ocr')
+  expect(result.stdout).toContain('--glm-ocr')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--epub-calibre')
 })
@@ -203,6 +205,14 @@ test('buildOptsFromFlags maps --deepgram-stt to deepgramSttModel', () => {
   expect(opts.deepgramSttModel).toBe('nova-3')
 })
 
+test('buildOptsFromFlags maps --glm-ocr to glmOcrModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'glm-ocr': 'glm-ocr'
+  })
+
+  expect(opts.glmOcrModel).toBe('glm-ocr')
+})
+
 test('buildOptsFromFlags maps --soniox-stt to sonioxSttModel', () => {
   const opts = buildOptsFromFlags(false, {
     'soniox-stt': 'stt-async-v4'
@@ -243,6 +253,14 @@ test('buildOptsFromFlags maps --json-output to structured output', () => {
   })
 
   expect(opts.structured).toBe(true)
+})
+
+test('buildOptsFromFlags accepts --url-backend glm-reader', () => {
+  const opts = buildOptsFromFlags(false, {
+    'url-backend': 'glm-reader'
+  })
+
+  expect(opts.urlBackend).toBe('glm-reader')
 })
 
 test('buildOptsFromFlags maps --md-output to markdown output', () => {
@@ -426,6 +444,8 @@ test('ocr accepts multiple OCR providers in price mode', async () => {
     '--paddle-ocr',
     '--mistral-ocr',
     'mistral-ocr-latest',
+    '--glm-ocr',
+    'glm-ocr',
     '--price'
   ])
 
@@ -440,6 +460,8 @@ test('write accepts multiple OCR providers in price mode', async () => {
     '--paddle-ocr',
     '--mistral-ocr',
     'mistral-ocr-latest',
+    '--glm-ocr',
+    'glm-ocr',
     '--openai',
     'gpt-5.4',
     '--price'

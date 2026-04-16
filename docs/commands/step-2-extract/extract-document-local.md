@@ -44,7 +44,7 @@ bun as ocr input/examples/document/1-document.pdf --paddle-ocr
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms if the Calibre CLI tools are missing.
 
-HTML/article extraction through `defuddle` is bundled and does not require extra setup.
+HTML/article extraction through `defuddle` is bundled and does not require extra setup. Hosted article backends (`firecrawl`, `glm-reader`) are documented in [`extract-document-services.md`](./extract-document-services.md).
 
 ### Tooling Notes
 
@@ -65,9 +65,11 @@ No environment variables are required for the default local OCR and `defuddle` p
 
 ```bash
 MISTRAL_API_KEY=...
+GLM_API_KEY=...
 ```
 
 `MISTRAL_API_KEY` is only needed when you opt into `--mistral-ocr`.
+`GLM_API_KEY` is only needed when you opt into `--glm-ocr` or `--url-backend glm-reader`.
 
 ## Usage
 
@@ -103,7 +105,8 @@ Rules:
 - local `.html` and `.htm` files always use `defuddle`
 - article extraction produces markdown-like text from the page body, not page-based OCR
 - if `defuddle` cannot extract meaningful content, the command fails with a message suggesting `--url-backend firecrawl`
-- OCR engine flags such as `--ocrmypdf`, `--paddle-ocr`, and `--mistral-ocr` are ignored for HTML/article inputs
+- OCR engine flags such as `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, and `--glm-ocr` are ignored for HTML/article inputs
+- local `.html` and `.htm` still use `defuddle` even if `--url-backend firecrawl` or `--url-backend glm-reader` is passed
 
 ## EPUB Inspect Modes
 
@@ -177,7 +180,7 @@ These are the flags currently exposed by the standalone `ocr` command:
 | `--password` | - | Password for encrypted PDFs |
 | `--ocrmypdf` | `false` | Use OCRmyPDF |
 | `--paddle-ocr` | `false` | Use PaddleOCR |
-| `--url-backend` | `defuddle` | Article/HTML backend: `defuddle` or `firecrawl`; local `.html` / `.htm` always use `defuddle` |
+| `--url-backend` | `defuddle` | Article/HTML backend: `defuddle`, `firecrawl`, or `glm-reader`; local `.html` / `.htm` always use `defuddle` |
 | `--epub-bun` | `false` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | `false` | Inspect EPUB structure with Calibre |
 | `--price` | `false` | Show the aggregated OCR estimate and exit |
@@ -188,7 +191,7 @@ These are the flags currently exposed by the standalone `ocr` command:
 - Supported image formats: PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF.
 - HTML/article inputs default to the bundled `defuddle` backend and produce `html+defuddle` extraction metadata.
 - Office files use native ZIP/XML extraction first and only fall back to OCR when the extracted text quality is poor.
-- `--mistral-ocr` is documented separately in [`extract-document-services.md`](./extract-document-services.md).
+- `--mistral-ocr`, `--glm-ocr`, and hosted article backends are documented separately in [`extract-document-services.md`](./extract-document-services.md).
 - Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are currently exposed through `write`, not through standalone `ocr`.
 
 ## Local Tests

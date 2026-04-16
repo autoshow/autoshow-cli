@@ -21,15 +21,74 @@ import {
   getExtractTargetDirectoryName,
   type ExtractTarget
 } from './step-2-document/extract-targets'
+import { FIRECRAWL_PRICE_NOTE } from './step-2-document/document-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
 
-const hasHtmlExtractionMethod = (
-  metadata: ExtractionMetadata | ExtractionMetadata[]
-): boolean =>
-  (Array.isArray(metadata) ? metadata : [metadata]).some((entry) => entry.extractionMethod.startsWith('html+'))
+const collectEstimatedExtractTargets = (
+  metadata: ExtractionMetadata | ExtractionMetadata[],
+  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel'>
+): Array<{
+  provider: 'mistral' | 'glm' | 'firecrawl'
+  model: string
+  pageCount?: number
+  promptTokens?: number
+  completionTokens?: number
+  estimateType?: 'heuristic' | 'exact'
+  note?: string
+}> => {
+  const targets: Array<{
+    provider: 'mistral' | 'glm' | 'firecrawl'
+    model: string
+    pageCount?: number
+    promptTokens?: number
+    completionTokens?: number
+    estimateType?: 'heuristic' | 'exact'
+    note?: string
+  }> = []
+
+  for (const entry of Array.isArray(metadata) ? metadata : [metadata]) {
+    if (entry.extractionMethod === 'html+firecrawl') {
+      targets.push({
+        provider: 'firecrawl',
+        model: 'firecrawl',
+        pageCount: entry.totalPages,
+        estimateType: 'exact',
+        note: FIRECRAWL_PRICE_NOTE
+      })
+      continue
+    }
+
+    if (entry.extractionMethod.startsWith('html+')) {
+      continue
+    }
+
+    if ((entry.ocrService === 'glm' || entry.extractionMethod.includes('glm-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'glm' as const,
+        model: entry.ocrModel ?? opts.glmOcrModel ?? 'glm-ocr',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'mistral' || entry.extractionMethod.includes('mistral-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'mistral' as const,
+        model: entry.ocrModel ?? opts.mistralOcrModel ?? 'mistral-ocr-latest',
+        pageCount: entry.totalPages,
+        estimateType: 'exact' as const
+      })
+    }
+  }
+
+  return targets
+}
 
 const writeExtractionArtifact = async (
   outputDir: string,
@@ -68,19 +127,19 @@ const buildDocumentMetadataPayload = (
   failures: Array<{ service: string, model: string, message: string }> = [],
   web?: ProcessDocumentOutput['web']
 ): Record<string, unknown> => {
-  const estimatedMistralOcrModel = hasHtmlExtractionMethod(step2Metadata)
-    ? undefined
-    : opts.mistralOcrModel
+  const extractTargets = collectEstimatedExtractTargets(step2Metadata, opts)
   const estimated = computeEstimatedCosts({
-    mistralOcrModel: estimatedMistralOcrModel,
-    extractPageCount: step1Metadata.pageCount,
+    extractTargets
   })
   const actual = computeActualCosts({ step2: step2Metadata })
   const cost = { estimated, actual }
 
   const estimatedTiming = computeEstimatedProcessingTimes({
-    mistralOcrModel: estimatedMistralOcrModel,
-    extractPageCount: step1Metadata.pageCount,
+    extractTargets: extractTargets.map((target) => ({
+      provider: target.provider,
+      model: target.model,
+      pageCount: target.pageCount ?? step1Metadata.pageCount
+    })),
   })
   const actualTiming = computeActualProcessingTimes({
     step1: step1Metadata,
@@ -123,6 +182,7 @@ export const processDocument = async (
     ...(rawOpts.useOcrmypdf ? { useOcrmypdf: true } : {}),
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
+    ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
     ...(rawOpts.useEpubBun ? { useEpubBun: true } : {}),
     ...(rawOpts.useEpubCalibre ? { useEpubCalibre: true } : {}),
     ...(preparedDocument?.preparedMarkdown ? { preparedMarkdown: preparedDocument.preparedMarkdown } : {}),

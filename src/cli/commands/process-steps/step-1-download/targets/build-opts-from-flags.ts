@@ -17,6 +17,7 @@ import {
   validateOpenAISttModel,
   validateMistralSttModel,
   validateAssemblyaiSttModel,
+  validateGlmOcrModel,
   validateMistralOcrModel,
   validateKittenTtsModel,
   validateElevenlabsTtsModel,
@@ -139,7 +140,7 @@ const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
 const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
 const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
-const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecrawl' => {
+const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecrawl' | 'glm-reader' => {
   const normalized = value?.trim().toLowerCase()
   if (!normalized || normalized === 'defuddle') {
     return 'defuddle'
@@ -147,7 +148,10 @@ const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecrawl' =>
   if (normalized === 'firecrawl') {
     return 'firecrawl'
   }
-  throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle" or "firecrawl".`)
+  if (normalized === 'glm-reader') {
+    return 'glm-reader'
+  }
+  throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle", "firecrawl", or "glm-reader".`)
 }
 
 type BuildOptsDefaults = {
@@ -207,6 +211,7 @@ export const buildOptsFromFlags = (
   const mistralSttModel = readValidated('mistral-stt', validateMistralSttModel)
   const assemblyaiSttModel = readValidated('assemblyai-stt', validateAssemblyaiSttModel)
   const mistralOcrModel = readValidated('mistral-ocr', validateMistralOcrModel)
+  const glmOcrModel = readValidated('glm-ocr', validateGlmOcrModel)
   const llamaModel = readValidated('llama', validateLlamaModel)
   const openaiModel = readValidated('openai', validateOpenAIModel)
   const groqModel = readValidated('groq', validateGroqModel)
@@ -292,6 +297,7 @@ export const buildOptsFromFlags = (
     useOcrmypdf: readBooleanFlag(mergedFlags, 'ocrmypdf'),
     usePaddleOcr: readBooleanFlag(mergedFlags, 'paddle-ocr'),
     mistralOcrModel,
+    glmOcrModel,
     useEpubBun: readBooleanFlag(mergedFlags, 'epub-bun'),
     useEpubCalibre: readBooleanFlag(mergedFlags, 'epub-calibre'),
     urlBackend,

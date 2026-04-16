@@ -20,11 +20,13 @@ import { processPages } from './document-utils/page-processor'
 import { runOcrmypdf } from './document-local/ocrmypdf/run-ocrmypdf'
 import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './document-local/paddle-ocr/run-paddle-ocr'
 import { runMistralOcr } from './document-services/mistral-ocr/run-mistral-ocr'
+import { runGlmOcr } from './document-services/glm-ocr/run-glm-ocr'
 import { convertDocumentToPdf } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { extractDocx, extractPptx, extractXlsx, extractOdf, type ZipXmlPage } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ZipXmlFormat } from '~/types'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-document/document-services/mistral-ocr/mistral'
+import { ensureGlmOcrSetup } from './document-services/glm-ocr/glm'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
 import { isOfficeTextUsable } from './document-utils/page-triage'
 import { estimateTokens } from '~/utils/text-utils'
@@ -33,7 +35,18 @@ const ZIP_XML_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'] as const)
 const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
 const isZipXmlFormat = (f: string): f is ZipXmlFormat => ZIP_XML_FORMATS.has(f as ZipXmlFormat)
 
-type LocalExtractOcrEngine = Exclude<ExtractOcrEngine, 'mistral-ocr'>
+type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr'
+type LocalExtractOcrEngine = Exclude<ExtractOcrEngine, HostedExtractOcrEngine>
+type HostedOcrRun = {
+  pages: PageResult[]
+  extractionMethod: HostedExtractOcrEngine
+  ocrService: 'mistral' | 'glm'
+  ocrModel: string
+  canonicalText?: string
+  totalPages?: number
+  promptTokens?: number
+  completionTokens?: number
+}
 
 const buildCombinedText = (pages: PageResult[], pageSeparator: string): string => {
   return pages
@@ -78,8 +91,14 @@ const resolveExtractEngine = (opts: ExtractionOptions): LocalExtractOcrEngine =>
 const hasMistralOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.mistralOcrModel === 'string' && opts.mistralOcrModel.length > 0
 
+const hasGlmOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.glmOcrModel === 'string' && opts.glmOcrModel.length > 0
+
+const hasHostedOcr = (opts: ExtractionOptions): boolean =>
+  hasMistralOcr(opts) || hasGlmOcr(opts)
+
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
-  opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasMistralOcr(opts)
+  opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
 
 // Convert document to PDF via LibreOffice (for office/RTF)
 const convertToLibreOfficePdf = async (
@@ -267,16 +286,24 @@ const warnTesseractOnlyFlags = (engine: Exclude<LocalExtractOcrEngine, 'tesserac
   }
 }
 
-const warnMistralOnlyFlags = (opts: ExtractionOptions): void => {
+const warnHostedOnlyFlags = (engineName: HostedExtractOcrEngine, opts: ExtractionOptions): void => {
   if (opts.psm !== 3) {
-    l.warn('Flag --psm is Tesseract-specific and has no effect with the mistral-ocr engine')
+    l.warn(`Flag --psm is Tesseract-specific and has no effect with the ${engineName} engine`)
   }
   if (opts.oem !== 1) {
-    l.warn('Flag --oem is Tesseract-specific and has no effect with the mistral-ocr engine')
+    l.warn(`Flag --oem is Tesseract-specific and has no effect with the ${engineName} engine`)
   }
   if (opts.preserveInterwordSpaces === true) {
-    l.warn('Flag --preserve-spaces is Tesseract-specific and has no effect with the mistral-ocr engine')
+    l.warn(`Flag --preserve-spaces is Tesseract-specific and has no effect with the ${engineName} engine`)
   }
+}
+
+const warnMistralOnlyFlags = (opts: ExtractionOptions): void => {
+  warnHostedOnlyFlags('mistral-ocr', opts)
+}
+
+const warnGlmOnlyFlags = (opts: ExtractionOptions): void => {
+  warnHostedOnlyFlags('glm-ocr', opts)
 }
 
 // Run OCR on a single image and return a PageResult
@@ -329,6 +356,64 @@ const engineSuffix = (engine: LocalExtractOcrEngine): string => {
   }
 }
 
+const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine): string => {
+  if (engine === 'glm-ocr') {
+    return 'The --glm-ocr engine supports PDF and standard image files (PNG/JPG) only.'
+  }
+  return 'The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.'
+}
+
+const assertSupportedHostedDirectImageFormat = (
+  format: string,
+  engine: HostedExtractOcrEngine
+): void => {
+  const supportedFormats = engine === 'glm-ocr'
+    ? new Set(['png', 'jpg'])
+    : new Set(['png', 'jpg', 'tif'])
+
+  if (!supportedFormats.has(format)) {
+    throw CLIUsageError(getHostedDirectImageSupportError(engine))
+  }
+}
+
+const runHostedOcr = async (
+  filePath: string,
+  step1Metadata: DocumentMetadata,
+  opts: ExtractionOptions
+): Promise<HostedOcrRun> => {
+  if (hasMistralOcr(opts)) {
+    await ensureMistralOcrSetup()
+    warnMistralOnlyFlags(opts)
+    const ocrModel = opts.mistralOcrModel as string
+    const run = await runMistralOcr(filePath, step1Metadata, ocrModel)
+    return {
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'mistral',
+      ocrModel
+    }
+  }
+
+  if (hasGlmOcr(opts)) {
+    await ensureGlmOcrSetup()
+    warnGlmOnlyFlags(opts)
+    const ocrModel = opts.glmOcrModel as string
+    const run = await runGlmOcr(filePath, step1Metadata, ocrModel)
+    return {
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'glm',
+      ocrModel,
+      canonicalText: run.markdown,
+      ...(typeof run.totalPages === 'number' ? { totalPages: run.totalPages } : {}),
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+    }
+  }
+
+  throw CLIUsageError('Hosted OCR requested without a configured hosted OCR model.')
+}
+
 export const runExtract = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
@@ -344,10 +429,25 @@ export const runExtract = async (
   let normalizedFrom: string | undefined
   let conversionChain: string[] | undefined
   let outputFidelity: string | undefined
+  let canonicalText: string | undefined
+  let reportedTotalPages: number | undefined
+  let ocrService: string | undefined
+  let promptTokens: number | undefined
+  let completionTokens: number | undefined
 
   const useEpubBun = opts.useEpubBun === true
   const useEpubCalibre = opts.useEpubCalibre === true
   const useEpubInspect = step1Metadata.format === 'epub' && (useEpubBun || useEpubCalibre)
+  const ocrEngineCount = [
+    opts.useOcrmypdf === true,
+    opts.usePaddleOcr === true,
+    hasMistralOcr(opts),
+    hasGlmOcr(opts)
+  ].filter(Boolean).length
+
+  if ((typeof opts.preparedMarkdown !== 'string' || opts.preparedMarkdown.trim().length === 0) && ocrEngineCount > 1) {
+    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr).')
+  }
 
   if (useEpubBun && useEpubCalibre) {
     throw CLIUsageError('Cannot use both EPUB inspect engines at the same time (--epub-bun, --epub-calibre).')
@@ -417,9 +517,20 @@ export const runExtract = async (
     try {
       const { pdfPath, conversionChain: epubConversionChain } = await convertEpubToPdfForOcr(filePath, tempDir, opts.password)
       const tempMeta: DocumentMetadata = { ...step1Metadata, format: 'pdf' }
-      const r = await runPdfOcr(pdfPath, tempMeta, opts)
-      pages = r.pages
-      extractionMethod = r.extractionMethod
+      if (hasHostedOcr(opts)) {
+        const r = await runHostedOcr(pdfPath, tempMeta, opts)
+        pages = r.pages
+        extractionMethod = `pdf+${r.extractionMethod}`
+        ocrService = r.ocrService
+        canonicalText = r.canonicalText
+        reportedTotalPages = r.totalPages
+        promptTokens = r.promptTokens
+        completionTokens = r.completionTokens
+      } else {
+        const r = await runPdfOcr(pdfPath, tempMeta, opts)
+        pages = r.pages
+        extractionMethod = r.extractionMethod
+      }
       conversionChain = epubConversionChain
     } finally {
       await rm(tempDir, { recursive: true, force: true })
@@ -457,24 +568,26 @@ export const runExtract = async (
         }
       }
     } else {
-      // OCR flag: force LibreOffice conversion + OCR
-      const engine = hasMistralOcr(opts) ? 'mistral' : resolveExtractEngine(opts)
       l.info(`${format.toUpperCase()} with OCR flag: converting to PDF via LibreOffice`)
       const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-office-ocr-'))
       try {
         const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
         const tempMeta: DocumentMetadata = { ...step1Metadata, format: 'pdf' }
 
-        if (hasMistralOcr(opts)) {
-          await ensureMistralOcrSetup()
-          warnMistralOnlyFlags(opts)
-          const r = await runMistralOcr(pdfPath, tempMeta, opts.mistralOcrModel as string)
+        if (hasHostedOcr(opts)) {
+          const r = await runHostedOcr(pdfPath, tempMeta, opts)
           pages = r.pages
-          extractionMethod = 'office+mistral-ocr'
+          extractionMethod = `office+${r.extractionMethod}`
+          ocrService = r.ocrService
+          canonicalText = r.canonicalText
+          reportedTotalPages = r.totalPages
+          promptTokens = r.promptTokens
+          completionTokens = r.completionTokens
         } else {
+          const engine = resolveExtractEngine(opts)
           const r = await runPdfOcr(pdfPath, tempMeta, opts)
           pages = r.pages
-          extractionMethod = `office+${engineSuffix(engine as LocalExtractOcrEngine)}`
+          extractionMethod = `office+${engineSuffix(engine)}`
         }
         conversionChain = ['libreoffice']
       } finally {
@@ -491,12 +604,15 @@ export const runExtract = async (
       const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
       const tempMeta: DocumentMetadata = { ...step1Metadata, format: 'pdf' }
 
-      if (hasMistralOcr(opts)) {
-        await ensureMistralOcrSetup()
-        warnMistralOnlyFlags(opts)
-        const r = await runMistralOcr(pdfPath, tempMeta, opts.mistralOcrModel as string)
+      if (hasHostedOcr(opts)) {
+        const r = await runHostedOcr(pdfPath, tempMeta, opts)
         pages = r.pages
-        extractionMethod = 'rtf+mistral-ocr'
+        extractionMethod = `rtf+${r.extractionMethod}`
+        ocrService = r.ocrService
+        canonicalText = r.canonicalText
+        reportedTotalPages = r.totalPages
+        promptTokens = r.promptTokens
+        completionTokens = r.completionTokens
       } else {
         const r = await runPdfOcr(pdfPath, tempMeta, opts)
         pages = r.pages
@@ -527,19 +643,25 @@ export const runExtract = async (
       const images = await extractCbzImages(filePath, tempDir)
       l.info(`Processing ${images.length} images from CBZ`)
 
-      if (hasMistralOcr(opts)) {
-        await ensureMistralOcrSetup()
-        warnMistralOnlyFlags(opts)
-        // Process CBZ images via Mistral by converting to PDF first
-        // (Mistral only supports PDF/image input)
+      if (hasHostedOcr(opts)) {
+        const hostedEngine: HostedExtractOcrEngine = hasGlmOcr(opts) ? 'glm-ocr' : 'mistral-ocr'
         const imagePages: PageResult[] = []
+        let totalPromptTokens = 0
+        let totalCompletionTokens = 0
         for (let i = 0; i < images.length; i++) {
           const imgPath = images[i]!
-          const r = await runMistralOcr(imgPath, { ...step1Metadata, format: 'png', pageCount: 1 }, opts.mistralOcrModel as string)
+          assertSupportedHostedDirectImageFormat(extname(imgPath).toLowerCase() === '.jpeg' ? 'jpg' : extname(imgPath).slice(1).toLowerCase(), hostedEngine)
+          const imageFormat = extname(imgPath).toLowerCase() === '.png' ? 'png' : 'jpg'
+          const r = await runHostedOcr(imgPath, { ...step1Metadata, format: imageFormat, pageCount: 1 }, opts)
           imagePages.push(...r.pages.map(p => ({ ...p, pageNumber: i + 1 })))
+          ocrService = r.ocrService
+          totalPromptTokens += r.promptTokens ?? 0
+          totalCompletionTokens += r.completionTokens ?? 0
         }
         pages = imagePages
-        extractionMethod = 'cbz+mistral-ocr'
+        extractionMethod = `cbz+${hostedEngine}`
+        if (totalPromptTokens > 0) promptTokens = totalPromptTokens
+        if (totalCompletionTokens > 0) completionTokens = totalCompletionTokens
       } else {
         const engine = resolveExtractEngine(opts)
         if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
@@ -566,16 +688,17 @@ export const runExtract = async (
   else if (IMAGE_FORMATS.has(format)) {
     inputFamily = 'image'
 
-    if (hasMistralOcr(opts)) {
-      const mistralFormats = new Set(['png', 'jpg', 'tif'])
-      if (!mistralFormats.has(format)) {
-        throw CLIUsageError('The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.')
-      }
-      await ensureMistralOcrSetup()
-      warnMistralOnlyFlags(opts)
-      const r = await runMistralOcr(filePath, step1Metadata, opts.mistralOcrModel as string)
+    if (hasHostedOcr(opts)) {
+      const hostedEngine: HostedExtractOcrEngine = hasGlmOcr(opts) ? 'glm-ocr' : 'mistral-ocr'
+      assertSupportedHostedDirectImageFormat(format, hostedEngine)
+      const r = await runHostedOcr(filePath, step1Metadata, opts)
       pages = r.pages
-      extractionMethod = 'image+mistral-ocr'
+      extractionMethod = `image+${r.extractionMethod}`
+      ocrService = r.ocrService
+      canonicalText = r.canonicalText
+      reportedTotalPages = r.totalPages
+      promptTokens = r.promptTokens
+      completionTokens = r.completionTokens
     } else {
       const engine = resolveExtractEngine(opts)
       if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
@@ -592,19 +715,21 @@ export const runExtract = async (
   }
   // ─── PDF (and EPUB via OCR flag already handled above) ───────────────────
   else {
-    // PDF or fallback
-    const useMistralOcr = hasMistralOcr(opts)
     inputFamily = 'pdf'
 
-    if (useMistralOcr) {
+    if (hasHostedOcr(opts)) {
       if (format !== 'pdf') {
-        throw CLIUsageError('The --mistral-ocr engine supports PDF and image files only.')
+        const hostedEngine: HostedExtractOcrEngine = hasGlmOcr(opts) ? 'glm-ocr' : 'mistral-ocr'
+        throw CLIUsageError(getHostedDirectImageSupportError(hostedEngine))
       }
-      await ensureMistralOcrSetup()
-      warnMistralOnlyFlags(opts)
-      const r = await runMistralOcr(filePath, step1Metadata, opts.mistralOcrModel as string)
+      const r = await runHostedOcr(filePath, step1Metadata, opts)
       pages = r.pages
       extractionMethod = r.extractionMethod
+      ocrService = r.ocrService
+      canonicalText = r.canonicalText
+      reportedTotalPages = r.totalPages
+      promptTokens = r.promptTokens
+      completionTokens = r.completionTokens
     } else {
       const engine = resolveExtractEngine(opts)
       if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
@@ -636,11 +761,17 @@ export const runExtract = async (
 
   const text = opts.preparedMarkdown
     ? opts.preparedMarkdown.trim()
-    : buildCombinedText(pages, opts.pageSeparator)
+    : typeof canonicalText === 'string' && canonicalText.trim().length > 0
+      ? canonicalText.trim()
+      : buildCombinedText(pages, opts.pageSeparator)
   const ocrPages = pages.filter(p => p.method === 'ocr').length
   const textPages = pages.filter(p => p.method === 'text').length
 
-  const totalPages = pages.length > 0 ? pages.length : step1Metadata.pageCount
+  const totalPages = typeof reportedTotalPages === 'number'
+    ? reportedTotalPages
+    : pages.length > 0
+      ? pages.length
+      : step1Metadata.pageCount
 
   const result = validateData(ExtractionResultSchema, {
     text,
@@ -661,8 +792,20 @@ export const runExtract = async (
     tokenEstimate: estimateTokens(result.text)
   }
 
+  if (typeof ocrService === 'string') {
+    step2MetadataPayload['ocrService'] = ocrService
+  }
   if (typeof opts.mistralOcrModel === 'string' && extractionMethod.includes('mistral-ocr')) {
     step2MetadataPayload['ocrModel'] = opts.mistralOcrModel
+  }
+  if (typeof opts.glmOcrModel === 'string' && extractionMethod.includes('glm-ocr')) {
+    step2MetadataPayload['ocrModel'] = opts.glmOcrModel
+  }
+  if (typeof promptTokens === 'number') {
+    step2MetadataPayload['promptTokens'] = promptTokens
+  }
+  if (typeof completionTokens === 'number') {
+    step2MetadataPayload['completionTokens'] = completionTokens
   }
   if (epubPayload) step2MetadataPayload['epub'] = epubPayload
   if (inputFamily) step2MetadataPayload['inputFamily'] = inputFamily

@@ -70,7 +70,7 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
 }
 
 const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
-  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string'
+  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string' || typeof opts.glmOcrModel === 'string'
 
 export const buildExpectedFilesList = async (command: ProcessCommand, opts: RuntimeOptions, resolvedTarget?: string): Promise<string[]> => {
   if (command === 'metadata') {

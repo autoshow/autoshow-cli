@@ -31,6 +31,7 @@ import { classifyUrlInput, isDocumentByExtension, isHtmlDocumentPath, isLikelyUr
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-document/document-utils/extract-pricing'
 import { estimateTokens } from '~/utils/text-utils'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
 
@@ -104,11 +105,6 @@ const downloadDocumentUrlToTempFile = async (
   }
 }
 
-const isHtmlExtractionMetadata = (
-  metadata: ExtractionMetadata | ExtractionMetadata[]
-): boolean =>
-  (Array.isArray(metadata) ? metadata : [metadata]).some((entry) => entry.extractionMethod.startsWith('html+'))
-
 const buildDocumentMetadataView = (
   step1: DocumentMetadata,
   web?: WebArticleMetadata
@@ -127,7 +123,70 @@ const buildDocumentMetadataView = (
 })
 
 const hasOcrExtractionFlags = (opts: RuntimeOptions): boolean =>
-  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string'
+  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string' || typeof opts.glmOcrModel === 'string'
+
+const collectEstimatedExtractTargets = (
+  metadata: ExtractionMetadata | ExtractionMetadata[],
+  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel'>
+): Array<{
+  provider: 'mistral' | 'glm' | 'firecrawl'
+  model: string
+  pageCount?: number
+  promptTokens?: number
+  completionTokens?: number
+  estimateType?: 'heuristic' | 'exact'
+  note?: string
+}> => {
+  const targets: Array<{
+    provider: 'mistral' | 'glm' | 'firecrawl'
+    model: string
+    pageCount?: number
+    promptTokens?: number
+    completionTokens?: number
+    estimateType?: 'heuristic' | 'exact'
+    note?: string
+  }> = []
+
+  for (const entry of Array.isArray(metadata) ? metadata : [metadata]) {
+    if (entry.extractionMethod === 'html+firecrawl') {
+      targets.push({
+        provider: 'firecrawl',
+        model: 'firecrawl',
+        pageCount: entry.totalPages,
+        estimateType: 'exact',
+        note: FIRECRAWL_PRICE_NOTE
+      })
+      continue
+    }
+
+    if (entry.extractionMethod.startsWith('html+')) {
+      continue
+    }
+
+    if ((entry.ocrService === 'glm' || entry.extractionMethod.includes('glm-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'glm' as const,
+        model: entry.ocrModel ?? opts.glmOcrModel ?? 'glm-ocr',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'mistral' || entry.extractionMethod.includes('mistral-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'mistral' as const,
+        model: entry.ocrModel ?? opts.mistralOcrModel ?? 'mistral-ocr-latest',
+        pageCount: entry.totalPages,
+        estimateType: 'exact' as const
+      })
+    }
+  }
+
+  return targets
+}
 
 const warnHtmlArticleFlagBehavior = (target: string, opts: RuntimeOptions, backend: PreparedDocument['htmlArticleBackend']): void => {
   if (hasOcrExtractionFlags(opts)) {
@@ -135,6 +194,8 @@ const warnHtmlArticleFlagBehavior = (target: string, opts: RuntimeOptions, backe
   }
   if (backend === 'firecrawl') {
     l.info('Article extraction backend: firecrawl')
+  } else if (backend === 'glm-reader') {
+    l.info('Article extraction backend: glm-reader')
   }
 }
 
@@ -197,6 +258,9 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.mistralOcrModel) {
     extractionOpts.mistralOcrModel = opts.mistralOcrModel
   }
+  if (opts.glmOcrModel) {
+    extractionOpts.glmOcrModel = opts.glmOcrModel
+  }
   if (opts.useEpubBun) {
     extractionOpts.useEpubBun = true
   }
@@ -212,7 +276,7 @@ type WriteDocumentOutputMetadataOptions = {
   step2: ExtractionMetadata | ExtractionMetadata[]
   step3: Step3Metadata | Step3Metadata[]
   mistralOcrModel: string | undefined
-  extractPageCount: number
+  glmOcrModel: string | undefined
   llmService: string
   llmModel: string
   llmInputTokenCount: number
@@ -226,12 +290,14 @@ const writeDocumentOutputMetadata = async (
   outputDir: string,
   params: WriteDocumentOutputMetadataOptions
 ): Promise<void> => {
-  const { step1, step2, step3, mistralOcrModel, extractPageCount, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles, web, errors } = params
-  const estimatedMistralOcrModel = isHtmlExtractionMetadata(step2) ? undefined : mistralOcrModel
+  const { step1, step2, step3, mistralOcrModel, glmOcrModel, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles, web, errors } = params
+  const extractTargets = collectEstimatedExtractTargets(step2, {
+    mistralOcrModel,
+    glmOcrModel
+  })
 
   const estimated = computeEstimatedCosts({
-    mistralOcrModel: estimatedMistralOcrModel,
-    extractPageCount,
+    extractTargets,
     llmService,
     llmModel,
     llmInputTokenCount,
@@ -242,8 +308,11 @@ const writeDocumentOutputMetadata = async (
   const cost = { estimated, actual }
 
   const estimatedTiming = computeEstimatedProcessingTimes({
-    mistralOcrModel: estimatedMistralOcrModel,
-    extractPageCount,
+    extractTargets: extractTargets.map((target) => ({
+      provider: target.provider,
+      model: target.model,
+      pageCount: target.pageCount ?? step1.pageCount
+    })),
     llmService: llmService as Step3Metadata['llmService'],
     llmModel,
     llmInputTokenCount,
@@ -316,7 +385,7 @@ const runDocumentWrite = async (
       step2: extraction.step2Metadata,
       step3,
       mistralOcrModel: opts.mistralOcrModel,
-      extractPageCount: extraction.step1Metadata.pageCount,
+      glmOcrModel: opts.glmOcrModel,
       llmService,
       llmModel,
       llmInputTokenCount: step3.inputTokenCount,
@@ -391,7 +460,7 @@ const runDocumentWrite = async (
     step2: extraction.step2Metadata,
     step3: step3Serialized,
     mistralOcrModel: opts.mistralOcrModel,
-    extractPageCount: extraction.step1Metadata.pageCount,
+    glmOcrModel: opts.glmOcrModel,
     llmService,
     llmModel,
     llmInputTokenCount,
@@ -493,7 +562,8 @@ const processMediaSingle = async (
     videoSize: llmDefaults.videoSize,
     videoAspectRatio: llmDefaults.videoAspectRatio,
     videoResolution: llmDefaults.videoResolution,
-    mistralOcrModel: llmDefaults.mistralOcrModel
+    mistralOcrModel: llmDefaults.mistralOcrModel,
+    glmOcrModel: llmDefaults.glmOcrModel
   }
 
   const options: ProcessingOptions = validateData(ProcessingOptionsSchema, baseOptions, 'processing options')

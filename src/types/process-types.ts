@@ -147,7 +147,7 @@ export type MutoolDocInfo = {
   author?: string
 }
 
-export type HtmlArticleBackend = 'defuddle' | 'firecrawl'
+export type HtmlArticleBackend = 'defuddle' | 'firecrawl' | 'glm-reader'
 
 export type WebArticleMetadata = {
   sourceUrl?: string
@@ -178,10 +178,11 @@ export const ExtractionOptionsSchema = v.object({
   useOcrmypdf: v.optional(v.boolean(), undefined),
   usePaddleOcr: v.optional(v.boolean(), undefined),
   mistralOcrModel: v.optional(v.string(), undefined),
+  glmOcrModel: v.optional(v.string(), undefined),
   useEpubBun: v.optional(v.boolean(), undefined),
   useEpubCalibre: v.optional(v.boolean(), undefined),
   preparedMarkdown: v.optional(v.string(), undefined),
-  htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl']), undefined)
+  htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl', 'glm-reader']), undefined)
 })
 
 export const PageResultSchema = v.object({
@@ -199,7 +200,7 @@ export const ExtractionResultSchema = v.object({
   textPages: v.number()
 })
 
-export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr'
+export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr'
 
 export type EpubInspectEngine = 'bun' | 'calibre'
 export type EpubInspection = Record<string, unknown>
@@ -209,13 +210,14 @@ export const ExtractionMetadataSchema = v.object({
   extractionMethod: v.picklist([
     'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'ocrmypdf', 'mistral-ocr', 'epub-bun', 'epub-calibre',
     'epub-text',
-    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr',
-    'office-native', 'office+tesseract', 'office+ocrmypdf', 'office+paddle-ocr', 'office+mistral-ocr',
-    'rtf+tesseract', 'rtf+ocrmypdf', 'rtf+paddle-ocr', 'rtf+mistral-ocr',
-    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr',
+    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr',
+    'office-native', 'office+tesseract', 'office+ocrmypdf', 'office+paddle-ocr', 'office+mistral-ocr', 'office+glm-ocr',
+    'rtf+tesseract', 'rtf+ocrmypdf', 'rtf+paddle-ocr', 'rtf+mistral-ocr', 'rtf+glm-ocr',
+    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr',
     'csv-raw',
-    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr',
-    'html+defuddle', 'html+firecrawl'
+    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr',
+    'glm-ocr',
+    'html+defuddle', 'html+firecrawl', 'html+glm-reader'
   ]),
   totalPages: v.number(),
   ocrPages: v.number(),
@@ -225,6 +227,9 @@ export const ExtractionMetadataSchema = v.object({
   languages: v.string(),
   tokenEstimate: v.number(),
   ocrModel: v.optional(v.string(), undefined),
+  ocrService: v.optional(v.string(), undefined),
+  promptTokens: v.optional(v.number(), undefined),
+  completionTokens: v.optional(v.number(), undefined),
   epub: v.optional(EpubInspectionSchema, undefined),
   inputFamily: v.optional(v.string(), undefined),
   normalizedFrom: v.optional(v.string(), undefined),
@@ -442,6 +447,36 @@ export const MistralOcrResponseSchema = v.object({
     pages_processed: v.optional(v.number(), undefined),
     doc_size_bytes: v.optional(v.number(), undefined)
   }), undefined)
+})
+
+export const GlmOcrLayoutDetailSchema = v.looseObject({
+  index: v.number(),
+  label: v.string(),
+  bbox_2d: v.optional(v.array(v.number()), undefined),
+  content: v.optional(v.string(), undefined),
+  height: v.optional(v.number(), undefined),
+  width: v.optional(v.number(), undefined)
+})
+
+export const GlmOcrResponseSchema = v.looseObject({
+  id: v.optional(v.string(), undefined),
+  created: v.optional(v.number(), undefined),
+  model: v.optional(v.string(), undefined),
+  md_results: v.string(),
+  layout_details: v.optional(v.array(v.array(GlmOcrLayoutDetailSchema)), undefined),
+  data_info: v.optional(v.looseObject({
+    num_pages: v.optional(v.number(), undefined),
+    pages: v.optional(v.array(v.looseObject({
+      width: v.optional(v.number(), undefined),
+      height: v.optional(v.number(), undefined)
+    })), undefined)
+  }), undefined),
+  usage: v.optional(v.looseObject({
+    prompt_tokens: v.optional(v.number(), undefined),
+    completion_tokens: v.optional(v.number(), undefined),
+    total_tokens: v.optional(v.number(), undefined)
+  }), undefined),
+  request_id: v.optional(v.string(), undefined)
 })
 
 export const WhisperJsonSegmentSchema = v.object({
@@ -769,6 +804,8 @@ export type StepCostEntry = {
   cost: number
   inputMetric?: string
   inputValue?: number
+  promptTokens?: number
+  completionTokens?: number
 }
 
 export type ActualCostBreakdown = {
@@ -783,10 +820,16 @@ export type EstimatedStepEntry = {
   cost: number
   costMultiplier?: number
   durationSeconds?: number
+  costPer1kPagesCents?: number
+  pageCount?: number
   inputCostPer1MCents?: number
   outputCostPer1MCents?: number
   estimatedInputTokens?: number
   estimatedOutputTokens?: number
+  promptTokens?: number
+  completionTokens?: number
+  estimateType?: 'heuristic' | 'exact'
+  note?: string
   costPer1kCharactersCents?: number
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number

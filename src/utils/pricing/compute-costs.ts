@@ -95,10 +95,40 @@ const isExtractionMetadata = (metadata: Step2Metadata | ExtractionMetadata): met
 const resolveExtractionProviderModel = (
   metadata: ExtractionMetadata
 ): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('html+firecrawl')) {
+    return {
+      provider: 'firecrawl',
+      model: 'firecrawl'
+    }
+  }
+  if (metadata.extractionMethod.includes('html+glm-reader')) {
+    return {
+      provider: 'glm',
+      model: 'glm-reader'
+    }
+  }
+  if (metadata.ocrService === 'glm') {
+    return {
+      provider: 'glm',
+      model: metadata.ocrModel ?? 'glm-ocr'
+    }
+  }
+  if (metadata.ocrService === 'mistral') {
+    return {
+      provider: 'mistral',
+      model: metadata.ocrModel ?? 'mistral-ocr'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
       model: metadata.ocrModel ?? 'mistral-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('glm-ocr')) {
+    return {
+      provider: 'glm',
+      model: metadata.ocrModel ?? 'glm-ocr'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -146,18 +176,58 @@ type ComputeActualCostsInput = {
 export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBreakdown => {
   const steps: StepCostEntry[] = []
 
-  if (input.step2 && !Array.isArray(input.step2) && isExtractionMetadata(input.step2) && input.step2.extractionMethod.includes('mistral-ocr') && input.step2.ocrModel) {
-    const extractPricing = getExtractPricing('mistral', input.step2.ocrModel)
-    const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
-    const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
-    steps.push({
-      step: 'extract',
-      provider: 'mistral',
-      model: input.step2.ocrModel,
-      cost,
-      inputMetric: 'pages',
-      inputValue: input.step2.totalPages,
-    })
+  if (input.step2 && !Array.isArray(input.step2) && isExtractionMetadata(input.step2)) {
+    const { provider, model } = resolveExtractionProviderModel(input.step2)
+    if (provider === 'mistral') {
+      const extractPricing = getExtractPricing('mistral', model)
+      const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
+      const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
+      steps.push({
+        step: 'extract',
+        provider: 'mistral',
+        model,
+        cost,
+        inputMetric: 'pages',
+        inputValue: input.step2.totalPages,
+      })
+    } else if (provider === 'firecrawl') {
+      const extractPricing = getExtractPricing('firecrawl', model)
+      const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
+      const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
+      steps.push({
+        step: 'extract',
+        provider,
+        model,
+        cost,
+        inputMetric: 'pages',
+        inputValue: input.step2.totalPages,
+      })
+    } else if (provider === 'glm' && input.step2.ocrModel) {
+      const extractPricing = getExtractPricing('glm', input.step2.ocrModel)
+      const promptTokens = input.step2.promptTokens ?? 0
+      const completionTokens = input.step2.completionTokens ?? 0
+      const cost = (promptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
+        + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0)
+      steps.push({
+        step: 'extract',
+        provider: 'glm',
+        model: input.step2.ocrModel,
+        cost,
+        inputMetric: 'tokens',
+        inputValue: promptTokens + completionTokens,
+        promptTokens,
+        completionTokens
+      })
+    } else if (provider !== 'extract') {
+      steps.push({
+        step: 'extract',
+        provider,
+        model,
+        cost: 0,
+        inputMetric: 'pages',
+        inputValue: input.step2.totalPages,
+      })
+    }
   }
 
   if (input.step1 && input.step2 && !Array.isArray(input.step2) && !isExtractionMetadata(input.step2)) {
@@ -181,16 +251,24 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   if (Array.isArray(input.step2) && input.step2.every(isExtractionMetadata)) {
     for (const step2Entry of input.step2) {
       const { provider, model } = resolveExtractionProviderModel(step2Entry)
-      const cost = provider === 'mistral' && step2Entry.ocrModel
-        ? (step2Entry.totalPages / 1000) * (getExtractPricing('mistral', step2Entry.ocrModel).costPer1kPagesCents ?? 0)
-        : 0
+      const promptTokens = step2Entry.promptTokens ?? 0
+      const completionTokens = step2Entry.completionTokens ?? 0
+      const cost = provider === 'mistral'
+        ? (step2Entry.totalPages / 1000) * (getExtractPricing('mistral', model).costPer1kPagesCents ?? 0)
+        : provider === 'firecrawl'
+          ? (step2Entry.totalPages / 1000) * (getExtractPricing('firecrawl', model).costPer1kPagesCents ?? 0)
+        : provider === 'glm' && step2Entry.ocrModel
+          ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
+            + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
+          : 0
       steps.push({
         step: 'extract',
         provider,
         model,
         cost,
-        inputMetric: 'pages',
-        inputValue: step2Entry.totalPages,
+        inputMetric: provider === 'glm' ? 'tokens' : 'pages',
+        inputValue: provider === 'glm' ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(provider === 'glm' ? { promptTokens, completionTokens } : {})
       })
     }
   }
@@ -320,6 +398,16 @@ type ComputeEstimatedCostsInput = {
   mistralSttModel?: string | undefined
   assemblyaiSttModel?: string | undefined
   mistralOcrModel?: string | undefined
+  glmOcrModel?: string | undefined
+  extractTargets?: Array<{
+    provider: 'mistral' | 'glm' | 'firecrawl'
+    model: string
+    pageCount?: number
+    promptTokens?: number
+    completionTokens?: number
+    estimateType?: 'heuristic' | 'exact'
+    note?: string
+  }> | undefined
   extractPageCount?: number | undefined
   useReverb?: boolean | undefined
   audioDurationSeconds?: number | undefined
@@ -395,20 +483,62 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     }
   }
 
-  if (input.mistralOcrModel && typeof input.extractPageCount === 'number') {
-    const extractPricing = getExtractPricing('mistral', input.mistralOcrModel)
-    const estimation = getExtractEstimation('mistral', input.mistralOcrModel)
+  const extractTargets = input.extractTargets && input.extractTargets.length > 0
+    ? input.extractTargets
+    : [
+        ...(input.mistralOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'mistral' as const, model: input.mistralOcrModel, pageCount: input.extractPageCount, estimateType: 'exact' as const }]
+          : []),
+        ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount, estimateType: 'heuristic' as const }]
+          : [])
+      ]
+
+  for (const target of extractTargets) {
+    const estimation = getExtractEstimation(target.provider, target.model)
+    if (target.provider === 'mistral' || target.provider === 'firecrawl') {
+      const extractPricing = getExtractPricing(target.provider, target.model)
+      const cost = applyCostMultiplier(
+        ((target.pageCount ?? input.extractPageCount ?? 0) / 1000) * (extractPricing.costPer1kPagesCents ?? 0),
+        estimation.costMultiplier
+      )
+      totalCost += cost
+      steps.push({
+        step: 'extract',
+        provider: target.provider,
+        model: target.model,
+        cost,
+        costMultiplier: estimation.costMultiplier,
+        ...(typeof extractPricing.costPer1kPagesCents === 'number' ? { costPer1kPagesCents: extractPricing.costPer1kPagesCents } : {}),
+        ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
+        ...(typeof target.note === 'string' ? { note: target.note } : {}),
+        estimateType: target.estimateType ?? 'exact'
+      })
+      continue
+    }
+
+    const extractPricing = getExtractPricing('glm', target.model)
+    const promptTokens = target.promptTokens ?? 0
+    const completionTokens = target.completionTokens ?? 0
+    const effectivePromptTokens = promptTokens > 0 ? promptTokens : ((target.pageCount ?? input.extractPageCount ?? 0) * 4000)
     const cost = applyCostMultiplier(
-      (input.extractPageCount / 1000) * (extractPricing.costPer1kPagesCents ?? 0),
+      (effectivePromptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
+      + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0),
       estimation.costMultiplier
     )
     totalCost += cost
     steps.push({
       step: 'extract',
-      provider: 'mistral',
-      model: input.mistralOcrModel,
+      provider: 'glm',
+      model: target.model,
       cost,
       costMultiplier: estimation.costMultiplier,
+      ...(typeof extractPricing.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: extractPricing.inputCostPer1MCents } : {}),
+      ...(typeof extractPricing.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: extractPricing.outputCostPer1MCents } : {}),
+      ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
+      promptTokens: effectivePromptTokens,
+      completionTokens,
+      estimateType: target.estimateType ?? (promptTokens > 0 || completionTokens > 0 ? 'exact' : 'heuristic')
     })
   }
 
@@ -553,6 +683,14 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           model: s.model,
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          ...(typeof s.costPer1kPagesCents === 'number' ? { costPer1kPagesCents: s.costPer1kPagesCents } : {}),
+          ...(typeof s.pageCount === 'number' ? { pageCount: s.pageCount } : {}),
+          ...(typeof s.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: s.inputCostPer1MCents } : {}),
+          ...(typeof s.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: s.outputCostPer1MCents } : {}),
+          ...(typeof s.promptTokens === 'number' ? { promptTokens: s.promptTokens } : {}),
+          ...(typeof s.completionTokens === 'number' ? { completionTokens: s.completionTokens } : {}),
+          ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {}),
+          ...(typeof s.note === 'string' ? { note: s.note } : {}),
         })
         break
       case 'llm':

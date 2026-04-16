@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
-  LINKS_OUTPUT_PATH,
+  LINKS_OUTPUT_DIR,
   collectLinks,
   parseLinksArgv,
   runLinksWithArgv
@@ -76,6 +76,21 @@ test('links collector includes Rev general and STT links', () => {
   expect(revLinks).toContain('https://docs.rev.ai/faq.md')
 })
 
+test('links collector includes Gladia general and STT links', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--gladia'
+  ])
+  const gladiaLinks = collectLinks(parsed.serviceSelections, parsed.globalSections)
+
+  expect(gladiaLinks).toHaveLength(14)
+  expect(gladiaLinks).toContain('https://docs.gladia.io/api-reference/authentication.md')
+  expect(gladiaLinks).toContain('https://docs.gladia.io/chapters/pre-recorded-stt/quickstart.md')
+  expect(gladiaLinks).toContain('https://docs.gladia.io/api-reference/v2/pre-recorded/webhook/success.md')
+})
+
 test('links command writes combined fetched markdown to a single file', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-links-'))
   tempDirs.push(tempDir)
@@ -104,7 +119,7 @@ test('links command writes combined fetched markdown to a single file', async ()
   expect(result.urlCount).toBe(5)
   expect(content).toContain('<!-- Source: https://developers.openai.com/api/docs/pricing.md -->')
   expect(content).toContain('Fetched from https://developers.openai.com/api/docs/guides/latest-model.md')
-  expect(content).not.toContain(String(LINKS_OUTPUT_PATH))
+  expect(content).not.toContain(String(LINKS_OUTPUT_DIR))
 })
 
 test('links command rejects unknown sections', async () => {

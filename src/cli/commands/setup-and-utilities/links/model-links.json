@@ -133,6 +133,26 @@
       "https://ai.google.dev/gemini-api/docs/document-processing.md.txt"
     ]
   },
+  "Gladia": {
+    "General": [
+      "https://docs.gladia.io/api-reference.md",
+      "https://docs.gladia.io/api-reference/authentication.md",
+      "https://docs.gladia.io/chapters/integrations/sdk.md",
+      "https://raw.githubusercontent.com/gladiaio/sdk/refs/heads/main/packages/sdk-js/README.md",
+      "https://docs.gladia.io/chapters/limits-and-specifications/concurrency.md",
+      "https://docs.gladia.io/chapters/limits-and-specifications/supported-formats.md"
+    ],
+    "STT": [
+      "https://docs.gladia.io/chapters/pre-recorded-stt/quickstart.md",
+      "https://docs.gladia.io/chapters/pre-recorded-stt/recommended-parameters.md",
+      "https://docs.gladia.io/chapters/audio-intelligence/speaker-diarization.md",
+      "https://docs.gladia.io/api-reference/v2/upload/audio-file.md",
+      "https://docs.gladia.io/api-reference/v2/pre-recorded/init.md",
+      "https://docs.gladia.io/api-reference/v2/pre-recorded/webhook/created.md",
+      "https://docs.gladia.io/api-reference/v2/pre-recorded/webhook/success.md",
+      "https://docs.gladia.io/api-reference/v2/pre-recorded/webhook/error.md"
+    ]
+  },
   "GLM": {
     "General": [
       "https://docs.z.ai/guides/overview/overview.md",

@@ -7,6 +7,7 @@ import {
   SUPPORTED_SPEECHMATICS_STT_MODELS,
   SUPPORTED_REV_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
+  SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
@@ -275,12 +276,16 @@ export const extractFlags = {
   'mistral-ocr': {
     description: buildModelDescription('Mistral OCR model', SUPPORTED_MISTRAL_OCR_MODELS),
     type: String
+  },
+  'glm-ocr': {
+    description: buildModelDescription('GLM OCR model', SUPPORTED_GLM_OCR_MODELS),
+    type: String
   }
 } as const satisfies ClercFlagsDefinition
 
 export const articleFlags = {
   'url-backend': {
-    description: 'Article/HTML extraction backend: defuddle|firecrawl (default: defuddle; local .html/.htm always use defuddle)',
+    description: 'Article/HTML extraction backend: defuddle|firecrawl|glm-reader (default: defuddle; local .html/.htm always use defuddle)',
     type: String
   }
 } as const satisfies ClercFlagsDefinition

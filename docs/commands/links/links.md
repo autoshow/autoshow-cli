@@ -53,6 +53,7 @@ Accepted provider selectors are the lowercase names below.
 | `--deepgram` | `stt` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--gemini` | `general`, `text`, `tts`, `image`, `video` |
+| `--gladia` | `general`, `stt` |
 | `--glm` | `general`, `text`, `document`, `image`, `video`, `stt` |
 | `--grok` | `general`, `text`, `image`, `video`, `tts` |
 | `--groq` | `general`, `text`, `stt`, `tts` |

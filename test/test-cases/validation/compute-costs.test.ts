@@ -208,6 +208,96 @@ describe('computeActualCosts STT', () => {
 })
 
 describe('computeActualCosts extract routing', () => {
+  test('estimates GLM OCR extract costs with heuristic token counts', () => {
+    const result = computeEstimatedCosts({
+      glmOcrModel: 'glm-ocr',
+      extractPageCount: 2
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('glm')
+    expect(extractStep?.model).toBe('glm-ocr')
+    expect(extractStep?.promptTokens).toBe(8000)
+    expect(extractStep?.completionTokens).toBe(0)
+    expect(extractStep?.estimateType).toBe('heuristic')
+    expect(extractStep?.cost).toBeCloseTo(0.024, 6)
+  })
+
+  test('estimates Firecrawl article extraction cost from the configured credit rate', () => {
+    const result = computeEstimatedCosts({
+      extractTargets: [{
+        provider: 'firecrawl',
+        model: 'firecrawl',
+        pageCount: 1,
+        estimateType: 'exact',
+        note: 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
+      }]
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('firecrawl')
+    expect(extractStep?.model).toBe('firecrawl')
+    expect(extractStep?.pageCount).toBe(1)
+    expect(extractStep?.costPer1kPagesCents).toBe(83)
+    expect(extractStep?.estimateType).toBe('exact')
+    expect(extractStep?.note).toContain('Firecrawl Standard plan rate')
+    expect(extractStep?.cost).toBeCloseTo(0.083, 6)
+  })
+
+  test('computes actual GLM OCR cost from token usage metadata', () => {
+    const result = computeActualCosts({
+      step2: {
+        extractionMethod: 'glm-ocr',
+        totalPages: 4,
+        ocrPages: 4,
+        textPages: 0,
+        processingTime: 800,
+        dpi: 300,
+        languages: 'eng',
+        tokenEstimate: 100,
+        ocrService: 'glm',
+        ocrModel: 'glm-ocr',
+        promptTokens: 16000,
+        completionTokens: 500
+      }
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('glm')
+    expect(extractStep?.model).toBe('glm-ocr')
+    expect(extractStep?.inputMetric).toBe('tokens')
+    expect(extractStep?.inputValue).toBe(16500)
+    expect(extractStep?.promptTokens).toBe(16000)
+    expect(extractStep?.completionTokens).toBe(500)
+    expect(extractStep?.cost).toBeCloseTo(0.0495, 6)
+  })
+
+  test('computes actual Firecrawl article extraction cost from extraction metadata', () => {
+    const result = computeActualCosts({
+      step2: {
+        extractionMethod: 'html+firecrawl',
+        totalPages: 1,
+        ocrPages: 0,
+        textPages: 1,
+        processingTime: 800,
+        dpi: 300,
+        languages: 'eng',
+        tokenEstimate: 100
+      }
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('firecrawl')
+    expect(extractStep?.model).toBe('firecrawl')
+    expect(extractStep?.inputMetric).toBe('pages')
+    expect(extractStep?.inputValue).toBe(1)
+    expect(extractStep?.cost).toBeCloseTo(0.083, 6)
+  })
+
   test('computes one actual extract step per extraction metadata entry', () => {
     const result = computeActualCosts({
       step2: [
@@ -231,15 +321,41 @@ describe('computeActualCosts extract routing', () => {
           languages: 'eng',
           tokenEstimate: 100,
           ocrModel: 'mistral-ocr-latest'
+        },
+        {
+          extractionMethod: 'glm-ocr',
+          totalPages: 4,
+          ocrPages: 4,
+          textPages: 0,
+          processingTime: 700,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 100,
+          ocrService: 'glm',
+          ocrModel: 'glm-ocr',
+          promptTokens: 16000,
+          completionTokens: 0
+        },
+        {
+          extractionMethod: 'html+firecrawl',
+          totalPages: 1,
+          ocrPages: 0,
+          textPages: 1,
+          processingTime: 600,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 100
         }
       ]
     })
 
     const extractSteps = result.steps.filter((step) => step.step === 'extract')
-    expect(extractSteps).toHaveLength(2)
+    expect(extractSteps).toHaveLength(4)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'ocrmypdf:ocrmypdf',
-      'mistral:mistral-ocr-latest'
+      'mistral:mistral-ocr-latest',
+      'glm:glm-ocr',
+      'firecrawl:firecrawl'
     ])
   })
 
@@ -266,15 +382,30 @@ describe('computeActualCosts extract routing', () => {
           languages: 'eng',
           tokenEstimate: 90,
           ocrModel: 'mistral-ocr-latest'
+        },
+        {
+          extractionMethod: 'glm-ocr',
+          totalPages: 3,
+          ocrPages: 3,
+          textPages: 0,
+          processingTime: 600,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 90,
+          ocrService: 'glm',
+          ocrModel: 'glm-ocr',
+          promptTokens: 12000,
+          completionTokens: 0
         }
       ]
     })
 
     const extractSteps = result.steps.filter((step) => step.step === 'extract')
-    expect(extractSteps).toHaveLength(2)
+    expect(extractSteps).toHaveLength(3)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'paddle-ocr:paddle-ocr',
-      'mistral:mistral-ocr-latest'
+      'mistral:mistral-ocr-latest',
+      'glm:glm-ocr'
     ])
   })
 })
