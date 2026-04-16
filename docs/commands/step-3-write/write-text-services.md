@@ -61,7 +61,7 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 
 ## Prompts
 
-Prompt names are loaded from `src/prompts/prompts.json`. Common names include:
+Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common names include:
 - `default`
 - `shortSummary`
 - `longSummary`

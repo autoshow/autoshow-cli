@@ -1,0 +1,11 @@
+{
+  "description": "Narrative folk song based on transcript themes",
+  "expectedInputTokens": 500,
+  "expectedOutputTokens": 1100,
+  "instruction": "- Write an authentic folk song that tells a story or conveys a message about social issues or human experiences.\n    - Use simple, direct language that feels conversational and honest.\n    - Include repetitive elements and a strong narrative structure.\n    - Focus on themes of community, tradition, or social commentary.\n    - Structure the song with verses, choruses, and provide three potential titles.",
+  "structuredPreset": "freeformEnvelope",
+  "examples": {
+    "json": "{\n  \"content\": \"Title Options:\\n- River Town Evening\\n- The Factory Bell\\n- Common Ground\\n\\nVerse 1\\n\\n[Narrative folk verse]\\n\\nChorus\\n\\n[Simple, repeatable chorus]\\n\\nVerse 2\\n\\n[Verse that deepens the social theme]\\n\\nBridge\\n\\n[Bridge with community or tradition imagery]\\n\\nChorus\\n\\n[Final chorus]\"\n}",
+    "markdown": "Format the output like so:\n\n## Song\n    \n    Lyrics to the song."
+  }
+}

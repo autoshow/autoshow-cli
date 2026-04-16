@@ -342,7 +342,7 @@ bun as write input/audio.mp3 --allow-over-budget
 
 ## LLM token estimation
 
-LLM preflight estimates are prompt-driven from `src/prompts/prompts.json`.
+LLM preflight estimates are prompt-driven from `src/prompts/entries/*.json`.
 Each leaf prompt defines:
 
 - `expectedInputTokens`

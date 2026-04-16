@@ -118,7 +118,7 @@ bun as stt input/examples/document/2-urls.md --batch-limit 5
 | `--reverb` | Use Reverb instead of Whisper |
 | `--reverb-verbatimicity <0-1>` | Reverb output style |
 | `--split` | Split audio into 10-minute chunks before transcription |
-| `--prompt <name...>` | Named prompt(s) from `src/prompts/prompts.json` |
+| `--prompt <name...>` | Named prompt(s) from `src/prompts/entries/*.json` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
 | `--batch-order <newest|oldest>` | Choose batch ordering |

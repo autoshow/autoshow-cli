@@ -158,7 +158,7 @@ Provider output directories now persist the canonical evidence consumed by this 
 | `--speaker-count <n>` | Speaker-count hint for providers that support it |
 | `--speaker-name <name...>` | OpenAI known speaker names. Repeat in the same order as `--speaker-reference` |
 | `--speaker-reference <path...>` | OpenAI known speaker reference clips or data URLs. Repeat in the same order as `--speaker-name` |
-| `--prompt <name...>` | Named prompt(s) from `src/prompts/prompts.json` |
+| `--prompt <name...>` | Named prompt(s) from `src/prompts/entries/*.json` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
 | `--batch-order <newest|oldest>` | Choose batch ordering |

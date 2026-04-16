@@ -80,7 +80,7 @@ bun as write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF -
 
 ## Prompts
 
-Prompt names are loaded from `src/prompts/prompts.json`. Common names include:
+Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common names include:
 - `default`
 - `shortSummary`
 - `longSummary`

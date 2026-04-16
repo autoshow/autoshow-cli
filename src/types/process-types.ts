@@ -138,12 +138,27 @@ export type DetectResult =
   | 'pdf' | 'epub' | 'docx' | 'pptx' | 'xlsx' | 'odf'
   | 'mobi' | 'azw3' | 'fb2' | 'lit' | 'cbz' | 'rtf' | 'csv'
   | 'png' | 'jpg' | 'tif' | 'webp' | 'bmp' | 'gif'
+  | 'html'
   | null
 
 export type MutoolDocInfo = {
   pageCount: number
   title?: string
   author?: string
+}
+
+export type HtmlArticleBackend = 'defuddle' | 'firecrawl'
+
+export type WebArticleMetadata = {
+  sourceUrl?: string
+  finalUrl?: string
+  title?: string
+  author?: string
+  site?: string
+  published?: string
+  language?: string
+  wordCount?: number
+  description?: string
 }
 
 export const ExtractionOptionsSchema = v.object({
@@ -164,7 +179,9 @@ export const ExtractionOptionsSchema = v.object({
   usePaddleOcr: v.optional(v.boolean(), undefined),
   mistralOcrModel: v.optional(v.string(), undefined),
   useEpubBun: v.optional(v.boolean(), undefined),
-  useEpubCalibre: v.optional(v.boolean(), undefined)
+  useEpubCalibre: v.optional(v.boolean(), undefined),
+  preparedMarkdown: v.optional(v.string(), undefined),
+  htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl']), undefined)
 })
 
 export const PageResultSchema = v.object({
@@ -197,7 +214,8 @@ export const ExtractionMetadataSchema = v.object({
     'rtf+tesseract', 'rtf+ocrmypdf', 'rtf+paddle-ocr', 'rtf+mistral-ocr',
     'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr',
     'csv-raw',
-    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr'
+    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr',
+    'html+defuddle', 'html+firecrawl'
   ]),
   totalPages: v.number(),
   ocrPages: v.number(),
@@ -226,7 +244,8 @@ export const DocumentMetadataSchema = v.object({
   pageCount: v.number(),
   format: v.picklist([
     'pdf', 'epub', 'png', 'jpg', 'tif', 'docx', 'pptx', 'xlsx', 'odf',
-    'mobi', 'azw3', 'fb2', 'lit', 'cbz', 'rtf', 'csv', 'webp', 'bmp', 'gif'
+    'mobi', 'azw3', 'fb2', 'lit', 'cbz', 'rtf', 'csv', 'webp', 'bmp', 'gif',
+    'html'
   ]),
   fileSize: v.number(),
   sourceFormat: v.optional(v.string(), undefined),
@@ -246,12 +265,16 @@ export type PreparedDocument = {
   step1Metadata: DocumentMetadata
   effectiveFilePath?: string
   tempCleanup?: () => Promise<void>
+  preparedMarkdown?: string
+  htmlArticleBackend?: HtmlArticleBackend
+  web?: WebArticleMetadata
 }
 
 export type ProcessDocumentOutput = {
   result: ExtractionResult
   step1Metadata: DocumentMetadata
   step2Metadata: ExtractionMetadata | ExtractionMetadata[]
+  web?: WebArticleMetadata | undefined
   step2Errors?: Array<{
     service: string
     model: string

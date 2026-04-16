@@ -204,7 +204,7 @@ export const mediaFlags = {
 
 export const promptFlag = {
   prompt: {
-    description: 'Named prompt(s) from src/prompts/prompts.json (default: "default")',
+    description: 'Named prompt(s) from src/prompts/entries/*.json (default: "default")',
     type: [String] as [StringConstructor],
     default: [] as string[]
   }
@@ -274,6 +274,13 @@ export const extractFlags = {
   },
   'mistral-ocr': {
     description: buildModelDescription('Mistral OCR model', SUPPORTED_MISTRAL_OCR_MODELS),
+    type: String
+  }
+} as const satisfies ClercFlagsDefinition
+
+export const articleFlags = {
+  'url-backend': {
+    description: 'Article/HTML extraction backend: defuddle|firecrawl (default: defuddle; local .html/.htm always use defuddle)',
     type: String
   }
 } as const satisfies ClercFlagsDefinition

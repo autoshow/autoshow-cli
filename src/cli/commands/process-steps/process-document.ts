@@ -6,7 +6,8 @@ import {
   type ExtractionOptions,
   type ProcessDocumentOutput,
   type ExtractionMetadata,
-  type ExtractionResult
+  type ExtractionResult,
+  type PreparedDocument
 } from '~/types'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
@@ -24,6 +25,11 @@ import { serializeOneOrMany } from './target-runner'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
+
+const hasHtmlExtractionMethod = (
+  metadata: ExtractionMetadata | ExtractionMetadata[]
+): boolean =>
+  (Array.isArray(metadata) ? metadata : [metadata]).some((entry) => entry.extractionMethod.startsWith('html+'))
 
 const writeExtractionArtifact = async (
   outputDir: string,
@@ -59,17 +65,21 @@ const buildDocumentMetadataPayload = (
   step1Metadata: ProcessDocumentOutput['step1Metadata'],
   step2Metadata: ProcessDocumentOutput['step2Metadata'],
   opts: ExtractionOptions,
-  failures: Array<{ service: string, model: string, message: string }> = []
+  failures: Array<{ service: string, model: string, message: string }> = [],
+  web?: ProcessDocumentOutput['web']
 ): Record<string, unknown> => {
+  const estimatedMistralOcrModel = hasHtmlExtractionMethod(step2Metadata)
+    ? undefined
+    : opts.mistralOcrModel
   const estimated = computeEstimatedCosts({
-    mistralOcrModel: opts.mistralOcrModel,
+    mistralOcrModel: estimatedMistralOcrModel,
     extractPageCount: step1Metadata.pageCount,
   })
   const actual = computeActualCosts({ step2: step2Metadata })
   const cost = { estimated, actual }
 
   const estimatedTiming = computeEstimatedProcessingTimes({
-    mistralOcrModel: opts.mistralOcrModel,
+    mistralOcrModel: estimatedMistralOcrModel,
     extractPageCount: step1Metadata.pageCount,
   })
   const actualTiming = computeActualProcessingTimes({
@@ -83,6 +93,7 @@ const buildDocumentMetadataPayload = (
   return {
     step1: step1Metadata,
     step2: serializeOneOrMany(Array.isArray(step2Metadata) ? step2Metadata : [step2Metadata]),
+    ...(web ? { web } : {}),
     cost,
     ...(timing ? { timing } : {}),
     ...(failures.length > 0 ? { errors: failures } : {}),
@@ -92,7 +103,8 @@ const buildDocumentMetadataPayload = (
 export const processDocument = async (
   filePath: string,
   rawOpts: Partial<ExtractionOptions>,
-  sourceRef?: Step1SourceRef
+  sourceRef?: Step1SourceRef,
+  preparedDocument?: PreparedDocument
 ): Promise<ProcessDocumentOutput> => {
   const opts = validateData(ExtractionOptionsSchema, {
     filePath,
@@ -112,17 +124,21 @@ export const processDocument = async (
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
     ...(rawOpts.useEpubBun ? { useEpubBun: true } : {}),
-    ...(rawOpts.useEpubCalibre ? { useEpubCalibre: true } : {})
+    ...(rawOpts.useEpubCalibre ? { useEpubCalibre: true } : {}),
+    ...(preparedDocument?.preparedMarkdown ? { preparedMarkdown: preparedDocument.preparedMarkdown } : {}),
+    ...(preparedDocument?.htmlArticleBackend ? { htmlArticleBackend: preparedDocument.htmlArticleBackend } : {})
   }, 'document extraction options')
 
-  const prepared = await runWithLogContext({ step: 'step-1-download' }, async () =>
-    await downloadDocument(filePath, opts.outputDir, opts.password, sourceRef)
-  )
+  const prepared = preparedDocument
+    ? preparedDocument
+    : await runWithLogContext({ step: 'step-1-download' }, async () =>
+      await downloadDocument(filePath, opts.outputDir, opts.password, sourceRef)
+    )
 
-  const { outputDir, step1Metadata, effectiveFilePath, tempCleanup } = prepared
+  const { outputDir, step1Metadata, effectiveFilePath, tempCleanup, web } = prepared
   const extractFilePath = effectiveFilePath ?? filePath
 
-  const explicitTargets = collectExplicitExtractTargets(opts)
+  const explicitTargets = opts.preparedMarkdown ? [] : collectExplicitExtractTargets(opts)
 
   try {
     if (explicitTargets.length > 1) {
@@ -182,7 +198,7 @@ export const processDocument = async (
 
       await writeFile(
         `${outputDir}/metadata.json`,
-        JSON.stringify(buildDocumentMetadataPayload(step1Metadata, step2Metadata, opts, failures), null, 2)
+        JSON.stringify(buildDocumentMetadataPayload(step1Metadata, step2Metadata, opts, failures, web), null, 2)
       )
       await writeExtractionArtifact(
         outputDir,
@@ -195,6 +211,7 @@ export const processDocument = async (
         result: primary.result,
         step1Metadata,
         step2Metadata,
+        ...(web ? { web } : {}),
         ...(failures.length > 0 ? { step2Errors: failures } : {}),
         outputDir
       }
@@ -206,7 +223,7 @@ export const processDocument = async (
 
     await writeFile(
       `${outputDir}/metadata.json`,
-      JSON.stringify(buildDocumentMetadataPayload(step1Metadata, extracted.step2Metadata, opts), null, 2)
+      JSON.stringify(buildDocumentMetadataPayload(step1Metadata, extracted.step2Metadata, opts, [], web), null, 2)
     )
     await writeExtractionArtifact(
       outputDir,
@@ -219,6 +236,7 @@ export const processDocument = async (
       result: extracted.result,
       step1Metadata,
       step2Metadata: extracted.step2Metadata,
+      ...(web ? { web } : {}),
       outputDir
     }
   } finally {

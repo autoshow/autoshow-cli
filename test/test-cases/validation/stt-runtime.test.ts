@@ -20,8 +20,8 @@ describe('STT runtime helpers', () => {
     expect(shouldRunCommandPreflight({ price: false }, 25)).toBe(true)
   })
 
-  test('advertises prompt.md for multi-provider STT outputs', () => {
-    expect(buildExpectedFilesList('stt', {
+  test('advertises prompt.md for multi-provider STT outputs', async () => {
+    expect(await buildExpectedFilesList('stt', {
       whisperExplicit: false,
       whisperModel: 'tiny',
       useReverb: false,

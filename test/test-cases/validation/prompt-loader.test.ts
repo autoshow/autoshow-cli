@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test'
-import { resolvePromptNames, resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
+import { getAvailablePromptNames, resolvePromptNames, resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 
 describe('prompt loader token estimates', () => {
   test('default estimate matches explicit included prompts', async () => {
@@ -40,5 +40,47 @@ describe('prompt loader token estimates', () => {
     expect(resolved).toContain('## Episode Description')
     expect(resolved).toContain('## Episode Summary')
     expect(resolved).toContain('## Chapters')
+  })
+
+  test('available prompt names are deterministic and include all split prompt files', async () => {
+    expect(await getAvailablePromptNames()).toEqual([
+      'blog',
+      'bulletPoints',
+      'chapters',
+      'chapterTitles',
+      'chapterTitlesAndQuotes',
+      'contentStrategy',
+      'countrySong',
+      'default',
+      'emailNewsletter',
+      'facebook',
+      'faq',
+      'folkSong',
+      'instagram',
+      'jazzSong',
+      'keyMoments',
+      'linkedin',
+      'longChapters',
+      'longSummary',
+      'mediumChapters',
+      'metadata',
+      'poetryCollection',
+      'popSong',
+      'questions',
+      'quotes',
+      'rapSong',
+      'rockSong',
+      'screenplay',
+      'seoArticle',
+      'shortChapters',
+      'shortStory',
+      'shortSummary',
+      'summary',
+      'takeaways',
+      'tiktok',
+      'titles',
+      'x',
+      'youtubeDescription'
+    ])
   })
 })

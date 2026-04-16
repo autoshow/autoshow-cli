@@ -5,7 +5,7 @@ import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { isSttCommand, type ProcessCommand, type RuntimeOptions } from '~/types'
-import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions, BatchProcessResult } from '~/types'
+import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions, BatchProcessResult, InputKind } from '~/types'
 import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-run-state'
 
@@ -274,11 +274,29 @@ export const formatBatchPartialFailureSummary = (
 
 export const DOCUMENT_EXTENSIONS = [
   '.pdf', '.epub', '.docx', '.pptx', '.xlsx', '.odt', '.ods', '.odp',
-  '.mobi', '.azw3', '.azw', '.fb2', '.lit', '.cbz', '.rtf', '.csv'
+  '.mobi', '.azw3', '.azw', '.fb2', '.lit', '.cbz', '.rtf', '.csv',
+  '.html', '.htm'
 ]
 export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.bmp', '.gif']
 export const MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
 const URL_LIST_EXTENSIONS = ['.md', '.txt']
+const HTML_DOCUMENT_EXTENSIONS = ['.html', '.htm'] as const
+const DOCUMENT_MIME_HINTS = [
+  'application/pdf',
+  'application/epub+zip',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.oasis.opendocument.text',
+  'application/vnd.oasis.opendocument.spreadsheet',
+  'application/vnd.oasis.opendocument.presentation',
+  'application/rtf',
+  'text/rtf',
+  'text/csv'
+] as const
+const HTML_MIME_HINTS = ['text/html', 'application/xhtml+xml'] as const
+const PROBE_TIMEOUT_MS = 5000
+const URL_PROBE_USER_AGENT = 'Mozilla/5.0 (compatible; autoshow-cli/0.1; +https://github.com/ajcwebdev/autoshow-cli)'
 
 export const isLikelyUrl = (input: string): boolean => {
   try {
@@ -287,6 +305,105 @@ export const isLikelyUrl = (input: string): boolean => {
   } catch {
     return false
   }
+}
+
+const isHtmlMimeType = (contentType: string): boolean =>
+  HTML_MIME_HINTS.some((hint) => contentType.includes(hint))
+
+const isDocumentMimeType = (contentType: string): boolean =>
+  DOCUMENT_MIME_HINTS.some((hint) => contentType.includes(hint))
+
+const isMediaMimeType = (contentType: string): boolean =>
+  contentType.startsWith('audio/') || contentType.startsWith('video/')
+
+const hasHtmlExtension = (path: string): boolean => {
+  const lower = path.toLowerCase()
+  return HTML_DOCUMENT_EXTENSIONS.some(ext => lower.endsWith(ext))
+}
+
+const isDirectMediaUrl = (url: string): boolean => {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase()
+    return MEDIA_EXTENSIONS.some(ext => pathname.endsWith(ext))
+  } catch {
+    return false
+  }
+}
+
+const isDocumentUrl = (url: string): boolean => {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase()
+    return isDocumentByExtension(pathname)
+  } catch {
+    return false
+  }
+}
+
+const isStreamingUrl = (url: string): boolean => {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return host.includes('youtube.com')
+      || host.includes('youtu.be')
+      || host.includes('twitch.tv')
+      || host.includes('tiktok.com')
+  } catch {
+    return false
+  }
+}
+
+const shouldAssumeHtmlArticle = (
+  url: string,
+  opts?: Pick<RuntimeOptions, 'urlBackendExplicit'>
+): boolean =>
+  opts?.urlBackendExplicit === true && /^https?:\/\//i.test(url)
+
+const probeHeaders = async (
+  url: string,
+  init: RequestInit
+): Promise<Headers | null> => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal })
+    try {
+      await response.body?.cancel()
+    } catch {
+    }
+
+    if (!response.ok) {
+      return null
+    }
+
+    return response.headers
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+const probeUrlHeaders = async (url: string): Promise<Headers | null> => {
+  const headHeaders = await probeHeaders(url, { method: 'HEAD' })
+  if (headHeaders) {
+    return headHeaders
+  }
+
+  const rangeHeaders = await probeHeaders(url, {
+    method: 'GET',
+    headers: { Range: 'bytes=0-0' }
+  })
+  if (rangeHeaders) {
+    return rangeHeaders
+  }
+
+  return await probeHeaders(url, {
+    method: 'GET',
+    headers: {
+      'User-Agent': URL_PROBE_USER_AGENT,
+      'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8'
+    }
+  })
 }
 
 const hasSupportedExtension = (path: string): boolean => {
@@ -299,6 +416,9 @@ export const isDocumentByExtension = (path: string): boolean => {
   return [...DOCUMENT_EXTENSIONS, ...IMAGE_EXTENSIONS].some(ext => lower.endsWith(ext))
 }
 
+export const isHtmlDocumentPath = (path: string): boolean =>
+  hasHtmlExtension(path)
+
 export const isLikelyDocumentTarget = (target: string): boolean => {
   if (isLikelyUrl(target)) {
     try {
@@ -309,6 +429,74 @@ export const isLikelyDocumentTarget = (target: string): boolean => {
   }
 
   return isDocumentByExtension(target)
+}
+
+export const classifyUrlInput = async (
+  url: string,
+  opts?: Pick<RuntimeOptions, 'urlBackendExplicit'>
+): Promise<InputKind> => {
+  if (isDocumentUrl(url)) {
+    return hasHtmlExtension(new URL(url).pathname) ? 'url_html_article' : 'url_direct_document'
+  }
+  if (isDirectMediaUrl(url)) {
+    return 'url_direct_media'
+  }
+  if (isStreamingUrl(url)) {
+    return 'url_streaming'
+  }
+
+  const headers = await probeUrlHeaders(url)
+  if (headers) {
+    const contentType = (headers.get('content-type') ?? '').toLowerCase()
+    const contentDisposition = (headers.get('content-disposition') ?? '').toLowerCase()
+
+    if (contentDisposition && DOCUMENT_EXTENSIONS.some(ext => contentDisposition.includes(ext))) {
+      return contentDisposition.includes('.html') || contentDisposition.includes('.htm')
+        ? 'url_html_article'
+        : 'url_direct_document'
+    }
+
+    if (isDocumentMimeType(contentType)) {
+      return 'url_direct_document'
+    }
+
+    if (isMediaMimeType(contentType)) {
+      return 'url_direct_media'
+    }
+
+    if (isHtmlMimeType(contentType)) {
+      return 'url_html_article'
+    }
+  }
+
+  if (shouldAssumeHtmlArticle(url, opts)) {
+    return 'url_html_article'
+  }
+
+  return 'url_streaming'
+}
+
+export const isDocumentLikeTarget = async (
+  target: string,
+  opts?: Pick<RuntimeOptions, 'urlBackendExplicit'>
+): Promise<boolean> => {
+  if (isLikelyUrl(target)) {
+    const kind = await classifyUrlInput(target, opts)
+    return kind === 'url_direct_document' || kind === 'url_html_article'
+  }
+
+  return isDocumentByExtension(target)
+}
+
+export const isHtmlArticleTarget = async (
+  target: string,
+  opts?: Pick<RuntimeOptions, 'urlBackendExplicit'>
+): Promise<boolean> => {
+  if (isLikelyUrl(target)) {
+    return await classifyUrlInput(target, opts) === 'url_html_article'
+  }
+
+  return isHtmlDocumentPath(target)
 }
 
 export const collectInputFiles = async (dir: string): Promise<string[]> => {

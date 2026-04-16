@@ -88,6 +88,7 @@ export type InputKind =
   | 'url_streaming'
   | 'url_direct_media'
   | 'url_direct_document'
+  | 'url_html_article'
   | 'local_media'
   | 'local_document'
 

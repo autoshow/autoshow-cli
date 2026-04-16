@@ -1,4 +1,5 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
+import { rm } from 'node:fs/promises'
 import { cleanupTestOutput, runCommand, fileExists, findLatestDirectory, ensurePageImageFixture } from '../../../../test-utils/test-helpers'
 
 type ExtractMetadata = {
@@ -9,6 +10,7 @@ type ExtractMetadata = {
 const pdfInput = 'input/examples/document/1-document.pdf'
 const epubInput = 'input/examples/document/1-epub.epub'
 const imageInput = 'input/examples/document/1-document.png'
+const articleUrl = 'https://ajcwebdev.com'
 const paddleOcrPython = 'runtime/bin/paddle-ocr/bin/python'
 
 beforeAll(async () => {
@@ -136,6 +138,32 @@ test('extract image with --ocrmypdf', async () => {
   expect(metadata.step1?.format).toBe('png')
   expect(metadata.step2?.extractionMethod).toBe('image+ocrmypdf')
   expect(metadata.step2?.totalPages).toBe(1)
+})
+
+test('bun as ocr https://ajcwebdev.com --url-backend defuddle', async () => {
+  let outputDir: string | null = null
+
+  try {
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'defuddle'],
+      { testName: 'bun as ocr https://ajcwebdev.com --url-backend defuddle' }
+    )
+    expect(result.exitCode).toBe(0)
+
+    outputDir = result.outputDir
+    expect(outputDir).not.toBeNull()
+    if (!outputDir) return
+
+    expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
+
+    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+    expect(metadata.step1?.format).toBe('html')
+    expect(metadata.step2?.extractionMethod).toBe('html+defuddle')
+  } finally {
+    if (outputDir && process.env['AUTOSHOW_TEST_PRESERVE_ARTIFACTS'] === '0') {
+      await rm(outputDir, { recursive: true, force: true }).catch(() => {})
+    }
+  }
 })
 
 test('extract EPUB with --epub-bun writes structured data into metadata.json only', async () => {

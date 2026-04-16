@@ -3,8 +3,10 @@
 INCLUDE_PATHS=(
   # "**/*"
   # "*"
-  # "docs/commands"
-  "docs"
+  # "test"
+  "src"
+  # "docs"
+  # "config"
 )
 
 IGNORE_PATHS=(

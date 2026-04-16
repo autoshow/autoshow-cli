@@ -75,6 +75,8 @@ export type RuntimeOptions = {
   mistralOcrModel: string | undefined
   useEpubBun: boolean
   useEpubCalibre: boolean
+  urlBackend: 'defuddle' | 'firecrawl'
+  urlBackendExplicit: boolean
 
   batchLimit: number
   batchAll: boolean

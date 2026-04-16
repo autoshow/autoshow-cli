@@ -68,6 +68,7 @@ export type LLMTarget = {
 export type DocFormat =
   | 'pdf' | 'epub' | 'png' | 'jpg' | 'tif' | 'docx' | 'pptx' | 'xlsx' | 'odf'
   | 'mobi' | 'azw3' | 'fb2' | 'lit' | 'cbz' | 'rtf' | 'csv' | 'webp' | 'bmp' | 'gif'
+  | 'html'
 
 export type EbookFormat = 'mobi' | 'azw3' | 'fb2' | 'lit'
 export type ImageFormat = 'png' | 'jpg' | 'tif' | 'webp' | 'bmp' | 'gif'

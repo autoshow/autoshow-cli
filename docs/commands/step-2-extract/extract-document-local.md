@@ -1,6 +1,6 @@
 # ocr (local)
 
-Extract text from documents and images with the local OCR engines exposed by `bun as ocr`. Alias: `extract`.
+Extract text from documents, images, and HTML articles with the local extraction paths exposed by `bun as ocr`. Alias: `extract`.
 
 ## Outline
 
@@ -10,6 +10,7 @@ Extract text from documents and images with the local OCR engines exposed by `bu
 - [Service Environment](#service-environment)
 - [Usage](#usage)
 - [Default Routing](#default-routing)
+- [HTML / Article Extraction](#html--article-extraction)
 - [EPUB Inspect Modes](#epub-inspect-modes)
 - [OCR Language Handling](#ocr-language-handling)
 - [Examples](#examples)
@@ -43,6 +44,8 @@ bun as ocr input/examples/document/1-document.pdf --paddle-ocr
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms if the Calibre CLI tools are missing.
 
+HTML/article extraction through `defuddle` is bundled and does not require extra setup.
+
 ### Tooling Notes
 
 | Tool | Used for | Current behavior |
@@ -53,13 +56,18 @@ bun as ocr input/examples/document/1-document.pdf --paddle-ocr
 | LibreOffice (`soffice`) | office/RTF to PDF conversion | installed by `bun as setup`; `ocr` itself does not auto-install it |
 | OCRmyPDF | `--ocrmypdf` engine | must already be available on `$PATH` |
 | PaddleOCR venv | `--paddle-ocr` engine | created lazily under `runtime/bin/paddle-ocr/` |
+| Defuddle + linkedom | HTML/article extraction to markdown | bundled dependency; no external setup |
 | ImageMagick (`convert`) | WebP/BMP normalization before OCR | optional; if missing, the file is passed through as-is |
 
 ### Service Environment
 
+No environment variables are required for the default local OCR and `defuddle` paths.
+
 ```bash
 MISTRAL_API_KEY=...
 ```
+
+`MISTRAL_API_KEY` is only needed when you opt into `--mistral-ocr`.
 
 ## Usage
 
@@ -78,11 +86,24 @@ bun as ocr [input] [flags]
 | RTF | LibreOffice to PDF, then Tesseract | LibreOffice to PDF, then OCRmyPDF | LibreOffice to PDF, then PaddleOCR |
 | CBZ | per-image Tesseract (`cbz+tesseract`) | per-image OCRmyPDF (`cbz+ocrmypdf`) | per-image PaddleOCR (`cbz+paddle-ocr`) |
 | CSV | raw text (`csv-raw`) | ignored with a warning | ignored with a warning |
+| Article URL (HTML response) | `html+defuddle` markdown extraction | ignored with a warning | ignored with a warning |
+| Local `.html` / `.htm` | `html+defuddle` markdown extraction | ignored with a warning | ignored with a warning |
 | PNG / JPG / TIF | `image+tesseract` | `image+ocrmypdf` | `image+paddle-ocr` |
 | WebP / BMP | normalize to PNG first when ImageMagick is available, then OCR | same | same |
 | GIF | pass the image directly to the selected engine | same | same |
 
 Only one OCR engine flag may be used at a time.
+
+## HTML / Article Extraction
+
+`defuddle` is the default backend for article-like HTML inputs.
+
+Rules:
+- remote article URLs use `defuddle` by default and write `step2.extractionMethod: "html+defuddle"`
+- local `.html` and `.htm` files always use `defuddle`
+- article extraction produces markdown-like text from the page body, not page-based OCR
+- if `defuddle` cannot extract meaningful content, the command fails with a message suggesting `--url-backend firecrawl`
+- OCR engine flags such as `--ocrmypdf`, `--paddle-ocr`, and `--mistral-ocr` are ignored for HTML/article inputs
 
 ## EPUB Inspect Modes
 
@@ -129,6 +150,15 @@ bun as ocr input/1-document.mobi
 # Local image OCR
 bun as ocr input/examples/document/1-document.png --paddle-ocr
 
+# Remote article extraction with the default defuddle backend
+bun as ocr https://ajcwebdev.com
+
+# Local HTML article extraction
+bun as ocr ./input/article.html --out json
+
+# Explicitly select the default article backend
+bun as ocr https://ajcwebdev.com --url-backend defuddle
+
 # Structured EPUB inspect with Bun
 bun as ocr input/examples/document/1-epub.epub --epub-bun --out json
 
@@ -147,6 +177,7 @@ These are the flags currently exposed by the standalone `ocr` command:
 | `--password` | - | Password for encrypted PDFs |
 | `--ocrmypdf` | `false` | Use OCRmyPDF |
 | `--paddle-ocr` | `false` | Use PaddleOCR |
+| `--url-backend` | `defuddle` | Article/HTML backend: `defuddle` or `firecrawl`; local `.html` / `.htm` always use `defuddle` |
 | `--epub-bun` | `false` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | `false` | Inspect EPUB structure with Calibre |
 | `--price` | `false` | Show the aggregated OCR estimate and exit |
@@ -155,6 +186,7 @@ These are the flags currently exposed by the standalone `ocr` command:
 
 - Supported document formats: PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, CBZ.
 - Supported image formats: PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF.
+- HTML/article inputs default to the bundled `defuddle` backend and produce `html+defuddle` extraction metadata.
 - Office files use native ZIP/XML extraction first and only fall back to OCR when the extracted text quality is poor.
 - `--mistral-ocr` is documented separately in [`extract-document-services.md`](./extract-document-services.md).
 - Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are currently exposed through `write`, not through standalone `ocr`.

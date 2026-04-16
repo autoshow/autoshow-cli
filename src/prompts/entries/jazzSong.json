@@ -1,0 +1,11 @@
+{
+  "description": "Sophisticated jazz song with poetic imagery",
+  "expectedInputTokens": 550,
+  "expectedOutputTokens": 1200,
+  "instruction": "- Write a sophisticated jazz song with complex emotions and poetic imagery.\n    - Use syncopated rhythms in the lyrical flow and sophisticated wordplay.\n    - Include themes of love, loss, or urban life with a touch of melancholy or sophistication.\n    - Structure the song with verses, choruses, and an improvisational bridge section.\n    - Offer three potential titles.",
+  "structuredPreset": "freeformEnvelope",
+  "examples": {
+    "json": "{\n  \"content\": \"Title Options:\\n- Midnight Platform\\n- Blue Hour Ledger\\n- Smoke Above Seventh\\n\\nVerse 1\\n\\n[Poetic jazz verse]\\n\\nChorus\\n\\n[Melancholic chorus]\\n\\nVerse 2\\n\\n[Verse with urban imagery and sophisticated wordplay]\\n\\nBridge\\n\\n[Improvisational bridge section]\\n\\nChorus\\n\\n[Final chorus]\"\n}",
+    "markdown": "Format the output like so:\n\n## Song\n    \n    Lyrics to the song."
+  }
+}

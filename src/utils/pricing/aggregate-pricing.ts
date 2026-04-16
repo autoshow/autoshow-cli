@@ -23,11 +23,14 @@ import {
 import { estimateMistralOcrCost } from '~/cli/commands/process-steps/step-2-document/document-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import type { SttStepEstimate, ExtractStepEstimate, LlmStepEstimate, TtsStepEstimate, ImageStepEstimate, MusicStepEstimate, VideoStepEstimate, StepEstimate, AggregatedPriceEstimate } from '~/types'
-import { isLikelyDocumentTarget } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
+import { isDocumentLikeTarget, isHtmlArticleTarget } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 export type { StepEstimate, AggregatedPriceEstimate } from '~/types'
 
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
+
+const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
+  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string'
 
 const buildCloudSttEstimate = async (
   provider: string,
@@ -248,7 +251,9 @@ export const buildAggregatedPriceEstimate = async (
   let totalEstimatedCost = 0
   const notes: string[] = []
 
-  const documentWrite = command === 'write' && isLikelyDocumentTarget(resolvedTarget)
+  const documentTarget = await isDocumentLikeTarget(resolvedTarget, opts)
+  const htmlArticleTarget = await isHtmlArticleTarget(resolvedTarget, opts)
+  const documentWrite = command === 'write' && documentTarget
 
   if (isSttCommand(command) || (command === 'write' && !documentWrite)) {
     for (const stt of await buildSttEstimates(resolvedTarget, opts)) {
@@ -257,11 +262,25 @@ export const buildAggregatedPriceEstimate = async (
     }
   }
 
-  if (isOcrCommand(command) || documentWrite) {
+  if ((isOcrCommand(command) || documentWrite) && !htmlArticleTarget) {
     const extract = await buildExtractEstimate(resolvedTarget, opts)
     if (extract) {
       steps.push(extract)
       totalEstimatedCost += extract.totalCost
+    }
+  }
+
+  if (htmlArticleTarget) {
+    if (opts.urlBackend === 'firecrawl' && resolvedTarget.startsWith('http')) {
+      notes.push('Firecrawl credits apply; exact cost is not estimated locally.')
+    }
+    if (resolvedTarget.startsWith('file://') || !resolvedTarget.startsWith('http')) {
+      if (opts.urlBackend === 'firecrawl') {
+        notes.push('Local HTML inputs always use the defuddle backend; --url-backend firecrawl is ignored.')
+      }
+    }
+    if (hasIgnoredHtmlOcrFlags(opts)) {
+      notes.push('OCR flags are ignored for HTML/article inputs.')
     }
   }
 

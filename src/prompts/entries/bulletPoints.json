@@ -1,0 +1,11 @@
+{
+  "description": "Bullet-point list summarizing the transcript",
+  "expectedInputTokens": 350,
+  "expectedOutputTokens": 500,
+  "instruction": "- Write a bullet point list summarizing the transcript.",
+  "structuredPreset": "bulletPoints",
+  "examples": {
+    "json": "{\n  \"bulletPoints\": [\n    \"Introduces the main topic and frames the discussion.\",\n    \"Explains the most important supporting points or arguments.\",\n    \"Highlights the main conclusion or takeaway for the audience.\"\n  ]\n}",
+    "markdown": "Format the output like so:\n\n## Bullet Point Summary\n\n    - A concise summary of a chapter's content in bullet point list form.\n    - It begins by introducing the main topic or theme of the chapter, providing context for the reader.\n    - The summary then outlines key points or arguments presented in the chapter"
+  }
+}

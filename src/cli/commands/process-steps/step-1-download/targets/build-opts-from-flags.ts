@@ -34,6 +34,7 @@ import {
   validateGeminiVideoModel,
   validateMinimaxVideoModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { readEnv } from '~/utils/validate/env-utils'
 import type { BatchOrder, OutputFormat, RuntimeOptions } from '~/types'
 
 const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
@@ -138,6 +139,17 @@ const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
 const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
 const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
+const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecrawl' => {
+  const normalized = value?.trim().toLowerCase()
+  if (!normalized || normalized === 'defuddle') {
+    return 'defuddle'
+  }
+  if (normalized === 'firecrawl') {
+    return 'firecrawl'
+  }
+  throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle" or "firecrawl".`)
+}
+
 type BuildOptsDefaults = {
   defaultTtsEngine?: 'kitten'
 }
@@ -219,6 +231,9 @@ export const buildOptsFromFlags = (
   const kittenTtsModelValue = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
     ? DEFAULT_KITTEN_TTS_MODEL
     : kittenTtsModelFlag
+  const urlBackendFlag = readOptionalStringFlag(mergedFlags, 'url-backend')
+  const urlBackendEnv = readEnv('AUTOSHOW_URL_BACKEND')
+  const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
 
   return {
     useReverb: readBooleanFlag(mergedFlags, 'reverb'),
@@ -279,6 +294,8 @@ export const buildOptsFromFlags = (
     mistralOcrModel,
     useEpubBun: readBooleanFlag(mergedFlags, 'epub-bun'),
     useEpubCalibre: readBooleanFlag(mergedFlags, 'epub-calibre'),
+    urlBackend,
+    urlBackendExplicit: urlBackendFlag !== undefined || urlBackendEnv !== undefined,
     batchLimit: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'batch-limit'), 5),
     batchAll: readBooleanFlag(mergedFlags, 'batch-all'),
     batchOrder: readBatchOrder(mergedFlags),

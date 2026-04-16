@@ -264,7 +264,7 @@ it accepts Whisper model IDs directly, but forwards non-Whisper values as llama 
 
 ### Prompts
 
-The prompt library lives in `src/prompts/prompts.json`.
+The prompt library lives in `src/prompts/entries/*.json`.
 As of this release, it exposes 37 top-level prompt definitions and presets.
 
 Common built-in prompt names include:

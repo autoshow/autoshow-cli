@@ -1,0 +1,11 @@
+{
+  "description": "Five potential video titles",
+  "expectedInputTokens": 300,
+  "expectedOutputTokens": 300,
+  "instruction": "- Write 5 potential titles for the video.\n  - The first two titles should be very short and have no subtitle.\n  - The last three titles can be longer and include subtitles.",
+  "structuredPreset": "titles",
+  "examples": {
+    "json": "{\n  \"titles\": [\n    \"Code Shift\",\n    \"Stack Change\",\n    \"The New Web Stack: Tools, Tradeoffs, and Direction\",\n    \"From Frontend to Backend: How Modern Web Development Changed\",\n    \"Building for Scale: Lessons from Today's Web Development Landscape\"\n  ]\n}",
+    "markdown": "Format the output like so:\n\n## Potential Titles\n\n    1. Title Hard\n    2. Title Harder\n    3. Title Hard with a Vengeance\n    4. Title Hard IV: Live Free or Title Hard\n    5. Title Hard V: A Good Day to Die Hard"
+  }
+}

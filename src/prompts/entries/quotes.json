@@ -1,0 +1,11 @@
+{
+  "description": "Most impactful quotes from the transcript",
+  "expectedInputTokens": 300,
+  "expectedOutputTokens": 500,
+  "instruction": "- Select the five most important and impactful quotes from the transcript.",
+  "structuredPreset": "quotes",
+  "examples": {
+    "json": "{\n  \"quotes\": [\n    \"Web development is constantly evolving, driven by new technologies and user expectations.\",\n    \"The tools changed quickly, but the need to solve real problems stayed the same.\",\n    \"The real shift was not just technical; it changed how teams worked together.\",\n    \"Good architecture creates room for change instead of fighting it.\",\n    \"The best systems scale because the people behind them can adapt.\"\n  ]\n}",
+    "markdown": "Format the output like so:\n\n## Important Quotes\n    \n    1. \"First important quote from the episode.\"\n    2. \"Second important quote from the episode.\"\n    3. \"Third important quote from the episode.\"\n    4. \"Fourth important quote from the episode.\"\n    5. \"Fifth important quote from the episode.\""
+  }
+}

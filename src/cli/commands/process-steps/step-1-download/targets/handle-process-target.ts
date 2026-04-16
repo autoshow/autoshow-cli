@@ -8,7 +8,8 @@ import {
   collectInputFiles,
   isDocumentByExtension,
   isInputDirectoryPath,
-  isLikelyDocumentTarget,
+  isDocumentLikeTarget,
+  isHtmlArticleTarget,
   processBatch,
   readInputList
 } from './target-utils'
@@ -68,7 +69,10 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
 
-export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOptions, resolvedTarget?: string): string[] => {
+const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
+  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string'
+
+export const buildExpectedFilesList = async (command: ProcessCommand, opts: RuntimeOptions, resolvedTarget?: string): Promise<string[]> => {
   if (command === 'metadata') {
     if (!opts.save) {
       return [opts.markdown ? 'metadata (logged to terminal as Markdown frontmatter YAML)' : 'metadata (logged to terminal)']
@@ -76,13 +80,15 @@ export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOpt
     return opts.markdown ? ['metadata.json', 'metadata.md'] : ['metadata.json']
   }
   if (command === 'download') {
-    return ['Audio or document file', 'metadata.json']
+    const documentDownload = typeof resolvedTarget === 'string' && await isDocumentLikeTarget(resolvedTarget, opts)
+    return documentDownload ? ['metadata.json'] : ['Audio file', 'metadata.json']
   }
   if (isOcrCommand(command)) {
+    const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
     if (opts.useEpubBun || opts.useEpubCalibre) {
       return ['metadata.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)']
     }
-    if (collectExplicitExtractTargets(opts).length > 1) {
+    if (!htmlArticleInput && collectExplicitExtractTargets(opts).length > 1) {
       return ['Extracted text', 'providers/<service>-<model>/extraction.txt', 'metadata.json']
     }
     return ['Extracted text', 'metadata.json']
@@ -101,10 +107,13 @@ export const buildExpectedFilesList = (command: ProcessCommand, opts: RuntimeOpt
     || opts.grokModel
   )
   const summaryFile = opts.structured && hasNonLlamaLlmProvider ? 'text.json' : 'text.md'
-  const documentWrite = command === 'write' && typeof resolvedTarget === 'string' && isLikelyDocumentTarget(resolvedTarget)
+  const documentWrite = command === 'write'
+    && typeof resolvedTarget === 'string'
+    && await isDocumentLikeTarget(resolvedTarget, opts)
   if (documentWrite) {
     const files = ['Extracted text', summaryFile]
-    if (collectExplicitExtractTargets(opts).length > 1) {
+    const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
+    if (!htmlArticleInput && collectExplicitExtractTargets(opts).length > 1) {
       files.push('providers/<service>-<model>/extraction.txt')
     }
     files.push('prompt.md')
@@ -349,7 +358,10 @@ export const handleProcessTarget = async (
     if (preflightTargets.length === 1) {
       const estimate = await buildAggregatedPriceEstimate(command, preflightTargets[0] as string, opts, undefined)
       l.report.estimate(estimate)
-      l.report.expectedOutput('./output/<timestamp>_<label>/', buildExpectedFilesList(command, opts, preflightTargets[0] as string))
+      if (typeof preflightTargets[0] === 'string' && await isHtmlArticleTarget(preflightTargets[0] as string, opts) && hasIgnoredHtmlOcrFlags(opts)) {
+        l.warn('OCR flags are ignored for HTML/article inputs during extraction pricing and execution.')
+      }
+      l.report.expectedOutput('./output/<timestamp>_<label>/', await buildExpectedFilesList(command, opts, preflightTargets[0] as string))
       return
     }
 

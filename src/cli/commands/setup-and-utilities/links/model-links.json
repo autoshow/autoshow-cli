@@ -135,8 +135,11 @@
   },
   "GLM": {
     "General": [
+      "https://docs.z.ai/guides/overview/overview.md",
       "https://docs.z.ai/guides/overview/pricing.md",
-      "https://docs.z.ai/guides/overview/concept-param.md"
+      "https://docs.z.ai/guides/overview/concept-param.md",
+      "https://docs.z.ai/api-reference/introduction.md",
+      "https://docs.z.ai/api-reference/api-code.md"
     ],
     "Text": [
       "https://docs.z.ai/guides/llm/glm-5.md",
@@ -144,7 +147,9 @@
       "https://docs.z.ai/guides/capabilities/struct-output.md"
     ],
     "Document": [
-      "https://docs.z.ai/guides/vlm/glm-ocr.md"
+      "https://docs.z.ai/guides/vlm/glm-ocr.md",
+      "https://docs.z.ai/api-reference/tools/layout-parsing.md",
+      "https://docs.z.ai/api-reference/tools/web-reader.md"
     ],
     "Image": [
       "https://docs.z.ai/guides/image/glm-image.md",

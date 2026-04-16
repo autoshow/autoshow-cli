@@ -1,3 +1,4 @@
+import { readdir, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
@@ -29,9 +30,11 @@ const CompositePromptSchema = v.object({
   includes: v.array(v.string())
 })
 
-const PromptsRegistrySchema = v.record(v.string(), v.union([LeafPromptSchema, CompositePromptSchema]))
+const PromptEntrySchema = v.union([LeafPromptSchema, CompositePromptSchema])
+const PromptsRegistrySchema = v.record(v.string(), PromptEntrySchema)
 
-const PROMPTS_PATH = resolve(import.meta.dir, 'prompts.json')
+const PROMPTS_DIR = resolve(import.meta.dir, 'entries')
+const PROMPT_FILE_EXTENSION = '.json'
 
 let cachedRegistry: PromptsRegistry | undefined
 
@@ -146,19 +149,50 @@ const collectLeafPromptsFromRegistry = (registry: PromptsRegistry, names: string
 const loadPrompts = async (): Promise<PromptsRegistry> => {
   if (cachedRegistry !== undefined) return cachedRegistry
 
-  const file = Bun.file(PROMPTS_PATH)
-  if (!await file.exists()) {
-    throw new Error(`Prompts registry not found at ${PROMPTS_PATH}`)
-  }
-
-  let raw: unknown
+  let dirEntries: string[]
   try {
-    raw = await file.json()
-  } catch {
-    throw new Error(`Failed to parse prompts registry at ${PROMPTS_PATH}: invalid JSON`)
+    dirEntries = await readdir(PROMPTS_DIR, 'utf8')
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error(`Prompts registry directory not found at ${PROMPTS_DIR}`)
+    }
+
+    throw new Error(`Failed to read prompts registry directory at ${PROMPTS_DIR}`)
   }
 
-  const validated = validateData(PromptsRegistrySchema, raw, `prompts registry at ${PROMPTS_PATH}`)
+  const promptFiles = dirEntries
+    .filter((fileName) => fileName.endsWith(PROMPT_FILE_EXTENSION))
+    .sort((a, b) => a.localeCompare(b))
+
+  if (promptFiles.length === 0) {
+    throw new Error(`Prompts registry directory at ${PROMPTS_DIR} contains no .json files`)
+  }
+
+  const rawEntries = await Promise.all(promptFiles.map(async (fileName) => {
+    const filePath = resolve(PROMPTS_DIR, fileName)
+
+    let fileContents: string
+    try {
+      fileContents = await readFile(filePath, 'utf8')
+    } catch {
+      throw new Error(`Failed to read prompt entry at ${filePath}`)
+    }
+
+    let rawEntry: unknown
+    try {
+      rawEntry = JSON.parse(fileContents) as unknown
+    } catch {
+      throw new Error(`Failed to parse prompt entry at ${filePath}: invalid JSON`)
+    }
+
+    const entry = validateData(PromptEntrySchema, rawEntry, `prompt entry at ${filePath}`)
+    const promptName = fileName.slice(0, -PROMPT_FILE_EXTENSION.length)
+
+    return [promptName, entry] as const
+  }))
+
+  const rawRegistry = Object.fromEntries(rawEntries)
+  const validated = validateData(PromptsRegistrySchema, rawRegistry, `prompts registry assembled from ${PROMPTS_DIR}`)
   cachedRegistry = validated
   return validated
 }

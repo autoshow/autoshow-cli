@@ -1,0 +1,11 @@
+{
+  "description": "Anthemic rock song with vivid imagery",
+  "expectedInputTokens": 500,
+  "expectedOutputTokens": 1100,
+  "instruction": "- Write a high-energy, anthemic rock song with powerful imagery and impactful, multi-layered lyrics.\n    - Use metaphors and vivid language to convey a sense of rebellion or freedom.\n    - Structure the song with verses, choruses, and a bridge.\n    - Provide the song with three potential titles.",
+  "structuredPreset": "freeformEnvelope",
+  "examples": {
+    "json": "{\n  \"content\": \"Title Options:\\n- Break the Static\\n- Neon Revolt\\n- Run Through the Wires\\n\\nVerse 1\\n\\n[High-energy rock verse]\\n\\nChorus\\n\\n[Anthemic chorus]\\n\\nVerse 2\\n\\n[Verse with stronger conflict and imagery]\\n\\nBridge\\n\\n[Bridge that heightens the sense of rebellion]\\n\\nChorus\\n\\n[Final chorus]\"\n}",
+    "markdown": "Format the output like so:\n\n## Song\n    \n    Lyrics to the song."
+  }
+}

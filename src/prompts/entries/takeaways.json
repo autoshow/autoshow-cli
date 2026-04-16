@@ -1,0 +1,11 @@
+{
+  "description": "Three key takeaways from the content",
+  "expectedInputTokens": 300,
+  "expectedOutputTokens": 350,
+  "instruction": "- Include three key takeaways the listener should get from the episode.",
+  "structuredPreset": "takeaways",
+  "examples": {
+    "json": "{\n  \"takeaways\": [\n    \"Full-stack development requires understanding both client-side and server-side systems.\",\n    \"Modern frameworks improve developer productivity but add architectural tradeoffs.\",\n    \"Scalable applications depend on thoughtful decisions about performance, security, and deployment.\"\n  ]\n}",
+    "markdown": "Format the output like so:\n\n## Key Takeaways\n\n    1. Full-stack development requires a broad understanding of both client-side and server-side technologies, enabling developers to create more cohesive and efficient web applications.\n    2. Modern front-end frameworks like React and Vue.js have revolutionized UI development, emphasizing component-based architecture and reactive programming paradigms.\n    3. Backend technologies like Node.js and cloud services have made it easier to build scalable, high-performance web applications, but require careful consideration of security and data management practices."
+  }
+}

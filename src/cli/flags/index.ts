@@ -1,4 +1,4 @@
-export { priceFlag, batchFlags, transcriptionFlags, llmProviderFlags, mediaFlags, promptFlag, extractFlags, advancedExtractFlags } from './shared-flags'
+export { priceFlag, batchFlags, transcriptionFlags, llmProviderFlags, mediaFlags, promptFlag, extractFlags, advancedExtractFlags, articleFlags } from './shared-flags'
 export { transcribeFlags } from './transcribe-flags'
 export { ttsFlags } from './tts-flags'
 export { imageGenFlags } from './image-flags'

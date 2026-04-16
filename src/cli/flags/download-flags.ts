@@ -1,5 +1,5 @@
 import type { ClercFlagsDefinition } from 'clerc'
-import { batchFlags } from './shared-flags'
+import { articleFlags, batchFlags } from './shared-flags'
 
 export const downloadFlags = {
   password: { description: 'Password for encrypted PDFs', type: String },
@@ -15,5 +15,6 @@ export const downloadFlags = {
     default: false,
     negatable: false
   },
+  ...articleFlags,
   ...batchFlags,
 } as const satisfies ClercFlagsDefinition

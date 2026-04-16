@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
-import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata } from '~/types'
+import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
 import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch-coordinator'
@@ -17,6 +17,7 @@ import {
 } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audio/dl-audio'
 import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
+import { prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { processDocument } from '~/cli/commands/process-steps/process-document'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-document/document-utils/doc-prompt-utils'
@@ -26,63 +27,33 @@ import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
 import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
-import { isDocumentByExtension, isLikelyUrl, MEDIA_EXTENSIONS } from './target-utils'
+import { classifyUrlInput, isDocumentByExtension, isHtmlDocumentPath, isLikelyUrl } from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { estimateTokens } from '~/utils/text-utils'
-import type { BatchItem, BatchItemProcessResult, InputKind } from '~/types'
+import type { BatchItem, BatchItemProcessResult } from '~/types'
 
+const extensionFromUrl = (
+  url: string,
+  contentType?: string | null,
+  contentDisposition?: string | null
+): string => {
+  const lowerContentType = contentType?.toLowerCase() ?? ''
+  const lowerContentDisposition = contentDisposition?.toLowerCase() ?? ''
 
-const isMediaByExtension = (path: string): boolean => {
-  const lower = path.toLowerCase()
-  return MEDIA_EXTENSIONS.some(ext => lower.endsWith(ext))
-}
+  if (lowerContentDisposition.includes('.epub') || lowerContentType.includes('application/epub+zip')) return '.epub'
+  if (lowerContentDisposition.includes('.docx') || lowerContentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) return '.docx'
+  if (lowerContentDisposition.includes('.pptx') || lowerContentType.includes('application/vnd.openxmlformats-officedocument.presentationml.presentation')) return '.pptx'
+  if (lowerContentDisposition.includes('.xlsx') || lowerContentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) return '.xlsx'
+  if (lowerContentDisposition.includes('.odt') || lowerContentType.includes('application/vnd.oasis.opendocument.text')) return '.odt'
+  if (lowerContentDisposition.includes('.ods') || lowerContentType.includes('application/vnd.oasis.opendocument.spreadsheet')) return '.ods'
+  if (lowerContentDisposition.includes('.odp') || lowerContentType.includes('application/vnd.oasis.opendocument.presentation')) return '.odp'
+  if (lowerContentDisposition.includes('.png') || lowerContentType.startsWith('image/png')) return '.png'
+  if (lowerContentDisposition.includes('.jpg') || lowerContentDisposition.includes('.jpeg') || lowerContentType.startsWith('image/jpeg')) return '.jpg'
+  if (lowerContentDisposition.includes('.tif') || lowerContentDisposition.includes('.tiff') || lowerContentType.startsWith('image/tiff')) return '.tif'
+  if (lowerContentDisposition.includes('.pdf') || lowerContentType.includes('application/pdf')) return '.pdf'
 
-const isDocumentUrl = (url: string): boolean => {
-  try {
-    const pathname = new URL(url).pathname.toLowerCase()
-    return isDocumentByExtension(pathname)
-  } catch {
-    return false
-  }
-}
-
-const isDirectMediaUrl = (url: string): boolean => {
-  try {
-    const pathname = new URL(url).pathname.toLowerCase()
-    return isMediaByExtension(pathname)
-  } catch {
-    return false
-  }
-}
-
-const isStreamingUrl = (url: string): boolean => {
-  try {
-    const host = new URL(url).hostname.toLowerCase()
-    return host.includes('youtube.com')
-      || host.includes('youtu.be')
-      || host.includes('twitch.tv')
-      || host.includes('tiktok.com')
-  } catch {
-    return false
-  }
-}
-
-const classifyUrlInput = (url: string): InputKind => {
-  if (isDocumentUrl(url)) {
-    return 'url_direct_document'
-  }
-  if (isDirectMediaUrl(url)) {
-    return 'url_direct_media'
-  }
-  if (isStreamingUrl(url)) {
-    return 'url_streaming'
-  }
-  return 'url_streaming'
-}
-
-const extensionFromUrl = (url: string): string => {
   try {
     const pathname = new URL(url).pathname.toLowerCase()
     if (pathname.endsWith('.pdf')) return '.pdf'
@@ -111,7 +82,11 @@ const downloadDocumentUrlToTempFile = async (
   }
 
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-doc-url-'))
-  const ext = extensionFromUrl(url)
+  const ext = extensionFromUrl(
+    url,
+    response.headers.get('content-type'),
+    response.headers.get('content-disposition')
+  )
   const filePath = join(tempDir, `document${ext}`)
   try {
     const bytes = await response.arrayBuffer()
@@ -127,6 +102,51 @@ const downloadDocumentUrlToTempFile = async (
       await rm(tempDir, { recursive: true, force: true })
     }
   }
+}
+
+const isHtmlExtractionMetadata = (
+  metadata: ExtractionMetadata | ExtractionMetadata[]
+): boolean =>
+  (Array.isArray(metadata) ? metadata : [metadata]).some((entry) => entry.extractionMethod.startsWith('html+'))
+
+const buildDocumentMetadataView = (
+  step1: DocumentMetadata,
+  web?: WebArticleMetadata
+): Record<string, unknown> => ({
+  ...(step1.title ? { title: step1.title } : {}),
+  slug: step1.slug,
+  ...(step1.author ? { author: step1.author } : {}),
+  pageCount: step1.pageCount,
+  format: step1.format,
+  fileSize: step1.fileSize,
+  ...(step1.sourceFormat ? { sourceFormat: step1.sourceFormat } : {}),
+  ...(step1.normalizedFormat ? { normalizedFormat: step1.normalizedFormat } : {}),
+  ...(step1.conversionChain ? { conversionChain: step1.conversionChain } : {}),
+  ...(step1.metadataSchemaVersion ? { metadataSchemaVersion: step1.metadataSchemaVersion } : {}),
+  ...(web ? { web } : {})
+})
+
+const hasOcrExtractionFlags = (opts: RuntimeOptions): boolean =>
+  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string'
+
+const warnHtmlArticleFlagBehavior = (target: string, opts: RuntimeOptions, backend: PreparedDocument['htmlArticleBackend']): void => {
+  if (hasOcrExtractionFlags(opts)) {
+    l.warn(`OCR flags are ignored for HTML/article inputs: ${target}`)
+  }
+  if (backend === 'firecrawl') {
+    l.info('Article extraction backend: firecrawl')
+  }
+}
+
+const prepareArticleDocument = async (
+  source: string,
+  baseDir: string,
+  opts: RuntimeOptions
+): Promise<PreparedDocument> => {
+  const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const prepared = await prepareHtmlArticle(source, effectiveBaseDir, opts.urlBackend)
+  warnHtmlArticleFlagBehavior(source, opts, prepared.htmlArticleBackend)
+  return prepared
 }
 
 const hasExplicitLlmProvider = (opts: RuntimeOptions): boolean => {
@@ -198,6 +218,7 @@ type WriteDocumentOutputMetadataOptions = {
   llmInputTokenCount: number
   llmOutputTokenCount: number
   artifactFiles: Record<string, string>
+  web?: WebArticleMetadata | undefined
   errors?: Array<{ service: string, model: string, message: string }> | undefined
 }
 
@@ -205,10 +226,11 @@ const writeDocumentOutputMetadata = async (
   outputDir: string,
   params: WriteDocumentOutputMetadataOptions
 ): Promise<void> => {
-  const { step1, step2, step3, mistralOcrModel, extractPageCount, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles, errors } = params
+  const { step1, step2, step3, mistralOcrModel, extractPageCount, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles, web, errors } = params
+  const estimatedMistralOcrModel = isHtmlExtractionMetadata(step2) ? undefined : mistralOcrModel
 
   const estimated = computeEstimatedCosts({
-    mistralOcrModel,
+    mistralOcrModel: estimatedMistralOcrModel,
     extractPageCount,
     llmService,
     llmModel,
@@ -220,7 +242,7 @@ const writeDocumentOutputMetadata = async (
   const cost = { estimated, actual }
 
   const estimatedTiming = computeEstimatedProcessingTimes({
-    mistralOcrModel,
+    mistralOcrModel: estimatedMistralOcrModel,
     extractPageCount,
     llmService: llmService as Step3Metadata['llmService'],
     llmModel,
@@ -237,6 +259,7 @@ const writeDocumentOutputMetadata = async (
     step1,
     step2,
     step3,
+    ...(web ? { web } : {}),
     cost,
     ...(timing ? { timing } : {}),
     ...(errors && errors.length > 0 ? { errors } : {}),
@@ -249,10 +272,16 @@ const runDocumentWrite = async (
   target: string,
   baseDir: string,
   opts: RuntimeOptions,
-  sourceRef?: Step1SourceRef
+  sourceRef?: Step1SourceRef,
+  preparedDocument?: PreparedDocument
 ): Promise<{ outputDir: string }> => {
   const llmConfig = resolveLLMDefaults(opts)
-  const extraction = await processDocument(target, buildExtractionCallOpts(target, baseDir, opts), sourceRef)
+  const extraction = await processDocument(
+    target,
+    buildExtractionCallOpts(target, baseDir, opts),
+    sourceRef,
+    preparedDocument
+  )
 
   const useLegacyFallback = opts.structured === false && !hasExplicitLlmProvider(opts)
   if (useLegacyFallback) {
@@ -293,6 +322,7 @@ const runDocumentWrite = async (
       llmInputTokenCount: step3.inputTokenCount,
       llmOutputTokenCount: step3.outputTokenCount,
       artifactFiles: { prompt: 'prompt.md', summary: 'text.md', metadata: 'metadata.json' },
+      ...(extraction.web ? { web: extraction.web } : {}),
       ...(extraction.step2Errors ? { errors: extraction.step2Errors } : {})
     })
     return { outputDir: extraction.outputDir }
@@ -303,7 +333,7 @@ const runDocumentWrite = async (
     duration: 'Unknown',
     author: extraction.step1Metadata.author ?? 'Unknown',
     description: '',
-    url: toDocumentSourceUrl(target)
+    url: sourceRef?.url ?? toDocumentSourceUrl(target)
   }
   const transcriptionLike: TranscriptionResult = {
     text: extraction.result.text,
@@ -367,6 +397,7 @@ const runDocumentWrite = async (
     llmInputTokenCount,
     llmOutputTokenCount,
     artifactFiles,
+    ...(extraction.web ? { web: extraction.web } : {}),
     ...(extraction.step2Errors ? { errors: extraction.step2Errors } : {})
   })
   return { outputDir: extraction.outputDir }
@@ -493,9 +524,15 @@ const processExtractSingle = async (
   target: string,
   baseDir: string,
   opts: RuntimeOptions,
-  sourceRef?: Step1SourceRef
+  sourceRef?: Step1SourceRef,
+  preparedDocument?: PreparedDocument
 ): Promise<{ outputDir: string }> => {
-  const extraction = await processDocument(target, buildExtractionCallOpts(target, baseDir, opts), sourceRef)
+  const extraction = await processDocument(
+    target,
+    buildExtractionCallOpts(target, baseDir, opts),
+    sourceRef,
+    preparedDocument
+  )
   l.success(`Extraction complete: ${extraction.outputDir}`)
   return { outputDir: extraction.outputDir }
 }
@@ -598,8 +635,12 @@ const mergeBatchItemMetadata = (
   }
 }
 
-const buildDownloadManifestEntry = (step1Metadata: Record<string, unknown>): Record<string, unknown> => ({
+const buildDownloadManifestEntry = (
+  step1Metadata: Record<string, unknown>,
+  web?: WebArticleMetadata
+): Record<string, unknown> => ({
   step1: step1Metadata,
+  ...(web ? { web } : {}),
   cost: {
     estimated: { totalCost: 0, steps: [] as never[] },
     actual: { totalCost: 0, steps: [] as never[] }
@@ -684,6 +725,22 @@ const processMetadataDocument = async (
   }
 }
 
+const processMetadataPreparedDocument = async (
+  prepared: PreparedDocument,
+  opts: RuntimeOptions
+): Promise<BatchItemProcessResult> => {
+  try {
+    const metadata = buildDocumentMetadataView(prepared.step1Metadata, prepared.web)
+    writeMetadataTerminalOutput(metadata, opts.markdown)
+    await writeSavedMetadataArtifacts(prepared.outputDir, metadata, opts.markdown, opts.save)
+    return { outputDir: prepared.outputDir }
+  } finally {
+    if (prepared.tempCleanup) {
+      await prepared.tempCleanup()
+    }
+  }
+}
+
 const processDownloadMedia = async (
   target: string,
   baseDir: string,
@@ -758,6 +815,32 @@ const processDownloadDocument = async (
   }
 }
 
+const processDownloadPreparedDocument = async (
+  prepared: PreparedDocument
+): Promise<{ outputDir: string }> => {
+  try {
+    const cost = {
+      estimated: { totalCost: 0, steps: [] as never[] },
+      actual: { totalCost: 0, steps: [] as never[] }
+    }
+
+    const metadataPath = `${prepared.outputDir}/metadata.json`
+    await Bun.write(metadataPath, JSON.stringify({
+      step1: prepared.step1Metadata,
+      ...(prepared.web ? { web: prepared.web } : {}),
+      cost
+    }, null, 2))
+
+    l.report.complete(prepared.outputDir, { metadata: 'metadata.json' })
+
+    return { outputDir: prepared.outputDir }
+  } finally {
+    if (prepared.tempCleanup) {
+      await prepared.tempCleanup()
+    }
+  }
+}
+
 export const processSingleTarget = async (
   command: ProcessCommand,
   item: string,
@@ -771,7 +854,7 @@ export const processSingleTarget = async (
 
   if (command === 'metadata') {
     if (isLikelyUrl(item)) {
-      const kind = classifyUrlInput(item)
+      const kind = await classifyUrlInput(item, opts)
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
@@ -780,12 +863,21 @@ export const processSingleTarget = async (
           await downloaded.cleanup()
         }
       }
+      if (kind === 'url_html_article') {
+        const prepared = await prepareArticleDocument(item, baseDir, opts)
+        return await processMetadataPreparedDocument(prepared, opts)
+      }
       return await processMetadataMedia(item, opts, baseDir, batchItem)
     }
 
     const exists = await fileExists(item)
     if (!exists) {
       throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help metadata`)
+    }
+
+    if (isHtmlDocumentPath(item)) {
+      const prepared = await prepareArticleDocument(item, baseDir, opts)
+      return await processMetadataPreparedDocument(prepared, opts)
     }
 
     const isDocExt = isDocumentByExtension(item)
@@ -799,7 +891,7 @@ export const processSingleTarget = async (
 
   if (command === 'download') {
     if (isLikelyUrl(item)) {
-      const kind = classifyUrlInput(item)
+      const kind = await classifyUrlInput(item, opts)
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
@@ -808,12 +900,21 @@ export const processSingleTarget = async (
           await downloaded.cleanup()
         }
       }
+      if (kind === 'url_html_article') {
+        const prepared = await prepareArticleDocument(item, baseDir, opts)
+        return await processDownloadPreparedDocument(prepared)
+      }
       return await processDownloadMedia(item, baseDir, opts, batchItem)
     }
 
     const exists = await fileExists(item)
     if (!exists) {
       throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help download`)
+    }
+
+    if (isHtmlDocumentPath(item)) {
+      const prepared = await prepareArticleDocument(item, baseDir, opts)
+      return await processDownloadPreparedDocument(prepared)
     }
 
     const isDocExt = isDocumentByExtension(item)
@@ -826,7 +927,7 @@ export const processSingleTarget = async (
   }
 
   if (isLikelyUrl(item)) {
-    const kind = classifyUrlInput(item)
+    const kind = await classifyUrlInput(item, opts)
     if (kind === 'url_direct_document') {
       if (isSttCommand(command)) {
         throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
@@ -842,6 +943,18 @@ export const processSingleTarget = async (
         } finally {
           await downloaded.cleanup()
         }
+    }
+
+    if (kind === 'url_html_article') {
+      if (isSttCommand(command)) {
+        throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
+      }
+
+      const prepared = await prepareArticleDocument(item, baseDir, opts)
+      if (isOcrCommand(command)) {
+        return await processExtractSingle(item, baseDir, opts, { url: item }, prepared)
+      }
+      return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared)
     }
 
     if (isOcrCommand(command)) {
@@ -865,9 +978,25 @@ export const processSingleTarget = async (
     throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help ${displayCommand}`)
   }
 
+  if (isHtmlDocumentPath(item)) {
+    const prepared = await prepareArticleDocument(item, baseDir, opts)
+
+    if (isOcrCommand(command)) {
+      return await processExtractSingle(item, baseDir, opts, undefined, prepared)
+    }
+
+    if (command === 'write') {
+      return await runDocumentWrite(item, baseDir, opts, undefined, prepared)
+    }
+
+    if (isSttCommand(command)) {
+      throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
+    }
+  }
+
   const isDocExt = isDocumentByExtension(item)
   const detected = isDocExt ? await detectDocumentFormat(item) : null
-  const kind: InputKind = (isDocExt || detected !== null) ? 'local_document' : 'local_media'
+  const kind = (isDocExt || detected !== null) ? 'local_document' : 'local_media'
 
   if (isOcrCommand(command)) {
     if (kind !== 'local_document') {

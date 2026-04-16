@@ -1,0 +1,11 @@
+{
+  "description": "Catchy pop song with memorable hooks",
+  "expectedInputTokens": 500,
+  "expectedOutputTokens": 1100,
+  "instruction": "- Write a catchy, radio-friendly pop song with memorable hooks and relatable themes.\n    - Focus on universal emotions and experiences that resonate with a broad audience.\n    - Use simple but effective rhyme schemes and repetitive, singable choruses.\n    - Structure the song with verses, choruses, and a bridge.\n    - Provide three potential titles.",
+  "structuredPreset": "freeformEnvelope",
+  "examples": {
+    "json": "{\n  \"content\": \"Title Options:\\n- Staying Bright\\n- One More Signal\\n- Echoes in the Summer\\n\\nVerse 1\\n\\n[Catchy pop verse]\\n\\nChorus\\n\\n[Memorable, singable hook]\\n\\nVerse 2\\n\\n[Second verse with relatable imagery]\\n\\nBridge\\n\\n[Bridge that shifts the emotional angle]\\n\\nChorus\\n\\n[Final chorus]\"\n}",
+    "markdown": "Format the output like so:\n\n## Song\n    \n    Lyrics to the song."
+  }
+}

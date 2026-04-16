@@ -343,6 +343,7 @@ export const runExtract = async (
   let inputFamily: string | undefined
   let normalizedFrom: string | undefined
   let conversionChain: string[] | undefined
+  let outputFidelity: string | undefined
 
   const useEpubBun = opts.useEpubBun === true
   const useEpubCalibre = opts.useEpubCalibre === true
@@ -358,8 +359,18 @@ export const runExtract = async (
 
   const format = step1Metadata.format
 
+  if (typeof opts.preparedMarkdown === 'string' && opts.preparedMarkdown.trim().length > 0) {
+    pages = [{
+      pageNumber: 1,
+      method: 'text',
+      text: opts.preparedMarkdown
+    }]
+    extractionMethod = `html+${opts.htmlArticleBackend ?? 'defuddle'}`
+    inputFamily = 'html'
+    outputFidelity = 'markdown'
+  }
   // ─── EPUB inspect mode (--epub-bun or --epub-calibre) ─────────────────────
-  if (useEpubInspect) {
+  else if (useEpubInspect) {
     if (useEpubCalibre) {
       l.info('Inspecting EPUB with Calibre tools')
       const inspected = await runEpubCalibreInspect(filePath)
@@ -623,7 +634,9 @@ export const runExtract = async (
     }
   }
 
-  const text = buildCombinedText(pages, opts.pageSeparator)
+  const text = opts.preparedMarkdown
+    ? opts.preparedMarkdown.trim()
+    : buildCombinedText(pages, opts.pageSeparator)
   const ocrPages = pages.filter(p => p.method === 'ocr').length
   const textPages = pages.filter(p => p.method === 'text').length
 
@@ -655,6 +668,8 @@ export const runExtract = async (
   if (inputFamily) step2MetadataPayload['inputFamily'] = inputFamily
   if (normalizedFrom) step2MetadataPayload['normalizedFrom'] = normalizedFrom
   if (conversionChain) step2MetadataPayload['conversionChain'] = conversionChain
+  if (outputFidelity) step2MetadataPayload['outputFidelity'] = outputFidelity
+  if (outputFidelity) step2MetadataPayload['outputFormat'] = opts.outputFormat
 
   const step2Metadata = validateData(ExtractionMetadataSchema, step2MetadataPayload, 'extraction metadata')
 

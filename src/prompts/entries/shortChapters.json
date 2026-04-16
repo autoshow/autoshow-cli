@@ -1,0 +1,11 @@
+{
+  "description": "Timestamped chapters with one-sentence descriptions",
+  "expectedInputTokens": 320,
+  "expectedOutputTokens": 700,
+  "instruction": "- Create chapter titles and one-sentence descriptions based on the topics discussed.\n  - Include only starting timestamps in exact HH:MM:SS format, always using two digits each for hours, minutes, and seconds.\n  - Chapters should be roughly 3-6 minutes long.\n  - Ensure chapters cover the entire content, clearly noting the last timestamp (HH:MM:SS), indicating total duration.\n  - Descriptions should flow naturally from the content.",
+  "structuredPreset": "shortChapters",
+  "examples": {
+    "json": "{\n  \"chapters\": [\n    {\n      \"timestamp\": \"00:00:00\",\n      \"title\": \"Introduction and Episode Overview\",\n      \"description\": \"Briefly introduces the episode's main themes, setting the stage for the discussion ahead.\"\n    },\n    {\n      \"timestamp\": \"00:04:30\",\n      \"title\": \"Core Ideas and Implications\",\n      \"description\": \"Summarizes the section's main argument and why it matters.\"\n    }\n  ]\n}",
+    "markdown": "Format the output like so:\n\n## Chapters\n\n    ### 00:00:00 - Introduction and Episode Overview\n\n    Briefly introduces the episode's main themes, setting the stage for detailed discussions ahead."
+  }
+}

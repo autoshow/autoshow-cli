@@ -1,0 +1,11 @@
+{
+  "description": "Short, hook-driven TikTok caption",
+  "expectedInputTokens": 300,
+  "expectedOutputTokens": 250,
+  "instruction": "- Write a TikTok caption that's engaging, trend-aware, and encourages interaction.\n  - Use a hook that grabs attention in the first few words.\n  - Include trending hashtags and calls to action.\n  - Keep it concise but impactful, around 100-150 characters.",
+  "structuredPreset": "tiktok",
+  "examples": {
+    "json": "{\n  \"hook\": \"POV: you just learned the secret to modern web development\",\n  \"content\": \"The stack is changing fast. Here is what every developer needs to watch next. Tell me which shift surprised you most.\",\n  \"hashtags\": [\n    \"#WebDev\",\n    \"#TechTok\",\n    \"#Programming\",\n    \"#Developer\",\n    \"#TechTrends\"\n  ]\n}",
+    "markdown": "Format the output like so:\n\n## TikTok Social Post\n    \n    POV: You just learned the secret to modern web development 🤯\n\n    The game is changing faster than you think! Here's what every developer needs to know about the future of coding.\n\n    Which trend surprised you most? Tell me in the comments! 👇\n\n    #WebDev #TechTok #Programming #Developer #CodeLife #TechTrends #LearnOnTikTok"
+  }
+}
