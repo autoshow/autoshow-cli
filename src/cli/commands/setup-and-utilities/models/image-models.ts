@@ -1,5 +1,5 @@
-import { createModelValidator } from '~/cli/commands/models/model-validation'
-import { isNativeGeminiImage } from '~/cli/commands/models/model-loader'
+import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
+import { isNativeGeminiImage } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { GeminiImageModel, OpenAIImageModel, MinimaxImageModel } from '~/types'
 export type { GeminiImageModel, OpenAIImageModel, MinimaxImageModel } from '~/types'
 

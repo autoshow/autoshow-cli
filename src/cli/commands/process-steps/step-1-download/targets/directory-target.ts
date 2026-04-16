@@ -3,7 +3,7 @@ import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { isOcrCommand, isSttCommand } from '~/types'
 import { collectInputFiles, isDocumentByExtension, isInputDirectoryPath, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
-import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/stt-batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/stt-batch/stt-batch'
 
 export const handleDirectoryTargetBatch = async (
   resolvedTarget: string,

@@ -1,7 +1,7 @@
 import { mkdir, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { commandExists, pathExists, runCapture, runInherit, detectPlatform, reverbConfigPath, reverbDiarizationDir, reverbModelDir, reverbModelPath, reverbUvEnvDir } from '../../../step-0-setup/setup-orchestrator/run-complete-setup'
+import { commandExists, pathExists, runCapture, runInherit, detectPlatform, reverbConfigPath, reverbDiarizationDir, reverbModelDir, reverbModelPath, reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import * as l from '~/logger'
 import { withRetry } from '~/utils/retries'
 import {

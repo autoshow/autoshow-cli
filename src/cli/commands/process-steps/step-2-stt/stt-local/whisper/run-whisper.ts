@@ -5,7 +5,7 @@ import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/
 import { parseWhisperJson, extractWhisperWords } from './parse-whisper-output'
 import { fileExists } from '~/utils/cli-utils'
 import { resolve } from 'node:path'
-import { whisperBinaryPath, whisperModelsDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
+import { whisperBinaryPath, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { pollUntil } from '~/utils/retries'
 import { formatWhisperProgressMessage, parseWhisperProgressPercent } from './whisper-progress'
 import { prepareLocalSttInput } from '../local-audio-normalize'

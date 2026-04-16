@@ -1,4 +1,4 @@
-import { createModelValidator } from '~/cli/commands/models/model-validation'
+import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
 export type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel } from '~/types'
 

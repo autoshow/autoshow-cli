@@ -1,6 +1,6 @@
 import { defineTTSServiceTest } from '../../../../test-utils/define-tts-service-test'
 import { readConfiguredEnvVar } from '../../../../test-utils/test-helpers'
-import { OPENAI_DEFAULT_TTS_VOICE } from '~/cli/commands/models/model-options'
+import { OPENAI_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
 
 defineTTSServiceTest({
   models: ['gpt-4o-mini-tts'],

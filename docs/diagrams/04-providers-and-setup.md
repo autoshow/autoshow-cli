@@ -86,7 +86,7 @@ collectTargets() checks all flags - multiple providers can run sequentially:
 ## Setup Pipeline
 
 ```
-bun as setup → src/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup.ts
+bun as setup → src/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup.ts
 → runCompleteSetup()
 
   ┌───────────────────────────────────────────────────────────────────┐

@@ -5,7 +5,7 @@ import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/proce
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
 import { withRetry } from '~/utils/retries'
-import { GEMINI_DEFAULT_TTS_VOICE, type GeminiTtsModel } from '~/cli/commands/models/model-options'
+import { GEMINI_DEFAULT_TTS_VOICE, type GeminiTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyGeminiRetry } from '~/utils/gemini-utils'
 

@@ -1,4 +1,4 @@
-import type { MinimaxVideoModel } from '~/cli/commands/models/model-options'
+import type { MinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { GeminiDurationSeconds, GeminiResolution, MinimaxResolution, MinimaxApiResolution, MinimaxDurationSeconds } from '~/types'
 
 

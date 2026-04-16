@@ -10,7 +10,7 @@ import {
   validateGeminiImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel
-} from '~/cli/commands/models/model-options'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureGeminiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { ensureOpenAIImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'

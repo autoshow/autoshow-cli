@@ -40,13 +40,13 @@ Per Rev docs: 409, 429, 502, 503, 504. Max 5 retries except 429 (can retry more)
 ### CLI Flags & Config
 - `src/cli/flags/shared-flags.ts`: Add `--rev-stt <model>` flag with bare default `machine`.
 - `src/cli/argv-normalize.ts`: Add `--rev-stt` bare-flag expansion.
-- `src/cli/commands/config/config-merge.ts`: Add `defaults.stt.revStt` config key.
+- `src/cli/commands/setup-and-utilities/config/config-merge.ts`: Add `defaults.stt.revStt` config key.
 - `src/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags.ts`: Map `revStt` flag to `revSttModel` in runtime options.
 - `src/cli/commands/process-steps/step-1-download/targets/handle-process-target.ts`: Add Rev to STT provider allowlist / explicit-selection list.
 
 ### Model Registry & Pricing
-- `src/cli/commands/models/stt-config.json`: Add `rev` entry with `type: "api"`, single model `machine`, description only, no `costPerHour*` values.
-- `src/cli/commands/models/stt-models.ts`: Register service `rev` if manual registration is needed beyond `stt-config.json`.
+- `src/cli/commands/setup-and-utilities/models/stt-config.json`: Add `rev` entry with `type: "api"`, single model `machine`, description only, no `costPerHour*` values.
+- `src/cli/commands/setup-and-utilities/models/stt-models.ts`: Register service `rev` if manual registration is needed beyond `stt-config.json`.
 - `src/utils/pricing/compute-costs.ts`: Map `revSttModel` into estimated-cost logic (will use generic API defaults since no curated pricing).
 
 ### STT Pipeline
@@ -57,8 +57,8 @@ Per Rev docs: 409, 429, 502, 503, 504. Max 5 retries except 429 (can retry more)
 - `src/cli/commands/process-steps/step-2-stt/resume-stt-batch.ts`: Add Rev to any provider-specific resume logic if present.
 
 ### Setup & Doctor
-- `src/cli/commands/process-steps/step-0-setup/run-doctor.ts`: Add `checkEnvVar('REVAI_ACCESS_TOKEN', 'REVAI_ACCESS_TOKEN')`.
-- `src/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup.ts`: Add `setupRevStt()` call.
+- `src/cli/commands/setup-and-utilities/setup/run-doctor.ts`: Add `checkEnvVar('REVAI_ACCESS_TOKEN', 'REVAI_ACCESS_TOKEN')`.
+- `src/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup.ts`: Add `setupRevStt()` call.
 - `src/cli/create-cli.ts`: Wire up Rev setup if providers are registered there.
 
 ### Docs
@@ -115,9 +115,9 @@ defineSTTServiceTest({
 ```
 
 ## No Changes Needed
-- `src/cli/commands/links/model-links.json`, `docs/links/rev-links.md`, link-fetcher, and `docs/commands/links/links.md` — Rev curated docs already exist.
+- `src/cli/commands/setup-and-utilities/links/model-links.json`, `docs/links/rev-links.md`, link-fetcher, and `docs/commands/links/links.md` — Rev curated docs already exist.
 - `package.json` — use existing `fetch` + Valibot pattern, no SDK needed.
-- `src/cli/commands/models/model-loader.ts`, `src/types/models-dir-types.ts`, `src/utils/pricing/compute-processing-time.ts`, `src/utils/pricing/aggregate-pricing.ts` — already registry-driven, work automatically once `rev` exists in `stt-config.json`.
+- `src/cli/commands/setup-and-utilities/models/model-loader.ts`, `src/types/models-dir-types.ts`, `src/utils/pricing/compute-processing-time.ts`, `src/utils/pricing/aggregate-pricing.ts` — already registry-driven, work automatically once `rev` exists in `stt-config.json`.
 - `test/test-utils/api-cheap-config.ts` — no Rev pricing data available, skip cheapest-provider helper.
 - `.env.example` — does not exist in this repo.
 

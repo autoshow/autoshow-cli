@@ -4,76 +4,53 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
-import type { AggregatedPriceEstimate, RuntimeOptions, RetryClass, Step2Metadata, Step2TimingMetadata, TranscriptionResult } from '~/types'
-import { getSttEstimation } from '~/cli/commands/models/model-loader'
+import type { AggregatedPriceEstimate, RuntimeOptions, RetryClass, Step2Metadata, TranscriptionResult } from '~/types'
+import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
-import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
+import { collectSttTargets, formatSttTargetLabel, getSttTargetDirectoryName, getSttTargetKey, type SttTarget } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
 import { getTranscribeEngineCapabilities, transcribeTarget } from './step-2-stt/run-transcribe'
-import { parseStep2RuntimeMetadata } from './step-2-stt/stt-utils/async-stt-job-runner'
+import { mergeStep2TimingMetadata } from './step-2-stt/stt-timing-metadata'
 import {
-  describeSttBatchProviderSlotLimits,
+  buildMetadataErrorEntries,
+  buildMissingProviders,
+  buildProviderStates,
+  getSttProviderArtifactDir,
+  readExistingSttRun,
+  resolveCompletionStatus,
+  SttPartialCompletionError,
+  toRecordedProviderError,
+  toRequestedProvider,
+  type ExistingSttRun,
+  type SttCompletionStatus,
+  type SttProviderFailureSummary,
+  type SttProviderState,
+  type SttProviderSuccess
+} from './step-2-stt/stt-batch/stt-run-state'
+import {
+  describeSttBatchProviderSlotLimits
+} from './step-2-stt/stt-batch/stt-batch-policy'
+import {
+  runCoordinatedSttTargetPool,
   SttBatchCoordinator,
   type SttBatchBlockedProviderReason
-} from './step-2-stt/stt-batch-coordinator'
+} from './step-2-stt/stt-batch/stt-batch-coordinator'
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
 import { CLIUsageError } from '~/utils/error-handler'
 
+export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/stt-batch/stt-run-state'
+export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from './step-2-stt/stt-batch/stt-run-state'
+
 type PreparedSttMedia = Awaited<ReturnType<typeof prepareSttMedia>>
 
-export type SttCompletionStatus = 'full' | 'incomplete' | 'failed'
-
-export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local' | 'diarizationOptions'>
-
-export type SttRecordedProviderError = {
-  message: string
-  retryable: boolean
-  skipped?: boolean | undefined
-  stage?: string | undefined
-  status?: number | undefined
-  retryAfterMs?: number | undefined
-  errorFile?: string | undefined
-  rawResponseFile?: string | undefined
-}
-
-export type SttProviderState = {
-  service: SttTarget['service']
-  model: string
-  local: boolean
-  artifactDir: string
-  status: 'succeeded' | 'missing' | 'failed' | 'skipped'
-  attempts: number
-  retryable?: boolean | undefined
-  lastError?: SttRecordedProviderError | undefined
-}
-
-type ProviderFailure = {
+type ProviderFailure = SttProviderFailureSummary & {
   index: number
   service: SttTarget['service']
   model: string
-  message: string
-  retryable: boolean
-  stage?: string | undefined
-  status?: number | undefined
-  retryAfterMs?: number | undefined
-  errorFile?: string | undefined
-  rawResponseFile?: string | undefined
-}
-
-type ProviderSuccess = {
-  target: SttTarget
-  metadata: Step2Metadata
-  result: TranscriptionResult
-  relativeDir?: string | undefined
-}
-
-type ExistingSttRun = {
-  successes: Array<ProviderSuccess | undefined>
-  providerStates: Map<string, SttProviderState>
 }
 
 type ProcessSttRunOptions = {
@@ -83,7 +60,7 @@ type ProcessSttRunOptions = {
   batchCoordinator?: SttBatchCoordinator | undefined
 }
 
-type PromptSelectionCandidate = ProviderSuccess
+type PromptSelectionCandidate = SttProviderSuccess
 
 type ProviderErrorLike = Error & {
   cause?: unknown
@@ -98,7 +75,6 @@ type ProviderErrorLike = Error & {
 const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
   value instanceof Error
 
-const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/
 const STT_RECOVERY_MAX_PASSES = 3
 const BATCH_BLOCKING_AUTH_STATUS_CODES = new Set([401, 403])
 const BATCH_BLOCKING_MODEL_ERROR_CODES = new Set([400, 404, 422])
@@ -354,9 +330,6 @@ export const resolveEffectiveSttProviderConcurrency = (
   }
 }
 
-const formatSttTargetLabel = (target: Pick<SttTarget, 'service' | 'model'>): string =>
-  `${target.service === 'whisper' ? 'whisper.cpp' : target.service}/${target.model}`
-
 const logSpeakerCountHintSummary = (
   targets: SttTarget[],
   requestedSpeakerCount: number | undefined
@@ -415,151 +388,11 @@ const formatProviderFailure = (failure: ProviderFailure): string => {
     : `${failure.service}/${failure.model}: ${failure.message}`
 }
 
-const STT_SERVICES = new Set<SttTarget['service']>([
-  'whisper',
-  'reverb',
-  'deepgram',
-  'elevenlabs',
-  'soniox',
-  'speechmatics',
-  'rev',
-  'groq',
-  'openai',
-  'mistral',
-  'assemblyai'
-])
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const isSttService = (value: unknown): value is SttTarget['service'] =>
-  typeof value === 'string' && STT_SERVICES.has(value as SttTarget['service'])
-
-const getTargetKey = (target: Pick<SttTarget, 'service' | 'model'>): string =>
-  `${target.service}:${target.model}`
-
-const getProviderArtifactDir = (target: Pick<SttTarget, 'service' | 'model'>): string =>
-  `providers/${getSttTargetDirectoryName(target)}`
-
-const toRequestedProvider = (target: SttTarget): SttRequestedProvider => ({
-  service: target.service,
-  model: target.model,
-  local: target.local,
-  ...(target.diarizationOptions ? { diarizationOptions: target.diarizationOptions } : {})
-})
-
-const toRecordedProviderError = (
-  failure: Omit<ProviderFailure, 'index' | 'service' | 'model'> & { skipped?: boolean | undefined }
-): SttRecordedProviderError => ({
-  message: failure.message,
-  retryable: failure.retryable,
-  ...(failure.skipped === true ? { skipped: true } : {}),
-  ...(failure.stage ? { stage: failure.stage } : {}),
-  ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
-  ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
-  ...(failure.errorFile ? { errorFile: failure.errorFile } : {}),
-  ...(failure.rawResponseFile ? { rawResponseFile: failure.rawResponseFile } : {})
-})
-
-const parseTranscriptText = (text: string): TranscriptionResult => {
-  const segments: TranscriptionResult['segments'] = []
-  for (const rawLine of text.split('\n')) {
-    const line = rawLine.trim()
-    if (line.length === 0) {
-      continue
-    }
-
-    const match = line.match(TRANSCRIPT_LINE_PATTERN)
-    if (!match) {
-      continue
-    }
-
-    const segmentText = (match[3] ?? '').trim()
-    if (segmentText.length === 0) {
-      continue
-    }
-
-    segments.push({
-      start: match[1] as string,
-      end: match[1] as string,
-      text: segmentText,
-      ...(typeof match[2] === 'string' && match[2].trim().length > 0
-        ? { speaker: match[2].trim() }
-        : {})
-    })
-  }
-
-  if (segments.length === 0) {
-    const trimmed = text.trim()
-    return {
-      text: trimmed,
-      segments: trimmed.length > 0
-        ? [{ start: '00:00:00', end: '00:00:00', text: trimmed }]
-        : []
-    }
-  }
-
-  return {
-    text: segments.map((segment) => segment.text).join(' ').trim(),
-    segments
-  }
-}
-
-const STT_TIMING_KEYS = [
-  'queueWaitMs',
-  'transcribeMs',
-  'uploadMs',
-  'createMs',
-  'createCount',
-  'pollMs',
-  'pollSleepMs',
-  'pollCount',
-  'transcriptMs',
-  'remoteProcessingMs',
-  'cleanupMs',
-  'requestCount',
-  'retryCount',
-  'rateLimitCount',
-  'blockedCount',
-  'degradedCount',
-  'backfillCount'
-] as const satisfies readonly (keyof Step2TimingMetadata)[]
-
-const parseStoredStep2Timings = (value: unknown): Step2TimingMetadata | undefined => {
-  if (!isRecord(value)) {
-    return undefined
-  }
-
-  const timings: Step2TimingMetadata = {}
-  for (const key of STT_TIMING_KEYS) {
-    if (typeof value[key] === 'number' && Number.isFinite(value[key])) {
-      timings[key] = value[key]
-    }
-  }
-
-  return Object.keys(timings).length > 0 ? timings : undefined
-}
-
-const mergeStep2Timings = (
-  ...values: Array<Step2TimingMetadata | undefined>
-): Step2TimingMetadata | undefined => {
-  const merged: Step2TimingMetadata = {}
-
-  for (const key of STT_TIMING_KEYS) {
-    const total = values.reduce((sum, value) => sum + (value?.[key] ?? 0), 0)
-    if (total > 0) {
-      merged[key] = total
-    }
-  }
-
-  return Object.keys(merged).length > 0 ? merged : undefined
-}
-
 const withMergedStep2Timings = (
   metadata: Step2Metadata,
-  timings: Step2TimingMetadata | undefined
+  ...timings: Array<Step2Metadata['timings']>
 ): Step2Metadata => {
-  const mergedTimings = mergeStep2Timings(metadata.timings, timings)
+  const mergedTimings = mergeStep2TimingMetadata([metadata.timings, ...timings])
   if (!mergedTimings) {
     return metadata
   }
@@ -569,229 +402,6 @@ const withMergedStep2Timings = (
     timings: mergedTimings
   }
 }
-
-const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => {
-  if (!isRecord(value) || !isSttService(value['transcriptionService']) || typeof value['transcriptionModel'] !== 'string') {
-    return undefined
-  }
-
-  if (typeof value['processingTime'] !== 'number' || typeof value['tokenCount'] !== 'number') {
-    return undefined
-  }
-
-  const timings = parseStoredStep2Timings(value['timings'])
-  const runtime = parseStep2RuntimeMetadata(value['runtime'])
-
-  return {
-    transcriptionService: value['transcriptionService'],
-    transcriptionModel: value['transcriptionModel'],
-    ...(typeof value['transcriptionModelName'] === 'string' ? { transcriptionModelName: value['transcriptionModelName'] } : {}),
-    processingTime: value['processingTime'],
-    tokenCount: value['tokenCount'],
-    ...(timings ? { timings } : {}),
-    ...(runtime ? { runtime } : {})
-  }
-}
-
-const parseStoredProviderState = (value: unknown): SttProviderState | undefined => {
-  if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
-    return undefined
-  }
-
-  if (value['status'] !== 'succeeded' && value['status'] !== 'missing' && value['status'] !== 'failed' && value['status'] !== 'skipped') {
-    return undefined
-  }
-
-  if (typeof value['artifactDir'] !== 'string' || typeof value['attempts'] !== 'number') {
-    return undefined
-  }
-
-  const lastError = isRecord(value['lastError']) && typeof value['lastError']['message'] === 'string'
-    ? {
-        message: value['lastError']['message'],
-        retryable: value['lastError']['retryable'] === true,
-        ...(value['lastError']['skipped'] === true ? { skipped: true } : {}),
-        ...(typeof value['lastError']['stage'] === 'string' ? { stage: value['lastError']['stage'] } : {}),
-        ...(typeof value['lastError']['status'] === 'number' ? { status: value['lastError']['status'] } : {}),
-        ...(typeof value['lastError']['retryAfterMs'] === 'number' ? { retryAfterMs: value['lastError']['retryAfterMs'] } : {}),
-        ...(typeof value['lastError']['errorFile'] === 'string' ? { errorFile: value['lastError']['errorFile'] } : {}),
-        ...(typeof value['lastError']['rawResponseFile'] === 'string' ? { rawResponseFile: value['lastError']['rawResponseFile'] } : {})
-      } satisfies SttRecordedProviderError
-    : undefined
-
-  return {
-    service: value['service'],
-    model: value['model'],
-    local: value['local'] === true,
-    artifactDir: value['artifactDir'],
-    status: value['status'],
-    attempts: value['attempts'],
-    ...(typeof value['retryable'] === 'boolean' ? { retryable: value['retryable'] } : {}),
-    ...(lastError ? { lastError } : {})
-  }
-}
-
-const readExistingSttRun = async (
-  outputDir: string,
-  requestedTargets: SttTarget[]
-): Promise<ExistingSttRun> => {
-  const providerStates = new Map<string, SttProviderState>()
-  const successes: Array<ProviderSuccess | undefined> = new Array(requestedTargets.length)
-  const metadataPath = join(outputDir, 'metadata.json')
-  if (!await Bun.file(metadataPath).exists()) {
-    return { successes, providerStates }
-  }
-
-  let raw: unknown
-  try {
-    raw = await Bun.file(metadataPath).json()
-  } catch {
-    return { successes, providerStates }
-  }
-
-  if (!isRecord(raw)) {
-    return { successes, providerStates }
-  }
-
-  const providerStateValues = Array.isArray(raw['providerStates']) ? raw['providerStates'] : []
-  for (const value of providerStateValues) {
-    const parsed = parseStoredProviderState(value)
-    if (!parsed) {
-      continue
-    }
-    providerStates.set(getTargetKey(parsed), parsed)
-  }
-
-  const storedStep2Values = Array.isArray(raw['step2'])
-    ? raw['step2']
-    : raw['step2'] === undefined
-      ? []
-      : [raw['step2']]
-
-  const storedStep2Metadata = storedStep2Values
-    .map(parseStoredStep2Metadata)
-    .filter((entry): entry is Step2Metadata => entry !== undefined)
-
-  await Promise.all(requestedTargets.map(async (target, index) => {
-    const metadata = storedStep2Metadata.find((entry) =>
-      entry.transcriptionService === target.service
-      && (entry.transcriptionModelName ?? entry.transcriptionModel) === target.model
-    )
-    if (!metadata) {
-      return
-    }
-
-    const transcriptPath = join(outputDir, getProviderArtifactDir(target), 'transcription.txt')
-    const transcriptText = await Bun.file(transcriptPath).text().catch(() => '')
-    successes[index] = {
-      target,
-      metadata,
-      result: parseTranscriptText(transcriptText),
-      relativeDir: getProviderArtifactDir(target)
-    }
-  }))
-
-  return {
-    successes,
-    providerStates
-  }
-}
-
-const buildProviderStates = (
-  requestedTargets: SttTarget[],
-  successes: Array<ProviderSuccess | undefined>,
-  failuresByIndex: Map<number, ProviderFailure>,
-  existingStates: Map<string, SttProviderState>
-): SttProviderState[] =>
-  requestedTargets.map((target, index) => {
-    const key = getTargetKey(target)
-    const existing = existingStates.get(key)
-    const failure = failuresByIndex.get(index)
-    const success = successes[index]
-
-    if (success) {
-      return {
-        service: target.service,
-        model: target.model,
-        local: target.local,
-        artifactDir: getProviderArtifactDir(target),
-        status: 'succeeded',
-        attempts: existing?.attempts ?? 0
-      }
-    }
-
-    if (failure) {
-      return {
-        service: target.service,
-        model: target.model,
-        local: target.local,
-        artifactDir: getProviderArtifactDir(target),
-        status: 'failed',
-        attempts: existing?.attempts ?? 0,
-        retryable: failure.retryable,
-        lastError: toRecordedProviderError({
-          message: failure.message,
-          retryable: failure.retryable,
-          ...(failure.stage ? { stage: failure.stage } : {}),
-          ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
-          ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
-          ...(failure.errorFile ? { errorFile: `${getProviderArtifactDir(target)}/${failure.errorFile}` } : {}),
-          ...(failure.rawResponseFile ? { rawResponseFile: `${getProviderArtifactDir(target)}/${failure.rawResponseFile}` } : {})
-        })
-      }
-    }
-
-    return {
-      service: target.service,
-      model: target.model,
-      local: target.local,
-      artifactDir: getProviderArtifactDir(target),
-      status: existing?.status ?? 'missing',
-      attempts: existing?.attempts ?? 0,
-      ...(existing?.retryable !== undefined ? { retryable: existing.retryable } : {}),
-      ...(existing?.lastError ? { lastError: existing.lastError } : {})
-    }
-  })
-
-const resolveCompletionStatus = (
-  requestedTargets: SttTarget[],
-  successes: Array<ProviderSuccess | undefined>
-): SttCompletionStatus => {
-  const successCount = successes.filter((entry) => entry !== undefined).length
-  if (successCount === 0) {
-    return 'failed'
-  }
-  return successCount === requestedTargets.length ? 'full' : 'incomplete'
-}
-
-const buildMissingProviders = (
-  providerStates: SttProviderState[],
-  requestedTargets: SttTarget[]
-): SttRequestedProvider[] => {
-  const missingKeys = new Set(providerStates
-    .filter((state) => state.status !== 'succeeded')
-    .map((state) => getTargetKey(state)))
-
-  return requestedTargets
-    .filter((target) => missingKeys.has(getTargetKey(target)))
-    .map(toRequestedProvider)
-}
-
-const buildMetadataErrorEntries = (providerStates: SttProviderState[]): Array<Record<string, unknown>> =>
-  providerStates
-    .filter((state) => state.lastError !== undefined)
-    .map((state) => ({
-      service: state.service,
-      model: state.model,
-      message: state.lastError?.message,
-      ...(state.status === 'skipped' ? { skipped: true } : {}),
-      ...(state.lastError?.stage ? { stage: state.lastError.stage } : {}),
-      ...(typeof state.lastError?.status === 'number' ? { status: state.lastError.status } : {}),
-      ...(typeof state.lastError?.retryAfterMs === 'number' ? { retryAfterMs: state.lastError.retryAfterMs } : {}),
-      retryable: state.lastError?.retryable === true,
-      ...(state.lastError?.errorFile ? { errorFile: state.lastError.errorFile } : {}),
-      ...(state.lastError?.rawResponseFile ? { rawResponseFile: state.lastError.rawResponseFile } : {})
-    }))
 
 export const filterSttPreflightEstimate = (
   estimate: AggregatedPriceEstimate
@@ -877,138 +487,6 @@ const runTargetPool = async (
   )
 }
 
-const selectCoordinatedCloudTarget = async (
-  indices: number[],
-  pendingIndices: Set<number>,
-  requestedTargets: SttTarget[],
-  batchCoordinator: SttBatchCoordinator,
-  onSkip: (index: number, reason: SttBatchBlockedProviderReason) => Promise<void>
-): Promise<{ index: number, queueWaitMs: number } | undefined> => {
-  const waitStartedAt = Date.now()
-
-  while (pendingIndices.size > 0) {
-    const deferredTargets: SttTarget[] = []
-    const runnableCandidates: Array<{
-      index: number
-      activeCount: number
-      slotLimit: number
-      priority: number
-    }> = []
-    let skippedAny = false
-
-    for (const [priority, index] of indices.entries()) {
-      if (!pendingIndices.has(index)) {
-        continue
-      }
-
-      const target = requestedTargets[index] as SttTarget
-      const availability = batchCoordinator.peekProviderAvailability(target)
-
-      if (availability.action === 'skip') {
-        pendingIndices.delete(index)
-        skippedAny = true
-        await onSkip(index, availability.reason)
-        continue
-      }
-
-      if (availability.action === 'run') {
-        runnableCandidates.push({
-          index,
-          activeCount: availability.activeCount,
-          slotLimit: availability.slotLimit,
-          priority
-        })
-        continue
-      }
-
-      deferredTargets.push(target)
-    }
-
-    if (runnableCandidates.length > 0) {
-      runnableCandidates.sort((left, right) => {
-        const leftUtilization = left.activeCount / left.slotLimit
-        const rightUtilization = right.activeCount / right.slotLimit
-        if (leftUtilization !== rightUtilization) {
-          return leftUtilization - rightUtilization
-        }
-
-        if (left.activeCount !== right.activeCount) {
-          return left.activeCount - right.activeCount
-        }
-
-        return left.priority - right.priority
-      })
-
-      for (const candidate of runnableCandidates) {
-        const decision = batchCoordinator.tryReserveProvider(requestedTargets[candidate.index] as SttTarget)
-        if (decision.action === 'run') {
-          pendingIndices.delete(candidate.index)
-          const queueWaitMs = Date.now() - waitStartedAt
-          batchCoordinator.noteProviderQueueWait(requestedTargets[candidate.index] as SttTarget, queueWaitMs)
-          return {
-            index: candidate.index,
-            queueWaitMs
-          }
-        }
-
-        if (decision.action === 'skip') {
-          pendingIndices.delete(candidate.index)
-          skippedAny = true
-          await onSkip(candidate.index, decision.reason)
-        }
-      }
-    }
-
-    if (skippedAny) {
-      continue
-    }
-
-    if (deferredTargets.length === 0) {
-      return undefined
-    }
-
-    await batchCoordinator.waitForAvailability(deferredTargets)
-  }
-
-  return undefined
-}
-
-const runCoordinatedCloudTargetPool = async (
-  indices: number[],
-  concurrency: number,
-  requestedTargets: SttTarget[],
-  batchCoordinator: SttBatchCoordinator,
-  onSkip: (index: number, reason: SttBatchBlockedProviderReason) => Promise<void>,
-  worker: (index: number, queueWaitMs: number) => Promise<void>
-): Promise<void> => {
-  const pendingIndices = new Set(indices)
-  const normalizedConcurrency = Math.max(1, concurrency)
-
-  const runWorker = async (): Promise<void> => {
-    while (true) {
-      const nextTarget = await selectCoordinatedCloudTarget(
-        indices,
-        pendingIndices,
-        requestedTargets,
-        batchCoordinator,
-        onSkip
-      )
-
-      if (!nextTarget) {
-        return
-      }
-
-      await worker(nextTarget.index, nextTarget.queueWaitMs)
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(normalizedConcurrency, indices.length) }, async () => {
-      await runWorker()
-    })
-  )
-}
-
 const buildProviderModelLabel = (
   metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel' | 'transcriptionModelName'>
 ): string =>
@@ -1051,8 +529,8 @@ export const scorePromptSelectionCandidate = (
 }
 
 export const selectPrimaryPromptProvider = (
-  successes: Array<ProviderSuccess | undefined>
-): ProviderSuccess | undefined => {
+  successes: Array<SttProviderSuccess | undefined>
+): SttProviderSuccess | undefined => {
   const candidates = successes
     .map((entry, index) => ({ entry, index }))
     .filter((entry): entry is { entry: PromptSelectionCandidate, index: number } => entry.entry !== undefined)
@@ -1106,30 +584,6 @@ const writeSttMetadata = async (outputDir: string, metadataJson: string): Promis
   l.debug(`Metadata:\n${metadataJson}`)
 }
 
-export class SttPartialCompletionError extends Error {
-  outputDir: string
-  completionStatus: SttCompletionStatus
-  missingProviders: SttRequestedProvider[]
-  exitCode: number
-
-  constructor(
-    outputDir: string,
-    completionStatus: SttCompletionStatus,
-    missingProviders: SttRequestedProvider[],
-    message: string
-  ) {
-    super(message)
-    this.name = 'SttPartialCompletionError'
-    this.outputDir = outputDir
-    this.completionStatus = completionStatus
-    this.missingProviders = missingProviders
-    this.exitCode = 2
-  }
-}
-
-export const isSttPartialCompletionError = (error: unknown): error is SttPartialCompletionError =>
-  error instanceof SttPartialCompletionError
-
 export const processStt = async (
   source: { url?: string, filePath?: string },
   baseDir: string,
@@ -1140,7 +594,7 @@ export const processStt = async (
   const processStart = Date.now()
   const requestedTargets = runOptions.requestedTargets ?? collectSttTargets(options)
   const targetsToRun = runOptions.targetsToRun ?? requestedTargets
-  const targetsToRunKeys = new Set(targetsToRun.map((target) => getTargetKey(target)))
+  const targetsToRunKeys = new Set(targetsToRun.map((target) => getSttTargetKey(target)))
   const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
   const metadata = await resolveSttSourceMetadata(source)
   const outputDir = runOptions.outputDir ?? join(outputBaseDir, createUniqueDirectoryName(metadata.title))
@@ -1165,7 +619,7 @@ export const processStt = async (
 
     if (requestedTargets.length === 1) {
       if (runOptions.outputDir) {
-        throw CLIUsageError('--resume-missing-from currently supports only STT batches that originally requested multiple providers.')
+        throw CLIUsageError('--resume-missing currently supports only STT batches that originally requested multiple providers.')
       }
 
       const target = requestedTargets[0] as SttTarget
@@ -1243,10 +697,10 @@ export const processStt = async (
     const existingRun = runOptions.outputDir
       ? await readExistingSttRun(outputDir, requestedTargets)
       : {
-          successes: new Array<ProviderSuccess | undefined>(requestedTargets.length),
+          successes: new Array<SttProviderSuccess | undefined>(requestedTargets.length),
           providerStates: new Map<string, SttProviderState>()
         } satisfies ExistingSttRun
-    const successes: Array<ProviderSuccess | undefined> = existingRun.successes
+    const successes: Array<SttProviderSuccess | undefined> = existingRun.successes
     const failuresByIndex = new Map<number, ProviderFailure>()
     const providerStateMap = new Map(existingRun.providerStates)
     const providerConcurrency = resolveEffectiveSttProviderConcurrency(options, requestedTargets)
@@ -1271,7 +725,7 @@ export const processStt = async (
             return
           }
 
-          const promptSourceKey = getTargetKey(promptSource.target)
+          const promptSourceKey = getSttTargetKey(promptSource.target)
           const promptScore = scorePromptSelectionCandidate(promptSource)
           if (promptSourceKey === lastPromptSourceKey || promptScore <= lastPromptScore) {
             return
@@ -1298,8 +752,8 @@ export const processStt = async (
     ): Promise<void> => {
       const target = requestedTargets[index] as SttTarget
       const providerDir = join(providersDir, getSttTargetDirectoryName(target))
-      const relativeDir = getProviderArtifactDir(target)
-      const targetKey = getTargetKey(target)
+      const relativeDir = getSttProviderArtifactDir(target)
+      const targetKey = getSttTargetKey(target)
       await mkdir(providerDir, { recursive: true })
       const skippedArtifacts = await writeSkippedProviderArtifact(providerDir, reason)
       providerStateMap.set(targetKey, {
@@ -1330,8 +784,8 @@ export const processStt = async (
       const target = requestedTargets[index] as SttTarget
       const providerDirName = getSttTargetDirectoryName(target)
       const providerDir = join(providersDir, providerDirName)
-      const relativeDir = getProviderArtifactDir(target)
-      const targetKey = getTargetKey(target)
+      const relativeDir = getSttProviderArtifactDir(target)
+      const targetKey = getSttTargetKey(target)
       const nextAttemptCount = (providerStateMap.get(targetKey)?.attempts ?? 0) + 1
 
       providerStateMap.set(targetKey, {
@@ -1454,15 +908,15 @@ export const processStt = async (
 
     const localIndices = requestedTargets
       .map((target, index) => ({ target, index }))
-      .filter((entry) => entry.target.local && targetsToRunKeys.has(getTargetKey(entry.target)))
+      .filter((entry) => entry.target.local && targetsToRunKeys.has(getSttTargetKey(entry.target)))
       .map((entry) => entry.index)
     const cloudIndices = prioritizeCloudSttTargetIndices(requestedTargets)
-      .filter((index) => targetsToRunKeys.has(getTargetKey(requestedTargets[index] as SttTarget)))
+      .filter((index) => targetsToRunKeys.has(getSttTargetKey(requestedTargets[index] as SttTarget)))
 
     await Promise.all([
       runTargetPool(localIndices, options.sttLocalConcurrency, runTargetAtIndex),
       batchCoordinator
-        ? runCoordinatedCloudTargetPool(
+        ? runCoordinatedSttTargetPool(
             cloudIndices,
             providerConcurrency.effective,
             requestedTargets,
@@ -1499,7 +953,7 @@ export const processStt = async (
       }
     }
 
-    const successfulProviders = successes.filter((entry): entry is ProviderSuccess => entry !== undefined)
+    const successfulProviders = successes.filter((entry): entry is SttProviderSuccess => entry !== undefined)
     const failures = [...failuresByIndex.values()].sort((left, right) => left.index - right.index)
     const completionStatus = resolveCompletionStatus(requestedTargets, successes)
     const providerStates = buildProviderStates(requestedTargets, successes, failuresByIndex, providerStateMap)

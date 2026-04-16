@@ -25,7 +25,7 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 
 ## Overview
 
-`links` reads the curated URL registry from `src/cli/commands/links/model-links.json`, fetches every matched page, and concatenates the results into a single local file.
+`links` reads the curated URL registry from `src/cli/commands/setup-and-utilities/links/model-links.json`, fetches every matched page, and concatenates the results into a single local file.
 
 - Output path: `docs/links/bun-links.md`
 - Existing output is overwritten on each run
@@ -126,6 +126,6 @@ Global flags like `--config-path` and `--allow-over-budget` may still appear in 
 
 ## Notes
 
-- Provider and section coverage comes entirely from `src/cli/commands/links/model-links.json`.
+- Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links.json`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
 - Provider selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.

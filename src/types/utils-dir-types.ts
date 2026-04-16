@@ -25,7 +25,7 @@ import {
   SUPPORTED_OPENAI_IMAGE_MODELS,
   SUPPORTED_OPENAI_STT_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS
-} from '~/cli/commands/models/model-options'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { MusicProvider, TtsProvider, VideoProvider } from '~/types/provider-types'
 
 export type GroqModel = typeof SUPPORTED_GROQ_MODELS[number]

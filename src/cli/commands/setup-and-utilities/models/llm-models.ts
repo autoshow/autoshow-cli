@@ -1,5 +1,5 @@
-import { getLlamaDownloadRepo } from '~/cli/commands/models/model-loader'
-import { createModelValidator } from '~/cli/commands/models/model-validation'
+import { getLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
 export type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
 

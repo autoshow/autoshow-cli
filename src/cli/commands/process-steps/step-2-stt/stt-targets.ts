@@ -11,6 +11,12 @@ export type SttTarget = {
 const sanitizeSegment = (value: string): string =>
   value.replace(/[/\\:*?"<>|]+/g, '_')
 
+export const getSttTargetKey = (target: Pick<SttTarget, 'service' | 'model'>): string =>
+  `${target.service}:${target.model}`
+
+export const formatSttTargetLabel = (target: Pick<SttTarget, 'service' | 'model'>): string =>
+  `${target.service === 'whisper' ? 'whisper.cpp' : target.service}/${target.model}`
+
 export const getSttTargetDirectoryName = (target: Pick<SttTarget, 'service' | 'model'>): string =>
   `${sanitizeSegment(target.service)}-${sanitizeSegment(target.model)}`
 

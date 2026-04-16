@@ -131,17 +131,19 @@ For YouTube inputs, anonymous `yt-dlp` requests may be rate-limited or challenge
 
 ## Processing Step Layout
 
-Runtime processing steps and shared routing live under:
+CLI commands are split between runtime processing steps and setup/utilities:
 
 ```text
-src/cli/commands/process-steps/
-  step-0-setup/
-  step-1-download/
-  step-2-stt/
-  step-2-document/
-  step-3-write/
-  step-4-tts/
-  step-5-image/
-  step-6-video/
-  step-7-music/
+src/cli/commands/
+  process-steps/
+    step-1-download/
+    step-2-stt/
+    step-2-document/
+    step-3-write/
+    step-4-tts/
+    step-5-image/
+    step-6-video/
+    step-7-music/
+  setup-and-utilities/
+    setup/
 ```

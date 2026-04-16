@@ -4,10 +4,18 @@ import { fileURLToPath } from 'node:url'
 import * as l from '~/logger'
 import type { BatchProcessResult, RuntimeOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
-import { processStt, type SttCompletionStatus, isSttPartialCompletionError } from '~/cli/commands/process-steps/process-stt'
-import { logSttBatchFinalSummary } from '../step-1-download/targets/target-utils'
-import { formatSttBatchSchedulerSummary, SttBatchCoordinator } from './stt-batch-coordinator'
-import type { SttTarget } from './stt-targets'
+import { processStt } from '~/cli/commands/process-steps/process-stt'
+import { logSttBatchFinalSummary, type BatchManifestEntry } from '../../step-1-download/targets/target-utils'
+import { formatSttBatchSchedulerSummary } from './stt-batch-policy'
+import { SttBatchCoordinator } from './stt-batch-coordinator'
+import {
+  buildMissingTargetsFromEntry,
+  inferStoredCompletionStatus,
+  isSttPartialCompletionError,
+  parseStoredRequestedTargets,
+  type SttCompletionStatus
+} from './stt-run-state'
+import { formatSttTargetLabel, getSttTargetKey, type SttTarget } from '../stt-targets'
 
 type ResumeBatchEntry = {
   outputDir: string
@@ -15,14 +23,7 @@ type ResumeBatchEntry = {
   requestedTargets: SttTarget[]
   missingTargets: SttTarget[]
   completionStatus: SttCompletionStatus
-  rawEntry: Record<string, unknown>
-}
-
-type ParsedProviderState = {
-  service: SttTarget['service']
-  model: string
-  status: 'succeeded' | 'missing' | 'failed' | 'skipped'
-  retryable?: boolean | undefined
+  rawEntry: BatchManifestEntry
 }
 
 type ResumeSttBatchRunOptions = {
@@ -41,117 +42,13 @@ type ResumeSttBatchPassResult = BatchProcessResult & {
   attemptedEntries: number
 }
 
-const STT_SERVICES = new Set<SttTarget['service']>([
-  'whisper',
-  'reverb',
-  'deepgram',
-  'elevenlabs',
-  'soniox',
-  'speechmatics',
-  'rev',
-  'groq',
-  'openai',
-  'mistral',
-  'assemblyai'
-])
+type ResumeBatchManifest = {
+  infoPath: string
+  entries: BatchManifestEntry[]
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const isSttService = (value: unknown): value is SttTarget['service'] =>
-  typeof value === 'string' && STT_SERVICES.has(value as SttTarget['service'])
-
-const getTargetKey = (target: Pick<SttTarget, 'service' | 'model'>): string =>
-  `${target.service}:${target.model}`
-
-const formatTargetLabel = (target: Pick<SttTarget, 'service' | 'model'>): string =>
-  `${target.service === 'whisper' ? 'whisper.cpp' : target.service}/${target.model}`
-
-const parseRequestedProvider = (value: unknown): SttTarget | undefined => {
-  if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
-    return undefined
-  }
-
-  return {
-    service: value['service'],
-    model: value['model'],
-    local: value['local'] === true,
-    ...(isRecord(value['diarizationOptions']) ? { diarizationOptions: value['diarizationOptions'] as SttTarget['diarizationOptions'] } : {})
-  }
-}
-
-const parseProviderState = (value: unknown): ParsedProviderState | undefined => {
-  if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
-    return undefined
-  }
-
-  if (value['status'] !== 'succeeded' && value['status'] !== 'missing' && value['status'] !== 'failed' && value['status'] !== 'skipped') {
-    return undefined
-  }
-
-  return {
-    service: value['service'],
-    model: value['model'],
-    status: value['status'],
-    ...(typeof value['retryable'] === 'boolean' ? { retryable: value['retryable'] } : {})
-  }
-}
-
-const parseProviderStateMap = (entry: Record<string, unknown>): Map<string, ParsedProviderState> => {
-  const states = new Map<string, ParsedProviderState>()
-  const values = Array.isArray(entry['providerStates']) ? entry['providerStates'] : []
-  for (const value of values) {
-    const parsed = parseProviderState(value)
-    if (!parsed) {
-      continue
-    }
-    states.set(getTargetKey(parsed), parsed)
-  }
-  return states
-}
-
-const parseStoredRequestedTargets = (
-  entry: Record<string, unknown>
-): SttTarget[] =>
-  Array.isArray(entry['requestedProviders'])
-    ? entry['requestedProviders'].map(parseRequestedProvider).filter((target): target is SttTarget => target !== undefined)
-    : []
-
-const parseSuccessfulProviderKeys = (entry: Record<string, unknown>): Set<string> => {
-  const values = Array.isArray(entry['step2'])
-    ? entry['step2']
-    : entry['step2'] === undefined
-      ? []
-      : [entry['step2']]
-
-  const keys = new Set<string>()
-  for (const value of values) {
-    if (!isRecord(value) || !isSttService(value['transcriptionService']) || typeof value['transcriptionModel'] !== 'string') {
-      continue
-    }
-
-    const model = typeof value['transcriptionModelName'] === 'string'
-      ? value['transcriptionModelName']
-      : value['transcriptionModel']
-    keys.add(`${value['transcriptionService']}:${model}`)
-  }
-  return keys
-}
-
-const inferCompletionStatus = (
-  entry: Record<string, unknown>,
-  requestedTargets: SttTarget[]
-): SttCompletionStatus => {
-  if (entry['completionStatus'] === 'full' || entry['completionStatus'] === 'incomplete' || entry['completionStatus'] === 'failed') {
-    return entry['completionStatus']
-  }
-
-  const successCount = parseSuccessfulProviderKeys(entry).size
-  if (successCount === 0) {
-    return 'failed'
-  }
-  return successCount === requestedTargets.length ? 'full' : 'incomplete'
-}
 
 const toSourceFromStep1 = (entry: Record<string, unknown>): { url?: string, filePath?: string } => {
   const step1 = isRecord(entry['step1']) ? entry['step1'] : undefined
@@ -211,27 +108,6 @@ const resolveStoredOutputDir = async (
   return undefined
 }
 
-const buildMissingTargets = (
-  entry: Record<string, unknown>,
-  requestedTargets: SttTarget[],
-  retryableOnly: boolean
-): SttTarget[] => {
-  const explicitMissing = Array.isArray(entry['missingProviders'])
-    ? entry['missingProviders'].map(parseRequestedProvider).filter((target): target is SttTarget => target !== undefined)
-    : []
-  const providerStates = parseProviderStateMap(entry)
-
-  const missingTargets = (explicitMissing.length > 0
-    ? explicitMissing
-    : requestedTargets.filter((target) => !parseSuccessfulProviderKeys(entry).has(getTargetKey(target))))
-
-  if (!retryableOnly) {
-    return missingTargets
-  }
-
-  return missingTargets.filter((target) => providerStates.get(getTargetKey(target))?.retryable === true)
-}
-
 const parseResumeEntry = async (
   batchDir: string,
   entry: unknown,
@@ -261,9 +137,9 @@ const parseResumeEntry = async (
     throw CLIUsageError('Could not determine the original STT provider set for this batch. Re-run with explicit provider flags.')
   }
 
-  const selectedKeys = selectedTargets ? new Set(selectedTargets.map(getTargetKey)) : undefined
+  const selectedKeys = selectedTargets ? new Set(selectedTargets.map(getSttTargetKey)) : undefined
   if (selectedKeys) {
-    const requestedKeys = new Set(requestedTargets.map(getTargetKey))
+    const requestedKeys = new Set(requestedTargets.map(getSttTargetKey))
     const unexpected = [...selectedKeys].filter((key) => !requestedKeys.has(key))
     if (unexpected.length > 0) {
       throw CLIUsageError(`Requested resume providers are not a subset of the original batch providers: ${unexpected.join(', ')}`)
@@ -281,9 +157,9 @@ const parseResumeEntry = async (
     throw error
   }
 
-  const completionStatus = inferCompletionStatus(entry, requestedTargets)
-  const missingTargets = buildMissingTargets(entry, requestedTargets, options.retryableOnly === true)
-    .filter((target) => selectedKeys ? selectedKeys.has(getTargetKey(target)) : true)
+  const completionStatus = inferStoredCompletionStatus(entry, requestedTargets)
+  const missingTargets = buildMissingTargetsFromEntry(entry, requestedTargets, options.retryableOnly === true)
+    .filter((target) => selectedKeys ? selectedKeys.has(getSttTargetKey(target)) : true)
 
   return {
     outputDir,
@@ -295,9 +171,9 @@ const parseResumeEntry = async (
   }
 }
 
-const loadResumeBatchInfoEntries = async (
+const readResumeBatchManifest = async (
   batchDir: string
-): Promise<unknown[] | undefined> => {
+): Promise<ResumeBatchManifest | undefined> => {
   const infoPath = join(batchDir, 'info.json')
   if (!await Bun.file(infoPath).exists()) {
     return undefined
@@ -305,26 +181,56 @@ const loadResumeBatchInfoEntries = async (
 
   try {
     const rawInfo = await Bun.file(infoPath).json() as unknown
-    return Array.isArray(rawInfo) ? rawInfo : undefined
+    if (!Array.isArray(rawInfo)) {
+      return undefined
+    }
+
+    return {
+      infoPath,
+      entries: rawInfo.filter((entry): entry is BatchManifestEntry => isRecord(entry))
+    }
   } catch {
     return undefined
   }
 }
 
+const readOutputMetadata = async (outputDir: string): Promise<BatchManifestEntry> => {
+  const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as unknown
+  if (!isRecord(metadata)) {
+    throw CLIUsageError(`Invalid STT metadata at ${outputDir}/metadata.json`)
+  }
+
+  return metadata
+}
+
+const withOutputDir = (
+  metadata: BatchManifestEntry,
+  outputDir: string
+): BatchManifestEntry => ({
+  ...metadata,
+  outputDir
+})
+
+const parseResumeEntries = async (
+  batchDir: string,
+  entries: BatchManifestEntry[],
+  selectedTargets: SttTarget[] | undefined,
+  options: Pick<ResumeSttBatchRunOptions, 'retryableOnly' | 'ignoreUnresumableEntries'>
+): Promise<Array<ResumeBatchEntry | undefined>> =>
+  await Promise.all(entries.map(async (entry) =>
+    await parseResumeEntry(batchDir, entry, selectedTargets, options)
+  ))
+
 const batchHasResumableWork = async (
   batchDir: string,
   selectedTargets: SttTarget[] | undefined
 ): Promise<boolean> => {
-  const rawInfo = await loadResumeBatchInfoEntries(batchDir)
-  if (!rawInfo) {
+  const manifest = await readResumeBatchManifest(batchDir)
+  if (!manifest) {
     return false
   }
 
-  for (const entry of rawInfo) {
-    if (!isRecord(entry)) {
-      continue
-    }
-
+  for (const entry of manifest.entries) {
     const storedRequestedTargets = parseStoredRequestedTargets(entry)
     if (storedRequestedTargets.length < 2) {
       continue
@@ -388,10 +294,10 @@ export const resolveResumeSttBatchDir = async (
   }
 
   if (selectedTargets && selectedTargets.length > 0) {
-    throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput} that matches the selected provider flags. Pass --resume-missing-from <batch-dir> explicitly.`)
+    throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput} that matches the selected provider flags. Pass --resume-missing <batch-dir> explicitly.`)
   }
 
-  throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput}. Pass --resume-missing-from <batch-dir> explicitly.`)
+  throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput}. Pass --resume-missing <batch-dir> explicitly.`)
 }
 
 const formatResumeSummary = (
@@ -411,7 +317,10 @@ const collectPartialFailureLabels = (
     if (typeof failure['service'] !== 'string' || typeof failure['model'] !== 'string') {
       continue
     }
-    const label = `${failure['service']}/${failure['model']}`
+    const label = formatSttTargetLabel({
+      service: failure['service'] as SttTarget['service'],
+      model: failure['model']
+    })
     partialFailureLabels.set(label, (partialFailureLabels.get(label) ?? 0) + 1)
   }
 }
@@ -424,19 +333,12 @@ const runResumePass = async (
   pass: number,
   totalPasses: number
 ): Promise<ResumeSttBatchPassResult> => {
-  const infoPath = join(batchDir, 'info.json')
-  if (!await Bun.file(infoPath).exists()) {
-    throw CLIUsageError(`Could not find batch manifest at ${infoPath}`)
+  const manifest = await readResumeBatchManifest(batchDir)
+  if (!manifest) {
+    throw CLIUsageError(`Invalid batch manifest at ${join(batchDir, 'info.json')}`)
   }
 
-  const rawInfo = await loadResumeBatchInfoEntries(batchDir)
-  if (!rawInfo) {
-    throw CLIUsageError(`Invalid batch manifest at ${infoPath}`)
-  }
-
-  const parsedEntries = await Promise.all(rawInfo.map(async (entry) =>
-    await parseResumeEntry(batchDir, entry, selectedTargets, options)
-  ))
+  const parsedEntries = await parseResumeEntries(batchDir, manifest.entries, selectedTargets, options)
 
   const batchCoordinator = parsedEntries.filter((entry) => entry !== undefined).length > 1
     ? new SttBatchCoordinator({ batchConcurrency: opts.batchConcurrency })
@@ -446,7 +348,7 @@ const runResumePass = async (
   let incomplete = 0
   let failed = 0
   let attemptedEntries = 0
-  const updatedEntries: Record<string, unknown>[] = []
+  const updatedEntries: BatchManifestEntry[] = []
   const partialFailureLabels = new Map<string, number>()
 
   if (options.maxPasses > 1) {
@@ -456,8 +358,8 @@ const runResumePass = async (
   for (let index = 0; index < parsedEntries.length; index++) {
     const entry = parsedEntries[index]
     if (!entry) {
-      const rawEntry = rawInfo[index]
-      if (isRecord(rawEntry)) {
+      const rawEntry = manifest.entries[index]
+      if (rawEntry) {
         updatedEntries.push(rawEntry)
       }
       continue
@@ -468,20 +370,14 @@ const runResumePass = async (
     if (wasComplete) {
       l.success(`Resume ${entryLabel}: already full (${entry.outputDir})`)
       full += 1
-      updatedEntries.push({
-        ...entry.rawEntry,
-        outputDir: entry.outputDir
-      })
+      updatedEntries.push(withOutputDir(entry.rawEntry, entry.outputDir))
       continue
     }
 
     if (entry.missingTargets.length === 0) {
       l.warn(`Resume ${entryLabel}: no matching missing providers selected; keeping ${entry.completionStatus} state (${entry.outputDir})`)
-      const metadata = await Bun.file(join(entry.outputDir, 'metadata.json')).json() as Record<string, unknown>
-      updatedEntries.push({
-        ...metadata,
-        outputDir: entry.outputDir
-      })
+      const metadata = await readOutputMetadata(entry.outputDir)
+      updatedEntries.push(withOutputDir(metadata, entry.outputDir))
       collectPartialFailureLabels(metadata, partialFailureLabels)
       if (metadata['completionStatus'] === 'failed') {
         failed += 1
@@ -492,7 +388,7 @@ const runResumePass = async (
     }
 
     attemptedEntries += 1
-    l.info(`Resume ${entryLabel}: ${entry.outputDir} -> ${entry.missingTargets.map(formatTargetLabel).join(', ')}`)
+    l.info(`Resume ${entryLabel}: ${entry.outputDir} -> ${entry.missingTargets.map(formatSttTargetLabel).join(', ')}`)
     try {
       const outputDir = await processStt(entry.source, batchDir, opts, undefined, {
         outputDir: entry.outputDir,
@@ -501,11 +397,8 @@ const runResumePass = async (
         batchCoordinator
       })
 
-      const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
-      updatedEntries.push({
-        ...metadata,
-        outputDir
-      })
+      const metadata = await readOutputMetadata(outputDir)
+      updatedEntries.push(withOutputDir(metadata, outputDir))
       full += 1
       l.success(`Resume ${entryLabel}: complete`)
     } catch (error) {
@@ -513,11 +406,8 @@ const runResumePass = async (
         throw error
       }
 
-      const metadata = await Bun.file(join(error.outputDir, 'metadata.json')).json() as Record<string, unknown>
-      updatedEntries.push({
-        ...metadata,
-        outputDir: error.outputDir
-      })
+      const metadata = await readOutputMetadata(error.outputDir)
+      updatedEntries.push(withOutputDir(metadata, error.outputDir))
 
       if (error.completionStatus === 'failed') {
         failed += 1
@@ -530,7 +420,7 @@ const runResumePass = async (
     }
   }
 
-  await Bun.write(infoPath, JSON.stringify(updatedEntries, null, 2))
+  await Bun.write(manifest.infoPath, JSON.stringify(updatedEntries, null, 2))
 
   if (partialFailureLabels.size > 0) {
     l.warn(`Partial provider failures: ${[...partialFailureLabels.entries()]

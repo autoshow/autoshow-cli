@@ -1,6 +1,6 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { MODEL_CONFIG_PATHS } from '~/cli/commands/models/model-loader'
+import { MODEL_CONFIG_PATHS } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { parseDurationToSeconds } from '~/utils/pricing/compute-costs'
 import { getFiniteNumber } from './utils'
 

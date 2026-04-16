@@ -19,14 +19,14 @@ import { handleSingleTarget, processSingleTarget } from './single-target'
 import { tryResolveBatchSource } from './batch/batch-router'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/config/config-loader'
-import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/config/config-merge'
+import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
+import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { resolveResumeSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume-stt-batch'
-import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch'
+import { resolveResumeSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/stt-batch/resume-stt-batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch'
 import { collectExplicitExtractTargets } from '~/cli/commands/process-steps/step-2-document/extract-targets'
 
 const runWithConcurrency = async <T,>(
@@ -293,28 +293,28 @@ export const handleProcessTarget = async (
 
   const maxCents = resolveMaxCents(config.pricing)
   const hasExplicitResumeTargetSelection = STT_PROVIDER_SELECTION_FLAGS.some((flag) => explicitFlags.has(flag))
-  const resumeMissingFromRequested = explicitFlags.has('resume-missing-from') || opts.resumeMissingFrom !== undefined
+  const resumeMissingRequested = explicitFlags.has('resume-missing') || opts.resumeMissing !== undefined
 
-  if (resumeMissingFromRequested) {
+  if (resumeMissingRequested) {
     if (!isSttCommand(command)) {
-      throw CLIUsageError('--resume-missing-from is only supported with "stt".')
+      throw CLIUsageError('--resume-missing is only supported with "stt".')
     }
     if ((typeof target === 'string' && target.length > 0) || doubleDash.length > 0) {
-      throw CLIUsageError('--resume-missing-from does not accept a positional input.')
+      throw CLIUsageError('--resume-missing does not accept a positional input.')
     }
     if (opts.price) {
-      throw CLIUsageError('--resume-missing-from does not support --price or --dry-run.')
+      throw CLIUsageError('--resume-missing does not support --price or --dry-run.')
     }
     if (maxCents !== undefined) {
-      l.warn('Skipping budget preflight for --resume-missing-from')
+      l.warn('Skipping budget preflight for --resume-missing')
     }
 
     const selectedTargets = hasExplicitResumeTargetSelection ? collectSttTargets(opts) : undefined
     const resumeBatchDir = await resolveResumeSttBatchDir(
-      opts.resumeMissingFrom,
+      opts.resumeMissing,
       selectedTargets
     )
-    if (opts.resumeMissingFrom === undefined) {
+    if (opts.resumeMissing === undefined) {
       l.info(`Auto-discovered resumable STT batch: ${resumeBatchDir}`)
     }
 

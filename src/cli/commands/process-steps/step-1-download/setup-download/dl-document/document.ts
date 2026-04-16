@@ -1,4 +1,4 @@
-import { commandExists, runInherit, detectPlatform } from '../../../step-0-setup/setup-orchestrator/run-complete-setup'
+import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import * as l from '~/logger'
 
 const shouldPrintCompletion = (): boolean => {

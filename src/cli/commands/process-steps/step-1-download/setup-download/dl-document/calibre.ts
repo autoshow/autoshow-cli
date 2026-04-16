@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { commandExists, runInherit, detectPlatform } from '../../../step-0-setup/setup-orchestrator/run-complete-setup'
+import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import * as l from '~/logger'
 import { setupDocumentTools } from './document'
 

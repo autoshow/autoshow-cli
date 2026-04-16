@@ -3,8 +3,8 @@ import { mkdir } from 'node:fs/promises'
 import { basename } from 'node:path'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
-import type { GeminiImageModel } from '~/cli/commands/models/model-options'
-import { isNativeGeminiImageModel } from '~/cli/commands/models/model-options'
+import type { GeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { isNativeGeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 
 export const runGeminiImageGen = async (

@@ -7,7 +7,7 @@ import {
   getSttEstimation,
   getTtsEstimation,
   getVideoEstimation,
-} from '~/cli/commands/models/model-loader'
+} from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type {
   ActualTimingBreakdown,
   DocumentMetadata,

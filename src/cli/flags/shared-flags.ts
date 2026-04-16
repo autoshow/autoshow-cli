@@ -15,8 +15,8 @@ import {
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_GEMINI_MODELS,
   SUPPORTED_GROK_MODELS
-} from '~/cli/commands/models/model-options'
-import { buildModelDescription } from '~/cli/commands/models/model-validation'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 
 export const priceFlag = {
   price: {
@@ -148,7 +148,7 @@ export const transcriptionFlags = {
     type: String,
     default: '4'
   },
-  'resume-missing-from': {
+  'resume-missing': {
     description: 'STT: reuse an existing batch directory and rerun only missing provider outputs; omit the path to auto-pick the newest resumable batch under ./output',
     type: String
   },

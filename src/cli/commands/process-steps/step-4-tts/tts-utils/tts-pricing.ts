@@ -1,4 +1,4 @@
-import { getTtsCost, getTtsPricing } from '~/cli/commands/models/model-loader'
+import { getTtsCost, getTtsPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { RuntimeOptions } from '~/types'
 import type { TtsRateEstimate, TtsCostEstimate } from '~/types'
 import { collectTtsTargets } from '../tts-targets'

@@ -5,7 +5,7 @@ import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/
 import { splitTextIntoChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
-import type { MinimaxTtsModel } from '~/cli/commands/models/model-options'
+import type { MinimaxTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'

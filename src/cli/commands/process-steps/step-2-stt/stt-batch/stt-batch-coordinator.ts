@@ -1,4 +1,5 @@
-import type { SttTarget } from './stt-targets'
+import { formatSttTargetLabel, getSttTargetKey, type SttTarget } from '../stt-targets'
+import { getSttBatchProviderProfile } from './stt-batch-policy'
 
 export type SttBatchBlockedProviderReason = {
   service: SttTarget['service']
@@ -76,32 +77,10 @@ type ProviderFailureSummary = {
   status?: number | undefined
 }
 
-type ProviderProfile = {
-  kind: 'sync' | 'async'
-  launchSlotLimit: number
-  pollSlotLimit: number
-}
+type ProviderProfile = ReturnType<typeof getSttBatchProviderProfile>
 
-const DEFAULT_PROVIDER_SLOT_LIMIT = 2
-const DEFAULT_DEEPGRAM_SLOT_LIMIT = 4
-const DEFAULT_ELEVENLABS_SLOT_LIMIT = 2
-const DEFAULT_ASYNC_CREATE_SLOT_LIMIT = 2
-const MAX_PROVIDER_SLOT_LIMIT = 8
 const MAX_PROVIDER_COOLDOWN_MS = 5 * 60 * 1000
-const MAX_POLL_SLOT_LIMIT = 8
 const RETRYABLE_FAILURE_DEGRADE_THRESHOLD = 2
-
-const getTargetKey = (target: Pick<SttTarget, 'service' | 'model'>): string =>
-  `${target.service}:${target.model}`
-
-const formatTargetLabel = (target: Pick<SttTarget, 'service' | 'model'>): string =>
-  `${target.service === 'whisper' ? 'whisper.cpp' : target.service}/${target.model}`
-
-const isAsyncBatchProvider = (target: Pick<SttTarget, 'service'>): boolean =>
-  target.service === 'assemblyai'
-  || target.service === 'soniox'
-  || target.service === 'speechmatics'
-  || target.service === 'rev'
 
 const cloneBlockedReason = (
   reason: SttBatchBlockedProviderReason
@@ -123,145 +102,12 @@ const wakeWaiters = (waiters: AvailabilityWaiter[]): void => {
   }
 }
 
-const normalizeEnvSegment = (value: string): string =>
-  value.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').toUpperCase()
-
-const parsePositiveIntegerEnv = (key: string): number | undefined => {
-  const raw = process.env[key]?.trim()
-  if (!raw) {
-    return undefined
-  }
-
-  const parsed = Number.parseInt(raw, 10)
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return undefined
-  }
-
-  return Math.min(MAX_PROVIDER_SLOT_LIMIT, parsed)
-}
-
 const normalizeCooldownMs = (value: number | undefined): number | undefined => {
   if (!Number.isFinite(value) || (value ?? 0) <= 0) {
     return undefined
   }
 
   return Math.min(MAX_PROVIDER_COOLDOWN_MS, Math.round(value as number))
-}
-
-const getDefaultProviderSlotLimit = (
-  target: Pick<SttTarget, 'service' | 'local'>
-): number => {
-  if (target.local) {
-    return 1
-  }
-
-  if (target.service === 'deepgram') {
-    return DEFAULT_DEEPGRAM_SLOT_LIMIT
-  }
-
-  if (target.service === 'elevenlabs') {
-    return DEFAULT_ELEVENLABS_SLOT_LIMIT
-  }
-
-  if (isAsyncBatchProvider(target)) {
-    return DEFAULT_ASYNC_CREATE_SLOT_LIMIT
-  }
-
-  return DEFAULT_PROVIDER_SLOT_LIMIT
-}
-
-export const resolveSttBatchProviderSlotLimit = (
-  target: Pick<SttTarget, 'service' | 'model' | 'local'>
-): number => {
-  if (target.local) {
-    return 1
-  }
-
-  const serviceKey = normalizeEnvSegment(target.service)
-  const modelKey = normalizeEnvSegment(target.model)
-  const modelScoped = parsePositiveIntegerEnv(`AUTOSHOW_STT_PROVIDER_SLOT_LIMIT_${serviceKey}_${modelKey}`)
-  if (modelScoped !== undefined) {
-    return modelScoped
-  }
-
-  const serviceScoped = parsePositiveIntegerEnv(`AUTOSHOW_STT_PROVIDER_SLOT_LIMIT_${serviceKey}`)
-  if (serviceScoped !== undefined) {
-    return serviceScoped
-  }
-
-  const globalScoped = parsePositiveIntegerEnv('AUTOSHOW_STT_PROVIDER_SLOT_LIMIT')
-  if (globalScoped !== undefined) {
-    return globalScoped
-  }
-
-  return getDefaultProviderSlotLimit(target)
-}
-
-export const resolveSttBatchPollSlotLimit = (
-  target: Pick<SttTarget, 'service' | 'local'>,
-  batchConcurrency: number
-): number => {
-  if (target.local || !isAsyncBatchProvider(target)) {
-    return 0
-  }
-
-  return Math.min(MAX_POLL_SLOT_LIMIT, Math.max(1, batchConcurrency))
-}
-
-export const describeSttBatchProviderSlotLimits = (
-  targets: Array<Pick<SttTarget, 'service' | 'model' | 'local'>>,
-  batchConcurrency = 1
-): string => {
-  const seen = new Set<string>()
-  return targets
-    .filter((target) => !target.local)
-    .filter((target) => {
-      const key = getTargetKey(target)
-      if (seen.has(key)) {
-        return false
-      }
-      seen.add(key)
-      return true
-    })
-    .map((target) => {
-      const launchSlotLimit = resolveSttBatchProviderSlotLimit(target)
-      if (!isAsyncBatchProvider(target)) {
-        return `${formatTargetLabel(target)}:launch=${launchSlotLimit}`
-      }
-
-      const pollSlotLimit = resolveSttBatchPollSlotLimit(target, batchConcurrency)
-      return `${formatTargetLabel(target)}:create=${launchSlotLimit},poll=${pollSlotLimit}`
-    })
-    .join(', ')
-}
-
-export const formatSttBatchSchedulerSummary = (
-  snapshot: SttBatchSchedulerSnapshot
-): string | undefined => {
-  if (snapshot.providers.length === 0) {
-    return undefined
-  }
-
-  return snapshot.providers
-    .map((provider) => {
-      const parts = [
-        `${formatTargetLabel(provider)}`,
-        provider.kind === 'async'
-          ? `create=${provider.launchSlotLimit},poll=${provider.pollSlotLimit}`
-          : `launch=${provider.launchSlotLimit}`,
-        `launched=${provider.launchedCount}`,
-        `completed=${provider.completedCount}`,
-        `queueWait=${provider.queueWaitMs}ms`,
-        provider.kind === 'async' ? `polls=${provider.pollCount}` : undefined,
-        provider.blockedCount > 0 ? `blocked=${provider.blockedCount}` : undefined,
-        provider.degradedCount > 0 ? `degraded=${provider.degradedCount}` : undefined,
-        provider.backfillCount > 0 ? `backfill=${provider.backfillCount}` : undefined,
-        provider.warmupComplete ? 'warm=true' : 'warm=false'
-      ].filter((entry): entry is string => typeof entry === 'string')
-
-      return parts.join(' ')
-    })
-    .join(' | ')
 }
 
 export class SttBatchCoordinator {
@@ -273,7 +119,7 @@ export class SttBatchCoordinator {
   }
 
   #getState(target: Pick<SttTarget, 'service' | 'model'>): ProviderState {
-    const key = getTargetKey(target)
+    const key = getSttTargetKey(target)
     let state = this.#providerStates.get(key)
     if (!state) {
       state = {
@@ -299,11 +145,7 @@ export class SttBatchCoordinator {
   }
 
   #getProfile(target: Pick<SttTarget, 'service' | 'model' | 'local'>): ProviderProfile {
-    return {
-      kind: isAsyncBatchProvider(target) ? 'async' : 'sync',
-      launchSlotLimit: resolveSttBatchProviderSlotLimit(target),
-      pollSlotLimit: resolveSttBatchPollSlotLimit(target, this.#batchConcurrency)
-    }
+    return getSttBatchProviderProfile(target, this.#batchConcurrency)
   }
 
   #clearExpiredCooldown(state: ProviderState): void {
@@ -631,8 +473,146 @@ export class SttBatchCoordinator {
           } satisfies SttBatchProviderStatsSnapshot
         })
         .sort((left, right) =>
-          formatTargetLabel(left).localeCompare(formatTargetLabel(right))
+          formatSttTargetLabel(left).localeCompare(formatSttTargetLabel(right))
         )
     }
   }
+}
+
+type CoordinatedTargetSelection = {
+  index: number
+  queueWaitMs: number
+}
+
+const selectCoordinatedTarget = async (
+  indices: number[],
+  pendingIndices: Set<number>,
+  requestedTargets: SttTarget[],
+  batchCoordinator: SttBatchCoordinator,
+  onSkip: (index: number, reason: SttBatchBlockedProviderReason) => Promise<void>
+): Promise<CoordinatedTargetSelection | undefined> => {
+  const waitStartedAt = Date.now()
+
+  while (pendingIndices.size > 0) {
+    const deferredTargets: SttTarget[] = []
+    const runnableCandidates: Array<{
+      index: number
+      activeCount: number
+      slotLimit: number
+      priority: number
+    }> = []
+    let skippedAny = false
+
+    for (const [priority, index] of indices.entries()) {
+      if (!pendingIndices.has(index)) {
+        continue
+      }
+
+      const target = requestedTargets[index] as SttTarget
+      const availability = batchCoordinator.peekProviderAvailability(target)
+
+      if (availability.action === 'skip') {
+        pendingIndices.delete(index)
+        skippedAny = true
+        await onSkip(index, availability.reason)
+        continue
+      }
+
+      if (availability.action === 'run') {
+        runnableCandidates.push({
+          index,
+          activeCount: availability.activeCount,
+          slotLimit: availability.slotLimit,
+          priority
+        })
+        continue
+      }
+
+      deferredTargets.push(target)
+    }
+
+    if (runnableCandidates.length > 0) {
+      runnableCandidates.sort((left, right) => {
+        const leftUtilization = left.activeCount / left.slotLimit
+        const rightUtilization = right.activeCount / right.slotLimit
+        if (leftUtilization !== rightUtilization) {
+          return leftUtilization - rightUtilization
+        }
+
+        if (left.activeCount !== right.activeCount) {
+          return left.activeCount - right.activeCount
+        }
+
+        return left.priority - right.priority
+      })
+
+      for (const candidate of runnableCandidates) {
+        const target = requestedTargets[candidate.index] as SttTarget
+        const decision = batchCoordinator.tryReserveProvider(target)
+        if (decision.action === 'run') {
+          pendingIndices.delete(candidate.index)
+          const queueWaitMs = Date.now() - waitStartedAt
+          batchCoordinator.noteProviderQueueWait(target, queueWaitMs)
+          return {
+            index: candidate.index,
+            queueWaitMs
+          }
+        }
+
+        if (decision.action === 'skip') {
+          pendingIndices.delete(candidate.index)
+          skippedAny = true
+          await onSkip(candidate.index, decision.reason)
+        }
+      }
+    }
+
+    if (skippedAny) {
+      continue
+    }
+
+    if (deferredTargets.length === 0) {
+      return undefined
+    }
+
+    await batchCoordinator.waitForAvailability(deferredTargets)
+  }
+
+  return undefined
+}
+
+export const runCoordinatedSttTargetPool = async (
+  indices: number[],
+  concurrency: number,
+  requestedTargets: SttTarget[],
+  batchCoordinator: SttBatchCoordinator,
+  onSkip: (index: number, reason: SttBatchBlockedProviderReason) => Promise<void>,
+  worker: (index: number, queueWaitMs: number) => Promise<void>
+): Promise<void> => {
+  const pendingIndices = new Set(indices)
+  const normalizedConcurrency = Math.max(1, concurrency)
+
+  const runWorker = async (): Promise<void> => {
+    while (true) {
+      const nextTarget = await selectCoordinatedTarget(
+        indices,
+        pendingIndices,
+        requestedTargets,
+        batchCoordinator,
+        onSkip
+      )
+
+      if (!nextTarget) {
+        return
+      }
+
+      await worker(nextTarget.index, nextTarget.queueWaitMs)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(normalizedConcurrency, indices.length) }, async () => {
+      await runWorker()
+    })
+  )
 }

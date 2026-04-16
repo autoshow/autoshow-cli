@@ -4,7 +4,7 @@ import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import { reverbUvEnvDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
+import { reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 
 const REVERB_SCRIPTS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),

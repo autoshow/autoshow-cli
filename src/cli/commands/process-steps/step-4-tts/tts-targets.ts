@@ -14,8 +14,8 @@ import {
   validateGeminiTtsModel,
   validateGroqTtsVoice,
   validateKittenTtsSpeaker,
-} from '~/cli/commands/models/model-options'
-import { pathExists, kittenTtsUvEnvDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import { pathExists, kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { ensureElevenLabsTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { ensureGroqTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'

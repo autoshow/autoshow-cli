@@ -6,8 +6,8 @@ import {
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS
-} from '~/cli/commands/models/model-options'
-import { buildModelDescription } from '~/cli/commands/models/model-validation'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
 
 export const ttsFlags = {

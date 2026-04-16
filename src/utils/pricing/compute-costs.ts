@@ -30,7 +30,7 @@ import {
   getTtsPricing,
   getVideoEstimation,
   getVideoModelMeta,
-} from '~/cli/commands/models/model-loader'
+} from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'

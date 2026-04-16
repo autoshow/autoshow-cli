@@ -1,7 +1,7 @@
 import { extname } from 'node:path'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { validateMistralOcrModel } from '~/cli/commands/models/model-options'
-import { getExtractPricing } from '~/cli/commands/models/model-loader'
+import { validateMistralOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff'] as const
 const DEFAULT_EXTRACT_PAGE_COUNT = 1

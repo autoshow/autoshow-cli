@@ -2,7 +2,7 @@ import OpenAI from 'openai'
 import { mkdir } from 'node:fs/promises'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
-import type { OpenAIImageModel } from '~/cli/commands/models/model-options'
+import type { OpenAIImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getOpenAIClientConfig } from '~/utils/openai-utils'
 
 export const runOpenAIImageGen = async (

@@ -1,5 +1,5 @@
 import { mkdir, rm } from 'node:fs/promises'
-import { commandExists, pathExists, runCapture, runInherit, reverbConfigPath, reverbModelPath, reverbUvEnvDir, setupUv } from '../../../step-0-setup/setup-orchestrator/run-complete-setup'
+import { commandExists, pathExists, runCapture, runInherit, reverbConfigPath, reverbModelPath, reverbUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import * as l from '~/logger'
 import { downloadDiarizationModel, downloadReverbModel } from './reverb-download'
 import { getHuggingFaceToken } from './reverb-huggingface'

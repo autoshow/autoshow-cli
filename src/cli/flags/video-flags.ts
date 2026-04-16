@@ -2,8 +2,8 @@ import type { ClercFlagsDefinition } from 'clerc'
 import {
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS
-} from '~/cli/commands/models/model-options'
-import { buildModelDescription } from '~/cli/commands/models/model-validation'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
 
 export const videoGenFlags = {

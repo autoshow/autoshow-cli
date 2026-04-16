@@ -5,7 +5,7 @@ import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/
 import { parseReverbWithSpeakers, parseReverbTextOutput } from './parse-reverb-output'
 import { exec } from '~/utils/cli-utils'
 import { getHuggingFaceToken, runDiarization, mergeASRWithDiarization, findCTMFile } from './run-reverb-diarization'
-import { reverbUvEnvDir, reverbModelDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
+import { reverbUvEnvDir, reverbModelDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { pollUntil } from '~/utils/retries'
 import { prepareLocalSttInput } from '../local-audio-normalize'
 

@@ -35,7 +35,7 @@ export const setupCommand = defineCommand({
     throw CLIUsageError(`Invalid --repeat value: ${ctx.flags.repeat}. Must be an integer >= 1`)
   }
 
-  await runWithLogContext({ step: 'step-0-setup' }, async () => {
+  await runWithLogContext({ step: 'setup' }, async () => {
     if (step === 'all' && !ctx.flags['force-redownload'] && repeatRaw === 1) {
       await runCompleteSetup()
     } else {

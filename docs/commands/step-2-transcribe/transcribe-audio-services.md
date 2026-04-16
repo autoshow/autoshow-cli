@@ -14,7 +14,7 @@ Download audio and transcribe it with the hosted STT providers. Alias: `transcri
 
 ```bash
 bun as stt [input] [flags]
-bun as stt --resume-missing-from [batch-dir] [provider flags]
+bun as stt --resume-missing [batch-dir] [provider flags]
 ```
 
 The input routing is the same as local `stt`: direct media URLs, streaming URLs, local media files, URL lists, directories, feeds, and YouTube channels are all supported.
@@ -91,16 +91,16 @@ bun as stt input/ajc --batch-all \
   --speaker-count 2
 
 # Resume only the missing provider outputs from an earlier batch
-bun as stt --resume-missing-from output/2026-04-12_22-37-12-852_files
+bun as stt --resume-missing output/2026-04-12_22-37-12-852_files
 
 # Resume the newest compatible incomplete STT batch under ./output
-bun as stt --resume-missing-from
+bun as stt --resume-missing
 
 # Resume only a subset of the originally requested providers
-bun as stt --resume-missing-from output/2026-04-12_22-37-12-852_files --deepgram-stt nova-3
+bun as stt --resume-missing output/2026-04-12_22-37-12-852_files --deepgram-stt nova-3
 
 # Resume only Rev backfill from the newest compatible incomplete STT batch under ./output
-bun as stt --resume-missing-from --rev-stt
+bun as stt --resume-missing --rev-stt
 
 # Price preflight
 bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
@@ -128,7 +128,7 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 | `--batch-order <newest|oldest>` | Choose batch ordering |
 | `--batch-concurrency <n>` | Process batch items concurrently |
 | `--stt-provider-concurrency <n>` | Per-item cloud provider concurrency upper bound; in multi-item multi-provider batches the scheduler still honors this cap while also limiting each provider/model to one in-flight item at a time |
-| `--resume-missing-from [batch-dir]` | Reuse an existing STT batch directory and rerun only the missing provider outputs. If omitted, the CLI auto-picks the newest compatible resumable batch under `./output` |
+| `--resume-missing [batch-dir]` | Reuse an existing STT batch directory and rerun only the missing provider outputs. If omitted, the CLI auto-picks the newest compatible resumable batch under `./output` |
 | `--price` | Show the aggregated estimate and exit |
 
 ## Notes
@@ -150,7 +150,7 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 - Provider metadata now includes additive STT timing fields such as scheduler queue wait, upload/create/poll, transcript fetch, and cleanup where the provider exposes those phases.
 - Batch `info.json` entries now include each item's `outputDir` and the same completion fields so missing provider/file pairs can be resumed later.
 - Failed providers keep `providers/<service>-<model>/error.json`, and validation-style failures also keep `raw-response.json` for debugging. Skipped providers also write a local `error.json` explaining which earlier provider failure blocked the attempt.
-- `--resume-missing-from` takes a batch directory produced by a prior STT batch run. If you omit the path entirely, the CLI scans `./output` and auto-picks the newest compatible resumable STT batch. With no provider flags, it reuses the original requested provider set. If provider flags are supplied, they must be a subset of the original requested providers. Persisted async jobs are resumed via short bounded status probes; if they are still pending after those checks, rerun the command later.
-- `--resume-missing-from` does not take a positional input and does not support `--price` / `--dry-run`.
+- `--resume-missing` takes a batch directory produced by a prior STT batch run. If you omit the path entirely, the CLI scans `./output` and auto-picks the newest compatible resumable STT batch. With no provider flags, it reuses the original requested provider set. If provider flags are supplied, they must be a subset of the original requested providers. Persisted async jobs are resumed via short bounded status probes; if they are still pending after those checks, rerun the command later.
+- `--resume-missing` does not take a positional input and does not support `--price` / `--dry-run`.
 - Incomplete STT batches still exit with code `2`, but they are reported as operational batch failures rather than CLI usage errors.
 - Service setup details are in [`transcribe-audio-local.md#setup`](./transcribe-audio-local.md#setup).

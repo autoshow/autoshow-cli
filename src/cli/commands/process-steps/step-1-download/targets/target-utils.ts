@@ -6,7 +6,8 @@ import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { isSttCommand, type ProcessCommand, type RuntimeOptions } from '~/types'
 import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions, BatchProcessResult } from '~/types'
-import { isSttPartialCompletionError } from '~/cli/commands/process-steps/process-stt'
+import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-run-state'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
@@ -30,9 +31,6 @@ type SttBatchItemSummary = {
   completionStatus: 'full' | 'incomplete' | 'failed'
   providers: SttManifestProviderSummary[]
 }
-
-const formatSttProviderLabel = (service: string, model: string): string =>
-  `${service === 'whisper' ? 'whisper.cpp' : service}/${model}`
 
 const getBatchManifestTitle = (
   entry: BatchManifestEntry,
@@ -97,7 +95,7 @@ const parseSttManifestProviderSummaries = (
       : undefined
 
     summaries.push({
-      label: formatSttProviderLabel(value['service'], value['model']),
+      label: formatSttTargetLabel({ service: value['service'], model: value['model'] }),
       status,
       ...(message ? { message } : {})
     })

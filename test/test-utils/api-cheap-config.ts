@@ -1,4 +1,4 @@
-import { getModelRegistry } from '../../src/cli/commands/models/model-loader'
+import { getModelRegistry } from '../../src/cli/commands/setup-and-utilities/models/model-loader'
 import type { VideoProvider } from '../../src/types/provider-types'
 import { estimateVideoCost } from '../../src/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import type { ApiCheapPriceCommand, VideoSelection } from '../../src/types/tests-dir-types'

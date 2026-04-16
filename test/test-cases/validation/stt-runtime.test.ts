@@ -11,7 +11,7 @@ import {
   shouldBlockSttProviderForBatch,
 } from '~/cli/commands/process-steps/process-stt'
 import type { SttTarget } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { getSttEstimation } from '~/cli/commands/models/model-loader'
+import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 describe('STT runtime helpers', () => {
   test('skips command preflight when neither --price nor budget is active', () => {

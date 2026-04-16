@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import type { Step7MusicMetadata } from '~/types'
 import * as l from '~/logger'
-import type { MinimaxMusicModel } from '~/cli/commands/models/model-options'
+import type { MinimaxMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'

@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
-import type { MinimaxImageModel } from '~/cli/commands/models/model-options'
+import type { MinimaxImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { MinimaxBaseRespSchema } from '~/utils/minimax-utils'

@@ -11,8 +11,8 @@ import {
   SUPPORTED_MINIMAX_VIDEO_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS
-} from '~/cli/commands/models/model-options'
-import { buildModelDescription } from '~/cli/commands/models/model-validation'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import {
   transcriptionFlags,
   llmProviderFlags,

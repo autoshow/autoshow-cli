@@ -1,6 +1,6 @@
 import type { Step7MusicMetadata } from '~/types'
 import * as l from '~/logger'
-import type { ElevenlabsMusicModel } from '~/cli/commands/models/model-options'
+import type { ElevenlabsMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readElevenLabsError } from '~/utils/elevenlabs-utils'

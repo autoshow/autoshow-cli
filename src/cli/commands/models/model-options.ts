@@ -1,7 +1,0 @@
-export * from '~/cli/commands/models/stt-models'
-export * from '~/cli/commands/models/extract-models'
-export * from '~/cli/commands/models/llm-models'
-export * from '~/cli/commands/models/tts-models'
-export * from '~/cli/commands/models/image-models'
-export * from '~/cli/commands/models/video-models'
-export * from '~/cli/commands/models/music-models'

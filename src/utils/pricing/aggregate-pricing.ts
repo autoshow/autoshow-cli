@@ -19,7 +19,7 @@ import {
   getSttEstimation,
   getTtsEstimation,
   getVideoEstimation,
-} from '~/cli/commands/models/model-loader'
+} from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { estimateMistralOcrCost } from '~/cli/commands/process-steps/step-2-document/document-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import type { SttStepEstimate, ExtractStepEstimate, LlmStepEstimate, TtsStepEstimate, ImageStepEstimate, MusicStepEstimate, VideoStepEstimate, StepEstimate, AggregatedPriceEstimate } from '~/types'

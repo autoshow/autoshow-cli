@@ -3,8 +3,8 @@ import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS
-} from '~/cli/commands/models/model-options'
-import { buildModelDescription } from '~/cli/commands/models/model-validation'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
 
 export const imageGenFlags = {

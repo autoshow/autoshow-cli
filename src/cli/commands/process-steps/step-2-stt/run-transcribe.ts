@@ -1,4 +1,5 @@
-import type { ProcessingOptions, TranscriptionResult, Step2Metadata, Step2TimingMetadata, DiarizationOptions } from '~/types'
+import type { ProcessingOptions, TranscriptionResult, Step2Metadata, DiarizationOptions } from '~/types'
+import { mergeStep2TimingMetadata } from './stt-timing-metadata'
 import * as l from '~/logger'
 import { runWhisperTranscribe } from './stt-local/whisper/run-whisper'
 import { runReverbTranscribe } from './stt-local/reverb/run-reverb'
@@ -24,7 +25,7 @@ import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-s
 import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
-import { reverbUvEnvDir, reverbModelPath, reverbConfigPath, whisperBinaryPath, whisperModelsDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
+import { reverbUvEnvDir, reverbModelPath, reverbConfigPath, whisperBinaryPath, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { assertNever } from '~/utils/validate/assert-never'
 import type { TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
@@ -249,36 +250,6 @@ type IndexedTranscriptionChunk = {
   data: { result: TranscriptionResult, metadata: Step2Metadata }
 }
 
-const STT_TIMING_KEYS = [
-  'queueWaitMs',
-  'transcribeMs',
-  'uploadMs',
-  'createMs',
-  'pollMs',
-  'pollSleepMs',
-  'transcriptMs',
-  'remoteProcessingMs',
-  'cleanupMs',
-  'requestCount',
-  'retryCount',
-  'rateLimitCount'
-] as const satisfies readonly (keyof Step2TimingMetadata)[]
-
-const mergeStep2Timings = (
-  values: Array<Step2TimingMetadata | undefined>
-): Step2TimingMetadata | undefined => {
-  const merged: Step2TimingMetadata = {}
-
-  for (const key of STT_TIMING_KEYS) {
-    const total = values.reduce((sum, value) => sum + (value?.[key] ?? 0), 0)
-    if (total > 0) {
-      merged[key] = total
-    }
-  }
-
-  return Object.keys(merged).length > 0 ? merged : undefined
-}
-
 export const ensureTranscribeTargetSetup = async (
   target: Pick<SttTarget, 'service' | 'model'>
 ): Promise<void> => {
@@ -476,7 +447,7 @@ export const mergeSplitTranscriptionChunks = (
 
   const totalProcessingTime = segmentResults.reduce((sum, s) => sum + s.metadata.processingTime, 0)
   const totalTokenCount = segmentResults.reduce((sum, s) => sum + s.metadata.tokenCount, 0)
-  const mergedTimings = mergeStep2Timings(segmentResults.map((segment) => segment.metadata.timings))
+  const mergedTimings = mergeStep2TimingMetadata(segmentResults.map((segment) => segment.metadata.timings))
 
   return {
     result: combinedResult,

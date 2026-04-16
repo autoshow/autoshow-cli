@@ -1,7 +1,7 @@
 import { defineCommand } from 'clerc'
 import { extractCommandFlags } from '~/cli/flags'
 import { handleProcessTarget } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
-import { extractExplicitFlags } from '~/cli/commands/config/config-merge'
+import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { CLIUsageError } from '~/utils/error-handler'
 
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, or URL list (.md/.txt)' }] as const

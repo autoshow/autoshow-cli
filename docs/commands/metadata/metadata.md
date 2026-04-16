@@ -179,18 +179,25 @@ For YouTube inputs, `metadata` honors the same `yt-dlp` environment overrides as
 
 ## Processing Step Layout
 
-Runtime processing steps and shared routing live under:
+CLI commands are split between runtime processing steps and setup/utilities:
 
 ```text
-src/cli/commands/process-steps/
-  step-0-metadata/
-  step-0-setup/
-  step-1-download/
-  step-2-stt/
-  step-2-document/
-  step-3-write/
-  step-4-tts/
-  step-5-image/
-  step-6-video/
-  step-7-music/
+src/cli/commands/
+  process-steps/
+    step-0-metadata/
+    step-1-download/
+    step-2-stt/
+    step-2-document/
+    step-3-write/
+    step-4-tts/
+    step-5-image/
+    step-6-video/
+    step-7-music/
+  setup-and-utilities/
+    setup/
+    models/
+    links/
+    config/
+    cache/
+    sample/
 ```

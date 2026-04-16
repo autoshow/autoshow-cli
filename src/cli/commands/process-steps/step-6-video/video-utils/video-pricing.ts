@@ -1,5 +1,5 @@
-import { type GeminiVideoModel, type MinimaxVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/models/model-options'
-import { getVideoModelMeta } from '~/cli/commands/models/model-loader'
+import { type GeminiVideoModel, type MinimaxVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { getVideoModelMeta } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
   normalizeGeminiDuration,
   normalizeGeminiResolution,

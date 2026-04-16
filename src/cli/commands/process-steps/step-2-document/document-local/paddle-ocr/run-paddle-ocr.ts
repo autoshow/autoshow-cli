@@ -5,7 +5,7 @@ import * as l from '~/logger'
 import { exec } from '~/utils/cli-utils'
 import type { ExtractionOptions } from '~/types'
 import type { OcrFn } from '../../document-utils/page-processor'
-import { paddleOcrUvEnvDir } from '~/cli/commands/process-steps/step-0-setup/setup-orchestrator/run-complete-setup'
+import { paddleOcrUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-document/document-local/paddle-ocr/paddle-ocr'
 
 const SCRIPT_PATH = join(import.meta.dir, 'scripts/run-paddle-ocr.py')

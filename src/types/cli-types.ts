@@ -50,7 +50,7 @@ export type RuntimeOptions = {
   sttLocalConcurrency: number
   sttSegmentConcurrency: number
   sttPreflightConcurrency: number
-  resumeMissingFrom: string | undefined
+  resumeMissing: string | undefined
   refreshCache: boolean
   noCache: boolean
   price: boolean

@@ -1,10 +1,10 @@
-import { createModelValidator, formatAllowedValues } from '~/cli/commands/models/model-validation'
+import { createModelValidator, formatAllowedValues } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   getKittenHfRepo,
   getKittenVoices,
   getGroqTtsVoices
-} from '~/cli/commands/models/model-loader'
+} from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type {
   KittenTtsModel,
   ElevenlabsTtsModel,

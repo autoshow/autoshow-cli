@@ -1,7 +1,7 @@
 import { inspectYtDlpAuthState } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-options'
 import { commandExists } from '~/utils/cli-utils'
 import { loadEnvFile } from '~/utils/cli-utils'
-import { resolveConfigPath, loadConfig } from '~/cli/commands/config/config-loader'
+import { resolveConfigPath, loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import * as l from '~/logger'
 
 type CheckResult = { label: string; ok: boolean; detail: string }

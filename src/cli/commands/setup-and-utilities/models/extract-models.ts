@@ -1,4 +1,4 @@
-import { createModelValidator } from '~/cli/commands/models/model-validation'
+import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import type { MistralOcrModel } from '~/types'
 export type { MistralOcrModel } from '~/types'
 

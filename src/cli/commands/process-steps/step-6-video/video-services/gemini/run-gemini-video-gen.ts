@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai'
 import { mkdir } from 'node:fs/promises'
 import type { Step6VideoMetadata } from '~/types'
-import type { GeminiVideoModel } from '~/cli/commands/models/model-options'
+import type { GeminiVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
 import * as l from '~/logger'

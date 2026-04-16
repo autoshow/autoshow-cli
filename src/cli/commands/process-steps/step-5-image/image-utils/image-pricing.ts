@@ -3,8 +3,8 @@ import {
   validateGeminiImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel
-} from '~/cli/commands/models/model-options'
-import { getImageCost } from '~/cli/commands/models/model-loader'
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import { getImageCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { ImageCostEstimate, EstimateImageCostOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 

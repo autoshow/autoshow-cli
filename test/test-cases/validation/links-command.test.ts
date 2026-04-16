@@ -7,7 +7,7 @@ import {
   collectLinks,
   parseLinksArgv,
   runLinksWithArgv
-} from '~/cli/commands/links/define-links-command'
+} from '~/cli/commands/setup-and-utilities/links/define-links-command'
 
 const tempDirs: string[] = []
 

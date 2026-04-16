@@ -1,10 +1,11 @@
 import * as l from '~/logger'
 import type { BatchProcessResult, BatchRunOptions, RuntimeOptions } from '~/types'
-import { collectSttTargets } from './stt-targets'
-import { formatSttBatchSchedulerSummary, SttBatchCoordinator } from './stt-batch-coordinator'
+import { collectSttTargets } from '../stt-targets'
+import { formatSttBatchSchedulerSummary } from './stt-batch-policy'
+import { SttBatchCoordinator } from './stt-batch-coordinator'
 import { runResumeSttMissingFromBatchDir } from './resume-stt-batch'
-import { logSttBatchFinalSummary, processBatch } from '../step-1-download/targets/target-utils'
-import { processSingleTarget } from '../step-1-download/targets/single-target'
+import { logSttBatchFinalSummary, processBatch } from '../../step-1-download/targets/target-utils'
+import { processSingleTarget } from '../../step-1-download/targets/single-target'
 
 export class SttBatchIncompleteError extends Error {
   readonly exitCode: number

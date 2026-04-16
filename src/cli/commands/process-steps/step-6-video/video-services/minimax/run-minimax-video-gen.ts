@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import type { Step6VideoMetadata } from '~/types'
-import type { MinimaxVideoModel } from '~/cli/commands/models/model-options'
+import type { MinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'

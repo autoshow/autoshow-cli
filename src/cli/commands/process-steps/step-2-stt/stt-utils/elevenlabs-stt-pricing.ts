@@ -1,5 +1,5 @@
-import { validateElevenlabsSttModel } from '~/cli/commands/models/model-options'
-import { getSttCost } from '~/cli/commands/models/model-loader'
+import { validateElevenlabsSttModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { getSttCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { ElevenlabsSttRateEstimate } from '~/types'
 
 
