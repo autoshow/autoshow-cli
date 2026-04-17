@@ -1,1 +1,1 @@
-export * from '~/cli/commands/setup-and-utilities/report/ocr-consensus-report'
+export * from '~/cli/commands/process-steps/step-2-ocr/report'

@@ -14,7 +14,7 @@ import {
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from './step-1-download/document/dl-document'
-import { runOcr } from './step-2-ocr/run-ocr'
+import { runOcr } from './step-2-ocr/orchestrator'
 import { runWithLogContext } from '~/logger'
 import {
   buildExtractionOptionsForTarget,
@@ -32,6 +32,7 @@ import {
   type OcrCompletionStatus,
   type OcrProviderSuccess
 } from './step-2-ocr/ocr-run-state'
+import { writeOcrRunManifest } from './step-2-ocr/manifest'
 import { FIRECRAWL_PRICE_NOTE } from './step-2-ocr/ocr-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
 
@@ -372,6 +373,18 @@ export const processOcr = async (
           2
         )
       )
+      await writeOcrRunManifest(
+        outputDir,
+        buildDocumentMetadataPayload(step1Metadata, step2Metadata, opts, {
+          failures: metadataErrors,
+          web,
+          source: documentSource,
+          completionStatus,
+          requestedProviders: requestedTargets.map(toRequestedProvider),
+          providerStates,
+          missingProviders
+        })
+      )
 
       if (!primary) {
         throw new OcrBatchCompletionError(
@@ -398,28 +411,29 @@ export const processOcr = async (
       }
     }
 
+    const singleTargetOpts = explicitTargets.length === 1
+      ? buildExtractionOptionsForTarget(opts, explicitTargets[0] as typeof explicitTargets[number])
+      : opts
     const extracted = await runWithLogContext({ step: 'step-2-ocr' }, async () =>
-      await runOcr(extractFilePath, step1Metadata, opts)
+      await runOcr(extractFilePath, step1Metadata, singleTargetOpts)
     )
 
+    const rootMetadata = buildDocumentMetadataPayload(step1Metadata, extracted.step2Metadata, opts, {
+      web,
+      source: documentSource,
+      completionStatus: 'full',
+      ...(explicitTargets.length === 1
+        ? {
+            requestedProviders: explicitTargets.map(toRequestedProvider),
+            missingProviders: []
+          }
+        : {})
+    })
     await writeFile(
       `${outputDir}/metadata.json`,
-      JSON.stringify(
-        buildDocumentMetadataPayload(step1Metadata, extracted.step2Metadata, opts, {
-          web,
-          source: documentSource,
-          completionStatus: 'full',
-          ...(explicitTargets.length === 1
-            ? {
-                requestedProviders: explicitTargets.map(toRequestedProvider),
-                missingProviders: []
-              }
-            : {})
-        }),
-        null,
-        2
-      )
+      JSON.stringify(rootMetadata, null, 2)
     )
+    await writeOcrRunManifest(outputDir, rootMetadata)
     await writeExtractionArtifact(
       outputDir,
       extracted.result,

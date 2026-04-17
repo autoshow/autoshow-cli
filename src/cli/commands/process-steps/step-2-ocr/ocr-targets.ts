@@ -1,40 +1,20 @@
 import type { ExtractionOptions, OcrTarget } from '~/types'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
+import { collectOcrProviderSpecs } from './cli'
 
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel'>
+  opts: Pick<ExtractionOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel'> & {
+    provider?: string[] | undefined
+  }
 ): OcrTarget[] => {
-  const targets: OcrTarget[] = []
-
-  if (opts.useOcrmypdf === true) {
-    targets.push({
-      service: 'ocrmypdf',
-      model: 'ocrmypdf'
-    })
-  }
-
-  if (opts.usePaddleOcr === true) {
-    targets.push({
-      service: 'paddle-ocr',
-      model: 'paddle-ocr'
-    })
-  }
-
-  if (typeof opts.mistralOcrModel === 'string' && opts.mistralOcrModel.length > 0) {
-    targets.push({
-      service: 'mistral',
-      model: opts.mistralOcrModel
-    })
-  }
-
-  if (typeof opts.glmOcrModel === 'string' && opts.glmOcrModel.length > 0) {
-    targets.push({
-      service: 'glm',
-      model: opts.glmOcrModel
-    })
-  }
-
-  return targets
+  return collectOcrProviderSpecs(opts as Parameters<typeof collectOcrProviderSpecs>[0]).map((spec) => ({
+    service: (spec.provider === 'mistral-ocr'
+      ? 'mistral'
+      : spec.provider === 'glm-ocr'
+        ? 'glm'
+        : spec.provider) as OcrTarget['service'],
+    model: spec.model ?? spec.provider
+  }))
 }
 
 export const getOcrTargetDirectoryName = (target: OcrTarget): string =>

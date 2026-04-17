@@ -134,7 +134,7 @@ export type HostedOcrRun = {
 }
 
 export type OcrTarget = {
-  service: 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm'
+  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm'
   model: string
 }
 

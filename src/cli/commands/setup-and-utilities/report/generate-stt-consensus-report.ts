@@ -1,4 +1,4 @@
-import { analyzeAndWriteConsensusReports } from './stt-consensus-report'
+import { analyzeAndWriteConsensusReports } from '~/cli/commands/process-steps/step-2-stt/report'
 
 const targetPath = process.argv[2]
 

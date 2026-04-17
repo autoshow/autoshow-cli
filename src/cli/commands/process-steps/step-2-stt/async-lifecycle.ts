@@ -3,6 +3,7 @@ import type {
   Step2Metadata,
   Step2RuntimeMetadata
 } from '~/types'
+import { readSttProviderCheckpoint, writeSttProviderCheckpoint } from './manifest'
 
 const DEFAULT_POLL_DEADLINE_MS = 10 * 60 * 1000
 const MAX_POLL_DEADLINE_MS = 30 * 60 * 1000
@@ -74,16 +75,29 @@ export const readPersistedAsyncSttRuntime = async (
   outputDir: string,
   expected: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
 ): Promise<Step2RuntimeMetadata | undefined> => {
+  const readCheckpointRuntime = async (): Promise<Step2RuntimeMetadata | undefined> => {
+    const checkpointMetadata = await readSttProviderCheckpoint(outputDir)
+    if (
+      checkpointMetadata
+      && checkpointMetadata['transcriptionService'] === expected.transcriptionService
+      && checkpointMetadata['transcriptionModel'] === expected.transcriptionModel
+    ) {
+      return parseStep2RuntimeMetadata(checkpointMetadata['runtime'])
+    }
+
+    return undefined
+  }
+
   const metadataPath = `${outputDir}/metadata.json`
   if (!await Bun.file(metadataPath).exists()) {
-    return undefined
+    return await readCheckpointRuntime()
   }
 
   let raw: unknown
   try {
     raw = await Bun.file(metadataPath).json()
   } catch {
-    return undefined
+    return await readCheckpointRuntime()
   }
 
   if (
@@ -91,7 +105,7 @@ export const readPersistedAsyncSttRuntime = async (
     || raw['transcriptionService'] !== expected.transcriptionService
     || raw['transcriptionModel'] !== expected.transcriptionModel
   ) {
-    return undefined
+    return await readCheckpointRuntime()
   }
 
   return parseStep2RuntimeMetadata(raw['runtime'])
@@ -102,6 +116,12 @@ export const writeAsyncSttProgressMetadata = async (
   metadata: Step2Metadata
 ): Promise<void> => {
   await Bun.write(`${outputDir}/metadata.json`, JSON.stringify(metadata, null, 2))
+  await writeSttProviderCheckpoint(
+    outputDir,
+    metadata.transcriptionService,
+    metadata.transcriptionModel,
+    metadata as unknown as Record<string, unknown>
+  )
 }
 
 export const resolveAsyncSttPollDeadlineMs = (

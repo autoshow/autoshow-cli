@@ -11,9 +11,10 @@ import type {
   SttTarget,
   TranscriptionResult
 } from '~/types'
-import { parseStep2RuntimeMetadata } from '../stt-utils/async-stt-job-runner'
+import { parseStep2RuntimeMetadata } from '../async-lifecycle'
 import { parseStoredStep2TimingMetadata } from '../stt-timing-metadata'
 import { getSttTargetDirectoryName, getSttTargetKey } from '../stt-targets'
+import { readSttRunManifestEntry } from '../manifest'
 
 const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/
 
@@ -267,18 +268,7 @@ export const readExistingSttRun = async (
 ): Promise<ExistingSttRun> => {
   const providerStates = new Map<string, SttProviderState>()
   const successes: Array<SttProviderSuccess | undefined> = new Array(requestedTargets.length)
-  const metadataPath = join(outputDir, 'metadata.json')
-  if (!await Bun.file(metadataPath).exists()) {
-    return { successes, providerStates }
-  }
-
-  let raw: unknown
-  try {
-    raw = await Bun.file(metadataPath).json()
-  } catch {
-    return { successes, providerStates }
-  }
-
+  const raw = await readSttRunManifestEntry(outputDir)
   if (!isRecord(raw)) {
     return { successes, providerStates }
   }

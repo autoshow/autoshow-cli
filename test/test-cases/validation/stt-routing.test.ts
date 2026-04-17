@@ -10,7 +10,7 @@ import {
   resolveDiarizationOptions,
   shouldRetrySplitTranscriptionAfterError,
   shouldSplitTranscriptionInput
-} from '~/cli/commands/process-steps/step-2-stt/run-stt'
+} from '~/cli/commands/process-steps/step-2-stt/orchestrator'
 
 describe('shouldSplitTranscriptionInput', () => {
   test('respects explicit split mode for any engine', () => {

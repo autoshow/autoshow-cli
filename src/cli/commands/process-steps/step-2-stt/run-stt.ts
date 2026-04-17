@@ -1,13 +1,10 @@
 import type {
-  DiarizationFlagOptions,
-  DiarizationOptions,
   IndexedTranscriptionChunk,
   ProcessingOptions,
   Step2Metadata,
   SttTarget,
   SttTargetOptions,
   TranscribeEngine,
-  TranscribeEngineCapabilities,
   TranscriptionResult,
   WhisperProgressWindow
 } from '~/types'
@@ -28,36 +25,10 @@ import { runGladiaStt } from './stt-services/gladia/run-gladia-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
 import { formatTranscriptText } from './stt-utils/stt-utils'
 import { buildPersistedTranscriptionEvidence, mergeTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/stt-evidence'
-import { fileExists } from '~/utils/cli-utils'
-import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-stt/stt-local/reverb/reverb'
-import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
-import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/elevenlabs'
-import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/deepgram'
-import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/soniox/soniox'
-import { ensureSpeechmaticsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/speechmatics/speechmatics'
-import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/rev'
-import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
-import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
-import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
-import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
-import { reverbUvEnvDir, reverbModelPath, reverbConfigPath, whisperBinaryPath, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { resolveDiarizationOptions } from './cli'
+import { ensureSttTargetSetup as ensureSttTargetSetupViaBroker } from './bootstrap'
 import { assertNever } from '~/utils/validate/assert-never'
-import { CLIUsageError } from '~/utils/error-handler'
-
-export const STT_ENGINE_CAPABILITIES = {
-  reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  speechmatics: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  rev: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  groq: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  openai: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
-  mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false }
-} as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
+export { STT_ENGINE_CAPABILITIES, getSttEngineCapabilities, resolveDiarizationOptions } from './cli'
 
 const SPLIT_SEGMENT_DURATION_MINUTES = 10
 export const GROQ_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
@@ -162,87 +133,6 @@ const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
   return 'whisper'
 }
 
-const checkReverbSetup = async (): Promise<boolean> => {
-  const envExists = await fileExists(`${reverbUvEnvDir}/bin/python`)
-  const modelExists = await fileExists(reverbModelPath)
-  const configExists = await fileExists(reverbConfigPath)
-  return envExists && modelExists && configExists
-}
-
-const ensureReverbSetup = async (): Promise<void> => {
-  const isSetup = await checkReverbSetup()
-  if (!isSetup) {
-    await ensureReverbRuntimeSetup()
-  }
-}
-
-const checkWhisperSetup = async (model: string): Promise<boolean> => {
-  const binaryExists = await fileExists(whisperBinaryPath)
-  const modelExists = await fileExists(`${whisperModelsDir}/ggml-${model}.bin`)
-  return binaryExists && modelExists
-}
-
-const ensureWhisperSetup = async (model: string): Promise<void> => {
-  const isSetup = await checkWhisperSetup(model)
-  if (!isSetup) {
-    await ensureWhisperReady(model)
-  }
-}
-
-export const getSttEngineCapabilities = (
-  engine: TranscribeEngine
-): TranscribeEngineCapabilities => STT_ENGINE_CAPABILITIES[engine]
-
-export const resolveDiarizationOptions = (
-  options: DiarizationFlagOptions,
-  engine: TranscribeEngine
-): DiarizationOptions | undefined => {
-  const speakerCount = options.diarizationSpeakerCount
-  const speakerNames = options.diarizationSpeakerNames
-  const speakerReferences = options.diarizationSpeakerReferences
-  const hasKnownSpeakerNames = speakerNames !== undefined && speakerNames.length > 0
-  const hasKnownSpeakerReferences = speakerReferences !== undefined && speakerReferences.length > 0
-
-  if (hasKnownSpeakerNames !== hasKnownSpeakerReferences) {
-    throw CLIUsageError('OpenAI diarization requires matching --speaker-name and --speaker-reference values.')
-  }
-
-  if (speakerNames && speakerReferences) {
-    if (speakerNames.length !== speakerReferences.length) {
-      throw CLIUsageError(`OpenAI diarization requires the same number of --speaker-name and --speaker-reference values (received ${speakerNames.length} names and ${speakerReferences.length} references).`)
-    }
-
-    if (speakerNames.length > 4) {
-      throw CLIUsageError(`OpenAI diarization supports at most 4 known speakers (received ${speakerNames.length}).`)
-    }
-  }
-
-  const capabilities = STT_ENGINE_CAPABILITIES[engine]
-  const diarizationOptions: DiarizationOptions = capabilities.diarizationByDefault
-    ? { enabled: true }
-    : {}
-
-  if (speakerNames && speakerReferences) {
-    if (!capabilities.supportsKnownSpeakerReferences) {
-      throw CLIUsageError(`--speaker-name and --speaker-reference are only supported with OpenAI diarization right now; received ${engine}.`)
-    }
-
-    diarizationOptions.knownSpeakerNames = speakerNames
-    diarizationOptions.knownSpeakerReferencePaths = speakerReferences
-  }
-
-  if (speakerCount === undefined) {
-    return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
-  }
-
-  if (!capabilities.supportsSpeakerCountHint) {
-    return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
-  }
-
-  diarizationOptions.speakerCount = speakerCount
-  return diarizationOptions
-}
-
 const persistTranscriptionEvidenceArtifacts = async (
   outputDir: string,
   result: TranscriptionResult,
@@ -259,57 +149,8 @@ const persistTranscriptionEvidenceArtifacts = async (
 
 export const ensureSttTargetSetup = async (
   target: Pick<SttTarget, 'service' | 'model'>
-): Promise<void> => {
-  if (target.service === 'reverb') {
-    await ensureReverbSetup()
-    return
-  }
-  if (target.service === 'elevenlabs') {
-    await ensureElevenLabsSttSetup()
-    return
-  }
-  if (target.service === 'deepgram') {
-    await ensureDeepgramSttSetup()
-    return
-  }
-  if (target.service === 'soniox') {
-    await ensureSonioxSttSetup()
-    return
-  }
-  if (target.service === 'speechmatics') {
-    await ensureSpeechmaticsSttSetup()
-    return
-  }
-  if (target.service === 'rev') {
-    await ensureRevSttSetup()
-    return
-  }
-  if (target.service === 'groq') {
-    return
-  }
-  if (target.service === 'openai') {
-    await ensureOpenAISttSetup()
-    return
-  }
-  if (target.service === 'mistral') {
-    await ensureMistralSttSetup()
-    return
-  }
-  if (target.service === 'assemblyai') {
-    await ensureAssemblyAiSttSetup()
-    return
-  }
-  if (target.service === 'gladia') {
-    await ensureGladiaSttSetup()
-    return
-  }
-  if (target.service === 'whisper') {
-    await ensureWhisperSetup(target.model)
-    return
-  }
-
-  assertNever(target.service)
-}
+): Promise<void> =>
+  await ensureSttTargetSetupViaBroker(target)
 
 const dispatchStt = async (
   target: SttTarget,

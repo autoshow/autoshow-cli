@@ -14,16 +14,17 @@ import type {
 } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
-import { logSttBatchFinalSummary } from '../../step-1-download/targets/target-utils'
-import { formatSttBatchSchedulerSummary } from './stt-batch-policy'
-import { SttBatchCoordinator } from './stt-batch-coordinator'
+import { logSttBatchFinalSummary } from '../step-1-download/targets/target-utils'
+import { formatSttBatchSchedulerSummary } from './stt-batch/stt-batch-policy'
+import { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
 import {
   buildMissingTargetsFromEntry,
   inferStoredCompletionStatus,
   isSttPartialCompletionError,
   parseStoredRequestedTargets
-} from './stt-run-state'
-import { formatSttTargetLabel, getSttTargetKey } from '../stt-targets'
+} from './stt-batch/stt-run-state'
+import { formatSttTargetLabel, getSttTargetKey } from './stt-targets'
+import { readSttBatchManifestEntries, readSttRunManifestEntry } from './manifest'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -152,28 +153,19 @@ const parseResumeEntry = async (
 const readResumeBatchManifest = async (
   batchDir: string
 ): Promise<ResumeBatchManifest | undefined> => {
-  const infoPath = join(batchDir, 'info.json')
-  if (!await Bun.file(infoPath).exists()) {
+  const manifest = await readSttBatchManifestEntries(batchDir)
+  if (!manifest) {
     return undefined
   }
 
-  try {
-    const rawInfo = await Bun.file(infoPath).json() as unknown
-    if (!Array.isArray(rawInfo)) {
-      return undefined
-    }
-
-    return {
-      infoPath,
-      entries: rawInfo.filter((entry): entry is BatchManifestEntry => isRecord(entry))
-    }
-  } catch {
-    return undefined
+  return {
+    infoPath: manifest.manifestPath,
+    entries: manifest.entries
   }
 }
 
 const readOutputMetadata = async (outputDir: string): Promise<BatchManifestEntry> => {
-  const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as unknown
+  const metadata = await readSttRunManifestEntry(outputDir)
   if (!isRecord(metadata)) {
     throw CLIUsageError(`Invalid STT metadata at ${outputDir}/metadata.json`)
   }

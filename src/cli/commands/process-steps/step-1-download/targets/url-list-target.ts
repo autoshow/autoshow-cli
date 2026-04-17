@@ -5,7 +5,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { selectBatchItems } from './batch/batch-select'
-import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/stt-batch/stt-batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
 
 const buildInputListBatchItems = (items: string[]): BatchItem[] =>
   items.map((item, index) => ({

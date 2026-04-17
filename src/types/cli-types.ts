@@ -21,6 +21,7 @@ export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
 export type BatchOrder = 'newest' | 'oldest'
 
 export type RuntimeOptions = {
+  provider: string[] | undefined
   useReverb: boolean
   whisperExplicit: boolean
   useOpenAI: boolean

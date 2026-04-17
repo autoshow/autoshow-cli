@@ -17,7 +17,7 @@ import {
   type OcrProviderState
 } from '~/cli/commands/process-steps/step-2-ocr/ocr-run-state'
 import { validateData } from '~/utils/validate/validation'
-import { detectReportTarget } from './report-target-detection'
+import { detectReportTarget } from '~/cli/commands/setup-and-utilities/report/report-target-detection'
 
 type OcrProviderArtifact = {
   id: string
@@ -114,7 +114,7 @@ type ProviderPageData = {
   localWindows: Array<{ startRel: number, endRel: number }>
 }
 
-const OCR_PROVIDER_PREFIXES: OcrTarget['service'][] = ['paddle-ocr', 'ocrmypdf', 'mistral', 'glm']
+const OCR_PROVIDER_PREFIXES: OcrTarget['service'][] = ['tesseract', 'paddle-ocr', 'ocrmypdf', 'mistral', 'glm']
 const WORD_PATTERN = /[A-Za-z0-9]+(?:[/'’-][A-Za-z0-9]+)*/g
 const SENTENCE_SPLIT_PATTERN = /(?<=[.!?])\s+(?=[^\s])/g
 

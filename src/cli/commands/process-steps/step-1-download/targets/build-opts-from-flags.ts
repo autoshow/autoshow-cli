@@ -239,6 +239,7 @@ export const buildOptsFromFlags = (
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
 
   return {
+    provider: readOptionalStringArrayFlag(mergedFlags, 'provider'),
     useReverb: readBooleanFlag(mergedFlags, 'reverb'),
     whisperExplicit: explicitFlags.has('whisper'),
     useOpenAI: openaiModel !== undefined,

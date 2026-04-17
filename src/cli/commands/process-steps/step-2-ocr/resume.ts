@@ -21,6 +21,7 @@ import {
   inferStoredCompletionStatus,
   parseStoredRequestedTargets
 } from './ocr-run-state'
+import { readOcrBatchManifestEntries, readOcrRunManifestEntry } from './manifest'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -149,28 +150,19 @@ const parseResumeEntry = async (
 const readResumeBatchManifest = async (
   batchDir: string
 ): Promise<{ infoPath: string, entries: BatchManifestEntry[] } | undefined> => {
-  const infoPath = join(batchDir, 'info.json')
-  if (!await Bun.file(infoPath).exists()) {
+  const manifest = await readOcrBatchManifestEntries(batchDir)
+  if (!manifest) {
     return undefined
   }
 
-  try {
-    const raw = await Bun.file(infoPath).json() as unknown
-    if (!Array.isArray(raw)) {
-      return undefined
-    }
-
-    return {
-      infoPath,
-      entries: raw.filter((entry): entry is BatchManifestEntry => isRecord(entry))
-    }
-  } catch {
-    return undefined
+  return {
+    infoPath: manifest.manifestPath,
+    entries: manifest.entries
   }
 }
 
 const readOutputMetadata = async (outputDir: string): Promise<BatchManifestEntry> => {
-  const raw = await Bun.file(join(outputDir, 'metadata.json')).json() as unknown
+  const raw = await readOcrRunManifestEntry(outputDir)
   if (!isRecord(raw)) {
     throw CLIUsageError(`Invalid OCR metadata at ${outputDir}/metadata.json`)
   }

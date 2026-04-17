@@ -27,8 +27,8 @@ import { createUniqueDirectoryName } from './step-1-download/audio/metadata-util
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { collectSttTargets, formatSttTargetLabel, getSttTargetDirectoryName, getSttTargetKey } from './step-2-stt/stt-targets'
-import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
-import { getSttEngineCapabilities, sttTarget } from './step-2-stt/run-stt'
+import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/media'
+import { getSttEngineCapabilities, sttTarget } from './step-2-stt/orchestrator'
 import { mergeStep2TimingMetadata } from './step-2-stt/stt-timing-metadata'
 import {
   buildMetadataErrorEntries,
@@ -37,22 +37,22 @@ import {
   getSttProviderArtifactDir,
   readExistingSttRun,
   resolveCompletionStatus,
-  SttPartialCompletionError,
   toRecordedProviderError,
   toRequestedProvider
 } from './step-2-stt/stt-batch/stt-run-state'
+import { writeSttRunManifest } from './step-2-stt/manifest'
 import {
-  describeSttBatchProviderSlotLimits
-} from './step-2-stt/stt-batch/stt-batch-policy'
-import {
+  describeSttBatchProviderSlotLimits,
+  isSttPartialCompletionError,
   runCoordinatedSttTargetPool,
-} from './step-2-stt/stt-batch/stt-batch-coordinator'
+  SttPartialCompletionError
+} from './step-2-stt/batch'
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
 import { CLIUsageError } from '~/utils/error-handler'
 
-export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/stt-batch/stt-run-state'
+export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/batch'
 export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from '~/types'
 
 const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
@@ -652,6 +652,7 @@ export const processStt = async (
         ...(timing ? { timing } : {})
       }, null, 2)
       await writeSttMetadata(outputDir, metadataJson)
+      await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
 
       const artifactFiles: Record<string, string> = {
         audio: prepared.step1Metadata.audioFileName,
@@ -812,6 +813,7 @@ export const processStt = async (
           queueWaitMs > 0 ? { queueWaitMs } : undefined
         )
         await Bun.write(join(providerDir, 'metadata.json'), JSON.stringify(metadataWithQueueTiming, null, 2))
+        await Bun.write(join(providerDir, 'result.json'), JSON.stringify(transcription.result, null, 2))
         successes[index] = {
           target,
           metadata: metadataWithQueueTiming,
@@ -1007,6 +1009,7 @@ export const processStt = async (
       ...(metadataErrors.length > 0 ? { errors: metadataErrors } : {})
     }, null, 2)
     await writeSttMetadata(outputDir, metadataJson)
+    await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
 
     const stepSummaries: StepTimingCost[] = [
       {

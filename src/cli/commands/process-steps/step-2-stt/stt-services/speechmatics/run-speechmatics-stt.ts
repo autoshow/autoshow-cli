@@ -30,7 +30,7 @@ import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
   writeAsyncSttProgressMetadata
-} from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
+} from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 import { getSpeechmaticsBaseUrl } from './speechmatics'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnvFallback } from '~/utils/validate/env-utils'

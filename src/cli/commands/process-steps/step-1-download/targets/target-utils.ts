@@ -4,7 +4,7 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { isSttCommand, type ProcessCommand, type RuntimeOptions } from '~/types'
+import { isOcrCommand, isSttCommand, type ProcessCommand, type RuntimeOptions } from '~/types'
 import type {
   BatchManifestEntry,
   BatchManifestErrorEntry,
@@ -17,7 +17,9 @@ import type {
   TopLevelTargetInfo
 } from '~/types'
 import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-run-state'
+import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/batch'
+import { writeOcrBatchManifest } from '~/cli/commands/process-steps/step-2-ocr/manifest'
+import { writeSttBatchManifest } from '~/cli/commands/process-steps/step-2-stt/manifest'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
@@ -677,6 +679,16 @@ export const processBatch = async (
     await writeFile(`${batchDir}/source.json`, JSON.stringify(sourceData, null, 2))
   }
 
+  const batchSource = runOpts.source
+    ? {
+        sourceKind: runOpts.source.sourceKind,
+        sourceUrl: runOpts.source.sourceUrl,
+        title: runOpts.source.title,
+        author: runOpts.source.author,
+        selectedCount: items.length
+      }
+    : undefined
+
   let infoEntries: BatchManifestEntry[]
   if (runOpts.selectedItems && runOpts.selectedItems.length > 0) {
     infoEntries = runOpts.selectedItems.map(i => ({
@@ -699,6 +711,11 @@ export const processBatch = async (
   }
 
   await writeFile(`${batchDir}/info.json`, JSON.stringify(infoEntries, null, 2))
+  if (isSttCommand(command)) {
+    await writeSttBatchManifest(batchDir, infoEntries, batchSource)
+  } else if (isOcrCommand(command)) {
+    await writeOcrBatchManifest(batchDir, infoEntries, batchSource)
+  }
 
   const concurrency = Math.max(1, runOpts.concurrency ?? 1)
   let ok = 0
@@ -885,6 +902,11 @@ export const processBatch = async (
     ? formatSttBatchCompletionSummary(ok, incomplete, fail)
     : formatBatchCompletionSummary(ok, partial, fail))
   await writeFile(`${batchDir}/info.json`, JSON.stringify(finalInfoEntries, null, 2))
+  if (isSttCommand(command)) {
+    await writeSttBatchManifest(batchDir, finalInfoEntries, batchSource)
+  } else if (isOcrCommand(command)) {
+    await writeOcrBatchManifest(batchDir, finalInfoEntries, batchSource)
+  }
 
   return {
     ok,

@@ -2,6 +2,7 @@ import { test, expect } from 'bun:test'
 import { runCommand, STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
 
 const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid whisper model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'whisper-large-v4'] },
@@ -57,6 +58,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--speaker-name')
   expect(result.stdout).toContain('--speaker-reference')
   expect(result.stdout).toContain('--price')
+  expect(result.stdout).toContain('--provider')
   expect(result.stdout).toContain('--elevenlabs-stt')
   expect(result.stdout).toContain('--deepgram-stt')
   expect(result.stdout).toContain('--soniox-stt')
@@ -92,6 +94,7 @@ test('ocr help includes hosted OCR flags', async () => {
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--mistral-ocr')
   expect(result.stdout).toContain('--glm-ocr')
+  expect(result.stdout).toContain('--provider')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--epub-calibre')
   expect(result.stdout).toContain('--resume-missing')
@@ -383,6 +386,14 @@ test('buildOptsFromFlags maps repeated OpenAI speaker hint flags', () => {
   expect(opts.diarizationSpeakerReferences).toEqual(['clips/host.mp3', 'clips/guest.mp3'])
 })
 
+test('buildOptsFromFlags maps repeated generic provider flags', () => {
+  const opts = buildOptsFromFlags(false, {
+    provider: ['whisper:base', 'assemblyai:universal-3-pro']
+  })
+
+  expect(opts.provider).toEqual(['whisper:base', 'assemblyai:universal-3-pro'])
+})
+
 test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
   const opts = buildOptsFromFlags(false, {
     'stt-provider-concurrency': '3',
@@ -412,6 +423,31 @@ test('collectSttTargets includes whisper only when explicitly requested alongsid
   expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
     'assemblyai:universal-2',
     'whisper:base'
+  ])
+})
+
+test('collectSttTargets merges generic provider specs with provider-specific flags without duplicates', () => {
+  const opts = buildOptsFromFlags(false, {
+    provider: ['whisper:base', 'assemblyai:universal-3-pro'],
+    'assemblyai-stt': 'universal-3-pro'
+  })
+
+  expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
+    'assemblyai:universal-3-pro',
+    'whisper:base'
+  ])
+})
+
+test('collectExplicitOcrTargets parses generic provider specs', () => {
+  const opts = buildOptsFromFlags(false, {
+    provider: ['tesseract', 'glm-ocr'],
+    'mistral-ocr': 'mistral-ocr-latest'
+  })
+
+  expect(collectExplicitOcrTargets(opts)).toEqual([
+    { service: 'mistral', model: 'mistral-ocr-latest' },
+    { service: 'tesseract', model: 'tesseract' },
+    { service: 'glm', model: 'glm-ocr' }
   ])
 })
 
@@ -525,6 +561,21 @@ test('stt accepts multiple STT providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('stt accepts generic --provider aliases in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--provider',
+    'whisper:tiny',
+    '--provider',
+    'assemblyai:universal-2',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
 test('stt accepts Deepgram plus another STT provider in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -579,6 +630,21 @@ test('ocr accepts multiple OCR providers in price mode', async () => {
     '--mistral-ocr',
     'mistral-ocr-latest',
     '--glm-ocr',
+    'glm-ocr',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('ocr accepts generic --provider aliases in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'ocr',
+    'input/examples/document/1-document.pdf',
+    '--provider',
+    'tesseract',
+    '--provider',
     'glm-ocr',
     '--price'
   ])

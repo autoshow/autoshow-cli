@@ -28,7 +28,7 @@ import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
   writeAsyncSttProgressMetadata
-} from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
+} from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'

@@ -26,7 +26,7 @@ import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import type { AggregatedPriceEstimate, ResolvedProcessTargetPlan } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
 import { dispatchResumeMissing } from '~/cli/commands/process-steps/resume-missing/resume-dispatch'
 

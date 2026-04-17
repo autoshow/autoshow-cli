@@ -3,7 +3,7 @@ import {
   ASYNC_STT_RESUME_PROBE_DELAYS_MS,
   pollAsyncSttJobUntilComplete,
   resolveAsyncSttPollDeadlineMs
-} from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
+} from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 
 const originalBunSleep = Bun.sleep
 const originalPollDeadlineOverride = process.env['AUTOSHOW_STT_POLL_DEADLINE_MS_TEST']

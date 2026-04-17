@@ -4,7 +4,7 @@ import { validateData } from '~/utils/validate/validation'
 import { ProcessingOptionsSchema, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
-import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch-coordinator'
+import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
 import { ensureDirectory, fileExists, writeFile } from '~/utils/cli-utils'
 import {

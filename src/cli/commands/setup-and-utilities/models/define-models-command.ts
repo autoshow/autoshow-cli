@@ -1,7 +1,7 @@
 import { defineCommand } from 'clerc'
 import { SUPPORTED_WHISPER_MODELS, validateWhisperModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
-import { downloadWhisperModel } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
+import { downloadWhisperModel } from '~/cli/commands/process-steps/step-2-stt/bootstrap'
 import * as l from '~/logger'
 
 const runLlamaModelDownload = async (ctx: { parameters: { model: string } }): Promise<void> => {

@@ -1,7 +1,7 @@
 import type { AutoshowConfig } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 
-const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
+const STT_PROVIDER_FLAGS = ['provider', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const

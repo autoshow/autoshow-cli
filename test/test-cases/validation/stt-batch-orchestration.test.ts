@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
-import { runSttBatch } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch'
+import { runSttBatch } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 
 const originalFetch = globalThis.fetch

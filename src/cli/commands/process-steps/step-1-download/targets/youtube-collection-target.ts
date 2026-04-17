@@ -7,7 +7,7 @@ import { isLikelyUrl, processBatch } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { validateDataSafe } from '~/utils/validate/validation'
 import { buildYtDlpListArgs, buildYtDlpFailureMessage } from '../audio/yt-dlp-options'
-import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/stt-batch/stt-batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
 
 const YtDlpPlaylistItemSchema = v.object({
   webpage_url: v.optional(v.string(), undefined),

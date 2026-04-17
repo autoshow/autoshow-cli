@@ -3,7 +3,7 @@ import type { BatchProcessResult, BatchRunOptions, RuntimeOptions } from '~/type
 import { collectSttTargets } from '../stt-targets'
 import { formatSttBatchSchedulerSummary } from './stt-batch-policy'
 import { SttBatchCoordinator } from './stt-batch-coordinator'
-import { runResumeSttMissingFromBatchDir } from './resume-stt-batch'
+import { runResumeSttMissingFromBatchDir } from '../resume'
 import { logSttBatchFinalSummary, processBatch } from '../../step-1-download/targets/target-utils'
 import { processSingleTarget } from '../../step-1-download/targets/single-target'
 

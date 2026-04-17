@@ -60,6 +60,10 @@ export const batchFlags = {
 } as const satisfies ClercFlagsDefinition
 
 export const transcriptionFlags = {
+  provider: {
+    description: 'Add STT provider selection as <provider[:model]>. Repeatable additive alias that does not replace provider-specific flags.',
+    type: [String] as [StringConstructor]
+  },
   whisper: {
     description: 'Local whisper.cpp model (free): tiny|base|small|medium|large-v3-turbo',
     type: String,
@@ -255,6 +259,10 @@ export const structuredWriteFlags = {
 } as const satisfies ClercFlagsDefinition
 
 export const extractFlags = {
+  provider: {
+    description: 'Add OCR provider selection as <provider[:model]>. Repeatable additive alias that does not replace provider-specific flags.',
+    type: [String] as [StringConstructor]
+  },
   lang: {
     description: 'Tesseract language(s) like eng+fra (default: eng)',
     type: String,

@@ -8,6 +8,7 @@ import {
 } from '~/types'
 import { validateData } from '~/utils/validate/validation'
 import { getOcrTargetDirectoryName } from './ocr-targets'
+import { readOcrRunManifestEntry } from './manifest'
 
 export type OcrCompletionStatus = 'full' | 'incomplete' | 'failed'
 
@@ -69,7 +70,8 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
   }
 
   if (
-    value['service'] !== 'ocrmypdf'
+    value['service'] !== 'tesseract'
+    && value['service'] !== 'ocrmypdf'
     && value['service'] !== 'paddle-ocr'
     && value['service'] !== 'mistral'
     && value['service'] !== 'glm'
@@ -262,18 +264,7 @@ export const readExistingOcrRun = async (
 ): Promise<ExistingOcrRun> => {
   const providerStates = new Map<string, OcrProviderState>()
   const successes: Array<OcrProviderSuccess | undefined> = new Array(requestedTargets.length)
-  const metadataPath = join(outputDir, 'metadata.json')
-  if (!await Bun.file(metadataPath).exists()) {
-    return { successes, providerStates }
-  }
-
-  let raw: unknown
-  try {
-    raw = await Bun.file(metadataPath).json()
-  } catch {
-    return { successes, providerStates }
-  }
-
+  const raw = await readOcrRunManifestEntry(outputDir)
   if (!isRecord(raw)) {
     return { successes, providerStates }
   }
