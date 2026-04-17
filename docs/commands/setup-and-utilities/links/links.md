@@ -1,6 +1,6 @@
 # links
 
-Fetch curated provider documentation pages and write one combined markdown file to `docs/links/bun-links.md`.
+Fetch curated provider documentation pages and write one combined markdown file to `project/links/bun-links.md`.
 
 ## Outline
 
@@ -27,7 +27,7 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 
 `links` reads the curated URL registry from `src/cli/commands/setup-and-utilities/links/model-links.json`, fetches every matched page, and concatenates the results into a single local file.
 
-- Output path: `docs/links/bun-links.md`
+- Output path: `project/links/bun-links.md`
 - Existing output is overwritten on each run
 - Duplicate URLs are removed before fetching, so overlapping selections only fetch once
 

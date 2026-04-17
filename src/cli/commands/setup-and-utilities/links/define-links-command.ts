@@ -15,7 +15,7 @@ type RunLinksOptions = {
 }
 
 const data = modelLinks as ModelLinksData
-export const LINKS_OUTPUT_DIR = new URL('../../../../../docs/links/', import.meta.url)
+export const LINKS_OUTPUT_DIR = new URL('../../../../../project/links/', import.meta.url)
 
 const getDefaultOutputPath = (serviceSelections: Map<string, string[]>): URL => {
   const services = [...serviceSelections.keys()]

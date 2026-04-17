@@ -472,8 +472,8 @@ Consensus report generation additionally writes artifacts such as:
 
 ### Report snapshot as of April 17, 2026
 
-The newest checked-in benchmark artifact in this repo is still
-`docs/reports/2026-03-19_09-00-06_test-run-e2e-report.md`.
+Historical benchmark artifacts belong under `project/reports/`.
+No benchmark report artifact is currently checked into this repo.
 
 As of April 17, 2026, these are still the closest recorded benchmark highlights bundled with the repo.
 They predate later additions such as Deepgram, Soniox, Speechmatics, Rev, Gladia, GLM OCR, and Firecrawl article extraction, and they also predate some current model-registry refreshes in the live flag surface.

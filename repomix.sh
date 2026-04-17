@@ -13,8 +13,8 @@ IGNORE_PATHS=(
   "new-*.md"
   "TODO.md"
   "repomix.sh"
-  "docs/reports"
-  "docs/links/bun-links.md"
+  "project/reports"
+  "project/links/bun-links.md"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

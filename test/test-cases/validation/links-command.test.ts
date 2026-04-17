@@ -91,6 +91,10 @@ test('links collector includes Gladia general and STT links', () => {
   expect(gladiaLinks).toContain('https://docs.gladia.io/api-reference/v2/pre-recorded/webhook/success.md')
 })
 
+test('links default output directory points to project/links', () => {
+  expect(decodeURIComponent(LINKS_OUTPUT_DIR.pathname).endsWith('/project/links/')).toBe(true)
+})
+
 test('links command writes combined fetched markdown to a single file', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-links-'))
   tempDirs.push(tempDir)
