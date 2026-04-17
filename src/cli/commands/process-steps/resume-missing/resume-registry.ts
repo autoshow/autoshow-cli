@@ -47,7 +47,10 @@ const sttResumeAdapter: ResumeAdapter = {
     const selectedTargets = STT_PROVIDER_SELECTION_FLAGS.some((flag) => explicitFlags.has(flag))
       ? collectSttTargets(opts)
       : undefined
-    return await resolveResumeSttBatchDir(batchDirInput, selectedTargets)
+    return await resolveResumeSttBatchDir(batchDirInput, selectedTargets, {
+      youtubeCaptions: opts.youtubeCaptions,
+      currentTargets: collectSttTargets(opts)
+    })
   },
   resume: async (batchDir, opts, explicitFlags) => {
     const selectedTargets = STT_PROVIDER_SELECTION_FLAGS.some((flag) => explicitFlags.has(flag))

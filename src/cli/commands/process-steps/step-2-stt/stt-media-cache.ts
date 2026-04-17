@@ -321,14 +321,16 @@ const resolveCacheLookup = async (
     return {
       cacheKey: sha256(`stream|${canonicalUrl}|${sourceId}`),
       weakFingerprint: false,
-      metadata
+      metadata,
+      ...(videoInfo ? { sourceVideoInfo: videoInfo } : {})
     }
   }
 
   return {
     cacheKey: sha256(`stream|${canonicalUrl}`),
     weakFingerprint: true,
-    metadata
+    metadata,
+    ...(videoInfo ? { sourceVideoInfo: videoInfo } : {})
   }
 }
 
@@ -553,6 +555,7 @@ export const prepareSttMedia = async (
 
       return {
         metadata: cacheLookup.metadata,
+        ...(cacheLookup.sourceVideoInfo ? { sourceVideoInfo: cacheLookup.sourceVideoInfo } : {}),
         step1Metadata,
         durationSeconds,
         executionArtifacts: {
@@ -679,6 +682,7 @@ export const prepareSttMedia = async (
 
       return {
         metadata: cacheLookup.metadata,
+        ...(cacheLookup.sourceVideoInfo ? { sourceVideoInfo: cacheLookup.sourceVideoInfo } : {}),
         step1Metadata,
         durationSeconds: entry.durationSeconds ?? 0,
         executionArtifacts: {

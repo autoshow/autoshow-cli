@@ -76,6 +76,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--speaker-count')
   expect(result.stdout).toContain('--speaker-name')
   expect(result.stdout).toContain('--speaker-reference')
+  expect(result.stdout).toContain('--youtube-captions')
   expect(result.stdout).toContain('--price')
   expect(result.stdout).not.toContain('--provider')
   expect(result.stdout).toContain('--elevenlabs-stt')
@@ -387,6 +388,14 @@ test('buildOptsFromFlags maps --deepgram-stt to deepgramSttModel', () => {
   })
 
   expect(opts.deepgramSttModel).toBe('nova-3')
+})
+
+test('buildOptsFromFlags maps --youtube-captions to youtubeCaptions', () => {
+  const opts = buildOptsFromFlags(false, {
+    'youtube-captions': true
+  })
+
+  expect(opts.youtubeCaptions).toBe(true)
 })
 
 test('buildOptsFromFlags maps --glm-ocr to glmOcrModel', () => {

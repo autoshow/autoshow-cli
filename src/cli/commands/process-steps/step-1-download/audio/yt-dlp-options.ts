@@ -143,6 +143,30 @@ export const buildYtDlpMetadataArgs = async (url: string): Promise<string[]> => 
   ]
 }
 
+export const buildYtDlpSubtitleDownloadArgs = async (
+  url: string,
+  outputDir: string,
+  captionKind: 'manual' | 'auto'
+): Promise<string[]> => {
+  const sharedArgs = await buildSharedYtDlpArgs()
+
+  return [
+    '--skip-download',
+    ...(captionKind === 'manual' ? ['--write-subs'] : ['--write-auto-subs']),
+    '--sub-langs',
+    'en.*,en',
+    '--sub-format',
+    'vtt/best',
+    '--convert-subs',
+    'vtt',
+    '--output',
+    `${outputDir}/youtube-captions.%(ext)s`,
+    '--no-playlist',
+    ...sharedArgs,
+    url
+  ]
+}
+
 export const buildYtDlpListArgs = async (
   url: string,
   options: YtDlpListOptions = {}
@@ -165,7 +189,7 @@ export const buildYtDlpListArgs = async (
 }
 
 export const buildYtDlpFailureMessage = (
-  operation: 'download' | 'metadata' | 'list',
+  operation: 'download' | 'metadata' | 'list' | 'subtitles',
   details: string
 ): string => {
   const cleanDetails = (details || 'unknown yt-dlp error').trim()

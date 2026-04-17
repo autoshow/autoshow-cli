@@ -28,6 +28,13 @@ Each provider file uses the shared `defineSTTServiceTest` helper, which currentl
 - `--price` output
 - real transcription when the required API key is configured
 
+YouTube caption-first mode is covered by validation tests instead of provider E2E runs because it is a synthetic zero-cost transcript source, not a hosted STT API. The main coverage lives in:
+- `test/test-cases/validation/youtube-captions.test.ts`
+- `test/test-cases/validation/yt-dlp-options.test.ts`
+- `test/test-cases/validation/stt-resume-batch.test.ts`
+- `test/test-cases/validation/compute-costs.test.ts`
+- `test/test-cases/validation/model-options.test.ts`
+
 ## E2E Services
 
 ```bash

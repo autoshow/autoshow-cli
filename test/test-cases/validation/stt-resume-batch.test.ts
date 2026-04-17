@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { discoverLatestResumableSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume'
+import { YOUTUBE_CAPTIONS_MODEL, YOUTUBE_CAPTIONS_SERVICE } from '~/cli/commands/process-steps/step-2-stt/youtube-captions'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import {
   readBatchItems,
@@ -244,6 +245,106 @@ test('discoverLatestResumableSttBatchDir skips newer incompatible batches when p
   expect(await discoverLatestResumableSttBatchDir(outputRoot, [
     { service: 'rev', model: 'machine', local: false, diarizationOptions: { enabled: true } }
   ])).toBe(expectedBatchDir)
+})
+
+test('discoverLatestResumableSttBatchDir treats caption-backed completion as complete when --youtube-captions is active', async () => {
+  const outputRoot = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-youtube-captions-on-'))
+  tempDirs.push(outputRoot)
+
+  const batchDir = await createResumeDiscoveryBatch(outputRoot, '2026-04-16_09-00-00-000_files', {
+    step1: {
+      title: 'youtube-caption-complete',
+      duration: '00:00:10',
+      author: 'Local',
+      description: '',
+      url: 'https://www.youtube.com/watch?v=abc123',
+      slug: 'youtube-caption-complete',
+      audioFileName: 'youtube-caption-complete.mp3',
+      audioFileSize: 1234
+    },
+    step2: [
+      {
+        transcriptionService: YOUTUBE_CAPTIONS_SERVICE,
+        transcriptionModel: YOUTUBE_CAPTIONS_MODEL,
+        processingTime: 100,
+        tokenCount: 20,
+        captionKind: 'manual',
+        captionLanguage: 'en',
+        captionFormat: 'vtt'
+      }
+    ],
+    completionStatus: 'full',
+    requestedProviders: [
+      { service: YOUTUBE_CAPTIONS_SERVICE, model: YOUTUBE_CAPTIONS_MODEL, local: false }
+    ],
+    providerStates: [
+      {
+        service: YOUTUBE_CAPTIONS_SERVICE,
+        model: YOUTUBE_CAPTIONS_MODEL,
+        local: false,
+        status: 'succeeded'
+      }
+    ],
+    missingProviders: []
+  })
+
+  expect(await discoverLatestResumableSttBatchDir(outputRoot, undefined, {
+    youtubeCaptions: true,
+    currentTargets: []
+  })).toBeUndefined()
+
+  expect(batchDir).toContain('2026-04-16_09-00-00-000_files')
+})
+
+test('discoverLatestResumableSttBatchDir treats caption-backed completion as incomplete when --youtube-captions is disabled', async () => {
+  const outputRoot = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-youtube-captions-off-'))
+  tempDirs.push(outputRoot)
+
+  const batchDir = await createResumeDiscoveryBatch(outputRoot, '2026-04-16_09-00-00-000_files', {
+    step1: {
+      title: 'youtube-caption-rerun',
+      duration: '00:00:10',
+      author: 'Local',
+      description: '',
+      url: 'https://www.youtube.com/watch?v=abc123',
+      slug: 'youtube-caption-rerun',
+      audioFileName: 'youtube-caption-rerun.mp3',
+      audioFileSize: 1234
+    },
+    step2: [
+      {
+        transcriptionService: YOUTUBE_CAPTIONS_SERVICE,
+        transcriptionModel: YOUTUBE_CAPTIONS_MODEL,
+        processingTime: 100,
+        tokenCount: 20,
+        captionKind: 'manual',
+        captionLanguage: 'en',
+        captionFormat: 'vtt'
+      }
+    ],
+    completionStatus: 'full',
+    requestedProviders: [
+      { service: YOUTUBE_CAPTIONS_SERVICE, model: YOUTUBE_CAPTIONS_MODEL, local: false }
+    ],
+    providerStates: [
+      {
+        service: YOUTUBE_CAPTIONS_SERVICE,
+        model: YOUTUBE_CAPTIONS_MODEL,
+        local: false,
+        status: 'succeeded'
+      }
+    ],
+    missingProviders: []
+  })
+
+  const currentTargets = [
+    { service: 'deepgram' as const, model: 'nova-3', local: false, diarizationOptions: { enabled: true } }
+  ]
+
+  expect(await discoverLatestResumableSttBatchDir(outputRoot, currentTargets, {
+    youtubeCaptions: false,
+    currentTargets
+  })).toBe(batchDir)
 })
 
 test('resumeSttMissingFromBatchDir reruns only missing providers into the existing outputDir', async () => {

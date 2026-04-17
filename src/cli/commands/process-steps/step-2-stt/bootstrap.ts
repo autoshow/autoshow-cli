@@ -33,11 +33,16 @@ const toBootstrapProviderId = (
       return 'assemblyai-stt'
     case 'gladia':
       return 'gladia-stt'
+    case 'youtube-captions':
+      return ''
   }
 }
 
 export const ensureSttTargetSetup = async (
   target: Pick<SttTarget, 'service' | 'model'>
 ): Promise<void> => {
+  if (target.service === 'youtube-captions') {
+    return
+  }
   await ensureProviderReady(toBootstrapProviderId(target))
 }

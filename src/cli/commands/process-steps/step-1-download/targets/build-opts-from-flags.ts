@@ -232,6 +232,7 @@ export const buildOptsFromFlags = (
 
   return {
     useReverb: readBooleanFlag(mergedFlags, 'reverb'),
+    youtubeCaptions: readBooleanFlag(mergedFlags, 'youtube-captions'),
     whisperExplicit: explicitFlags.has('whisper'),
     llamaModel,
     openaiModel,

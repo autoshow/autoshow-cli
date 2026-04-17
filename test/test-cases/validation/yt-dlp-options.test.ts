@@ -8,6 +8,7 @@ import {
   buildYtDlpFailureMessage,
   buildYtDlpListArgs,
   buildYtDlpMetadataArgs,
+  buildYtDlpSubtitleDownloadArgs,
   inspectYtDlpAuthState,
   resetYtDlpOptionWarningStateForTests
 } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-options'
@@ -161,6 +162,44 @@ describe('yt-dlp option builders', () => {
       '--cookies-from-browser',
       'firefox',
       'https://example.com/@channel/videos'
+    ])
+  })
+
+  test('builds subtitle download args for manual and auto YouTube captions', async () => {
+    process.env['YTDLP_COOKIES_FROM_BROWSER'] = 'firefox'
+
+    await expect(buildYtDlpSubtitleDownloadArgs('https://example.com/watch?v=abc', '/tmp/out', 'manual')).resolves.toEqual([
+      '--skip-download',
+      '--write-subs',
+      '--sub-langs',
+      'en.*,en',
+      '--sub-format',
+      'vtt/best',
+      '--convert-subs',
+      'vtt',
+      '--output',
+      '/tmp/out/youtube-captions.%(ext)s',
+      '--no-playlist',
+      '--cookies-from-browser',
+      'firefox',
+      'https://example.com/watch?v=abc'
+    ])
+
+    await expect(buildYtDlpSubtitleDownloadArgs('https://example.com/watch?v=abc', '/tmp/out', 'auto')).resolves.toEqual([
+      '--skip-download',
+      '--write-auto-subs',
+      '--sub-langs',
+      'en.*,en',
+      '--sub-format',
+      'vtt/best',
+      '--convert-subs',
+      'vtt',
+      '--output',
+      '/tmp/out/youtube-captions.%(ext)s',
+      '--no-playlist',
+      '--cookies-from-browser',
+      'firefox',
+      'https://example.com/watch?v=abc'
     ])
   })
 

@@ -120,9 +120,13 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     return [ocrArtifact, ...ocrExportArtifacts, 'run.json']
   }
   if (isSttCommand(command)) {
-    return collectSttTargets(opts).length > 1
+    const files = collectSttTargets(opts).length > 1
       ? ['Shared audio artifact(s)', 'providers/<service>-<model>/transcription.txt', 'providers/<service>-<model>/result.json', 'prompt.md', 'run.json']
       : ['Audio file', 'transcription.txt', 'prompt.md', 'run.json']
+    if (opts.youtubeCaptions) {
+      files.splice(files.length - 2, 0, 'youtube-captions.vtt (when available)', 'youtube-captions.json (when available)')
+    }
+    return files
   }
   const summaryFile = 'text.json'
   const documentWrite = command === 'write'
@@ -158,6 +162,10 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   }
   if (opts.elevenlabsMusicModel || opts.minimaxMusicModel) {
     files.push('Music file')
+  }
+  if (opts.youtubeCaptions) {
+    files.push('youtube-captions.vtt (when available)')
+    files.push('youtube-captions.json (when available)')
   }
   files.push('prompt.md')
   files.push('run.json')

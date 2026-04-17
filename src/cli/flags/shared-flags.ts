@@ -59,6 +59,12 @@ export const transcriptionFlags = {
     type: String,
     default: 'tiny'
   },
+  'youtube-captions': {
+    description: 'Prefer English YouTube captions before STT when available; falls back to the normal STT provider path',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   reverb: {
     description: 'Use Reverb ASR for transcription',
     type: Boolean,

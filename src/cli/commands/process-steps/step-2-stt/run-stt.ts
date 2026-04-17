@@ -297,6 +297,10 @@ const dispatchStt = async (
     })
   }
 
+  if (target.service === 'youtube-captions') {
+    throw new Error('youtube-captions is resolved before STT provider dispatch')
+  }
+
   assertNever(target.service)
 }
 

@@ -288,7 +288,7 @@ describe('STT runtime helpers', () => {
   })
 
   test('Groq STT bootstrap no longer reports unsupported provider', async () => {
-    const hasGroqApiKey = typeof process.env.GROQ_API_KEY === 'string' && process.env.GROQ_API_KEY.length > 0
+    const hasGroqApiKey = typeof process.env['GROQ_API_KEY'] === 'string' && process.env['GROQ_API_KEY'].length > 0
 
     try {
       await ensureSttTargetSetup({

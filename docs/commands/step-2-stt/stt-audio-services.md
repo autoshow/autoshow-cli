@@ -1,6 +1,6 @@
 # stt (services)
 
-Download audio and transcribe it with the hosted STT providers.
+Download audio and transcribe it with the hosted STT providers, or opt into a YouTube caption-first transcript source.
 
 ## Outline
 
@@ -33,9 +33,11 @@ The input routing is the same as local `stt`: direct media URLs, streaming URLs,
 | Mistral | `--mistral-stt <model>` | `voxtral-mini-2602` |
 | AssemblyAI | `--assemblyai-stt <model>` | `universal-3-pro` |
 | Gladia | `--gladia-stt <model>` | `default` |
+| YouTube captions | `--youtube-captions` | synthetic `subtitle-track` |
 
 You can combine multiple hosted STT provider flags in one execution. Each selected provider writes its own transcript and metadata under `providers/<service>-<model>/`.
 If you omit the model value after a hosted STT flag, the CLI now resolves that provider to its cheapest supported model.
+`--youtube-captions` is opt-in and only applies to direct YouTube watch URLs plus YouTube items resolved from channel, playlist, and feed batches. When enabled, step 2 prefers manual English captions first, then auto-generated English captions, and only falls back to the selected STT providers when no acceptable English VTT track is available.
 
 ## Examples
 
@@ -96,6 +98,9 @@ bun as stt input/examples/audio/1-audio.mp3 --gladia-stt
 # Gladia with an exact speaker-count hint
 bun as stt input/examples/audio/1-audio.mp3 --gladia-stt default --speaker-count 2
 
+# Prefer YouTube English captions, but fall back to Deepgram if no usable caption track exists
+bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
+
 # Multi-provider batch
 bun as stt input/ajc --batch-all \
   --batch-concurrency 3 \
@@ -141,6 +146,7 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 | `--speaker-count <n>` | Speaker-count hint for providers that support it |
 | `--speaker-name <name...>` | OpenAI known speaker names. Repeat in the same order as `--speaker-reference` |
 | `--speaker-reference <path...>` | OpenAI known speaker reference clips or data URLs. Repeat in the same order as `--speaker-name` |
+| `--youtube-captions` | For YouTube inputs only, prefer manual English captions first and auto English captions second before running STT providers |
 | `--prompt <name...>` | Named prompt(s) from `src/prompts/entries/*.json` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
@@ -166,6 +172,9 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 - Deepgram, Soniox, Speechmatics, Rev, Mistral, Groq, local engines, and count-only OpenAI diarization ignore `--speaker-count`; the CLI now emits one aggregated warning that lists which selected providers honor the hint and which ignore it.
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - OpenAI known speaker references support up to 4 speakers. Each reference clip should be about 2-10 seconds.
+- `--youtube-captions` is English-only in v1. Caption-backed runs write `youtube-captions.vtt` and `youtube-captions.json` at the output root and under `providers/youtube-captions-subtitle-track/`.
+- When captions are found, the selected STT providers are skipped for that item and step 2 is recorded as `youtube-captions/subtitle-track`, so `--price` reports zero STT cost for the transcript source actually used.
+- Re-running a caption-backed batch with `--youtube-captions` treats the saved caption result as complete. Re-running the same batch without `--youtube-captions` treats that item as incomplete and dispatches the normal STT providers instead.
 - In multi-item batch mode with more than one hosted STT provider active, the batch scheduler keeps one in-flight item per provider/model and uses free provider slots across items before waiting behind a busy provider. `--stt-provider-concurrency` remains the per-item upper bound.
 - Async hosted STT providers now use a shorter default poll budget: `max(10m, audio duration * 250ms)` capped at `30m`, unless `AUTOSHOW_STT_POLL_DEADLINE_MS` or the provider-specific override is set.
 - Multi-item multi-provider STT batches now do one automatic retry-only backfill sweep in the same invocation. Retryable missing provider outputs are rerun from the batch manifest before the command exits, and persisted async jobs are resumed with short bounded status probes instead of another long poll window.

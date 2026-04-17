@@ -7,6 +7,7 @@ export const ProcessingOptionsSchema = v.pipe(
     url: v.optional(v.pipe(v.string(), v.url()), undefined),
     filePath: v.optional(v.string(), undefined),
     whisperModel: v.string(),
+    youtubeCaptions: v.optional(v.boolean(), undefined),
     groqSttModel: v.optional(v.string(), undefined),
     elevenlabsSttModel: v.optional(v.string(), undefined),
     sonioxSttModel: v.optional(v.string(), undefined),
@@ -112,6 +113,12 @@ const YtDlpChapterSchema = v.object({
   title: v.optional(v.string(), undefined)
 })
 
+const YtDlpSubtitleTrackSchema = v.object({
+  ext: v.string(),
+  url: v.string(),
+  name: v.optional(v.string(), undefined)
+})
+
 export const YtDlpVideoInfoSchema = v.object({
   id: v.optional(v.string(), undefined),
   title: v.optional(v.string(), undefined),
@@ -122,7 +129,9 @@ export const YtDlpVideoInfoSchema = v.object({
   description: v.optional(v.string(), undefined),
   upload_date: v.optional(v.string(), undefined),
   thumbnail: v.optional(v.string(), undefined),
-  chapters: v.optional(v.array(YtDlpChapterSchema), undefined)
+  chapters: v.optional(v.array(YtDlpChapterSchema), undefined),
+  subtitles: v.optional(v.record(v.string(), v.array(YtDlpSubtitleTrackSchema)), undefined),
+  automatic_captions: v.optional(v.record(v.string(), v.array(YtDlpSubtitleTrackSchema)), undefined)
 })
 
 export type ProcessingOptions = v.InferOutput<typeof ProcessingOptionsSchema>
@@ -415,10 +424,13 @@ export type Step2RuntimeMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number
+  captionKind?: 'manual' | 'auto' | undefined
+  captionLanguage?: string | undefined
+  captionFormat?: 'vtt' | undefined
   timings?: Step2TimingMetadata | undefined
   runtime?: Step2RuntimeMetadata | undefined
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { parseDurationToSeconds, computeEstimatedCosts, computeActualCosts } from '~/utils/pricing/compute-costs'
-import { computeActualProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 
 describe('parseDurationToSeconds', () => {
   test('returns 0 for empty string', () => {
@@ -139,6 +139,20 @@ describe('computeEstimatedCosts STT routing', () => {
     ])
   })
 
+  test('youtube-captions estimate is zero-cost when selected explicitly', () => {
+    const result = computeEstimatedCosts({
+      sttTargets: [
+        { service: 'youtube-captions', model: 'subtitle-track' }
+      ],
+      audioDurationSeconds: 60
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('youtube-captions')
+    expect(sttStep?.model).toBe('subtitle-track')
+    expect(sttStep?.cost).toBe(0)
+  })
+
   test('no STT step when no model set and useReverb is false', () => {
     const result = computeEstimatedCosts({ audioDurationSeconds: 60 })
     const sttSteps = result.steps.filter(s => s.step === 'stt')
@@ -222,6 +236,35 @@ describe('computeActualCosts STT', () => {
       'rev:machine'
     ])
     expect(sttSteps[3]?.cost).toBeCloseTo(20 / 60, 8)
+  })
+
+  test('youtube-captions actual STT cost stays zero', () => {
+    const result = computeActualCosts({
+      step1: {
+        url: 'https://www.youtube.com/watch?v=abc123',
+        duration: '1:00',
+        title: 'Test',
+        description: '',
+        author: '',
+        slug: 'test',
+        audioFileName: 'test.mp3',
+        audioFileSize: 0
+      },
+      step2: {
+        transcriptionService: 'youtube-captions',
+        transcriptionModel: 'subtitle-track',
+        processingTime: 250,
+        tokenCount: 50,
+        captionKind: 'manual',
+        captionLanguage: 'en',
+        captionFormat: 'vtt'
+      }
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('youtube-captions')
+    expect(sttStep?.model).toBe('subtitle-track')
+    expect(sttStep?.cost).toBe(0)
   })
 
   test('computes Rev actual cost without extra minimum billing above 15 seconds', () => {
@@ -451,5 +494,19 @@ describe('computeActualCosts extract routing', () => {
       'mistral:mistral-ocr-2512',
       'glm:glm-ocr'
     ])
+  })
+
+  test('youtube-captions estimated timing stays zero', () => {
+    const result = computeEstimatedProcessingTimes({
+      sttTargets: [
+        { service: 'youtube-captions', model: 'subtitle-track' }
+      ],
+      audioDurationSeconds: 60
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('youtube-captions')
+    expect(sttStep?.model).toBe('subtitle-track')
+    expect(sttStep?.processingTimeMs).toBe(0)
   })
 })

@@ -42,6 +42,7 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { serializeOneOrMany } from './target-runner'
 import { classifySttProviderFailure, prioritizeCloudSttTargetIndices, selectPrimaryPromptProvider } from './process-stt'
 import { writeProviderResult, writeRunManifest } from './manifest-utils'
+import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-stt/youtube-captions'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
 
@@ -92,7 +93,7 @@ export const processVideo = async (
   }
   const sttTargets = collectSttTargets(processingOptions as unknown as RuntimeOptions)
   let preparedSttMedia: Awaited<ReturnType<typeof prepareSttMedia>> | undefined
-  let transcriptionResult: { result: TranscriptionResult, metadata: Step2Metadata | Step2Metadata[] }
+  let transcriptionResult: { result: TranscriptionResult, metadata: Step2Metadata | Step2Metadata[] } | undefined
   let successfulSttProviders: SttProviderSuccess[] = []
   let sttFailures: Array<{
     service: string
@@ -120,7 +121,27 @@ export const processVideo = async (
     const sourceMetadata = preparedSttMedia.metadata
     const audioPath = preparedSttMedia.executionArtifacts.sourceMediaPath
 
-    if (sttTargets.length === 1) {
+    if (processingOptions.youtubeCaptions && processingOptions.url) {
+      const captionTranscription = await tryResolveYoutubeCaptionTranscription(
+        processingOptions.url,
+        outputDir,
+        preparedSttMedia.sourceVideoInfo
+      )
+
+      if (captionTranscription) {
+        if (sttTargets.length > 0) {
+          l.info(`YouTube captions selected; skipping requested STT providers: ${sttTargets.map((target) => `${target.service}/${target.model}`).join(', ')}`)
+        }
+
+        transcriptionResult = {
+          result: captionTranscription.result,
+          metadata: captionTranscription.metadata
+        }
+        successfulSttProviders = [captionTranscription]
+      }
+    }
+
+    if (successfulSttProviders.length === 0 && sttTargets.length === 1) {
       const target = sttTargets[0] as SttTarget
       const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
         await sttTarget(audioPath, outputDir, target, {
@@ -135,7 +156,7 @@ export const processVideo = async (
         metadata: singleTranscription.metadata,
         result: singleTranscription.result
       }]
-    } else {
+    } else if (successfulSttProviders.length === 0) {
       const providersDir = `${outputDir}/providers`
       await mkdir(providersDir, { recursive: true })
 
@@ -211,23 +232,28 @@ export const processVideo = async (
       }
     }
 
-    let step3RunResults: StructuredRunResult[] = []
-    let step3Results: Step3Metadata[] = []
-    if (processingOptions.skipLLM) {
-      await runWithLogContext({ step: 'step-3-write' }, async () => {
-        const promptPath = `${outputDir}/prompt.md`
-        const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
-          exampleFormat: 'json'
-        })
-        const promptContent = buildPrompt(sourceMetadata, transcriptionResult.result, instruction, step1Metadata.slug)
-        await Bun.write(promptPath, promptContent)
+  if (!transcriptionResult) {
+    throw new Error('No transcription result was produced for the write pipeline')
+  }
+  const finalizedTranscriptionResult = transcriptionResult
+
+  let step3RunResults: StructuredRunResult[] = []
+  let step3Results: Step3Metadata[] = []
+  if (processingOptions.skipLLM) {
+    await runWithLogContext({ step: 'step-3-write' }, async () => {
+      const promptPath = `${outputDir}/prompt.md`
+      const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
+        exampleFormat: 'json'
       })
-    } else {
-      step3RunResults = await runWithLogContext({ step: 'step-3-write' }, async () =>
-        await runLLM(sourceMetadata, transcriptionResult.result, processingOptions, step1Metadata.slug)
-      )
-      step3Results = step3RunResults.map((result) => result.metadata)
-    }
+      const promptContent = buildPrompt(sourceMetadata, finalizedTranscriptionResult.result, instruction, step1Metadata.slug)
+      await Bun.write(promptPath, promptContent)
+    })
+  } else {
+    step3RunResults = await runWithLogContext({ step: 'step-3-write' }, async () =>
+      await runLLM(sourceMetadata, finalizedTranscriptionResult.result, processingOptions, step1Metadata.slug)
+    )
+    step3Results = step3RunResults.map((result) => result.metadata)
+  }
 
   let step4Metadata: Step4Metadata[] | null = null
   let step5Metadata: Step5Metadata[] | null = null
@@ -309,9 +335,12 @@ export const processVideo = async (
   const llmOutputTokenCount = step3Results.length > 0
     ? step3Results.reduce((sum, s3) => sum + s3.outputTokenCount, 0)
     : undefined
-  const selectedSttTargets = sttTargets.map((target) => ({
-    service: target.service,
-    model: target.model
+  const step2EntriesForEstimation = Array.isArray(transcriptionResult.metadata)
+    ? transcriptionResult.metadata
+    : [transcriptionResult.metadata]
+  const selectedSttTargets = step2EntriesForEstimation.map((entry) => ({
+    service: entry.transcriptionService,
+    model: entry.transcriptionModel
   }))
 
   const estimated = preflightEstimate
@@ -497,6 +526,10 @@ export const processVideo = async (
   const artifactFiles: Record<string, string> = {
     audio: step1Metadata.audioFileName,
     transcript: 'transcription.txt'
+  }
+  if (step2Entries.some((entry) => entry.transcriptionService === YOUTUBE_CAPTIONS_SERVICE)) {
+    artifactFiles['captions'] = 'youtube-captions.vtt'
+    artifactFiles['captionMetadata'] = 'youtube-captions.json'
   }
   if (successfulSttProviders.length > 1) {
     for (const provider of successfulSttProviders) {

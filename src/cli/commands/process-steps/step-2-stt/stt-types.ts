@@ -4,6 +4,7 @@ import type {
   DiarizationOptions,
   GladiaStatusResponse,
   ProcessingOptions,
+  YtDlpVideoInfo,
   RetryClass,
   Step1Metadata,
   Step2Metadata,
@@ -79,6 +80,7 @@ export type CacheLookup = {
   cacheKey: string
   weakFingerprint: boolean
   metadata: VideoMetadata
+  sourceVideoInfo?: YtDlpVideoInfo | undefined
 }
 
 export type AcquireArtifactOptions = {
@@ -91,6 +93,7 @@ export type AcquireArtifactOptions = {
 
 export type PreparedSttMedia = {
   metadata: VideoMetadata
+  sourceVideoInfo?: YtDlpVideoInfo | undefined
   step1Metadata: Step1Metadata
   durationSeconds: number
   executionArtifacts: {

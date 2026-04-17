@@ -4,10 +4,20 @@ import {
   selectCheapestLlmModel,
   selectCheapestSttModel,
   selectCheapestTtsModel,
+  type CheapestVideoSelection,
   selectCheapestVideoSelection
 } from '../../src/cli/commands/setup-and-utilities/models/cheapest-models'
 import type { ApiCheapPriceCommand, VideoSelection } from '../../src/types/tests-dir-types'
 export type { ApiCheapPriceCommand } from '../../src/types/tests-dir-types'
+
+const toVideoSelection = (selection: CheapestVideoSelection): VideoSelection => ({
+  provider: selection.provider,
+  model: selection.model,
+  duration: selection.duration,
+  ...(selection.size ? { size: selection.size } : {}),
+  ...(selection.resolution ? { resolution: selection.resolution } : {}),
+  totalCost: selection.totalCost
+})
 
 export const buildApiCheapSelections = () => {
   const llmSelections = [
@@ -43,8 +53,8 @@ export const buildApiCheapSelections = () => {
   ]
 
   const videoSelections = [
-    selectCheapestVideoSelection('gemini'),
-    selectCheapestVideoSelection('minimax')
+    toVideoSelection(selectCheapestVideoSelection('gemini')),
+    toVideoSelection(selectCheapestVideoSelection('minimax'))
   ] satisfies VideoSelection[]
 
   const extractSelections = [

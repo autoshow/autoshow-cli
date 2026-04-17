@@ -45,7 +45,7 @@ export type OpenAITranscriptionDiarizedResponse = {
   segments?: unknown
 }
 
-export type TranscribeEngine = 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia' | 'whisper'
+export type TranscribeEngine = 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia' | 'whisper' | 'youtube-captions'
 
 export type TranscribeEngineCapabilities = {
   diarizationByDefault: boolean

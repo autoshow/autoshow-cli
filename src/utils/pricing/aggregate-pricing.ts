@@ -10,6 +10,7 @@ import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/vi
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-duration'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-stt/stt-utils/elevenlabs-stt-pricing'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { resolveYoutubeCaptionEstimateTargets } from '~/cli/commands/process-steps/step-2-stt/youtube-captions'
 import {
   getExtractEstimation,
   getImageEstimation,
@@ -51,7 +52,12 @@ const buildSttEstimates = async (
   resolvedTarget: string,
   opts: RuntimeOptions
 ): Promise<SttStepEstimate[]> => {
-  const targets = collectSttTargets(opts)
+  const captionTargets = opts.youtubeCaptions && /^https?:\/\//i.test(resolvedTarget)
+    ? await resolveYoutubeCaptionEstimateTargets(resolvedTarget)
+    : null
+  const targets = captionTargets
+    ? captionTargets.map((target) => ({ ...target, local: false }))
+    : collectSttTargets(opts)
   if (targets.length === 0) {
     return []
   }

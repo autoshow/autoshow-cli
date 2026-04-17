@@ -375,6 +375,7 @@ const processMediaSingle = async (
   const baseOptions: Record<string, unknown> = {
     ...(isUrl ? { url: target } : exists ? { filePath: target } : { url: target }),
     whisperModel: llmDefaults.whisperModel,
+    youtubeCaptions: llmDefaults.youtubeCaptions,
     groqSttModel: llmDefaults.groqSttModel,
     elevenlabsSttModel: llmDefaults.elevenlabsSttModel,
     deepgramSttModel: llmDefaults.deepgramSttModel,

@@ -49,7 +49,11 @@ import {
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
-import { CLIUsageError } from '~/utils/error-handler'
+import {
+  readStoredYoutubeCaptionSuccess,
+  tryResolveYoutubeCaptionTranscription,
+  YOUTUBE_CAPTIONS_SERVICE
+} from './step-2-stt/youtube-captions'
 
 export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/batch'
 export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from '~/types'
@@ -586,11 +590,83 @@ export const processStt = async (
     l.info(buildAcquireSummary(prepared.step1Metadata.slug, prepared))
     logSpeakerCountHintSummary(requestedTargets, options.diarizationSpeakerCount)
 
-    if (requestedTargets.length === 1) {
-      if (runOptions.outputDir) {
-        throw CLIUsageError('--resume-missing currently supports only STT batches that originally requested multiple providers.')
-      }
+    if (options.youtubeCaptions && source.url) {
+      const captionTranscription = await readStoredYoutubeCaptionSuccess(outputDir)
+        ?? await tryResolveYoutubeCaptionTranscription(source.url, outputDir, prepared.sourceVideoInfo)
 
+      if (captionTranscription) {
+        if (requestedTargets.length > 0) {
+          l.info(`YouTube captions selected; skipping requested STT providers: ${requestedTargets.map(formatSttTargetLabel).join(', ')}`)
+        }
+
+        await buildPromptFile(outputDir, prepared.metadata, captionTranscription.result, prepared.step1Metadata.slug, {
+          prompts: options.prompts,
+          promptSourceProvider: buildProviderModelLabel(captionTranscription.metadata)
+        })
+
+        const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], prepared.durationSeconds))
+        const actual = computeActualCosts({
+          step1: prepared.step1Metadata,
+          step2: captionTranscription.metadata
+        })
+        const cost = { estimated, actual }
+        const estimatedTiming = computeEstimatedProcessingTimes({
+          sttTargets: [{
+            service: captionTranscription.target.service,
+            model: captionTranscription.target.model
+          }],
+          audioDurationSeconds: prepared.durationSeconds
+        })
+        const actualTiming = computeActualProcessingTimes({
+          audioDurationSeconds: prepared.durationSeconds,
+          step2: captionTranscription.metadata
+        })
+        const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+          ? { estimated: estimatedTiming, actual: actualTiming }
+          : undefined
+
+        const metadataJson = JSON.stringify({
+          step1: prepared.step1Metadata,
+          step2: captionTranscription.metadata,
+          completionStatus: 'full' as SttCompletionStatus,
+          requestedProviders: [toRequestedProvider(captionTranscription.target)],
+          providerStates: [{
+            service: captionTranscription.target.service,
+            model: captionTranscription.target.model,
+            local: captionTranscription.target.local,
+            artifactDir: captionTranscription.relativeDir ?? '.',
+            status: 'succeeded',
+            attempts: 1
+          }],
+          missingProviders: [],
+          cost,
+          ...(timing ? { timing } : {})
+        }, null, 2)
+        await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
+        const metadataPath = `${outputDir}/run.json`
+        l.info(`Run manifest: ${metadataPath}`)
+        l.debug(`Run manifest:\n${metadataJson}`)
+
+        const artifactFiles: Record<string, string> = {
+          audio: prepared.step1Metadata.audioFileName,
+          transcript: 'transcription.txt',
+          captions: 'youtube-captions.vtt',
+          captionMetadata: 'youtube-captions.json',
+          prompt: 'prompt.md',
+          run: 'run.json'
+        }
+
+        l.report.complete(outputDir, artifactFiles, {
+          steps: buildSingleStepSummaries(acquisitionTimeMs, captionTranscription.metadata, actual),
+          totalTimeMs: Date.now() - processStart,
+          totalCost: actual.totalCost
+        })
+
+        return outputDir
+      }
+    }
+
+    if (requestedTargets.length === 1) {
       const target = requestedTargets[0] as SttTarget
       const audioPath = resolveTargetAudioPath(target, prepared)
       const transcription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
@@ -1029,14 +1105,18 @@ export const processStt = async (
       }))
     ]
 
-    if (completionStatus === 'full') {
-      const artifactFiles: Record<string, string> = {
-        prompt: 'prompt.md',
-        run: 'run.json'
-      }
-      artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
-      for (const entry of successfulProviders) {
-        const dir = entry.relativeDir as string
+      if (completionStatus === 'full') {
+        const artifactFiles: Record<string, string> = {
+          prompt: 'prompt.md',
+          run: 'run.json'
+        }
+        artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
+        if (successfulProviders.some((entry) => entry.metadata.transcriptionService === YOUTUBE_CAPTIONS_SERVICE)) {
+          artifactFiles['captions'] = 'youtube-captions.vtt'
+          artifactFiles['captionMetadata'] = 'youtube-captions.json'
+        }
+        for (const entry of successfulProviders) {
+          const dir = entry.relativeDir as string
         const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModel}`
         artifactFiles[`transcript-${key}`] = `${dir}/transcription.txt`
         artifactFiles[`result-${key}`] = `${dir}/result.json`

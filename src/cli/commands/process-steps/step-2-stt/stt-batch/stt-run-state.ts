@@ -31,7 +31,8 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'openai',
   'mistral',
   'assemblyai',
-  'gladia'
+  'gladia',
+  'youtube-captions'
 ])
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -101,6 +102,11 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
     transcriptionModel: value['transcriptionModel'],
     processingTime: value['processingTime'],
     tokenCount: value['tokenCount'],
+    ...(value['captionKind'] === 'manual' || value['captionKind'] === 'auto'
+      ? { captionKind: value['captionKind'] }
+      : {}),
+    ...(typeof value['captionLanguage'] === 'string' ? { captionLanguage: value['captionLanguage'] } : {}),
+    ...(value['captionFormat'] === 'vtt' ? { captionFormat: value['captionFormat'] } : {}),
     ...(timings ? { timings } : {}),
     ...(runtime ? { runtime } : {})
   }
@@ -231,11 +237,17 @@ export const inferStoredCompletionStatus = (
     return entry['completionStatus']
   }
 
-  const successCount = parseSuccessfulProviderKeys(entry).size
-  if (successCount === 0) {
+  const successKeys = parseSuccessfulProviderKeys(entry)
+  if (successKeys.size === 0) {
     return 'failed'
   }
-  return successCount === requestedTargets.length ? 'full' : 'incomplete'
+
+  const matchedCount = requestedTargets
+    .map(getSttTargetKey)
+    .filter((key) => successKeys.has(key))
+    .length
+
+  return matchedCount === requestedTargets.length ? 'full' : 'incomplete'
 }
 
 export const buildMissingTargetsFromEntry = (

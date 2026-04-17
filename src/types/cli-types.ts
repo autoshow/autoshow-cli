@@ -9,6 +9,7 @@ export type BatchOrder = 'newest' | 'oldest'
 
 export type RuntimeOptions = {
   useReverb: boolean
+  youtubeCaptions: boolean
   whisperExplicit: boolean
   llamaModel: string | undefined
   openaiModel: string | undefined

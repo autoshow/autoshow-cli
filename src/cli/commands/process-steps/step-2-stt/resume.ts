@@ -23,9 +23,10 @@ import {
   isSttPartialCompletionError,
   parseStoredRequestedTargets
 } from './stt-batch/stt-run-state'
-import { formatSttTargetLabel, getSttTargetKey } from './stt-targets'
+import { collectSttTargets, formatSttTargetLabel, getSttTargetKey } from './stt-targets'
 import { readSttRunManifestEntry, writeSttBatchManifest } from './manifest'
 import { readBatchManifest } from '../manifest-utils'
+import { YOUTUBE_CAPTIONS_SERVICE } from './youtube-captions'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -61,6 +62,7 @@ const parseResumeEntry = async (
   entry: unknown,
   selectedTargets: SttTarget[] | undefined,
   options: Pick<ResumeSttBatchRunOptions, 'retryableOnly' | 'ignoreUnresumableEntries'>
+    & { youtubeCaptions: boolean, currentTargets: SttTarget[] }
 ): Promise<ResumeBatchEntry | undefined> => {
   if (!isRecord(entry)) {
     return undefined
@@ -76,17 +78,21 @@ const parseResumeEntry = async (
   }
 
   const storedRequestedTargets = parseStoredRequestedTargets(entry)
+  const storedCaptionOnly = storedRequestedTargets.length === 1
+    && storedRequestedTargets[0]?.service === YOUTUBE_CAPTIONS_SERVICE
 
-  const requestedTargets = storedRequestedTargets.length > 0
-    ? storedRequestedTargets
-    : selectedTargets
+  const requestedTargets = storedCaptionOnly && !options.youtubeCaptions
+    ? (selectedTargets && selectedTargets.length > 0 ? selectedTargets : options.currentTargets)
+    : storedRequestedTargets.length > 0
+      ? storedRequestedTargets
+      : selectedTargets
 
   if (!requestedTargets || requestedTargets.length === 0) {
     throw CLIUsageError('Could not determine the original STT provider set for this batch. Re-run with explicit provider flags.')
   }
 
   const selectedKeys = selectedTargets ? new Set(selectedTargets.map(getSttTargetKey)) : undefined
-  if (selectedKeys) {
+  if (selectedKeys && !(storedCaptionOnly && options.youtubeCaptions)) {
     const requestedKeys = new Set(requestedTargets.map(getSttTargetKey))
     const unexpected = [...selectedKeys].filter((key) => !requestedKeys.has(key))
     if (unexpected.length > 0) {
@@ -155,6 +161,7 @@ const parseResumeEntries = async (
   entries: BatchManifestEntry[],
   selectedTargets: SttTarget[] | undefined,
   options: Pick<ResumeSttBatchRunOptions, 'retryableOnly' | 'ignoreUnresumableEntries'>
+    & { youtubeCaptions: boolean, currentTargets: SttTarget[] }
 ): Promise<Array<ResumeBatchEntry | undefined>> =>
   await Promise.all(entries.map(async (entry) =>
     await parseResumeEntry(entry, selectedTargets, options)
@@ -162,7 +169,8 @@ const parseResumeEntries = async (
 
 const batchHasResumableWork = async (
   batchDir: string,
-  selectedTargets: SttTarget[] | undefined
+  selectedTargets: SttTarget[] | undefined,
+  options: { youtubeCaptions: boolean, currentTargets: SttTarget[] }
 ): Promise<boolean> => {
   const manifest = await readResumeBatchManifest(batchDir)
   if (!manifest) {
@@ -171,14 +179,17 @@ const batchHasResumableWork = async (
 
   for (const entry of manifest.entries) {
     const storedRequestedTargets = parseStoredRequestedTargets(entry)
-    if (storedRequestedTargets.length < 2) {
+    const storedCaptionOnly = storedRequestedTargets.length === 1
+      && storedRequestedTargets[0]?.service === YOUTUBE_CAPTIONS_SERVICE
+    if (storedRequestedTargets.length < 2 && !storedCaptionOnly) {
       continue
     }
 
     try {
         const parsedEntry = await parseResumeEntry(entry, selectedTargets, {
           retryableOnly: false,
-          ignoreUnresumableEntries: true
+          ignoreUnresumableEntries: true,
+          ...options
         })
       if (parsedEntry && parsedEntry.missingTargets.length > 0) {
         return true
@@ -193,7 +204,8 @@ const batchHasResumableWork = async (
 
 export const discoverLatestResumableSttBatchDir = async (
   outputRootInput: string,
-  selectedTargets?: SttTarget[]
+  selectedTargets?: SttTarget[],
+  options: { youtubeCaptions?: boolean, currentTargets?: SttTarget[] } = {}
 ): Promise<string | undefined> => {
   const outputRoot = resolvePath(outputRootInput)
 
@@ -210,7 +222,10 @@ export const discoverLatestResumableSttBatchDir = async (
 
   for (const batchName of batchNames) {
     const batchDir = join(outputRoot, batchName)
-    if (await batchHasResumableWork(batchDir, selectedTargets)) {
+    if (await batchHasResumableWork(batchDir, selectedTargets, {
+      youtubeCaptions: options.youtubeCaptions === true,
+      currentTargets: options.currentTargets ?? []
+    })) {
       return batchDir
     }
   }
@@ -221,13 +236,14 @@ export const discoverLatestResumableSttBatchDir = async (
 export const resolveResumeSttBatchDir = async (
   batchDirInput: string | undefined,
   selectedTargets?: SttTarget[],
+  options: { youtubeCaptions?: boolean, currentTargets?: SttTarget[] } = {},
   outputRootInput = './output'
 ): Promise<string> => {
   if (typeof batchDirInput === 'string' && batchDirInput.trim().length > 0) {
     return batchDirInput
   }
 
-  const discoveredBatchDir = await discoverLatestResumableSttBatchDir(outputRootInput, selectedTargets)
+  const discoveredBatchDir = await discoverLatestResumableSttBatchDir(outputRootInput, selectedTargets, options)
   if (discoveredBatchDir) {
     return discoveredBatchDir
   }
@@ -268,7 +284,7 @@ const runResumePass = async (
   batchDir: string,
   opts: RuntimeOptions,
   selectedTargets: SttTarget[] | undefined,
-  options: NormalizedResumeSttBatchRunOptions,
+  options: NormalizedResumeSttBatchRunOptions & { youtubeCaptions: boolean, currentTargets: SttTarget[] },
   pass: number,
   totalPasses: number
 ): Promise<ResumeSttBatchPassResult> => {
@@ -395,13 +411,18 @@ export const runResumeSttMissingFromBatchDir = async (
   runOptions: ResumeSttBatchRunOptions = {}
 ): Promise<ResumeSttBatchPassResult> => {
   const batchDir = resolvePath(batchDirInput)
+  const currentTargets = selectedTargets && selectedTargets.length > 0 ? selectedTargets : collectSttTargets(opts)
   const normalizedOptions: NormalizedResumeSttBatchRunOptions = {
     retryableOnly: runOptions.retryableOnly === true,
     maxPasses: Math.max(1, runOptions.maxPasses ?? 1),
     ignoreUnresumableEntries: runOptions.ignoreUnresumableEntries === true
   }
 
-  let result = await runResumePass(batchDir, opts, selectedTargets, normalizedOptions, 1, normalizedOptions.maxPasses)
+  let result = await runResumePass(batchDir, opts, selectedTargets, {
+    ...normalizedOptions,
+    youtubeCaptions: opts.youtubeCaptions,
+    currentTargets
+  }, 1, normalizedOptions.maxPasses)
   for (let pass = 2; pass <= normalizedOptions.maxPasses; pass++) {
     if (result.incomplete === 0 && result.fail === 0) {
       break
@@ -409,7 +430,11 @@ export const runResumeSttMissingFromBatchDir = async (
     if (result.attemptedEntries === 0) {
       break
     }
-    result = await runResumePass(batchDir, opts, selectedTargets, normalizedOptions, pass, normalizedOptions.maxPasses)
+    result = await runResumePass(batchDir, opts, selectedTargets, {
+      ...normalizedOptions,
+      youtubeCaptions: opts.youtubeCaptions,
+      currentTargets
+    }, pass, normalizedOptions.maxPasses)
   }
 
   return result
