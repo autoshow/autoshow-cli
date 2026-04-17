@@ -15,6 +15,7 @@ import { parseStep2RuntimeMetadata } from '../async-lifecycle'
 import { parseStoredStep2TimingMetadata } from '../stt-timing-metadata'
 import { getSttTargetDirectoryName, getSttTargetKey } from '../stt-targets'
 import { readSttRunManifestEntry } from '../manifest'
+import { readProviderResultEntry } from '../../manifest-utils'
 
 const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/
 
@@ -98,7 +99,6 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
   return {
     transcriptionService: value['transcriptionService'],
     transcriptionModel: value['transcriptionModel'],
-    ...(typeof value['transcriptionModelName'] === 'string' ? { transcriptionModelName: value['transcriptionModelName'] } : {}),
     processingTime: value['processingTime'],
     tokenCount: value['tokenCount'],
     ...(timings ? { timings } : {}),
@@ -218,10 +218,7 @@ export const parseSuccessfulProviderKeys = (
       continue
     }
 
-    const model = typeof value['transcriptionModelName'] === 'string'
-      ? value['transcriptionModelName']
-      : value['transcriptionModel']
-    keys.add(`${value['transcriptionService']}:${model}`)
+    keys.add(`${value['transcriptionService']}:${value['transcriptionModel']}`)
   }
   return keys
 }
@@ -278,21 +275,14 @@ export const readExistingSttRun = async (
     providerStates.set(key, value)
   }
 
-  const storedStep2Values = Array.isArray(raw['step2'])
-    ? raw['step2']
-    : raw['step2'] === undefined
-      ? []
-      : [raw['step2']]
-
-  const storedStep2Metadata = storedStep2Values
-    .map(parseStoredStep2Metadata)
-    .filter((entry): entry is Step2Metadata => entry !== undefined)
-
   await Promise.all(requestedTargets.map(async (target, index) => {
-    const metadata = storedStep2Metadata.find((entry) =>
-      entry.transcriptionService === target.service
-      && (entry.transcriptionModelName ?? entry.transcriptionModel) === target.model
-    )
+    const providerDir = join(outputDir, getSttProviderArtifactDir(target))
+    const providerResult = await readProviderResultEntry(providerDir)
+    if (!providerResult) {
+      return
+    }
+
+    const metadata = parseStoredStep2Metadata(providerResult.metadata)
     if (!metadata) {
       return
     }

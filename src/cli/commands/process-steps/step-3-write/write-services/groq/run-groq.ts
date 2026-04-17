@@ -1,11 +1,11 @@
 import OpenAI from 'openai'
 import * as l from '~/logger'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runOpenAICompatibleChatModel } from '../openai-compatible-chat'
 
 const getGroqClientConfig = (): { apiKey: string, baseURL: string } => {
-  const apiKey = readEnvFallback('GROQ_API_KEY')
+  const apiKey = readEnv('GROQ_API_KEY')
   if (!apiKey) {
     l.error('GROQ_API_KEY not found in environment for Groq model')
     throw new Error('GROQ_API_KEY environment variable is required for --groq models')

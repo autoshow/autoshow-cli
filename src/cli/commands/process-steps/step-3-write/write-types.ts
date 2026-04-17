@@ -9,19 +9,13 @@ import type {
 export type LLMOptions = Pick<ProcessingOptions,
   | 'outputDir'
   | 'prompts'
-  | 'useOpenAI'
   | 'openaiModel'
   | 'groqModel'
-  | 'useGemini'
   | 'geminiModel'
-  | 'useAnthropic'
   | 'anthropicModel'
   | 'minimaxModel'
   | 'grokModel'
   | 'llamaModel'
-  | 'structured'
-  | 'structuredStrict'
-  | 'structuredCompatRetries'
 > & {
   promptBuilder?: ((instruction: string) => string) | undefined
 }
@@ -60,19 +54,19 @@ export type LlamaIdentityMatchResult = {
 
 export type JsonSchemaObject = Record<string, unknown>
 
-export type StructuredMode = 'native' | 'compat' | 'off'
+export type StructuredStrategy = 'native' | 'schema-guided'
 
 export type StructuredRequestOptions = {
   schemaName: string
   schema: JsonSchemaObject
   strict: boolean
-  modeHint: Exclude<StructuredMode, 'off'>
+  strategy: StructuredStrategy
 }
 
 export type StructuredResult = {
   parsed: unknown
   renderedText: string
-  structuredMode: Exclude<StructuredMode, 'off'>
+  structuredMode: StructuredStrategy
   presetNames: string[]
 }
 

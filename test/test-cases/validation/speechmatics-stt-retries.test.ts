@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runSpeechmaticsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/speechmatics/run-speechmatics-stt'
+import { readProviderCheckpointMetadata, writeProviderCheckpointFixture } from '../../test-utils/manifest-helpers'
 
 const originalFetch = globalThis.fetch
 const originalApiKey = process.env['SPEECHMATICS_API_KEY']
@@ -147,10 +148,9 @@ describe('runSpeechmaticsStt', () => {
     process.env['SPEECHMATICS_API_KEY'] = 'test-key'
     process.env['SPEECHMATICS_BASE_URL'] = 'https://speechmatics.test'
 
-    await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify({
+    await writeProviderCheckpointFixture(outputDir, 'speechmatics', 'standard', {
       transcriptionService: 'speechmatics',
       transcriptionModel: 'standard',
-      transcriptionModelName: 'standard',
       processingTime: 10,
       tokenCount: 0,
       runtime: {
@@ -159,7 +159,7 @@ describe('runSpeechmaticsStt', () => {
         remoteJobId: 'job-existing',
         createCompletedAt: '2026-04-15T00:00:00.000Z'
       }
-    }, null, 2))
+    })
 
     const slept: number[] = []
     ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (ms: number) => {
@@ -213,7 +213,7 @@ describe('runSpeechmaticsStt', () => {
     expect(deleteAttempts).toBe(0)
     expect(slept).toEqual([30_000, 60_000, 120_000, 240_000])
 
-    const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+    const metadata = await readProviderCheckpointMetadata(outputDir)
     expect(metadata['runtime']).toEqual(expect.objectContaining({
       mode: 'resumed',
       stage: 'polling',

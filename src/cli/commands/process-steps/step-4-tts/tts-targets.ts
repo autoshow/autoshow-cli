@@ -101,7 +101,7 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   if (typeof options.kittenTtsModel === 'string' && options.kittenTtsModel.length > 0) {
     const model: KittenTtsModel = validateKittenTtsModel(options.kittenTtsModel)
     const rawSpeaker = options.ttsSpeaker ?? DEFAULT_KITTEN_TTS_SPEAKER
-    const speaker = validateKittenTtsSpeaker(rawSpeaker === 'Ryan' ? DEFAULT_KITTEN_TTS_SPEAKER : rawSpeaker)
+    const speaker = validateKittenTtsSpeaker(rawSpeaker)
 
     targets.push({
       service: 'kitten',

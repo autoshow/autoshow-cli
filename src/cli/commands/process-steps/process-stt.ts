@@ -43,7 +43,6 @@ import {
 import { writeSttRunManifest } from './step-2-stt/manifest'
 import {
   describeSttBatchProviderSlotLimits,
-  isSttPartialCompletionError,
   runCoordinatedSttTargetPool,
   SttPartialCompletionError
 } from './step-2-stt/batch'
@@ -465,23 +464,23 @@ const runTargetPool = async (
 }
 
 const buildProviderModelLabel = (
-  metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel' | 'transcriptionModelName'>
+  metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
 ): string =>
-  `${metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : metadata.transcriptionService}/${metadata.transcriptionModelName ?? metadata.transcriptionModel}`
+  `${metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : metadata.transcriptionService}/${metadata.transcriptionModel}`
 
 const buildPromptFile = async (
   outputDir: string,
   metadata: PreparedSttMedia['metadata'],
   transcription: TranscriptionResult,
   slug: string,
-  options: Pick<RuntimeOptions, 'prompts' | 'structured'> & {
+  options: Pick<RuntimeOptions, 'prompts'> & {
     promptSourceProvider?: string | undefined
     requestedSpeakerCount?: number | undefined
     suppressDiarizationLog?: boolean | undefined
   }
 ): Promise<void> => {
   const instruction = await resolvePromptNames(options.prompts ?? [], {
-    exampleFormat: options.structured === false ? 'markdown' : 'json'
+    exampleFormat: 'json'
   })
   const promptContent = buildPrompt(metadata, transcription, instruction, slug, {
     promptSourceProvider: options.promptSourceProvider,
@@ -538,7 +537,7 @@ const buildSingleStepSummaries = (
   },
   {
     label: 'Transcribe',
-    providerModel: `${step2Metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : step2Metadata.transcriptionService}/${step2Metadata.transcriptionModelName ?? step2Metadata.transcriptionModel}`,
+    providerModel: `${step2Metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : step2Metadata.transcriptionService}/${step2Metadata.transcriptionModel}`,
     processingTime: step2Metadata.processingTime,
     cost: actualCost.steps.find((step) => step.step === 'stt')?.cost ?? 0
   }
@@ -552,13 +551,6 @@ export const filterEstimatedSttCosts = (
     totalCost: steps.reduce((sum, step) => sum + step.cost, 0),
     steps
   }
-}
-
-const writeSttMetadata = async (outputDir: string, metadataJson: string): Promise<void> => {
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, metadataJson)
-  l.info(`Metadata file: ${metadataPath}`)
-  l.debug(`Metadata:\n${metadataJson}`)
 }
 
 export const processStt = async (
@@ -611,7 +603,6 @@ export const processStt = async (
 
       await buildPromptFile(outputDir, prepared.metadata, transcription.result, prepared.step1Metadata.slug, {
         prompts: options.prompts,
-        structured: options.structured,
         promptSourceProvider: buildProviderModelLabel(transcription.metadata),
         requestedSpeakerCount: target.diarizationOptions?.speakerCount
       })
@@ -651,14 +642,16 @@ export const processStt = async (
         cost,
         ...(timing ? { timing } : {})
       }, null, 2)
-      await writeSttMetadata(outputDir, metadataJson)
       await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
+      const metadataPath = `${outputDir}/run.json`
+      l.info(`Run manifest: ${metadataPath}`)
+      l.debug(`Run manifest:\n${metadataJson}`)
 
       const artifactFiles: Record<string, string> = {
         audio: prepared.step1Metadata.audioFileName,
         transcript: 'transcription.txt',
         prompt: 'prompt.md',
-        metadata: 'metadata.json'
+        run: 'run.json'
       }
 
       l.report.complete(outputDir, artifactFiles, {
@@ -711,7 +704,6 @@ export const processStt = async (
 
           await buildPromptFile(outputDir, preparedMedia.metadata, promptSource.result, preparedMedia.step1Metadata.slug, {
             prompts: options.prompts,
-            structured: options.structured,
             promptSourceProvider: buildProviderModelLabel(promptSource.metadata),
             requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount,
             suppressDiarizationLog: coordinatedAcrossBatch
@@ -812,8 +804,14 @@ export const processStt = async (
           transcription.metadata,
           queueWaitMs > 0 ? { queueWaitMs } : undefined
         )
-        await Bun.write(join(providerDir, 'metadata.json'), JSON.stringify(metadataWithQueueTiming, null, 2))
-        await Bun.write(join(providerDir, 'result.json'), JSON.stringify(transcription.result, null, 2))
+        await Bun.write(join(providerDir, 'result.json'), JSON.stringify({
+          schemaVersion: 2,
+          kind: 'provider-result',
+          provider: target.service,
+          model: target.model,
+          metadata: metadataWithQueueTiming,
+          result: transcription.result
+        }, null, 2))
         successes[index] = {
           target,
           metadata: metadataWithQueueTiming,
@@ -987,7 +985,7 @@ export const processStt = async (
         },
         providers: successfulProviders.map((entry) => ({
           service: entry.metadata.transcriptionService,
-          model: entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel,
+          model: entry.metadata.transcriptionModel,
           processingTimeMs: entry.metadata.processingTime,
           ...(entry.metadata.timings ? { timings: entry.metadata.timings } : {})
         }))
@@ -1008,8 +1006,10 @@ export const processStt = async (
       },
       ...(metadataErrors.length > 0 ? { errors: metadataErrors } : {})
     }, null, 2)
-    await writeSttMetadata(outputDir, metadataJson)
     await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
+    const metadataPath = `${outputDir}/run.json`
+    l.info(`Run manifest: ${metadataPath}`)
+    l.debug(`Run manifest:\n${metadataJson}`)
 
     const stepSummaries: StepTimingCost[] = [
       {
@@ -1024,7 +1024,7 @@ export const processStt = async (
         cost: actual.steps.find((step) =>
           step.step === 'stt'
           && step.provider === entry.metadata.transcriptionService
-          && step.model === (entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel)
+          && step.model === entry.metadata.transcriptionModel
         )?.cost ?? 0
       }))
     ]
@@ -1032,14 +1032,14 @@ export const processStt = async (
     if (completionStatus === 'full') {
       const artifactFiles: Record<string, string> = {
         prompt: 'prompt.md',
-        metadata: 'metadata.json'
+        run: 'run.json'
       }
       artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
       for (const entry of successfulProviders) {
         const dir = entry.relativeDir as string
-        const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModelName ?? entry.metadata.transcriptionModel}`
+        const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModel}`
         artifactFiles[`transcript-${key}`] = `${dir}/transcription.txt`
-        artifactFiles[`metadata-${key}`] = `${dir}/metadata.json`
+        artifactFiles[`result-${key}`] = `${dir}/result.json`
       }
 
       l.report.complete(outputDir, artifactFiles, {

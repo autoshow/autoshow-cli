@@ -1,8 +1,8 @@
 import * as l from '~/logger'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const setupOpenAIStt = async (): Promise<void> => {
-  const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
+  const apiKey = readEnv('OPENAI_API_KEY')
   if (apiKey) {
     l.success('OPENAI_API_KEY found — OpenAI transcription ready')
   } else {
@@ -12,7 +12,7 @@ export const setupOpenAIStt = async (): Promise<void> => {
 }
 
 export const ensureOpenAISttSetup = async (): Promise<void> => {
-  const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
+  const apiKey = readEnv('OPENAI_API_KEY')
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY environment variable is required for OpenAI transcription')
   }

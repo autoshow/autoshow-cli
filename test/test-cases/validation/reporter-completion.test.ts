@@ -7,10 +7,10 @@ describe('reporter completion output', () => {
   test('builds compact human completion lines for non-verbose output', () => {
     const lines = buildHumanCompletionMessages('output/run', {
       prompt: 'prompt.md',
-      metadata: 'metadata.json',
+      run: 'run.json',
       audio: 'audio.mp3',
       'transcript-elevenlabs-scribe_v2': 'providers/elevenlabs-scribe_v2/transcription.txt',
-      'metadata-elevenlabs-scribe_v2': 'providers/elevenlabs-scribe_v2/metadata.json'
+      'result-elevenlabs-scribe_v2': 'providers/elevenlabs-scribe_v2/result.json'
     }, {
       metrics: {
         providersRequested: 4,
@@ -28,8 +28,8 @@ describe('reporter completion output', () => {
     })
 
     expect(lines).toEqual([
-      'Artifacts: prompt=output/run/prompt.md, metadata=output/run/metadata.json, audio=output/run/audio.mp3',
-      'Providers: dir=output/run/providers, transcripts=1, metadata=1',
+      'Artifacts: prompt=output/run/prompt.md, run=output/run/run.json, audio=output/run/audio.mp3',
+      'Providers: dir=output/run/providers, transcripts=1, results=1',
       'Metrics: providersRequested=4, providersSucceeded=4, providersFailed=0, partial=false, promptSource=elevenlabs/scribe_v2',
       'Step: Download, time=12.9s, cost=0.00000¢',
       'Step: Transcribe elevenlabs/scribe_v2, time=1m 27s, cost=17.01944¢',
@@ -39,7 +39,7 @@ describe('reporter completion output', () => {
 
   test('preserves numeric metrics in emitted completion result data', () => {
     const result = buildCompleteResultData('output/run', {
-      metadata: 'metadata.json'
+      run: 'run.json'
     }, {
       metrics: {
         providersRequested: 4,
@@ -69,7 +69,7 @@ describe('reporter completion output', () => {
     const reporter = createReporter(logger)
 
     reporter.complete('output/run', {
-      metadata: 'metadata.json'
+      run: 'run.json'
     }, {
       metrics: {
         providersRequested: 4
@@ -77,7 +77,7 @@ describe('reporter completion output', () => {
     })
 
     expect(events.map((event) => event.message)).toContain(
-      '{\n  "artifacts": {\n    "metadata": "output/run/metadata.json"\n  },\n  "metrics": {\n    "providersRequested": 4\n  }\n}'
+      '{\n  "artifacts": {\n    "run": "output/run/run.json"\n  },\n  "metrics": {\n    "providersRequested": 4\n  }\n}'
     )
   })
 })

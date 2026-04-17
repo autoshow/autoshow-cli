@@ -1,6 +1,6 @@
 import * as l from '~/logger'
 import type { BatchItem, ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
-import { isSttCommand } from '~/types'
+import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'

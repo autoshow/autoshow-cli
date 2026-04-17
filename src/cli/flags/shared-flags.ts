@@ -26,12 +26,6 @@ export const priceFlag = {
     type: Boolean,
     default: false,
     negatable: false
-  },
-  'dry-run': {
-    description: 'Preview what would happen without executing (same as --price)',
-    type: Boolean,
-    default: false,
-    negatable: false
   }
 } as const satisfies ClercFlagsDefinition
 
@@ -60,10 +54,6 @@ export const batchFlags = {
 } as const satisfies ClercFlagsDefinition
 
 export const transcriptionFlags = {
-  provider: {
-    description: 'Add STT provider selection as <provider[:model]>. Repeatable additive alias that does not replace provider-specific flags.',
-    type: [String] as [StringConstructor]
-  },
   whisper: {
     description: 'Local whisper.cpp model (free): tiny|base|small|medium|large-v3-turbo',
     type: String,
@@ -223,46 +213,7 @@ export const promptFlag = {
   }
 } as const satisfies ClercFlagsDefinition
 
-export const promptOutputFlags = {
-  'json-output': {
-    description: 'Use JSON prompt examples and prefer structured JSON write output when supported',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'md-output': {
-    description: 'Use markdown prompt examples and disable structured JSON write output',
-    type: Boolean,
-    default: false,
-    negatable: false
-  }
-} as const satisfies ClercFlagsDefinition
-
-export const structuredWriteFlags = {
-  structured: {
-    description: 'Enable structured JSON output for write step (default: on)',
-    type: Boolean,
-    default: true,
-    negatable: true
-  },
-  'structured-strict': {
-    description: 'Enable strict schema mode for providers that support it (default: on)',
-    type: Boolean,
-    default: true,
-    negatable: true
-  },
-  'structured-compat-retries': {
-    description: 'Structured compat-mode retries for providers without native schema support (default: 2)',
-    type: String,
-    default: '2'
-  }
-} as const satisfies ClercFlagsDefinition
-
 export const extractFlags = {
-  provider: {
-    description: 'Add OCR provider selection as <provider[:model]>. Repeatable additive alias that does not replace provider-specific flags.',
-    type: [String] as [StringConstructor]
-  },
   lang: {
     description: 'Tesseract language(s) like eng+fra (default: eng)',
     type: String,

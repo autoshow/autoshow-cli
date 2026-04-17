@@ -56,7 +56,7 @@ export type OcrPolicy = {
 }
 
 export type ProviderCheckpoint = {
-  schemaVersion: 1
+  schemaVersion: 2
   kind: 'provider-checkpoint'
   provider: string
   model?: string | undefined
@@ -64,17 +64,17 @@ export type ProviderCheckpoint = {
 }
 
 export type ProviderResult = {
-  schemaVersion: 1
+  schemaVersion: 2
   kind: 'provider-result'
   provider: string
   model?: string | undefined
-  metadata?: Record<string, unknown> | undefined
+  metadata: Record<string, unknown>
   result: Record<string, unknown>
 }
 
 export type RunManifest = {
-  schemaVersion: 1
-  kind: 'stt' | 'ocr'
+  schemaVersion: 2
+  kind: 'metadata' | 'download' | 'ocr' | 'stt' | 'write' | 'tts' | 'image' | 'video' | 'music'
   metadata: Record<string, unknown>
 }
 
@@ -87,8 +87,8 @@ export type OcrRunManifest = RunManifest & {
 }
 
 export type BatchManifest = {
-  schemaVersion: 1
-  kind: 'stt' | 'ocr'
+  schemaVersion: 2
+  kind: RunManifest['kind']
   items: Record<string, unknown>[]
   source?: Record<string, unknown> | undefined
 }

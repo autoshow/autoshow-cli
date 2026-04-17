@@ -123,24 +123,20 @@ Common batch controls:
 
 ## Config, Pricing, and Logging
 
-Persistent defaults live in `config/autoshow.json`. You can save provider choices, model defaults, prompts, structured-output settings, extract options, voices, batch settings, and pricing thresholds.
+Persistent defaults live in `config/autoshow.json`. You can save provider choices, model defaults, prompts, extract options, voices, batch settings, and pricing thresholds.
 
 ```bash
 bun as config --show
 bun as config --openai gpt-5.2 --batch-limit 20 --max-cents 50
-bun as config --structured --structured-compat-retries 3
 bun as config --reset
 ```
 
 Pricing and budget behavior:
 
 - Runnable commands estimate cost before execution.
-- `--price` and `--dry-run` are equivalent estimate-only modes.
+- `--price` is the estimate-only mode.
 - `--allow-over-budget` overrides a configured hard budget for a single run.
 - `--config-path` lets you use an alternate config file on any command.
-- Selected bare provider flags expand to default models when omitted. For example, `--openai` uses `gpt-5.2`, `--groq-stt` uses `whisper-large-v3-turbo`, and `--minimax-image` uses `image-01`.
-
-`write` uses structured JSON output by default when the chosen provider supports it. Use `--md-output` or `--no-structured` when you want markdown-only output.
 
 Logging controls:
 
@@ -160,7 +156,7 @@ AUTOSHOW_LOG_LEVEL=info    # debug | info | success | warn | error
 
 ## Output Layout
 
-Most artifact-producing runs write a timestamped directory under `output/` with `metadata.json` plus the files for the steps that actually ran.
+Most artifact-producing runs write a timestamped directory under `output/` with `run.json` plus the files for the steps that actually ran.
 
 Typical artifacts include:
 
@@ -168,16 +164,16 @@ Typical artifacts include:
 - `prompt.md`
 - `transcription.txt`
 - extracted text or OCR output
-- `text.json` or `text.md`
+- `text.json`
 - generated speech, image, video, or music files
-- `metadata.json`
+- `run.json`
 - `metadata.md` for `metadata --markdown --save`
 
-Batch runs also write `info.json`, and some structured remote sources add `source.json`.
+Batch runs write `batch.json`, and some structured remote sources add `source.json`.
 
 Notable exceptions:
 
-- `metadata --save` reports `metadata.json`, and `metadata --markdown --save` also reports `metadata.md`
+- `metadata --save` reports `run.json`, and `metadata --markdown --save` also reports `metadata.md`
 - `links` writes to `docs/links/bun-links.md`
 - utility commands such as `config`, `setup`, `sample`, and `models` do not use the `output/` run-directory pattern
 

@@ -31,13 +31,7 @@ export const ProcessingOptionsSchema = v.pipe(
     useReverb: v.optional(v.boolean(), undefined),
     reverbVerbatimicity: v.optional(v.number(), undefined),
     split: v.optional(v.boolean(), undefined),
-    useOpenAI: v.optional(v.boolean(), undefined),
-    useGemini: v.optional(v.boolean(), undefined),
-    useAnthropic: v.optional(v.boolean(), undefined),
     skipLLM: v.optional(v.boolean(), undefined),
-    structured: v.optional(v.boolean(), undefined),
-    structuredStrict: v.optional(v.boolean(), undefined),
-    structuredCompatRetries: v.optional(v.number(), undefined),
     
 
     directDownload: v.optional(v.boolean(), undefined),
@@ -409,7 +403,6 @@ export type Step2RuntimeMetadata = {
 export type Step2Metadata = {
   transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia'
   transcriptionModel: string
-  transcriptionModelName?: string | undefined
   processingTime: number
   tokenCount: number
   timings?: Step2TimingMetadata | undefined
@@ -817,8 +810,8 @@ export type Step3Metadata = {
   inputTokenCount: number
   outputTokenCount: number
   outputFileName: string
-  outputFormat: 'json' | 'markdown'
-  structuredMode: 'native' | 'compat' | 'off'
+  outputFormat: 'json'
+  structuredMode: 'native' | 'schema-guided'
   structuredPresetNames: string[]
 }
 
@@ -843,9 +836,8 @@ export type Step5Metadata = {
   imageService: ImageProvider
   imageModel: string
   processingTime: number
-  imageCount: number
-  imageFileName: string
   imageFileNames: string[]
+  imageCount: number
   imageFileSize: number
   imageWidth: number | undefined
   imageHeight: number | undefined

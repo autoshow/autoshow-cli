@@ -1,11 +1,11 @@
 import * as l from '~/logger'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const getSpeechmaticsBaseUrl = (): string =>
   readEnv('SPEECHMATICS_BASE_URL') ?? 'https://eu1.asr.api.speechmatics.com'
 
 export const setupSpeechmaticsStt = async (): Promise<void> => {
-  const apiKey = readEnvFallback('SPEECHMATICS_API_KEY')
+  const apiKey = readEnv('SPEECHMATICS_API_KEY')
   if (apiKey) {
     l.success(`SPEECHMATICS_API_KEY found — Speechmatics transcription ready (${getSpeechmaticsBaseUrl()})`)
   } else {
@@ -15,7 +15,7 @@ export const setupSpeechmaticsStt = async (): Promise<void> => {
 }
 
 export const ensureSpeechmaticsSttSetup = async (): Promise<void> => {
-  const apiKey = readEnvFallback('SPEECHMATICS_API_KEY')
+  const apiKey = readEnv('SPEECHMATICS_API_KEY')
   if (!apiKey) {
     throw new Error('SPEECHMATICS_API_KEY environment variable is required for Speechmatics transcription')
   }

@@ -136,7 +136,6 @@ export const runOpenAIStt = async (
   const metadata: Step2Metadata = {
     transcriptionService: 'openai',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(finalText)
   }

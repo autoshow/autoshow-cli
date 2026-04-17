@@ -1,5 +1,5 @@
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { canonicalizeProcessCommand } from '~/types'
+import { canonicalizeProcessCommand } from '../process-command-kinds'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
 import { resolveResumeOcrBatchDir, resumeOcrMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-ocr/resume'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
@@ -20,7 +20,6 @@ export type ResumeAdapter = {
 }
 
 const STT_PROVIDER_SELECTION_FLAGS = [
-  'provider',
   'whisper',
   'reverb',
   'elevenlabs-stt',
@@ -36,7 +35,6 @@ const STT_PROVIDER_SELECTION_FLAGS = [
 ] as const
 
 const OCR_PROVIDER_SELECTION_FLAGS = [
-  'provider',
   'ocrmypdf',
   'paddle-ocr',
   'mistral-ocr',

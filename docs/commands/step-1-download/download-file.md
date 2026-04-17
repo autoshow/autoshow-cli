@@ -35,9 +35,9 @@ bun as dl <input>          # alias
 
 **Supported image formats:** PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF
 
-MOBI, AZW3, FB2, and LIT inputs are normalized to EPUB through Calibre during step 1. The source format and conversion chain are recorded in `metadata.json`.
+MOBI, AZW3, FB2, and LIT inputs are normalized to EPUB through Calibre during step 1. The source format and conversion chain are recorded in `run.json` under `step1`.
 
-Step-1 metadata also includes `slug`, which is derived from the original filename without its final extension when available.
+Step-1 metadata in `run.json` also includes `slug`, which is derived from the original filename without its final extension when available.
 
 ## Flags
 
@@ -58,14 +58,14 @@ Step-1 metadata also includes `slug`, which is derived from the original filenam
 ```text
 output/YYYY-MM-DD_HH-MM-SS_title/
   <audio>.wav
-  metadata.json
+  run.json
 ```
 
 **Document inputs**
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_title/
-  metadata.json
+  run.json
 ```
 
 **Batch inputs**
@@ -73,7 +73,7 @@ output/YYYY-MM-DD_HH-MM-SS_title/
 ```text
 output/YYYY-MM-DD_HH-MM-SS_batch-label/
   source.json
-  info.json   # consolidated per-item metadata.json payloads
+  batch.json  # consolidated per-item run metadata payloads
   YYYY-MM-DD_HH-MM-SS_item/
     <artifacts for that item>
 ```
@@ -83,7 +83,7 @@ output/YYYY-MM-DD_HH-MM-SS_batch-label/
 ```text
 output/YYYY-MM-DD_HH-MM-SS_batch-label/
   source.json
-  info.json
+  batch.json
   <episode-1>.wav    # default
   <episode-2>.wav
 ```
@@ -93,7 +93,7 @@ With `--keep-original-media --flat-batch`, the same batch directory keeps the or
 ```text
 output/YYYY-MM-DD_HH-MM-SS_batch-label/
   source.json
-  info.json
+  batch.json
   <episode-1>.mp3
   <episode-2>.mp3
 ```

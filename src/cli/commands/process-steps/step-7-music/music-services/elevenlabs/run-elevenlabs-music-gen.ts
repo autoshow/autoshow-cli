@@ -1,7 +1,7 @@
 import type { Step7MusicMetadata } from '~/types'
 import * as l from '~/logger'
 import type { ElevenlabsMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readElevenLabsError } from '~/utils/elevenlabs-utils'
 
@@ -35,7 +35,7 @@ export const runElevenLabsMusicGen = async (
     forceInstrumental?: boolean | undefined
   }
 ): Promise<{ musicPath: string, metadata: Step7MusicMetadata }> => {
-  const apiKey = readEnvFallback('ELEVENLABS_API_KEY')
+  const apiKey = readEnv('ELEVENLABS_API_KEY')
   if (!apiKey) {
     throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs music generation')
   }

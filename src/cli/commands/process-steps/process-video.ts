@@ -41,6 +41,7 @@ import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, pref
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
 import { classifySttProviderFailure, prioritizeCloudSttTargetIndices, selectPrimaryPromptProvider } from './process-stt'
+import { writeProviderResult, writeRunManifest } from './manifest-utils'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
 
@@ -155,7 +156,13 @@ export const processVideo = async (
               sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
             })
           )
-          await Bun.write(`${providerDir}/metadata.json`, JSON.stringify(providerTranscription.metadata, null, 2))
+          await writeProviderResult(
+            providerDir,
+            target.service,
+            target.model,
+            providerTranscription.metadata as Record<string, unknown>,
+            providerTranscription.result as Record<string, unknown>
+          )
           successes[index] = {
             target,
             metadata: providerTranscription.metadata,
@@ -210,7 +217,7 @@ export const processVideo = async (
       await runWithLogContext({ step: 'step-3-write' }, async () => {
         const promptPath = `${outputDir}/prompt.md`
         const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
-          exampleFormat: processingOptions.structured === false ? 'markdown' : 'json'
+          exampleFormat: 'json'
         })
         const promptContent = buildPrompt(sourceMetadata, transcriptionResult.result, instruction, step1Metadata.slug)
         await Bun.write(promptPath, promptContent)
@@ -273,19 +280,19 @@ export const processVideo = async (
       ? step3Results
       : undefined
 
-  const llmService = processingOptions.useOpenAI ? 'openai'
+  const llmService = processingOptions.openaiModel ? 'openai'
     : processingOptions.groqModel ? 'groq'
-      : processingOptions.useGemini ? 'gemini'
-        : processingOptions.useAnthropic ? 'anthropic'
+      : processingOptions.geminiModel ? 'gemini'
+        : processingOptions.anthropicModel ? 'anthropic'
           : processingOptions.minimaxModel ? 'minimax'
             : processingOptions.llamaModel ? 'llama.cpp'
               : undefined
-  const llmModel = processingOptions.useOpenAI ? processingOptions.openaiModel
-    : processingOptions.groqModel ? processingOptions.groqModel
-      : processingOptions.useGemini ? processingOptions.geminiModel
-        : processingOptions.useAnthropic ? processingOptions.anthropicModel
-          : processingOptions.minimaxModel ? processingOptions.minimaxModel
-            : processingOptions.llamaModel
+  const llmModel = processingOptions.openaiModel
+    ?? processingOptions.groqModel
+    ?? processingOptions.geminiModel
+    ?? processingOptions.anthropicModel
+    ?? processingOptions.minimaxModel
+    ?? processingOptions.llamaModel
 
   const attemptedTtsTargets = step3Results.length === 1 ? ttsTargets : []
   const attemptedImageTargets = step3Results.length === 1 ? imageTargets : []
@@ -398,10 +405,9 @@ export const processVideo = async (
     ...(timing ? { timing } : {}),
     ...(sttFailures.length > 0 ? { errors: sttFailures } : {}),
   }
-  const metadataPath = `${outputDir}/metadata.json`
   const metadataJson = JSON.stringify(processingMetadata, null, 2)
-  await Bun.write(metadataPath, metadataJson)
-  l.info(`Metadata:\n${metadataJson}`)
+  await writeRunManifest(outputDir, 'write', processingMetadata)
+  l.info(`Run manifest:\n${metadataJson}`)
 
   const totalTime = Date.now() - processStart
   const step2Entries = Array.isArray(transcriptionResult.metadata)
@@ -424,10 +430,10 @@ export const processVideo = async (
     (entry) => {
       const displayService = entry.transcriptionService === 'whisper' ? 'whisper.cpp' : entry.transcriptionService
       const displayModel = entry.transcriptionService === 'whisper'
-        ? (entry.transcriptionModelName ?? processingOptions.whisperModel ?? entry.transcriptionModel)
+        ? (processingOptions.whisperModel ?? entry.transcriptionModel)
         : entry.transcriptionService === 'reverb'
           ? 'reverb'
-          : (entry.transcriptionModelName ?? entry.transcriptionModel)
+          : entry.transcriptionModel
       return `${displayService}/${displayModel}`
     },
     (entry) => entry.processingTime
@@ -497,13 +503,13 @@ export const processVideo = async (
       if (!provider.relativeDir) {
         continue
       }
-      const key = `${provider.metadata.transcriptionService}-${provider.metadata.transcriptionModelName ?? provider.metadata.transcriptionModel}`
+      const key = `${provider.metadata.transcriptionService}-${provider.metadata.transcriptionModel}`
       artifactFiles[`transcript-${key}`] = `${provider.relativeDir}/transcription.txt`
-      artifactFiles[`metadata-${key}`] = `${provider.relativeDir}/metadata.json`
+      artifactFiles[`result-${key}`] = `${provider.relativeDir}/result.json`
     }
   }
   if (step3Results.length === 1) {
-    artifactFiles['summary'] = step3Results[0]?.outputFileName ?? 'text.md'
+    artifactFiles['summary'] = step3Results[0]?.outputFileName ?? 'text.json'
   } else if (step3Results.length > 1) {
     for (const r of step3Results) {
       artifactFiles[`summary-${r.llmModel}`] = r.outputFileName
@@ -518,7 +524,7 @@ export const processVideo = async (
   if (step6Metadata) Object.assign(artifactFiles, buildVideoArtifactMap(step6Metadata))
   if (step7Metadata) Object.assign(artifactFiles, buildMusicArtifactMap(step7Metadata))
   artifactFiles['prompt'] = 'prompt.md'
-  artifactFiles['metadata'] = 'metadata.json'
+  artifactFiles['run'] = 'run.json'
   l.report.complete(outputDir, artifactFiles, { steps: stepSummaries, totalTimeMs: totalTime, totalCost: actual.totalCost })
 
   if (sttFailures.length > 0) {

@@ -6,7 +6,7 @@ import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
 import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
-import { ensureDirectory, fileExists, writeFile } from '~/utils/cli-utils'
+import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import {
   buildMediaStep1Slug,
   createUniqueDirectoryName,
@@ -20,18 +20,17 @@ import { processOcr } from '~/cli/commands/process-steps/process-ocr'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/doc-prompt-utils'
 import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
-import { resolvePromptNames } from '~/prompts/prompt-loader'
 import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
-import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/types'
+import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import { classifyUrlInput, isDocumentByExtension, isHtmlDocumentPath, isLikelyUrl } from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
-import { estimateTokens } from '~/utils/text-utils'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
+import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 
 const buildDocumentMetadataView = (
   step1: DocumentMetadata,
@@ -138,18 +137,6 @@ const prepareArticleDocument = async (
   return prepared
 }
 
-const hasExplicitLlmProvider = (opts: RuntimeOptions): boolean => {
-  return [
-    opts.openaiModel,
-    opts.groqModel,
-    opts.geminiModel,
-    opts.anthropicModel,
-    opts.minimaxModel,
-    opts.grokModel,
-    opts.llamaModel
-  ].some((model) => typeof model === 'string' && model.length > 0)
-}
-
 const toDocumentSourceUrl = (target: string): string => {
   if (isLikelyUrl(target)) {
     return target
@@ -236,7 +223,7 @@ const writeDocumentOutputMetadata = async (
     ? { estimated: estimatedTiming, actual: actualTiming }
     : undefined
 
-  await writeFile(`${outputDir}/metadata.json`, JSON.stringify({
+  await writeRunManifest(outputDir, 'write', {
     step1,
     step2,
     step3,
@@ -244,7 +231,7 @@ const writeDocumentOutputMetadata = async (
     cost,
     ...(timing ? { timing } : {}),
     ...(errors && errors.length > 0 ? { errors } : {}),
-  }, null, 2))
+  })
 
   l.report.complete(outputDir, artifactFiles)
 }
@@ -263,51 +250,6 @@ const runDocumentWrite = async (
     sourceRef,
     preparedDocument
   )
-
-  const useLegacyFallback = opts.structured === false && !hasExplicitLlmProvider(opts)
-  if (useLegacyFallback) {
-    const instruction = await resolvePromptNames(opts.prompts ?? [], {
-      exampleFormat: 'markdown'
-    })
-    const prompt = buildDocumentPrompt(extraction.result.text, extraction.step1Metadata, instruction)
-    const promptPath = `${extraction.outputDir}/prompt.md`
-    await Bun.write(promptPath, prompt)
-
-    const textWords = extraction.result.text.split(/\s+/).filter(Boolean)
-    const summary = `# Summary\n\n${textWords.slice(0, 220).join(' ')}`
-    const summaryPath = `${extraction.outputDir}/text.md`
-    await Bun.write(summaryPath, summary)
-
-    const llmService: Step3Metadata['llmService'] = (llmConfig.llmService ?? 'llama.cpp') as Step3Metadata['llmService']
-    const llmModel = llmConfig.llmModel ?? (llmConfig.llamaModel as string)
-    const step3: Step3Metadata = {
-      llmService,
-      llmModel,
-      processingTime: 0,
-      inputTokenCount: estimateTokens(prompt),
-      outputTokenCount: estimateTokens(summary),
-      outputFileName: 'text.md',
-      outputFormat: 'markdown',
-      structuredMode: 'off',
-      structuredPresetNames: []
-    }
-
-    await writeDocumentOutputMetadata(extraction.outputDir, {
-      step1: extraction.step1Metadata,
-      step2: extraction.step2Metadata,
-      step3,
-      mistralOcrModel: opts.mistralOcrModel,
-      glmOcrModel: opts.glmOcrModel,
-      llmService,
-      llmModel,
-      llmInputTokenCount: step3.inputTokenCount,
-      llmOutputTokenCount: step3.outputTokenCount,
-      artifactFiles: { prompt: 'prompt.md', summary: 'text.md', metadata: 'metadata.json' },
-      ...(extraction.web ? { web: extraction.web } : {}),
-      ...(extraction.step2Errors ? { errors: extraction.step2Errors } : {})
-    })
-    return { outputDir: extraction.outputDir }
-  }
 
   const documentMeta: VideoMetadata = {
     title: extraction.step1Metadata.title ?? 'Document',
@@ -328,18 +270,13 @@ const runDocumentWrite = async (
   const step3Runs = await runLLM(documentMeta, transcriptionLike, {
     outputDir: extraction.outputDir,
     prompts: opts.prompts,
-    useOpenAI: llmConfig.useOpenAI,
     openaiModel: llmConfig.openaiModel,
     groqModel: llmConfig.groqModel,
-    useGemini: llmConfig.useGemini,
     geminiModel: llmConfig.geminiModel,
-    useAnthropic: llmConfig.useAnthropic,
     anthropicModel: llmConfig.anthropicModel,
     minimaxModel: llmConfig.minimaxModel,
+    grokModel: llmConfig.grokModel,
     llamaModel: llmConfig.llamaModel,
-    structured: opts.structured,
-    structuredStrict: opts.structuredStrict,
-    structuredCompatRetries: opts.structuredCompatRetries,
     promptBuilder: (instruction: string) =>
       buildDocumentPrompt(extraction.result.text, extraction.step1Metadata, instruction)
   })
@@ -357,10 +294,10 @@ const runDocumentWrite = async (
 
   const artifactFiles: Record<string, string> = {
     prompt: 'prompt.md',
-    metadata: 'metadata.json'
+    run: 'run.json'
   }
   if (step3Results.length === 1) {
-    artifactFiles['summary'] = step3Results[0]?.outputFileName ?? 'text.md'
+    artifactFiles['summary'] = step3Results[0]?.outputFileName ?? 'text.json'
   } else {
     for (const step3 of step3Results) {
       artifactFiles[`summary-${step3.llmModel}`] = step3.outputFileName
@@ -435,15 +372,9 @@ const processMediaSingle = async (
     grokModel: llmConfig.grokModel,
     outputDir: baseDir,
     useReverb: llmDefaults.useReverb,
-    useOpenAI: llmConfig.useOpenAI,
-    useGemini: llmConfig.useGemini,
-    useAnthropic: llmConfig.useAnthropic,
     reverbVerbatimicity: llmDefaults.reverbVerbatimicity,
     split: llmDefaults.split,
     skipLLM: llmDefaults.skipLLM,
-    structured: llmDefaults.structured,
-    structuredStrict: llmDefaults.structuredStrict,
-    structuredCompatRetries: llmDefaults.structuredCompatRetries,
     prompts: llmDefaults.prompts,
     ttsSpeaker: llmDefaults.ttsSpeaker,
     kittenTtsModel: llmDefaults.kittenTtsModel,
@@ -537,10 +468,9 @@ const writeSavedMetadataArtifacts = async (
   markdown: boolean,
   save: boolean
 ): Promise<void> => {
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify({ step1: metadata }, null, 2))
+  await writeRunManifest(outputDir, 'metadata', { step1: metadata })
 
-  const artifactFiles: Record<string, string> = { metadata: 'metadata.json' }
+  const artifactFiles: Record<string, string> = { run: 'run.json' }
   if (save && markdown) {
     await Bun.write(`${outputDir}/metadata.md`, formatMetadataAsFrontmatter(metadata))
     artifactFiles['metadataMarkdown'] = 'metadata.md'
@@ -765,10 +695,9 @@ const processDownloadMedia = async (
     return { manifestEntry }
   }
 
-  const metadataPath = `${outputDir}/metadata.json`
-  await Bun.write(metadataPath, JSON.stringify(manifestEntry, null, 2))
+  await writeRunManifest(outputDir, 'download', manifestEntry)
 
-  l.report.complete(outputDir, { audio: step1Metadata.audioFileName, metadata: 'metadata.json' })
+  l.report.complete(outputDir, { audio: step1Metadata.audioFileName, run: 'run.json' })
 
   return { outputDir }
 }
@@ -787,10 +716,9 @@ const processDownloadDocument = async (
       actual: { totalCost: 0, steps: [] as never[] }
     }
 
-    const metadataPath = `${prepared.outputDir}/metadata.json`
-    await Bun.write(metadataPath, JSON.stringify({ step1: prepared.step1Metadata, cost }, null, 2))
+    await writeRunManifest(prepared.outputDir, 'download', { step1: prepared.step1Metadata, cost })
 
-    l.report.complete(prepared.outputDir, { metadata: 'metadata.json' })
+    l.report.complete(prepared.outputDir, { run: 'run.json' })
 
     return { outputDir: prepared.outputDir }
   } finally {
@@ -809,14 +737,13 @@ const processDownloadPreparedDocument = async (
       actual: { totalCost: 0, steps: [] as never[] }
     }
 
-    const metadataPath = `${prepared.outputDir}/metadata.json`
-    await Bun.write(metadataPath, JSON.stringify({
+    await writeRunManifest(prepared.outputDir, 'download', {
       step1: prepared.step1Metadata,
       ...(prepared.web ? { web: prepared.web } : {}),
       cost
-    }, null, 2))
+    })
 
-    l.report.complete(prepared.outputDir, { metadata: 'metadata.json' })
+    l.report.complete(prepared.outputDir, { run: 'run.json' })
 
     return { outputDir: prepared.outputDir }
   } finally {

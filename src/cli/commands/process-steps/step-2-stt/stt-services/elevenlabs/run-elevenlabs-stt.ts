@@ -10,7 +10,7 @@ import type {
 import { ElevenLabsSttResponseSchema } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 
@@ -163,7 +163,7 @@ export const runElevenLabsTranscribe = async (
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments, diarizationOptions } = options
-  const apiKey = readEnvFallback('ELEVENLABS_API_KEY')
+  const apiKey = readEnv('ELEVENLABS_API_KEY')
   if (!apiKey) {
     throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs transcription')
   }
@@ -259,7 +259,6 @@ export const runElevenLabsTranscribe = async (
   const metadata: Step2Metadata = {
     transcriptionService: 'elevenlabs',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(finalText),
     ...((transcribeMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0 || remoteProcessingMs > 0)

@@ -14,6 +14,7 @@ import {
   shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
+import { readRunMetadata } from './manifest-helpers'
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
@@ -115,16 +116,16 @@ export const defineTTSServiceTest = ({
         const audioFile = Bun.file(`${outputDir}/speech.wav`)
         expect(audioFile.size).toBeGreaterThan(0)
 
-        const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-          tts?: { ttsService?: string, ttsModel?: string, speaker?: string, audioFileName?: string }
+        const metadata = await readRunMetadata(outputDir) as {
+          tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string, audioFileName?: string }>
         }
-        expect(metadata.tts?.ttsService).toBe(ttsService)
-        expect(metadata.tts?.ttsModel).toBe(model)
+        expect(metadata.tts?.[0]?.ttsService).toBe(ttsService)
+        expect(metadata.tts?.[0]?.ttsModel).toBe(model)
         if (resolveExpectedSpeaker) {
           const expectedSpeaker = await resolveExpectedSpeaker()
-          expect(metadata.tts?.speaker).toBe(expectedSpeaker)
+          expect(metadata.tts?.[0]?.speaker).toBe(expectedSpeaker)
         }
-        expect(metadata.tts?.audioFileName).toBe('speech.wav')
+        expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
       }
     })
   }

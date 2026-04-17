@@ -211,7 +211,6 @@ describe('mergeSplitTranscriptionChunks', () => {
           metadata: {
             transcriptionService: 'groq',
             transcriptionModel: 'whisper-large-v3-turbo',
-            transcriptionModelName: 'whisper-large-v3-turbo',
             processingTime: 300,
             tokenCount: 3
           }
@@ -227,7 +226,6 @@ describe('mergeSplitTranscriptionChunks', () => {
           metadata: {
             transcriptionService: 'groq',
             transcriptionModel: 'whisper-large-v3-turbo',
-            transcriptionModelName: 'whisper-large-v3-turbo',
             processingTime: 100,
             tokenCount: 1
           }
@@ -243,7 +241,6 @@ describe('mergeSplitTranscriptionChunks', () => {
           metadata: {
             transcriptionService: 'groq',
             transcriptionModel: 'whisper-large-v3-turbo',
-            transcriptionModelName: 'whisper-large-v3-turbo',
             processingTime: 200,
             tokenCount: 2
           }

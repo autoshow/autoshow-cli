@@ -3,6 +3,7 @@ import type {
   Step2Metadata,
   Step2RuntimeMetadata
 } from '~/types'
+import { readProviderResultEntry } from '../manifest-utils'
 import { readSttProviderCheckpoint, writeSttProviderCheckpoint } from './manifest'
 
 const DEFAULT_POLL_DEADLINE_MS = 10 * 60 * 1000
@@ -88,34 +89,22 @@ export const readPersistedAsyncSttRuntime = async (
     return undefined
   }
 
-  const metadataPath = `${outputDir}/metadata.json`
-  if (!await Bun.file(metadataPath).exists()) {
-    return await readCheckpointRuntime()
-  }
-
-  let raw: unknown
-  try {
-    raw = await Bun.file(metadataPath).json()
-  } catch {
-    return await readCheckpointRuntime()
-  }
-
+  const providerResult = await readProviderResultEntry(outputDir)
   if (
-    !isRecord(raw)
-    || raw['transcriptionService'] !== expected.transcriptionService
-    || raw['transcriptionModel'] !== expected.transcriptionModel
+    providerResult
+    && providerResult.metadata['transcriptionService'] === expected.transcriptionService
+    && providerResult.metadata['transcriptionModel'] === expected.transcriptionModel
   ) {
-    return await readCheckpointRuntime()
+    return parseStep2RuntimeMetadata(providerResult.metadata['runtime'])
   }
 
-  return parseStep2RuntimeMetadata(raw['runtime'])
+  return await readCheckpointRuntime()
 }
 
 export const writeAsyncSttProgressMetadata = async (
   outputDir: string,
   metadata: Step2Metadata
 ): Promise<void> => {
-  await Bun.write(`${outputDir}/metadata.json`, JSON.stringify(metadata, null, 2))
   await writeSttProviderCheckpoint(
     outputDir,
     metadata.transcriptionService,

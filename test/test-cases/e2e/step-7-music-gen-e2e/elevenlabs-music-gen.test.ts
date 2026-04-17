@@ -7,6 +7,7 @@ import {
   cleanupTestOutput,
   hasConfiguredEnvVar
 } from '../../../test-utils/test-helpers'
+import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
 
@@ -55,11 +56,11 @@ test('music_v1 generates cinematic orchestral music', async () => {
     const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
     expect(musicExists).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-      music?: { musicService?: string; musicModel?: string }
+    const metadata = await readRunMetadata(outputDir) as {
+      music?: Array<{ musicService?: string; musicModel?: string }>
     }
-    expect(metadata.music?.musicService).toBe('elevenlabs')
-    expect(metadata.music?.musicModel).toBe('music_v1')
+    expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
+    expect(metadata.music?.[0]?.musicModel).toBe('music_v1')
   }
 })
 
@@ -85,10 +86,10 @@ test('music_v1 generates lo-fi with duration and instrumental flag', async () =>
     const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
     expect(musicExists).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-      music?: { musicService?: string; lyricsSource?: string }
+    const metadata = await readRunMetadata(outputDir) as {
+      music?: Array<{ musicService?: string; lyricsSource?: string }>
     }
-    expect(metadata.music?.musicService).toBe('elevenlabs')
-    expect(metadata.music?.lyricsSource).toBe('none')
+    expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
+    expect(metadata.music?.[0]?.lyricsSource).toBe('none')
   }
 })

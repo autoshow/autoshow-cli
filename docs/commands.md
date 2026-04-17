@@ -96,7 +96,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 
 ## Pricing Preflight
 
-Most runtime commands support `--price` (or `--dry-run`) to print estimated cost and exit:
+Most runtime commands support `--price` to print estimated cost and exit:
 
 ```bash
 bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price

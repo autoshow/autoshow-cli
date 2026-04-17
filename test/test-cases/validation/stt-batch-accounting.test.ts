@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { processBatch } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { SttPartialCompletionError } from '~/cli/commands/process-steps/process-stt'
+import { readBatchItems, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
 
 const createdBatchDirs: string[] = []
 
@@ -13,7 +14,7 @@ afterEach(async () => {
   }))
 })
 
-test('processBatch counts incomplete STT items separately and preserves outputDir in info.json', async () => {
+test('processBatch counts incomplete STT items separately and preserves outputDir in batch.json', async () => {
   const batchLabel = `stt-batch-accounting-${Date.now()}`
   const opts = buildOptsFromFlags(false, {
     'mistral-stt': 'voxtral-mini-latest'
@@ -27,7 +28,7 @@ test('processBatch counts incomplete STT items separately and preserves outputDi
     async (_command, item, batchDir) => {
       const outputDir = join(batchDir, 'item-1')
       await mkdir(outputDir, { recursive: true })
-      await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify({
+      await writeRunManifestFixture(outputDir, 'stt', {
         step1: {
           title: item,
           slug: 'example',
@@ -74,7 +75,7 @@ test('processBatch counts incomplete STT items separately and preserves outputDi
             errorFile: 'providers/soniox-stt-async-v4/error.json'
           }
         ]
-      }, null, 2))
+      })
 
       throw new SttPartialCompletionError(
         outputDir,
@@ -103,7 +104,7 @@ test('processBatch counts incomplete STT items separately and preserves outputDi
   }
   createdBatchDirs.push(batchDir)
 
-  const info = await Bun.file(join(batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+  const info = await readBatchItems(batchDir)
   expect(info[0]).toEqual(expect.objectContaining({
     completionStatus: 'incomplete',
     outputDir: join(batchDir, 'item-1')

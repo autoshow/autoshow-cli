@@ -1,7 +1,6 @@
 import type { AutoshowConfig } from '~/types'
-import { CLIUsageError } from '~/utils/error-handler'
 
-const STT_PROVIDER_FLAGS = ['provider', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
+const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
@@ -73,9 +72,6 @@ export const mergeConfigIntoRawFlags = (
       ['llama', d.llm.llama], ['openai', d.llm.openai], ['groq', d.llm.groq],
       ['gemini', d.llm.gemini], ['anthropic', d.llm.anthropic], ['minimax', d.llm.minimax],
     ])
-    inject('structured', d.llm.structured)
-    inject('structured-strict', d.llm.structuredStrict)
-    inject('structured-compat-retries', d.llm.structuredCompatRetries)
   }
 
   if (d.post?.tts) {
@@ -173,9 +169,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini':            ['defaults', 'llm', 'gemini'],
   'anthropic':         ['defaults', 'llm', 'anthropic'],
   'minimax':           ['defaults', 'llm', 'minimax'],
-  'structured':        ['defaults', 'llm', 'structured'],
-  'structured-strict': ['defaults', 'llm', 'structuredStrict'],
-  'structured-compat-retries': ['defaults', 'llm', 'structuredCompatRetries'],
   'kitten-tts':        ['defaults', 'post', 'tts', 'kittenTts'],
   'elevenlabs-tts':    ['defaults', 'post', 'tts', 'elevenlabsTts'],
   'minimax-tts':       ['defaults', 'post', 'tts', 'minimaxTts'],
@@ -241,7 +234,7 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
   const numericFlags = new Set([
     'speaker-count', 'reverb-verbatimicity', 'imagen-count', 'video-duration',
     'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'batch-limit', 'batch-concurrency',
-    'max-cents', 'max-usd', 'structured-compat-retries',
+    'max-cents', 'max-usd',
     'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency'
   ])
   if (numericFlags.has(flagName)) {
@@ -255,21 +248,10 @@ export const buildConfigPatchFromFlags = (
   flags: Record<string, unknown>,
   explicitFlags: Set<string>
 ): Record<string, unknown> => {
-  const patch: Record<string, unknown> = {}
-
-  if (explicitFlags.has('json-output') && explicitFlags.has('md-output')) {
-    throw CLIUsageError('Cannot use both --json-output and --md-output at the same time.')
-  }
-
-  if (explicitFlags.has('json-output')) {
-    setNestedValue(patch, ['defaults', 'llm', 'structured'], true)
-  } else if (explicitFlags.has('md-output')) {
-    setNestedValue(patch, ['defaults', 'llm', 'structured'], false)
-  }
+  const patch: Record<string, unknown> = { version: 2 }
 
   for (const flagName of explicitFlags) {
     if (RUNTIME_ONLY_FLAGS.has(flagName)) continue
-    if (flagName === 'json-output' || flagName === 'md-output') continue
     const configPath = FLAG_TO_CONFIG_PATH[flagName]
     if (!configPath) continue
     const rawValue = flags[flagName]

@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runAssemblyAiTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/run-assemblyai-stt'
+import { readProviderCheckpointMetadata, writeProviderCheckpointFixture } from '../../test-utils/manifest-helpers'
 
 const originalFetch = globalThis.fetch
 const originalApiKey = process.env['ASSEMBLYAI_API_KEY']
@@ -118,10 +119,9 @@ describe('runAssemblyAiTranscribe', () => {
     process.env['ASSEMBLYAI_API_KEY'] = 'test-key'
     process.env['ASSEMBLYAI_BASE_URL'] = 'https://assemblyai.test'
 
-    await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify({
+    await writeProviderCheckpointFixture(outputDir, 'assemblyai', 'universal-3-pro', {
       transcriptionService: 'assemblyai',
       transcriptionModel: 'universal-3-pro',
-      transcriptionModelName: 'universal-3-pro',
       processingTime: 10,
       tokenCount: 0,
       runtime: {
@@ -131,7 +131,7 @@ describe('runAssemblyAiTranscribe', () => {
         remoteAssetUrl: 'https://cdn.assemblyai.test/audio.wav',
         createCompletedAt: '2026-04-14T00:00:00.000Z'
       }
-    }, null, 2))
+    })
 
     const slept: number[] = []
     ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (ms: number) => {
@@ -181,7 +181,7 @@ describe('runAssemblyAiTranscribe', () => {
     expect(pollAttempts).toBe(5)
     expect(slept).toEqual([30_000, 60_000, 120_000, 240_000])
 
-    const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+    const metadata = await readProviderCheckpointMetadata(outputDir)
     expect(metadata['runtime']).toEqual(expect.objectContaining({
       mode: 'resumed',
       stage: 'polling',

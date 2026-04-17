@@ -1,5 +1,5 @@
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isOcrCommand, isSttCommand } from '~/types'
+import { isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'

@@ -98,9 +98,6 @@ const resolveExtractionProviderModel = (
 }
 
 const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
-  if (typeof metadata.transcriptionModelName === 'string' && metadata.transcriptionModelName.length > 0) {
-    return metadata.transcriptionModelName
-  }
   if (metadata.transcriptionService !== 'whisper') {
     return metadata.transcriptionModel
   }

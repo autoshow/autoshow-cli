@@ -73,27 +73,6 @@ const parseOptionalPositiveIntFlag = (
   return parsed
 }
 
-const parseNonNegativeIntFlag = (
-  value: string | undefined,
-  flagName: string,
-  fallback: number
-): number => {
-  if (value === undefined) {
-    return fallback
-  }
-
-  if (!/^\d+$/.test(value)) {
-    throw CLIUsageError(`Invalid --${flagName} value "${value}". Expected a non-negative integer.`)
-  }
-
-  const parsed = Number.parseInt(value, 10)
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw CLIUsageError(`Invalid --${flagName} value "${value}". Expected a non-negative integer.`)
-  }
-
-  return parsed
-}
-
 const readStringFlag = (flags: Record<string, unknown>, key: string, fallback: string): string => {
   const value = flags[key]
   if (typeof value === 'string' && value.length > 0) {
@@ -124,13 +103,6 @@ const readOptionalStringArrayFlag = (flags: Record<string, unknown>, key: string
 
 const readBooleanFlag = (flags: Record<string, unknown>, key: string): boolean => {
   return flags[key] === true
-}
-
-const readBooleanFlagWithDefault = (flags: Record<string, unknown>, key: string, fallback: boolean): boolean => {
-  const value = flags[key]
-  if (value === true) return true
-  if (value === false) return false
-  return fallback
 }
 
 const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
@@ -182,22 +154,22 @@ export const buildOptsFromFlags = (
   const ddArgs = parseDoubleDashArgs(doubleDashArgs)
 
   const mergedFlags: Record<string, unknown> = { ...ddArgs, ...flags }
+  const validateCliValue = <T>(validator: (value: string) => T, value: string): T => {
+    try {
+      return validator(value)
+    } catch (error) {
+      throw CLIUsageError(error instanceof Error ? error.message : String(error))
+    }
+  }
   const readValidated = <T>(key: string, validator: (v: string) => T): T | undefined => {
     const v = readOptionalStringFlag(mergedFlags, key)
-    return v === undefined ? undefined : validator(v)
-  }
-
-  const jsonOutput = readBooleanFlag(mergedFlags, 'json-output')
-  const mdOutput = readBooleanFlag(mergedFlags, 'md-output')
-
-  if (jsonOutput && mdOutput) {
-    throw CLIUsageError('Cannot use both --json-output and --md-output at the same time.')
+    return v === undefined ? undefined : validateCliValue(validator, v)
   }
 
   const outputFormat = readStringFlag(mergedFlags, 'out', 'json')
   const normalizedOut: OutputFormat = outputFormat === 'text' || outputFormat === 'tsv' || outputFormat === 'hocr' ? outputFormat : 'json'
 
-  const whisperModel = validateWhisperModel(readStringFlag(mergedFlags, 'whisper', 'tiny'))
+  const whisperModel = validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper', 'tiny'))
   const groqSttModel = readValidated('groq-stt', validateGroqSttModel)
   const elevenlabsSttModel = readValidated('elevenlabs-stt', validateElevenlabsSttModel)
   const deepgramSttModel = readValidated('deepgram-stt', validateDeepgramSttModel)
@@ -239,12 +211,8 @@ export const buildOptsFromFlags = (
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
 
   return {
-    provider: readOptionalStringArrayFlag(mergedFlags, 'provider'),
     useReverb: readBooleanFlag(mergedFlags, 'reverb'),
     whisperExplicit: explicitFlags.has('whisper'),
-    useOpenAI: openaiModel !== undefined,
-    useGemini: geminiModel !== undefined,
-    useAnthropic: anthropicModel !== undefined,
     llamaModel,
     openaiModel,
     groqModel,
@@ -273,18 +241,11 @@ export const buildOptsFromFlags = (
     resumeMissing: readOptionalStringFlag(mergedFlags, 'resume-missing'),
     refreshCache: readBooleanFlag(mergedFlags, 'refresh-cache'),
     noCache: readBooleanFlag(mergedFlags, 'no-cache'),
-    price: readBooleanFlag(mergedFlags, 'price') || readBooleanFlag(mergedFlags, 'dry-run'),
+    price: readBooleanFlag(mergedFlags, 'price'),
     allowOverBudget: readBooleanFlag(mergedFlags, 'allow-over-budget'),
     reverbVerbatimicity: parseFloatWithDefault(readOptionalStringFlag(mergedFlags, 'reverb-verbatimicity'), 0.5),
     split: readBooleanFlag(mergedFlags, 'split'),
     skipLLM,
-    structured: jsonOutput
-      ? true
-      : mdOutput
-        ? false
-        : readBooleanFlagWithDefault(mergedFlags, 'structured', true),
-    structuredStrict: readBooleanFlagWithDefault(mergedFlags, 'structured-strict', true),
-    structuredCompatRetries: parseNonNegativeIntFlag(readOptionalStringFlag(mergedFlags, 'structured-compat-retries'), 'structured-compat-retries', 2),
     dpi: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'dpi'), 300),
     lang: readStringFlag(mergedFlags, 'lang', 'eng'),
     psm: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'psm'), 3),
@@ -316,26 +277,24 @@ export const buildOptsFromFlags = (
     })(),
     ttsSpeaker: (() => {
       const raw = readStringFlag(mergedFlags, 'kitten-voice', DEFAULT_KITTEN_TTS_SPEAKER)
-      if (kittenTtsModelValue !== undefined) {
-        const speaker = raw === 'Ryan' ? DEFAULT_KITTEN_TTS_SPEAKER : raw
-        return validateKittenTtsSpeaker(speaker)
-      }
-      return raw
+      return kittenTtsModelValue !== undefined
+        ? validateCliValue(validateKittenTtsSpeaker, raw)
+        : raw
     })(),
-    kittenTtsModel: kittenTtsModelValue === undefined ? undefined : validateKittenTtsModel(kittenTtsModelValue),
-    groqTtsModel: groqTtsModelFlag === undefined ? undefined : validateGroqTtsModel(groqTtsModelFlag),
-    openaiTtsModel: openaiTtsModelFlag === undefined ? undefined : validateOpenAITtsModel(openaiTtsModelFlag),
-    geminiTtsModel: geminiTtsModelFlag === undefined ? undefined : validateGeminiTtsModel(geminiTtsModelFlag),
+    kittenTtsModel: kittenTtsModelValue === undefined ? undefined : validateCliValue(validateKittenTtsModel, kittenTtsModelValue),
+    groqTtsModel: groqTtsModelFlag === undefined ? undefined : validateCliValue(validateGroqTtsModel, groqTtsModelFlag),
+    openaiTtsModel: openaiTtsModelFlag === undefined ? undefined : validateCliValue(validateOpenAITtsModel, openaiTtsModelFlag),
+    geminiTtsModel: geminiTtsModelFlag === undefined ? undefined : validateCliValue(validateGeminiTtsModel, geminiTtsModelFlag),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
       if (groqTtsModelFlag === undefined) return v
-      return validateGroqTtsVoice(v)
+      return validateCliValue(validateGroqTtsVoice, v)
     })(),
     openaiVoiceId: readOptionalStringFlag(mergedFlags, 'openai-voice'),
     geminiVoiceId: readOptionalStringFlag(mergedFlags, 'gemini-voice'),
-    elevenlabsTtsModel: elevenlabsTtsModelFlag === undefined ? undefined : validateElevenlabsTtsModel(elevenlabsTtsModelFlag),
-    minimaxTtsModel: minimaxTtsModelFlag === undefined ? undefined : validateMinimaxTtsModel(minimaxTtsModelFlag),
+    elevenlabsTtsModel: elevenlabsTtsModelFlag === undefined ? undefined : validateCliValue(validateElevenlabsTtsModel, elevenlabsTtsModelFlag),
+    minimaxTtsModel: minimaxTtsModelFlag === undefined ? undefined : validateCliValue(validateMinimaxTtsModel, minimaxTtsModelFlag),
     minimaxTtsVoice: readOptionalStringFlag(mergedFlags, 'minimax-tts-voice'),
     elevenlabsVoiceId: readOptionalStringFlag(mergedFlags, 'elevenlabs-voice'),
     geminiImageModel: readValidated('gemini-image', validateGeminiImageModel),

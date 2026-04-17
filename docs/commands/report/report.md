@@ -21,8 +21,8 @@ bun as report <outputDir>
 
 The target can be:
 
-- a single run directory that already contains `providers/` and `metadata.json`
-- a batch root whose immediate child directories each contain `providers/` and `metadata.json`
+- a single run directory that already contains `providers/` and `run.json`
+- a batch root whose immediate child directories each contain `providers/` and `run.json`
 
 ## Target Detection
 
@@ -30,10 +30,10 @@ The target can be:
 
 Detection rules:
 
-- if the target itself contains `providers/` and `metadata.json`, it is treated as one run
+- if the target itself contains `providers/` and `run.json`, it is treated as one run
 - otherwise, `report` scans only the immediate child directories and treats matching children as batch runs
 - a run is classified as STT if any provider directory contains `transcription.evidence.json`
-- a run is classified as OCR if any provider directory contains `metadata.json` plus one of `result.json`, `extraction.json`, `extraction.txt`, `extraction.tsv`, or `extraction.hocr`
+- a run is classified as OCR if any provider directory contains `result.json`
 - all discovered runs in one invocation must resolve to the same kind
 
 Failures:
@@ -70,10 +70,7 @@ OCR reporting analyzes persisted provider artifacts under `providers/` and surfa
 
 OCR provider loading behavior:
 
-- reads provider identity and timing/token metadata from provider `metadata.json`
-- prefers provider `result.json`
-- falls back to `extraction.json`
-- falls back again to `extraction.txt`, `extraction.tsv`, or `extraction.hocr` for older OCR runs
+- reads provider identity, timing/token metadata, and structured OCR results from provider `result.json`
 - incomplete OCR runs are allowed as long as at least one provider artifact is analyzable
 
 Per run, OCR reporting writes:

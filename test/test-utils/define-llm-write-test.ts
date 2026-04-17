@@ -7,6 +7,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
 } from "./test-helpers"
 import { budgetedTest } from './budget'
+import { readRunMetadata } from './manifest-helpers'
 import { shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
@@ -65,13 +66,13 @@ export const defineLLMWriteTest = ({
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
-      const metadataExists = await fileExists(`${outputDir}/metadata.json`)
+      const metadataExists = await fileExists(`${outputDir}/run.json`)
       expect(metadataExists).toBe(true)
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(outputDir) as {
         step3?: { llmModel?: string; llmService?: string; outputFileName?: string }
       }
-      const outputFileName = metadata.step3?.outputFileName ?? 'text.md'
+      const outputFileName = metadata.step3?.outputFileName ?? 'text.json'
       expect(await fileExists(`${outputDir}/${outputFileName}`)).toBe(true)
 
       if (outputFileName.endsWith('.json')) {

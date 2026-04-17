@@ -1,8 +1,8 @@
 import * as l from '~/logger'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const setupGroqTts = async (): Promise<void> => {
-  const apiKey = readEnvFallback('GROQ_API_KEY')
+  const apiKey = readEnv('GROQ_API_KEY')
   if (apiKey) {
     l.success('GROQ_API_KEY found — Groq TTS ready')
   } else {
@@ -12,7 +12,7 @@ export const setupGroqTts = async (): Promise<void> => {
 }
 
 export const ensureGroqTtsSetup = async (): Promise<void> => {
-  const apiKey = readEnvFallback('GROQ_API_KEY')
+  const apiKey = readEnv('GROQ_API_KEY')
   if (!apiKey) {
     throw new Error('GROQ_API_KEY environment variable is required for Groq TTS')
   }

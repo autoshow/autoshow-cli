@@ -11,6 +11,7 @@ import {
   shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
+import { readRunMetadata } from './manifest-helpers'
 
 const IMAGE_GEN_TITLE = 'image-gen'
 
@@ -74,12 +75,12 @@ export const defineImageServiceTest = ({
         const imageExists = await fileExists(`${outputDir}/generated-image.${ext}`)
         expect(imageExists).toBe(true)
 
-        const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-          image?: { imageService?: string; imageModel?: string; imageFileName?: string }
+        const metadata = await readRunMetadata(outputDir) as {
+          image?: Array<{ imageService?: string; imageModel?: string; imageFileNames?: string[] }>
         }
-        expect(metadata.image?.imageService).toBe(imageService)
-        expect(metadata.image?.imageModel).toBe(model)
-        expect(metadata.image?.imageFileName).toBe(`generated-image.${ext}`)
+        expect(metadata.image?.[0]?.imageService).toBe(imageService)
+        expect(metadata.image?.[0]?.imageModel).toBe(model)
+        expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe(`generated-image.${ext}`)
       }
     })
   }

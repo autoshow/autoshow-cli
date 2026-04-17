@@ -12,7 +12,6 @@ export type DetectedReportTarget = {
 
 const OCR_ARTIFACT_FILES = new Set([
   'result.json',
-  'extraction.json',
   'extraction.txt',
   'extraction.tsv',
   'extraction.hocr'
@@ -24,7 +23,7 @@ const isRunDirectory = async (targetDir: string): Promise<boolean> => {
     return false
   }
 
-  return entries.includes('providers') && entries.includes('metadata.json')
+  return entries.includes('providers') && entries.includes('run.json')
 }
 
 const listProviderDirectories = async (runDir: string): Promise<string[]> => {
@@ -49,7 +48,7 @@ export const classifyReportRunDirectory = async (
     }
 
     if (
-      providerEntries.includes('metadata.json')
+      providerEntries.includes('result.json')
       && providerEntries.some((entry) => OCR_ARTIFACT_FILES.has(entry))
     ) {
       hasOcrArtifacts = true
@@ -94,7 +93,7 @@ export const discoverReportRunDirectories = async (targetPath: string): Promise<
 
   if (runDirectories.length === 0) {
     throw new Error(
-      `No reportable runs found under ${resolvedTarget}. Expected a run directory with providers/ and metadata.json, or a batch root whose immediate child directories contain those artifacts.`
+      `No reportable runs found under ${resolvedTarget}. Expected a run directory with providers/ and run.json, or a batch root whose immediate child directories contain those artifacts.`
     )
   }
 
@@ -119,7 +118,7 @@ export const detectReportTarget = async (targetPath: string): Promise<DetectedRe
   const unclassifiedRuns = classifications.filter((entry) => entry.kind === null)
   if (unclassifiedRuns.length > 0) {
     throw new Error(
-      `Could not infer report type from these runs: ${unclassifiedRuns.map((entry) => entry.runDir).join(', ')}. STT runs need transcription.evidence.json; OCR runs need provider metadata.json plus result.json or extraction.* artifacts.`
+      `Could not infer report type from these runs: ${unclassifiedRuns.map((entry) => entry.runDir).join(', ')}. STT runs need transcription.evidence.json; OCR runs need provider result.json plus extraction.* artifacts.`
     )
   }
 

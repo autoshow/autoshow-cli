@@ -6,7 +6,7 @@ import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
@@ -120,7 +120,7 @@ export const runMistralStt = async (
     diarizationOptions?: DiarizationOptions | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const apiKey = readEnvFallback('MISTRAL_API_KEY')
+  const apiKey = readEnv('MISTRAL_API_KEY')
   if (!apiKey) {
     throw new Error('MISTRAL_API_KEY environment variable is required for Mistral transcription')
   }
@@ -201,7 +201,6 @@ export const runMistralStt = async (
   const metadata: Step2Metadata = {
     transcriptionService: 'mistral',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(text),
     ...(transcribeMs > 0 ? { timings: { transcribeMs } } : {})

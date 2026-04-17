@@ -10,6 +10,7 @@ import {
 } from '../../../../test-utils/test-helpers'
 import { rm } from 'node:fs/promises'
 import { budgetedTest } from '../../../../test-utils/budget'
+import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 
 describe('write subcommand with llama', () => {
@@ -36,13 +37,13 @@ describe('write subcommand with llama', () => {
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
-      const summaryExists = await fileExists(`${outputDir}/text.md`)
+      const summaryExists = await fileExists(`${outputDir}/text.json`)
       expect(summaryExists).toBe(true)
 
-      const summaryContent = await Bun.file(`${outputDir}/text.md`).text()
-      expect(summaryContent.length).toBeGreaterThan(0)
+      const summaryJson = await Bun.file(`${outputDir}/text.json`).json() as unknown
+      expect(summaryJson).toBeDefined()
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(outputDir) as {
         step3?: { llmModel?: string; llmService?: string }
       }
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
@@ -64,10 +65,10 @@ describe('write subcommand with llama', () => {
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
-      const summaryExists = await fileExists(`${outputDir}/text.md`)
+      const summaryExists = await fileExists(`${outputDir}/text.json`)
       expect(summaryExists).toBe(true)
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(outputDir) as {
         step3?: { llmModel?: string; llmService?: string }
       }
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
@@ -110,10 +111,10 @@ describe('write subcommand with document input', () => {
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
-      const summaryExists = await fileExists(`${outputDir}/text.md`)
+      const summaryExists = await fileExists(`${outputDir}/text.json`)
       expect(summaryExists).toBe(true)
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(outputDir) as {
         step3?: { llmModel?: string; llmService?: string }
       }
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')

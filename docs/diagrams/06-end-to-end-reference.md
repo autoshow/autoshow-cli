@@ -51,17 +51,17 @@ Complete trace of a real CLI command from input to output, plus environment vari
     |
     |  STEP 3: LLM Summary
     |  ├── buildPrompt(metadata, transcription) → prompt.md
-    |  ├── runLLM() → llama.cpp (default model) → text.md
+    |  ├── runLLM() → llama.cpp (default model) → text.json
     |  └── Step3Metadata
     |
-    |  Write metadata.json { step1, step2, step3 }
+    |  Write run.json { step1, step2, step3 }
     v
   output/2026-02-18_12-00-00_video-title/
     ├── audio.wav
     ├── transcription.txt
     ├── prompt.md
-    ├── text.md
-    └── metadata.json
+    ├── text.json
+    └── run.json
 ```
 
 ## Environment Variables

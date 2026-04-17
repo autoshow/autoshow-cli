@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import * as v from 'valibot'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
-import { getStructuredCapability, resolveStructuredMode, shouldApplyStrictMode } from '~/cli/commands/process-steps/step-3-write/structured-output/capabilities'
+import { getStructuredCapability, resolveStructuredStrategy, shouldApplyStrictMode } from '~/cli/commands/process-steps/step-3-write/structured-output/capabilities'
 import { renderToPlainText } from '~/cli/commands/process-steps/step-3-write/structured-output/renderers'
 import { getStructuredPresetSchema, hasStructuredPreset } from '~/cli/commands/process-steps/step-3-write/structured-output/preset-registry'
 
@@ -87,21 +87,17 @@ describe('getStructuredCapability', () => {
   })
 })
 
-describe('resolveStructuredMode', () => {
-  test('returns off when not enabled', () => {
-    expect(resolveStructuredMode('openai', false)).toBe('off')
+describe('resolveStructuredStrategy', () => {
+  test('returns native for providers with native schema output', () => {
+    expect(resolveStructuredStrategy('openai')).toBe('native')
   })
 
-  test('returns off for llama.cpp even when enabled', () => {
-    expect(resolveStructuredMode('llama.cpp', true)).toBe('off')
+  test('returns schema-guided for llama.cpp', () => {
+    expect(resolveStructuredStrategy('llama.cpp')).toBe('schema-guided')
   })
 
-  test('returns native for openai when enabled', () => {
-    expect(resolveStructuredMode('openai', true)).toBe('native')
-  })
-
-  test('returns compat for minimax when enabled', () => {
-    expect(resolveStructuredMode('minimax', true)).toBe('compat')
+  test('returns schema-guided for minimax', () => {
+    expect(resolveStructuredStrategy('minimax')).toBe('schema-guided')
   })
 })
 

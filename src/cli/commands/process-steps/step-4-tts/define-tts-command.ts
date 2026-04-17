@@ -18,8 +18,8 @@ export const ttsCommand = defineCommand({
   flags: ttsFlags,
   help: {
     examples: [
-      ['bun as tts output/text.md --kitten-tts', 'Generate speech with local Kitten TTS'],
-      ['bun as tts output/text.md --elevenlabs-tts', 'Generate speech with ElevenLabs']
+      ['bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8', 'Generate speech with local Kitten TTS'],
+      ['bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3', 'Generate speech with ElevenLabs']
     ]
   }
 }, async (ctx) => {
@@ -48,7 +48,7 @@ export const ttsCommand = defineCommand({
   if (shouldExit) {
     l.report.expectedOutput(
       './output/<timestamp>_<label>/',
-      [...targets.map((target) => getTtsArtifactFileName(target, targets.length === 1)), 'metadata.json']
+      [...targets.map((target) => getTtsArtifactFileName(target, targets.length === 1)), 'run.json']
     )
     return
   }
@@ -87,7 +87,7 @@ export const ttsCommand = defineCommand({
     outputDir,
     {
       ...buildTtsArtifactMap(metadata, 'audio'),
-      metadata: 'metadata.json'
+      run: 'run.json'
     },
     {
       steps: buildProviderStepSummaries(

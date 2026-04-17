@@ -68,7 +68,7 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --bu
 Covers:
 - `bun as ocr https://ajcwebdev.com --url-backend firecrawl`
 - remote article extraction writing `extraction.txt`
-- `metadata.json` reporting `step1.format: "html"` and `step2.extractionMethod: "html+firecrawl"`
+- `run.json` reporting `step1.format: "html"` and `step2.extractionMethod: "html+firecrawl"`
 
 Requires `FIRECRAWL_API_KEY`.
 
@@ -83,7 +83,7 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --b
 Covers:
 - `bun as ocr https://ajcwebdev.com --url-backend glm-reader`
 - remote article extraction writing `extraction.txt`
-- `metadata.json` reporting `step1.format: "html"` and `step2.extractionMethod: "html+glm-reader"`
+- `run.json` reporting `step1.format: "html"` and `step2.extractionMethod: "html+glm-reader"`
 
 Requires `GLM_API_KEY`.
 

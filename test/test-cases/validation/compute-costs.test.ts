@@ -162,7 +162,6 @@ describe('computeActualCosts STT', () => {
       step2: {
         transcriptionService: 'deepgram',
         transcriptionModel: 'nova-3',
-        transcriptionModelName: 'nova-3',
         processingTime: 5000,
         tokenCount: 150
       }
@@ -190,28 +189,24 @@ describe('computeActualCosts STT', () => {
         {
           transcriptionService: 'elevenlabs',
           transcriptionModel: 'scribe_v2',
-          transcriptionModelName: 'scribe_v2',
           processingTime: 500,
           tokenCount: 100
         },
         {
           transcriptionService: 'assemblyai',
           transcriptionModel: 'universal-2',
-          transcriptionModelName: 'universal-2',
           processingTime: 600,
           tokenCount: 120
         },
         {
           transcriptionService: 'speechmatics',
           transcriptionModel: 'enhanced',
-          transcriptionModelName: 'enhanced',
           processingTime: 700,
           tokenCount: 140
         },
         {
           transcriptionService: 'rev',
           transcriptionModel: 'machine',
-          transcriptionModelName: 'machine',
           processingTime: 800,
           tokenCount: 160
         }
@@ -244,7 +239,6 @@ describe('computeActualCosts STT', () => {
       step2: {
         transcriptionService: 'rev',
         transcriptionModel: 'machine',
-        transcriptionModelName: 'machine',
         processingTime: 5000,
         tokenCount: 150
       }

@@ -8,9 +8,10 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
   hasConfiguredEnvVar,
 } from "../../../../test-utils/test-helpers"
+import { readRunMetadata } from "../../../../test-utils/manifest-helpers"
 
 const hasOpenAiEnv = async (): Promise<boolean> => {
-  return await hasConfiguredEnvVar('OPENAI_API_KEY') || await hasConfiguredEnvVar('NITRO_OPENAI_API_KEY')
+  return await hasConfiguredEnvVar('OPENAI_API_KEY')
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -53,15 +54,14 @@ describe("kitten-tts pipeline", () => {
       expect(outputDir).not.toBeNull()
 
       if (outputDir) {
-        const metadataExists = await fileExists(`${outputDir}/metadata.json`)
+        const metadataExists = await fileExists(`${outputDir}/run.json`)
         expect(metadataExists).toBe(true)
 
-        const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-          step3?: { llmService?: string; outputFileName?: string }
-          step4?: { ttsService?: string; ttsModel?: string; chunkCount?: number; audioFileName?: string }
-        }
+        const metadata = await readRunMetadata(outputDir) as Record<string, unknown>
+        const step3 = isRecord(metadata['step3']) ? metadata['step3'] : null
+        const step4Entries = toRecordArray(metadata['step4'])
 
-        const outputFileName = metadata.step3?.outputFileName ?? "text.md"
+        const outputFileName = typeof step3?.['outputFileName'] === 'string' ? step3['outputFileName'] : 'text.json'
         const summaryExists = await fileExists(`${outputDir}/${outputFileName}`)
         expect(summaryExists).toBe(true)
 
@@ -79,11 +79,11 @@ describe("kitten-tts pipeline", () => {
         const audioFile = Bun.file(`${outputDir}/speech.wav`)
         expect(audioFile.size).toBeGreaterThan(0)
 
-        expect(metadata.step3?.llmService).toBeDefined()
-        expect(metadata.step4?.ttsService).toBe("kitten")
-        expect(metadata.step4?.ttsModel).toBe(model)
-        expect(metadata.step4?.chunkCount).toBeGreaterThan(0)
-        expect(metadata.step4?.audioFileName).toBe("speech.wav")
+        expect(step3?.['llmService']).toBeDefined()
+        expect(step4Entries[0]?.['ttsService']).toBe("kitten")
+        expect(step4Entries[0]?.['ttsModel']).toBe(model)
+        expect(step4Entries[0]?.['chunkCount']).toBeGreaterThan(0)
+        expect(step4Entries[0]?.['audioFileName']).toBe("speech.wav")
       }
     })
 
@@ -113,7 +113,7 @@ describe("kitten-tts pipeline", () => {
 
     test('write can emit multiple speech artifacts from one summary', async () => {
       if (!await hasOpenAiEnv()) {
-        console.log('Skipping: OPENAI_API_KEY or NITRO_OPENAI_API_KEY is required for multi-provider write TTS coverage')
+        console.log('Skipping: OPENAI_API_KEY is required for multi-provider write TTS coverage')
         return
       }
 
@@ -142,7 +142,7 @@ describe("kitten-tts pipeline", () => {
         expect(await fileExists(`${outputDir}/speech-kitten-kitten-tts-mini.wav`)).toBe(true)
         expect(await fileExists(`${outputDir}/speech-openai-gpt-4o-mini-tts.wav`)).toBe(true)
 
-        const metadata = JSON.parse(await Bun.file(`${outputDir}/metadata.json`).text()) as Record<string, unknown>
+        const metadata = await readRunMetadata(outputDir)
         const step3 = isRecord(metadata['step3']) ? metadata['step3'] : null
         const step4Entries = toRecordArray(metadata['step4'])
 

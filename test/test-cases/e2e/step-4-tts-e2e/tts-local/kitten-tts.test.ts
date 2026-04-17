@@ -10,12 +10,13 @@ import {
   hasConfiguredEnvVar,
 } from '../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../test-utils/budget'
+import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 const KITTEN_TTS_ENV_DIR = 'runtime/bin/kitten-tts'
 const KITTEN_PYTHON_VERSION = '3.12'
 
 const hasOpenAiTtsEnv = async (): Promise<boolean> => {
-  return await hasConfiguredEnvVar('OPENAI_API_KEY') || await hasConfiguredEnvVar('NITRO_OPENAI_API_KEY')
+  return await hasConfiguredEnvVar('OPENAI_API_KEY')
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -102,14 +103,14 @@ describe('kitten-tts', () => {
           const audioFile = Bun.file(`${outputDir}/speech.wav`)
           expect(audioFile.size).toBeGreaterThan(0)
 
-          const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-            tts?: { ttsService?: string; ttsModel?: string; chunkCount?: number; audioFileName?: string; speaker?: string }
+          const metadata = await readRunMetadata(outputDir) as {
+            tts?: Array<{ ttsService?: string; ttsModel?: string; chunkCount?: number; audioFileName?: string; speaker?: string }>
           }
-          expect(metadata.tts?.ttsService).toBe('kitten')
-          expect(metadata.tts?.ttsModel).toBe(kittenModelCase.model)
-          expect(metadata.tts?.chunkCount).toBeGreaterThan(0)
-          expect(metadata.tts?.audioFileName).toBe('speech.wav')
-          expect(metadata.tts?.speaker).toBe(kittenModelCase.speaker)
+          expect(metadata.tts?.[0]?.ttsService).toBe('kitten')
+          expect(metadata.tts?.[0]?.ttsModel).toBe(kittenModelCase.model)
+          expect(metadata.tts?.[0]?.chunkCount).toBeGreaterThan(0)
+          expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
+          expect(metadata.tts?.[0]?.speaker).toBe(kittenModelCase.speaker)
         }
       })
     }
@@ -135,7 +136,7 @@ describe('kitten-tts', () => {
 
     test('multi-provider run succeeds when one local and one API target are both available', async () => {
       if (!await hasOpenAiTtsEnv()) {
-        console.log('Skipping: OPENAI_API_KEY or NITRO_OPENAI_API_KEY is required for multi-provider TTS success coverage')
+        console.log('Skipping: OPENAI_API_KEY is required for multi-provider TTS success coverage')
         return
       }
 
@@ -162,7 +163,7 @@ describe('kitten-tts', () => {
         expect(await fileExists(`${outputDir}/speech-kitten-kitten-tts-mini.wav`)).toBe(true)
         expect(await fileExists(`${outputDir}/speech-openai-gpt-4o-mini-tts.wav`)).toBe(true)
 
-        const metadata = JSON.parse(await Bun.file(`${outputDir}/metadata.json`).text()) as Record<string, unknown>
+        const metadata = await readRunMetadata(outputDir)
         const ttsEntries = toRecordArray(metadata['tts'])
         expect(ttsEntries).toHaveLength(2)
         expect(ttsEntries[0]?.['ttsService']).toBe('kitten')
@@ -198,8 +199,7 @@ describe('kitten-tts', () => {
         ],
         {
           env: {
-            OPENAI_API_KEY: '',
-            NITRO_OPENAI_API_KEY: ''
+            OPENAI_API_KEY: ''
           }
         }
       )
@@ -213,14 +213,11 @@ describe('kitten-tts', () => {
         expect(await fileExists(`${outputDir}/speech-kitten-kitten-tts-mini.wav`)).toBe(true)
         expect(await fileExists(`${outputDir}/speech-openai-gpt-4o-mini-tts.wav`)).toBe(false)
 
-        const metadata = JSON.parse(await Bun.file(`${outputDir}/metadata.json`).text()) as Record<string, unknown>
-        const tts = metadata['tts']
-        expect(Array.isArray(tts)).toBe(false)
-        expect(isRecord(tts)).toBe(true)
-        if (isRecord(tts)) {
-          expect(tts['ttsService']).toBe('kitten')
-          expect(tts['audioFileName']).toBe('speech-kitten-kitten-tts-mini.wav')
-        }
+        const metadata = await readRunMetadata(outputDir)
+        const ttsEntries = toRecordArray(metadata['tts'])
+        expect(ttsEntries).toHaveLength(1)
+        expect(ttsEntries[0]?.['ttsService']).toBe('kitten')
+        expect(ttsEntries[0]?.['audioFileName']).toBe('speech-kitten-kitten-tts-mini.wav')
       }
     }, 15000)
 
@@ -238,7 +235,6 @@ describe('kitten-tts', () => {
         {
           env: {
             OPENAI_API_KEY: '',
-            NITRO_OPENAI_API_KEY: '',
             GEMINI_API_KEY: ''
           }
         }

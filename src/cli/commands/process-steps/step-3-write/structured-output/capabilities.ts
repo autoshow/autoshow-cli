@@ -1,4 +1,4 @@
-import type { LLMService, ProviderStructuredCapability, StructuredMode } from '~/types'
+import type { LLMService, ProviderStructuredCapability, StructuredStrategy } from '~/types'
 
 const CAPABILITIES: Record<LLMService, ProviderStructuredCapability> = {
   'openai': {
@@ -35,10 +35,8 @@ export const getStructuredCapability = (service: LLMService): ProviderStructured
   return CAPABILITIES[service]
 }
 
-export const resolveStructuredMode = (service: LLMService, enabled: boolean): StructuredMode => {
-  if (!enabled) return 'off'
-  if (service === 'llama.cpp') return 'off'
-  return CAPABILITIES[service].nativeStructuredOutput ? 'native' : 'compat'
+export const resolveStructuredStrategy = (service: LLMService): StructuredStrategy => {
+  return CAPABILITIES[service].nativeStructuredOutput ? 'native' : 'schema-guided'
 }
 
 export const shouldApplyStrictMode = (

@@ -30,7 +30,7 @@ import {
   writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
@@ -506,7 +506,7 @@ export const runSonioxStt = async (
     lifecycle?: AsyncSttLifecycleHooks | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const apiKey = readEnvFallback('SONIOX_API_KEY')
+  const apiKey = readEnv('SONIOX_API_KEY')
   if (!apiKey) {
     throw new Error('SONIOX_API_KEY environment variable is required for Soniox transcription')
   }
@@ -565,7 +565,6 @@ export const runSonioxStt = async (
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'soniox',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
     timings: {
@@ -733,7 +732,6 @@ export const runSonioxStt = async (
     metadata = {
       transcriptionService: 'soniox',
       transcriptionModel: modelName,
-      transcriptionModelName: modelName,
       processingTime,
       tokenCount: countTokens(text),
       runtime: completedRuntime,

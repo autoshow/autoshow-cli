@@ -1,8 +1,8 @@
 import * as l from '~/logger'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const setupElevenLabsStt = async (): Promise<void> => {
-  const apiKey = readEnvFallback('ELEVENLABS_API_KEY')
+  const apiKey = readEnv('ELEVENLABS_API_KEY')
   if (apiKey) {
     l.success('ELEVENLABS_API_KEY found — ElevenLabs transcription ready')
   } else {
@@ -12,7 +12,7 @@ export const setupElevenLabsStt = async (): Promise<void> => {
 }
 
 export const ensureElevenLabsSttSetup = async (): Promise<void> => {
-  const apiKey = readEnvFallback('ELEVENLABS_API_KEY')
+  const apiKey = readEnv('ELEVENLABS_API_KEY')
   if (!apiKey) {
     throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs transcription')
   }

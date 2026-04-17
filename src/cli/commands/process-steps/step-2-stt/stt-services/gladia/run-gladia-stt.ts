@@ -33,7 +33,7 @@ import {
   writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 import { getGladiaBaseUrl } from './gladia'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 
@@ -190,7 +190,7 @@ export const runGladiaStt = async (
     runMode,
     lifecycle
   } = options
-  const apiKey = readEnvFallback('GLADIA_API_KEY')
+  const apiKey = readEnv('GLADIA_API_KEY')
   if (!apiKey) {
     throw new Error('GLADIA_API_KEY environment variable is required for Gladia transcription')
   }
@@ -231,7 +231,6 @@ export const runGladiaStt = async (
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'gladia',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
     timings: {
@@ -568,7 +567,6 @@ export const runGladiaStt = async (
   const metadata: Step2Metadata = {
     transcriptionService: 'gladia',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(finalText),
     runtime: completedRuntime,

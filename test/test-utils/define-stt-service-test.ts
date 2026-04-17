@@ -13,6 +13,7 @@ import {
   shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
+import { readRunMetadata } from './manifest-helpers'
 
 export const defineSTTServiceTest = ({
   models,
@@ -77,7 +78,7 @@ export const defineSTTServiceTest = ({
         expect(transcriptContent.length).toBeGreaterThan(0)
         expect(transcriptContent).toMatch(/\[\d{2}:\d{2}:\d{2}\]/)
 
-        const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+        const metadata = await readRunMetadata(outputDir) as {
           step2?: { transcriptionService?: string, transcriptionModel?: string }
         }
         expect(metadata.step2?.transcriptionService).toBe(sttService)
@@ -86,7 +87,7 @@ export const defineSTTServiceTest = ({
         const promptExists = await fileExists(`${outputDir}/prompt.md`)
         expect(promptExists).toBe(true)
 
-        const summaryExists = await fileExists(`${outputDir}/text.md`)
+        const summaryExists = await fileExists(`${outputDir}/text.json`)
         expect(summaryExists).toBe(false)
       }
     }, timeoutMs)

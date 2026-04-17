@@ -9,6 +9,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
 } from '../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../test-utils/budget'
+import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 describe('write subcommand with services', () => {
   beforeAll(async () => {
@@ -84,10 +85,10 @@ describe('write subcommand with services', () => {
       expect(outputDir).not.toBeNull()
 
       if (outputDir) {
-        const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+        const metadata = await readRunMetadata(outputDir) as {
           step3?: { llmModel?: string; llmService?: string; outputFileName?: string }
         }
-        const outputFileName = metadata.step3?.outputFileName ?? 'text.md'
+        const outputFileName = metadata.step3?.outputFileName ?? 'text.json'
         expect(await fileExists(`${outputDir}/${outputFileName}`)).toBe(true)
 
         if (outputFileName.endsWith('.json')) {

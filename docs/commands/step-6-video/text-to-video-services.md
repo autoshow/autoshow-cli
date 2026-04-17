@@ -78,7 +78,7 @@ Single-provider runs write:
 ```text
 output/YYYY-MM-DD_HH-mm-ss_video-gen/
   generated-video.mp4
-  metadata.json
+  run.json
 ```
 
 Multi-provider runs write one file per provider:
@@ -87,10 +87,10 @@ Multi-provider runs write one file per provider:
 output/YYYY-MM-DD_HH-mm-ss_video-gen/
   generated-video-gemini-veo-3.1-fast-generate-preview.mp4
   generated-video-minimax-MiniMax-Hailuo-2.3.mp4
-  metadata.json
+  run.json
 ```
 
-`metadata.json` includes `video` (a single object for one provider, an array for multiple), `cost`, and `timing` sections.
+`run.json` includes `video`, `cost`, and `timing` sections. `video` is always an array, even when only one provider succeeds.
 
 ## Notes
 

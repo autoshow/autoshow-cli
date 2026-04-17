@@ -1,8 +1,8 @@
 import * as l from '~/logger'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const setupDeepgramStt = async (): Promise<void> => {
-  const apiKey = readEnvFallback('DEEPGRAM_API_KEY')
+  const apiKey = readEnv('DEEPGRAM_API_KEY')
   if (apiKey) {
     l.success('DEEPGRAM_API_KEY found — Deepgram transcription ready')
   } else {
@@ -12,7 +12,7 @@ export const setupDeepgramStt = async (): Promise<void> => {
 }
 
 export const ensureDeepgramSttSetup = async (): Promise<void> => {
-  const apiKey = readEnvFallback('DEEPGRAM_API_KEY')
+  const apiKey = readEnv('DEEPGRAM_API_KEY')
   if (!apiKey) {
     throw new Error('DEEPGRAM_API_KEY environment variable is required for Deepgram transcription')
   }

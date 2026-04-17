@@ -14,6 +14,7 @@ import {
 } from '~/utils/ocr-consensus-report'
 import { validateData } from '~/utils/validate/validation'
 import { runCommand } from '../../test-utils/test-helpers'
+import { writeProviderResultFixture, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
 
 const writeJson = async (path: string, value: unknown): Promise<void> => {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
@@ -58,10 +59,9 @@ const writeOcrProviderArtifacts = async (
 ): Promise<void> => {
   const providerDir = join(runDir, 'providers', providerDirName)
   await mkdir(providerDir, { recursive: true })
-  await writeJson(join(providerDir, 'metadata.json'), metadata)
+  await writeProviderResultFixture(providerDir, metadata.ocrService ?? providerDirName, metadata.ocrModel, metadata as unknown as Record<string, unknown>, result as unknown as Record<string, unknown>)
 
   if (artifactMode === 'result') {
-    await writeJson(join(providerDir, 'result.json'), result)
     return
   }
 
@@ -95,13 +95,13 @@ const writeMinimalSttClassificationArtifacts = async (
     timingQuality: 'native_word',
     speakerInventory: []
   })
-  await writeJson(join(providerDir, 'metadata.json'), {
+  await writeProviderResultFixture(providerDir, 'assemblyai', 'universal-3-pro', {
     transcriptionService: 'assemblyai',
     transcriptionModel: 'universal-3-pro',
     tokenCount: 2,
     processingTime: 1000
-  })
-  await writeJson(join(runDir, 'metadata.json'), {
+  }, {})
+  await writeRunManifestFixture(runDir, 'stt', {
     step1: { title: 'stt', duration: '00:01' }
   })
 }
@@ -157,7 +157,7 @@ describe('ocr consensus report utilities', () => {
         )
       ])
 
-      await writeJson(join(runDir, 'metadata.json'), {
+      await writeRunManifestFixture(runDir, 'ocr', {
         step1: {
           title: 'Quarterly scan',
           author: 'Ops',
@@ -212,7 +212,7 @@ describe('ocr consensus report utilities', () => {
     }
   })
 
-  test('supports incomplete OCR runs and legacy extraction.txt fallbacks', async () => {
+  test('supports incomplete OCR runs with result.json provider artifacts', async () => {
     const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-consensus-legacy-'))
     const runDir = join(rootDir, '2026-04-15_legacy')
 
@@ -240,11 +240,10 @@ describe('ocr consensus report utilities', () => {
           totalPages: 1,
           ocrPages: 1,
           textPages: 0
-        }),
-        'legacy-text'
+        })
       )
 
-      await writeJson(join(runDir, 'metadata.json'), {
+      await writeRunManifestFixture(runDir, 'ocr', {
         step1: {
           title: 'Legacy OCR run',
           author: 'Archive',
@@ -342,12 +341,12 @@ describe('ocr consensus report utilities', () => {
       ])
 
       await Promise.all([
-        writeJson(join(runA, 'metadata.json'), {
+        writeRunManifestFixture(runA, 'ocr', {
           step1: { title: 'Run A', author: 'Batch', pageCount: 1, format: 'pdf' },
           requestedProviders: [{ service: 'ocrmypdf', model: 'ocrmypdf' }],
           completionStatus: 'full'
         }),
-        writeJson(join(runB, 'metadata.json'), {
+        writeRunManifestFixture(runB, 'ocr', {
           step1: { title: 'Run B', author: 'Batch', pageCount: 1, format: 'pdf' },
           requestedProviders: [{ service: 'paddle-ocr', model: 'paddle-ocr' }],
           completionStatus: 'full'
@@ -394,7 +393,7 @@ describe('ocr consensus report utilities', () => {
           textPages: 0
         })
       )
-      await writeJson(join(ocrRun, 'metadata.json'), {
+      await writeRunManifestFixture(ocrRun, 'ocr', {
         step1: { title: 'OCR', author: 'Mixed', pageCount: 1, format: 'pdf' },
         requestedProviders: [{ service: 'ocrmypdf', model: 'ocrmypdf' }]
       })

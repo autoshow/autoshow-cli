@@ -152,7 +152,7 @@ src/cli/commands/process-steps/step-1-download/targets/target-utils.ts
                                              v
   ┌──────────────────────────────────────────────────────────────────────┐
   │  Create batch output directory: output/YYYY-MM-DD_HH-MM-SS_<label>/│
-  │  Write info.json (consolidated per-item metadata manifest)          │
+  │  Write batch.json (consolidated per-item run manifest)              │
   └──────────────────────────────────────────┬───────────────────────────┘
                                              |
                                              v

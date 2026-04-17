@@ -240,8 +240,8 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
     pairs,
     'transcribe',
     typeof step2?.['transcriptionService'] === 'string' ? step2['transcriptionService'] : null,
-    typeof step2?.['transcriptionModelName'] === 'string'
-      ? step2['transcriptionModelName']
+    typeof step2?.['transcriptionModel'] === 'string'
+      ? step2['transcriptionModel']
       : typeof step2?.['transcriptionModel'] === 'string'
         ? step2['transcriptionModel']
         : null

@@ -18,8 +18,8 @@ export const imageCommand = defineCommand({
   flags: imageGenFlags,
   help: {
     examples: [
-      ['bun as image output/text.md --gemini-image', 'Generate image from summary with Gemini'],
-      ['bun as image output/text.md --openai-image --image-size 1024x1024', 'Generate with OpenAI']
+      ['bun as image "a dramatic fox portrait in snow" --gemini-image imagen-4.0-fast-generate-001', 'Generate with Gemini'],
+      ['bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --image-size 1024x1024', 'Generate with OpenAI']
     ]
   }
 }, async (ctx) => {
@@ -39,7 +39,7 @@ export const imageCommand = defineCommand({
       ...imageTargets.flatMap((target) =>
         getExpectedImageArtifactFileNames(target, imageOpts, imageTargets.length === 1)
       ),
-      'metadata.json'
+      'run.json'
     ]
     l.report.expectedOutput('./output/<timestamp>_image-gen/', expectedFiles)
     return
@@ -74,7 +74,7 @@ export const imageCommand = defineCommand({
     outputDir,
     {
       ...buildImageArtifactMap(metadata),
-      metadata: 'metadata.json'
+      run: 'run.json'
     },
     {
       steps: buildProviderStepSummaries(

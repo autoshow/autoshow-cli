@@ -2,7 +2,7 @@ import type { Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { ELEVENLABS_DEFAULT_VOICE_ID, type ElevenlabsTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readElevenLabsError } from '~/utils/elevenlabs-utils'
@@ -12,7 +12,7 @@ export const runElevenLabsTts = async (
   outputDir: string,
   options: { model: ElevenlabsTtsModel, voiceId?: string | undefined }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
-  const apiKey = readEnvFallback('ELEVENLABS_API_KEY')
+  const apiKey = readEnv('ELEVENLABS_API_KEY')
   if (!apiKey) {
     throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs TTS')
   }

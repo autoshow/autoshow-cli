@@ -1,3 +1,5 @@
+import { unwrapRunMetadataValue } from './manifest-helpers'
+
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null
 }
@@ -71,15 +73,16 @@ export type OutputMetadataSummary = {
 }
 
 export const summarizeOutputMetadataValue = (value: unknown): OutputMetadataSummary | null => {
-  if (!isRecord(value)) {
+  const metadata = unwrapRunMetadataValue(value)
+  if (!metadata) {
     return null
   }
 
   return {
-    estimatedCostCents: readCostTotal(value, 'estimated'),
-    actualCostCents: readCostTotal(value, 'actual'),
-    estimatedProcessingTimeMs: readTimingTotal(value, 'estimated'),
-    actualProcessingTimeMs: readTimingTotal(value, 'actual') ?? readActualProcessingTime(value),
+    estimatedCostCents: readCostTotal(metadata, 'estimated'),
+    actualCostCents: readCostTotal(metadata, 'actual'),
+    estimatedProcessingTimeMs: readTimingTotal(metadata, 'estimated'),
+    actualProcessingTimeMs: readTimingTotal(metadata, 'actual') ?? readActualProcessingTime(metadata),
   }
 }
 

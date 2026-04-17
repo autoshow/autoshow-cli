@@ -66,14 +66,14 @@ bun as image "a sunset" --openai-image gpt-image-1 --minimax-image image-01 --pr
 
 ## Output
 
-Standalone `image` runs always write `metadata.json`, and the generated image filenames vary by provider:
+Standalone `image` runs always write `run.json`, and the generated image filenames vary by provider:
 
 - Gemini: `generated-image.png`, plus `generated-image-2.png`, `generated-image-3.png`, and so on when multiple images are returned
 - OpenAI: `generated-image.<format>` where the default format is `png`
 - MiniMax: `generated-image.jpeg`
 - Multi-provider runs rename each provider output to include the provider and model, such as `generated-image-openai-gpt-image-1-mini.png` or `generated-image-gemini-imagen-4.0-generate-001-2.png`
 
-`metadata.json` includes `image`, `cost`, and `timing` sections. The `image` field is a single object for one provider and an array when multiple providers are selected. Each image metadata object includes both `imageFileName` and `imageFileNames`.
+`run.json` includes `image`, `cost`, and `timing` sections. The `image` field is always an array, even when only one provider succeeds. Each image metadata object includes `imageFileNames`.
 
 ## Notes
 

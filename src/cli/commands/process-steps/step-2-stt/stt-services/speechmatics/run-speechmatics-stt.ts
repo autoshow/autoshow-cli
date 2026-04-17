@@ -33,7 +33,7 @@ import {
 } from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 import { getSpeechmaticsBaseUrl } from './speechmatics'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
 const INITIAL_POLL_INTERVAL_MS = 1000
@@ -363,7 +363,7 @@ export const runSpeechmaticsStt = async (
     lifecycle?: AsyncSttLifecycleHooks | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const apiKey = readEnvFallback('SPEECHMATICS_API_KEY')
+  const apiKey = readEnv('SPEECHMATICS_API_KEY')
   if (!apiKey) {
     throw new Error('SPEECHMATICS_API_KEY environment variable is required for Speechmatics transcription')
   }
@@ -406,7 +406,6 @@ export const runSpeechmaticsStt = async (
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'speechmatics',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
     timings: {
@@ -657,7 +656,6 @@ export const runSpeechmaticsStt = async (
     metadata = {
       transcriptionService: 'speechmatics',
       transcriptionModel: modelName,
-      transcriptionModelName: modelName,
       processingTime,
       tokenCount: countTokens(finalText),
       runtime: completedRuntime,

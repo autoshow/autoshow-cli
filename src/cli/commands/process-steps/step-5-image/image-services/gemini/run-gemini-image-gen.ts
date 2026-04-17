@@ -108,7 +108,6 @@ export const runGeminiImageGen = async (
     imageModel: options.model,
     processingTime,
     imageCount: imagePaths.length,
-    imageFileName: basename(primaryPath),
     imageFileNames: imagePaths.map((imagePath) => basename(imagePath)),
     imageFileSize,
     imageWidth: undefined,

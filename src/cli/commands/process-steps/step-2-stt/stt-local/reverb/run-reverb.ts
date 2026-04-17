@@ -319,7 +319,6 @@ export const runReverbTranscribe = async (
     const metadata: Step2Metadata = {
       transcriptionService: 'reverb',
       transcriptionModel: transcriptionModelDescriptor,
-      transcriptionModelName: 'reverb',
       processingTime,
       tokenCount
     }

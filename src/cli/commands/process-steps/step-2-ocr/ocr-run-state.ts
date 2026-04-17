@@ -9,6 +9,7 @@ import {
 import { validateData } from '~/utils/validate/validation'
 import { getOcrTargetDirectoryName } from './ocr-targets'
 import { readOcrRunManifestEntry } from './manifest'
+import { readProviderResultEntry } from '../manifest-utils'
 
 export type OcrCompletionStatus = 'full' | 'incomplete' | 'failed'
 
@@ -227,14 +228,10 @@ const readStoredExtractionResult = async (
 ): Promise<ExtractionResult | undefined> => {
   const resultJsonPath = join(providerDir, 'result.json')
   if (await Bun.file(resultJsonPath).exists()) {
-    const raw = await Bun.file(resultJsonPath).json() as unknown
-    return validateData(ExtractionResultSchema, raw, 'stored OCR result')
-  }
-
-  const extractionJsonPath = join(providerDir, 'extraction.json')
-  if (await Bun.file(extractionJsonPath).exists()) {
-    const raw = await Bun.file(extractionJsonPath).json() as unknown
-    return validateData(ExtractionResultSchema, raw, 'stored OCR result')
+    const providerResult = await readProviderResultEntry(providerDir)
+    if (providerResult) {
+      return validateData(ExtractionResultSchema, providerResult.result, 'stored OCR result')
+    }
   }
 
   const extractionTextPath = join(providerDir, 'extraction.txt')
@@ -276,13 +273,12 @@ export const readExistingOcrRun = async (
 
   await Promise.all(requestedTargets.map(async (target, index) => {
     const providerDir = join(outputDir, getOcrProviderArtifactDir(target))
-    const metadataFile = join(providerDir, 'metadata.json')
-    if (!await Bun.file(metadataFile).exists()) {
+    const providerResult = await readProviderResultEntry(providerDir)
+    if (!providerResult) {
       return
     }
 
-    const rawMetadata = await Bun.file(metadataFile).json() as unknown
-    const metadata = validateData(ExtractionMetadataSchema, rawMetadata, 'stored OCR provider metadata')
+    const metadata = validateData(ExtractionMetadataSchema, providerResult.metadata, 'stored OCR provider metadata')
     const result = await readStoredExtractionResult(providerDir, metadata)
     if (!result) {
       return

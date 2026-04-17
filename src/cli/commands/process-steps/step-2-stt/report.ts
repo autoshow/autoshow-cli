@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, extname, join, resolve } from 'node:path'
 import type { PersistedTranscriptionEvidence, TranscriptionEvidenceCapabilities, TranscriptionEvidenceSegment, TranscriptionEvidenceWord } from '~/types'
 import { commandExists, exec, fileExists } from '~/utils/cli-utils'
+import { readProviderResultEntry, readRunManifest } from '../manifest-utils'
 
 
 type ProviderTranscript = {
@@ -11,7 +12,7 @@ type ProviderTranscript = {
   label: string
   transcriptPath: string
   evidencePath: string
-  metadataPath: string
+  resultPath: string
   rawText: string
   evidence: PersistedTranscriptionEvidence
   tokenCount: number | null
@@ -481,12 +482,12 @@ const loadProviderTranscript = async (
   const providerDir = join(runDir, 'providers', providerDirName)
   const transcriptPath = join(providerDir, 'transcription.txt')
   const evidencePath = join(providerDir, 'transcription.evidence.json')
-  const metadataPath = join(providerDir, 'metadata.json')
+  const resultPath = join(providerDir, 'result.json')
 
-  const [transcriptRaw, evidenceRaw, providerMetadata] = await Promise.all([
+  const [transcriptRaw, evidenceRaw, providerResult] = await Promise.all([
     readFile(transcriptPath, 'utf8').catch(() => null),
     readJsonFile(evidencePath),
-    readJsonFile(metadataPath)
+    readProviderResultEntry(providerDir)
   ])
 
   if (typeof transcriptRaw !== 'string' || transcriptRaw.trim().length === 0) {
@@ -498,7 +499,7 @@ const loadProviderTranscript = async (
     throw new Error(`Run requires transcription.evidence.json for providers/${providerDirName}. Rerun STT with the updated evidence persistence before generating a consensus report.`)
   }
 
-  const providerMetadataRecord = isRecord(providerMetadata) ? providerMetadata : {}
+  const providerMetadataRecord = isRecord(providerResult?.metadata) ? providerResult.metadata : {}
   const providerKey = normalizeProviderKey(evidence.service, evidence.model)
 
   return {
@@ -508,7 +509,7 @@ const loadProviderTranscript = async (
     label: evidence.label,
     transcriptPath,
     evidencePath,
-    metadataPath,
+    resultPath,
     rawText: transcriptRaw,
     evidence,
     tokenCount: getFiniteNumber(providerMetadataRecord['tokenCount']),
@@ -526,7 +527,7 @@ export const discoverAnalyzableRunDirectories = async (targetPath: string): Prom
     throw new Error(`Target path does not exist or is not readable: ${resolvedTarget}`)
   }
 
-  if (directEntries.includes('providers') && directEntries.includes('metadata.json')) {
+  if (directEntries.includes('providers') && directEntries.includes('run.json')) {
     return [resolvedTarget]
   }
 
@@ -539,7 +540,7 @@ export const discoverAnalyzableRunDirectories = async (targetPath: string): Prom
     }
     const childDir = join(resolvedTarget, entry.name)
     const childDirEntries = await readdir(childDir).catch((): string[] => [])
-    if (childDirEntries.includes('providers') && childDirEntries.includes('metadata.json')) {
+    if (childDirEntries.includes('providers') && childDirEntries.includes('run.json')) {
       runDirectories.push(childDir)
     }
   }
@@ -1320,7 +1321,7 @@ const addReviewArtifacts = async (
 
 export const analyzeSttRunDirectory = async (runDir: string): Promise<RunConsensusAnalysis> => {
   const resolvedRunDir = resolve(runDir)
-  const rootMetadata = await readJsonFile(join(resolvedRunDir, 'metadata.json'))
+  const rootMetadata = (await readRunManifest(resolvedRunDir, 'stt'))?.metadata ?? null
   const metadataSummary = summarizeRunMetadata(rootMetadata)
   const costActualByKey = extractCostStepMap(rootMetadata, 'actual')
   const costEstimatedByKey = extractCostStepMap(rootMetadata, 'estimated')

@@ -68,11 +68,6 @@ export type BatchRunOptions = {
 }
 
 export type ResolvedLLMConfig = {
-  useOpenAI: boolean
-  useGroq: boolean
-  useGemini: boolean
-  useAnthropic: boolean
-  useMinimax: boolean
   llamaModel: string | undefined
   openaiModel: string | undefined
   groqModel: string | undefined

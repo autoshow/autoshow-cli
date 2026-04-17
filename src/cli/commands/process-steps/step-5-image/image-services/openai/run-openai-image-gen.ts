@@ -59,7 +59,6 @@ export const runOpenAIImageGen = async (
     imageModel: options.model,
     processingTime,
     imageCount: 1,
-    imageFileName: `generated-image.${ext}`,
     imageFileNames: [`generated-image.${ext}`],
     imageFileSize,
     imageWidth: undefined,

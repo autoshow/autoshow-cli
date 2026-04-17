@@ -9,6 +9,7 @@ import {
   stopLlamaServer,
 } from "../../../../../test-utils/test-helpers"
 import { budgetedTest } from '../../../../../test-utils/budget'
+import { readRunMetadata } from "../../../../../test-utils/manifest-helpers"
 
 describe("llama qwen", () => {
   beforeAll(async () => {
@@ -38,16 +39,16 @@ describe("llama qwen", () => {
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
-      const summaryExists = await fileExists(`${outputDir}/text.md`)
+      const summaryExists = await fileExists(`${outputDir}/text.json`)
       expect(summaryExists).toBe(true)
 
-      const summaryContent = await Bun.file(`${outputDir}/text.md`).text()
-      expect(summaryContent.length).toBeGreaterThan(0)
+      const summaryJson = await Bun.file(`${outputDir}/text.json`).json() as unknown
+      expect(summaryJson).toBeDefined()
 
-      const metadataExists = await fileExists(`${outputDir}/metadata.json`)
+      const metadataExists = await fileExists(`${outputDir}/run.json`)
       expect(metadataExists).toBe(true)
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(outputDir) as {
         step3?: { llmModel?: string; llmService?: string }
       }
       expect(metadata.step3?.llmModel).toBe(model)

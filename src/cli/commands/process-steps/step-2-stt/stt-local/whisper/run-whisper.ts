@@ -248,7 +248,6 @@ export const runWhisperTranscribe = async (
     const metadata: Step2Metadata = {
       transcriptionService: 'whisper',
       transcriptionModel: transcriptionModelDescriptor,
-      transcriptionModelName: modelName,
       processingTime,
       tokenCount
     }

@@ -31,7 +31,7 @@ import {
 } from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 import { getRevBaseUrl } from './rev'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
 const INITIAL_POLL_INTERVAL_MS = 2000
@@ -318,7 +318,7 @@ export const runRevStt = async (
     lifecycle?: AsyncSttLifecycleHooks | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const accessToken = readEnvFallback('REVAI_ACCESS_TOKEN')
+  const accessToken = readEnv('REVAI_ACCESS_TOKEN')
   if (!accessToken) {
     throw new Error('REVAI_ACCESS_TOKEN environment variable is required for Rev transcription')
   }
@@ -361,7 +361,6 @@ export const runRevStt = async (
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'rev',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
     timings: {
@@ -612,7 +611,6 @@ export const runRevStt = async (
     metadata = {
       transcriptionService: 'rev',
       transcriptionModel: modelName,
-      transcriptionModelName: modelName,
       processingTime,
       tokenCount: countTokens(finalText),
       runtime: completedRuntime,

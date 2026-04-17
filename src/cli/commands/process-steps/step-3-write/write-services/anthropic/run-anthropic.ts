@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as l from '~/logger'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runAnthropicCompatibleModel } from '../anthropic-compatible'
 
@@ -9,7 +9,7 @@ export const runAnthropicModel = async (
   model: string,
   structuredOpts?: StructuredRequestOptions
 ): Promise<{ result: string, metadata: Step3Metadata }> => {
-  const apiKey = readEnvFallback('ANTHROPIC_API_KEY', 'NITRO_ANTHROPIC_API_KEY')
+  const apiKey = readEnv('ANTHROPIC_API_KEY')
   if (!apiKey) {
     l.error(`ANTHROPIC_API_KEY not found in environment`)
     throw new Error('ANTHROPIC_API_KEY environment variable is required')
@@ -31,7 +31,7 @@ export const runAnthropicModel = async (
 
 export const checkAnthropicHealth = async (): Promise<boolean> => {
   try {
-    const apiKey = readEnvFallback('ANTHROPIC_API_KEY', 'NITRO_ANTHROPIC_API_KEY')
+    const apiKey = readEnv('ANTHROPIC_API_KEY')
     if (!apiKey) return false
 
     const client = new Anthropic({ apiKey, maxRetries: 0 })

@@ -11,6 +11,7 @@ import {
   shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
+import { readRunMetadata } from './manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
 
@@ -70,12 +71,12 @@ export const defineMusicServiceTest = ({
         const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
         expect(musicExists).toBe(true)
 
-        const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-          music?: { musicService?: string; musicModel?: string; musicFileName?: string }
+        const metadata = await readRunMetadata(outputDir) as {
+          music?: Array<{ musicService?: string; musicModel?: string; musicFileName?: string }>
         }
-        expect(metadata.music?.musicService).toBe(musicService)
-        expect(metadata.music?.musicModel).toBe(model)
-        expect(metadata.music?.musicFileName).toBe('generated-music.mp3')
+        expect(metadata.music?.[0]?.musicService).toBe(musicService)
+        expect(metadata.music?.[0]?.musicModel).toBe(model)
+        expect(metadata.music?.[0]?.musicFileName).toBe('generated-music.mp3')
       }
     })
   }

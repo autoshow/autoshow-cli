@@ -16,7 +16,7 @@ import { runGeminiModel } from './write-services/gemini/run-gemini'
 import { runAnthropicModel } from './write-services/anthropic/run-anthropic'
 import { runMinimaxModel } from './write-services/minimax/run-minimax'
 import { runGrokModel } from './write-services/grok/run-grok'
-import { resolveStructuredMode, shouldApplyStrictMode } from './structured-output/capabilities'
+import { resolveStructuredStrategy, shouldApplyStrictMode } from './structured-output/capabilities'
 import { buildStructuredInstructionSuffix, resolveStructuredSchema } from './structured-output/schema-resolver'
 import { parseAndValidateStructured } from './structured-output/validator'
 import { runCompatFallback } from './structured-output/compat-fallback'
@@ -28,15 +28,15 @@ const sanitizeModelName = (model: string): string =>
 const collectTargets = (options: LLMOptions): LLMTarget[] => {
   const targets: LLMTarget[] = []
 
-  if (options.useGemini && options.geminiModel) {
+  if (options.geminiModel) {
     targets.push({ service: 'gemini', label: 'Gemini', model: options.geminiModel, run: runGeminiModel })
   }
 
-  if (options.useAnthropic && options.anthropicModel) {
+  if (options.anthropicModel) {
     targets.push({ service: 'anthropic', label: 'Anthropic', model: options.anthropicModel, run: runAnthropicModel })
   }
 
-  if (options.useOpenAI && options.openaiModel) {
+  if (options.openaiModel) {
     targets.push({ service: 'openai', label: 'OpenAI', model: options.openaiModel, run: runOpenAIModel })
   }
 
@@ -59,32 +59,24 @@ const collectTargets = (options: LLMOptions): LLMTarget[] => {
   return targets
 }
 
-const markdownFallback = '# Summary\n\n(No output generated)\n'
-
 export const runLLM = async (
   meta: VideoMetadata,
   transcription: TranscriptionResult,
   options: LLMOptions,
   slug?: string
 ): Promise<StructuredRunResult[]> => {
-  const structuredEnabled = options.structured !== false
   const targets = collectTargets(options)
 
   if (targets.length === 0) {
     throw new Error('No LLM provider configured')
   }
 
-  const hasStructuredTarget = targets.some((target) => resolveStructuredMode(target.service, structuredEnabled) !== 'off')
   const instructionBase = await resolvePromptNames(options.prompts ?? [], {
-    exampleFormat: structuredEnabled ? 'json' : 'markdown'
+    exampleFormat: 'json'
   })
-  const structuredSchema = hasStructuredTarget
-    ? await resolveStructuredSchema(options.prompts ?? [])
-    : undefined
+  const structuredSchema = await resolveStructuredSchema(options.prompts ?? [])
 
-  const instruction = structuredSchema
-    ? `${instructionBase}\n\n${buildStructuredInstructionSuffix(structuredSchema.leafPromptNames)}`
-    : instructionBase
+  const instruction = `${instructionBase}\n\n${buildStructuredInstructionSuffix(structuredSchema.leafPromptNames)}`
 
   const prompt = options.promptBuilder
     ? options.promptBuilder(instruction)
@@ -99,39 +91,18 @@ export const runLLM = async (
 
   for (const target of targets) {
     try {
-      const structuredMode = resolveStructuredMode(target.service, structuredEnabled)
-
-      if (structuredMode === 'off' || !structuredSchema) {
-        const response = await target.run(prompt, target.model)
-        const text = response.result.trim().length > 0 ? response.result : markdownFallback
-        const fileName = single ? 'text.md' : `text-${sanitizeModelName(target.model)}.md`
-        const filePath = `${options.outputDir}/${fileName}`
-        await Bun.write(filePath, text)
-
-        results.push({
-          metadata: {
-            ...response.metadata,
-            outputFileName: fileName,
-            outputFormat: 'markdown',
-            structuredMode: 'off',
-            structuredPresetNames: []
-          },
-          renderedText: text,
-          parsedJson: text
-        })
-        continue
-      }
+      const structuredMode = resolveStructuredStrategy(target.service)
 
       let parsedJson: unknown
       let metadata = undefined as StructuredRunResult['metadata'] | undefined
 
-      if (structuredMode === 'compat') {
+      if (structuredMode === 'schema-guided') {
         const compatResponse = await runCompatFallback(
           target,
           prompt,
           target.model,
           structuredSchema,
-          options.structuredCompatRetries ?? 2
+          2
         )
         parsedJson = compatResponse.parsedJson
         metadata = compatResponse.metadata
@@ -139,8 +110,8 @@ export const runLLM = async (
         const structuredOpts: StructuredRequestOptions = {
           schemaName: structuredSchema.schemaName,
           schema: structuredSchema.jsonSchema,
-          strict: shouldApplyStrictMode(target.service, options.structuredStrict !== false),
-          modeHint: 'native'
+          strict: shouldApplyStrictMode(target.service, true),
+          strategy: 'native'
         }
 
         let response = await target.run(prompt, target.model, structuredOpts)

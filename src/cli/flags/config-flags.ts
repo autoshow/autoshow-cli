@@ -7,8 +7,6 @@ import {
   advancedExtractFlags,
   batchFlags,
   promptFlag,
-  promptOutputFlags,
-  structuredWriteFlags,
   priceFlag
 } from './shared-flags'
 import { ttsFlags } from './tts-flags'
@@ -65,8 +63,6 @@ export const configCommandFlags = {
   ...withHelpGroup(advancedExtractFlags, 'step-2-ocr'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
-  ...withHelpGroup(promptOutputFlags, 'step-3-write'),
-  ...withHelpGroup(structuredWriteFlags, 'step-3-write'),
   ...withHelpGroup(ttsFlags, 'step-4-tts'),
   ...withHelpGroup(imageGenFlags, 'step-5-image'),
   ...withHelpGroup(videoGenFlags, 'step-6-video'),

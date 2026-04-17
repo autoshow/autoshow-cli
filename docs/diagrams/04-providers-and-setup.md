@@ -77,7 +77,7 @@ collectTargets() checks all flags - multiple providers can run sequentially:
            v
   ┌──────────────────────────────────────────────────────────────┐
   │  Output (per provider run)                                  │
-  │  ├── text.md  (single provider) or text-<model>.md (multi)  │
+  │  ├── text.json (single provider) or text-<model>.json       │
   │  └── Step3Metadata { llmService, llmModel, processingTime,  │
   │       inputTokenCount, outputTokenCount }                   │
   └──────────────────────────────────────────────────────────────┘

@@ -80,7 +80,6 @@ bun as config --whisper large
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-usd 1.00
-bun as config --no-structured --structured-compat-retries 3
 ```
 
 Only flags that are explicitly typed on the command line are written. Flags with Clerc-supplied defaults that you did not type are not persisted.
@@ -114,7 +113,7 @@ Full JSON shape of `config/autoshow.json`:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "defaults": {
     "stt": {
       "whisper": "tiny",
@@ -211,10 +210,6 @@ Full JSON shape of `config/autoshow.json`:
 | `anthropic` | `--anthropic` | Default Anthropic model |
 | `minimax` | `--minimax` | Default MiniMax model |
 | `grok` | `--grok` | Default Grok model |
-| `structured` | `--structured` / `--no-structured` | Default structured output mode for write/root |
-| `structuredStrict` | `--structured-strict` / `--no-structured-strict` | Default strict structured mode when supported (OpenAI/Groq) |
-| `structuredCompatRetries` | `--structured-compat-retries` | Default compat-mode retry budget |
-
 ### defaults.post.tts
 
 | Field | Flag | Description |
@@ -313,11 +308,10 @@ Only flags explicitly typed on the command line override config values. Flags th
 
 Every runnable command (`download`, `transcribe`, `write`, `extract`, `tts`, `image`, `music`, `video`) runs a cost preflight automatically before executing. The estimate is logged to the console.
 
-To show the estimate and exit without running the pipeline, pass `--price` or `--dry-run`:
+To show the estimate and exit without running the pipeline, pass `--price`:
 
 ```bash
 bun as write input/audio.mp3 --price
-bun as write input/audio.mp3 --openai gpt-5.4 --dry-run
 ```
 
 ## Budget enforcement
@@ -434,7 +428,6 @@ Notable findings from the full pricing comparison:
 | `--verbose` | boolean | Enable debug-level logging (global, overrides AUTOSHOW_LOG_LEVEL) |
 | `--quiet` / `-q` | boolean | Suppress all output except errors (global, overrides AUTOSHOW_LOG_LEVEL) |
 | `--json` | boolean | Output logs as JSON (global, overrides AUTOSHOW_LOG_FORMAT) |
-| `--dry-run` | boolean | Preview what would happen without executing (same as --price) |
 | `--max-cents` | number | Budget limit in cents |
 | `--max-usd` | number | Budget limit in USD |
 | All provider/model flags | string | Same surface as `write`, `tts`, `image`, `music`, `video` |

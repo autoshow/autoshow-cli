@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runGladiaStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/run-gladia-stt'
+import { readProviderCheckpointMetadata, writeProviderCheckpointFixture } from '../../test-utils/manifest-helpers'
 
 const originalFetch = globalThis.fetch
 const originalApiKey = process.env['GLADIA_API_KEY']
@@ -149,10 +150,9 @@ describe('runGladiaStt', () => {
     process.env['GLADIA_API_KEY'] = 'test-key'
     process.env['GLADIA_BASE_URL'] = 'https://gladia.test'
 
-    await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify({
+    await writeProviderCheckpointFixture(outputDir, 'gladia', 'default', {
       transcriptionService: 'gladia',
       transcriptionModel: 'default',
-      transcriptionModelName: 'default',
       processingTime: 10,
       tokenCount: 0,
       runtime: {
@@ -163,7 +163,7 @@ describe('runGladiaStt', () => {
         remoteAssetUrl: 'https://cdn.gladia.test/audio.wav',
         createCompletedAt: '2026-04-14T00:00:00.000Z'
       }
-    }, null, 2))
+    })
 
     const slept: number[] = []
     ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (ms: number) => {
@@ -213,7 +213,7 @@ describe('runGladiaStt', () => {
     expect(pollAttempts).toBe(5)
     expect(slept).toEqual([30_000, 60_000, 120_000, 240_000])
 
-    const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+    const metadata = await readProviderCheckpointMetadata(outputDir)
     expect(metadata['runtime']).toEqual(expect.objectContaining({
       mode: 'resumed',
       stage: 'polling',

@@ -1,5 +1,5 @@
 import { AutoshowConfigSchema, type AutoshowConfig } from '~/types'
-import { validateDataSafe } from '~/utils/validate/validation'
+import { validateData } from '~/utils/validate/validation'
 
 const findProjectRoot = async (startDir: string): Promise<string> => {
   let dir = startDir
@@ -28,24 +28,25 @@ export const resolveConfigPath = async (configPathOverride?: string): Promise<st
 
 export const loadConfig = async (configPath: string): Promise<AutoshowConfig> => {
   const file = Bun.file(configPath)
-  if (!await file.exists()) return {}
+  if (!await file.exists()) {
+    return { version: 2 }
+  }
 
   let text: string
   try {
     text = await file.text()
   } catch {
-    return {}
+    throw new Error(`Failed to read autoshow config at ${configPath}`)
   }
 
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
   } catch {
-    return {}
+    throw new Error(`Invalid JSON in autoshow config at ${configPath}`)
   }
 
-  const validated = validateDataSafe(AutoshowConfigSchema, parsed, 'autoshow config')
-  return validated ?? {}
+  return validateData(AutoshowConfigSchema, parsed, 'autoshow config')
 }
 
 export const resolveMaxCents = (pricing: AutoshowConfig['pricing']): number | undefined =>

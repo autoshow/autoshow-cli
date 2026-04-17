@@ -98,17 +98,17 @@ bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-mini --opena
 
 If exactly one TTS target succeeds, the run writes:
 - `speech.wav`
-- `metadata.json`
+- `run.json`
 
 If multiple TTS targets succeed, the run writes:
 - `speech-<service>-<sanitized-model>.wav` for each successful target
-- `metadata.json`
+- `run.json`
 
 Examples:
 - `speech-kitten-kitten-tts-mini.wav`
 - `speech-openai-gpt-4o-mini-tts.wav`
 
-`metadata.json` includes `tts`, `cost`, and `timing` sections. `tts` is a single object for one successful target and an array when multiple targets succeed.
+`run.json` includes `tts`, `cost`, and `timing` sections. `tts` is always an array, even when only one target succeeds.
 
 ## Local Tests
 

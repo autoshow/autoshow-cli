@@ -326,7 +326,6 @@ export const mergeSplitTranscriptionChunks = (
     metadata: {
       transcriptionService: segmentResults[0]!.metadata.transcriptionService,
       transcriptionModel: segmentResults[0]!.metadata.transcriptionModel,
-      transcriptionModelName: segmentResults[0]!.metadata.transcriptionModelName,
       processingTime: totalProcessingTime,
       tokenCount: totalTokenCount,
       ...(mergedTimings ? { timings: mergedTimings } : {})

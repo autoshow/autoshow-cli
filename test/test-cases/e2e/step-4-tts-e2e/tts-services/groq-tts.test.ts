@@ -9,6 +9,7 @@ import {
   STABLE_TTS_MD_TITLE,
   hasConfiguredEnvVar
 } from '../../../../test-utils/test-helpers'
+import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 defineTTSServiceTest({
   models: ['canopylabs/orpheus-v1-english'],
@@ -48,11 +49,11 @@ test('orpheus english with --groq-voice hannah generates speech.wav', async () =
     const audioExists = await fileExists(`${outputDir}/speech.wav`)
     expect(audioExists).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-      tts?: { ttsService?: string, ttsModel?: string, speaker?: string }
+    const metadata = await readRunMetadata(outputDir) as {
+      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
     }
-    expect(metadata.tts?.ttsService).toBe('groq')
-    expect(metadata.tts?.ttsModel).toBe('canopylabs/orpheus-v1-english')
-    expect(metadata.tts?.speaker).toBe('hannah')
+    expect(metadata.tts?.[0]?.ttsService).toBe('groq')
+    expect(metadata.tts?.[0]?.ttsModel).toBe('canopylabs/orpheus-v1-english')
+    expect(metadata.tts?.[0]?.speaker).toBe('hannah')
   }
 })

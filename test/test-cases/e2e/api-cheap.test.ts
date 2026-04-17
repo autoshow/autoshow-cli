@@ -7,6 +7,7 @@ import {
   hasConfiguredEnvVar,
   runCommand
 } from '../../test-utils/test-helpers'
+import { readRunMetadata } from '../../test-utils/manifest-helpers'
 
 const SHORT_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
 const SHORT_AUDIO_TITLE = '0-audio-short'
@@ -36,14 +37,6 @@ const getObject = (record: Record<string, unknown>, key: string): Record<string,
 const getString = (record: Record<string, unknown>, key: string): string | null => {
   const value = record[key]
   return typeof value === 'string' ? value : null
-}
-
-const readJsonObject = async (path: string): Promise<Record<string, unknown>> => {
-  const raw: unknown = JSON.parse(await Bun.file(path).text())
-  if (!isRecord(raw)) {
-    throw new Error(`Expected JSON object in ${path}`)
-  }
-  return raw
 }
 
 describe('api-cheap', () => {
@@ -85,11 +78,11 @@ describe('api-cheap', () => {
         expect(outputDir).not.toBeNull()
 
         if (outputDir) {
-          const metadata = await readJsonObject(`${outputDir}/metadata.json`)
+          const metadata = await readRunMetadata(outputDir)
           const step3 = getObject(metadata, 'step3')
           expect(step3).not.toBeNull()
           if (step3) {
-            const outputFileName = getString(step3, 'outputFileName') ?? 'text.md'
+            const outputFileName = getString(step3, 'outputFileName') ?? 'text.json'
             expect(await fileExists(`${outputDir}/${outputFileName}`)).toBe(true)
             if (outputFileName.endsWith('.json')) {
               const summaryJson = await Bun.file(`${outputDir}/${outputFileName}`).json() as unknown
@@ -137,7 +130,7 @@ describe('api-cheap', () => {
         if (outputDir) {
           expect(await fileExists(`${outputDir}/transcription.txt`)).toBe(true)
 
-          const metadata = await readJsonObject(`${outputDir}/metadata.json`)
+          const metadata = await readRunMetadata(outputDir)
           const step2 = getObject(metadata, 'step2')
           expect(step2).not.toBeNull()
           if (step2) {
@@ -177,8 +170,9 @@ describe('api-cheap', () => {
         expect(outputDir).not.toBeNull()
 
         if (outputDir) {
-          const metadata = await readJsonObject(`${outputDir}/metadata.json`)
-          const ttsMeta = getObject(metadata, 'tts')
+          const metadata = await readRunMetadata(outputDir)
+          const ttsEntries = metadata['tts']
+          const ttsMeta = Array.isArray(ttsEntries) && isRecord(ttsEntries[0]) ? ttsEntries[0] : null
           expect(ttsMeta).not.toBeNull()
 
           if (ttsMeta) {
@@ -232,17 +226,20 @@ describe('api-cheap', () => {
         expect(outputDir).not.toBeNull()
 
         if (outputDir) {
-          const metadata = await readJsonObject(`${outputDir}/metadata.json`)
-          const imageMeta = getObject(metadata, 'image')
+          const metadata = await readRunMetadata(outputDir)
+          const imageEntries = metadata['image']
+          const imageMeta = Array.isArray(imageEntries) && isRecord(imageEntries[0]) ? imageEntries[0] : null
           expect(imageMeta).not.toBeNull()
           if (imageMeta) {
             expect(getString(imageMeta, 'imageService')).toBe(selection.service)
             expect(getString(imageMeta, 'imageModel')).toBe(selection.model)
 
-            const imageFileName = getString(imageMeta, 'imageFileName')
-            if (imageFileName) {
-              expect(await fileExists(`${outputDir}/${imageFileName}`)).toBe(true)
-            }
+            const imageFileNames = imageMeta['imageFileNames']
+            const firstImageFileName = Array.isArray(imageFileNames) && typeof imageFileNames[0] === 'string'
+              ? imageFileNames[0]
+              : null
+            expect(firstImageFileName).not.toBeNull()
+            expect(await fileExists(`${outputDir}/${firstImageFileName}`)).toBe(true)
           }
         }
       })

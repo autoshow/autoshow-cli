@@ -34,10 +34,7 @@ const LlmDefaultsSchema = v.object({
   groq: v.optional(v.string(), undefined),
   gemini: v.optional(v.string(), undefined),
   anthropic: v.optional(v.string(), undefined),
-  minimax: v.optional(v.string(), undefined),
-  structured: v.optional(v.boolean(), undefined),
-  structuredStrict: v.optional(v.boolean(), undefined),
-  structuredCompatRetries: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), undefined)
+  minimax: v.optional(v.string(), undefined)
 })
 
 const TtsDefaultsSchema = v.object({
@@ -116,7 +113,7 @@ const ConfigDefaultsSchema = v.object({
 })
 
 export const AutoshowConfigSchema = v.object({
-  version: v.optional(v.literal(1), undefined),
+  version: v.literal(2),
   defaults: v.optional(ConfigDefaultsSchema, undefined),
   pricing: v.optional(PricingConfigSchema, undefined)
 })

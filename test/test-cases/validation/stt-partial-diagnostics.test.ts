@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { isSttPartialCompletionError, processStt } from '~/cli/commands/process-steps/process-stt'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
+import { readRunMetadata } from '../../test-utils/manifest-helpers'
 
 const originalFetch = globalThis.fetch
 const originalSonioxApiKey = process.env['SONIOX_API_KEY']
@@ -160,7 +161,7 @@ describe('processStt partial failure diagnostics', () => {
 
     const errorJson = await Bun.file(`${sonioxDir}/error.json`).json() as Record<string, unknown>
     const rawResponseJson = await Bun.file(`${sonioxDir}/raw-response.json`).json() as Record<string, unknown>
-    const metadata = await Bun.file(`${resolvedOutputDir}/metadata.json`).json() as {
+    const metadata = await readRunMetadata(resolvedOutputDir) as {
       step2: Array<{ transcriptionService: string }>
       completionStatus: string
       requestedProviders: Array<Record<string, unknown>>

@@ -18,8 +18,8 @@ export const musicCommand = defineCommand({
   flags: musicGenFlags,
   help: {
     examples: [
-      ['bun as music output/text.md --elevenlabs-music', 'Generate music from summary'],
-      ['bun as music output/text.md --minimax-music --music-duration 30', 'Generate 30s music with MiniMax']
+      ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
+      ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax']
     ]
   }
 }, async (ctx) => {
@@ -44,7 +44,7 @@ export const musicCommand = defineCommand({
     const singleTarget = musicTargets.length === 1
     const expectedFiles = [
       ...musicTargets.map((target) => getMusicArtifactFileName(target, singleTarget)),
-      'metadata.json'
+      'run.json'
     ]
     l.report.expectedOutput('./output/<timestamp>_music-gen/', expectedFiles)
     return
@@ -83,7 +83,7 @@ export const musicCommand = defineCommand({
     outputDir,
     {
       ...buildMusicArtifactMap(metadata),
-      metadata: 'metadata.json'
+      run: 'run.json'
     },
     {
       steps: buildProviderStepSummaries(

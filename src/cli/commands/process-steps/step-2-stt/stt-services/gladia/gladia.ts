@@ -1,11 +1,11 @@
 import * as l from '~/logger'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const getGladiaBaseUrl = (): string =>
   readEnv('GLADIA_BASE_URL') ?? 'https://api.gladia.io'
 
 export const setupGladiaStt = async (): Promise<void> => {
-  const apiKey = readEnvFallback('GLADIA_API_KEY')
+  const apiKey = readEnv('GLADIA_API_KEY')
   if (apiKey) {
     l.success(`GLADIA_API_KEY found — Gladia transcription ready (${getGladiaBaseUrl()})`)
   } else {
@@ -15,7 +15,7 @@ export const setupGladiaStt = async (): Promise<void> => {
 }
 
 export const ensureGladiaSttSetup = async (): Promise<void> => {
-  const apiKey = readEnvFallback('GLADIA_API_KEY')
+  const apiKey = readEnv('GLADIA_API_KEY')
   if (!apiKey) {
     throw new Error('GLADIA_API_KEY environment variable is required for Gladia transcription')
   }

@@ -1,7 +1,7 @@
 import * as l from '~/logger'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/types'
+import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import {
   buildOptsFromFlags,
   classifyTopLevelTarget,
@@ -72,57 +72,64 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
 const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
   opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string' || typeof opts.glmOcrModel === 'string'
 
+const getExpectedOcrArtifact = (opts: RuntimeOptions): string => {
+  if (opts.out === 'tsv') {
+    return 'extraction.tsv'
+  }
+  if (opts.out === 'hocr') {
+    return 'extraction.hocr'
+  }
+  if (opts.out === 'json') {
+    return 'result.json'
+  }
+  return 'extraction.txt'
+}
+
 export const buildExpectedFilesList = async (command: ProcessCommand, opts: RuntimeOptions, resolvedTarget?: string): Promise<string[]> => {
   if (command === 'metadata') {
     if (!opts.save) {
       return [opts.markdown ? 'metadata (logged to terminal as Markdown frontmatter YAML)' : 'metadata (logged to terminal)']
     }
-    return opts.markdown ? ['metadata.json', 'metadata.md'] : ['metadata.json']
+    return opts.markdown ? ['run.json', 'metadata.md'] : ['run.json']
   }
   if (command === 'download') {
     const documentDownload = typeof resolvedTarget === 'string' && await isDocumentLikeTarget(resolvedTarget, opts)
-    return documentDownload ? ['metadata.json'] : ['Audio file', 'metadata.json']
+    return documentDownload ? ['run.json'] : ['Audio file', 'run.json']
   }
   if (isOcrCommand(command)) {
+    const ocrArtifact = getExpectedOcrArtifact(opts)
     const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
     if (opts.useEpubBun || opts.useEpubCalibre) {
-      return ['metadata.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)']
+      return ['run.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)']
     }
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
-      return ['Extracted text', 'providers/<service>-<model>/extraction.txt', 'metadata.json']
+      return [ocrArtifact, 'providers/<service>-<model>/result.json', 'run.json']
     }
-    return ['Extracted text', 'metadata.json']
+    return [ocrArtifact, 'run.json']
   }
   if (isSttCommand(command)) {
     return collectSttTargets(opts).length > 1
-      ? ['Shared audio artifact(s)', 'providers/<service>-<model>/transcription.txt', 'prompt.md', 'metadata.json']
-      : ['Audio file', 'transcription.txt', 'prompt.md', 'metadata.json']
+      ? ['Shared audio artifact(s)', 'providers/<service>-<model>/transcription.txt', 'providers/<service>-<model>/result.json', 'prompt.md', 'run.json']
+      : ['Audio file', 'transcription.txt', 'prompt.md', 'run.json']
   }
-  const hasNonLlamaLlmProvider = !!(
-    opts.useOpenAI
-    || opts.groqModel
-    || opts.useGemini
-    || opts.useAnthropic
-    || opts.minimaxModel
-    || opts.grokModel
-  )
-  const summaryFile = opts.structured && hasNonLlamaLlmProvider ? 'text.json' : 'text.md'
+  const summaryFile = 'text.json'
   const documentWrite = command === 'write'
     && typeof resolvedTarget === 'string'
     && await isDocumentLikeTarget(resolvedTarget, opts)
   if (documentWrite) {
-    const files = ['Extracted text', summaryFile]
+    const files = [getExpectedOcrArtifact(opts), summaryFile]
     const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
-      files.push('providers/<service>-<model>/extraction.txt')
+      files.push('providers/<service>-<model>/result.json')
     }
     files.push('prompt.md')
-    files.push('metadata.json')
+    files.push('run.json')
     return files
   }
   const files = ['Audio file', 'transcription.txt', summaryFile]
   if (collectSttTargets(opts).length > 1) {
     files.push('providers/<service>-<model>/transcription.txt')
+    files.push('providers/<service>-<model>/result.json')
   }
   const ttsTargets = collectTtsTargets(opts)
   if (ttsTargets.length > 0 && getEffectiveLlmOutputCount(opts) === 1) {
@@ -140,7 +147,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     files.push('Music file')
   }
   files.push('prompt.md')
-  files.push('metadata.json')
+  files.push('run.json')
   return files
 }
 

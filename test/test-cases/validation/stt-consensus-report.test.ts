@@ -8,6 +8,7 @@ import {
   discoverAnalyzableRunDirectories
 } from '~/utils/stt-consensus-report'
 import { runCommand } from '../../test-utils/test-helpers'
+import { writeProviderResultFixture, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
 
 const writeJson = async (path: string, value: unknown): Promise<void> => {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
@@ -79,13 +80,12 @@ const writeProviderArtifacts = async (
     timingQuality: 'native_word',
     speakerInventory: segments.flatMap((segment) => segment.speaker ? [segment.speaker] : [])
   })
-  await writeJson(join(providerDir, 'metadata.json'), {
+  await writeProviderResultFixture(providerDir, service, model, {
     transcriptionService: service,
     transcriptionModel: model,
-    transcriptionModelName: model,
     tokenCount: words.length,
     processingTime: 1000
-  })
+  }, {})
 }
 
 describe('stt consensus report utilities', () => {
@@ -112,7 +112,7 @@ describe('stt consensus report utilities', () => {
         ])
       ])
 
-      await writeJson(join(runDir, 'metadata.json'), {
+      await writeRunManifestFixture(runDir, 'stt', {
         step1: {
           title: 'Sample episode',
           duration: '00:07',
@@ -174,7 +174,7 @@ describe('stt consensus report utilities', () => {
     }
   })
 
-  test('rejects legacy runs without persisted evidence artifacts', async () => {
+  test('rejects v2 runs without persisted evidence artifacts', async () => {
     const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-consensus-legacy-'))
     const runDir = join(rootDir, '2026-04-15_legacy')
     const providerDir = join(runDir, 'providers', 'assemblyai-universal-3-pro')
@@ -182,13 +182,13 @@ describe('stt consensus report utilities', () => {
     try {
       await mkdir(providerDir, { recursive: true })
       await writeFile(join(providerDir, 'transcription.txt'), '[00:00:00] hello\n', 'utf8')
-      await writeJson(join(providerDir, 'metadata.json'), {
+      await writeProviderResultFixture(providerDir, 'assemblyai', 'universal-3-pro', {
         transcriptionService: 'assemblyai',
         transcriptionModel: 'universal-3-pro',
         tokenCount: 1,
         processingTime: 1000
-      })
-      await writeJson(join(runDir, 'metadata.json'), {
+      }, {})
+      await writeRunManifestFixture(runDir, 'stt', {
         step1: { title: 'Legacy run', duration: '00:01' },
         step2: [{ transcriptionService: 'assemblyai', transcriptionModel: 'universal-3-pro', processingTime: 1000, tokenCount: 1 }]
       })
@@ -208,8 +208,8 @@ describe('stt consensus report utilities', () => {
       const runB = join(batchDir, 'run-b')
       await mkdir(join(runA, 'providers'), { recursive: true })
       await mkdir(join(runB, 'providers'), { recursive: true })
-      await writeJson(join(runA, 'metadata.json'), { step1: { title: 'A', duration: '00:01' } })
-      await writeJson(join(runB, 'metadata.json'), { step1: { title: 'B', duration: '00:01' } })
+      await writeRunManifestFixture(runA, 'stt', { step1: { title: 'A', duration: '00:01' } })
+      await writeRunManifestFixture(runB, 'stt', { step1: { title: 'B', duration: '00:01' } })
 
       const discovered = await discoverAnalyzableRunDirectories(batchDir)
       expect(discovered).toEqual([runA, runB])
@@ -236,7 +236,7 @@ describe('stt consensus report utilities', () => {
         ])
       ])
 
-      await writeJson(join(runDir, 'metadata.json'), {
+      await writeRunManifestFixture(runDir, 'stt', {
         step1: {
           title: 'Sample episode',
           duration: '00:07',

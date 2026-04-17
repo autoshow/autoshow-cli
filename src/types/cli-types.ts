@@ -1,32 +1,15 @@
 export const PROCESS_COMMANDS = ['metadata', 'download', 'stt', 'write', 'ocr', 'tts', 'image', 'music', 'video'] as const
-export const PROCESS_COMMAND_ALIASES = ['transcribe', 'extract'] as const
 
 export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
-export type ProcessCommand = CanonicalProcessCommand | typeof PROCESS_COMMAND_ALIASES[number]
-
-export const isSttCommand = (command: ProcessCommand): command is 'stt' | 'transcribe' =>
-  command === 'stt' || command === 'transcribe'
-
-export const isOcrCommand = (command: ProcessCommand): command is 'ocr' | 'extract' =>
-  command === 'ocr' || command === 'extract'
-
-export const canonicalizeProcessCommand = (command: ProcessCommand): CanonicalProcessCommand => {
-  if (isSttCommand(command)) return 'stt'
-  if (isOcrCommand(command)) return 'ocr'
-  return command
-}
+export type ProcessCommand = CanonicalProcessCommand
 
 export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
 
 export type BatchOrder = 'newest' | 'oldest'
 
 export type RuntimeOptions = {
-  provider: string[] | undefined
   useReverb: boolean
   whisperExplicit: boolean
-  useOpenAI: boolean
-  useGemini: boolean
-  useAnthropic: boolean
   llamaModel: string | undefined
   openaiModel: string | undefined
   groqModel: string | undefined
@@ -60,9 +43,6 @@ export type RuntimeOptions = {
   reverbVerbatimicity: number
   split: boolean
   skipLLM: boolean
-  structured: boolean
-  structuredStrict: boolean
-  structuredCompatRetries: number
   dpi: number
   lang: string
   psm: number

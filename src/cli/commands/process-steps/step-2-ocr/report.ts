@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { readdir, writeFile } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
 
 import {
@@ -16,6 +16,7 @@ import {
   readExistingOcrRun,
   type OcrProviderState
 } from '~/cli/commands/process-steps/step-2-ocr/ocr-run-state'
+import { readProviderResultEntry, readRunManifest } from '../manifest-utils'
 import { validateData } from '~/utils/validate/validation'
 import { detectReportTarget } from '~/cli/commands/setup-and-utilities/report/report-target-detection'
 
@@ -24,7 +25,7 @@ type OcrProviderArtifact = {
   service: OcrTarget['service']
   model: string
   label: string
-  metadataPath: string
+  resultPath: string
   metadata: ExtractionMetadata
   result: ExtractionResult
   actualCostCents: number | null
@@ -251,14 +252,6 @@ const normalizeConfidence = (value: number | null): number | null => {
   return clamp(scaled, 0, 100)
 }
 
-const readJsonFile = async (path: string): Promise<unknown> => {
-  try {
-    return JSON.parse(await readFile(path, 'utf8')) as unknown
-  } catch {
-    return null
-  }
-}
-
 const extractCostStepMap = (metadata: unknown, phase: 'actual' | 'estimated'): Map<string, number> => {
   const values = new Map<string, number>()
   if (!isRecord(metadata) || !isRecord(metadata['cost']) || !isRecord(metadata['cost'][phase])) {
@@ -410,47 +403,6 @@ const inferProviderModel = (
   return inferProviderTargetFromDirectoryName(providerDirName)?.model ?? service
 }
 
-const buildSyntheticResult = (
-  text: string,
-  metadata: ExtractionMetadata
-): ExtractionResult =>
-  validateData(ExtractionResultSchema, {
-    text,
-    pages: text.trim().length > 0
-      ? [{ pageNumber: 1, method: 'ocr', text }]
-      : [],
-    totalPages: metadata.totalPages,
-    ocrPages: metadata.ocrPages,
-    textPages: metadata.textPages
-  }, 'stored OCR result')
-
-const readStoredExtractionResult = async (
-  providerDir: string,
-  metadata: ExtractionMetadata
-): Promise<ExtractionResult | undefined> => {
-  const resultJsonPath = join(providerDir, 'result.json')
-  const resultJson = await readJsonFile(resultJsonPath)
-  if (resultJson !== null) {
-    return validateData(ExtractionResultSchema, resultJson, 'stored OCR result')
-  }
-
-  const extractionJsonPath = join(providerDir, 'extraction.json')
-  const extractionJson = await readJsonFile(extractionJsonPath)
-  if (extractionJson !== null) {
-    return validateData(ExtractionResultSchema, extractionJson, 'stored OCR result')
-  }
-
-  for (const artifact of ['extraction.txt', 'extraction.tsv', 'extraction.hocr'] as const) {
-    try {
-      const text = await readFile(join(providerDir, artifact), 'utf8')
-      return buildSyntheticResult(text, metadata)
-    } catch {
-    }
-  }
-
-  return undefined
-}
-
 const loadOcrProviderArtifact = async (
   runDir: string,
   providerDirName: string,
@@ -460,17 +412,14 @@ const loadOcrProviderArtifact = async (
   timingEstimatedByKey: Map<string, number>
 ): Promise<OcrProviderArtifact | null> => {
   const providerDir = join(runDir, 'providers', providerDirName)
-  const metadataPath = join(providerDir, 'metadata.json')
-  const metadataRaw = await readJsonFile(metadataPath)
-  if (metadataRaw === null) {
+  const resultPath = join(providerDir, 'result.json')
+  const providerResult = await readProviderResultEntry(providerDir)
+  if (!providerResult) {
     return null
   }
 
-  const metadata = validateData(ExtractionMetadataSchema, metadataRaw, 'stored OCR provider metadata')
-  const result = await readStoredExtractionResult(providerDir, metadata)
-  if (!result) {
-    return null
-  }
+  const metadata = validateData(ExtractionMetadataSchema, providerResult.metadata, 'stored OCR provider metadata')
+  const result = validateData(ExtractionResultSchema, providerResult.result, 'stored OCR result')
 
   const service = inferProviderService(metadata, providerDirName)
   if (!service) {
@@ -485,7 +434,7 @@ const loadOcrProviderArtifact = async (
     service,
     model,
     label: `${service}/${model}`,
-    metadataPath,
+    resultPath,
     metadata,
     result,
     actualCostCents: costActualByKey.get(providerKey) ?? null,
@@ -950,7 +899,7 @@ const toStructuredRunSummary = (analysis: OcrRunConsensusAnalysis): Record<strin
 
 export const analyzeOcrRunDirectory = async (runDir: string): Promise<OcrRunConsensusAnalysis> => {
   const resolvedRunDir = resolve(runDir)
-  const rootMetadata = await readJsonFile(join(resolvedRunDir, 'metadata.json'))
+  const rootMetadata = (await readRunManifest(resolvedRunDir, 'ocr'))?.metadata ?? null
   const metadataSummary = summarizeRunMetadata(rootMetadata)
   const costActualByKey = extractCostStepMap(rootMetadata, 'actual')
   const costEstimatedByKey = extractCostStepMap(rootMetadata, 'estimated')

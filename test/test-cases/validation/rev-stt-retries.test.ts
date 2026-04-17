@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runRevStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/run-rev-stt'
+import { readProviderCheckpointMetadata, writeProviderCheckpointFixture } from '../../test-utils/manifest-helpers'
 
 const originalFetch = globalThis.fetch
 const originalAccessToken = process.env['REVAI_ACCESS_TOKEN']
@@ -329,10 +330,9 @@ describe('runRevStt', () => {
     process.env['REVAI_ACCESS_TOKEN'] = 'test-token'
     process.env['REVAI_BASE_URL'] = 'https://rev.test'
 
-    await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify({
+    await writeProviderCheckpointFixture(outputDir, 'rev', 'machine', {
       transcriptionService: 'rev',
       transcriptionModel: 'machine',
-      transcriptionModelName: 'machine',
       processingTime: 10,
       tokenCount: 0,
       runtime: {
@@ -341,7 +341,7 @@ describe('runRevStt', () => {
         remoteJobId: 'job-existing',
         createCompletedAt: '2026-04-15T00:00:00.000Z'
       }
-    }, null, 2))
+    })
 
     const slept: number[] = []
     ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (ms: number) => {
@@ -386,7 +386,7 @@ describe('runRevStt', () => {
     expect(pollAttempts).toBe(5)
     expect(slept).toEqual([30_000, 60_000, 120_000, 240_000])
 
-    const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+    const metadata = await readProviderCheckpointMetadata(outputDir)
     expect(metadata['runtime']).toEqual(expect.objectContaining({
       mode: 'resumed',
       stage: 'polling',
@@ -444,7 +444,7 @@ describe('runRevStt', () => {
 
     expect(deleteAttempts).toBe(1)
 
-    const metadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+    const metadata = await readProviderCheckpointMetadata(outputDir)
     expect(metadata['runtime']).toEqual(expect.objectContaining({
       stage: 'cleanup-complete',
       remoteJobId: 'job-failed',

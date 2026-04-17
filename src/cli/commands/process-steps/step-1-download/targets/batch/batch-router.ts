@@ -1,7 +1,7 @@
 
 
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isOcrCommand } from '~/types'
+import { isOcrCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import type { BatchSource } from './batch-types'
 import { selectBatchItems } from './batch-select'
 import { tryEnumerateYoutubeChannel } from '../youtube-channel-provider'

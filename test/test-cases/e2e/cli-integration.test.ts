@@ -7,13 +7,14 @@ import {
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE
 } from "../../test-utils/test-helpers"
+import { readRunMetadata } from "../../test-utils/manifest-helpers"
 
 const getSummaryFileName = async (outputDir: string): Promise<string> => {
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+  const metadata = await readRunMetadata(outputDir) as {
     step3?: { outputFileName?: string }
   }
 
-  return metadata.step3?.outputFileName ?? "text.md"
+  return metadata.step3?.outputFileName ?? "text.json"
 }
 
 beforeAll(async () => {
@@ -95,16 +96,14 @@ test("bun as transcribe skips LLM processing but creates prompt", async () => {
     expect(promptContent).toContain('Write a one-sentence description of the transcript')
     expect(promptContent).not.toContain('Create chapter titles and descriptions based on the topics discussed throughout')
     
-    const summaryExists = await fileExists(`${outputDir}/text.md`)
+    const summaryExists = await fileExists(`${outputDir}/text.json`)
     expect(summaryExists).toBe(false)
     
-    const metadataFile = Bun.file(`${outputDir}/metadata.json`)
-    const metadataContent = await metadataFile.text()
-    const metadata = JSON.parse(metadataContent)
+    const metadata = await readRunMetadata(outputDir)
     
-    expect(metadata.step1).toBeDefined()
-    expect(metadata.step2).toBeDefined()
-    expect(metadata.step3).toBeUndefined()
+    expect(metadata['step1']).toBeDefined()
+    expect(metadata['step2']).toBeDefined()
+    expect(metadata['step3']).toBeUndefined()
   }
 })
 
@@ -130,11 +129,14 @@ test("all output files contain expected content structure", async () => {
       expect(promptContent).toContain("Transcript:")
     }
     
-    const summaryFile = Bun.file(`${outputDir}/text.md`)
+    const summaryFileName = await getSummaryFileName(outputDir)
+    const summaryFile = Bun.file(`${outputDir}/${summaryFileName}`)
     const summaryExists = await summaryFile.exists()
-    
+
     if (summaryExists) {
-      const summaryContent = await summaryFile.text()
+      const summaryContent = summaryFileName.endsWith('.json')
+        ? JSON.stringify(await summaryFile.json())
+        : await summaryFile.text()
       expect(summaryContent.length).toBeGreaterThan(0)
     }
   }

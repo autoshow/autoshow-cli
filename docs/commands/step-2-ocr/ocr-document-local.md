@@ -114,8 +114,8 @@ Structured EPUB inspection is available through two mutually exclusive flags:
 
 | Flag | Engine | Result |
 |------|--------|--------|
-| `--epub-bun` | native Bun ZIP/XML parser | writes structured EPUB payload into `metadata.json` (`step2.epub`) |
-| `--epub-calibre` | Calibre CLI tools | writes the same unified `step2.epub` payload shape |
+| `--epub-bun` | native Bun ZIP/XML parser | writes structured EPUB payload into `run.json` (`step2.epub`) |
+| `--epub-calibre` | Calibre CLI tools | writes the same unified `step2.epub` payload shape into `run.json` |
 
 Rules:
 - inspect mode is metadata-only for EPUB inputs

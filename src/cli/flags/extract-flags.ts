@@ -6,13 +6,13 @@ export const extractCommandFlags = {
   ...articleFlags,
   ...resumeMissingFlag,
   'epub-bun': {
-    description: 'EPUB inspect mode with Bun ZIP/XML parser (writes structured EPUB data into metadata.json)',
+    description: 'EPUB inspect mode with Bun ZIP/XML parser (writes structured EPUB data into run.json)',
     type: Boolean,
     default: false,
     negatable: false
   },
   'epub-calibre': {
-    description: 'EPUB inspect mode with Calibre CLI tools (writes structured EPUB data into metadata.json)',
+    description: 'EPUB inspect mode with Calibre CLI tools (writes structured EPUB data into run.json)',
     type: Boolean,
     default: false,
     negatable: false

@@ -3,20 +3,20 @@ import type { ResolvedLLMConfig } from '~/cli/commands/process-steps/step-1-down
 import type { LlmRateEstimate } from '~/types'
 
 
-const SERVICE_ORDER: Array<{ key: keyof ResolvedLLMConfig, service: string, modelKey: keyof ResolvedLLMConfig }> = [
-  { key: 'useOpenAI', service: 'openai', modelKey: 'openaiModel' },
-  { key: 'useGroq', service: 'groq', modelKey: 'groqModel' },
-  { key: 'useGemini', service: 'gemini', modelKey: 'geminiModel' },
-  { key: 'useAnthropic', service: 'anthropic', modelKey: 'anthropicModel' },
-  { key: 'useMinimax', service: 'minimax', modelKey: 'minimaxModel' },
+const SERVICE_ORDER: Array<{ service: string, modelKey: keyof ResolvedLLMConfig }> = [
+  { service: 'openai', modelKey: 'openaiModel' },
+  { service: 'groq', modelKey: 'groqModel' },
+  { service: 'gemini', modelKey: 'geminiModel' },
+  { service: 'anthropic', modelKey: 'anthropicModel' },
+  { service: 'minimax', modelKey: 'minimaxModel' },
 ]
 
 export const estimateLlmRates = (llmConfig: ResolvedLLMConfig): LlmRateEstimate[] => {
   const estimates: LlmRateEstimate[] = []
 
-  for (const { key, service, modelKey } of SERVICE_ORDER) {
+  for (const { service, modelKey } of SERVICE_ORDER) {
     const model = llmConfig[modelKey]
-    if (llmConfig[key] && typeof model === 'string') {
+    if (typeof model === 'string') {
       const cost = getLlmCost(service, model)
       estimates.push({
         provider: service,

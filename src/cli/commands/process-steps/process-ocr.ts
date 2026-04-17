@@ -35,6 +35,7 @@ import {
 import { writeOcrRunManifest } from './step-2-ocr/manifest'
 import { FIRECRAWL_PRICE_NOTE } from './step-2-ocr/ocr-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
+import { writeProviderResult } from './manifest-utils'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
@@ -106,7 +107,8 @@ const writeExtractionArtifact = async (
   outputDir: string,
   extractionResult: ExtractionResult,
   outputFormat: ExtractionOptions['outputFormat'],
-  epubInspectMode: boolean
+  epubInspectMode: boolean,
+  jsonFileName = 'result.json'
 ): Promise<void> => {
   if (epubInspectMode) {
     return
@@ -118,7 +120,9 @@ const writeExtractionArtifact = async (
   }
 
   if (outputFormat === 'json') {
-    await writeFile(`${outputDir}/extraction.json`, JSON.stringify(extractionResult, null, 2))
+    if (jsonFileName) {
+      await writeFile(`${outputDir}/${jsonFileName}`, JSON.stringify(extractionResult, null, 2))
+    }
     return
   }
 
@@ -134,6 +138,7 @@ const writeExtractionArtifact = async (
 
 const writeProviderArtifacts = async (
   providerDir: string,
+  target: { service: string, model: string },
   extractionResult: ExtractionResult,
   step2Metadata: ExtractionMetadata,
   outputFormat: ExtractionOptions['outputFormat']
@@ -142,10 +147,16 @@ const writeProviderArtifacts = async (
     providerDir,
     extractionResult,
     outputFormat,
-    isEpubInspectMode(step2Metadata)
+    isEpubInspectMode(step2Metadata),
+    undefined
   )
-  await writeFile(`${providerDir}/metadata.json`, JSON.stringify(step2Metadata, null, 2))
-  await writeFile(`${providerDir}/result.json`, JSON.stringify(extractionResult, null, 2))
+  await writeProviderResult(
+    providerDir,
+    target.service,
+    target.model,
+    step2Metadata as Record<string, unknown>,
+    extractionResult as Record<string, unknown>
+  )
 }
 
 const buildDocumentSource = (
@@ -316,6 +327,7 @@ export const processOcr = async (
 
           await writeProviderArtifacts(
             providerDir,
+            target,
             extracted.result,
             extracted.step2Metadata,
             opts.outputFormat ?? 'text'
@@ -357,22 +369,6 @@ export const processOcr = async (
         .map((entry) => entry.metadata)
       const primary = pickPrimarySuccess(requestedTargets, successes)
 
-      await writeFile(
-        `${outputDir}/metadata.json`,
-        JSON.stringify(
-          buildDocumentMetadataPayload(step1Metadata, step2Metadata, opts, {
-            failures: metadataErrors,
-            web,
-            source: documentSource,
-            completionStatus,
-            requestedProviders: requestedTargets.map(toRequestedProvider),
-            providerStates,
-            missingProviders
-          }),
-          null,
-          2
-        )
-      )
       await writeOcrRunManifest(
         outputDir,
         buildDocumentMetadataPayload(step1Metadata, step2Metadata, opts, {
@@ -398,7 +394,8 @@ export const processOcr = async (
         outputDir,
         primary.result,
         opts.outputFormat ?? 'text',
-        isEpubInspectMode(primary.metadata)
+        isEpubInspectMode(primary.metadata),
+        'result.json'
       )
 
       return {
@@ -429,16 +426,13 @@ export const processOcr = async (
           }
         : {})
     })
-    await writeFile(
-      `${outputDir}/metadata.json`,
-      JSON.stringify(rootMetadata, null, 2)
-    )
     await writeOcrRunManifest(outputDir, rootMetadata)
     await writeExtractionArtifact(
       outputDir,
       extracted.result,
       opts.outputFormat ?? 'text',
-      isEpubInspectMode(extracted.step2Metadata)
+      isEpubInspectMode(extracted.step2Metadata),
+      'result.json'
     )
 
     return {

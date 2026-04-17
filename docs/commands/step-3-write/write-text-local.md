@@ -101,7 +101,7 @@ Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common 
 
 ## Notes
 
-- Local llama output is always written as markdown (`text.md`), even when structured mode is enabled for the command.
+- Local llama output is written as `text.json`, the same JSON-only artifact used by hosted write providers.
 - Upstream transcribe / extract behavior is still controlled by the normal `write` flags.
 
 ## Local Tests

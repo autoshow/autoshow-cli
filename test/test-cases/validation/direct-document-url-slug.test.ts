@@ -3,6 +3,7 @@ import { once } from 'node:events'
 import { createServer } from 'node:http'
 import { rm } from 'node:fs/promises'
 import { runCommand } from '../../test-utils/test-helpers'
+import { readRunMetadata } from '../../test-utils/manifest-helpers'
 
 test('download direct document URL derives step1 slug from the original URL filename', async () => {
   const pdfBytes = await Bun.file('input/examples/document/1-document.pdf').bytes()
@@ -42,7 +43,7 @@ test('download direct document URL derives step1 slug from the original URL file
       return
     }
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as { step1?: Record<string, unknown> }
+    const metadata = await readRunMetadata(outputDir) as { step1?: Record<string, unknown> }
     expect(metadata.step1?.['slug']).toBe('Quarterly Report.v1')
     expect(metadata.step1?.['slug']).not.toBe('document')
   } finally {

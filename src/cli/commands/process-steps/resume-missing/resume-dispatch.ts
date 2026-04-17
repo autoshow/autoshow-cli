@@ -1,6 +1,6 @@
 import * as l from '~/logger'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { canonicalizeProcessCommand } from '~/types'
+import { canonicalizeProcessCommand } from '../process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeAdapter } from './resume-registry'
 
@@ -22,7 +22,7 @@ export const dispatchResumeMissing = async (
     throw CLIUsageError('--resume-missing does not accept a positional input.')
   }
   if (opts.price) {
-    throw CLIUsageError('--resume-missing does not support --price or --dry-run.')
+    throw CLIUsageError('--resume-missing does not support --price.')
   }
   if (maxCents !== undefined) {
     l.warn('Skipping budget preflight for --resume-missing')

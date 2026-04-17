@@ -9,6 +9,7 @@ import { buildOptsFromFlags, classifyUrlInput } from '~/cli/commands/process-ste
 import { prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import { runCommand } from '../../test-utils/test-helpers'
+import { readRunMetadata } from '../../test-utils/manifest-helpers'
 
 const ARTICLE_HTML = `<!doctype html>
 <html lang="en">
@@ -160,7 +161,7 @@ describe('HTML article inputs', () => {
     }
 
     cleanupPaths.add(result.outputDir)
-    const metadata = await Bun.file(`${result.outputDir}/metadata.json`).json() as {
+    const metadata = await readRunMetadata(result.outputDir) as {
       step1: { format?: string }
       step2: { extractionMethod?: string }
       web?: { title?: string }
@@ -195,7 +196,7 @@ describe('HTML article inputs', () => {
       }
 
       cleanupPaths.add(result.outputDir)
-      const metadata = await Bun.file(`${result.outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(result.outputDir) as {
         step1: { format?: string }
         step2: { extractionMethod?: string }
         web?: { title?: string }
@@ -240,7 +241,7 @@ describe('HTML article inputs', () => {
       }
 
       cleanupPaths.add(result.outputDir)
-      const metadata = await Bun.file(`${result.outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(result.outputDir) as {
         step1: { format?: string }
         step2: { extractionMethod?: string }
         web?: { title?: string; description?: string }
@@ -313,7 +314,7 @@ describe('HTML article inputs', () => {
         'Extracted text',
         'text.json',
         'prompt.md',
-        'metadata.json'
+        'run.json'
       ])
     } finally {
       await stopServer(server)
@@ -453,7 +454,7 @@ describe('HTML article inputs', () => {
     }
 
     cleanupPaths.add(result.outputDir)
-    const metadata = await Bun.file(`${result.outputDir}/metadata.json`).json() as {
+    const metadata = await readRunMetadata(result.outputDir) as {
       step2: { extractionMethod?: string }
     }
     expect(metadata.step2.extractionMethod).toBe('html+defuddle')

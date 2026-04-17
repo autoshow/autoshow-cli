@@ -58,7 +58,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--speaker-name')
   expect(result.stdout).toContain('--speaker-reference')
   expect(result.stdout).toContain('--price')
-  expect(result.stdout).toContain('--provider')
+  expect(result.stdout).not.toContain('--provider')
   expect(result.stdout).toContain('--elevenlabs-stt')
   expect(result.stdout).toContain('--deepgram-stt')
   expect(result.stdout).toContain('--soniox-stt')
@@ -94,7 +94,7 @@ test('ocr help includes hosted OCR flags', async () => {
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--mistral-ocr')
   expect(result.stdout).toContain('--glm-ocr')
-  expect(result.stdout).toContain('--provider')
+  expect(result.stdout).not.toContain('--provider')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--epub-calibre')
   expect(result.stdout).toContain('--resume-missing')
@@ -352,12 +352,16 @@ test('buildOptsFromFlags maps --gemini-voice to geminiVoiceId', () => {
   expect(opts.geminiVoiceId).toBe('Kore')
 })
 
-test('buildOptsFromFlags maps --json-output to structured output', () => {
-  const opts = buildOptsFromFlags(false, {
-    'json-output': true
-  })
+test('write rejects removed --json-output flag', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--json-output'
+  ])
 
-  expect(opts.structured).toBe(true)
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--json-output')
 })
 
 test('buildOptsFromFlags accepts --url-backend glm-reader', () => {
@@ -368,12 +372,16 @@ test('buildOptsFromFlags accepts --url-backend glm-reader', () => {
   expect(opts.urlBackend).toBe('glm-reader')
 })
 
-test('buildOptsFromFlags maps --md-output to markdown output', () => {
-  const opts = buildOptsFromFlags(false, {
-    'md-output': true
-  })
+test('write rejects removed --md-output flag', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--md-output'
+  ])
 
-  expect(opts.structured).toBe(false)
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--md-output')
 })
 
 test('buildOptsFromFlags maps repeated OpenAI speaker hint flags', () => {
@@ -384,14 +392,6 @@ test('buildOptsFromFlags maps repeated OpenAI speaker hint flags', () => {
 
   expect(opts.diarizationSpeakerNames).toEqual(['Host', 'Guest'])
   expect(opts.diarizationSpeakerReferences).toEqual(['clips/host.mp3', 'clips/guest.mp3'])
-})
-
-test('buildOptsFromFlags maps repeated generic provider flags', () => {
-  const opts = buildOptsFromFlags(false, {
-    provider: ['whisper:base', 'assemblyai:universal-3-pro']
-  })
-
-  expect(opts.provider).toEqual(['whisper:base', 'assemblyai:universal-3-pro'])
 })
 
 test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
@@ -426,28 +426,26 @@ test('collectSttTargets includes whisper only when explicitly requested alongsid
   ])
 })
 
-test('collectSttTargets merges generic provider specs with provider-specific flags without duplicates', () => {
+test('collectSttTargets deduplicates identical provider-specific specs', () => {
   const opts = buildOptsFromFlags(false, {
-    provider: ['whisper:base', 'assemblyai:universal-3-pro'],
+    whisper: 'base',
     'assemblyai-stt': 'universal-3-pro'
   })
 
   expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
-    'assemblyai:universal-3-pro',
-    'whisper:base'
+    'assemblyai:universal-3-pro'
   ])
 })
 
-test('collectExplicitOcrTargets parses generic provider specs', () => {
+test('collectExplicitOcrTargets collects canonical OCR provider flags', () => {
   const opts = buildOptsFromFlags(false, {
-    provider: ['tesseract', 'glm-ocr'],
+    'paddle-ocr': true,
     'mistral-ocr': 'mistral-ocr-latest'
   })
 
   expect(collectExplicitOcrTargets(opts)).toEqual([
-    { service: 'mistral', model: 'mistral-ocr-latest' },
-    { service: 'tesseract', model: 'tesseract' },
-    { service: 'glm', model: 'glm-ocr' }
+    { service: 'paddle-ocr', model: 'paddle-ocr' },
+    { service: 'mistral', model: 'mistral-ocr-latest' }
   ])
 })
 
@@ -561,7 +559,7 @@ test('stt accepts multiple STT providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
-test('stt accepts generic --provider aliases in price mode', async () => {
+test('stt rejects removed generic --provider aliases', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'stt',
@@ -573,7 +571,8 @@ test('stt accepts generic --provider aliases in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--provider')
 })
 
 test('stt accepts Deepgram plus another STT provider in price mode', async () => {
@@ -637,7 +636,7 @@ test('ocr accepts multiple OCR providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
-test('ocr accepts generic --provider aliases in price mode', async () => {
+test('ocr rejects removed generic --provider aliases', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'ocr',
@@ -649,7 +648,8 @@ test('ocr accepts generic --provider aliases in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--provider')
 })
 
 test('write accepts multiple OCR providers in price mode', async () => {
@@ -694,9 +694,14 @@ test('buildOptsFromFlags maps --markdown for metadata output', () => {
   expect(opts.markdown).toBe(true)
 })
 
-test('buildOptsFromFlags rejects conflicting output mode flags', () => {
-  expect(() => buildOptsFromFlags(false, {
-    'json-output': true,
-    'md-output': true
-  })).toThrow('Cannot use both --json-output and --md-output at the same time.')
+test('write rejects removed structured output flags', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--structured'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--structured')
 })

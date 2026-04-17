@@ -25,7 +25,7 @@ export const buildStep3Metadata = (
   inputTokenCount: timing.inputTokenCount,
   outputTokenCount: timing.outputTokenCount,
   outputFileName: '',
-  outputFormat: structuredOpts ? 'json' : 'markdown',
-  structuredMode: structuredOpts?.modeHint ?? 'off',
+  outputFormat: 'json',
+  structuredMode: structuredOpts?.strategy ?? 'schema-guided',
   structuredPresetNames: []
 })

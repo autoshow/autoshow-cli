@@ -1,7 +1,7 @@
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const getOpenAIClientConfig = (): { apiKey: string, baseURL?: string } => {
-  const apiKey = readEnvFallback('OPENAI_API_KEY', 'NITRO_OPENAI_API_KEY')
+  const apiKey = readEnv('OPENAI_API_KEY')
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY environment variable is required')
   }

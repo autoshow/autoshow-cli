@@ -4,7 +4,7 @@ import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { GROQ_DEFAULT_TTS_VOICE, type GroqTtsModel, validateGroqTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
 
 const GROQ_DEFAULT_BASE_URL = 'https://api.groq.com/openai/v1'
@@ -47,7 +47,7 @@ export const runGroqTts = async (
   outputDir: string,
   options: { model: GroqTtsModel, voiceId?: string | undefined }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
-  const apiKey = readEnvFallback('GROQ_API_KEY')
+  const apiKey = readEnv('GROQ_API_KEY')
   if (!apiKey) {
     throw new Error('GROQ_API_KEY environment variable is required for Groq TTS')
   }

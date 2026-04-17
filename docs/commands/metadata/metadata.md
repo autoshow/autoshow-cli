@@ -42,7 +42,7 @@ bun as <input>               # root shorthand
 
 ```text
 --markdown           Output metadata as Markdown frontmatter YAML
---save               Save metadata.json to disk (and metadata.md with --markdown)
+--save               Save run.json to disk (and metadata.md with --markdown)
 --password           Password for encrypted PDFs
 --batch-limit        Batch: number of items to process (default 5)
 --batch-all          Batch: process all items
@@ -90,14 +90,14 @@ When `--save` is provided, metadata artifacts are written to a timestamped outpu
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_title/
-  metadata.json
+  run.json
 ```
 
 With `--save --markdown`, the same directory also includes:
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_title/
-  metadata.json
+  run.json
   metadata.md
 ```
 
@@ -123,16 +123,13 @@ bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
 # Same thing, explicit metadata command
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
-# Use alias
-bun as meta "https://www.youtube.com/watch?v=u1-WHqATSQU"
-
 # Display and save metadata to disk
 bun as --save "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Display metadata as Markdown frontmatter YAML
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 
-# Display and save both metadata.json and metadata.md
+# Display and save both run.json and metadata.md
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown --save
 
 # Local media file metadata

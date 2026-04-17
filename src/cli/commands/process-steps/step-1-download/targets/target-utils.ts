@@ -4,7 +4,8 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { isOcrCommand, isSttCommand, type ProcessCommand, type RuntimeOptions } from '~/types'
+import type { ProcessCommand, RuntimeOptions } from '~/types'
+import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import type {
   BatchManifestEntry,
   BatchManifestErrorEntry,
@@ -18,10 +19,17 @@ import type {
 } from '~/types'
 import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/batch'
-import { writeOcrBatchManifest } from '~/cli/commands/process-steps/step-2-ocr/manifest'
-import { writeSttBatchManifest } from '~/cli/commands/process-steps/step-2-stt/manifest'
+import { readBatchManifest, readRunManifest, writeBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
+
+const toManifestKind = (command: ProcessCommand): 'metadata' | 'download' | 'ocr' | 'stt' | 'write' => {
+  if (command === 'metadata' || command === 'download' || command === 'ocr' || command === 'stt' || command === 'write') {
+    return command
+  }
+
+  throw new Error(`Unsupported batch manifest command: ${command}`)
+}
 
 const getBatchManifestTitle = (
   entry: BatchManifestEntry,
@@ -159,24 +167,12 @@ export const buildSttBatchFinalSummaryLines = (
 }
 
 export const logSttBatchFinalSummary = async (batchDir: string): Promise<void> => {
-  const infoPath = `${batchDir}/info.json`
-  if (!await fileExists(infoPath)) {
+  const manifest = await readBatchManifest(batchDir, 'stt').catch(() => undefined)
+  if (!manifest) {
     return
   }
 
-  let raw: unknown
-  try {
-    raw = JSON.parse(await Bun.file(infoPath).text()) as unknown
-  } catch {
-    return
-  }
-
-  if (!Array.isArray(raw)) {
-    return
-  }
-
-  const entries = raw.filter((value): value is BatchManifestEntry => isRecord(value))
-  const lines = buildSttBatchFinalSummaryLines(entries)
+  const lines = buildSttBatchFinalSummaryLines(manifest.manifest.items)
   if (lines.length === 0) {
     return
   }
@@ -609,18 +605,15 @@ const getErrorOutputDir = (error: unknown): string | undefined => {
   return typeof outputDir === 'string' && outputDir.length > 0 ? outputDir : undefined
 }
 
-const readBatchManifestEntry = async (outputDir: string): Promise<BatchManifestEntry | null> => {
-  const metadataPath = `${outputDir}/metadata.json`
-  if (!await fileExists(metadataPath)) {
+const readBatchManifestEntry = async (
+  outputDir: string,
+  command: ProcessCommand
+): Promise<BatchManifestEntry | null> => {
+  const manifest = await readRunManifest(outputDir, toManifestKind(command)).catch(() => undefined)
+  if (!manifest) {
     return null
   }
-
-  try {
-    const raw = JSON.parse(await Bun.file(metadataPath).text()) as unknown
-    return isRecord(raw) ? raw : null
-  } catch {
-    return null
-  }
+  return manifest.metadata
 }
 
 const attachOutputDir = (
@@ -710,12 +703,7 @@ export const processBatch = async (
     })
   }
 
-  await writeFile(`${batchDir}/info.json`, JSON.stringify(infoEntries, null, 2))
-  if (isSttCommand(command)) {
-    await writeSttBatchManifest(batchDir, infoEntries, batchSource)
-  } else if (isOcrCommand(command)) {
-    await writeOcrBatchManifest(batchDir, infoEntries, batchSource)
-  }
+  await writeBatchManifest(batchDir, toManifestKind(command), infoEntries, batchSource)
 
   const concurrency = Math.max(1, runOpts.concurrency ?? 1)
   let ok = 0
@@ -761,7 +749,7 @@ export const processBatch = async (
       const manifestEntry = processed?.manifestEntry
         ? (processed.outputDir ? attachOutputDir(processed.manifestEntry, processed.outputDir) : processed.manifestEntry)
         : processed?.outputDir
-          ? attachOutputDir(await readBatchManifestEntry(processed.outputDir), processed.outputDir)
+          ? attachOutputDir(await readBatchManifestEntry(processed.outputDir, command), processed.outputDir)
           : null
       const errorCount = getBatchManifestErrorCount(manifestEntry)
 
@@ -790,7 +778,7 @@ export const processBatch = async (
       return { manifestEntry, errorCount, status: 'ok' }
     } catch (error) {
       if (isSttCommand(command) && isSttPartialCompletionError(error)) {
-        const manifestEntry = attachOutputDir(await readBatchManifestEntry(error.outputDir), error.outputDir)
+        const manifestEntry = attachOutputDir(await readBatchManifestEntry(error.outputDir, command), error.outputDir)
         const errorCount = getBatchManifestErrorCount(manifestEntry)
         if (error.completionStatus === 'failed') {
           l.error(`Failed ${index + 1}/${items.length}: ${error.message}`)
@@ -803,7 +791,7 @@ export const processBatch = async (
 
       const errorOutputDir = getErrorOutputDir(error)
       if (errorOutputDir && !isSttCommand(command)) {
-        const manifestEntry = attachOutputDir(await readBatchManifestEntry(errorOutputDir), errorOutputDir)
+        const manifestEntry = attachOutputDir(await readBatchManifestEntry(errorOutputDir, command), errorOutputDir)
         const errorCount = getBatchManifestErrorCount(manifestEntry)
         const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : undefined)
 
@@ -901,12 +889,7 @@ export const processBatch = async (
   l.info(isSttCommand(command)
     ? formatSttBatchCompletionSummary(ok, incomplete, fail)
     : formatBatchCompletionSummary(ok, partial, fail))
-  await writeFile(`${batchDir}/info.json`, JSON.stringify(finalInfoEntries, null, 2))
-  if (isSttCommand(command)) {
-    await writeSttBatchManifest(batchDir, finalInfoEntries, batchSource)
-  } else if (isOcrCommand(command)) {
-    await writeOcrBatchManifest(batchDir, finalInfoEntries, batchSource)
-  }
+  await writeBatchManifest(batchDir, toManifestKind(command), finalInfoEntries, batchSource)
 
   return {
     ok,

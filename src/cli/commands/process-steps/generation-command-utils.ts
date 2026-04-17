@@ -3,7 +3,7 @@ import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
-import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
+import { writeRunManifest } from './manifest-utils'
 
 type CostStep = {
   step: string
@@ -32,10 +32,11 @@ export const writeGenerationMetadata = async <T,>(
   cost: unknown,
   timing: unknown
 ): Promise<void> => {
-  await Bun.write(
-    `${outputDir}/metadata.json`,
-    JSON.stringify({ [metadataKey]: serializeOneOrMany(metadata), cost, timing }, null, 2)
-  )
+  await writeRunManifest(outputDir, metadataKey as 'tts' | 'image' | 'video' | 'music', {
+    [metadataKey]: metadata,
+    cost: cost as Record<string, unknown>,
+    timing: timing as Record<string, unknown>
+  })
 }
 
 export const buildProviderStepSummaries = <T,>(

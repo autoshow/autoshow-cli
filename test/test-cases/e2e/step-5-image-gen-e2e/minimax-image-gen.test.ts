@@ -7,6 +7,7 @@ import {
   cleanupTestOutput,
   hasConfiguredEnvVar
 } from '../../../test-utils/test-helpers'
+import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 defineImageServiceTest({
   models: [
@@ -47,10 +48,10 @@ test('image-01 generates dramatic fox portrait with aspect ratio', async () => {
     const imageExists = await fileExists(`${outputDir}/generated-image.jpeg`)
     expect(imageExists).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-      image?: { imageService?: string; imageModel?: string }
+    const metadata = await readRunMetadata(outputDir) as {
+      image?: Array<{ imageService?: string; imageModel?: string }>
     }
-    expect(metadata.image?.imageService).toBe('minimax')
-    expect(metadata.image?.imageModel).toBe('image-01')
+    expect(metadata.image?.[0]?.imageService).toBe('minimax')
+    expect(metadata.image?.[0]?.imageModel).toBe('image-01')
   }
 })

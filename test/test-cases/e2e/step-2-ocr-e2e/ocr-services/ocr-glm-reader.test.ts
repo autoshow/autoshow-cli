@@ -2,6 +2,7 @@ import { expect } from 'bun:test'
 import { rm } from 'node:fs/promises'
 import { budgetedTest } from '../../../../test-utils/budget'
 import { runCommand, fileExists } from '../../../../test-utils/test-helpers'
+import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 import { shouldSkipMissingEnv } from '../../../../test-utils/service-test-kit'
 
 type ExtractMetadata = {
@@ -31,7 +32,7 @@ budgetedTest('extract-glm-reader-url', 'bun as ocr https://ajcwebdev.com --url-b
 
     expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+    const metadata = await readRunMetadata(outputDir) as ExtractMetadata
     expect(metadata.step1?.format).toBe('html')
     expect(metadata.step2?.extractionMethod).toBe('html+glm-reader')
   } finally {

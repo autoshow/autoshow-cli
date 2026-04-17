@@ -1,6 +1,6 @@
 import * as l from '~/logger'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isOcrCommand, isSttCommand } from '~/types'
+import { isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { collectInputFiles, isDocumentByExtension, isInputDirectoryPath, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'

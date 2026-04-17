@@ -16,7 +16,7 @@ import {
   readPersistedAsyncSttRuntime,
   writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 
@@ -120,7 +120,7 @@ export const runAssemblyAiTranscribe = async (
     runMode,
     lifecycle
   } = options
-  const apiKey = readEnvFallback('ASSEMBLYAI_API_KEY')
+  const apiKey = readEnv('ASSEMBLYAI_API_KEY')
   if (!apiKey) {
     throw new Error('ASSEMBLYAI_API_KEY environment variable is required for AssemblyAI transcription')
   }
@@ -165,7 +165,6 @@ export const runAssemblyAiTranscribe = async (
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'assemblyai',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
     timings: {
@@ -501,7 +500,6 @@ export const runAssemblyAiTranscribe = async (
   const metadata: Step2Metadata = {
     transcriptionService: 'assemblyai',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(finalText),
     runtime: completedRuntime,

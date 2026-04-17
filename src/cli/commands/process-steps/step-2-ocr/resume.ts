@@ -21,7 +21,8 @@ import {
   inferStoredCompletionStatus,
   parseStoredRequestedTargets
 } from './ocr-run-state'
-import { readOcrBatchManifestEntries, readOcrRunManifestEntry } from './manifest'
+import { readOcrRunManifestEntry, writeOcrBatchManifest } from './manifest'
+import { readBatchManifest } from '../manifest-utils'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -36,42 +37,11 @@ type ResumeOcrBatchEntry = {
 }
 
 const resolveStoredOutputDir = async (
-  batchDir: string,
   entry: Record<string, unknown>
 ): Promise<string | undefined> => {
   if (typeof entry['outputDir'] === 'string' && entry['outputDir'].length > 0) {
     return resolvePath(entry['outputDir'])
   }
-
-  const batchEntries = await readdir(batchDir, { withFileTypes: true })
-  const expectedSlug = isRecord(entry['step1']) && typeof entry['step1']['slug'] === 'string'
-    ? entry['step1']['slug']
-    : undefined
-
-  for (const dirent of batchEntries) {
-    if (!dirent.isDirectory()) {
-      continue
-    }
-
-    const candidateDir = join(batchDir, dirent.name)
-    const metadataPath = join(candidateDir, 'metadata.json')
-    if (!await Bun.file(metadataPath).exists()) {
-      continue
-    }
-
-    try {
-      const metadata = await Bun.file(metadataPath).json() as unknown
-      if (!isRecord(metadata) || !isRecord(metadata['step1'])) {
-        continue
-      }
-
-      if (expectedSlug && metadata['step1']['slug'] === expectedSlug) {
-        return candidateDir
-      }
-    } catch {
-    }
-  }
-
   return undefined
 }
 
@@ -106,7 +76,6 @@ const toStoredSource = (entry: Record<string, unknown>): Step1SourceRef => {
 }
 
 const parseResumeEntry = async (
-  batchDir: string,
   entry: unknown,
   selectedTargets: OcrTarget[] | undefined
 ): Promise<ResumeOcrBatchEntry | undefined> => {
@@ -114,7 +83,7 @@ const parseResumeEntry = async (
     return undefined
   }
 
-  const outputDir = await resolveStoredOutputDir(batchDir, entry)
+  const outputDir = await resolveStoredOutputDir(entry)
   if (!outputDir) {
     return undefined
   }
@@ -149,22 +118,23 @@ const parseResumeEntry = async (
 
 const readResumeBatchManifest = async (
   batchDir: string
-): Promise<{ infoPath: string, entries: BatchManifestEntry[] } | undefined> => {
-  const manifest = await readOcrBatchManifestEntries(batchDir)
+): Promise<{ infoPath: string, entries: BatchManifestEntry[], source?: Record<string, unknown> } | undefined> => {
+  const manifest = await readBatchManifest(batchDir, 'ocr')
   if (!manifest) {
     return undefined
   }
 
   return {
     infoPath: manifest.manifestPath,
-    entries: manifest.entries
+    entries: manifest.manifest.items,
+    ...(manifest.manifest.source ? { source: manifest.manifest.source } : {})
   }
 }
 
 const readOutputMetadata = async (outputDir: string): Promise<BatchManifestEntry> => {
   const raw = await readOcrRunManifestEntry(outputDir)
   if (!isRecord(raw)) {
-    throw CLIUsageError(`Invalid OCR metadata at ${outputDir}/metadata.json`)
+    throw CLIUsageError(`Invalid OCR manifest at ${outputDir}/run.json`)
   }
   return raw
 }
@@ -172,7 +142,7 @@ const readOutputMetadata = async (outputDir: string): Promise<BatchManifestEntry
 const readPreparedDocument = async (outputDir: string): Promise<PreparedDocument> => {
   const metadata = await readOutputMetadata(outputDir)
   if (!isRecord(metadata['step1'])) {
-    throw CLIUsageError(`Invalid OCR metadata at ${outputDir}/metadata.json`)
+    throw CLIUsageError(`Invalid OCR manifest at ${outputDir}/run.json`)
   }
 
   const step1Metadata = validateData(DocumentMetadataSchema, metadata['step1'], 'stored OCR step1 metadata')
@@ -208,7 +178,7 @@ const batchHasResumableWork = async (
       continue
     }
 
-    const parsed = await parseResumeEntry(batchDir, entry, selectedTargets)
+    const parsed = await parseResumeEntry(entry, selectedTargets)
     if (parsed && parsed.missingTargets.length > 0) {
       return true
     }
@@ -298,11 +268,11 @@ export const resumeOcrMissingFromBatchDir = async (
   const batchDir = resolvePath(batchDirInput)
   const manifest = await readResumeBatchManifest(batchDir)
   if (!manifest) {
-    throw CLIUsageError(`Invalid batch manifest at ${join(batchDir, 'info.json')}`)
+    throw CLIUsageError(`Invalid batch manifest at ${join(batchDir, 'batch.json')}`)
   }
 
   const parsedEntries = await Promise.all(
-    manifest.entries.map(async (entry) => await parseResumeEntry(batchDir, entry, selectedTargets))
+    manifest.entries.map(async (entry) => await parseResumeEntry(entry, selectedTargets))
   )
 
   let full = 0
@@ -408,7 +378,7 @@ export const resumeOcrMissingFromBatchDir = async (
     }
   }
 
-  await Bun.write(manifest.infoPath, JSON.stringify(updatedEntries, null, 2))
+  await writeOcrBatchManifest(batchDir, updatedEntries, manifest.source)
   l.info(formatResumeSummary(full, incomplete, failed))
 
   if (incomplete > 0 || failed > 0) {

@@ -8,6 +8,7 @@ import {
   hasConfiguredEnvVar
 } from '../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../test-utils/budget'
+import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
 
@@ -50,12 +51,12 @@ budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop music', a
     const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
     expect(musicExists).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-      music?: { musicService?: string; musicModel?: string; lyricsSource?: string }
+    const metadata = await readRunMetadata(outputDir) as {
+      music?: Array<{ musicService?: string; musicModel?: string; lyricsSource?: string }>
     }
-    expect(metadata.music?.musicService).toBe('minimax')
-    expect(metadata.music?.musicModel).toBe('music-2.5')
-    expect(metadata.music?.lyricsSource).toBe('provided')
+    expect(metadata.music?.[0]?.musicService).toBe('minimax')
+    expect(metadata.music?.[0]?.musicModel).toBe('music-2.5')
+    expect(metadata.music?.[0]?.lyricsSource).toBe('provided')
   }
 })
 
@@ -81,11 +82,11 @@ budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop with lyri
     const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
     expect(musicExists).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-      music?: { musicService?: string; lyricsSource?: string }
+    const metadata = await readRunMetadata(outputDir) as {
+      music?: Array<{ musicService?: string; lyricsSource?: string }>
     }
-    expect(metadata.music?.musicService).toBe('minimax')
-    expect(metadata.music?.lyricsSource).toBe('provided')
+    expect(metadata.music?.[0]?.musicService).toBe('minimax')
+    expect(metadata.music?.[0]?.lyricsSource).toBe('provided')
   }
 })
 
@@ -160,10 +161,9 @@ test('multi-provider run produces per-provider filenames and array metadata', as
     expect(await fileExists(`${outputDir}/generated-music-elevenlabs-music_v1.mp3`)).toBe(true)
     expect(await fileExists(`${outputDir}/generated-music-minimax-music-2.5.mp3`)).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+    const metadata = await readRunMetadata(outputDir) as {
       music?: Array<{ musicService?: string; musicModel?: string }>
     }
-    expect(Array.isArray(metadata.music)).toBe(true)
     const musicArr = metadata.music ?? []
     expect(musicArr.some(m => m.musicService === 'elevenlabs')).toBe(true)
     expect(musicArr.some(m => m.musicService === 'minimax')).toBe(true)

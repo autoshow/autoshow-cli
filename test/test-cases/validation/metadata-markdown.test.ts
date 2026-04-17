@@ -24,7 +24,7 @@ test('metadata --markdown prints frontmatter yaml instead of json', async () => 
   expect(result.stdout).not.toContain('{\n  "title"')
 })
 
-test('metadata --markdown --save writes metadata.json and metadata.md', async () => {
+test('metadata --markdown --save writes run.json and metadata.md', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'metadata',
@@ -37,18 +37,18 @@ test('metadata --markdown --save writes metadata.json and metadata.md', async ()
   expect(result.outputDir).not.toBeNull()
 
   const outputDir = result.outputDir as string
-  const jsonPath = `${outputDir}/metadata.json`
+  const jsonPath = `${outputDir}/run.json`
   const markdownPath = `${outputDir}/metadata.md`
 
   expect(await fileExists(jsonPath)).toBe(true)
   expect(await fileExists(markdownPath)).toBe(true)
 
-  const savedJson = await Bun.file(jsonPath).json() as { step1?: Record<string, unknown> }
+  const savedJson = await Bun.file(jsonPath).json() as { metadata?: { step1?: Record<string, unknown> } }
   const savedMarkdown = await Bun.file(markdownPath).text()
 
-  expect(savedJson.step1?.['title']).toBe('audio')
-  expect(savedJson.step1?.['slug']).toBe('audio')
-  expect(savedJson.step1?.['url']).toBe(DIRECT_MEDIA_URL)
+  expect(savedJson.metadata?.step1?.['title']).toBe('audio')
+  expect(savedJson.metadata?.step1?.['slug']).toBe('audio')
+  expect(savedJson.metadata?.step1?.['url']).toBe(DIRECT_MEDIA_URL)
   expect(savedMarkdown).toBe(EXPECTED_FRONTMATTER)
   expect(result.stdout.startsWith(EXPECTED_FRONTMATTER)).toBe(true)
 })

@@ -1,6 +1,7 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
 import { rm } from 'node:fs/promises'
 import { cleanupTestOutput, runCommand, fileExists, findLatestDirectory, ensurePageImageFixture } from '../../../../test-utils/test-helpers'
+import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 type ExtractMetadata = {
   step1?: { format?: string }
@@ -35,8 +36,8 @@ test('extract PDF with default options', async () => {
   if (!outputDir) return
 
   expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
-  expect(await fileExists(`${outputDir}/extraction.json`)).toBe(false)
-  expect(await fileExists(`${outputDir}/metadata.json`)).toBe(true)
+  expect(await fileExists(`${outputDir}/result.json`)).toBe(false)
+  expect(await fileExists(`${outputDir}/run.json`)).toBe(true)
 })
 
 test('extract PDF with --out json', async () => {
@@ -50,7 +51,7 @@ test('extract PDF with --out json', async () => {
   if (!outputDir) return
 
   expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(false)
-  expect(await fileExists(`${outputDir}/extraction.json`)).toBe(true)
+  expect(await fileExists(`${outputDir}/result.json`)).toBe(true)
 })
 
 test('extract PDF with --ocrmypdf', async () => {
@@ -67,7 +68,7 @@ test('extract PDF with --ocrmypdf', async () => {
   expect(outputDir).not.toBeNull()
   if (!outputDir) return
 
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step2?.extractionMethod).toBe('ocrmypdf')
 })
 
@@ -85,7 +86,7 @@ test('extract PDF with --paddle-ocr', async () => {
   expect(outputDir).not.toBeNull()
   if (!outputDir) return
 
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step2?.extractionMethod).toBe('mutool+paddle-ocr')
 })
 
@@ -103,7 +104,7 @@ test('extract EPUB with --ocrmypdf', async () => {
   expect(outputDir).not.toBeNull()
   if (!outputDir) return
 
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step1?.format).toBe('epub')
   expect(metadata.step2?.extractionMethod).toBe('pdf+ocrmypdf')
 })
@@ -123,7 +124,7 @@ test('extract image with --ocrmypdf', async () => {
   expect(outputDir).not.toBeNull()
   if (!outputDir) return
 
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step1?.format).toBe('png')
   expect(metadata.step2?.extractionMethod).toBe('image+ocrmypdf')
   expect(metadata.step2?.totalPages).toBe(1)
@@ -145,7 +146,7 @@ test('bun as ocr https://ajcwebdev.com --url-backend defuddle', async () => {
 
     expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+    const metadata = await readRunMetadata(outputDir) as ExtractMetadata
     expect(metadata.step1?.format).toBe('html')
     expect(metadata.step2?.extractionMethod).toBe('html+defuddle')
   } finally {
@@ -165,21 +166,21 @@ test('bun as ocr https://ajcwebdev.com --url-backend glm-reader --price', async 
   expect(`${result.stdout}\n${result.stderr}`).toContain('GLM Reader cost is not estimated locally during preflight.')
 })
 
-test('extract EPUB with --epub-bun writes structured data into metadata.json only', async () => {
+test('extract EPUB with --epub-bun writes structured data into run.json only', async () => {
   await cleanupTestOutput('1-epub')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', epubInput, '--epub-bun'], { testName: 'extract EPUB with --epub-bun writes structured data into metadata.json only' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', epubInput, '--epub-bun'], { testName: 'extract EPUB with --epub-bun writes structured data into run.json only' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-epub')
   expect(outputDir).not.toBeNull()
   if (!outputDir) return
 
-  expect(await fileExists(`${outputDir}/metadata.json`)).toBe(true)
+  expect(await fileExists(`${outputDir}/run.json`)).toBe(true)
   expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(false)
-  expect(await fileExists(`${outputDir}/extraction.json`)).toBe(false)
+  expect(await fileExists(`${outputDir}/result.json`)).toBe(false)
 
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step2?.extractionMethod).toBe('epub-bun')
   expect(typeof metadata.step2?.epub).toBe('object')
 })
@@ -198,7 +199,7 @@ test('extract EPUB with --epub-calibre', async () => {
   expect(outputDir).not.toBeNull()
   if (!outputDir) return
 
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step2?.extractionMethod).toBe('epub-calibre')
   expect(typeof metadata.step2?.epub).toBe('object')
 })
@@ -229,6 +230,6 @@ test('extract non-EPUB with --epub-bun falls back to normal extraction flow', as
   if (!outputDir) return
 
   expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step2?.extractionMethod).not.toBe('epub-bun')
 })

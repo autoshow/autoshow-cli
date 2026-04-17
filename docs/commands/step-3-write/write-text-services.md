@@ -69,12 +69,10 @@ Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common 
 
 ## Structured Outputs
 
-- Structured outputs are enabled by default for non-llama `write` runs.
+- `write` output is JSON-only.
 - Single-provider runs write `text.json`.
 - Multi-provider runs write `text-<model>.json` for each provider.
-- Use `--no-structured` to keep markdown output.
-- MiniMax uses compatibility-mode validation retries because it does not have the same native structured-output path as the other hosted providers.
-- `--structured-strict` is only meaningful for providers that support strict schema enforcement.
+- Providers with native schema output use it directly; providers without it use the internal schema-guided fallback path.
 
 ## Flags
 
@@ -87,13 +85,9 @@ Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common 
 | `--minimax <model>` | Select a MiniMax model |
 | `--grok <model>` | Select a Grok (xAI) model |
 | `--prompt <name...>` | Select prompt preset(s) |
-| `--structured` / `--no-structured` | Enable or disable structured JSON output |
-| `--structured-strict` / `--no-structured-strict` | Request strict schema mode where supported |
-| `--structured-compat-retries <n>` | Retry count for compatibility-mode validation |
 | `--price` | Show the aggregated estimate and exit |
 
 ## Notes
 
 - Service LLM selection only affects step 3. You can still use local or hosted step 2 engines in the same `write` run.
-- When no explicit LLM provider is configured and `--no-structured` is set, document `write` still has a legacy extract-plus-markdown fallback path.
 - Service setup details are in [`write-text-local.md#setup`](./write-text-local.md#setup).

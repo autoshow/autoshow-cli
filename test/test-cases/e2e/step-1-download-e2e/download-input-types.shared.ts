@@ -2,6 +2,7 @@ import { test, expect, beforeAll, afterAll } from 'bun:test'
 import { readdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput } from '../../../test-utils/test-helpers'
+import { readBatchItems, readBatchSource, readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const OUTPUT_DIR = './output'
 const createdDirs: string[] = []
@@ -143,7 +144,7 @@ export const setupDownloadInputTypeLifecycle = (suffixes: string[]): void => {
 export const assertDownloadOnlyArtifacts = async (outputDir: string, metadata: Metadata): Promise<void> => {
   expect(await fileExists(`${outputDir}/transcription.txt`)).toBe(false)
   expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(false)
-  expect(await fileExists(`${outputDir}/text.md`)).toBe(false)
+  expect(await fileExists(`${outputDir}/text.json`)).toBe(false)
   expect(await fileExists(`${outputDir}/prompt.md`)).toBe(false)
   expect(metadata.step2).toBeUndefined()
   expect(metadata.step3).toBeUndefined()
@@ -172,8 +173,8 @@ export const defineSingleCaseTest = (tc: SingleCase): void => {
     }
     rememberDir(outputDir)
 
-    expect(await fileExists(`${outputDir}/metadata.json`)).toBe(true)
-    const metadata = parseMetadata(await Bun.file(`${outputDir}/metadata.json`).json())
+    expect(await fileExists(`${outputDir}/run.json`)).toBe(true)
+    const metadata = parseMetadata(await readRunMetadata(outputDir))
     expect(metadata.step1).toBeDefined()
 
     await tc.checks(metadata, outputDir)
@@ -202,12 +203,10 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
     }
 
     expect(await fileExists(`${batchDir}/source.json`)).toBe(true)
-    expect(await fileExists(`${batchDir}/info.json`)).toBe(true)
-    const info = await Bun.file(`${batchDir}/info.json`).json()
-    expect(Array.isArray(info)).toBe(true)
-    const infoEntries = Array.isArray(info) ? info : []
+    expect(await fileExists(`${batchDir}/batch.json`)).toBe(true)
+    const infoEntries = await readBatchItems(batchDir)
 
-    const source = parseBatchSource(await Bun.file(`${batchDir}/source.json`).json())
+    const source = parseBatchSource(await readBatchSource(batchDir))
     expect(source.sourceKind).toBe(tc.expectedSourceKind)
     if (tc.expectedSelectedCount !== undefined) {
       expect(source.selectedCount).toBe(tc.expectedSelectedCount)
@@ -230,11 +229,11 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
       return
     }
 
-    expect(await fileExists(`${firstItemDir}/metadata.json`)).toBe(true)
+    expect(await fileExists(`${firstItemDir}/run.json`)).toBe(true)
     expect(infoEntries.length).toBe(itemDirs.length)
-    const rawMetadata = await Bun.file(`${firstItemDir}/metadata.json`).json()
-    expect(infoEntries[0]).toEqual(rawMetadata)
-    const metadata = parseMetadata(await Bun.file(`${firstItemDir}/metadata.json`).json())
+    const rawMetadata = await readRunMetadata(firstItemDir)
+    expect(infoEntries[0]).toEqual({ ...rawMetadata, outputDir: firstItemDir })
+    const metadata = parseMetadata(await readRunMetadata(firstItemDir))
     expect(metadata.step1).toBeDefined()
     await assertDownloadOnlyArtifacts(firstItemDir, metadata)
   })

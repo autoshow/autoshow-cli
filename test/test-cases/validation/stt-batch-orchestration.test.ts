@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { runSttBatch } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
+import { readBatchItems } from '../../test-utils/manifest-helpers'
 
 const originalFetch = globalThis.fetch
 const originalDeepgramApiKey = process.env['DEEPGRAM_API_KEY']
@@ -486,7 +487,7 @@ test('runSttBatch blocks a permanently failing provider and marks later items as
     return
   }
 
-  const info = await Bun.file(join(result.batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+  const info = await readBatchItems(result.batchDir)
   const mistralStates = info.flatMap((entry) =>
     Array.isArray(entry['providerStates'])
       ? entry['providerStates'].filter((state): state is Record<string, unknown> => typeof state === 'object' && state !== null)
@@ -654,7 +655,7 @@ test('runSttBatch backfills retryable provider failures within the same invocati
     return
   }
 
-  const info = await Bun.file(join(result.batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+  const info = await readBatchItems(result.batchDir)
   for (const entry of info) {
     expect(entry['completionStatus']).toBe('full')
     expect(Array.isArray(entry['missingProviders'])).toBe(true)
@@ -753,7 +754,7 @@ test('runSttBatch performs a single automatic backfill sweep for retryable async
     return
   }
 
-  const info = await Bun.file(join(result.batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+  const info = await readBatchItems(result.batchDir)
   for (const entry of info) {
     expect(entry['completionStatus']).toBe('incomplete')
     const assemblyAiState = Array.isArray(entry['providerStates'])

@@ -18,8 +18,8 @@ export const videoCommand = defineCommand({
   flags: videoGenFlags,
   help: {
     examples: [
-      ['bun as video output/text.md --gemini-video', 'Generate video from summary with Gemini Veo'],
-      ['bun as video output/text.md --minimax-video', 'Generate video with MiniMax Hailuo']
+      ['bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview', 'Generate video with Gemini Veo'],
+      ['bun as video "a cinematic mountain sunrise" --minimax-video MiniMax-Hailuo-2.3', 'Generate video with MiniMax Hailuo']
     ]
   }
 }, async (ctx) => {
@@ -55,7 +55,7 @@ export const videoCommand = defineCommand({
     const singleTarget = videoTargets.length === 1
     l.report.expectedOutput('./output/<timestamp>_video-gen/', [
       ...videoTargets.map((t) => getVideoArtifactFileName(t, singleTarget)),
-      'metadata.json'
+      'run.json'
     ])
     return
   }
@@ -100,7 +100,7 @@ export const videoCommand = defineCommand({
     outputDir,
     {
       ...buildVideoArtifactMap(metadata),
-      metadata: 'metadata.json'
+      run: 'run.json'
     },
     {
       steps: buildProviderStepSummaries(

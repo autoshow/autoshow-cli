@@ -4,6 +4,7 @@ import {
   ensurePageImageFixture,
 } from './test-helpers'
 import { budgetedTest } from './budget'
+import { readRunMetadata } from './manifest-helpers'
 import { runCommandAndExpectOutputDir, shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
 
 const extractServiceFromFlag = (cliFlag: string): string => {
@@ -50,7 +51,7 @@ export const defineOCRServiceTest = ({
       const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'ocr', pdfInput, cliFlag, model])
       if (!outputDir) return
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(outputDir) as {
         step2?: { extractionMethod?: string }
       }
       expect(metadata.step2?.extractionMethod).toBe(extractionMethod)
@@ -69,7 +70,7 @@ export const defineOCRServiceTest = ({
       const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'ocr', imageInput, cliFlag, model])
       if (!outputDir) return
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+      const metadata = await readRunMetadata(outputDir) as {
         step2?: { extractionMethod?: string; totalPages?: number }
       }
       expect(metadata.step2?.extractionMethod).toBe(imageExtractionMethod ?? extractionMethod)

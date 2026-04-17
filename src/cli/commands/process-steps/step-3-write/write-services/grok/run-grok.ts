@@ -1,11 +1,11 @@
 import OpenAI from 'openai'
 import * as l from '~/logger'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runOpenAICompatibleChatModel } from '../openai-compatible-chat'
 
 const getGrokClientConfig = (): { apiKey: string, baseURL: string } => {
-  const apiKey = readEnvFallback('XAI_API_KEY')
+  const apiKey = readEnv('XAI_API_KEY')
   if (!apiKey) {
     l.error('XAI_API_KEY not found in environment for Grok model')
     throw new Error('XAI_API_KEY environment variable is required for --grok models')

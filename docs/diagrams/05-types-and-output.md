@@ -15,50 +15,49 @@ output/
 └── YYYY-MM-DD_HH-MM-SS_<sanitized-title>/
     │
     │  ── Metadata (metadata command, with --save) ──
-    ├── metadata.json               # { step1 } — metadata only, no downloaded files
+    ├── run.json                    # { step1 } — metadata only, no downloaded files
     │
     │  ── Media (stt command) ──
     ├── audio.wav                   # 16kHz mono PCM audio
     ├── transcription.txt           # [HH:MM:SS] timestamped text
     ├── prompt.md                   # Formatted prompt for LLM
-    ├── metadata.json               # { step1, step2 }
+    ├── run.json                    # { step1, step2 }
     │
     │  ── Media (write command) ──
     ├── audio.wav
     ├── transcription.txt
     ├── prompt.md
-    ├── text.json                   # structured service write output (default)
-    ├── text.md                     # local or legacy markdown write output
+    ├── text.json                   # structured write output
     ├── speech.wav                  # (if --kitten-tts/--elevenlabs-tts/... set)
     ├── generated-image.*           # (if --gemini-image/--openai-image/... set)
     ├── generated-video.mp4         # (if --gemini-video/--minimax-video/... set)
     ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music set)
-    ├── metadata.json               # { step1, step2, step3[, step4, step5, step6, step7] }
+    ├── run.json                    # { step1, step2, step3[, step4, step5, step6, step7] }
     │
     │  ── Document (ocr command) ──
-    ├── extraction.txt              # if --out text
-    ├── extraction.json             # if --out json
+    ├── extraction.txt              # if --out text (default)
+    ├── result.json                 # if --out json
     ├── extraction.tsv              # if --out tsv
     ├── extraction.hocr             # if --out hocr
-    ├── metadata.json               # { step1, step2 }
-    │                               # EPUB inspect mode writes metadata.json only
+    ├── run.json                    # { step1, step2 }
+    │                               # EPUB inspect mode writes run.json only
     │
     │  ── Document (write command) ──
     ├── extraction.<requested-format>
     ├── prompt.md
-    ├── text.json                   # structured service write output (default)
-    ├── text.md                     # local or legacy markdown write output
-    ├── metadata.json               # { step1, step2, step3 }
+    ├── text.json                   # structured write output
+    ├── run.json                    # { step1, step2, step3 }
     │
     │  ── Standalone commands (tts / image / music / video) ──
     ├── speech.wav                  # (tts command output)
     ├── generated-image.*           # (image command output)
     ├── generated-video.mp4         # (video command output)
     ├── generated-music.mp3         # (music command output)
+    ├── run.json                    # generation metadata, timing, and cost
     │
     │  ── Batch Processing ──
     └── output/YYYY-MM-DD_HH-MM-SS_<batch-label>/
-        ├── info.json               # Consolidated per-item metadata.json payloads
+        ├── batch.json              # Consolidated per-item run metadata payloads
         └── YYYY-MM-DD_HH-MM-SS_<item-title>/
             └── (individual item output files)
 ```
@@ -165,7 +164,7 @@ src/types/
 │                                                                              │
 │  Step 5 (Image Gen):                                                         │
 │  └── Step5Metadata        imageService (ImageProvider), imageModel,          │
-│       processingTime, imageCount, imageFileName, imageFileNames[],           │
+│       processingTime, imageCount, imageFileNames[],                           │
 │       imageFileSize, imageWidth, imageHeight                                 │
 │                                                                              │
 │  Step 6 (Video Gen):                                                         │

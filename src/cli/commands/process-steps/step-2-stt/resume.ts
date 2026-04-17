@@ -24,7 +24,8 @@ import {
   parseStoredRequestedTargets
 } from './stt-batch/stt-run-state'
 import { formatSttTargetLabel, getSttTargetKey } from './stt-targets'
-import { readSttBatchManifestEntries, readSttRunManifestEntry } from './manifest'
+import { readSttRunManifestEntry, writeSttBatchManifest } from './manifest'
+import { readBatchManifest } from '../manifest-utils'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -48,47 +49,15 @@ const toSourceFromStep1 = (entry: Record<string, unknown>): { url?: string, file
 }
 
 const resolveStoredOutputDir = async (
-  batchDir: string,
   entry: Record<string, unknown>
 ): Promise<string | undefined> => {
   if (typeof entry['outputDir'] === 'string' && entry['outputDir'].length > 0) {
     return resolvePath(entry['outputDir'])
   }
-
-  const batchEntries = await readdir(batchDir, { withFileTypes: true })
-  const expectedSlug = isRecord(entry['step1']) && typeof entry['step1']['slug'] === 'string'
-    ? entry['step1']['slug']
-    : undefined
-
-  for (const dirent of batchEntries) {
-    if (!dirent.isDirectory()) {
-      continue
-    }
-
-    const candidateDir = join(batchDir, dirent.name)
-    const metadataPath = join(candidateDir, 'metadata.json')
-    if (!await Bun.file(metadataPath).exists()) {
-      continue
-    }
-
-    try {
-      const metadata = await Bun.file(metadataPath).json() as unknown
-      if (!isRecord(metadata) || !isRecord(metadata['step1'])) {
-        continue
-      }
-
-      if (expectedSlug && metadata['step1']['slug'] === expectedSlug) {
-        return candidateDir
-      }
-    } catch {
-    }
-  }
-
   return undefined
 }
 
 const parseResumeEntry = async (
-  batchDir: string,
   entry: unknown,
   selectedTargets: SttTarget[] | undefined,
   options: Pick<ResumeSttBatchRunOptions, 'retryableOnly' | 'ignoreUnresumableEntries'>
@@ -97,7 +66,7 @@ const parseResumeEntry = async (
     return undefined
   }
 
-  const outputDir = await resolveStoredOutputDir(batchDir, entry)
+  const outputDir = await resolveStoredOutputDir(entry)
   if (!outputDir) {
     if (options.ignoreUnresumableEntries) {
       l.warn('Skipping STT batch entry with no resumable output directory')
@@ -152,22 +121,23 @@ const parseResumeEntry = async (
 
 const readResumeBatchManifest = async (
   batchDir: string
-): Promise<ResumeBatchManifest | undefined> => {
-  const manifest = await readSttBatchManifestEntries(batchDir)
+): Promise<(ResumeBatchManifest & { source?: Record<string, unknown> }) | undefined> => {
+  const manifest = await readBatchManifest(batchDir, 'stt')
   if (!manifest) {
     return undefined
   }
 
   return {
     infoPath: manifest.manifestPath,
-    entries: manifest.entries
+    entries: manifest.manifest.items,
+    ...(manifest.manifest.source ? { source: manifest.manifest.source } : {})
   }
 }
 
 const readOutputMetadata = async (outputDir: string): Promise<BatchManifestEntry> => {
   const metadata = await readSttRunManifestEntry(outputDir)
   if (!isRecord(metadata)) {
-    throw CLIUsageError(`Invalid STT metadata at ${outputDir}/metadata.json`)
+    throw CLIUsageError(`Invalid STT manifest at ${outputDir}/run.json`)
   }
 
   return metadata
@@ -182,13 +152,12 @@ const withOutputDir = (
 })
 
 const parseResumeEntries = async (
-  batchDir: string,
   entries: BatchManifestEntry[],
   selectedTargets: SttTarget[] | undefined,
   options: Pick<ResumeSttBatchRunOptions, 'retryableOnly' | 'ignoreUnresumableEntries'>
 ): Promise<Array<ResumeBatchEntry | undefined>> =>
   await Promise.all(entries.map(async (entry) =>
-    await parseResumeEntry(batchDir, entry, selectedTargets, options)
+    await parseResumeEntry(entry, selectedTargets, options)
   ))
 
 const batchHasResumableWork = async (
@@ -207,10 +176,10 @@ const batchHasResumableWork = async (
     }
 
     try {
-      const parsedEntry = await parseResumeEntry(batchDir, entry, selectedTargets, {
-        retryableOnly: false,
-        ignoreUnresumableEntries: true
-      })
+        const parsedEntry = await parseResumeEntry(entry, selectedTargets, {
+          retryableOnly: false,
+          ignoreUnresumableEntries: true
+        })
       if (parsedEntry && parsedEntry.missingTargets.length > 0) {
         return true
       }
@@ -305,10 +274,10 @@ const runResumePass = async (
 ): Promise<ResumeSttBatchPassResult> => {
   const manifest = await readResumeBatchManifest(batchDir)
   if (!manifest) {
-    throw CLIUsageError(`Invalid batch manifest at ${join(batchDir, 'info.json')}`)
+    throw CLIUsageError(`Invalid batch manifest at ${join(batchDir, 'batch.json')}`)
   }
 
-  const parsedEntries = await parseResumeEntries(batchDir, manifest.entries, selectedTargets, options)
+  const parsedEntries = await parseResumeEntries(manifest.entries, selectedTargets, options)
 
   const batchCoordinator = parsedEntries.filter((entry) => entry !== undefined).length > 1
     ? new SttBatchCoordinator({ batchConcurrency: opts.batchConcurrency })
@@ -390,7 +359,7 @@ const runResumePass = async (
     }
   }
 
-  await Bun.write(manifest.infoPath, JSON.stringify(updatedEntries, null, 2))
+  await writeSttBatchManifest(batchDir, updatedEntries, manifest.source)
 
   if (partialFailureLabels.size > 0) {
     l.warn(`Partial provider failures: ${[...partialFailureLabels.entries()]

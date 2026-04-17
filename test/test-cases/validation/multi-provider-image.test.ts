@@ -62,7 +62,6 @@ describe('multi-provider image helpers', () => {
         imageModel: 'imagen-4.0-generate-001',
         processingTime: 1200,
         imageCount: 2,
-        imageFileName: 'generated-image-gemini-imagen-4.0-generate-001.png',
         imageFileNames: [
           'generated-image-gemini-imagen-4.0-generate-001.png',
           'generated-image-gemini-imagen-4.0-generate-001-2.png'
@@ -76,7 +75,6 @@ describe('multi-provider image helpers', () => {
         imageModel: 'gpt-image-1-mini',
         processingTime: 900,
         imageCount: 1,
-        imageFileName: 'generated-image-openai-gpt-image-1-mini.jpg',
         imageFileNames: ['generated-image-openai-gpt-image-1-mini.jpg'],
         imageFileSize: 567,
         imageWidth: undefined,
@@ -98,7 +96,6 @@ describe('multi-provider image helpers', () => {
         imageModel: 'imagen-4.0-generate-001',
         processingTime: 1500,
         imageCount: 2,
-        imageFileName: 'generated-image-gemini-imagen-4.0-generate-001.png',
         imageFileNames: [
           'generated-image-gemini-imagen-4.0-generate-001.png',
           'generated-image-gemini-imagen-4.0-generate-001-2.png'
@@ -112,7 +109,6 @@ describe('multi-provider image helpers', () => {
         imageModel: 'gpt-image-1-mini',
         processingTime: 800,
         imageCount: 1,
-        imageFileName: 'generated-image-openai-gpt-image-1-mini.jpg',
         imageFileNames: ['generated-image-openai-gpt-image-1-mini.jpg'],
         imageFileSize: 800,
         imageWidth: undefined,
@@ -160,7 +156,6 @@ describe('multi-provider image helpers', () => {
                 imageModel: 'gpt-image-1-mini',
                 processingTime: 100,
                 imageCount: 1,
-                imageFileName: 'generated-image.jpg',
                 imageFileNames: ['generated-image.jpg'],
                 imageFileSize: 3,
                 imageWidth: undefined,
@@ -180,7 +175,7 @@ describe('multi-provider image helpers', () => {
 
       expect(result.metadata).toHaveLength(1)
       expect(result.imagePaths).toHaveLength(1)
-      expect(result.metadata[0]?.imageFileName).toBe('generated-image-openai-gpt-image-1-mini.jpg')
+      expect(result.metadata[0]?.imageFileNames[0]).toBe('generated-image-openai-gpt-image-1-mini.jpg')
       expect(await Bun.file(result.imagePaths[0]!).exists()).toBe(true)
     } finally {
       await rm(outputDir, { recursive: true, force: true })

@@ -36,7 +36,6 @@ const finalizeTargetArtifacts = async (
     metadata: {
       ...result.metadata,
       imageCount: finalImagePaths.length,
-      imageFileName: finalFileNames[0] ?? result.metadata.imageFileName,
       imageFileNames: finalFileNames,
       imageFileSize: Bun.file(primaryPath).size,
     }

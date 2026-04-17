@@ -2,7 +2,7 @@ import { extname } from 'node:path'
 import { Mistral } from '@mistralai/mistralai'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { MistralOcrResponseSchema } from '~/types'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
 const normalizeMistralServerURL = (serverURL: string): string => serverURL.replace(/\/v1\/?$/, '')
@@ -21,7 +21,7 @@ export const runMistralOcr = async (
   step1Metadata: DocumentMetadata,
   model: string
 ): Promise<{ pages: PageResult[], extractionMethod: 'mistral-ocr' }> => {
-  const apiKey = readEnvFallback('MISTRAL_API_KEY')
+  const apiKey = readEnv('MISTRAL_API_KEY')
   if (!apiKey) {
     throw new Error('MISTRAL_API_KEY environment variable is required for Mistral OCR')
   }

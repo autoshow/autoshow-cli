@@ -76,7 +76,7 @@ Single-provider runs write:
 ```text
 output/YYYY-MM-DD_HH-mm-ss_music-gen/
   generated-music.mp3
-  metadata.json
+  run.json
 ```
 
 Multi-provider runs write one file per provider:
@@ -85,10 +85,10 @@ Multi-provider runs write one file per provider:
 output/YYYY-MM-DD_HH-mm-ss_music-gen/
   generated-music-elevenlabs-music_v1.mp3
   generated-music-minimax-music-2.5.mp3
-  metadata.json
+  run.json
 ```
 
-`metadata.json` includes `music` (a single object for one provider, an array for multiple), `cost`, and `timing` sections.
+`run.json` includes `music`, `cost`, and `timing` sections. `music` is always an array, even when only one provider succeeds.
 
 ## Notes
 

@@ -119,7 +119,7 @@ type StepSummaryEntry = {
 
 type DetailedCompletionSummary = Record<string, unknown>
 
-const HUMAN_PRIMARY_ARTIFACT_KEYS = ['prompt', 'metadata', 'audio', 'transcript'] as const
+const HUMAN_PRIMARY_ARTIFACT_KEYS = ['prompt', 'run', 'audio', 'transcript'] as const
 
 const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCost: number) => {
   const entries: StepSummaryEntry[] = steps.map(step => ({
@@ -145,7 +145,7 @@ const buildHumanArtifactSummary = (outputDir: string, files: Record<string, stri
 
   const providerFiles = Object.entries(files).filter(([, file]) => file.startsWith('providers/'))
   const providerTranscripts = providerFiles.filter(([key]) => key.startsWith('transcript-')).length
-  const providerMetadata = providerFiles.filter(([key]) => key.startsWith('metadata-')).length
+  const providerResults = providerFiles.filter(([key]) => key.startsWith('result-')).length
 
   const summary: Record<string, unknown> = {}
   if (Object.keys(artifacts).length > 0) {
@@ -155,7 +155,7 @@ const buildHumanArtifactSummary = (outputDir: string, files: Record<string, stri
     summary['providers'] = {
       dir: `${outputDir}/providers`,
       transcripts: providerTranscripts,
-      metadata: providerMetadata
+      results: providerResults
     }
   }
 

@@ -31,7 +31,7 @@ export const runCompatFallback = async (
     schemaName: schema.schemaName,
     schema: schema.jsonSchema,
     strict: false,
-    modeHint: 'compat'
+    strategy: 'schema-guided'
   }
 
   const maxAttempts = retryBudget + 1

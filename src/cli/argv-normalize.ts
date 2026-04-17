@@ -1,34 +1,13 @@
-import { PROCESS_COMMANDS, canonicalizeProcessCommand } from '~/types'
+import { PROCESS_COMMANDS } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { redactCliArgv } from '~/logger/redaction'
 
-export const COMMAND_ALIASES: Record<string, string> = {
-  model: 'models',
-  meta: 'metadata',
-  info: 'metadata',
-  dl: 'download',
-  transcribe: 'stt',
-  transcript: 'stt',
-  transcription: 'stt',
-  extract: 'ocr',
-  document: 'ocr',
-  voice: 'tts',
-  llm: 'write',
-  llms: 'write',
-  samples: 'sample'
-}
-
-const COMMAND_HELP_SHORTCUTS = new Set(['help', 'h', '-h', '--h'])
-
 export const knownCommands = new Set<string>([
   ...PROCESS_COMMANDS,
-  ...Object.keys(COMMAND_ALIASES),
   'config',
   'cache',
   'setup',
   'sample',
-  'samples',
-  'model',
   'models',
   'report',
   'help',
@@ -45,83 +24,20 @@ const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = new Set<string>([
   '--llama'
 ])
 
-export const BARE_FLAG_DEFAULTS: Record<string, string> = {
-  '--openai':    'gpt-5.4',
-  '--groq':      'openai/gpt-oss-20b',
-  '--gemini':    'gemini-3.1-flash-lite-preview',
-  '--anthropic': 'claude-sonnet-4-6',
-  '--minimax':   'MiniMax-M2.5',
-  '--grok':      'grok-4.20-reasoning',
-  '--llama':     'ggml-org/gemma-3-270m-it-GGUF',
-  '--elevenlabs-stt': 'scribe_v2',
-  '--deepgram-stt': 'nova-3',
-  '--soniox-stt': 'stt-async-v4',
-  '--speechmatics-stt': 'enhanced',
-  '--rev-stt': 'machine',
-  '--groq-stt': 'whisper-large-v3-turbo',
-  '--openai-stt': 'gpt-4o-transcribe-diarize',
-  '--gladia-stt': 'default',
-  '--elevenlabs-tts': 'eleven_v3',
-  '--openai-tts': 'gpt-4o-mini-tts',
-  '--gemini-tts': 'gemini-2.5-flash-preview-tts',
-  '--elevenlabs-music': 'music_v1',
-  '--minimax-tts': 'speech-2.8-turbo',
-  '--minimax-music': 'music-2.5',
-  '--minimax-image': 'image-01',
-  '--gemini-video': 'veo-3.1-fast-generate-preview',
-  '--minimax-video': 'MiniMax-Hailuo-2.3'
-}
-
-export const normalizeCommandAliases = (argv: string[]): string[] => {
-  if (argv.length === 0) {
-    return argv
-  }
-
-  const [first, second, ...rest] = argv
-
-  if (first === 'help' && typeof second === 'string') {
-    const mapped = COMMAND_ALIASES[second]
-    if (mapped) {
-      return ['help', mapped, ...rest]
-    }
-    return argv
-  }
-
-  if (typeof first === 'string') {
-    const mapped = COMMAND_ALIASES[first]
-    if (mapped) {
-      return [mapped, ...(argv.slice(1))]
-    }
-  }
-
-  return argv
+const REMOVED_FLAG_MESSAGES: Record<string, string> = {
+  '--dry-run': 'The --dry-run flag was removed. Use --price for estimate-only mode.',
+  '--provider': 'The generic --provider flag was removed. Use provider-named flags such as --assemblyai-stt, --glm-ocr, or --openai.',
+  '--json-output': 'The --json-output flag was removed. Write output is JSON-only now.',
+  '--md-output': 'The --md-output flag was removed. Write output is JSON-only now.',
+  '--structured': 'The --structured flag was removed. Structured output is now internal and always JSON-only.',
+  '--no-structured': 'The --no-structured flag was removed. Structured output is now internal and always JSON-only.',
+  '--structured-strict': 'The --structured-strict flag was removed. Structured output mode is no longer configurable from the CLI.',
+  '--no-structured-strict': 'The --no-structured-strict flag was removed. Structured output mode is no longer configurable from the CLI.',
+  '--structured-compat-retries': 'The --structured-compat-retries flag was removed. Structured fallback retries are now internal only.'
 }
 
 export const normalizeKnownCommandName = (command: string): string | null => {
-  if (!knownCommands.has(command)) {
-    return null
-  }
-
-  const mapped = COMMAND_ALIASES[command] ?? command
-  return PROCESS_COMMANDS.includes(mapped as typeof PROCESS_COMMANDS[number])
-    ? canonicalizeProcessCommand(mapped as Parameters<typeof canonicalizeProcessCommand>[0])
-    : mapped
-}
-
-export const normalizeCommandHelpShortcut = (argv: string[]): string[] => {
-  if (argv.length === 2) {
-    const [first, second] = argv
-    if (
-      typeof first === 'string' &&
-      typeof second === 'string' &&
-      knownCommands.has(first) &&
-      COMMAND_HELP_SHORTCUTS.has(second)
-    ) {
-      return ['help', first]
-    }
-  }
-
-  return argv
+  return knownCommands.has(command) ? command : null
 }
 
 export const formatInput = (argv: string[]): string => {
@@ -130,6 +46,8 @@ export const formatInput = (argv: string[]): string => {
 }
 
 export const validateSttFlagCompatibility = (argv: string[]): void => {
+  validateRemovedLegacyFlags(argv)
+
   if (argv[0] !== 'stt') {
     return
   }
@@ -140,42 +58,16 @@ export const validateSttFlagCompatibility = (argv: string[]): void => {
   }
 }
 
-export const expandBareModelFlags = (argv: string[]): string[] => {
-  const result: string[] = []
-  for (let i = 0; i < argv.length; i++) {
-    const token = argv[i] as string
-    const def = BARE_FLAG_DEFAULTS[token]
-    if (def !== undefined) {
-      const next = argv[i + 1]
-      if (next === undefined || (typeof next === 'string' && next.startsWith('-'))) {
-        result.push(token, def)
-      } else {
-        result.push(token)
-      }
-    } else {
-      result.push(token)
+const validateRemovedLegacyFlags = (argv: string[]): void => {
+  for (const token of argv) {
+    if (!token.startsWith('--')) {
+      continue
     }
-  }
-  return result
-}
 
-export const expandPromptArgs = (argv: string[]): string[] => {
-  const result: string[] = []
-  let i = 0
-  while (i < argv.length) {
-    const token = argv[i] as string
-    if (token === '--prompt') {
-      i++
-      while (i < argv.length) {
-        const next = argv[i] as string
-        if (next.startsWith('-')) break
-        result.push('--prompt', next)
-        i++
-      }
-    } else {
-      result.push(token)
-      i++
+    const flag = token.includes('=') ? token.slice(0, token.indexOf('=')) : token
+    const message = REMOVED_FLAG_MESSAGES[flag]
+    if (message) {
+      throw CLIUsageError(message)
     }
   }
-  return result
 }

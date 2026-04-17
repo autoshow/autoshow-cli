@@ -4,6 +4,15 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { discoverLatestResumableSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import {
+  readBatchItems,
+  readProviderResultMetadata,
+  readRunMetadata,
+  writeBatchManifestFixture,
+  writeProviderCheckpointFixture,
+  writeProviderResultFixture,
+  writeRunManifestFixture
+} from '../../test-utils/manifest-helpers'
 import { STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 
 const originalFetch = globalThis.fetch
@@ -39,12 +48,12 @@ const createResumeDiscoveryBatch = async (
   const batchDir = join(outputRoot, batchName)
   const outputDir = join(batchDir, '2026-04-13_partial-item')
   await mkdir(outputDir, { recursive: true })
-  await Bun.write(join(batchDir, 'info.json'), JSON.stringify([
+  await writeBatchManifestFixture(batchDir, 'stt', [
     {
       ...entry,
       outputDir
     }
-  ], null, 2))
+  ])
   return batchDir
 }
 
@@ -89,13 +98,11 @@ test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provi
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest',
-        transcriptionModelName: 'voxtral-mini-latest'
+        transcriptionModel: 'voxtral-mini-latest'
       },
       {
         transcriptionService: 'soniox',
-        transcriptionModel: 'stt-async-v4',
-        transcriptionModelName: 'stt-async-v4'
+        transcriptionModel: 'stt-async-v4'
       }
     ],
     completionStatus: 'full',
@@ -125,8 +132,7 @@ test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provi
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest',
-        transcriptionModelName: 'voxtral-mini-latest'
+        transcriptionModel: 'voxtral-mini-latest'
       }
     ],
     completionStatus: 'incomplete',
@@ -207,8 +213,7 @@ test('discoverLatestResumableSttBatchDir skips newer incompatible batches when p
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest',
-        transcriptionModelName: 'voxtral-mini-latest'
+        transcriptionModel: 'voxtral-mini-latest'
       }
     ],
     completionStatus: 'incomplete',
@@ -250,13 +255,14 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
   await mkdir(mistralDir, { recursive: true })
 
   await Bun.write(join(mistralDir, 'transcription.txt'), '[00:00:00] [speaker-1] Existing Mistral transcript')
-  await Bun.write(join(mistralDir, 'metadata.json'), JSON.stringify({
+  await writeProviderResultFixture(mistralDir, 'mistral', 'voxtral-mini-latest', {
     transcriptionService: 'mistral',
     transcriptionModel: 'voxtral-mini-latest',
-    transcriptionModelName: 'voxtral-mini-latest',
     processingTime: 100,
     tokenCount: 3
-  }, null, 2))
+  }, {
+    text: 'Existing Mistral transcript'
+  })
 
   const rootMetadata = {
       step1: {
@@ -273,7 +279,6 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
       {
         transcriptionService: 'mistral',
         transcriptionModel: 'voxtral-mini-latest',
-        transcriptionModelName: 'voxtral-mini-latest',
         processingTime: 100,
         tokenCount: 3
       }
@@ -321,13 +326,13 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
     ]
   }
 
-  await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify(rootMetadata, null, 2))
-  await Bun.write(join(batchDir, 'info.json'), JSON.stringify([
+  await writeRunManifestFixture(outputDir, 'stt', rootMetadata)
+  await writeBatchManifestFixture(batchDir, 'stt', [
     {
       ...rootMetadata,
       outputDir
     }
-  ], null, 2))
+  ])
 
   process.env['SONIOX_API_KEY'] = 'soniox-test-key'
   process.env['SONIOX_BASE_URL'] = 'https://soniox.test'
@@ -391,14 +396,14 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
   expect(createCalls).toBe(1)
   expect(await Bun.file(join(outputDir, 'providers', 'soniox-stt-async-v4', 'transcription.txt')).exists()).toBe(true)
 
-  const updatedMetadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+  const updatedMetadata = await readRunMetadata(outputDir)
   expect(updatedMetadata['completionStatus']).toBe('full')
   expect(Array.isArray(updatedMetadata['missingProviders'])).toBe(true)
   expect((updatedMetadata['missingProviders'] as unknown[])).toHaveLength(0)
   expect(Array.isArray(updatedMetadata['step2'])).toBe(true)
   expect((updatedMetadata['step2'] as unknown[])).toHaveLength(2)
 
-  const info = await Bun.file(join(batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+  const info = await readBatchItems(batchDir)
   expect(info[0]).toEqual(expect.objectContaining({
     completionStatus: 'full',
     outputDir
@@ -416,18 +421,18 @@ test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before cr
   await mkdir(sonioxDir, { recursive: true })
 
   await Bun.write(join(mistralDir, 'transcription.txt'), '[00:00:00] [speaker-1] Existing Mistral transcript')
-  await Bun.write(join(mistralDir, 'metadata.json'), JSON.stringify({
+  await writeProviderResultFixture(mistralDir, 'mistral', 'voxtral-mini-latest', {
     transcriptionService: 'mistral',
     transcriptionModel: 'voxtral-mini-latest',
-    transcriptionModelName: 'voxtral-mini-latest',
     processingTime: 100,
     tokenCount: 3
-  }, null, 2))
+  }, {
+    text: 'Existing Mistral transcript'
+  })
 
-  await Bun.write(join(sonioxDir, 'metadata.json'), JSON.stringify({
+  await writeProviderCheckpointFixture(sonioxDir, 'soniox', 'stt-async-v4', {
     transcriptionService: 'soniox',
     transcriptionModel: 'stt-async-v4',
-    transcriptionModelName: 'stt-async-v4',
     processingTime: 10,
     tokenCount: 0,
     timings: {
@@ -441,7 +446,7 @@ test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before cr
       remoteAssetId: 'file-existing',
       createCompletedAt: '2026-04-13T00:00:00.000Z'
     }
-  }, null, 2))
+  })
 
   const rootMetadata = {
     step1: {
@@ -458,7 +463,6 @@ test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before cr
       {
         transcriptionService: 'mistral',
         transcriptionModel: 'voxtral-mini-latest',
-        transcriptionModelName: 'voxtral-mini-latest',
         processingTime: 100,
         tokenCount: 3
       }
@@ -504,13 +508,13 @@ test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before cr
     ]
   }
 
-  await Bun.write(join(outputDir, 'metadata.json'), JSON.stringify(rootMetadata, null, 2))
-  await Bun.write(join(batchDir, 'info.json'), JSON.stringify([
+  await writeRunManifestFixture(outputDir, 'stt', rootMetadata)
+  await writeBatchManifestFixture(batchDir, 'stt', [
     {
       ...rootMetadata,
       outputDir
     }
-  ], null, 2))
+  ])
 
   process.env['SONIOX_API_KEY'] = 'soniox-test-key'
   process.env['SONIOX_BASE_URL'] = 'https://soniox.test'
@@ -584,13 +588,13 @@ test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before cr
   expect(statusCalls).toBeGreaterThanOrEqual(1)
   expect(await Bun.file(join(outputDir, 'providers', 'soniox-stt-async-v4', 'transcription.txt')).exists()).toBe(true)
 
-  const updatedProviderMetadata = await Bun.file(join(outputDir, 'providers', 'soniox-stt-async-v4', 'metadata.json')).json() as Record<string, unknown>
+  const updatedProviderMetadata = await readProviderResultMetadata(join(outputDir, 'providers', 'soniox-stt-async-v4'))
   expect(updatedProviderMetadata['runtime']).toEqual(expect.objectContaining({
     mode: 'resumed',
     remoteJobId: 'tx-existing'
   }))
 
-  const updatedMetadata = await Bun.file(join(outputDir, 'metadata.json')).json() as Record<string, unknown>
+  const updatedMetadata = await readRunMetadata(outputDir)
   expect(updatedMetadata['completionStatus']).toBe('full')
   expect(Array.isArray(updatedMetadata['step2'])).toBe(true)
   expect((updatedMetadata['step2'] as unknown[])).toHaveLength(2)

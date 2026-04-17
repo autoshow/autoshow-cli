@@ -97,8 +97,8 @@ export const getExpectedImageArtifactFileNames = (
 }
 
 export const getStep5ImageFileNames = (
-  metadata: Pick<Step5Metadata, 'imageFileName' | 'imageFileNames'>
-): string[] => metadata.imageFileNames.length > 0 ? metadata.imageFileNames : [metadata.imageFileName]
+  metadata: Pick<Step5Metadata, 'imageFileNames'>
+): string[] => metadata.imageFileNames
 
 export const buildImageArtifactMap = (metadata: Step5Metadata[]): Record<string, string> => {
   if (metadata.length === 1) {

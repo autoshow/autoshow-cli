@@ -80,7 +80,7 @@ src/cli/commands/process-steps/process-video.ts
                 │ file only     │  │  src/cli/commands/process-steps/   │
                 │               │  │  step-3-write/                     │
                 │ prompt.md     │  │                                    │
-                │ metadata.json │  │  buildPrompt()                     │
+                │ run.json      │  │  buildPrompt()                     │
                 │ (step1+step2) │  │  ├── Video metadata                │
                 │               │  │  ├── Transcription segments        │
                 │ DONE          │  │  ├── Speaker labels (if diarized)  │
@@ -91,7 +91,7 @@ src/cli/commands/process-steps/process-video.ts
                                    │  runLLM() → Provider Selection:    │
                                    │  (see 04-providers-and-setup.md)   │
                                    │                                    │
-                                   │  Output: text.md + Step3Metadata   │
+                                   │  Output: text.json + Step3Metadata │
                                    └────────────────────────────────────┘
                                                     |
                                         ┌───────────┴──────────────────┐
@@ -115,7 +115,7 @@ src/cli/commands/process-steps/process-video.ts
                                                     |
                                                     v
                                           ┌──────────────────┐
-                                          │  metadata.json   │
+                                          │  run.json        │
                                           │  {step1,step2,   │
                                           │   step3[,step4,  │
                                           │   step5,step6,   │
@@ -207,9 +207,9 @@ src/cli/commands/process-steps/process-ocr.ts
 │  │       'paddle-ocr' | 'mutool+paddle-ocr' | 'docx' | ...      │            │
 │  └──────────────────────────────────────────────────────────────┘            │
 │                                                                              │
-│  Output (always written):                                                    │
-│  ├── extraction.txt  → full text                                             │
-│  ├── extraction.json → structured per-page results (default --out json)      │
+│  Output (based on --out):                                                    │
+│  ├── extraction.txt  → full text (default --out text)                        │
+│  ├── result.json     → structured per-page results (if --out json)           │
 │  ├── extraction.tsv  → (if --out tsv)                                        │
 │  └── extraction.hocr → (if --out hocr)                                       │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -223,13 +223,12 @@ src/cli/commands/process-steps/process-ocr.ts
                 │ Write files:  │  │  Build prompt + LLM Summary        │
                 │               │  │                                    │
                 │ extraction.txt│  │  buildDocumentPrompt()             │
-                │ extraction.   │  │  ├── Extracted text                │
-                │   json        │  │  └── Document metadata             │
-                │ metadata.json │  │                                    │
+                │ result.json   │  │  ├── Extracted text                │
+                │ run.json      │  │  └── Document metadata             │
                 │ (step1+step2) │  │  Output: prompt.md                 │
                 │               │  │                                    │
-                │ +tsv/hocr if  │  │  LLM call → text.md                │
-                │  requested    │  │  metadata.json (step1+step2+step3) │
+                │ +tsv/hocr if  │  │  LLM call → text.json              │
+                │  requested    │  │  run.json (step1+step2+step3)      │
                 │               │  │                                    │
                 │ DONE          │  │  DONE                              │
                 └───────────────┘  └────────────────────────────────────┘

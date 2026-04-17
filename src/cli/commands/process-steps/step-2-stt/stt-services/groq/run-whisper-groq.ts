@@ -1,7 +1,7 @@
 import type { Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 import type { GroqTranscriptionSegment, GroqTranscriptionResponse } from '~/types'
 
 const parseSegments = (raw: unknown, offsetSeconds: number): TranscriptionSegment[] => {
@@ -37,7 +37,7 @@ export const runGroqTranscribe = async (
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
-  const apiKey = readEnvFallback('GROQ_API_KEY')
+  const apiKey = readEnv('GROQ_API_KEY')
   if (!apiKey) {
     throw new Error('GROQ_API_KEY environment variable is required for Groq STT models')
   }
@@ -93,7 +93,6 @@ export const runGroqTranscribe = async (
   const metadata: Step2Metadata = {
     transcriptionService: 'groq',
     transcriptionModel: modelName,
-    transcriptionModelName: modelName,
     processingTime,
     tokenCount: countTokens(text)
   }

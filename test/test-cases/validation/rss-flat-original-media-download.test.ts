@@ -3,6 +3,7 @@ import { once } from 'node:events'
 import { createServer } from 'node:http'
 import { readdir, rm } from 'node:fs/promises'
 import { fileExists, runCommand } from '../../test-utils/test-helpers'
+import { readBatchItems } from '../../test-utils/manifest-helpers'
 
 test('download RSS feed can keep original media and flatten files into one batch directory', async () => {
   const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').bytes()
@@ -80,7 +81,7 @@ test('download RSS feed can keep original media and flatten files into one batch
     }
 
     expect(await fileExists(`${batchDir}/source.json`)).toBe(true)
-    expect(await fileExists(`${batchDir}/info.json`)).toBe(true)
+    expect(await fileExists(`${batchDir}/batch.json`)).toBe(true)
 
     const entries = await readdir(batchDir, { withFileTypes: true })
     expect(entries.some(entry => entry.isDirectory())).toBe(false)
@@ -95,7 +96,7 @@ test('download RSS feed can keep original media and flatten files into one batch
       '2024-02-04-episode-two.mp3'
     ])
 
-    const info = await Bun.file(`${batchDir}/info.json`).json() as Array<{
+    const info = await readBatchItems(batchDir) as Array<{
       step1?: {
         audioFileName?: string
         title?: string

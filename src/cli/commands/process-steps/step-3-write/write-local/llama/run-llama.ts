@@ -849,8 +849,8 @@ export const runLlamaModel = async (
         inputTokenCount,
         outputTokenCount,
         outputFileName: '',
-        outputFormat: structuredOpts ? 'json' : 'markdown',
-        structuredMode: structuredOpts?.modeHint ?? 'off',
+        outputFormat: 'json',
+        structuredMode: structuredOpts?.strategy ?? 'schema-guided',
         structuredPresetNames: []
       }
       

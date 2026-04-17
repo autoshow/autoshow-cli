@@ -1,8 +1,8 @@
 import * as l from '~/logger'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const setupAssemblyAiStt = async (): Promise<void> => {
-  const apiKey = readEnvFallback('ASSEMBLYAI_API_KEY')
+  const apiKey = readEnv('ASSEMBLYAI_API_KEY')
   if (apiKey) {
     l.success('ASSEMBLYAI_API_KEY found — AssemblyAI transcription ready')
   } else {
@@ -12,7 +12,7 @@ export const setupAssemblyAiStt = async (): Promise<void> => {
 }
 
 export const ensureAssemblyAiSttSetup = async (): Promise<void> => {
-  const apiKey = readEnvFallback('ASSEMBLYAI_API_KEY')
+  const apiKey = readEnv('ASSEMBLYAI_API_KEY')
   if (!apiKey) {
     throw new Error('ASSEMBLYAI_API_KEY environment variable is required for AssemblyAI transcription')
   }

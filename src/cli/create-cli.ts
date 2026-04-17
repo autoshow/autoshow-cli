@@ -23,13 +23,9 @@ import * as l from '~/logger'
 import { runWithLogContext, reconfigureLogger } from '~/logger'
 import {
   knownCommands,
-  normalizeCommandAliases,
   normalizeKnownCommandName,
-  normalizeCommandHelpShortcut,
   formatInput,
-  validateSttFlagCompatibility,
-  expandBareModelFlags,
-  expandPromptArgs
+  validateSttFlagCompatibility
 } from '~/cli/argv-normalize'
 import {
   colorText,
@@ -172,19 +168,7 @@ const createCli = () => {
   const cli = Clerc.create({
     name: 'AutoShow CLI',
     scriptName: 'bun as',
-    description: [
-      'Process audio/video and documents with transcription, extraction, and write workflows',
-      '',
-      'Aliases:',
-      '  models: model',
-      '  metadata: meta, info',
-      '  download: dl',
-      '  stt: transcribe, transcript, transcription',
-      '  ocr: extract, document',
-      '  tts: voice',
-      '  write: llm, llms',
-      '  sample: samples'
-    ].join('\n'),
+    description: 'Process audio/video and documents with transcription, extraction, and write workflows',
     version: CLI_VERSION
   })
     .use(versionPlugin())
@@ -286,9 +270,8 @@ const createCli = () => {
 }
 
 const main = async (): Promise<void> => {
-  const argv = normalizeCommandHelpShortcut(normalizeCommandAliases(expandPromptArgs(expandBareModelFlags(Bun.argv.slice(2)))))
+  const argv = Bun.argv.slice(2)
   validateSttFlagCompatibility(argv)
-  const removedAuthCommandMessage = 'The "auth" command was removed. See docs/cookies.md for YouTube cookie setup.'
   const parseCli = async (parseArgv: string[]): Promise<void> => {
     if (shouldPatchHelpConsole(parseArgv)) {
       await withPatchedHelpConsole(async () => {
@@ -309,9 +292,6 @@ const main = async (): Promise<void> => {
       }
 
       const maybeCommand = rest[0]
-      if (maybeCommand === 'auth') {
-        throw CLIUsageError(removedAuthCommandMessage)
-      }
       const canonicalCommand = maybeCommand ? normalizeKnownCommandName(maybeCommand) : null
       if (canonicalCommand) {
         await parseCli(['help', canonicalCommand])
@@ -325,10 +305,6 @@ const main = async (): Promise<void> => {
     if (first === '--version' || first === '-v' || first === '-V') {
       await parseCli(['--version'])
       return
-    }
-
-    if (first === 'auth') {
-      throw CLIUsageError(removedAuthCommandMessage)
     }
 
     if (first !== '--' && first!.startsWith('-')) {

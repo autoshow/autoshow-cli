@@ -30,8 +30,9 @@ describe('STT runtime helpers', () => {
     } as RuntimeOptions)).toEqual([
       'Shared audio artifact(s)',
       'providers/<service>-<model>/transcription.txt',
+      'providers/<service>-<model>/result.json',
       'prompt.md',
-      'metadata.json'
+      'run.json'
     ])
   })
 
@@ -96,7 +97,6 @@ describe('STT runtime helpers', () => {
         metadata: {
           transcriptionService: 'mistral',
           transcriptionModel: 'voxtral-mini-latest',
-          transcriptionModelName: 'voxtral-mini-latest',
           processingTime: 123,
           tokenCount: 10
         },
@@ -110,7 +110,6 @@ describe('STT runtime helpers', () => {
         metadata: {
           transcriptionService: 'assemblyai',
           transcriptionModel: 'universal-3-pro',
-          transcriptionModelName: 'universal-3-pro',
           processingTime: 99,
           tokenCount: 8
         },
@@ -132,7 +131,6 @@ describe('STT runtime helpers', () => {
         metadata: {
           transcriptionService: 'mistral',
           transcriptionModel: 'voxtral-mini-latest',
-          transcriptionModelName: 'voxtral-mini-latest',
           processingTime: 123,
           tokenCount: 10
         },
@@ -146,7 +144,6 @@ describe('STT runtime helpers', () => {
         metadata: {
           transcriptionService: 'assemblyai',
           transcriptionModel: 'universal-3-pro',
-          transcriptionModelName: 'universal-3-pro',
           processingTime: 99,
           tokenCount: 8
         },

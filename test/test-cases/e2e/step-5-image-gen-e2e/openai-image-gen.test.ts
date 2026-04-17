@@ -9,6 +9,7 @@ import {
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE,
 } from '../../../test-utils/test-helpers'
+import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 defineImageServiceTest({
   models: [
@@ -73,12 +74,12 @@ describe('openai image format options', () => {
       const imageExists = await fileExists(`${outputDir}/generated-image.jpg`)
       expect(imageExists).toBe(true)
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-        image?: { imageService?: string; imageModel?: string; imageFileName?: string }
+      const metadata = await readRunMetadata(outputDir) as {
+        image?: Array<{ imageService?: string; imageModel?: string; imageFileNames?: string[] }>
       }
-      expect(metadata.image?.imageService).toBe('openai')
-      expect(metadata.image?.imageModel).toBe('gpt-image-1-mini')
-      expect(metadata.image?.imageFileName).toBe('generated-image.jpg')
+      expect(metadata.image?.[0]?.imageService).toBe('openai')
+      expect(metadata.image?.[0]?.imageModel).toBe('gpt-image-1-mini')
+      expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe('generated-image.jpg')
     }
   })
 
@@ -110,11 +111,11 @@ describe('openai image format options', () => {
       const imageExists = await fileExists(`${outputDir}/generated-image.png`)
       expect(imageExists).toBe(true)
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-        image?: { imageService?: string; imageModel?: string }
+      const metadata = await readRunMetadata(outputDir) as {
+        image?: Array<{ imageService?: string; imageModel?: string }>
       }
-      expect(metadata.image?.imageService).toBe('openai')
-      expect(metadata.image?.imageModel).toBe('gpt-image-1')
+      expect(metadata.image?.[0]?.imageService).toBe('openai')
+      expect(metadata.image?.[0]?.imageModel).toBe('gpt-image-1')
     }
   })
 })
@@ -150,9 +151,14 @@ describe('write with image gen', () => {
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
-      const summaryExists = await fileExists(`${outputDir}/text.md`)
+      const metadata = await readRunMetadata(outputDir) as {
+        step3?: { llmService?: string; outputFileName?: string }
+        step5?: { imageService?: string; imageModel?: string; imageFileNames?: string[] }
+      }
+      const outputFileName = metadata.step3?.outputFileName ?? 'text.json'
+      const summaryExists = await fileExists(`${outputDir}/${outputFileName}`)
       if (!summaryExists) {
-        console.log('LLM step did not produce text.md — skipping image assertions')
+        console.log(`LLM step did not produce ${outputFileName} — skipping image assertions`)
         return
       }
       expect(summaryExists).toBe(true)
@@ -160,14 +166,10 @@ describe('write with image gen', () => {
       const imageExists = await fileExists(`${outputDir}/generated-image.png`)
       expect(imageExists).toBe(true)
 
-      const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
-        step3?: { llmService?: string }
-        step5?: { imageService?: string; imageModel?: string; imageFileName?: string }
-      }
       expect(metadata.step3?.llmService).toBeDefined()
       expect(metadata.step5?.imageService).toBe('openai')
       expect(metadata.step5?.imageModel).toBe('gpt-image-1')
-      expect(metadata.step5?.imageFileName).toBe('generated-image.png')
+      expect(metadata.step5?.imageFileNames?.[0]).toBe('generated-image.png')
     }
   })
 })

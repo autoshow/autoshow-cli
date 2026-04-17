@@ -1,6 +1,7 @@
 import { expect, beforeAll, afterAll } from 'bun:test'
 import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_LOCAL_AUDIO_PATH, STABLE_LOCAL_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../../test-utils/budget'
+import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
 
 const videoInputPath = 'input/examples/video/2-video.mp4'
 const videoTitleSuffix = '2-video'
@@ -42,17 +43,18 @@ budgetedTest('transcribe-whisper-large-v3-turbo', 'whisper large-v3-turbo model 
     expect(transcriptContent.length).toBeGreaterThan(0)
     expect(transcriptContent).toMatch(/\[\d{2}:\d{2}:\d{2}\]/)
 
-    const metadataFile = Bun.file(`${outputDir}/metadata.json`)
-    const metadataContent = await metadataFile.text()
-    const metadata = JSON.parse(metadataContent)
-    expect(metadata.step2).toBeDefined()
-    expect(typeof metadata.step2.transcriptionModel).toBe('string')
-    expect(metadata.step2.transcriptionModel).toContain('ggml-large-v3-turbo')
+    const metadata = await readRunMetadata(outputDir) as {
+      step2?: { transcriptionModel?: string }
+    }
+    const step2 = metadata.step2
+    expect(step2).toBeDefined()
+    expect(typeof step2?.transcriptionModel).toBe('string')
+    expect(step2?.transcriptionModel).toContain('ggml-large-v3-turbo')
 
     const promptExists = await fileExists(`${outputDir}/prompt.md`)
     expect(promptExists).toBe(true)
 
-    const summaryExists = await fileExists(`${outputDir}/text.md`)
+    const summaryExists = await fileExists(`${outputDir}/text.json`)
     expect(summaryExists).toBe(false)
   }
 })
@@ -79,9 +81,12 @@ budgetedTest('transcribe-whisper-large-v3-turbo-split', 'whisper large-v3-turbo 
     expect(transcriptContent.length).toBeGreaterThan(0)
     expect(transcriptContent).toMatch(/\[\d{2}:\d{2}:\d{2}\]/)
 
-    const metadata = JSON.parse(await Bun.file(`${outputDir}/metadata.json`).text())
-    expect(metadata.step2).toBeDefined()
-    expect(metadata.step2.transcriptionModel).toContain('ggml-large-v3-turbo')
+    const metadata = await readRunMetadata(outputDir) as {
+      step2?: { transcriptionModel?: string }
+    }
+    const step2 = metadata.step2
+    expect(step2).toBeDefined()
+    expect(step2?.transcriptionModel).toContain('ggml-large-v3-turbo')
 
     const segmentsDirExists = await fileExists(`${outputDir}/segments`)
     expect(segmentsDirExists).toBe(true)

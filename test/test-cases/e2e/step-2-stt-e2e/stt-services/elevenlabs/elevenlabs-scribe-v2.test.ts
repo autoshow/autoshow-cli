@@ -9,6 +9,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
   hasConfiguredEnvVar
 } from '../../../../../test-utils/test-helpers'
+import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
 
 defineSTTServiceTest({
   models: ['scribe_v2'],
@@ -45,7 +46,7 @@ test('elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
     const transcriptExists = await fileExists(`${outputDir}/transcription.txt`)
     expect(transcriptExists).toBe(true)
 
-    const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as {
+    const metadata = await readRunMetadata(outputDir) as {
       step2?: { transcriptionService?: string, transcriptionModel?: string }
     }
     expect(metadata.step2?.transcriptionService).toBe('elevenlabs')

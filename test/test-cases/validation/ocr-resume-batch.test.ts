@@ -5,6 +5,7 @@ import { once } from 'node:events'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { runCommand } from '../../test-utils/test-helpers'
+import { readBatchItems } from '../../test-utils/manifest-helpers'
 
 const cleanupPaths = new Set<string>()
 
@@ -174,7 +175,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     const batchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
     cleanupPaths.add(batchDir)
 
-    const initialInfo = await Bun.file(join(batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+    const initialInfo = await readBatchItems(batchDir)
     const initialEntry = initialInfo[0] as Record<string, unknown>
     expect(initialEntry['completionStatus']).toBe('incomplete')
     expect(initialEntry['source']).toEqual({ filePath: pdfPath })
@@ -204,7 +205,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     expect(resumed.exitCode).toBe(0)
     expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Auto-discovered resumable OCR batch:')
 
-    const updatedInfo = await Bun.file(join(batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+    const updatedInfo = await readBatchItems(batchDir)
     const updatedEntry = updatedInfo[0] as Record<string, unknown>
     expect(updatedEntry['completionStatus']).toBe('full')
     expect(updatedEntry['missingProviders']).toEqual([])
@@ -254,7 +255,7 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     const batchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
     cleanupPaths.add(batchDir)
 
-    const info = await Bun.file(join(batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+    const info = await readBatchItems(batchDir)
     const entry = info[0] as Record<string, unknown>
     expect(entry['completionStatus']).toBe('incomplete')
     expect(entry['source']).toEqual({ url: reportUrl })
@@ -276,7 +277,7 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     expect(resumed.exitCode).toBe(0)
     expect(state.reportRequests).toBeGreaterThan(reportRequestsAfterInitial)
 
-    const updatedInfo = await Bun.file(join(batchDir, 'info.json')).json() as Array<Record<string, unknown>>
+    const updatedInfo = await readBatchItems(batchDir)
     const updatedEntry = updatedInfo[0] as Record<string, unknown>
     expect(updatedEntry['completionStatus']).toBe('full')
     expect(updatedEntry['missingProviders']).toEqual([])

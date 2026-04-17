@@ -1,11 +1,11 @@
 import * as l from '~/logger'
-import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv } from '~/utils/validate/env-utils'
 
 export const getRevBaseUrl = (): string =>
   readEnv('REVAI_BASE_URL') ?? 'https://api.rev.ai/speechtotext/v1'
 
 export const setupRevStt = async (): Promise<void> => {
-  const accessToken = readEnvFallback('REVAI_ACCESS_TOKEN')
+  const accessToken = readEnv('REVAI_ACCESS_TOKEN')
   if (accessToken) {
     l.success(`REVAI_ACCESS_TOKEN found — Rev transcription ready (${getRevBaseUrl()})`)
   } else {
@@ -15,7 +15,7 @@ export const setupRevStt = async (): Promise<void> => {
 }
 
 export const ensureRevSttSetup = async (): Promise<void> => {
-  const accessToken = readEnvFallback('REVAI_ACCESS_TOKEN')
+  const accessToken = readEnv('REVAI_ACCESS_TOKEN')
   if (!accessToken) {
     throw new Error('REVAI_ACCESS_TOKEN environment variable is required for Rev transcription')
   }

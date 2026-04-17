@@ -71,7 +71,7 @@ const parseOutputDirFromText = (text: string): string | null => {
   const patterns = [
     /Output directory:\s*([^\n\r]+)/g,
     /Extraction complete:\s*([^\n\r]+)/g,
-    /"metadata"\s*:\s*"([^"\n\r]+\/metadata\.json)"/g,
+    /"run"\s*:\s*"([^"\n\r]+\/run\.json)"/g,
   ]
 
   for (const pattern of patterns) {
@@ -82,8 +82,8 @@ const parseOutputDirFromText = (text: string): string | null => {
     }
     const value = last[1]?.trim()
     if (value && value.length > 0) {
-      if (value.endsWith('/metadata.json')) {
-        return value.slice(0, -'/metadata.json'.length)
+      if (value.endsWith('/run.json')) {
+        return value.slice(0, -'/run.json'.length)
       }
       return value
     }
@@ -92,14 +92,14 @@ const parseOutputDirFromText = (text: string): string | null => {
   return null
 }
 
-const copyMetadataToArtifacts = async (outputDir: string | null): Promise<void> => {
+const copyRunManifestToArtifacts = async (outputDir: string | null): Promise<void> => {
   const artifactsDir = process.env['AUTOSHOW_TEST_ARTIFACTS_DIR']
   if (!artifactsDir || !outputDir) {
     return
   }
 
   const absoluteOutputDir = isAbsolute(outputDir) ? outputDir : resolve(process.cwd(), outputDir)
-  const srcPath = `${absoluteOutputDir}/metadata.json`
+  const srcPath = `${absoluteOutputDir}/run.json`
 
   try {
     const exists = await fileExists(srcPath)
@@ -107,7 +107,7 @@ const copyMetadataToArtifacts = async (outputDir: string | null): Promise<void> 
       return
     }
 
-    const destDir = `${artifactsDir}/metadata`
+      const destDir = `${artifactsDir}/run`
     await mkdir(destDir, { recursive: true })
     await copyFile(srcPath, `${destDir}/${basename(absoluteOutputDir)}.json`)
   } catch {
@@ -180,12 +180,12 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
 
   const combined = `${stdout}\n${stderr}`
   const outputDir = parseOutputDirFromText(combined)
-  await copyMetadataToArtifacts(outputDir)
+  await copyRunManifestToArtifacts(outputDir)
   const absoluteOutputDir = outputDir
     ? (isAbsolute(outputDir) ? outputDir : resolve(process.cwd(), outputDir))
     : null
   const metadataSummary = absoluteOutputDir
-    ? await readOutputMetadataSummary(`${absoluteOutputDir}/metadata.json`)
+    ? await readOutputMetadataSummary(`${absoluteOutputDir}/run.json`)
     : null
   const parsedEstimatedCostCents = parseCommandEstimatedTotal(combined)
   const caller = parseCallerLocation()

@@ -1,6 +1,7 @@
 import { expect, beforeAll, afterAll } from 'bun:test'
 import { cleanupTestOutput, runCommand, fileExists, findLatestDirectory, ensurePageImageFixture } from '../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../test-utils/budget'
+import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 type ExtractMetadata = {
   step1?: { format?: string }
@@ -34,7 +35,7 @@ budgetedTest('extract-paddle-ocr-image', 'extract image with --paddle-ocr', asyn
   expect(outputDir).not.toBeNull()
   if (!outputDir) return
 
-  const metadata = await Bun.file(`${outputDir}/metadata.json`).json() as ExtractMetadata
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step1?.format).toBe('png')
   expect(metadata.step2?.extractionMethod).toBe('paddle-ocr')
   expect(metadata.step2?.totalPages).toBe(1)

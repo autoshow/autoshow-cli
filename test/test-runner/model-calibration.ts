@@ -277,8 +277,8 @@ const getLegacyTimingSteps = (metadata: Record<string, unknown>): Map<string, { 
 
   if (step2 && typeof step2['transcriptionService'] === 'string' && typeof step2['transcriptionModel'] === 'string') {
     const service = step2['transcriptionService']
-    const model = typeof step2['transcriptionModelName'] === 'string'
-      ? step2['transcriptionModelName']
+    const model = typeof step2['transcriptionModel'] === 'string'
+      ? step2['transcriptionModel']
       : step2['transcriptionModel']
     const normalized = normalizeStepShape('stt', service, model)
     const processingTimeMs = getFiniteNumber(step2['processingTime'])
