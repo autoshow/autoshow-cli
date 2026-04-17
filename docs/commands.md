@@ -67,22 +67,22 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 ## Command Map
 
 - `(root)` shorthand: `bun as <input>` = `bun as metadata <input>`
-- `metadata`: [metadata](./commands/metadata/metadata.md)
-- `setup` / model pre-downloads: [setup](./commands/step-0-setup/setup.md)
-- `sample`: [sample](./commands/sample/sample.md)
+- `metadata`: [metadata](./commands/setup-and-utilities/metadata/metadata.md)
+- `setup` / model pre-downloads: [setup](./commands/process-steps/step-0-setup/setup.md)
+- `sample`: [sample](./commands/setup-and-utilities/sample/sample.md)
 - `models`: download a Whisper or llama.cpp model without running inference (`bun as models <model>`)
 - `cache`: manage the persistent STT media cache (`bun as cache prune` / `bun as cache clear`)
-- `download`: [download](./commands/step-1-download/download-file.md)
-- `ocr`: [local](./commands/step-2-ocr/ocr-document-local.md) | [services](./commands/step-2-ocr/ocr-document-services.md) | [setup](./commands/step-2-ocr/ocr-document-local.md#setup)
-- `stt`: [local](./commands/step-2-stt/stt-audio-local.md) | [services](./commands/step-2-stt/stt-audio-services.md) | [setup](./commands/step-2-stt/stt-audio-local.md#setup)
-- `report`: [report](./commands/report/report.md)
-- `write`: [local](./commands/step-3-write/write-text-local.md) | [services](./commands/step-3-write/write-text-services.md) | [setup](./commands/step-3-write/write-text-local.md#setup)
-- `tts`: [local](./commands/step-4-tts/text-to-speech-local.md) | [services](./commands/step-4-tts/text-to-speech-services.md) | [setup](./commands/step-4-tts/text-to-speech-local.md#setup)
-- `image`: [services](./commands/step-5-image/text-to-image-services.md) | [setup](./commands/step-5-image/text-to-image-setup.md)
-- `video`: [video](./commands/step-6-video/text-to-video-services.md)
-- `music`: [music](./commands/step-7-music/text-to-music-services.md)
-- `config`: [config](./commands/config/config.md)
-- `links`: [links](./commands/links/links.md)
+- `download`: [download](./commands/process-steps/step-1-download/download-file.md)
+- `ocr`: [command](./commands/process-steps/step-2-ocr/ocr-document.md) | [setup](./commands/process-steps/step-2-ocr/ocr-document.md#setup)
+- `stt`: [command](./commands/process-steps/step-2-stt/stt-audio.md) | [setup](./commands/process-steps/step-2-stt/stt-audio.md#setup)
+- `report`: [report](./commands/setup-and-utilities/report/report.md)
+- `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
+- `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
+- `image`: [command](./commands/process-steps/step-5-image/text-to-image.md) | [setup](./commands/process-steps/step-5-image/text-to-image.md#setup)
+- `video`: [video](./commands/process-steps/step-6-video/text-to-video-services.md)
+- `music`: [music](./commands/process-steps/step-7-music/text-to-music-services.md)
+- `config`: [config](./commands/setup-and-utilities/config/config.md)
+- `links`: [links](./commands/setup-and-utilities/links/links.md)
 
 ## Selection Guide
 

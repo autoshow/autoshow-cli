@@ -73,12 +73,12 @@ Notes:
 - `--budget` in normal mode only skips tests that use a matching `budgetedTest()` key.
 - Some local paths still have no mapped price commands, including `test/test-cases/local/sample/`, `test/test-cases/validation/`, and `test/test-cases/e2e/step-0-setup-e2e/`.
 
-## Command Docs
+## Related Docs
 
 - [Service Tests](service-tests.md)
-- [Sample Tests](../commands/sample/sample-tests.md)
-- [Setup Tests](../commands/step-0-setup/setup-tests.md)
-- [OCR Tests (Local)](../commands/step-2-ocr/ocr-document-local.md#local-tests)
-- [STT Tests (Local)](../commands/step-2-stt/stt-audio-local.md#local-tests)
-- [Write Tests (Local)](../commands/step-3-write/write-text-local.md#local-tests)
-- [TTS Tests (Local)](../commands/step-4-tts/text-to-speech-local.md#local-tests)
+- [Sample Tests](../commands/setup-and-utilities/sample/sample-tests.md)
+- [Step 0 Setup Service Tests](step-0-service-tests-setup.md)
+- [OCR Command](../commands/process-steps/step-2-ocr/ocr-document.md)
+- [STT Command](../commands/process-steps/step-2-stt/stt-audio.md)
+- [Write Command](../commands/process-steps/step-3-write/write-text.md)
+- [TTS Command](../commands/process-steps/step-4-tts/text-to-speech.md)
