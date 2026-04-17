@@ -598,6 +598,15 @@ const runWithSemaphore = async <T>(
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+const getErrorOutputDir = (error: unknown): string | undefined => {
+  if (!error || typeof error !== 'object' || !('outputDir' in error)) {
+    return undefined
+  }
+
+  const outputDir = (error as { outputDir?: unknown }).outputDir
+  return typeof outputDir === 'string' && outputDir.length > 0 ? outputDir : undefined
+}
+
 const readBatchManifestEntry = async (outputDir: string): Promise<BatchManifestEntry | null> => {
   const metadataPath = `${outputDir}/metadata.json`
   if (!await fileExists(metadataPath)) {
@@ -773,6 +782,23 @@ export const processBatch = async (
 
         l.warn(`Incomplete ${index + 1}/${items.length} (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
         return { manifestEntry, errorCount, status: 'incomplete', failureError: error }
+      }
+
+      const errorOutputDir = getErrorOutputDir(error)
+      if (errorOutputDir && !isSttCommand(command)) {
+        const manifestEntry = attachOutputDir(await readBatchManifestEntry(errorOutputDir), errorOutputDir)
+        const errorCount = getBatchManifestErrorCount(manifestEntry)
+        const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : undefined)
+
+        if (completionStatus === 'failed') {
+          l.error(`Failed ${index + 1}/${items.length}: ${error instanceof Error ? error.message : String(error)}`)
+          return { manifestEntry, errorCount, status: 'failed', failureError: error }
+        }
+
+        if (completionStatus === 'incomplete') {
+          l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
+          return { manifestEntry, errorCount, status: 'partial', failureError: error }
+        }
       }
 
       throw error

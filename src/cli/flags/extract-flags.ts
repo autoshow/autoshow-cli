@@ -1,9 +1,10 @@
 import type { ClercFlagsDefinition } from 'clerc'
-import { articleFlags, extractFlags, priceFlag } from './shared-flags'
+import { articleFlags, extractFlags, priceFlag, resumeMissingFlag } from './shared-flags'
 
 export const extractCommandFlags = {
   ...extractFlags,
   ...articleFlags,
+  ...resumeMissingFlag,
   'epub-bun': {
     description: 'EPUB inspect mode with Bun ZIP/XML parser (writes structured EPUB data into metadata.json)',
     type: Boolean,

@@ -154,10 +154,6 @@ export const transcriptionFlags = {
     type: String,
     default: '4'
   },
-  'resume-missing': {
-    description: 'STT: reuse an existing batch directory and rerun only missing provider outputs; omit the path to auto-pick the newest resumable batch under ./output',
-    type: String
-  },
   'refresh-cache': {
     description: 'STT: rebuild cache entries touched by this run',
     type: Boolean,
@@ -169,6 +165,13 @@ export const transcriptionFlags = {
     type: Boolean,
     default: false,
     negatable: false
+  }
+} as const satisfies ClercFlagsDefinition
+
+export const resumeMissingFlag = {
+  'resume-missing': {
+    description: 'Reuse an existing batch directory and rerun only missing provider outputs; omit the path to auto-pick the newest resumable batch under ./output',
+    type: String
   }
 } as const satisfies ClercFlagsDefinition
 

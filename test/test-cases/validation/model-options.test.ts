@@ -71,6 +71,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--stt-local-concurrency')
   expect(result.stdout).toContain('--stt-segment-concurrency')
   expect(result.stdout).toContain('--stt-preflight-concurrency')
+  expect(result.stdout).toContain('--resume-missing')
   expect(result.stdout).toContain('--refresh-cache')
   expect(result.stdout).toContain('--no-cache')
   expect(result.stdout).not.toMatch(/--openai(\s|$)/)
@@ -93,6 +94,18 @@ test('ocr help includes hosted OCR flags', async () => {
   expect(result.stdout).toContain('--glm-ocr')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--epub-calibre')
+  expect(result.stdout).toContain('--resume-missing')
+})
+
+test('write help excludes STT-only resume flag', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).not.toContain('--resume-missing')
 })
 
 test('setup help includes calibre step', async () => {
@@ -227,6 +240,29 @@ test('stt bare --resume-missing rejects positional input instead of starting a f
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('--resume-missing does not accept a positional input.')
+})
+
+test('ocr bare --resume-missing rejects positional input instead of starting a fresh run', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'ocr',
+    'input/examples/document/1-document.pdf',
+    '--resume-missing'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--resume-missing does not accept a positional input.')
+})
+
+test('write --resume-missing rejects unsupported command', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    '--resume-missing'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--resume-missing is not supported with "write".')
 })
 
 test('buildOptsFromFlags maps --openai-voice to openaiVoiceId', () => {

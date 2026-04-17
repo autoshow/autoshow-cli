@@ -26,9 +26,9 @@ import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import type { AggregatedPriceEstimate, ResolvedProcessTargetPlan } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { resolveResumeSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/stt-batch/resume-stt-batch'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
+import { dispatchResumeMissing } from '~/cli/commands/process-steps/resume-missing/resume-dispatch'
 
 const runWithConcurrency = async <T,>(
   items: T[],
@@ -145,21 +145,6 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
 }
 
 const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'llama', 'mistral'] as const
-const STT_PROVIDER_SELECTION_FLAGS = [
-  'whisper',
-  'reverb',
-  'elevenlabs-stt',
-  'deepgram-stt',
-  'soniox-stt',
-  'speechmatics-stt',
-  'rev-stt',
-  'groq-stt',
-  'openai-stt',
-  'mistral-stt',
-  'assemblyai-stt',
-  'gladia-stt'
-] as const
-
 const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, doubleDashArgs: string[] = []): boolean => {
   const inParsedFlags = TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.some((key) => flags[key] !== undefined)
   if (inParsedFlags) {
@@ -295,36 +280,16 @@ export const handleProcessTarget = async (
   )
 
   const maxCents = resolveMaxCents(config.pricing)
-  const hasExplicitResumeTargetSelection = STT_PROVIDER_SELECTION_FLAGS.some((flag) => explicitFlags.has(flag))
   const resumeMissingRequested = explicitFlags.has('resume-missing') || opts.resumeMissing !== undefined
 
   if (resumeMissingRequested) {
-    if (!isSttCommand(command)) {
-      throw CLIUsageError('--resume-missing is only supported with "stt".')
-    }
-    if ((typeof target === 'string' && target.length > 0) || doubleDash.length > 0) {
-      throw CLIUsageError('--resume-missing does not accept a positional input.')
-    }
-    if (opts.price) {
-      throw CLIUsageError('--resume-missing does not support --price or --dry-run.')
-    }
-    if (maxCents !== undefined) {
-      l.warn('Skipping budget preflight for --resume-missing')
-    }
-
-    const selectedTargets = hasExplicitResumeTargetSelection ? collectSttTargets(opts) : undefined
-    const resumeBatchDir = await resolveResumeSttBatchDir(
-      opts.resumeMissing,
-      selectedTargets
-    )
-    if (opts.resumeMissing === undefined) {
-      l.info(`Auto-discovered resumable STT batch: ${resumeBatchDir}`)
-    }
-
-    await resumeSttMissingFromBatchDir(
-      resumeBatchDir,
+    await dispatchResumeMissing(
+      command,
+      target,
       opts,
-      selectedTargets
+      explicitFlags,
+      doubleDash,
+      maxCents
     )
     return
   }

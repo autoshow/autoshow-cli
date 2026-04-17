@@ -89,20 +89,6 @@ test('extract PDF with --paddle-ocr', async () => {
   expect(metadata.step2?.extractionMethod).toBe('mutool+paddle-ocr')
 })
 
-for (const args of [
-  ['--ocrmypdf', '--paddle-ocr'],
-  ['--mistral-ocr', 'mistral-ocr-2512', '--ocrmypdf'],
-  ['--mistral-ocr', 'mistral-ocr-2512', '--paddle-ocr'],
-  ['--glm-ocr', 'glm-ocr', '--ocrmypdf'],
-  ['--glm-ocr', 'glm-ocr', '--paddle-ocr'],
-  ['--glm-ocr', 'glm-ocr', '--mistral-ocr', 'mistral-ocr-2512'],
-]) {
-  test(`extract rejects conflicting flags: ${args.join(' ')}`, async () => {
-    const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, ...args])
-    expect(result.exitCode).not.toBe(0)
-  })
-}
-
 test('extract EPUB with --ocrmypdf', async () => {
   if (!Bun.which('ocrmypdf')) {
     return

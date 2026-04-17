@@ -1,6 +1,4 @@
-import { basename, join, resolve as pathResolve } from 'node:path'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { basename, resolve as pathResolve } from 'node:path'
 import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
 import { ProcessingOptionsSchema, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
@@ -17,6 +15,7 @@ import {
 import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audio/dl-audio'
 import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
 import { prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
+import { downloadDocumentUrlToTempFile } from '~/cli/commands/process-steps/step-1-download/document/resolve-document-source'
 import { processOcr } from '~/cli/commands/process-steps/process-ocr'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/doc-prompt-utils'
@@ -33,76 +32,6 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 import { estimateTokens } from '~/utils/text-utils'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
-
-const extensionFromUrl = (
-  url: string,
-  contentType?: string | null,
-  contentDisposition?: string | null
-): string => {
-  const lowerContentType = contentType?.toLowerCase() ?? ''
-  const lowerContentDisposition = contentDisposition?.toLowerCase() ?? ''
-
-  if (lowerContentDisposition.includes('.epub') || lowerContentType.includes('application/epub+zip')) return '.epub'
-  if (lowerContentDisposition.includes('.docx') || lowerContentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) return '.docx'
-  if (lowerContentDisposition.includes('.pptx') || lowerContentType.includes('application/vnd.openxmlformats-officedocument.presentationml.presentation')) return '.pptx'
-  if (lowerContentDisposition.includes('.xlsx') || lowerContentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) return '.xlsx'
-  if (lowerContentDisposition.includes('.odt') || lowerContentType.includes('application/vnd.oasis.opendocument.text')) return '.odt'
-  if (lowerContentDisposition.includes('.ods') || lowerContentType.includes('application/vnd.oasis.opendocument.spreadsheet')) return '.ods'
-  if (lowerContentDisposition.includes('.odp') || lowerContentType.includes('application/vnd.oasis.opendocument.presentation')) return '.odp'
-  if (lowerContentDisposition.includes('.png') || lowerContentType.startsWith('image/png')) return '.png'
-  if (lowerContentDisposition.includes('.jpg') || lowerContentDisposition.includes('.jpeg') || lowerContentType.startsWith('image/jpeg')) return '.jpg'
-  if (lowerContentDisposition.includes('.tif') || lowerContentDisposition.includes('.tiff') || lowerContentType.startsWith('image/tiff')) return '.tif'
-  if (lowerContentDisposition.includes('.pdf') || lowerContentType.includes('application/pdf')) return '.pdf'
-
-  try {
-    const pathname = new URL(url).pathname.toLowerCase()
-    if (pathname.endsWith('.pdf')) return '.pdf'
-    if (pathname.endsWith('.epub')) return '.epub'
-    if (pathname.endsWith('.docx')) return '.docx'
-    if (pathname.endsWith('.pptx')) return '.pptx'
-    if (pathname.endsWith('.xlsx')) return '.xlsx'
-    if (pathname.endsWith('.odt')) return '.odt'
-    if (pathname.endsWith('.ods')) return '.ods'
-    if (pathname.endsWith('.odp')) return '.odp'
-    if (pathname.endsWith('.png')) return '.png'
-    if (pathname.endsWith('.jpg') || pathname.endsWith('.jpeg')) return '.jpg'
-    if (pathname.endsWith('.tif') || pathname.endsWith('.tiff')) return '.tif'
-  } catch {
-  }
-
-  return '.pdf'
-}
-
-const downloadDocumentUrlToTempFile = async (
-  url: string
-): Promise<{ filePath: string, cleanup: () => Promise<void> }> => {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to download document URL: ${url} (${response.status})`)
-  }
-
-  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-doc-url-'))
-  const ext = extensionFromUrl(
-    url,
-    response.headers.get('content-type'),
-    response.headers.get('content-disposition')
-  )
-  const filePath = join(tempDir, `document${ext}`)
-  try {
-    const bytes = await response.arrayBuffer()
-    await Bun.write(filePath, bytes)
-  } catch (err) {
-    await rm(tempDir, { recursive: true, force: true })
-    throw err
-  }
-
-  return {
-    filePath,
-    cleanup: async () => {
-      await rm(tempDir, { recursive: true, force: true })
-    }
-  }
-}
 
 const buildDocumentMetadataView = (
   step1: DocumentMetadata,

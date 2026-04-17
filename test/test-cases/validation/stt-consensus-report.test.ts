@@ -7,6 +7,7 @@ import {
   analyzeSttRunDirectory,
   discoverAnalyzableRunDirectories
 } from '~/utils/stt-consensus-report'
+import { runCommand } from '../../test-utils/test-helpers'
 
 const writeJson = async (path: string, value: unknown): Promise<void> => {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
@@ -212,6 +213,76 @@ describe('stt consensus report utilities', () => {
 
       const discovered = await discoverAnalyzableRunDirectories(batchDir)
       expect(discovered).toEqual([runA, runB])
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
+  })
+
+  test('report command matches the legacy STT wrapper output', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-report-command-'))
+    const runDir = join(rootDir, '2026-04-15_sample')
+
+    try {
+      await mkdir(join(runDir, 'providers'), { recursive: true })
+
+      await Promise.all([
+        writeProviderArtifacts(runDir, 'assemblyai-universal-3-pro', 'assemblyai', 'universal-3-pro', [
+          { startSeconds: 0, endSeconds: 4, text: 'JavaScript Jam starts now', speaker: 'speaker-A' },
+          { startSeconds: 5, endSeconds: 7, text: 'Yeah', speaker: 'speaker-B' }
+        ]),
+        writeProviderArtifacts(runDir, 'soniox-stt-async-v4', 'soniox', 'stt-async-v4', [
+          { startSeconds: 0, endSeconds: 4, text: 'JavaScript Jam starts now', speaker: '1' },
+          { startSeconds: 5, endSeconds: 7, text: 'Yeah', speaker: '2' }
+        ])
+      ])
+
+      await writeJson(join(runDir, 'metadata.json'), {
+        step1: {
+          title: 'Sample episode',
+          duration: '00:07',
+          audioFileName: 'sample.mp3'
+        },
+        step2: [
+          { transcriptionService: 'assemblyai', transcriptionModel: 'universal-3-pro', processingTime: 1000, tokenCount: 5 },
+          { transcriptionService: 'soniox', transcriptionModel: 'stt-async-v4', processingTime: 1000, tokenCount: 5 }
+        ],
+        requestedProviders: [
+          { service: 'assemblyai', model: 'universal-3-pro' },
+          { service: 'soniox', model: 'stt-async-v4' }
+        ],
+        completionStatus: 'complete'
+      })
+
+      const reportResult = await runCommand([
+        'src/cli/create-cli.ts',
+        'report',
+        runDir
+      ])
+
+      expect(reportResult.exitCode).toBe(0)
+
+      const cliOutputs = await Promise.all([
+        readFile(join(runDir, 'consensus-transcription.txt'), 'utf8'),
+        readFile(join(runDir, 'consensus-report.md'), 'utf8'),
+        readFile(join(runDir, 'consensus-review.md'), 'utf8'),
+        readFile(join(runDir, 'consensus-report.json'), 'utf8')
+      ])
+
+      const wrapperResult = await runCommand([
+        'src/scripts/generate-stt-consensus-report.ts',
+        runDir
+      ])
+
+      expect(wrapperResult.exitCode).toBe(0)
+
+      const wrapperOutputs = await Promise.all([
+        readFile(join(runDir, 'consensus-transcription.txt'), 'utf8'),
+        readFile(join(runDir, 'consensus-report.md'), 'utf8'),
+        readFile(join(runDir, 'consensus-review.md'), 'utf8'),
+        readFile(join(runDir, 'consensus-report.json'), 'utf8')
+      ])
+
+      expect(wrapperOutputs).toEqual(cliOutputs)
     } finally {
       await rm(rootDir, { recursive: true, force: true })
     }

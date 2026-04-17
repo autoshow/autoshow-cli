@@ -2,8 +2,10 @@ import { extname } from 'node:path'
 import { Mistral } from '@mistralai/mistralai'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { MistralOcrResponseSchema } from '~/types'
-import { readEnvFallback } from '~/utils/validate/env-utils'
+import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
+
+const normalizeMistralServerURL = (serverURL: string): string => serverURL.replace(/\/v1\/?$/, '')
 
 const imageMimeType = (filePath: string): string => {
   const ext = extname(filePath).toLowerCase()
@@ -24,7 +26,8 @@ export const runMistralOcr = async (
     throw new Error('MISTRAL_API_KEY environment variable is required for Mistral OCR')
   }
 
-  const client = new Mistral({ apiKey })
+  const serverURL = normalizeMistralServerURL(readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1')
+  const client = new Mistral({ apiKey, serverURL })
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
 

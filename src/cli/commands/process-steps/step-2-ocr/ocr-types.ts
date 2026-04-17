@@ -137,3 +137,9 @@ export type OcrTarget = {
   service: 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm'
   model: string
 }
+
+export type OcrResumeRun = {
+  outputDir: string
+  requestedTargets: OcrTarget[]
+  targetsToRun: OcrTarget[]
+}

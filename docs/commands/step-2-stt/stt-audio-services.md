@@ -7,7 +7,6 @@ Download audio and transcribe it with the hosted STT providers. Alias: `transcri
 - [Usage](#usage)
 - [Service Engines](#service-engines)
 - [Examples](#examples)
-- [Consensus Report](#consensus-report)
 - [Flags](#flags)
 - [Notes](#notes)
 
@@ -121,41 +120,6 @@ bun as stt --resume-missing --rev-stt
 bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize --price
 ```
 
-## Consensus Report
-
-Use the consensus report after a multi-provider hosted STT run when you want a merged best-guess transcript plus review artifacts for disagreement windows.
-
-Prerequisites:
-
-- Run `bun as stt ...` with two or more hosted providers first.
-- The target run must be a newer evidence-rich run where each successful provider wrote `providers/<service>-<model>/transcription.evidence.json`.
-- Legacy runs without `transcription.evidence.json` are rejected. Rerun STT with the updated evidence persistence before generating the report.
-- `review-clips/*.mp3` are only extracted when the source audio file is still present in the run directory and `ffmpeg` is available on `PATH`.
-
-Commands:
-
-```bash
-# Generate report artifacts for one STT run directory
-bun src/scripts/generate-stt-consensus-report.ts output/2026-04-15_12-00-00_episode
-
-# Generate per-run artifacts for every child run in a batch directory
-# and an aggregate consensus-report.md at the batch root
-bun src/scripts/generate-stt-consensus-report.ts output/2026-04-15_12-00-00_batch
-```
-
-Per run, the script writes:
-
-- `consensus-transcription.txt`: merged best-guess transcript built from evidence-backed comparison windows
-- `consensus-report.md`: human-readable summary of provider agreement, confidence, and costs/timing when available
-- `consensus-report.json`: structured report data for automation
-- `consensus-review.md`: only the low-confidence windows that need inspection
-- `review-clips/*.mp3`: optional review clips for flagged windows when audio + `ffmpeg` are available
-
-Provider output directories now persist the canonical evidence consumed by this report:
-
-- `transcription.evidence.json`: normalized segments/words/capabilities used by consensus analysis
-- `transcription.raw.json`: optional raw provider payload when the adapter exposes one
-
 ## Flags
 
 | Flag | Description |
@@ -209,5 +173,4 @@ Provider output directories now persist the canonical evidence consumed by this 
 - `--resume-missing` takes a batch directory produced by a prior STT batch run. If you omit the path entirely, the CLI scans `./output` and auto-picks the newest compatible resumable STT batch. With no provider flags, it reuses the original requested provider set. If provider flags are supplied, they must be a subset of the original requested providers. Persisted async jobs are resumed via short bounded status probes; if they are still pending after those checks, rerun the command later.
 - `--resume-missing` does not take a positional input and does not support `--price` / `--dry-run`.
 - Incomplete STT batches still exit with code `2`, but they are reported as operational batch failures rather than CLI usage errors.
-- Successful hosted STT provider runs now also persist `transcription.evidence.json`, and when native provider payloads are available they also persist `transcription.raw.json`.
 - Service setup details are in [`stt-audio-local.md#setup`](./stt-audio-local.md#setup).

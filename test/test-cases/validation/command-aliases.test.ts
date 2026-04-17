@@ -87,6 +87,28 @@ test('voice alias resolves to tts help', async () => {
   expect(result.stdout).toContain('--openai-tts')
 })
 
+test('report help works through both help entrypoints', async () => {
+  const directHelp = await runCommand([
+    'src/cli/create-cli.ts',
+    'report',
+    '--help'
+  ])
+
+  expect(directHelp.exitCode).toBe(0)
+  expect(directHelp.stdout).toContain('Generate consensus report artifacts for STT or OCR run outputs')
+  expect(directHelp.stdout).toContain('outputDir')
+
+  const nestedHelp = await runCommand([
+    'src/cli/create-cli.ts',
+    'help',
+    'report'
+  ])
+
+  expect(nestedHelp.exitCode).toBe(0)
+  expect(nestedHelp.stdout).toContain('Generate consensus report artifacts for STT or OCR run outputs')
+  expect(nestedHelp.stdout).toContain('outputDir')
+})
+
 test('download-llama no longer resolves to the models command', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -153,6 +175,7 @@ test('top-level help groups commands into the expected sections and order', asyn
     'download  Download media or document and collect metadata only',
     'ocr       Extract text from PDF, EPUB, and image files',
     'stt       Download audio and run speech-to-text only',
+    'report    Generate consensus report artifacts for STT or OCR run outputs',
     'write     Download audio, transcribe, and run LLM summary pipeline',
     'tts       Generate speech audio from a text file (.md or .txt)',
     'image     Generate an image from a text prompt',

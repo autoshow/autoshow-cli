@@ -30,6 +30,7 @@ export const knownCommands = new Set<string>([
   'samples',
   'model',
   'models',
+  'report',
   'help',
   'version'
 ])
