@@ -7,6 +7,10 @@ import {
   type CheapestVideoSelection,
   selectCheapestVideoSelection
 } from '../../src/cli/commands/setup-and-utilities/models/cheapest-models'
+import {
+  supportsGeminiImageSize,
+  type GeminiImageModel
+} from '../../src/cli/commands/setup-and-utilities/models/model-options'
 import type { ApiCheapPriceCommand, VideoSelection } from '../../src/types/tests-dir-types'
 export type { ApiCheapPriceCommand } from '../../src/types/tests-dir-types'
 
@@ -18,6 +22,24 @@ const toVideoSelection = (selection: CheapestVideoSelection): VideoSelection => 
   ...(selection.resolution ? { resolution: selection.resolution } : {}),
   totalCost: selection.totalCost
 })
+
+export const appendApiCheapImageArgs = (
+  args: string[],
+  selection: { service: string, model: string }
+): string[] => {
+  if (selection.service === 'openai') {
+    args.push('--image-size', '1024x1024', '--image-quality', 'low', '--image-format', 'jpeg')
+  }
+
+  if (selection.service === 'gemini' && selection.model.startsWith('imagen-')) {
+    args.push('--imagen-count', '1', '--image-aspect-ratio', '1:1')
+    if (supportsGeminiImageSize(selection.model as GeminiImageModel)) {
+      args.push('--image-size', '1K')
+    }
+  }
+
+  return args
+}
 
 export const buildApiCheapSelections = () => {
   const llmSelections = [
@@ -144,20 +166,14 @@ export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
   }
 
   for (const selection of imageSelections) {
-    const args = [
+    const args = appendApiCheapImageArgs([
       'src/cli/create-cli.ts',
       'image',
       imagePrompt,
       selection.flag,
       selection.model,
       '--price'
-    ]
-    if (selection.service === 'openai') {
-      args.push('--image-size', '1024x1024', '--image-quality', 'low', '--image-format', 'jpeg')
-    }
-    if (selection.service === 'gemini' && selection.model.startsWith('imagen-')) {
-      args.push('--imagen-count', '1', '--image-aspect-ratio', '1:1', '--image-size', '1K')
-    }
+    ], selection)
     commands.push({
       name: `image-${selection.service}-${selection.model}`,
       args

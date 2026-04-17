@@ -120,6 +120,9 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 # Prefer YouTube captions, then fall back to STT
 bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
 
+# Process a whole YouTube channel batch with caption-first routing
+bun as stt https://www.youtube.com/@channelname --youtube-captions --batch-all
+
 # Resume missing provider outputs from an earlier batch
 bun as stt --resume-missing
 ```
@@ -166,5 +169,7 @@ bun as stt --resume-missing
 - `--speaker-count` is currently honored by ElevenLabs, AssemblyAI, and Gladia. It is ignored by local engines and the other hosted STT providers.
 - OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
+- For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.
+- STT batch roots now include `stt-summary.json`, which records per-item caption-vs-STT routing alongside completion status.
 - `--resume-missing` reuses an earlier STT batch, does not take a positional input, does not support `--price`, and any provider flags must be a subset of the original requested providers.

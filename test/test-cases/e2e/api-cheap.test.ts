@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { buildApiCheapSelections } from '../../test-utils/api-cheap-config'
+import {
+  appendApiCheapImageArgs,
+  buildApiCheapSelections
+} from '../../test-utils/api-cheap-config'
 import {
   cleanupTestOutput,
   fileExists,
@@ -211,13 +214,10 @@ describe('api-cheap', () => {
         await cleanupTestOutput(IMAGE_GEN_TITLE)
 
         const prompt = selection.service === 'minimax' ? MINIMAX_IMAGE_PROMPT : IMAGE_PROMPT
-        const args = ['src/cli/create-cli.ts', 'image', prompt, selection.flag, selection.model]
-        if (selection.service === 'openai') {
-          args.push('--image-size', '1024x1024', '--image-quality', 'low', '--image-format', 'jpeg')
-        }
-        if (selection.service === 'gemini' && selection.model.startsWith('imagen-')) {
-          args.push('--imagen-count', '1', '--image-aspect-ratio', '1:1')
-        }
+        const args = appendApiCheapImageArgs(
+          ['src/cli/create-cli.ts', 'image', prompt, selection.flag, selection.model],
+          selection
+        )
 
         const result = await runCommand(args, { testName: imageTestName })
         expect(result.exitCode).toBe(0)

@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import { PRICE_SELECTION_REGISTRY, resolvePriceSelection } from '../../test-runner/price-commands'
+import {
+  appendApiCheapImageArgs,
+  buildApiCheapPriceCommands
+} from '../../test-utils/api-cheap-config'
 
 const listAllTestFiles = async (): Promise<string[]> => {
   const glob = new Bun.Glob('test/test-cases/**/*.test.ts')
@@ -159,6 +163,28 @@ describe('test runner price selection', () => {
 
     expect(resolved.suiteName).toBe('Selected paths: api-cheap.test.ts')
     expect(resolved.commands).toEqual([])
+  })
+
+  test('api-cheap price command omits unsupported image-size for Gemini fast Imagen', () => {
+    const command = buildApiCheapPriceCommands()
+      .find((entry) => entry.name === 'image-gemini-imagen-4.0-fast-generate-001')
+
+    expect(command).toBeDefined()
+    expect(command?.args).toContain('--imagen-count')
+    expect(command?.args).toContain('--image-aspect-ratio')
+    expect(command?.args).not.toContain('--image-size')
+  })
+
+  test('api-cheap image args keep 1K size for size-capable Gemini Imagen models', () => {
+    const args = appendApiCheapImageArgs(
+      ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001'],
+      { service: 'gemini', model: 'imagen-4.0-generate-001' }
+    )
+
+    expect(args).toContain('--imagen-count')
+    expect(args).toContain('--image-aspect-ratio')
+    expect(args).toContain('--image-size')
+    expect(args).toContain('1K')
   })
 
   test('registry budget keys stay aligned with the supported budget skip surface', () => {

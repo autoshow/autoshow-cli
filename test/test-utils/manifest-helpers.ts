@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import type { BatchManifest, ProviderCheckpoint, ProviderResult, RunManifest } from '~/types'
+import type { BatchManifest, ProviderCheckpoint, ProviderResult, RunManifest, SttBatchSummary } from '~/types'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -74,6 +74,21 @@ export const writeBatchManifestFixture = async (
     ...(source ? { source } : {})
   }
   await Bun.write(resolveArtifactPath(pathOrDir, 'batch.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+}
+
+export const readSttBatchSummary = async (pathOrDir: string): Promise<SttBatchSummary> => {
+  const raw = await Bun.file(resolveArtifactPath(pathOrDir, 'stt-summary.json')).json() as unknown
+  if (
+    !isRecord(raw)
+    || raw['schemaVersion'] !== 2
+    || raw['kind'] !== 'stt-batch-summary'
+    || !isRecord(raw['totals'])
+    || !Array.isArray(raw['items'])
+  ) {
+    throw new Error(`Invalid STT batch summary at ${resolveArtifactPath(pathOrDir, 'stt-summary.json')}`)
+  }
+
+  return raw as SttBatchSummary
 }
 
 export const readProviderResult = async (pathOrDir: string): Promise<ProviderResult> => {

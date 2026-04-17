@@ -92,3 +92,36 @@ export type BatchManifest = {
   items: Record<string, unknown>[]
   source?: Record<string, unknown> | undefined
 }
+
+export type SttBatchSummaryItem = {
+  url?: string | undefined
+  title?: string | undefined
+  publishedAt?: string | undefined
+  outputDir: string
+  completionStatus: 'full' | 'incomplete' | 'failed'
+  transcriptionService?: string | undefined
+  transcriptionModel?: string | undefined
+  captionUsed: boolean
+  captionKind?: 'manual' | 'auto' | undefined
+  captionLanguage?: string | undefined
+}
+
+export type SttBatchSummary = {
+  schemaVersion: 2
+  kind: 'stt-batch-summary'
+  source?: {
+    sourceKind?: string | undefined
+    sourceUrl?: string | undefined
+    title?: string | undefined
+    author?: string | undefined
+    selectedCount?: number | undefined
+  } | undefined
+  totals: {
+    items: number
+    captionBacked: number
+    sttFallback: number
+    incomplete: number
+    failed: number
+  }
+  items: SttBatchSummaryItem[]
+}

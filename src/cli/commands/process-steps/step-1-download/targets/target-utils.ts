@@ -19,6 +19,7 @@ import type {
 } from '~/types'
 import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/batch'
+import { writeSttBatchManifest } from '~/cli/commands/process-steps/step-2-stt/manifest'
 import { readBatchManifest, readRunManifest, writeBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
@@ -889,7 +890,11 @@ export const processBatch = async (
   l.info(isSttCommand(command)
     ? formatSttBatchCompletionSummary(ok, incomplete, fail)
     : formatBatchCompletionSummary(ok, partial, fail))
-  await writeBatchManifest(batchDir, toManifestKind(command), finalInfoEntries, batchSource)
+  if (isSttCommand(command)) {
+    await writeSttBatchManifest(batchDir, finalInfoEntries, batchSource)
+  } else {
+    await writeBatchManifest(batchDir, toManifestKind(command), finalInfoEntries, batchSource)
+  }
 
   return {
     ok,
