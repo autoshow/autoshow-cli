@@ -30,6 +30,6 @@ runtime/auth/
 test-output
 new-llm-*.md
 TODO.md
-# project/links
-# project/plans
-# project/reports
+project/links
+project/plans
+project/reports

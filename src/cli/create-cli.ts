@@ -11,6 +11,7 @@ import { ttsCommand } from '~/cli/commands/process-steps/step-4-tts/define-tts-c
 import { imageCommand } from '~/cli/commands/process-steps/step-5-image/define-image-command'
 import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-music-command'
 import { videoCommand } from '~/cli/commands/process-steps/step-6-video/define-video-command'
+import { lyricsCommand } from '~/cli/commands/process-steps/step-8-lyrics/define-lyrics-command'
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { sampleCommand } from '~/cli/commands/setup-and-utilities/sample/define-sample-command'
 import { reportCommand } from '~/cli/commands/setup-and-utilities/report/define-report-command'
@@ -101,7 +102,8 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   tts: 'processing',
   image: 'processing',
   music: 'processing',
-  video: 'processing'
+  video: 'processing',
+  lyrics: 'processing'
 }
 
 const COMMAND_DEFINITIONS = [
@@ -121,7 +123,8 @@ const COMMAND_DEFINITIONS = [
   ttsCommand,
   imageCommand,
   musicCommand,
-  videoCommand
+  videoCommand,
+  lyricsCommand
 ] as const
 
 const setCommandHelpGroup = (command: unknown, group: HelpCommandGroupKey): void => {

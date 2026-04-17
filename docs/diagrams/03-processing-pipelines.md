@@ -8,6 +8,7 @@ The `metadata` command (default) runs only the metadata extraction portion of St
 
 - [Media Processing Pipeline](#media-processing-pipeline)
 - [Document Processing Pipeline](#document-processing-pipeline)
+- [Lyrics Pipeline](#lyrics-pipeline)
 
 ## Media Processing Pipeline
 
@@ -232,4 +233,42 @@ src/cli/commands/process-steps/process-ocr.ts
                 │               │  │                                    │
                 │ DONE          │  │  DONE                              │
                 └───────────────┘  └────────────────────────────────────┘
+```
+
+## Lyrics Pipeline
+
+```
+src/cli/commands/process-steps/step-8-lyrics/
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      LYRICS COMMAND                                          │
+│                                                                              │
+│  Input validation                                                            │
+│  ├── single run: --audio must be inside ./input                              │
+│  ├── rerender: --captions must be inside ./output                            │
+│  └── batch: recursively scan ./input for .wav/.mp3/.m4a/.flac/.ogg/.aac     │
+│                                                                              │
+│  Caption source                                                              │
+│  ├── --captions → parse VTT/SRT directly                                     │
+│  └── no --captions → ensure whisper:<model> → runWhisperTranscribe()         │
+│                     → build short lyric cues from word timings               │
+│                                                                              │
+│  Render prep                                                                 │
+│  ├── write <stem>.vtt                                                        │
+│  ├── write <stem>.srt                                                        │
+│  ├── build ASS subtitle file                                                 │
+│  └── detect background image beside the audio                                │
+│                                                                              │
+│  Render                                                                      │
+│  ├── image match → dimmed cover-art background                               │
+│  ├── no image  → spectrogram background                                      │
+│  ├── ffmpeg ass filter when available                                        │
+│  └── fallback image-overlay cards when ass is unavailable                    │
+│                                                                              │
+│  Output                                                                      │
+│  ├── output/<timestamp>_lyrics-<stem>/<stem>.mp4                             │
+│  ├── output/<timestamp>_lyrics-<stem>/<stem>.vtt                             │
+│  ├── output/<timestamp>_lyrics-<stem>/<stem>.srt                             │
+│  └── run.json / batch.json                                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```

@@ -58,6 +58,19 @@ describe('reporter completion output', () => {
     expect(typeof (result['metrics'] as Record<string, unknown>)['providersRequested']).toBe('number')
   })
 
+  test('includes lyrics artifacts in compact human completion lines', () => {
+    const lines = buildHumanCompletionMessages('output/run', {
+      run: 'run.json',
+      video: 'song.mp4',
+      vtt: 'song.vtt',
+      srt: 'song.srt'
+    })
+
+    expect(lines).toEqual([
+      'Artifacts: run=output/run/run.json, video=output/run/song.mp4, vtt=output/run/song.vtt, srt=output/run/song.srt'
+    ])
+  })
+
   test('keeps detailed completion payloads when verbose logging is active', () => {
     const events: LogSinkEvent[] = []
     const logger = createLogger({

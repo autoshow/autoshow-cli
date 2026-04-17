@@ -166,3 +166,4 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/setup-orchestrator/r
 | `video --minimax-video` | `MINIMAX_API_KEY` |
 | `music --elevenlabs-music` | `ELEVENLABS_API_KEY` |
 | `music --minimax-music` | `MINIMAX_API_KEY` |
+| `lyrics` | `ffmpeg`, `ffprobe`, `whisper-cli`, and a local Whisper model (`large-v3-turbo` via `setup --step lyrics`) |

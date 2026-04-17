@@ -119,7 +119,7 @@ type StepSummaryEntry = {
 
 type DetailedCompletionSummary = Record<string, unknown>
 
-const HUMAN_PRIMARY_ARTIFACT_KEYS = ['prompt', 'run', 'audio', 'transcript'] as const
+const HUMAN_PRIMARY_ARTIFACT_KEYS = ['prompt', 'run', 'audio', 'transcript', 'video', 'vtt', 'srt'] as const
 
 const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCost: number) => {
   const entries: StepSummaryEntry[] = steps.map(step => ({

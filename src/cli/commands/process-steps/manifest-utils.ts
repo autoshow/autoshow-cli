@@ -31,6 +31,7 @@ const parseRunManifest = (
     && kind !== 'image'
     && kind !== 'video'
     && kind !== 'music'
+    && kind !== 'lyrics'
   ) {
     return undefined
   }
@@ -70,6 +71,7 @@ const parseBatchManifest = (
     && kind !== 'image'
     && kind !== 'video'
     && kind !== 'music'
+    && kind !== 'lyrics'
   ) {
     return undefined
   }

@@ -74,7 +74,7 @@ export type ProviderResult = {
 
 export type RunManifest = {
   schemaVersion: 2
-  kind: 'metadata' | 'download' | 'ocr' | 'stt' | 'write' | 'tts' | 'image' | 'video' | 'music'
+  kind: 'metadata' | 'download' | 'ocr' | 'stt' | 'write' | 'tts' | 'image' | 'video' | 'music' | 'lyrics'
   metadata: Record<string, unknown>
 }
 

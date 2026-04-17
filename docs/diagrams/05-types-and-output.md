@@ -55,6 +55,12 @@ output/
     ├── generated-music.mp3         # (music command output)
     ├── run.json                    # generation metadata, timing, and cost
     │
+    │  ── Standalone local lyrics command ──
+    ├── <stem>.mp4                  # rendered lyric video
+    ├── <stem>.vtt                  # editable captions
+    ├── <stem>.srt                  # editable captions
+    ├── run.json                    # lyrics metadata, render settings, timing
+    │
     │  ── Batch Processing ──
     └── output/YYYY-MM-DD_HH-MM-SS_<batch-label>/
         ├── batch.json              # Consolidated per-item run metadata payloads
@@ -90,6 +96,8 @@ src/types/
 │                                                                              │
 │  ProcessCommand = 'metadata' | 'download' | 'stt' | 'write' | 'ocr'         │
 │                 | 'tts' | 'image' | 'music' | 'video'                        │
+│  Note: `lyrics` is a standalone top-level command with its own local runner  │
+│  and output manifests; it is not part of the shared process-target router.   │
 │  OutputFormat   = 'text' | 'json' | 'tsv' | 'hocr'                          │
 │  BatchOrder     = 'newest' | 'oldest'                                        │
 │                                                                              │

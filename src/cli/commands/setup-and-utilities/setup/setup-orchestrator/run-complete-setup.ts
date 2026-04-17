@@ -149,7 +149,7 @@ export const setupUv = async (): Promise<void> => {
 export type SetupStepId =
   | 'uv' | 'yt-dlp' | 'whisper-binary' | 'whisper-model' | 'llama-binary'
   | 'reverb' | 'calibre' | 'all'
-  | 'transcription' | 'write' | 'tts' | 'image' | 'sample'
+  | 'transcription' | 'write' | 'tts' | 'image' | 'lyrics' | 'sample'
 
 export const defaultWhisperModel = 'tiny'
 export const defaultLlamaModel = 'ggml-org/gemma-3-270m-it-GGUF'
@@ -297,6 +297,30 @@ const runSetupImage = async (): Promise<void> => {
   l.success('Image setup complete (all image providers are API-based)')
 }
 
+const runSetupLyrics = async (): Promise<void> => {
+  const requiredTools = ['ffmpeg', 'ffprobe']
+  const missing = requiredTools.filter((tool) => !commandExists(tool))
+  if (missing.length > 0) {
+    throw new Error(
+      `Lyrics setup: missing required tools: ${missing.join(', ')}. Install them via your system package manager or run: bun as setup`
+    )
+  }
+
+  const ffmpegFilters = await runCapture('ffmpeg', ['-hide_banner', '-filters'], { allowFailure: true })
+  const hasAssFilter = ffmpegFilters.exitCode === 0
+    && ffmpegFilters.stdout.split('\n').some((line) => line.trim().split(/\s+/).includes('ass'))
+  const hasFallbackRenderer = commandExists('pango-view') && (commandExists('magick') || commandExists('convert'))
+  if (!hasAssFilter && !hasFallbackRenderer) {
+    throw new Error(
+      'Lyrics setup: ffmpeg does not expose the ass filter, and the fallback renderer is unavailable. Install pango-view plus ImageMagick, or use an ffmpeg build with ass support.'
+    )
+  }
+
+  await setupWhisper()
+  await downloadWhisperModel('large-v3-turbo')
+  l.success('Lyrics setup complete')
+}
+
 const runSetupSample = async (): Promise<void> => {
   l.info('Sample setup: verifying required tools for fixture generation (ffmpeg, soffice)')
   const { commandExists } = await import('~/utils/cli-utils')
@@ -347,11 +371,13 @@ const logBenchmarkResults = (
 
 const getForceRedownloadPaths = (step: SetupStepId): readonly string[] => {
   const whisperModelPath = `${whisperModelsDir}/ggml-${defaultWhisperModel}.bin`
+  const lyricsWhisperModelPath = `${whisperModelsDir}/ggml-large-v3-turbo.bin`
   switch (step) {
     case 'whisper-binary': return [whisperBinaryPath, whisperBuildDir]
     case 'whisper-model': return [whisperModelPath]
     case 'llama-binary': return [llamaBinaryPath]
     case 'reverb': return [reverbModelDir, reverbDiarizationDir]
+    case 'lyrics': return [whisperBinaryPath, whisperBuildDir, lyricsWhisperModelPath]
     case 'all': return [whisperModelPath, llamaBinaryPath]
     case 'uv': case 'yt-dlp': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'sample': return []
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
@@ -380,6 +406,7 @@ const executeStepOnce = async (step: SetupStepId): Promise<void> => {
     case 'write': await runSetupWrite(); return
     case 'tts': await runSetupTts(); return
     case 'image': await runSetupImage(); return
+    case 'lyrics': await runSetupLyrics(); return
     case 'sample': await runSetupSample(); return
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
   }

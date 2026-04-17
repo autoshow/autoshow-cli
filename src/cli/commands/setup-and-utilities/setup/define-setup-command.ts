@@ -6,7 +6,7 @@ import { runDoctor } from './run-doctor'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 
-const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'sample']
+const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'lyrics', 'sample']
 
 export const setupCommand = defineCommand({
   name: 'setup',

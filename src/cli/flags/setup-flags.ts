@@ -8,7 +8,7 @@ export const setupFlags = {
     negatable: false
   },
   step: {
-    description: 'Run only a specific setup step: uv|yt-dlp|whisper-binary|whisper-model|llama-binary|reverb|calibre|all|transcription|write|tts|image|sample (default: all). Assumes prerequisites are already installed for isolated steps.',
+    description: 'Run only a specific setup step: uv|yt-dlp|whisper-binary|whisper-model|llama-binary|reverb|calibre|all|transcription|write|tts|image|lyrics|sample (default: all). Assumes prerequisites are already installed for isolated steps.',
     type: String,
     default: 'all'
   },

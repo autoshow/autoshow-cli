@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 16 named commands plus the root shorthand (`bun as <input>` => `metadata <input>`): `metadata`, `download`, `ocr`, `stt`, `report`, `write`, `tts`, `image`, `video`, `music`, `config`, `cache`, `setup`, `sample`, `models`, `links`
+   - Defines 17 named commands plus the root shorthand (`bun as <input>` => `metadata <input>`): `metadata`, `download`, `ocr`, `stt`, `report`, `write`, `tts`, `image`, `video`, `music`, `lyrics`, `config`, `cache`, `setup`, `sample`, `models`, `links`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -51,7 +51,7 @@ src/cli/create-cli.ts
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  validateSttFlagCompatibility()                                              │
-│  - Blocks LLM provider flags on `stt`                                        │
+│  - Blocks LLM provider flags on `stt` and removed legacy flags on `lyrics`   │
 │  normalizeCommandHelpShortcut()                                              │
 │  - Maps "--help write" style input to "help write"                           │
 │  validateArgumentOrder()                                                     │
@@ -107,6 +107,14 @@ src/cli/create-cli.ts
 │  │ from .md/.txt    │  │ from .md/.txt    │  │ dependencies     │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
+│  ┌──────────────────┐                                                        │
+│  │     lyrics       │                                                        │
+│  │                  │                                                        │
+│  │ Local audio ->   │                                                        │
+│  │ Whisper/edited   │                                                        │
+│  │ captions -> MP4  │                                                        │
+│  └──────────────────┘                                                        │
+│                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
 │  │     models       │  │     config       │  │      cache       │            │
 │  │                  │  │                  │  │                  │            │
@@ -121,7 +129,8 @@ src/cli/create-cli.ts
 │  │ fixtures         │  │ reference docs   │  │ consensus reports│            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
-│  All process commands → handleProcessTarget(command, target, flags)          │
+│  Most process commands → handleProcessTarget(command, target, flags)         │
+│  Standalone local commands such as `lyrics` route to their own runner        │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 

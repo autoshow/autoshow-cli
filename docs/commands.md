@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 16 named commands plus the root shorthand. `bun as <input>` is equivalent to `bun as metadata <input>`.
+AutoShow currently exposes 17 named commands plus the root shorthand. `bun as <input>` is equivalent to `bun as metadata <input>`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -54,6 +54,11 @@ bun as tts input/examples/document/1-tts.md --gemini-tts gemini-2.5-flash-previe
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
 
+# local lyric-video render from repo audio
+# bundled lyrics fixtures: input/examples/lyrics/01-example-song.wav,
+# input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
+bun as lyrics --audio input/examples/lyrics/01-example-song.wav
+
 # music generation
 bun as music "an ambient piano instrumental with soft strings" --minimax-music music-2.5
 
@@ -81,6 +86,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - `image`: [command](./commands/process-steps/step-5-image/text-to-image.md) | [setup](./commands/process-steps/step-5-image/text-to-image.md#setup)
 - `video`: [video](./commands/process-steps/step-6-video/text-to-video-services.md)
 - `music`: [music](./commands/process-steps/step-7-music/text-to-music-services.md)
+- `lyrics`: [lyrics](./commands/process-steps/step-8-lyrics/lyrics.md)
 - `config`: [config](./commands/setup-and-utilities/config/config.md)
 - `links`: [links](./commands/setup-and-utilities/links/links.md)
 
@@ -92,11 +98,12 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - Use `stt` for audio/video when you only need transcript + prompt output.
 - Use `report` when you already have STT or OCR run artifacts under `providers/` and want consensus outputs plus review files.
 - Use `write` for full summary pipeline with optional TTS/image/video generation.
+- Use `lyrics` for local-only lyric videos from repo audio under `input/`, with optional rerender from edited caption files under `output/`.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
 
 ## Pricing Preflight
 
-Most runtime commands support `--price` to print estimated cost and exit:
+Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. Local-only commands such as `lyrics` do not:
 
 ```bash
 bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price

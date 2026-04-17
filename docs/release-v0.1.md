@@ -34,6 +34,7 @@ AutoShow is a Bun-native CLI for turning media, documents, HTML/articles, and te
 - OCR and document extraction artifacts
 - JSON write outputs
 - generated speech, images, video, and music
+- local lyric videos from repo audio
 - consensus review artifacts for STT and OCR runs
 
 This release brings together:
@@ -42,10 +43,11 @@ This release brings together:
 - a step-oriented processing model from setup through post-generation
 - local and service-backed engines across STT, OCR, LLM, TTS, image, video, and music
 - persistent CLI defaults in `config/autoshow.json`
-- automatic cost preflight and budget enforcement
+- automatic cost preflight and budget enforcement for hosted and mixed-provider runs
 - a persistent STT media cache plus cache-management utilities
 - a `links` command for fetching provider documentation into one local markdown file
 - a `report` command for generating consensus report artifacts from completed run directories
+- a `lyrics` command for local lyric-video rendering with Whisper captions
 
 ## What AutoShow Is
 
@@ -77,6 +79,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 | Image | Generate images from text prompts |
 | Video | Generate videos from text prompts |
 | Music | Generate music from text prompts |
+| Lyrics | Render local lyric videos from repo audio plus Whisper or edited captions |
 | Config | Inspect, reset, or persist selected defaults for batch, STT, OCR, write, and post-generation |
 | Cache | Prune or clear the persistent STT media cache |
 | Setup | Install local runtimes and verify prerequisites with `--doctor` |
@@ -87,8 +90,8 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 ### High-value behaviors
 
 - `bun as <input>` is a root shorthand for `bun as metadata <input>`.
-- Runnable commands run an automatic cost preflight before execution.
-- `--price` prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting.
+- Hosted and mixed-provider runnable commands run an automatic cost preflight before execution.
+- `--price` prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting. Local-only commands such as `lyrics` are excluded.
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - `write` can run multiple LLM providers in one invocation and writes provider-specific JSON artifacts for each result.
 - Multi-provider STT runs write provider-specific transcripts and result envelopes under `providers/<service>-<model>/`.
@@ -132,6 +135,11 @@ bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-nano-0.8-int
 # standalone image generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 
+# local lyric-video render from repo audio
+# bundled lyrics fixtures: input/examples/lyrics/01-example-song.wav,
+# input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
+bun as lyrics --audio input/examples/lyrics/01-example-song.wav
+
 # generate consensus artifacts for a previous STT or OCR run
 bun as report ./output/2026-04-17_episode
 
@@ -173,7 +181,7 @@ estimated and actual cost, and estimated and actual processing time.
 
 ## Command Surface
 
-AutoShow exposes 16 workflow/support commands, plus `help`, `version`, and the root shorthand.
+AutoShow exposes 17 workflow/support commands, plus `help`, `version`, and the root shorthand.
 
 | Command | Primary purpose | Typical input |
 |---------|-----------------|---------------|
@@ -188,6 +196,7 @@ AutoShow exposes 16 workflow/support commands, plus `help`, `version`, and the r
 | `image` | text-to-image | prompt |
 | `music` | text-to-music | prompt |
 | `video` | text-to-video | prompt |
+| `lyrics` | local lyric-video rendering | repo-local audio or edited captions |
 | `config` | inspect, reset, or persist defaults | none |
 | `cache` | prune or clear STT media cache | `prune` or `clear` |
 | `setup` | install runtimes and verify tools | none |
@@ -377,7 +386,7 @@ The same global `--config-path` override works on every command, not just `confi
 
 ### Pricing and budget enforcement
 
-All runnable commands perform preflight cost estimation.
+Hosted or mixed-provider runnable commands perform preflight cost estimation. `lyrics` is local-only and skips pricing preflight.
 
 Supported behaviors:
 
@@ -405,6 +414,7 @@ Important setup coverage includes:
 - local document OCR dependencies
 - Kitten TTS environment and default local model download
 - provider-specific setup hooks for supported STT, OCR, TTS, image, and music services
+- a `lyrics` setup step that verifies `ffmpeg`/`ffprobe`, ensures `whisper-cli`, and downloads `large-v3-turbo`
 - `bun as setup --doctor` checks for core tools, API keys, config presence, config validity, and the active Bun version
 
 There are also targeted setup substeps such as:
@@ -420,6 +430,7 @@ There are also targeted setup substeps such as:
 - `bun as setup --step write`
 - `bun as setup --step tts`
 - `bun as setup --step image`
+- `bun as setup --step lyrics`
 - `bun as setup --step sample`
 
 `setup` also supports `--force-redownload` for reinstalling artifacts and `--repeat <n>` for benchmark-oriented repeated setup runs.
@@ -449,6 +460,7 @@ Common output artifacts include:
 - generated image files
 - generated video files
 - generated music files
+- lyric-video outputs (`.mp4`, `.vtt`, `.srt`) for `lyrics`
 - `run.json`
 - `metadata.md` for `metadata --markdown --save`
 
@@ -462,6 +474,7 @@ Provider directories can additionally include:
 Batch runs additionally write:
 
 - `batch.json`
+- one child lyric run directory per discovered audio file for `lyrics --batch`
 
 Consensus report generation additionally writes artifacts such as:
 
