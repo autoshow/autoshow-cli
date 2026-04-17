@@ -29,7 +29,7 @@ test('elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'transcribe',
+    'stt',
     STABLE_LOCAL_AUDIO_PATH,
     '--elevenlabs-stt',
     'scribe_v2',

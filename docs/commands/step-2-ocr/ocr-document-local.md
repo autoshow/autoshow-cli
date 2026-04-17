@@ -1,6 +1,6 @@
 # ocr (local)
 
-Extract text from documents, images, and HTML articles with the local extraction paths exposed by `bun as ocr`. Alias: `extract`.
+Extract text from documents, images, and HTML articles with the local extraction paths exposed by `bun as ocr`.
 
 ## Outline
 

@@ -9,6 +9,7 @@ export const knownCommands = new Set<string>([
   'setup',
   'sample',
   'models',
+  'links',
   'report',
   'help',
   'version'
@@ -24,21 +25,17 @@ const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = new Set<string>([
   '--llama'
 ])
 
-const REMOVED_FLAG_MESSAGES: Record<string, string> = {
-  '--dry-run': 'The --dry-run flag was removed. Use --price for estimate-only mode.',
-  '--provider': 'The generic --provider flag was removed. Use provider-named flags such as --assemblyai-stt, --glm-ocr, or --openai.',
-  '--json-output': 'The --json-output flag was removed. Write output is JSON-only now.',
-  '--md-output': 'The --md-output flag was removed. Write output is JSON-only now.',
-  '--structured': 'The --structured flag was removed. Structured output is now internal and always JSON-only.',
-  '--no-structured': 'The --no-structured flag was removed. Structured output is now internal and always JSON-only.',
-  '--structured-strict': 'The --structured-strict flag was removed. Structured output mode is no longer configurable from the CLI.',
-  '--no-structured-strict': 'The --no-structured-strict flag was removed. Structured output mode is no longer configurable from the CLI.',
-  '--structured-compat-retries': 'The --structured-compat-retries flag was removed. Structured fallback retries are now internal only.'
-}
-
-export const normalizeKnownCommandName = (command: string): string | null => {
-  return knownCommands.has(command) ? command : null
-}
+const UNSUPPORTED_LEGACY_FLAGS = new Set<string>([
+  '--dry-run',
+  '--provider',
+  '--json-output',
+  '--md-output',
+  '--structured',
+  '--no-structured',
+  '--structured-strict',
+  '--no-structured-strict',
+  '--structured-compat-retries'
+])
 
 export const formatInput = (argv: string[]): string => {
   const redacted = redactCliArgv(argv)
@@ -46,7 +43,7 @@ export const formatInput = (argv: string[]): string => {
 }
 
 export const validateSttFlagCompatibility = (argv: string[]): void => {
-  validateRemovedLegacyFlags(argv)
+  validateUnsupportedLegacyFlags(argv)
 
   if (argv[0] !== 'stt') {
     return
@@ -58,16 +55,15 @@ export const validateSttFlagCompatibility = (argv: string[]): void => {
   }
 }
 
-const validateRemovedLegacyFlags = (argv: string[]): void => {
+const validateUnsupportedLegacyFlags = (argv: string[]): void => {
   for (const token of argv) {
     if (!token.startsWith('--')) {
       continue
     }
 
     const flag = token.includes('=') ? token.slice(0, token.indexOf('=')) : token
-    const message = REMOVED_FLAG_MESSAGES[flag]
-    if (message) {
-      throw CLIUsageError(message)
+    if (UNSUPPORTED_LEGACY_FLAGS.has(flag)) {
+      throw CLIUsageError(`Unknown option ${flag}`)
     }
   }
 }

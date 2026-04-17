@@ -3,7 +3,6 @@ import type { GlmOcrModel, MistralOcrModel } from '~/types'
 export type { GlmOcrModel, MistralOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
-  'mistral-ocr-latest',
   'mistral-ocr-2512'
 ] as const satisfies readonly string[]
 

@@ -1,7 +1,7 @@
 import { test, expect } from 'bun:test'
 import { runCommand, fileExists } from '../../../test-utils/test-helpers'
 
-// ─── Help and alias ──────────────────────────────────────────────────────────
+// ─── Help ────────────────────────────────────────────────────────────────────
 
 test('sample --help exits 0 and contains expected flags', async () => {
   const result = await runCommand(['src/cli/create-cli.ts', 'sample', '--help'])
@@ -11,13 +11,6 @@ test('sample --help exits 0 and contains expected flags', async () => {
   expect(result.stdout).toContain('--refresh')
   expect(result.stdout).toContain('--verify-only')
   expect(result.stdout).toContain('--valid-only')
-})
-
-test('samples alias resolves to sample (help exits 0)', async () => {
-  const result = await runCommand(['src/cli/create-cli.ts', 'samples', '--help'])
-
-  expect(result.exitCode).toBe(0)
-  expect(result.stdout).toContain('--out')
 })
 
 // ─── verify-only with no manifest ────────────────────────────────────────────

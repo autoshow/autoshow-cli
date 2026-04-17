@@ -112,7 +112,6 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
     command('transcribe-reverb', 'transcribe-reverb', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--reverb', '--reverb-verbatimicity', '0.5', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/assemblyai/', [
-    command('transcribe-assemblyai-universal-2', 'transcribe-assemblyai-universal-2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-2', '--price']),
     command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/gladia/', [
@@ -123,7 +122,6 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/soniox/', [
     command('transcribe-soniox-stt-async-v4', 'transcribe-soniox-stt-async-v4', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v4', '--price']),
-    command('transcribe-soniox-stt-async-v3', 'transcribe-soniox-stt-async-v3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v3', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/speechmatics/', [
     command('transcribe-speechmatics-standard', 'transcribe-speechmatics-standard', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--speechmatics-stt', 'standard', '--price']),
@@ -145,7 +143,6 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/mistral/', [
     command('transcribe-mistral-voxtral-mini-2602', 'transcribe-mistral-voxtral-mini-2602', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--mistral-stt', 'voxtral-mini-2602', '--price']),
-    command('transcribe-mistral-voxtral-mini-latest', 'transcribe-mistral-voxtral-mini-latest', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--mistral-stt', 'voxtral-mini-latest', '--price']),
   ]),
 
   ...prefix('test/test-cases/e2e/step-3-write-e2e/write-services/openai/', [
@@ -251,7 +248,6 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   ]),
 
   ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts', [
-    command('extract-mistral-mistral-ocr-latest', 'extract-mistral-mistral-ocr-latest', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-latest', '--price']),
     command('extract-mistral-mistral-ocr-2512', 'extract-mistral-mistral-ocr-2512', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2512', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts', [

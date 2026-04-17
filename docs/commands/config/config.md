@@ -76,10 +76,10 @@ Pass any provider, model, or generation flag to persist it as a default:
 
 ```bash
 bun as config --openai gpt-5.4
-bun as config --whisper large
+bun as config --whisper large-v3-turbo
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
 bun as config --batch-limit 20 --batch-order oldest
-bun as config --max-usd 1.00
+bun as config --max-cents 100
 ```
 
 Only flags that are explicitly typed on the command line are written. Flags with Clerc-supplied defaults that you did not type are not persisted.
@@ -95,7 +95,7 @@ bun as config --openai gpt-5.4 --whisper large
 ```
 
 ```bash
-bun as config --max-usd 0.50
+bun as config --max-cents 50
 ```
 
 ```bash
@@ -123,8 +123,8 @@ Full JSON shape of `config/autoshow.json`:
       "revStt": "machine",
       "speechmaticsStt": "enhanced",
       "openaiStt": "gpt-4o-transcribe-diarize",
-      "mistralStt": "voxtral-mini-latest",
-      "assemblyaiStt": "universal-2",
+      "mistralStt": "voxtral-mini-2602",
+      "assemblyaiStt": "universal-3-pro",
       "gladiaStt": "default",
       "speakerCount": 2,
       "split": false,
@@ -136,10 +136,7 @@ Full JSON shape of `config/autoshow.json`:
       "groq": "openai/gpt-oss-20b",
       "gemini": "gemini-3.1-flash-lite-preview",
       "anthropic": "claude-sonnet-4-6",
-      "minimax": "MiniMax-M2.5",
-      "structured": true,
-      "structuredStrict": true,
-      "structuredCompatRetries": 2
+      "minimax": "MiniMax-M2.5"
     },
     "post": {
       "tts": {
@@ -175,7 +172,7 @@ Full JSON shape of `config/autoshow.json`:
     "prompts": ["shortSummary", "chapters"]
   },
   "pricing": {
-    "maxUsd": 1.00
+    "maxCents": 100
   }
 }
 ```
@@ -294,7 +291,6 @@ Saved as `["shortSummary", "chapters"]` in `defaults.prompts`.
 | Field | Flag | Description |
 |-------|------|-------------|
 | `maxCents` | `--max-cents` | Hard budget limit in cents |
-| `maxUsd` | `--max-usd` | Hard budget limit in USD |
 
 ## Precedence
 
@@ -306,7 +302,7 @@ Only flags explicitly typed on the command line override config values. Flags th
 
 ## Always-on preflight
 
-Every runnable command (`download`, `transcribe`, `write`, `extract`, `tts`, `image`, `music`, `video`) runs a cost preflight automatically before executing. The estimate is logged to the console.
+Every runnable command (`download`, `stt`, `write`, `ocr`, `tts`, `image`, `music`, `video`) runs a cost preflight automatically before executing. The estimate is logged to the console.
 
 To show the estimate and exit without running the pipeline, pass `--price`:
 
@@ -316,10 +312,10 @@ bun as write input/audio.mp3 --price
 
 ## Budget enforcement
 
-Set `pricing.maxUsd` to hard-fail any command whose estimate exceeds the limit:
+Set `pricing.maxCents` to hard-fail any command whose estimate exceeds the limit:
 
 ```bash
-bun as config --max-usd 0.50
+bun as config --max-cents 50
 ```
 
 When the estimate exceeds the limit the command fails before execution:
@@ -424,10 +420,9 @@ Notable findings from the full pricing comparison:
 | `--show` | boolean | Print resolved config path and effective config |
 | `--reset` | boolean | Clear the config file |
 | `--config-path` | string | Path to config file (global, all commands) |
-| `--allow-over-budget` | boolean | Continue when estimate exceeds maxUsd (global, never persisted) |
+| `--allow-over-budget` | boolean | Continue when estimate exceeds the configured budget (global, never persisted) |
 | `--verbose` | boolean | Enable debug-level logging (global, overrides AUTOSHOW_LOG_LEVEL) |
 | `--quiet` / `-q` | boolean | Suppress all output except errors (global, overrides AUTOSHOW_LOG_LEVEL) |
 | `--json` | boolean | Output logs as JSON (global, overrides AUTOSHOW_LOG_FORMAT) |
 | `--max-cents` | number | Budget limit in cents |
-| `--max-usd` | number | Budget limit in USD |
 | All provider/model flags | string | Same surface as `write`, `tts`, `image`, `music`, `video` |

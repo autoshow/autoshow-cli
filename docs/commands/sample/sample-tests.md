@@ -19,7 +19,6 @@ bun t test/test-cases/smoke/sample/sample-command.test.ts
 
 Coverage (no tools required):
 - `sample --help` exits 0 and exposes expected flags (`--out`, `--refresh`, `--verify-only`, `--valid-only`)
-- `samples` alias resolves to `sample` (alias exits 0)
 - `sample --verify-only` with a nonexistent output directory fails with non-zero exit
 - `sample --verify-only` against the preflight-generated `input/samples` passes (skipped if preflight did not run)
 - `manifest.json` schema validation: `schemaVersion`, `generatedAt`, `fixtures[]`, `skipped[]`, `summary` fields

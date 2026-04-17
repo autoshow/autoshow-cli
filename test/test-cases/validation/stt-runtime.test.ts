@@ -12,6 +12,7 @@ import {
 } from '~/cli/commands/process-steps/process-stt'
 import type { SttTarget } from '~/types'
 import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { ensureSttTargetSetup } from '~/cli/commands/process-steps/step-2-stt/bootstrap'
 
 describe('STT runtime helpers', () => {
   test('skips command preflight when neither --price nor budget is active', () => {
@@ -26,7 +27,7 @@ describe('STT runtime helpers', () => {
       whisperModel: 'tiny',
       useReverb: false,
       elevenlabsSttModel: 'scribe_v2',
-      mistralSttModel: 'voxtral-mini-latest'
+      mistralSttModel: 'voxtral-mini-2602'
     } as RuntimeOptions)).toEqual([
       'Shared audio artifact(s)',
       'providers/<service>-<model>/transcription.txt',
@@ -40,7 +41,7 @@ describe('STT runtime helpers', () => {
     const estimate: AggregatedPriceEstimate = {
       totalEstimatedCost: 65,
       steps: [
-        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-latest', durationSeconds: 60, totalCost: 10, costMultiplier: 1 },
+        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-2602', durationSeconds: 60, totalCost: 10, costMultiplier: 1 },
         { step: 'video', provider: 'gemini', model: 'veo-3.1-fast-generate-preview', totalCost: 55, costMultiplier: 1 }
       ]
     }
@@ -48,7 +49,7 @@ describe('STT runtime helpers', () => {
     expect(filterSttPreflightEstimate(estimate)).toEqual({
       totalEstimatedCost: 10,
       steps: [
-        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-latest', durationSeconds: 60, totalCost: 10, costMultiplier: 1 }
+        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-2602', durationSeconds: 60, totalCost: 10, costMultiplier: 1 }
       ]
     })
   })
@@ -57,20 +58,20 @@ describe('STT runtime helpers', () => {
     expect(filterEstimatedSttCosts({
       totalCost: 65,
       steps: [
-        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-latest', cost: 10, costMultiplier: 1, durationSeconds: 60 },
+        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-2602', cost: 10, costMultiplier: 1, durationSeconds: 60 },
         { step: 'video', provider: 'gemini', model: 'veo-3.1-fast-generate-preview', cost: 55, costMultiplier: 1 }
       ]
     })).toEqual({
       totalCost: 10,
       steps: [
-        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-latest', cost: 10, costMultiplier: 1, durationSeconds: 60 }
+        { step: 'stt', provider: 'mistral', model: 'voxtral-mini-2602', cost: 10, costMultiplier: 1, durationSeconds: 60 }
       ]
     })
   })
 
   test('prioritizes AssemblyAI first among cloud STT targets and excludes local targets', () => {
     const targets: SttTarget[] = [
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false },
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false },
       { service: 'whisper', model: 'tiny', local: true },
       { service: 'elevenlabs', model: 'scribe_v2', local: false },
       { service: 'assemblyai', model: 'universal-3-pro', local: false }
@@ -93,10 +94,10 @@ describe('STT runtime helpers', () => {
     const selected = selectPrimaryPromptProvider([
       undefined,
       {
-        target: { service: 'mistral', model: 'voxtral-mini-latest', local: false },
+        target: { service: 'mistral', model: 'voxtral-mini-2602', local: false },
         metadata: {
           transcriptionService: 'mistral',
-          transcriptionModel: 'voxtral-mini-latest',
+          transcriptionModel: 'voxtral-mini-2602',
           processingTime: 123,
           tokenCount: 10
         },
@@ -127,10 +128,10 @@ describe('STT runtime helpers', () => {
   test('prefers a successful provider that honored the requested diarization hint for the root prompt', () => {
     const selected = selectPrimaryPromptProvider([
       {
-        target: { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+        target: { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } },
         metadata: {
           transcriptionService: 'mistral',
-          transcriptionModel: 'voxtral-mini-latest',
+          transcriptionModel: 'voxtral-mini-2602',
           processingTime: 123,
           tokenCount: 10
         },
@@ -284,5 +285,23 @@ describe('STT runtime helpers', () => {
       effective: 3,
       hostedProviderCount: 2
     })
+  })
+
+  test('Groq STT bootstrap no longer reports unsupported provider', async () => {
+    const hasGroqApiKey = typeof process.env.GROQ_API_KEY === 'string' && process.env.GROQ_API_KEY.length > 0
+
+    try {
+      await ensureSttTargetSetup({
+        service: 'groq',
+        model: 'whisper-large-v3'
+      })
+      expect(hasGroqApiKey).toBe(true)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      expect(message).not.toContain('Unsupported bootstrap provider')
+      if (!hasGroqApiKey) {
+        expect(message).toContain('GROQ_API_KEY environment variable is required for Groq STT models')
+      }
+    }
   })
 })

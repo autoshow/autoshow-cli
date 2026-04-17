@@ -1,8 +1,8 @@
 import { defineCommand } from 'clerc'
 import * as l from '~/logger'
-import { analyzeAndWriteOcrConsensusReports } from '~/cli/commands/process-steps/step-2-ocr/report'
-import { detectReportTarget } from './report-target-detection'
-import { analyzeAndWriteConsensusReports } from '~/cli/commands/process-steps/step-2-stt/report'
+import { analyzeAndWriteOcrConsensusReports } from '~/cli/commands/setup-and-utilities/report/ocr-consensus-report'
+import { detectReportTarget } from '~/cli/commands/setup-and-utilities/report/report-target-detection'
+import { analyzeAndWriteConsensusReports } from '~/cli/commands/setup-and-utilities/report/stt-consensus-report'
 import { CLIUsageError } from '~/utils/error-handler'
 
 const outputDirParameter = [{

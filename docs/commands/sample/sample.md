@@ -19,7 +19,6 @@ Generate and validate deterministic fixture files for all supported formats.
 
 ```bash
 bun as sample [flags]
-bun as samples [flags]   # alias
 ```
 
 ## Overview

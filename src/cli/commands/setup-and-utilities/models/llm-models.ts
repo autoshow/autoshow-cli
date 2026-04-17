@@ -16,17 +16,6 @@ export const SUPPORTED_GROQ_MODELS = [
   'openai/gpt-oss-120b'
 ] as const satisfies readonly string[]
 
-const GROQ_MODEL_ALIASES = {
-  'gpt-oss-20b': 'openai/gpt-oss-20b',
-  'gpt-oss-120b': 'openai/gpt-oss-120b'
-} as const satisfies Record<string, GroqModel>
-
-const normalizeGroqModel = (model: string): string => {
-  if (model === 'gpt-oss-20b') return GROQ_MODEL_ALIASES['gpt-oss-20b']
-  if (model === 'gpt-oss-120b') return GROQ_MODEL_ALIASES['gpt-oss-120b']
-  return model
-}
-
 export const SUPPORTED_GEMINI_MODELS = [
   'gemini-3.1-pro-preview',
   'gemini-3.1-flash-lite-preview',
@@ -59,7 +48,7 @@ const _validateOpenAI = createModelValidator(SUPPORTED_OPENAI_MODELS, 'openai')
 export const validateOpenAIModel = (model: string): string => _validateOpenAI(model)
 
 const _validateGroqRaw = createModelValidator<GroqModel>(SUPPORTED_GROQ_MODELS, 'groq')
-export const validateGroqModel = (model: string): GroqModel => _validateGroqRaw(normalizeGroqModel(model))
+export const validateGroqModel = (model: string): GroqModel => _validateGroqRaw(model)
 
 export const validateGeminiModel = createModelValidator(SUPPORTED_GEMINI_MODELS, 'gemini')
 export const validateAnthropicModel = createModelValidator<AnthropicModel>(SUPPORTED_ANTHROPIC_MODELS, 'anthropic')

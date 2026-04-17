@@ -17,7 +17,7 @@ Generate consensus report artifacts for existing STT or OCR run outputs.
 bun as report <outputDir>
 ```
 
-`report` takes one positional path and no report-specific flags in v1.
+`report` takes one positional path and no report-specific flags.
 
 The target can be:
 
@@ -100,15 +100,9 @@ bun as report output/2026-04-15_stt-batch
 bun as report output/2026-04-15_ocr-batch
 ```
 
-Legacy STT wrapper still works, but `bun as report` is the primary supported interface:
-
-```bash
-bun src/scripts/generate-stt-consensus-report.ts output/2026-04-15_episode
-```
-
 ## Notes
 
 - `report` has no public `stt` or `ocr` subcommands
-- `report` does not expose a public format flag in v1
+- `report` does not expose a public format flag
 - batch discovery only scans the immediate children of the supplied target directory
 - STT runs write transcript-focused consensus artifacts; OCR runs write extraction-focused consensus artifacts

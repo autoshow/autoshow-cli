@@ -36,6 +36,7 @@ import {
   validateGeminiVideoModel,
   validateMinimaxVideoModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { BatchOrder, BuildOptsDefaults, OutputFormat, RuntimeOptions } from '~/types'
 
@@ -86,6 +87,24 @@ const readOptionalStringFlag = (flags: Record<string, unknown>, key: string): st
   if (typeof value === 'string' && value.length > 0) {
     return value
   }
+  return undefined
+}
+
+const readOptionalModelFlag = (flags: Record<string, unknown>, key: string): string | undefined => {
+  const value = flags[key]
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.length > 0) {
+      return trimmed
+    }
+
+    return resolveCheapestModelForFlag(key)
+  }
+
+  if (value === true) {
+    return resolveCheapestModelForFlag(key)
+  }
+
   return undefined
 }
 
@@ -162,7 +181,7 @@ export const buildOptsFromFlags = (
     }
   }
   const readValidated = <T>(key: string, validator: (v: string) => T): T | undefined => {
-    const v = readOptionalStringFlag(mergedFlags, key)
+    const v = readOptionalModelFlag(mergedFlags, key)
     return v === undefined ? undefined : validateCliValue(validator, v)
   }
 
@@ -189,12 +208,12 @@ export const buildOptsFromFlags = (
   const anthropicModel = readValidated('anthropic', validateAnthropicModel)
   const minimaxModel = readValidated('minimax', validateMinimaxModel)
   const grokModel = readValidated('grok', validateGrokModel)
-  const kittenTtsModelFlag = readOptionalStringFlag(mergedFlags, 'kitten-tts')
-  const elevenlabsTtsModelFlag = readOptionalStringFlag(mergedFlags, 'elevenlabs-tts')
-  const minimaxTtsModelFlag = readOptionalStringFlag(mergedFlags, 'minimax-tts')
-  const groqTtsModelFlag = readOptionalStringFlag(mergedFlags, 'groq-tts')
-  const openaiTtsModelFlag = readOptionalStringFlag(mergedFlags, 'openai-tts')
-  const geminiTtsModelFlag = readOptionalStringFlag(mergedFlags, 'gemini-tts')
+  const kittenTtsModelFlag = readOptionalModelFlag(mergedFlags, 'kitten-tts')
+  const elevenlabsTtsModelFlag = readOptionalModelFlag(mergedFlags, 'elevenlabs-tts')
+  const minimaxTtsModelFlag = readOptionalModelFlag(mergedFlags, 'minimax-tts')
+  const groqTtsModelFlag = readOptionalModelFlag(mergedFlags, 'groq-tts')
+  const openaiTtsModelFlag = readOptionalModelFlag(mergedFlags, 'openai-tts')
+  const geminiTtsModelFlag = readOptionalModelFlag(mergedFlags, 'gemini-tts')
   const hasExplicitTtsEngine = [
     kittenTtsModelFlag,
     elevenlabsTtsModelFlag,

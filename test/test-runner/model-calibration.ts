@@ -1,7 +1,6 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { MODEL_CONFIG_PATHS } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import { parseDurationToSeconds } from '~/utils/pricing/compute-costs'
 import { getFiniteNumber } from './utils'
 
 type CalibrationKind = 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
@@ -58,14 +57,6 @@ const MAX_CHANGE_FACTOR = 0.5
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-
-const toRecordArray = (value: unknown): Record<string, unknown>[] => {
-  if (Array.isArray(value)) {
-    return value.filter(isRecord)
-  }
-  return isRecord(value) ? [value] : []
 }
 
 const normalizeLlmService = (service: string): string => {
@@ -258,130 +249,14 @@ const getTimingActualSteps = (metadata: Record<string, unknown>): Map<string, { 
 
   return out
 }
-
-const getLegacyTimingSteps = (metadata: Record<string, unknown>): Map<string, { processingTimeMs: number, unitValue: number | null }> => {
-  const out = new Map<string, { processingTimeMs: number, unitValue: number | null }>()
-  const step1 = isRecord(metadata['step1']) ? metadata['step1'] : null
-  const step2 = isRecord(metadata['step2']) ? metadata['step2'] : null
-  const step3Raw = metadata['step3']
-  const step4Entries = [
-    ...toRecordArray(metadata['step4']),
-    ...toRecordArray(metadata['tts'])
-  ]
-  const step5Entries = [
-    ...toRecordArray(metadata['step5']),
-    ...toRecordArray(metadata['image'])
-  ]
-  const step6 = isRecord(metadata['step6']) ? metadata['step6'] : isRecord(metadata['video']) ? metadata['video'] : null
-  const step7 = isRecord(metadata['step7']) ? metadata['step7'] : isRecord(metadata['music']) ? metadata['music'] : null
-
-  if (step2 && typeof step2['transcriptionService'] === 'string' && typeof step2['transcriptionModel'] === 'string') {
-    const service = step2['transcriptionService']
-    const model = typeof step2['transcriptionModel'] === 'string'
-      ? step2['transcriptionModel']
-      : step2['transcriptionModel']
-    const normalized = normalizeStepShape('stt', service, model)
-    const processingTimeMs = getFiniteNumber(step2['processingTime'])
-    const duration = step1 && typeof step1['duration'] === 'string'
-      ? parseDurationToSeconds(step1['duration'])
-      : null
-    if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: duration })
-    }
-  } else if (
-    step2
-    && typeof step2['ocrModel'] === 'string'
-    && (
-      typeof step2['ocrService'] === 'string'
-      || (typeof step2['extractionMethod'] === 'string' && (
-        String(step2['extractionMethod']).includes('mistral-ocr')
-        || String(step2['extractionMethod']).includes('glm-ocr')
-      ))
-    )
-  ) {
-    const extractService = typeof step2['ocrService'] === 'string'
-      ? step2['ocrService']
-      : String(step2['extractionMethod']).includes('glm-ocr')
-        ? 'glm'
-        : 'mistral'
-    const normalized = normalizeStepShape('extract', extractService, step2['ocrModel'])
-    const processingTimeMs = getFiniteNumber(step2['processingTime'])
-    const pageCount = getFiniteNumber(step2['totalPages'])
-    if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: pageCount })
-    }
-  }
-
-  const step3Array = Array.isArray(step3Raw)
-    ? step3Raw.filter(isRecord)
-    : isRecord(step3Raw)
-      ? [step3Raw]
-      : []
-
-  for (const step3 of step3Array) {
-    if (typeof step3['llmService'] !== 'string' || typeof step3['llmModel'] !== 'string') continue
-    const normalized = normalizeStepShape('llm', step3['llmService'], step3['llmModel'])
-    const processingTimeMs = getFiniteNumber(step3['processingTime'])
-    const tokenCount = (getFiniteNumber(step3['inputTokenCount']) ?? 0) + (getFiniteNumber(step3['outputTokenCount']) ?? 0)
-    if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: tokenCount > 0 ? tokenCount : null })
-    }
-  }
-
-  for (const step4 of step4Entries) {
-    if (typeof step4['ttsService'] !== 'string' || typeof step4['ttsModel'] !== 'string') {
-      continue
-    }
-    const normalized = normalizeStepShape('tts', step4['ttsService'], step4['ttsModel'])
-    const processingTimeMs = getFiniteNumber(step4['processingTime'])
-    if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: null })
-    }
-  }
-
-  for (const step5 of step5Entries) {
-    if (typeof step5['imageService'] !== 'string' || typeof step5['imageModel'] !== 'string') {
-      continue
-    }
-
-    const normalized = normalizeStepShape('image', step5['imageService'], step5['imageModel'])
-    const processingTimeMs = getFiniteNumber(step5['processingTime'])
-    const imageCount = normalizeUnitValue('image', 'images', getFiniteNumber(step5['imageCount']))
-    if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: imageCount })
-    }
-  }
-
-  if (step6 && typeof step6['videoGenService'] === 'string' && typeof step6['videoGenModel'] === 'string') {
-    const normalized = normalizeStepShape('video', step6['videoGenService'], step6['videoGenModel'])
-    const processingTimeMs = getFiniteNumber(step6['processingTime'])
-    const durationSeconds = normalizeUnitValue('video', 'durationSeconds', getFiniteNumber(step6['videoDuration']))
-    if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: durationSeconds })
-    }
-  }
-
-  if (step7 && typeof step7['musicService'] === 'string' && typeof step7['musicModel'] === 'string') {
-    const normalized = normalizeStepShape('music', step7['musicService'], step7['musicModel'])
-    const processingTimeMs = getFiniteNumber(step7['processingTime'])
-    const durationSeconds = normalizeUnitValue('music', 'durationMs', getFiniteNumber(step7['musicDurationMs']))
-    if (normalized && processingTimeMs !== null) {
-      out.set(buildStepKey(normalized), { processingTimeMs, unitValue: durationSeconds })
-    }
-  }
-
-  return out
-}
-
 const collectObservationsFromMetadata = (metadata: Record<string, unknown>): StepObservation[] => {
   const estimatedCostSteps = getEstimatedCostSteps(metadata)
   const actualCostSteps = getActualCostSteps(metadata)
   const timingSteps = getTimingActualSteps(metadata)
-  const legacyTimingSteps = timingSteps.size > 0 ? timingSteps : getLegacyTimingSteps(metadata)
   const keys = new Set<string>([
     ...estimatedCostSteps.keys(),
     ...actualCostSteps.keys(),
-    ...legacyTimingSteps.keys(),
+    ...timingSteps.keys(),
   ])
 
   const out: StepObservation[] = []
@@ -392,7 +267,7 @@ const collectObservationsFromMetadata = (metadata: Record<string, unknown>): Ste
 
     const estimatedCost = estimatedCostSteps.get(key)
     const actualCost = actualCostSteps.get(key)
-    const timing = legacyTimingSteps.get(key)
+    const timing = timingSteps.get(key)
     const normalized = normalizeStepShape(kind, service, model)
     if (!normalized) continue
 

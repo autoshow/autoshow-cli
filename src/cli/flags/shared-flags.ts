@@ -91,7 +91,7 @@ export const transcriptionFlags = {
     type: String
   },
   'groq-stt': {
-    description: `Groq Whisper STT model (API, billed): ${SUPPORTED_GROQ_STT_MODELS.join('|')}`,
+    description: buildModelDescription('Groq Whisper STT model (API, billed)', SUPPORTED_GROQ_STT_MODELS),
     type: String
   },
   'openai-stt': {
@@ -171,19 +171,19 @@ export const resumeMissingFlag = {
 
 export const llmProviderFlags = {
   llama: {
-    description: `llama.cpp model ID or Hugging Face repo ID (namespace/repo_name; ${SUPPORTED_LLAMA_MODELS.length} setup-managed defaults)`,
+    description: `llama.cpp model ID or Hugging Face repo ID (namespace/repo_name; omit value for the default local model, ${SUPPORTED_LLAMA_MODELS.length} setup-managed defaults)`,
     type: String
   },
   openai: {
-    description: 'OpenAI model: gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano',
+    description: 'OpenAI model (omit value for cheapest supported model): gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano',
     type: String
   },
   groq: {
-    description: `Groq model: ${SUPPORTED_GROQ_MODELS.join('|')}`,
+    description: `Groq model (omit value for cheapest supported model): ${SUPPORTED_GROQ_MODELS.join('|')}`,
     type: String
   },
   anthropic: {
-    description: 'Anthropic model: claude-sonnet-4-6|claude-opus-4-6|claude-haiku-4-5',
+    description: 'Anthropic model (omit value for cheapest supported model): claude-sonnet-4-6|claude-opus-4-6|claude-haiku-4-5',
     type: String
   },
   gemini: {
@@ -191,11 +191,11 @@ export const llmProviderFlags = {
     type: String
   },
   minimax: {
-    description: `MiniMax model: ${SUPPORTED_MINIMAX_MODELS.join('|')}`,
+    description: `MiniMax model (omit value for cheapest supported model): ${SUPPORTED_MINIMAX_MODELS.join('|')}`,
     type: String
   },
   grok: {
-    description: `Grok model: ${SUPPORTED_GROK_MODELS.join('|')}`,
+    description: `Grok model (omit value for cheapest supported model): ${SUPPORTED_GROK_MODELS.join('|')}`,
     type: String
   }
 } as const satisfies ClercFlagsDefinition

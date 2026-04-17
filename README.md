@@ -71,16 +71,9 @@ bun as links --openai
 High-value notes:
 
 - `bun as <input>` is shorthand for `bun as metadata <input>`.
-- `write` is the central orchestration command. It can summarize transcripts or extracted documents, write markdown or structured JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
+- `write` is the central orchestration command. It can summarize transcripts or extracted documents, write JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
 - `models` lets you pre-download local runtimes without running inference, for example `bun as models tiny` or `bun as models ggml-org/gemma-3-270m-it-GGUF`.
 - If YouTube starts blocking `yt-dlp`, follow [docs/cookies.md](./docs/cookies.md) to configure `YTDLP_COOKIES_FROM_BROWSER` or `YTDLP_COOKIES`.
-- `metadata` aliases: `meta`, `info`
-- `download` alias: `dl`
-- `stt` aliases: `transcribe`, `transcript`, `transcription`
-- `ocr` aliases: `extract`, `document`
-- `tts` alias: `voice`
-- `write` aliases: `llm`, `llms`
-- `sample` alias: `samples`
 
 ## Usage Basics
 

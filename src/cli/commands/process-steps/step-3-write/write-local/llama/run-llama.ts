@@ -136,26 +136,6 @@ export const parseLlamaServerIdentityFromModels = (raw: unknown): LlamaServerIde
     }
   }
 
-  const legacyModels = Array.isArray(candidate['models']) ? candidate['models'] : []
-  if (legacyModels.length > 0) {
-    sawLlamaCppSignature = true
-  }
-  for (const entry of legacyModels) {
-    if (!entry || typeof entry !== 'object') continue
-    const record = entry as Record<string, unknown>
-    const modelId = typeof record['model'] === 'string'
-      ? record['model'].trim()
-      : typeof record['name'] === 'string'
-        ? record['name'].trim()
-        : ''
-    if (modelId && primaryModelId === null) {
-      primaryModelId = modelId
-    }
-    if (modelId) {
-      aliases.push(modelId)
-    }
-  }
-
   const dedupedAliases = uniqueStrings(aliases)
   if (!sawLlamaCppSignature || dedupedAliases.length === 0) {
     return null

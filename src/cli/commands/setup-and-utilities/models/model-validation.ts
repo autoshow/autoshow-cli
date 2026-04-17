@@ -18,4 +18,4 @@ export const createModelValidator = <T extends string>(
   }
 
 export const buildModelDescription = (label: string, models: readonly string[]): string =>
-  `${label}: ${models.join('|')}`
+  `${label} (omit value for cheapest supported model): ${models.join('|')}`

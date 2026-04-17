@@ -25,7 +25,7 @@ describe('stt batch preflight', () => {
     const configPath = join(tempDir, 'autoshow.json')
 
     await writeFile(inputListPath, `${resolve('input/examples/audio/1-audio.mp3')}\n`)
-    await writeFile(configPath, JSON.stringify({ pricing: { maxCents: 0 } }, null, 2))
+    await writeFile(configPath, JSON.stringify({ version: 2, pricing: { maxCents: 0 } }, null, 2))
 
     const result = await runCommand([
       'src/cli/create-cli.ts',
@@ -52,7 +52,7 @@ describe('stt batch preflight', () => {
 
     await writeFile(notePath, '# not audio\n')
     await writeFile(inputListPath, `${resolve('input/examples/audio/1-audio.mp3')}\n${notePath}\n`)
-    await writeFile(configPath, JSON.stringify({}, null, 2))
+    await writeFile(configPath, JSON.stringify({ version: 2 }, null, 2))
 
     const result = await runCommand([
       'src/cli/create-cli.ts',

@@ -1,6 +1,6 @@
 # stt (services)
 
-Download audio and transcribe it with the hosted STT providers. Alias: `transcribe`.
+Download audio and transcribe it with the hosted STT providers.
 
 ## Outline
 
@@ -26,21 +26,25 @@ The input routing is the same as local `stt`: direct media URLs, streaming URLs,
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3`, `whisper-large-v3-turbo` |
 | ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
 | Deepgram | `--deepgram-stt <model>` | `nova-3` |
-| Soniox | `--soniox-stt <model>` | `stt-async-v4`, `stt-async-v3` |
+| Soniox | `--soniox-stt <model>` | `stt-async-v4` |
 | Speechmatics | `--speechmatics-stt <model>` | `standard`, `enhanced` |
 | Rev | `--rev-stt <model>` | `machine`, `low_cost` |
 | OpenAI | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
-| Mistral | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
-| AssemblyAI | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
+| Mistral | `--mistral-stt <model>` | `voxtral-mini-2602` |
+| AssemblyAI | `--assemblyai-stt <model>` | `universal-3-pro` |
 | Gladia | `--gladia-stt <model>` | `default` |
 
 You can combine multiple hosted STT provider flags in one execution. Each selected provider writes its own transcript and metadata under `providers/<service>-<model>/`.
+If you omit the model value after a hosted STT flag, the CLI now resolves that provider to its cheapest supported model.
 
 ## Examples
 
 ```bash
 # Groq
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
+
+# Groq bare flag defaults to the cheapest supported model: whisper-large-v3-turbo
+bun as stt input/examples/audio/1-audio.mp3 --groq-stt
 
 # ElevenLabs with diarization
 bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2
@@ -57,7 +61,7 @@ bun as stt input/examples/audio/1-audio.mp3 --soniox-stt stt-async-v4
 # Speechmatics with diarization always enabled
 bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt enhanced
 
-# Speechmatics bare flag defaults to enhanced
+# Speechmatics bare flag defaults to the cheapest supported model: standard
 bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt
 
 # Rev with diarization always enabled
@@ -66,7 +70,7 @@ bun as stt input/examples/audio/1-audio.mp3 --rev-stt machine
 # Rev Turbo with diarization always enabled
 bun as stt input/examples/audio/1-audio.mp3 --rev-stt low_cost
 
-# Rev bare flag defaults to machine
+# Rev bare flag defaults to the cheapest supported model: low_cost
 bun as stt input/examples/audio/1-audio.mp3 --rev-stt
 
 # OpenAI with known speaker references
@@ -78,10 +82,10 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 bun as stt input/examples/audio/1-audio.mp3 --mistral-stt voxtral-mini-2602
 
 # AssemblyAI with diarization
-bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2
+bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-3-pro
 
 # AssemblyAI with an optional speaker-count hint
-bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-2 --speaker-count 3
+bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-3-pro --speaker-count 3
 
 # Gladia with diarization
 bun as stt input/examples/audio/1-audio.mp3 --gladia-stt default
@@ -101,7 +105,7 @@ bun as stt input/ajc --batch-all \
   --speechmatics-stt enhanced \
   --assemblyai-stt universal-3-pro \
   --gladia-stt default \
-  --mistral-stt voxtral-mini-latest \
+  --mistral-stt voxtral-mini-2602 \
   --speaker-count 2
 
 # Resume only the missing provider outputs from an earlier batch
@@ -124,16 +128,16 @@ bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diari
 
 | Flag | Description |
 |------|-------------|
-| `--groq-stt <model>` | Select a Groq Whisper model |
-| `--elevenlabs-stt <model>` | Select the ElevenLabs STT model |
-| `--deepgram-stt <model>` | Select the Deepgram STT model |
-| `--soniox-stt <model>` | Select the Soniox STT model |
-| `--speechmatics-stt <model>` | Select the Speechmatics STT model |
-| `--rev-stt <model>` | Select the Rev STT model |
-| `--openai-stt <model>` | Select the OpenAI STT model |
-| `--mistral-stt <model>` | Select the Mistral STT model |
-| `--assemblyai-stt <model>` | Select the AssemblyAI STT model |
-| `--gladia-stt <model>` | Select the Gladia STT model |
+| `--groq-stt <model>` | Select a Groq Whisper model; omit the value to use the cheapest supported model |
+| `--elevenlabs-stt <model>` | Select the ElevenLabs STT model; omitting the value keeps `scribe_v2` |
+| `--deepgram-stt <model>` | Select the Deepgram STT model; omitting the value keeps `nova-3` |
+| `--soniox-stt <model>` | Select the Soniox STT model; omitting the value keeps `stt-async-v4` |
+| `--speechmatics-stt <model>` | Select the Speechmatics STT model; omit the value to use `standard` |
+| `--rev-stt <model>` | Select the Rev STT model; omit the value to use `low_cost` |
+| `--openai-stt <model>` | Select the OpenAI STT model; omitting the value keeps `gpt-4o-transcribe-diarize` |
+| `--mistral-stt <model>` | Select the Mistral STT model; omit the value to use `voxtral-mini-2602` |
+| `--assemblyai-stt <model>` | Select the AssemblyAI STT model; omit the value to use `universal-3-pro` |
+| `--gladia-stt <model>` | Select the Gladia STT model; omitting the value keeps `default` |
 | `--speaker-count <n>` | Speaker-count hint for providers that support it |
 | `--speaker-name <name...>` | OpenAI known speaker names. Repeat in the same order as `--speaker-reference` |
 | `--speaker-reference <path...>` | OpenAI known speaker reference clips or data URLs. Repeat in the same order as `--speaker-name` |

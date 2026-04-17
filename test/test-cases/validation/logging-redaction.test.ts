@@ -5,8 +5,9 @@ test('usage-error output redacts password flag values', async () => {
   const secret = 'supersecret-password-123'
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    '--help',
     'write',
+    '--openai',
+    'definitely-not-a-model',
     '--password',
     secret
   ])

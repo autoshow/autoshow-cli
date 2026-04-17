@@ -33,8 +33,8 @@ describe('batch summary helpers', () => {
     expect(formatBatchPartialFailureSummary([
       { service: 'soniox', model: 'stt-async-v4', message: 'bad schema' },
       { service: 'soniox', model: 'stt-async-v4', message: 'bad schema' },
-      { service: 'mistral', model: 'voxtral-mini-latest', message: '503' }
-    ])).toBe('Partial provider failures: mistral/voxtral-mini-latest x1, soniox/stt-async-v4 x2')
+      { service: 'mistral', model: 'voxtral-mini-2602', message: '503' }
+    ])).toBe('Partial provider failures: mistral/voxtral-mini-2602 x1, soniox/stt-async-v4 x2')
   })
 
   test('builds final STT batch summary lines grouped by item and provider status', () => {

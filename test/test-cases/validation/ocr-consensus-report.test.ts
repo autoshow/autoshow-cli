@@ -11,7 +11,7 @@ import {
 import {
   analyzeAndWriteOcrConsensusReports,
   analyzeOcrRunDirectory
-} from '~/utils/ocr-consensus-report'
+} from '~/cli/commands/setup-and-utilities/report/ocr-consensus-report'
 import { validateData } from '~/utils/validate/validation'
 import { runCommand } from '../../test-utils/test-helpers'
 import { writeProviderResultFixture, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
@@ -117,7 +117,7 @@ describe('ocr consensus report utilities', () => {
       const mistralMetadata = createMetadata({
         extractionMethod: 'mistral-ocr',
         ocrService: 'mistral',
-        ocrModel: 'mistral-ocr-latest',
+        ocrModel: 'mistral-ocr-2512',
         promptTokens: 200,
         completionTokens: 120
       })
@@ -133,7 +133,7 @@ describe('ocr consensus report utilities', () => {
       await Promise.all([
         writeOcrProviderArtifacts(
           runDir,
-          'mistral-mistral-ocr-latest',
+          'mistral-mistral-ocr-2512',
           mistralMetadata,
           createResult({
             text: 'Page 1\nAlpha beta gamma delta.\n\nPage 2\nSecond page clean text.',
@@ -165,11 +165,11 @@ describe('ocr consensus report utilities', () => {
           format: 'pdf'
         },
         step2: [
-          { ocrService: 'mistral', ocrModel: 'mistral-ocr-latest', processingTime: 1200, promptTokens: 200, completionTokens: 120 },
+          { ocrService: 'mistral', ocrModel: 'mistral-ocr-2512', processingTime: 1200, promptTokens: 200, completionTokens: 120 },
           { ocrService: 'glm', ocrModel: 'glm-4.5v', processingTime: 1400, promptTokens: 220, completionTokens: 80 }
         ],
         requestedProviders: [
-          { service: 'mistral', model: 'mistral-ocr-latest' },
+          { service: 'mistral', model: 'mistral-ocr-2512' },
           { service: 'glm', model: 'glm-4.5v' }
         ],
         completionStatus: 'full',
@@ -177,7 +177,7 @@ describe('ocr consensus report utilities', () => {
           actual: {
             totalCost: 31,
             steps: [
-              { provider: 'mistral', model: 'mistral-ocr-latest', cost: 15 },
+              { provider: 'mistral', model: 'mistral-ocr-2512', cost: 15 },
               { provider: 'glm', model: 'glm-4.5v', cost: 16 }
             ]
           }
@@ -186,7 +186,7 @@ describe('ocr consensus report utilities', () => {
           actual: {
             totalProcessingTimeMs: 2600,
             steps: [
-              { provider: 'mistral', model: 'mistral-ocr-latest', processingTimeMs: 1200 },
+              { provider: 'mistral', model: 'mistral-ocr-2512', processingTimeMs: 1200 },
               { provider: 'glm', model: 'glm-4.5v', processingTimeMs: 1400 }
             ]
           },
@@ -408,7 +408,7 @@ describe('ocr consensus report utilities', () => {
       ])
 
       expect(result.exitCode).toBeGreaterThan(0)
-      expect(result.stderr).toContain('Mixed report kinds are not supported')
+      expect(result.stderr).toContain('mixed STT and OCR artifacts')
     } finally {
       await rm(rootDir, { recursive: true, force: true })
     }

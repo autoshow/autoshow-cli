@@ -1,14 +1,32 @@
 import { test, expect } from 'bun:test'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { runCommand, STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
+import { loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
+import { buildConfigPatchFromFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { resolveCheapestModelForFlag, selectCheapestVideoSelection } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
+
+const expectPriceSelection = (
+  result: Awaited<ReturnType<typeof runCommand>>,
+  provider: string,
+  model: string
+): void => {
+  expect(result.exitCode).toBe(0)
+  const combined = `${result.stdout}\n${result.stderr}`
+  expect(combined).toContain(`"provider": "${provider}"`)
+  expect(combined).toContain(`"model": "${model}"`)
+}
 
 const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid whisper model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'whisper-large-v4'] },
   { label: 'CLI invalid ElevenLabs STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--elevenlabs-stt', 'scribe_v3'] },
   { label: 'CLI invalid Deepgram STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', 'nova-4'] },
   { label: 'CLI invalid Soniox STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v2'] },
+  { label: 'CLI removed Soniox STT compatibility model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v3'] },
   { label: 'CLI invalid Speechmatics STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', 'premium'] },
   { label: 'CLI invalid Rev STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'human'] },
   { label: 'CLI unsupported Rev STT fusion model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'fusion'] },
@@ -27,6 +45,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid anthropic model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--anthropic', 'not-a-real-anthropic-model'] },
   { label: 'CLI invalid MiniMax model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'not-a-real-minimax-model'] },
   { label: 'CLI invalid Grok model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--grok', 'not-a-real-grok-model'] },
+  { label: 'CLI removed Groq short model compatibility id exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--groq', 'gpt-oss-20b'] },
   { label: 'CLI invalid ElevenLabs TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--elevenlabs-tts', 'eleven_v4', '--elevenlabs-voice', 'voice_123'] },
   { label: 'CLI invalid MiniMax TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--minimax-tts', 'speech-3.0-hd'] },
   { label: 'CLI invalid Groq TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--groq-tts', 'canopylabs/orpheus-v2-english'] },
@@ -122,6 +141,18 @@ test('setup help includes calibre step', async () => {
   expect(result.stdout).toContain('calibre')
 })
 
+test('config help excludes legacy --max-usd and keeps --max-cents', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'config',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--max-cents')
+  expect(result.stdout).not.toContain('--max-usd')
+})
+
 test('metadata help includes markdown output flag', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -156,7 +187,7 @@ test('CLI bare Deepgram STT flag is accepted in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expectPriceSelection(result, 'deepgram', 'nova-3')
 })
 
 test('CLI bare Soniox STT flag is accepted in price mode', async () => {
@@ -168,7 +199,7 @@ test('CLI bare Soniox STT flag is accepted in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expectPriceSelection(result, 'soniox', 'stt-async-v4')
 })
 
 test('CLI bare Speechmatics STT flag is accepted in price mode', async () => {
@@ -180,7 +211,7 @@ test('CLI bare Speechmatics STT flag is accepted in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expectPriceSelection(result, 'speechmatics', 'standard')
 })
 
 test('CLI bare Gladia STT flag is accepted in price mode', async () => {
@@ -192,7 +223,7 @@ test('CLI bare Gladia STT flag is accepted in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expectPriceSelection(result, 'gladia', 'default')
 })
 
 test('CLI bare Rev STT flag is accepted in price mode', async () => {
@@ -204,7 +235,7 @@ test('CLI bare Rev STT flag is accepted in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expectPriceSelection(result, 'rev', 'low_cost')
 })
 
 test('CLI explicit Rev Turbo STT flag is accepted in price mode', async () => {
@@ -218,6 +249,78 @@ test('CLI explicit Rev Turbo STT flag is accepted in price mode', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
+})
+
+test('CLI bare Groq STT flag resolves to the cheapest model in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--groq-stt',
+    '--price'
+  ])
+
+  expectPriceSelection(result, 'groq', 'whisper-large-v3-turbo')
+})
+
+test('CLI bare Groq LLM flag resolves to the cheapest model in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--groq',
+    '--price'
+  ])
+
+  expectPriceSelection(result, 'groq', 'openai/gpt-oss-20b')
+})
+
+test('CLI bare OpenAI TTS flag resolves to the cheapest model in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    'input/examples/document/1-tts.md',
+    '--openai-tts',
+    '--price'
+  ])
+
+  expectPriceSelection(result, 'openai', 'gpt-4o-mini-tts')
+})
+
+test('CLI bare OpenAI image flag resolves to the cheapest model in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'image',
+    'a sunset',
+    '--openai-image',
+    '--price'
+  ])
+
+  expectPriceSelection(result, 'openai', 'gpt-image-1-mini')
+})
+
+test('CLI bare Mistral OCR flag resolves to the cheapest model in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'ocr',
+    'input/examples/document/1-document.pdf',
+    '--mistral-ocr',
+    '--price'
+  ])
+
+  expectPriceSelection(result, 'mistral', 'mistral-ocr-2512')
+})
+
+test('CLI bare Gemini video flag resolves to the cheapest model in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'video',
+    'a cinematic mountain sunrise',
+    '--gemini-video',
+    '--price'
+  ])
+
+  expectPriceSelection(result, 'gemini', 'veo-3.1-fast-generate-preview')
 })
 
 test('CLI custom llama Hugging Face repo ID is accepted in price mode', async () => {
@@ -294,12 +397,102 @@ test('buildOptsFromFlags maps --glm-ocr to glmOcrModel', () => {
   expect(opts.glmOcrModel).toBe('glm-ocr')
 })
 
+test('buildConfigPatchFromFlags resolves bare provider flags before writing config', () => {
+  expect(buildConfigPatchFromFlags({
+    'groq-stt': true,
+    'openai': true,
+    'openai-tts': true,
+    'openai-image': true,
+    'mistral-ocr': true,
+    'gemini-video': true
+  }, new Set(['groq-stt', 'openai', 'openai-tts', 'openai-image', 'mistral-ocr', 'gemini-video']))).toEqual({
+    version: 2,
+    defaults: {
+      stt: {
+        groqStt: 'whisper-large-v3-turbo'
+      },
+      llm: {
+        openai: 'gpt-5.4-nano'
+      },
+      post: {
+        tts: {
+          openaiTts: 'gpt-4o-mini-tts'
+        },
+        image: {
+          openaiImage: 'gpt-image-1-mini'
+        },
+        video: {
+          geminiVideo: 'veo-3.1-fast-generate-preview'
+        }
+      },
+      extract: {
+        mistralOcr: 'mistral-ocr-2512'
+      }
+    }
+  })
+})
+
 test('buildOptsFromFlags preserves custom llama Hugging Face repo IDs', () => {
   const opts = buildOptsFromFlags(false, {
     'llama': 'unsloth/Qwen3.5-0.8B-GGUF'
   })
 
   expect(opts.llamaModel).toBe('unsloth/Qwen3.5-0.8B-GGUF')
+})
+
+test('resolveCheapestModelForFlag uses current registry-driven cheapest selections', () => {
+  expect(resolveCheapestModelForFlag('groq-stt')).toBe('whisper-large-v3-turbo')
+  expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
+  expect(resolveCheapestModelForFlag('openai-tts')).toBe('gpt-4o-mini-tts')
+  expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1-mini')
+  expect(resolveCheapestModelForFlag('mistral-ocr')).toBe('mistral-ocr-2512')
+  expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-fast-generate-preview')
+  expect(resolveCheapestModelForFlag('minimax-video')).toBe('T2V-01')
+})
+
+test('selectCheapestVideoSelection preserves minimal-cost video defaults', () => {
+  expect(selectCheapestVideoSelection('gemini')).toEqual({
+    provider: 'gemini',
+    model: 'veo-3.1-fast-generate-preview',
+    duration: 4,
+    resolution: '720p',
+    totalCost: 55
+  })
+
+  expect(selectCheapestVideoSelection('minimax')).toEqual({
+    provider: 'minimax',
+    model: 'T2V-01',
+    duration: 6,
+    resolution: '720p',
+    totalCost: 19
+  })
+})
+
+test('buildOptsFromFlags resolves bare provider flags to cheapest models', () => {
+  const opts = buildOptsFromFlags(false, {
+    'groq-stt': true,
+    'openai': true,
+    'openai-tts': true,
+    'openai-image': true,
+    'mistral-ocr': true,
+    'gemini-video': true
+  })
+
+  expect(opts.groqSttModel).toBe('whisper-large-v3-turbo')
+  expect(opts.openaiModel).toBe('gpt-5.4-nano')
+  expect(opts.openaiTtsModel).toBe('gpt-4o-mini-tts')
+  expect(opts.openaiImageModel).toBe('gpt-image-1-mini')
+  expect(opts.mistralOcrModel).toBe('mistral-ocr-2512')
+  expect(opts.geminiVideoModel).toBe('veo-3.1-fast-generate-preview')
+})
+
+test('buildOptsFromFlags resolves bare OpenAI TTS to avoid kitten fallback', () => {
+  const opts = buildOptsFromFlags(true, {
+    'openai-tts': true
+  }, [], { defaultTtsEngine: 'kitten' })
+
+  expect(opts.openaiTtsModel).toBe('gpt-4o-mini-tts')
+  expect(opts.kittenTtsModel).toBeUndefined()
 })
 
 test('buildOptsFromFlags maps --soniox-stt to sonioxSttModel', () => {
@@ -362,6 +555,7 @@ test('write rejects removed --json-output flag', async () => {
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('--json-output')
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('was removed')
 })
 
 test('buildOptsFromFlags accepts --url-backend glm-reader', () => {
@@ -382,6 +576,7 @@ test('write rejects removed --md-output flag', async () => {
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('--md-output')
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('was removed')
 })
 
 test('buildOptsFromFlags maps repeated OpenAI speaker hint flags', () => {
@@ -417,11 +612,11 @@ test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
 test('collectSttTargets includes whisper only when explicitly requested alongside other providers', () => {
   const opts = buildOptsFromFlags(false, {
     whisper: 'base',
-    'assemblyai-stt': 'universal-2'
+    'assemblyai-stt': 'universal-3-pro'
   }, [], {}, new Set(['whisper', 'assemblyai-stt']))
 
   expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
-    'assemblyai:universal-2',
+    'assemblyai:universal-3-pro',
     'whisper:base'
   ])
 })
@@ -440,12 +635,12 @@ test('collectSttTargets deduplicates identical provider-specific specs', () => {
 test('collectExplicitOcrTargets collects canonical OCR provider flags', () => {
   const opts = buildOptsFromFlags(false, {
     'paddle-ocr': true,
-    'mistral-ocr': 'mistral-ocr-latest'
+    'mistral-ocr': 'mistral-ocr-2512'
   })
 
   expect(collectExplicitOcrTargets(opts)).toEqual([
     { service: 'paddle-ocr', model: 'paddle-ocr' },
-    { service: 'mistral', model: 'mistral-ocr-latest' }
+    { service: 'mistral', model: 'mistral-ocr-2512' }
   ])
 })
 
@@ -552,7 +747,7 @@ test('stt accepts multiple STT providers in price mode', async () => {
     '--elevenlabs-stt',
     'scribe_v2',
     '--assemblyai-stt',
-    'universal-2',
+    'universal-3-pro',
     '--price'
   ])
 
@@ -567,12 +762,13 @@ test('stt rejects removed generic --provider aliases', async () => {
     '--provider',
     'whisper:tiny',
     '--provider',
-    'assemblyai:universal-2',
+    'assemblyai:universal-3-pro',
     '--price'
   ])
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('--provider')
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('Use provider-named flags')
 })
 
 test('stt accepts Deepgram plus another STT provider in price mode', async () => {
@@ -583,7 +779,7 @@ test('stt accepts Deepgram plus another STT provider in price mode', async () =>
     '--deepgram-stt',
     'nova-3',
     '--assemblyai-stt',
-    'universal-2',
+    'universal-3-pro',
     '--price'
   ])
 
@@ -598,7 +794,7 @@ test('write accepts multiple STT providers in price mode', async () => {
     '--whisper',
     'tiny',
     '--assemblyai-stt',
-    'universal-2',
+    'universal-3-pro',
     '--price'
   ])
 
@@ -627,7 +823,7 @@ test('ocr accepts multiple OCR providers in price mode', async () => {
     'input/examples/document/1-document.pdf',
     '--paddle-ocr',
     '--mistral-ocr',
-    'mistral-ocr-latest',
+    'mistral-ocr-2512',
     '--glm-ocr',
     'glm-ocr',
     '--price'
@@ -650,6 +846,7 @@ test('ocr rejects removed generic --provider aliases', async () => {
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('--provider')
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('Use provider-named flags')
 })
 
 test('write accepts multiple OCR providers in price mode', async () => {
@@ -659,7 +856,7 @@ test('write accepts multiple OCR providers in price mode', async () => {
     'input/examples/document/1-document.pdf',
     '--paddle-ocr',
     '--mistral-ocr',
-    'mistral-ocr-latest',
+    'mistral-ocr-2512',
     '--glm-ocr',
     'glm-ocr',
     '--openai',
@@ -704,4 +901,23 @@ test('write rejects removed structured output flags', async () => {
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('--structured')
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('Structured output is now internal')
+})
+
+test('loadConfig rejects legacy pricing.maxUsd', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-config-legacy-'))
+  const configPath = join(tempDir, 'autoshow.json')
+
+  try {
+    await writeFile(configPath, JSON.stringify({
+      version: 2,
+      pricing: {
+        maxUsd: 1
+      }
+    }, null, 2))
+
+    await expect(loadConfig(configPath)).rejects.toThrow('autoshow config')
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
 })

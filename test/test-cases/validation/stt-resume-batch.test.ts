@@ -98,7 +98,7 @@ test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provi
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest'
+        transcriptionModel: 'voxtral-mini-2602'
       },
       {
         transcriptionService: 'soniox',
@@ -107,13 +107,13 @@ test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provi
     ],
     completionStatus: 'full',
     requestedProviders: [
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } },
       { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
     ],
     providerStates: [
       {
         service: 'mistral',
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         local: false,
         status: 'succeeded'
       },
@@ -132,18 +132,18 @@ test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provi
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest'
+        transcriptionModel: 'voxtral-mini-2602'
       }
     ],
     completionStatus: 'incomplete',
     requestedProviders: [
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } },
       { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
     ],
     providerStates: [
       {
         service: 'mistral',
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         local: false,
         status: 'succeeded'
       },
@@ -184,7 +184,7 @@ test('discoverLatestResumableSttBatchDir skips newer incompatible batches when p
     completionStatus: 'failed',
     requestedProviders: [
       { service: 'deepgram', model: 'nova-3', local: false, diarizationOptions: { enabled: true } },
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } }
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } }
     ],
     providerStates: [
       {
@@ -196,7 +196,7 @@ test('discoverLatestResumableSttBatchDir skips newer incompatible batches when p
       },
       {
         service: 'mistral',
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         local: false,
         status: 'missing',
         retryable: true
@@ -204,7 +204,7 @@ test('discoverLatestResumableSttBatchDir skips newer incompatible batches when p
     ],
     missingProviders: [
       { service: 'deepgram', model: 'nova-3', local: false, diarizationOptions: { enabled: true } },
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } }
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } }
     ]
   })
 
@@ -213,18 +213,18 @@ test('discoverLatestResumableSttBatchDir skips newer incompatible batches when p
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest'
+        transcriptionModel: 'voxtral-mini-2602'
       }
     ],
     completionStatus: 'incomplete',
     requestedProviders: [
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } },
       { service: 'rev', model: 'machine', local: false, diarizationOptions: { enabled: true } }
     ],
     providerStates: [
       {
         service: 'mistral',
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         local: false,
         status: 'succeeded'
       },
@@ -251,13 +251,13 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
   tempDirs.push(batchDir)
 
   const outputDir = join(batchDir, '2026-04-13_partial-item')
-  const mistralDir = join(outputDir, 'providers', 'mistral-voxtral-mini-latest')
+  const mistralDir = join(outputDir, 'providers', 'mistral-voxtral-mini-2602')
   await mkdir(mistralDir, { recursive: true })
 
   await Bun.write(join(mistralDir, 'transcription.txt'), '[00:00:00] [speaker-1] Existing Mistral transcript')
-  await writeProviderResultFixture(mistralDir, 'mistral', 'voxtral-mini-latest', {
+  await writeProviderResultFixture(mistralDir, 'mistral', 'voxtral-mini-2602', {
     transcriptionService: 'mistral',
-    transcriptionModel: 'voxtral-mini-latest',
+    transcriptionModel: 'voxtral-mini-2602',
     processingTime: 100,
     tokenCount: 3
   }, {
@@ -278,22 +278,22 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest',
+        transcriptionModel: 'voxtral-mini-2602',
         processingTime: 100,
         tokenCount: 3
       }
     ],
     completionStatus: 'incomplete',
     requestedProviders: [
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } },
       { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
     ],
     providerStates: [
       {
         service: 'mistral',
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         local: false,
-        artifactDir: 'providers/mistral-voxtral-mini-latest',
+        artifactDir: 'providers/mistral-voxtral-mini-2602',
         status: 'succeeded',
         attempts: 1
       },
@@ -415,15 +415,15 @@ test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before cr
   tempDirs.push(batchDir)
 
   const outputDir = join(batchDir, '2026-04-13_partial-runtime-item')
-  const mistralDir = join(outputDir, 'providers', 'mistral-voxtral-mini-latest')
+  const mistralDir = join(outputDir, 'providers', 'mistral-voxtral-mini-2602')
   const sonioxDir = join(outputDir, 'providers', 'soniox-stt-async-v4')
   await mkdir(mistralDir, { recursive: true })
   await mkdir(sonioxDir, { recursive: true })
 
   await Bun.write(join(mistralDir, 'transcription.txt'), '[00:00:00] [speaker-1] Existing Mistral transcript')
-  await writeProviderResultFixture(mistralDir, 'mistral', 'voxtral-mini-latest', {
+  await writeProviderResultFixture(mistralDir, 'mistral', 'voxtral-mini-2602', {
     transcriptionService: 'mistral',
-    transcriptionModel: 'voxtral-mini-latest',
+    transcriptionModel: 'voxtral-mini-2602',
     processingTime: 100,
     tokenCount: 3
   }, {
@@ -462,22 +462,22 @@ test('resumeSttMissingFromBatchDir reuses persisted Soniox remote jobs before cr
     step2: [
       {
         transcriptionService: 'mistral',
-        transcriptionModel: 'voxtral-mini-latest',
+        transcriptionModel: 'voxtral-mini-2602',
         processingTime: 100,
         tokenCount: 3
       }
     ],
     completionStatus: 'incomplete',
     requestedProviders: [
-      { service: 'mistral', model: 'voxtral-mini-latest', local: false, diarizationOptions: { enabled: true } },
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } },
       { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } }
     ],
     providerStates: [
       {
         service: 'mistral',
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         local: false,
-        artifactDir: 'providers/mistral-voxtral-mini-latest',
+        artifactDir: 'providers/mistral-voxtral-mini-2602',
         status: 'succeeded',
         attempts: 1
       },

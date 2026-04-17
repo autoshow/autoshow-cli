@@ -2,6 +2,7 @@ import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-st
 import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/deepgram'
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/elevenlabs'
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
+import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/groq/groq'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/rev'
@@ -68,6 +69,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'rev-stt': {
     ensure: async () => await ensureRevSttSetup()
+  },
+  'groq-stt': {
+    ensure: async () => await ensureGroqSttSetup()
   },
   'openai-stt': {
     ensure: async () => await ensureOpenAISttSetup()

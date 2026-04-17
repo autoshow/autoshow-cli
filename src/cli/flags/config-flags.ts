@@ -47,10 +47,6 @@ const pricingFlags = {
   'max-cents': {
     description: 'Budget limit in cents — commands exceeding this fail unless --allow-over-budget is set',
     type: String
-  },
-  'max-usd': {
-    description: 'Legacy budget limit in USD (converted to cents internally)',
-    type: String
   }
 } as const satisfies ClercFlagsDefinition
 

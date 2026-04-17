@@ -17,7 +17,7 @@ afterEach(async () => {
 test('processBatch counts incomplete STT items separately and preserves outputDir in batch.json', async () => {
   const batchLabel = `stt-batch-accounting-${Date.now()}`
   const opts = buildOptsFromFlags(false, {
-    'mistral-stt': 'voxtral-mini-latest'
+    'mistral-stt': 'voxtral-mini-2602'
   })
 
   const result = await processBatch(
@@ -36,15 +36,15 @@ test('processBatch counts incomplete STT items separately and preserves outputDi
         },
         completionStatus: 'incomplete',
         requestedProviders: [
-          { service: 'mistral', model: 'voxtral-mini-latest', local: false },
+          { service: 'mistral', model: 'voxtral-mini-2602', local: false },
           { service: 'soniox', model: 'stt-async-v4', local: false }
         ],
         providerStates: [
           {
             service: 'mistral',
-            model: 'voxtral-mini-latest',
+            model: 'voxtral-mini-2602',
             local: false,
-            artifactDir: 'providers/mistral-voxtral-mini-latest',
+            artifactDir: 'providers/mistral-voxtral-mini-2602',
             status: 'succeeded',
             attempts: 1
           },

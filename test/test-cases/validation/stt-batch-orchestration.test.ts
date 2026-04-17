@@ -215,7 +215,7 @@ const createCoordinatedProviderFetch = (): CoordinatedProviderFetch => {
     if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
       mistralCalls += 1
       return new Response(JSON.stringify({
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         text: `Mistral transcript ${mistralCalls}.`,
         language: null,
         usage: {},
@@ -324,7 +324,7 @@ const createAsyncCreateReleaseFetch = (): AsyncCreateReleaseFetch => {
     if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
       mistralCalls += 1
       return new Response(JSON.stringify({
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         text: `Mistral transcript ${mistralCalls}.`,
         language: null,
         usage: {},
@@ -467,7 +467,7 @@ test('runSttBatch blocks a permanently failing provider and marks later items as
   globalThis.fetch = fetchImpl
 
   const opts = buildOptsFromFlags(false, {
-    'mistral-stt': 'voxtral-mini-latest',
+    'mistral-stt': 'voxtral-mini-2602',
     'soniox-stt': 'stt-async-v4',
     'batch-concurrency': '2',
     'no-cache': true
@@ -521,7 +521,7 @@ test('runSttBatch uses free provider slots on later items instead of waiting beh
   const opts = buildOptsFromFlags(false, {
     'deepgram-stt': 'nova-3',
     'soniox-stt': 'stt-async-v4',
-    'mistral-stt': 'voxtral-mini-latest',
+    'mistral-stt': 'voxtral-mini-2602',
     'batch-concurrency': '2',
     'stt-provider-concurrency': '2',
     'no-cache': true
@@ -572,7 +572,7 @@ test('runSttBatch releases async create slots after remote job creation', async 
 
   const opts = buildOptsFromFlags(false, {
     'soniox-stt': 'stt-async-v4',
-    'mistral-stt': 'voxtral-mini-latest',
+    'mistral-stt': 'voxtral-mini-2602',
     'batch-concurrency': '3',
     'no-cache': true
   })
@@ -614,7 +614,7 @@ test('runSttBatch backfills retryable provider failures within the same invocati
     }
 
     return new Response(JSON.stringify({
-      model: 'voxtral-mini-latest',
+      model: 'voxtral-mini-2602',
       text: 'Recovered Mistral transcript.',
       language: null,
       usage: {},
@@ -635,7 +635,7 @@ test('runSttBatch backfills retryable provider failures within the same invocati
   ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async () => {}) as typeof Bun.sleep
 
   const opts = buildOptsFromFlags(false, {
-    'mistral-stt': 'voxtral-mini-latest',
+    'mistral-stt': 'voxtral-mini-2602',
     'soniox-stt': 'stt-async-v4',
     'batch-concurrency': '2',
     'no-cache': true
@@ -709,7 +709,7 @@ test('runSttBatch performs a single automatic backfill sweep for retryable async
     if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
       mistralCalls += 1
       return new Response(JSON.stringify({
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         text: `Mistral transcript ${mistralCalls}.`,
         language: null,
         usage: {},
@@ -733,7 +733,7 @@ test('runSttBatch performs a single automatic backfill sweep for retryable async
 
   const opts = buildOptsFromFlags(false, {
     'assemblyai-stt': 'universal-3-pro',
-    'mistral-stt': 'voxtral-mini-latest',
+    'mistral-stt': 'voxtral-mini-2602',
     'batch-concurrency': '2',
     'no-cache': true
   })

@@ -1,6 +1,6 @@
 # stt (local)
 
-Download audio and transcribe it with the local STT engines. Alias: `transcribe`.
+Download audio and transcribe it with the local STT engines.
 
 ## Outline
 

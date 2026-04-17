@@ -35,6 +35,11 @@ const serializeEvent = (event: Parameters<LogSink>[0]): string => {
 export const createJsonSink = (): LogSink => {
   return (event) => {
     const line = serializeEvent(event)
-    console.error(line)
+    if (event.level === 'warn' || event.level === 'error') {
+      console.error(line)
+      return
+    }
+
+    console.log(line)
   }
 }

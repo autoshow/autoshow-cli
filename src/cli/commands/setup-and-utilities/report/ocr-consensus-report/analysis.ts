@@ -1,152 +1,47 @@
-import { readdir, writeFile } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
 
-import {
-  ExtractionMetadataSchema,
-  ExtractionResultSchema,
-  type ExtractionMetadata,
-  type ExtractionResult,
-  type OcrTarget,
-  type PageResult
-} from '~/types'
 import {
   buildMissingTargetsFromEntry,
   getOcrTargetKey,
   parseStoredRequestedTargets,
-  readExistingOcrRun,
-  type OcrProviderState
+  readExistingOcrRun
 } from '~/cli/commands/process-steps/step-2-ocr/ocr-run-state'
-import { readProviderResultEntry, readRunManifest } from '../manifest-utils'
+import { readProviderResultEntry, readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import {
+  ExtractionMetadataSchema,
+  ExtractionResultSchema
+} from '~/types'
+import { average, clamp, getFiniteNumber, getString, isRecord } from '~/cli/commands/setup-and-utilities/report/report-internals/primitives'
+import {
+  computeWordSimilarity,
+  normalizeText,
+  tokenizeSurfaceWords,
+  tokenizeWords
+} from '~/cli/commands/setup-and-utilities/report/report-internals/text'
 import { validateData } from '~/utils/validate/validation'
-import { detectReportTarget } from '~/cli/commands/setup-and-utilities/report/report-target-detection'
 
-type OcrProviderArtifact = {
-  id: string
-  service: OcrTarget['service']
-  model: string
-  label: string
-  resultPath: string
-  metadata: ExtractionMetadata
-  result: ExtractionResult
-  actualCostCents: number | null
-  estimatedCostCents: number | null
-  actualProcessingTimeMs: number | null
-  estimatedProcessingTimeMs: number | null
-}
-
-type MissingOcrProviderSummary = {
-  providerId: string
-  label: string
-  status: OcrProviderState['status']
-  artifactDir: string
-  retryable: boolean
-  lastError: string | null
-}
-
-type OcrProviderVariant = {
-  providerId: string
-  label: string
-  text: string
-  similarity: number
-  confidence: number | null
-}
-
-export type OcrComparisonRow = {
-  id: string
-  pageNumber: number
-  windowIndex: number
-  consensusText: string
-  confidence: number
-  averageSimilarity: number
-  reviewReasons: string[]
-  variants: OcrProviderVariant[]
-}
-
-export type OcrProviderSummary = {
-  providerId: string
-  label: string
-  similarity: number
-  rowCoverage: number
-  pageCoverage: number
-  totalPages: number
-  tokenEstimate: number
-  promptTokens: number | null
-  completionTokens: number | null
-  actualCostCents: number | null
-  estimatedCostCents: number | null
-  actualProcessingTimeMs: number | null
-  estimatedProcessingTimeMs: number | null
-}
-
-export type OcrRunMetadataSummary = {
-  title: string | null
-  author: string | null
-  pageCount: number | null
-  format: string | null
-  completionStatus: string | null
-  actualTotalCostCents: number | null
-  estimatedTotalCostCents: number | null
-  actualTotalProcessingTimeMs: number | null
-  estimatedTotalProcessingTimeMs: number | null
-  wallTimeMs: number | null
-  requestedProviderKeys: string[]
-  producedProviderKeys: string[]
-}
-
-export type OcrRunConsensusAnalysis = {
-  runDir: string
-  runLabel: string
-  metadata: OcrRunMetadataSummary
-  providers: OcrProviderArtifact[]
-  missingProviders: MissingOcrProviderSummary[]
-  rows: OcrComparisonRow[]
-  reviewRows: OcrComparisonRow[]
-  providerSummary: OcrProviderSummary[]
-  consensusText: string
-  averageSimilarity: number
-  pageCountMismatch: boolean
-}
-
-type ProviderPageData = {
-  pageNumber: number
-  normalizedText: string
-  tokens: string[]
-  confidence: number | null
-  localWindows: Array<{ startRel: number, endRel: number }>
-}
+import type {
+  ExtractionMetadata,
+  MissingOcrProviderSummary,
+  OcrComparisonRow,
+  OcrProviderArtifact,
+  OcrProviderSummary,
+  OcrRunConsensusAnalysis,
+  OcrRunMetadataSummary,
+  OcrTarget,
+  PageResult,
+  ProviderPageData
+} from './types'
 
 const OCR_PROVIDER_PREFIXES: OcrTarget['service'][] = ['tesseract', 'paddle-ocr', 'ocrmypdf', 'mistral', 'glm']
-const WORD_PATTERN = /[A-Za-z0-9]+(?:[/'’-][A-Za-z0-9]+)*/g
 const SENTENCE_SPLIT_PATTERN = /(?<=[.!?])\s+(?=[^\s])/g
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const getString = (value: unknown): string | null =>
-  typeof value === 'string' && value.length > 0 ? value : null
-
-const getFiniteNumber = (value: unknown): number | null =>
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(max, Math.max(min, value))
-
-const average = (values: number[]): number =>
-  values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length
 
 const cleanSpacing = (text: string): string =>
   text
     .replace(/\s+([,.;:!?])/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')
     .trim()
-
-const normalizeText = (text: string): string =>
-  text
-    .normalize('NFKC')
-    .replace(/\r\n/g, '\n')
-    .replace(/[‘’]/g, '\'')
-    .replace(/[“”]/g, '"')
-    .replace(/[—–]/g, '-')
 
 const normalizePageText = (text: string): string =>
   normalizeText(text)
@@ -155,93 +50,6 @@ const normalizePageText = (text: string): string =>
     .filter(Boolean)
     .join('\n\n')
     .trim()
-
-const tokenizeWords = (text: string): string[] =>
-  [...normalizeText(text).matchAll(WORD_PATTERN)].map((match) => match[0].toLowerCase())
-
-const tokenizeSurfaceWords = (text: string): string[] =>
-  [...normalizeText(text).matchAll(WORD_PATTERN)].map((match) => match[0])
-
-const buildNgramCounts = (words: string[], size: number): Map<string, number> => {
-  const counts = new Map<string, number>()
-  if (words.length === 0) {
-    return counts
-  }
-
-  if (words.length < size) {
-    counts.set(words.join(' '), 1)
-    return counts
-  }
-
-  for (let index = 0; index <= words.length - size; index += 1) {
-    const gram = words.slice(index, index + size).join(' ')
-    counts.set(gram, (counts.get(gram) ?? 0) + 1)
-  }
-
-  return counts
-}
-
-const computeDiceCoefficient = (left: Map<string, number>, right: Map<string, number>): number => {
-  if (left.size === 0 && right.size === 0) {
-    return 1
-  }
-  if (left.size === 0 || right.size === 0) {
-    return 0
-  }
-
-  let overlap = 0
-  let leftTotal = 0
-  let rightTotal = 0
-
-  for (const value of left.values()) {
-    leftTotal += value
-  }
-  for (const value of right.values()) {
-    rightTotal += value
-  }
-
-  const [smaller, larger] = left.size <= right.size ? [left, right] : [right, left]
-  for (const [key, value] of smaller) {
-    overlap += Math.min(value, larger.get(key) ?? 0)
-  }
-
-  return (2 * overlap) / (leftTotal + rightTotal)
-}
-
-const computeWordSimilarity = (leftWords: string[], rightWords: string[]): number => {
-  if (leftWords.length === 0 && rightWords.length === 0) {
-    return 1
-  }
-  if (leftWords.length === 0 || rightWords.length === 0) {
-    return 0
-  }
-
-  const gramSize = Math.min(leftWords.length, rightWords.length) >= 2 ? 2 : 1
-  const gramScore = computeDiceCoefficient(
-    buildNgramCounts(leftWords, gramSize),
-    buildNgramCounts(rightWords, gramSize)
-  )
-  const lengthPenalty = 1 - Math.min(1, Math.abs(leftWords.length - rightWords.length) / Math.max(leftWords.length, rightWords.length))
-  return (gramScore * 0.8) + (lengthPenalty * 0.2)
-}
-
-const formatCents = (value: number | null): string =>
-  value === null ? 'n/a' : `$${(value / 100).toFixed(2)}`
-
-const formatDurationMs = (value: number | null): string => {
-  if (value === null) {
-    return 'n/a'
-  }
-
-  if (value < 1000) {
-    return `${Math.round(value)}ms`
-  }
-
-  const totalSeconds = Math.round(value / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
-}
 
 const normalizeConfidence = (value: number | null): number | null => {
   if (value === null) {
@@ -787,116 +595,6 @@ const buildProviderSummary = (
     })
     .sort((left, right) => right.similarity - left.similarity)
 
-const buildRunConsensusReportMarkdown = (analysis: OcrRunConsensusAnalysis): string => {
-  const lines: string[] = []
-  lines.push('# OCR Consensus Report')
-  lines.push('')
-  lines.push(`Source run: \`${analysis.runLabel}\``)
-  lines.push('')
-  lines.push('## Summary')
-  lines.push('')
-  lines.push(`- Title: ${analysis.metadata.title ?? 'n/a'}`)
-  lines.push(`- Author: ${analysis.metadata.author ?? 'n/a'}`)
-  lines.push(`- Format: ${analysis.metadata.format ?? 'n/a'}`)
-  lines.push(`- Completion status: ${analysis.metadata.completionStatus ?? 'n/a'}`)
-  lines.push(`- Providers analyzed: ${analysis.providers.length}`)
-  lines.push(`- Pages analyzed: ${new Set(analysis.rows.map((row) => row.pageNumber)).size}`)
-  lines.push(`- Windows analyzed: ${analysis.rows.length}`)
-  lines.push(`- Average similarity: ${analysis.averageSimilarity.toFixed(2)}/100`)
-  lines.push(`- Review rows: ${analysis.reviewRows.length}`)
-  lines.push(`- Missing providers: ${analysis.missingProviders.length === 0 ? 'none' : analysis.missingProviders.map((provider) => provider.label).join(', ')}`)
-  lines.push(`- Provider page counts differ: ${analysis.pageCountMismatch ? 'yes' : 'no'}`)
-  lines.push(`- Actual cost: ${formatCents(analysis.metadata.actualTotalCostCents)}`)
-  lines.push(`- Wall time: ${formatDurationMs(analysis.metadata.wallTimeMs)}`)
-  lines.push('')
-  lines.push('## Missing Providers')
-  lines.push('')
-
-  if (analysis.missingProviders.length === 0) {
-    lines.push('- No missing providers were recorded.')
-  } else {
-    lines.push('| Provider | Status | Retryable | Last Error |')
-    lines.push('|---|---|---|---|')
-    for (const provider of analysis.missingProviders) {
-      lines.push(`| ${provider.label} | ${provider.status} | ${provider.retryable ? 'yes' : 'no'} | ${provider.lastError ?? 'n/a'} |`)
-    }
-  }
-
-  lines.push('')
-  lines.push('## Providers')
-  lines.push('')
-  lines.push('| Provider | Similarity | Pages | Rows | Total Pages | Prompt Tokens | Completion Tokens | Actual Cost | Time |')
-  lines.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|')
-  for (const provider of analysis.providerSummary) {
-    lines.push(`| ${provider.label} | ${provider.similarity.toFixed(2)} | ${provider.pageCoverage} | ${provider.rowCoverage} | ${provider.totalPages} | ${provider.promptTokens ?? 0} | ${provider.completionTokens ?? 0} | ${formatCents(provider.actualCostCents)} | ${formatDurationMs(provider.actualProcessingTimeMs)} |`)
-  }
-
-  lines.push('')
-  lines.push('## Comparison')
-  lines.push('')
-
-  if (analysis.rows.length === 0) {
-    lines.push('- No comparison rows were generated from the available OCR artifacts.')
-  } else {
-    for (const row of analysis.rows) {
-      lines.push(`### Page ${row.pageNumber} / Window ${row.windowIndex}`)
-      lines.push('')
-      lines.push(`- Consensus: ${row.consensusText.length > 0 ? row.consensusText : '(empty)'}`)
-      lines.push(`- Confidence: ${row.confidence.toFixed(2)}/100`)
-      lines.push(`- Average similarity: ${row.averageSimilarity.toFixed(2)}/100`)
-      lines.push(`- Review: ${row.reviewReasons.length === 0 ? 'no' : row.reviewReasons.join('; ')}`)
-      for (const variant of row.variants) {
-        lines.push(`- ${variant.label}: ${variant.text.length > 0 ? variant.text : '(empty)'} (${variant.similarity.toFixed(2)}/100${variant.confidence !== null ? `, confidence ${variant.confidence.toFixed(2)}/100` : ''})`)
-      }
-      lines.push('')
-    }
-  }
-
-  lines.push('## Artifacts')
-  lines.push('')
-  lines.push('- `consensus-extraction.txt` is the merged best-guess extraction assembled page by page.')
-  lines.push('- `consensus-review.md` lists only flagged pages and windows.')
-  lines.push('- `consensus-report.json` contains the structured rows, provider summaries, and missing-provider state.')
-
-  return lines.join('\n')
-}
-
-const buildRunReviewMarkdown = (analysis: OcrRunConsensusAnalysis): string => {
-  const lines: string[] = []
-  lines.push('# OCR Consensus Review')
-  lines.push('')
-  lines.push(`Source run: \`${analysis.runLabel}\``)
-  lines.push('')
-
-  if (analysis.reviewRows.length === 0) {
-    lines.push('- No review rows were flagged.')
-    return lines.join('\n')
-  }
-
-  for (const row of analysis.reviewRows) {
-    lines.push(`## Page ${row.pageNumber} / Window ${row.windowIndex}`)
-    lines.push('')
-    lines.push(`- Consensus: ${row.consensusText.length > 0 ? row.consensusText : '(empty)'}`)
-    lines.push(`- Confidence: ${row.confidence.toFixed(2)}/100`)
-    lines.push(`- Reasons: ${row.reviewReasons.join('; ')}`)
-    lines.push('')
-  }
-
-  return lines.join('\n')
-}
-
-const toStructuredRunSummary = (analysis: OcrRunConsensusAnalysis): Record<string, unknown> => ({
-  runDir: analysis.runDir,
-  runLabel: analysis.runLabel,
-  metadata: analysis.metadata,
-  missingProviders: analysis.missingProviders,
-  rows: analysis.rows,
-  reviewRows: analysis.reviewRows,
-  providerSummary: analysis.providerSummary,
-  averageSimilarity: analysis.averageSimilarity,
-  pageCountMismatch: analysis.pageCountMismatch
-})
-
 export const analyzeOcrRunDirectory = async (runDir: string): Promise<OcrRunConsensusAnalysis> => {
   const resolvedRunDir = resolve(runDir)
   const rootMetadata = (await readRunManifest(resolvedRunDir, 'ocr'))?.metadata ?? null
@@ -1034,7 +732,7 @@ export const analyzeOcrRunDirectory = async (runDir: string): Promise<OcrRunCons
   const providerSummary = buildProviderSummary(providers, rows)
   const consensusText = formatConsensusRows(rows) || normalizePageText(providers[0]?.result.text ?? '')
   const reviewRows = rows.filter((row) => row.reviewReasons.length > 0)
-  const averageSimilarity = average(rows.map((row) => row.averageSimilarity))
+  const averageSimilarityValue = average(rows.map((row) => row.averageSimilarity))
 
   return {
     runDir: resolvedRunDir,
@@ -1046,96 +744,7 @@ export const analyzeOcrRunDirectory = async (runDir: string): Promise<OcrRunCons
     reviewRows,
     providerSummary,
     consensusText,
-    averageSimilarity,
+    averageSimilarity: averageSimilarityValue,
     pageCountMismatch
-  }
-}
-
-export const writeOcrRunConsensusArtifacts = async (analysis: OcrRunConsensusAnalysis): Promise<{
-  consensusPath: string
-  reportPath: string
-  jsonPath: string
-  reviewPath: string
-}> => {
-  const consensusPath = join(analysis.runDir, 'consensus-extraction.txt')
-  const reportPath = join(analysis.runDir, 'consensus-report.md')
-  const jsonPath = join(analysis.runDir, 'consensus-report.json')
-  const reviewPath = join(analysis.runDir, 'consensus-review.md')
-
-  await Promise.all([
-    writeFile(consensusPath, `${analysis.consensusText}\n`, 'utf8'),
-    writeFile(reportPath, `${buildRunConsensusReportMarkdown(analysis)}\n`, 'utf8'),
-    writeFile(jsonPath, `${JSON.stringify(toStructuredRunSummary(analysis), null, 2)}\n`, 'utf8'),
-    writeFile(reviewPath, `${buildRunReviewMarkdown(analysis)}\n`, 'utf8')
-  ])
-
-  return { consensusPath, reportPath, jsonPath, reviewPath }
-}
-
-export const buildAggregateOcrConsensusReportMarkdown = (
-  targetDir: string,
-  analyses: OcrRunConsensusAnalysis[]
-): string => {
-  const lines: string[] = []
-  lines.push('# OCR Consensus Batch Report')
-  lines.push('')
-  lines.push(`Target directory: \`${targetDir}\``)
-  lines.push('')
-  lines.push('## Runs')
-  lines.push('')
-  lines.push('| Run | Providers | Pages | Windows | Review Rows | Best Similarity | Missing Providers | Actual Cost | Wall Time |')
-  lines.push('|---|---:|---:|---:|---:|---:|---|---:|---:|')
-
-  for (const analysis of analyses) {
-    const bestProvider = analysis.providerSummary[0]
-    lines.push(`| ${analysis.runLabel} | ${analysis.providers.length} | ${new Set(analysis.rows.map((row) => row.pageNumber)).size} | ${analysis.rows.length} | ${analysis.reviewRows.length} | ${bestProvider ? bestProvider.similarity.toFixed(2) : 'n/a'} | ${analysis.missingProviders.length === 0 ? 'none' : analysis.missingProviders.map((provider) => provider.label).join(', ')} | ${formatCents(analysis.metadata.actualTotalCostCents)} | ${formatDurationMs(analysis.metadata.wallTimeMs)} |`)
-  }
-
-  lines.push('')
-  lines.push('Each run directory also contains `consensus-extraction.txt`, `consensus-report.md`, `consensus-review.md`, and `consensus-report.json`.')
-  return lines.join('\n')
-}
-
-export const analyzeAndWriteOcrConsensusReports = async (targetPath: string): Promise<{
-  targetDir: string
-  runArtifacts: Array<{
-    runDir: string
-    consensusPath: string
-    reportPath: string
-    jsonPath: string
-    reviewPath: string
-  }>
-  aggregateReportPath: string | null
-}> => {
-  const detectedTarget = await detectReportTarget(targetPath)
-  if (detectedTarget.kind !== 'ocr') {
-    throw new Error(`Report target resolves to ${detectedTarget.kind.toUpperCase()} artifacts, not OCR: ${detectedTarget.targetDir}`)
-  }
-
-  const analyses = await Promise.all(detectedTarget.runDirectories.map((runDir) => analyzeOcrRunDirectory(runDir)))
-  const runArtifacts = await Promise.all(analyses.map(async (analysis) => ({
-    runDir: analysis.runDir,
-    ...(await writeOcrRunConsensusArtifacts(analysis))
-  })))
-
-  if (detectedTarget.runDirectories.length === 1) {
-    return {
-      targetDir: detectedTarget.targetDir,
-      runArtifacts,
-      aggregateReportPath: null
-    }
-  }
-
-  const aggregateReportPath = join(detectedTarget.targetDir, 'consensus-report.md')
-  await writeFile(
-    aggregateReportPath,
-    `${buildAggregateOcrConsensusReportMarkdown(detectedTarget.targetDir, analyses)}\n`,
-    'utf8'
-  )
-
-  return {
-    targetDir: detectedTarget.targetDir,
-    runArtifacts,
-    aggregateReportPath
   }
 }

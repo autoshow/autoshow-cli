@@ -1,6 +1,9 @@
 import { AutoshowConfigSchema, type AutoshowConfig } from '~/types'
 import { validateData } from '~/utils/validate/validation'
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
 const findProjectRoot = async (startDir: string): Promise<string> => {
   let dir = startDir
   while (true) {
@@ -46,8 +49,12 @@ export const loadConfig = async (configPath: string): Promise<AutoshowConfig> =>
     throw new Error(`Invalid JSON in autoshow config at ${configPath}`)
   }
 
+  if (isRecord(parsed) && isRecord(parsed['pricing']) && 'maxUsd' in parsed['pricing']) {
+    throw new Error('Invalid data structure for autoshow config: pricing.maxUsd is no longer supported. Use pricing.maxCents.')
+  }
+
   return validateData(AutoshowConfigSchema, parsed, 'autoshow config')
 }
 
 export const resolveMaxCents = (pricing: AutoshowConfig['pricing']): number | undefined =>
-  pricing?.maxCents ?? (pricing?.maxUsd !== undefined ? pricing.maxUsd * 100 : undefined)
+  pricing?.maxCents

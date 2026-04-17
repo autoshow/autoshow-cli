@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 const PricingConfigSchema = v.object({
-  maxCents: v.optional(v.pipe(v.number(), v.minValue(0)), undefined),
-  maxUsd: v.optional(v.pipe(v.number(), v.minValue(0)), undefined)
+  maxCents: v.optional(v.pipe(v.number(), v.minValue(0)), undefined)
 })
 
 const SttDefaultsSchema = v.object({

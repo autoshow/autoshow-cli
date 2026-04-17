@@ -109,7 +109,7 @@ describe('processStt partial failure diagnostics', () => {
 
       if (url === 'https://mistral.test/v1/audio/transcriptions' && method === 'POST') {
         return new Response(JSON.stringify({
-          model: 'voxtral-mini-latest',
+          model: 'voxtral-mini-2602',
           text: 'Hello from Mistral',
           language: null,
           usage: {},
@@ -131,7 +131,7 @@ describe('processStt partial failure diagnostics', () => {
     }) as unknown as typeof fetch
 
     const opts = buildOptsFromFlags(false, {
-      'mistral-stt': 'voxtral-mini-latest',
+      'mistral-stt': 'voxtral-mini-2602',
       'soniox-stt': 'stt-async-v4',
       'no-cache': true
     })
@@ -187,7 +187,7 @@ describe('processStt partial failure diagnostics', () => {
     expect(metadata.providerStates).toEqual(expect.arrayContaining([
       expect.objectContaining({
         service: 'mistral',
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         status: 'succeeded'
       }),
       expect.objectContaining({

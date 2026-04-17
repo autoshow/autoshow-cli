@@ -1,4 +1,5 @@
 import type { AutoshowConfig } from '~/types'
+import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 
 const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'openai-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax'] as const
@@ -211,7 +212,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'batch-order':       ['defaults', 'batch', 'order'],
   'batch-concurrency': ['defaults', 'batch', 'concurrency'],
   'max-cents':         ['pricing', 'maxCents'],
-  'max-usd':           ['pricing', 'maxUsd']
 }
 
 const RUNTIME_ONLY_FLAGS = new Set(['price', 'allow-over-budget', 'show', 'reset', 'config-path'])
@@ -234,7 +234,7 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
   const numericFlags = new Set([
     'speaker-count', 'reverb-verbatimicity', 'imagen-count', 'video-duration',
     'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'batch-limit', 'batch-concurrency',
-    'max-cents', 'max-usd',
+    'max-cents',
     'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency'
   ])
   if (numericFlags.has(flagName)) {
@@ -242,6 +242,17 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
     return Number.isFinite(n) ? n : rawValue
   }
   return rawValue
+}
+
+const resolveConfigFlagValue = (flagName: string, rawValue: unknown): unknown => {
+  if (rawValue === true || rawValue === '') {
+    const cheapestModel = resolveCheapestModelForFlag(flagName)
+    if (cheapestModel !== undefined) {
+      return cheapestModel
+    }
+  }
+
+  return parseConfigValue(flagName, rawValue)
 }
 
 export const buildConfigPatchFromFlags = (
@@ -256,7 +267,7 @@ export const buildConfigPatchFromFlags = (
     if (!configPath) continue
     const rawValue = flags[flagName]
     if (rawValue === undefined) continue
-    const value = parseConfigValue(flagName, rawValue)
+    const value = resolveConfigFlagValue(flagName, rawValue)
     setNestedValue(patch, configPath, value)
   }
 

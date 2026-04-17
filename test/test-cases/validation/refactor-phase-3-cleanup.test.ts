@@ -6,16 +6,24 @@ const DELETED_PRIVATE_MODULES = [
   'src/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner.ts',
   'src/cli/commands/process-steps/step-2-stt/stt-batch/resume-stt-batch.ts',
   'src/cli/commands/process-steps/step-2-ocr/resume-ocr-batch.ts',
-  'src/cli/commands/setup-and-utilities/report/stt-consensus-report.ts',
-  'src/cli/commands/setup-and-utilities/report/ocr-consensus-report.ts'
+  'src/cli/commands/process-steps/step-2-stt/report.ts',
+  'src/cli/commands/process-steps/step-2-ocr/report.ts',
+  'src/utils/stt-consensus-report/index.ts',
+  'src/utils/ocr-consensus-report/index.ts',
+  'src/utils/report-target-detection/index.ts',
+  'src/utils/report-internals/primitives.ts'
 ] as const
 
 const FORBIDDEN_IMPORT_FRAGMENTS = [
   'step-2-stt/stt-utils/async-stt-job-runner',
   'step-2-stt/stt-batch/resume-stt-batch',
   'step-2-ocr/resume-ocr-batch',
-  'setup-and-utilities/report/stt-consensus-report',
-  'setup-and-utilities/report/ocr-consensus-report'
+  'step-2-stt/report',
+  'step-2-ocr/report',
+  'utils/stt-consensus-report',
+  'utils/ocr-consensus-report',
+  'utils/report-target-detection',
+  'utils/report-internals'
 ] as const
 
 const collectSourceFiles = async (root: string): Promise<string[]> => {

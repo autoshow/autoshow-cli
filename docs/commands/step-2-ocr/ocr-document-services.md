@@ -1,6 +1,6 @@
 # ocr (services)
 
-Extract text with the hosted extraction paths exposed by `bun as ocr`: Mistral OCR, GLM OCR, Firecrawl article extraction, and GLM Reader article extraction. Alias: `extract`.
+Extract text with the hosted extraction paths exposed by `bun as ocr`: Mistral OCR, GLM OCR, Firecrawl article extraction, and GLM Reader article extraction.
 
 ## Outline
 
@@ -56,7 +56,6 @@ Rules:
 | CSV | raw text; OCR flag is ignored with a warning |
 
 Current Mistral OCR models:
-- `mistral-ocr-latest`
 - `mistral-ocr-2512`
 
 ## GLM OCR Routing
@@ -103,11 +102,11 @@ AUTOSHOW_URL_BACKEND=glm-reader
 ## Examples
 
 ```bash
-bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-latest
+bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
 bun as ocr input/examples/document/1-document.jpg --mistral-ocr mistral-ocr-2512
 bun as ocr input/examples/document/1-epub.epub --mistral-ocr mistral-ocr-2512
-bun as ocr input/examples/document/1-docx.docx --mistral-ocr mistral-ocr-latest
-bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-latest --price
+bun as ocr input/examples/document/1-docx.docx --mistral-ocr mistral-ocr-2512
+bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512 --price
 
 bun as ocr input/examples/document/1-document.pdf --glm-ocr glm-ocr
 bun as ocr input/examples/document/1-document.jpg --glm-ocr glm-ocr

@@ -19,8 +19,7 @@ export const SUPPORTED_DEEPGRAM_STT_MODELS = [
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_SONIOX_STT_MODELS = [
-  'stt-async-v4',
-  'stt-async-v3'
+  'stt-async-v4'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_SPEECHMATICS_STT_MODELS = [
@@ -43,12 +42,10 @@ export const SUPPORTED_OPENAI_STT_MODELS = [
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_MISTRAL_STT_MODELS = [
-  'voxtral-mini-latest',
   'voxtral-mini-2602'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_ASSEMBLYAI_STT_MODELS = [
-  'universal-2',
   'universal-3-pro'
 ] as const satisfies readonly string[]
 

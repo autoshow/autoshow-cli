@@ -1,6 +1,6 @@
 # Service Tests: OCR
 
-Hosted OCR coverage for the `ocr` command and its `extract` alias.
+Hosted OCR coverage for the `ocr` command.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ bun t \
 
 ## Current Coverage
 
-- `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts` covers PDF and image extraction with `mistral-ocr-latest` and `mistral-ocr-2512`.
+- `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts` covers PDF and image extraction with `mistral-ocr-2512`.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts` covers PDF and image extraction with `--glm-ocr glm-ocr`.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts` covers remote article extraction with `--url-backend firecrawl`.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts` covers remote article extraction with `--url-backend glm-reader`.

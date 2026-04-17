@@ -300,7 +300,7 @@ describe('HTML article inputs', () => {
       const articleUrl = `http://127.0.0.1:${address.port}/article`
       const opts = buildOptsFromFlags(false, {
         openai: 'gpt-5.4',
-        'mistral-ocr': 'mistral-ocr-latest',
+        'mistral-ocr': 'mistral-ocr-2512',
         'url-backend': 'defuddle'
       }, [], {}, new Set(['openai', 'mistral-ocr', 'url-backend']))
 
@@ -310,12 +310,12 @@ describe('HTML article inputs', () => {
       expect(estimate.steps.some((step) => step.step === 'stt')).toBe(false)
       expect(estimate.steps.some((step) => step.step === 'extract')).toBe(false)
       expect(estimate.notes).toContain('OCR flags are ignored for HTML/article inputs.')
-      expect(expectedFiles).toEqual([
-        'Extracted text',
-        'text.json',
-        'prompt.md',
-        'run.json'
-      ])
+      expect(expectedFiles).toContain('result.json')
+      expect(expectedFiles).toContain('text.json')
+      expect(expectedFiles).toContain('prompt.md')
+      expect(expectedFiles).toContain('run.json')
+      expect(expectedFiles).not.toContain('Audio file')
+      expect(expectedFiles).not.toContain('transcription.txt')
     } finally {
       await stopServer(server)
     }

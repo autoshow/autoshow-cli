@@ -8,6 +8,7 @@ import { runCommand } from '../../test-utils/test-helpers'
 import { readBatchItems } from '../../test-utils/manifest-helpers'
 
 const cleanupPaths = new Set<string>()
+const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
 afterEach(async () => {
   for (const path of cleanupPaths) {
@@ -17,7 +18,7 @@ afterEach(async () => {
 })
 
 const parseBatchDir = (output: string): string => {
-  const match = output.match(/Output directory:\s*([^\n\r]+)/)
+  const match = stripAnsi(output).match(/Output directory:\s*([^\n\r]+)/)
   if (!match || !match[1]) {
     throw new Error(`Could not find batch output directory in command output:\n${output}`)
   }
@@ -63,7 +64,7 @@ const startOcrResumeServer = async () => {
             dimensions: null
           }
         ],
-        model: 'mistral-ocr-latest',
+        model: 'mistral-ocr-2512',
         usage_info: {
           pages_processed: 1,
           doc_size_bytes: pdfBytes.length
@@ -163,7 +164,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
       inputListPath,
       '--batch-all',
       '--mistral-ocr',
-      'mistral-ocr-latest',
+      'mistral-ocr-2512',
       '--glm-ocr',
       'glm-ocr'
     ], {
@@ -180,7 +181,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     expect(initialEntry['completionStatus']).toBe('incomplete')
     expect(initialEntry['source']).toEqual({ filePath: pdfPath })
     expect(initialEntry['requestedProviders']).toEqual([
-      { service: 'mistral', model: 'mistral-ocr-latest' },
+      { service: 'mistral', model: 'mistral-ocr-2512' },
       { service: 'glm', model: 'glm-ocr' }
     ])
     expect(initialEntry['missingProviders']).toEqual([
@@ -243,7 +244,7 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
       inputListPath,
       '--batch-all',
       '--mistral-ocr',
-      'mistral-ocr-latest',
+      'mistral-ocr-2512',
       '--glm-ocr',
       'glm-ocr'
     ], {

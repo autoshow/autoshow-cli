@@ -67,14 +67,14 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 ## Command Map
 
 - `(root)` shorthand: `bun as <input>` = `bun as metadata <input>`
-- `metadata` (aliases: `meta`, `info`): [metadata](./commands/metadata/metadata.md)
+- `metadata`: [metadata](./commands/metadata/metadata.md)
 - `setup` / model pre-downloads: [setup](./commands/step-0-setup/setup.md)
 - `sample`: [sample](./commands/sample/sample.md)
 - `models`: download a Whisper or llama.cpp model without running inference (`bun as models <model>`)
 - `cache`: manage the persistent STT media cache (`bun as cache prune` / `bun as cache clear`)
 - `download`: [download](./commands/step-1-download/download-file.md)
-- `ocr` (aliases: `extract`, `document`): [local](./commands/step-2-ocr/ocr-document-local.md) | [services](./commands/step-2-ocr/ocr-document-services.md) | [setup](./commands/step-2-ocr/ocr-document-local.md#setup)
-- `stt` (alias: `transcribe`): [local](./commands/step-2-stt/stt-audio-local.md) | [services](./commands/step-2-stt/stt-audio-services.md) | [setup](./commands/step-2-stt/stt-audio-local.md#setup)
+- `ocr`: [local](./commands/step-2-ocr/ocr-document-local.md) | [services](./commands/step-2-ocr/ocr-document-services.md) | [setup](./commands/step-2-ocr/ocr-document-local.md#setup)
+- `stt`: [local](./commands/step-2-stt/stt-audio-local.md) | [services](./commands/step-2-stt/stt-audio-services.md) | [setup](./commands/step-2-stt/stt-audio-local.md#setup)
 - `report`: [report](./commands/report/report.md)
 - `write`: [local](./commands/step-3-write/write-text-local.md) | [services](./commands/step-3-write/write-text-services.md) | [setup](./commands/step-3-write/write-text-local.md#setup)
 - `tts`: [local](./commands/step-4-tts/text-to-speech-local.md) | [services](./commands/step-4-tts/text-to-speech-services.md) | [setup](./commands/step-4-tts/text-to-speech-local.md#setup)

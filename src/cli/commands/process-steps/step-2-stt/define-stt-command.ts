@@ -12,11 +12,11 @@ export const sttCommand = defineCommand({
   help: {
     examples: [
       ['bun as stt https://youtube.com/watch?v=abc', 'Transcribe with default whisper tiny model'],
-      ['bun as stt file.mp3 --groq-stt', 'Transcribe with Groq Whisper API'],
-      ['bun as stt file.mp3 --deepgram-stt', 'Transcribe with Deepgram Nova-3'],
+      ['bun as stt file.mp3 --groq-stt', 'Transcribe with the cheapest Groq Whisper API model'],
+      ['bun as stt file.mp3 --deepgram-stt', 'Transcribe with the cheapest Deepgram model'],
       ['bun as stt file.mp3 --soniox-stt', 'Transcribe with Soniox async diarization'],
-      ['bun as stt file.mp3 --speechmatics-stt', 'Transcribe with Speechmatics batch diarization'],
-      ['bun as stt file.mp3 --rev-stt', 'Transcribe with Rev async diarization'],
+      ['bun as stt file.mp3 --speechmatics-stt', 'Transcribe with the cheapest Speechmatics batch model'],
+      ['bun as stt file.mp3 --rev-stt', 'Transcribe with the cheapest Rev async model'],
       ['bun as stt file.mp3 --gladia-stt', 'Transcribe with Gladia pre-recorded diarization'],
       ['bun as stt file.mp3 --gladia-stt --speaker-count 2', 'Transcribe with Gladia diarization and an exact speaker-count hint'],
       ['bun as stt --resume-missing', 'Resume the newest compatible incomplete STT batch under ./output'],

@@ -38,8 +38,8 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts --
 ```
 
 Covers:
-- PDF extraction with `mistral-ocr-latest` and `mistral-ocr-2512`
-- image extraction with the same two model IDs
+- PDF extraction with `mistral-ocr-2512`
+- image extraction with the same model ID
 
 Requires `MISTRAL_API_KEY`.
 

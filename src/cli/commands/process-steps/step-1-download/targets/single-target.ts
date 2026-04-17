@@ -105,7 +105,7 @@ const collectEstimatedExtractTargets = (
     if ((entry.ocrService === 'mistral' || entry.extractionMethod.includes('mistral-ocr')) && typeof entry.ocrModel === 'string') {
       targets.push({
         provider: 'mistral' as const,
-        model: entry.ocrModel ?? opts.mistralOcrModel ?? 'mistral-ocr-latest',
+        model: entry.ocrModel ?? opts.mistralOcrModel ?? 'mistral-ocr-2512',
         pageCount: entry.totalPages,
         estimateType: 'exact' as const
       })

@@ -1,6 +1,6 @@
 # Service Tests: STT
 
-Provider-backed speech-to-text coverage for the `stt` command. Alias: `transcribe`.
+Provider-backed speech-to-text coverage for the `stt` command.
 
 ## Quick Start
 

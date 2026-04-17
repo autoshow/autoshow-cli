@@ -90,15 +90,6 @@
           "costMultiplier": 0.9902,
           "msPerSecond": 240
         }
-      },
-      "stt-async-v3": {
-        "description": "Async v3 compatibility alias routed to v4 by Soniox",
-        "costPerHourUSD": 0.1,
-        "costPerHourCents": 10,
-        "estimation": {
-          "costMultiplier": 0.9902,
-          "msPerSecond": 240
-        }
       }
     }
   },
@@ -176,15 +167,6 @@
     "description": "Mistral cloud speech-to-text",
     "type": "api",
     "models": {
-      "voxtral-mini-latest": {
-        "description": "Voxtral Mini latest alias",
-        "costPerHourUSD": 0.18,
-        "costPerHourCents": 18,
-        "estimation": {
-          "costMultiplier": 0.9902,
-          "msPerSecond": 79
-        }
-      },
       "voxtral-mini-2602": {
         "description": "Voxtral Mini Transcribe 2",
         "costPerHourUSD": 0.18,
@@ -200,15 +182,6 @@
     "description": "AssemblyAI cloud speech-to-text",
     "type": "api",
     "models": {
-      "universal-2": {
-        "description": "Universal-2 — 99 languages, diarization, word-level timestamps",
-        "costPerHourUSD": 0.15,
-        "costPerHourCents": 15,
-        "estimation": {
-          "costMultiplier": 0.9902,
-          "msPerSecond": 125
-        }
-      },
       "universal-3-pro": {
         "description": "Universal-3 Pro — 6 languages, advanced prompting, diarization",
         "costPerHourUSD": 0.21,

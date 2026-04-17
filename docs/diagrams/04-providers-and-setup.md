@@ -148,12 +148,12 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/setup-orchestrator/r
 
 | Command | Required Dependencies |
 |---------|----------------------|
-| `transcribe` | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--openai-stt`/`--mistral-stt`/`--assemblyai-stt` API key) |
-| `transcribe --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `extract` | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`) |
-| `write` (media) | All of `transcribe` + llama.cpp (or LLM API key) |
+| `stt` | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--openai-stt`/`--mistral-stt`/`--assemblyai-stt` API key) |
+| `stt --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
+| `ocr` | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`) |
+| `write` (media) | All of `stt` + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
-| `write` (document) | All of `extract` + llama.cpp (or LLM API key) |
+| `write` (document) | All of `ocr` + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |
 | `tts --groq-tts` | `GROQ_API_KEY` |

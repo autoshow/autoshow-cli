@@ -15,8 +15,6 @@ This is the most fundamental command in the pipeline hierarchy: `metadata` → `
 
 ```bash
 bun as metadata <input>
-bun as meta <input>          # alias
-bun as info <input>          # alias
 bun as <input>               # root shorthand
 ```
 
@@ -145,7 +143,7 @@ bun as metadata input/examples/document/protected.pdf --password secret
 bun as metadata https://example.com/feed --batch-limit 3
 
 # Batch metadata for a YouTube channel
-bun as meta https://www.youtube.com/@channelname --batch-limit 5
+bun as metadata https://www.youtube.com/@channelname --batch-limit 5
 
 # Batch metadata from a URL list, save all to disk
 bun as metadata input/examples/document/2-urls.md --batch-all --save

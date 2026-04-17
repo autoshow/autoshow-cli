@@ -26,26 +26,9 @@ export const videoCommand = defineCommand({
   const prompt = ctx.parameters.prompt
   const flags = ctx.flags
 
-  const geminiModelRaw = typeof flags['gemini-video'] === 'string' ? flags['gemini-video'] : undefined
-  const minimaxModelRaw = typeof flags['minimax-video'] === 'string' ? flags['minimax-video'] : undefined
-
-  const videoDurationRaw = typeof flags['video-duration'] === 'string' ? parseInt(flags['video-duration'], 10) : undefined
-  const videoDuration = Number.isFinite(videoDurationRaw) ? videoDurationRaw : undefined
-  const videoSize = typeof flags['video-size'] === 'string' ? flags['video-size'] : undefined
-  const videoAspectRatio = typeof flags['video-aspect-ratio'] === 'string' ? flags['video-aspect-ratio'] : undefined
-  const videoResolution = typeof flags['video-resolution'] === 'string' ? flags['video-resolution'] : undefined
-
   const videoMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
-
-  const videoTargets = collectVideoTargets({
-    geminiVideoModel: geminiModelRaw,
-    minimaxVideoModel: minimaxModelRaw,
-    videoDuration,
-    videoSize,
-    videoAspectRatio,
-    videoResolution
-  })
+  const videoTargets = collectVideoTargets(videoOpts)
   if (videoTargets.length === 0) {
     throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
   }
@@ -63,27 +46,20 @@ export const videoCommand = defineCommand({
   const outputDir = await createGenerationOutputDir('video-gen')
 
   const { metadata } = await runWithLogContext({ step: 'step-6-video' }, async () =>
-    await runVideoGen(prompt, outputDir, {
-      geminiVideoModel: geminiModelRaw,
-      minimaxVideoModel: minimaxModelRaw,
-      videoDuration,
-      videoSize,
-      videoAspectRatio,
-      videoResolution
-    })
+    await runVideoGen(prompt, outputDir, videoOpts)
   )
 
   const estimatedVideoTargets = videoTargets.map((target) => ({
     service: target.service,
     model: target.model,
-    ...(videoDuration !== undefined ? { durationSeconds: videoDuration } : {})
+    ...(videoOpts.videoDuration !== undefined ? { durationSeconds: videoOpts.videoDuration } : {})
   }))
   const estimated = computeEstimatedCosts({
-    geminiVideoModel: geminiModelRaw,
-    minimaxVideoModel: minimaxModelRaw,
-    videoDuration,
-    videoSize,
-    videoResolution
+    geminiVideoModel: videoOpts.geminiVideoModel,
+    minimaxVideoModel: videoOpts.minimaxVideoModel,
+    videoDuration: videoOpts.videoDuration,
+    videoSize: videoOpts.videoSize,
+    videoResolution: videoOpts.videoResolution
   })
   const actual = computeActualCosts({ step6: metadata })
   const cost = { estimated, actual }

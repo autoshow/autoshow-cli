@@ -65,7 +65,7 @@ Setup-managed local llama.cpp models in the project config:
 - `ggml-org/gemma-3-270m-it-GGUF`
 - `ggml-org/Qwen3-0.6B-GGUF`
 
-`--llama` also accepts any Hugging Face repo ID in `namespace/repo_name` form. Known project models still work as aliases and are the ones downloaded by `bun as setup --step write`.
+`--llama` also accepts any Hugging Face repo ID in `namespace/repo_name` form. The setup-managed model IDs above are first-class supported values and are the ones downloaded by `bun as setup --step write`.
 
 ## Examples
 
@@ -95,7 +95,7 @@ Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common 
 
 | Flag | Description |
 |------|-------------|
-| `--llama <model>` | Select a local llama.cpp model alias or Hugging Face repo ID |
+| `--llama <model>` | Select a supported local llama.cpp model ID or Hugging Face repo ID |
 | `--prompt <name...>` | Select prompt preset(s) |
 | `--price` | Show the aggregated estimate and exit |
 

@@ -110,14 +110,6 @@ const parseProviderResult = (
   }
 }
 
-const unsupportedLegacyArtifactError = (
-  dir: string,
-  foundFile: 'metadata.json' | 'info.json'
-): Error =>
-  new Error(
-    `Unsupported legacy artifact tree at ${dir}. Remove ${foundFile} and rerun to produce v2 manifests.`
-  )
-
 export const writeRunManifest = async (
   outputDir: string,
   kind: RunManifestKind,
@@ -142,11 +134,6 @@ export const readRunManifest = async (
   outputDir: string,
   expectedKind?: RunManifestKind
 ): Promise<RunManifest | undefined> => {
-  const metadataPath = join(outputDir, 'metadata.json')
-  if (await Bun.file(metadataPath).exists()) {
-    throw unsupportedLegacyArtifactError(outputDir, 'metadata.json')
-  }
-
   const runPath = join(outputDir, 'run.json')
   if (!await Bun.file(runPath).exists()) {
     return undefined
@@ -190,11 +177,6 @@ export const readBatchManifest = async (
   batchDir: string,
   expectedKind?: BatchManifestKind
 ): Promise<{ manifestPath: string, manifest: BatchManifest } | undefined> => {
-  const legacyPath = join(batchDir, 'info.json')
-  if (await Bun.file(legacyPath).exists()) {
-    throw unsupportedLegacyArtifactError(batchDir, 'info.json')
-  }
-
   const batchPath = join(batchDir, 'batch.json')
   if (!await Bun.file(batchPath).exists()) {
     return undefined
@@ -234,11 +216,6 @@ export const writeProviderResult = async (
 export const readProviderResultEntry = async (
   providerDir: string
 ): Promise<ProviderResult | undefined> => {
-  const metadataPath = join(providerDir, 'metadata.json')
-  if (await Bun.file(metadataPath).exists()) {
-    throw unsupportedLegacyArtifactError(providerDir, 'metadata.json')
-  }
-
   const resultPath = join(providerDir, 'result.json')
   if (!await Bun.file(resultPath).exists()) {
     return undefined

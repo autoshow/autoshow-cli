@@ -103,7 +103,7 @@ describe('runAssemblyAiTranscribe', () => {
     }) as unknown as typeof fetch
 
     const { result, metadata } = await runAssemblyAiTranscribe(audioPath, outputDir, {
-      model: 'universal-2',
+      model: 'universal-3-pro',
       segmentOffsetMinutes: 0
     })
 
@@ -111,7 +111,7 @@ describe('runAssemblyAiTranscribe', () => {
     expect(pollAttempts).toBe(1)
     expect(result.text).toBe('Hello world')
     expect(metadata.transcriptionService).toBe('assemblyai')
-    expect(metadata.transcriptionModel).toBe('universal-2')
+    expect(metadata.transcriptionModel).toBe('universal-3-pro')
   })
 
   test('reuses a persisted AssemblyAI job with bounded resume probes and no new transcript creation', async () => {

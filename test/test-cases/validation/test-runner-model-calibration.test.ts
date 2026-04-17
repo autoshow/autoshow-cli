@@ -74,6 +74,20 @@ describe('test runner model calibration', () => {
             ],
           },
         },
+        timing: {
+          actual: {
+            steps: [
+              {
+                step: 'llm',
+                provider: 'openai',
+                model: 'gpt-5.4',
+                processingTimeMs: 2000,
+                inputMetric: 'tokens',
+                inputValue: 200,
+              },
+            ],
+          },
+        },
       }
 
       await writeFile(join(metadataDir, 'sample.json'), JSON.stringify(metadata, null, 2))

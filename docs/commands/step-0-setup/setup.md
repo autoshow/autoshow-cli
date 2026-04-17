@@ -27,7 +27,7 @@ Install local runtimes and prerequisite tools. Sample fixture generation is hand
 bun as setup
 ```
 
-Use full setup on a clean machine when you want local download, extract, transcribe, write, or TTS workflows to work without manually installing their prerequisites first.
+Use full setup on a clean machine when you want local download, OCR, STT, write, or TTS workflows to work without manually installing their prerequisites first.
 
 ## Doctor
 
@@ -101,9 +101,6 @@ bun as setup --step tts --repeat 3
 ```bash
 # Generate fixtures under input/samples/
 bun as sample
-
-# Alias
-bun as samples
 
 # Verify an existing manifest without regenerating
 bun as sample --verify-only

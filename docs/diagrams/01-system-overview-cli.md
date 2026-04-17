@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 13 named commands plus the root shorthand (`bun as <input>` => `metadata <input>`): `metadata`, `download`, `stt`, `write`, `ocr`, `tts`, `image`, `music`, `video`, `setup`, `sample`, `models`, `config`
+   - Defines 16 named commands plus the root shorthand (`bun as <input>` => `metadata <input>`): `metadata`, `download`, `ocr`, `stt`, `report`, `write`, `tts`, `image`, `video`, `music`, `config`, `cache`, `setup`, `sample`, `models`, `links`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -50,14 +50,12 @@ src/cli/create-cli.ts
          |  Bun.argv
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  expandBareModelFlags()                                                      │
-│  - Fills default model when bare flag used (--openai → --openai gpt-5.4)    │
-│  expandPromptArgs()                                                          │
-│  - Allows multiple --prompt values (--prompt chapters summary)               │
-│  normalizeCommandAliases()                                                   │
-│  - Maps aliases: transcribe → stt, extract → ocr, voice → tts, dl → download, ... │
+│  validateSttFlagCompatibility()                                              │
+│  - Blocks LLM provider flags on `stt`                                        │
 │  normalizeCommandHelpShortcut()                                              │
-│  - Maps "write --help" → "help write"                                        │
+│  - Maps "--help write" style input to "help write"                           │
+│  validateArgumentOrder()                                                     │
+│  - Rejects flag-first invocation order such as "bun as --openai ... write"   │
 └──────────────────────────────────────────────────────────────────────────────┘
          |
          v
@@ -109,12 +107,19 @@ src/cli/create-cli.ts
 │  │ from .md/.txt    │  │ from .md/.txt    │  │ dependencies     │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐                                  │
-│  │     models       │  │     config       │                                  │
-│  │                  │  │                  │                                  │
-│  │ Download llama   │  │ Read/write       │                                  │
-│  │ model by ID      │  │ autoshow.json    │                                  │
-│  └──────────────────┘  └──────────────────┘                                  │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
+│  │     models       │  │     config       │  │      cache       │            │
+│  │                  │  │                  │  │                  │            │
+│  │ Download llama   │  │ Read/write       │  │ Prune or clear   │            │
+│  │ model by ID      │  │ autoshow.json    │  │ STT media cache  │            │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
+│                                                                              │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
+│  │     sample       │  │      links       │  │      report      │            │
+│  │                  │  │                  │  │                  │            │
+│  │ Generate test    │  │ Fetch provider   │  │ Generate STT/OCR │            │
+│  │ fixtures         │  │ reference docs   │  │ consensus reports│            │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
 │  All process commands → handleProcessTarget(command, target, flags)          │
 └──────────────────────────────────────────────────────────────────────────────┘

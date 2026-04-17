@@ -123,7 +123,7 @@ describe('computeEstimatedCosts STT routing', () => {
     const result = computeEstimatedCosts({
       sttTargets: [
         { service: 'elevenlabs', model: 'scribe_v2' },
-        { service: 'assemblyai', model: 'universal-2' },
+        { service: 'assemblyai', model: 'universal-3-pro' },
         { service: 'gladia', model: 'default' },
         { service: 'whisper', model: 'tiny' }
       ],
@@ -133,7 +133,7 @@ describe('computeEstimatedCosts STT routing', () => {
     const sttSteps = result.steps.filter(s => s.step === 'stt')
     expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'elevenlabs:scribe_v2',
-      'assemblyai:universal-2',
+      'assemblyai:universal-3-pro',
       'gladia:default',
       'whisper:tiny'
     ])
@@ -194,7 +194,7 @@ describe('computeActualCosts STT', () => {
         },
         {
           transcriptionService: 'assemblyai',
-          transcriptionModel: 'universal-2',
+          transcriptionModel: 'universal-3-pro',
           processingTime: 600,
           tokenCount: 120
         },
@@ -217,7 +217,7 @@ describe('computeActualCosts STT', () => {
     expect(sttSteps).toHaveLength(4)
     expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'elevenlabs:scribe_v2',
-      'assemblyai:universal-2',
+      'assemblyai:universal-3-pro',
       'speechmatics:enhanced',
       'rev:machine'
     ])
@@ -364,7 +364,7 @@ describe('computeActualCosts extract routing', () => {
           dpi: 300,
           languages: 'eng',
           tokenEstimate: 100,
-          ocrModel: 'mistral-ocr-latest'
+          ocrModel: 'mistral-ocr-2512'
         },
         {
           extractionMethod: 'glm-ocr',
@@ -397,7 +397,7 @@ describe('computeActualCosts extract routing', () => {
     expect(extractSteps).toHaveLength(4)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'ocrmypdf:ocrmypdf',
-      'mistral:mistral-ocr-latest',
+      'mistral:mistral-ocr-2512',
       'glm:glm-ocr',
       'firecrawl:firecrawl'
     ])
@@ -425,7 +425,7 @@ describe('computeActualCosts extract routing', () => {
           dpi: 300,
           languages: 'eng',
           tokenEstimate: 90,
-          ocrModel: 'mistral-ocr-latest'
+          ocrModel: 'mistral-ocr-2512'
         },
         {
           extractionMethod: 'glm-ocr',
@@ -448,7 +448,7 @@ describe('computeActualCosts extract routing', () => {
     expect(extractSteps).toHaveLength(3)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'paddle-ocr:paddle-ocr',
-      'mistral:mistral-ocr-latest',
+      'mistral:mistral-ocr-2512',
       'glm:glm-ocr'
     ])
   })

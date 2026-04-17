@@ -1,180 +1,32 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile } from 'node:fs/promises'
 import { basename, extname, join, resolve } from 'node:path'
-import type { PersistedTranscriptionEvidence, TranscriptionEvidenceCapabilities, TranscriptionEvidenceSegment, TranscriptionEvidenceWord } from '~/types'
+
+import { readProviderResultEntry, readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { commandExists, exec, fileExists } from '~/utils/cli-utils'
-import { readProviderResultEntry, readRunManifest } from '../manifest-utils'
+import { average, clamp, getFiniteNumber, getString, isRecord, median } from '~/cli/commands/setup-and-utilities/report/report-internals/primitives'
+import { computeWordSimilarity, tokenizeWords } from '~/cli/commands/setup-and-utilities/report/report-internals/text'
 
-
-type ProviderTranscript = {
-  id: string
-  service: string
-  model: string
-  label: string
-  transcriptPath: string
-  evidencePath: string
-  resultPath: string
-  rawText: string
-  evidence: PersistedTranscriptionEvidence
-  tokenCount: number | null
-  actualCostCents: number | null
-  estimatedCostCents: number | null
-  actualProcessingTimeMs: number | null
-  estimatedProcessingTimeMs: number | null
-}
-
-type ProviderVariant = {
-  providerId: string
-  label: string
-  text: string
-  similarity: number
-  wordCount: number
-  speaker?: string
-  supportsWindow: boolean
-}
-
-type ComparisonRow = {
-  id: string
-  startSeconds: number
-  endSeconds: number
-  startTimestamp: string
-  endTimestamp: string
-  speaker?: string
-  consensusText: string
-  confidence: number
-  averageSimilarity: number
-  reviewReasons: string[]
-  variants: ProviderVariant[]
-}
-
-type ProviderSummary = {
-  providerId: string
-  label: string
-  similarity: number
-  rowCoverage: number
-  wordCount: number
-  timingQuality: PersistedTranscriptionEvidence['timingQuality']
-  capabilities: TranscriptionEvidenceCapabilities
-  tokenCount: number | null
-  actualCostCents: number | null
-  estimatedCostCents: number | null
-  actualProcessingTimeMs: number | null
-  estimatedProcessingTimeMs: number | null
-}
-
-type ReviewWindow = {
-  rowId: string
-  startTimestamp: string
-  endTimestamp: string
-  speaker?: string
-  consensusText: string
-  confidence: number
-  reasons: string[]
-  clipPath: string | null
-}
-
-export type RunMetadataSummary = {
-  title: string | null
-  duration: string | null
-  completionStatus: string | null
-  actualTotalCostCents: number | null
-  estimatedTotalCostCents: number | null
-  actualTotalProcessingTimeMs: number | null
-  estimatedTotalProcessingTimeMs: number | null
-  wallTimeMs: number | null
-  requestedProviderKeys: string[]
-  producedProviderKeys: string[]
-}
-
-export type RunConsensusAnalysis = {
-  runDir: string
-  runLabel: string
-  metadata: RunMetadataSummary
-  providers: ProviderTranscript[]
-  rows: ComparisonRow[]
-  reviewWindows: ReviewWindow[]
-  providerSummary: ProviderSummary[]
-  consensusText: string
-  audioPath: string | null
-}
-
-type TimeObservation = {
-  time: number
-  providerId: string
-}
-
-type TimeCluster = {
-  time: number
-  observations: TimeObservation[]
-  providerIds: Set<string>
-}
-
-type SpeakerTrack = {
-  key: string
-  providerId: string
-  speaker: string
-  intervals: Array<{ start: number, end: number }>
-  totalDuration: number
-  firstStart: number
-}
-
-type SpeakerCluster = {
-  tracks: SpeakerTrack[]
-  providerIds: Set<string>
-  intervals: Array<{ start: number, end: number }>
-  totalDuration: number
-  firstStart: number
-}
-
-type WordObservation = {
-  providerId: string
-  label: string
-  text: string
-  normalized: string
-  midpoint: number
-  relative: number
-  weight: number
-}
+import type {
+  ComparisonRow,
+  PersistedTranscriptionEvidence,
+  ProviderSummary,
+  ProviderTranscript,
+  ReviewWindow,
+  RunConsensusAnalysis,
+  RunMetadataSummary,
+  SpeakerCluster,
+  SpeakerTrack,
+  TimeCluster,
+  TimeObservation,
+  TranscriptionEvidenceCapabilities,
+  TranscriptionEvidenceSegment,
+  TranscriptionEvidenceWord,
+  WordObservation
+} from './types'
 
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.opus', '.flac', '.webm', '.mp4'])
-const WORD_PATTERN = /[A-Za-z0-9]+(?:[/'’-][A-Za-z0-9]+)*/g
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const getString = (value: unknown): string | null =>
-  typeof value === 'string' && value.length > 0 ? value : null
-
-const getFiniteNumber = (value: unknown): number | null =>
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(max, Math.max(min, value))
-
-const average = (values: number[]): number =>
-  values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length
-
-const median = (values: number[]): number => {
-  if (values.length === 0) {
-    return 0
-  }
-
-  const sorted = [...values].sort((left, right) => left - right)
-  const middle = Math.floor(sorted.length / 2)
-  return sorted.length % 2 === 0
-    ? ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2
-    : (sorted[middle] ?? 0)
-}
 
 const normalizeProviderKey = (service: string, model: string): string => `${service}/${model}`
-
-const normalizeText = (text: string): string => text
-  .normalize('NFKC')
-  .replace(/[‘’]/g, '\'')
-  .replace(/[“”]/g, '"')
-  .replace(/[—–]/g, '-')
-
-const tokenizeWords = (text: string): string[] =>
-  [...normalizeText(text).matchAll(WORD_PATTERN)].map((match) => match[0].toLowerCase())
 
 const formatSecondsToTimestamp = (seconds: number): string => {
   const rounded = Math.max(0, Math.floor(seconds))
@@ -191,69 +43,6 @@ const cleanSpacing = (text: string): string =>
     .trim()
 
 const joinWordTexts = (words: Array<{ text: string }>): string => cleanSpacing(words.map((word) => word.text).join(' '))
-
-const buildNgramCounts = (words: string[], size: number): Map<string, number> => {
-  const counts = new Map<string, number>()
-  if (words.length === 0) {
-    return counts
-  }
-
-  if (words.length < size) {
-    counts.set(words.join(' '), 1)
-    return counts
-  }
-
-  for (let index = 0; index <= words.length - size; index += 1) {
-    const gram = words.slice(index, index + size).join(' ')
-    counts.set(gram, (counts.get(gram) ?? 0) + 1)
-  }
-
-  return counts
-}
-
-const computeDiceCoefficient = (left: Map<string, number>, right: Map<string, number>): number => {
-  if (left.size === 0 && right.size === 0) {
-    return 1
-  }
-  if (left.size === 0 || right.size === 0) {
-    return 0
-  }
-
-  let overlap = 0
-  let leftTotal = 0
-  let rightTotal = 0
-
-  for (const value of left.values()) {
-    leftTotal += value
-  }
-  for (const value of right.values()) {
-    rightTotal += value
-  }
-
-  const [smaller, larger] = left.size <= right.size ? [left, right] : [right, left]
-  for (const [key, value] of smaller) {
-    overlap += Math.min(value, larger.get(key) ?? 0)
-  }
-
-  return (2 * overlap) / (leftTotal + rightTotal)
-}
-
-const computeWordSimilarity = (leftWords: string[], rightWords: string[]): number => {
-  if (leftWords.length === 0 && rightWords.length === 0) {
-    return 1
-  }
-  if (leftWords.length === 0 || rightWords.length === 0) {
-    return 0
-  }
-
-  const gramSize = Math.min(leftWords.length, rightWords.length) >= 2 ? 2 : 1
-  const gramScore = computeDiceCoefficient(
-    buildNgramCounts(leftWords, gramSize),
-    buildNgramCounts(rightWords, gramSize)
-  )
-  const lengthPenalty = 1 - Math.min(1, Math.abs(leftWords.length - rightWords.length) / Math.max(leftWords.length, rightWords.length))
-  return (gramScore * 0.8) + (lengthPenalty * 0.2)
-}
 
 const readJsonFile = async (path: string): Promise<unknown> => {
   try {
@@ -518,38 +307,6 @@ const loadProviderTranscript = async (
     actualProcessingTimeMs: timingActualByKey.get(providerKey) ?? getFiniteNumber(providerMetadataRecord['processingTime']),
     estimatedProcessingTimeMs: timingEstimatedByKey.get(providerKey) ?? null
   }
-}
-
-export const discoverAnalyzableRunDirectories = async (targetPath: string): Promise<string[]> => {
-  const resolvedTarget = resolve(targetPath)
-  const directEntries = await readdir(resolvedTarget).catch(() => null)
-  if (!directEntries) {
-    throw new Error(`Target path does not exist or is not readable: ${resolvedTarget}`)
-  }
-
-  if (directEntries.includes('providers') && directEntries.includes('run.json')) {
-    return [resolvedTarget]
-  }
-
-  const childEntries = await readdir(resolvedTarget, { withFileTypes: true })
-  const runDirectories: string[] = []
-
-  for (const entry of childEntries) {
-    if (!entry.isDirectory()) {
-      continue
-    }
-    const childDir = join(resolvedTarget, entry.name)
-    const childDirEntries = await readdir(childDir).catch((): string[] => [])
-    if (childDirEntries.includes('providers') && childDirEntries.includes('run.json')) {
-      runDirectories.push(childDir)
-    }
-  }
-
-  if (runDirectories.length === 0) {
-    throw new Error(`No STT output runs found under ${resolvedTarget}`)
-  }
-
-  return runDirectories.sort()
 }
 
 const buildSpeakerTracks = (providers: ProviderTranscript[]): SpeakerTrack[] =>
@@ -1031,7 +788,7 @@ const buildRows = (providers: ProviderTranscript[]): ComparisonRow[] => {
     }
 
     const consensusWords = tokenizeWords(consensus.consensusText)
-    const variants: ProviderVariant[] = consensus.variants.map((variant) => {
+    const variants = consensus.variants.map((variant) => {
       const variantWords = variant.words.map((word) => word.normalized)
       return {
         providerId: variant.provider.id,
@@ -1128,131 +885,6 @@ const formatTranscriptRows = (rows: ComparisonRow[]): string =>
     const speakerPrefix = row.speaker ? `[${row.speaker}] ` : ''
     return `[${row.startTimestamp}] ${speakerPrefix}${row.consensusText}`.trim()
   }).join('\n')
-
-const formatCents = (value: number | null): string => value === null ? 'n/a' : `${value.toFixed(4)}¢ ($${(value / 100).toFixed(4)})`
-
-const formatDurationMs = (value: number | null): string => {
-  if (value === null) {
-    return 'n/a'
-  }
-  if (value < 1000) {
-    return `${value} ms`
-  }
-  const totalSeconds = value / 1000
-  if (totalSeconds < 60) {
-    return `${totalSeconds.toFixed(2)} s`
-  }
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}m ${seconds.toFixed(2)}s`
-}
-
-const buildMissingProviderSummary = (analysis: RunConsensusAnalysis): string[] => {
-  const produced = new Set(analysis.metadata.producedProviderKeys)
-  const missing = analysis.metadata.requestedProviderKeys.filter((providerKey) => !produced.has(providerKey))
-  return missing.length === 0
-    ? ['- Missing requested providers: none']
-    : [`- Missing requested providers: ${missing.map((provider) => `\`${provider}\``).join(', ')}`]
-}
-
-const buildRunConsensusReportMarkdown = (analysis: RunConsensusAnalysis): string => {
-  const lines: string[] = []
-  lines.push('# STT Consensus Report')
-  lines.push('')
-  lines.push(`Source run: \`${analysis.runLabel}\``)
-  lines.push('')
-  lines.push('## Summary')
-  lines.push('')
-  lines.push(`- Title: ${analysis.metadata.title ? `\`${analysis.metadata.title}\`` : 'n/a'}`)
-  lines.push(`- Duration: ${analysis.metadata.duration ? `\`${analysis.metadata.duration}\`` : 'n/a'}`)
-  lines.push(`- Completion status: ${analysis.metadata.completionStatus ? `\`${analysis.metadata.completionStatus}\`` : 'n/a'}`)
-  lines.push(`- Requested providers: ${analysis.metadata.requestedProviderKeys.length}`)
-  lines.push(`- Produced transcripts: ${analysis.providers.length}`)
-  lines.push(`- Comparison rows: ${analysis.rows.length}`)
-  lines.push(`- Review windows: ${analysis.reviewWindows.length}`)
-  lines.push(`- Actual total cost: ${formatCents(analysis.metadata.actualTotalCostCents)}`)
-  lines.push(`- Actual total provider processing time: ${formatDurationMs(analysis.metadata.actualTotalProcessingTimeMs)}`)
-  lines.push(`- Wall time: ${formatDurationMs(analysis.metadata.wallTimeMs)}`)
-  lines.push(...buildMissingProviderSummary(analysis))
-  lines.push(`- Audio grounding: provider-native evidence only${analysis.audioPath ? ' with review clip extraction' : ' (audio file unavailable for clip extraction)'}`)
-  lines.push('')
-  lines.push('## Provider Summary')
-  lines.push('')
-  lines.push('| Provider | Similarity | Coverage | Timing | Native Words | Confidence | Speakers | Actual Cost | Actual Time |')
-  lines.push('|---|---:|---:|---|---:|---:|---:|---:|---:|')
-  analysis.providerSummary.forEach((provider) => {
-    lines.push(`| ${provider.label} | ${provider.similarity.toFixed(2)} | ${provider.rowCoverage}/${analysis.rows.length} | ${provider.timingQuality} | ${provider.capabilities.hasNativeWordTiming ? 'yes' : 'no'} | ${provider.capabilities.hasConfidence ? 'yes' : 'no'} | ${provider.capabilities.hasSpeakerLabels ? 'yes' : 'no'} | ${formatCents(provider.actualCostCents)} | ${formatDurationMs(provider.actualProcessingTimeMs)} |`)
-  })
-  lines.push('')
-  lines.push('## Comparison')
-  lines.push('')
-
-  if (analysis.rows.length === 0) {
-    lines.push('- No comparison rows were generated from the available evidence.')
-  } else {
-    analysis.rows.forEach((row) => {
-      const speakerSuffix = row.speaker ? ` [${row.speaker}]` : ''
-      lines.push(`### ${row.startTimestamp} - ${row.endTimestamp}${speakerSuffix}`)
-      lines.push('')
-      lines.push(`- Consensus: ${row.consensusText}`)
-      lines.push(`- Confidence: ${row.confidence.toFixed(2)}/100`)
-      lines.push(`- Average similarity: ${row.averageSimilarity.toFixed(2)}/100`)
-      lines.push(`- Review: ${row.reviewReasons.length === 0 ? 'no' : row.reviewReasons.join('; ')}`)
-      row.variants.forEach((variant) => {
-        const speakerNote = variant.speaker ? ` [${variant.speaker}]` : ''
-        lines.push(`- ${variant.label}${speakerNote}: ${variant.text.length > 0 ? variant.text : '(no aligned words)'} (${variant.similarity.toFixed(2)}/100)`)
-      })
-      lines.push('')
-    })
-  }
-
-  lines.push('## Artifacts')
-  lines.push('')
-  lines.push('- `consensus-transcription.txt` is the clean best-guess transcript built from the merged provider windows.')
-  lines.push('- `consensus-review.md` lists only the low-confidence windows.')
-  lines.push('- `consensus-report.json` contains the structured rows and provider summary.')
-  if (analysis.reviewWindows.some((window) => window.clipPath !== null)) {
-    lines.push('- `review-clips/` contains extracted mp3 clips for review windows.')
-  }
-
-  return lines.join('\n')
-}
-
-const buildRunReviewMarkdown = (analysis: RunConsensusAnalysis): string => {
-  const lines: string[] = []
-  lines.push('# STT Consensus Review')
-  lines.push('')
-  lines.push(`Source run: \`${analysis.runLabel}\``)
-  lines.push('')
-
-  if (analysis.reviewWindows.length === 0) {
-    lines.push('- No review windows were flagged.')
-    return lines.join('\n')
-  }
-
-  analysis.reviewWindows.forEach((window) => {
-    const speakerSuffix = window.speaker ? ` [${window.speaker}]` : ''
-    lines.push(`## ${window.startTimestamp} - ${window.endTimestamp}${speakerSuffix}`)
-    lines.push('')
-    lines.push(`- Consensus: ${window.consensusText}`)
-    lines.push(`- Confidence: ${window.confidence.toFixed(2)}/100`)
-    lines.push(`- Reasons: ${window.reasons.join('; ')}`)
-    lines.push(`- Clip: ${window.clipPath ? `\`${window.clipPath}\`` : 'not available'}`)
-    lines.push('')
-  })
-
-  return lines.join('\n')
-}
-
-const toStructuredRunSummary = (analysis: RunConsensusAnalysis): Record<string, unknown> => ({
-  runDir: analysis.runDir,
-  runLabel: analysis.runLabel,
-  metadata: analysis.metadata,
-  rows: analysis.rows,
-  reviewWindows: analysis.reviewWindows,
-  providerSummary: analysis.providerSummary,
-  audioPath: analysis.audioPath
-})
 
 const extractReviewClip = async (
   audioPath: string,
@@ -1365,89 +997,5 @@ export const analyzeSttRunDirectory = async (runDir: string): Promise<RunConsens
     providerSummary,
     consensusText,
     audioPath
-  }
-}
-
-export const writeRunConsensusArtifacts = async (analysis: RunConsensusAnalysis): Promise<{
-  consensusPath: string
-  reportPath: string
-  jsonPath: string
-  reviewPath: string
-}> => {
-  const consensusPath = join(analysis.runDir, 'consensus-transcription.txt')
-  const reportPath = join(analysis.runDir, 'consensus-report.md')
-  const jsonPath = join(analysis.runDir, 'consensus-report.json')
-  const reviewPath = join(analysis.runDir, 'consensus-review.md')
-
-  await Promise.all([
-    writeFile(consensusPath, `${analysis.consensusText}\n`, 'utf8'),
-    writeFile(reportPath, `${buildRunConsensusReportMarkdown(analysis)}\n`, 'utf8'),
-    writeFile(jsonPath, `${JSON.stringify(toStructuredRunSummary(analysis), null, 2)}\n`, 'utf8'),
-    writeFile(reviewPath, `${buildRunReviewMarkdown(analysis)}\n`, 'utf8')
-  ])
-
-  return { consensusPath, reportPath, jsonPath, reviewPath }
-}
-
-export const buildAggregateConsensusReportMarkdown = (targetDir: string, analyses: RunConsensusAnalysis[]): string => {
-  const lines: string[] = []
-  lines.push('# STT Consensus Batch Report')
-  lines.push('')
-  lines.push(`Target directory: \`${targetDir}\``)
-  lines.push('')
-  lines.push('## Runs')
-  lines.push('')
-  lines.push('| Run | Produced Providers | Rows | Review Windows | Best Similarity | Missing Providers | Actual Cost | Wall Time |')
-  lines.push('|---|---:|---:|---:|---:|---|---:|---:|')
-
-  analyses.forEach((analysis) => {
-    const bestProvider = analysis.providerSummary[0]
-    const produced = new Set(analysis.metadata.producedProviderKeys)
-    const missingProviders = analysis.metadata.requestedProviderKeys.filter((providerKey) => !produced.has(providerKey))
-    lines.push(`| ${analysis.runLabel} | ${analysis.providers.length} | ${analysis.rows.length} | ${analysis.reviewWindows.length} | ${bestProvider ? bestProvider.similarity.toFixed(2) : 'n/a'} | ${missingProviders.length === 0 ? 'none' : missingProviders.join(', ')} | ${formatCents(analysis.metadata.actualTotalCostCents)} | ${formatDurationMs(analysis.metadata.wallTimeMs)} |`)
-  })
-
-  lines.push('')
-  lines.push('Each run directory also contains `consensus-transcription.txt`, `consensus-report.md`, `consensus-review.md`, and `consensus-report.json`.')
-  return lines.join('\n')
-}
-
-export const analyzeAndWriteConsensusReports = async (targetPath: string): Promise<{
-  targetDir: string
-  runArtifacts: Array<{
-    runDir: string
-    consensusPath: string
-    reportPath: string
-    jsonPath: string
-    reviewPath: string
-  }>
-  aggregateReportPath: string | null
-}> => {
-  const runDirectories = await discoverAnalyzableRunDirectories(targetPath)
-  const analyses = await Promise.all(runDirectories.map((runDir) => analyzeSttRunDirectory(runDir)))
-  const runArtifacts = await Promise.all(analyses.map(async (analysis) => ({
-    runDir: analysis.runDir,
-    ...(await writeRunConsensusArtifacts(analysis))
-  })))
-
-  if (runDirectories.length === 1) {
-    return {
-      targetDir: resolve(targetPath),
-      runArtifacts,
-      aggregateReportPath: null
-    }
-  }
-
-  const aggregateReportPath = join(resolve(targetPath), 'consensus-report.md')
-  await writeFile(
-    aggregateReportPath,
-    `${buildAggregateConsensusReportMarkdown(resolve(targetPath), analyses)}\n`,
-    'utf8'
-  )
-
-  return {
-    targetDir: resolve(targetPath),
-    runArtifacts,
-    aggregateReportPath
   }
 }

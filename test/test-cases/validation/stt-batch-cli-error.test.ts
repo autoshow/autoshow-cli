@@ -97,7 +97,7 @@ test('incomplete STT batches exit non-zero without being reported as usage error
         '--batch-all',
         '--batch-concurrency', '2',
         '--soniox-stt', 'stt-async-v4',
-        '--mistral-stt', 'voxtral-mini-latest',
+        '--mistral-stt', 'voxtral-mini-2602',
         '--no-cache'
       ],
       {

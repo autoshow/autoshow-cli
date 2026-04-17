@@ -23,7 +23,6 @@ import * as l from '~/logger'
 import { runWithLogContext, reconfigureLogger } from '~/logger'
 import {
   knownCommands,
-  normalizeKnownCommandName,
   formatInput,
   validateSttFlagCompatibility
 } from '~/cli/argv-normalize'
@@ -292,7 +291,7 @@ const main = async (): Promise<void> => {
       }
 
       const maybeCommand = rest[0]
-      const canonicalCommand = maybeCommand ? normalizeKnownCommandName(maybeCommand) : null
+      const canonicalCommand = maybeCommand && knownCommands.has(maybeCommand) ? maybeCommand : null
       if (canonicalCommand) {
         await parseCli(['help', canonicalCommand])
         return
@@ -309,7 +308,7 @@ const main = async (): Promise<void> => {
 
     if (first !== '--' && first!.startsWith('-')) {
       const maybeCommand = rest.find(token => knownCommands.has(token))
-      const canonicalCommand = maybeCommand ? normalizeKnownCommandName(maybeCommand) : null
+      const canonicalCommand = maybeCommand && knownCommands.has(maybeCommand) ? maybeCommand : null
       if (canonicalCommand) {
         throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as ${canonicalCommand} <input> [flags]`)
       }

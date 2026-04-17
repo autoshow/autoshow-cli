@@ -65,7 +65,7 @@ describe('runMistralStt', () => {
       }
 
       return new Response(JSON.stringify({
-        model: 'voxtral-mini-latest',
+        model: 'voxtral-mini-2602',
         text: 'Hello world',
         language: null,
         usage: {},
@@ -84,12 +84,12 @@ describe('runMistralStt', () => {
     }) as unknown as typeof fetch
 
     const { result, metadata } = await runMistralStt(audioPath, outputDir, {
-      model: 'voxtral-mini-latest',
+      model: 'voxtral-mini-2602',
       segmentOffsetMinutes: 0
     })
 
     expect(attempts).toBe(2)
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       text: 'Hello world',
       segments: [
         {
@@ -100,8 +100,9 @@ describe('runMistralStt', () => {
         }
       ]
     })
+    expect(result.evidence?.timingQuality).toBe('segment_interpolated')
     expect(metadata.transcriptionService).toBe('mistral')
-    expect(metadata.transcriptionModel).toBe('voxtral-mini-latest')
+    expect(metadata.transcriptionModel).toBe('voxtral-mini-2602')
 
     const transcript = await Bun.file(join(outputDir, 'transcription.txt')).text()
     expect(transcript).toBe('[00:00:00] [speaker_1] Hello world')
@@ -122,7 +123,7 @@ describe('runMistralStt', () => {
     }) as unknown as typeof fetch
 
     await expect(runMistralStt(audioPath, outputDir, {
-      model: 'voxtral-mini-latest',
+      model: 'voxtral-mini-2602',
       segmentOffsetMinutes: 0
     })).rejects.toThrow('Mistral transcription failed (400)')
 

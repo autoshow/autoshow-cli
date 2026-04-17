@@ -45,9 +45,6 @@ describe('llama server selection helpers', () => {
         id: 'ggml-org/Qwen3-0.6B-GGUF',
         aliases: ['ggml-org/Qwen3-0.6B-GGUF'],
         owned_by: 'llamacpp'
-      }],
-      models: [{
-        model: 'ggml-org/Qwen3-0.6B-GGUF'
       }]
     })
 
