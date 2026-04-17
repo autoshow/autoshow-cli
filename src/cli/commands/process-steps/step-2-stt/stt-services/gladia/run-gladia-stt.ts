@@ -1,7 +1,11 @@
 import { basename } from 'node:path'
 import type {
+  AsyncSttLifecycleHooks,
   DiarizationOptions,
+  GladiaHttpError,
+  GladiaNormalizedWord,
   GladiaStatusResponse,
+  GladiaUtterance,
   RetryClass,
   Step2Metadata,
   Step2RuntimeMetadata,
@@ -26,8 +30,7 @@ import {
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata,
-  type AsyncSttLifecycleHooks
+  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
 import { getGladiaBaseUrl } from './gladia'
 import { readEnvFallback } from '~/utils/validate/env-utils'
@@ -38,26 +41,6 @@ const INITIAL_POLL_INTERVAL_MS = 1000
 const MAX_POLL_INTERVAL_MS = 10000
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
-
-type GladiaHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'upload' | 'create' | 'poll'
-  retryClass?: RetryClass
-  rawResponse?: unknown
-}
-
-type GladiaNormalizedWord = {
-  start: number
-  end: number
-  text: string
-  speaker?: string | undefined
-  confidence?: number | undefined
-}
-
-type GladiaResult = NonNullable<GladiaStatusResponse['result']>
-type GladiaTranscription = NonNullable<GladiaResult['transcription']>
-type GladiaUtterance = NonNullable<GladiaTranscription['utterances']>[number]
 
 const buildGladiaUrl = (baseURL: string, path: string): string =>
   new URL(path.replace(/^\/+/, ''), baseURL.endsWith('/') ? baseURL : `${baseURL}/`).toString()

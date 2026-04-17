@@ -1,4 +1,4 @@
-import type { ProcessingOptions, Step4Metadata, TtsProvider } from '~/types'
+import type { Step4Metadata, TtsOptions, TtsTarget } from '~/types'
 import {
   type KittenTtsModel,
   type ElevenlabsTtsModel,
@@ -34,29 +34,6 @@ const KITTEN_PYTHON_VERSION = '3.12'
 
 export const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
 export const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
-
-export type TtsOptions = Pick<
-  ProcessingOptions,
-  | 'ttsSpeaker'
-  | 'kittenTtsModel'
-  | 'elevenlabsTtsModel'
-  | 'elevenlabsVoiceId'
-  | 'minimaxTtsModel'
-  | 'minimaxTtsVoice'
-  | 'groqTtsModel'
-  | 'groqVoiceId'
-  | 'openaiTtsModel'
-  | 'openaiVoiceId'
-  | 'geminiTtsModel'
-  | 'geminiVoiceId'
->
-
-export type TtsTarget = {
-  service: TtsProvider
-  model: string
-  voice?: string
-  run: (text: string, outputDir: string, opts: TtsOptions) => Promise<{ audioPath: string, metadata: Step4Metadata }>
-}
 
 const checkKittenTtsSetup = async (): Promise<boolean> => {
   if (!await pathExists(kittenTtsUvEnvDir)) {

@@ -1,8 +1,6 @@
-import type { Step7MusicMetadata } from '~/types'
+import type { MusicGenOptions, MusicTarget, Step7MusicMetadata } from '~/types'
 import { runSingleFileTargets } from '~/cli/commands/process-steps/target-runner'
 import {
-  type MusicGenOptions,
-  type MusicTarget,
   collectMusicTargets,
   getMusicArtifactFileName,
 } from './music-targets'

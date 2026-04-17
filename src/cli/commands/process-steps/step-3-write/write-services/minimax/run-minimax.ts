@@ -1,8 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as l from '~/logger'
 import { readEnv } from '~/utils/validate/env-utils'
-import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
-import type { Step3Metadata } from '~/types'
+import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runAnthropicCompatibleModel } from '../anthropic-compatible'
 
 const MINIMAX_ANTHROPIC_BASE_URL = 'https://api.minimax.io/anthropic'

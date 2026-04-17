@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import type { ImageProvider, ProcessingOptions, Step5Metadata } from '~/types'
+import type { ImageGenOptions, ImageTarget, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   type GeminiImageModel,
@@ -17,25 +17,6 @@ import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
 import { runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
 import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
-
-export type ImageGenOptions = Pick<
-  ProcessingOptions,
-  | 'geminiImageModel'
-  | 'openaiImageModel'
-  | 'minimaxImageModel'
-  | 'imageAspectRatio'
-  | 'imageSize'
-  | 'imageQuality'
-  | 'imageFormat'
-  | 'imageBackground'
-  | 'imagenCount'
->
-
-export type ImageTarget = {
-  service: ImageProvider
-  model: string
-  run: (prompt: string, outputDir: string, opts: ImageGenOptions) => Promise<{ imagePaths: string[], metadata: Step5Metadata }>
-}
 
 export const sanitizeImageModelName = sanitizeModelName
 

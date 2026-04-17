@@ -1,9 +1,7 @@
 import { rename } from 'node:fs/promises'
-import type { Step4Metadata } from '~/types'
+import type { Step4Metadata, TtsOptions, TtsTarget } from '~/types'
 import { sanitizeModelName, runTargets } from '~/cli/commands/process-steps/target-runner'
 import {
-  type TtsOptions,
-  type TtsTarget,
   collectTtsTargets,
   getTtsArtifactFileName,
 } from './tts-targets'

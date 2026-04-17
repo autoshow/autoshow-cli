@@ -1,23 +1,11 @@
-import OpenAI from 'openai'
 import * as l from '~/logger'
-import type { Step3Metadata } from '~/types'
+import type {
+  RunOpenAICompatibleChatModelOptions,
+  Step3Metadata
+} from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
 import { isStructuredFallbackError } from '~/cli/commands/process-steps/step-3-write/write-utils/structured-error-utils'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
-
-type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok'>
-
-type RunOpenAICompatibleChatModelOptions = {
-  prompt: string
-  model: string
-  structuredOpts?: StructuredRequestOptions | undefined
-  client: OpenAI
-  service: OpenAICompatibleChatService
-  providerLabel: string
-  operationName: string
-  customizeRequestBody?: ((requestBody: Record<string, unknown>, model: string) => void) | undefined
-}
 
 const createCombinedSignal = (signal?: AbortSignal): AbortSignal => {
   const timeoutSignal = AbortSignal.timeout(1800000)

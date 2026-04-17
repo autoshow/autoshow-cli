@@ -5,7 +5,7 @@ import { basename, join } from 'node:path'
 import { prepareSttMedia } from '~/cli/commands/process-steps/step-2-stt/stt-media-cache'
 import { prepareLocalSttInput } from '~/cli/commands/process-steps/step-2-stt/stt-local/local-audio-normalize'
 import { splitAudioFile } from '~/cli/commands/process-steps/step-2-stt/stt-utils/audio-splitter'
-import type { SttTarget } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import type { SttTarget } from '~/types'
 import { exec, fileExists } from '~/utils/cli-utils'
 
 const SAMPLE_AUDIO_PATH = 'input/examples/audio/1-audio.mp3'

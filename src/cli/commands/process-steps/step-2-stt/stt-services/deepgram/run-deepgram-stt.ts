@@ -1,4 +1,4 @@
-import type { DeepgramResponse, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
+import type { DeepgramAlternative, DeepgramHttpError, DeepgramResponse, DeepgramWords, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { DeepgramResponseSchema } from '~/types'
 import * as l from '~/logger'
 import {
@@ -16,16 +16,6 @@ import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
-
-type DeepgramHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'transcribe'
-  retryClass?: RetryClass
-}
-
-type DeepgramAlternative = NonNullable<DeepgramResponse['results']['channels'][number]['alternatives']>[number]
-type DeepgramWords = DeepgramAlternative['words']
 
 const getErrorStatus = (error: unknown): number | undefined =>
   error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'

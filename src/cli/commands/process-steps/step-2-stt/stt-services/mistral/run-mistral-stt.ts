@@ -1,7 +1,7 @@
 import { basename } from 'node:path'
 import { Mistral } from '@mistralai/mistralai'
 import { ConnectionError, MistralError, RequestAbortedError, RequestTimeoutError } from '@mistralai/mistralai/models/errors'
-import type { Step2Metadata, TranscriptionResult, TranscriptionSegment, DiarizationOptions, RetryClass } from '~/types'
+import type { DiarizationOptions, MistralHttpError, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
@@ -10,13 +10,6 @@ import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
-
-type MistralHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'transcribe'
-  retryClass?: RetryClass
-}
 
 const toMistralHttpError = (status: number, headers: Headers, errText: string): MistralHttpError => {
   return Object.assign(

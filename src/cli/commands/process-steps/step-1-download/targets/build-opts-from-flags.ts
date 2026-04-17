@@ -37,7 +37,7 @@ import {
   validateMinimaxVideoModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
-import type { BatchOrder, OutputFormat, RuntimeOptions } from '~/types'
+import type { BatchOrder, BuildOptsDefaults, OutputFormat, RuntimeOptions } from '~/types'
 
 const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
   if (!value) return fallback
@@ -153,10 +153,6 @@ const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecrawl' | 
     return 'glm-reader'
   }
   throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle", "firecrawl", or "glm-reader".`)
-}
-
-type BuildOptsDefaults = {
-  defaultTtsEngine?: 'kitten'
 }
 
 const parseDoubleDashArgs = (args: string[]): Record<string, string | boolean> => {

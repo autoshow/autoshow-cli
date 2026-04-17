@@ -1,4 +1,5 @@
 import type {
+  ElevenLabsHttpError,
   Step2Metadata,
   TranscriptionResult,
   TranscriptionSegment,
@@ -14,13 +15,6 @@ import { validateData } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
-
-type ElevenLabsHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'transcribe'
-  retryClass?: RetryClass
-}
 
 const getErrorStatus = (error: unknown): number | undefined =>
   error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'

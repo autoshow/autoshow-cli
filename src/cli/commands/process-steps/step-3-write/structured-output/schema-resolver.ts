@@ -1,7 +1,7 @@
 import { toJsonSchema } from '@valibot/to-json-schema'
+import type { ResolvedStructuredSchema, ValibotSchema } from '~/types'
 import { collectLeafPrompts } from '~/prompts/prompt-loader'
 import { composePromptObjectSchema, getStructuredPresetSchema, hasStructuredPreset } from './preset-registry'
-import type { ResolvedStructuredSchema, ValibotSchema } from './types'
 
 const sanitizeSchemaName = (name: string): string => {
   const sanitized = name.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)

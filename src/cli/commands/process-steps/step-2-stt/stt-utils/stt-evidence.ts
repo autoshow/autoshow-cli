@@ -1,6 +1,7 @@
 import type {
   PersistedTranscriptionEvidence,
   Step2Metadata,
+  TokenizedWord,
   TranscriptionEvidence,
   TranscriptionEvidenceCapabilities,
   TranscriptionEvidenceSegment,
@@ -32,11 +33,6 @@ export const parseTranscriptTimestampToSeconds = (timestamp: string): number => 
 }
 
 const normalizeEvidenceWord = (text: string): string => normalizeText(text).toLowerCase()
-
-type TokenizedWord = {
-  text: string
-  normalized: string
-}
 
 const tokenizeEvidenceWords = (text: string): TokenizedWord[] => {
   const normalized = normalizeText(text)

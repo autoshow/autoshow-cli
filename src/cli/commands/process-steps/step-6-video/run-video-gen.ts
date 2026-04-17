@@ -1,8 +1,6 @@
-import type { Step6VideoMetadata } from '~/types'
+import type { Step6VideoMetadata, VideoGenOptions, VideoTarget } from '~/types'
 import { runSingleFileTargets } from '~/cli/commands/process-steps/target-runner'
 import {
-  type VideoGenOptions,
-  type VideoTarget,
   collectVideoTargets,
   getVideoArtifactFileName,
 } from './video-targets'

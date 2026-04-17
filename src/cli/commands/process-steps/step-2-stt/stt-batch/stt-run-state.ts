@@ -1,57 +1,19 @@
 import { join } from 'node:path'
-import type { Step2Metadata, TranscriptionResult } from '~/types'
+import type {
+  ExistingSttRun,
+  Step2Metadata,
+  SttCompletionStatus,
+  SttProviderFailureSummary,
+  SttProviderState,
+  SttProviderSuccess,
+  SttRecordedProviderError,
+  SttRequestedProvider,
+  SttTarget,
+  TranscriptionResult
+} from '~/types'
 import { parseStep2RuntimeMetadata } from '../stt-utils/async-stt-job-runner'
 import { parseStoredStep2TimingMetadata } from '../stt-timing-metadata'
-import { getSttTargetDirectoryName, getSttTargetKey, type SttTarget } from '../stt-targets'
-
-export type SttCompletionStatus = 'full' | 'incomplete' | 'failed'
-
-export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local' | 'diarizationOptions'>
-
-export type SttRecordedProviderError = {
-  message: string
-  retryable: boolean
-  skipped?: boolean | undefined
-  stage?: string | undefined
-  status?: number | undefined
-  retryAfterMs?: number | undefined
-  errorFile?: string | undefined
-  rawResponseFile?: string | undefined
-}
-
-export type SttProviderFailureSummary = {
-  message: string
-  retryable: boolean
-  skipped?: boolean | undefined
-  stage?: string | undefined
-  status?: number | undefined
-  retryAfterMs?: number | undefined
-  errorFile?: string | undefined
-  rawResponseFile?: string | undefined
-}
-
-export type SttProviderState = {
-  service: SttTarget['service']
-  model: string
-  local: boolean
-  artifactDir: string
-  status: 'succeeded' | 'missing' | 'failed' | 'skipped'
-  attempts: number
-  retryable?: boolean | undefined
-  lastError?: SttRecordedProviderError | undefined
-}
-
-export type SttProviderSuccess = {
-  target: SttTarget
-  metadata: Step2Metadata
-  result: TranscriptionResult
-  relativeDir?: string | undefined
-}
-
-export type ExistingSttRun = {
-  successes: Array<SttProviderSuccess | undefined>
-  providerStates: Map<string, SttProviderState>
-}
+import { getSttTargetDirectoryName, getSttTargetKey } from '../stt-targets'
 
 const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/
 

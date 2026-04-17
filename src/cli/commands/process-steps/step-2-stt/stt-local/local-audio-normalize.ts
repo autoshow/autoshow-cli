@@ -1,12 +1,8 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { PreparedLocalSttInput } from '~/types'
 import { exec } from '~/utils/cli-utils'
-
-export type PreparedLocalSttInput = {
-  audioPath: string
-  cleanup: () => Promise<void>
-}
 
 export const prepareLocalSttInput = async (
   audioPath: string,

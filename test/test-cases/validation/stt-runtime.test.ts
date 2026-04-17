@@ -10,7 +10,7 @@ import {
   selectPrimaryPromptProvider,
   shouldBlockSttProviderForBatch,
 } from '~/cli/commands/process-steps/process-stt'
-import type { SttTarget } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import type { SttTarget } from '~/types'
 import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 describe('STT runtime helpers', () => {

@@ -1,12 +1,5 @@
-import type { DiarizationOptions, RuntimeOptions, TranscribeEngine } from '~/types'
+import type { RuntimeOptions, SttTarget } from '~/types'
 import { resolveDiarizationOptions } from './run-stt'
-
-export type SttTarget = {
-  service: TranscribeEngine
-  model: string
-  local: boolean
-  diarizationOptions?: DiarizationOptions | undefined
-}
 
 const sanitizeSegment = (value: string): string =>
   value.replace(/[/\\:*?"<>|]+/g, '_')

@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
-import { ProcessingOptionsSchema, type ProcessingOptions, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata } from '~/types'
+import { ProcessingOptionsSchema, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
 import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch-coordinator'
@@ -12,8 +12,7 @@ import { ensureDirectory, fileExists, writeFile } from '~/utils/cli-utils'
 import {
   buildMediaStep1Slug,
   createUniqueDirectoryName,
-  extractSourceMetadata,
-  type Step1SourceRef
+  extractSourceMetadata
 } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audio/dl-audio'
 import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
@@ -270,22 +269,6 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
 
   return extractionOpts
 }
-
-type WriteDocumentOutputMetadataOptions = {
-  step1: DocumentMetadata
-  step2: ExtractionMetadata | ExtractionMetadata[]
-  step3: Step3Metadata | Step3Metadata[]
-  mistralOcrModel: string | undefined
-  glmOcrModel: string | undefined
-  llmService: string
-  llmModel: string
-  llmInputTokenCount: number
-  llmOutputTokenCount: number
-  artifactFiles: Record<string, string>
-  web?: WebArticleMetadata | undefined
-  errors?: Array<{ service: string, model: string, message: string }> | undefined
-}
-
 const writeDocumentOutputMetadata = async (
   outputDir: string,
   params: WriteDocumentOutputMetadataOptions

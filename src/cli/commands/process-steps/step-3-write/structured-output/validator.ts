@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import type { StructuredValidationResult, ValibotSchema } from './types'
+import type { StructuredValidationResult, ValibotSchema } from '~/types'
 
 const stripMarkdownCodeFence = (raw: string): string => {
   const trimmed = raw.trim()

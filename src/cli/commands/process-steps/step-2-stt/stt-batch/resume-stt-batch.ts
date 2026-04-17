@@ -2,50 +2,28 @@ import { readdir } from 'node:fs/promises'
 import { resolve as resolvePath, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as l from '~/logger'
-import type { BatchProcessResult, RuntimeOptions } from '~/types'
+import type {
+  BatchManifestEntry,
+  NormalizedResumeSttBatchRunOptions,
+  ResumeBatchEntry,
+  ResumeBatchManifest,
+  ResumeSttBatchPassResult,
+  ResumeSttBatchRunOptions,
+  RuntimeOptions,
+  SttTarget
+} from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
-import { logSttBatchFinalSummary, type BatchManifestEntry } from '../../step-1-download/targets/target-utils'
+import { logSttBatchFinalSummary } from '../../step-1-download/targets/target-utils'
 import { formatSttBatchSchedulerSummary } from './stt-batch-policy'
 import { SttBatchCoordinator } from './stt-batch-coordinator'
 import {
   buildMissingTargetsFromEntry,
   inferStoredCompletionStatus,
   isSttPartialCompletionError,
-  parseStoredRequestedTargets,
-  type SttCompletionStatus
+  parseStoredRequestedTargets
 } from './stt-run-state'
-import { formatSttTargetLabel, getSttTargetKey, type SttTarget } from '../stt-targets'
-
-type ResumeBatchEntry = {
-  outputDir: string
-  source: { url?: string, filePath?: string }
-  requestedTargets: SttTarget[]
-  missingTargets: SttTarget[]
-  completionStatus: SttCompletionStatus
-  rawEntry: BatchManifestEntry
-}
-
-type ResumeSttBatchRunOptions = {
-  retryableOnly?: boolean | undefined
-  maxPasses?: number | undefined
-  ignoreUnresumableEntries?: boolean | undefined
-}
-
-type NormalizedResumeSttBatchRunOptions = {
-  retryableOnly: boolean
-  maxPasses: number
-  ignoreUnresumableEntries: boolean
-}
-
-type ResumeSttBatchPassResult = BatchProcessResult & {
-  attemptedEntries: number
-}
-
-type ResumeBatchManifest = {
-  infoPath: string
-  entries: BatchManifestEntry[]
-}
+import { formatSttTargetLabel, getSttTargetKey } from '../stt-targets'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

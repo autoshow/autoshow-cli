@@ -21,7 +21,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'stt rejects MiniMax LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
   { label: 'stt rejects Grok LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-4.20-reasoning'] },
   { label: 'CLI invalid OpenAI model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--openai', 'not-a-real-openai-model'] },
-  { label: 'CLI invalid llama model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'not-a-real-llama-model'] },
+  { label: 'CLI malformed llama repo ID exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'not-a-real-llama-model'] },
   { label: 'CLI invalid anthropic model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--anthropic', 'not-a-real-anthropic-model'] },
   { label: 'CLI invalid MiniMax model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'not-a-real-minimax-model'] },
   { label: 'CLI invalid Grok model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--grok', 'not-a-real-grok-model'] },
@@ -189,6 +189,19 @@ test('CLI bare Rev STT flag is accepted in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('CLI custom llama Hugging Face repo ID is accepted in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--llama',
+    'unsloth/Qwen3.5-0.8B-GGUF',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
 test('stt bare --resume-missing rejects positional input instead of starting a fresh run', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -225,6 +238,14 @@ test('buildOptsFromFlags maps --glm-ocr to glmOcrModel', () => {
   })
 
   expect(opts.glmOcrModel).toBe('glm-ocr')
+})
+
+test('buildOptsFromFlags preserves custom llama Hugging Face repo IDs', () => {
+  const opts = buildOptsFromFlags(false, {
+    'llama': 'unsloth/Qwen3.5-0.8B-GGUF'
+  })
+
+  expect(opts.llamaModel).toBe('unsloth/Qwen3.5-0.8B-GGUF')
 })
 
 test('buildOptsFromFlags maps --soniox-stt to sonioxSttModel', () => {

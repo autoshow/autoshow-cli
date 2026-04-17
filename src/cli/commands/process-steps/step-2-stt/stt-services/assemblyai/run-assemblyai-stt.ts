@@ -1,4 +1,6 @@
 import type {
+  AssemblyAiHttpError,
+  AsyncSttLifecycleHooks,
   Step2Metadata,
   Step2RuntimeMetadata,
   TranscriptionResult,
@@ -12,8 +14,7 @@ import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscrip
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata,
-  type AsyncSttLifecycleHooks
+  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -23,13 +24,6 @@ const INITIAL_POLL_INTERVAL_MS = 1000
 const MAX_POLL_INTERVAL_MS = 10000
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
-
-type AssemblyAiHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'upload' | 'create' | 'poll'
-  retryClass?: RetryClass
-}
 
 const formatSpeaker = (speaker: string | undefined): string | undefined => {
   if (speaker === undefined || speaker.length === 0) return undefined

@@ -1,8 +1,8 @@
 import type { BatchSource, BatchItem } from './batch/batch-types'
 import { exec } from '~/utils/cli-utils'
 import * as l from '~/logger'
-import type { YtDlpFlatEntry } from '~/types'
-import { buildYtDlpFailureMessage, buildYtDlpListArgs, type YtDlpListOptions } from '../audio/yt-dlp-options'
+import type { YtDlpFlatEntry, YtDlpListOptions } from '~/types'
+import { buildYtDlpFailureMessage, buildYtDlpListArgs } from '../audio/yt-dlp-options'
 
 const YOUTUBE_CHANNEL_PATH_PATTERNS = [
   /^\/@[^/]+\/?$/,

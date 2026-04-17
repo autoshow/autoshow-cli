@@ -1,5 +1,5 @@
 import type { Step3Metadata } from '~/types/process-types'
-import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
+import type { StructuredRequestOptions } from '../cli/commands/process-steps/step-3-write/write-types'
 
 export type DownloadAudioOptions = {
   url?: string | undefined
@@ -85,12 +85,6 @@ export type ZipXmlResult = {
   totalPages: number
 }
 
-export type ZipEntry = {
-  name: string
-  method: number
-  compSize: number
-  uncompSize: number
-  localOffset: number
-}
+export type { ZipEntry } from '~/cli/commands/process-steps/step-2-ocr/ocr-types'
 
 export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'

@@ -1,14 +1,6 @@
 import { inflateRawSync } from 'node:zlib'
 import { inspectEpubWithReader, normalizeEntryPath } from './inspect-core'
-import type { EpubContentEntry, EpubContentReader, EpubInspectOutput } from './types'
-
-type ZipEntry = {
-  name: string
-  method: number
-  compSize: number
-  uncompSize: number
-  localOffset: number
-}
+import type { EpubContentEntry, EpubContentReader, EpubInspectOutput, ZipEntry } from '~/types'
 
 const EOCD_SIG = 0x06054b50
 const CD_SIG = 0x02014b50

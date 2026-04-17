@@ -1,13 +1,6 @@
+import type { AudioSegmentDescriptor } from '~/types'
 import * as l from '~/logger'
 import { exec, ensureDirectory } from '~/utils/cli-utils'
-
-export type AudioSegmentDescriptor = {
-  path: string
-  segmentNumber: number
-  totalSegments: number
-  startSeconds: number
-  durationSeconds: number
-}
 
 export const splitAudioFile = async (audioPath: string, outputDir: string, segmentDurationMinutes: number = 10): Promise<AudioSegmentDescriptor[]> => {
   l.info(`Splitting audio file into ${segmentDurationMinutes}-minute segments`)

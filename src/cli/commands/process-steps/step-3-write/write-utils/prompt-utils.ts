@@ -1,13 +1,7 @@
-import type { VideoMetadata, TranscriptionResult } from '~/types'
+import type { BuildPromptOptions, TranscriptionResult, VideoMetadata } from '~/types'
 import * as l from '~/logger'
 
 export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
-
-export type BuildPromptOptions = {
-  promptSourceProvider?: string | undefined
-  requestedSpeakerCount?: number | undefined
-  suppressDiarizationLog?: boolean | undefined
-}
 
 export const buildPrompt = (
   metadata: VideoMetadata,

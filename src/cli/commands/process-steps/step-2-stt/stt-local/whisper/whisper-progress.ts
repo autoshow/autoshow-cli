@@ -1,12 +1,6 @@
-const WHISPER_PROGRESS_PATTERN = /whisper_print_progress_callback:\s+progress =\s*(\d+)%/
+import type { WhisperProgressLogContext } from '~/types'
 
-export type WhisperProgressLogContext = {
-  segmentNumber?: number | undefined
-  totalSegments?: number | undefined
-  segmentStartSeconds?: number | undefined
-  segmentDurationSeconds?: number | undefined
-  totalDurationSeconds?: number | undefined
-}
+const WHISPER_PROGRESS_PATTERN = /whisper_print_progress_callback:\s+progress =\s*(\d+)%/
 
 const clampPercent = (value: number): number => {
   return Math.max(0, Math.min(100, value))

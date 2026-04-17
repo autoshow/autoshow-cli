@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import type { ValibotSchema } from './types'
+import type { StructuredPresetName, ValibotSchema } from '~/types'
 
 const TextSchema = v.pipe(v.string(), v.minLength(1))
 const StringListSchema = v.array(TextSchema)
@@ -145,9 +145,7 @@ const PRESET_REGISTRY = {
     content: TextSchema
   }),
   freeformEnvelope: FreeformEnvelopeSchema
-} as const
-
-export type StructuredPresetName = keyof typeof PRESET_REGISTRY
+} as const satisfies Record<StructuredPresetName, ValibotSchema>
 
 export const getStructuredPresetSchema = (presetName: string): ValibotSchema => {
   const schema = PRESET_REGISTRY[presetName as StructuredPresetName]

@@ -1,9 +1,8 @@
 import { GoogleGenAI } from '@google/genai'
 import * as l from '~/logger'
-import type { Step3Metadata } from '~/types'
+import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry } from '~/utils/retries'
-import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { classifyGeminiRetry } from '~/utils/gemini-utils'
 

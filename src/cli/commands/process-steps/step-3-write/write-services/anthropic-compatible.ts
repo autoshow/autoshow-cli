@@ -1,22 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
 import * as l from '~/logger'
-import type { Step3Metadata } from '~/types'
+import type {
+  RunAnthropicCompatibleModelOptions,
+  Step3Metadata
+} from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
-
-type AnthropicCompatibleService = Extract<Step3Metadata['llmService'], 'anthropic' | 'minimax'>
-
-type RunAnthropicCompatibleModelOptions = {
-  prompt: string
-  model: string
-  structuredOpts?: StructuredRequestOptions | undefined
-  client: Anthropic
-  service: AnthropicCompatibleService
-  providerLabel: string
-  operationName: string
-  supportsStructuredOutput?: boolean
-}
 
 const createCombinedSignal = (signal?: AbortSignal): AbortSignal => {
   const timeoutSignal = AbortSignal.timeout(1800000)

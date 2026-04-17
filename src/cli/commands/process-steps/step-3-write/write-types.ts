@@ -1,0 +1,173 @@
+import type Anthropic from '@anthropic-ai/sdk'
+import type OpenAI from 'openai'
+import type * as v from 'valibot'
+import type {
+  ProcessingOptions,
+  Step3Metadata
+} from '~/types/process-types'
+
+export type LLMOptions = Pick<ProcessingOptions,
+  | 'outputDir'
+  | 'prompts'
+  | 'useOpenAI'
+  | 'openaiModel'
+  | 'groqModel'
+  | 'useGemini'
+  | 'geminiModel'
+  | 'useAnthropic'
+  | 'anthropicModel'
+  | 'minimaxModel'
+  | 'grokModel'
+  | 'llamaModel'
+  | 'structured'
+  | 'structuredStrict'
+  | 'structuredCompatRetries'
+> & {
+  promptBuilder?: ((instruction: string) => string) | undefined
+}
+
+export type BuildPromptOptions = {
+  promptSourceProvider?: string | undefined
+  requestedSpeakerCount?: number | undefined
+  suppressDiarizationLog?: boolean | undefined
+}
+
+export type LlamaServerTarget =
+  | {
+    mode: 'repo'
+    requestedModel: string
+    expectedRepo: string
+    startupArgs: string[]
+  }
+  | {
+    mode: 'path'
+    requestedModel: string
+    expectedPath: string
+    startupArgs: string[]
+  }
+
+export type LlamaServerIdentity = {
+  source: 'props' | 'models'
+  modelId: string | null
+  aliases: string[]
+  modelPath: string | null
+}
+
+export type LlamaIdentityMatchResult = {
+  matches: boolean
+  reason: string
+}
+
+export type JsonSchemaObject = Record<string, unknown>
+
+export type StructuredMode = 'native' | 'compat' | 'off'
+
+export type StructuredRequestOptions = {
+  schemaName: string
+  schema: JsonSchemaObject
+  strict: boolean
+  modeHint: Exclude<StructuredMode, 'off'>
+}
+
+export type StructuredResult = {
+  parsed: unknown
+  renderedText: string
+  structuredMode: Exclude<StructuredMode, 'off'>
+  presetNames: string[]
+}
+
+export type StructuredRunResult = {
+  metadata: Step3Metadata
+  renderedText: string
+  parsedJson: unknown
+}
+
+export type StructuredValidationFailureEnvelope = {
+  _raw: string
+  _validationError: string
+}
+
+export type ValibotSchema = v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>
+
+export type ResolvedStructuredSchema = {
+  schemaName: string
+  leafPromptNames: string[]
+  presetNames: string[]
+  schema: ValibotSchema
+  jsonSchema: JsonSchemaObject
+}
+
+export type ProviderStructuredCapability = {
+  nativeStructuredOutput: boolean
+  strictMode: boolean
+}
+
+export type StructuredValidationResult = {
+  success: boolean
+  value?: unknown
+  issue?: string
+}
+
+export type LLMService = Step3Metadata['llmService']
+
+export type StructuredPresetName =
+  | 'shortSummary'
+  | 'longSummary'
+  | 'chapters'
+  | 'bulletPoints'
+  | 'takeaways'
+  | 'quotes'
+  | 'titles'
+  | 'metadata'
+  | 'faq'
+  | 'questions'
+  | 'chapterTitles'
+  | 'chapterTitlesAndQuotes'
+  | 'shortChapters'
+  | 'mediumChapters'
+  | 'longChapters'
+  | 'keyMoments'
+  | 'summary'
+  | 'blog'
+  | 'youtubeDescription'
+  | 'seoArticle'
+  | 'contentStrategy'
+  | 'emailNewsletter'
+  | 'x'
+  | 'tiktok'
+  | 'facebook'
+  | 'instagram'
+  | 'linkedin'
+  | 'freeformEnvelope'
+
+export type CompatStructuredResponse = {
+  parsedJson: unknown
+  rawResponse: string
+  metadata: Step3Metadata
+}
+
+export type AnthropicCompatibleService = Extract<Step3Metadata['llmService'], 'anthropic' | 'minimax'>
+
+export type RunAnthropicCompatibleModelOptions = {
+  prompt: string
+  model: string
+  structuredOpts?: StructuredRequestOptions | undefined
+  client: Anthropic
+  service: AnthropicCompatibleService
+  providerLabel: string
+  operationName: string
+  supportsStructuredOutput?: boolean
+}
+
+export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok'>
+
+export type RunOpenAICompatibleChatModelOptions = {
+  prompt: string
+  model: string
+  structuredOpts?: StructuredRequestOptions | undefined
+  client: OpenAI
+  service: OpenAICompatibleChatService
+  providerLabel: string
+  operationName: string
+  customizeRequestBody?: ((requestBody: Record<string, unknown>, model: string) => void) | undefined
+}

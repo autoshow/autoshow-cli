@@ -3,15 +3,20 @@ import { pollUntil } from '~/utils/retries'
 import { resolveLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { validateData } from '~/utils/validate/validation'
-import { LlamaResponseSchema, type Step3Metadata } from '~/types'
+import {
+  LlamaResponseSchema,
+  type DownloadInfo,
+  type LlamaIdentityMatchResult,
+  type LlamaServerIdentity,
+  type LlamaServerTarget,
+  type Step3Metadata,
+  type StructuredRequestOptions
+} from '~/types'
 import { llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
+import { resolve as resolvePath } from 'node:path'
 import { readEnv } from '~/utils/validate/env-utils'
-import type { DownloadInfo } from '~/types'
-import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
-
-
 const LLAMA_BASE_URL = 'http://localhost:8080'
 const DEFAULT_LLAMA_SERVER_START_TIMEOUT_MS = 1800000
 const LLAMA_SERVER_START_TIMEOUT_ENV = 'LLAMA_SERVER_START_TIMEOUT_MS'
@@ -20,6 +25,8 @@ const LLAMA_SERVER_HEALTH_HEARTBEAT_MS = 15000
 const LLAMA_SERVER_STDERR_TAIL_LIMIT = 12000
 const LLAMA_DOWNLOAD_PROGRESS_POLL_MS = 3000
 const LLAMA_DOWNLOAD_STALLED_LOG_MS = 15000
+const LLAMA_SERVER_STOP_TIMEOUT_MS = 5000
+const LLAMA_CHAT_TEMPLATE_KWARGS = { enable_thinking: false } as const
 
 const resolveLlamaServerBinary = (): string => {
 
@@ -32,8 +39,327 @@ const resolveLlamaServerBinary = (): string => {
   if (systemPath) {
     return systemPath
   }
-  
+
   throw new Error('llama-server is not installed. Run `bun as setup` first.')
+}
+
+const normalizeModelPath = (modelPath: string): string => resolvePath(modelPath.trim())
+
+export const resolveLlamaServerTarget = (model: string): LlamaServerTarget => {
+  const modelPath = readEnv('LLAMA_MODEL_PATH')
+  if (modelPath) {
+    return {
+      mode: 'path',
+      requestedModel: model,
+      expectedPath: normalizeModelPath(modelPath),
+      startupArgs: ['-m', modelPath]
+    }
+  }
+
+  const modelRepo = readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model)
+  return {
+    mode: 'repo',
+    requestedModel: model,
+    expectedRepo: modelRepo,
+    startupArgs: ['-hf', modelRepo]
+  }
+}
+
+const uniqueStrings = (values: Array<string | null | undefined>): string[] => {
+  const seen = new Set<string>()
+  const result: string[] = []
+
+  for (const value of values) {
+    if (typeof value !== 'string') continue
+    const trimmed = value.trim()
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    result.push(trimmed)
+  }
+
+  return result
+}
+
+export const parseLlamaServerIdentityFromProps = (raw: unknown): LlamaServerIdentity | null => {
+  if (!raw || typeof raw !== 'object') {
+    return null
+  }
+
+  const candidate = raw as Record<string, unknown>
+  const modelAlias = typeof candidate['model_alias'] === 'string' ? candidate['model_alias'].trim() : ''
+  const modelPath = typeof candidate['model_path'] === 'string' ? candidate['model_path'].trim() : ''
+
+  if (!modelAlias && !modelPath) {
+    return null
+  }
+
+  return {
+    source: 'props',
+    modelId: modelAlias || null,
+    aliases: uniqueStrings([modelAlias]),
+    modelPath: modelPath ? normalizeModelPath(modelPath) : null
+  }
+}
+
+export const parseLlamaServerIdentityFromModels = (raw: unknown): LlamaServerIdentity | null => {
+  if (!raw || typeof raw !== 'object') {
+    return null
+  }
+
+  const candidate = raw as Record<string, unknown>
+  const aliases: string[] = []
+  let primaryModelId: string | null = null
+  let sawLlamaCppSignature = false
+
+  const dataEntries = Array.isArray(candidate['data']) ? candidate['data'] : []
+  for (const entry of dataEntries) {
+    if (!entry || typeof entry !== 'object') continue
+    const record = entry as Record<string, unknown>
+    if (record['owned_by'] === 'llamacpp') {
+      sawLlamaCppSignature = true
+    }
+
+    const modelId = typeof record['id'] === 'string' ? record['id'].trim() : ''
+    if (modelId && primaryModelId === null) {
+      primaryModelId = modelId
+    }
+    if (modelId) {
+      aliases.push(modelId)
+    }
+
+    if (Array.isArray(record['aliases'])) {
+      for (const alias of record['aliases']) {
+        if (typeof alias === 'string') {
+          aliases.push(alias)
+        }
+      }
+    }
+  }
+
+  const legacyModels = Array.isArray(candidate['models']) ? candidate['models'] : []
+  if (legacyModels.length > 0) {
+    sawLlamaCppSignature = true
+  }
+  for (const entry of legacyModels) {
+    if (!entry || typeof entry !== 'object') continue
+    const record = entry as Record<string, unknown>
+    const modelId = typeof record['model'] === 'string'
+      ? record['model'].trim()
+      : typeof record['name'] === 'string'
+        ? record['name'].trim()
+        : ''
+    if (modelId && primaryModelId === null) {
+      primaryModelId = modelId
+    }
+    if (modelId) {
+      aliases.push(modelId)
+    }
+  }
+
+  const dedupedAliases = uniqueStrings(aliases)
+  if (!sawLlamaCppSignature || dedupedAliases.length === 0) {
+    return null
+  }
+
+  return {
+    source: 'models',
+    modelId: primaryModelId ?? dedupedAliases[0] ?? null,
+    aliases: dedupedAliases,
+    modelPath: null
+  }
+}
+
+const mergeLlamaServerIdentity = (
+  propsIdentity: LlamaServerIdentity | null,
+  modelsIdentity: LlamaServerIdentity | null
+): LlamaServerIdentity | null => {
+  if (!propsIdentity && !modelsIdentity) {
+    return null
+  }
+
+  return {
+    source: propsIdentity?.source ?? modelsIdentity?.source ?? 'models',
+    modelId: propsIdentity?.modelId ?? modelsIdentity?.modelId ?? null,
+    aliases: uniqueStrings([...(propsIdentity?.aliases ?? []), ...(modelsIdentity?.aliases ?? [])]),
+    modelPath: propsIdentity?.modelPath ?? modelsIdentity?.modelPath ?? null
+  }
+}
+
+const fetchLlamaJsonQuiet = async (path: string): Promise<unknown | null> => {
+  try {
+    const response = await fetch(`${LLAMA_BASE_URL}${path}`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(2000)
+    })
+    if (!response.ok) {
+      return null
+    }
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
+const inspectRunningLlamaServer = async (): Promise<LlamaServerIdentity | null> => {
+  const propsIdentity = parseLlamaServerIdentityFromProps(await fetchLlamaJsonQuiet('/props'))
+  const modelsIdentity = parseLlamaServerIdentityFromModels(await fetchLlamaJsonQuiet('/v1/models'))
+  return mergeLlamaServerIdentity(propsIdentity, modelsIdentity)
+}
+
+const describeLlamaServerTarget = (target: LlamaServerTarget): string => {
+  if (target.mode === 'path') {
+    return `model path ${target.expectedPath}`
+  }
+  return `hf repo ${target.expectedRepo}`
+}
+
+const describeLlamaServerIdentity = (identity: LlamaServerIdentity): string => {
+  const parts: string[] = []
+  if (identity.modelId) {
+    parts.push(`model ${identity.modelId}`)
+  } else if (identity.aliases.length > 0) {
+    parts.push(`aliases ${identity.aliases.join(', ')}`)
+  } else {
+    parts.push('unknown model')
+  }
+  if (identity.modelPath) {
+    parts.push(`path ${identity.modelPath}`)
+  }
+  return parts.join(', ')
+}
+
+const resolveLlamaRequestModel = (identity: LlamaServerIdentity): string => {
+  const requestModel = identity.modelId ?? identity.aliases[0] ?? null
+  if (!requestModel) {
+    throw new Error(`llama-server is healthy but did not report a usable model id (${describeLlamaServerIdentity(identity)})`)
+  }
+  return requestModel
+}
+
+export const evaluateLlamaServerIdentityMatch = (
+  target: LlamaServerTarget,
+  identity: LlamaServerIdentity
+): LlamaIdentityMatchResult => {
+  if (target.mode === 'path') {
+    if (!identity.modelPath) {
+      return {
+        matches: false,
+        reason: `llama-server did not report model_path; cannot verify expected path ${target.expectedPath}`
+      }
+    }
+
+    if (identity.modelPath === target.expectedPath) {
+      return {
+        matches: true,
+        reason: `model path matches ${target.expectedPath}`
+      }
+    }
+
+    return {
+      matches: false,
+      reason: `loaded path ${identity.modelPath} does not match expected path ${target.expectedPath}`
+    }
+  }
+
+  const reportedModels = uniqueStrings([identity.modelId, ...identity.aliases])
+  if (reportedModels.includes(target.expectedRepo)) {
+    return {
+      matches: true,
+      reason: `loaded model matches ${target.expectedRepo}`
+    }
+  }
+
+  return {
+    matches: false,
+    reason: `loaded models [${reportedModels.join(', ')}] do not include expected repo ${target.expectedRepo}`
+  }
+}
+
+const readPsOutput = (): string => {
+  const proc = Bun.spawnSync(['ps', '-ax', '-o', 'pid=,command='], {
+    stdout: 'pipe',
+    stderr: 'pipe'
+  })
+
+  if (proc.exitCode !== 0) {
+    const stderr = proc.stderr.toString().trim()
+    throw new Error(stderr ? `Failed to inspect running processes: ${stderr}` : 'Failed to inspect running processes')
+  }
+
+  return proc.stdout.toString()
+}
+
+const LLAMA_SERVER_PORT_PATTERN = /(?:^|\s)--port(?:=|\s+)8080(?:\s|$)/
+const LLAMA_SERVER_COMMAND_PATTERN = /(?:^|\s)(?:\S+\/)?llama-server(?:\s|$)/
+
+export const findLlamaServerPidsFromPsOutput = (psOutput: string): number[] => {
+  const pids: number[] = []
+
+  for (const rawLine of psOutput.split('\n')) {
+    const line = rawLine.trim()
+    if (!line) continue
+
+    const match = line.match(/^(\d+)\s+(.*)$/)
+    if (!match) continue
+
+    const pid = Number.parseInt(match[1] || '', 10)
+    const command = match[2] || ''
+    if (!Number.isFinite(pid)) continue
+    if (!LLAMA_SERVER_COMMAND_PATTERN.test(command)) continue
+    if (!LLAMA_SERVER_PORT_PATTERN.test(command)) continue
+
+    pids.push(pid)
+  }
+
+  return pids
+}
+
+const waitForLlamaHealthState = async (healthy: boolean, timeoutMs: number): Promise<boolean> => {
+  try {
+    await pollUntil({
+      operationName: healthy ? 'llama-server-wait-healthy' : 'llama-server-wait-stopped',
+      intervalMs: 250,
+      deadlineMs: timeoutMs,
+      pollFn: async () => await checkLlamaHealthQuiet(),
+      isDone: (result) => result === healthy
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+const stopLlamaServerProcesses = (pids: number[], signal: NodeJS.Signals): void => {
+  for (const pid of pids) {
+    try {
+      process.kill(pid, signal)
+    } catch (error) {
+      const errno = error as NodeJS.ErrnoException
+      if (errno?.code !== 'ESRCH') {
+        throw error
+      }
+    }
+  }
+}
+
+const stopRunningLlamaServerForRestart = async (): Promise<void> => {
+  const pids = findLlamaServerPidsFromPsOutput(readPsOutput())
+
+  if (pids.length === 0) {
+    throw new Error('A healthy service is already running on localhost:8080, but no restartable llama-server process targeting --port 8080 was found.')
+  }
+
+  stopLlamaServerProcesses(pids, 'SIGTERM')
+  if (await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)) {
+    return
+  }
+
+  stopLlamaServerProcesses(pids, 'SIGKILL')
+  if (await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)) {
+    return
+  }
+
+  throw new Error(`Failed to stop existing llama-server on localhost:8080 (pids: ${pids.join(', ')})`)
 }
 
 const checkLlamaHealthQuiet = async (): Promise<boolean> => {
@@ -284,24 +610,14 @@ const waitForLlamaHealth = async (
   }
 }
 
-const ensureLlamaServerRunning = async (model: string): Promise<void> => {
-  if (await checkLlamaHealthQuiet()) {
-    return
-  }
-
+const startLlamaServer = async (target: LlamaServerTarget): Promise<LlamaServerIdentity> => {
   const llamaServerPath = resolveLlamaServerBinary()
 
-  const modelPath = readEnv('LLAMA_MODEL_PATH')
-  const modelRepo = readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model)
-  const modelArgs = modelPath
-    ? ['-m', modelPath]
-    : ['-hf', modelRepo]
-
-  if (!modelPath && modelRepo !== model) {
-    l.info(`Resolved llama model alias ${model} -> ${modelRepo}`)
+  if (target.mode === 'repo' && target.expectedRepo !== target.requestedModel) {
+    l.info(`Resolved llama model alias ${target.requestedModel} -> ${target.expectedRepo}`)
   }
-  l.info(`Starting llama-server (${modelPath ? 'local model path' : `hf repo: ${modelRepo}`})`)
-  const proc = Bun.spawn([llamaServerPath, ...modelArgs, '--host', '127.0.0.1', '--port', '8080', '--jinja'], {
+  l.info(`Starting llama-server (${describeLlamaServerTarget(target)})`)
+  const proc = Bun.spawn([llamaServerPath, ...target.startupArgs, '--host', '127.0.0.1', '--port', '8080', '--jinja'], {
     stdin: 'ignore',
     stdout: 'ignore',
     stderr: 'pipe'
@@ -360,6 +676,42 @@ const ensureLlamaServerRunning = async (model: string): Promise<void> => {
         : `llama-server failed to become healthy within ${timeoutSeconds} seconds`
     )
   }
+
+  const identity = await inspectRunningLlamaServer()
+  if (!identity) {
+    throw new Error(`llama-server became healthy but could not verify the loaded model for ${describeLlamaServerTarget(target)}`)
+  }
+
+  const match = evaluateLlamaServerIdentityMatch(target, identity)
+  if (!match.matches) {
+    throw new Error(
+      `llama-server became healthy but loaded the wrong target (${describeLlamaServerIdentity(identity)}). Expected ${describeLlamaServerTarget(target)}. ${match.reason}`
+    )
+  }
+
+  return identity
+}
+
+const ensureLlamaServerRunning = async (model: string): Promise<LlamaServerIdentity> => {
+  const target = resolveLlamaServerTarget(model)
+
+  if (await checkLlamaHealthQuiet()) {
+    const identity = await inspectRunningLlamaServer()
+    if (!identity) {
+      throw new Error('A healthy service is already running on localhost:8080, but it could not be verified as llama.cpp.')
+    }
+
+    const match = evaluateLlamaServerIdentityMatch(target, identity)
+    if (match.matches) {
+      l.info(`Reusing llama-server (${describeLlamaServerIdentity(identity)})`)
+      return identity
+    }
+
+    l.info(`Restarting llama-server on localhost:8080 (${describeLlamaServerIdentity(identity)}; expected ${describeLlamaServerTarget(target)})`)
+    await stopRunningLlamaServerForRestart()
+  }
+
+  return await startLlamaServer(target)
 }
 
 const requestLlamaCompletion = async (prompt: string, model: string, signal?: AbortSignal): Promise<{ responseText: string, outputTokenCount: number }> => {
@@ -378,7 +730,8 @@ const requestLlamaCompletion = async (prompt: string, model: string, signal?: Ab
       ],
       stream: false,
       temperature: 0.7,
-      max_tokens: 4096
+      max_tokens: 4096,
+      chat_template_kwargs: LLAMA_CHAT_TEMPLATE_KWARGS
     }),
     ...(signal ? { signal } : {})
   }
@@ -475,11 +828,8 @@ export const runLlamaModel = async (
   structuredOpts?: StructuredRequestOptions
 ): Promise<{ result: string, metadata: Step3Metadata }> => {
   try {
-    await ensureLlamaServerRunning(model)
-    
-    const requestModel = readEnv('LLAMA_MODEL_PATH')
-      ? model
-      : (readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model))
+    const identity = await ensureLlamaServerRunning(model)
+    const requestModel = resolveLlamaRequestModel(identity)
     
     const inputTokenCount = countTokens(prompt)
     const startTime = Date.now()
@@ -542,8 +892,8 @@ export const getAvailableModels = async (): Promise<string[]> => {
     const response = await fetch(`${LLAMA_BASE_URL}/v1/models`)
     
     if (response.ok) {
-      const data = await response.json() as { data?: { id: string }[] }
-      const models = data.data?.map(m => m.id) || []
+      const identity = parseLlamaServerIdentityFromModels(await response.json())
+      const models = identity?.aliases ?? []
       return models
     }
     
@@ -557,11 +907,8 @@ export const getAvailableModels = async (): Promise<string[]> => {
 export const streamLlamaResponse = async function* (prompt: string, model: string): AsyncGenerator<string> {
   try {
 
-    await ensureLlamaServerRunning(model)
-    
-    const requestModel = readEnv('LLAMA_MODEL_PATH')
-      ? model
-      : (readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model))
+    const identity = await ensureLlamaServerRunning(model)
+    const requestModel = resolveLlamaRequestModel(identity)
     
     const response = await fetch(`${LLAMA_BASE_URL}/v1/chat/completions`, {
       method: 'POST',
@@ -578,7 +925,8 @@ export const streamLlamaResponse = async function* (prompt: string, model: strin
         ],
         stream: true,
         temperature: 0.7,
-        max_tokens: 4096
+        max_tokens: 4096,
+        chat_template_kwargs: LLAMA_CHAT_TEMPLATE_KWARGS
       })
     })
     

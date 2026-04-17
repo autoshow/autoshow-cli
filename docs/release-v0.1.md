@@ -236,7 +236,7 @@ Notable behavior:
 | Mistral STT | `voxtral-mini-latest`, `voxtral-mini-2602` |
 | AssemblyAI STT | `universal-2`, `universal-3-pro` |
 | Mistral OCR | `mistral-ocr-latest`, `mistral-ocr-2512` |
-| llama.cpp | `ggml-org/gemma-3-270m-it-GGUF`, `ggml-org/Qwen3-0.6B-GGUF` |
+| llama.cpp | setup-managed defaults `ggml-org/gemma-3-270m-it-GGUF`, `ggml-org/Qwen3-0.6B-GGUF`, plus arbitrary Hugging Face repo IDs in `namespace/repo_name` form |
 | OpenAI LLM | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Groq LLM | `openai/gpt-oss-20b`, `openai/gpt-oss-120b` |
 | Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-haiku-4-5` |
@@ -257,8 +257,8 @@ Notable behavior:
 | ElevenLabs music | `music_v1` |
 | MiniMax music | `music-2.5` |
 
-`models` is slightly looser for llama downloads than the flag registry:
-it accepts Whisper model IDs directly, but forwards non-Whisper values as llama repo IDs to the local downloader.
+`models` and `write --llama` both accept arbitrary llama Hugging Face repo IDs.
+`models` also accepts Whisper model IDs directly for local Whisper downloads.
 
 ## Prompts, Structured Output, Config, And Pricing
 

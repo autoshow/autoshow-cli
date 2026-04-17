@@ -1,4 +1,16 @@
-import type { ProcessingOptions, TranscriptionResult, Step2Metadata, DiarizationOptions } from '~/types'
+import type {
+  DiarizationFlagOptions,
+  DiarizationOptions,
+  IndexedTranscriptionChunk,
+  ProcessingOptions,
+  Step2Metadata,
+  SttTarget,
+  SttTargetOptions,
+  TranscribeEngine,
+  TranscribeEngineCapabilities,
+  TranscriptionResult,
+  WhisperProgressWindow
+} from '~/types'
 import { mergeStep2TimingMetadata } from './stt-timing-metadata'
 import * as l from '~/logger'
 import { runWhisperTranscribe } from './stt-local/whisper/run-whisper'
@@ -30,10 +42,7 @@ import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-st
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
 import { reverbUvEnvDir, reverbModelPath, reverbConfigPath, whisperBinaryPath, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import { assertNever } from '~/utils/validate/assert-never'
-import type { TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
-import type { SttTarget } from './stt-targets'
-import type { AsyncSttLifecycleHooks } from './stt-utils/async-stt-job-runner'
 
 export const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
@@ -180,11 +189,6 @@ const ensureWhisperSetup = async (model: string): Promise<void> => {
   }
 }
 
-type DiarizationFlagOptions = Pick<
-  ProcessingOptions,
-  'diarizationSpeakerCount' | 'diarizationSpeakerNames' | 'diarizationSpeakerReferences'
->
-
 export const getSttEngineCapabilities = (
   engine: TranscribeEngine
 ): TranscribeEngineCapabilities => STT_ENGINE_CAPABILITIES[engine]
@@ -237,26 +241,6 @@ export const resolveDiarizationOptions = (
 
   diarizationOptions.speakerCount = speakerCount
   return diarizationOptions
-}
-
-type WhisperProgressWindow = {
-  segmentStartSeconds: number
-  segmentDurationSeconds: number
-  totalDurationSeconds: number
-}
-
-type SttTargetOptions = {
-  split?: boolean | undefined
-  reverbVerbatimicity?: number | undefined
-  sttSegmentConcurrency?: number | undefined
-  audioDurationSeconds?: number | undefined
-  runMode?: 'initial' | 'backfill' | undefined
-  asyncLifecycle?: AsyncSttLifecycleHooks | undefined
-}
-
-type IndexedTranscriptionChunk = {
-  segmentIndex: number
-  data: { result: TranscriptionResult, metadata: Step2Metadata }
 }
 
 const persistTranscriptionEvidenceArtifacts = async (

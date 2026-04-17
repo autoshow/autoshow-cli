@@ -9,7 +9,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import * as l from '~/logger'
 import { DOCUMENT_EXTENSIONS, IMAGE_EXTENSIONS, MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { prepareSttMedia } from '../stt-media-cache'
-import type { SttTarget } from '../stt-targets'
+import type { SttTarget } from '~/types'
 
 const isLikelyUrl = (input: string): boolean => {
   try {

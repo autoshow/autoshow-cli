@@ -1,5 +1,6 @@
 import { getLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
+import { CLIUsageError } from '~/utils/error-handler'
 import type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
 export type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
 
@@ -52,6 +53,8 @@ export const SUPPORTED_LLAMA_MODELS = [
   'ggml-org/Qwen3-0.6B-GGUF'
 ] as const satisfies readonly string[]
 
+const HUGGING_FACE_REPO_ID_PATTERN = /^[^/\s]+\/[^/\s]+$/
+
 const _validateOpenAI = createModelValidator(SUPPORTED_OPENAI_MODELS, 'openai')
 export const validateOpenAIModel = (model: string): string => _validateOpenAI(model)
 
@@ -62,7 +65,19 @@ export const validateGeminiModel = createModelValidator(SUPPORTED_GEMINI_MODELS,
 export const validateAnthropicModel = createModelValidator<AnthropicModel>(SUPPORTED_ANTHROPIC_MODELS, 'anthropic')
 export const validateMinimaxModel = createModelValidator<MinimaxModel>(SUPPORTED_MINIMAX_MODELS, 'minimax')
 export const validateGrokModel = createModelValidator(SUPPORTED_GROK_MODELS, 'grok')
-export const validateLlamaModel = createModelValidator(SUPPORTED_LLAMA_MODELS, 'llama')
+export const validateLlamaModel = (model: string): string => {
+  if (SUPPORTED_LLAMA_MODELS.includes(model as typeof SUPPORTED_LLAMA_MODELS[number])) {
+    return model
+  }
+
+  if (HUGGING_FACE_REPO_ID_PATTERN.test(model)) {
+    return model
+  }
+
+  throw CLIUsageError(
+    `Invalid --llama model "${model}". Use a supported local model alias or a Hugging Face repo ID in namespace/repo_name form.`
+  )
+}
 
 export const resolveLlamaDownloadRepo = (model: string): string => {
   return getLlamaDownloadRepo(model) || model

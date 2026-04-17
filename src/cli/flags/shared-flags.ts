@@ -174,7 +174,7 @@ export const transcriptionFlags = {
 
 export const llmProviderFlags = {
   llama: {
-    description: `llama.cpp model ID (${SUPPORTED_LLAMA_MODELS.length} supported; see docs/commands/03-write.md)`,
+    description: `llama.cpp model ID or Hugging Face repo ID (namespace/repo_name; ${SUPPORTED_LLAMA_MODELS.length} setup-managed defaults)`,
     type: String
   },
   openai: {

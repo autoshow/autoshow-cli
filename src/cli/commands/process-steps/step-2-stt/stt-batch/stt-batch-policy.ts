@@ -1,12 +1,5 @@
-import type { SttTarget } from '../stt-targets'
+import type { SttBatchProviderProfile, SttBatchSchedulerSnapshot, SttTarget } from '~/types'
 import { formatSttTargetLabel, getSttTargetKey } from '../stt-targets'
-import type { SttBatchSchedulerSnapshot } from './stt-batch-coordinator'
-
-type SttBatchProviderProfile = {
-  kind: 'sync' | 'async'
-  launchSlotLimit: number
-  pollSlotLimit: number
-}
 
 const DEFAULT_PROVIDER_SLOT_LIMIT = 2
 const DEFAULT_DEEPGRAM_SLOT_LIMIT = 4

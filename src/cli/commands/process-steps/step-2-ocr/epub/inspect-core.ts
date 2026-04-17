@@ -19,7 +19,7 @@ import type {
   EpubManifestItem,
   EpubMetadata,
   EpubTocItem
-} from './types'
+} from '~/types'
 
 const stripNsPrefixes = (xml: string): string =>
   xml.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*:/g, match => (match[1] === '/' ? '</' : '<'))

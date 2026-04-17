@@ -1,7 +1,9 @@
 import { basename } from 'node:path'
 import type {
+  AsyncSttLifecycleHooks,
   DiarizationOptions,
   RetryClass,
+  SonioxHttpError,
   SonioxTranscriptResponse,
   SonioxTranscriptionStatus,
   Step2Metadata,
@@ -25,8 +27,7 @@ import {
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata,
-  type AsyncSttLifecycleHooks
+  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
@@ -39,14 +40,6 @@ const MAX_POLL_INTERVAL_MS = 10000
 const SILENCE_BREAK_MS = 1500
 const MIN_SENTENCE_SEGMENT_CHARS = 80
 const MAX_SEGMENT_CHARS = 220
-
-type SonioxHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'upload' | 'create' | 'poll' | 'transcript'
-  retryClass?: RetryClass
-  rawResponse?: unknown
-}
 
 const buildSonioxUrl = (baseURL: string, path: string): string => new URL(path, baseURL).toString()
 

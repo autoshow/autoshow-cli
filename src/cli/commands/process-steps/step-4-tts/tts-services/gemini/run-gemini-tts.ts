@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
-import type { Step4Metadata } from '~/types'
+import type { GeminiInlineAudioInfo, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
@@ -10,12 +10,6 @@ import { readEnv } from '~/utils/validate/env-utils'
 import { classifyGeminiRetry } from '~/utils/gemini-utils'
 
 const MAX_CHARS_PER_CHUNK = 4000
-
-type GeminiInlineAudioInfo = {
-  ext: string
-  isRawPcm: boolean
-  sampleRate: number
-}
 
 const parseGeminiInlineAudioInfo = (mimeType: string | undefined): GeminiInlineAudioInfo => {
   const raw = mimeType ?? ''

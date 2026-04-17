@@ -1,15 +1,11 @@
 import { rename } from 'node:fs/promises'
 import { basename } from 'node:path'
-import type { Step5Metadata } from '~/types'
+import type { ImageGenOptions, ImageResult, ImageTarget, Step5Metadata } from '~/types'
 import { sanitizeModelName, runTargets } from '~/cli/commands/process-steps/target-runner'
 import {
-  type ImageGenOptions,
-  type ImageTarget,
   collectImageTargets,
   getImageArtifactFileNames,
 } from './image-targets'
-
-type ImageResult = { imagePaths: string[], metadata: Step5Metadata }
 
 const finalizeTargetArtifacts = async (
   outputDir: string,

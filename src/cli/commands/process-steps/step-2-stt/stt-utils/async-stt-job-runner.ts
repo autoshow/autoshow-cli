@@ -1,4 +1,8 @@
-import type { Step2Metadata, Step2RuntimeMetadata } from '~/types'
+import type {
+  AsyncSttPollLoopOptions,
+  Step2Metadata,
+  Step2RuntimeMetadata
+} from '~/types'
 
 const DEFAULT_POLL_DEADLINE_MS = 10 * 60 * 1000
 const MAX_POLL_DEADLINE_MS = 30 * 60 * 1000
@@ -120,33 +124,10 @@ export const resolveAsyncSttPollDeadlineMs = (
   )
 }
 
-export type AsyncSttPollMode = 'fresh' | 'resume-probe'
-
 export const withOptionalGate = async <T>(
   gate: ((fn: () => Promise<T>) => Promise<T>) | undefined,
   fn: () => Promise<T>
 ): Promise<T> => gate ? await gate(fn) : await fn()
-
-export type AsyncSttLifecycleHooks = {
-  onJobReady?: ((runtime: Step2RuntimeMetadata) => Promise<void> | void) | undefined
-  withPollSlot?: (<T>(fn: () => Promise<T>) => Promise<T>) | undefined
-}
-
-type AsyncSttPollLoopOptions<TStatus> = {
-  jobId: string
-  initialPollIntervalMs: number
-  maxPollIntervalMs: number
-  audioDurationSeconds?: number | undefined
-  envSpecificDeadlineKey: string
-  pollMode?: AsyncSttPollMode | undefined
-  poll: () => Promise<{ status: TStatus, retryAfterMs: number | null }>
-  isComplete: (status: TStatus) => boolean
-  isFailed: (status: TStatus) => string | undefined
-  buildDeadlineError: (jobId: string, pollDeadlineMs: number) => never
-  buildResumeProbeError?: ((jobId: string, probeCount: number, totalWaitMs: number) => never) | undefined
-  onProgress?: ((status: TStatus) => Promise<void> | void) | undefined
-  withPollSlot?: (<T>(fn: () => Promise<T>) => Promise<T>) | undefined
-}
 
 export const pollAsyncSttJobUntilComplete = async <TStatus>(
   options: AsyncSttPollLoopOptions<TStatus>

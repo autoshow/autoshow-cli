@@ -1,14 +1,5 @@
-import type { Step4Metadata, TtsProvider } from '~/types'
+import type { FinalizeTtsRunOptions, Step4Metadata } from '~/types'
 import * as l from '~/logger'
-
-type FinalizeTtsRunOptions = {
-  service: TtsProvider
-  model: string
-  speaker?: string | undefined
-  audioPath: string
-  chunkCount: number
-  startTime: number
-}
 
 export const finalizeTtsRun = ({
   service,

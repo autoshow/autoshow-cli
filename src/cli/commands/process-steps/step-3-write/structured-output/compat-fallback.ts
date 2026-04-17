@@ -1,6 +1,10 @@
 import * as l from '~/logger'
-import type { LLMTarget, Step3Metadata } from '~/types'
-import type { ResolvedStructuredSchema, StructuredRequestOptions } from './types'
+import type {
+  CompatStructuredResponse,
+  LLMTarget,
+  ResolvedStructuredSchema,
+  StructuredRequestOptions
+} from '~/types'
 import { parseAndValidateStructured } from './validator'
 import { buildStructuredInstructionSuffix } from './schema-resolver'
 
@@ -13,12 +17,6 @@ const buildCompatPrompt = (prompt: string, schema: ResolvedStructuredSchema): st
     'JSON schema:',
     JSON.stringify(schema.jsonSchema, null, 2)
   ].join('\n')
-}
-
-export type CompatStructuredResponse = {
-  parsedJson: unknown
-  rawResponse: string
-  metadata: Step3Metadata
 }
 
 export const runCompatFallback = async (

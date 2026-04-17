@@ -2,13 +2,11 @@ import { cpus } from 'node:os'
 import { join } from 'node:path'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import type { ExtractionOptions, PageResult, InternalPage } from '~/types'
+import type { ExtractionOptions, InternalPage, OcrFn, PageResult } from '~/types'
 import * as l from '~/logger'
 import { extractPageText, renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { ocrImage } from './tesseract-utils'
 import { isTextUsable } from './page-triage'
-
-export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
 
 const toPlainTextFromTsv = (tsv: string): string => {
   const lines = tsv.split('\n').map(l => l.trim()).filter(Boolean)

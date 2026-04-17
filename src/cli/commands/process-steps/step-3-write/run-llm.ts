@@ -1,5 +1,12 @@
 import * as l from '~/logger'
-import type { ProcessingOptions, VideoMetadata, TranscriptionResult } from '~/types'
+import type {
+  LLMOptions,
+  LLMTarget,
+  StructuredRequestOptions,
+  StructuredRunResult,
+  TranscriptionResult,
+  VideoMetadata
+} from '~/types'
 import { buildPrompt as buildPromptFromUtils } from './write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { runLlamaModel } from './write-local/llama/run-llama'
@@ -9,33 +16,11 @@ import { runGeminiModel } from './write-services/gemini/run-gemini'
 import { runAnthropicModel } from './write-services/anthropic/run-anthropic'
 import { runMinimaxModel } from './write-services/minimax/run-minimax'
 import { runGrokModel } from './write-services/grok/run-grok'
-import type { LLMTarget } from '~/types'
 import { resolveStructuredMode, shouldApplyStrictMode } from './structured-output/capabilities'
 import { buildStructuredInstructionSuffix, resolveStructuredSchema } from './structured-output/schema-resolver'
 import { parseAndValidateStructured } from './structured-output/validator'
 import { runCompatFallback } from './structured-output/compat-fallback'
 import { renderToPlainText } from './structured-output/renderers'
-import type { StructuredRequestOptions, StructuredRunResult } from './structured-output/types'
-
-type LLMOptions = Pick<ProcessingOptions,
-  | 'outputDir'
-  | 'prompts'
-  | 'useOpenAI'
-  | 'openaiModel'
-  | 'groqModel'
-  | 'useGemini'
-  | 'geminiModel'
-  | 'useAnthropic'
-  | 'anthropicModel'
-  | 'minimaxModel'
-  | 'grokModel'
-  | 'llamaModel'
-  | 'structured'
-  | 'structuredStrict'
-  | 'structuredCompatRetries'
-> & {
-  promptBuilder?: ((instruction: string) => string) | undefined
-}
 
 const sanitizeModelName = (model: string): string =>
   model.replace(/[/\\:*?"<>|]/g, '-')

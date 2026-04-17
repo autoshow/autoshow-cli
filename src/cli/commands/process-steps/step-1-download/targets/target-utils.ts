@@ -5,32 +5,21 @@ import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { isSttCommand, type ProcessCommand, type RuntimeOptions } from '~/types'
-import type { TopLevelTargetInfo, BatchItemProcessor, BatchRunOptions, BatchProcessResult, InputKind } from '~/types'
+import type {
+  BatchManifestEntry,
+  BatchManifestErrorEntry,
+  BatchItemProcessor,
+  BatchProcessResult,
+  BatchRunOptions,
+  InputKind,
+  SttBatchItemSummary,
+  SttManifestProviderSummary,
+  TopLevelTargetInfo
+} from '~/types'
 import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-run-state'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
-
-export type BatchManifestEntry = Record<string, unknown>
-type BatchManifestErrorEntry = {
-  service?: string
-  model?: string
-  message?: string
-}
-
-type SttManifestProviderStatus = 'succeeded' | 'missing' | 'failed' | 'skipped'
-
-type SttManifestProviderSummary = {
-  label: string
-  status: SttManifestProviderStatus
-  message?: string
-}
-
-type SttBatchItemSummary = {
-  label: string
-  completionStatus: 'full' | 'incomplete' | 'failed'
-  providers: SttManifestProviderSummary[]
-}
 
 const getBatchManifestTitle = (
   entry: BatchManifestEntry,

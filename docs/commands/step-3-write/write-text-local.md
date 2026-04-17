@@ -61,9 +61,11 @@ bun as write [input] [flags]
 
 ## Local LLM
 
-Current local llama.cpp models in the project config:
+Setup-managed local llama.cpp models in the project config:
 - `ggml-org/gemma-3-270m-it-GGUF`
 - `ggml-org/Qwen3-0.6B-GGUF`
+
+`--llama` also accepts any Hugging Face repo ID in `namespace/repo_name` form. Known project models still work as aliases and are the ones downloaded by `bun as setup --step write`.
 
 ## Examples
 
@@ -72,6 +74,7 @@ Current local llama.cpp models in the project config:
 bun as write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF
 
 bun as write input/examples/audio/1-audio.mp3 --llama unsloth/Qwen3.5-0.8B-GGUF
+bun as write input/examples/audio/1-audio.mp3 --llama unsloth/Qwen3.5-2B-GGUF
 
 # Document input + local summary
 bun as write input/examples/document/1-document.pdf --llama ggml-org/Qwen3-0.6B-GGUF
@@ -92,7 +95,7 @@ Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common 
 
 | Flag | Description |
 |------|-------------|
-| `--llama <model>` | Select the local llama.cpp model |
+| `--llama <model>` | Select a local llama.cpp model alias or Hugging Face repo ID |
 | `--prompt <name...>` | Select prompt preset(s) |
 | `--price` | Show the aggregated estimate and exit |
 

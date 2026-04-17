@@ -24,7 +24,7 @@ import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/s
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
-import type { AggregatedPriceEstimate, ResolvedBatch } from '~/types'
+import type { AggregatedPriceEstimate, ResolvedProcessTargetPlan } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { resolveResumeSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/stt-batch/resume-stt-batch'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch'
@@ -178,13 +178,6 @@ const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, double
 
   return false
 }
-
-type ResolvedProcessTargetPlan =
-  | { kind: 'directory', targets: string[] }
-  | { kind: 'input_list', resolvedBatch: ResolvedBatch }
-  | { kind: 'resolved_batch', resolvedBatch: ResolvedBatch }
-  | { kind: 'youtube_collection', targets: string[] }
-  | { kind: 'single', target: string }
 
 const resolveProcessTargetPlan = async (
   command: ProcessCommand,

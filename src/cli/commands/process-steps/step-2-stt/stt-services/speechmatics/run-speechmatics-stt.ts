@@ -1,7 +1,9 @@
 import { basename } from 'node:path'
 import type {
+  AsyncSttLifecycleHooks,
   DiarizationOptions,
   RetryClass,
+  SpeechmaticsHttpError,
   SpeechmaticsCreateJobResponse,
   SpeechmaticsJob,
   SpeechmaticsTranscriptResponse,
@@ -27,8 +29,7 @@ import {
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata,
-  type AsyncSttLifecycleHooks
+  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
 import { getSpeechmaticsBaseUrl } from './speechmatics'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
@@ -39,14 +40,6 @@ const INITIAL_POLL_INTERVAL_MS = 1000
 const MAX_POLL_INTERVAL_MS = 10000
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
-
-type SpeechmaticsHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'create' | 'poll' | 'transcript'
-  retryClass?: RetryClass
-  rawResponse?: unknown
-}
 
 const buildSpeechmaticsUrl = (baseURL: string, path: string): string =>
   new URL(path, baseURL).toString()

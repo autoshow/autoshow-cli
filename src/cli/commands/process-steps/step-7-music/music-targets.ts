@@ -1,21 +1,10 @@
-import type { MusicProvider, ProcessingOptions, Step7MusicMetadata } from '~/types'
+import type { MusicGenOptions, MusicTarget, Step7MusicMetadata } from '~/types'
 import { type ElevenlabsMusicModel, type MinimaxMusicModel, validateElevenlabsMusicModel, validateMinimaxMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureElevenLabsMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { ensureMinimaxMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import { runElevenLabsMusicGen } from './music-services/elevenlabs/run-elevenlabs-music-gen'
 import { runMinimaxMusicGen } from './music-services/minimax/run-minimax-music-gen'
-
-export type MusicGenOptions = Pick<
-  ProcessingOptions,
-  'elevenlabsMusicModel' | 'minimaxMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental'
->
-
-export type MusicTarget = {
-  service: MusicProvider
-  model: string
-  run: (prompt: string, outputDir: string) => Promise<{ musicPath: string, metadata: Step7MusicMetadata }>
-}
 
 export const getMusicArtifactFileName = (
   target: Pick<MusicTarget, 'service' | 'model'>,

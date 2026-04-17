@@ -7,22 +7,22 @@ import {
   type ProcessDocumentOutput,
   type ExtractionMetadata,
   type ExtractionResult,
-  type PreparedDocument
+  type PreparedDocument,
+  type Step1SourceRef
 } from '~/types'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from './step-1-download/document/dl-document'
 import { runOcr } from './step-2-ocr/run-ocr'
 import { runWithLogContext } from '~/logger'
-import type { Step1SourceRef } from './step-1-download/audio/metadata-utils'
 import {
   buildExtractionOptionsForTarget,
   collectExplicitOcrTargets,
-  getOcrTargetDirectoryName,
-  type OcrTarget
+  getOcrTargetDirectoryName
 } from './step-2-ocr/ocr-targets'
 import { FIRECRAWL_PRICE_NOTE } from './step-2-ocr/ocr-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
+import type { OcrTarget } from '~/types'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'

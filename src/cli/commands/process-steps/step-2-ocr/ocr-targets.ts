@@ -1,10 +1,5 @@
-import type { ExtractionOptions } from '~/types'
+import type { ExtractionOptions, OcrTarget } from '~/types'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
-
-export type OcrTarget = {
-  service: 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm'
-  model: string
-}
 
 export const collectExplicitOcrTargets = (
   opts: Pick<ExtractionOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel'>

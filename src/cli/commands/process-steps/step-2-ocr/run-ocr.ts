@@ -10,9 +10,11 @@ import {
   ExtractionResultSchema,
   type DocumentMetadata,
   type ExtractionMetadata,
+  type HostedExtractOcrEngine,
+  type HostedOcrRun,
   type ExtractionOptions,
   type ExtractionResult,
-  type ExtractOcrEngine,
+  type LocalExtractOcrEngine,
   type PageResult
 } from '~/types'
 import { ensureTesseractSetup, ocrImage } from './ocr-utils/tesseract-utils'
@@ -34,19 +36,6 @@ import { estimateTokens } from '~/utils/text-utils'
 const ZIP_XML_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'] as const)
 const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
 const isZipXmlFormat = (f: string): f is ZipXmlFormat => ZIP_XML_FORMATS.has(f as ZipXmlFormat)
-
-type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr'
-type LocalExtractOcrEngine = Exclude<ExtractOcrEngine, HostedExtractOcrEngine>
-type HostedOcrRun = {
-  pages: PageResult[]
-  extractionMethod: HostedExtractOcrEngine
-  ocrService: 'mistral' | 'glm'
-  ocrModel: string
-  canonicalText?: string
-  totalPages?: number
-  promptTokens?: number
-  completionTokens?: number
-}
 
 const buildCombinedText = (pages: PageResult[], pageSeparator: string): string => {
   return pages

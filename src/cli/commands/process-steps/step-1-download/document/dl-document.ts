@@ -7,13 +7,11 @@ import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-d
 import { validateData } from '~/utils/validate/validation'
 import {
   buildDocumentStep1Slug,
-  createUniqueDirectoryName,
-  type Step1SourceRef
+  createUniqueDirectoryName
 } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { DocumentMetadataSchema, type PreparedDocument } from '~/types'
+import { DocumentMetadataSchema, type DocFormat, type PreparedDocument, type PreparedDocumentMetadata, type Step1SourceRef } from '~/types'
 import { detectDocumentFormat } from './detect-format'
 import { getDocumentInfo } from './mutool-utils'
-import type { DocFormat } from '~/types'
 import * as l from '~/logger'
 
 const EBOOK_FORMATS = new Set(['mobi', 'azw3', 'fb2', 'lit'])
@@ -76,8 +74,6 @@ const defaultOutputDir = (baseDir: string, filePath: string): string => {
   const title = basename(filePath).replace(/\.[^.]+$/, '')
   return `${baseDir}/${createUniqueDirectoryName(title)}`
 }
-
-type PreparedDocumentMetadata = Pick<PreparedDocument, 'step1Metadata' | 'effectiveFilePath' | 'tempCleanup'>
 
 export const prepareDocumentMetadata = async (
   filePath: string,

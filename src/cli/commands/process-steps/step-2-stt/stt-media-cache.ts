@@ -14,68 +14,21 @@ import {
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import * as l from '~/logger'
-import type { Step1Metadata, VideoMetadata } from '~/types'
+import type {
+  AcquireArtifactOptions,
+  CacheArtifactRecord,
+  CacheArtifactStatus,
+  CacheLookup,
+  MediaCacheEntry,
+  PreparedSttMedia,
+  Step1Metadata,
+  VideoMetadata
+} from '~/types'
 import { buildMediaStep1Slug, buildVideoMetadataFromInfo, extractLocalFileMetadata, getVideoInfo, isDirectMediaUrl, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { downloadVideo } from '~/cli/commands/process-steps/step-1-download/audio/yt-utils'
 import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
 import { commandExists, exec, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
-import type { SttTarget } from './stt-targets'
-
-type CacheArtifactStatus = 'hit' | 'miss'
-
-type CacheArtifactRecord = {
-  fileName: string
-  size: number
-}
-
-type MediaCacheEntry = {
-  cacheKey: string
-  weakFingerprint?: boolean | undefined
-  metadataSchemaVersion: number
-  artifactVersions: {
-    source_media: number
-  }
-  durationSeconds?: number | undefined
-  createdAt: string
-  lastAccessedAt: string
-  artifacts?: {
-    source_media?: CacheArtifactRecord | undefined
-  } | undefined
-}
-
-type CacheLookup = {
-  cacheKey: string
-  weakFingerprint: boolean
-  metadata: VideoMetadata
-}
-
-type AcquireArtifactOptions = {
-  source: { url?: string, filePath?: string }
-  targets: SttTarget[]
-  outputDir?: string | undefined
-  noCache?: boolean | undefined
-  refreshCache?: boolean | undefined
-}
-
-export type PreparedSttMedia = {
-  metadata: VideoMetadata
-  step1Metadata: Step1Metadata
-  durationSeconds: number
-  executionArtifacts: {
-    sourceMediaPath: string
-  }
-  outputArtifacts: {
-    sourceMediaPath: string
-  }
-  cache: {
-    sourceMedia: CacheArtifactStatus
-  }
-  timings: {
-    sourceMediaMs?: number | undefined
-  }
-  cleanup?: (() => Promise<void>) | undefined
-}
 
 const METADATA_SCHEMA_VERSION = 1
 const SOURCE_MEDIA_ARTIFACT_VERSION = 3

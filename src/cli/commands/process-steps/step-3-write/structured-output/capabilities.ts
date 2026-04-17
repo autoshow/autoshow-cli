@@ -1,7 +1,4 @@
-import type { Step3Metadata } from '~/types'
-import type { ProviderStructuredCapability, StructuredMode } from './types'
-
-type LLMService = Step3Metadata['llmService']
+import type { LLMService, ProviderStructuredCapability, StructuredMode } from '~/types'
 
 const CAPABILITIES: Record<LLMService, ProviderStructuredCapability> = {
   'openai': {

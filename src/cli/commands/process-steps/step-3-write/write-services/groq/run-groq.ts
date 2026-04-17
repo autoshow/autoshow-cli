@@ -1,8 +1,7 @@
 import OpenAI from 'openai'
 import * as l from '~/logger'
 import { readEnv, readEnvFallback } from '~/utils/validate/env-utils'
-import type { StructuredRequestOptions } from '~/cli/commands/process-steps/step-3-write/structured-output/types'
-import type { Step3Metadata } from '~/types'
+import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runOpenAICompatibleChatModel } from '../openai-compatible-chat'
 
 const getGroqClientConfig = (): { apiKey: string, baseURL: string } => {

@@ -2,17 +2,11 @@ import { access } from 'node:fs/promises'
 import { constants as fsConstants } from 'node:fs'
 import { resolve } from 'node:path'
 import * as l from '~/logger'
+import type { YtDlpAuthMode, YtDlpListOptions } from '~/types'
 import { loadEnvFile } from '~/utils/cli-utils'
 
 const YOUTUBE_BOT_CHECK_PATTERN = /Sign in to confirm you(?:’|')re not a bot/i
 const warnedUnreadableCookiePaths = new Set<string>()
-
-export type YtDlpAuthMode = 'cookies-file' | 'cookies-from-browser' | 'none'
-export type YtDlpListOptions = {
-  limit?: number
-  all?: boolean
-  order?: 'newest' | 'oldest'
-}
 
 const getTrimmedEnv = (key: string): string | undefined => {
   const value = process.env[key]?.trim()

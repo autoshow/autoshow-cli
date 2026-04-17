@@ -1,7 +1,9 @@
 import { basename } from 'node:path'
 import type {
+  AsyncSttLifecycleHooks,
   DiarizationOptions,
   RetryClass,
+  RevHttpError,
   RevJob,
   RevTranscriptResponse,
   Step2Metadata,
@@ -25,8 +27,7 @@ import {
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata,
-  type AsyncSttLifecycleHooks
+  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-stt/stt-utils/async-stt-job-runner'
 import { getRevBaseUrl } from './rev'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
@@ -37,14 +38,6 @@ const INITIAL_POLL_INTERVAL_MS = 2000
 const MAX_POLL_INTERVAL_MS = 10000
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
-
-type RevHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'create' | 'poll' | 'transcript'
-  retryClass?: RetryClass
-  rawResponse?: unknown
-}
 
 const buildRevUrl = (baseURL: string, path: string): string =>
   new URL(path.replace(/^\/+/, ''), baseURL.endsWith('/') ? baseURL : `${baseURL}/`).toString()

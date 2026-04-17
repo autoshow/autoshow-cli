@@ -203,7 +203,7 @@ export const ExtractionResultSchema = v.object({
 
 export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr'
 
-export type EpubInspectEngine = 'bun' | 'calibre'
+export type { EpubInspectEngine } from '~/cli/commands/process-steps/step-2-ocr/ocr-types'
 export type EpubInspection = Record<string, unknown>
 const EpubInspectionSchema = v.record(v.string(), v.unknown())
 

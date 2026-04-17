@@ -11,7 +11,10 @@ import type {
   AggregatedPriceEstimate,
   RuntimeOptions,
   Step2Metadata,
+  SttProviderSuccess,
+  SttTarget,
   TranscriptionResult,
+  StructuredRunResult,
 } from '~/types'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
@@ -20,12 +23,11 @@ import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { sttTarget } from './step-2-stt/run-stt'
 import { formatTranscriptText } from './step-2-stt/stt-utils/stt-utils'
-import { collectSttTargets, getSttTargetDirectoryName, type SttTarget } from './step-2-stt/stt-targets'
+import { collectSttTargets, getSttTargetDirectoryName } from './step-2-stt/stt-targets'
 import { prepareSttMedia } from './step-2-stt/stt-media-cache'
 import { runLLM } from './step-3-write/run-llm'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
-import type { StructuredRunResult } from './step-3-write/structured-output/types'
 import { runTts } from './step-4-tts/run-tts'
 import { buildTtsArtifactMap, collectTtsTargets } from './step-4-tts/tts-targets'
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } from './step-5-image/image-targets'
@@ -41,13 +43,6 @@ import { serializeOneOrMany } from './target-runner'
 import { classifySttProviderFailure, prioritizeCloudSttTargetIndices, selectPrimaryPromptProvider } from './process-stt'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
-
-type SttProviderSuccess = {
-  target: SttTarget
-  metadata: Step2Metadata
-  result: TranscriptionResult
-  relativeDir?: string | undefined
-}
 
 const runTargetPool = async (
   indices: number[],

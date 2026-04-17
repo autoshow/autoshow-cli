@@ -1,83 +1,18 @@
-import { formatSttTargetLabel, getSttTargetKey, type SttTarget } from '../stt-targets'
+import type {
+  AvailabilityWaiter,
+  CoordinatedTargetSelection,
+  ProviderFailureSummary,
+  ProviderProfile,
+  ProviderState,
+  SttBatchAttemptDecision,
+  SttBatchBlockedProviderReason,
+  SttBatchProviderAvailability,
+  SttBatchProviderStatsSnapshot,
+  SttBatchSchedulerSnapshot,
+  SttTarget
+} from '~/types'
+import { formatSttTargetLabel, getSttTargetKey } from '../stt-targets'
 import { getSttBatchProviderProfile } from './stt-batch-policy'
-
-export type SttBatchBlockedProviderReason = {
-  service: SttTarget['service']
-  model: string
-  local: boolean
-  message: string
-  retryable: boolean
-  stage?: string | undefined
-  status?: number | undefined
-  degraded?: boolean | undefined
-}
-
-export type SttBatchAttemptDecision =
-  | { action: 'run' }
-  | { action: 'skip', reason: SttBatchBlockedProviderReason }
-  | { action: 'defer' }
-
-export type SttBatchProviderAvailability =
-  | { action: 'run', activeCount: number, slotLimit: number }
-  | { action: 'skip', reason: SttBatchBlockedProviderReason, activeCount: number, slotLimit: number }
-  | { action: 'defer', activeCount: number, slotLimit: number, cooldownMs?: number | undefined }
-
-export type SttBatchProviderStatsSnapshot = {
-  service: SttTarget['service']
-  model: string
-  kind: 'sync' | 'async'
-  launchSlotLimit: number
-  pollSlotLimit: number
-  launchedCount: number
-  completedCount: number
-  blockedCount: number
-  degradedCount: number
-  queueWaitMs: number
-  pollCount: number
-  backfillCount: number
-  warmupComplete: boolean
-}
-
-export type SttBatchSchedulerSnapshot = {
-  providers: SttBatchProviderStatsSnapshot[]
-}
-
-type AvailabilityWaiter = {
-  resolved: boolean
-  notify: () => void
-  timer?: ReturnType<typeof setTimeout> | undefined
-}
-
-type ProviderStats = {
-  launchedCount: number
-  completedCount: number
-  blockedCount: number
-  degradedCount: number
-  queueWaitMs: number
-  pollCount: number
-  backfillCount: number
-}
-
-type ProviderState = {
-  activeCount: number
-  pollActiveCount: number
-  blockedReason?: SttBatchBlockedProviderReason | undefined
-  waiters: AvailabilityWaiter[]
-  pollWaiters: AvailabilityWaiter[]
-  cooldownUntil?: number | undefined
-  warmupComplete: boolean
-  consecutiveRetryableFailures: number
-  stats: ProviderStats
-}
-
-type ProviderFailureSummary = {
-  message: string
-  retryable: boolean
-  stage?: string | undefined
-  status?: number | undefined
-}
-
-type ProviderProfile = ReturnType<typeof getSttBatchProviderProfile>
 
 const MAX_PROVIDER_COOLDOWN_MS = 5 * 60 * 1000
 const RETRYABLE_FAILURE_DEGRADE_THRESHOLD = 2
@@ -477,11 +412,6 @@ export class SttBatchCoordinator {
         )
     }
   }
-}
-
-type CoordinatedTargetSelection = {
-  index: number
-  queueWaitMs: number
 }
 
 const selectCoordinatedTarget = async (

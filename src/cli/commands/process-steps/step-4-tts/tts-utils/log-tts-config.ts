@@ -1,9 +1,5 @@
+import type { TtsConfigField } from '~/types'
 import * as l from '~/logger'
-
-type TtsConfigField = {
-  label: string
-  value: string | number | undefined
-}
 
 export const logTtsConfig = (provider: string, fields: readonly TtsConfigField[]): void => {
   for (const field of fields) {

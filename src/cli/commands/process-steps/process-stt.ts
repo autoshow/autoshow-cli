@@ -4,12 +4,29 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
-import type { AggregatedPriceEstimate, RuntimeOptions, RetryClass, Step2Metadata, TranscriptionResult } from '~/types'
+import type {
+  AggregatedPriceEstimate,
+  EffectiveSttProviderConcurrency,
+  ExistingSttRun,
+  PreparedSttMedia,
+  ProcessSttRunOptions,
+  PromptSelectionCandidate,
+  ProviderErrorLike,
+  ProviderFailure,
+  RuntimeOptions,
+  Step2Metadata,
+  SttBatchBlockedProviderReason,
+  SttCompletionStatus,
+  SttProviderState,
+  SttProviderSuccess,
+  SttTarget,
+  TranscriptionResult
+} from '~/types'
 import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
-import { collectSttTargets, formatSttTargetLabel, getSttTargetDirectoryName, getSttTargetKey, type SttTarget } from './step-2-stt/stt-targets'
+import { collectSttTargets, formatSttTargetLabel, getSttTargetDirectoryName, getSttTargetKey } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/stt-media-cache'
 import { getSttEngineCapabilities, sttTarget } from './step-2-stt/run-stt'
 import { mergeStep2TimingMetadata } from './step-2-stt/stt-timing-metadata'
@@ -22,20 +39,13 @@ import {
   resolveCompletionStatus,
   SttPartialCompletionError,
   toRecordedProviderError,
-  toRequestedProvider,
-  type ExistingSttRun,
-  type SttCompletionStatus,
-  type SttProviderFailureSummary,
-  type SttProviderState,
-  type SttProviderSuccess
+  toRequestedProvider
 } from './step-2-stt/stt-batch/stt-run-state'
 import {
   describeSttBatchProviderSlotLimits
 } from './step-2-stt/stt-batch/stt-batch-policy'
 import {
   runCoordinatedSttTargetPool,
-  SttBatchCoordinator,
-  type SttBatchBlockedProviderReason
 } from './step-2-stt/stt-batch/stt-batch-coordinator'
 import { computeActualCosts, computeEstimatedCosts, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
@@ -43,34 +53,7 @@ import { classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
 import { CLIUsageError } from '~/utils/error-handler'
 
 export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/stt-batch/stt-run-state'
-export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from './step-2-stt/stt-batch/stt-run-state'
-
-type PreparedSttMedia = Awaited<ReturnType<typeof prepareSttMedia>>
-
-type ProviderFailure = SttProviderFailureSummary & {
-  index: number
-  service: SttTarget['service']
-  model: string
-}
-
-type ProcessSttRunOptions = {
-  outputDir?: string | undefined
-  requestedTargets?: SttTarget[] | undefined
-  targetsToRun?: SttTarget[] | undefined
-  batchCoordinator?: SttBatchCoordinator | undefined
-}
-
-type PromptSelectionCandidate = SttProviderSuccess
-
-type ProviderErrorLike = Error & {
-  cause?: unknown
-  headers?: Headers
-  retryClass?: RetryClass
-  stage?: string
-  status?: number
-  retryable?: boolean
-  rawResponse?: unknown
-}
+export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from '~/types'
 
 const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
   value instanceof Error
@@ -308,12 +291,6 @@ const writeSkippedProviderArtifact = async (
   }, null, 2))
 
   return { errorFile }
-}
-
-type EffectiveSttProviderConcurrency = {
-  requested: number
-  effective: number
-  hostedProviderCount: number
 }
 
 export const resolveEffectiveSttProviderConcurrency = (
