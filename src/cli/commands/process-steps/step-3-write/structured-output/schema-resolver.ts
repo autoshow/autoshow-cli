@@ -55,7 +55,30 @@ const resolveLeafPresetName = (leafPromptName: string, structuredPreset: string 
   return 'freeformEnvelope'
 }
 
-export const resolveStructuredSchema = async (promptNames: string[]): Promise<ResolvedStructuredSchema> => {
+const buildFreeformEnvelopeSchema = (): ResolvedStructuredSchema => {
+  const schema = getStructuredPresetSchema('freeformEnvelope')
+  const jsonSchemaRaw = toJsonSchema(schema, {
+    target: 'draft-07',
+    errorMode: 'throw'
+  }) as Record<string, unknown>
+
+  return {
+    schemaName: 'prompt_content',
+    leafPromptNames: ['content'],
+    presetNames: ['freeformEnvelope'],
+    schema,
+    jsonSchema: normalizeJsonSchema(jsonSchemaRaw)
+  }
+}
+
+export const resolveStructuredSchema = async (
+  promptNames: string[],
+  options: { fallbackToFreeformEnvelope?: boolean } = {}
+): Promise<ResolvedStructuredSchema> => {
+  if (options.fallbackToFreeformEnvelope && promptNames.length === 0) {
+    return buildFreeformEnvelopeSchema()
+  }
+
   const leaves = await collectLeafPrompts(promptNames)
   if (leaves.length === 0) {
     throw new Error('No prompt leaves resolved for structured output')

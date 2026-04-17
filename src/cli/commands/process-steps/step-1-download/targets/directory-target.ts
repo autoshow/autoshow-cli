@@ -4,17 +4,20 @@ import { isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process
 import { collectInputFiles, isDocumentByExtension, isInputDirectoryPath, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
+import { collectTextInputFiles } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 
 export const handleDirectoryTargetBatch = async (
   resolvedTarget: string,
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<void> => {
-  const allFiles = await collectInputFiles(resolvedTarget)
+  const allFiles = command === 'write' && opts.textInput
+    ? await collectTextInputFiles(resolvedTarget)
+    : await collectInputFiles(resolvedTarget)
   const files = isOcrCommand(command)
     ? allFiles.filter(file => isDocumentByExtension(file))
     : allFiles
-  const includeUrlsFromInputDir = isInputDirectoryPath(resolvedTarget)
+  const includeUrlsFromInputDir = !opts.textInput && isInputDirectoryPath(resolvedTarget)
   const listedInputs = includeUrlsFromInputDir ? await readInputList(`${resolvedTarget}/2-urls.md`) : []
   const all = includeUrlsFromInputDir ? [...files, ...listedInputs] : files
 
@@ -23,7 +26,11 @@ export const handleDirectoryTargetBatch = async (
     return
   }
 
-  const label = includeUrlsFromInputDir ? 'input' : 'files'
+  const label = command === 'write' && opts.textInput
+    ? 'text'
+    : includeUrlsFromInputDir
+      ? 'input'
+      : 'files'
   if (isSttCommand(command)) {
     const result = await runSttBatch(all, label, opts, {
       concurrency: opts.batchConcurrency

@@ -21,6 +21,7 @@ import { buildStructuredInstructionSuffix, resolveStructuredSchema } from './str
 import { parseAndValidateStructured } from './structured-output/validator'
 import { runCompatFallback } from './structured-output/compat-fallback'
 import { renderToPlainText } from './structured-output/renderers'
+import { readPromptFileText } from './text-input-utils'
 
 const sanitizeModelName = (model: string): string =>
   model.replace(/[/\\:*?"<>|]/g, '-')
@@ -71,12 +72,25 @@ export const runLLM = async (
     throw new Error('No LLM provider configured')
   }
 
-  const instructionBase = await resolvePromptNames(options.prompts ?? [], {
-    exampleFormat: 'json'
-  })
-  const structuredSchema = await resolveStructuredSchema(options.prompts ?? [])
+  const promptNames = options.prompts ?? []
+  const hasPromptFile = typeof options.promptFile === 'string' && options.promptFile.length > 0
+  const promptFileOnly = hasPromptFile && promptNames.length === 0
+  const promptFileText = await readPromptFileText(options.promptFile)
 
-  const instruction = `${instructionBase}\n\n${buildStructuredInstructionSuffix(structuredSchema.leafPromptNames)}`
+  const instructionBase = await resolvePromptNames(promptNames, {
+    exampleFormat: 'json',
+    fallbackToDefault: !promptFileOnly
+  })
+  const structuredSchema = await resolveStructuredSchema(promptNames, {
+    fallbackToFreeformEnvelope: promptFileOnly
+  })
+
+  const instructionSections = [
+    promptFileText,
+    instructionBase,
+    buildStructuredInstructionSuffix(structuredSchema.leafPromptNames)
+  ].filter((section): section is string => typeof section === 'string' && section.trim().length > 0)
+  const instruction = instructionSections.join('\n\n')
 
   const prompt = options.promptBuilder
     ? options.promptBuilder(instruction)

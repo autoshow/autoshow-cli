@@ -30,6 +30,7 @@ import {
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import type { SttStepEstimate, ExtractStepEstimate, LlmStepEstimate, TtsStepEstimate, ImageStepEstimate, MusicStepEstimate, VideoStepEstimate, StepEstimate, AggregatedPriceEstimate } from '~/types'
 import { isDocumentLikeTarget, isHtmlArticleTarget } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
+import { estimatePromptTokensFromText, readPromptFileText } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 export type { StepEstimate, AggregatedPriceEstimate } from '~/types'
 
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
@@ -156,12 +157,17 @@ const buildLlmEstimates = async (
   if (skipLLM) return []
   const llmConfig = resolveLLMDefaults(opts)
   const rates = estimateLlmRates(llmConfig)
-  const promptTokenEstimate = await resolvePromptTokenEstimate(opts.prompts)
+  const promptFileOnly = typeof opts.promptFile === 'string' && opts.promptFile.length > 0 && opts.prompts.length === 0
+  const promptTokenEstimate = await resolvePromptTokenEstimate(opts.prompts, {
+    fallbackToDefault: !promptFileOnly
+  })
+  const promptFileText = await readPromptFileText(opts.promptFile)
+  const extraPromptTokens = promptFileText ? estimatePromptTokensFromText(promptFileText) : 0
 
   return rates.map(r => {
     const registryService = r.provider === 'llama.cpp' ? 'llama' : r.provider
     const estimation = getLlmEstimation(registryService, r.model)
-    const estimatedInputTokens = promptTokenEstimate.estimatedInputTokens
+    const estimatedInputTokens = promptTokenEstimate.estimatedInputTokens + extraPromptTokens
     const estimatedOutputTokens = promptTokenEstimate.estimatedOutputTokens
     const totalCost = applyCostMultiplier(
       (estimatedInputTokens / 1_000_000) * r.inputCostPer1MCents +
@@ -288,16 +294,17 @@ export const buildAggregatedPriceEstimate = async (
 
   const documentTarget = await isDocumentLikeTarget(resolvedTarget, opts)
   const htmlArticleTarget = await isHtmlArticleTarget(resolvedTarget, opts)
-  const documentWrite = command === 'write' && documentTarget
+  const textInputWrite = command === 'write' && opts.textInput
+  const documentWrite = command === 'write' && documentTarget && !textInputWrite
 
-  if (isSttCommand(command) || (command === 'write' && !documentWrite)) {
+  if (!textInputWrite && (isSttCommand(command) || (command === 'write' && !documentWrite))) {
     for (const stt of await buildSttEstimates(resolvedTarget, opts)) {
       steps.push(stt)
       totalEstimatedCost += stt.totalCost
     }
   }
 
-  if ((isOcrCommand(command) || documentWrite) && !htmlArticleTarget) {
+  if (!textInputWrite && (isOcrCommand(command) || documentWrite) && !htmlArticleTarget) {
     for (const extract of await buildExtractEstimates(resolvedTarget, opts)) {
       steps.push(extract)
       totalEstimatedCost += extract.totalCost

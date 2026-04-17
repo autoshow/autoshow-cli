@@ -38,6 +38,10 @@ export const ProcessingOptionsSchema = v.pipe(
     directDownload: v.optional(v.boolean(), undefined),
 
     prompts: v.optional(v.array(v.string()), undefined),
+    promptFile: v.optional(v.string(), undefined),
+    renderedText: v.optional(v.boolean(), undefined),
+    renderedOutDir: v.optional(v.string(), undefined),
+    trackList: v.optional(v.string(), undefined),
 
     ttsSpeaker: v.optional(v.string(), undefined),
     groqTtsModel: v.optional(v.string(), undefined),
@@ -185,6 +189,9 @@ export const ExtractionOptionsSchema = v.object({
   glmOcrModel: v.optional(v.string(), undefined),
   epubChapterFiles: v.optional(v.boolean(), undefined),
   epubChunkLimitChars: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  pdfChapterMode: v.optional(v.picklist(['local', 'auto', 'llm']), 'local'),
+  pdfChapterLlmService: v.optional(v.string(), undefined),
+  pdfChapterLlmModel: v.optional(v.string(), undefined),
   useEpubBun: v.optional(v.boolean(), undefined),
   useEpubCalibre: v.optional(v.boolean(), undefined),
   preparedMarkdown: v.optional(v.string(), undefined),
@@ -211,7 +218,8 @@ export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistra
 export type { EpubInspectEngine } from '~/cli/commands/process-steps/step-2-ocr/ocr-types'
 export type EpubInspection = Record<string, unknown>
 const EpubInspectionSchema = v.record(v.string(), v.unknown())
-const EpubExportSummarySchema = v.object({
+const ChapterExportSummarySchema = v.object({
+  sourceFormat: v.picklist(['epub', 'pdf']),
   mode: v.picklist(['chapters', 'chunks']),
   chunkLimitChars: v.optional(v.number(), undefined),
   sectionsKept: v.number(),
@@ -248,7 +256,9 @@ export const ExtractionMetadataSchema = v.object({
   promptTokens: v.optional(v.number(), undefined),
   completionTokens: v.optional(v.number(), undefined),
   epub: v.optional(EpubInspectionSchema, undefined),
-  epubExport: v.optional(EpubExportSummarySchema, undefined),
+  chapterExport: v.optional(ChapterExportSummarySchema, undefined),
+  epubExport: v.optional(ChapterExportSummarySchema, undefined),
+  pdfChapterDetection: v.optional(v.record(v.string(), v.unknown()), undefined),
   inputFamily: v.optional(v.string(), undefined),
   normalizedFrom: v.optional(v.string(), undefined),
   conversionChain: v.optional(v.array(v.string()), undefined),

@@ -6,14 +6,15 @@ const inputParameter = [{ key: '[input]', description: 'URL, local file, directo
 
 export const writeCommand = defineCommand({
   name: 'write',
-  description: 'Download audio, transcribe, and run LLM summary pipeline',
+  description: 'Run the write pipeline for media, documents, or raw text inputs',
   parameters: inputParameter,
   flags: writeFlags,
   help: {
     examples: [
       ['bun as write https://youtube.com/watch?v=abc', 'Full pipeline with default local models'],
       ['bun as write video.mp4 --openai --prompt summary', 'Summarize with OpenAI'],
-      ['bun as write ./input/examples/document/2-urls.md --gemini --batch-all --price', 'Estimate cost for a batch']
+      ['bun as write ./input/examples/document/2-urls.md --gemini --batch-all --price', 'Estimate cost for a batch'],
+      ['bun as write ./albums/demo/text --text-input --prompt rockSong --rendered-out-dir ./albums/demo/lyrics', 'Process raw text files into rendered song lyrics']
     ]
   }
 }, async (ctx) => {

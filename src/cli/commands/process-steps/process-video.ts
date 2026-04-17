@@ -27,6 +27,7 @@ import { collectSttTargets, getSttTargetDirectoryName } from './step-2-stt/stt-t
 import { prepareSttMedia } from './step-2-stt/media'
 import { runLLM } from './step-3-write/run-llm'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
+import { writeRenderedTextArtifacts } from './step-3-write/text-input-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { runTts } from './step-4-tts/run-tts'
 import { buildTtsArtifactMap, collectTtsTargets } from './step-4-tts/tts-targets'
@@ -253,6 +254,22 @@ export const processVideo = async (
       await runLLM(sourceMetadata, finalizedTranscriptionResult.result, processingOptions, step1Metadata.slug)
     )
     step3Results = step3RunResults.map((result) => result.metadata)
+  }
+
+  const renderedArtifacts = step3RunResults.length > 0
+    ? await writeRenderedTextArtifacts({
+        outputDir,
+        results: step3RunResults,
+        writeInternal: processingOptions.renderedText === true,
+        sourcePath: options.filePath,
+        trackListPath: processingOptions.trackList,
+        externalDir: processingOptions.renderedOutDir,
+        externalBaseName: step1Metadata.slug
+      })
+    : { internalArtifacts: {}, externalFiles: [] as string[] }
+
+  if (renderedArtifacts.externalFiles.length > 0) {
+    l.info(`Rendered text saved to ${processingOptions.renderedOutDir} (${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'})`)
   }
 
   let step4Metadata: Step4Metadata[] | null = null
@@ -525,7 +542,8 @@ export const processVideo = async (
 
   const artifactFiles: Record<string, string> = {
     audio: step1Metadata.audioFileName,
-    transcript: 'transcription.txt'
+    transcript: 'transcription.txt',
+    ...renderedArtifacts.internalArtifacts
   }
   if (step2Entries.some((entry) => entry.transcriptionService === YOUTUBE_CAPTIONS_SERVICE)) {
     artifactFiles['captions'] = 'youtube-captions.vtt'

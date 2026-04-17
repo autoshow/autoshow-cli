@@ -29,6 +29,7 @@ import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-t
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
 import { dispatchResumeMissing } from '~/cli/commands/process-steps/resume-missing/resume-dispatch'
+import { collectTextInputFiles, isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 
 const runWithConcurrency = async <T,>(
   items: T[],
@@ -88,7 +89,7 @@ const getExpectedOcrArtifact = (opts: RuntimeOptions): string => {
 const getExpectedOcrExportArtifacts = (opts: RuntimeOptions): string[] => {
   const artifacts: string[] = []
   if (opts.epubChapterFiles) {
-    artifacts.push('chapters/*.txt (EPUB native text runs only)')
+    artifacts.push('chapters/*.txt (EPUB native text runs, or PDF chapter autodetection)')
   }
   if (typeof opts.epubChunkLimitChars === 'number' && !opts.epubChapterFiles) {
     artifacts.push('chunks/*.txt (EPUB native text runs only)')
@@ -128,6 +129,35 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     }
     return files
   }
+  if (command === 'write' && opts.textInput) {
+    const llmOutputCount = getEffectiveLlmOutputCount(opts)
+    const canRunPostGeneration = llmOutputCount === 1
+    const files = [llmOutputCount <= 1 ? 'text.json' : 'text-<provider>.json']
+    if (opts.renderedText) {
+      files.push(llmOutputCount <= 1 ? 'text.md' : 'text-<provider>.md')
+    }
+    if (typeof opts.renderedOutDir === 'string' && opts.renderedOutDir.length > 0) {
+      files.push(`${opts.renderedOutDir}/*.md`)
+    }
+    const ttsTargets = collectTtsTargets(opts)
+    if (ttsTargets.length > 0 && canRunPostGeneration) {
+      for (const target of ttsTargets) {
+        files.push(getTtsArtifactFileName(target, ttsTargets.length === 1))
+      }
+    }
+    if (canRunPostGeneration && (opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel)) {
+      files.push('generated-image.png')
+    }
+    if (canRunPostGeneration && (opts.geminiVideoModel || opts.minimaxVideoModel)) {
+      files.push('Video file')
+    }
+    if (canRunPostGeneration && (opts.elevenlabsMusicModel || opts.minimaxMusicModel)) {
+      files.push('Music file')
+    }
+    files.push('prompt.md')
+    files.push('run.json')
+    return files
+  }
   const summaryFile = 'text.json'
   const documentWrite = command === 'write'
     && typeof resolvedTarget === 'string'
@@ -149,18 +179,19 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     files.push('providers/<service>-<model>/result.json')
   }
   const ttsTargets = collectTtsTargets(opts)
-  if (ttsTargets.length > 0 && getEffectiveLlmOutputCount(opts) === 1) {
+  const canRunPostGeneration = getEffectiveLlmOutputCount(opts) === 1
+  if (ttsTargets.length > 0 && canRunPostGeneration) {
     for (const target of ttsTargets) {
       files.push(getTtsArtifactFileName(target, ttsTargets.length === 1))
     }
   }
-  if (opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel) {
+  if (canRunPostGeneration && (opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel)) {
     files.push('generated-image.png')
   }
-  if (opts.geminiVideoModel || opts.minimaxVideoModel) {
+  if (canRunPostGeneration && (opts.geminiVideoModel || opts.minimaxVideoModel)) {
     files.push('Video file')
   }
-  if (opts.elevenlabsMusicModel || opts.minimaxMusicModel) {
+  if (canRunPostGeneration && (opts.elevenlabsMusicModel || opts.minimaxMusicModel)) {
     files.push('Music file')
   }
   if (opts.youtubeCaptions) {
@@ -197,6 +228,30 @@ const resolveProcessTargetPlan = async (
   resolvedTarget: string,
   opts: RuntimeOptions
 ): Promise<ResolvedProcessTargetPlan> => {
+  if (command === 'write' && opts.textInput) {
+    if (/^https?:\/\//i.test(resolvedTarget)) {
+      throw CLIUsageError('write --text-input only accepts local .md or .txt files or directories')
+    }
+
+    const topLevel = await classifyTopLevelTarget(resolvedTarget)
+    if (!topLevel.exists) {
+      throw CLIUsageError(`Input does not exist: ${resolvedTarget}. Run: bun as help write`)
+    }
+
+    if (topLevel.kind === 'directory') {
+      return {
+        kind: 'directory',
+        targets: await collectTextInputFiles(resolvedTarget)
+      }
+    }
+
+    if (!isTextInputPath(resolvedTarget)) {
+      throw CLIUsageError(`write --text-input only accepts .md or .txt files. Got: ${resolvedTarget}`)
+    }
+
+    return { kind: 'single', target: resolvedTarget }
+  }
+
   const topLevel = await classifyTopLevelTarget(resolvedTarget)
 
   if (topLevel.kind === 'directory') {

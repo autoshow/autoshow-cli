@@ -31,6 +31,8 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
+import { isTextInputPath, writeRenderedTextArtifacts } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 
 const buildDocumentMetadataView = (
   step1: DocumentMetadata,
@@ -51,6 +53,17 @@ const buildDocumentMetadataView = (
 
 const hasOcrExtractionFlags = (opts: RuntimeOptions): boolean =>
   opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string' || typeof opts.glmOcrModel === 'string'
+
+const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
+  [
+    opts.llamaModel,
+    opts.openaiModel,
+    opts.groqModel,
+    opts.geminiModel,
+    opts.anthropicModel,
+    opts.minimaxModel,
+    opts.grokModel
+  ].some((value) => typeof value === 'string' && value.length > 0)
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
@@ -154,8 +167,17 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
     oem: opts.oem,
     psm: opts.psm,
     outputFormat: opts.out,
+    pdfChapterMode: opts.pdfChapterMode,
     preserveInterwordSpaces: opts.preserveSpaces,
     rotate: opts.rotate
+  }
+
+  if (opts.pdfChapterMode !== 'local' && hasConfiguredLlmProvider(opts)) {
+    const llmConfig = resolveLLMDefaults(opts)
+    if (typeof llmConfig.llmService === 'string' && typeof llmConfig.llmModel === 'string') {
+      extractionOpts.pdfChapterLlmService = llmConfig.llmService
+      extractionOpts.pdfChapterLlmModel = llmConfig.llmModel
+    }
   }
 
   if (opts.password) {
@@ -242,12 +264,12 @@ const writeDocumentOutputMetadata = async (
   l.report.complete(outputDir, artifactFiles)
 }
 
-const appendEpubExportArtifacts = (
+const appendChapterExportArtifacts = (
   artifactFiles: Record<string, string>,
   step2Metadata: ExtractionMetadata | ExtractionMetadata[]
 ): void => {
   const primary = Array.isArray(step2Metadata) ? step2Metadata[0] : step2Metadata
-  const exportSummary = primary?.epubExport
+  const exportSummary = primary?.chapterExport ?? primary?.epubExport
   if (!exportSummary || !Array.isArray(exportSummary.directories)) {
     return
   }
@@ -294,6 +316,7 @@ const runDocumentWrite = async (
   const step3Runs = await runLLM(documentMeta, transcriptionLike, {
     outputDir: extraction.outputDir,
     prompts: opts.prompts,
+    promptFile: opts.promptFile,
     openaiModel: llmConfig.openaiModel,
     groqModel: llmConfig.groqModel,
     geminiModel: llmConfig.geminiModel,
@@ -310,6 +333,19 @@ const runDocumentWrite = async (
     throw new Error('No LLM outputs generated for document write')
   }
 
+  const renderedArtifacts = await writeRenderedTextArtifacts({
+    outputDir: extraction.outputDir,
+    results: step3Runs,
+    writeInternal: opts.renderedText,
+    sourcePath: sourceRef?.filePath ?? target,
+    trackListPath: opts.trackList,
+    externalDir: opts.renderedOutDir,
+    externalBaseName: extraction.step1Metadata.slug
+  })
+  if (renderedArtifacts.externalFiles.length > 0) {
+    l.info(`Rendered text saved to ${opts.renderedOutDir} (${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'})`)
+  }
+
   const step3Serialized: Step3Metadata | Step3Metadata[] = step3Results.length === 1 ? step3Results[0]! : step3Results
   const llmInputTokenCount = step3Results.reduce((sum, item) => sum + item.inputTokenCount, 0)
   const llmOutputTokenCount = step3Results.reduce((sum, item) => sum + item.outputTokenCount, 0)
@@ -318,9 +354,10 @@ const runDocumentWrite = async (
 
   const artifactFiles: Record<string, string> = {
     prompt: 'prompt.md',
-    run: 'run.json'
+    run: 'run.json',
+    ...renderedArtifacts.internalArtifacts
   }
-  appendEpubExportArtifacts(artifactFiles, extraction.step2Metadata)
+  appendChapterExportArtifacts(artifactFiles, extraction.step2Metadata)
   if (step3Results.length === 1) {
     artifactFiles['summary'] = step3Results[0]?.outputFileName ?? 'text.json'
   } else {
@@ -402,6 +439,10 @@ const processMediaSingle = async (
     split: llmDefaults.split,
     skipLLM: llmDefaults.skipLLM,
     prompts: llmDefaults.prompts,
+    promptFile: llmDefaults.promptFile,
+    renderedText: llmDefaults.renderedText,
+    renderedOutDir: llmDefaults.renderedOutDir,
+    trackList: llmDefaults.trackList,
     ttsSpeaker: llmDefaults.ttsSpeaker,
     kittenTtsModel: llmDefaults.kittenTtsModel,
     groqTtsModel: llmDefaults.groqTtsModel,
@@ -862,6 +903,18 @@ export const processSingleTarget = async (
     } else {
       return await processDownloadMedia(item, baseDir, opts, batchItem)
     }
+  }
+
+  if (command === 'write' && opts.textInput) {
+    if (isLikelyUrl(item)) {
+      throw CLIUsageError('write --text-input only accepts local .md or .txt files or directories')
+    }
+
+    if (!isTextInputPath(item)) {
+      throw CLIUsageError(`write --text-input only accepts .md or .txt files. Got: ${item}`)
+    }
+
+    return await runTextWrite(item, baseDir, opts)
   }
 
   if (isLikelyUrl(item)) {

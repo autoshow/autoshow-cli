@@ -10,21 +10,27 @@ import { runPreflight } from '~/utils/pricing/preflight'
 import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
+import { fileExists } from '~/utils/cli-utils'
+import { isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 
 export const musicCommand = defineCommand({
   name: 'music',
-  description: 'Generate music from a text prompt',
-  parameters: [{ key: '<prompt>', description: 'Text prompt for music generation' }],
+  description: 'Generate music from a text prompt or local .md/.txt file',
+  parameters: [{ key: '<input>', description: 'Text prompt or path to a local .md/.txt file' }],
   flags: musicGenFlags,
   help: {
     examples: [
       ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
-      ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax']
+      ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax'],
+      ['bun as music input/examples/document/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body']
     ]
   }
 }, async (ctx) => {
-  const prompt = ctx.parameters.prompt
+  const input = ctx.parameters.input
   const flags = ctx.flags
+  const prompt = isTextInputPath(input) && await fileExists(input)
+    ? await Bun.file(input).text()
+    : input
 
   const musicDurationRaw = typeof flags['music-duration'] === 'string' ? parseInt(flags['music-duration'], 10) : undefined
   const musicDuration = Number.isFinite(musicDurationRaw) ? musicDurationRaw : undefined

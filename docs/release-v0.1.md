@@ -454,7 +454,7 @@ Common output artifacts include:
 - `transcription.txt`
 - `transcription.evidence.json`
 - extracted text or OCR output in the requested format such as `extraction.txt`, `result.json`, `*.tsv`, or `*.hocr`
-- `chapters/*.txt` or `chunks/*.txt` for native EPUB text runs when `--chapters` and/or `--length` is active
+- `chapters/*.txt` or `chunks/*.txt` for native EPUB text runs, plus `chapters/*.txt` for PDF chapter autodetection when `--chapters` is active
 - `text.json` or `text-<model>.json`
 - `speech.wav` or provider/model-specific variants
 - generated image files

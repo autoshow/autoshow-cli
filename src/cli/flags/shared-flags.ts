@@ -255,13 +255,17 @@ export const extractFlags = {
     type: String
   },
   chapters: {
-    description: 'EPUB native text runs: write one cleaned file per kept section under chapters/',
+    description: 'EPUB native text runs and PDF autodetection: write chapter files under chapters/',
     type: Boolean,
     default: false,
     negatable: false
   },
   length: {
-    description: 'EPUB native text runs: hard export limit in thousands of characters; alone writes chunks/, with --chapters splits long sections',
+    description: 'Hard export limit in thousands of characters; for EPUB alone writes chunks/, and with --chapters splits oversized EPUB or PDF chapter files',
+    type: String
+  },
+  'pdf-chapter-mode': {
+    description: 'PDF chapter detection mode: local|auto|llm (default: local)',
     type: String
   }
 } as const satisfies ClercFlagsDefinition

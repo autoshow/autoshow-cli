@@ -88,7 +88,8 @@ const ExtractDefaultsSchema = v.object({
   mistralOcr: v.optional(v.string(), undefined),
   glmOcr: v.optional(v.string(), undefined),
   chapters: v.optional(v.boolean(), undefined),
-  length: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
+  length: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  pdfChapterMode: v.optional(v.picklist(['local', 'auto', 'llm']), undefined)
 })
 
 const BatchDefaultsSchema = v.object({

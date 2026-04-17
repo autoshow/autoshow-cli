@@ -59,6 +59,7 @@ export type RuntimeOptions = {
   glmOcrModel: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined
+  pdfChapterMode: 'local' | 'auto' | 'llm'
   useEpubBun: boolean
   useEpubCalibre: boolean
   urlBackend: 'defuddle' | 'firecrawl' | 'glm-reader'
@@ -74,6 +75,11 @@ export type RuntimeOptions = {
   ttsSpeaker: string
 
   prompts: string[]
+  promptFile: string | undefined
+  textInput: boolean
+  renderedText: boolean
+  renderedOutDir: string | undefined
+  trackList: string | undefined
 
   kittenTtsModel: string | undefined
   groqTtsModel: string | undefined

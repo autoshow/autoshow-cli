@@ -105,7 +105,17 @@ The default EPUB path writes cleaned native text instead of synthetic `Page N` o
 - `--chapters` writes one cleaned file per kept section under `chapters/`.
 - `--length <n>` uses a hard limit of `n * 1000` characters and writes `chunks/` side artifacts.
 - `--chapters --length <n>` splits oversized section files with `-part-NNN` suffixes.
-- `--chapters` and `--length` are ignored for non-EPUB inputs and for EPUB runs that use a hosted OCR engine or image/PDF OCR path.
+- `--chapters` and `--length` are ignored for non-EPUB/non-PDF inputs and for EPUB runs that use a hosted OCR engine or image/PDF OCR path.
+
+## PDF Chapter Detection
+
+- `--chapters` on a PDF runs chapter autodetection and writes best-effort chapter files under `chapters/`.
+- Detection is local-first by default and uses PDF bookmarks, TOC-like pages, printed-page-to-PDF-page mapping, and heading fallback.
+- `--pdf-chapter-mode local` keeps detection fully heuristic and local.
+- `--pdf-chapter-mode auto` starts local and only tries model assistance when the local result is weak and a default LLM is configured.
+- `--pdf-chapter-mode llm` always attempts the model-assisted resolver after building the local evidence dossier.
+- `--length <n>` only affects PDFs when `--chapters` is also set; it hard-splits oversized chapter files with `-part-NNN` suffixes.
+- Detection diagnostics are written into `run.json` under `step2.pdfChapterDetection`, and the export summary is written under `step2.chapterExport`.
 
 ## Examples
 
@@ -115,6 +125,12 @@ bun as ocr input/examples/document/1-document.pdf
 
 # JSON output
 bun as ocr input/examples/document/1-document.pdf --out json
+
+# PDF chapter autodetection
+bun as ocr input/examples/document/3-document.pdf --chapters
+
+# PDF chapter autodetection with model-assisted fallback
+bun as ocr input/examples/document/3-document.pdf --chapters --pdf-chapter-mode auto
 
 # Native EPUB extraction plus chapter side artifacts
 bun as ocr input/examples/document/1-epub.epub --chapters
@@ -155,8 +171,9 @@ bun as ocr --resume-missing
 | `--paddle-ocr` | Use PaddleOCR |
 | `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
 | `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
-| `--chapters` | EPUB native text runs: write one cleaned file per kept section under `chapters/` |
-| `--length <n>` | EPUB native text runs: hard export limit in thousands of characters |
+| `--chapters` | EPUB native text runs or PDF autodetection: write chapter files under `chapters/` |
+| `--length <n>` | Hard export limit in thousands of characters; for EPUB alone writes `chunks/`, and with `--chapters` splits oversized EPUB or PDF chapter files |
+| `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
 | `--url-backend <backend>` | Article backend: `defuddle`, `firecrawl`, or `glm-reader` |
 | `--epub-bun` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | Inspect EPUB structure with Calibre |
@@ -166,11 +183,11 @@ bun as ocr --resume-missing
 ## Notes
 
 - Standalone `ocr` writes the root extraction artifact (`extraction.txt` or `result.json`) plus `run.json`.
-- Native EPUB export writes additive `chapters/` or `chunks/` side artifacts inside the same output directory.
+- EPUB export and PDF chapter autodetection write additive `chapters/` or `chunks/` side artifacts inside the same output directory.
 - Supported document formats include PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, and CBZ.
 - Supported image formats include PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, and GIF.
 - Mistral OCR accepts PDF and standard images (`PNG`, `JPG`, `TIF`); GLM OCR accepts PDF plus `PNG` and `JPG`.
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
-- Config defaults can persist EPUB export settings under `defaults.extract.chapters` and `defaults.extract.length`.
+- Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
 - `--resume-missing` does not accept a positional input and does not support `--price`.
 - Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are exposed through [`write`](../step-3-write/write-text.md), not standalone `ocr`.

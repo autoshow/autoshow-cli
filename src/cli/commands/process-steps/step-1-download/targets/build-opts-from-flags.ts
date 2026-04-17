@@ -146,6 +146,20 @@ const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecrawl' | 
   throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle", "firecrawl", or "glm-reader".`)
 }
 
+const parsePdfChapterMode = (value: string | undefined): 'local' | 'auto' | 'llm' => {
+  const normalized = value?.trim().toLowerCase()
+  if (!normalized || normalized === 'local') {
+    return 'local'
+  }
+  if (normalized === 'auto') {
+    return 'auto'
+  }
+  if (normalized === 'llm') {
+    return 'llm'
+  }
+  throw CLIUsageError(`Invalid --pdf-chapter-mode value "${value}". Expected "local", "auto", or "llm".`)
+}
+
 const parseDoubleDashArgs = (args: string[]): Record<string, string | boolean> => {
   const result: Record<string, string | boolean> = {}
   for (let i = 0; i < args.length; i++) {
@@ -188,6 +202,7 @@ export const buildOptsFromFlags = (
   const outputFormat = readStringFlag(mergedFlags, 'out', 'json')
   const normalizedOut: OutputFormat = outputFormat === 'text' || outputFormat === 'tsv' || outputFormat === 'hocr' ? outputFormat : 'json'
   const epubLengthThousands = parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'length'), 'length')
+  const pdfChapterMode = parsePdfChapterMode(readOptionalStringFlag(mergedFlags, 'pdf-chapter-mode'))
 
   const whisperModel = validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper', 'tiny'))
   const groqSttModel = readValidated('groq-stt', validateGroqSttModel)
@@ -282,6 +297,7 @@ export const buildOptsFromFlags = (
     glmOcrModel,
     epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
     epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
+    pdfChapterMode,
     useEpubBun: readBooleanFlag(mergedFlags, 'epub-bun'),
     useEpubCalibre: readBooleanFlag(mergedFlags, 'epub-calibre'),
     urlBackend,
@@ -298,6 +314,11 @@ export const buildOptsFromFlags = (
       if (typeof v === 'string' && v.length > 0) return [v]
       return []
     })(),
+    promptFile: readOptionalStringFlag(mergedFlags, 'prompt-file'),
+    textInput: readBooleanFlag(mergedFlags, 'text-input'),
+    renderedText: readBooleanFlag(mergedFlags, 'rendered-text'),
+    renderedOutDir: readOptionalStringFlag(mergedFlags, 'rendered-out-dir'),
+    trackList: readOptionalStringFlag(mergedFlags, 'track-list'),
     ttsSpeaker: (() => {
       const raw = readStringFlag(mergedFlags, 'kitten-voice', DEFAULT_KITTEN_TTS_SPEAKER)
       return kittenTtsModelValue !== undefined

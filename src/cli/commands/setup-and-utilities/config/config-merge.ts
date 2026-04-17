@@ -130,6 +130,7 @@ export const mergeConfigIntoRawFlags = (
     inject('glm-ocr', d.extract.glmOcr)
     inject('chapters', d.extract.chapters)
     inject('length', d.extract.length)
+    inject('pdf-chapter-mode', d.extract.pdfChapterMode)
   }
 
   if (d.batch) {
@@ -212,6 +213,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'glm-ocr':           ['defaults', 'extract', 'glmOcr'],
   'chapters':          ['defaults', 'extract', 'chapters'],
   'length':            ['defaults', 'extract', 'length'],
+  'pdf-chapter-mode':  ['defaults', 'extract', 'pdfChapterMode'],
   'batch-limit':       ['defaults', 'batch', 'limit'],
   'batch-order':       ['defaults', 'batch', 'order'],
   'batch-concurrency': ['defaults', 'batch', 'concurrency'],

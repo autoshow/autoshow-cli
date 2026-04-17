@@ -37,7 +37,7 @@ import { writeOcrRunManifest } from './step-2-ocr/manifest'
 import { FIRECRAWL_PRICE_NOTE } from './step-2-ocr/ocr-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
 import { writeProviderResult } from './manifest-utils'
-import type { EpubArtifactFile } from './step-2-ocr/epub/export'
+import type { TextArtifactFile } from './step-2-ocr/epub/export'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
@@ -161,9 +161,9 @@ const writeProviderArtifacts = async (
   )
 }
 
-const writeEpubArtifactFiles = async (
+const writeTextArtifactFiles = async (
   outputDir: string,
-  files: EpubArtifactFile[]
+  files: TextArtifactFile[]
 ): Promise<void> => {
   const topLevelDirs = [...new Set(
     files
@@ -300,6 +300,9 @@ export const processOcr = async (
     ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
     ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
     ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),
+    pdfChapterMode: rawOpts.pdfChapterMode ?? 'local',
+    ...(rawOpts.pdfChapterLlmService ? { pdfChapterLlmService: rawOpts.pdfChapterLlmService } : {}),
+    ...(rawOpts.pdfChapterLlmModel ? { pdfChapterLlmModel: rawOpts.pdfChapterLlmModel } : {}),
     ...(rawOpts.useEpubBun ? { useEpubBun: true } : {}),
     ...(rawOpts.useEpubCalibre ? { useEpubCalibre: true } : {}),
     ...(preparedDocument?.preparedMarkdown ? { preparedMarkdown: preparedDocument.preparedMarkdown } : {}),
@@ -461,7 +464,7 @@ export const processOcr = async (
       'result.json'
     )
     if (Array.isArray(extracted.artifactFiles)) {
-      await writeEpubArtifactFiles(outputDir, extracted.artifactFiles)
+      await writeTextArtifactFiles(outputDir, extracted.artifactFiles)
     }
 
     return {

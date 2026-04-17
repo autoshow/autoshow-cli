@@ -4,11 +4,20 @@ import { cleanupTestOutput, runCommand, fileExists, findLatestDirectory, ensureP
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 type EpubExportMetadata = {
+  sourceFormat?: 'epub' | 'pdf'
   mode?: 'chapters' | 'chunks'
   chunkLimitChars?: number
   directories?: string[]
   chapterFilesWritten?: number
   chunkFilesWritten?: number
+}
+
+type PdfChapterDetectionMetadata = {
+  strategyUsed?: string
+  tocPages?: number[]
+  pageMapSpans?: Array<Record<string, unknown>>
+  chapters?: Array<Record<string, unknown>>
+  warnings?: string[]
 }
 
 type ExtractMetadata = {
@@ -17,12 +26,15 @@ type ExtractMetadata = {
     extractionMethod?: string
     totalPages?: number
     epub?: Record<string, unknown>
+    chapterExport?: EpubExportMetadata
     epubExport?: EpubExportMetadata
+    pdfChapterDetection?: PdfChapterDetectionMetadata
     outputFidelity?: string
   }
 }
 
 const pdfInput = 'input/examples/document/1-document.pdf'
+const multiPagePdfInput = 'input/examples/document/3-document.pdf'
 const epubInput = 'input/examples/document/1-epub.epub'
 const imageInput = 'input/examples/document/1-document.png'
 const articleUrl = 'https://ajcwebdev.com'
@@ -31,11 +43,13 @@ const paddleOcrPython = 'runtime/bin/paddle-ocr/bin/python'
 beforeAll(async () => {
   await ensurePageImageFixture(imageInput)
   await cleanupTestOutput('1-document')
+  await cleanupTestOutput('3-document')
   await cleanupTestOutput('1-epub')
 })
 
 afterAll(async () => {
   await cleanupTestOutput('1-document')
+  await cleanupTestOutput('3-document')
   await cleanupTestOutput('1-epub')
 })
 
@@ -253,6 +267,7 @@ test('extract EPUB with --chapters writes chapter files and metadata summary', a
   expect(await fileExists(`${outputDir}/chunks`)).toBe(false)
 
   const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.step2?.chapterExport?.sourceFormat).toBe('epub')
   expect(metadata.step2?.epubExport?.mode).toBe('chapters')
   expect(metadata.step2?.epubExport?.chunkLimitChars).toBe(5000)
   expect(metadata.step2?.epubExport?.directories).toEqual(['chapters'])
@@ -276,9 +291,31 @@ test('extract EPUB with --length writes chunk files and metadata summary', async
   expect(await fileExists(`${outputDir}/chapters`)).toBe(false)
 
   const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.step2?.chapterExport?.sourceFormat).toBe('epub')
   expect(metadata.step2?.epubExport?.mode).toBe('chunks')
   expect(metadata.step2?.epubExport?.chunkLimitChars).toBe(1000)
   expect(metadata.step2?.epubExport?.directories).toEqual(['chunks'])
+})
+
+test('extract PDF with --chapters writes chapter files and diagnostics', async () => {
+  await cleanupTestOutput('3-document')
+
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', multiPagePdfInput, '--chapters', '--out', 'json'], { testName: 'extract PDF with --chapters writes chapter files and diagnostics' })
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory('3-document')
+  expect(outputDir).not.toBeNull()
+  if (!outputDir) return
+
+  const chapterFiles = (await readdir(`${outputDir}/chapters`)).filter((name) => name.endsWith('.txt')).sort()
+  expect(chapterFiles.length).toBeGreaterThan(0)
+
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.step2?.chapterExport?.sourceFormat).toBe('pdf')
+  expect(metadata.step2?.chapterExport?.mode).toBe('chapters')
+  expect(metadata.step2?.chapterExport?.directories).toEqual(['chapters'])
+  expect(Array.isArray(metadata.step2?.pdfChapterDetection?.chapters)).toBe(true)
+  expect((metadata.step2?.pdfChapterDetection?.chapters ?? []).length).toBeGreaterThan(0)
 })
 
 test('extract EPUB inspect mode ignores chapter export flags', async () => {
@@ -299,12 +336,12 @@ test('extract EPUB inspect mode ignores chapter export flags', async () => {
   expect(metadata.step2?.epubExport).toBeUndefined()
 })
 
-test('extract non-EPUB ignores chapter export flags', async () => {
+test('extract non-EPUB-non-PDF ignores chapter export flags', async () => {
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', pdfInput, '--chapters', '--out', 'json'], { testName: 'extract non-EPUB ignores chapter export flags' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', imageInput, '--chapters', '--out', 'json'], { testName: 'extract non-EPUB-non-PDF ignores chapter export flags' })
   expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('EPUB export flags (--chapters, --length) are ignored for non-EPUB inputs.')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Chapter export flags (--chapters, --length) are ignored for inputs other than EPUB and PDF.')
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
   expect(outputDir).not.toBeNull()
@@ -312,6 +349,7 @@ test('extract non-EPUB ignores chapter export flags', async () => {
 
   expect(await fileExists(`${outputDir}/chapters`)).toBe(false)
   const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.step2?.chapterExport).toBeUndefined()
   expect(metadata.step2?.epubExport).toBeUndefined()
 })
 

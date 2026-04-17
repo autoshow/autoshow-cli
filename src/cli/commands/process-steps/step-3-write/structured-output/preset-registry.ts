@@ -33,6 +33,14 @@ const TimestampedTitleQuoteSchema = v.object({
   quote: TextSchema
 })
 
+const PdfChapterBoundarySchema = v.object({
+  title: TextSchema,
+  pdfStartPage: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  printedStartPage: v.optional(TextSchema, undefined),
+  confidence: TextSchema,
+  reason: TextSchema
+})
+
 const QuestionsSchema = v.object({
   beginnerQuestions: StringListSchema,
   expertQuestions: StringListSchema
@@ -124,6 +132,9 @@ const PRESET_REGISTRY = {
     subjectLine: TextSchema,
     previewText: TextSchema,
     body: TextSchema
+  }),
+  pdfChapterBoundaries: v.object({
+    chapters: v.array(PdfChapterBoundarySchema)
   }),
   x: v.object({
     content: TextSchema,

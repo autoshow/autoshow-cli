@@ -5,14 +5,30 @@ import { finalizeEpubText } from './cleanup'
 
 const CHAPTER_SLUG_MAX_LENGTH = 60
 
-export type EpubArtifactFile = {
+export type TextArtifactFile = {
   relativePath: string
   text: string
 }
 
+export type ChapterExportSummary = {
+  sourceFormat: 'epub' | 'pdf'
+  mode: 'chapters' | 'chunks'
+  chunkLimitChars?: number
+  sectionsKept: number
+  sectionsDropped: number
+  dividerSectionsMerged: number
+  filesWritten: number
+  chapterFilesWritten?: number
+  chunkFilesWritten?: number
+  directories: string[]
+}
+
+export type EpubArtifactFile = TextArtifactFile
+
 export type EpubExportPlan = {
-  files: EpubArtifactFile[]
+  files: TextArtifactFile[]
   summary: {
+    sourceFormat: 'epub'
     mode: 'chapters' | 'chunks'
     chunkLimitChars?: number
     sectionsKept: number
@@ -61,7 +77,7 @@ const buildSectionSlug = (section: Pick<EpubTextSection, 'index' | 'title' | 'id
   return candidates[0] ?? `section-${section.index}`
 }
 
-const splitWithHardLimit = (text: string, maxChars: number): string[] => {
+export const splitWithHardLimit = (text: string, maxChars: number): string[] => {
   const chunks: string[] = []
   const paragraphs = text.split(/\n\n+/)
   let current = ''
@@ -226,7 +242,7 @@ const buildChapterFiles = (
   sections: EpubTextSection[],
   chunkLimitChars?: number
 ): EpubArtifactFile[] => {
-  const files: EpubArtifactFile[] = []
+  const files: TextArtifactFile[] = []
 
   for (const section of sections) {
     const baseName = `${String(section.index).padStart(3, '0')}-${buildSectionSlug(section)}`
@@ -293,6 +309,7 @@ export const buildEpubTextOutput = (
       exportPlan: {
         files,
         summary: {
+          sourceFormat: 'epub',
           mode: 'chapters',
           ...(typeof options.chunkLimitChars === 'number' ? { chunkLimitChars: options.chunkLimitChars } : {}),
           sectionsKept: sections.length,
@@ -314,6 +331,7 @@ export const buildEpubTextOutput = (
       exportPlan: {
         files,
         summary: {
+          sourceFormat: 'epub',
           mode: 'chunks',
           chunkLimitChars: options.chunkLimitChars,
           sectionsKept: sections.length,

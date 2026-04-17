@@ -31,6 +31,7 @@ import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-ocr/o
 import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
 import { buildEpubTextOutput, type EpubArtifactFile } from './epub/export'
+import { buildPdfChapterArtifacts } from './pdf/chapters'
 import { isOfficeTextUsable } from './ocr-utils/page-triage'
 import { estimateTokens } from '~/utils/text-utils'
 
@@ -431,7 +432,8 @@ export const runOcr = async (
   let ocrService: string | undefined
   let promptTokens: number | undefined
   let completionTokens: number | undefined
-  let epubExportSummary: Record<string, unknown> | undefined
+  let chapterExportSummary: Record<string, unknown> | undefined
+  let pdfChapterDetectionSummary: Record<string, unknown> | undefined
   let artifactFiles: EpubArtifactFile[] | undefined
 
   const useEpubBun = opts.useEpubBun === true
@@ -458,9 +460,14 @@ export const runOcr = async (
 
   const format = step1Metadata.format
   const epubExportFlagsActive = hasEpubExportFlags(opts)
+  const pdfChapterFilesRequested = format === 'pdf' && opts.epubChapterFiles === true
+  const pdfChunkOnlyRequested = format === 'pdf' && opts.epubChapterFiles !== true && typeof opts.epubChunkLimitChars === 'number'
 
-  if (format !== 'epub' && epubExportFlagsActive) {
-    l.warn('EPUB export flags (--chapters, --length) are ignored for non-EPUB inputs.')
+  if (format !== 'epub' && format !== 'pdf' && epubExportFlagsActive) {
+    l.warn('Chapter export flags (--chapters, --length) are ignored for inputs other than EPUB and PDF.')
+  }
+  if (pdfChunkOnlyRequested) {
+    l.warn('For PDF inputs, --length is only applied when --chapters is also set.')
   }
 
   if (typeof opts.preparedMarkdown === 'string' && opts.preparedMarkdown.trim().length > 0) {
@@ -512,7 +519,7 @@ export const runOcr = async (
     pages = epubTextOutput.pages
     canonicalText = epubTextOutput.text
     artifactFiles = epubTextOutput.exportPlan?.files
-    epubExportSummary = epubTextOutput.exportPlan?.summary as Record<string, unknown> | undefined
+    chapterExportSummary = epubTextOutput.exportPlan?.summary as Record<string, unknown> | undefined
 
     extractionMethod = 'epub-text'
     inputFamily = 'epub'
@@ -770,6 +777,24 @@ export const runOcr = async (
     }
   }
 
+  if (pdfChapterFilesRequested && format === 'pdf') {
+    l.info(`Detecting PDF chapters with ${opts.pdfChapterMode} mode`)
+    const pdfChapterOutput = await buildPdfChapterArtifacts({
+      filePath,
+      pages,
+      mode: opts.pdfChapterMode,
+      ...(typeof step1Metadata.title === 'string' ? { title: step1Metadata.title } : {}),
+      ...(typeof step1Metadata.author === 'string' ? { author: step1Metadata.author } : {}),
+      ...(typeof opts.password === 'string' ? { password: opts.password } : {}),
+      ...(typeof opts.epubChunkLimitChars === 'number' ? { chunkLimitChars: opts.epubChunkLimitChars } : {}),
+      ...(typeof opts.pdfChapterLlmService === 'string' ? { llmService: opts.pdfChapterLlmService } : {}),
+      ...(typeof opts.pdfChapterLlmModel === 'string' ? { llmModel: opts.pdfChapterLlmModel } : {})
+    })
+    artifactFiles = pdfChapterOutput.files
+    chapterExportSummary = pdfChapterOutput.summary as Record<string, unknown> | undefined
+    pdfChapterDetectionSummary = pdfChapterOutput.detection as unknown as Record<string, unknown>
+  }
+
   const text = opts.preparedMarkdown
     ? opts.preparedMarkdown.trim()
     : typeof canonicalText === 'string' && canonicalText.trim().length > 0
@@ -819,7 +844,9 @@ export const runOcr = async (
     step2MetadataPayload['completionTokens'] = completionTokens
   }
   if (epubPayload) step2MetadataPayload['epub'] = epubPayload
-  if (epubExportSummary) step2MetadataPayload['epubExport'] = epubExportSummary
+  if (chapterExportSummary) step2MetadataPayload['chapterExport'] = chapterExportSummary
+  if (chapterExportSummary?.['sourceFormat'] === 'epub') step2MetadataPayload['epubExport'] = chapterExportSummary
+  if (pdfChapterDetectionSummary) step2MetadataPayload['pdfChapterDetection'] = pdfChapterDetectionSummary
   if (inputFamily) step2MetadataPayload['inputFamily'] = inputFamily
   if (normalizedFrom) step2MetadataPayload['normalizedFrom'] = normalizedFrom
   if (conversionChain) step2MetadataPayload['conversionChain'] = conversionChain

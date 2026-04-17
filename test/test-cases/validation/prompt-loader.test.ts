@@ -42,6 +42,20 @@ describe('prompt loader token estimates', () => {
     expect(resolved).toContain('## Chapters')
   })
 
+  test('prompt resolution can skip the default summary preset entirely', async () => {
+    const resolved = await resolvePromptNames([], { fallbackToDefault: false })
+    expect(resolved).toBe('')
+  })
+
+  test('token estimates can skip the default summary preset entirely', async () => {
+    const estimate = await resolvePromptTokenEstimate([], { fallbackToDefault: false })
+    expect(estimate).toEqual({
+      estimatedInputTokens: 0,
+      estimatedOutputTokens: 0,
+      resolvedLeafPromptNames: []
+    })
+  })
+
   test('available prompt names are deterministic and include all split prompt files', async () => {
     expect(await getAvailablePromptNames()).toEqual([
       'blog',
@@ -64,6 +78,7 @@ describe('prompt loader token estimates', () => {
       'longSummary',
       'mediumChapters',
       'metadata',
+      'pdfChapterBoundaries',
       'poetryCollection',
       'popSong',
       'questions',

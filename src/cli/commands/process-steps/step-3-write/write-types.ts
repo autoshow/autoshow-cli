@@ -9,6 +9,7 @@ import type {
 export type LLMOptions = Pick<ProcessingOptions,
   | 'outputDir'
   | 'prompts'
+  | 'promptFile'
   | 'openaiModel'
   | 'groqModel'
   | 'geminiModel'
@@ -127,6 +128,7 @@ export type StructuredPresetName =
   | 'seoArticle'
   | 'contentStrategy'
   | 'emailNewsletter'
+  | 'pdfChapterBoundaries'
   | 'x'
   | 'tiktok'
   | 'facebook'

@@ -4,6 +4,7 @@ import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-
 import { getStructuredCapability, resolveStructuredStrategy, shouldApplyStrictMode } from '~/cli/commands/process-steps/step-3-write/structured-output/capabilities'
 import { renderToPlainText } from '~/cli/commands/process-steps/step-3-write/structured-output/renderers'
 import { getStructuredPresetSchema, hasStructuredPreset } from '~/cli/commands/process-steps/step-3-write/structured-output/preset-registry'
+import { resolveStructuredSchema } from '~/cli/commands/process-steps/step-3-write/structured-output/schema-resolver'
 
 describe('parseAndValidateStructured', () => {
   const TestSchema = v.object({
@@ -198,5 +199,16 @@ describe('preset-registry', () => {
       faq: [{ question: 'What?', answer: 'This.' }]
     })
     expect(result.success).toBe(true)
+  })
+})
+
+describe('resolveStructuredSchema', () => {
+  test('falls back to the freeform envelope for prompt-file-only runs', async () => {
+    const resolved = await resolveStructuredSchema([], { fallbackToFreeformEnvelope: true })
+
+    expect(resolved.schemaName).toBe('prompt_content')
+    expect(resolved.leafPromptNames).toEqual(['content'])
+    expect(resolved.presetNames).toEqual(['freeformEnvelope'])
+    expect(v.safeParse(resolved.schema, { content: 'Rendered song lyrics' }).success).toBe(true)
   })
 })

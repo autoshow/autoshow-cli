@@ -94,3 +94,19 @@ export const convertDocumentToPdf = async (
   const args = withPassword(base, password)
   return await exec('mutool', args)
 }
+
+export const showPdfObject = async (
+  filePath: string,
+  objectPath: string,
+  password?: string
+): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
+  await ensureMutoolSetup()
+  const args = withPassword(['show', filePath, objectPath], password)
+  return await exec('mutool', args)
+}
+
+export const showPdfOutline = async (
+  filePath: string,
+  password?: string
+): Promise<{ stdout: string, stderr: string, exitCode: number }> =>
+  await showPdfObject(filePath, 'outline', password)

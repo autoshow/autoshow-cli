@@ -131,6 +131,33 @@ test('write help excludes STT-only resume flag', async () => {
   expect(result.stdout).not.toContain('--resume-missing')
 })
 
+test('write help includes text-input lyric workflow flags', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--text-input')
+  expect(result.stdout).toContain('--prompt-file')
+  expect(result.stdout).toContain('--rendered-text')
+  expect(result.stdout).toContain('--rendered-out-dir')
+  expect(result.stdout).toContain('--track-list')
+})
+
+test('music help advertises local markdown and text prompt files', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'music',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('local .md/.txt file')
+  expect(result.stdout).toContain('input/examples/document/1-tts.md')
+})
+
 test('setup help includes calibre step', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -898,6 +925,22 @@ test('buildOptsFromFlags maps --markdown for metadata output', () => {
   })
 
   expect(opts.markdown).toBe(true)
+})
+
+test('buildOptsFromFlags maps text-input lyric workflow flags', () => {
+  const opts = buildOptsFromFlags(false, {
+    'text-input': true,
+    'prompt-file': './albums/demo/prompt.md',
+    'rendered-text': true,
+    'rendered-out-dir': './albums/demo/lyrics',
+    'track-list': './albums/demo/tracks.md'
+  })
+
+  expect(opts.textInput).toBe(true)
+  expect(opts.promptFile).toBe('./albums/demo/prompt.md')
+  expect(opts.renderedText).toBe(true)
+  expect(opts.renderedOutDir).toBe('./albums/demo/lyrics')
+  expect(opts.trackList).toBe('./albums/demo/tracks.md')
 })
 
 test('write rejects removed structured output flags', async () => {

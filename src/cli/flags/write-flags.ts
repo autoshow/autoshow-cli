@@ -115,6 +115,33 @@ const writeMusicModelFlags = {
   }
 } as const satisfies ClercFlagsDefinition
 
+const writeTextInputFlags = {
+  'text-input': {
+    description: 'Treat local .md/.txt files and directories as raw source text instead of URL lists',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'prompt-file': {
+    description: 'Prepend prompt instructions from a local text file before named prompt presets',
+    type: String
+  },
+  'rendered-text': {
+    description: 'Save rendered step-3 markdown output alongside JSON output',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'rendered-out-dir': {
+    description: 'Also write rendered step-3 markdown files to this directory using source-based filenames',
+    type: String
+  },
+  'track-list': {
+    description: 'Optional tracks.md file used to prepend track-number headers on saved rendered text',
+    type: String
+  }
+} as const satisfies ClercFlagsDefinition
+
 export const writeFlags = {
   ...withHelpGroup(batchFlags, 'step-1-download'),
   ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
@@ -123,6 +150,7 @@ export const writeFlags = {
   ...withHelpGroup(articleFlags, 'step-2-ocr'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
+  ...withHelpGroup(writeTextInputFlags, 'step-3-write'),
   ...withHelpGroup(writeTtsFlags, 'step-4-tts'),
   ...withHelpGroup(imageGenFlags, 'step-5-image'),
   ...withHelpGroup(videoGenFlags, 'step-6-video'),

@@ -102,12 +102,21 @@ const buildExamplesText = (
   return `Example JSON output:\n\n${normalizedExamples[0]}`
 }
 
-const resolveRequestedPromptNames = (names: string[]): string[] =>
-  names.length === 0 ? ['default'] : names
+const resolveRequestedPromptNames = (
+  names: string[],
+  fallbackToDefault: boolean
+): string[] =>
+  names.length === 0
+    ? (fallbackToDefault ? ['default'] : [])
+    : names
 
-const collectLeafPromptsFromRegistry = (registry: PromptsRegistry, names: string[]): ResolvedLeafPrompt[] => {
+const collectLeafPromptsFromRegistry = (
+  registry: PromptsRegistry,
+  names: string[],
+  fallbackToDefault: boolean
+): ResolvedLeafPrompt[] => {
   const available = Object.keys(registry)
-  const resolved = resolveRequestedPromptNames(names)
+  const resolved = resolveRequestedPromptNames(names, fallbackToDefault)
   const leaves: ResolvedLeafPrompt[] = []
   const seen = new Set<string>()
 
@@ -199,11 +208,12 @@ const loadPrompts = async (): Promise<PromptsRegistry> => {
 
 export const resolvePromptNames = async (
   names: string[],
-  options: { exampleFormat?: PromptExampleFormat } = {}
+  options: { exampleFormat?: PromptExampleFormat, fallbackToDefault?: boolean } = {}
 ): Promise<string> => {
   const registry = await loadPrompts()
   const exampleFormat = options.exampleFormat ?? 'json'
-  const leaves = collectLeafPromptsFromRegistry(registry, names)
+  const fallbackToDefault = options.fallbackToDefault ?? true
+  const leaves = collectLeafPromptsFromRegistry(registry, names, fallbackToDefault)
 
   const instructionsText = leaves
     .map(({ entry }) => entry.instruction.trim())
@@ -217,9 +227,13 @@ export const resolvePromptNames = async (
     .join('\n\n')
 }
 
-export const resolvePromptTokenEstimate = async (names: string[]): Promise<PromptTokenEstimate> => {
+export const resolvePromptTokenEstimate = async (
+  names: string[],
+  options: { fallbackToDefault?: boolean } = {}
+): Promise<PromptTokenEstimate> => {
   const registry = await loadPrompts()
-  const leaves = collectLeafPromptsFromRegistry(registry, names)
+  const fallbackToDefault = options.fallbackToDefault ?? true
+  const leaves = collectLeafPromptsFromRegistry(registry, names, fallbackToDefault)
 
   const estimatedInputTokens = leaves.reduce((sum, leaf) => sum + leaf.entry.expectedInputTokens, 0)
   const estimatedOutputTokens = leaves.reduce((sum, leaf) => sum + leaf.entry.expectedOutputTokens, 0)
@@ -238,7 +252,7 @@ export const getAvailablePromptNames = async (): Promise<string[]> => {
 
 export const collectLeafPrompts = async (names: string[]): Promise<ResolvedLeafPrompt[]> => {
   const registry = await loadPrompts()
-  return collectLeafPromptsFromRegistry(registry, names)
+  return collectLeafPromptsFromRegistry(registry, names, true)
 }
 
 export const resolvePresetNames = async (names: string[]): Promise<string[]> => {
