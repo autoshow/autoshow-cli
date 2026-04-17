@@ -4,17 +4,15 @@ import * as l from '~/logger'
 import type { MinimaxMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
-import { pollUntil } from '~/utils/retries'
 import {
   MinimaxBaseRespSchema,
   ensureMinimaxBaseRespSuccess,
   parseMinimaxJsonResponse,
-  isMinimaxTaskSuccess
 } from '~/utils/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
-const POLL_INTERVAL_MS = 3_000
-const POLL_TIMEOUT_MS = 10 * 60_000
+const REQUEST_TIMEOUT_MS = 10 * 60_000
+const INCOMPLETE_RESPONSE_RETRY_DELAY_MS = 3_000
 
 const MinimaxLyricsResponseSchema = v.object({
   song_title: v.optional(v.string(), undefined),
@@ -33,25 +31,12 @@ const MinimaxMusicExtraInfoSchema = v.object({
 })
 
 const MinimaxMusicResponseSchema = v.object({
-  data: v.optional(MinimaxMusicDataSchema, undefined),
-  extra_info: v.optional(MinimaxMusicExtraInfoSchema, undefined),
+  data: v.optional(v.nullable(MinimaxMusicDataSchema), undefined),
+  extra_info: v.optional(v.nullable(MinimaxMusicExtraInfoSchema), undefined),
   base_resp: v.optional(MinimaxBaseRespSchema, undefined)
 })
 
-const readMusicStatus = (
-  payload: v.InferOutput<typeof MinimaxMusicResponseSchema>
-): string | number | undefined => {
-  return payload.data?.status
-}
-
-const isMusicInProgress = (status: string | number | undefined): boolean => {
-  if (status === 1 || status === '1') return true
-  if (typeof status === 'string') {
-    const normalized = status.trim().toLowerCase()
-    return normalized === 'pending' || normalized === 'processing' || normalized === 'in_progress'
-  }
-  return false
-}
+type MinimaxMusicResponse = v.InferOutput<typeof MinimaxMusicResponseSchema>
 
 const readProvidedLyrics = async (lyricsFile: string): Promise<string> => {
   const file = Bun.file(lyricsFile)
@@ -112,25 +97,35 @@ const requestMusicGeneration = async (
     prompt: string
     lyrics: string
   }
-): Promise<v.InferOutput<typeof MinimaxMusicResponseSchema>> => {
-  const response = await fetch(`${baseURL}/v1/music_generation`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: payload.model,
-      prompt: payload.prompt,
-      lyrics: payload.lyrics,
-      output_format: 'hex',
-      audio_setting: {
-        sample_rate: 44100,
-        bitrate: 256000,
-        format: 'mp3'
-      }
+): Promise<MinimaxMusicResponse> => {
+  let response: Response
+  try {
+    response = await fetch(`${baseURL}/v1/music_generation`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: payload.model,
+        prompt: payload.prompt,
+        lyrics: payload.lyrics,
+        output_format: 'hex',
+        audio_setting: {
+          sample_rate: 44100,
+          bitrate: 256000,
+          format: 'mp3'
+        }
+      }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     })
-  })
+  } catch (error) {
+    if ((error instanceof DOMException && error.name === 'AbortError')
+      || (error instanceof Error && error.name === 'AbortError')) {
+      throw new Error(`MiniMax music generation timed out after ${REQUEST_TIMEOUT_MS}ms`)
+    }
+    throw error
+  }
 
   if (!response.ok) {
     const body = await response.text()
@@ -146,7 +141,25 @@ const requestMusicGeneration = async (
   return parsed
 }
 
-const pollMusicGeneration = async (
+const isIncompleteSuccessEnvelope = (payload: MinimaxMusicResponse): boolean =>
+  payload.base_resp?.status_code === 0 && payload.data == null && payload.extra_info == null
+
+const formatMusicResponseDetails = (payload: MinimaxMusicResponse): string => {
+  const details: string[] = []
+  if (payload.base_resp?.status_code !== undefined) {
+    details.push(`status_code=${payload.base_resp.status_code}`)
+  }
+  if (payload.base_resp?.status_msg) {
+    details.push(`status_msg=${payload.base_resp.status_msg}`)
+  }
+  if (payload.data?.status !== undefined) {
+    details.push(`music_status=${payload.data.status}`)
+  }
+  details.push(`has_audio=${payload.data?.audio?.trim().length ? 'true' : 'false'}`)
+  return details.join(', ')
+}
+
+const requestMusicGenerationWithIncompleteRetry = async (
   baseURL: string,
   apiKey: string,
   payload: {
@@ -154,31 +167,21 @@ const pollMusicGeneration = async (
     prompt: string
     lyrics: string
   }
-): Promise<v.InferOutput<typeof MinimaxMusicResponseSchema>> => {
-  return await pollUntil({
-    operationName: 'minimax-music-gen',
-    intervalMs: POLL_INTERVAL_MS,
-    deadlineMs: POLL_TIMEOUT_MS,
-    pollFn: async () => {
-      const result = await requestMusicGeneration(baseURL, apiKey, payload)
-      const status = readMusicStatus(result)
-      l.info(`MiniMax music status: ${status ?? 'processing'}`)
-      return result
-    },
-    isDone: (result) => {
-      const status = readMusicStatus(result)
-      if (isMinimaxTaskSuccess(status)) return true
-      if (!isMusicInProgress(status) && result.data?.audio) return true
-      return false
-    },
-    isFailed: (result) => {
-      const status = readMusicStatus(result)
-      if (!isMusicInProgress(status) && !isMinimaxTaskSuccess(status) && !result.data?.audio) {
-        return { failed: true, reason: result.base_resp?.status_msg ?? 'Unknown error' }
-      }
-      return { failed: false }
-    }
-  })
+): Promise<MinimaxMusicResponse> => {
+  const result = await requestMusicGeneration(baseURL, apiKey, payload)
+  if (!isIncompleteSuccessEnvelope(result)) {
+    return result
+  }
+
+  l.warn('MiniMax music generation returned an incomplete success response; retrying once')
+  await Bun.sleep(INCOMPLETE_RESPONSE_RETRY_DELAY_MS)
+
+  const retried = await requestMusicGeneration(baseURL, apiKey, payload)
+  if (isIncompleteSuccessEnvelope(retried)) {
+    throw new Error(`MiniMax music generation returned an incomplete success response after retry (${formatMusicResponseDetails(retried)})`)
+  }
+
+  return retried
 }
 
 export const runMinimaxMusicGen = async (
@@ -219,11 +222,11 @@ export const runMinimaxMusicGen = async (
     prompt,
     lyrics
   }
-  const generated = await pollMusicGeneration(baseURL, apiKey, payload)
+  const generated = await requestMusicGenerationWithIncompleteRetry(baseURL, apiKey, payload)
   const hexAudio = generated.data?.audio
 
   if (!hexAudio || hexAudio.trim().length === 0) {
-    throw new Error('MiniMax music generation completed but no audio payload was returned')
+    throw new Error(`MiniMax music generation completed without audio payload (${formatMusicResponseDetails(generated)})`)
   }
 
   const audioBytes = new Uint8Array(Buffer.from(hexAudio, 'hex'))
