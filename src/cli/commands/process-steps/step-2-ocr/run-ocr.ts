@@ -30,6 +30,7 @@ import type { ZipXmlFormat } from '~/types'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
+import { buildEpubTextOutput, type EpubArtifactFile } from './epub/export'
 import { isOfficeTextUsable } from './ocr-utils/page-triage'
 import { estimateTokens } from '~/utils/text-utils'
 
@@ -37,9 +38,13 @@ const ZIP_XML_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'] as const)
 const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
 const isZipXmlFormat = (f: string): f is ZipXmlFormat => ZIP_XML_FORMATS.has(f as ZipXmlFormat)
 
-const buildCombinedText = (pages: PageResult[], pageSeparator: string): string => {
+const buildCombinedText = (
+  pages: PageResult[],
+  pageSeparator: string,
+  includePageLabels = true
+): string => {
   return pages
-    .map(page => `Page ${page.pageNumber}\n${page.text.trim()}`)
+    .map(page => includePageLabels ? `Page ${page.pageNumber}\n${page.text.trim()}` : page.text.trim())
     .join(pageSeparator)
     .trim()
 }
@@ -88,6 +93,9 @@ const hasHostedOcr = (opts: ExtractionOptions): boolean =>
 
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
   opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
+
+const hasEpubExportFlags = (opts: ExtractionOptions): boolean =>
+  opts.epubChapterFiles === true || typeof opts.epubChunkLimitChars === 'number'
 
 // Convert document to PDF via LibreOffice (for office/RTF)
 const convertToLibreOfficePdf = async (
@@ -407,7 +415,7 @@ export const runOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   opts: ExtractionOptions
-): Promise<{ result: ExtractionResult, step2Metadata: ExtractionMetadata }> => {
+): Promise<{ result: ExtractionResult, step2Metadata: ExtractionMetadata, artifactFiles?: EpubArtifactFile[] }> => {
 
   const start = Date.now()
 
@@ -423,6 +431,8 @@ export const runOcr = async (
   let ocrService: string | undefined
   let promptTokens: number | undefined
   let completionTokens: number | undefined
+  let epubExportSummary: Record<string, unknown> | undefined
+  let artifactFiles: EpubArtifactFile[] | undefined
 
   const useEpubBun = opts.useEpubBun === true
   const useEpubCalibre = opts.useEpubCalibre === true
@@ -447,6 +457,11 @@ export const runOcr = async (
   }
 
   const format = step1Metadata.format
+  const epubExportFlagsActive = hasEpubExportFlags(opts)
+
+  if (format !== 'epub' && epubExportFlagsActive) {
+    l.warn('EPUB export flags (--chapters, --length) are ignored for non-EPUB inputs.')
+  }
 
   if (typeof opts.preparedMarkdown === 'string' && opts.preparedMarkdown.trim().length > 0) {
     pages = [{
@@ -460,6 +475,9 @@ export const runOcr = async (
   }
   // ─── EPUB inspect mode (--epub-bun or --epub-calibre) ─────────────────────
   else if (useEpubInspect) {
+    if (epubExportFlagsActive) {
+      l.warn('EPUB export flags (--chapters, --length) are ignored when using EPUB inspect mode.')
+    }
     if (useEpubCalibre) {
       l.info('Inspecting EPUB with Calibre tools')
       const inspected = await runEpubCalibreInspect(filePath)
@@ -486,21 +504,25 @@ export const runOcr = async (
   else if (format === 'epub' && !hasOcrFlag(opts)) {
     l.info('Extracting EPUB chapter text with Bun ZIP/XML parser')
     const inspected = await runEpubBunInspect(filePath)
-
-    pages = inspected.payload.chapters.map((chapter) => {
-      const heading = chapter.title ? `## ${chapter.title}\n\n` : ''
-      return {
-        pageNumber: chapter.index,
-        method: 'text' as const,
-        text: `${heading}${chapter.text}`
-      }
+    const epubTextOutput = buildEpubTextOutput(step1Metadata.slug, inspected.payload.chapters, {
+      chapterFiles: opts.epubChapterFiles === true,
+      ...(typeof opts.epubChunkLimitChars === 'number' ? { chunkLimitChars: opts.epubChunkLimitChars } : {})
     })
+
+    pages = epubTextOutput.pages
+    canonicalText = epubTextOutput.text
+    artifactFiles = epubTextOutput.exportPlan?.files
+    epubExportSummary = epubTextOutput.exportPlan?.summary as Record<string, unknown> | undefined
 
     extractionMethod = 'epub-text'
     inputFamily = 'epub'
+    outputFidelity = 'cleaned-epub-text'
   }
   // ─── EPUB with OCR flag → convert to PDF first ───────────────────────────
   else if (format === 'epub' && hasOcrFlag(opts)) {
+    if (epubExportFlagsActive) {
+      l.warn('EPUB export flags (--chapters, --length) are ignored when an OCR engine is selected for EPUB input.')
+    }
     inputFamily = 'epub'
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-epub-ocr-'))
     try {
@@ -752,7 +774,7 @@ export const runOcr = async (
     ? opts.preparedMarkdown.trim()
     : typeof canonicalText === 'string' && canonicalText.trim().length > 0
       ? canonicalText.trim()
-      : buildCombinedText(pages, opts.pageSeparator)
+      : buildCombinedText(pages, opts.pageSeparator, extractionMethod !== 'epub-text')
   const ocrPages = pages.filter(p => p.method === 'ocr').length
   const textPages = pages.filter(p => p.method === 'text').length
 
@@ -797,6 +819,7 @@ export const runOcr = async (
     step2MetadataPayload['completionTokens'] = completionTokens
   }
   if (epubPayload) step2MetadataPayload['epub'] = epubPayload
+  if (epubExportSummary) step2MetadataPayload['epubExport'] = epubExportSummary
   if (inputFamily) step2MetadataPayload['inputFamily'] = inputFamily
   if (normalizedFrom) step2MetadataPayload['normalizedFrom'] = normalizedFrom
   if (conversionChain) step2MetadataPayload['conversionChain'] = conversionChain
@@ -807,7 +830,8 @@ export const runOcr = async (
 
   return {
     result,
-    step2Metadata
+    step2Metadata,
+    ...(artifactFiles ? { artifactFiles } : {})
   }
 }
 

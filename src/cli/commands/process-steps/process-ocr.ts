@@ -1,4 +1,5 @@
-import { mkdir } from 'node:fs/promises'
+import { mkdir, rm } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { writeFile } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
 import {
@@ -36,6 +37,7 @@ import { writeOcrRunManifest } from './step-2-ocr/manifest'
 import { FIRECRAWL_PRICE_NOTE } from './step-2-ocr/ocr-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
 import { writeProviderResult } from './manifest-utils'
+import type { EpubArtifactFile } from './step-2-ocr/epub/export'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
@@ -159,6 +161,28 @@ const writeProviderArtifacts = async (
   )
 }
 
+const writeEpubArtifactFiles = async (
+  outputDir: string,
+  files: EpubArtifactFile[]
+): Promise<void> => {
+  const topLevelDirs = [...new Set(
+    files
+      .map((file) => file.relativePath.split('/')[0])
+      .filter((dir): dir is string => typeof dir === 'string' && dir.length > 0)
+  )]
+
+  for (const dir of topLevelDirs) {
+    await rm(join(outputDir, dir), { recursive: true, force: true })
+    await mkdir(join(outputDir, dir), { recursive: true })
+  }
+
+  for (const file of files) {
+    const absolutePath = join(outputDir, file.relativePath)
+    await mkdir(dirname(absolutePath), { recursive: true })
+    await writeFile(absolutePath, file.text)
+  }
+}
+
 const buildDocumentSource = (
   filePath: string,
   sourceRef?: Step1SourceRef
@@ -274,6 +298,8 @@ export const processOcr = async (
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
     ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
+    ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
+    ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),
     ...(rawOpts.useEpubBun ? { useEpubBun: true } : {}),
     ...(rawOpts.useEpubCalibre ? { useEpubCalibre: true } : {}),
     ...(preparedDocument?.preparedMarkdown ? { preparedMarkdown: preparedDocument.preparedMarkdown } : {}),
@@ -434,6 +460,9 @@ export const processOcr = async (
       isEpubInspectMode(extracted.step2Metadata),
       'result.json'
     )
+    if (Array.isArray(extracted.artifactFiles)) {
+      await writeEpubArtifactFiles(outputDir, extracted.artifactFiles)
+    }
 
     return {
       result: extracted.result,

@@ -247,6 +247,16 @@ export const extractFlags = {
   'glm-ocr': {
     description: buildModelDescription('GLM OCR model', SUPPORTED_GLM_OCR_MODELS),
     type: String
+  },
+  chapters: {
+    description: 'EPUB native text runs: write one cleaned file per kept section under chapters/',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  length: {
+    description: 'EPUB native text runs: hard export limit in thousands of characters; alone writes chunks/, with --chapters splits long sections',
+    type: String
   }
 } as const satisfies ClercFlagsDefinition
 

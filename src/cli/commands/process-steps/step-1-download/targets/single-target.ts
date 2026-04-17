@@ -176,6 +176,12 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.glmOcrModel) {
     extractionOpts.glmOcrModel = opts.glmOcrModel
   }
+  if (opts.epubChapterFiles) {
+    extractionOpts.epubChapterFiles = true
+  }
+  if (typeof opts.epubChunkLimitChars === 'number') {
+    extractionOpts.epubChunkLimitChars = opts.epubChunkLimitChars
+  }
   if (opts.useEpubBun) {
     extractionOpts.useEpubBun = true
   }
@@ -234,6 +240,24 @@ const writeDocumentOutputMetadata = async (
   })
 
   l.report.complete(outputDir, artifactFiles)
+}
+
+const appendEpubExportArtifacts = (
+  artifactFiles: Record<string, string>,
+  step2Metadata: ExtractionMetadata | ExtractionMetadata[]
+): void => {
+  const primary = Array.isArray(step2Metadata) ? step2Metadata[0] : step2Metadata
+  const exportSummary = primary?.epubExport
+  if (!exportSummary || !Array.isArray(exportSummary.directories)) {
+    return
+  }
+
+  if (exportSummary.directories.includes('chapters')) {
+    artifactFiles['chapters'] = 'chapters/'
+  }
+  if (exportSummary.directories.includes('chunks')) {
+    artifactFiles['chunks'] = 'chunks/'
+  }
 }
 
 const runDocumentWrite = async (
@@ -296,6 +320,7 @@ const runDocumentWrite = async (
     prompt: 'prompt.md',
     run: 'run.json'
   }
+  appendEpubExportArtifacts(artifactFiles, extraction.step2Metadata)
   if (step3Results.length === 1) {
     artifactFiles['summary'] = step3Results[0]?.outputFileName ?? 'text.json'
   } else {

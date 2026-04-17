@@ -81,7 +81,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 | Cache | Prune or clear the persistent STT media cache |
 | Setup | Install local runtimes and verify prerequisites with `--doctor` |
 | Models | Download a Whisper model or llama.cpp repo without running inference |
-| Sample | Generate and validate deterministic fixtures for testing and validation |
+| Sample | Generate and validate deterministic fixtures for all supported formats |
 | Links | Fetch curated provider documentation markdown into one combined file |
 
 ### High-value behaviors
@@ -92,7 +92,9 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - `write` can run multiple LLM providers in one invocation and writes provider-specific JSON artifacts for each result.
 - Multi-provider STT runs write provider-specific transcripts and result envelopes under `providers/<service>-<model>/`.
+- STT batch runs can resume missing provider outputs with `--resume-missing`; supported diarization services accept `--speaker-count`, and OpenAI diarization can pair `--speaker-name` with `--speaker-reference` hints.
 - HTML/article inputs can use `defuddle`, `firecrawl`, or `glm-reader` backends through `--url-backend`.
+- Native EPUB text extraction writes cleaned section-aware text by default, strips common footnote/reference noise, and can additionally emit `chapters/` or `chunks/` side artifacts.
 - The persistent STT cache can be managed with `bun as cache prune` and `bun as cache clear`, and runs can force refresh or bypass via `--refresh-cache` and `--no-cache`.
 - `report` can generate consensus markdown, JSON, and review artifacts from STT or OCR runs after the original pipeline completes.
 - Global runtime flags include `--config-path` for alternate config files plus `--verbose`, `--quiet/-q`, and `--json` for log-output control.
@@ -118,6 +120,9 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 # document OCR/extraction
 bun as ocr input/examples/document/1-document.pdf --out json
 
+# native EPUB extraction with chapter side artifacts
+bun as ocr input/examples/document/1-epub.epub --chapters --length 50
+
 # article extraction with a hosted backend
 bun as ocr https://ajcwebdev.com --url-backend firecrawl
 
@@ -128,7 +133,7 @@ bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-nano-0.8-int
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 
 # generate consensus artifacts for a previous STT or OCR run
-bun as report ./output/2026-04-15_episode
+bun as report ./output/2026-04-17_episode
 
 # fetch curated OpenAI provider docs
 bun as links --openai
@@ -227,8 +232,10 @@ Current extraction and download coverage includes:
 
 Notable behavior:
 
-- EPUB defaults to native chapter extraction when no OCR engine is requested.
+- EPUB defaults to cleaned native text extraction when no OCR engine is requested.
 - EPUB inspect modes are available through `--epub-bun` and `--epub-calibre`, and they write structured EPUB payloads into `run.json`.
+- Native EPUB text cleanup removes common footnote/reference noise, normalizes section text, and drops empty sections before export.
+- Native EPUB text runs can additionally write `chapters/` with `--chapters` and bounded `chunks/` with `--length <n>`; `--length` is expressed in thousands of characters, and with `--chapters` it hard-splits long sections into multiple chapter files.
 - MOBI / AZW3 / FB2 / LIT are normalized through Calibre before downstream extraction.
 - Office formats attempt native ZIP/XML extraction first, then fall back to OCR when quality heuristics fail.
 - CSV is treated as raw text, not OCR.
@@ -346,10 +353,10 @@ Key behaviors:
 
 It can persist defaults for:
 
-- STT engines, models, concurrency, split mode, and cache behavior
+- STT engines, models, speaker-count hints, concurrency, split mode, and cache behavior
 - selected write-provider defaults
 - TTS, image, video, and music post-processing defaults
-- OCR defaults like language, output format, DPI, rotation, and service model
+- OCR defaults like language, output format, DPI, rotation, service model, and EPUB chapter/chunk export settings
 - batch defaults
 - default prompt lists
 - pricing thresholds
@@ -397,7 +404,7 @@ Important setup coverage includes:
 - Calibre
 - local document OCR dependencies
 - Kitten TTS environment and default local model download
-- provider-specific setup hooks for supported STT, TTS, image, and music services
+- provider-specific setup hooks for supported STT, OCR, TTS, image, and music services
 - `bun as setup --doctor` checks for core tools, API keys, config presence, config validity, and the active Bun version
 
 There are also targeted setup substeps such as:
@@ -414,6 +421,8 @@ There are also targeted setup substeps such as:
 - `bun as setup --step tts`
 - `bun as setup --step image`
 - `bun as setup --step sample`
+
+`setup` also supports `--force-redownload` for reinstalling artifacts and `--repeat <n>` for benchmark-oriented repeated setup runs.
 
 ### Runtime layout
 
@@ -434,6 +443,7 @@ Common output artifacts include:
 - `transcription.txt`
 - `transcription.evidence.json`
 - extracted text or OCR output in the requested format such as `extraction.txt`, `result.json`, `*.tsv`, or `*.hocr`
+- `chapters/*.txt` or `chunks/*.txt` for native EPUB text runs when `--chapters` and/or `--length` is active
 - `text.json` or `text-<model>.json`
 - `speech.wav` or provider/model-specific variants
 - generated image files
@@ -460,10 +470,15 @@ Consensus report generation additionally writes artifacts such as:
 - `consensus-review.md`
 - `consensus-transcription.txt` for STT or `consensus-extraction.txt` for OCR
 
-### Report snapshot from March 19, 2026
+### Report snapshot as of April 17, 2026
 
-These are dated report observations, not timeless guarantees.
-They predate later additions such as Deepgram, Soniox, Speechmatics, Rev, Gladia, GLM OCR, and Firecrawl article extraction.
+The newest checked-in benchmark artifact in this repo is still
+`docs/reports/2026-03-19_09-00-06_test-run-e2e-report.md`.
+
+As of April 17, 2026, these are still the closest recorded benchmark highlights bundled with the repo.
+They predate later additions such as Deepgram, Soniox, Speechmatics, Rev, Gladia, GLM OCR, and Firecrawl article extraction, and they also predate some current model-registry refreshes in the live flag surface.
+
+For current cost decisions, trust `--price` and the live model registries over this historical table.
 
 | Area | Cheapest / fastest highlight from the report |
 |------|----------------------------------------------|

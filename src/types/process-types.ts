@@ -174,6 +174,8 @@ export const ExtractionOptionsSchema = v.object({
   usePaddleOcr: v.optional(v.boolean(), undefined),
   mistralOcrModel: v.optional(v.string(), undefined),
   glmOcrModel: v.optional(v.string(), undefined),
+  epubChapterFiles: v.optional(v.boolean(), undefined),
+  epubChunkLimitChars: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   useEpubBun: v.optional(v.boolean(), undefined),
   useEpubCalibre: v.optional(v.boolean(), undefined),
   preparedMarkdown: v.optional(v.string(), undefined),
@@ -200,6 +202,17 @@ export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistra
 export type { EpubInspectEngine } from '~/cli/commands/process-steps/step-2-ocr/ocr-types'
 export type EpubInspection = Record<string, unknown>
 const EpubInspectionSchema = v.record(v.string(), v.unknown())
+const EpubExportSummarySchema = v.object({
+  mode: v.picklist(['chapters', 'chunks']),
+  chunkLimitChars: v.optional(v.number(), undefined),
+  sectionsKept: v.number(),
+  sectionsDropped: v.number(),
+  dividerSectionsMerged: v.number(),
+  filesWritten: v.number(),
+  chapterFilesWritten: v.optional(v.number(), undefined),
+  chunkFilesWritten: v.optional(v.number(), undefined),
+  directories: v.array(v.string())
+})
 
 export const ExtractionMetadataSchema = v.object({
   extractionMethod: v.picklist([
@@ -226,6 +239,7 @@ export const ExtractionMetadataSchema = v.object({
   promptTokens: v.optional(v.number(), undefined),
   completionTokens: v.optional(v.number(), undefined),
   epub: v.optional(EpubInspectionSchema, undefined),
+  epubExport: v.optional(EpubExportSummarySchema, undefined),
   inputFamily: v.optional(v.string(), undefined),
   normalizedFrom: v.optional(v.string(), undefined),
   conversionChain: v.optional(v.array(v.string()), undefined),

@@ -128,6 +128,8 @@ export const mergeConfigIntoRawFlags = (
     inject('rotate', d.extract.rotate)
     inject('mistral-ocr', d.extract.mistralOcr)
     inject('glm-ocr', d.extract.glmOcr)
+    inject('chapters', d.extract.chapters)
+    inject('length', d.extract.length)
   }
 
   if (d.batch) {
@@ -208,6 +210,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'rotate':            ['defaults', 'extract', 'rotate'],
   'mistral-ocr':       ['defaults', 'extract', 'mistralOcr'],
   'glm-ocr':           ['defaults', 'extract', 'glmOcr'],
+  'chapters':          ['defaults', 'extract', 'chapters'],
+  'length':            ['defaults', 'extract', 'length'],
   'batch-limit':       ['defaults', 'batch', 'limit'],
   'batch-order':       ['defaults', 'batch', 'order'],
   'batch-concurrency': ['defaults', 'batch', 'concurrency'],
@@ -233,7 +237,7 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
   if (typeof rawValue !== 'string') return rawValue
   const numericFlags = new Set([
     'speaker-count', 'reverb-verbatimicity', 'imagen-count', 'video-duration',
-    'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'batch-limit', 'batch-concurrency',
+    'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'length', 'batch-limit', 'batch-concurrency',
     'max-cents',
     'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency'
   ])

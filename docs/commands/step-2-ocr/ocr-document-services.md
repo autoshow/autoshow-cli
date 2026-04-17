@@ -22,6 +22,8 @@ bun as ocr <article-url> --url-backend firecrawl
 bun as ocr <article-url> --url-backend glm-reader
 ```
 
+`--chapters` and `--length` are not hosted OCR features. They only apply to the default native EPUB text path documented in [`ocr-document-local.md`](./ocr-document-local.md#epub-native-cleanup-and-export).
+
 ## Hosted Article Routing
 
 Remote HTML/article URLs can be routed through Firecrawl or GLM Reader.
@@ -145,6 +147,7 @@ FIRECRAWL_API_URL=http://localhost:3002 bun as ocr https://ajcwebdev.com --url-b
 | `--out <format>` | `text`, `json`, `tsv`, or `hocr` |
 | `--password <value>` | Password for encrypted PDFs |
 | `--lang <codes>` | Accepted by the CLI but ignored by Mistral OCR |
+| `--chapters` / `--length <n>` | Accepted by the CLI, but only used for native EPUB text extraction; ignored with a warning on hosted OCR EPUB runs |
 | `--epub-bun` / `--epub-calibre` | EPUB inspect modes, which take precedence on EPUB inputs |
 | `--price` | Show the aggregated OCR estimate and exit |
 
@@ -157,5 +160,6 @@ FIRECRAWL_API_URL=http://localhost:3002 bun as ocr https://ajcwebdev.com --url-b
 - Firecrawl article extraction preflight is estimated as `1 credit / page` at the configured Standard-plan effective rate (`$83 / 100K credits`, currently `0.08300¢` per article URL).
 - GLM Reader cost is not estimated locally during `--price`.
 - Local `.html` / `.htm` inputs always use `defuddle` even if `--url-backend firecrawl` or `--url-backend glm-reader` is passed.
+- `--chapters` and `--length` are ignored with a warning when `--mistral-ocr` or `--glm-ocr` is selected for EPUB input.
 - Standalone `ocr` does not expose the advanced Tesseract tuning flags; those are only available through `write`.
 - Local tool setup is in [`ocr-document-local.md#setup`](./ocr-document-local.md#setup).

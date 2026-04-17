@@ -20,6 +20,7 @@ import type {
   EpubMetadata,
   EpubTocItem
 } from '~/types'
+import { cleanEpubHtmlToText } from './cleanup'
 
 const stripNsPrefixes = (xml: string): string =>
   xml.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*:/g, match => (match[1] === '/' ? '</' : '<'))
@@ -46,18 +47,6 @@ const readTagTexts = (xml: string, tagName: string): string[] =>
   scanTagBlocks(xml, tagName)
     .map(block => collapseWhitespace(decodeXmlEntities(innerXml(block, tagName))))
     .filter(Boolean)
-
-const stripMarkup = (value: string): string =>
-  value
-    .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<head\b[\s\S]*?<\/head>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-
-const extractHtmlText = (xml: string): string => {
-  const stripped = stripMarkup(xml)
-  return collapseWhitespace(decodeXmlEntities(stripped))
-}
 
 const parseMetadata = (opfXml: string): EpubMetadata => {
   const xml = stripNsPrefixes(opfXml)
@@ -169,7 +158,7 @@ const parseNavHtml = (navXml: string, packagePath: string): EpubTocItem[] => {
   while ((match = anchorRegex.exec(tocBlock)) !== null) {
     const hrefRaw = (match[1] || match[2] || '').trim()
     const href = hrefRaw.split('#')[0] ?? ''
-    const title = collapseWhitespace(decodeXmlEntities(stripMarkup(match[3] || '')))
+    const title = collapseWhitespace(cleanEpubHtmlToText(match[3] || ''))
     if (!href || !title) continue
     items.push({
       title,
@@ -212,7 +201,7 @@ const buildChapters = async (
       ?? firstTagText(stripped, 'h1')
       ?? tocByPath.get(spineItem.path)?.title
 
-    const text = extractHtmlText(stripped)
+    const text = cleanEpubHtmlToText(stripped)
     const words = text.length === 0 ? 0 : text.split(/\s+/).filter(Boolean).length
 
     chapters.push({
@@ -281,7 +270,7 @@ const findPackagePathFallback = (reader: EpubContentReader): string | undefined 
 
 const buildPageText = (chapters: EpubChapter[]): string =>
   chapters
-    .map(chapter => `Page ${chapter.index}\n${chapter.text}`)
+    .map(chapter => chapter.text)
     .join('\n\n')
     .trim()
 

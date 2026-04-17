@@ -187,6 +187,7 @@ export const buildOptsFromFlags = (
 
   const outputFormat = readStringFlag(mergedFlags, 'out', 'json')
   const normalizedOut: OutputFormat = outputFormat === 'text' || outputFormat === 'tsv' || outputFormat === 'hocr' ? outputFormat : 'json'
+  const epubLengthThousands = parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'length'), 'length')
 
   const whisperModel = validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper', 'tiny'))
   const groqSttModel = readValidated('groq-stt', validateGroqSttModel)
@@ -278,6 +279,8 @@ export const buildOptsFromFlags = (
     usePaddleOcr: readBooleanFlag(mergedFlags, 'paddle-ocr'),
     mistralOcrModel,
     glmOcrModel,
+    epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
+    epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
     useEpubBun: readBooleanFlag(mergedFlags, 'epub-bun'),
     useEpubCalibre: readBooleanFlag(mergedFlags, 'epub-calibre'),
     urlBackend,

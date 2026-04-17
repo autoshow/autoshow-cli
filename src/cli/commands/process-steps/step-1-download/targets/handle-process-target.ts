@@ -85,6 +85,17 @@ const getExpectedOcrArtifact = (opts: RuntimeOptions): string => {
   return 'extraction.txt'
 }
 
+const getExpectedOcrExportArtifacts = (opts: RuntimeOptions): string[] => {
+  const artifacts: string[] = []
+  if (opts.epubChapterFiles) {
+    artifacts.push('chapters/*.txt (EPUB native text runs only)')
+  }
+  if (typeof opts.epubChunkLimitChars === 'number' && !opts.epubChapterFiles) {
+    artifacts.push('chunks/*.txt (EPUB native text runs only)')
+  }
+  return artifacts
+}
+
 export const buildExpectedFilesList = async (command: ProcessCommand, opts: RuntimeOptions, resolvedTarget?: string): Promise<string[]> => {
   if (command === 'metadata') {
     if (!opts.save) {
@@ -98,14 +109,15 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   }
   if (isOcrCommand(command)) {
     const ocrArtifact = getExpectedOcrArtifact(opts)
+    const ocrExportArtifacts = getExpectedOcrExportArtifacts(opts)
     const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
     if (opts.useEpubBun || opts.useEpubCalibre) {
-      return ['run.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)']
+      return ['run.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)', ...ocrExportArtifacts]
     }
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
-      return [ocrArtifact, 'providers/<service>-<model>/result.json', 'run.json']
+      return [ocrArtifact, ...ocrExportArtifacts, 'providers/<service>-<model>/result.json', 'run.json']
     }
-    return [ocrArtifact, 'run.json']
+    return [ocrArtifact, ...ocrExportArtifacts, 'run.json']
   }
   if (isSttCommand(command)) {
     return collectSttTargets(opts).length > 1
@@ -118,6 +130,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     && await isDocumentLikeTarget(resolvedTarget, opts)
   if (documentWrite) {
     const files = [getExpectedOcrArtifact(opts), summaryFile]
+    files.push(...getExpectedOcrExportArtifacts(opts))
     const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
       files.push('providers/<service>-<model>/result.json')

@@ -27,6 +27,12 @@ bun t test/test-cases/validation/html-article-inputs.test.ts
 
 That suite includes setup guards for missing `FIRECRAWL_API_KEY` and `GLM_API_KEY`, local HTML fallback coverage, and mocked GLM Reader routing.
 
+Native EPUB cleanup/export validation is local-only and lives in:
+
+```bash
+bun t test/test-cases/validation/epub-cleanup-and-export.test.ts
+```
+
 ## E2E Services
 
 ### Mistral OCR

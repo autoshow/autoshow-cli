@@ -12,6 +12,7 @@ Extract text from documents, images, and HTML articles with the local extraction
 - [Default Routing](#default-routing)
 - [HTML / Article Extraction](#html--article-extraction)
 - [EPUB Inspect Modes](#epub-inspect-modes)
+- [EPUB Native Cleanup And Export](#epub-native-cleanup-and-export)
 - [OCR Language Handling](#ocr-language-handling)
 - [Examples](#examples)
 - [Standalone `ocr` Flags](#standalone-ocr-flags)
@@ -82,7 +83,7 @@ bun as ocr [input] [flags]
 | Input family | Default path | `--ocrmypdf` | `--paddle-ocr` |
 |--------------|--------------|--------------|----------------|
 | PDF | `mutool+tesseract` | `pdf+ocrmypdf` | `mutool+paddle-ocr` |
-| EPUB | `epub-text` via Bun ZIP/XML chapter extraction | EPUB to PDF, then `pdf+ocrmypdf` | EPUB to PDF, then `pdf+paddle-ocr` |
+| EPUB | `epub-text` via cleaned Bun ZIP/XML section extraction | EPUB to PDF, then `pdf+ocrmypdf` | EPUB to PDF, then `pdf+paddle-ocr` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB via Calibre, then follow the EPUB path | same | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, with OCR fallback through LibreOffice if quality is poor | LibreOffice to PDF, then OCRmyPDF | LibreOffice to PDF, then PaddleOCR |
 | RTF | LibreOffice to PDF, then Tesseract | LibreOffice to PDF, then OCRmyPDF | LibreOffice to PDF, then PaddleOCR |
@@ -119,8 +120,26 @@ Structured EPUB inspection is available through two mutually exclusive flags:
 
 Rules:
 - inspect mode is metadata-only for EPUB inputs
+- `step2.epub.chapters[*].text` uses the same cleaned section text model as the default native EPUB path
 - if `--out` is explicitly provided in inspect mode, it must be `json`
+- `--chapters` and `--length` are ignored with a warning in inspect mode
 - for non-EPUB inputs, these flags fall back to the normal OCR flow
+
+## EPUB Native Cleanup And Export
+
+The default EPUB path (`step2.extractionMethod: "epub-text"`) now writes cleaned native EPUB text instead of rebuilding the book with synthetic `Page N` labels.
+
+Rules:
+- plain `bun as ocr book.epub` still writes the normal root extraction artifact (`extraction.txt` or `result.json`) plus `run.json`
+- cleaned EPUB runs report `step2.outputFidelity: "cleaned-epub-text"`
+- `--chapters` writes one cleaned file per kept EPUB section under `chapters/`
+- `--length <n>` uses a hard limit of `n * 1000` characters; by itself it writes `chunks/<document-slug>-NNN.txt`
+- `--chapters --length <n>` splits oversized section files under `chapters/` using `-part-NNN.txt` suffixes
+- export files are additive side artifacts inside the same run directory; they do not replace the root `extraction.*` artifact
+- `step2.epubExport` is written to `run.json` only when chapter or chunk side artifacts are created
+- `--chapters` and `--length` are ignored with a warning for non-EPUB inputs and for EPUB runs that use `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, or `--glm-ocr`
+
+The cleanup pass removes common footnote/endnote markup, preserves meaningful block and line breaks, decodes entities, and drops isolated page-number noise lines. Standalone `PART ...` divider sections are merged into adjacent kept sections before export.
 
 ## OCR Language Handling
 
@@ -143,6 +162,15 @@ bun as ocr input/examples/document/1-document.pdf --out json
 
 # EPUB chapter extraction
 bun as ocr input/examples/document/1-epub.epub
+
+# EPUB chapter side artifacts
+bun as ocr input/examples/document/1-epub.epub --chapters
+
+# EPUB chunk side artifacts at 50k characters
+bun as ocr input/examples/document/1-epub.epub --length 50
+
+# EPUB chapter files with per-section hard splitting at 50k characters
+bun as ocr input/examples/document/1-epub.epub --chapters --length 50
 
 # EPUB OCR path
 bun as ocr input/examples/document/1-epub.epub --ocrmypdf
@@ -180,6 +208,8 @@ These are the flags currently exposed by the standalone `ocr` command:
 | `--password` | - | Password for encrypted PDFs |
 | `--ocrmypdf` | `false` | Use OCRmyPDF |
 | `--paddle-ocr` | `false` | Use PaddleOCR |
+| `--chapters` | `false` | EPUB native text runs: write one cleaned file per kept section under `chapters/` |
+| `--length` | - | EPUB native text runs: hard export limit in thousands of characters; alone writes `chunks/`, with `--chapters` splits long sections |
 | `--url-backend` | `defuddle` | Article/HTML backend: `defuddle`, `firecrawl`, or `glm-reader`; local `.html` / `.htm` always use `defuddle` |
 | `--epub-bun` | `false` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | `false` | Inspect EPUB structure with Calibre |
@@ -190,6 +220,8 @@ These are the flags currently exposed by the standalone `ocr` command:
 - Supported document formats: PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, CBZ.
 - Supported image formats: PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF.
 - HTML/article inputs default to the bundled `defuddle` backend and produce `html+defuddle` extraction metadata.
+- Native EPUB text runs can additionally write `chapters/` and `chunks/` side artifacts inside the same run directory.
+- Config defaults can persist these EPUB export flags under `defaults.extract.chapters` and `defaults.extract.length`.
 - Office files use native ZIP/XML extraction first and only fall back to OCR when the extracted text quality is poor.
 - `--mistral-ocr`, `--glm-ocr`, and hosted article backends are documented separately in [`ocr-document-services.md`](./ocr-document-services.md).
 - Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are currently exposed through `write`, not through standalone `ocr`.
@@ -199,14 +231,21 @@ These are the flags currently exposed by the standalone `ocr` command:
 ```bash
 bun t \
   test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-options.test.ts \
-  test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts
+  test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts \
+  test/test-cases/validation/epub-cleanup-and-export.test.ts
 ```
 
 For cost-capped runs, append `--budget <whole-number-cents>` (for example `--budget 5`). In normal test mode the runner performs pricing preflight first and prints RUN/SKIP plus a skipped-command list before executing tests. Combined with `--test-price`, it marks commands under over-budget test keys as skipped in the price report.
 
 ### Validation / Price / Non-E2E
 
-No standalone local OCR validation or price file exists. Validation is mixed into `ocr-options.test.ts`.
+There is now a standalone EPUB cleanup/export validation suite:
+
+```bash
+bun t test/test-cases/validation/epub-cleanup-and-export.test.ts
+```
+
+It covers the parser-based EPUB cleanup path plus chapter/chunk export planning logic. Local OCR pricing coverage is still mixed into `ocr-options.test.ts`.
 
 ### Core Local Paths
 
@@ -220,6 +259,11 @@ Current coverage in this file includes:
 - PDF extraction with `--ocrmypdf`
 - PDF extraction with `--paddle-ocr`
 - EPUB extraction with `--ocrmypdf`
+- default EPUB extraction writing cleaned text without synthetic `Page N` labels
+- EPUB extraction with `--chapters`
+- EPUB extraction with `--length`
+- EPUB inspect mode ignoring chapter export flags
+- non-EPUB inputs ignoring EPUB export flags
 - image extraction with `--ocrmypdf`
 - EPUB inspect via `--epub-bun`
 - EPUB inspect via `--epub-calibre`

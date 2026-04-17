@@ -122,3 +122,53 @@ describe('write subcommand with document input', () => {
     }
   })
 })
+
+describe('write subcommand with EPUB export flags', () => {
+  const documentTitleSuffix = '1-epub'
+
+  const cleanupDocOutput = async () => {
+    if (process.env['AUTOSHOW_TEST_PRESERVE_ARTIFACTS'] !== '0') return
+    const result = await Bun.$`find ./output -maxdepth 1 -type d -name "*_${documentTitleSuffix}" 2>/dev/null`.quiet().nothrow()
+    const dirs = result.stdout.toString().trim().split('\n').filter(Boolean)
+    await Promise.all(dirs.map(d => rm(d, { recursive: true, force: true })))
+  }
+
+  beforeAll(async () => {
+    await stopLlamaServer()
+    await cleanupDocOutput()
+  })
+
+  afterAll(async () => {
+    await stopLlamaServer()
+    await cleanupDocOutput()
+  })
+
+  budgetedTest('write-llama-qwen3-0.6b-epub', 'write input/examples/document/1-epub.epub --llama ggml-org/Qwen3-0.6B-GGUF --chapters --length 5', async () => {
+    await stopLlamaServer()
+    await cleanupDocOutput()
+
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'write', 'input/examples/document/1-epub.epub', '--llama', 'ggml-org/Qwen3-0.6B-GGUF', '--chapters', '--length', '5'],
+    )
+
+    expect(result.exitCode).toBe(0)
+
+    const outputDir = await findLatestDirectory(documentTitleSuffix)
+    expect(outputDir).not.toBeNull()
+
+    if (outputDir) {
+      expect(await fileExists(`${outputDir}/text.json`)).toBe(true)
+      expect(await fileExists(`${outputDir}/chapters`)).toBe(true)
+
+      const metadata = await readRunMetadata(outputDir) as {
+        step2?: { extractionMethod?: string; epubExport?: { mode?: string; directories?: string[] } }
+        step3?: { llmModel?: string; llmService?: string }
+      }
+      expect(metadata.step2?.extractionMethod).toBe('epub-text')
+      expect(metadata.step2?.epubExport?.mode).toBe('chapters')
+      expect(metadata.step2?.epubExport?.directories).toEqual(['chapters'])
+      expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
+      expect(metadata.step3?.llmService).toBe('llama.cpp')
+    }
+  })
+})
