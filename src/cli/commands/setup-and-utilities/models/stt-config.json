@@ -123,7 +123,22 @@
     "type": "api",
     "models": {
       "machine": {
-        "description": "Machine transcription via Rev async REST API with diarization enabled by default"
+        "description": "Reverb Transcription via Rev async REST API with diarization enabled by default",
+        "costPerHourUSD": 0.2,
+        "costPerHourCents": 20,
+        "billing": {
+          "roundingIncrementSeconds": 1,
+          "minimumSeconds": 15
+        }
+      },
+      "low_cost": {
+        "description": "Reverb Turbo transcription via Rev async REST API with diarization enabled by default",
+        "costPerHourUSD": 0.1,
+        "costPerHourCents": 10,
+        "billing": {
+          "roundingIncrementSeconds": 1,
+          "minimumSeconds": 15
+        }
       }
     }
   },

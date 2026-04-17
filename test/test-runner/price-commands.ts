@@ -131,6 +131,7 @@ export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
   ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/rev/', [
     command('transcribe-rev-machine', 'transcribe-rev-machine', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--rev-stt', 'machine', '--price']),
+    command('transcribe-rev-low_cost', 'transcribe-rev-low_cost', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--rev-stt', 'low_cost', '--price']),
   ]),
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/elevenlabs/', [
     command('transcribe-elevenlabs-scribe_v2', 'transcribe-elevenlabs-scribe_v2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--elevenlabs-stt', 'scribe_v2', '--price']),

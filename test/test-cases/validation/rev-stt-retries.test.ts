@@ -172,6 +172,83 @@ describe('runRevStt', () => {
     expect(transcript).toContain('[speaker-2] General Kenobi!')
   })
 
+  test('sends low_cost to the Rev transcriber when requested', async () => {
+    const { audioPath, outputDir } = await createAudioFixture()
+    process.env['REVAI_ACCESS_TOKEN'] = 'test-token'
+    process.env['REVAI_BASE_URL'] = 'https://rev.test'
+
+    let deleteAttempts = 0
+
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url === 'https://rev.test/jobs' && method === 'POST') {
+        expect(init?.body).toBeInstanceOf(FormData)
+        const body = init?.body as FormData
+        expect(JSON.parse(String(body.get('options')))).toEqual({
+          transcriber: 'low_cost',
+          remove_disfluencies: true
+        })
+
+        return new Response(JSON.stringify({
+          id: 'job-low-cost',
+          status: 'in_progress'
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+
+      if (url === 'https://rev.test/jobs/job-low-cost' && method === 'GET') {
+        return new Response(JSON.stringify({
+          id: 'job-low-cost',
+          status: 'transcribed'
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+
+      if (url === 'https://rev.test/jobs/job-low-cost/transcript' && method === 'GET') {
+        return new Response(JSON.stringify({
+          monologues: [
+            {
+              speaker: 0,
+              elements: [
+                { type: 'text', value: 'Turbo', ts: 0, end_ts: 0.4 },
+                { type: 'punct', value: ' ' },
+                { type: 'text', value: 'mode', ts: 0.41, end_ts: 0.8 },
+                { type: 'punct', value: '.' }
+              ]
+            }
+          ]
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+
+      if (url === 'https://rev.test/jobs/job-low-cost' && method === 'DELETE') {
+        deleteAttempts += 1
+        return new Response(null, { status: 204 })
+      }
+
+      throw new Error(`Unexpected fetch: ${method} ${url}`)
+    }) as unknown as typeof fetch
+
+    const { result, metadata } = await runRevStt(audioPath, outputDir, {
+      model: 'low_cost',
+      segmentOffsetMinutes: 0
+    })
+
+    expect(result.text).toBe('Turbo mode.')
+    expect(metadata.transcriptionService).toBe('rev')
+    expect(metadata.transcriptionModel).toBe('low_cost')
+    expect(metadata.runtime?.cleanup?.remoteJobDeleted).toBe(true)
+    expect(deleteAttempts).toBe(1)
+  })
+
   test('uses the default Rev API base path when REVAI_BASE_URL is unset', async () => {
     const { audioPath, outputDir } = await createAudioFixture()
     process.env['REVAI_ACCESS_TOKEN'] = 'test-token'

@@ -29,7 +29,7 @@ The input routing is the same as local `stt`: direct media URLs, streaming URLs,
 | Deepgram | `--deepgram-stt <model>` | `nova-3` |
 | Soniox | `--soniox-stt <model>` | `stt-async-v4`, `stt-async-v3` |
 | Speechmatics | `--speechmatics-stt <model>` | `standard`, `enhanced` |
-| Rev | `--rev-stt <model>` | `machine` |
+| Rev | `--rev-stt <model>` | `machine`, `low_cost` |
 | OpenAI | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
 | Mistral | `--mistral-stt <model>` | `voxtral-mini-latest`, `voxtral-mini-2602` |
 | AssemblyAI | `--assemblyai-stt <model>` | `universal-2`, `universal-3-pro` |
@@ -63,6 +63,9 @@ bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt
 
 # Rev with diarization always enabled
 bun as stt input/examples/audio/1-audio.mp3 --rev-stt machine
+
+# Rev Turbo with diarization always enabled
+bun as stt input/examples/audio/1-audio.mp3 --rev-stt low_cost
 
 # Rev bare flag defaults to machine
 bun as stt input/examples/audio/1-audio.mp3 --rev-stt
@@ -184,7 +187,8 @@ Provider output directories now persist the canonical evidence consumed by this 
 - Diarization is enabled by default for ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, AssemblyAI, Gladia, Mistral, and OpenAI diarized STT models.
 - ElevenLabs, AssemblyAI, and Gladia use `--speaker-count` as an optional diarization hint.
 - Speechmatics always sends `language: "auto"` and `diarization: "speaker"`, so no extra language flag is required and speaker labels use Speechmatics native IDs such as `S1`, `S2`, and `UU`.
-- Rev uploads the already-downloaded local file as `multipart/form-data`, always uses the `machine` transcriber with `remove_disfluencies: true`, and deletes the remote job after terminal success or failure.
+- Rev uploads the already-downloaded local file as `multipart/form-data`, uses the selected Rev transcriber (`machine` or `low_cost`) with `remove_disfluencies: true`, and deletes the remote job after terminal success or failure.
+- Rev `machine` and `low_cost` bill per second with a 15-second minimum in `--price`.
 - Set `REVAI_ACCESS_TOKEN` to enable the provider. `REVAI_BASE_URL` is optional and defaults to `https://api.rev.ai/speechtotext/v1`.
 - Set `SPEECHMATICS_API_KEY` to enable the provider. `SPEECHMATICS_BASE_URL` is optional and defaults to `https://eu1.asr.api.speechmatics.com`.
 - Set `GLADIA_API_KEY` to enable the provider. `GLADIA_BASE_URL` is optional and defaults to `https://api.gladia.io`.

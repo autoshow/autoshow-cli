@@ -20,6 +20,7 @@ import {
   getTtsEstimation,
   getVideoEstimation,
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import {
   estimateFirecrawlScrapeCost,
   estimateGlmOcrCost,
@@ -41,9 +42,8 @@ const buildCloudSttEstimate = async (
   model: string,
   durationSeconds: number
 ): Promise<SttStepEstimate> => {
-  const sttCost = getSttCost(provider, model)
   const estimation = getSttEstimation(provider, model)
-  const totalCost = applyCostMultiplier((durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0), estimation.costMultiplier)
+  const totalCost = applyCostMultiplier(computeBilledSttCost(provider, model, durationSeconds).cost, estimation.costMultiplier)
   return { step: 'stt', provider, model, durationSeconds, totalCost, costMultiplier: estimation.costMultiplier }
 }
 

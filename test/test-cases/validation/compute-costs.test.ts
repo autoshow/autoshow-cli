@@ -67,7 +67,21 @@ describe('computeEstimatedCosts STT routing', () => {
     const result = computeEstimatedCosts({ revSttModel: 'machine', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('rev')
     expect(result.steps[0]?.model).toBe('machine')
-    expect(result.steps[0]?.cost).toBe(0)
+    expect(result.steps[0]?.cost).toBeCloseTo(20 / 60, 8)
+  })
+
+  test('rev machine estimate applies 15 second minimum billing', () => {
+    const result = computeEstimatedCosts({ revSttModel: 'machine', audioDurationSeconds: 3 })
+    expect(result.steps[0]?.provider).toBe('rev')
+    expect(result.steps[0]?.model).toBe('machine')
+    expect(result.steps[0]?.cost).toBeCloseTo((15 / 3600) * 20, 8)
+  })
+
+  test('rev low_cost estimate applies 15 second minimum billing', () => {
+    const result = computeEstimatedCosts({ revSttModel: 'low_cost', audioDurationSeconds: 3 })
+    expect(result.steps[0]?.provider).toBe('rev')
+    expect(result.steps[0]?.model).toBe('low_cost')
+    expect(result.steps[0]?.cost).toBeCloseTo((15 / 3600) * 10, 8)
   })
 
   test('mistralSttModel routes to mistral', () => {
@@ -212,6 +226,34 @@ describe('computeActualCosts STT', () => {
       'speechmatics:enhanced',
       'rev:machine'
     ])
+    expect(sttSteps[3]?.cost).toBeCloseTo(20 / 60, 8)
+  })
+
+  test('computes Rev actual cost without extra minimum billing above 15 seconds', () => {
+    const result = computeActualCosts({
+      step1: {
+        url: 'https://example.com/audio.mp3',
+        duration: '1:01',
+        title: 'Test',
+        description: '',
+        author: '',
+        slug: 'test',
+        audioFileName: 'test.mp3',
+        audioFileSize: 0
+      },
+      step2: {
+        transcriptionService: 'rev',
+        transcriptionModel: 'machine',
+        transcriptionModelName: 'machine',
+        processingTime: 5000,
+        tokenCount: 150
+      }
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('rev')
+    expect(sttStep?.model).toBe('machine')
+    expect(sttStep?.cost).toBeCloseTo((61 / 3600) * 20, 8)
   })
 })
 

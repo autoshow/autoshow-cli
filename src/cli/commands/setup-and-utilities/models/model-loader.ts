@@ -10,11 +10,17 @@ const SttEstimationSchema = v.object({
   msPerSecond: v.optional(v.number(), undefined)
 })
 
+const SttBillingSchema = v.object({
+  roundingIncrementSeconds: v.optional(v.number(), undefined),
+  minimumSeconds: v.optional(v.number(), undefined)
+})
+
 const SttModelSchema = v.object({
   description: v.string(),
   costPerHourUSD: v.optional(v.number(), undefined),
   costPerHourCents: v.optional(v.number(), undefined),
   costPerThreeHours: v.optional(v.number(), undefined),
+  billing: v.optional(SttBillingSchema, undefined),
   estimation: v.optional(SttEstimationSchema, undefined)
 })
 
@@ -221,6 +227,11 @@ export type SttEstimation = CostEstimation & {
   msPerSecond: number
 }
 
+export type SttBilling = {
+  roundingIncrementSeconds?: number
+  minimumSeconds?: number
+}
+
 export type ExtractEstimation = CostEstimation & {
   msPerPage: number
 }
@@ -292,6 +303,18 @@ export const getSttCost = (
         ? { costPerHourCents: sttModel.costPerHourUSD * 100 }
         : {}),
     ...(sttModel.costPerThreeHours !== undefined ? { costPerThreeHoursCents: sttModel.costPerThreeHours * 100 } : {})
+  }
+}
+
+export const getSttBilling = (service: string, model: string): SttBilling => {
+  const billing = getModelRegistry().stt[service]?.models[model]?.billing
+  return {
+    ...(billing?.roundingIncrementSeconds !== undefined
+      ? { roundingIncrementSeconds: billing.roundingIncrementSeconds }
+      : {}),
+    ...(billing?.minimumSeconds !== undefined
+      ? { minimumSeconds: billing.minimumSeconds }
+      : {})
   }
 }
 

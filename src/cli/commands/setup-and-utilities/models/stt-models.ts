@@ -29,7 +29,8 @@ export const SUPPORTED_SPEECHMATICS_STT_MODELS = [
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_REV_STT_MODELS = [
-  'machine'
+  'machine',
+  'low_cost'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_GROQ_STT_MODELS = [

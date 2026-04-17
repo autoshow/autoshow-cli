@@ -10,6 +10,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Soniox STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v2'] },
   { label: 'CLI invalid Speechmatics STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', 'premium'] },
   { label: 'CLI invalid Rev STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'human'] },
+  { label: 'CLI unsupported Rev STT fusion model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'fusion'] },
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
   { label: 'CLI invalid OpenAI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai-stt', 'gpt-4o-transcribe'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
@@ -61,6 +62,7 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--soniox-stt')
   expect(result.stdout).toContain('--speechmatics-stt')
   expect(result.stdout).toContain('--rev-stt')
+  expect(result.stdout).toContain('low_cost')
   expect(result.stdout).toContain('--groq-stt')
   expect(result.stdout).toContain('--openai-stt')
   expect(result.stdout).toContain('--mistral-stt')
@@ -189,6 +191,19 @@ test('CLI bare Rev STT flag is accepted in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('CLI explicit Rev Turbo STT flag is accepted in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--rev-stt',
+    'low_cost',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
 test('CLI custom llama Hugging Face repo ID is accepted in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -270,6 +285,14 @@ test('buildOptsFromFlags maps --rev-stt to revSttModel', () => {
   })
 
   expect(opts.revSttModel).toBe('machine')
+})
+
+test('buildOptsFromFlags maps --rev-stt low_cost to revSttModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'rev-stt': 'low_cost'
+  })
+
+  expect(opts.revSttModel).toBe('low_cost')
 })
 
 test('buildOptsFromFlags maps --gladia-stt to gladiaSttModel', () => {
@@ -398,6 +421,22 @@ test('collectSttTargets includes Rev targets with ignored speaker-count hints', 
     {
       service: 'rev',
       model: 'machine',
+      local: false,
+      diarizationOptions: { enabled: true }
+    }
+  ])
+})
+
+test('collectSttTargets includes Rev Turbo targets with ignored speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'rev-stt': 'low_cost',
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'rev',
+      model: 'low_cost',
       local: false,
       diarizationOptions: { enabled: true }
     }

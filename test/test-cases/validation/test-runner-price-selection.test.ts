@@ -39,6 +39,7 @@ const EXPECTED_BUDGET_KEYS = [
   'transcribe-mistral-voxtral-mini-2602',
   'transcribe-mistral-voxtral-mini-latest',
   'transcribe-openai-gpt-4o-transcribe-diarize',
+  'transcribe-rev-low_cost',
   'transcribe-rev-machine',
   'transcribe-reverb',
   'transcribe-soniox-stt-async-v3',

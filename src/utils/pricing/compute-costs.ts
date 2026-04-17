@@ -23,7 +23,6 @@ import {
   getLlmEstimation,
   getMusicEstimation,
   getMusicModelMeta,
-  getSttCost,
   getSttEstimation,
   getTtsCost,
   getTtsEstimation,
@@ -31,6 +30,7 @@ import {
   getVideoEstimation,
   getVideoModelMeta,
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
@@ -157,10 +157,8 @@ const resolveExtractionProviderModel = (
 
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
 
-const computeSttHourlyCost = (service: string, model: string, durationSeconds: number): number => {
-  const sttCost = getSttCost(service, model)
-  return (durationSeconds / 3600) * (sttCost.costPerHourCents ?? 0)
-}
+const computeSttCost = (service: string, model: string, durationSeconds: number): number =>
+  computeBilledSttCost(service, model, durationSeconds).cost
 
 type ComputeActualCostsInput = {
   step1?: Step1Metadata | undefined
@@ -236,7 +234,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     const model = resolveTranscriptionModel(input.step2)
     let cost = 0
 
-    cost = computeSttHourlyCost(service, model, durationSeconds)
+    cost = computeSttCost(service, model, durationSeconds)
 
     steps.push({
       step: 'stt',
@@ -282,7 +280,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         step: 'stt',
         provider: service,
         model,
-        cost: computeSttHourlyCost(service, model, durationSeconds),
+        cost: computeSttCost(service, model, durationSeconds),
         inputMetric: 'durationSeconds',
         inputValue: durationSeconds
       })
@@ -453,7 +451,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       }
 
       const estimation = getSttEstimation(target.service, target.model)
-      const cost = applyCostMultiplier(computeSttHourlyCost(target.service, target.model, durationSeconds), estimation.costMultiplier)
+      const cost = applyCostMultiplier(computeSttCost(target.service, target.model, durationSeconds), estimation.costMultiplier)
       totalCost += cost
       steps.push({ step: 'stt', provider: target.service, model: target.model, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
     }
@@ -477,7 +475,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       const model = input[field]
       if (typeof model === 'string' && model.length > 0) {
         const estimation = getSttEstimation(provider, model)
-        const cost = applyCostMultiplier(computeSttHourlyCost(provider, model, durationSeconds), estimation.costMultiplier)
+        const cost = applyCostMultiplier(computeSttCost(provider, model, durationSeconds), estimation.costMultiplier)
         totalCost += cost
         steps.push({ step: 'stt', provider, model, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
         break
