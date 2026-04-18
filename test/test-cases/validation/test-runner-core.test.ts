@@ -43,14 +43,14 @@ describe('test-runner args', () => {
     const parsed = parseRunnerArgs([
       'bun',
       'test/test-runner.ts',
-      'test/test-cases/e2e/step-3-write-e2e/write-services/openai/',
+      'test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts',
       'test/test-cases/validation/test-runner-args.test.ts',
       '--test-price',
       '--bail',
     ])
 
     expect(parsed.pathFilters).toEqual([
-      'test/test-cases/e2e/step-3-write-e2e/write-services/openai/',
+      'test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts',
       'test/test-cases/validation/test-runner-args.test.ts',
     ])
     expect(parsed.priceMode).toBe(true)

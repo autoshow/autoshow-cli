@@ -202,65 +202,81 @@ test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () =
   expect(result.exitCode).toBe(0)
 })
 
-test('CLI bare Deepgram STT flag is accepted in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--deepgram-stt',
-    '--price'
-  ])
+const barePriceSelectionCases = [
+  {
+    name: 'CLI bare Deepgram STT flag is accepted in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', '--price'],
+    provider: 'deepgram',
+    model: 'nova-3',
+  },
+  {
+    name: 'CLI bare Soniox STT flag is accepted in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', '--price'],
+    provider: 'soniox',
+    model: 'stt-async-v4',
+  },
+  {
+    name: 'CLI bare Speechmatics STT flag is accepted in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', '--price'],
+    provider: 'speechmatics',
+    model: 'standard',
+  },
+  {
+    name: 'CLI bare Gladia STT flag is accepted in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', '--price'],
+    provider: 'gladia',
+    model: 'default',
+  },
+  {
+    name: 'CLI bare Rev STT flag is accepted in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', '--price'],
+    provider: 'rev',
+    model: 'low_cost',
+  },
+  {
+    name: 'CLI bare Groq STT flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', '--price'],
+    provider: 'groq',
+    model: 'whisper-large-v3-turbo',
+  },
+  {
+    name: 'CLI bare Groq LLM flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--groq', '--price'],
+    provider: 'groq',
+    model: 'openai/gpt-oss-20b',
+  },
+  {
+    name: 'CLI bare OpenAI TTS flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'tts', 'input/examples/document/1-tts.md', '--openai-tts', '--price'],
+    provider: 'openai',
+    model: 'gpt-4o-mini-tts',
+  },
+  {
+    name: 'CLI bare OpenAI image flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', '--price'],
+    provider: 'openai',
+    model: 'gpt-image-1-mini',
+  },
+  {
+    name: 'CLI bare Mistral OCR flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', '--price'],
+    provider: 'mistral',
+    model: 'mistral-ocr-2512',
+  },
+  {
+    name: 'CLI bare Gemini video flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', '--price'],
+    provider: 'gemini',
+    model: 'veo-3.1-fast-generate-preview',
+  },
+] as const
 
-  expectPriceSelection(result, 'deepgram', 'nova-3')
-})
-
-test('CLI bare Soniox STT flag is accepted in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--soniox-stt',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'soniox', 'stt-async-v4')
-})
-
-test('CLI bare Speechmatics STT flag is accepted in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--speechmatics-stt',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'speechmatics', 'standard')
-})
-
-test('CLI bare Gladia STT flag is accepted in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--gladia-stt',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'gladia', 'default')
-})
-
-test('CLI bare Rev STT flag is accepted in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--rev-stt',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'rev', 'low_cost')
-})
+for (const barePriceSelectionCase of barePriceSelectionCases) {
+  test(barePriceSelectionCase.name, async () => {
+    const result = await runCommand([...barePriceSelectionCase.args])
+    expectPriceSelection(result, barePriceSelectionCase.provider, barePriceSelectionCase.model)
+  })
+}
 
 test('CLI explicit Rev Turbo STT flag is accepted in price mode', async () => {
   const result = await runCommand([
@@ -273,78 +289,6 @@ test('CLI explicit Rev Turbo STT flag is accepted in price mode', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
-})
-
-test('CLI bare Groq STT flag resolves to the cheapest model in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'stt',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--groq-stt',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'groq', 'whisper-large-v3-turbo')
-})
-
-test('CLI bare Groq LLM flag resolves to the cheapest model in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'write',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--groq',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'groq', 'openai/gpt-oss-20b')
-})
-
-test('CLI bare OpenAI TTS flag resolves to the cheapest model in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    'input/examples/document/1-tts.md',
-    '--openai-tts',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'openai', 'gpt-4o-mini-tts')
-})
-
-test('CLI bare OpenAI image flag resolves to the cheapest model in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'image',
-    'a sunset',
-    '--openai-image',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'openai', 'gpt-image-1-mini')
-})
-
-test('CLI bare Mistral OCR flag resolves to the cheapest model in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'ocr',
-    'input/examples/document/1-document.pdf',
-    '--mistral-ocr',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'mistral', 'mistral-ocr-2512')
-})
-
-test('CLI bare Gemini video flag resolves to the cheapest model in price mode', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'video',
-    'a cinematic mountain sunrise',
-    '--gemini-video',
-    '--price'
-  ])
-
-  expectPriceSelection(result, 'gemini', 'veo-3.1-fast-generate-preview')
 })
 
 test('CLI custom llama Hugging Face repo ID is accepted in price mode', async () => {

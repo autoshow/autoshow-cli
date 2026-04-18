@@ -25,13 +25,19 @@ test('requires a music provider flag', async () => {
     ['src/cli/create-cli.ts', 'music', 'an ambient piano song'],
   )
   expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Specify a music generation provider')
 })
 
 test('--price with both providers shows two cost rows and per-provider filenames', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--elevenlabs-music', 'music_v1', '--minimax-music', 'music-2.5', '--price'],
   )
+  const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
+  expect(output).toContain('"provider": "elevenlabs"')
+  expect(output).toContain('"provider": "minimax"')
+  expect(output).toContain('generated-music-elevenlabs-music_v1.mp3')
+  expect(output).toContain('generated-music-minimax-music-2.5.mp3')
 })
 
 test('music_v1 generates cinematic orchestral music', async () => {
@@ -91,5 +97,36 @@ test('music_v1 generates lo-fi with duration and instrumental flag', async () =>
     }
     expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
     expect(metadata.music?.[0]?.lyricsSource).toBe('none')
+  }
+})
+
+test('write with elevenlabs music pipeline writes music artifacts and metadata', async () => {
+  const hasOpenai = await hasConfiguredEnvVar('OPENAI_API_KEY')
+  const hasElevenlabs = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
+  if (!hasOpenai || !hasElevenlabs) {
+    console.log('Skipping: OPENAI_API_KEY and ELEVENLABS_API_KEY required')
+    return
+  }
+
+  await cleanupTestOutput('1-audio')
+
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4', '--elevenlabs-music', 'music_v1', '--music-duration', '20'],
+  )
+
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory('1-audio')
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/generated-music.mp3`)).toBe(true)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      step7?: Array<{ musicService?: string; musicModel?: string; lyricsSource?: string }>
+    }
+    expect(metadata.step7?.[0]?.musicService).toBe('elevenlabs')
+    expect(metadata.step7?.[0]?.musicModel).toBe('music_v1')
+    expect(metadata.step7?.[0]?.lyricsSource).toBe('generated')
   }
 })

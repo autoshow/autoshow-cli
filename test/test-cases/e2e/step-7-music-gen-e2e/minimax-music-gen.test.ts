@@ -60,55 +60,17 @@ budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop music', a
   }
 })
 
-budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop with lyrics file', async () => {
-  const hasApiKey = await hasConfiguredEnvVar('MINIMAX_API_KEY')
-  if (!hasApiKey) {
-    console.log('Skipping: MINIMAX_API_KEY not configured')
-    return
-  }
-
-  await cleanupTestOutput(MUSIC_GEN_TITLE)
-
+budgetedTest('music-pipeline-minimax-music-2.5', 'write --price includes MiniMax music estimate for a real input', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'indie pop, nostalgic summer road trip vibe', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/examples/document/1-tts.md'],
+    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
   )
+  const output = `${result.stdout}\n${result.stderr}`
 
   expect(result.exitCode).toBe(0)
-
-  const outputDir = await findLatestDirectory(MUSIC_GEN_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
-    expect(musicExists).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      music?: Array<{ musicService?: string; lyricsSource?: string }>
-    }
-    expect(metadata.music?.[0]?.musicService).toBe('minimax')
-    expect(metadata.music?.[0]?.lyricsSource).toBe('provided')
-  }
-})
-
-budgetedTest('music-pipeline-minimax-music-2.5', 'write --price includes MiniMax music estimate', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'any-input', '--minimax-music', 'music-2.5', '--price'],
-  )
-  expect(result.exitCode).toBe(0)
-})
-
-test('write with elevenlabs music pipeline', async () => {
-  const hasOpenai = await hasConfiguredEnvVar('OPENAI_API_KEY')
-  const hasElevenlabs = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
-  if (!hasOpenai || !hasElevenlabs) {
-    console.log('Skipping: OPENAI_API_KEY and ELEVENLABS_API_KEY required')
-    return
-  }
-
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4', '--elevenlabs-music', 'music_v1', '--music-duration', '20'],
-  )
-  expect(result.exitCode).toBe(0)
+  expect(output).toContain('"step": "music"')
+  expect(output).toContain('"provider": "minimax"')
+  expect(output).toContain('"model": "music-2.5"')
+  expect(output).toContain('Music file')
 })
 
 budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and lyrics file', async () => {
@@ -118,17 +80,27 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and l
     return
   }
 
+  await cleanupTestOutput('1-audio')
+
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/examples/document/1-tts.md'],
   )
   expect(result.exitCode).toBe(0)
-})
 
-budgetedTest('music-pipeline-minimax-music-2.5', 'write --price with minimax music estimate', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
-  )
-  expect(result.exitCode).toBe(0)
+  const outputDir = await findLatestDirectory('1-audio')
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/generated-music.mp3`)).toBe(true)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      step7?: Array<{ musicService?: string; musicModel?: string; lyricsSource?: string; musicFileName?: string }>
+    }
+    expect(metadata.step7?.[0]?.musicService).toBe('minimax')
+    expect(metadata.step7?.[0]?.musicModel).toBe('music-2.5')
+    expect(metadata.step7?.[0]?.lyricsSource).toBe('provided')
+    expect(metadata.step7?.[0]?.musicFileName).toBe('generated-music.mp3')
+  }
 })
 
 test('multi-provider run produces per-provider filenames and array metadata', async () => {

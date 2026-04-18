@@ -150,8 +150,8 @@ describe('test runner cost/time metrics', () => {
   test('heuristically matches shared-helper metrics back to e2e test cases', async () => {
     const junitCases: ParsedJunitCase[] = [
       {
-        id: 'test/test-cases/e2e/step-4-tts-e2e/tts-services/gemini-tts.test.ts::gemini-2.5-pro-preview-tts generates speech.wav',
-        file: 'test/test-cases/e2e/step-4-tts-e2e/tts-services/gemini-tts.test.ts',
+        id: 'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts::gemini-2.5-pro-preview-tts generates speech.wav',
+        file: 'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts',
         name: 'gemini-2.5-pro-preview-tts generates speech.wav',
         line: 37,
         durationMs: 17_552,
@@ -189,7 +189,7 @@ describe('test runner cost/time metrics', () => {
         artifacts,
         '2026-03-19T00:00:21.000Z',
         21_000,
-        ['test/test-cases/e2e/step-4-tts-e2e/tts-services/gemini-tts.test.ts']
+        ['test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts']
       ) as {
         tests: Array<{ metrics: Record<string, unknown> }>
         e2e: { tests: Array<Record<string, unknown>> }

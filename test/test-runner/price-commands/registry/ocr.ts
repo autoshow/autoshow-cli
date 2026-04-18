@@ -2,10 +2,8 @@ import type { PriceSelectionEntry } from '../../../../src/types/tests-dir-types'
 import { command, exact, reportOnly } from '../helpers'
 
 export const ocrRegistry: PriceSelectionEntry[] = [
-  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-mistral-ocr.test.ts', [
+  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts', [
     command('extract-mistral-mistral-ocr-2512', 'extract-mistral-mistral-ocr-2512', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2512', '--price']),
-  ]),
-  ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-ocr.test.ts', [
     command('extract-glm-glm-ocr', 'extract-glm-glm-ocr', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts', [

@@ -7,7 +7,6 @@ export const musicRegistry: PriceSelectionEntry[] = [
   ]),
   ...exact('test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts', [
     command('music-minimax-music-2.5', 'music-minimax-music-2.5', ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--minimax-music', 'music-2.5', '--price']),
-    command('music-pipeline-minimax-music-2.5', 'music-pipeline-minimax-music-2.5', ['src/cli/create-cli.ts', 'write', 'any-input', '--minimax-music', 'music-2.5', '--price']),
     command('music-pipeline-minimax-music-2.5', 'music-pipeline-minimax-music-2.5', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price']),
   ]),
 ]

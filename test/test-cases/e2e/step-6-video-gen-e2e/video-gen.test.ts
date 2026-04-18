@@ -24,18 +24,37 @@ defineVideoServiceTest({
   envVarDescription: 'Gemini video generation',
 })
 
+defineVideoServiceTest({
+  models: [
+    { model: 'MiniMax-Hailuo-2.3', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+    { model: 'T2V-01', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+    { model: 'MiniMax-Hailuo-02', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+    { model: 'T2V-01-Director', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+  ],
+  cliFlag: '--minimax-video',
+  videoService: 'minimax',
+  envVarKey: 'MINIMAX_API_KEY',
+  envVarDescription: 'MiniMax video generation',
+})
+
 test('requires a provider flag', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise'],
   )
   expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Specify a video generation provider')
 })
 
 test('allows multiple providers with --price', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3', '--price'],
   )
+  const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
+  expect(output).toContain('"provider": "gemini"')
+  expect(output).toContain('"provider": "minimax"')
+  expect(output).toContain('generated-video-gemini-veo-3.1-generate-preview.mp4')
+  expect(output).toContain('generated-video-minimax-MiniMax-Hailuo-2.3.mp4')
 })
 
 budgetedTest('video-multi-provider-gemini-minimax', 'live multi-provider run writes provider-specific video artifacts', async () => {

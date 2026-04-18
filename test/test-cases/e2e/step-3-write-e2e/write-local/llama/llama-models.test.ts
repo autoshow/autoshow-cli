@@ -8,6 +8,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
   stopLlamaServer,
 } from "../../../../../test-utils/test-helpers"
+import { budgetedTest } from "../../../../../test-utils/budget"
 import { readRunMetadata } from "../../../../../test-utils/manifest-helpers"
 
 
@@ -60,6 +61,24 @@ describe("llama models", () => {
       }
     }, LLAMA_TEST_TIMEOUT_MS)
   }
+
+  budgetedTest('write-llama-gemma-3-270m', 'ggml-org/gemma-3-270m-it-GGUF --price prints a llama cost estimate', async () => {
+    const model = 'ggml-org/gemma-3-270m-it-GGUF'
+
+    await stopLlamaServer()
+    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--llama', model, '--price'],
+      { testName: `${model} --price prints a llama cost estimate` },
+    )
+    const output = `${result.stdout}\n${result.stderr}`
+
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain('"step": "llm"')
+    expect(output).toContain('"provider": "llama"')
+    expect(output).toContain(model)
+  }, LLAMA_TEST_TIMEOUT_MS)
 
   test('switches the running llama-server when a different model is requested', async () => {
     const firstModel = 'ggml-org/gemma-3-270m-it-GGUF'

@@ -127,15 +127,17 @@ describe('test runner price selection', () => {
   test('resolves directory selection to the union of matching commands', async () => {
     const resolved = resolvePriceSelection(
       await listAllTestFiles(),
-      ['test/test-cases/e2e/step-3-write-e2e/write-services/openai/']
+      ['test/test-cases/e2e/step-6-video-gen-e2e/']
     )
 
-    expect(resolved.suiteName).toBe('Selected paths: step-3-write-e2e/write-services/openai')
+    expect(resolved.suiteName).toBe('Selected paths: step-6-video-gen-e2e')
     expect(resolved.commands.map(command => command.key).sort()).toEqual([
-      'write-openai-gpt-5.4',
-      'write-openai-gpt-5.4-mini',
-      'write-openai-gpt-5.4-nano',
-      'write-openai-gpt-5.4-pro',
+      'video-gemini-veo-3.1-fast-generate-preview',
+      'video-gemini-veo-3.1-generate-preview',
+      'video-minimax-MiniMax-Hailuo-02',
+      'video-minimax-MiniMax-Hailuo-2.3',
+      'video-minimax-T2V-01',
+      'video-minimax-T2V-01-Director',
     ])
   })
 
@@ -143,22 +145,20 @@ describe('test runner price selection', () => {
     const resolved = resolvePriceSelection(
       await listAllTestFiles(),
       [
-        'test/test-cases/e2e/step-3-write-e2e/write-services/openai/',
+        'test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts',
         'test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts',
       ]
     )
 
-    expect(resolved.suiteName).toBe('Selected paths: step-3-write-e2e/write-services/openai, step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts')
+    expect(resolved.suiteName).toBe('Selected paths: step-2-ocr-e2e/ocr-services/service-models.test.ts, step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts')
     expect(resolved.commands.map(command => command.key).sort()).toEqual([
+      'extract-glm-glm-ocr',
+      'extract-mistral-mistral-ocr-2512',
       'transcribe-whisper-base',
       'transcribe-whisper-large-v3-turbo',
       'transcribe-whisper-medium',
       'transcribe-whisper-small',
       'transcribe-whisper-tiny',
-      'write-openai-gpt-5.4',
-      'write-openai-gpt-5.4-mini',
-      'write-openai-gpt-5.4-nano',
-      'write-openai-gpt-5.4-pro',
     ])
   })
 
@@ -175,11 +175,11 @@ describe('test runner price selection', () => {
   test('filters report-only commands out of budget preflight selection', async () => {
     const resolved = resolvePriceSelection(
       await listAllTestFiles(),
-      ['test/test-cases/e2e/api-cheap.test.ts'],
+      ['test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts'],
       true
     )
 
-    expect(resolved.suiteName).toBe('Selected paths: api-cheap.test.ts')
+    expect(resolved.suiteName).toBe('Selected paths: step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts')
     expect(resolved.commands).toEqual([])
   })
 
@@ -212,7 +212,7 @@ describe('test runner price selection', () => {
 
 describe('test runner price evaluation', () => {
   test('applies budget decisions at the budget-key level using the max variant cost', () => {
-    const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/openai', [
+    const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/service-models.test.ts', [
       {
         name: 'write-openai-gpt-5.4',
         key: 'write-openai-gpt-5.4',
@@ -247,7 +247,7 @@ describe('test runner price evaluation', () => {
 
     expect(evaluation.commandResults.map(result => result.status)).toEqual(['skipped', 'skipped', 'passed'])
     expect(evaluation.budgetSummary).toEqual({
-      suiteName: 'Selected paths: step-3-write-e2e/write-services/openai',
+      suiteName: 'Selected paths: step-3-write-e2e/write-services/service-models.test.ts',
       budgetCents: 2,
       commandsChecked: 2,
       commandsRunnable: 1,
@@ -266,7 +266,7 @@ describe('test runner price evaluation', () => {
   })
 
   test('budget summary ignores report-only commands while still reporting their cost', () => {
-    const evaluation = evaluatePriceObservations('Selected paths: api-cheap.test.ts', [
+    const evaluation = evaluatePriceObservations('Selected paths: step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts', [
       {
         name: 'write-openai-gpt-5.4',
         key: 'write-openai-gpt-5.4',
@@ -291,7 +291,7 @@ describe('test runner price evaluation', () => {
 
     expect(evaluation.commandResults.map(result => result.status)).toEqual(['skipped', 'passed'])
     expect(evaluation.budgetSummary).toEqual({
-      suiteName: 'Selected paths: api-cheap.test.ts',
+      suiteName: 'Selected paths: step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts',
       budgetCents: 2,
       commandsChecked: 1,
       commandsRunnable: 0,
@@ -399,7 +399,7 @@ describe('test runner price evaluation', () => {
       },
     ]
     const budgetSummary: BudgetPreflightSummary = {
-      suiteName: 'Selected paths: step-3-write-e2e/write-services/openai',
+      suiteName: 'Selected paths: step-3-write-e2e/write-services/service-models.test.ts',
       budgetCents: 2,
       commandsChecked: 2,
       commandsRunnable: 1,
@@ -414,11 +414,11 @@ describe('test runner price evaluation', () => {
 
     const report = buildPriceReportData(
       results,
-      'Selected paths: step-3-write-e2e/write-services/openai',
+      'Selected paths: step-3-write-e2e/write-services/service-models.test.ts',
       artifacts,
       '2026-03-19T00:00:11.000Z',
       11_000,
-      ['test/test-cases/e2e/step-3-write-e2e/write-services/openai/', '--test-price', '--budget', '2'],
+      ['test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts', '--test-price', '--budget', '2'],
       budgetSummary
     ) as {
       run: Record<string, unknown>
@@ -430,7 +430,7 @@ describe('test runner price evaluation', () => {
     expect(report.summary['skipped']).toBe(1)
     expect(report.summary['totalEstimatedCostCents']).toBe(9.5)
     expect(report.run['budgetCents']).toBe(2)
-    expect(report.run['budgetPreflightSuite']).toBe('Selected paths: step-3-write-e2e/write-services/openai')
+    expect(report.run['budgetPreflightSuite']).toBe('Selected paths: step-3-write-e2e/write-services/service-models.test.ts')
     expect(report.run['budgetPreflightSkipped']).toBe(1)
     expect(report.run['budgetSkipKeys']).toEqual(['write-openai-gpt-5.4'])
     expect(report.run['budgetSkippedEntries']).toEqual([
