@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { processBatch } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { SttPartialCompletionError } from '~/cli/commands/process-steps/process-stt'
+import { SttBatchIncompleteError } from '~/cli/commands/process-steps/step-2-stt/batch'
+import { isUsageError, normalizeExitCode } from '~/utils/error-handler'
 import { readBatchItems, readSttBatchSummary, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
 
 const createdBatchDirs: string[] = []
@@ -12,6 +14,22 @@ afterEach(async () => {
   await Promise.all(createdBatchDirs.splice(0).map(async (dir) => {
     await rm(dir, { recursive: true, force: true })
   }))
+})
+
+test('STT batch incomplete errors use exit code 2 without being treated as usage errors', () => {
+  const error = new SttBatchIncompleteError({
+    ok: 0,
+    partial: 0,
+    incomplete: 2,
+    fail: 1,
+    batchDir: './output/example-batch',
+    failureExitCode: 2
+  })
+
+  expect(error.exitCode).toBe(2)
+  expect(normalizeExitCode(error)).toBe(2)
+  expect(isUsageError(error)).toBe(false)
+  expect(error.message.startsWith('STT batch incomplete:')).toBe(true)
 })
 
 test('processBatch counts incomplete STT items separately and preserves outputDir in batch.json', async () => {

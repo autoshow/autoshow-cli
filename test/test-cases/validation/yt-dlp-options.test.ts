@@ -131,9 +131,8 @@ describe('yt-dlp option builders', () => {
     ])
 
     await expect(buildYtDlpDownloadArgs('https://example.com/watch?v=abc', '/tmp/out')).resolves.toEqual([
-      '--extract-audio',
-      '--audio-format',
-      'mp3',
+      '--format',
+      'bestaudio/best',
       '--output',
       '/tmp/out/%(title)s.%(ext)s',
       '--restrict-filenames',

@@ -140,14 +140,9 @@ if (args.includes('--skip-download')) {
   process.exit(0)
 }
 
-if (args.includes('--extract-audio')) {
-  const outputPattern = getArgValue('--output')
-  const metadata = metadataByUrl[url]
-  if (!outputPattern || !metadata) {
-    console.error('missing download output pattern or metadata')
-    process.exit(1)
-  }
-
+const outputPattern = getArgValue('--output')
+const metadata = metadataByUrl[url]
+if (outputPattern && metadata && !args.includes('--skip-download')) {
   const outputPath = outputPattern
     .replace('%(title)s', metadata.title)
     .replace('%(ext)s', 'mp3')

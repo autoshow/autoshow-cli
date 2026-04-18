@@ -31,3 +31,13 @@ test('usage-error output redacts sensitive URL query values', async () => {
   const combined = `${result.stdout}\n${result.stderr}`
   expect(combined.includes(token)).toBe(false)
 })
+
+test('fatal process handlers redact unhandled rejection payloads', async () => {
+  const result = await runCommand([
+    'test/test-cases/validation/fixtures/failure-fixture.ts'
+  ])
+
+  expect(result.exitCode).toBe(1)
+  const combined = `${result.stdout}\n${result.stderr}`
+  expect(combined.includes('fatal-secret-value-987')).toBe(false)
+})
