@@ -1,4 +1,5 @@
 import type {
+  BatchChildRunContext,
   BatchProcessResult,
   DeepgramResponse,
   DiarizationOptions,
@@ -34,6 +35,7 @@ export type ProcessSttRunOptions = {
   requestedTargets?: SttTarget[] | undefined
   targetsToRun?: SttTarget[] | undefined
   batchCoordinator?: SttBatchCoordinator | undefined
+  batchChildContext?: BatchChildRunContext | undefined
 }
 
 export type PromptSelectionCandidate = SttProviderSuccess
@@ -294,7 +296,7 @@ export type PreparedLocalSttInput = {
 
 export type DiarizationFlagOptions = Pick<
   ProcessingOptions,
-  'diarizationSpeakerCount' | 'diarizationSpeakerNames' | 'diarizationSpeakerReferences'
+  'diarizationSpeakerCount'
 >
 
 export type WhisperProgressWindow = {

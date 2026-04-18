@@ -15,7 +15,7 @@ const relayYtDlpLine = (line: string): void => {
 }
 
 const findDownloadedAudio = async (outputDir: string): Promise<string> => {
-  const files = await Bun.$`find ${outputDir} -type f \( -name "*.mp3" -o -name "*.m4a" -o -name "*.webm" -o -name "*.mp4" -o -name "*.opus" -o -name "*.ogg" -o -name "*.aac" \)`.text()
+  const files = await Bun.$`find ${outputDir} -type f \( -name "*.mp3" -o -name "*.m4a" -o -name "*.webm" -o -name "*.mp4" -o -name "*.opus" -o -name "*.ogg" -o -name "*.aac" -o -name "*.flac" -o -name "*.wav" \)`.text()
   const list = files.trim().split('\n').filter(f => f.length > 0)
   const first = list[0]
   if (!first) {

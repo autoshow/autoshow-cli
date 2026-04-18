@@ -33,6 +33,19 @@ test('links parser keeps provider selections and global sections', () => {
   expect(parsed.globalSections).toEqual(['tts'])
 })
 
+test('links parser accepts dashed global section selectors', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--stt',
+    'tts'
+  ])
+
+  expect(parsed.serviceSelections.size).toBe(0)
+  expect(parsed.globalSections).toEqual(['stt', 'tts'])
+})
+
 test('links collector treats a bare provider selection as all sections for that provider', () => {
   const parsed = parseLinksArgv([
     'bun',
@@ -45,6 +58,25 @@ test('links collector treats a bare provider selection as all sections for that 
   expect(openAiLinks.length).toBeGreaterThan(10)
   expect(openAiLinks).toContain('https://developers.openai.com/api/docs/pricing.md')
   expect(openAiLinks).toContain('https://developers.openai.com/api/docs/guides/video-generation.md')
+})
+
+test('links collector treats a dashed global section selector like the bare form', () => {
+  const dashed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--stt'
+  ])
+  const bare = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'stt'
+  ])
+
+  expect(collectLinks(dashed.serviceSelections, dashed.globalSections)).toEqual(
+    collectLinks(bare.serviceSelections, bare.globalSections)
+  )
 })
 
 test('links collector includes Speechmatics general and STT links', () => {
@@ -134,4 +166,33 @@ test('links command rejects unknown sections', async () => {
     '--openai',
     'music'
   ])).rejects.toThrow('Unknown links section(s) for --openai: music')
+})
+
+test('links command rejects dashed global sections mixed after a provider selector', async () => {
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--openai',
+    '--stt'
+  ])).rejects.toThrow('Dashed links sections like "--stt" cannot be mixed with provider selectors. Use "bun as links --stt" for global sections or "bun as links --deepgram stt" for provider-scoped sections.')
+})
+
+test('links command rejects dashed global sections mixed before a provider selector', async () => {
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--stt',
+    '--openai'
+  ])).rejects.toThrow('Dashed links sections like "--stt" cannot be mixed with provider selectors. Use "bun as links --stt" for global sections or "bun as links --deepgram stt" for provider-scoped sections.')
+})
+
+test('links command rejects unknown dashed selectors with provider and section guidance', async () => {
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--bogus'
+  ])).rejects.toThrow('Unknown links selector "--bogus". Known providers: assembly, claude, deapi, deepgram, elevenlabs, gemini, gladia, glm, grok, groq, happyscribe, minimax, openai, rev, soniox, speechmatics, supadata. Known sections: general, image, music, ocr, stt, text, tts, video.')
 })

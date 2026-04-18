@@ -51,12 +51,6 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('nova-3')
   })
 
-  test('openaiSttModel routes to openai', () => {
-    const result = computeEstimatedCosts({ openaiSttModel: 'gpt-4o-mini-transcribe', audioDurationSeconds: 60 })
-    expect(result.steps[0]?.provider).toBe('openai')
-    expect(result.steps[0]?.model).toBe('gpt-4o-mini-transcribe')
-  })
-
   test('speechmaticsSttModel routes to speechmatics', () => {
     const result = computeEstimatedCosts({ speechmaticsSttModel: 'enhanced', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('speechmatics')

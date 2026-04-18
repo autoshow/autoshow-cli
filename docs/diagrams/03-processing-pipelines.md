@@ -28,13 +28,16 @@ src/cli/commands/process-steps/process-video.ts
 │  └── output/YYYY-MM-DD_HH-MM-SS_<sanitized-title>/                           │
 │                                                                              │
 │  downloadAudio()                                                             │
-│  ├── url_streaming → yt-dlp -x --audio-format wav                            │
+│  ├── url_streaming → yt-dlp --format bestaudio/best                          │
 │  ├── url_direct_media → fetch() → save to disk                               │
 │  └── local file → use as-is                                                  │
 │                                                                              │
-│  Convert to WAV: ffmpeg -i <input> -ar 16000 -ac 1 -c:a pcm_s16le audio.wav │
+│  Normalize once to compressed audio-only media:                              │
+│  ├── keep mp3 / m4a / ogg / flac when already audio-only                     │
+│  ├── extract AAC/ALAC/MP3/Opus/Vorbis streams without re-encoding            │
+│  └── fall back to FLAC for PCM or unsupported codecs                         │
 │                                                                              │
-│  Output: audio.wav + Step1Metadata                                           │
+│  Output: audio.(mp3|m4a|ogg|flac) + Step1Metadata                            │
 └──────────────────────────────────────────────────────────────────────────────┘
                                     |
                                     v
@@ -45,12 +48,12 @@ src/cli/commands/process-steps/process-video.ts
 │  resolveSttEngine() - picks exactly one engine:                              │
 │                                                                              │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐│
-│  │ --reverb   │ │--elevenlabs│ │--groq-stt  │ │--openai-stt│ │--mistral-  │ │--assemblyai- ││
-│  │ Reverb ASR │ │-stt        │ │ Groq       │ │ OpenAI STT │ │stt         │ │stt           ││
-│  │ (local)    │ │ ElevenLabs │ │ Whisper    │ │ (API)      │ │ Mistral    │ │ AssemblyAI   ││
-│  │ diarization│ │ Scribe(API)│ │ (API)      │ │ diarization│ │ STT (API)  │ │ STT (API)    ││
-│  │ --reverb-  │ │ w/speaker- │ │            │ │ w/speaker- │ │ diarization│ │ diarization  ││
-│  │ verbatimic.│ │ count hint │ │            │ │ count hint │ │            │ │ w/speaker-   ││
+│  │ --reverb   │ │--elevenlabs│ │--groq-stt  │ │--deepgram- │ │--mistral-  │ │--assemblyai- ││
+│  │ Reverb ASR │ │-stt        │ │ Groq       │ │stt         │ │stt         │ │stt           ││
+│  │ (local)    │ │ ElevenLabs │ │ Whisper    │ │ Deepgram   │ │ Mistral    │ │ AssemblyAI   ││
+│  │ diarization│ │ Scribe(API)│ │ (API)      │ │ STT (API)  │ │ STT (API)  │ │ STT (API)    ││
+│  │ --reverb-  │ │ w/speaker- │ │            │ │ diarization│ │ diarization│ │ diarization  ││
+│  │ verbatimic.│ │ count hint │ │            │ │ enabled    │ │            │ │ w/speaker-   ││
 │  │            │ │            │ │            │ │            │ │            │ │ count hint   ││
 │  └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └──────┬───────┘│
 │        └───────────────┴──────────────┴──────────────┴──────────────┴────────────────┘       │

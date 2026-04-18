@@ -10,8 +10,8 @@ import { exec, fileExists } from '~/utils/cli-utils'
 
 const SAMPLE_AUDIO_PATH = 'input/examples/audio/1-audio.mp3'
 const CLOUD_STT_TARGET: SttTarget = {
-  service: 'openai',
-  model: 'gpt-4o-transcribe',
+  service: 'groq',
+  model: 'whisper-large-v3-turbo',
   local: false
 }
 
@@ -52,6 +52,19 @@ const createMp4Input = async (outputPath: string): Promise<void> => {
   expect(result.exitCode).toBe(0)
 }
 
+const createWavInput = async (outputPath: string): Promise<void> => {
+  const result = await exec('ffmpeg', [
+    '-i', SAMPLE_AUDIO_PATH,
+    '-ar', '48000',
+    '-ac', '2',
+    '-c:a', 'pcm_s16le',
+    '-y',
+    outputPath
+  ])
+
+  expect(result.exitCode).toBe(0)
+}
+
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map(async (dir) => {
     await rm(dir, { recursive: true, force: true })
@@ -78,7 +91,7 @@ describe('audio normalization', () => {
     }
   })
 
-  test('prepareSttMedia normalizes local mp4 inputs to source_media.mp3', async () => {
+  test('prepareSttMedia normalizes local mp4 inputs to source_media.m4a without lossy re-encoding', async () => {
     const tempDir = await createTempDir()
     const inputPath = join(tempDir, 'input.mp4')
     const outputDir = join(tempDir, 'output')
@@ -92,16 +105,40 @@ describe('audio normalization', () => {
     })
 
     try {
-      expect(basename(prepared.executionArtifacts.sourceMediaPath)).toBe('source_media.mp3')
-      expect(prepared.executionArtifacts.sourceMediaPath.endsWith('.mp3')).toBe(true)
-      expect(prepared.outputArtifacts.sourceMediaPath.endsWith('.mp3')).toBe(true)
-      expect(prepared.step1Metadata.audioFileName.endsWith('.mp3')).toBe(true)
+      expect(basename(prepared.executionArtifacts.sourceMediaPath)).toBe('source_media.m4a')
+      expect(prepared.executionArtifacts.sourceMediaPath.endsWith('.m4a')).toBe(true)
+      expect(prepared.outputArtifacts.sourceMediaPath.endsWith('.m4a')).toBe(true)
+      expect(prepared.step1Metadata.audioFileName.endsWith('.m4a')).toBe(true)
       expect(prepared.cache.sourceMedia).toBe('miss')
       expect(await fileExists(prepared.executionArtifacts.sourceMediaPath)).toBe(true)
       expect(await fileExists(prepared.outputArtifacts.sourceMediaPath)).toBe(true)
-      expect(await probeAudioCodec(prepared.executionArtifacts.sourceMediaPath)).toBe('mp3')
+      expect(await probeAudioCodec(prepared.executionArtifacts.sourceMediaPath)).toBe('aac')
       expect(Object.keys(prepared.executionArtifacts)).toEqual(['sourceMediaPath'])
       expect(Object.keys(prepared.outputArtifacts)).toEqual(['sourceMediaPath'])
+    } finally {
+      await prepared.cleanup?.()
+    }
+  })
+
+  test('prepareSttMedia converts uncompressed wav inputs to source_media.flac', async () => {
+    const tempDir = await createTempDir()
+    const inputPath = join(tempDir, 'input.wav')
+    const outputDir = join(tempDir, 'output')
+    await createWavInput(inputPath)
+
+    const prepared = await prepareSttMedia({
+      source: { filePath: inputPath },
+      targets: [CLOUD_STT_TARGET],
+      outputDir,
+      noCache: true
+    })
+
+    try {
+      expect(basename(prepared.executionArtifacts.sourceMediaPath)).toBe('source_media.flac')
+      expect(prepared.executionArtifacts.sourceMediaPath.endsWith('.flac')).toBe(true)
+      expect(prepared.outputArtifacts.sourceMediaPath.endsWith('.flac')).toBe(true)
+      expect(prepared.step1Metadata.audioFileName.endsWith('.flac')).toBe(true)
+      expect(await probeAudioCodec(prepared.executionArtifacts.sourceMediaPath)).toBe('flac')
     } finally {
       await prepared.cleanup?.()
     }

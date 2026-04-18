@@ -37,6 +37,6 @@ budgetedTest('extract-paddle-ocr-image', 'extract image with --paddle-ocr', asyn
 
   const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step1?.format).toBe('png')
-  expect(metadata.step2?.extractionMethod).toBe('paddle-ocr')
+  expect(metadata.step2?.extractionMethod).toBe('image+paddle-ocr')
   expect(metadata.step2?.totalPages).toBe(1)
 })

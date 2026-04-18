@@ -88,7 +88,6 @@ If no engine flag is provided, `stt` defaults to Whisper with the `tiny` model.
 | Soniox | `--soniox-stt <model>` | `stt-async-v4` |
 | Speechmatics | `--speechmatics-stt <model>` | `standard`, `enhanced` |
 | Rev | `--rev-stt <model>` | `machine`, `low_cost` |
-| OpenAI | `--openai-stt <model>` | `gpt-4o-transcribe-diarize` |
 | Mistral | `--mistral-stt <model>` | `voxtral-mini-2602` |
 | AssemblyAI | `--assemblyai-stt <model>` | `universal-3-pro` |
 | Gladia | `--gladia-stt <model>` | `default` |
@@ -111,11 +110,6 @@ bun as stt input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
 # Hosted providers
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
-
-# OpenAI known speaker references
-bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize \
-  --speaker-name Host --speaker-reference clips/host.mp3 \
-  --speaker-name Guest --speaker-reference clips/guest.mp3
 
 # Prefer YouTube captions, then fall back to STT
 bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
@@ -140,13 +134,10 @@ bun as stt --resume-missing
 | `--speechmatics-stt <model>` | Select the Speechmatics STT model; omit the value to use `standard` |
 | `--rev-stt <model>` | Select the Rev STT model; omit the value to use `low_cost` |
 | `--groq-stt <model>` | Select the Groq STT model; omit the value to use the cheapest supported model |
-| `--openai-stt <model>` | Select the OpenAI STT model; omit the value to keep `gpt-4o-transcribe-diarize` |
 | `--mistral-stt <model>` | Select the Mistral STT model; omit the value to use `voxtral-mini-2602` |
 | `--assemblyai-stt <model>` | Select the AssemblyAI STT model; omit the value to use `universal-3-pro` |
 | `--gladia-stt <model>` | Select the Gladia STT model; omit the value to keep `default` |
 | `--speaker-count <n>` | Diarization speaker-count hint for supported services |
-| `--speaker-name <name...>` | OpenAI known speaker names; repeat in the same order as `--speaker-reference` |
-| `--speaker-reference <path...>` | OpenAI speaker reference clips or data URLs |
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
 | `--split` | Split audio into 10-minute segments before transcription |
 | `--prompt <name...>` | Named prompt presets from `src/prompts/entries/*.json` |
@@ -165,9 +156,9 @@ bun as stt --resume-missing
 
 ## Notes
 
+- Before any hosted STT provider upload, Autoshow now extracts/persists a shared compressed audio-only artifact and avoids fresh lossy re-encoding whenever it can preserve the original audio stream.
 - Hosted multi-provider runs write one transcript and metadata set per provider under `providers/<service>-<model>/`.
 - `--speaker-count` is currently honored by ElevenLabs, AssemblyAI, and Gladia. It is ignored by local engines and the other hosted STT providers.
-- OpenAI does not support count-only diarization hints. Use `--speaker-name` with matching `--speaker-reference` clips instead.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.

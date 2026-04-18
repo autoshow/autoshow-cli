@@ -1,11 +1,12 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
 import { readdir, rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput } from '../../../test-utils/test-helpers'
 import { readBatchItems, readBatchSource, readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const OUTPUT_DIR = './output'
 const createdDirs: string[] = []
+const TIMESTAMPED_CHILD_DIR_PATTERN = /^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-\d{3}_/
 
 type Step1Metadata = {
   audioFileName?: string
@@ -106,6 +107,9 @@ const rememberDir = (dir: string): void => {
     createdDirs.push(dir)
   }
 }
+
+const normalizeOutputDir = (dir: string): string =>
+  dir.replace(/\\/g, '/').replace(/^\.\//, '')
 
 const getOutputDirs = async (): Promise<string[]> => {
   try {
@@ -218,6 +222,9 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
       .filter(entry => entry.isDirectory())
       .map(entry => join(batchDir, entry.name))
       .sort()
+    for (const itemDir of itemDirs) {
+      expect(basename(itemDir)).not.toMatch(TIMESTAMPED_CHILD_DIR_PATTERN)
+    }
     if (tc.expectedSelectedCount !== undefined) {
       expect(itemDirs.length).toBe(tc.expectedSelectedCount)
     } else {
@@ -232,7 +239,20 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
     expect(await fileExists(`${firstItemDir}/run.json`)).toBe(true)
     expect(infoEntries.length).toBe(itemDirs.length)
     const rawMetadata = await readRunMetadata(firstItemDir)
-    expect(infoEntries[0]).toEqual({ ...rawMetadata, outputDir: firstItemDir })
+    const firstInfoEntry = asRecord(infoEntries[0])
+    expect(firstInfoEntry).not.toBeNull()
+    if (!firstInfoEntry) {
+      return
+    }
+    expect({
+      ...firstInfoEntry,
+      outputDir: typeof firstInfoEntry['outputDir'] === 'string'
+        ? normalizeOutputDir(firstInfoEntry['outputDir'])
+        : firstInfoEntry['outputDir']
+    }).toEqual({
+      ...rawMetadata,
+      outputDir: normalizeOutputDir(firstItemDir)
+    })
     const metadata = parseMetadata(await readRunMetadata(firstItemDir))
     expect(metadata.step1).toBeDefined()
     await assertDownloadOnlyArtifacts(firstItemDir, metadata)

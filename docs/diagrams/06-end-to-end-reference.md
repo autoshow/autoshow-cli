@@ -41,7 +41,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
   process-video.ts → processVideo()
     |
     |  STEP 1: Download
-    |  ├── downloadAudio() → yt-dlp + ffmpeg → audio.wav
+    |  ├── downloadAudio() → yt-dlp/fetch + shared audio normalization
     |  └── Step1Metadata
     |
     |  STEP 2: STT
@@ -57,7 +57,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
     |  Write run.json { step1, step2, step3 }
     v
   output/2026-02-18_12-00-00_video-title/
-    ├── audio.wav
+    ├── audio.(mp3|m4a|ogg|flac)
     ├── transcription.txt
     ├── prompt.md
     ├── text.json
@@ -69,8 +69,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  API Keys                                                                    │
-│  ├── OPENAI_API_KEY                  Required for --openai, --openai-stt,    │
-│  │                                   --openai-tts models                     │
+│  ├── OPENAI_API_KEY                  Required for --openai, --openai-tts,    │
+│  │                                   --openai-image models                   │
 │  ├── GROQ_API_KEY                    Required for --groq, --groq-stt,        │
 │  │                                   --groq-tts models                       │
 │  ├── ANTHROPIC_API_KEY               Required for --anthropic models         │

@@ -11,7 +11,6 @@ const SttDefaultsSchema = v.object({
   deepgramStt: v.optional(v.string(), undefined),
   sonioxStt: v.optional(v.string(), undefined),
   revStt: v.optional(v.string(), undefined),
-  openaiStt: v.optional(v.string(), undefined),
   mistralStt: v.optional(v.string(), undefined),
   assemblyaiStt: v.optional(v.string(), undefined),
   gladiaStt: v.optional(v.string(), undefined),

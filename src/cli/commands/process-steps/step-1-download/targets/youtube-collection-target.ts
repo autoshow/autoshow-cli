@@ -102,7 +102,12 @@ export const tryHandleYoutubeCollectionTarget = async (
     command,
     opts,
     async (commandName, item, batchDir, batchOpts, batchItem) =>
-      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem)
+      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
+        batchChildContext: {
+          batchDir,
+          ...(batchItem ? { batchItem } : {})
+        }
+      }, batchItem)
   )
   if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && items.length > 0 && fail === items.length)) {
     const problemCount = isSttCommand(command) ? incomplete + fail : fail

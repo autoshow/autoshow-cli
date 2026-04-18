@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type {
+  BatchChildRunContext,
   RuntimeOptions,
   Step3Metadata,
   Step4Metadata,
@@ -14,6 +15,7 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
+import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { runLLM } from './run-llm'
@@ -126,7 +128,8 @@ const buildStepSummaries = (
 export const runTextWrite = async (
   inputPath: string,
   baseDir: string,
-  opts: RuntimeOptions
+  opts: RuntimeOptions,
+  batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
   const sourceText = await Bun.file(inputPath).text()
   if (sourceText.trim().length === 0) {
@@ -135,7 +138,10 @@ export const runTextWrite = async (
 
   const title = getTextInputTitle(inputPath)
   const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
-  const outputDir = `${outputBaseDir}/${createUniqueDirectoryName(title)}`
+  const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
+    title,
+    fallbackLabel: title
+  }) ?? `${outputBaseDir}/${createUniqueDirectoryName(title)}`
   await ensureDirectory(outputDir)
 
   const llmConfig = resolveLLMDefaults(opts)

@@ -4,7 +4,6 @@ import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-st
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
 import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/groq/groq'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
-import { ensureOpenAISttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/rev'
 import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/soniox/soniox'
 import { ensureSpeechmaticsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/speechmatics/speechmatics'
@@ -72,9 +71,6 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'groq-stt': {
     ensure: async () => await ensureGroqSttSetup()
-  },
-  'openai-stt': {
-    ensure: async () => await ensureOpenAISttSetup()
   },
   'mistral-stt': {
     ensure: async () => await ensureMistralSttSetup()

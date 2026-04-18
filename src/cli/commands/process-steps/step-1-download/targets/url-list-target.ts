@@ -65,7 +65,12 @@ export const processResolvedInputListBatch = async (
     command,
     opts,
     async (commandName, item, batchDir, batchOpts, batchItem) =>
-      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem),
+      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
+        batchChildContext: {
+          batchDir,
+          ...(batchItem ? { batchItem } : {})
+        }
+      }, batchItem),
     {
       source: resolvedBatch.source,
       selectedItems: resolvedBatch.selectedItems,

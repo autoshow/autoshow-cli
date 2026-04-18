@@ -23,6 +23,7 @@ import type {
   TranscriptionResult
 } from '~/types'
 import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { reserveBatchChildOutputDir } from './batch-child-output'
 import { createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
@@ -501,7 +502,6 @@ export const scorePromptSelectionCandidate = (
     typeof segment.speaker === 'string' && segment.speaker.length > 0
   )
   const hasRequestedDiarizationHint = candidate.target.diarizationOptions?.speakerCount !== undefined
-    || (candidate.target.diarizationOptions?.knownSpeakerNames?.length ?? 0) > 0
   const hasDiarizationEnabled = candidate.target.diarizationOptions?.enabled === true
     || hasRequestedDiarizationHint
 
@@ -570,7 +570,14 @@ export const processStt = async (
   const targetsToRunKeys = new Set(targetsToRun.map((target) => getSttTargetKey(target)))
   const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
   const metadata = await resolveSttSourceMetadata(source)
-  const outputDir = runOptions.outputDir ?? join(outputBaseDir, createUniqueDirectoryName(metadata.title))
+  const batchChildOutputDir = runOptions.outputDir === undefined
+    ? await reserveBatchChildOutputDir(runOptions.batchChildContext, {
+        title: metadata.title,
+        publishedAt: metadata.publishDate,
+        fallbackLabel: metadata.title
+      })
+    : undefined
+  const outputDir = runOptions.outputDir ?? batchChildOutputDir ?? join(outputBaseDir, createUniqueDirectoryName(metadata.title))
   await ensureDirectory(outputDir)
 
   let prepared: Awaited<ReturnType<typeof prepareSttMedia>> | undefined
@@ -669,11 +676,13 @@ export const processStt = async (
     if (requestedTargets.length === 1) {
       const target = requestedTargets[0] as SttTarget
       const audioPath = resolveTargetAudioPath(target, prepared)
+      const audioDurationSeconds = prepared.durationSeconds
       const transcription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
         await sttTarget(audioPath, outputDir, target, {
           split: options.split,
           reverbVerbatimicity: options.reverbVerbatimicity,
-          sttSegmentConcurrency: options.sttSegmentConcurrency
+          sttSegmentConcurrency: options.sttSegmentConcurrency,
+          audioDurationSeconds
         })
       )
 

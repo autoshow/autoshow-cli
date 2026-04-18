@@ -24,8 +24,8 @@ bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 # stt with Deepgram STT
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 
-# stt with OpenAI STT
-bun as stt input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-transcribe-diarize
+# stt with AssemblyAI STT
+bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-3-pro
 
 # consensus report for an existing STT or OCR output directory
 bun as report output/2026-04-15_episode

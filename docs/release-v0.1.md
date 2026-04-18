@@ -95,7 +95,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - `write` can run multiple LLM providers in one invocation and writes provider-specific JSON artifacts for each result.
 - Multi-provider STT runs write provider-specific transcripts and result envelopes under `providers/<service>-<model>/`.
-- STT batch runs can resume missing provider outputs with `--resume-missing`; supported diarization services accept `--speaker-count`, and OpenAI diarization can pair `--speaker-name` with `--speaker-reference` hints.
+- STT batch runs can resume missing provider outputs with `--resume-missing`; supported diarization services accept `--speaker-count`.
 - HTML/article inputs can use `defuddle`, `firecrawl`, or `glm-reader` backends through `--url-backend`.
 - Native EPUB text extraction writes cleaned section-aware text by default, strips common footnote/reference noise, and can additionally emit `chapters/` or `chunks/` side artifacts.
 - The persistent STT cache can be managed with `bun as cache prune` and `bun as cache clear`, and runs can force refresh or bypass via `--refresh-cache` and `--no-cache`.
@@ -169,7 +169,7 @@ Artifact-producing runs typically write:
 Batch runs additionally write:
 
 - one `batch.json`
-- one output directory per processed item
+- one content-derived child output directory per processed item (`YYYY-MM-DD-slug` when dated, otherwise `slug`)
 
 Provider subruns can additionally write:
 
@@ -275,7 +275,6 @@ Notable behavior:
 | Speechmatics STT | `standard`, `enhanced` |
 | Rev STT | `machine`, `low_cost` |
 | Groq STT | `whisper-large-v3-turbo`, `whisper-large-v3` |
-| OpenAI STT | `gpt-4o-transcribe-diarize` |
 | Mistral STT | `voxtral-mini-2602` |
 | AssemblyAI STT | `universal-3-pro` |
 | Gladia STT | `default` |

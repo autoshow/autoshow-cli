@@ -1,7 +1,7 @@
 export {
+  DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES,
   GLADIA_MAX_ATTACHMENT_BYTES,
   GROQ_MAX_ATTACHMENT_BYTES,
-  OPENAI_MAX_ATTACHMENT_BYTES,
   SPEECHMATICS_MAX_ATTACHMENT_BYTES,
   REV_MAX_ATTACHMENT_BYTES,
   ensureSttTargetSetup,
@@ -10,6 +10,9 @@ export {
   mergeSplitTranscriptionChunks,
   resolveDiarizationOptions,
   resolveEffectiveSegmentConcurrency,
+  resolveEffectiveSplitSegmentDurationMinutes,
+  resolveSttSplitPolicy,
+  resolveTranscriptionSplitDecision,
   shouldRetrySplitTranscriptionAfterError,
   shouldSplitTranscriptionInput,
   stt,

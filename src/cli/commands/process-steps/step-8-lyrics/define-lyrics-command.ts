@@ -4,8 +4,9 @@ import { defineCommand } from 'clerc'
 import { lyricsFlags } from '~/cli/flags'
 import { validateWhisperModel } from '~/cli/commands/setup-and-utilities/models/stt-models'
 import { ensureProviderReady } from '~/features/bootstrap-broker'
+import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { runWhisperTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/run-whisper'
-import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
+import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { writeBatchManifest, writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
@@ -335,10 +336,11 @@ export const lyricsCommand = defineCommand({
 
     for (const audioPath of files) {
       const label = baseStem(audioPath)
-      const childDirName = `${String(items.length + 1).padStart(3, '0')}-${sanitizeTitleSlug(label, 80)}`
-      const childDirAbsolute = join(batchDirAbsolute, childDirName)
-      const childDirRelative = `${batchDirRelative}/${childDirName}`
-      await ensureDirectory(childDirAbsolute)
+      const childDirAbsolute = await reserveBatchChildOutputDir({ batchDir: batchDirAbsolute }, {
+        title: label,
+        fallbackLabel: label
+      }) ?? join(batchDirAbsolute, label)
+      const childDirRelative = toProjectDisplayPath(childDirAbsolute)
 
       try {
         const result = await processLyricsRun({

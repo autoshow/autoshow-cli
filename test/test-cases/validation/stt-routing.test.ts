@@ -1,61 +1,205 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES,
   GROQ_MAX_ATTACHMENT_BYTES,
   GLADIA_MAX_ATTACHMENT_BYTES,
-  OPENAI_MAX_ATTACHMENT_BYTES,
+  REV_MAX_ATTACHMENT_BYTES,
   SPEECHMATICS_MAX_ATTACHMENT_BYTES,
   isPayloadTooLargeTranscriptionError,
   mergeSplitTranscriptionChunks,
   resolveEffectiveSegmentConcurrency,
+  resolveEffectiveSplitSegmentDurationMinutes,
   resolveDiarizationOptions,
+  resolveSttSplitPolicy,
+  resolveTranscriptionSplitDecision,
   shouldRetrySplitTranscriptionAfterError,
   shouldSplitTranscriptionInput
 } from '~/cli/commands/process-steps/step-2-stt/orchestrator'
+import { getSttLimits } from '~/cli/commands/setup-and-utilities/models/model-loader'
+
+const TARGET_MODELS = {
+  whisper: 'large-v3-turbo',
+  deepgram: 'nova-3',
+  groq: 'whisper-large-v3-turbo',
+  soniox: 'stt-async-v4',
+  speechmatics: 'standard',
+  rev: 'low_cost',
+  elevenlabs: 'scribe_v2',
+  mistral: 'voxtral-mini-2602',
+  assemblyai: 'universal-3-pro',
+  gladia: 'default',
+  reverb: 'test-model'
+} as const
+
+type TestTargetService = keyof typeof TARGET_MODELS
+
+const createTarget = (service: TestTargetService) => ({
+  service,
+  model: TARGET_MODELS[service]
+})
+
+const requireSttLimit = (
+  service: Exclude<TestTargetService, 'whisper' | 'reverb'>,
+  field: 'effectiveBytes' | 'durationSeconds'
+): number => {
+  const value = getSttLimits(service, TARGET_MODELS[service])[field]
+  if (typeof value !== 'number') {
+    throw new Error(`Missing ${field} for ${service}/${TARGET_MODELS[service]}`)
+  }
+
+  return value
+}
+
+describe('getSttLimits', () => {
+  test('returns transport-aware AssemblyAI limits', () => {
+    expect(getSttLimits('assemblyai', TARGET_MODELS.assemblyai)).toEqual(expect.objectContaining({
+      effectiveBytes: 2362232013,
+      directUploadBytes: 2362232013,
+      remoteUrlBytes: 5368709120,
+      durationSeconds: 36000
+    }))
+  })
+
+  test('returns no numeric limits for uncapped local Whisper models', () => {
+    const limits = getSttLimits('whisper', TARGET_MODELS.whisper)
+    expect(limits.effectiveBytes).toBeUndefined()
+    expect(limits.directUploadBytes).toBeUndefined()
+    expect(limits.remoteUrlBytes).toBeUndefined()
+    expect(limits.durationSeconds).toBeUndefined()
+    expect(limits.notes).toContain('provider-side upload and duration caps do not apply')
+  })
+
+  test('returns transport-specific Groq and Gladia remote URL limits', () => {
+    expect(getSttLimits('groq', TARGET_MODELS.groq)).toEqual(expect.objectContaining({
+      effectiveBytes: 26214400,
+      directUploadBytes: 26214400,
+      remoteUrlBytes: 104857600
+    }))
+    expect(getSttLimits('gladia', TARGET_MODELS.gladia)).toEqual(expect.objectContaining({
+      effectiveBytes: 1048576000,
+      directUploadBytes: 1048576000,
+      remoteUrlBytes: 1048576000
+    }))
+  })
+})
 
 describe('shouldSplitTranscriptionInput', () => {
   test('respects explicit split mode for any engine', () => {
-    expect(shouldSplitTranscriptionInput('whisper', 1024, true)).toBe(true)
-    expect(shouldSplitTranscriptionInput('groq', 1024, true)).toBe(true)
+    expect(shouldSplitTranscriptionInput(createTarget('whisper'), 1024, undefined, true)).toBe(true)
+    expect(shouldSplitTranscriptionInput(createTarget('groq'), 1024, undefined, true)).toBe(true)
+  })
+
+  test('auto-splits Deepgram uploads above the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('deepgram'), requireSttLimit('deepgram', 'effectiveBytes') + 1, undefined, false)).toBe(true)
   })
 
   test('auto-splits Groq uploads above the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('groq', GROQ_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
+    expect(shouldSplitTranscriptionInput(createTarget('groq'), GROQ_MAX_ATTACHMENT_BYTES + 1, undefined, false)).toBe(true)
   })
 
-  test('auto-splits OpenAI uploads above the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('openai', OPENAI_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
+  test('auto-splits ElevenLabs uploads above the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('elevenlabs'), requireSttLimit('elevenlabs', 'effectiveBytes') + 1, undefined, false)).toBe(true)
   })
 
   test('auto-splits Speechmatics uploads above the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
+    expect(shouldSplitTranscriptionInput(createTarget('speechmatics'), SPEECHMATICS_MAX_ATTACHMENT_BYTES + 1, undefined, false)).toBe(true)
+  })
+
+  test('auto-splits Rev uploads above the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('rev'), REV_MAX_ATTACHMENT_BYTES + 1, undefined, false)).toBe(true)
+  })
+
+  test('auto-splits AssemblyAI uploads above the effective upload cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('assemblyai'), requireSttLimit('assemblyai', 'effectiveBytes') + 1, undefined, false)).toBe(true)
   })
 
   test('auto-splits Gladia uploads above the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('gladia', GLADIA_MAX_ATTACHMENT_BYTES + 1, false)).toBe(true)
+    expect(shouldSplitTranscriptionInput(createTarget('gladia'), GLADIA_MAX_ATTACHMENT_BYTES + 1, undefined, false)).toBe(true)
+  })
+
+  test('auto-splits duration-limited ElevenLabs inputs above the model cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('elevenlabs'), 1024, requireSttLimit('elevenlabs', 'durationSeconds') + 1, false)).toBe(true)
+  })
+
+  test('auto-splits duration-limited Soniox inputs above the model cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('soniox'), 1024, requireSttLimit('soniox', 'durationSeconds') + 1, false)).toBe(true)
+  })
+
+  test('auto-splits duration-limited Mistral inputs above the model cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('mistral'), 1024, requireSttLimit('mistral', 'durationSeconds') + 1, false)).toBe(true)
+  })
+
+  test('auto-splits duration-limited AssemblyAI inputs above the model cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('assemblyai'), 1024, requireSttLimit('assemblyai', 'durationSeconds') + 1, false)).toBe(true)
+  })
+
+  test('auto-splits duration-limited Gladia inputs above the model cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('gladia'), 1024, requireSttLimit('gladia', 'durationSeconds') + 1, false)).toBe(true)
+  })
+
+  test('auto-splits duration-limited Rev inputs above the model cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('rev'), 1024, requireSttLimit('rev', 'durationSeconds') + 1, false)).toBe(true)
   })
 
   test('does not auto-split Groq uploads at or below the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('groq', GROQ_MAX_ATTACHMENT_BYTES, false)).toBe(false)
-    expect(shouldSplitTranscriptionInput('groq', GROQ_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
-  })
-
-  test('does not auto-split OpenAI uploads at or below the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('openai', OPENAI_MAX_ATTACHMENT_BYTES, false)).toBe(false)
-    expect(shouldSplitTranscriptionInput('openai', OPENAI_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('groq'), GROQ_MAX_ATTACHMENT_BYTES, undefined, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('groq'), GROQ_MAX_ATTACHMENT_BYTES - 1, undefined, false)).toBe(false)
   })
 
   test('does not auto-split Speechmatics uploads at or below the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES, false)).toBe(false)
-    expect(shouldSplitTranscriptionInput('speechmatics', SPEECHMATICS_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('speechmatics'), SPEECHMATICS_MAX_ATTACHMENT_BYTES, undefined, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('speechmatics'), SPEECHMATICS_MAX_ATTACHMENT_BYTES - 1, undefined, false)).toBe(false)
   })
 
   test('does not auto-split Gladia uploads at or below the attachment cap', () => {
-    expect(shouldSplitTranscriptionInput('gladia', GLADIA_MAX_ATTACHMENT_BYTES, false)).toBe(false)
-    expect(shouldSplitTranscriptionInput('gladia', GLADIA_MAX_ATTACHMENT_BYTES - 1, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('gladia'), GLADIA_MAX_ATTACHMENT_BYTES, undefined, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('gladia'), GLADIA_MAX_ATTACHMENT_BYTES - 1, undefined, false)).toBe(false)
   })
 
   test('does not auto-split engines without a documented upload cap', () => {
-    expect(shouldSplitTranscriptionInput('whisper', GROQ_MAX_ATTACHMENT_BYTES * 10, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('whisper'), GROQ_MAX_ATTACHMENT_BYTES * 10, undefined, false)).toBe(false)
+  })
+
+  test('returns detailed split reasons for size and duration caps', () => {
+    const attachmentCapBytes = requireSttLimit('assemblyai', 'effectiveBytes')
+    const maxDurationSeconds = requireSttLimit('assemblyai', 'durationSeconds')
+    const decision = resolveTranscriptionSplitDecision(createTarget('assemblyai'), {
+      audioFileSizeBytes: attachmentCapBytes + 1,
+      audioDurationSeconds: maxDurationSeconds + 1,
+      splitRequested: false
+    })
+
+    expect(decision.shouldSplit).toBe(true)
+    expect(decision.reasons).toEqual([
+      {
+        kind: 'attachment_cap',
+        attachmentCapBytes,
+        audioFileSizeBytes: attachmentCapBytes + 1
+      },
+      {
+        kind: 'duration_cap',
+        maxDurationSeconds,
+        audioDurationSeconds: maxDurationSeconds + 1
+      }
+    ])
+  })
+})
+
+describe('split policy helpers', () => {
+  test('reads AssemblyAI attachment and duration caps from config metadata', () => {
+    expect(resolveSttSplitPolicy(createTarget('assemblyai'))).toEqual({
+      attachmentCapBytes: requireSttLimit('assemblyai', 'effectiveBytes'),
+      maxDurationSeconds: requireSttLimit('assemblyai', 'durationSeconds')
+    })
+  })
+
+  test('keeps the default split duration when the provider cap is looser than 10 minutes', () => {
+    expect(resolveEffectiveSplitSegmentDurationMinutes(resolveSttSplitPolicy(createTarget('assemblyai')))).toBe(DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES)
+  })
+
+  test('shortens segment duration when a provider cap is tighter than the default', () => {
+    expect(resolveEffectiveSplitSegmentDurationMinutes({ maxDurationSeconds: 300 })).toBeLessThan(DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES)
+    expect(resolveEffectiveSplitSegmentDurationMinutes({ maxDurationSeconds: 300 })).toBeLessThan(5)
   })
 })
 
@@ -83,108 +227,74 @@ describe('isPayloadTooLargeTranscriptionError', () => {
 describe('shouldRetrySplitTranscriptionAfterError', () => {
   test('retries hosted upload engines when the provider rejects the payload as too large', () => {
     const error = new Error('Mistral transcription failed (413): {"message":"Request size limit exceeded"}')
-    expect(shouldRetrySplitTranscriptionAfterError('mistral', false, error)).toBe(true)
-    expect(shouldRetrySplitTranscriptionAfterError('deepgram', false, error)).toBe(true)
-    expect(shouldRetrySplitTranscriptionAfterError('openai', false, error)).toBe(true)
-    expect(shouldRetrySplitTranscriptionAfterError('groq', false, error)).toBe(true)
-    expect(shouldRetrySplitTranscriptionAfterError('speechmatics', false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('mistral'), false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('deepgram'), false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('groq'), false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('speechmatics'), false, error)).toBe(true)
+  })
+
+  test('retries duration-limited models when the provider rejects audio that exceeds the model cap', () => {
+    const maxDurationSeconds = requireSttLimit('assemblyai', 'durationSeconds')
+    const error = new Error(`400 audio duration ${maxDurationSeconds + 1} seconds is longer than ${maxDurationSeconds} seconds which is the maximum for this model`)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('assemblyai'), false, error)).toBe(true)
   })
 
   test('does not retry when split mode was already requested', () => {
     const error = new Error('Mistral transcription failed (413): {"message":"Request size limit exceeded"}')
-    expect(shouldRetrySplitTranscriptionAfterError('mistral', true, error)).toBe(false)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('mistral'), true, error)).toBe(false)
   })
 
   test('does not retry local engines on payload-too-large errors', () => {
     const error = new Error('Payload Too Large')
-    expect(shouldRetrySplitTranscriptionAfterError('whisper', false, error)).toBe(false)
-    expect(shouldRetrySplitTranscriptionAfterError('reverb', false, error)).toBe(false)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('whisper'), false, error)).toBe(false)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('reverb'), false, error)).toBe(false)
+  })
+
+  test('does not retry duration errors for models without a configured duration cap', () => {
+    const error = new Error('400 audio duration 1413.693625 seconds is longer than 1400 seconds which is the maximum for this model')
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('deepgram'), false, error)).toBe(false)
   })
 })
 
 describe('resolveDiarizationOptions', () => {
-  test('ignores speaker-count for OpenAI and preserves known speaker references', () => {
-    expect(resolveDiarizationOptions({
-      diarizationSpeakerCount: 2,
-      diarizationSpeakerNames: ['Host', 'Guest'],
-      diarizationSpeakerReferences: ['clips/host.mp3', 'clips/guest.mp3']
-    }, 'openai')).toEqual({
-      enabled: true,
-      knownSpeakerNames: ['Host', 'Guest'],
-      knownSpeakerReferencePaths: ['clips/host.mp3', 'clips/guest.mp3']
-    })
-  })
-
-  test('preserves speaker-count for providers that support it', () => {
+  test('preserves speaker-count for AssemblyAI', () => {
     expect(resolveDiarizationOptions({
       diarizationSpeakerCount: 3,
-      diarizationSpeakerNames: undefined,
-      diarizationSpeakerReferences: undefined
     }, 'assemblyai')).toEqual({ enabled: true, speakerCount: 3 })
   })
 
   test('preserves speaker-count for Gladia', () => {
     expect(resolveDiarizationOptions({
-      diarizationSpeakerCount: 2,
-      diarizationSpeakerNames: undefined,
-      diarizationSpeakerReferences: undefined
+      diarizationSpeakerCount: 2
     }, 'gladia')).toEqual({ enabled: true, speakerCount: 2 })
   })
 
   test('ignores speaker-count for Deepgram while keeping diarization enabled', () => {
     expect(resolveDiarizationOptions({
-      diarizationSpeakerCount: 2,
-      diarizationSpeakerNames: undefined,
-      diarizationSpeakerReferences: undefined
+      diarizationSpeakerCount: 2
     }, 'deepgram')).toEqual({ enabled: true })
   })
 
   test('ignores speaker-count for Soniox while keeping diarization enabled', () => {
     expect(resolveDiarizationOptions({
-      diarizationSpeakerCount: 2,
-      diarizationSpeakerNames: undefined,
-      diarizationSpeakerReferences: undefined
+      diarizationSpeakerCount: 2
     }, 'soniox')).toEqual({ enabled: true })
   })
 
   test('ignores speaker-count for Speechmatics while keeping diarization enabled', () => {
     expect(resolveDiarizationOptions({
-      diarizationSpeakerCount: 2,
-      diarizationSpeakerNames: undefined,
-      diarizationSpeakerReferences: undefined
+      diarizationSpeakerCount: 2
     }, 'speechmatics')).toEqual({ enabled: true })
   })
 
   test('ignores speaker-count for Rev while keeping diarization enabled', () => {
     expect(resolveDiarizationOptions({
-      diarizationSpeakerCount: 2,
-      diarizationSpeakerNames: undefined,
-      diarizationSpeakerReferences: undefined
+      diarizationSpeakerCount: 2
     }, 'rev')).toEqual({ enabled: true })
   })
 
   test('enables diarization by default for diarized ElevenLabs models', () => {
-    expect(resolveDiarizationOptions({
-      diarizationSpeakerCount: undefined,
-      diarizationSpeakerNames: undefined,
-      diarizationSpeakerReferences: undefined
-    }, 'elevenlabs')).toEqual({ enabled: true })
-  })
-
-  test('rejects OpenAI speaker names without matching references', () => {
-    expect(() => resolveDiarizationOptions({
-      diarizationSpeakerCount: undefined,
-      diarizationSpeakerNames: ['Host'],
-      diarizationSpeakerReferences: undefined
-    }, 'openai')).toThrow('OpenAI diarization requires matching --speaker-name and --speaker-reference values.')
-  })
-
-  test('rejects known speaker references for non-OpenAI engines', () => {
-    expect(() => resolveDiarizationOptions({
-      diarizationSpeakerCount: undefined,
-      diarizationSpeakerNames: ['Host'],
-      diarizationSpeakerReferences: ['clips/host.mp3']
-    }, 'elevenlabs')).toThrow('only supported with OpenAI diarization')
+    expect(resolveDiarizationOptions({}, 'elevenlabs')).toEqual({ enabled: true })
   })
 })
 

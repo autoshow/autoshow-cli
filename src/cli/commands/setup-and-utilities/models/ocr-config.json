@@ -7,6 +7,9 @@
         "description": "Mistral OCR (December 2025)",
         "costPer1kPagesUSD": 2,
         "costPer1kPagesCents": 200,
+        "limits": {
+          "notes": "No Mistral OCR file-size or page-count limits were found in project/links/bun-links.md."
+        },
         "estimation": {
           "costMultiplier": 1,
           "msPerPage": 1982
@@ -24,6 +27,12 @@
         "costPerMOutputTokensUSD": 0.03,
         "costPerMInputTokensCents": 3,
         "costPerMOutputTokensCents": 3,
+        "limits": {
+          "imageBytes": 10485760,
+          "pdfBytes": 52428800,
+          "pageCount": 100,
+          "notes": "project/links/bun-links.md documents GLM OCR input caps of 10 MB per image, 50 MB per PDF, and a maximum of 100 pages."
+        },
         "estimation": {
           "costMultiplier": 1,
           "msPerPage": 1906
@@ -38,7 +47,10 @@
       "firecrawl": {
         "description": "Firecrawl /scrape markdown extraction estimated at the Standard plan effective credit rate",
         "costPer1kPagesUSD": 0.83,
-        "costPer1kPagesCents": 83
+        "costPer1kPagesCents": 83,
+        "limits": {
+          "notes": "No Firecrawl article-extraction file-size or page-count limits were found in project/links/bun-links.md."
+        }
       }
     }
   }

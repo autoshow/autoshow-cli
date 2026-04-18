@@ -28,7 +28,6 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'speechmatics',
   'rev',
   'groq',
-  'openai',
   'mistral',
   'assemblyai',
   'gladia',

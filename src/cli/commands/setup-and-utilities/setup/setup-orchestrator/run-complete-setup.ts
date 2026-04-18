@@ -17,7 +17,6 @@ import { setupDeepgramStt } from '~/cli/commands/process-steps/step-2-stt/stt-se
 import { setupSonioxStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/soniox/soniox'
 import { setupSpeechmaticsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/speechmatics/speechmatics'
 import { setupRevStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/rev'
-import { setupOpenAIStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/openai/openai'
 import { setupMistralStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
@@ -234,8 +233,6 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupSpeechmaticsStt)
 
   await withCompactSetup(setupRevStt)
-
-  await withCompactSetup(setupOpenAIStt)
 
   await withCompactSetup(async () => { await setupMistralStt(); await setupMistralOcr(); await setupGlmOcr() })
 

@@ -7,6 +7,9 @@
         "description": "Tiny — fastest, lowest accuracy",
         "costPerHourUSD": 0,
         "costPerHourCents": 0,
+        "limits": {
+          "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
+        },
         "estimation": {
           "msPerSecond": 18
         }
@@ -15,6 +18,9 @@
         "description": "Base — fast with reasonable accuracy",
         "costPerHourUSD": 0,
         "costPerHourCents": 0,
+        "limits": {
+          "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
+        },
         "estimation": {
           "msPerSecond": 23
         }
@@ -22,17 +28,26 @@
       "small": {
         "description": "Small — balanced speed and accuracy",
         "costPerHourUSD": 0,
-        "costPerHourCents": 0
+        "costPerHourCents": 0,
+        "limits": {
+          "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
+        }
       },
       "medium": {
         "description": "Medium — good accuracy, moderate speed",
         "costPerHourUSD": 0,
-        "costPerHourCents": 0
+        "costPerHourCents": 0,
+        "limits": {
+          "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
+        }
       },
       "large-v3-turbo": {
         "description": "Large v3 Turbo — fast with near-v3 accuracy",
         "costPerHourUSD": 0,
         "costPerHourCents": 0,
+        "limits": {
+          "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
+        },
         "estimation": {
           "msPerSecond": 72
         }
@@ -47,6 +62,12 @@
         "description": "Nova-3 — diarization-inclusive pre-recorded transcription",
         "costPerHourUSD": 0.582,
         "costPerHourCents": 58.2,
+        "limits": {
+          "effectiveBytes": 2147483648,
+          "directUploadBytes": 2147483648,
+          "remoteUrlBytes": 2147483648,
+          "notes": "Deepgram's current docs publish a 2 GB file cap and separately state no limits to audio length for batch transcription, with a 10-minute processing-time cap for Nova/Base/Enhanced requests."
+        },
         "estimation": {
           "costMultiplier": 1,
           "msPerSecond": 200
@@ -62,6 +83,12 @@
         "description": "Groq-hosted Whisper large v3",
         "costPerHourUSD": 0.111,
         "costPerHourCents": 11.1,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "remoteUrlBytes": 104857600,
+          "notes": "Groq documents a 25 MB free-tier file cap and a 100 MB dev-tier file cap. Direct multipart attachments remain capped at 25 MB, so the current CLI keeps effectiveBytes at 25 MB. No maximum audio duration is currently documented."
+        },
         "estimation": {
           "costMultiplier": 0.9902,
           "msPerSecond": 32
@@ -71,6 +98,12 @@
         "description": "Groq-hosted Whisper large v3 turbo",
         "costPerHourUSD": 0.04,
         "costPerHourCents": 4,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "remoteUrlBytes": 104857600,
+          "notes": "Groq documents a 25 MB free-tier file cap and a 100 MB dev-tier file cap. Direct multipart attachments remain capped at 25 MB, so the current CLI keeps effectiveBytes at 25 MB. No maximum audio duration is currently documented."
+        },
         "estimation": {
           "costMultiplier": 0.9951,
           "msPerSecond": 40
@@ -86,6 +119,12 @@
         "description": "Async v4 — diarized asynchronous transcription with token timestamps",
         "costPerHourUSD": 0.1,
         "costPerHourCents": 10,
+        "limits": {
+          "effectiveBytes": 524288000,
+          "directUploadBytes": 524288000,
+          "durationSeconds": 18000,
+          "notes": "Soniox's Files API documents a maximum uploaded file size of 524288000 bytes. Async docs separately cap file duration at 300 minutes. The transcription API also accepts audio_url, but no explicit remote URL size cap is currently published."
+        },
         "estimation": {
           "costMultiplier": 0.9902,
           "msPerSecond": 240
@@ -100,12 +139,22 @@
       "standard": {
         "description": "Batch standard accuracy — faster turnaround with lower cost",
         "costPerHourUSD": 0.45,
-        "costPerHourCents": 45
+        "costPerHourCents": 45,
+        "limits": {
+          "effectiveBytes": 1073741824,
+          "directUploadBytes": 1073741824,
+          "notes": "Current Speechmatics docs publish a 1 GB limit for multipart uploads and explicitly suggest fetch-by-URL for larger files. They do not publish a current remote URL size cap or a batch-audio duration cap."
+        }
       },
       "enhanced": {
         "description": "Batch enhanced accuracy — highest accuracy for file transcription",
         "costPerHourUSD": 0.75,
-        "costPerHourCents": 75
+        "costPerHourCents": 75,
+        "limits": {
+          "effectiveBytes": 1073741824,
+          "directUploadBytes": 1073741824,
+          "notes": "Current Speechmatics docs publish a 1 GB limit for multipart uploads and explicitly suggest fetch-by-URL for larger files. They do not publish a current remote URL size cap or a batch-audio duration cap."
+        }
       }
     }
   },
@@ -117,6 +166,13 @@
         "description": "Reverb Transcription via Rev async REST API with diarization enabled by default",
         "costPerHourUSD": 0.2,
         "costPerHourCents": 20,
+        "limits": {
+          "effectiveBytes": 2147483648,
+          "directUploadBytes": 2147483648,
+          "remoteUrlBytes": 5497558138880,
+          "durationSeconds": 61200,
+          "notes": "The 5 TB limit applies to dashboard or source_config submissions; current CLI uploads multipart media files directly."
+        },
         "billing": {
           "roundingIncrementSeconds": 1,
           "minimumSeconds": 15
@@ -126,6 +182,13 @@
         "description": "Reverb Turbo transcription via Rev async REST API with diarization enabled by default",
         "costPerHourUSD": 0.1,
         "costPerHourCents": 10,
+        "limits": {
+          "effectiveBytes": 2147483648,
+          "directUploadBytes": 2147483648,
+          "remoteUrlBytes": 5497558138880,
+          "durationSeconds": 61200,
+          "notes": "The 5 TB limit applies to dashboard or source_config submissions; current CLI uploads multipart media files directly."
+        },
         "billing": {
           "roundingIncrementSeconds": 1,
           "minimumSeconds": 15
@@ -141,24 +204,16 @@
         "description": "Scribe v2 — 90+ languages, diarization, word-level timestamps",
         "costPerHourUSD": 0.22,
         "costPerHourCents": 22,
+        "limits": {
+          "effectiveBytes": 3221225472,
+          "directUploadBytes": 3221225472,
+          "remoteUrlBytes": 2147483648,
+          "durationSeconds": 36000,
+          "notes": "Standard mode is capped at 10 hours. ElevenLabs also documents a 1-hour cap for multichannel mode, which the current CLI does not use."
+        },
         "estimation": {
           "costMultiplier": 0.9902,
           "msPerSecond": 107
-        }
-      }
-    }
-  },
-  "openai": {
-    "description": "OpenAI cloud speech-to-text",
-    "type": "api",
-    "models": {
-      "gpt-4o-transcribe-diarize": {
-        "description": "GPT-4o Transcribe Diarize — diarized transcription with speaker labels",
-        "costPerHourUSD": 0.36,
-        "costPerHourCents": 36,
-        "estimation": {
-          "costMultiplier": 0.9951,
-          "msPerSecond": 460
         }
       }
     }
@@ -171,6 +226,10 @@
         "description": "Voxtral Mini Transcribe 2",
         "costPerHourUSD": 0.18,
         "costPerHourCents": 18,
+        "limits": {
+          "durationSeconds": 10800,
+          "notes": "Mistral's /v1/audio/transcriptions endpoint supports file, file_id, and file_url inputs. Current docs explicitly publish the 3-hour audio-length cap for transcription, but not a dedicated size limit for direct multipart file or external file_url inputs. Mistral's separate /v1/files endpoint documents a 512 MB cap for uploaded files referenced via file_id."
+        },
         "estimation": {
           "costMultiplier": 0.9902,
           "msPerSecond": 71
@@ -186,6 +245,13 @@
         "description": "Universal-3 Pro — 6 languages, advanced prompting, diarization",
         "costPerHourUSD": 0.21,
         "costPerHourCents": 21,
+        "limits": {
+          "effectiveBytes": 2362232013,
+          "directUploadBytes": 2362232013,
+          "remoteUrlBytes": 5368709120,
+          "durationSeconds": 36000,
+          "notes": "AssemblyAI allows larger remote URLs than upload API submissions. The current CLI uploads first, so effectiveBytes tracks the smaller upload cap."
+        },
         "estimation": {
           "costMultiplier": 0.9902,
           "msPerSecond": 178
@@ -200,7 +266,14 @@
       "default": {
         "description": "Default pre-recorded STT — diarization-enabled async transcription",
         "costPerHourUSD": 0.61,
-        "costPerHourCents": 61
+        "costPerHourCents": 61,
+        "limits": {
+          "effectiveBytes": 1048576000,
+          "directUploadBytes": 1048576000,
+          "remoteUrlBytes": 1048576000,
+          "durationSeconds": 8100,
+          "notes": "Direct YouTube links are limited to 120 minutes. Current CLI uploads files instead. Enterprise plans can raise the audio-length cap to 4 hours 15 minutes."
+        }
       }
     }
   },
@@ -212,6 +285,9 @@
         "description": "Manual or auto-generated English subtitle track via yt-dlp",
         "costPerHourUSD": 0,
         "costPerHourCents": 0,
+        "limits": {
+          "notes": "This adapter reuses subtitle tracks fetched by yt-dlp instead of uploading audio to a hosted STT API, so provider-side file-size and duration request caps do not apply."
+        },
         "estimation": {
           "msPerSecond": 0
         }

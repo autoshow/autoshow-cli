@@ -58,6 +58,7 @@ bun as music "an ambient piano instrumental" --minimax-music music-2.5
 
 # Fetch curated provider docs into project/links/bun-links.md
 bun as links --openai
+bun as links --stt
 ```
 
 ## Command Map

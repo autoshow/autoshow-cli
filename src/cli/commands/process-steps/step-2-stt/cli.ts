@@ -1,20 +1,18 @@
 import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, SttPolicy, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
-import { CLIUsageError } from '~/utils/error-handler'
 
 export const STT_ENGINE_CAPABILITIES = {
-  reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  speechmatics: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  rev: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  groq: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  openai: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: true },
-  mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true, supportsKnownSpeakerReferences: false },
-  whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false },
-  'youtube-captions': { diarizationByDefault: false, supportsSpeakerCountHint: false, supportsKnownSpeakerReferences: false }
+  reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false },
+  elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true },
+  deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false },
+  soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false },
+  speechmatics: { diarizationByDefault: true, supportsSpeakerCountHint: false },
+  rev: { diarizationByDefault: true, supportsSpeakerCountHint: false },
+  groq: { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false },
+  assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true },
+  gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true },
+  whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  'youtube-captions': { diarizationByDefault: false, supportsSpeakerCountHint: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
 
 const appendProviderSpec = (
@@ -37,38 +35,10 @@ export const resolveDiarizationOptions = (
   engine: TranscribeEngine
 ): DiarizationOptions | undefined => {
   const speakerCount = options.diarizationSpeakerCount
-  const speakerNames = options.diarizationSpeakerNames
-  const speakerReferences = options.diarizationSpeakerReferences
-  const hasKnownSpeakerNames = speakerNames !== undefined && speakerNames.length > 0
-  const hasKnownSpeakerReferences = speakerReferences !== undefined && speakerReferences.length > 0
-
-  if (hasKnownSpeakerNames !== hasKnownSpeakerReferences) {
-    throw CLIUsageError('OpenAI diarization requires matching --speaker-name and --speaker-reference values.')
-  }
-
-  if (speakerNames && speakerReferences) {
-    if (speakerNames.length !== speakerReferences.length) {
-      throw CLIUsageError(`OpenAI diarization requires the same number of --speaker-name and --speaker-reference values (received ${speakerNames.length} names and ${speakerReferences.length} references).`)
-    }
-
-    if (speakerNames.length > 4) {
-      throw CLIUsageError(`OpenAI diarization supports at most 4 known speakers (received ${speakerNames.length}).`)
-    }
-  }
-
   const capabilities = STT_ENGINE_CAPABILITIES[engine]
   const diarizationOptions: DiarizationOptions = capabilities.diarizationByDefault
     ? { enabled: true }
     : {}
-
-  if (speakerNames && speakerReferences) {
-    if (!capabilities.supportsKnownSpeakerReferences) {
-      throw CLIUsageError(`--speaker-name and --speaker-reference are only supported with OpenAI diarization right now; received ${engine}.`)
-    }
-
-    diarizationOptions.knownSpeakerNames = speakerNames
-    diarizationOptions.knownSpeakerReferencePaths = speakerReferences
-  }
 
   if (speakerCount === undefined) {
     return Object.keys(diarizationOptions).length > 0 ? diarizationOptions : undefined
@@ -94,7 +64,6 @@ export const collectSttProviderSpecs = (
     | 'speechmaticsSttModel'
     | 'revSttModel'
     | 'groqSttModel'
-    | 'openaiSttModel'
     | 'mistralSttModel'
     | 'assemblyaiSttModel'
     | 'gladiaSttModel'
@@ -122,9 +91,6 @@ export const collectSttProviderSpecs = (
   }
   if (options.groqSttModel) {
     appendProviderSpec(specs, { provider: 'groq', model: options.groqSttModel })
-  }
-  if (options.openaiSttModel) {
-    appendProviderSpec(specs, { provider: 'openai', model: options.openaiSttModel })
   }
   if (options.mistralSttModel) {
     appendProviderSpec(specs, { provider: 'mistral', model: options.mistralSttModel })
@@ -169,9 +135,7 @@ export const buildSttPolicy = (
       segment: options.sttSegmentConcurrency
     },
     diarization: {
-      ...(options.diarizationSpeakerCount !== undefined ? { speakerCount: options.diarizationSpeakerCount } : {}),
-      ...(options.diarizationSpeakerNames ? { speakerNames: options.diarizationSpeakerNames } : {}),
-      ...(options.diarizationSpeakerReferences ? { speakerReferences: options.diarizationSpeakerReferences } : {})
+      ...(options.diarizationSpeakerCount !== undefined ? { speakerCount: options.diarizationSpeakerCount } : {})
     },
     split: options.split
   }

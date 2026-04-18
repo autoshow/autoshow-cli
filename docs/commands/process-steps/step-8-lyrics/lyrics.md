@@ -94,7 +94,7 @@ Batch runs write a batch root plus one child run per discovered audio file:
 ```text
 output/YYYY-MM-DD_HH-MM-SS-sss_lyrics-batch/
   batch.json
-  001-<slug>/
+  <slug>/
     <stem>.mp4
     <stem>.vtt
     <stem>.srt

@@ -13,6 +13,7 @@ import {
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const REQUEST_TIMEOUT_MS = 10 * 60_000
 const INCOMPLETE_RESPONSE_RETRY_DELAY_MS = 3_000
+const MINIMAX_MUSIC_PROMPT_MAX_CHARS = 2000
 
 const MinimaxLyricsResponseSchema = v.object({
   song_title: v.optional(v.string(), undefined),
@@ -37,6 +38,26 @@ const MinimaxMusicResponseSchema = v.object({
 })
 
 type MinimaxMusicResponse = v.InferOutput<typeof MinimaxMusicResponseSchema>
+
+const clampMinimaxMusicPrompt = (
+  prompt: string
+): { prompt: string, truncated: boolean } => {
+  const trimmed = prompt.trim()
+  if (trimmed.length <= MINIMAX_MUSIC_PROMPT_MAX_CHARS) {
+    return { prompt: trimmed, truncated: false }
+  }
+
+  const candidate = trimmed.slice(0, MINIMAX_MUSIC_PROMPT_MAX_CHARS)
+  const boundaryMatch = /^(.*)\s+\S*$/s.exec(candidate)
+  const truncatedPrompt = boundaryMatch?.[1]?.trimEnd().length
+    ? boundaryMatch[1].trimEnd()
+    : candidate.trimEnd()
+
+  return {
+    prompt: truncatedPrompt,
+    truncated: true
+  }
+}
 
 const readProvidedLyrics = async (lyricsFile: string): Promise<string> => {
   const file = Bun.file(lyricsFile)
@@ -214,12 +235,17 @@ export const runMinimaxMusicGen = async (
     ? await readProvidedLyrics(options.lyricsFile)
     : await generateLyrics(baseURL, apiKey, prompt)
   const lyricsSource: Step7MusicMetadata['lyricsSource'] = options.lyricsFile ? 'provided' : 'generated'
+  const promptForMusic = clampMinimaxMusicPrompt(prompt)
+
+  if (promptForMusic.truncated) {
+    l.warn(`MiniMax music prompt exceeded ${MINIMAX_MUSIC_PROMPT_MAX_CHARS} characters; truncating to fit provider limit`)
+  }
 
   l.info(`MiniMax music model: ${options.model}`)
 
   const payload = {
     model: options.model,
-    prompt,
+    prompt: promptForMusic.prompt,
     lyrics
   }
   const generated = await requestMusicGenerationWithIncompleteRetry(baseURL, apiKey, payload)

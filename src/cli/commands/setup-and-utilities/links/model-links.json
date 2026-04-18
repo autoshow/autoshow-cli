@@ -71,10 +71,6 @@
       "https://developers.openai.com/api/reference/resources/models/methods/retrieve/index.md",
       "https://developers.openai.com/api/reference/resources/models/methods/list/index.md"
     ],
-    "STT": [
-      "https://developers.openai.com/api/docs/guides/speech-to-text.md",
-      "https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create/index.md"
-    ],
     "Text": [
       "https://developers.openai.com/api/docs/guides/text.md",
       "https://developers.openai.com/api/docs/guides/structured-outputs.md",
@@ -166,7 +162,7 @@
       "https://docs.z.ai/guides/llm/glm-5-turbo.md",
       "https://docs.z.ai/guides/capabilities/struct-output.md"
     ],
-    "Document": [
+    "OCR": [
       "https://docs.z.ai/guides/vlm/glm-ocr.md",
       "https://docs.z.ai/api-reference/tools/layout-parsing.md",
       "https://docs.z.ai/api-reference/tools/web-reader.md"

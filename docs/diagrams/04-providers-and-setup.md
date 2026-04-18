@@ -111,18 +111,26 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/setup-orchestrator/r
                                           |
   Step 7  ─── setupElevenLabsStt() ────── Check ElevenLabs STT (API key only)
                                           |
-  Step 8  ─── setupOpenAIStt() ────────── Check OpenAI STT (API key only)
+  Step 8  ─── setupDeepgramStt() ──────── Check Deepgram STT (API key only)
                                           |
-  Step 9  ─── setupMistralStt() ───────── Check Mistral STT (API key only)
+  Step 9  ─── setupSonioxStt() ────────── Check Soniox STT (API key only)
+                                          |
+  Step 10 ─── setupSpeechmaticsStt() ──── Check Speechmatics STT (API key only)
+                                          |
+  Step 11 ─── setupRevStt() ───────────── Check Rev STT (API key only)
+                                          |
+  Step 12 ─── setupMistralStt() ───────── Check Mistral STT (API key only)
               setupMistralOcr() ───────── Check Mistral OCR (API key only)
                                           |
-  Step 10 ─── setupAssemblyAiStt() ────── Check AssemblyAI STT (API key only)
+  Step 13 ─── setupAssemblyAiStt() ────── Check AssemblyAI STT (API key only)
                                           |
-  Step 11 ─── setupDocumentTools() ────── MuPDF (mutool) for PDFs
+  Step 14 ─── setupGladiaStt() ────────── Check Gladia STT (API key only)
                                           |
-  Step 12 ─── setupExtractionOcr() ────── Tesseract OCR
+  Step 15 ─── setupDocumentTools() ────── MuPDF (mutool) for PDFs
                                           |
-  Step 13 ─── setupKittenTts() ────────── Kitten TTS Python venv + models
+  Step 16 ─── setupExtractionOcr() ────── Tesseract OCR
+                                          |
+  Step 17 ─── setupKittenTts() ────────── Kitten TTS Python venv + models
               downloadKittenTtsModel() ── Download default Kitten model
                                           |
   Step 14 ─── setupElevenLabsTts() ────── Check ElevenLabs TTS (API key only)
@@ -148,7 +156,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/setup-orchestrator/r
 
 | Command | Required Dependencies |
 |---------|----------------------|
-| `stt` | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--openai-stt`/`--mistral-stt`/`--assemblyai-stt` API key) |
+| `stt` | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
 | `stt --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
 | `ocr` | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`) |
 | `write` (media) | All of `stt` + llama.cpp (or LLM API key) |

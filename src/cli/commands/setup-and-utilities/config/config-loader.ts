@@ -52,6 +52,14 @@ export const loadConfig = async (configPath: string): Promise<AutoshowConfig> =>
   if (isRecord(parsed) && isRecord(parsed['pricing']) && 'maxUsd' in parsed['pricing']) {
     throw new Error('Invalid data structure for autoshow config: pricing.maxUsd is no longer supported. Use pricing.maxCents.')
   }
+  if (
+    isRecord(parsed)
+    && isRecord(parsed['defaults'])
+    && isRecord(parsed['defaults']['stt'])
+    && 'openaiStt' in parsed['defaults']['stt']
+  ) {
+    throw new Error('Invalid data structure for autoshow config: defaults.stt.openaiStt is no longer supported.')
+  }
 
   return validateData(AutoshowConfigSchema, parsed, 'autoshow config')
 }

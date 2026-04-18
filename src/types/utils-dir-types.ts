@@ -25,7 +25,6 @@ import {
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
-  SUPPORTED_OPENAI_STT_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { MusicProvider, TtsProvider, VideoProvider } from '~/types/provider-types'
@@ -39,7 +38,6 @@ export type SonioxSttModel = typeof SUPPORTED_SONIOX_STT_MODELS[number]
 export type SpeechmaticsSttModel = typeof SUPPORTED_SPEECHMATICS_STT_MODELS[number]
 export type RevSttModel = typeof SUPPORTED_REV_STT_MODELS[number]
 export type GroqSttModel = typeof SUPPORTED_GROQ_STT_MODELS[number]
-export type OpenAISttModel = typeof SUPPORTED_OPENAI_STT_MODELS[number]
 export type MistralSttModel = typeof SUPPORTED_MISTRAL_STT_MODELS[number]
 export type AssemblyaiSttModel = typeof SUPPORTED_ASSEMBLYAI_STT_MODELS[number]
 export type GladiaSttModel = typeof SUPPORTED_GLADIA_STT_MODELS[number]

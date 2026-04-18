@@ -19,11 +19,11 @@ bun as download <input>
 
 | Input | Behavior |
 |-------|----------|
-| YouTube / Twitch / TikTok URL | `yt-dlp` download, convert to WAV, collect media metadata |
-| Direct media URL (`.mp3`, `.mp4`, etc.) | HTTP fetch, convert to WAV, collect media metadata |
+| YouTube / Twitch / TikTok URL | `yt-dlp` download, normalize to compressed audio-only media, collect media metadata |
+| Direct media URL (`.mp3`, `.mp4`, etc.) | HTTP fetch, normalize to compressed audio-only media, collect media metadata |
 | Direct document URL (`.pdf`, `.epub`, `.docx`, etc.) | HTTP fetch to a temp file, detect format, collect document metadata |
 | Direct document URL without an extension | HEAD probe plus download + magic-byte detection |
-| Local media file | ffmpeg convert to WAV, collect media metadata |
+| Local media file | normalize to compressed audio-only media, collect media metadata |
 | Local document file | detect format by magic bytes first, then extension |
 | YouTube channel URL | batch the latest videos |
 | RSS / podcast feed URL | batch the latest episodes |
@@ -42,7 +42,7 @@ Step-1 metadata in `run.json` also includes `slug`, which is derived from the or
 
 ```text
 --password           Password for encrypted PDFs
---keep-original-media  Keep downloaded media in its original format instead of converting to WAV
+--keep-original-media  Keep downloaded media in its original/downloaded format instead of creating the normalized compressed audio artifact
 --flat-batch         Batch download: place primary media files directly in the batch output directory
 --batch-limit        Batch: number of items to process (default 5)
 --batch-all          Batch: process all items
@@ -56,7 +56,7 @@ Step-1 metadata in `run.json` also includes `slug`, which is derived from the or
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_title/
-  <audio>.wav
+  <audio>.mp3|.m4a|.ogg|.flac
   run.json
 ```
 
@@ -73,7 +73,8 @@ output/YYYY-MM-DD_HH-MM-SS_title/
 output/YYYY-MM-DD_HH-MM-SS_batch-label/
   source.json
   batch.json  # consolidated per-item run metadata payloads
-  YYYY-MM-DD_HH-MM-SS_item/
+  YYYY-MM-DD-item/   # when the item has a content date
+  item-slug/         # otherwise
     <artifacts for that item>
 ```
 
@@ -83,11 +84,11 @@ output/YYYY-MM-DD_HH-MM-SS_batch-label/
 output/YYYY-MM-DD_HH-MM-SS_batch-label/
   source.json
   batch.json
-  <episode-1>.wav    # default
-  <episode-2>.wav
+  <episode-1>.mp3|.m4a|.ogg|.flac
+  <episode-2>.mp3|.m4a|.ogg|.flac
 ```
 
-With `--keep-original-media --flat-batch`, the same batch directory keeps the original media extensions instead of converting to WAV:
+With `--keep-original-media --flat-batch`, the same batch directory keeps the original downloaded media extensions instead of the normalized audio-only artifact:
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_batch-label/

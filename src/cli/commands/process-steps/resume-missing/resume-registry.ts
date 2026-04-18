@@ -28,7 +28,6 @@ const STT_PROVIDER_SELECTION_FLAGS = [
   'speechmatics-stt',
   'rev-stt',
   'groq-stt',
-  'openai-stt',
   'mistral-stt',
   'assemblyai-stt',
   'gladia-stt'

@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from 'bun:test'
 import { chmod, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { fileExists, runCommand, STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 import { readBatchItems, readBatchSource, readRunMetadata, readSttBatchSummary } from '../../test-utils/manifest-helpers'
 
@@ -235,6 +235,10 @@ test('stt youtube channel with --youtube-captions processes every selected video
     .map((entry) => join(batchDir, entry.name))
     .sort()
   expect(itemDirs).toHaveLength(2)
+  expect(itemDirs.map((dir) => basename(dir))).toEqual([
+    '2026-04-16-channel-auto-caption',
+    '2026-04-17-channel-manual-caption'
+  ])
 
   const perItem = await Promise.all(itemDirs.map(async (dir) => {
     const metadata = await readRunMetadata(dir)

@@ -46,6 +46,7 @@ import { writeProviderResult, writeRunManifest } from './manifest-utils'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-stt/youtube-captions'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
+  & { outputDir?: string | undefined }
 
 const runTargetPool = async (
   indices: number[],
@@ -85,8 +86,7 @@ export const processVideo = async (
     ...(options.filePath !== undefined ? { filePath: options.filePath } : {})
   })
   const baseDir = options.outputDir && options.outputDir.trim().length > 0 ? options.outputDir : './output'
-  const uniqueDirName = createUniqueDirectoryName(metadata.title)
-  const outputDir = `${baseDir}/${uniqueDirName}`
+  const outputDir = runtimeOptions?.outputDir ?? `${baseDir}/${createUniqueDirectoryName(metadata.title)}`
   await ensureDirectory(outputDir)
   const processingOptions: ProcessingOptions = {
     ...options,
@@ -144,11 +144,13 @@ export const processVideo = async (
 
     if (successfulSttProviders.length === 0 && sttTargets.length === 1) {
       const target = sttTargets[0] as SttTarget
+      const audioDurationSeconds = preparedSttMedia.durationSeconds
       const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
         await sttTarget(audioPath, outputDir, target, {
           split: processingOptions.split,
           reverbVerbatimicity: processingOptions.reverbVerbatimicity,
-          sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
+          sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
+          audioDurationSeconds
         })
       )
       transcriptionResult = singleTranscription
@@ -159,6 +161,7 @@ export const processVideo = async (
       }]
     } else if (successfulSttProviders.length === 0) {
       const providersDir = `${outputDir}/providers`
+      const audioDurationSeconds = preparedSttMedia.durationSeconds
       await mkdir(providersDir, { recursive: true })
 
       const successes: Array<SttProviderSuccess | undefined> = new Array(sttTargets.length)
@@ -175,7 +178,8 @@ export const processVideo = async (
             await sttTarget(audioPath, providerDir, target, {
               split: processingOptions.split,
               reverbVerbatimicity: processingOptions.reverbVerbatimicity,
-              sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency
+              sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
+              audioDurationSeconds
             })
           )
           await writeProviderResult(

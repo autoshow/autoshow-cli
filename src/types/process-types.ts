@@ -12,15 +12,12 @@ export const ProcessingOptionsSchema = v.pipe(
     elevenlabsSttModel: v.optional(v.string(), undefined),
     sonioxSttModel: v.optional(v.string(), undefined),
     revSttModel: v.optional(v.string(), undefined),
-    openaiSttModel: v.optional(v.string(), undefined),
     mistralSttModel: v.optional(v.string(), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
     gladiaSttModel: v.optional(v.string(), undefined),
     speechmaticsSttModel: v.optional(v.string(), undefined),
     deepgramSttModel: v.optional(v.string(), undefined),
     diarizationSpeakerCount: v.optional(v.number(), undefined),
-    diarizationSpeakerNames: v.optional(v.array(v.string()), undefined),
-    diarizationSpeakerReferences: v.optional(v.array(v.string()), undefined),
     llamaModel: v.optional(v.string(), undefined),
     openaiModel: v.optional(v.string(), undefined),
     groqModel: v.optional(v.string(), undefined),
@@ -393,8 +390,6 @@ export type TranscriptionResult = {
 export type DiarizationOptions = {
   enabled?: boolean | undefined
   speakerCount?: number | undefined
-  knownSpeakerNames?: string[] | undefined
-  knownSpeakerReferencePaths?: string[] | undefined
 }
 
 export type Step2TimingMetadata = {
@@ -434,7 +429,7 @@ export type Step2RuntimeMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number

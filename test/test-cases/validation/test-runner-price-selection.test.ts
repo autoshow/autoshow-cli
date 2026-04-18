@@ -39,7 +39,6 @@ const EXPECTED_BUDGET_KEYS = [
   'transcribe-groq-whisper-large-v3',
   'transcribe-groq-whisper-large-v3-turbo',
   'transcribe-mistral-voxtral-mini-2602',
-  'transcribe-openai-gpt-4o-transcribe-diarize',
   'transcribe-rev-low_cost',
   'transcribe-rev-machine',
   'transcribe-reverb',

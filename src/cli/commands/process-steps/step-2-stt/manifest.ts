@@ -22,8 +22,8 @@ const getPrimaryTranscriptionMetadata = (
   const step2Entries = getStep2Entries(entry)
   const captionMetadata = step2Entries.find((value) => value['transcriptionService'] === 'youtube-captions')
   return {
-    metadata: captionMetadata ?? step2Entries[0],
-    captionMetadata,
+    ...(captionMetadata ?? step2Entries[0] ? { metadata: captionMetadata ?? step2Entries[0] } : {}),
+    ...(captionMetadata ? { captionMetadata } : {}),
     captionUsed: captionMetadata !== undefined
   }
 }

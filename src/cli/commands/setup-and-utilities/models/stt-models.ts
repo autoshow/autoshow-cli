@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel } from '~/types'
-export type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, OpenAISttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel } from '~/types'
+import type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel } from '~/types'
+export type { DeepgramSttModel, ElevenlabsSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel } from '~/types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',
@@ -37,10 +37,6 @@ export const SUPPORTED_GROQ_STT_MODELS = [
   'whisper-large-v3'
 ] as const satisfies readonly string[]
 
-export const SUPPORTED_OPENAI_STT_MODELS = [
-  'gpt-4o-transcribe-diarize'
-] as const satisfies readonly string[]
-
 export const SUPPORTED_MISTRAL_STT_MODELS = [
   'voxtral-mini-2602'
 ] as const satisfies readonly string[]
@@ -60,7 +56,6 @@ export const validateSonioxSttModel = createModelValidator<SonioxSttModel>(SUPPO
 export const validateSpeechmaticsSttModel = createModelValidator<SpeechmaticsSttModel>(SUPPORTED_SPEECHMATICS_STT_MODELS, 'speechmatics-stt')
 export const validateRevSttModel = createModelValidator<RevSttModel>(SUPPORTED_REV_STT_MODELS, 'rev-stt')
 export const validateGroqSttModel = createModelValidator<GroqSttModel>(SUPPORTED_GROQ_STT_MODELS, 'groq-stt', 'This flag only accepts Groq Whisper API models.')
-export const validateOpenAISttModel = createModelValidator<OpenAISttModel>(SUPPORTED_OPENAI_STT_MODELS, 'openai-stt')
 export const validateMistralSttModel = createModelValidator<MistralSttModel>(SUPPORTED_MISTRAL_STT_MODELS, 'mistral-stt')
 export const validateAssemblyaiSttModel = createModelValidator<AssemblyaiSttModel>(SUPPORTED_ASSEMBLYAI_STT_MODELS, 'assemblyai-stt')
 export const validateGladiaSttModel = createModelValidator<GladiaSttModel>(SUPPORTED_GLADIA_STT_MODELS, 'gladia-stt')

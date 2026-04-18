@@ -23,15 +23,12 @@ export type RuntimeOptions = {
   elevenlabsSttModel: string | undefined
   sonioxSttModel: string | undefined
   revSttModel: string | undefined
-  openaiSttModel: string | undefined
   mistralSttModel: string | undefined
   assemblyaiSttModel: string | undefined
   gladiaSttModel: string | undefined
   speechmaticsSttModel: string | undefined
   deepgramSttModel: string | undefined
   diarizationSpeakerCount: number | undefined
-  diarizationSpeakerNames: string[] | undefined
-  diarizationSpeakerReferences: string[] | undefined
   sttProviderConcurrency: number
   sttLocalConcurrency: number
   sttSegmentConcurrency: number

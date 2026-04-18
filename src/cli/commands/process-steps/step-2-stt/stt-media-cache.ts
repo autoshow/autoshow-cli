@@ -25,13 +25,14 @@ import type {
   VideoMetadata
 } from '~/types'
 import { buildMediaStep1Slug, buildVideoMetadataFromInfo, extractLocalFileMetadata, getVideoInfo, isDirectMediaUrl, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
+import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
 import { downloadVideo } from '~/cli/commands/process-steps/step-1-download/audio/yt-utils'
 import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
-import { commandExists, exec, ensureDirectory } from '~/utils/cli-utils'
+import { commandExists, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
 
 const METADATA_SCHEMA_VERSION = 1
-const SOURCE_MEDIA_ARTIFACT_VERSION = 3
+const SOURCE_MEDIA_ARTIFACT_VERSION = 4
 const DEFAULT_CACHE_MAX_GB = 20
 const DEFAULT_CACHE_MAX_AGE_DAYS = 30
 const DEFAULT_STT_ACQUIRE_CONCURRENCY = 2
@@ -192,24 +193,6 @@ const ensureMediaTooling = async (needsYtDlp: boolean): Promise<void> => {
   }
 }
 
-const transcodeToMp3 = async (inputPath: string, outputPath: string): Promise<void> => {
-  const result = await exec('ffmpeg', [
-    '-i', inputPath,
-    '-vn',
-    '-codec:a', 'libmp3lame',
-    '-q:a', '2',
-    '-y',
-    outputPath
-  ])
-
-  if (result.exitCode !== 0) {
-    throw new Error(`Failed to build source_media artifact: ${result.stderr}`)
-  }
-}
-
-const isMp3InputPath = (filePath: string): boolean =>
-  /\.(mp3|mpga)$/i.test(filePath)
-
 const fetchDirectMedia = async (url: string, outputPath: string): Promise<void> => {
   const response = await fetch(url, { redirect: 'follow' })
   if (!response.ok) {
@@ -223,16 +206,22 @@ const stageSourceMediaArtifact = async (
   source: { url?: string, filePath?: string },
   workspaceDir: string
 ): Promise<string> => {
-  const stagedPath = join(workspaceDir, 'source_media.mp3')
+  const materializeFromSourcePath = async (
+    sourcePath: string,
+    options: { removeOriginal?: boolean } = {}
+  ): Promise<string> => {
+    const { plan } = await planNormalizedAudioArtifact(sourcePath)
+    const stagedPath = join(workspaceDir, `source_media${plan.outputExtension}`)
+    await materializeNormalizedAudioArtifact(sourcePath, stagedPath, plan)
+    if (options.removeOriginal && sourcePath !== stagedPath) {
+      await rm(sourcePath, { force: true })
+    }
+    return stagedPath
+  }
 
   if (source.filePath) {
     const absoluteFilePath = resolve(source.filePath)
-    if (isMp3InputPath(absoluteFilePath)) {
-      await copyFile(absoluteFilePath, stagedPath)
-    } else {
-      await transcodeToMp3(absoluteFilePath, stagedPath)
-    }
-    return stagedPath
+    return await materializeFromSourcePath(absoluteFilePath)
   }
 
   const url = source.url as string
@@ -241,14 +230,12 @@ const stageSourceMediaArtifact = async (
     const directSuffix = extname(pathname).toLowerCase() || '.bin'
     const downloadedPath = join(workspaceDir, `downloaded${directSuffix}`)
     await fetchDirectMedia(url, downloadedPath)
-    await transcodeToMp3(downloadedPath, stagedPath)
-    return stagedPath
+    return await materializeFromSourcePath(downloadedPath, { removeOriginal: true })
   }
 
   await ensureMediaTooling(true)
   const downloadedPath = await downloadVideo(url, workspaceDir)
-  await transcodeToMp3(downloadedPath, stagedPath)
-  return stagedPath
+  return await materializeFromSourcePath(downloadedPath, { removeOriginal: true })
 }
 
 const resolveCacheLookup = async (
@@ -438,6 +425,26 @@ const getEntryArtifactPath = (
   artifact: CacheArtifactRecord | undefined
 ): string | undefined => artifact ? join(getEntryDir(cacheKey), artifact.fileName) : undefined
 
+const removeStaleSourceMediaArtifacts = async (
+  entryDir: string,
+  keepPath?: string | undefined
+): Promise<void> => {
+  const candidates = [
+    'source_media.mp3',
+    'source_media.m4a',
+    'source_media.ogg',
+    'source_media.flac',
+    'wav16k_mono.wav'
+  ]
+
+  await Promise.all(candidates.map(async (fileName) => {
+    const candidatePath = join(entryDir, fileName)
+    if (candidatePath !== keepPath) {
+      await rm(candidatePath, { force: true })
+    }
+  }))
+}
+
 const getMaxCacheBytes = (): number => {
   const value = Number.parseFloat(process.env['AUTOSHOW_CACHE_MAX_GB'] ?? '')
   const maxGb = Number.isFinite(value) && value > 0 ? value : DEFAULT_CACHE_MAX_GB
@@ -614,9 +621,8 @@ export const prepareSttMedia = async (
             timings.sourceMediaMs = Date.now() - startedAt
             return stagedPath
           })
-          const finalPath = join(entryDir, 'source_media.mp3')
-          await rm(finalPath, { force: true })
-          await rm(join(entryDir, 'wav16k_mono.wav'), { force: true })
+          const finalPath = join(entryDir, basename(builtSourcePath))
+          await removeStaleSourceMediaArtifacts(entryDir, finalPath)
           if (sourceMediaExecutionPath && sourceMediaExecutionPath !== finalPath) {
             await rm(sourceMediaExecutionPath, { force: true })
           }
@@ -644,7 +650,7 @@ export const prepareSttMedia = async (
         throw new Error('No STT artifacts were prepared')
       }
 
-      await rm(join(entryDir, 'wav16k_mono.wav'), { force: true })
+      await removeStaleSourceMediaArtifacts(entryDir, sourceMediaExecutionPath)
       entry.artifacts = entry.artifacts?.source_media
         ? { source_media: entry.artifacts.source_media }
         : {}

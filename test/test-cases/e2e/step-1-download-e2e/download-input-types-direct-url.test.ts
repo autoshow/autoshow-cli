@@ -16,6 +16,7 @@ const singleCases: SingleCase[] = [
     checks: async (metadata, outputDir) => {
       expect(metadata.step1?.audioFileName).toBeDefined()
       expect((metadata.step1?.audioFileSize ?? 0) > 0).toBe(true)
+      expect(metadata.step1?.audioFileName?.endsWith('.mp3')).toBe(true)
       const audioPath = `${outputDir}/${metadata.step1?.audioFileName ?? ''}`
       expect(await fileExists(audioPath)).toBe(true)
     },
@@ -27,6 +28,7 @@ const singleCases: SingleCase[] = [
     checks: async (metadata, outputDir) => {
       expect(metadata.step1?.audioFileName).toBeDefined()
       expect((metadata.step1?.audioFileSize ?? 0) > 0).toBe(true)
+      expect(metadata.step1?.audioFileName?.endsWith('.wav')).toBe(false)
       const audioPath = `${outputDir}/${metadata.step1?.audioFileName ?? ''}`
       expect(await fileExists(audioPath)).toBe(true)
     },

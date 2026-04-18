@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect } from 'bun:test'
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
 import { budgetedTest } from '../../../test-utils/budget'
 import {
   cleanupTestOutput,
@@ -218,6 +218,10 @@ budgetedTest('lyrics-batch-tiny', 'lyrics batch writes a batch manifest and chil
     const manifest = await readBatchManifest(batchDir)
     expect(manifest.kind).toBe('lyrics')
     expect(manifest.items).toHaveLength(2)
+    const childDirNames = (manifest.items as Array<Record<string, unknown>>)
+      .map((item) => basename(String(item['outputDir'])))
+      .sort()
+    expect(childDirNames).toEqual(['01-batch-one', '02-batch-two'])
 
     for (const item of manifest.items as Array<Record<string, unknown>>) {
       expect(item['status']).toBe('completed')

@@ -11,6 +11,7 @@ const singleCases: SingleCase[] = [
       expect(metadata.step1?.audioFileName).toBeDefined()
       expect((metadata.step1?.audioFileSize ?? 0) > 0).toBe(true)
       expect(metadata.step1?.slug).toBe('1-audio')
+      expect(metadata.step1?.audioFileName?.endsWith('.mp3')).toBe(true)
       const audioPath = `${outputDir}/${metadata.step1?.audioFileName ?? ''}`
       expect(await fileExists(audioPath)).toBe(true)
     },

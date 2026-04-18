@@ -1,7 +1,7 @@
 import { validateData } from '~/utils/validate/validation'
 import { assertNever } from '~/utils/validate/assert-never'
 import * as l from '~/logger'
-import { mkdtemp, rm, readdir } from 'node:fs/promises'
+import { mkdtemp, readdir, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, basename, extname } from 'node:path'
 import { exec, commandExists } from '~/utils/cli-utils'
@@ -23,7 +23,7 @@ import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
 import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
 import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
-import { convertDocumentToPdf } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
+import { convertDocumentToPdf, getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { extractDocx, extractPptx, extractXlsx, extractOdf, type ZipXmlPage } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ZipXmlFormat } from '~/types'
@@ -34,6 +34,7 @@ import { buildEpubTextOutput, type EpubArtifactFile } from './epub/export'
 import { buildPdfChapterArtifacts } from './pdf/chapters'
 import { isOfficeTextUsable } from './ocr-utils/page-triage'
 import { estimateTokens } from '~/utils/text-utils'
+import { getExtractLimits } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 const ZIP_XML_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'] as const)
 const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
@@ -97,6 +98,48 @@ const hasOcrFlag = (opts: ExtractionOptions): boolean =>
 
 const hasEpubExportFlags = (opts: ExtractionOptions): boolean =>
   opts.epubChapterFiles === true || typeof opts.epubChunkLimitChars === 'number'
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < (1024 * 1024)) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < (1024 * 1024 * 1024)) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+const formatHostedOcrLabel = (service: 'mistral' | 'glm'): string =>
+  service === 'glm' ? 'GLM OCR' : 'Mistral OCR'
+
+const resolvePdfPageCount = async (
+  filePath: string,
+  password?: string,
+  fallbackPageCount?: number
+): Promise<number | undefined> => {
+  try {
+    const info = await getDocumentInfo(filePath, password)
+    return Math.max(1, info.pageCount)
+  } catch {
+    return typeof fallbackPageCount === 'number' ? Math.max(1, fallbackPageCount) : undefined
+  }
+}
+
+const buildHostedUploadMetadata = async (
+  filePath: string,
+  baseMetadata: DocumentMetadata,
+  format: DocumentMetadata['format'],
+  password?: string
+): Promise<DocumentMetadata> => {
+  const sourceStats = await stat(filePath)
+  const pageCount = format === 'pdf'
+    ? await resolvePdfPageCount(filePath, password, baseMetadata.pageCount)
+    : 1
+
+  return {
+    ...baseMetadata,
+    format,
+    fileSize: sourceStats.size,
+    pageCount: pageCount ?? (format === 'pdf' ? baseMetadata.pageCount : 1)
+  }
+}
 
 // Convert document to PDF via LibreOffice (for office/RTF)
 const convertToLibreOfficePdf = async (
@@ -374,11 +417,64 @@ const assertSupportedHostedDirectImageFormat = (
   }
 }
 
+const resolveHostedOcrSelection = (
+  opts: ExtractionOptions
+): { service: 'mistral' | 'glm', model: string } | undefined => {
+  if (hasMistralOcr(opts)) {
+    return { service: 'mistral', model: opts.mistralOcrModel as string }
+  }
+
+  if (hasGlmOcr(opts)) {
+    return { service: 'glm', model: opts.glmOcrModel as string }
+  }
+
+  return undefined
+}
+
+const assertHostedOcrWithinLimits = async (
+  filePath: string,
+  step1Metadata: DocumentMetadata,
+  opts: ExtractionOptions
+): Promise<void> => {
+  const selection = resolveHostedOcrSelection(opts)
+  if (!selection) return
+
+  const limits = getExtractLimits(selection.service, selection.model, step1Metadata.format)
+  if (
+    limits.effectiveBytes === undefined
+    && limits.pageCount === undefined
+  ) {
+    return
+  }
+
+  const inputLabel = step1Metadata.format === 'pdf' ? 'PDF' : 'image'
+  const fileStats = await stat(filePath)
+
+  if (typeof limits.effectiveBytes === 'number' && fileStats.size > limits.effectiveBytes) {
+    throw CLIUsageError(
+      `${formatHostedOcrLabel(selection.service)} supports ${inputLabel} inputs up to ${formatBytes(limits.effectiveBytes)} based on project/links/bun-links.md. ` +
+      `Got ${formatBytes(fileStats.size)} for ${basename(filePath)}.`
+    )
+  }
+
+  if (step1Metadata.format === 'pdf' && typeof limits.pageCount === 'number') {
+    const pageCount = await resolvePdfPageCount(filePath, opts.password, step1Metadata.pageCount)
+    if (typeof pageCount === 'number' && pageCount > limits.pageCount) {
+      throw CLIUsageError(
+        `${formatHostedOcrLabel(selection.service)} supports PDF inputs up to ${limits.pageCount} pages based on project/links/bun-links.md. ` +
+        `Got ${pageCount} pages for ${basename(filePath)}.`
+      )
+    }
+  }
+}
+
 const runHostedOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   opts: ExtractionOptions
 ): Promise<HostedOcrRun> => {
+  await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
+
   if (hasMistralOcr(opts)) {
     await ensureMistralOcrSetup()
     warnMistralOnlyFlags(opts)
@@ -534,7 +630,7 @@ export const runOcr = async (
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-epub-ocr-'))
     try {
       const { pdfPath, conversionChain: epubConversionChain } = await convertEpubToPdfForOcr(filePath, tempDir, opts.password)
-      const tempMeta: DocumentMetadata = { ...step1Metadata, format: 'pdf' }
+      const tempMeta = await buildHostedUploadMetadata(pdfPath, step1Metadata, 'pdf', opts.password)
       if (hasHostedOcr(opts)) {
         const r = await runHostedOcr(pdfPath, tempMeta, opts)
         pages = r.pages
@@ -590,7 +686,7 @@ export const runOcr = async (
       const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-office-ocr-'))
       try {
         const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
-        const tempMeta: DocumentMetadata = { ...step1Metadata, format: 'pdf' }
+        const tempMeta = await buildHostedUploadMetadata(pdfPath, step1Metadata, 'pdf')
 
         if (hasHostedOcr(opts)) {
           const r = await runHostedOcr(pdfPath, tempMeta, opts)
@@ -620,7 +716,7 @@ export const runOcr = async (
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-rtf-'))
     try {
       const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
-      const tempMeta: DocumentMetadata = { ...step1Metadata, format: 'pdf' }
+      const tempMeta = await buildHostedUploadMetadata(pdfPath, step1Metadata, 'pdf')
 
       if (hasHostedOcr(opts)) {
         const r = await runHostedOcr(pdfPath, tempMeta, opts)
@@ -670,7 +766,8 @@ export const runOcr = async (
           const imgPath = images[i]!
           assertSupportedHostedDirectImageFormat(extname(imgPath).toLowerCase() === '.jpeg' ? 'jpg' : extname(imgPath).slice(1).toLowerCase(), hostedEngine)
           const imageFormat = extname(imgPath).toLowerCase() === '.png' ? 'png' : 'jpg'
-          const r = await runHostedOcr(imgPath, { ...step1Metadata, format: imageFormat, pageCount: 1 }, opts)
+          const tempMeta = await buildHostedUploadMetadata(imgPath, step1Metadata, imageFormat)
+          const r = await runHostedOcr(imgPath, tempMeta, opts)
           imagePages.push(...r.pages.map(p => ({ ...p, pageNumber: i + 1 })))
           ocrService = r.ocrService
           totalPromptTokens += r.promptTokens ?? 0

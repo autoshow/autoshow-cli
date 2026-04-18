@@ -31,7 +31,6 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Rev STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'human'] },
   { label: 'CLI unsupported Rev STT fusion model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'fusion'] },
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
-  { label: 'CLI invalid OpenAI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai-stt', 'gpt-4o-transcribe'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
   { label: 'CLI invalid Gladia STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', 'premium'] },
   { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
@@ -74,8 +73,6 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--prompt')
   expect(result.stdout).toContain('--speaker-count')
-  expect(result.stdout).toContain('--speaker-name')
-  expect(result.stdout).toContain('--speaker-reference')
   expect(result.stdout).toContain('--youtube-captions')
   expect(result.stdout).toContain('--price')
   expect(result.stdout).not.toContain('--provider')
@@ -86,7 +83,6 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--rev-stt')
   expect(result.stdout).toContain('low_cost')
   expect(result.stdout).toContain('--groq-stt')
-  expect(result.stdout).toContain('--openai-stt')
   expect(result.stdout).toContain('--mistral-stt')
   expect(result.stdout).toContain('--gladia-stt')
   expect(result.stdout).toContain('--stt-provider-concurrency')
@@ -615,16 +611,6 @@ test('write rejects removed --md-output flag', async () => {
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('was removed')
 })
 
-test('buildOptsFromFlags maps repeated OpenAI speaker hint flags', () => {
-  const opts = buildOptsFromFlags(false, {
-    'speaker-name': ['Host', 'Guest'],
-    'speaker-reference': ['clips/host.mp3', 'clips/guest.mp3']
-  })
-
-  expect(opts.diarizationSpeakerNames).toEqual(['Host', 'Guest'])
-  expect(opts.diarizationSpeakerReferences).toEqual(['clips/host.mp3', 'clips/guest.mp3'])
-})
-
 test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
   const opts = buildOptsFromFlags(false, {
     'stt-provider-concurrency': '3',
@@ -969,6 +955,28 @@ test('loadConfig rejects legacy pricing.maxUsd', async () => {
     }, null, 2))
 
     await expect(loadConfig(configPath)).rejects.toThrow('autoshow config')
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+})
+
+test('loadConfig rejects removed defaults.stt.openaiStt', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-config-removed-stt-'))
+  const configPath = join(tempDir, 'autoshow.json')
+
+  try {
+    await writeFile(configPath, JSON.stringify({
+      version: 2,
+      defaults: {
+        stt: {
+          openaiStt: 'removed-model'
+        }
+      }
+    }, null, 2))
+
+    await expect(loadConfig(configPath)).rejects.toThrow(
+      'defaults.stt.openaiStt is no longer supported'
+    )
   } finally {
     await rm(tempDir, { recursive: true, force: true })
   }

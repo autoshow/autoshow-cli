@@ -1,7 +1,8 @@
 import { basename, resolve as pathResolve } from 'node:path'
 import * as l from '~/logger'
 import { validateData } from '~/utils/validate/validation'
-import { ProcessingOptionsSchema, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
+import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
+import { ProcessingOptionsSchema, type BatchChildRunContext, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
 import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/batch'
@@ -142,10 +143,11 @@ const warnHtmlArticleFlagBehavior = (target: string, opts: RuntimeOptions, backe
 const prepareArticleDocument = async (
   source: string,
   baseDir: string,
-  opts: RuntimeOptions
+  opts: RuntimeOptions,
+  batchChildContext?: BatchChildRunContext
 ): Promise<PreparedDocument> => {
   const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
-  const prepared = await prepareHtmlArticle(source, effectiveBaseDir, opts.urlBackend)
+  const prepared = await prepareHtmlArticle(source, effectiveBaseDir, opts.urlBackend, batchChildContext)
   warnHtmlArticleFlagBehavior(source, opts, prepared.htmlArticleBackend)
   return prepared
 }
@@ -287,14 +289,18 @@ const runDocumentWrite = async (
   baseDir: string,
   opts: RuntimeOptions,
   sourceRef?: Step1SourceRef,
-  preparedDocument?: PreparedDocument
+  preparedDocument?: PreparedDocument,
+  batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
   const llmConfig = resolveLLMDefaults(opts)
+  const resolvedPreparedDocument = preparedDocument ?? (batchChildContext
+    ? await downloadDocument(target, baseDir || './output', opts.password, sourceRef, batchChildContext)
+    : undefined)
   const extraction = await processOcr(
     target,
     buildExtractionCallOpts(target, baseDir, opts),
     sourceRef,
-    preparedDocument
+    resolvedPreparedDocument
   )
 
   const documentMeta: VideoMetadata = {
@@ -387,7 +393,8 @@ const processMediaSingle = async (
   target: string,
   baseDir: string,
   llmDefaults: RuntimeOptions,
-  preflightEstimate?: AggregatedPriceEstimate
+  preflightEstimate?: AggregatedPriceEstimate,
+  batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string, info: { url: string, title: string, channel: string, channelUrl?: string, publishDate?: string, duration: string } }> => {
   const llmConfig = resolveLLMDefaults(llmDefaults)
 
@@ -408,6 +415,11 @@ const processMediaSingle = async (
   }
 
   const meta = await extractSourceMetadata(src)
+  const batchOutputDir = await reserveBatchChildOutputDir(batchChildContext, {
+    title: meta.title,
+    publishedAt: meta.publishDate,
+    fallbackLabel: meta.title
+  })
 
   const baseOptions: Record<string, unknown> = {
     ...(isUrl ? { url: target } : exists ? { filePath: target } : { url: target }),
@@ -419,13 +431,10 @@ const processMediaSingle = async (
     sonioxSttModel: llmDefaults.sonioxSttModel,
     speechmaticsSttModel: llmDefaults.speechmaticsSttModel,
     revSttModel: llmDefaults.revSttModel,
-    openaiSttModel: llmDefaults.openaiSttModel,
     mistralSttModel: llmDefaults.mistralSttModel,
     assemblyaiSttModel: llmDefaults.assemblyaiSttModel,
     gladiaSttModel: llmDefaults.gladiaSttModel,
     diarizationSpeakerCount: llmDefaults.diarizationSpeakerCount,
-    diarizationSpeakerNames: llmDefaults.diarizationSpeakerNames,
-    diarizationSpeakerReferences: llmDefaults.diarizationSpeakerReferences,
     llamaModel: llmConfig.llamaModel,
     openaiModel: llmConfig.openaiModel,
     groqModel: llmConfig.groqModel,
@@ -482,6 +491,7 @@ const processMediaSingle = async (
   const options: ProcessingOptions = validateData(ProcessingOptionsSchema, baseOptions, 'processing options')
 
   const outDir = await processVideo(options, meta, preflightEstimate, {
+    ...(batchOutputDir ? { outputDir: batchOutputDir } : {}),
     sttProviderConcurrency: llmDefaults.sttProviderConcurrency,
     sttLocalConcurrency: llmDefaults.sttLocalConcurrency,
     sttSegmentConcurrency: llmDefaults.sttSegmentConcurrency,
@@ -508,13 +518,17 @@ const processExtractSingle = async (
   baseDir: string,
   opts: RuntimeOptions,
   sourceRef?: Step1SourceRef,
-  preparedDocument?: PreparedDocument
+  preparedDocument?: PreparedDocument,
+  batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
+  const resolvedPreparedDocument = preparedDocument ?? (batchChildContext
+    ? await downloadDocument(target, baseDir || './output', opts.password, sourceRef, batchChildContext)
+    : undefined)
   const extraction = await processOcr(
     target,
     buildExtractionCallOpts(target, baseDir, opts),
     sourceRef,
-    preparedDocument
+    resolvedPreparedDocument
   )
   l.success(`Extraction complete: ${extraction.outputDir}`)
   return { outputDir: extraction.outputDir }
@@ -546,26 +560,6 @@ const writeSavedMetadataArtifacts = async (
   if (save) {
     l.report.complete(outputDir, artifactFiles)
   }
-}
-
-const normalizeBatchItemPublishDate = (publishedAt?: string): string | undefined => {
-  if (!publishedAt || publishedAt.length === 0) {
-    return undefined
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(publishedAt)) {
-    return publishedAt
-  }
-
-  const parsed = new Date(publishedAt)
-  if (Number.isNaN(parsed.getTime())) {
-    return undefined
-  }
-
-  const year = parsed.getUTCFullYear()
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(parsed.getUTCDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 const normalizeBatchItemDuration = (duration?: string): string | undefined => {
@@ -605,7 +599,7 @@ const mergeBatchItemMetadata = (
     return meta
   }
 
-  const publishDate = normalizeBatchItemPublishDate(batchItem.publishedAt)
+  const publishDate = normalizeBatchChildPublishedAt(batchItem.publishedAt)
   const duration = normalizeBatchItemDuration(batchItem.duration)
 
   return {
@@ -633,7 +627,8 @@ const processMetadataMedia = async (
   target: string,
   opts: RuntimeOptions,
   baseDir: string,
-  batchItem?: BatchItem
+  batchItem?: BatchItem,
+  batchChildContext?: BatchChildRunContext
 ): Promise<BatchItemProcessResult> => {
   const isUrl = isLikelyUrl(target)
   const exists = await fileExists(target)
@@ -661,8 +656,11 @@ const processMetadataMedia = async (
   writeMetadataTerminalOutput(metadata, opts.markdown)
 
   const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
-  const uniqueDirName = createUniqueDirectoryName(meta.title)
-  const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+  const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
+    title: meta.title,
+    publishedAt: meta.publishDate,
+    fallbackLabel: meta.title
+  }) ?? `${effectiveBaseDir}/${createUniqueDirectoryName(meta.title)}`
   await ensureDirectory(outputDir)
   await writeSavedMetadataArtifacts(outputDir, metadata, opts.markdown, opts.save)
   return { outputDir }
@@ -673,7 +671,8 @@ const processMetadataDocument = async (
   opts: RuntimeOptions,
   baseDir: string,
   password?: string,
-  sourceRef?: Step1SourceRef
+  sourceRef?: Step1SourceRef,
+  batchChildContext?: BatchChildRunContext
 ): Promise<BatchItemProcessResult> => {
   const prepared = await prepareDocumentMetadata(target, password, sourceRef)
   try {
@@ -695,8 +694,10 @@ const processMetadataDocument = async (
     writeMetadataTerminalOutput(metadata, opts.markdown)
 
     const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
-    const uniqueDirName = createUniqueDirectoryName(title)
-    const outputDir = `${effectiveBaseDir}/${uniqueDirName}`
+    const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
+      slug: step1.slug,
+      fallbackLabel: title
+    }) ?? `${effectiveBaseDir}/${createUniqueDirectoryName(title)}`
     await ensureDirectory(outputDir)
     await writeSavedMetadataArtifacts(outputDir, metadata, opts.markdown, opts.save)
     return { outputDir }
@@ -727,7 +728,8 @@ const processDownloadMedia = async (
   target: string,
   baseDir: string,
   opts: RuntimeOptions,
-  batchItem?: BatchItem
+  batchItem?: BatchItem,
+  batchChildContext?: BatchChildRunContext
 ): Promise<BatchItemProcessResult> => {
   const isUrl = isLikelyUrl(target)
   const exists = await fileExists(target)
@@ -742,9 +744,14 @@ const processDownloadMedia = async (
 
   const meta = mergeBatchItemMetadata(await extractSourceMetadata(src), batchItem)
   const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
-  const useFlatBatchOutput = opts.flatBatch && baseDir.trim().length > 0
-  const uniqueDirName = createUniqueDirectoryName(meta.title)
-  const outputDir = useFlatBatchOutput ? effectiveBaseDir : `${effectiveBaseDir}/${uniqueDirName}`
+  const useFlatBatchOutput = opts.flatBatch && batchChildContext !== undefined
+  const outputDir = useFlatBatchOutput
+    ? effectiveBaseDir
+    : await reserveBatchChildOutputDir(batchChildContext, {
+        title: meta.title,
+        publishedAt: meta.publishDate,
+        fallbackLabel: meta.title
+      }) ?? `${effectiveBaseDir}/${createUniqueDirectoryName(meta.title)}`
   await ensureDirectory(outputDir)
 
   const dlOpts = {
@@ -773,10 +780,11 @@ const processDownloadDocument = async (
   target: string,
   baseDir: string,
   opts: RuntimeOptions,
-  sourceRef?: Step1SourceRef
+  sourceRef?: Step1SourceRef,
+  batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
   const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
-  const prepared = await downloadDocument(target, effectiveBaseDir, opts.password, sourceRef)
+  const prepared = await downloadDocument(target, effectiveBaseDir, opts.password, sourceRef, batchChildContext)
   try {
     const cost = {
       estimated: { totalCost: 0, steps: [] as never[] },
@@ -826,10 +834,14 @@ export const processSingleTarget = async (
   baseDir: string,
   opts: RuntimeOptions,
   preflightEstimate?: AggregatedPriceEstimate,
-  runOptions?: { sttBatchCoordinator?: SttBatchCoordinator | undefined },
+  runOptions?: {
+    sttBatchCoordinator?: SttBatchCoordinator | undefined
+    batchChildContext?: BatchChildRunContext | undefined
+  },
   batchItem?: BatchItem
 ): Promise<BatchItemProcessResult | void> => {
   const displayCommand = canonicalizeProcessCommand(command)
+  const batchChildContext = runOptions?.batchChildContext
 
   if (command === 'metadata') {
     if (isLikelyUrl(item)) {
@@ -837,16 +849,16 @@ export const processSingleTarget = async (
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          return await processMetadataDocument(downloaded.filePath, opts, baseDir, opts.password, { url: item })
+          return await processMetadataDocument(downloaded.filePath, opts, baseDir, opts.password, { url: item }, batchChildContext)
         } finally {
           await downloaded.cleanup()
         }
       }
       if (kind === 'url_html_article') {
-        const prepared = await prepareArticleDocument(item, baseDir, opts)
+        const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
         return await processMetadataPreparedDocument(prepared, opts)
       }
-      return await processMetadataMedia(item, opts, baseDir, batchItem)
+      return await processMetadataMedia(item, opts, baseDir, batchItem, batchChildContext)
     }
 
     const exists = await fileExists(item)
@@ -855,16 +867,16 @@ export const processSingleTarget = async (
     }
 
     if (isHtmlDocumentPath(item)) {
-      const prepared = await prepareArticleDocument(item, baseDir, opts)
+      const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
       return await processMetadataPreparedDocument(prepared, opts)
     }
 
     const isDocExt = isDocumentByExtension(item)
     const detected = isDocExt ? await detectDocumentFormat(item) : null
     if (isDocExt || detected !== null) {
-      return await processMetadataDocument(item, opts, baseDir, opts.password)
+      return await processMetadataDocument(item, opts, baseDir, opts.password, undefined, batchChildContext)
     } else {
-      return await processMetadataMedia(item, opts, baseDir, batchItem)
+      return await processMetadataMedia(item, opts, baseDir, batchItem, batchChildContext)
     }
   }
 
@@ -874,16 +886,16 @@ export const processSingleTarget = async (
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          return await processDownloadDocument(downloaded.filePath, baseDir, opts, { url: item })
+          return await processDownloadDocument(downloaded.filePath, baseDir, opts, { url: item }, batchChildContext)
         } finally {
           await downloaded.cleanup()
         }
       }
       if (kind === 'url_html_article') {
-        const prepared = await prepareArticleDocument(item, baseDir, opts)
+        const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
         return await processDownloadPreparedDocument(prepared)
       }
-      return await processDownloadMedia(item, baseDir, opts, batchItem)
+      return await processDownloadMedia(item, baseDir, opts, batchItem, batchChildContext)
     }
 
     const exists = await fileExists(item)
@@ -892,16 +904,16 @@ export const processSingleTarget = async (
     }
 
     if (isHtmlDocumentPath(item)) {
-      const prepared = await prepareArticleDocument(item, baseDir, opts)
+      const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
       return await processDownloadPreparedDocument(prepared)
     }
 
     const isDocExt = isDocumentByExtension(item)
     const detected = isDocExt ? await detectDocumentFormat(item) : null
     if (isDocExt || detected !== null) {
-      return await processDownloadDocument(item, baseDir, opts)
+      return await processDownloadDocument(item, baseDir, opts, undefined, batchChildContext)
     } else {
-      return await processDownloadMedia(item, baseDir, opts, batchItem)
+      return await processDownloadMedia(item, baseDir, opts, batchItem, batchChildContext)
     }
   }
 
@@ -914,7 +926,7 @@ export const processSingleTarget = async (
       throw CLIUsageError(`write --text-input only accepts .md or .txt files. Got: ${item}`)
     }
 
-    return await runTextWrite(item, baseDir, opts)
+    return await runTextWrite(item, baseDir, opts, batchChildContext)
   }
 
   if (isLikelyUrl(item)) {
@@ -927,9 +939,9 @@ export const processSingleTarget = async (
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
           if (isOcrCommand(command)) {
-            return await processExtractSingle(downloaded.filePath, baseDir, opts, { url: item })
+            return await processExtractSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
           } else {
-            return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item })
+            return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
           }
         } finally {
           await downloaded.cleanup()
@@ -941,11 +953,11 @@ export const processSingleTarget = async (
         throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
       }
 
-      const prepared = await prepareArticleDocument(item, baseDir, opts)
+      const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
       if (isOcrCommand(command)) {
-        return await processExtractSingle(item, baseDir, opts, { url: item }, prepared)
+        return await processExtractSingle(item, baseDir, opts, { url: item }, prepared, batchChildContext)
       }
-      return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared)
+      return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared, batchChildContext)
     }
 
     if (isOcrCommand(command)) {
@@ -955,12 +967,13 @@ export const processSingleTarget = async (
     if (isSttCommand(command)) {
       return {
         outputDir: await processStt({ url: item }, baseDir, opts, preflightEstimate, {
-          ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {})
+          ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
+          ...(batchChildContext ? { batchChildContext } : {})
         })
       }
     }
 
-    const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)
+    const result = await processMediaSingle(item, baseDir, opts, preflightEstimate, batchChildContext)
     return { outputDir: result.outputDir }
   }
 
@@ -970,14 +983,14 @@ export const processSingleTarget = async (
   }
 
   if (isHtmlDocumentPath(item)) {
-    const prepared = await prepareArticleDocument(item, baseDir, opts)
+    const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
 
     if (isOcrCommand(command)) {
-      return await processExtractSingle(item, baseDir, opts, undefined, prepared)
+      return await processExtractSingle(item, baseDir, opts, undefined, prepared, batchChildContext)
     }
 
     if (command === 'write') {
-      return await runDocumentWrite(item, baseDir, opts, undefined, prepared)
+      return await runDocumentWrite(item, baseDir, opts, undefined, prepared, batchChildContext)
     }
 
     if (isSttCommand(command)) {
@@ -994,11 +1007,11 @@ export const processSingleTarget = async (
       l.warn(`Skipping non-document file in ocr mode: ${item}`)
       return
     }
-    return await processExtractSingle(item, baseDir, opts)
+    return await processExtractSingle(item, baseDir, opts, undefined, undefined, batchChildContext)
   }
 
   if (command === 'write' && kind === 'local_document') {
-    return await runDocumentWrite(item, baseDir, opts)
+    return await runDocumentWrite(item, baseDir, opts, undefined, undefined, batchChildContext)
   }
 
   if (isSttCommand(command) && kind === 'local_document') {
@@ -1008,12 +1021,13 @@ export const processSingleTarget = async (
   if (isSttCommand(command)) {
     return {
       outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate, {
-        ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {})
+        ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
+        ...(batchChildContext ? { batchChildContext } : {})
       })
     }
   }
 
-  const result = await processMediaSingle(item, baseDir, opts, preflightEstimate)
+  const result = await processMediaSingle(item, baseDir, opts, preflightEstimate, batchChildContext)
   return { outputDir: result.outputDir }
 }
 

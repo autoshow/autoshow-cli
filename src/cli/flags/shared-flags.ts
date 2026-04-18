@@ -12,7 +12,6 @@ import {
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
-  SUPPORTED_OPENAI_STT_MODELS,
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_GEMINI_MODELS,
@@ -100,10 +99,6 @@ export const transcriptionFlags = {
     description: buildModelDescription('Groq Whisper STT model (API, billed)', SUPPORTED_GROQ_STT_MODELS),
     type: String
   },
-  'openai-stt': {
-    description: buildModelDescription('OpenAI STT model', SUPPORTED_OPENAI_STT_MODELS),
-    type: String
-  },
   'mistral-stt': {
     description: buildModelDescription('Mistral STT model', SUPPORTED_MISTRAL_STT_MODELS),
     type: String
@@ -119,14 +114,6 @@ export const transcriptionFlags = {
   'speaker-count': {
     description: 'Optional diarization speaker-count hint for supported STT services; unsupported providers report one aggregated warning at runtime',
     type: String
-  },
-  'speaker-name': {
-    description: 'OpenAI diarization known speaker name. Repeat with matching --speaker-reference entries (up to 4)',
-    type: [String] as [StringConstructor]
-  },
-  'speaker-reference': {
-    description: 'OpenAI diarization reference clip path or data URL. Repeat in the same order as --speaker-name',
-    type: [String] as [StringConstructor]
   },
   split: {
     description: 'Split audio into 10-minute segments for transcription',

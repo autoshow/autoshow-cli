@@ -27,8 +27,6 @@ export type ConcurrencyPolicy = {
 export type DiarizationPolicy = {
   enabled?: boolean | undefined
   speakerCount?: number | undefined
-  speakerNames?: string[] | undefined
-  speakerReferences?: string[] | undefined
 }
 
 export type OcrRenderPolicy = {

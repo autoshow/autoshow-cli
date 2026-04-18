@@ -1,0 +1,54 @@
+import type { PriceSelectionEntry } from '../../../../src/types/tests-dir-types'
+import { command, exact, prefix } from '../helpers'
+
+export const sttRegistry: PriceSelectionEntry[] = [
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-default.test.ts', [
+    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'tiny', '--price']),
+    command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'base', '--price']),
+    command('transcribe-whisper-split', 'transcribe-whisper-split', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--split', '--whisper', 'tiny', '--price']),
+  ]),
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts', [
+    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'tiny', '--price']),
+    command('transcribe-whisper-base', 'transcribe-whisper-base', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'base', '--price']),
+    command('transcribe-whisper-small', 'transcribe-whisper-small', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'small', '--price']),
+    command('transcribe-whisper-medium', 'transcribe-whisper-medium', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'medium', '--price']),
+    command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
+  ]),
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/whisper-large-v3-turbo.test.ts', [
+    command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--whisper', 'large-v3-turbo', '--price']),
+    command('transcribe-whisper-large-v3-turbo-split', 'transcribe-whisper-large-v3-turbo-split', ['src/cli/create-cli.ts', 'stt', 'input/examples/video/2-video.mp4', '--whisper', 'large-v3-turbo', '--split', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/', [
+    command('transcribe-reverb', 'transcribe-reverb', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--reverb', '--reverb-verbatimicity', '0.5', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/assemblyai/', [
+    command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/gladia/', [
+    command('transcribe-gladia-default', 'transcribe-gladia-default', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--gladia-stt', 'default', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/deepgram/', [
+    command('transcribe-deepgram-nova-3', 'transcribe-deepgram-nova-3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deepgram-stt', 'nova-3', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/soniox/', [
+    command('transcribe-soniox-stt-async-v4', 'transcribe-soniox-stt-async-v4', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--soniox-stt', 'stt-async-v4', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/speechmatics/', [
+    command('transcribe-speechmatics-standard', 'transcribe-speechmatics-standard', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--speechmatics-stt', 'standard', '--price']),
+    command('transcribe-speechmatics-enhanced', 'transcribe-speechmatics-enhanced', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--speechmatics-stt', 'enhanced', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/rev/', [
+    command('transcribe-rev-machine', 'transcribe-rev-machine', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--rev-stt', 'machine', '--price']),
+    command('transcribe-rev-low_cost', 'transcribe-rev-low_cost', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--rev-stt', 'low_cost', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/elevenlabs/', [
+    command('transcribe-elevenlabs-scribe_v2', 'transcribe-elevenlabs-scribe_v2', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--elevenlabs-stt', 'scribe_v2', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/groq/', [
+    command('transcribe-groq-whisper-large-v3', 'transcribe-groq-whisper-large-v3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--groq-stt', 'whisper-large-v3', '--price']),
+    command('transcribe-groq-whisper-large-v3-turbo', 'transcribe-groq-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--groq-stt', 'whisper-large-v3-turbo', '--price']),
+  ]),
+  ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-services/mistral/', [
+    command('transcribe-mistral-voxtral-mini-2602', 'transcribe-mistral-voxtral-mini-2602', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--mistral-stt', 'voxtral-mini-2602', '--price']),
+  ]),
+]

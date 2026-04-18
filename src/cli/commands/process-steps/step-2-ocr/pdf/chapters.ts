@@ -12,6 +12,13 @@ const CHAPTER_SLUG_MAX_LENGTH = 60
 const ROMAN_RE = /^[ivxlcdm]+$/i
 const ISOLATED_LABEL_RE = /^([0-9]+|[ivxlcdm]+)$/i
 const TOC_PAGE_TITLE_RE = /^(table of contents|contents)$/i
+const INDEX_PAGE_TITLE_RE = /^index$/i
+const FILE_EXTENSION_RE = /\.(pdf|epub|docx?|txt|rtf)$/i
+const OUTLINE_ARTIFACT_RE = /\b(?:topaz|scan(?:ned)?|enhance(?:d)?|ocr|djvu|archive|text|output|input)\b/i
+const ISBNISH_OUTLINE_RE = /\b(?:97[89]\d{10}|[0-9]{9}[0-9x])\b/i
+const MAX_TOC_TITLE_LENGTH = 120
+const MAX_TOC_ARABIC_PAGE = 1200
+const MAX_TOC_ROMAN_PAGE = 100
 
 export type PdfChapterMode = 'local' | 'auto' | 'llm'
 
@@ -48,9 +55,9 @@ export type PdfPageMapSpan = {
 
 export type PdfTocEntry = {
   title: string
-  printedPage: string
-  style: 'arabic' | 'roman'
-  numericValue: number
+  printedPage?: string
+  style?: 'arabic' | 'roman'
+  numericValue?: number
   tocPdfPage: number
 }
 
@@ -94,6 +101,274 @@ const normalizeTitle = (value: string): string =>
     .replace(/[^a-z0-9]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+
+const normalizeCompactTitle = (value: string): string =>
+  normalizeTitle(value).replace(/\s+/g, '')
+
+const extractPageLines = (text: string): string[] =>
+  stripMutoolPageBanner(text)
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+
+const stripLeadingIsolatedLabels = (lines: string[]): string[] => {
+  let index = 0
+  while (index < lines.length && ISOLATED_LABEL_RE.test(normalizeDecoratedLabel(lines[index] ?? ''))) {
+    index += 1
+  }
+  return lines.slice(index)
+}
+
+const getTocCandidateLines = (text: string): string[] =>
+  stripLeadingIsolatedLabels(extractPageLines(text))
+
+const countAlphaChars = (value: string): number =>
+  (value.match(/[A-Za-z]/g) ?? []).length
+
+const isMostlyUppercase = (value: string): boolean => {
+  const letters = value.match(/[A-Za-z]/g) ?? []
+  if (letters.length < 4) {
+    return false
+  }
+  const uppercase = value.match(/[A-Z]/g) ?? []
+  return uppercase.length / letters.length >= 0.65
+}
+
+const isLikelyFilenameTitle = (value: string): boolean => {
+  const trimmed = normalizeInlineWhitespace(value)
+  const normalized = normalizeTitle(trimmed)
+  if (trimmed.length === 0) {
+    return false
+  }
+  if (FILE_EXTENSION_RE.test(trimmed)) {
+    return true
+  }
+  if (ISBNISH_OUTLINE_RE.test(trimmed)) {
+    return true
+  }
+  if (OUTLINE_ARTIFACT_RE.test(normalized) && /(?:\.| |-|_)(?:pdf|epub|txt|doc|docx)\b/i.test(trimmed)) {
+    return true
+  }
+  return false
+}
+
+const getOutlineRejectReason = (title: string): string | undefined => {
+  const normalized = normalizeTitle(title)
+  if (normalized.length === 0) {
+    return 'blank title'
+  }
+  if ([
+    'table of contents',
+    'contents',
+    'request',
+    'response',
+    'see also',
+    'errors',
+    'next step'
+  ].includes(normalized)) {
+    return 'generic title'
+  }
+  if (isLikelyFilenameTitle(title)) {
+    return 'filename bookmark'
+  }
+  return undefined
+}
+
+const isPlausibleTocPageRef = (parsed: { style: 'arabic' | 'roman', numericValue: number }): boolean =>
+  parsed.numericValue > 0
+  && (parsed.style === 'roman'
+    ? parsed.numericValue <= MAX_TOC_ROMAN_PAGE
+    : parsed.numericValue <= MAX_TOC_ARABIC_PAGE)
+
+const isPlausibleTocTitle = (value: string): boolean => {
+  const trimmed = normalizeInlineWhitespace(value)
+  if (trimmed.length === 0 || trimmed.length > MAX_TOC_TITLE_LENGTH) {
+    return false
+  }
+  const alphaChars = countAlphaChars(trimmed)
+  if (alphaChars < 3) {
+    return false
+  }
+  const normalized = normalizeTitle(trimmed)
+  if (normalized.length === 0) {
+    return false
+  }
+  const tokens = normalized.split(' ').filter(Boolean)
+  const longishTokens = tokens.filter((token) => token.length >= 2)
+  if (longishTokens.length === 0) {
+    return false
+  }
+  if (tokens.length >= 4 && longishTokens.length < Math.ceil(tokens.length / 2)) {
+    return false
+  }
+  const noisyChars = (trimmed.match(/[^A-Za-z0-9\s'".,&!?;:;\/()\-]/g) ?? []).length
+  if (noisyChars > Math.max(4, Math.floor(trimmed.length / 6))) {
+    return false
+  }
+  return true
+}
+
+const isStandaloneTocTitle = (value: string): boolean => {
+  if (!isPlausibleTocTitle(value)) {
+    return false
+  }
+  const words = normalizeInlineWhitespace(value).split(/\s+/).filter((word) => /[A-Za-z]/.test(word))
+  if (words.length === 0 || words.length > 10) {
+    return false
+  }
+  const strongWords = words.filter((word) =>
+    /^[A-Z][A-Za-z'’-]*$/.test(word)
+    || /^[A-Z]{2,}[A-Za-z'’-]*$/.test(word)
+    || /^[A-Za-z]+[!?]$/.test(word)
+  )
+  return strongWords.length >= Math.ceil(words.length / 2)
+}
+
+const scoreTitleMatchText = (title: string, candidate: string): number => {
+  const normalizedNeedle = normalizeTitle(title)
+  const compactNeedle = normalizeCompactTitle(title)
+  const normalizedCandidate = normalizeTitle(candidate)
+  const compactCandidate = normalizeCompactTitle(candidate)
+  if (normalizedNeedle.length === 0 || normalizedCandidate.length === 0) {
+    return 0
+  }
+  if (compactCandidate === compactNeedle) {
+    return 3
+  }
+  if (compactCandidate.includes(compactNeedle) || compactNeedle.includes(compactCandidate)) {
+    return 2
+  }
+  if (normalizedCandidate.includes(normalizedNeedle) || normalizedNeedle.includes(normalizedCandidate)) {
+    return 1
+  }
+  return 0
+}
+
+const scoreTitleMatchAgainstLines = (title: string, lines: string[]): number => {
+  let best = 0
+  for (const line of lines.slice(0, 12)) {
+    const lineScore = scoreTitleMatchText(title, line)
+    if (lineScore > 0) {
+      best = Math.max(best, lineScore + 2)
+    }
+  }
+  if (best > 0) {
+    return best
+  }
+  return scoreTitleMatchText(title, lines.slice(0, 20).join(' '))
+}
+
+const buildTocEntry = (
+  title: string,
+  tocPdfPage: number,
+  parsed?: { style: 'arabic' | 'roman', raw: string, numericValue: number }
+): PdfTocEntry | undefined => {
+  const normalizedTitle = normalizeInlineWhitespace(title)
+  if (!isPlausibleTocTitle(normalizedTitle)) {
+    return undefined
+  }
+  if (!parsed) {
+    return {
+      title: normalizedTitle,
+      tocPdfPage
+    }
+  }
+  if (!isPlausibleTocPageRef(parsed)) {
+    return undefined
+  }
+  return {
+    title: normalizedTitle,
+    printedPage: parsed.raw,
+    style: parsed.style,
+    numericValue: parsed.numericValue,
+    tocPdfPage
+  }
+}
+
+const scanTocEntries = (lines: string[], tocPdfPage: number): PdfTocEntry[] => {
+  const entries: PdfTocEntry[] = []
+  let pendingTitle = ''
+
+  for (const rawLine of lines) {
+    const line = normalizeInlineWhitespace(rawLine)
+    if (line.length === 0) {
+      continue
+    }
+    if (TOC_PAGE_TITLE_RE.test(line)) {
+      pendingTitle = ''
+      continue
+    }
+    if (/^(chapter|chapters|page|pages)$/i.test(line)) {
+      continue
+    }
+
+    const inlineMatch = line.match(/^(.*?)(?:\.{2,}|\s{2,}|\s)\s*([0-9]+|[ivxlcdm]+)\s*$/i)
+    if (inlineMatch) {
+      const parsed = parsePrintedLabel(inlineMatch[2] ?? '')
+      const titlePart = normalizeInlineWhitespace(`${pendingTitle} ${inlineMatch[1] ?? ''}`)
+      pendingTitle = ''
+      const entry = parsed ? buildTocEntry(titlePart, tocPdfPage, parsed) : undefined
+      if (entry) {
+        entries.push(entry)
+      }
+      continue
+    }
+
+    const isolatedLine = normalizeDecoratedLabel(line)
+    const isolatedPageRef = parsePrintedLabel(isolatedLine)
+    if (isolatedPageRef && isPlausibleTocPageRef(isolatedPageRef)) {
+      if (pendingTitle.length > 0) {
+        const entry = buildTocEntry(pendingTitle, tocPdfPage, isolatedPageRef)
+        if (entry) {
+          entries.push(entry)
+        }
+      }
+      pendingTitle = ''
+      continue
+    }
+
+    if (!isPlausibleTocTitle(line)) {
+      pendingTitle = ''
+      continue
+    }
+
+    if (pendingTitle.length === 0) {
+      pendingTitle = line
+      continue
+    }
+
+    const combinedTitle = normalizeInlineWhitespace(`${pendingTitle} ${line}`)
+    if (isStandaloneTocTitle(pendingTitle) && isStandaloneTocTitle(line)) {
+      const entry = buildTocEntry(pendingTitle, tocPdfPage)
+      if (entry) {
+        entries.push(entry)
+      }
+      pendingTitle = line
+      continue
+    }
+
+    if (combinedTitle.length <= MAX_TOC_TITLE_LENGTH) {
+      pendingTitle = combinedTitle
+      continue
+    }
+
+    const entry = buildTocEntry(pendingTitle, tocPdfPage)
+    if (entry) {
+      entries.push(entry)
+    }
+    pendingTitle = line
+  }
+
+  if (pendingTitle.length > 0) {
+    const entry = buildTocEntry(pendingTitle, tocPdfPage)
+    if (entry) {
+      entries.push(entry)
+    }
+  }
+
+  return entries
+}
 
 const romanToInt = (value: string): number => {
   const roman = value.toUpperCase()
@@ -176,23 +451,6 @@ const formatPrintedLabel = (style: 'arabic' | 'roman', numericValue: number): st
 const normalizeDecoratedLabel = (value: string): string =>
   value.trim().replace(/^[\-\[\]()\s]+|[\-\[\]()\s]+$/g, '')
 
-const isGenericOutlineTitle = (title: string): boolean => {
-  const normalized = normalizeTitle(title)
-  if (normalized.length === 0) {
-    return true
-  }
-  return [
-    'table of contents',
-    'contents',
-    'request',
-    'response',
-    'see also',
-    'errors',
-    'next step',
-    'contents'
-  ].includes(normalized)
-}
-
 const cleanExportLines = (text: string): string[] => {
   const lines = stripMutoolPageBanner(text)
     .replace(/\r/g, '')
@@ -228,7 +486,9 @@ const trimPageTextToHeading = (text: string, title: string): string => {
 
   const lineIndex = lines.findIndex((line) => {
     const normalizedLine = normalizeTitle(line)
-    return normalizedLine.includes(normalizedNeedle) || normalizedNeedle.includes(normalizedLine)
+    return normalizedLine.includes(normalizedNeedle)
+      || normalizedNeedle.includes(normalizedLine)
+      || scoreTitleMatchText(title, line) > 0
   })
 
   if (lineIndex <= 0) {
@@ -325,6 +585,39 @@ const buildPageLabelSpans = (
       source: 'page-labels'
     }
   })
+
+const canMergePageMapSpans = (previous: PdfPageMapSpan, current: PdfPageMapSpan): boolean => {
+  if (previous.style !== current.style || previous.offset !== current.offset) {
+    return false
+  }
+  const previousPrinted = parsePrintedLabel(previous.printedEndPage)
+  const currentPrinted = parsePrintedLabel(current.printedStartPage)
+  if (!previousPrinted || !currentPrinted || previousPrinted.style !== currentPrinted.style) {
+    return false
+  }
+  const gapPages = current.pdfStartPage - previous.pdfEndPage - 1
+  if (gapPages < 0) {
+    return false
+  }
+  return previousPrinted.numericValue + gapPages + 1 === currentPrinted.numericValue
+}
+
+export const mergePageMapSpans = (spans: PdfPageMapSpan[]): PdfPageMapSpan[] => {
+  const merged: PdfPageMapSpan[] = []
+  for (const span of [...spans].sort((a, b) => a.pdfStartPage - b.pdfStartPage)) {
+    const previous = merged[merged.length - 1]
+    if (previous && canMergePageMapSpans(previous, span)) {
+      previous.pdfEndPage = Math.max(previous.pdfEndPage, span.pdfEndPage)
+      previous.printedEndPage = span.printedEndPage
+      previous.source = previous.source === 'page-labels' || span.source === 'page-labels'
+        ? 'page-labels'
+        : 'page-text'
+      continue
+    }
+    merged.push({ ...span })
+  }
+  return merged
+}
 
 const extractIsolatedPageLabel = (lines: string[]): { raw: string, value: number, style: 'arabic' | 'roman' } | undefined => {
   for (const line of lines) {
@@ -427,69 +720,54 @@ export const buildTextPageMapSpans = (
     }
   }
 
-  return spans.sort((a, b) => a.pdfStartPage - b.pdfStartPage)
+  return mergePageMapSpans(spans)
 }
 
 const isTocLikeLine = (line: string): boolean =>
   /(?:\.{2,}|\s{2,})([0-9]+|[ivxlcdm]+)\s*$/i.test(line) || /^.+\s+([0-9]+|[ivxlcdm]+)\s*$/i.test(line)
 
+const isLikelyIndexPage = (lines: string[]): boolean => {
+  const headingInTopLines = lines.slice(0, 6).some((line) => INDEX_PAGE_TITLE_RE.test(line))
+  if (!headingInTopLines) {
+    return false
+  }
+  return lines.slice(1, 20).filter((line) => /,\s*\d/.test(line) || /\d+\s*-\s*\d+/.test(line)).length >= 2
+}
+
 export const isTocPage = (page: PageResult): boolean => {
-  const lines = cleanExportLines(page.text).map((line) => line.trim()).filter((line) => line.length > 0)
+  const lines = getTocCandidateLines(page.text)
   if (lines.length === 0) {
     return false
   }
-  const heading = lines.slice(0, 4).some((line) => TOC_PAGE_TITLE_RE.test(line))
+  if (isLikelyIndexPage(lines)) {
+    return false
+  }
+  const heading = lines.slice(0, 24).some((line) => TOC_PAGE_TITLE_RE.test(line))
+  const entries = scanTocEntries(lines, page.pageNumber)
+  const numberedEntries = entries.filter((entry) => typeof entry.printedPage === 'string')
+  if (heading) {
+    return entries.length >= 2
+  }
   const tocLikeCount = lines.filter(isTocLikeLine).length
-  return heading || tocLikeCount >= 4
+  return numberedEntries.length >= 3 && tocLikeCount >= 3
 }
 
 export const parseTocEntriesFromPage = (page: PageResult): PdfTocEntry[] => {
-  const lines = cleanExportLines(page.text).map((line) => line.trim()).filter((line) => line.length > 0)
-  const entries: PdfTocEntry[] = []
-  let pendingTitle = ''
-
-  for (const line of lines) {
-    if (TOC_PAGE_TITLE_RE.test(line)) {
-      pendingTitle = ''
-      continue
-    }
-
-    const match = line.match(/^(.*?)(?:\.{2,}|\s{2,}|\s)\s*([0-9]+|[ivxlcdm]+)\s*$/i)
-    if (match) {
-      const titlePart = normalizeInlineWhitespace(`${pendingTitle} ${match[1] ?? ''}`)
-      pendingTitle = ''
-      if (titlePart.length === 0) {
-        continue
-      }
-      const parsed = parsePrintedLabel(match[2] ?? '')
-      if (!parsed) {
-        continue
-      }
-      entries.push({
-        title: titlePart,
-        printedPage: parsed.raw,
-        style: parsed.style,
-        numericValue: parsed.numericValue,
-        tocPdfPage: page.pageNumber
-      })
-      continue
-    }
-
-    if (line.length <= 120 && /[A-Za-z]/.test(line)) {
-      pendingTitle = normalizeInlineWhitespace(`${pendingTitle} ${line}`)
-    } else {
-      pendingTitle = ''
-    }
+  const lines = getTocCandidateLines(page.text)
+  if (isLikelyIndexPage(lines)) {
+    return []
   }
-
-  return entries
+  return scanTocEntries(lines, page.pageNumber)
 }
 
 const mapPrintedToPdfPage = (
-  printedPage: string,
+  printedPage: string | undefined,
   spans: PdfPageMapSpan[],
   totalPages: number
 ): number | undefined => {
+  if (typeof printedPage !== 'string') {
+    return undefined
+  }
   const parsed = parsePrintedLabel(printedPage)
   if (!parsed) {
     return undefined
@@ -513,11 +791,15 @@ const mapPrintedToPdfPage = (
 }
 
 const buildOutlineCandidates = (
-  rawEntries: PdfOutlineEntry[]
-): ResolvedPdfChapter[] => {
+  rawEntries: PdfOutlineEntry[],
+  pages: PageResult[]
+): { chapters: ResolvedPdfChapter[], rejectedTitles: string[] } => {
   const byPage = new Map<number, PdfOutlineEntry[]>()
+  const rejectedTitles: string[] = []
   for (const entry of rawEntries) {
-    if (isGenericOutlineTitle(entry.title)) {
+    const rejectReason = getOutlineRejectReason(entry.title)
+    if (rejectReason) {
+      rejectedTitles.push(`${entry.title} (${rejectReason})`)
       continue
     }
     const list = byPage.get(entry.pdfPage) ?? []
@@ -526,48 +808,91 @@ const buildOutlineCandidates = (
   }
 
   const chapters: ResolvedPdfChapter[] = []
-  for (const [pdfPage, entries] of [...byPage.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [, entries] of [...byPage.entries()].sort((a, b) => a[0] - b[0])) {
     const chosen = [...entries].sort((a, b) =>
       a.depth - b.depth || b.title.length - a.title.length
     )[0]
     if (!chosen) {
       continue
     }
+    const anchoredPage = findTitleAnchorPage(chosen.title, chosen.pdfPage, pages, { radius: 6 })
+    const resolvedPage = anchoredPage ?? chosen.pdfPage
+    const confidence = anchoredPage
+      ? (anchoredPage === chosen.pdfPage ? 0.84 : 0.78)
+      : (resolvedPage <= 5 ? 0.34 : 0.58)
     chapters.push({
       title: chosen.title,
-      pdfStartPage: pdfPage,
-      source: 'outline',
-      confidence: 0.92
+      pdfStartPage: resolvedPage,
+      source: anchoredPage
+        ? (anchoredPage === chosen.pdfPage ? 'outline+anchor' : 'outline+retarget')
+        : 'outline',
+      confidence
     })
   }
 
-  return chapters
+  return { chapters, rejectedTitles }
 }
 
 const findTitleAnchorPage = (
   title: string,
-  predictedPage: number,
-  pages: PageResult[]
-): number => {
+  predictedPage: number | undefined,
+  pages: PageResult[],
+  options?: {
+    radius?: number
+    allowGlobal?: boolean
+  }
+): number | undefined => {
   const normalizedNeedle = normalizeTitle(title)
   if (normalizedNeedle.length === 0) {
     return predictedPage
   }
-
-  for (let delta = 0; delta <= 2; delta++) {
-    for (const candidatePage of [predictedPage - delta, predictedPage + delta]) {
-      const page = pages.find((entry) => entry.pageNumber === candidatePage)
-      if (!page) {
-        continue
-      }
-      const normalizedPage = normalizeTitle(cleanPageTextForExport(page.text))
-      if (normalizedPage.includes(normalizedNeedle)) {
-        return candidatePage
+  const pageLookup = new Map(pages.map((page) => [page.pageNumber, page]))
+  const candidatePages: number[] = []
+  const seen = new Set<number>()
+  const radius = options?.radius ?? 2
+  if (typeof predictedPage === 'number' && Number.isFinite(predictedPage)) {
+    for (let delta = 0; delta <= radius; delta++) {
+      for (const candidatePage of [predictedPage - delta, predictedPage + delta]) {
+        if (seen.has(candidatePage)) {
+          continue
+        }
+        seen.add(candidatePage)
+        candidatePages.push(candidatePage)
       }
     }
   }
+  if (options?.allowGlobal || candidatePages.length === 0) {
+    for (const page of pages) {
+      if (seen.has(page.pageNumber)) {
+        continue
+      }
+      seen.add(page.pageNumber)
+      candidatePages.push(page.pageNumber)
+    }
+  }
 
-  return predictedPage
+  let bestMatch: { pageNumber: number, score: number, distance: number } | undefined
+  for (const candidatePage of candidatePages) {
+    const page = pageLookup.get(candidatePage)
+    if (!page) {
+      continue
+    }
+    const score = scoreTitleMatchAgainstLines(title, cleanExportLines(page.text))
+    if (score <= 0) {
+      continue
+    }
+    const distance = typeof predictedPage === 'number' && Number.isFinite(predictedPage)
+      ? Math.abs(candidatePage - predictedPage)
+      : candidatePage
+    if (!bestMatch
+      || score > bestMatch.score
+      || (score === bestMatch.score && distance < bestMatch.distance)
+      || (score === bestMatch.score && distance === bestMatch.distance && candidatePage < bestMatch.pageNumber)) {
+      bestMatch = { pageNumber: candidatePage, score, distance }
+    }
+  }
+
+  return bestMatch?.pageNumber
 }
 
 const buildTocCandidates = (
@@ -581,20 +906,39 @@ const buildTocCandidates = (
 
   for (const entry of tocEntries) {
     const mappedPage = mapPrintedToPdfPage(entry.printedPage, pageMapSpans, totalPages)
-    if (!mappedPage) {
+    const nearbyAnchor = typeof mappedPage === 'number'
+      ? findTitleAnchorPage(entry.title, mappedPage, pages, { radius: 10 })
+      : undefined
+    const titleSearchPage = findTitleAnchorPage(entry.title, mappedPage, pages, {
+      radius: 10,
+      allowGlobal: true
+    })
+    const resolvedPage = nearbyAnchor ?? mappedPage ?? titleSearchPage
+    if (!resolvedPage || seenPages.has(resolvedPage)) {
       continue
     }
-    const anchoredPage = findTitleAnchorPage(entry.title, mappedPage, pages)
-    if (seenPages.has(anchoredPage)) {
-      continue
-    }
-    seenPages.add(anchoredPage)
+    seenPages.add(resolvedPage)
+    const hasPrintedPage = typeof entry.printedPage === 'string'
+    const source = nearbyAnchor
+      ? (nearbyAnchor === mappedPage ? 'toc-page-map+anchor' : 'toc-page-map+retarget')
+      : mappedPage
+        ? 'toc-page-map'
+        : titleSearchPage
+          ? 'toc-title-search'
+          : 'toc'
+    const confidence = nearbyAnchor
+      ? (nearbyAnchor === mappedPage ? 0.84 : 0.88)
+      : mappedPage
+        ? 0.76
+        : hasPrintedPage
+          ? 0.74
+          : 0.81
     resolved.push({
       title: entry.title,
-      pdfStartPage: anchoredPage,
-      printedStartPage: entry.printedPage,
-      source: anchoredPage === mappedPage ? 'toc-page-map' : 'toc-page-map+anchor',
-      confidence: anchoredPage === mappedPage ? 0.76 : 0.86
+      pdfStartPage: resolvedPage,
+      ...(entry.printedPage ? { printedStartPage: entry.printedPage } : {}),
+      source,
+      confidence
     })
   }
 
@@ -604,14 +948,39 @@ const buildTocCandidates = (
 const detectHeadingTitle = (page: PageResult): string | undefined => {
   const lines = cleanExportLines(page.text).map((line) => line.trim()).filter((line) => line.length > 0)
   const topLines = lines.slice(0, 12)
+  const first = topLines[0]
+  const second = topLines[1]
+  const third = topLines[2]
+
+  if (first && /^(acknowledg(?:e)?ment|prologue|epilogue|introduction|foreword|preface|appendix|footnotes?|selected bibliography|bibliography|index)\b/i.test(first)) {
+    return first
+  }
+  if (first && ROMAN_RE.test(normalizeDecoratedLabel(first)) && second && isPlausibleTocTitle(second) && isMostlyUppercase(second)) {
+    return second
+  }
+  if (first && /^\d+$/.test(normalizeDecoratedLabel(first)) && second && ROMAN_RE.test(normalizeDecoratedLabel(second)) && third && isPlausibleTocTitle(third) && isMostlyUppercase(third)) {
+    return third
+  }
+  if (first && /^\d+$/.test(normalizeDecoratedLabel(first)) && second && isPlausibleTocTitle(second) && isMostlyUppercase(second)) {
+    return second
+  }
 
   for (const line of topLines) {
     if (/^(chapter|chap\.|part|book|section)\s+([0-9ivxlcdm]+)\b/i.test(line)) {
+      const lineIndex = topLines.indexOf(line)
+      const next = topLines[lineIndex + 1]
+      if (next && isPlausibleTocTitle(next) && isMostlyUppercase(next)) {
+        return next
+      }
       return line
     }
     if (/^(prologue|epilogue|introduction|foreword|preface|appendix)\b/i.test(line)) {
       return line
     }
+  }
+
+  if (first && isPlausibleTocTitle(first) && isMostlyUppercase(first)) {
+    return first
   }
 
   return undefined
@@ -639,7 +1008,11 @@ const buildHeadingCandidates = (
 const dedupeResolvedChapters = (chapters: ResolvedPdfChapter[]): ResolvedPdfChapter[] => {
   const deduped: ResolvedPdfChapter[] = []
   const seenPages = new Set<number>()
-  for (const chapter of [...chapters].sort((a, b) => a.pdfStartPage - b.pdfStartPage)) {
+  for (const chapter of [...chapters].sort((a, b) =>
+    a.pdfStartPage - b.pdfStartPage
+    || b.confidence - a.confidence
+    || b.title.length - a.title.length
+  )) {
     if (seenPages.has(chapter.pdfStartPage)) {
       continue
     }
@@ -647,6 +1020,109 @@ const dedupeResolvedChapters = (chapters: ResolvedPdfChapter[]): ResolvedPdfChap
     deduped.push(chapter)
   }
   return deduped
+}
+
+const inferStrategyUsed = (strategyName: 'outline' | 'toc' | 'heading', chapters: ResolvedPdfChapter[]): string => {
+  if (chapters.length === 0) {
+    return 'none'
+  }
+  if (strategyName === 'toc') {
+    const usedTitleSearch = chapters.some((chapter) => chapter.source.includes('title-search') || chapter.source.includes('retarget') || chapter.source.includes('anchor'))
+    return usedTitleSearch ? 'toc+title-search' : 'toc-page-map'
+  }
+  return strategyName
+}
+
+const scoreChapterStrategy = (
+  chapters: ResolvedPdfChapter[],
+  totalPages: number,
+  strategyName: 'outline' | 'toc' | 'heading'
+): number => {
+  if (chapters.length === 0) {
+    return 0
+  }
+  const averageConfidence = scoreOverallConfidence(chapters)
+  const countScore = chapters.length <= 1 ? 0.15 : Math.min(chapters.length / 8, 1)
+  const spanPages = chapters.length > 1
+    ? chapters[chapters.length - 1]!.pdfStartPage - chapters[0]!.pdfStartPage
+    : 0
+  const spreadScore = totalPages > 1 ? Math.min(spanPages / Math.max(totalPages * 0.65, 1), 1) : 0
+  const frontMatterOnlyPenalty = chapters.length <= 2 && chapters.every((chapter) => chapter.pdfStartPage <= Math.max(10, Math.ceil(totalPages * 0.05)))
+    ? 0.45
+    : 0
+  const strategyBonus = strategyName === 'toc'
+    ? 0.06
+    : strategyName === 'heading'
+      ? -0.02
+      : 0
+  return averageConfidence * 0.55 + countScore * 0.25 + spreadScore * 0.2 + strategyBonus - frontMatterOnlyPenalty
+}
+
+export const resolveLocalPdfChapterDetection = (input: {
+  pages: PageResult[]
+  outlineEntries?: PdfOutlineEntry[]
+  labelEntries?: PdfPageLabelEntry[]
+}): {
+  chapters: ResolvedPdfChapter[]
+  pageMapSpans: PdfPageMapSpan[]
+  tocPages: number[]
+  warnings: string[]
+  strategyUsed: string
+} => {
+  const warnings: string[] = []
+  const totalPages = input.pages.length > 0 ? Math.max(...input.pages.map((page) => page.pageNumber)) : 0
+  const pageTextCandidates = extractPrintedPageCandidates(input.pages)
+  const pageMapSpans = mergePageMapSpans([
+    ...buildPageLabelSpans(input.labelEntries ?? [], totalPages),
+    ...buildTextPageMapSpans(pageTextCandidates, totalPages)
+  ])
+
+  const tocPages = input.pages.filter(isTocPage).map((page) => page.pageNumber)
+  const tocEntries = input.pages
+    .filter((page) => tocPages.includes(page.pageNumber))
+    .flatMap(parseTocEntriesFromPage)
+
+  const outlineResult = buildOutlineCandidates(input.outlineEntries ?? [], input.pages)
+  if (outlineResult.rejectedTitles.length > 0) {
+    warnings.push(`Ignored ${outlineResult.rejectedTitles.length} low-quality PDF outline entr${outlineResult.rejectedTitles.length === 1 ? 'y' : 'ies'} while resolving chapters.`)
+  }
+
+  const outlineCandidates = dedupeResolvedChapters(outlineResult.chapters)
+  const tocCandidates = dedupeResolvedChapters(buildTocCandidates(tocEntries, pageMapSpans, input.pages))
+  const headingCandidates = dedupeResolvedChapters(buildHeadingCandidates(input.pages))
+
+  const strategyOptions = [
+    {
+      name: 'outline' as const,
+      chapters: outlineCandidates
+    },
+    {
+      name: 'toc' as const,
+      chapters: tocCandidates
+    },
+    {
+      name: 'heading' as const,
+      chapters: headingCandidates
+    }
+  ].map((option) => ({
+    ...option,
+    score: scoreChapterStrategy(option.chapters, totalPages, option.name),
+    strategyUsed: inferStrategyUsed(option.name, option.chapters)
+  }))
+
+  const chosen = strategyOptions.sort((a, b) =>
+    b.score - a.score
+    || b.chapters.length - a.chapters.length
+    || (b.name === 'toc' ? 1 : 0) - (a.name === 'toc' ? 1 : 0)
+  )[0]
+
+  return {
+    chapters: chosen?.chapters ?? [],
+    pageMapSpans,
+    tocPages,
+    warnings,
+    strategyUsed: chosen?.strategyUsed ?? 'none'
+  }
 }
 
 const buildPdfChapterFiles = (
@@ -832,7 +1308,10 @@ const resolveLlmCandidates = async (input: {
       }
       resolved.push({
         title,
-        pdfStartPage: findTitleAnchorPage(title, pdfStartPage, input.pages),
+        pdfStartPage: findTitleAnchorPage(title, pdfStartPage, input.pages, {
+          radius: 10,
+          allowGlobal: true
+        }) ?? pdfStartPage,
         ...(printedStartPage ? { printedStartPage } : {}),
         source: 'llm',
         confidence: confidenceValue === 'high' ? 0.88 : confidenceValue === 'low' ? 0.55 : 0.72
@@ -856,7 +1335,6 @@ export const buildPdfChapterArtifacts = async (input: {
   llmService?: string
   llmModel?: string
 }): Promise<PdfChapterBuildResult> => {
-  const warnings: string[] = []
   const totalPages = input.pages.length > 0 ? Math.max(...input.pages.map((page) => page.pageNumber)) : 0
 
   let outlineEntries: PdfOutlineEntry[] = []
@@ -871,33 +1349,20 @@ export const buildPdfChapterArtifacts = async (input: {
     labelEntries = parsePdfPageLabels(pageLabelsResult.stdout)
   }
 
-  const pageTextCandidates = extractPrintedPageCandidates(input.pages)
-  const pageMapSpans = [
-    ...buildPageLabelSpans(labelEntries, totalPages),
-    ...buildTextPageMapSpans(pageTextCandidates, totalPages)
-  ]
-
-  const tocPages = input.pages.filter(isTocPage).map((page) => page.pageNumber)
+  const localDetection = resolveLocalPdfChapterDetection({
+    pages: input.pages,
+    outlineEntries,
+    labelEntries
+  })
+  const warnings = [...localDetection.warnings]
   const tocEntries = input.pages
-    .filter((page) => tocPages.includes(page.pageNumber))
+    .filter((page) => localDetection.tocPages.includes(page.pageNumber))
     .flatMap(parseTocEntriesFromPage)
+  const pageMapSpans = localDetection.pageMapSpans
+  const tocPages = localDetection.tocPages
 
-  const outlineCandidates = dedupeResolvedChapters(buildOutlineCandidates(outlineEntries))
-  const tocCandidates = dedupeResolvedChapters(buildTocCandidates(tocEntries, pageMapSpans, input.pages))
-  const headingCandidates = dedupeResolvedChapters(buildHeadingCandidates(input.pages))
-
-  let chapters = outlineCandidates
-  let strategyUsed = outlineCandidates.length >= 2 ? 'outline' : 'none'
-
-  if (chapters.length < 2 && tocCandidates.length >= 2) {
-    chapters = tocCandidates
-    strategyUsed = 'toc-page-map'
-  }
-
-  if (chapters.length < 2 && headingCandidates.length >= 2) {
-    chapters = headingCandidates
-    strategyUsed = 'heading'
-  }
+  let chapters = localDetection.chapters
+  let strategyUsed = localDetection.strategyUsed
 
   const localConfidence = scoreOverallConfidence(chapters)
   const shouldUseLlm = input.mode === 'llm'
@@ -912,11 +1377,7 @@ export const buildPdfChapterArtifacts = async (input: {
           tocPages,
           tocEntries,
           pageMapSpans,
-          localCandidates: dedupeResolvedChapters([
-            ...outlineCandidates,
-            ...tocCandidates,
-            ...headingCandidates
-          ]),
+          localCandidates: chapters,
           ...(typeof input.title === 'string' ? { title: input.title } : {}),
           ...(typeof input.author === 'string' ? { author: input.author } : {}),
           llmService: input.llmService,

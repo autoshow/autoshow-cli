@@ -21,8 +21,7 @@ export const sttCommand = defineCommand({
       ['bun as stt file.mp3 --gladia-stt --speaker-count 2', 'Transcribe with Gladia diarization and an exact speaker-count hint'],
       ['bun as stt --resume-missing', 'Resume the newest compatible incomplete STT batch under ./output'],
       ['bun as stt file.mp3 --elevenlabs-stt', 'Transcribe with ElevenLabs speaker diarization'],
-      ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with ElevenLabs diarization and a speaker-count hint'],
-      ['bun as stt file.mp3 --openai-stt gpt-4o-transcribe-diarize --speaker-name Host --speaker-reference clips/host.mp3 --speaker-name Guest --speaker-reference clips/guest.mp3', 'Transcribe with OpenAI known speaker references']
+      ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with ElevenLabs diarization and a speaker-count hint']
     ]
   }
 }, async (ctx) => {

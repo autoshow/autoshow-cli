@@ -25,8 +25,6 @@ const toBootstrapProviderId = (
       return 'rev-stt'
     case 'groq':
       return 'groq-stt'
-    case 'openai':
-      return 'openai-stt'
     case 'mistral':
       return 'mistral-stt'
     case 'assemblyai':

@@ -18,7 +18,6 @@ import { runDeepgramTranscribe } from './stt-services/deepgram/run-deepgram-stt'
 import { runSonioxStt } from './stt-services/soniox/run-soniox-stt'
 import { runSpeechmaticsStt } from './stt-services/speechmatics/run-speechmatics-stt'
 import { runRevStt } from './stt-services/rev/run-rev-stt'
-import { runOpenAIStt } from './stt-services/openai/run-openai-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
 import { runGladiaStt } from './stt-services/gladia/run-gladia-stt'
@@ -27,31 +26,33 @@ import { formatTranscriptText } from './stt-utils/stt-utils'
 import { buildPersistedTranscriptionEvidence, mergeTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/stt-evidence'
 import { resolveDiarizationOptions } from './cli'
 import { ensureSttTargetSetup as ensureSttTargetSetupViaBroker } from './bootstrap'
+import {
+  DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES,
+  resolveEffectiveSplitSegmentDurationMinutes,
+  resolveSttSplitPolicy,
+  resolveTranscriptionSplitDecision
+} from './stt-split-policy'
 import { assertNever } from '~/utils/validate/assert-never'
 export { STT_ENGINE_CAPABILITIES, getSttEngineCapabilities, resolveDiarizationOptions } from './cli'
+export {
+  DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES,
+  GLADIA_MAX_ATTACHMENT_BYTES,
+  GROQ_MAX_ATTACHMENT_BYTES,
+  REV_MAX_ATTACHMENT_BYTES,
+  SPEECHMATICS_MAX_ATTACHMENT_BYTES,
+  resolveEffectiveSplitSegmentDurationMinutes,
+  resolveSttSplitPolicy,
+  resolveTranscriptionSplitDecision
+} from './stt-split-policy'
 
-const SPLIT_SEGMENT_DURATION_MINUTES = 10
-export const GROQ_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
-export const OPENAI_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
-export const SPEECHMATICS_MAX_ATTACHMENT_BYTES = 1 * 1024 * 1024 * 1024
-export const REV_MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024 * 1024
-export const GLADIA_MAX_ATTACHMENT_BYTES = 1000 * 1024 * 1024
+type SplitPolicyTarget = Pick<SttTarget, 'service' | 'model'>
 
-const AUTO_SPLIT_ATTACHMENT_CAP_BYTES: Partial<Record<TranscribeEngine, number>> = {
-  groq: GROQ_MAX_ATTACHMENT_BYTES,
-  openai: OPENAI_MAX_ATTACHMENT_BYTES,
-  speechmatics: SPEECHMATICS_MAX_ATTACHMENT_BYTES,
-  rev: REV_MAX_ATTACHMENT_BYTES,
-  gladia: GLADIA_MAX_ATTACHMENT_BYTES
-}
-
-const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<TranscribeEngine>([
+const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'elevenlabs',
   'deepgram',
   'speechmatics',
   'rev',
   'groq',
-  'openai',
   'mistral',
   'assemblyai',
   'gladia'
@@ -64,17 +65,98 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-export const shouldSplitTranscriptionInput = (
-  engine: TranscribeEngine,
-  audioFileSizeBytes: number,
-  splitRequested: boolean
-): boolean => {
-  if (splitRequested) {
-    return true
+const formatSeconds = (seconds: number): string =>
+  Number.isInteger(seconds) ? `${seconds} seconds` : `${seconds.toFixed(1)} seconds`
+
+const formatSegmentDurationMinutes = (minutes: number): string => {
+  const roundedMinutes = Number.isInteger(minutes) ? String(minutes) : String(Number(minutes.toFixed(2)))
+  return `${roundedMinutes}-minute`
+}
+
+const formatServiceLabel = (service: string): string =>
+  `${service[0]!.toUpperCase()}${service.slice(1)}`
+
+const toErrorMessage = (error: unknown): string | undefined => {
+  if (error instanceof Error) {
+    return error.message
   }
 
-  const attachmentCapBytes = AUTO_SPLIT_ATTACHMENT_CAP_BYTES[engine]
-  return attachmentCapBytes !== undefined && audioFileSizeBytes > attachmentCapBytes
+  if (typeof error === 'string') {
+    return error
+  }
+
+  return undefined
+}
+
+const isDurationLimitedTranscriptionError = (
+  target: SplitPolicyTarget,
+  error: unknown
+): boolean => {
+  const maxDurationSeconds = resolveSttSplitPolicy(target).maxDurationSeconds
+  const message = toErrorMessage(error)
+  if (maxDurationSeconds === undefined || !message) {
+    return false
+  }
+
+  const match = message.match(/audio duration\s+[\d.]+\s+seconds is longer than\s+([\d.]+)\s+seconds which is the maximum for this model/i)
+  if (!match) {
+    return false
+  }
+
+  const capFromError = Number.parseFloat(match[1] ?? '')
+  return !Number.isFinite(capFromError) || Math.abs(capFromError - maxDurationSeconds) < 1
+}
+
+const resolveSplitRetryReason = (
+  target: SplitPolicyTarget,
+  splitRequested: boolean,
+  error: unknown
+): 'attachment_cap' | 'duration_cap' | undefined => {
+  if (splitRequested) {
+    return undefined
+  }
+
+  if (SPLIT_RETRY_ON_TOO_LARGE_ENGINES.has(target.service) && isPayloadTooLargeTranscriptionError(error)) {
+    return 'attachment_cap'
+  }
+
+  if (isDurationLimitedTranscriptionError(target, error)) {
+    return 'duration_cap'
+  }
+
+  return undefined
+}
+
+const logAutoSplitDecision = (
+  target: SplitPolicyTarget,
+  audioPath: string,
+  splitDecision: ReturnType<typeof resolveTranscriptionSplitDecision>
+): void => {
+  const autoReason = splitDecision.reasons.find((reason) => reason.kind !== 'explicit')
+  if (!autoReason) {
+    return
+  }
+
+  const inputFilename = audioPath.split('/').pop() || 'audio'
+  if (autoReason.kind === 'attachment_cap') {
+    l.warn(`${formatServiceLabel(target.service)} file uploads are capped at ${formatBytes(autoReason.attachmentCapBytes)}; ${inputFilename} is ${formatBytes(autoReason.audioFileSizeBytes)}. Splitting into ${formatSegmentDurationMinutes(splitDecision.segmentDurationMinutes)} segments automatically`)
+    return
+  }
+
+  l.warn(`${formatServiceLabel(target.service)} ${target.model} audio duration is capped at ${formatSeconds(autoReason.maxDurationSeconds)}; ${inputFilename} is ${formatSeconds(autoReason.audioDurationSeconds)}. Splitting into ${formatSegmentDurationMinutes(splitDecision.segmentDurationMinutes)} segments automatically`)
+}
+
+export const shouldSplitTranscriptionInput = (
+  target: SplitPolicyTarget,
+  audioFileSizeBytes: number,
+  audioDurationSeconds: number | undefined,
+  splitRequested: boolean
+): boolean => {
+  return resolveTranscriptionSplitDecision(target, {
+    audioFileSizeBytes,
+    audioDurationSeconds,
+    splitRequested
+  }).shouldSplit
 }
 
 export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
@@ -90,15 +172,11 @@ export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => 
 }
 
 export const shouldRetrySplitTranscriptionAfterError = (
-  engine: TranscribeEngine,
+  target: SplitPolicyTarget,
   splitRequested: boolean,
   error: unknown
 ): boolean => {
-  if (splitRequested) {
-    return false
-  }
-
-  return SPLIT_RETRY_ON_TOO_LARGE_ENGINES.has(engine) && isPayloadTooLargeTranscriptionError(error)
+  return resolveSplitRetryReason(target, splitRequested, error) !== undefined
 }
 
 const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
@@ -109,14 +187,13 @@ const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
   const hasSpeechmatics = typeof options.speechmaticsSttModel === 'string' && options.speechmaticsSttModel.length > 0
   const hasRev = typeof options.revSttModel === 'string' && options.revSttModel.length > 0
   const hasGroq = typeof options.groqSttModel === 'string' && options.groqSttModel.length > 0
-  const hasOpenAI = typeof options.openaiSttModel === 'string' && options.openaiSttModel.length > 0
   const hasMistral = typeof options.mistralSttModel === 'string' && options.mistralSttModel.length > 0
   const hasAssemblyAi = typeof options.assemblyaiSttModel === 'string' && options.assemblyaiSttModel.length > 0
   const hasGladia = typeof options.gladiaSttModel === 'string' && options.gladiaSttModel.length > 0
 
-  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasSpeechmatics, hasRev, hasGroq, hasOpenAI, hasMistral, hasAssemblyAi, hasGladia].filter(Boolean).length
+  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasSpeechmatics, hasRev, hasGroq, hasMistral, hasAssemblyAi, hasGladia].filter(Boolean).length
   if (engineCount > 1) {
-    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --speechmatics-stt, --rev-stt, --groq-stt, --openai-stt, --mistral-stt, --assemblyai-stt, --gladia-stt)')
+    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --speechmatics-stt, --rev-stt, --groq-stt, --mistral-stt, --assemblyai-stt, --gladia-stt)')
   }
 
   if (hasReverb) return 'reverb'
@@ -126,7 +203,6 @@ const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
   if (hasSpeechmatics) return 'speechmatics'
   if (hasRev) return 'rev'
   if (hasGroq) return 'groq'
-  if (hasOpenAI) return 'openai'
   if (hasMistral) return 'mistral'
   if (hasAssemblyAi) return 'assemblyai'
   if (hasGladia) return 'gladia'
@@ -251,16 +327,6 @@ const dispatchStt = async (
     })
   }
 
-  if (target.service === 'openai') {
-    return await runOpenAIStt(audioPath, outputDir, {
-      model: target.model,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments,
-      diarizationOptions: target.diarizationOptions
-    })
-  }
-
   if (target.service === 'mistral') {
     return await runMistralStt(audioPath, outputDir, {
       model: target.model,
@@ -341,9 +407,15 @@ const runSplitTranscription = async (
   target: SttTarget,
   audioPath: string,
   outputDir: string,
-  options: SttTargetOptions
+  options: SttTargetOptions,
+  splitSegmentDurationMinutes?: number
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const segmentDescriptors = await splitAudioFile(audioPath, outputDir, SPLIT_SEGMENT_DURATION_MINUTES)
+  const effectiveSegmentDurationMinutes = splitSegmentDurationMinutes
+    ?? resolveEffectiveSplitSegmentDurationMinutes(resolveSttSplitPolicy(target), DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES, {
+      audioFileSizeBytes: Bun.file(audioPath).size,
+      audioDurationSeconds: options.audioDurationSeconds
+    })
+  const segmentDescriptors = await splitAudioFile(audioPath, outputDir, effectiveSegmentDurationMinutes)
   const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
   const segmentConcurrency = resolveEffectiveSegmentConcurrency(target, options.sttSegmentConcurrency)
   const results: IndexedTranscriptionChunk[] = []
@@ -412,17 +484,19 @@ export const sttTarget = async (
   await ensureSttTargetSetup(target)
 
   const audioFileSize = Bun.file(audioPath).size
-  if (shouldSplitTranscriptionInput(target.service, audioFileSize, options.split === true)) {
-    const attachmentCapBytes = AUTO_SPLIT_ATTACHMENT_CAP_BYTES[target.service]
-    if (options.split !== true && attachmentCapBytes !== undefined) {
-      const inputFilename = audioPath.split('/').pop() || 'audio'
-      l.warn(`${target.service[0]!.toUpperCase()}${target.service.slice(1)} file uploads are capped at ${formatBytes(attachmentCapBytes)}; ${inputFilename} is ${formatBytes(audioFileSize)}. Splitting into ${SPLIT_SEGMENT_DURATION_MINUTES}-minute segments automatically`)
+  const splitDecision = resolveTranscriptionSplitDecision(target, {
+    audioFileSizeBytes: audioFileSize,
+    audioDurationSeconds: options.audioDurationSeconds,
+    splitRequested: options.split === true
+  })
+  if (splitDecision.shouldSplit) {
+    if (options.split !== true) {
+      logAutoSplitDecision(target, audioPath, splitDecision)
     }
-
     return await runSplitTranscription(target, audioPath, outputDir, {
       ...options,
       asyncLifecycle: undefined
-    })
+    }, splitDecision.segmentDurationMinutes)
   }
 
   try {
@@ -430,12 +504,22 @@ export const sttTarget = async (
     await persistTranscriptionEvidenceArtifacts(outputDir, transcription.result, transcription.metadata)
     return transcription
   } catch (error) {
-    if (shouldRetrySplitTranscriptionAfterError(target.service, options.split === true, error)) {
-      l.warn(`${target.service[0]!.toUpperCase()}${target.service.slice(1)} rejected the upload as too large. Retrying with ${SPLIT_SEGMENT_DURATION_MINUTES}-minute split transcription`)
+    const splitRetryReason = resolveSplitRetryReason(target, options.split === true, error)
+    if (splitRetryReason !== undefined) {
+      const splitSegmentDurationMinutes = resolveEffectiveSplitSegmentDurationMinutes(resolveSttSplitPolicy(target), DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES, {
+        audioFileSizeBytes: audioFileSize,
+        audioDurationSeconds: options.audioDurationSeconds
+      })
+      if (splitRetryReason === 'attachment_cap') {
+        l.warn(`${formatServiceLabel(target.service)} rejected the upload as too large. Retrying with ${formatSegmentDurationMinutes(splitSegmentDurationMinutes)} split transcription`)
+      } else {
+        l.warn(`${formatServiceLabel(target.service)} ${target.model} exceeded the model audio duration limit. Retrying with ${formatSegmentDurationMinutes(splitSegmentDurationMinutes)} split transcription`)
+      }
+
       return await runSplitTranscription(target, audioPath, outputDir, {
         ...options,
         asyncLifecycle: undefined
-      })
+      }, splitSegmentDurationMinutes)
     }
 
     throw error
@@ -457,7 +541,6 @@ export const stt = async (
     if (engine === 'speechmatics') return options.speechmaticsSttModel as string
     if (engine === 'rev') return options.revSttModel as string
     if (engine === 'groq') return options.groqSttModel as string
-    if (engine === 'openai') return options.openaiSttModel as string
     if (engine === 'mistral') return options.mistralSttModel as string
     if (engine === 'assemblyai') return options.assemblyaiSttModel as string
     return options.gladiaSttModel as string
@@ -473,6 +556,7 @@ export const stt = async (
     split: options.split,
     reverbVerbatimicity: options.reverbVerbatimicity,
     sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency,
+    audioDurationSeconds: (options as ProcessingOptions & { audioDurationSeconds?: number }).audioDurationSeconds,
     runMode: 'initial'
   })
 }

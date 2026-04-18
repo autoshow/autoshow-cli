@@ -6,5 +6,5 @@ defineSTTServiceTest({
   sttService: 'rev',
   envVarKey: 'REVAI_ACCESS_TOKEN',
   envVarDescription: 'Rev transcription',
-  timeoutMs: 30_000,
+  timeoutMs: 90_000,
 })

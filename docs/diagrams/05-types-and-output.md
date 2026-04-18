@@ -18,13 +18,13 @@ output/
     ├── run.json                    # { step1 } — metadata only, no downloaded files
     │
     │  ── Media (stt command) ──
-    ├── audio.wav                   # 16kHz mono PCM audio
+    ├── audio.(mp3|m4a|ogg|flac)    # normalized compressed audio-only artifact
     ├── transcription.txt           # [HH:MM:SS] timestamped text
     ├── prompt.md                   # Formatted prompt for LLM
     ├── run.json                    # { step1, step2 }
     │
     │  ── Media (write command) ──
-    ├── audio.wav
+    ├── audio.(mp3|m4a|ogg|flac)
     ├── transcription.txt
     ├── prompt.md
     ├── text.json                   # structured write output
@@ -105,7 +105,7 @@ src/types/
 │    useReverb, useOpenAI, useGemini, useAnthropic,                            │
 │    llamaModel, openaiModel, groqModel, geminiModel,                          │
 │    anthropicModel, minimaxModel, grokModel,                                  │
-│    whisperModel, groqSttModel, elevenlabsSttModel, openaiSttModel,           │
+│    whisperModel, groqSttModel, elevenlabsSttModel, deepgramSttModel,         │
 │    mistralSttModel, assemblyaiSttModel,                                      │
 │    diarizationSpeakerCount,                                                  │
 │    price, allowOverBudget,                                                   │

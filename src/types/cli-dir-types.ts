@@ -11,6 +11,12 @@ export type BatchItem = {
   meta?: Record<string, unknown>
 }
 
+export type BatchChildRunContext = {
+  batchDir: string
+  batchItem?: BatchItem
+  outputDir?: string
+}
+
 export type BatchSourceKind = 'podcast_rss' | 'youtube_channel' | 'youtube_playlist' | 'url_list'
 
 export type BatchSource = {

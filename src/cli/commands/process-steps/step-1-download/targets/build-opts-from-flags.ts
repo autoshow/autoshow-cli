@@ -14,7 +14,6 @@ import {
   validateSpeechmaticsSttModel,
   validateRevSttModel,
   validateGroqSttModel,
-  validateOpenAISttModel,
   validateMistralSttModel,
   validateAssemblyaiSttModel,
   validateGladiaSttModel,
@@ -105,18 +104,6 @@ const readOptionalModelFlag = (flags: Record<string, unknown>, key: string): str
     return resolveCheapestModelForFlag(key)
   }
 
-  return undefined
-}
-
-const readOptionalStringArrayFlag = (flags: Record<string, unknown>, key: string): string[] | undefined => {
-  const value = flags[key]
-  if (Array.isArray(value)) {
-    const values = value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
-    return values.length > 0 ? values : undefined
-  }
-  if (typeof value === 'string' && value.length > 0) {
-    return [value]
-  }
   return undefined
 }
 
@@ -211,7 +198,6 @@ export const buildOptsFromFlags = (
   const sonioxSttModel = readValidated('soniox-stt', validateSonioxSttModel)
   const speechmaticsSttModel = readValidated('speechmatics-stt', validateSpeechmaticsSttModel)
   const revSttModel = readValidated('rev-stt', validateRevSttModel)
-  const openaiSttModel = readValidated('openai-stt', validateOpenAISttModel)
   const mistralSttModel = readValidated('mistral-stt', validateMistralSttModel)
   const assemblyaiSttModel = readValidated('assemblyai-stt', validateAssemblyaiSttModel)
   const gladiaSttModel = readValidated('gladia-stt', validateGladiaSttModel)
@@ -263,13 +249,10 @@ export const buildOptsFromFlags = (
     sonioxSttModel,
     speechmaticsSttModel,
     revSttModel,
-    openaiSttModel,
     mistralSttModel,
     assemblyaiSttModel,
     gladiaSttModel,
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
-    diarizationSpeakerNames: readOptionalStringArrayFlag(mergedFlags, 'speaker-name'),
-    diarizationSpeakerReferences: readOptionalStringArrayFlag(mergedFlags, 'speaker-reference'),
     sttProviderConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-provider-concurrency'), 2)),
     sttLocalConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-local-concurrency'), 1)),
     sttSegmentConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-segment-concurrency'), 2)),

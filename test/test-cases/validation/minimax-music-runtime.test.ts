@@ -104,6 +104,50 @@ describe('runMinimaxMusicGen', () => {
     expect(Array.from(bytes)).toEqual([1, 2, 3, 4])
   })
 
+  test('truncates overlong music prompts before the MiniMax request', async () => {
+    const { outputDir, lyricsPath } = await createFixture()
+    process.env['MINIMAX_API_KEY'] = 'test-key'
+    process.env['MINIMAX_BASE_URL'] = 'https://minimax.test'
+
+    const overlongPrompt = 'word '.repeat(500)
+
+    globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        model: string
+        prompt: string
+        lyrics: string
+      }
+
+      expect(body.model).toBe('music-2.5')
+      expect(body.lyrics).toBe('[verse]\nTest lyrics')
+      expect(body.prompt.length).toBeLessThanOrEqual(2000)
+      expect(body.prompt.length).toBeLessThan(overlongPrompt.length)
+      expect(body.prompt.endsWith('word')).toBe(true)
+      expect(body.prompt.endsWith(' ')).toBe(false)
+
+      return jsonResponse({
+        data: {
+          status: 2,
+          audio: '0102'
+        },
+        extra_info: {
+          music_duration: 1234
+        },
+        base_resp: {
+          status_code: 0,
+          status_msg: 'success'
+        }
+      })
+    }) as unknown as typeof fetch
+
+    const { metadata } = await runMinimaxMusicGen(overlongPrompt, outputDir, {
+      model: 'music-2.5',
+      lyricsFile: lyricsPath
+    })
+
+    expect(metadata.musicDurationMs).toBe(1234)
+  })
+
   test('retries once when MiniMax returns an incomplete success envelope', async () => {
     const { outputDir, lyricsPath } = await createFixture()
     process.env['MINIMAX_API_KEY'] = 'test-key'

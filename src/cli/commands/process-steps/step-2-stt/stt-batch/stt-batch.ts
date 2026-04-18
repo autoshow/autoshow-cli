@@ -47,9 +47,13 @@ export const runSttBatch = async (
     batchLabel,
     'stt',
     opts,
-    async (command, item, batchDir, batchOpts) =>
+    async (command, item, batchDir, batchOpts, batchItem) =>
       await processSingleTarget(command, item, batchDir, batchOpts, undefined, {
-        ...(coordinator ? { sttBatchCoordinator: coordinator } : {})
+        ...(coordinator ? { sttBatchCoordinator: coordinator } : {}),
+        batchChildContext: {
+          batchDir,
+          ...(batchItem ? { batchItem } : {})
+        }
       }),
     runOpts
   )

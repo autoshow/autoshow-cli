@@ -4,7 +4,7 @@ import { articleFlags, batchFlags } from './shared-flags'
 export const downloadFlags = {
   password: { description: 'Password for encrypted PDFs', type: String },
   'keep-original-media': {
-    description: 'Keep downloaded media in its original format instead of converting to WAV',
+    description: 'Keep downloaded media in its original/downloaded format instead of creating the normalized compressed audio artifact',
     type: Boolean,
     default: false,
     negatable: false

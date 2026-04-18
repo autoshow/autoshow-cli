@@ -1,4 +1,4 @@
-import { copyFile, rename } from 'node:fs/promises'
+import { copyFile, rename, rm } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { basename, extname, join } from 'node:path'
 import type { Step1Metadata, VideoMetadata } from '~/types'
@@ -10,6 +10,7 @@ import { buildMediaStep1Slug, sanitizeTitleSlug } from './metadata-utils'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import type { DownloadAudioOptions } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact } from './audio-normalize'
 
 
 let ytDlpVersionVerified = false
@@ -98,43 +99,31 @@ const downloadDirectMediaUrl = async (url: string, outputDir: string): Promise<s
   return dest
 }
 
-export const convertToWav = async (inputPath: string, outputDir: string, removeOriginal: boolean = true): Promise<string> => {
-  try {
-    const inputFile = Bun.file(inputPath)
-    const fileSize = inputFile.size
-    
-    if (fileSize < 1000) {
-      throw new Error(`Input file is too small (${fileSize} bytes), likely corrupted`)
-    }
-    
-    const inputFilename = inputPath.split('/').pop() || 'audio'
-    const outputFilename = inputFilename.replace(/\.[^/.]+$/, '.wav')
-    const wavPath = `${outputDir}/${outputFilename}`
-
-    l.info(`Converting audio to WAV: ${inputFilename}`)
-    const result = await exec('ffmpeg', [
-      '-i', inputPath,
-      '-ar', '16000',
-      '-ac', '1',
-      '-c:a', 'pcm_s16le',
-      '-y',
-      wavPath
-    ])
-    
-    if (result.exitCode !== 0) {
-      throw new Error(`Failed to convert to WAV: ${result.stderr}`)
-    }
-
-    if (removeOriginal) {
-      await Bun.$`rm -f ${inputPath}`.quiet()
-    }
-
-    l.success(`WAV ready: ${outputFilename}`)
-    return wavPath
-  } catch (error) {
-    l.error(`Failed to convert to WAV`, error)
-    throw error
+const normalizeDownloadedAudio = async (
+  inputPath: string,
+  outputDir: string,
+  videoMetadata: VideoMetadata,
+  options: { removeOriginal?: boolean } = {}
+): Promise<string> => {
+  const inputFile = Bun.file(inputPath)
+  const fileSize = inputFile.size
+  if (fileSize < 1000) {
+    throw new Error(`Input file is too small (${fileSize} bytes), likely corrupted`)
   }
+
+  const { plan } = await planNormalizedAudioArtifact(inputPath)
+  const preferredFileName = `${buildPreferredMediaBaseName(videoMetadata)}${plan.outputExtension}`
+  const finalPath = await ensureUniqueOutputPath(outputDir, preferredFileName, inputPath)
+
+  l.info(`Normalizing audio to ${plan.outputExtension}: ${basename(inputPath) || 'audio'} (${plan.reason})`)
+  await materializeNormalizedAudioArtifact(inputPath, finalPath, plan)
+
+  if (options.removeOriginal && inputPath !== finalPath) {
+    await rm(inputPath, { force: true })
+  }
+
+  l.success(`Audio ready: ${basename(finalPath)}`)
+  return finalPath
 }
 
 const verifyYtDlpVersion = async (): Promise<void> => {
@@ -204,14 +193,14 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     if (options.keepOriginalMedia) {
       audioPath = await finalizeDownloadedMedia(options.filePath, options.outputDir, videoMetadata, { copy: true })
     } else {
-      audioPath = await convertToWav(options.filePath, options.outputDir, false)
+      audioPath = await normalizeDownloadedAudio(options.filePath, options.outputDir, videoMetadata)
     }
   } else if (options.directDownload) {
     l.info('Downloading direct audio URL')
     const rawPath = await downloadDirectAudioUrl(options.url as string, options.outputDir)
     audioPath = options.keepOriginalMedia
       ? await finalizeDownloadedMedia(rawPath, options.outputDir, videoMetadata)
-      : await convertToWav(rawPath, options.outputDir, true)
+      : await normalizeDownloadedAudio(rawPath, options.outputDir, videoMetadata, { removeOriginal: true })
   } else if (isDirectMediaUrl(options.url as string)) {
     l.info('Downloading direct media URL')
     const mediaPath = await downloadDirectMediaUrl(options.url as string, options.outputDir)
@@ -221,7 +210,7 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     }
     audioPath = options.keepOriginalMedia
       ? await finalizeDownloadedMedia(mediaPath, options.outputDir, videoMetadata)
-      : await convertToWav(mediaPath, options.outputDir, true)
+      : await normalizeDownloadedAudio(mediaPath, options.outputDir, videoMetadata, { removeOriginal: true })
   } else {
     if (!commandExists('yt-dlp')) {
       await setupYtDependencies()
@@ -235,21 +224,12 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     }
     audioPath = options.keepOriginalMedia
       ? await finalizeDownloadedMedia(videoPath, options.outputDir, videoMetadata)
-      : await convertToWav(videoPath, options.outputDir, true)
-  }
-  
-  if (!options.keepOriginalMedia) {
-    const sanitizedAudioName = `${buildPreferredMediaBaseName(videoMetadata)}.wav`
-    const sanitizedAudioPath = await ensureUniqueOutputPath(options.outputDir, sanitizedAudioName, audioPath)
-    if (audioPath !== sanitizedAudioPath) {
-      await rename(audioPath, sanitizedAudioPath)
-      audioPath = sanitizedAudioPath
-    }
+      : await normalizeDownloadedAudio(videoPath, options.outputDir, videoMetadata, { removeOriginal: true })
   }
 
   const audioFile = Bun.file(audioPath)
   const audioFileSize = audioFile.size
-  const audioFileName = basename(audioPath) || 'audio.wav'
+  const audioFileName = basename(audioPath) || 'audio'
 
   const slug = buildMediaStep1Slug({
     ...(options.filePath ? { filePath: options.filePath } : {}),

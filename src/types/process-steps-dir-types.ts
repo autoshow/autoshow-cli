@@ -30,27 +30,11 @@ export type GroqTranscriptionResponse = {
   segments?: unknown
 }
 
-export type OpenAITranscriptionDiarizedSegment = {
-  id?: unknown
-  start?: unknown
-  end?: unknown
-  speaker?: unknown
-  text?: unknown
-}
-
-export type OpenAITranscriptionDiarizedResponse = {
-  text?: unknown
-  duration?: unknown
-  task?: unknown
-  segments?: unknown
-}
-
-export type TranscribeEngine = 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'openai' | 'mistral' | 'assemblyai' | 'gladia' | 'whisper' | 'youtube-captions'
+export type TranscribeEngine = 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'whisper' | 'youtube-captions'
 
 export type TranscribeEngineCapabilities = {
   diarizationByDefault: boolean
   supportsSpeakerCountHint: boolean
-  supportsKnownSpeakerReferences: boolean
 }
 
 export type DownloadInfo = {

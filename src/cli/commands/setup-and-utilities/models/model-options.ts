@@ -1,5 +1,5 @@
 export * from '~/cli/commands/setup-and-utilities/models/stt-models'
-export * from '~/cli/commands/setup-and-utilities/models/extract-models'
+export * from '~/cli/commands/setup-and-utilities/models/ocr-models'
 export * from '~/cli/commands/setup-and-utilities/models/llm-models'
 export * from '~/cli/commands/setup-and-utilities/models/tts-models'
 export * from '~/cli/commands/setup-and-utilities/models/image-models'

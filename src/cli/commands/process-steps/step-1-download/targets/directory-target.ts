@@ -40,7 +40,12 @@ export const handleDirectoryTargetBatch = async (
   }
 
   const { ok, incomplete, fail, failureExitCode } = await processBatch(all, label, command, opts, async (commandName, item, batchDir, batchOpts, batchItem) =>
-    await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem), {
+    await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
+      batchChildContext: {
+        batchDir,
+        ...(batchItem ? { batchItem } : {})
+      }
+    }, batchItem), {
     concurrency: opts.batchConcurrency
   })
   if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && ok === 0 && fail > 0)) {

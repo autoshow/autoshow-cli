@@ -115,9 +115,8 @@ export const buildYtDlpDownloadArgs = async (url: string, outputDir: string): Pr
   const sharedArgs = await buildSharedYtDlpArgs()
 
   return [
-    '--extract-audio',
-    '--audio-format',
-    'mp3',
+    '--format',
+    'bestaudio/best',
     '--output',
     `${outputDir}/%(title)s.%(ext)s`,
     '--restrict-filenames',

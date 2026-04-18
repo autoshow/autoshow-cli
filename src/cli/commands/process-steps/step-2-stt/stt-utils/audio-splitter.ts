@@ -1,6 +1,7 @@
 import type { AudioSegmentDescriptor } from '~/types'
 import * as l from '~/logger'
 import { exec, ensureDirectory } from '~/utils/cli-utils'
+import { planNormalizedAudioArtifact, resolveSplitAudioPlan } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
 
 export const splitAudioFile = async (audioPath: string, outputDir: string, segmentDurationMinutes: number = 10): Promise<AudioSegmentDescriptor[]> => {
   l.info(`Splitting audio file into ${segmentDurationMinutes}-minute segments`)
@@ -8,6 +9,8 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
   const segmentDurationSeconds = segmentDurationMinutes * 60
   const segmentsDir = `${outputDir}/segments`
   await ensureDirectory(segmentsDir)
+  const { probe } = await planNormalizedAudioArtifact(audioPath)
+  const splitPlan = resolveSplitAudioPlan(audioPath, probe)
 
   const durationResult = await exec('ffprobe', [
     '-v', 'error',
@@ -29,18 +32,23 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
 
   for (let i = 0; i < totalSegments; i++) {
     const startTime = i * segmentDurationSeconds
-    const segmentPath = `${segmentsDir}/segment_${String(i + 1).padStart(3, '0')}.mp3`
+    const segmentPath = `${segmentsDir}/segment_${String(i + 1).padStart(3, '0')}${splitPlan.outputExtension}`
 
-    const result = await exec('ffmpeg', [
+    const ffmpegArgs = [
       '-i', audioPath,
       '-ss', String(startTime),
       '-t', String(segmentDurationSeconds),
       '-vn',
-      '-codec:a', 'libmp3lame',
-      '-q:a', '2',
-      '-y',
-      segmentPath
-    ])
+      '-map', '0:a:0'
+    ]
+
+    if (splitPlan.mode === 'copy-stream') {
+      ffmpegArgs.push('-c:a', 'copy', '-f', splitPlan.outputFormat, '-y', segmentPath)
+    } else {
+      ffmpegArgs.push('-c:a', 'flac', '-compression_level', '12', '-y', segmentPath)
+    }
+
+    const result = await exec('ffmpeg', ffmpegArgs)
 
     if (result.exitCode !== 0) {
       l.error(`Failed to create segment ${i + 1}: ${result.stderr}`)

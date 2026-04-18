@@ -15,19 +15,36 @@ const SttBillingSchema = v.object({
   minimumSeconds: v.optional(v.number(), undefined)
 })
 
+const SttLimitsSchema = v.object({
+  effectiveBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  directUploadBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  remoteUrlBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  durationSeconds: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  notes: v.optional(v.string(), undefined)
+})
+
 const SttModelSchema = v.object({
   description: v.string(),
   costPerHourUSD: v.optional(v.number(), undefined),
   costPerHourCents: v.optional(v.number(), undefined),
   costPerThreeHours: v.optional(v.number(), undefined),
   billing: v.optional(SttBillingSchema, undefined),
-  estimation: v.optional(SttEstimationSchema, undefined)
+  estimation: v.optional(SttEstimationSchema, undefined),
+  limits: v.optional(SttLimitsSchema, undefined)
 })
 
 const SttServiceSchema = v.object({
   description: v.string(),
   type: v.picklist(['local', 'api']),
   models: v.record(v.string(), SttModelSchema)
+})
+
+const ExtractLimitsSchema = v.object({
+  effectiveBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  imageBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  pdfBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  pageCount: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  notes: v.optional(v.string(), undefined)
 })
 
 const ExtractModelSchema = v.object({
@@ -38,6 +55,7 @@ const ExtractModelSchema = v.object({
   costPerMInputTokensCents: v.optional(v.number(), undefined),
   costPerMOutputTokensUSD: v.optional(v.number(), undefined),
   costPerMOutputTokensCents: v.optional(v.number(), undefined),
+  limits: v.optional(ExtractLimitsSchema, undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),
     msPerPage: v.optional(v.number(), undefined)
@@ -182,7 +200,7 @@ export const ModelRegistrySchema = v.object({
 
 
 const STT_PATH = resolve(import.meta.dir, 'stt-config.json')
-const EXTRACT_PATH = resolve(import.meta.dir, 'extract-config.json')
+const OCR_PATH = resolve(import.meta.dir, 'ocr-config.json')
 const LLM_PATH = resolve(import.meta.dir, 'llm-config.json')
 const TTS_PATH = resolve(import.meta.dir, 'tts-config.json')
 const IMAGE_PATH = resolve(import.meta.dir, 'image-config.json')
@@ -211,7 +229,7 @@ const DEFAULT_MUSIC_MS_PER_SECOND = 4_000
 
 export const MODEL_CONFIG_PATHS = {
   stt: STT_PATH,
-  extract: EXTRACT_PATH,
+  extract: OCR_PATH,
   llm: LLM_PATH,
   tts: TTS_PATH,
   image: IMAGE_PATH,
@@ -231,6 +249,9 @@ export type SttBilling = {
   roundingIncrementSeconds?: number
   minimumSeconds?: number
 }
+
+export type SttLimits = v.InferOutput<typeof SttLimitsSchema>
+export type ExtractLimits = v.InferOutput<typeof ExtractLimitsSchema>
 
 export type ExtractEstimation = CostEstimation & {
   msPerPage: number
@@ -260,7 +281,7 @@ export const getModelRegistry = (): ModelRegistry => {
   if (cached) return cached
 
   const stt = validateData(SttRegistrySchema, JSON.parse(readFileSync(STT_PATH, 'utf-8')), `STT models at ${STT_PATH}`)
-  const extract = validateData(ExtractRegistrySchema, JSON.parse(readFileSync(EXTRACT_PATH, 'utf-8')), `extract models at ${EXTRACT_PATH}`)
+  const extract = validateData(ExtractRegistrySchema, JSON.parse(readFileSync(OCR_PATH, 'utf-8')), `extract models at ${OCR_PATH}`)
   const llm = validateData(LlmRegistrySchema, JSON.parse(readFileSync(LLM_PATH, 'utf-8')), `LLM models at ${LLM_PATH}`)
   const tts = validateData(TtsRegistrySchema, JSON.parse(readFileSync(TTS_PATH, 'utf-8')), `TTS models at ${TTS_PATH}`)
   const image = validateData(ImageRegistrySchema, JSON.parse(readFileSync(IMAGE_PATH, 'utf-8')), `image models at ${IMAGE_PATH}`)
@@ -318,6 +339,19 @@ export const getSttBilling = (service: string, model: string): SttBilling => {
   }
 }
 
+export const getSttLimits = (service: string, model: string): SttLimits => {
+  const limits = getModelRegistry().stt[service]?.models[model]?.limits
+  const effectiveBytes = limits?.effectiveBytes ?? limits?.directUploadBytes ?? limits?.remoteUrlBytes
+
+  return {
+    ...(effectiveBytes !== undefined ? { effectiveBytes } : {}),
+    ...(limits?.directUploadBytes !== undefined ? { directUploadBytes: limits.directUploadBytes } : {}),
+    ...(limits?.remoteUrlBytes !== undefined ? { remoteUrlBytes: limits.remoteUrlBytes } : {}),
+    ...(limits?.durationSeconds !== undefined ? { durationSeconds: limits.durationSeconds } : {}),
+    ...(limits?.notes !== undefined ? { notes: limits.notes } : {})
+  }
+}
+
 export const getSttEstimation = (service: string, model: string): SttEstimation => {
   const serviceType = getRegistryServiceType('stt', service) ?? 'api'
   const modelMeta = getModelRegistry().stt[service]?.models[model]
@@ -353,6 +387,29 @@ export const getExtractPricing = (
       : extractModel.costPerMOutputTokensUSD !== undefined
         ? { outputCostPer1MCents: extractModel.costPerMOutputTokensUSD * 100 }
         : {})
+  }
+}
+
+export const getExtractLimits = (
+  service: string,
+  model: string,
+  format?: string
+): ExtractLimits => {
+  const limits = getModelRegistry().extract[service]?.models[model]?.limits
+  const normalizedFormat = format?.toLowerCase()
+  const effectiveBytes = limits?.effectiveBytes
+    ?? (normalizedFormat === 'pdf'
+      ? limits?.pdfBytes
+      : normalizedFormat === 'png' || normalizedFormat === 'jpg' || normalizedFormat === 'tif' || normalizedFormat === 'webp' || normalizedFormat === 'bmp' || normalizedFormat === 'gif'
+        ? limits?.imageBytes
+        : undefined)
+
+  return {
+    ...(effectiveBytes !== undefined ? { effectiveBytes } : {}),
+    ...(limits?.imageBytes !== undefined ? { imageBytes: limits.imageBytes } : {}),
+    ...(limits?.pdfBytes !== undefined ? { pdfBytes: limits.pdfBytes } : {}),
+    ...(limits?.pageCount !== undefined ? { pageCount: limits.pageCount } : {}),
+    ...(limits?.notes !== undefined ? { notes: limits.notes } : {})
   }
 }
 

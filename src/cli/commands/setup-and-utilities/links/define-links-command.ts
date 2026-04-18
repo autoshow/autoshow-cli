@@ -36,6 +36,7 @@ const globalSectionKeySet = new Set(
 )
 const knownProviders = [...serviceKeySet].sort()
 const knownSections = [...globalSectionKeySet].sort()
+const MIXED_DASHED_SECTION_ERROR = 'Dashed links sections like "--stt" cannot be mixed with provider selectors. Use "bun as links --stt" for global sections or "bun as links --deepgram stt" for provider-scoped sections.'
 
 export const parseLinksArgv = (argv: string[]): LinksSelection => {
   const linksIdx = argv.findIndex((a) => a === 'links')
@@ -43,6 +44,7 @@ export const parseLinksArgv = (argv: string[]): LinksSelection => {
 
   const serviceSelections = new Map<string, string[]>()
   const globalSections: string[] = []
+  let usedDashedSectionSelector = false
   let currentService: string | null = null
 
   for (const arg of args) {
@@ -54,14 +56,21 @@ export const parseLinksArgv = (argv: string[]): LinksSelection => {
         if (!serviceSelections.has(currentService)) {
           serviceSelections.set(currentService, [])
         }
+      } else if (globalSectionKeySet.has(flag)) {
+        usedDashedSectionSelector = true
+        globalSections.push(flag)
       } else {
-        throw CLIUsageError(`Unknown links provider "--${flag}". Known providers: ${knownProviders.join(', ')}`)
+        throw CLIUsageError(`Unknown links selector "--${flag}". Known providers: ${knownProviders.join(', ')}. Known sections: ${knownSections.join(', ')}.`)
       }
     } else if (currentService) {
       serviceSelections.get(currentService)!.push(arg.toLowerCase())
     } else {
       globalSections.push(arg.toLowerCase())
     }
+  }
+
+  if (usedDashedSectionSelector && serviceSelections.size > 0) {
+    throw CLIUsageError(MIXED_DASHED_SECTION_ERROR)
   }
 
   return { serviceSelections, globalSections }
@@ -190,7 +199,8 @@ export const linksCommand = defineCommand({
   description: 'Fetch provider documentation markdown and write a combined file',
   help: {
     examples: [
-      ['bun as links', 'Fetch all provider documentation']
+      ['bun as links', 'Fetch all provider documentation'],
+      ['bun as links --stt', 'Fetch STT documentation across every provider']
     ]
   }
 }, runLinks)

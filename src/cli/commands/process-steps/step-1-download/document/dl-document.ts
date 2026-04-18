@@ -3,13 +3,14 @@ import { stat } from 'node:fs/promises'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { ensureDirectory, exec } from '~/utils/cli-utils'
+import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
 import { validateData } from '~/utils/validate/validation'
 import {
   buildDocumentStep1Slug,
   createUniqueDirectoryName
 } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { DocumentMetadataSchema, type DocFormat, type PreparedDocument, type PreparedDocumentMetadata, type Step1SourceRef } from '~/types'
+import { DocumentMetadataSchema, type BatchChildRunContext, type DocFormat, type PreparedDocument, type PreparedDocumentMetadata, type Step1SourceRef } from '~/types'
 import { detectDocumentFormat } from './detect-format'
 import { getDocumentInfo } from './mutool-utils'
 import * as l from '~/logger'
@@ -175,10 +176,14 @@ export const downloadDocument = async (
   filePath: string,
   baseOutputDir: string,
   password?: string,
-  sourceRef?: Step1SourceRef
+  sourceRef?: Step1SourceRef,
+  batchChildContext?: BatchChildRunContext
 ): Promise<PreparedDocument> => {
   const prepared = await prepareDocumentMetadata(filePath, password, sourceRef)
-  const outputDir = defaultOutputDir(baseOutputDir, filePath)
+  const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
+    slug: prepared.step1Metadata.slug,
+    fallbackLabel: basename(filePath).replace(/\.[^.]+$/, '')
+  }) ?? defaultOutputDir(baseOutputDir, filePath)
   await ensureDirectory(outputDir)
 
   return {

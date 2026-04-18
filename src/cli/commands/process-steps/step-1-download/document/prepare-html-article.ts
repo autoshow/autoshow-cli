@@ -3,11 +3,12 @@ import { basename, resolve as pathResolve } from 'node:path'
 import { parseHTML } from 'linkedom'
 import { Defuddle } from 'defuddle/node'
 import * as l from '~/logger'
+import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
-import { DocumentMetadataSchema, type HtmlArticleBackend, type PreparedDocument, type WebArticleMetadata } from '~/types'
+import { DocumentMetadataSchema, type BatchChildRunContext, type HtmlArticleBackend, type PreparedDocument, type WebArticleMetadata } from '~/types'
 import { runGlmReader } from './glm-reader'
 
 const HTML_FETCH_TIMEOUT_MS = 15000
@@ -353,7 +354,8 @@ const runFirecrawlScrape = async (
 export async function prepareHtmlArticle(
   source: string,
   outputDir: string,
-  backend: HtmlArticleBackend
+  backend: HtmlArticleBackend,
+  batchChildContext?: BatchChildRunContext
 ): Promise<PreparedDocument> {
   const remote = isRemoteSource(source)
   let resolvedBackend = backend
@@ -438,7 +440,11 @@ export async function prepareHtmlArticle(
   }, 'html article metadata')
 
   const effectiveBaseDir = outputDir.trim().length > 0 ? outputDir : './output'
-  const preparedOutputDir = `${effectiveBaseDir}/${createUniqueDirectoryName(step1Title || step1Slug || 'article')}`
+  const preparedOutputDir = await reserveBatchChildOutputDir(batchChildContext, {
+    slug: step1Slug,
+    publishedAt: batchChildContext?.batchItem?.publishedAt ?? normalizeBatchChildPublishedAt(web.published),
+    fallbackLabel: step1Title || step1Slug || 'article'
+  }) ?? `${effectiveBaseDir}/${createUniqueDirectoryName(step1Title || step1Slug || 'article')}`
   await ensureDirectory(preparedOutputDir)
 
   return {

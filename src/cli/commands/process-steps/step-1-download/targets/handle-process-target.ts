@@ -463,7 +463,12 @@ export const handleProcessTarget = async (
       command,
       opts,
       async (commandName, item, batchDir, batchOpts, batchItem) =>
-        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem),
+        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
+          batchChildContext: {
+            batchDir,
+            ...(batchItem ? { batchItem } : {})
+          }
+        }, batchItem),
       {
         source: resolved.source,
         selectedItems: resolved.selectedItems,
@@ -496,7 +501,12 @@ export const handleProcessTarget = async (
       command,
       opts,
       async (commandName, item, batchDir, batchOpts, batchItem) =>
-        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, undefined, batchItem)
+        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
+          batchChildContext: {
+            batchDir,
+            ...(batchItem ? { batchItem } : {})
+          }
+        }, batchItem)
     )
     if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && plan.targets.length > 0 && fail === plan.targets.length)) {
       const problemCount = isSttCommand(command) ? incomplete + fail : fail

@@ -1,10 +1,24 @@
 import { describe, expect, test } from 'bun:test'
 import * as v from 'valibot'
+import type { Step3Metadata } from '~/types'
+import { runCompatFallback } from '~/cli/commands/process-steps/step-3-write/structured-output/compat-fallback'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { getStructuredCapability, resolveStructuredStrategy, shouldApplyStrictMode } from '~/cli/commands/process-steps/step-3-write/structured-output/capabilities'
 import { renderToPlainText } from '~/cli/commands/process-steps/step-3-write/structured-output/renderers'
 import { getStructuredPresetSchema, hasStructuredPreset } from '~/cli/commands/process-steps/step-3-write/structured-output/preset-registry'
 import { resolveStructuredSchema } from '~/cli/commands/process-steps/step-3-write/structured-output/schema-resolver'
+
+const compatMetadata: Step3Metadata = {
+  llmService: 'llama.cpp',
+  llmModel: 'ggml-org/Qwen3-0.6B-GGUF',
+  processingTime: 123,
+  inputTokenCount: 45,
+  outputTokenCount: 67,
+  outputFileName: 'text.json',
+  outputFormat: 'json',
+  structuredMode: 'schema-guided',
+  structuredPresetNames: ['shortSummary', 'longSummary', 'chapters']
+}
 
 describe('parseAndValidateStructured', () => {
   const TestSchema = v.object({
@@ -151,9 +165,73 @@ describe('renderToPlainText', () => {
     expect(result).toContain('detailed')
   })
 
+  test('renders fallback content envelopes directly even for multi-prompt runs', () => {
+    const result = renderToPlainText(
+      { content: 'raw model output', _validationError: 'missing chapters' },
+      ['shortSummary', 'longSummary', 'chapters']
+    )
+    expect(result).toBe('raw model output')
+  })
+
   test('handles null/undefined input', () => {
     expect(renderToPlainText(null, [])).toBe('(No output generated)')
     expect(renderToPlainText(undefined, [])).toBe('(No output generated)')
+  })
+})
+
+describe('runCompatFallback', () => {
+  test('falls back to a raw content envelope after invalid JSON exhausts retries', async () => {
+    const schema = await resolveStructuredSchema(['default'])
+    let attempts = 0
+
+    const result = await runCompatFallback({
+      service: 'llama.cpp',
+      label: 'llama.cpp',
+      model: compatMetadata.llmModel,
+      run: async () => {
+        attempts += 1
+        return {
+          result: 'this is not valid json',
+          metadata: compatMetadata
+        }
+      }
+    }, 'Prompt text', compatMetadata.llmModel, schema, 2)
+
+    expect(attempts).toBe(3)
+    expect(result.metadata).toEqual(compatMetadata)
+    expect(result.rawResponse).toBe('this is not valid json')
+    expect(result.parsedJson).toEqual({
+      content: 'this is not valid json',
+      _validationError: 'Response was not valid JSON'
+    })
+  })
+
+  test('falls back to a raw content envelope after schema validation exhausts retries', async () => {
+    const schema = await resolveStructuredSchema(['default'])
+    const rawResponse = JSON.stringify({
+      shortSummary: {
+        episodeDescription: 'Short summary'
+      },
+      longSummary: {
+        episodeSummary: 'Long summary'
+      }
+    })
+
+    const result = await runCompatFallback({
+      service: 'llama.cpp',
+      label: 'llama.cpp',
+      model: compatMetadata.llmModel,
+      run: async () => ({
+        result: rawResponse,
+        metadata: compatMetadata
+      })
+    }, 'Prompt text', compatMetadata.llmModel, schema, 1)
+
+    expect(result.rawResponse).toBe(rawResponse)
+    expect(result.parsedJson).toMatchObject({
+      content: rawResponse
+    })
+    expect((result.parsedJson as { _validationError?: string })._validationError).toContain('chapters')
   })
 })
 

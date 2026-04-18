@@ -146,7 +146,7 @@ src/cli/flags/
 │  ├── --reverb-verbatimicity  0.0-1.0                       │
 │  ├── --elevenlabs-stt MODEL  ElevenLabs Scribe STT         │
 │  ├── --groq-stt MODEL    Groq Whisper STT (API)            │
-│  ├── --openai-stt MODEL  OpenAI STT (supports diarization) │
+│  ├── --deepgram-stt MODEL Deepgram STT (diarized)          │
 │  ├── --mistral-stt MODEL Mistral STT (supports diarization)│
 │  ├── --assemblyai-stt MODEL AssemblyAI STT (diarization)   │
 │  ├── --speaker-count N   Diarization speaker hint          │

@@ -19,6 +19,14 @@ const buildCompatPrompt = (prompt: string, schema: ResolvedStructuredSchema): st
   ].join('\n')
 }
 
+const buildCompatFallbackEnvelope = (
+  rawResponse: string,
+  validationIssue: string
+): Record<string, string> => ({
+  content: rawResponse,
+  _validationError: validationIssue
+})
+
 export const runCompatFallback = async (
   target: LLMTarget,
   prompt: string,
@@ -36,9 +44,11 @@ export const runCompatFallback = async (
 
   const maxAttempts = retryBudget + 1
   let lastIssue = 'Unknown compat failure'
+  let lastResponse: Awaited<ReturnType<LLMTarget['run']>> | undefined
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const response = await target.run(compatPrompt, model, requestOptions)
+    lastResponse = response
     const validated = parseAndValidateStructured(schema.schema, response.result)
 
     if (validated.success) {
@@ -55,5 +65,14 @@ export const runCompatFallback = async (
     }
   }
 
-  throw new Error(`Structured compat mode failed for ${target.label}/${model}: ${lastIssue}`)
+  if (!lastResponse) {
+    throw new Error(`Structured compat mode failed for ${target.label}/${model}: ${lastIssue}`)
+  }
+
+  l.warn(`Structured compat fallback for ${target.label}/${model}: ${lastIssue}`)
+  return {
+    parsedJson: buildCompatFallbackEnvelope(lastResponse.result, lastIssue),
+    rawResponse: lastResponse.result,
+    metadata: lastResponse.metadata
+  }
 }

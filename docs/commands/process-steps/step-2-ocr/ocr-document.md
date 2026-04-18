@@ -187,6 +187,8 @@ bun as ocr --resume-missing
 - Supported document formats include PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, and CBZ.
 - Supported image formats include PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, and GIF.
 - Mistral OCR accepts PDF and standard images (`PNG`, `JPG`, `TIF`); GLM OCR accepts PDF plus `PNG` and `JPG`.
+- GLM OCR currently enforces the bundled docs caps from `project/links/bun-links.md`: images up to 10 MB, PDFs up to 50 MB, and PDFs up to 100 pages.
+- No numeric Mistral OCR or Firecrawl file-size/page-count caps were found in `project/links/bun-links.md`, so this CLI does not enforce any new numeric limits for those providers from that source.
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
 - Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
 - `--resume-missing` does not accept a positional input and does not support `--price`.
