@@ -4,19 +4,19 @@ import type { LlmRateEstimate } from '~/types'
 
 
 const SERVICE_ORDER: Array<{ service: string, modelKey: keyof ResolvedLLMConfig }> = [
-  { service: 'openai', modelKey: 'openaiModel' },
-  { service: 'groq', modelKey: 'groqModel' },
-  { service: 'gemini', modelKey: 'geminiModel' },
-  { service: 'anthropic', modelKey: 'anthropicModel' },
-  { service: 'minimax', modelKey: 'minimaxModel' },
+  { service: 'openai', modelKey: 'openaiModels' },
+  { service: 'groq', modelKey: 'groqModels' },
+  { service: 'gemini', modelKey: 'geminiModels' },
+  { service: 'anthropic', modelKey: 'anthropicModels' },
+  { service: 'minimax', modelKey: 'minimaxModels' },
 ]
 
 export const estimateLlmRates = (llmConfig: ResolvedLLMConfig): LlmRateEstimate[] => {
   const estimates: LlmRateEstimate[] = []
 
   for (const { service, modelKey } of SERVICE_ORDER) {
-    const model = llmConfig[modelKey]
-    if (typeof model === 'string') {
+    const models = llmConfig[modelKey]
+    for (const model of Array.isArray(models) ? models : []) {
       const cost = getLlmCost(service, model)
       estimates.push({
         provider: service,
@@ -27,21 +27,21 @@ export const estimateLlmRates = (llmConfig: ResolvedLLMConfig): LlmRateEstimate[
     }
   }
 
-  if (llmConfig.grokModel) {
-    const cost = getLlmCost('grok', llmConfig.grokModel)
+  for (const model of llmConfig.grokModels ?? []) {
+    const cost = getLlmCost('grok', model)
     estimates.push({
       provider: 'grok',
-      model: llmConfig.grokModel,
+      model,
       inputCostPer1MCents: cost?.inputCostPer1MCents ?? 0,
       outputCostPer1MCents: cost?.outputCostPer1MCents ?? 0
     })
   }
 
-  if (llmConfig.llamaModel) {
-    const cost = getLlmCost('llama', llmConfig.llamaModel)
+  for (const model of llmConfig.llamaModels ?? []) {
+    const cost = getLlmCost('llama', model)
     estimates.push({
       provider: 'llama',
-      model: llmConfig.llamaModel,
+      model,
       inputCostPer1MCents: cost?.inputCostPer1MCents ?? 0,
       outputCostPer1MCents: cost?.outputCostPer1MCents ?? 0
     })

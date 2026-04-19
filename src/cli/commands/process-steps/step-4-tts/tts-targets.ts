@@ -97,9 +97,15 @@ export const buildTtsArtifactMap = (
 
 export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const targets: TtsTarget[] = []
+  const kittenModels = options.kittenTtsModels ?? (options.kittenTtsModel ? [options.kittenTtsModel] : [])
+  const elevenlabsModels = options.elevenlabsTtsModels ?? (options.elevenlabsTtsModel ? [options.elevenlabsTtsModel] : [])
+  const minimaxModels = options.minimaxTtsModels ?? (options.minimaxTtsModel ? [options.minimaxTtsModel] : [])
+  const groqModels = options.groqTtsModels ?? (options.groqTtsModel ? [options.groqTtsModel] : [])
+  const openaiModels = options.openaiTtsModels ?? (options.openaiTtsModel ? [options.openaiTtsModel] : [])
+  const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
 
-  if (typeof options.kittenTtsModel === 'string' && options.kittenTtsModel.length > 0) {
-    const model: KittenTtsModel = validateKittenTtsModel(options.kittenTtsModel)
+  for (const rawModel of kittenModels) {
+    const model: KittenTtsModel = validateKittenTtsModel(rawModel)
     const rawSpeaker = options.ttsSpeaker ?? DEFAULT_KITTEN_TTS_SPEAKER
     const speaker = validateKittenTtsSpeaker(rawSpeaker)
 
@@ -114,8 +120,8 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     })
   }
 
-  if (typeof options.elevenlabsTtsModel === 'string' && options.elevenlabsTtsModel.length > 0) {
-    const model: ElevenlabsTtsModel = validateElevenlabsTtsModel(options.elevenlabsTtsModel)
+  for (const rawModel of elevenlabsModels) {
+    const model: ElevenlabsTtsModel = validateElevenlabsTtsModel(rawModel)
     const voiceId = options.elevenlabsVoiceId?.trim() || undefined
 
     targets.push({
@@ -129,8 +135,8 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     })
   }
 
-  if (typeof options.minimaxTtsModel === 'string' && options.minimaxTtsModel.length > 0) {
-    const model: MinimaxTtsModel = validateMinimaxTtsModel(options.minimaxTtsModel)
+  for (const rawModel of minimaxModels) {
+    const model: MinimaxTtsModel = validateMinimaxTtsModel(rawModel)
     const voiceId = options.minimaxTtsVoice?.trim() || undefined
 
     targets.push({
@@ -143,8 +149,8 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     })
   }
 
-  if (typeof options.groqTtsModel === 'string' && options.groqTtsModel.length > 0) {
-    const model: GroqTtsModel = validateGroqTtsModel(options.groqTtsModel)
+  for (const rawModel of groqModels) {
+    const model: GroqTtsModel = validateGroqTtsModel(rawModel)
     const voiceRaw = options.groqVoiceId?.trim()
     const voiceId = voiceRaw && voiceRaw.length > 0 ? validateGroqTtsVoice(voiceRaw) : undefined
 
@@ -159,8 +165,8 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     })
   }
 
-  if (typeof options.openaiTtsModel === 'string' && options.openaiTtsModel.length > 0) {
-    const model: OpenAITtsModel = validateOpenAITtsModel(options.openaiTtsModel)
+  for (const rawModel of openaiModels) {
+    const model: OpenAITtsModel = validateOpenAITtsModel(rawModel)
     const voiceId = options.openaiVoiceId?.trim() || undefined
 
     targets.push({
@@ -174,8 +180,8 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     })
   }
 
-  if (typeof options.geminiTtsModel === 'string' && options.geminiTtsModel.length > 0) {
-    const model: GeminiTtsModel = validateGeminiTtsModel(options.geminiTtsModel)
+  for (const rawModel of geminiModels) {
+    const model: GeminiTtsModel = validateGeminiTtsModel(rawModel)
     const voiceId = options.geminiVoiceId?.trim() || undefined
 
     targets.push({

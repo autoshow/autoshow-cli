@@ -74,12 +74,19 @@ export type BatchRunOptions = {
 }
 
 export type ResolvedLLMConfig = {
+  llamaModels: string[] | undefined
   llamaModel: string | undefined
+  openaiModels: string[] | undefined
   openaiModel: string | undefined
+  groqModels: string[] | undefined
   groqModel: string | undefined
+  geminiModels: string[] | undefined
   geminiModel: string | undefined
+  anthropicModels: string[] | undefined
   anthropicModel: string | undefined
+  minimaxModels: string[] | undefined
   minimaxModel: string | undefined
+  grokModels: string[] | undefined
   grokModel: string | undefined
   llmService: string | undefined
   llmModel: string | undefined

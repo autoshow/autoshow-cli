@@ -20,6 +20,7 @@ import { setupRevStt } from '~/cli/commands/process-steps/step-2-stt/stt-service
 import { setupMistralStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
+import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
 import { setupCalibreDocumentTools } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
 import { setupExtractionOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/extract'
 import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
@@ -209,6 +210,7 @@ const runFullSetup = async (): Promise<void> => {
   l.info('Starting complete AutoShow setup')
   await logPinnedVersions()
   await ensureRuntimeDirs()
+  const awsDefaults = await readAwsSttConfigDefaults()
 
   await withCompactSetup(setupYtDependencies)
 
@@ -239,6 +241,13 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupAssemblyAiStt)
 
   await withCompactSetup(setupGladiaStt)
+
+  await withCompactSetup(async () => {
+    await setupAwsStt({
+      ...awsDefaults,
+      verifyTranscribe: true
+    })
+  })
 
   await withCompactSetup(setupCalibreDocumentTools)
 
@@ -273,8 +282,13 @@ const runFullSetup = async (): Promise<void> => {
 export const runCompleteSetup = async (): Promise<void> => { await runFullSetup() }
 
 const runSetupTranscription = async (): Promise<void> => {
+  const awsDefaults = await readAwsSttConfigDefaults()
   await downloadWhisperModel('large-v3-turbo')
   await setupReverb()
+  await setupAwsStt({
+    ...awsDefaults,
+    verifyTranscribe: true
+  })
   l.success('Transcription setup complete')
 }
 

@@ -43,7 +43,7 @@ bun as image <prompt> [flags]
 | OpenAI | `--openai-image <model>` | `gpt-image-1.5`, `gpt-image-1`, `gpt-image-1-mini` |
 | MiniMax | `--minimax-image <model>` | `image-01` |
 
-Provider flags accept an omitted model value and then resolve to the cheapest supported model.
+Provider flags accept an omitted model value and then resolve to the cheapest supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
 ## Examples
 
@@ -62,15 +62,18 @@ bun as image "a dramatic fox portrait in snow" --minimax-image image-01 --image-
 
 # Multi-provider
 bun as image "a sunset over the lake" --gemini-image imagen-4.0-generate-001 --openai-image gpt-image-1-mini --imagen-count 2
+
+# Same provider, multiple models
+bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-image gpt-image-1
 ```
 
 ## Flags
 
 | Flag | Description |
 |------|-------------|
-| `--gemini-image <model>` | Select a Gemini image model; omit the value to use the cheapest supported model |
-| `--openai-image <model>` | Select an OpenAI image model; omit the value to use the cheapest supported model |
-| `--minimax-image <model>` | Select a MiniMax image model; omit the value to use the cheapest supported model |
+| `--gemini-image <model>` | Select one or more Gemini image models; omit the value to use the cheapest supported model |
+| `--openai-image <model>` | Select one or more OpenAI image models; omit the value to use the cheapest supported model |
+| `--minimax-image <model>` | Select one or more MiniMax image models; omit the value to use the cheapest supported model |
 | `--image-aspect-ratio <ratio>` | Aspect ratio control for Gemini and MiniMax |
 | `--image-size <size>` | Size control: `1K`, `2K`, `4K` for Gemini, or `1024x1024`, `1536x1024`, `1024x1536` for OpenAI |
 | `--imagen-count <n>` | Number of images to generate for Imagen 4 models |

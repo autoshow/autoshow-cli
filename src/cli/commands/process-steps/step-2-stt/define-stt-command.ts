@@ -12,6 +12,10 @@ export const sttCommand = defineCommand({
   help: {
     examples: [
       ['bun as stt https://youtube.com/watch?v=abc', 'Transcribe with default whisper tiny model'],
+      ['bun as stt file.mp3 --gcloud-stt', 'Transcribe with Google Cloud Speech-to-Text via gcloud CLI auth'],
+      ['bun as stt file.mp3 --gcloud-stt --speaker-count 2', 'Transcribe with Google diarization and an exact speaker-count hint'],
+      ['bun as stt file.mp3 --aws-stt', 'Transcribe with AWS CLI Amazon Transcribe batch STT'],
+      ['bun as stt file.mp3 --aws-stt --speaker-count 2', 'Transcribe with AWS diarization and a max-speaker hint'],
       ['bun as stt file.mp3 --groq-stt', 'Transcribe with the cheapest Groq Whisper API model'],
       ['bun as stt file.mp3 --deepgram-stt', 'Transcribe with the cheapest Deepgram model'],
       ['bun as stt file.mp3 --soniox-stt', 'Transcribe with Soniox async diarization'],

@@ -57,13 +57,13 @@ const hasOcrExtractionFlags = (opts: RuntimeOptions): boolean =>
 
 const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
   [
-    opts.llamaModel,
-    opts.openaiModel,
-    opts.groqModel,
-    opts.geminiModel,
-    opts.anthropicModel,
-    opts.minimaxModel,
-    opts.grokModel
+    ...(opts.llamaModels ?? (opts.llamaModel ? [opts.llamaModel] : [])),
+    ...(opts.openaiModels ?? (opts.openaiModel ? [opts.openaiModel] : [])),
+    ...(opts.groqModels ?? (opts.groqModel ? [opts.groqModel] : [])),
+    ...(opts.geminiModels ?? (opts.geminiModel ? [opts.geminiModel] : [])),
+    ...(opts.anthropicModels ?? (opts.anthropicModel ? [opts.anthropicModel] : [])),
+    ...(opts.minimaxModels ?? (opts.minimaxModel ? [opts.minimaxModel] : [])),
+    ...(opts.grokModels ?? (opts.grokModel ? [opts.grokModel] : []))
   ].some((value) => typeof value === 'string' && value.length > 0)
 
 const collectEstimatedExtractTargets = (
@@ -219,7 +219,20 @@ const writeDocumentOutputMetadata = async (
   outputDir: string,
   params: WriteDocumentOutputMetadataOptions
 ): Promise<void> => {
-  const { step1, step2, step3, mistralOcrModel, glmOcrModel, llmService, llmModel, llmInputTokenCount, llmOutputTokenCount, artifactFiles, web, errors } = params
+  const {
+    step1,
+    step2,
+    step3,
+    mistralOcrModel,
+    glmOcrModel,
+    artifactFiles,
+    completionStatus,
+    requestedProviders,
+    providerStates,
+    missingProviders,
+    web,
+    errors
+  } = params
   const extractTargets = collectEstimatedExtractTargets(step2, {
     mistralOcrModel,
     glmOcrModel
@@ -227,10 +240,12 @@ const writeDocumentOutputMetadata = async (
 
   const estimated = computeEstimatedCosts({
     extractTargets,
-    llmService,
-    llmModel,
-    llmInputTokenCount,
-    llmOutputTokenCount,
+    llmTargets: (Array.isArray(step3) ? step3 : [step3]).map((entry) => ({
+      service: entry.llmService,
+      model: entry.llmModel,
+      inputTokens: entry.inputTokenCount,
+      outputTokens: entry.outputTokenCount
+    })),
     skipLLM: false
   })
   const actual = computeActualCosts({ step2, step3 })
@@ -242,10 +257,12 @@ const writeDocumentOutputMetadata = async (
       model: target.model,
       pageCount: target.pageCount ?? step1.pageCount
     })),
-    llmService: llmService as Step3Metadata['llmService'],
-    llmModel,
-    llmInputTokenCount,
-    llmOutputTokenCount,
+    llmTargets: (Array.isArray(step3) ? step3 : [step3]).map((entry) => ({
+      service: entry.llmService,
+      model: entry.llmModel,
+      inputTokens: entry.inputTokenCount,
+      outputTokens: entry.outputTokenCount
+    })),
     skipLLM: false,
   })
   const actualTiming = computeActualProcessingTimes({ step1, step2, step3 })
@@ -256,6 +273,10 @@ const writeDocumentOutputMetadata = async (
   await writeRunManifest(outputDir, 'write', {
     step1,
     step2,
+    ...(completionStatus ? { completionStatus } : {}),
+    ...(requestedProviders ? { requestedProviders } : {}),
+    ...(providerStates ? { providerStates } : {}),
+    ...(missingProviders ? { missingProviders } : {}),
     step3,
     ...(web ? { web } : {}),
     cost,
@@ -323,12 +344,19 @@ const runDocumentWrite = async (
     outputDir: extraction.outputDir,
     prompts: opts.prompts,
     promptFile: opts.promptFile,
+    openaiModels: llmConfig.openaiModels,
     openaiModel: llmConfig.openaiModel,
+    groqModels: llmConfig.groqModels,
     groqModel: llmConfig.groqModel,
+    geminiModels: llmConfig.geminiModels,
     geminiModel: llmConfig.geminiModel,
+    anthropicModels: llmConfig.anthropicModels,
     anthropicModel: llmConfig.anthropicModel,
+    minimaxModels: llmConfig.minimaxModels,
     minimaxModel: llmConfig.minimaxModel,
+    grokModels: llmConfig.grokModels,
     grokModel: llmConfig.grokModel,
+    llamaModels: llmConfig.llamaModels,
     llamaModel: llmConfig.llamaModel,
     promptBuilder: (instruction: string) =>
       buildDocumentPrompt(extraction.result.text, extraction.step1Metadata, instruction)
@@ -383,6 +411,10 @@ const runDocumentWrite = async (
     llmInputTokenCount,
     llmOutputTokenCount,
     artifactFiles,
+    ...(extraction.completionStatus ? { completionStatus: extraction.completionStatus } : {}),
+    ...(extraction.requestedProviders ? { requestedProviders: extraction.requestedProviders } : {}),
+    ...(extraction.providerStates ? { providerStates: extraction.providerStates } : {}),
+    ...(extraction.missingProviders ? { missingProviders: extraction.missingProviders } : {}),
     ...(extraction.web ? { web: extraction.web } : {}),
     ...(extraction.step2Errors ? { errors: extraction.step2Errors } : {})
   })
@@ -423,24 +455,49 @@ const processMediaSingle = async (
 
   const baseOptions: Record<string, unknown> = {
     ...(isUrl ? { url: target } : exists ? { filePath: target } : { url: target }),
+    whisperModels: llmDefaults.whisperModels,
     whisperModel: llmDefaults.whisperModel,
     youtubeCaptions: llmDefaults.youtubeCaptions,
+    gcloudSttModels: llmDefaults.gcloudSttModels,
+    gcloudSttModel: llmDefaults.gcloudSttModel,
+    awsSttModels: llmDefaults.awsSttModels,
+    awsSttModel: llmDefaults.awsSttModel,
+    awsRegion: llmDefaults.awsRegion,
+    awsBucket: llmDefaults.awsBucket,
+    groqSttModels: llmDefaults.groqSttModels,
     groqSttModel: llmDefaults.groqSttModel,
+    elevenlabsSttModels: llmDefaults.elevenlabsSttModels,
     elevenlabsSttModel: llmDefaults.elevenlabsSttModel,
+    deepgramSttModels: llmDefaults.deepgramSttModels,
     deepgramSttModel: llmDefaults.deepgramSttModel,
+    sonioxSttModels: llmDefaults.sonioxSttModels,
     sonioxSttModel: llmDefaults.sonioxSttModel,
+    speechmaticsSttModels: llmDefaults.speechmaticsSttModels,
     speechmaticsSttModel: llmDefaults.speechmaticsSttModel,
+    revSttModels: llmDefaults.revSttModels,
     revSttModel: llmDefaults.revSttModel,
+    mistralSttModels: llmDefaults.mistralSttModels,
     mistralSttModel: llmDefaults.mistralSttModel,
+    assemblyaiSttModels: llmDefaults.assemblyaiSttModels,
     assemblyaiSttModel: llmDefaults.assemblyaiSttModel,
+    gladiaSttModels: llmDefaults.gladiaSttModels,
     gladiaSttModel: llmDefaults.gladiaSttModel,
     diarizationSpeakerCount: llmDefaults.diarizationSpeakerCount,
+    refreshCache: llmDefaults.refreshCache,
+    noCache: llmDefaults.noCache,
+    llamaModels: llmConfig.llamaModels,
     llamaModel: llmConfig.llamaModel,
+    openaiModels: llmConfig.openaiModels,
     openaiModel: llmConfig.openaiModel,
+    groqModels: llmConfig.groqModels,
     groqModel: llmConfig.groqModel,
+    geminiModels: llmConfig.geminiModels,
     geminiModel: llmConfig.geminiModel,
+    anthropicModels: llmConfig.anthropicModels,
     anthropicModel: llmConfig.anthropicModel,
+    minimaxModels: llmConfig.minimaxModels,
     minimaxModel: llmConfig.minimaxModel,
+    grokModels: llmConfig.grokModels,
     grokModel: llmConfig.grokModel,
     outputDir: baseDir,
     useReverb: llmDefaults.useReverb,
@@ -453,19 +510,28 @@ const processMediaSingle = async (
     renderedOutDir: llmDefaults.renderedOutDir,
     trackList: llmDefaults.trackList,
     ttsSpeaker: llmDefaults.ttsSpeaker,
+    kittenTtsModels: llmDefaults.kittenTtsModels,
     kittenTtsModel: llmDefaults.kittenTtsModel,
+    groqTtsModels: llmDefaults.groqTtsModels,
     groqTtsModel: llmDefaults.groqTtsModel,
     groqVoiceId: llmDefaults.groqVoiceId,
+    openaiTtsModels: llmDefaults.openaiTtsModels,
     openaiTtsModel: llmDefaults.openaiTtsModel,
     openaiVoiceId: llmDefaults.openaiVoiceId,
+    geminiTtsModels: llmDefaults.geminiTtsModels,
     geminiTtsModel: llmDefaults.geminiTtsModel,
     geminiVoiceId: llmDefaults.geminiVoiceId,
+    elevenlabsTtsModels: llmDefaults.elevenlabsTtsModels,
     elevenlabsTtsModel: llmDefaults.elevenlabsTtsModel,
     elevenlabsVoiceId: llmDefaults.elevenlabsVoiceId,
+    minimaxTtsModels: llmDefaults.minimaxTtsModels,
     minimaxTtsModel: llmDefaults.minimaxTtsModel,
     minimaxTtsVoice: llmDefaults.minimaxTtsVoice,
+    geminiImageModels: llmDefaults.geminiImageModels,
     geminiImageModel: llmDefaults.geminiImageModel,
+    openaiImageModels: llmDefaults.openaiImageModels,
     openaiImageModel: llmDefaults.openaiImageModel,
+    minimaxImageModels: llmDefaults.minimaxImageModels,
     minimaxImageModel: llmDefaults.minimaxImageModel,
     imageAspectRatio: llmDefaults.imageAspectRatio,
     imageSize: llmDefaults.imageSize,
@@ -473,18 +539,24 @@ const processMediaSingle = async (
     imageFormat: llmDefaults.imageFormat,
     imageBackground: llmDefaults.imageBackground,
     imagenCount: llmDefaults.imagenCount,
+    elevenlabsMusicModels: llmDefaults.elevenlabsMusicModels,
     elevenlabsMusicModel: llmDefaults.elevenlabsMusicModel,
+    minimaxMusicModels: llmDefaults.minimaxMusicModels,
     minimaxMusicModel: llmDefaults.minimaxMusicModel,
     musicDuration: llmDefaults.musicDuration,
     musicLyricsFile: llmDefaults.musicLyricsFile,
     musicInstrumental: llmDefaults.musicInstrumental,
+    geminiVideoModels: llmDefaults.geminiVideoModels,
     geminiVideoModel: llmDefaults.geminiVideoModel,
+    minimaxVideoModels: llmDefaults.minimaxVideoModels,
     minimaxVideoModel: llmDefaults.minimaxVideoModel,
     videoDuration: llmDefaults.videoDuration,
     videoSize: llmDefaults.videoSize,
     videoAspectRatio: llmDefaults.videoAspectRatio,
     videoResolution: llmDefaults.videoResolution,
+    mistralOcrModels: llmDefaults.mistralOcrModels,
     mistralOcrModel: llmDefaults.mistralOcrModel,
+    glmOcrModels: llmDefaults.glmOcrModels,
     glmOcrModel: llmDefaults.glmOcrModel
   }
 

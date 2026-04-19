@@ -28,7 +28,8 @@ const parsePositiveIntegerEnv = (key: string): number | undefined => {
 export const isAsyncSttBatchProvider = (
   target: Pick<SttTarget, 'service'>
 ): boolean =>
-  target.service === 'assemblyai'
+  target.service === 'aws'
+  || target.service === 'assemblyai'
   || target.service === 'gladia'
   || target.service === 'soniox'
   || target.service === 'speechmatics'

@@ -51,6 +51,27 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('nova-3')
   })
 
+  test('awsSttModel routes to aws', () => {
+    const result = computeEstimatedCosts({ awsSttModel: 'standard', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('aws')
+    expect(result.steps[0]?.model).toBe('standard')
+    expect(result.steps[0]?.cost).toBeCloseTo(144 / 60, 8)
+  })
+
+  test('gcloudSttModel routes to gcloud', () => {
+    const result = computeEstimatedCosts({ gcloudSttModel: 'chirp_3', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('gcloud')
+    expect(result.steps[0]?.model).toBe('chirp_3')
+    expect(result.steps[0]?.cost).toBeCloseTo(96 / 60, 8)
+  })
+
+  test('aws standard estimate applies 15 second minimum billing', () => {
+    const result = computeEstimatedCosts({ awsSttModel: 'standard', audioDurationSeconds: 3 })
+    expect(result.steps[0]?.provider).toBe('aws')
+    expect(result.steps[0]?.model).toBe('standard')
+    expect(result.steps[0]?.cost).toBeCloseTo((15 / 3600) * 144, 8)
+  })
+
   test('speechmaticsSttModel routes to speechmatics', () => {
     const result = computeEstimatedCosts({ speechmaticsSttModel: 'enhanced', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('speechmatics')
@@ -116,6 +137,7 @@ describe('computeEstimatedCosts STT routing', () => {
   test('sttTargets emits one STT step per selected provider', () => {
     const result = computeEstimatedCosts({
       sttTargets: [
+        { service: 'aws', model: 'standard' },
         { service: 'elevenlabs', model: 'scribe_v2' },
         { service: 'assemblyai', model: 'universal-3-pro' },
         { service: 'gladia', model: 'default' },
@@ -126,6 +148,7 @@ describe('computeEstimatedCosts STT routing', () => {
 
     const sttSteps = result.steps.filter(s => s.step === 'stt')
     expect(sttSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
+      'aws:standard',
       'elevenlabs:scribe_v2',
       'assemblyai:universal-3-pro',
       'gladia:default',

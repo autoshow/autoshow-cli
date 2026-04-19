@@ -54,6 +54,51 @@
       }
     }
   },
+  "gcloud": {
+    "description": "Google Cloud Speech-to-Text v2 via gcloud CLI auth and direct REST requests",
+    "type": "api",
+    "models": {
+      "chirp_3": {
+        "description": "Chirp 3 synchronous transcription with diarization, automatic punctuation, and word timing",
+        "costPerHourUSD": 0.96,
+        "costPerHourCents": 96,
+        "limits": {
+          "effectiveBytes": 10485760,
+          "directUploadBytes": 10485760,
+          "durationSeconds": 60,
+          "notes": "Google Cloud Speech-to-Text V2 synchronous Recognize requests are limited to 10 MB or 60 seconds for inline local audio. AutoShow uses the us-speech.googleapis.com regional endpoint with location us and relies on the existing split-and-merge path for larger inputs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 180
+        }
+      }
+    }
+  },
+  "aws": {
+    "description": "Amazon Transcribe batch speech-to-text via AWS CLI",
+    "type": "api",
+    "models": {
+      "standard": {
+        "description": "Standard batch transcription with language identification and speaker labels",
+        "costPerHourUSD": 1.44,
+        "costPerHourCents": 144,
+        "limits": {
+          "effectiveBytes": 2147483648,
+          "durationSeconds": 14400,
+          "notes": "Amazon Transcribe batch jobs require S3 input in the same AWS Region as the transcription request. Current AWS quotas document a 2 GB maximum audio file size and a 14,400-second maximum audio file length for standard transcription."
+        },
+        "billing": {
+          "roundingIncrementSeconds": 1,
+          "minimumSeconds": 15
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 260
+        }
+      }
+    }
+  },
   "deepgram": {
     "description": "Deepgram cloud speech-to-text",
     "type": "api",

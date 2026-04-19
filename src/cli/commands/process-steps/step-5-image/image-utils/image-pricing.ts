@@ -10,9 +10,12 @@ import { CLIUsageError } from '~/utils/error-handler'
 
 export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCostEstimate[] => {
   const estimates: ImageCostEstimate[] = []
+  const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
+  const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
+  const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
 
-  if (options.geminiImageModel) {
-    const model = validateGeminiImageModel(options.geminiImageModel)
+  for (const rawModel of geminiModels) {
+    const model = validateGeminiImageModel(rawModel)
     const imageCount = isNativeGeminiImageModel(model) ? 1 : Math.max(1, options.imagenCount ?? 1)
     const costPerImageCents = getImageCost('gemini', model) || 4
     estimates.push({
@@ -25,8 +28,8 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
     })
   }
 
-  if (options.openaiImageModel) {
-    const model = validateOpenAIImageModel(options.openaiImageModel)
+  for (const rawModel of openaiModels) {
+    const model = validateOpenAIImageModel(rawModel)
     const costPerImageCents = getImageCost('openai', model) || 4
     estimates.push({
       provider: 'openai',
@@ -38,8 +41,8 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
     })
   }
 
-  if (options.minimaxImageModel) {
-    const model = validateMinimaxImageModel(options.minimaxImageModel)
+  for (const rawModel of minimaxModels) {
+    const model = validateMinimaxImageModel(rawModel)
     const costPerImageCents = getImageCost('minimax', model)
     estimates.push({
       provider: 'minimax',

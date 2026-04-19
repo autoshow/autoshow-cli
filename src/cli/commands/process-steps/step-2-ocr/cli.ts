@@ -12,9 +12,14 @@ const appendProviderSpec = (
 }
 
 export const collectOcrProviderSpecs = (
-  options: Pick<RuntimeOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel'>
+  options: Pick<RuntimeOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'mistralOcrModels' | 'glmOcrModel' | 'glmOcrModels'>
 ): ProviderSpec[] => {
   const specs: ProviderSpec[] = []
+  const appendModels = (provider: ProviderSpec['provider'], models: string[] | undefined, fallback?: string): void => {
+    for (const model of models ?? (fallback ? [fallback] : [])) {
+      appendProviderSpec(specs, { provider, model })
+    }
+  }
 
   if (options.useOcrmypdf) {
     appendProviderSpec(specs, { provider: 'ocrmypdf', model: 'ocrmypdf' })
@@ -22,12 +27,8 @@ export const collectOcrProviderSpecs = (
   if (options.usePaddleOcr) {
     appendProviderSpec(specs, { provider: 'paddle-ocr', model: 'paddle-ocr' })
   }
-  if (options.mistralOcrModel) {
-    appendProviderSpec(specs, { provider: 'mistral-ocr', model: options.mistralOcrModel })
-  }
-  if (options.glmOcrModel) {
-    appendProviderSpec(specs, { provider: 'glm-ocr', model: options.glmOcrModel })
-  }
+  appendModels('mistral-ocr', options.mistralOcrModels, options.mistralOcrModel)
+  appendModels('glm-ocr', options.glmOcrModels, options.glmOcrModel)
 
   return specs
 }

@@ -37,7 +37,12 @@ const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
 
 const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
-  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string' || typeof opts.glmOcrModel === 'string'
+  opts.useOcrmypdf
+  || opts.usePaddleOcr
+  || (opts.mistralOcrModels?.length ?? 0) > 0
+  || typeof opts.mistralOcrModel === 'string'
+  || (opts.glmOcrModels?.length ?? 0) > 0
+  || typeof opts.glmOcrModel === 'string'
 
 const buildCloudSttEstimate = async (
   provider: string,
@@ -113,8 +118,9 @@ const buildExtractEstimates = async (
 ): Promise<ExtractStepEstimate[]> => {
   const estimates: ExtractStepEstimate[] = []
 
-  if (opts.mistralOcrModel) {
-    const estimate = await estimateMistralOcrCost(opts.mistralOcrModel, resolvedTarget)
+  const mistralModels = opts.mistralOcrModels ?? (opts.mistralOcrModel ? [opts.mistralOcrModel] : [])
+  for (const model of mistralModels) {
+    const estimate = await estimateMistralOcrCost(model, resolvedTarget)
     const estimation = getExtractEstimation(estimate.provider, estimate.model)
     estimates.push({
       step: 'extract',
@@ -128,8 +134,9 @@ const buildExtractEstimates = async (
     })
   }
 
-  if (opts.glmOcrModel) {
-    const estimate = await estimateGlmOcrCost(opts.glmOcrModel, resolvedTarget)
+  const glmModels = opts.glmOcrModels ?? (opts.glmOcrModel ? [opts.glmOcrModel] : [])
+  for (const model of glmModels) {
+    const estimate = await estimateGlmOcrCost(model, resolvedTarget)
     const estimation = getExtractEstimation(estimate.provider, estimate.model)
     estimates.push({
       step: 'extract',
@@ -214,12 +221,20 @@ const buildTtsEstimates = (opts: RuntimeOptions, characterCount: number): TtsSte
 }
 
 const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
-  const hasImage = opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel
+  const hasImage = (opts.geminiImageModels?.length ?? 0) > 0
+    || !!opts.geminiImageModel
+    || (opts.openaiImageModels?.length ?? 0) > 0
+    || !!opts.openaiImageModel
+    || (opts.minimaxImageModels?.length ?? 0) > 0
+    || !!opts.minimaxImageModel
   if (!hasImage) return []
 
   return estimateImageCosts({
+    geminiImageModels: opts.geminiImageModels,
     geminiImageModel: opts.geminiImageModel,
+    openaiImageModels: opts.openaiImageModels,
     openaiImageModel: opts.openaiImageModel,
+    minimaxImageModels: opts.minimaxImageModels,
     minimaxImageModel: opts.minimaxImageModel,
     imagenCount: opts.imagenCount
   }).map((estimate) => {
@@ -235,11 +250,16 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
 }
 
 const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
-  const hasVideo = opts.geminiVideoModel || opts.minimaxVideoModel
+  const hasVideo = (opts.geminiVideoModels?.length ?? 0) > 0
+    || !!opts.geminiVideoModel
+    || (opts.minimaxVideoModels?.length ?? 0) > 0
+    || !!opts.minimaxVideoModel
   if (!hasVideo) return []
 
   return estimateVideoCosts({
+    geminiVideoModels: opts.geminiVideoModels,
     geminiVideoModel: opts.geminiVideoModel,
+    minimaxVideoModels: opts.minimaxVideoModels,
     minimaxVideoModel: opts.minimaxVideoModel,
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
@@ -257,11 +277,16 @@ const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
 }
 
 const buildMusicEstimates = (opts: RuntimeOptions): MusicStepEstimate[] => {
-  const hasMusic = opts.elevenlabsMusicModel || opts.minimaxMusicModel
+  const hasMusic = (opts.elevenlabsMusicModels?.length ?? 0) > 0
+    || !!opts.elevenlabsMusicModel
+    || (opts.minimaxMusicModels?.length ?? 0) > 0
+    || !!opts.minimaxMusicModel
   if (!hasMusic) return []
 
   const estimates = estimateMusicCosts({
+    elevenlabsMusicModels: opts.elevenlabsMusicModels,
     elevenlabsMusicModel: opts.elevenlabsMusicModel,
+    minimaxMusicModels: opts.minimaxMusicModels,
     minimaxMusicModel: opts.minimaxMusicModel,
     musicDuration: opts.musicDuration,
     musicLyricsFile: opts.musicLyricsFile,

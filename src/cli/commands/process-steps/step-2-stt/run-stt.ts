@@ -1,10 +1,10 @@
 import type {
   IndexedTranscriptionChunk,
   ProcessingOptions,
+  RuntimeOptions,
   Step2Metadata,
   SttTarget,
   SttTargetOptions,
-  TranscribeEngine,
   TranscriptionResult,
   WhisperProgressWindow
 } from '~/types'
@@ -21,11 +21,12 @@ import { runRevStt } from './stt-services/rev/run-rev-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
 import { runGladiaStt } from './stt-services/gladia/run-gladia-stt'
+import { runGcloudStt } from './stt-services/gcloud/run-gcloud-stt'
+import { runAwsStt } from './stt-services/aws/run-aws-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
 import { formatTranscriptText } from './stt-utils/stt-utils'
 import { mergeTranscriptionEvidence } from './stt-utils/stt-evidence'
 import { writeSttResultArtifact } from './stt-utils/stt-result-artifacts'
-import { resolveDiarizationOptions } from './cli'
 import { ensureSttTargetSetup as ensureSttTargetSetupViaBroker } from './bootstrap'
 import {
   DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES,
@@ -33,6 +34,7 @@ import {
   resolveSttSplitPolicy,
   resolveTranscriptionSplitDecision
 } from './stt-split-policy'
+import { collectSttTargets } from './stt-targets'
 import { assertNever } from '~/utils/validate/assert-never'
 export { STT_ENGINE_CAPABILITIES, getSttEngineCapabilities, resolveDiarizationOptions } from './cli'
 export {
@@ -49,6 +51,8 @@ export {
 type SplitPolicyTarget = Pick<SttTarget, 'service' | 'model'>
 
 const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
+  'gcloud',
+  'aws',
   'elevenlabs',
   'deepgram',
   'speechmatics',
@@ -180,36 +184,6 @@ export const shouldRetrySplitTranscriptionAfterError = (
   return resolveSplitRetryReason(target, splitRequested, error) !== undefined
 }
 
-const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
-  const hasReverb = options.useReverb === true
-  const hasElevenlabs = typeof options.elevenlabsSttModel === 'string' && options.elevenlabsSttModel.length > 0
-  const hasDeepgram = typeof options.deepgramSttModel === 'string' && options.deepgramSttModel.length > 0
-  const hasSoniox = typeof options.sonioxSttModel === 'string' && options.sonioxSttModel.length > 0
-  const hasSpeechmatics = typeof options.speechmaticsSttModel === 'string' && options.speechmaticsSttModel.length > 0
-  const hasRev = typeof options.revSttModel === 'string' && options.revSttModel.length > 0
-  const hasGroq = typeof options.groqSttModel === 'string' && options.groqSttModel.length > 0
-  const hasMistral = typeof options.mistralSttModel === 'string' && options.mistralSttModel.length > 0
-  const hasAssemblyAi = typeof options.assemblyaiSttModel === 'string' && options.assemblyaiSttModel.length > 0
-  const hasGladia = typeof options.gladiaSttModel === 'string' && options.gladiaSttModel.length > 0
-
-  const engineCount = [hasReverb, hasElevenlabs, hasDeepgram, hasSoniox, hasSpeechmatics, hasRev, hasGroq, hasMistral, hasAssemblyAi, hasGladia].filter(Boolean).length
-  if (engineCount > 1) {
-    throw new Error('Cannot use more than one transcription engine at the same time (--reverb, --elevenlabs-stt, --deepgram-stt, --soniox-stt, --speechmatics-stt, --rev-stt, --groq-stt, --mistral-stt, --assemblyai-stt, --gladia-stt)')
-  }
-
-  if (hasReverb) return 'reverb'
-  if (hasElevenlabs) return 'elevenlabs'
-  if (hasDeepgram) return 'deepgram'
-  if (hasSoniox) return 'soniox'
-  if (hasSpeechmatics) return 'speechmatics'
-  if (hasRev) return 'rev'
-  if (hasGroq) return 'groq'
-  if (hasMistral) return 'mistral'
-  if (hasAssemblyAi) return 'assemblyai'
-  if (hasGladia) return 'gladia'
-  return 'whisper'
-}
-
 const persistTranscriptionStructuredArtifact = async (
   outputDir: string,
   result: TranscriptionResult,
@@ -244,6 +218,16 @@ const dispatchStt = async (
 
   if (target.service === 'elevenlabs') {
     return await runElevenLabsTranscribe(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      diarizationOptions: target.diarizationOptions
+    })
+  }
+
+  if (target.service === 'gcloud') {
+    return await runGcloudStt(audioPath, outputDir, {
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
@@ -290,6 +274,21 @@ const dispatchStt = async (
   if (target.service === 'rev') {
     return await runRevStt(audioPath, outputDir, {
       model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      diarizationOptions: target.diarizationOptions,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
+    })
+  }
+
+  if (target.service === 'aws') {
+    return await runAwsStt(audioPath, outputDir, {
+      model: target.model,
+      region: target.awsRegion,
+      bucket: target.awsBucket,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
@@ -525,27 +524,14 @@ export const stt = async (
   audioPath: string,
   options: ProcessingOptions
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const engine = resolveSttEngine(options)
-  const diarizationOptions = resolveDiarizationOptions(options, engine)
-  const model = (() => {
-    if (engine === 'reverb') return 'reverb'
-    if (engine === 'whisper') return options.whisperModel
-    if (engine === 'elevenlabs') return options.elevenlabsSttModel as string
-    if (engine === 'deepgram') return options.deepgramSttModel as string
-    if (engine === 'soniox') return options.sonioxSttModel as string
-    if (engine === 'speechmatics') return options.speechmaticsSttModel as string
-    if (engine === 'rev') return options.revSttModel as string
-    if (engine === 'groq') return options.groqSttModel as string
-    if (engine === 'mistral') return options.mistralSttModel as string
-    if (engine === 'assemblyai') return options.assemblyaiSttModel as string
-    return options.gladiaSttModel as string
-  })()
-  const target: SttTarget = {
-    service: engine,
-    model,
-    local: engine === 'reverb' || engine === 'whisper',
-    diarizationOptions
+  const targets = collectSttTargets({
+    ...(options as unknown as RuntimeOptions),
+    whisperExplicit: true
+  })
+  if (targets.length !== 1) {
+    throw new Error(`stt() expects exactly one STT target, received ${targets.length}`)
   }
+  const target = targets[0] as SttTarget
 
   return await sttTarget(audioPath, options.outputDir, target, {
     split: options.split,

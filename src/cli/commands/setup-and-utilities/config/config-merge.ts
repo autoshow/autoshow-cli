@@ -1,12 +1,19 @@
 import type { AutoshowConfig } from '~/types'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
+import {
+  REPEATABLE_MODEL_FLAGS,
+  normalizeModelFlagOccurrences,
+  parseRepeatableModelFlagOccurrences,
+  type RepeatableModelFlag
+} from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 
-const STT_PROVIDER_FLAGS = ['groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
-const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax'] as const
+const STT_PROVIDER_FLAGS = ['gcloud-stt', 'aws-stt', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
+const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
+const REPEATABLE_CONFIG_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
 
 export const extractExplicitFlags = (argv: string[]): Set<string> => {
   const explicit = new Set<string>()
@@ -48,6 +55,8 @@ export const mergeConfigIntoRawFlags = (
   if (d.stt) {
     inject('whisper', d.stt.whisper)
     injectProviderGroup(STT_PROVIDER_FLAGS, [
+      ['gcloud-stt', d.stt.gcloudStt],
+      ['aws-stt', d.stt.awsStt],
       ['groq-stt', d.stt.groqStt], ['elevenlabs-stt', d.stt.elevenlabsStt],
       ['deepgram-stt', d.stt.deepgramStt],
       ['soniox-stt', d.stt.sonioxStt],
@@ -57,6 +66,8 @@ export const mergeConfigIntoRawFlags = (
       ['assemblyai-stt', d.stt.assemblyaiStt],
       ['gladia-stt', d.stt.gladiaStt],
     ])
+    inject('aws-region', d.stt.awsRegion)
+    inject('aws-bucket', d.stt.awsBucket)
     inject('speaker-count', d.stt.speakerCount)
     inject('split', d.stt.split)
     inject('reverb-verbatimicity', d.stt.reverbVerbatimicity)
@@ -72,6 +83,7 @@ export const mergeConfigIntoRawFlags = (
     injectProviderGroup(LLM_PROVIDER_FLAGS, [
       ['llama', d.llm.llama], ['openai', d.llm.openai], ['groq', d.llm.groq],
       ['gemini', d.llm.gemini], ['anthropic', d.llm.anthropic], ['minimax', d.llm.minimax],
+      ['grok', d.llm.grok],
     ])
   }
 
@@ -148,6 +160,8 @@ export const mergeConfigIntoRawFlags = (
 
 const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'whisper':           ['defaults', 'stt', 'whisper'],
+  'gcloud-stt':        ['defaults', 'stt', 'gcloudStt'],
+  'aws-stt':           ['defaults', 'stt', 'awsStt'],
   'groq-stt':          ['defaults', 'stt', 'groqStt'],
   'elevenlabs-stt':    ['defaults', 'stt', 'elevenlabsStt'],
   'deepgram-stt':      ['defaults', 'stt', 'deepgramStt'],
@@ -157,6 +171,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'mistral-stt':       ['defaults', 'stt', 'mistralStt'],
   'assemblyai-stt':    ['defaults', 'stt', 'assemblyaiStt'],
   'gladia-stt':        ['defaults', 'stt', 'gladiaStt'],
+  'aws-region':        ['defaults', 'stt', 'awsRegion'],
+  'aws-bucket':        ['defaults', 'stt', 'awsBucket'],
   'speaker-count':     ['defaults', 'stt', 'speakerCount'],
   'split':             ['defaults', 'stt', 'split'],
   'reverb-verbatimicity': ['defaults', 'stt', 'reverbVerbatimicity'],
@@ -172,6 +188,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini':            ['defaults', 'llm', 'gemini'],
   'anthropic':         ['defaults', 'llm', 'anthropic'],
   'minimax':           ['defaults', 'llm', 'minimax'],
+  'grok':              ['defaults', 'llm', 'grok'],
   'kitten-tts':        ['defaults', 'post', 'tts', 'kittenTts'],
   'elevenlabs-tts':    ['defaults', 'post', 'tts', 'elevenlabsTts'],
   'minimax-tts':       ['defaults', 'post', 'tts', 'minimaxTts'],
@@ -262,17 +279,29 @@ const resolveConfigFlagValue = (flagName: string, rawValue: unknown): unknown =>
 
 export const buildConfigPatchFromFlags = (
   flags: Record<string, unknown>,
-  explicitFlags: Set<string>
+  explicitFlags: Set<string>,
+  rawArgs: string[] = []
 ): Record<string, unknown> => {
   const patch: Record<string, unknown> = { version: 2 }
+  const rawOccurrences = parseRepeatableModelFlagOccurrences(rawArgs)
 
   for (const flagName of explicitFlags) {
     if (RUNTIME_ONLY_FLAGS.has(flagName)) continue
     const configPath = FLAG_TO_CONFIG_PATH[flagName]
     if (!configPath) continue
-    const rawValue = flags[flagName]
-    if (rawValue === undefined) continue
-    const value = resolveConfigFlagValue(flagName, rawValue)
+    let value: unknown
+
+    if (REPEATABLE_CONFIG_MODEL_FLAG_SET.has(flagName)) {
+      value = normalizeModelFlagOccurrences(flagName as RepeatableModelFlag, flags, rawOccurrences)
+      if (!Array.isArray(value) || value.length === 0) {
+        continue
+      }
+    } else {
+      const rawValue = flags[flagName]
+      if (rawValue === undefined) continue
+      value = resolveConfigFlagValue(flagName, rawValue)
+    }
+
     setNestedValue(patch, configPath, value)
   }
 

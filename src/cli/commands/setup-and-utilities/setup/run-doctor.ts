@@ -2,6 +2,8 @@ import { inspectYtDlpAuthState } from '~/cli/commands/process-steps/step-1-downl
 import { commandExists } from '~/utils/cli-utils'
 import { loadEnvFile } from '~/utils/cli-utils'
 import { resolveConfigPath, loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
+import { readAwsSttConfigDefaults, readAwsSttReadiness } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
+import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
 import * as l from '~/logger'
 
 type CheckResult = { label: string; ok: boolean; detail: string }
@@ -69,6 +71,29 @@ export const runDoctor = async (): Promise<void> => {
   const bunVersion = Bun.version
   checks.push({ label: 'bun', ok: true, detail: `v${bunVersion}` })
 
+  const awsDefaults = await readAwsSttConfigDefaults()
+  const awsState = await readAwsSttReadiness({
+    preferredRegion: awsDefaults.preferredRegion,
+    preferredBucket: awsDefaults.preferredBucket,
+    verifyTranscribe: true
+  })
+  checks.push({ label: 'aws', ok: awsState.hasCli, detail: awsState.details.cli })
+  checks.push({ label: 'aws auth', ok: awsState.authConfigured, detail: awsState.details.auth })
+  checks.push({ label: 'aws region', ok: awsState.region !== undefined, detail: awsState.region ?? awsState.details.region })
+  checks.push({
+    label: 'aws bucket',
+    ok: awsState.bucketAccessible === true,
+    detail: awsState.bucket ? `${awsState.bucket} (${awsState.details.bucket})` : awsState.details.bucket
+  })
+  checks.push({ label: 'aws transcribe', ok: awsState.transcribeAccessible === true, detail: awsState.details.transcribe })
+
+  const gcloudState = await readGcloudSttReadiness()
+  checks.push({ label: 'gcloud', ok: gcloudState.hasCli, detail: gcloudState.details.cli })
+  checks.push({ label: 'gcloud auth', ok: gcloudState.authConfigured, detail: gcloudState.details.auth })
+  checks.push({ label: 'gcloud project', ok: gcloudState.projectId !== undefined, detail: gcloudState.projectId ?? gcloudState.details.project })
+  checks.push({ label: 'gcloud billing', ok: gcloudState.billingEnabled === true, detail: gcloudState.details.billing })
+  checks.push({ label: 'speech.googleapis.com', ok: gcloudState.speechApiEnabled === true, detail: gcloudState.details.speechApi })
+
   let hasFailure = false
   for (const check of checks) {
     const symbol = check.ok ? 'OK' : 'MISSING'
@@ -104,6 +129,7 @@ export const runDoctor = async (): Promise<void> => {
   if (hasFailure) {
     l.info('')
     l.info("Run 'bun as setup' to install missing tools")
+    l.info("Run 'bun as setup --gcloud' to verify Google Cloud STT CLI readiness")
     l.info('See docs/cookies.md for YouTube cookie setup')
   }
 }

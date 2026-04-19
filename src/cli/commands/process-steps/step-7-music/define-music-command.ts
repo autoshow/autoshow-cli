@@ -38,7 +38,7 @@ export const musicCommand = defineCommand({
   const musicInstrumental = flags['music-instrumental'] === true
 
   const musicMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const musicOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
+  const musicOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
 
   const musicTargets = collectMusicTargets(musicOpts)
   if (musicTargets.length === 0) {
@@ -68,8 +68,7 @@ export const musicCommand = defineCommand({
     ...(musicDuration !== undefined ? { durationSeconds: musicDuration } : {})
   }))
   const estimated = computeEstimatedCosts({
-    elevenlabsMusicModel: musicOpts.elevenlabsMusicModel,
-    minimaxMusicModel: musicOpts.minimaxMusicModel,
+    musicTargets: estimatedMusicTargets,
     musicDuration,
     musicLyricsFile,
     musicInstrumental

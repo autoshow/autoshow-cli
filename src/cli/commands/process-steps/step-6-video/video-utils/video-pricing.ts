@@ -91,20 +91,18 @@ const estimateGeminiCost = (model: GeminiVideoModel, options: EstimateVideoCostO
 }
 
 export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCostEstimate[] => {
-  const geminiModelRaw = options.geminiVideoModel
-  const minimaxModelRaw = options.minimaxVideoModel
-  const hasGemini = typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0
-  const hasMinimax = typeof minimaxModelRaw === 'string' && minimaxModelRaw.length > 0
+  const geminiModels = options.geminiVideoModels ?? (options.geminiVideoModel ? [options.geminiVideoModel] : [])
+  const minimaxModels = options.minimaxVideoModels ?? (options.minimaxVideoModel ? [options.minimaxVideoModel] : [])
 
   const estimates: VideoCostEstimate[] = []
 
-  if (hasGemini) {
-    const model = validateGeminiVideoModel(geminiModelRaw)
+  for (const rawModel of geminiModels) {
+    const model = validateGeminiVideoModel(rawModel)
     estimates.push(estimateGeminiCost(model, options))
   }
 
-  if (hasMinimax) {
-    const model = validateMinimaxVideoModel(minimaxModelRaw)
+  for (const rawModel of minimaxModels) {
+    const model = validateMinimaxVideoModel(rawModel)
     estimates.push(estimateMinimaxCost(model, options))
   }
 
@@ -116,17 +114,15 @@ export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCost
 }
 
 export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostEstimate => {
-  const geminiModelRaw = options.geminiVideoModel
-  const minimaxModelRaw = options.minimaxVideoModel
-  const hasGemini = typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0
-  const hasMinimax = typeof minimaxModelRaw === 'string' && minimaxModelRaw.length > 0
+  const geminiModelRaw = options.geminiVideoModels?.[0] ?? options.geminiVideoModel
+  const minimaxModelRaw = options.minimaxVideoModels?.[0] ?? options.minimaxVideoModel
 
-  if (hasGemini) {
+  if (typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0) {
     const model = validateGeminiVideoModel(geminiModelRaw)
     return estimateGeminiCost(model, options)
   }
 
-  if (hasMinimax) {
+  if (typeof minimaxModelRaw === 'string' && minimaxModelRaw.length > 0) {
     const model = validateMinimaxVideoModel(minimaxModelRaw)
     return estimateMinimaxCost(model, options)
   }

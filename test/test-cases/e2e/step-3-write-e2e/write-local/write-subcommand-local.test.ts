@@ -44,12 +44,29 @@ describe('write subcommand with llama', () => {
       expect(summaryJson).toBeDefined()
 
       const metadata = await readRunMetadata(outputDir) as {
+        completionStatus?: string
+        requestedProviders?: Array<{ service?: string; model?: string }>
+        providerStates?: Array<{ service?: string; model?: string; status?: string; artifactDir?: string }>
+        missingProviders?: Array<unknown>
+        cache?: { sourceMedia?: string }
         step3?: { llmModel?: string; llmService?: string }
       }
+      expect(metadata.completionStatus).toBe('full')
+      expect(metadata.requestedProviders).toEqual([{ service: 'whisper', model: 'tiny' }])
+      expect(metadata.providerStates).toEqual([
+        expect.objectContaining({
+          service: 'whisper',
+          model: 'tiny',
+          status: 'succeeded',
+          artifactDir: '.'
+        })
+      ])
+      expect(metadata.missingProviders).toEqual([])
+      expect(typeof metadata.cache?.sourceMedia).toBe('string')
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  })
+  }, 20_000)
 
   budgetedTest('write-llama-qwen3-0.6b', 'write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary', async () => {
     await stopLlamaServer()
@@ -69,12 +86,14 @@ describe('write subcommand with llama', () => {
       expect(summaryExists).toBe(true)
 
       const metadata = await readRunMetadata(outputDir) as {
+        completionStatus?: string
         step3?: { llmModel?: string; llmService?: string }
       }
+      expect(metadata.completionStatus).toBe('full')
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  })
+  }, 20_000)
 })
 
 describe('write subcommand with document input', () => {
@@ -115,12 +134,14 @@ describe('write subcommand with document input', () => {
       expect(summaryExists).toBe(true)
 
       const metadata = await readRunMetadata(outputDir) as {
+        completionStatus?: string
         step3?: { llmModel?: string; llmService?: string }
       }
+      expect(metadata.completionStatus).toBe('full')
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  })
+  }, 20_000)
 })
 
 describe('write subcommand with EPUB export flags', () => {
@@ -161,14 +182,16 @@ describe('write subcommand with EPUB export flags', () => {
       expect(await fileExists(`${outputDir}/chapters`)).toBe(true)
 
       const metadata = await readRunMetadata(outputDir) as {
+        completionStatus?: string
         step2?: { extractionMethod?: string; epubExport?: { mode?: string; directories?: string[] } }
         step3?: { llmModel?: string; llmService?: string }
       }
+      expect(metadata.completionStatus).toBe('full')
       expect(metadata.step2?.extractionMethod).toBe('epub-text')
       expect(metadata.step2?.epubExport?.mode).toBe('chapters')
       expect(metadata.step2?.epubExport?.directories).toEqual(['chapters'])
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  })
+  }, 20_000)
 })

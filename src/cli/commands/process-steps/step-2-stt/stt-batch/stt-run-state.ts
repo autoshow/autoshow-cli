@@ -22,6 +22,8 @@ const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?
 const STT_SERVICES = new Set<SttTarget['service']>([
   'whisper',
   'reverb',
+  'gcloud',
+  'aws',
   'deepgram',
   'elevenlabs',
   'soniox',
@@ -119,6 +121,8 @@ export const toRequestedProvider = (target: SttTarget): SttRequestedProvider => 
   service: target.service,
   model: target.model,
   local: target.local,
+  ...(target.awsRegion ? { awsRegion: target.awsRegion } : {}),
+  ...(target.awsBucket ? { awsBucket: target.awsBucket } : {}),
   ...(target.diarizationOptions ? { diarizationOptions: target.diarizationOptions } : {})
 })
 
@@ -144,6 +148,8 @@ export const parseStoredRequestedTarget = (value: unknown): SttTarget | undefine
     service: value['service'],
     model: value['model'],
     local: value['local'] === true,
+    ...(typeof value['awsRegion'] === 'string' ? { awsRegion: value['awsRegion'] } : {}),
+    ...(typeof value['awsBucket'] === 'string' ? { awsBucket: value['awsBucket'] } : {}),
     ...(isRecord(value['diarizationOptions']) ? { diarizationOptions: value['diarizationOptions'] as SttTarget['diarizationOptions'] } : {})
   }
 }

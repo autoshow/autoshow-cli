@@ -2,7 +2,7 @@ import type { MusicProvider, ProcessingOptions, Step7MusicMetadata } from '~/typ
 
 export type MusicGenOptions = Pick<
   ProcessingOptions,
-  'elevenlabsMusicModel' | 'minimaxMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental'
+  'elevenlabsMusicModels' | 'elevenlabsMusicModel' | 'minimaxMusicModels' | 'minimaxMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental'
 >
 
 export type MusicTarget = {

@@ -33,6 +33,8 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
   { label: 'CLI invalid Gladia STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', 'premium'] },
+  { label: 'CLI invalid AWS STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--aws-stt', 'premium'] },
+  { label: 'CLI invalid Google Cloud STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', 'chirp_2'] },
   { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
   { label: 'CLI invalid GLM OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr-v2'] },
   { label: 'stt rejects invalid speaker-count with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
@@ -76,6 +78,10 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--youtube-captions')
   expect(result.stdout).toContain('--price')
   expect(result.stdout).not.toContain('--provider')
+  expect(result.stdout).toContain('--gcloud-stt')
+  expect(result.stdout).toContain('--aws-stt')
+  expect(result.stdout).toContain('--aws-region')
+  expect(result.stdout).toContain('--aws-bucket')
   expect(result.stdout).toContain('--elevenlabs-stt')
   expect(result.stdout).toContain('--deepgram-stt')
   expect(result.stdout).toContain('--soniox-stt')
@@ -140,6 +146,8 @@ test('write help includes text-input lyric workflow flags', async () => {
   expect(result.stdout).toContain('--rendered-text')
   expect(result.stdout).toContain('--rendered-out-dir')
   expect(result.stdout).toContain('--track-list')
+  expect(result.stdout).toContain('--epub-bun')
+  expect(result.stdout).toContain('--epub-calibre')
 })
 
 test('music help advertises local markdown and text prompt files', async () => {
@@ -163,6 +171,95 @@ test('setup help includes calibre step', async () => {
 
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('calibre')
+  expect(result.stdout).toContain('--gcloud')
+  expect(result.stdout).toContain('--gcloud-project')
+  expect(result.stdout).toContain('--gcloud-billing-account')
+  expect(result.stdout).toContain('--gcloud-project-name')
+  expect(result.stdout).toContain('--gcloud-organization')
+  expect(result.stdout).toContain('--gcloud-folder')
+  expect(result.stdout).toContain('--aws')
+  expect(result.stdout).toContain('--aws-create-bucket')
+  expect(result.stdout).toContain('--aws-region')
+  expect(result.stdout).toContain('--aws-bucket')
+})
+
+test('setup rejects combining --gcloud with --step', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--gcloud',
+    '--step',
+    'transcription'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--gcloud cannot be combined with --step')
+})
+
+test('setup rejects gcloud project automation flag without --gcloud', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--gcloud-project',
+    'my-project'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--gcloud-project require --gcloud')
+})
+
+test('setup rejects gcloud project bootstrap flags without --gcloud-project', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--gcloud',
+    '--gcloud-billing-account',
+    '000000-000000-000000'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--gcloud-billing-account require --gcloud-project')
+})
+
+test('setup rejects combining gcloud organization and folder selectors', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--gcloud',
+    '--gcloud-project',
+    'my-project',
+    '--gcloud-organization',
+    '123',
+    '--gcloud-folder',
+    '456'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--gcloud-organization cannot be combined with --gcloud-folder')
+})
+
+test('setup rejects combining --aws with --step', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--aws',
+    '--step',
+    'transcription'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--aws cannot be combined with --step')
+})
+
+test('setup rejects aws bucket automation flags without --aws', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--aws-create-bucket'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--aws-create-bucket require --aws')
 })
 
 test('config help excludes legacy --max-usd and keeps --max-cents', async () => {
@@ -203,6 +300,12 @@ test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () =
 })
 
 const barePriceSelectionCases = [
+  {
+    name: 'CLI bare Google Cloud STT flag is accepted in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', '--price'],
+    provider: 'gcloud',
+    model: 'chirp_3',
+  },
   {
     name: 'CLI bare Deepgram STT flag is accepted in price mode',
     args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', '--price'],
@@ -339,6 +442,35 @@ test('write --resume-missing rejects unsupported command', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('--resume-missing is not supported with "write".')
 })
 
+test('write EPUB inspect mode rejects explicit non-JSON output the same way as ocr', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    'input/examples/document/1-epub.epub',
+    '--epub-bun',
+    '--out',
+    'text',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('EPUB inspect mode supports JSON output only. Use --out json with --epub-bun or --epub-calibre.')
+})
+
+test('write EPUB inspect price output reports write artifacts instead of extraction.txt', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    'input/examples/document/1-epub.epub',
+    '--epub-bun',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('run.json (includes EPUB inspection payload)')
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('extraction.txt')
+})
+
 test('buildOptsFromFlags maps --openai-voice to openaiVoiceId', () => {
   const opts = buildOptsFromFlags(false, {
     'openai-tts': 'gpt-4o-mini-tts',
@@ -355,6 +487,26 @@ test('buildOptsFromFlags maps --deepgram-stt to deepgramSttModel', () => {
   })
 
   expect(opts.deepgramSttModel).toBe('nova-3')
+})
+
+test('buildOptsFromFlags maps --gcloud-stt to gcloudSttModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'gcloud-stt': 'chirp_3'
+  })
+
+  expect(opts.gcloudSttModel).toBe('chirp_3')
+})
+
+test('buildOptsFromFlags maps AWS STT flags', () => {
+  const opts = buildOptsFromFlags(false, {
+    'aws-stt': 'standard',
+    'aws-region': 'us-east-1',
+    'aws-bucket': 'transcribe-bucket'
+  })
+
+  expect(opts.awsSttModel).toBe('standard')
+  expect(opts.awsRegion).toBe('us-east-1')
+  expect(opts.awsBucket).toBe('transcribe-bucket')
 })
 
 test('buildOptsFromFlags maps --youtube-captions to youtubeCaptions', () => {
@@ -375,34 +527,96 @@ test('buildOptsFromFlags maps --glm-ocr to glmOcrModel', () => {
 
 test('buildConfigPatchFromFlags resolves bare provider flags before writing config', () => {
   expect(buildConfigPatchFromFlags({
+    'gcloud-stt': true,
+    'aws-stt': true,
     'groq-stt': true,
     'openai': true,
+    'grok': true,
     'openai-tts': true,
     'openai-image': true,
     'mistral-ocr': true,
     'gemini-video': true
-  }, new Set(['groq-stt', 'openai', 'openai-tts', 'openai-image', 'mistral-ocr', 'gemini-video']))).toEqual({
+  }, new Set(['gcloud-stt', 'aws-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'gemini-video']))).toEqual({
     version: 2,
     defaults: {
       stt: {
-        groqStt: 'whisper-large-v3-turbo'
+        gcloudStt: ['chirp_3'],
+        awsStt: ['standard'],
+        groqStt: ['whisper-large-v3-turbo']
       },
       llm: {
-        openai: 'gpt-5.4-nano'
+        openai: ['gpt-5.4-nano'],
+        grok: ['grok-4.20-non-reasoning']
       },
       post: {
         tts: {
-          openaiTts: 'gpt-4o-mini-tts'
+          openaiTts: ['gpt-4o-mini-tts']
         },
         image: {
-          openaiImage: 'gpt-image-1-mini'
+          openaiImage: ['gpt-image-1-mini']
         },
         video: {
-          geminiVideo: 'veo-3.1-fast-generate-preview'
+          geminiVideo: ['veo-3.1-fast-generate-preview']
         }
       },
       extract: {
-        mistralOcr: 'mistral-ocr-2512'
+        mistralOcr: ['mistral-ocr-2512']
+      }
+    }
+  })
+})
+
+test('buildConfigPatchFromFlags stores AWS region and bucket defaults', () => {
+  expect(buildConfigPatchFromFlags({
+    'aws-stt': 'standard',
+    'aws-region': 'us-east-1',
+    'aws-bucket': 'transcribe-bucket'
+  }, new Set(['aws-stt', 'aws-region', 'aws-bucket']))).toEqual({
+    version: 2,
+    defaults: {
+      stt: {
+        awsStt: ['standard'],
+        awsRegion: 'us-east-1',
+        awsBucket: 'transcribe-bucket'
+      }
+    }
+  })
+})
+
+test('buildConfigPatchFromFlags stores repeated same-provider flags as ordered arrays', () => {
+  const rawArgs = [
+    'config',
+    '--speechmatics-stt',
+    'standard',
+    '--speechmatics-stt',
+    'enhanced',
+    '--openai',
+    'gpt-5.4',
+    '--openai',
+    'gpt-5.4-mini',
+    '--gemini-video',
+    'veo-3.1-fast-generate-preview',
+    '--gemini-video',
+    'veo-3.1-generate-preview'
+  ]
+
+  expect(buildConfigPatchFromFlags({
+    'speechmatics-stt': ['standard', 'enhanced'],
+    'openai': ['gpt-5.4', 'gpt-5.4-mini'],
+    'gemini-video': ['veo-3.1-fast-generate-preview', 'veo-3.1-generate-preview']
+  }, new Set(['speechmatics-stt', 'openai', 'gemini-video']), rawArgs)).toEqual({
+    version: 2,
+    defaults: {
+      stt: {
+        speechmaticsStt: ['standard', 'enhanced']
+      },
+      llm: {
+        openai: ['gpt-5.4', 'gpt-5.4-mini']
+      },
+      post: {
+        video: {
+          geminiVideo: ['veo-3.1-fast-generate-preview', 'veo-3.1-generate-preview']
+        }
       }
     }
   })
@@ -417,8 +631,11 @@ test('buildOptsFromFlags preserves custom llama Hugging Face repo IDs', () => {
 })
 
 test('resolveCheapestModelForFlag uses current registry-driven cheapest selections', () => {
+  expect(resolveCheapestModelForFlag('gcloud-stt')).toBe('chirp_3')
+  expect(resolveCheapestModelForFlag('aws-stt')).toBe('standard')
   expect(resolveCheapestModelForFlag('groq-stt')).toBe('whisper-large-v3-turbo')
   expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
+  expect(resolveCheapestModelForFlag('grok')).toBe('grok-4.20-non-reasoning')
   expect(resolveCheapestModelForFlag('openai-tts')).toBe('gpt-4o-mini-tts')
   expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1-mini')
   expect(resolveCheapestModelForFlag('mistral-ocr')).toBe('mistral-ocr-2512')
@@ -446,20 +663,79 @@ test('selectCheapestVideoSelection preserves minimal-cost video defaults', () =>
 
 test('buildOptsFromFlags resolves bare provider flags to cheapest models', () => {
   const opts = buildOptsFromFlags(false, {
+    'gcloud-stt': true,
+    'aws-stt': true,
     'groq-stt': true,
     'openai': true,
+    'grok': true,
     'openai-tts': true,
     'openai-image': true,
     'mistral-ocr': true,
     'gemini-video': true
   })
 
+  expect(opts.gcloudSttModel).toBe('chirp_3')
+  expect(opts.awsSttModel).toBe('standard')
   expect(opts.groqSttModel).toBe('whisper-large-v3-turbo')
   expect(opts.openaiModel).toBe('gpt-5.4-nano')
+  expect(opts.grokModel).toBe('grok-4.20-non-reasoning')
   expect(opts.openaiTtsModel).toBe('gpt-4o-mini-tts')
   expect(opts.openaiImageModel).toBe('gpt-image-1-mini')
   expect(opts.mistralOcrModel).toBe('mistral-ocr-2512')
   expect(opts.geminiVideoModel).toBe('veo-3.1-fast-generate-preview')
+})
+
+test('buildOptsFromFlags preserves repeated same-provider flags in first-seen order', () => {
+  const opts = buildOptsFromFlags(false, {
+    'speechmatics-stt': ['standard', 'enhanced'],
+    'openai': ['gpt-5.4', 'gpt-5.4-mini'],
+    'openai-image': ['gpt-image-1-mini', 'gpt-image-1']
+  }, [], {}, new Set(['speechmatics-stt', 'openai', 'openai-image']), [
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--speechmatics-stt',
+    'standard',
+    '--speechmatics-stt',
+    'enhanced',
+    '--openai',
+    'gpt-5.4',
+    '--openai',
+    'gpt-5.4-mini',
+    '--openai-image',
+    'gpt-image-1-mini',
+    '--openai-image',
+    'gpt-image-1'
+  ])
+
+  expect(opts.speechmaticsSttModels).toEqual(['standard', 'enhanced'])
+  expect(opts.speechmaticsSttModel).toBe('standard')
+  expect(opts.openaiModels).toEqual(['gpt-5.4', 'gpt-5.4-mini'])
+  expect(opts.openaiModel).toBe('gpt-5.4')
+  expect(opts.openaiImageModels).toEqual(['gpt-image-1-mini', 'gpt-image-1'])
+  expect(opts.openaiImageModel).toBe('gpt-image-1-mini')
+})
+
+test('buildOptsFromFlags deduplicates identical repeated provider-model pairs', () => {
+  const opts = buildOptsFromFlags(false, {
+    'speechmatics-stt': ['standard', 'standard', 'enhanced'],
+    'openai': ['gpt-5.4', 'gpt-5.4']
+  }, [], {}, new Set(['speechmatics-stt', 'openai']), [
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--speechmatics-stt',
+    'standard',
+    '--speechmatics-stt',
+    'standard',
+    '--speechmatics-stt',
+    'enhanced',
+    '--openai',
+    'gpt-5.4',
+    '--openai',
+    'gpt-5.4'
+  ])
+
+  expect(opts.speechmaticsSttModels).toEqual(['standard', 'enhanced'])
+  expect(opts.openaiModels).toEqual(['gpt-5.4'])
 })
 
 test('buildOptsFromFlags resolves bare OpenAI TTS to avoid kitten fallback', () => {
@@ -509,6 +785,14 @@ test('buildOptsFromFlags maps --gladia-stt to gladiaSttModel', () => {
   })
 
   expect(opts.gladiaSttModel).toBe('default')
+})
+
+test('buildOptsFromFlags maps --aws-stt to awsSttModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'aws-stt': 'standard'
+  })
+
+  expect(opts.awsSttModel).toBe('standard')
 })
 
 test('buildOptsFromFlags maps --gemini-voice to geminiVoiceId', () => {
@@ -622,6 +906,42 @@ test('collectSttTargets includes Deepgram targets with ignored speaker-count hin
       model: 'nova-3',
       local: false,
       diarizationOptions: { enabled: true }
+    }
+  ])
+})
+
+test('collectSttTargets includes AWS targets with region, bucket, and speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'aws-stt': 'standard',
+    'aws-region': 'us-east-1',
+    'aws-bucket': 'transcribe-bucket',
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'aws',
+      model: 'standard',
+      local: false,
+      awsRegion: 'us-east-1',
+      awsBucket: 'transcribe-bucket',
+      diarizationOptions: { enabled: true, speakerCount: 2 }
+    }
+  ])
+})
+
+test('collectSttTargets includes Google Cloud targets with exact speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'gcloud-stt': 'chirp_3',
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'gcloud',
+      model: 'chirp_3',
+      local: false,
+      diarizationOptions: { enabled: true, speakerCount: 2 }
     }
   ])
 })
@@ -752,7 +1072,7 @@ test('stt accepts Deepgram plus another STT provider in price mode', async () =>
   expect(result.exitCode).toBe(0)
 })
 
-test('write accepts multiple STT providers in price mode', async () => {
+test('write rejects multiple STT providers in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'write',
@@ -761,6 +1081,67 @@ test('write accepts multiple STT providers in price mode', async () => {
     'tiny',
     '--assemblyai-stt',
     'universal-3-pro',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('write accepts at most one STT provider')
+})
+
+test('write accepts multiple LLM providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--openai',
+    'gpt-5.4',
+    '--groq',
+    'openai/gpt-oss-20b',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('write accepts multiple TTS providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--openai-tts',
+    'gpt-4o-mini-tts',
+    '--elevenlabs-tts',
+    'eleven_v3',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('write accepts multiple image providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--openai-image',
+    'gpt-image-1-mini',
+    '--minimax-image',
+    'image-01',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('write accepts multiple video providers in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--gemini-video',
+    'veo-3.1-generate-preview',
+    '--minimax-video',
+    'MiniMax-Hailuo-2.3',
     '--price'
   ])
 
@@ -815,7 +1196,7 @@ test('ocr rejects removed generic --provider aliases', async () => {
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('Use provider-named flags')
 })
 
-test('write accepts multiple OCR providers in price mode', async () => {
+test('write rejects multiple OCR providers in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'write',
@@ -830,7 +1211,8 @@ test('write accepts multiple OCR providers in price mode', async () => {
     '--price'
   ])
 
-  expect(result.exitCode).toBe(0)
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('write accepts at most one OCR provider')
 })
 
 test('cache command accepts prune and clear actions', async () => {
@@ -899,6 +1281,57 @@ test('loadConfig rejects legacy pricing.maxUsd', async () => {
     }, null, 2))
 
     await expect(loadConfig(configPath)).rejects.toThrow('autoshow config')
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+})
+
+test('loadConfig normalizes legacy scalar model selections to arrays', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-config-normalize-'))
+  const configPath = join(tempDir, 'autoshow.json')
+
+  try {
+    await writeFile(configPath, JSON.stringify({
+      version: 2,
+      defaults: {
+        stt: {
+          speechmaticsStt: 'enhanced'
+        },
+        llm: {
+          openai: 'gpt-5.4-mini',
+          grok: 'grok-4.20-non-reasoning'
+        },
+        post: {
+          video: {
+            geminiVideo: 'veo-3.1-fast-generate-preview'
+          }
+        },
+        extract: {
+          mistralOcr: 'mistral-ocr-2512'
+        }
+      }
+    }, null, 2))
+
+    await expect(loadConfig(configPath)).resolves.toEqual({
+      version: 2,
+      defaults: {
+        stt: {
+          speechmaticsStt: ['enhanced']
+        },
+        llm: {
+          openai: ['gpt-5.4-mini'],
+          grok: ['grok-4.20-non-reasoning']
+        },
+        post: {
+          video: {
+            geminiVideo: ['veo-3.1-fast-generate-preview']
+          }
+        },
+        extract: {
+          mistralOcr: ['mistral-ocr-2512']
+        }
+      }
+    })
   } finally {
     await rm(tempDir, { recursive: true, force: true })
   }

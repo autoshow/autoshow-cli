@@ -60,6 +60,7 @@ bun as tts <input> [flags]
 If no engine flag is provided, `tts` defaults to Kitten TTS with `kitten-tts-nano-0.8-int8`.
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file.
+Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider.
 
 ## Examples
 
@@ -79,19 +80,22 @@ bun as tts input/examples/document/1-tts.md \
   --kitten-tts kitten-tts-mini \
   --openai-tts gpt-4o-mini-tts \
   --openai-voice alloy
+
+# Same provider, multiple models
+bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts eleven_flash_v2_5
 ```
 
 ## Flags
 
 | Flag | Description |
 |------|-------------|
-| `--kitten-tts <model>` | Select the Kitten TTS model; omit the value to use the cheapest supported model |
+| `--kitten-tts <model>` | Select one or more Kitten TTS models; omit the value to use the cheapest supported model |
 | `--kitten-voice <name>` | Select the Kitten speaker |
-| `--elevenlabs-tts <model>` | Select the ElevenLabs model; omit the value to use the cheapest supported model |
-| `--minimax-tts <model>` | Select the MiniMax model; omit the value to use the cheapest supported model |
-| `--groq-tts <model>` | Select the Groq model; omit the value to use the cheapest supported model |
-| `--openai-tts <model>` | Select the OpenAI model; omit the value to use the cheapest supported model |
-| `--gemini-tts <model>` | Select the Gemini model; omit the value to use the cheapest supported model |
+| `--elevenlabs-tts <model>` | Select one or more ElevenLabs models; omit the value to use the cheapest supported model |
+| `--minimax-tts <model>` | Select one or more MiniMax models; omit the value to use the cheapest supported model |
+| `--groq-tts <model>` | Select one or more Groq models; omit the value to use the cheapest supported model |
+| `--openai-tts <model>` | Select one or more OpenAI models; omit the value to use the cheapest supported model |
+| `--gemini-tts <model>` | Select one or more Gemini models; omit the value to use the cheapest supported model |
 | `--elevenlabs-voice <id>` | Override the ElevenLabs voice ID |
 | `--minimax-tts-voice <id>` | Override the MiniMax voice ID |
 | `--groq-voice <id>` | Override the Groq voice ID |

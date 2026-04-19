@@ -28,34 +28,25 @@ const sanitizeModelName = (model: string): string =>
 
 const collectTargets = (options: LLMOptions): LLMTarget[] => {
   const targets: LLMTarget[] = []
-
-  if (options.geminiModel) {
-    targets.push({ service: 'gemini', label: 'Gemini', model: options.geminiModel, run: runGeminiModel })
+  const appendTargets = (
+    service: LLMTarget['service'],
+    label: string,
+    models: string[] | undefined,
+    fallback: string | undefined,
+    run: LLMTarget['run']
+  ): void => {
+    for (const model of models ?? (fallback ? [fallback] : [])) {
+      targets.push({ service, label, model, run })
+    }
   }
 
-  if (options.anthropicModel) {
-    targets.push({ service: 'anthropic', label: 'Anthropic', model: options.anthropicModel, run: runAnthropicModel })
-  }
-
-  if (options.openaiModel) {
-    targets.push({ service: 'openai', label: 'OpenAI', model: options.openaiModel, run: runOpenAIModel })
-  }
-
-  if (options.groqModel) {
-    targets.push({ service: 'groq', label: 'Groq', model: options.groqModel, run: runGroqModel })
-  }
-
-  if (options.minimaxModel) {
-    targets.push({ service: 'minimax', label: 'MiniMax', model: options.minimaxModel, run: runMinimaxModel })
-  }
-
-  if (options.grokModel) {
-    targets.push({ service: 'grok', label: 'Grok', model: options.grokModel, run: runGrokModel })
-  }
-
-  if (options.llamaModel) {
-    targets.push({ service: 'llama.cpp', label: 'llama.cpp', model: options.llamaModel, run: runLlamaModel })
-  }
+  appendTargets('gemini', 'Gemini', options.geminiModels, options.geminiModel, runGeminiModel)
+  appendTargets('anthropic', 'Anthropic', options.anthropicModels, options.anthropicModel, runAnthropicModel)
+  appendTargets('openai', 'OpenAI', options.openaiModels, options.openaiModel, runOpenAIModel)
+  appendTargets('groq', 'Groq', options.groqModels, options.groqModel, runGroqModel)
+  appendTargets('minimax', 'MiniMax', options.minimaxModels, options.minimaxModel, runMinimaxModel)
+  appendTargets('grok', 'Grok', options.grokModels, options.grokModel, runGrokModel)
+  appendTargets('llama.cpp', 'llama.cpp', options.llamaModels, options.llamaModel, runLlamaModel)
 
   return targets
 }

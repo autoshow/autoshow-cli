@@ -3,8 +3,11 @@ import type { ImageProvider } from '~/types/provider-types'
 
 export type ImageGenOptions = Pick<
   ProcessingOptions,
+  | 'geminiImageModels'
   | 'geminiImageModel'
+  | 'openaiImageModels'
   | 'openaiImageModel'
+  | 'minimaxImageModels'
   | 'minimaxImageModel'
   | 'imageAspectRatio'
   | 'imageSize'

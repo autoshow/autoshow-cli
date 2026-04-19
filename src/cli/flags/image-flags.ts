@@ -10,15 +10,15 @@ import { priceFlag } from './shared-flags'
 export const imageGenFlags = {
   'gemini-image': {
     description: buildModelDescription('Gemini image model', SUPPORTED_GEMINI_IMAGE_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'openai-image': {
     description: buildModelDescription('OpenAI image model', SUPPORTED_OPENAI_IMAGE_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-image': {
     description: buildModelDescription('MiniMax image model', SUPPORTED_MINIMAX_IMAGE_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'image-aspect-ratio': {
     description: 'Image aspect ratio: 1:1|16:9|9:16|4:3|3:4 (Gemini)',

@@ -30,6 +30,37 @@ bun as setup
 
 Use full setup on a clean machine when you want local download, OCR, STT, write, or TTS workflows to work without manually installing their prerequisites first.
 
+Check gcloud CLI readiness for Google Cloud Speech-to-Text separately:
+
+```bash
+bun as setup --gcloud
+bun as setup --gcloud --gcloud-project PROJECT_ID
+bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
+```
+
+`bun as setup --gcloud` verifies the `gcloud` binary, Google Cloud CLI auth, the active project, project billing state, and whether `speech.googleapis.com` is enabled. `bun as setup --gcloud --gcloud-project PROJECT_ID` sets the active project or creates it when missing, auto-links billing when exactly one open billing account is visible, enables `speech.googleapis.com` when billing is ready, and saves `chirp_3` as the default Google STT model when no Google STT default has been saved yet. Use `--gcloud-billing-account ACCOUNT_ID` when multiple open billing accounts are available or when you want to force a specific billing account. When anything is still missing, setup prints the exact next-step commands to run.
+
+Check AWS CLI readiness for Amazon Transcribe separately:
+
+```bash
+bun as setup --aws
+```
+
+This verifies the `aws` binary, AWS CLI auth, the effective region, the configured S3 bucket (when saved in AutoShow config), and basic Amazon Transcribe access. When auth and region are ready but no bucket is configured yet, `bun as setup --aws` now creates and saves a staging bucket automatically.
+
+Force creation of a staging bucket or create a specific bucket name:
+
+```bash
+bun as setup --aws --aws-create-bucket
+```
+
+You can optionally pin the region or bucket name:
+
+```bash
+bun as setup --aws --aws-create-bucket --aws-region us-east-2
+bun as setup --aws --aws-create-bucket --aws-region us-east-2 --aws-bucket my-transcribe-bucket
+```
+
 ## Doctor
 
 Check prerequisites, API keys, and configuration without installing anything:
@@ -38,7 +69,7 @@ Check prerequisites, API keys, and configuration without installing anything:
 bun as setup --doctor
 ```
 
-Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`), config file validity, and Bun version.
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`), Google Cloud STT gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
 
 Doctor also reports YouTube cookie state separately:
 
@@ -68,6 +99,22 @@ Isolated steps assume their prerequisites are already present. On a clean machin
 ```bash
 # Document foundations: mutool + Calibre CLI tools
 bun as setup --step calibre
+
+# Focus only on Google Cloud STT readiness
+bun as setup --gcloud
+
+# Set or create the Google Cloud project, link billing when possible,
+# enable Speech-to-Text, and save the default Google STT model
+bun as setup --gcloud --gcloud-project PROJECT_ID
+
+# Force a specific Google Cloud billing account during bootstrap
+bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
+
+# Focus only on AWS CLI Transcribe readiness
+bun as setup --aws
+
+# Create and save an AWS Transcribe staging bucket automatically
+bun as setup --aws --aws-create-bucket
 
 # Build whisper.cpp binary only
 bun as setup --step whisper-binary

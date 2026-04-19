@@ -1,20 +1,26 @@
 import * as v from 'valibot'
 
+const ModelArraySchema = v.optional(v.array(v.string()), undefined)
+
 const PricingConfigSchema = v.object({
   maxCents: v.optional(v.pipe(v.number(), v.minValue(0)), undefined)
 })
 
 const SttDefaultsSchema = v.object({
-  whisper: v.optional(v.string(), undefined),
-  groqStt: v.optional(v.string(), undefined),
-  elevenlabsStt: v.optional(v.string(), undefined),
-  deepgramStt: v.optional(v.string(), undefined),
-  sonioxStt: v.optional(v.string(), undefined),
-  revStt: v.optional(v.string(), undefined),
-  mistralStt: v.optional(v.string(), undefined),
-  assemblyaiStt: v.optional(v.string(), undefined),
-  gladiaStt: v.optional(v.string(), undefined),
-  speechmaticsStt: v.optional(v.string(), undefined),
+  whisper: ModelArraySchema,
+  gcloudStt: ModelArraySchema,
+  awsStt: ModelArraySchema,
+  groqStt: ModelArraySchema,
+  elevenlabsStt: ModelArraySchema,
+  deepgramStt: ModelArraySchema,
+  sonioxStt: ModelArraySchema,
+  revStt: ModelArraySchema,
+  mistralStt: ModelArraySchema,
+  assemblyaiStt: ModelArraySchema,
+  gladiaStt: ModelArraySchema,
+  speechmaticsStt: ModelArraySchema,
+  awsRegion: v.optional(v.string(), undefined),
+  awsBucket: v.optional(v.string(), undefined),
   speakerCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   split: v.optional(v.boolean(), undefined),
   reverbVerbatimicity: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(1)), undefined),
@@ -27,21 +33,22 @@ const SttDefaultsSchema = v.object({
 })
 
 const LlmDefaultsSchema = v.object({
-  llama: v.optional(v.string(), undefined),
-  openai: v.optional(v.string(), undefined),
-  groq: v.optional(v.string(), undefined),
-  gemini: v.optional(v.string(), undefined),
-  anthropic: v.optional(v.string(), undefined),
-  minimax: v.optional(v.string(), undefined)
+  llama: ModelArraySchema,
+  openai: ModelArraySchema,
+  groq: ModelArraySchema,
+  gemini: ModelArraySchema,
+  anthropic: ModelArraySchema,
+  minimax: ModelArraySchema,
+  grok: ModelArraySchema
 })
 
 const TtsDefaultsSchema = v.object({
-  kittenTts: v.optional(v.string(), undefined),
-  elevenlabsTts: v.optional(v.string(), undefined),
-  minimaxTts: v.optional(v.string(), undefined),
-  groqTts: v.optional(v.string(), undefined),
-  openaiTts: v.optional(v.string(), undefined),
-  geminiTts: v.optional(v.string(), undefined),
+  kittenTts: ModelArraySchema,
+  elevenlabsTts: ModelArraySchema,
+  minimaxTts: ModelArraySchema,
+  groqTts: ModelArraySchema,
+  openaiTts: ModelArraySchema,
+  geminiTts: ModelArraySchema,
   ttsSpeaker: v.optional(v.string(), undefined),
   groqVoice: v.optional(v.string(), undefined),
   openaiVoice: v.optional(v.string(), undefined),
@@ -51,9 +58,9 @@ const TtsDefaultsSchema = v.object({
 })
 
 const ImageDefaultsSchema = v.object({
-  geminiImage: v.optional(v.string(), undefined),
-  openaiImage: v.optional(v.string(), undefined),
-  minimaxImage: v.optional(v.string(), undefined),
+  geminiImage: ModelArraySchema,
+  openaiImage: ModelArraySchema,
+  minimaxImage: ModelArraySchema,
   imageAspectRatio: v.optional(v.string(), undefined),
   imageSize: v.optional(v.string(), undefined),
   imageQuality: v.optional(v.string(), undefined),
@@ -63,8 +70,8 @@ const ImageDefaultsSchema = v.object({
 })
 
 const VideoDefaultsSchema = v.object({
-  geminiVideo: v.optional(v.string(), undefined),
-  minimaxVideo: v.optional(v.string(), undefined),
+  geminiVideo: ModelArraySchema,
+  minimaxVideo: ModelArraySchema,
   videoDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   videoSize: v.optional(v.string(), undefined),
   videoAspectRatio: v.optional(v.string(), undefined),
@@ -72,8 +79,8 @@ const VideoDefaultsSchema = v.object({
 })
 
 const MusicDefaultsSchema = v.object({
-  elevenlabsMusic: v.optional(v.string(), undefined),
-  minimaxMusic: v.optional(v.string(), undefined),
+  elevenlabsMusic: ModelArraySchema,
+  minimaxMusic: ModelArraySchema,
   musicDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
@@ -84,8 +91,8 @@ const ExtractDefaultsSchema = v.object({
   psm: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), undefined),
   oem: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), undefined),
   rotate: v.optional(v.pipe(v.number(), v.integer()), undefined),
-  mistralOcr: v.optional(v.string(), undefined),
-  glmOcr: v.optional(v.string(), undefined),
+  mistralOcr: ModelArraySchema,
+  glmOcr: ModelArraySchema,
   chapters: v.optional(v.boolean(), undefined),
   length: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   pdfChapterMode: v.optional(v.picklist(['local', 'auto', 'llm']), undefined)

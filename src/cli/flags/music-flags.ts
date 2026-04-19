@@ -9,11 +9,11 @@ import { priceFlag } from './shared-flags'
 export const musicGenFlags = {
   'elevenlabs-music': {
     description: buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-music': {
     description: buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'music-duration': {
     description: 'Music duration in seconds',

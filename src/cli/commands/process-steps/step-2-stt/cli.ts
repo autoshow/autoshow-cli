@@ -2,6 +2,8 @@ import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeO
 
 export const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false },
+  gcloud: { diarizationByDefault: true, supportsSpeakerCountHint: true },
+  aws: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false },
@@ -58,53 +60,56 @@ export const collectSttProviderSpecs = (
     | 'useReverb'
     | 'whisperExplicit'
     | 'whisperModel'
+    | 'whisperModels'
+    | 'gcloudSttModel'
+    | 'gcloudSttModels'
+    | 'awsSttModel'
+    | 'awsSttModels'
     | 'elevenlabsSttModel'
+    | 'elevenlabsSttModels'
     | 'deepgramSttModel'
+    | 'deepgramSttModels'
     | 'sonioxSttModel'
+    | 'sonioxSttModels'
     | 'speechmaticsSttModel'
+    | 'speechmaticsSttModels'
     | 'revSttModel'
+    | 'revSttModels'
     | 'groqSttModel'
+    | 'groqSttModels'
     | 'mistralSttModel'
+    | 'mistralSttModels'
     | 'assemblyaiSttModel'
+    | 'assemblyaiSttModels'
     | 'gladiaSttModel'
+    | 'gladiaSttModels'
   >
 ): ProviderSpec[] => {
   const specs: ProviderSpec[] = []
+  const appendModels = (provider: ProviderSpec['provider'], models: string[] | undefined, fallback?: string): void => {
+    for (const model of models ?? (fallback ? [fallback] : [])) {
+      appendProviderSpec(specs, { provider, model })
+    }
+  }
 
   if (options.useReverb) {
     appendProviderSpec(specs, { provider: 'reverb', model: 'reverb' })
   }
-  if (options.elevenlabsSttModel) {
-    appendProviderSpec(specs, { provider: 'elevenlabs', model: options.elevenlabsSttModel })
-  }
-  if (options.deepgramSttModel) {
-    appendProviderSpec(specs, { provider: 'deepgram', model: options.deepgramSttModel })
-  }
-  if (options.sonioxSttModel) {
-    appendProviderSpec(specs, { provider: 'soniox', model: options.sonioxSttModel })
-  }
-  if (options.speechmaticsSttModel) {
-    appendProviderSpec(specs, { provider: 'speechmatics', model: options.speechmaticsSttModel })
-  }
-  if (options.revSttModel) {
-    appendProviderSpec(specs, { provider: 'rev', model: options.revSttModel })
-  }
-  if (options.groqSttModel) {
-    appendProviderSpec(specs, { provider: 'groq', model: options.groqSttModel })
-  }
-  if (options.mistralSttModel) {
-    appendProviderSpec(specs, { provider: 'mistral', model: options.mistralSttModel })
-  }
-  if (options.assemblyaiSttModel) {
-    appendProviderSpec(specs, { provider: 'assemblyai', model: options.assemblyaiSttModel })
-  }
-  if (options.gladiaSttModel) {
-    appendProviderSpec(specs, { provider: 'gladia', model: options.gladiaSttModel })
-  }
+  appendModels('gcloud', options.gcloudSttModels, options.gcloudSttModel)
+  appendModels('aws', options.awsSttModels, options.awsSttModel)
+  appendModels('elevenlabs', options.elevenlabsSttModels, options.elevenlabsSttModel)
+  appendModels('deepgram', options.deepgramSttModels, options.deepgramSttModel)
+  appendModels('soniox', options.sonioxSttModels, options.sonioxSttModel)
+  appendModels('speechmatics', options.speechmaticsSttModels, options.speechmaticsSttModel)
+  appendModels('rev', options.revSttModels, options.revSttModel)
+  appendModels('groq', options.groqSttModels, options.groqSttModel)
+  appendModels('mistral', options.mistralSttModels, options.mistralSttModel)
+  appendModels('assemblyai', options.assemblyaiSttModels, options.assemblyaiSttModel)
+  appendModels('gladia', options.gladiaSttModels, options.gladiaSttModel)
 
   const whisperRequested = specs.some((entry) => entry.provider === 'whisper')
   if (options.whisperExplicit && !whisperRequested) {
-    appendProviderSpec(specs, { provider: 'whisper', model: options.whisperModel })
+    appendModels('whisper', options.whisperModels, options.whisperModel)
   }
 
   if (specs.length === 0) {

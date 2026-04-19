@@ -19,10 +19,12 @@ import {
   extractFlags,
   advancedExtractFlags,
   articleFlags,
+  // Shared separately because write excludes --resume-missing but should still expose EPUB inspect flags.
   batchFlags,
   promptFlag,
   priceFlag
 } from './shared-flags'
+import { epubInspectFlags } from './extract-flags'
 import { imageGenFlags } from './image-flags'
 import { musicGenFlags } from './music-flags'
 import { videoGenFlags } from './video-flags'
@@ -35,27 +37,27 @@ const writeTtsFlags = {
   },
   'kitten-tts': {
     description: `Enable Kitten TTS on LLM output. ${buildModelDescription('Kitten TTS model', SUPPORTED_KITTEN_TTS_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'elevenlabs-tts': {
     description: `Enable ElevenLabs TTS on LLM output. ${buildModelDescription('ElevenLabs TTS model', SUPPORTED_ELEVENLABS_TTS_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-tts': {
     description: `Enable MiniMax TTS on LLM output. ${buildModelDescription('MiniMax TTS model', SUPPORTED_MINIMAX_TTS_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'groq-tts': {
     description: `Enable Groq TTS on LLM output. ${buildModelDescription('Groq TTS model', SUPPORTED_GROQ_TTS_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'openai-tts': {
     description: `Enable OpenAI TTS on LLM output. ${buildModelDescription('OpenAI TTS model', SUPPORTED_OPENAI_TTS_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'gemini-tts': {
     description: `Enable Gemini TTS on LLM output. ${buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-tts-voice': {
     description: 'MiniMax TTS voice ID override (default: English_expressive_narrator)',
@@ -82,22 +84,22 @@ const writeTtsFlags = {
 const writeVideoModelFlags = {
   'gemini-video': {
     description: `Enable video generation on LLM output. ${buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-video': {
     description: `Enable video generation on LLM output. ${buildModelDescription('MiniMax video model', SUPPORTED_MINIMAX_VIDEO_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   }
 } as const satisfies ClercFlagsDefinition
 
 const writeMusicModelFlags = {
   'elevenlabs-music': {
     description: `Enable music generation on LLM output. ${buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-music': {
     description: `Enable music generation on LLM output. ${buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS)}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   'music-duration': {
     description: 'Music duration in seconds',
@@ -148,6 +150,7 @@ export const writeFlags = {
   ...withHelpGroup(extractFlags, 'step-2-ocr'),
   ...withHelpGroup(advancedExtractFlags, 'step-2-ocr'),
   ...withHelpGroup(articleFlags, 'step-2-ocr'),
+  ...withHelpGroup(epubInspectFlags, 'step-2-ocr'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
   ...withHelpGroup(writeTextInputFlags, 'step-3-write'),

@@ -312,7 +312,7 @@ export const resolveEffectiveSttProviderConcurrency = (
   }
 }
 
-const logSpeakerCountHintSummary = (
+export const logSpeakerCountHintSummary = (
   targets: SttTarget[],
   requestedSpeakerCount: number | undefined
 ): void => {
@@ -469,7 +469,7 @@ const runTargetPool = async (
   )
 }
 
-const buildProviderModelLabel = (
+export const buildProviderModelLabel = (
   metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
 ): string =>
   `${metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : metadata.transcriptionService}/${metadata.transcriptionModel}`

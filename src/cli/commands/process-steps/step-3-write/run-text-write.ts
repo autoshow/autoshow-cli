@@ -29,7 +29,7 @@ import { buildTtsArtifactMap, collectTtsTargets } from '~/cli/commands/process-s
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } from '~/cli/commands/process-steps/step-5-image/image-targets'
 import { runImageGen } from '~/cli/commands/process-steps/step-5-image/run-image-gen'
 import { runVideoGen } from '~/cli/commands/process-steps/step-6-video/run-video-gen'
-import { buildVideoArtifactMap } from '~/cli/commands/process-steps/step-6-video/video-targets'
+import { buildVideoArtifactMap, collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
 import { runMusicGen } from '~/cli/commands/process-steps/step-7-music/run-music-gen'
 import { buildMusicArtifactMap, collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
 import { buildProviderStepSummaries } from '~/cli/commands/process-steps/generation-command-utils'
@@ -153,12 +153,19 @@ export const runTextWrite = async (
       outputDir,
       prompts: opts.prompts,
       promptFile: opts.promptFile,
+      openaiModels: llmConfig.openaiModels,
       openaiModel: llmConfig.openaiModel,
+      groqModels: llmConfig.groqModels,
       groqModel: llmConfig.groqModel,
+      geminiModels: llmConfig.geminiModels,
       geminiModel: llmConfig.geminiModel,
+      anthropicModels: llmConfig.anthropicModels,
       anthropicModel: llmConfig.anthropicModel,
+      minimaxModels: llmConfig.minimaxModels,
       minimaxModel: llmConfig.minimaxModel,
+      grokModels: llmConfig.grokModels,
       grokModel: llmConfig.grokModel,
+      llamaModels: llmConfig.llamaModels,
       llamaModel: llmConfig.llamaModel,
       promptBuilder: (instruction: string) =>
         buildTextInputPrompt(sourceText, {
@@ -196,18 +203,19 @@ export const runTextWrite = async (
 
   const ttsTargets = collectTtsTargets(opts)
   const imageTargets = collectImageTargets(opts)
+  const videoTargets = collectVideoTargets(opts)
   const musicTargets = collectMusicTargets(opts)
   const ttsRequested = ttsTargets.length > 0
   const imageRequested = imageTargets.length > 0
+  const videoRequested = videoTargets.length > 0
   const musicRequested = musicTargets.length > 0
-  const videoGenRequested = !!(opts.geminiVideoModel || opts.minimaxVideoModel)
 
-  if ((ttsRequested || imageRequested || musicRequested || videoGenRequested) && step3Results.length > 1) {
+  if ((ttsRequested || imageRequested || musicRequested || videoRequested) && step3Results.length > 1) {
     if (ttsRequested) l.warn(`TTS skipped: step 4 only runs when write produces exactly one summary, but ${step3Results.length} LLM outputs were generated`)
     if (imageRequested) l.warn(`Image gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
     if (musicRequested) l.warn(`Music gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
-    if (videoGenRequested) l.warn(`Video gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
-  } else if (step3Results.length === 1 && (ttsRequested || imageRequested || musicRequested || videoGenRequested)) {
+    if (videoRequested) l.warn(`Video gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
+  } else if (step3Results.length === 1 && (ttsRequested || imageRequested || musicRequested || videoRequested)) {
     const renderedText = step3RunResults[0]?.renderedText ?? ''
     ttsCharacterCount = renderedText.length
 
@@ -221,7 +229,7 @@ export const runTextWrite = async (
       musicRequested
         ? runWithLogContext({ step: 'step-7-music' }, async () => await runMusicGen(renderedText, outputDir, opts))
         : null,
-      videoGenRequested
+      videoRequested
         ? runWithLogContext({ step: 'step-6-video' }, async () => await runVideoGen(renderedText, outputDir, opts))
         : null
     ])
@@ -236,13 +244,16 @@ export const runTextWrite = async (
     ? step3Results[0]
     : step3Results
 
-  const llmInputTokenCount = step3Results.reduce((sum, item) => sum + item.inputTokenCount, 0)
-  const llmOutputTokenCount = step3Results.reduce((sum, item) => sum + item.outputTokenCount, 0)
-  const llmService = step3Results[0]?.llmService
-  const llmModel = step3Results[0]?.llmModel ?? llmConfig.llmModel
+  const llmTargets = step3Results.map((item) => ({
+    service: item.llmService,
+    model: item.llmModel,
+    inputTokens: item.inputTokenCount,
+    outputTokens: item.outputTokenCount
+  }))
 
   const attemptedTtsTargets = step3Results.length === 1 ? ttsTargets : []
   const attemptedImageTargets = step3Results.length === 1 ? imageTargets : []
+  const attemptedVideoTargets = step3Results.length === 1 ? videoTargets : []
   const attemptedMusicTargets = step3Results.length === 1 ? musicTargets : []
   const ttsEstimateTargets = attemptedTtsTargets.map((target) => ({ service: target.service, model: target.model }))
   const imageEstimateTargets = attemptedImageTargets.map((target) => ({
@@ -252,21 +263,24 @@ export const runTextWrite = async (
   }))
 
   const estimated = computeEstimatedCosts({
-    llmService,
-    llmModel,
-    llmInputTokenCount,
-    llmOutputTokenCount,
+    llmTargets,
     skipLLM: false,
     ttsTargets: ttsEstimateTargets,
     ttsCharacterCount,
     imageTargets: imageEstimateTargets,
-    geminiVideoModel: opts.geminiVideoModel,
-    minimaxVideoModel: opts.minimaxVideoModel,
+    videoTargets: attemptedVideoTargets.map((target) => ({
+      service: target.service,
+      model: target.model,
+      ...(opts.videoDuration !== undefined ? { durationSeconds: opts.videoDuration } : {})
+    })),
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
     videoResolution: opts.videoResolution,
-    elevenlabsMusicModel: opts.elevenlabsMusicModel,
-    minimaxMusicModel: opts.minimaxMusicModel,
+    musicTargets: attemptedMusicTargets.map((entry) => ({
+      service: entry.service,
+      model: entry.model,
+      ...(opts.musicDuration !== undefined ? { durationSeconds: opts.musicDuration } : {})
+    })),
     musicDuration: opts.musicDuration,
     musicLyricsFile: opts.musicLyricsFile,
     musicInstrumental: opts.musicInstrumental
@@ -282,20 +296,17 @@ export const runTextWrite = async (
 
   const cost = { estimated, actual }
   const estimatedTiming = computeEstimatedProcessingTimes({
-    llmService,
-    llmModel,
-    llmInputTokenCount,
-    llmOutputTokenCount,
+    llmTargets,
     skipLLM: false,
     ttsTargets: ttsEstimateTargets,
     ttsCharacterCount,
     ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
-    ...(step6Metadata && step6Metadata.length > 0
+    ...(attemptedVideoTargets.length > 0
       ? {
-          videoTargets: step6Metadata.map((entry) => ({
-            service: entry.videoGenService,
-            model: entry.videoGenModel,
-            ...(typeof entry.videoDuration === 'number' ? { durationSeconds: entry.videoDuration } : {})
+          videoTargets: attemptedVideoTargets.map((entry) => ({
+            service: entry.service,
+            model: entry.model,
+            ...(opts.videoDuration !== undefined ? { durationSeconds: opts.videoDuration } : {})
           }))
         }
       : {}),

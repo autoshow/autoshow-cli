@@ -9,11 +9,11 @@ import { priceFlag } from './shared-flags'
 export const videoGenFlags = {
   'gemini-video': {
     description: buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-video': {
     description: buildModelDescription('MiniMax video model', SUPPORTED_MINIMAX_VIDEO_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'video-duration': {
     description: 'Video duration in seconds',

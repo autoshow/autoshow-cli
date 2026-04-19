@@ -25,9 +25,11 @@ export const buildVideoArtifactMap = (metadata: Step6VideoMetadata[]): Record<st
 
 export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => {
   const targets: VideoTarget[] = []
+  const geminiModels = options.geminiVideoModels ?? (options.geminiVideoModel ? [options.geminiVideoModel] : [])
+  const minimaxModels = options.minimaxVideoModels ?? (options.minimaxVideoModel ? [options.minimaxVideoModel] : [])
 
-  if (typeof options.geminiVideoModel === 'string' && options.geminiVideoModel.length > 0) {
-    const model: GeminiVideoModel = validateGeminiVideoModel(options.geminiVideoModel)
+  for (const rawModel of geminiModels) {
+    const model: GeminiVideoModel = validateGeminiVideoModel(rawModel)
 
     targets.push({
       service: 'gemini',
@@ -43,8 +45,8 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
     })
   }
 
-  if (typeof options.minimaxVideoModel === 'string' && options.minimaxVideoModel.length > 0) {
-    const model: MinimaxVideoModel = validateMinimaxVideoModel(options.minimaxVideoModel)
+  for (const rawModel of minimaxModels) {
+    const model: MinimaxVideoModel = validateMinimaxVideoModel(rawModel)
 
     targets.push({
       service: 'minimax',

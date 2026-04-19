@@ -27,9 +27,11 @@ export const buildMusicArtifactMap = (metadata: Step7MusicMetadata[]): Record<st
 
 export const collectMusicTargets = (options: MusicGenOptions): MusicTarget[] => {
   const targets: MusicTarget[] = []
+  const elevenlabsModels = options.elevenlabsMusicModels ?? (options.elevenlabsMusicModel ? [options.elevenlabsMusicModel] : [])
+  const minimaxModels = options.minimaxMusicModels ?? (options.minimaxMusicModel ? [options.minimaxMusicModel] : [])
 
-  if (typeof options.elevenlabsMusicModel === 'string' && options.elevenlabsMusicModel.length > 0) {
-    const model: ElevenlabsMusicModel = validateElevenlabsMusicModel(options.elevenlabsMusicModel)
+  for (const rawModel of elevenlabsModels) {
+    const model: ElevenlabsMusicModel = validateElevenlabsMusicModel(rawModel)
 
     targets.push({
       service: 'elevenlabs',
@@ -45,8 +47,8 @@ export const collectMusicTargets = (options: MusicGenOptions): MusicTarget[] => 
     })
   }
 
-  if (typeof options.minimaxMusicModel === 'string' && options.minimaxMusicModel.length > 0) {
-    const model: MinimaxMusicModel = validateMinimaxMusicModel(options.minimaxMusicModel)
+  for (const rawModel of minimaxModels) {
+    const model: MinimaxMusicModel = validateMinimaxMusicModel(rawModel)
 
     targets.push({
       service: 'minimax',

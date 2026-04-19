@@ -8,6 +8,8 @@ import {
   validateMinimaxModel,
   validateGrokModel,
   validateWhisperModel,
+  validateGcloudSttModel,
+  validateAwsSttModel,
   validateElevenlabsSttModel,
   validateDeepgramSttModel,
   validateSonioxSttModel,
@@ -38,6 +40,48 @@ import {
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { BatchOrder, BuildOptsDefaults, OutputFormat, RuntimeOptions } from '~/types'
+
+export const REPEATABLE_MODEL_FLAGS = [
+  'whisper',
+  'gcloud-stt',
+  'aws-stt',
+  'groq-stt',
+  'elevenlabs-stt',
+  'deepgram-stt',
+  'soniox-stt',
+  'speechmatics-stt',
+  'rev-stt',
+  'mistral-stt',
+  'assemblyai-stt',
+  'gladia-stt',
+  'mistral-ocr',
+  'glm-ocr',
+  'llama',
+  'openai',
+  'groq',
+  'gemini',
+  'anthropic',
+  'minimax',
+  'grok',
+  'kitten-tts',
+  'elevenlabs-tts',
+  'minimax-tts',
+  'groq-tts',
+  'openai-tts',
+  'gemini-tts',
+  'gemini-image',
+  'openai-image',
+  'minimax-image',
+  'elevenlabs-music',
+  'minimax-music',
+  'gemini-video',
+  'minimax-video'
+] as const
+
+export type RepeatableModelFlag = typeof REPEATABLE_MODEL_FLAGS[number]
+type FlagOccurrenceValue = string | boolean
+
+const REPEATABLE_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
 
 const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
   if (!value) return fallback
@@ -89,22 +133,89 @@ const readOptionalStringFlag = (flags: Record<string, unknown>, key: string): st
   return undefined
 }
 
-const readOptionalModelFlag = (flags: Record<string, unknown>, key: string): string | undefined => {
-  const value = flags[key]
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    if (trimmed.length > 0) {
-      return trimmed
+export const parseRepeatableModelFlagOccurrences = (
+  args: string[]
+): Partial<Record<RepeatableModelFlag, FlagOccurrenceValue[]>> => {
+  const result: Partial<Record<RepeatableModelFlag, FlagOccurrenceValue[]>> = {}
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] as string
+    if (!arg.startsWith('--')) {
+      continue
     }
 
-    return resolveCheapestModelForFlag(key)
+    const withoutDashes = arg.slice(2)
+    const eqIdx = withoutDashes.indexOf('=')
+    const key = (eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx)) as RepeatableModelFlag
+    if (!REPEATABLE_MODEL_FLAG_SET.has(key)) {
+      continue
+    }
+
+    const occurrenceList = result[key] ?? []
+    result[key] = occurrenceList
+
+    if (eqIdx !== -1) {
+      const inlineValue = withoutDashes.slice(eqIdx + 1)
+      occurrenceList.push(inlineValue.length > 0 ? inlineValue : true)
+      continue
+    }
+
+    const next = args[i + 1]
+    if (typeof next === 'string' && !next.startsWith('--') && next !== '--') {
+      occurrenceList.push(next)
+      i++
+      continue
+    }
+
+    occurrenceList.push(true)
   }
 
-  if (value === true) {
-    return resolveCheapestModelForFlag(key)
+  return result
+}
+
+const appendUnique = <T>(values: T[], value: T): void => {
+  if (!values.includes(value)) {
+    values.push(value)
+  }
+}
+
+export const normalizeModelFlagOccurrences = (
+  flagName: RepeatableModelFlag,
+  flags: Record<string, unknown>,
+  rawOccurrences: Partial<Record<RepeatableModelFlag, FlagOccurrenceValue[]>>
+): string[] | undefined => {
+  const occurrences = rawOccurrences[flagName]
+  const sourceValues: FlagOccurrenceValue[] | undefined = occurrences && occurrences.length > 0
+    ? occurrences
+    : Array.isArray(flags[flagName])
+      ? (flags[flagName] as unknown[]).flatMap((entry) =>
+          typeof entry === 'string' || entry === true ? [entry] : []
+        )
+      : typeof flags[flagName] === 'string' || flags[flagName] === true
+        ? [flags[flagName] as string | boolean]
+        : undefined
+
+  if (!sourceValues || sourceValues.length === 0) {
+    return undefined
   }
 
-  return undefined
+  const models: string[] = []
+  for (const value of sourceValues) {
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (trimmed.length > 0) {
+        appendUnique(models, trimmed)
+        continue
+      }
+    }
+
+    const cheapestModel = resolveCheapestModelForFlag(flagName)
+    if (cheapestModel !== undefined) {
+      appendUnique(models, cheapestModel)
+    }
+  }
+
+  return models.length > 0 ? models : undefined
 }
 
 const readBooleanFlag = (flags: Record<string, unknown>, key: string): boolean => {
@@ -169,9 +280,11 @@ export const buildOptsFromFlags = (
   flags: Record<string, unknown>,
   doubleDashArgs: string[] = [],
   defaults: BuildOptsDefaults = {},
-  explicitFlags: Set<string> = new Set()
+  explicitFlags: Set<string> = new Set(),
+  rawArgs: string[] = []
 ): RuntimeOptions => {
   const ddArgs = parseDoubleDashArgs(doubleDashArgs)
+  const rawModelOccurrences = parseRepeatableModelFlagOccurrences(rawArgs)
 
   const mergedFlags: Record<string, unknown> = { ...ddArgs, ...flags }
   const validateCliValue = <T>(validator: (value: string) => T, value: string): T => {
@@ -181,52 +294,95 @@ export const buildOptsFromFlags = (
       throw CLIUsageError(error instanceof Error ? error.message : String(error))
     }
   }
-  const readValidated = <T>(key: string, validator: (v: string) => T): T | undefined => {
-    const v = readOptionalModelFlag(mergedFlags, key)
-    return v === undefined ? undefined : validateCliValue(validator, v)
+  const readValidatedMany = <T extends string>(
+    key: RepeatableModelFlag,
+    validator: (value: string) => T
+  ): T[] | undefined => {
+    const values = normalizeModelFlagOccurrences(key, mergedFlags, rawModelOccurrences)
+    if (!values || values.length === 0) {
+      return undefined
+    }
+
+    const normalized: T[] = []
+    for (const value of values) {
+      appendUnique(normalized, validateCliValue(validator, value))
+    }
+    return normalized.length > 0 ? normalized : undefined
   }
+  const first = <T>(values: T[] | undefined): T | undefined => values?.[0]
 
   const outputFormat = readStringFlag(mergedFlags, 'out', 'json')
   const normalizedOut: OutputFormat = outputFormat === 'text' || outputFormat === 'tsv' || outputFormat === 'hocr' ? outputFormat : 'json'
   const epubLengthThousands = parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'length'), 'length')
   const pdfChapterMode = parsePdfChapterMode(readOptionalStringFlag(mergedFlags, 'pdf-chapter-mode'))
 
-  const whisperModel = validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper', 'tiny'))
-  const groqSttModel = readValidated('groq-stt', validateGroqSttModel)
-  const elevenlabsSttModel = readValidated('elevenlabs-stt', validateElevenlabsSttModel)
-  const deepgramSttModel = readValidated('deepgram-stt', validateDeepgramSttModel)
-  const sonioxSttModel = readValidated('soniox-stt', validateSonioxSttModel)
-  const speechmaticsSttModel = readValidated('speechmatics-stt', validateSpeechmaticsSttModel)
-  const revSttModel = readValidated('rev-stt', validateRevSttModel)
-  const mistralSttModel = readValidated('mistral-stt', validateMistralSttModel)
-  const assemblyaiSttModel = readValidated('assemblyai-stt', validateAssemblyaiSttModel)
-  const gladiaSttModel = readValidated('gladia-stt', validateGladiaSttModel)
-  const mistralOcrModel = readValidated('mistral-ocr', validateMistralOcrModel)
-  const glmOcrModel = readValidated('glm-ocr', validateGlmOcrModel)
-  const llamaModel = readValidated('llama', validateLlamaModel)
-  const openaiModel = readValidated('openai', validateOpenAIModel)
-  const groqModel = readValidated('groq', validateGroqModel)
-  const geminiModel = readValidated('gemini', validateGeminiModel)
-  const anthropicModel = readValidated('anthropic', validateAnthropicModel)
-  const minimaxModel = readValidated('minimax', validateMinimaxModel)
-  const grokModel = readValidated('grok', validateGrokModel)
-  const kittenTtsModelFlag = readOptionalModelFlag(mergedFlags, 'kitten-tts')
-  const elevenlabsTtsModelFlag = readOptionalModelFlag(mergedFlags, 'elevenlabs-tts')
-  const minimaxTtsModelFlag = readOptionalModelFlag(mergedFlags, 'minimax-tts')
-  const groqTtsModelFlag = readOptionalModelFlag(mergedFlags, 'groq-tts')
-  const openaiTtsModelFlag = readOptionalModelFlag(mergedFlags, 'openai-tts')
-  const geminiTtsModelFlag = readOptionalModelFlag(mergedFlags, 'gemini-tts')
+  const whisperModels = readValidatedMany('whisper', validateWhisperModel)
+  const whisperModel = first(whisperModels) ?? validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper', 'tiny'))
+  const gcloudSttModels = readValidatedMany('gcloud-stt', validateGcloudSttModel)
+  const awsSttModels = readValidatedMany('aws-stt', validateAwsSttModel)
+  const groqSttModels = readValidatedMany('groq-stt', validateGroqSttModel)
+  const elevenlabsSttModels = readValidatedMany('elevenlabs-stt', validateElevenlabsSttModel)
+  const deepgramSttModels = readValidatedMany('deepgram-stt', validateDeepgramSttModel)
+  const sonioxSttModels = readValidatedMany('soniox-stt', validateSonioxSttModel)
+  const speechmaticsSttModels = readValidatedMany('speechmatics-stt', validateSpeechmaticsSttModel)
+  const revSttModels = readValidatedMany('rev-stt', validateRevSttModel)
+  const mistralSttModels = readValidatedMany('mistral-stt', validateMistralSttModel)
+  const assemblyaiSttModels = readValidatedMany('assemblyai-stt', validateAssemblyaiSttModel)
+  const gladiaSttModels = readValidatedMany('gladia-stt', validateGladiaSttModel)
+  const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
+  const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
+  const llamaModels = readValidatedMany('llama', validateLlamaModel)
+  const openaiModels = readValidatedMany('openai', validateOpenAIModel)
+  const groqModels = readValidatedMany('groq', validateGroqModel)
+  const geminiModels = readValidatedMany('gemini', validateGeminiModel)
+  const anthropicModels = readValidatedMany('anthropic', validateAnthropicModel)
+  const minimaxModels = readValidatedMany('minimax', validateMinimaxModel)
+  const grokModels = readValidatedMany('grok', validateGrokModel)
+  const gcloudSttModel = first(gcloudSttModels)
+  const awsSttModel = first(awsSttModels)
+  const groqSttModel = first(groqSttModels)
+  const elevenlabsSttModel = first(elevenlabsSttModels)
+  const deepgramSttModel = first(deepgramSttModels)
+  const sonioxSttModel = first(sonioxSttModels)
+  const speechmaticsSttModel = first(speechmaticsSttModels)
+  const revSttModel = first(revSttModels)
+  const mistralSttModel = first(mistralSttModels)
+  const assemblyaiSttModel = first(assemblyaiSttModels)
+  const gladiaSttModel = first(gladiaSttModels)
+  const mistralOcrModel = first(mistralOcrModels)
+  const glmOcrModel = first(glmOcrModels)
+  const llamaModel = first(llamaModels)
+  const openaiModel = first(openaiModels)
+  const groqModel = first(groqModels)
+  const geminiModel = first(geminiModels)
+  const anthropicModel = first(anthropicModels)
+  const minimaxModel = first(minimaxModels)
+  const grokModel = first(grokModels)
+  const kittenTtsModels = readValidatedMany('kitten-tts', validateKittenTtsModel)
+  const elevenlabsTtsModels = readValidatedMany('elevenlabs-tts', validateElevenlabsTtsModel)
+  const minimaxTtsModels = readValidatedMany('minimax-tts', validateMinimaxTtsModel)
+  const groqTtsModels = readValidatedMany('groq-tts', validateGroqTtsModel)
+  const openaiTtsModels = readValidatedMany('openai-tts', validateOpenAITtsModel)
+  const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const hasExplicitTtsEngine = [
-    kittenTtsModelFlag,
-    elevenlabsTtsModelFlag,
-    minimaxTtsModelFlag,
-    groqTtsModelFlag,
-    openaiTtsModelFlag,
-    geminiTtsModelFlag
-  ].some((value) => value !== undefined)
-  const kittenTtsModelValue = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
-    ? DEFAULT_KITTEN_TTS_MODEL
-    : kittenTtsModelFlag
+    kittenTtsModels,
+    elevenlabsTtsModels,
+    minimaxTtsModels,
+    groqTtsModels,
+    openaiTtsModels,
+    geminiTtsModels
+  ].some((value) => value !== undefined && value.length > 0)
+  const kittenTtsModelValues = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
+    ? [DEFAULT_KITTEN_TTS_MODEL]
+    : kittenTtsModels
+  const kittenTtsModelValue = first(kittenTtsModelValues)
+  const geminiImageModels = readValidatedMany('gemini-image', validateGeminiImageModel)
+  const openaiImageModels = readValidatedMany('openai-image', validateOpenAIImageModel)
+  const minimaxImageModels = readValidatedMany('minimax-image', validateMinimaxImageModel)
+  const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
+  const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
+  const geminiVideoModels = readValidatedMany('gemini-video', validateGeminiVideoModel)
+  const minimaxVideoModels = readValidatedMany('minimax-video', validateMinimaxVideoModel)
   const urlBackendFlag = readOptionalStringFlag(mergedFlags, 'url-backend')
   const urlBackendEnv = readEnv('AUTOSHOW_URL_BACKEND')
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
@@ -235,22 +391,45 @@ export const buildOptsFromFlags = (
     useReverb: readBooleanFlag(mergedFlags, 'reverb'),
     youtubeCaptions: readBooleanFlag(mergedFlags, 'youtube-captions'),
     whisperExplicit: explicitFlags.has('whisper'),
+    llamaModels,
     llamaModel,
+    openaiModels,
     openaiModel,
+    groqModels,
     groqModel,
+    geminiModels,
     geminiModel,
+    anthropicModels,
     anthropicModel,
+    minimaxModels,
     minimaxModel,
+    grokModels,
     grokModel,
+    whisperModels,
     whisperModel,
+    gcloudSttModels,
+    gcloudSttModel,
+    awsSttModels,
+    awsSttModel,
+    awsRegion: readOptionalStringFlag(mergedFlags, 'aws-region'),
+    awsBucket: readOptionalStringFlag(mergedFlags, 'aws-bucket'),
+    groqSttModels,
     groqSttModel,
+    elevenlabsSttModels,
     elevenlabsSttModel,
+    deepgramSttModels,
     deepgramSttModel,
+    sonioxSttModels,
     sonioxSttModel,
+    speechmaticsSttModels,
     speechmaticsSttModel,
+    revSttModels,
     revSttModel,
+    mistralSttModels,
     mistralSttModel,
+    assemblyaiSttModels,
     assemblyaiSttModel,
+    gladiaSttModels,
     gladiaSttModel,
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
     sttProviderConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-provider-concurrency'), 2)),
@@ -276,7 +455,9 @@ export const buildOptsFromFlags = (
     rotate: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'rotate'), 0),
     useOcrmypdf: readBooleanFlag(mergedFlags, 'ocrmypdf'),
     usePaddleOcr: readBooleanFlag(mergedFlags, 'paddle-ocr'),
+    mistralOcrModels,
     mistralOcrModel,
+    glmOcrModels,
     glmOcrModel,
     epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
     epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
@@ -308,25 +489,34 @@ export const buildOptsFromFlags = (
         ? validateCliValue(validateKittenTtsSpeaker, raw)
         : raw
     })(),
+    kittenTtsModels: kittenTtsModelValues,
     kittenTtsModel: kittenTtsModelValue === undefined ? undefined : validateCliValue(validateKittenTtsModel, kittenTtsModelValue),
-    groqTtsModel: groqTtsModelFlag === undefined ? undefined : validateCliValue(validateGroqTtsModel, groqTtsModelFlag),
-    openaiTtsModel: openaiTtsModelFlag === undefined ? undefined : validateCliValue(validateOpenAITtsModel, openaiTtsModelFlag),
-    geminiTtsModel: geminiTtsModelFlag === undefined ? undefined : validateCliValue(validateGeminiTtsModel, geminiTtsModelFlag),
+    groqTtsModels,
+    groqTtsModel: first(groqTtsModels),
+    openaiTtsModels,
+    openaiTtsModel: first(openaiTtsModels),
+    geminiTtsModels,
+    geminiTtsModel: first(geminiTtsModels),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
-      if (groqTtsModelFlag === undefined) return v
+      if (groqTtsModels === undefined) return v
       return validateCliValue(validateGroqTtsVoice, v)
     })(),
     openaiVoiceId: readOptionalStringFlag(mergedFlags, 'openai-voice'),
     geminiVoiceId: readOptionalStringFlag(mergedFlags, 'gemini-voice'),
-    elevenlabsTtsModel: elevenlabsTtsModelFlag === undefined ? undefined : validateCliValue(validateElevenlabsTtsModel, elevenlabsTtsModelFlag),
-    minimaxTtsModel: minimaxTtsModelFlag === undefined ? undefined : validateCliValue(validateMinimaxTtsModel, minimaxTtsModelFlag),
+    elevenlabsTtsModels,
+    elevenlabsTtsModel: first(elevenlabsTtsModels),
+    minimaxTtsModels,
+    minimaxTtsModel: first(minimaxTtsModels),
     minimaxTtsVoice: readOptionalStringFlag(mergedFlags, 'minimax-tts-voice'),
     elevenlabsVoiceId: readOptionalStringFlag(mergedFlags, 'elevenlabs-voice'),
-    geminiImageModel: readValidated('gemini-image', validateGeminiImageModel),
-    openaiImageModel: readValidated('openai-image', validateOpenAIImageModel),
-    minimaxImageModel: readValidated('minimax-image', validateMinimaxImageModel),
+    geminiImageModels,
+    geminiImageModel: first(geminiImageModels),
+    openaiImageModels,
+    openaiImageModel: first(openaiImageModels),
+    minimaxImageModels,
+    minimaxImageModel: first(minimaxImageModels),
     imageAspectRatio: readOptionalStringFlag(mergedFlags, 'image-aspect-ratio'),
     imageSize: readOptionalStringFlag(mergedFlags, 'image-size'),
     imageQuality: readOptionalStringFlag(mergedFlags, 'image-quality'),
@@ -338,8 +528,10 @@ export const buildOptsFromFlags = (
       const n = parseInt(v, 10)
       return Number.isFinite(n) ? n : undefined
     })(),
-    elevenlabsMusicModel: readValidated('elevenlabs-music', validateElevenlabsMusicModel),
-    minimaxMusicModel: readValidated('minimax-music', validateMinimaxMusicModel),
+    elevenlabsMusicModels,
+    elevenlabsMusicModel: first(elevenlabsMusicModels),
+    minimaxMusicModels,
+    minimaxMusicModel: first(minimaxMusicModels),
     musicDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'music-duration')
       if (v === undefined) return undefined
@@ -348,8 +540,10 @@ export const buildOptsFromFlags = (
     })(),
     musicLyricsFile: readOptionalStringFlag(mergedFlags, 'music-lyrics-file'),
     musicInstrumental: readBooleanFlag(mergedFlags, 'music-instrumental'),
-    geminiVideoModel: readValidated('gemini-video', validateGeminiVideoModel),
-    minimaxVideoModel: readValidated('minimax-video', validateMinimaxVideoModel),
+    geminiVideoModels,
+    geminiVideoModel: first(geminiVideoModels),
+    minimaxVideoModels,
+    minimaxVideoModel: first(minimaxVideoModels),
     videoDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'video-duration')
       if (v === undefined) return undefined

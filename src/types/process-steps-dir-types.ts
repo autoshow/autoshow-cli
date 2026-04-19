@@ -30,7 +30,7 @@ export type GroqTranscriptionResponse = {
   segments?: unknown
 }
 
-export type TranscribeEngine = 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'whisper' | 'youtube-captions'
+export type TranscribeEngine = 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'whisper' | 'youtube-captions'
 
 export type TranscribeEngineCapabilities = {
   diarizationByDefault: boolean

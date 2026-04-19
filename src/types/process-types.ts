@@ -6,32 +6,55 @@ export const ProcessingOptionsSchema = v.pipe(
   v.object({
     url: v.optional(v.pipe(v.string(), v.url()), undefined),
     filePath: v.optional(v.string(), undefined),
+    whisperModels: v.optional(v.array(v.string()), undefined),
     whisperModel: v.string(),
     youtubeCaptions: v.optional(v.boolean(), undefined),
+    gcloudSttModels: v.optional(v.array(v.string()), undefined),
+    gcloudSttModel: v.optional(v.string(), undefined),
+    awsSttModels: v.optional(v.array(v.string()), undefined),
+    awsSttModel: v.optional(v.string(), undefined),
+    awsRegion: v.optional(v.string(), undefined),
+    awsBucket: v.optional(v.string(), undefined),
+    groqSttModels: v.optional(v.array(v.string()), undefined),
     groqSttModel: v.optional(v.string(), undefined),
+    elevenlabsSttModels: v.optional(v.array(v.string()), undefined),
     elevenlabsSttModel: v.optional(v.string(), undefined),
+    sonioxSttModels: v.optional(v.array(v.string()), undefined),
     sonioxSttModel: v.optional(v.string(), undefined),
+    revSttModels: v.optional(v.array(v.string()), undefined),
     revSttModel: v.optional(v.string(), undefined),
+    mistralSttModels: v.optional(v.array(v.string()), undefined),
     mistralSttModel: v.optional(v.string(), undefined),
+    assemblyaiSttModels: v.optional(v.array(v.string()), undefined),
     assemblyaiSttModel: v.optional(v.string(), undefined),
+    gladiaSttModels: v.optional(v.array(v.string()), undefined),
     gladiaSttModel: v.optional(v.string(), undefined),
+    speechmaticsSttModels: v.optional(v.array(v.string()), undefined),
     speechmaticsSttModel: v.optional(v.string(), undefined),
+    deepgramSttModels: v.optional(v.array(v.string()), undefined),
     deepgramSttModel: v.optional(v.string(), undefined),
     diarizationSpeakerCount: v.optional(v.number(), undefined),
+    refreshCache: v.optional(v.boolean(), undefined),
+    noCache: v.optional(v.boolean(), undefined),
+    llamaModels: v.optional(v.array(v.string()), undefined),
     llamaModel: v.optional(v.string(), undefined),
+    openaiModels: v.optional(v.array(v.string()), undefined),
     openaiModel: v.optional(v.string(), undefined),
+    groqModels: v.optional(v.array(v.string()), undefined),
     groqModel: v.optional(v.string(), undefined),
+    geminiModels: v.optional(v.array(v.string()), undefined),
     geminiModel: v.optional(v.string(), undefined),
+    anthropicModels: v.optional(v.array(v.string()), undefined),
     anthropicModel: v.optional(v.string(), undefined),
+    minimaxModels: v.optional(v.array(v.string()), undefined),
     minimaxModel: v.optional(v.string(), undefined),
+    grokModels: v.optional(v.array(v.string()), undefined),
     grokModel: v.optional(v.string(), undefined),
     outputDir: v.string(),
     useReverb: v.optional(v.boolean(), undefined),
     reverbVerbatimicity: v.optional(v.number(), undefined),
     split: v.optional(v.boolean(), undefined),
     skipLLM: v.optional(v.boolean(), undefined),
-    
-
     directDownload: v.optional(v.boolean(), undefined),
 
     prompts: v.optional(v.array(v.string()), undefined),
@@ -41,21 +64,30 @@ export const ProcessingOptionsSchema = v.pipe(
     trackList: v.optional(v.string(), undefined),
 
     ttsSpeaker: v.optional(v.string(), undefined),
+    groqTtsModels: v.optional(v.array(v.string()), undefined),
     groqTtsModel: v.optional(v.string(), undefined),
     groqVoiceId: v.optional(v.string(), undefined),
+    openaiTtsModels: v.optional(v.array(v.string()), undefined),
     openaiTtsModel: v.optional(v.string(), undefined),
     openaiVoiceId: v.optional(v.string(), undefined),
+    geminiTtsModels: v.optional(v.array(v.string()), undefined),
     geminiTtsModel: v.optional(v.string(), undefined),
     geminiVoiceId: v.optional(v.string(), undefined),
+    elevenlabsTtsModels: v.optional(v.array(v.string()), undefined),
     elevenlabsTtsModel: v.optional(v.string(), undefined),
     elevenlabsVoiceId: v.optional(v.string(), undefined),
+    minimaxTtsModels: v.optional(v.array(v.string()), undefined),
     minimaxTtsModel: v.optional(v.string(), undefined),
     minimaxTtsVoice: v.optional(v.string(), undefined),
 
+    kittenTtsModels: v.optional(v.array(v.string()), undefined),
     kittenTtsModel: v.optional(v.string(), undefined),
 
+    geminiImageModels: v.optional(v.array(v.string()), undefined),
     geminiImageModel: v.optional(v.string(), undefined),
+    openaiImageModels: v.optional(v.array(v.string()), undefined),
     openaiImageModel: v.optional(v.string(), undefined),
+    minimaxImageModels: v.optional(v.array(v.string()), undefined),
     minimaxImageModel: v.optional(v.string(), undefined),
     imageAspectRatio: v.optional(v.string(), undefined),
     imageSize: v.optional(v.string(), undefined),
@@ -64,13 +96,17 @@ export const ProcessingOptionsSchema = v.pipe(
     imageBackground: v.optional(v.string(), undefined),
     imagenCount: v.optional(v.number(), undefined),
 
+    elevenlabsMusicModels: v.optional(v.array(v.string()), undefined),
     elevenlabsMusicModel: v.optional(v.string(), undefined),
+    minimaxMusicModels: v.optional(v.array(v.string()), undefined),
     minimaxMusicModel: v.optional(v.string(), undefined),
     musicDuration: v.optional(v.number(), undefined),
     musicLyricsFile: v.optional(v.string(), undefined),
     musicInstrumental: v.optional(v.boolean(), undefined),
 
+    geminiVideoModels: v.optional(v.array(v.string()), undefined),
     geminiVideoModel: v.optional(v.string(), undefined),
+    minimaxVideoModels: v.optional(v.array(v.string()), undefined),
     minimaxVideoModel: v.optional(v.string(), undefined),
     videoDuration: v.optional(v.number(), undefined),
     videoSize: v.optional(v.string(), undefined),
@@ -304,6 +340,10 @@ export type ProcessDocumentOutput = {
   result: ExtractionResult
   step1Metadata: DocumentMetadata
   step2Metadata: ExtractionMetadata | ExtractionMetadata[]
+  completionStatus?: 'full' | 'incomplete' | 'failed' | undefined
+  requestedProviders?: Array<{ service: string, model: string }> | undefined
+  providerStates?: Array<Record<string, unknown>> | undefined
+  missingProviders?: Array<{ service: string, model: string }> | undefined
   web?: WebArticleMetadata | undefined
   step2Errors?: Array<{
     service: string
@@ -429,7 +469,7 @@ export type Step2RuntimeMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number
@@ -507,6 +547,30 @@ export const GladiaStatusResponseSchema = v.looseObject({
     transcription: v.optional(GladiaTranscriptionResultSchema, undefined),
     diarization: v.optional(GladiaDiarizationResultSchema, undefined)
   })), undefined)
+})
+
+export const GoogleCloudWordInfoSchema = v.looseObject({
+  startOffset: v.optional(v.string(), undefined),
+  endOffset: v.optional(v.string(), undefined),
+  word: v.string(),
+  confidence: v.optional(v.number(), undefined),
+  speakerLabel: v.optional(v.string(), undefined)
+})
+
+export const GoogleCloudSpeechAlternativeSchema = v.looseObject({
+  transcript: v.optional(v.string(), undefined),
+  confidence: v.optional(v.number(), undefined),
+  words: v.optional(v.array(GoogleCloudWordInfoSchema), undefined)
+})
+
+export const GoogleCloudSpeechResultSchema = v.looseObject({
+  languageCode: v.optional(v.string(), undefined),
+  alternatives: v.optional(v.array(GoogleCloudSpeechAlternativeSchema), undefined)
+})
+
+export const GoogleCloudRecognizeResponseSchema = v.looseObject({
+  results: v.optional(v.array(GoogleCloudSpeechResultSchema), undefined),
+  metadata: v.optional(v.looseObject({}), undefined)
 })
 
 export const MistralTranscriptionSegmentSchema = v.looseObject({

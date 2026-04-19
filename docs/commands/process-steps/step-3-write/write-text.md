@@ -73,7 +73,7 @@ If you pass `--llama` without a value, `write` uses the default local model `ggm
 | MiniMax | `--minimax <model>` | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
 | Grok | `--grok <model>` | `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |
 
-Hosted provider flags also accept an omitted value and then resolve to the cheapest supported model.
+Hosted provider flags also accept an omitted value and then resolve to the cheapest supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
 ## Prompts
 
@@ -90,6 +90,7 @@ Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common 
 - Single-target runs write `text.json`.
 - Multi-target runs write `text-<model>.json` for each selected LLM target.
 - Providers with native structured output use it directly; other providers use the internal schema-guided fallback path.
+- EPUB inspect mode keeps the extraction payload in `run.json` and still writes the normal step-3 JSON output.
 
 ## Examples
 
@@ -105,11 +106,20 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 bun as write input/examples/audio/1-audio.mp3 --anthropic claude-sonnet-4-6
 bun as write input/examples/audio/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview
 
+# Hosted STT plus hosted write
+bun as write input/examples/audio/1-audio.mp3 --gcloud-stt --openai gpt-5.4
+
 # Document input plus local summary
 bun as write input/examples/document/1-document.pdf --llama ggml-org/gemma-3-270m-it-GGUF
 
+# EPUB inspect mode plus local summary
+bun as write input/examples/document/1-epub.epub --epub-bun --llama --out json
+
 # Multiple prompts
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --prompt shortSummary longSummary
+
+# Same provider, multiple models
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --openai gpt-5.4-mini
 
 # Multi-provider run
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b
@@ -119,17 +129,20 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt
 
 | Flag | Description |
 |------|-------------|
-| `--llama <model>` | Select a local llama.cpp model ID or Hugging Face repo ID |
-| `--openai <model>` | Select an OpenAI model; omit the value to use the cheapest supported model |
-| `--anthropic <model>` | Select an Anthropic model; omit the value to use the cheapest supported model |
-| `--gemini <model>` | Select a Gemini model; omit the value to use the cheapest supported model |
-| `--groq <model>` | Select a Groq model; omit the value to use the cheapest supported model |
-| `--minimax <model>` | Select a MiniMax model; omit the value to use the cheapest supported model |
-| `--grok <model>` | Select a Grok model; omit the value to use the cheapest supported model |
+| `--llama <model>` | Select one or more local llama.cpp model IDs or Hugging Face repo IDs |
+| `--openai <model>` | Select one or more OpenAI models; omit the value to use the cheapest supported model |
+| `--anthropic <model>` | Select one or more Anthropic models; omit the value to use the cheapest supported model |
+| `--gemini <model>` | Select one or more Gemini models; omit the value to use the cheapest supported model |
+| `--groq <model>` | Select one or more Groq models; omit the value to use the cheapest supported model |
+| `--minimax <model>` | Select one or more MiniMax models; omit the value to use the cheapest supported model |
+| `--grok <model>` | Select one or more Grok models; omit the value to use the cheapest supported model |
 | `--prompt <name...>` | Select prompt presets |
 | `--price` | Show the aggregated estimate and exit |
 
 ## Notes
 
-- `write` accepts the same step-2 OCR and STT flags documented in [`ocr`](../step-2-ocr/ocr-document.md) and [`stt`](../step-2-stt/stt-audio.md).
+- `write` accepts the same step-2 OCR and STT flags documented in [`ocr`](../step-2-ocr/ocr-document.md) and [`stt`](../step-2-stt/stt-audio.md), including `--gcloud-stt`, but each `write` run may select at most one STT provider and at most one OCR provider.
+- `write` also accepts `--epub-bun` and `--epub-calibre`; when `--out` is set alongside either flag, it must be `json`.
+- `--resume-missing` remains supported only on [`stt`](../step-2-stt/stt-audio.md) and [`ocr`](../step-2-ocr/ocr-document.md), not on `write`.
 - `write` also accepts post-generation flags for [`tts`](../step-4-tts/text-to-speech.md), [`image`](../step-5-image/text-to-image.md), video, and music. Those options are documented on their own command pages instead of being repeated here.
+- Post-generation steps still require exactly one step-3 LLM output. Repeating `--openai`, `--llama`, or any other LLM flag produces multiple step-3 outputs and therefore skips TTS, image, video, and music generation for that run.

@@ -18,27 +18,27 @@ export const ttsFlags = {
   },
   'kitten-tts': {
     description: buildModelDescription('Kitten TTS model', SUPPORTED_KITTEN_TTS_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'elevenlabs-tts': {
     description: buildModelDescription('ElevenLabs TTS model', SUPPORTED_ELEVENLABS_TTS_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-tts': {
     description: buildModelDescription('MiniMax TTS model', SUPPORTED_MINIMAX_TTS_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'groq-tts': {
     description: buildModelDescription('Groq TTS model', SUPPORTED_GROQ_TTS_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'openai-tts': {
     description: buildModelDescription('OpenAI TTS model', SUPPORTED_OPENAI_TTS_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'gemini-tts': {
     description: buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'minimax-tts-voice': {
     description: 'MiniMax TTS voice ID override (default: English_expressive_narrator)',

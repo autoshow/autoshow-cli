@@ -18,6 +18,24 @@ Download audio and transcribe it with local or hosted speech-to-text engines.
 # full setup
 bun as setup
 
+# verify gcloud CLI auth, active project, and Speech-to-Text API access
+bun as setup --gcloud
+
+# set or create the active gcloud project, link billing when possible,
+# enable Speech-to-Text when billing is ready, and save chirp_3 when no
+# Google STT default is saved yet
+bun as setup --gcloud --gcloud-project PROJECT_ID
+
+# pin a specific billing account when multiple open billing accounts exist
+bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
+
+# verify AWS CLI auth, region, and bucket config for Amazon Transcribe
+# creates and saves a staging bucket automatically when one is not configured
+bun as setup --aws
+
+# force creation of a staging bucket or create a specific bucket name
+bun as setup --aws --aws-create-bucket
+
 # build whisper.cpp binary only
 bun as setup --step whisper-binary
 
@@ -41,6 +59,8 @@ bun as setup --step reverb
 | Soniox | `SONIOX_API_KEY` | `SONIOX_BASE_URL` |
 | Speechmatics | `SPEECHMATICS_API_KEY` | `SPEECHMATICS_BASE_URL` |
 | Rev | `REVAI_ACCESS_TOKEN` | `REVAI_BASE_URL` |
+| Google Cloud STT | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | none; project is read from `gcloud config`, location is fixed to `us`, and requests go to `us-speech.googleapis.com`; use `bun as setup --gcloud --gcloud-project ...` to set or create the active project from AutoShow |
+| AWS Transcribe | AWS CLI auth (`aws configure` or `AWS_PROFILE`) | `AWS_REGION` / `AWS_DEFAULT_REGION`; save `--aws-region` and `--aws-bucket` with `bun as config`, or run `bun as setup --aws` to provision/save a staging bucket automatically when none is configured |
 | OpenAI | `OPENAI_API_KEY` | - |
 | Mistral | `MISTRAL_API_KEY` | - |
 | AssemblyAI | `ASSEMBLYAI_API_KEY` | `ASSEMBLYAI_BASE_URL` |
@@ -84,6 +104,8 @@ If no engine flag is provided, `stt` defaults to Whisper with the `tiny` model.
 |--------|-----------|-------------------|
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3-turbo`, `whisper-large-v3` |
 | ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
+| Google Cloud STT | `--gcloud-stt <model>` | `chirp_3`; sync REST via gcloud CLI auth with diarization always enabled |
+| AWS Transcribe | `--aws-stt <model>` | `standard`; async batch via AWS CLI with diarization always enabled |
 | Deepgram | `--deepgram-stt <model>` | `nova-3` |
 | Soniox | `--soniox-stt <model>` | `stt-async-v4` |
 | Speechmatics | `--speechmatics-stt <model>` | `standard`, `enhanced` |
@@ -93,7 +115,7 @@ If no engine flag is provided, `stt` defaults to Whisper with the `tiny` model.
 | Gladia | `--gladia-stt <model>` | `default` |
 | YouTube captions | `--youtube-captions` | prefer manual English captions, then auto English captions, before STT |
 
-Hosted provider flags accept an omitted model value and then resolve to the cheapest or default supported model.
+Hosted provider flags accept an omitted model value and then resolve to the cheapest or default supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
 ## Examples
 
@@ -108,8 +130,15 @@ bun as stt input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
 bun as stt input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
 
 # Hosted providers
+bun as stt input/examples/audio/1-audio.mp3 --gcloud-stt
+bun as stt input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
+bun as stt input/examples/audio/1-audio.mp3 --aws-stt
+bun as stt input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
+
+# Same provider, multiple models
+bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt standard --speechmatics-stt enhanced
 
 # Prefer YouTube captions, then fall back to STT
 bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
@@ -125,18 +154,22 @@ bun as stt --resume-missing
 
 | Flag | Description |
 |------|-------------|
-| `--whisper <model>` | Select the local Whisper model |
+| `--whisper <model>` | Select one or more local Whisper models |
 | `--reverb` | Use Reverb instead of Whisper |
 | `--reverb-verbatimicity <0-1>` | Reverb output style |
-| `--elevenlabs-stt <model>` | Select the ElevenLabs STT model; omit the value to keep `scribe_v2` |
-| `--deepgram-stt <model>` | Select the Deepgram STT model; omit the value to keep `nova-3` |
-| `--soniox-stt <model>` | Select the Soniox STT model; omit the value to keep `stt-async-v4` |
-| `--speechmatics-stt <model>` | Select the Speechmatics STT model; omit the value to use `standard` |
-| `--rev-stt <model>` | Select the Rev STT model; omit the value to use `low_cost` |
-| `--groq-stt <model>` | Select the Groq STT model; omit the value to use the cheapest supported model |
-| `--mistral-stt <model>` | Select the Mistral STT model; omit the value to use `voxtral-mini-2602` |
-| `--assemblyai-stt <model>` | Select the AssemblyAI STT model; omit the value to use `universal-3-pro` |
-| `--gladia-stt <model>` | Select the Gladia STT model; omit the value to keep `default` |
+| `--gcloud-stt <model>` | Select one or more Google Cloud STT models; omit the value to use `chirp_3` |
+| `--aws-stt <model>` | Select one or more AWS Transcribe models; omit the value to use `standard` |
+| `--aws-region <region>` | Override the AWS CLI region used for AWS Transcribe jobs |
+| `--aws-bucket <bucket>` | S3 bucket used for temporary AWS Transcribe input/output objects |
+| `--elevenlabs-stt <model>` | Select one or more ElevenLabs STT models; omit the value to keep `scribe_v2` |
+| `--deepgram-stt <model>` | Select one or more Deepgram STT models; omit the value to keep `nova-3` |
+| `--soniox-stt <model>` | Select one or more Soniox STT models; omit the value to keep `stt-async-v4` |
+| `--speechmatics-stt <model>` | Select one or more Speechmatics STT models; omit the value to use `standard` |
+| `--rev-stt <model>` | Select one or more Rev STT models; omit the value to use `low_cost` |
+| `--groq-stt <model>` | Select one or more Groq STT models; omit the value to use the cheapest supported model |
+| `--mistral-stt <model>` | Select one or more Mistral STT models; omit the value to use `voxtral-mini-2602` |
+| `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models; omit the value to use `universal-3-pro` |
+| `--gladia-stt <model>` | Select one or more Gladia STT models; omit the value to keep `default` |
 | `--speaker-count <n>` | Diarization speaker-count hint for supported services |
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
 | `--split` | Split audio into 10-minute segments before transcription |
@@ -159,7 +192,7 @@ bun as stt --resume-missing
 - Before any hosted STT provider upload, Autoshow now extracts/persists a shared compressed audio-only artifact and avoids fresh lossy re-encoding whenever it can preserve the original audio stream.
 - Single-provider STT runs write root `transcription.txt` plus root `result.json`.
 - Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
-- `--speaker-count` is currently honored by ElevenLabs, AssemblyAI, and Gladia. It is ignored by local engines and the other hosted STT providers.
+- `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.

@@ -122,9 +122,12 @@ export const buildImageArtifactMap = (metadata: Step5Metadata[]): Record<string,
 
 export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => {
   const targets: ImageTarget[] = []
+  const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
+  const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
+  const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
 
-  if (typeof options.geminiImageModel === 'string' && options.geminiImageModel.length > 0) {
-    const model: GeminiImageModel = validateGeminiImageModel(options.geminiImageModel)
+  for (const rawModel of geminiModels) {
+    const model: GeminiImageModel = validateGeminiImageModel(rawModel)
     if (typeof options.imageSize === 'string' && options.imageSize.length > 0 && !supportsGeminiImageSize(model)) {
       throw CLIUsageError(`--image-size is not supported by Gemini image model "${model}"`)
     }
@@ -144,8 +147,8 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     })
   }
 
-  if (typeof options.openaiImageModel === 'string' && options.openaiImageModel.length > 0) {
-    const model: OpenAIImageModel = validateOpenAIImageModel(options.openaiImageModel)
+  for (const rawModel of openaiModels) {
+    const model: OpenAIImageModel = validateOpenAIImageModel(rawModel)
 
     targets.push({
       service: 'openai',
@@ -163,8 +166,8 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     })
   }
 
-  if (typeof options.minimaxImageModel === 'string' && options.minimaxImageModel.length > 0) {
-    const model: MinimaxImageModel = validateMinimaxImageModel(options.minimaxImageModel)
+  for (const rawModel of minimaxModels) {
+    const model: MinimaxImageModel = validateMinimaxImageModel(rawModel)
 
     targets.push({
       service: 'minimax',

@@ -431,6 +431,10 @@ export const processOcr = async (
         result: primary.result,
         step1Metadata,
         step2Metadata,
+        completionStatus,
+        requestedProviders: requestedTargets.map(toRequestedProvider),
+        providerStates,
+        missingProviders,
         ...(web ? { web } : {}),
         ...(failures.length > 0 ? { step2Errors: failures } : {}),
         outputDir
@@ -471,6 +475,13 @@ export const processOcr = async (
       result: extracted.result,
       step1Metadata,
       step2Metadata: extracted.step2Metadata,
+      completionStatus: 'full',
+      ...(explicitTargets.length === 1
+        ? {
+            requestedProviders: explicitTargets.map(toRequestedProvider),
+            missingProviders: []
+          }
+        : {}),
       ...(web ? { web } : {}),
       outputDir
     }

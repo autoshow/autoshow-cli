@@ -119,6 +119,12 @@ type ComputeEstimatedProcessingTimesInput = {
   glmOcrModel?: string | undefined
   extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'firecrawl', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
+  llmTargets?: Array<{
+    service: Step3Metadata['llmService']
+    model: string
+    inputTokens?: number
+    outputTokens?: number
+  }> | undefined
   llmService?: Step3Metadata['llmService'] | undefined
   llmModel?: string | undefined
   llmInputTokenCount?: number | undefined
@@ -215,18 +221,31 @@ export const computeEstimatedProcessingTimes = (
     })
   }
 
-  if (!input.skipLLM && input.llmService && input.llmModel) {
-    const registryService = input.llmService === 'llama.cpp' ? 'llama' : input.llmService
-    const estimation = getLlmEstimation(registryService, input.llmModel)
-    const tokenCount = Math.max(0, (input.llmInputTokenCount ?? 0) + (input.llmOutputTokenCount ?? 0))
-    steps.push({
-      step: 'llm',
-      provider: input.llmService,
-      model: input.llmModel,
-      processingTimeMs: roundMs((tokenCount / 1000) * estimation.msPer1KTokens),
-      inputMetric: 'tokens',
-      inputValue: tokenCount,
-    })
+  const llmTargets = input.llmTargets && input.llmTargets.length > 0
+    ? input.llmTargets
+    : input.llmService && input.llmModel
+      ? [{
+          service: input.llmService,
+          model: input.llmModel,
+          ...(typeof input.llmInputTokenCount === 'number' ? { inputTokens: input.llmInputTokenCount } : {}),
+          ...(typeof input.llmOutputTokenCount === 'number' ? { outputTokens: input.llmOutputTokenCount } : {})
+        }]
+      : []
+
+  if (!input.skipLLM) {
+    for (const llmTarget of llmTargets) {
+      const registryService = llmTarget.service === 'llama.cpp' ? 'llama' : llmTarget.service
+      const estimation = getLlmEstimation(registryService, llmTarget.model)
+      const tokenCount = Math.max(0, (llmTarget.inputTokens ?? 0) + (llmTarget.outputTokens ?? 0))
+      steps.push({
+        step: 'llm',
+        provider: llmTarget.service,
+        model: llmTarget.model,
+        processingTimeMs: roundMs((tokenCount / 1000) * estimation.msPer1KTokens),
+        inputMetric: 'tokens',
+        inputValue: tokenCount,
+      })
+    }
   }
 
   const ttsTargets = input.ttsTargets && input.ttsTargets.length > 0

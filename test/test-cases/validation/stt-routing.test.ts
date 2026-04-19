@@ -19,6 +19,7 @@ import { getSttLimits } from '~/cli/commands/setup-and-utilities/models/model-lo
 
 const TARGET_MODELS = {
   whisper: 'large-v3-turbo',
+  gcloud: 'chirp_3',
   deepgram: 'nova-3',
   groq: 'whisper-large-v3-turbo',
   soniox: 'stt-async-v4',
@@ -93,6 +94,10 @@ describe('shouldSplitTranscriptionInput', () => {
     expect(shouldSplitTranscriptionInput(createTarget('deepgram'), requireSttLimit('deepgram', 'effectiveBytes') + 1, undefined, false)).toBe(true)
   })
 
+  test('auto-splits Google Cloud uploads above the attachment cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('gcloud'), requireSttLimit('gcloud', 'effectiveBytes') + 1, undefined, false)).toBe(true)
+  })
+
   test('auto-splits Groq uploads above the attachment cap', () => {
     expect(shouldSplitTranscriptionInput(createTarget('groq'), GROQ_MAX_ATTACHMENT_BYTES + 1, undefined, false)).toBe(true)
   })
@@ -123,6 +128,10 @@ describe('shouldSplitTranscriptionInput', () => {
 
   test('auto-splits duration-limited Soniox inputs above the model cap', () => {
     expect(shouldSplitTranscriptionInput(createTarget('soniox'), 1024, requireSttLimit('soniox', 'durationSeconds') + 1, false)).toBe(true)
+  })
+
+  test('auto-splits duration-limited Google Cloud inputs above the model cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('gcloud'), 1024, requireSttLimit('gcloud', 'durationSeconds') + 1, false)).toBe(true)
   })
 
   test('auto-splits duration-limited Mistral inputs above the model cap', () => {
@@ -261,6 +270,12 @@ describe('resolveDiarizationOptions', () => {
     expect(resolveDiarizationOptions({
       diarizationSpeakerCount: 3,
     }, 'assemblyai')).toEqual({ enabled: true, speakerCount: 3 })
+  })
+
+  test('preserves speaker-count for Google Cloud', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2
+    }, 'gcloud')).toEqual({ enabled: true, speakerCount: 2 })
   })
 
   test('preserves speaker-count for Gladia', () => {

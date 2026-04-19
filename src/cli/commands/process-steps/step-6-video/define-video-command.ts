@@ -27,7 +27,7 @@ export const videoCommand = defineCommand({
   const flags = ctx.flags
 
   const videoMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
+  const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
   const videoTargets = collectVideoTargets(videoOpts)
   if (videoTargets.length === 0) {
     throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
@@ -55,8 +55,7 @@ export const videoCommand = defineCommand({
     ...(videoOpts.videoDuration !== undefined ? { durationSeconds: videoOpts.videoDuration } : {})
   }))
   const estimated = computeEstimatedCosts({
-    geminiVideoModel: videoOpts.geminiVideoModel,
-    minimaxVideoModel: videoOpts.minimaxVideoModel,
+    videoTargets: estimatedVideoTargets,
     videoDuration: videoOpts.videoDuration,
     videoSize: videoOpts.videoSize,
     videoResolution: videoOpts.videoResolution

@@ -41,7 +41,7 @@ export const ttsCommand = defineCommand({
   }
 
   const maxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' })
+  const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' }, new Set(), Bun.argv.slice(2))
   const targets = collectTtsTargets(ttsOptions)
 
   const { shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, text.length)

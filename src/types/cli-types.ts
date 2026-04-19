@@ -11,22 +11,45 @@ export type RuntimeOptions = {
   useReverb: boolean
   youtubeCaptions: boolean
   whisperExplicit: boolean
+  llamaModels: string[] | undefined
   llamaModel: string | undefined
+  openaiModels: string[] | undefined
   openaiModel: string | undefined
+  groqModels: string[] | undefined
   groqModel: string | undefined
+  geminiModels: string[] | undefined
   geminiModel: string | undefined
+  anthropicModels: string[] | undefined
   anthropicModel: string | undefined
+  minimaxModels: string[] | undefined
   minimaxModel: string | undefined
+  grokModels: string[] | undefined
   grokModel: string | undefined
+  whisperModels: string[] | undefined
   whisperModel: string
+  gcloudSttModels: string[] | undefined
+  gcloudSttModel: string | undefined
+  awsSttModels: string[] | undefined
+  awsSttModel: string | undefined
+  awsRegion: string | undefined
+  awsBucket: string | undefined
+  groqSttModels: string[] | undefined
   groqSttModel: string | undefined
+  elevenlabsSttModels: string[] | undefined
   elevenlabsSttModel: string | undefined
+  sonioxSttModels: string[] | undefined
   sonioxSttModel: string | undefined
+  revSttModels: string[] | undefined
   revSttModel: string | undefined
+  mistralSttModels: string[] | undefined
   mistralSttModel: string | undefined
+  assemblyaiSttModels: string[] | undefined
   assemblyaiSttModel: string | undefined
+  gladiaSttModels: string[] | undefined
   gladiaSttModel: string | undefined
+  speechmaticsSttModels: string[] | undefined
   speechmaticsSttModel: string | undefined
+  deepgramSttModels: string[] | undefined
   deepgramSttModel: string | undefined
   diarizationSpeakerCount: number | undefined
   sttProviderConcurrency: number
@@ -52,7 +75,9 @@ export type RuntimeOptions = {
   rotate: number
   useOcrmypdf: boolean
   usePaddleOcr: boolean
+  mistralOcrModels: string[] | undefined
   mistralOcrModel: string | undefined
+  glmOcrModels: string[] | undefined
   glmOcrModel: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined
@@ -78,19 +103,28 @@ export type RuntimeOptions = {
   renderedOutDir: string | undefined
   trackList: string | undefined
 
+  kittenTtsModels: string[] | undefined
   kittenTtsModel: string | undefined
+  groqTtsModels: string[] | undefined
   groqTtsModel: string | undefined
   groqVoiceId: string | undefined
+  openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined
+  geminiTtsModels: string[] | undefined
   geminiTtsModel: string | undefined
   geminiVoiceId: string | undefined
+  elevenlabsTtsModels: string[] | undefined
   elevenlabsTtsModel: string | undefined
   elevenlabsVoiceId: string | undefined
+  minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined
+  geminiImageModels: string[] | undefined
   geminiImageModel: string | undefined
+  openaiImageModels: string[] | undefined
   openaiImageModel: string | undefined
+  minimaxImageModels: string[] | undefined
   minimaxImageModel: string | undefined
   imageAspectRatio: string | undefined
   imageSize: string | undefined
@@ -99,13 +133,17 @@ export type RuntimeOptions = {
   imageBackground: string | undefined
   imagenCount: number | undefined
 
+  elevenlabsMusicModels: string[] | undefined
   elevenlabsMusicModel: string | undefined
+  minimaxMusicModels: string[] | undefined
   minimaxMusicModel: string | undefined
   musicDuration: number | undefined
   musicLyricsFile: string | undefined
   musicInstrumental: boolean | undefined
 
+  geminiVideoModels: string[] | undefined
   geminiVideoModel: string | undefined
+  minimaxVideoModels: string[] | undefined
   minimaxVideoModel: string | undefined
   videoDuration: number | undefined
   videoSize: string | undefined

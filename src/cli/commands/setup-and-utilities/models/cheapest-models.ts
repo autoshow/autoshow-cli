@@ -270,6 +270,10 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
   }
 
   switch (flagName) {
+    case 'gcloud-stt':
+      return selectCheapestSttModel('gcloud')
+    case 'aws-stt':
+      return selectCheapestSttModel('aws')
     case 'elevenlabs-stt':
       return selectCheapestSttModel('elevenlabs')
     case 'deepgram-stt':

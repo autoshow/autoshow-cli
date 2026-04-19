@@ -1,8 +1,10 @@
 import {
   SUPPORTED_ANTHROPIC_MODELS,
+  SUPPORTED_AWS_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
+  SUPPORTED_GCLOUD_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_SONIOX_STT_MODELS,
   SUPPORTED_SPEECHMATICS_STT_MODELS,
@@ -32,6 +34,8 @@ import type { MusicProvider, TtsProvider, VideoProvider } from '~/types/provider
 export type GroqModel = typeof SUPPORTED_GROQ_MODELS[number]
 export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
+export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
+export type GcloudSttModel = typeof SUPPORTED_GCLOUD_STT_MODELS[number]
 export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
 export type ElevenlabsSttModel = typeof SUPPORTED_ELEVENLABS_STT_MODELS[number]
 export type SonioxSttModel = typeof SUPPORTED_SONIOX_STT_MODELS[number]
@@ -123,8 +127,11 @@ export type ImageCostEstimate = CostEstimateBase<'gemini' | 'openai' | 'minimax'
 }
 
 export type EstimateImageCostOptions = {
+  geminiImageModels?: string[] | undefined
   geminiImageModel?: string | undefined
+  openaiImageModels?: string[] | undefined
   openaiImageModel?: string | undefined
+  minimaxImageModels?: string[] | undefined
   minimaxImageModel?: string | undefined
   imagenCount?: number | undefined
 }
@@ -157,7 +164,9 @@ export type MusicCostEstimate = ProviderModelBase<MusicProvider> & {
 }
 
 export type EstimateMusicCostOptions = {
+  elevenlabsMusicModels?: string[] | undefined
   elevenlabsMusicModel?: string | undefined
+  minimaxMusicModels?: string[] | undefined
   minimaxMusicModel?: string | undefined
   musicDuration?: number | undefined
   musicLyricsFile?: string | undefined
@@ -165,7 +174,9 @@ export type EstimateMusicCostOptions = {
 }
 
 export type EstimateVideoCostOptions = {
+  geminiVideoModels?: string[] | undefined
   geminiVideoModel?: string | undefined
+  minimaxVideoModels?: string[] | undefined
   minimaxVideoModel?: string | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined

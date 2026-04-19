@@ -1,6 +1,8 @@
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
+import { ensureAwsSttSetup, setupAwsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
 import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/deepgram'
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/elevenlabs'
+import { ensureGcloudSttSetup, setupGcloudStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
 import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/groq/groq'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
@@ -53,6 +55,14 @@ const handlers: Record<string, BootstrapHandler> = {
   reverb: {
     ensure: async () => await ensureReverbRuntimeSetup(),
     setup: async () => await setupReverb()
+  },
+  'aws-stt': {
+    ensure: async () => { await ensureAwsSttSetup() },
+    setup: async () => await setupAwsStt()
+  },
+  'gcloud-stt': {
+    ensure: async () => { await ensureGcloudSttSetup() },
+    setup: async () => await setupGcloudStt()
   },
   'elevenlabs-stt': {
     ensure: async () => await ensureElevenLabsSttSetup()

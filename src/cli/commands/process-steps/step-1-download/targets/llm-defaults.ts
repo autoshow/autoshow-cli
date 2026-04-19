@@ -6,43 +6,61 @@ export type { ResolvedLLMConfig } from '~/types'
 export const DEFAULT_LLAMA_MODEL = 'ggml-org/gemma-3-270m-it-GGUF'
 
 export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
+  const llamaModels = opts.llamaModels
+  const openaiModels = opts.openaiModels
+  const groqModels = opts.groqModels
+  const geminiModels = opts.geminiModels
+  const anthropicModels = opts.anthropicModels
+  const minimaxModels = opts.minimaxModels
+  const grokModels = opts.grokModels
   const anySelected = [
-    opts.openaiModel,
-    opts.groqModel,
-    opts.geminiModel,
-    opts.anthropicModel,
-    opts.minimaxModel,
-    opts.grokModel,
-    opts.llamaModel
-  ].some((value) => typeof value === 'string' && value.length > 0)
+    openaiModels?.length,
+    groqModels?.length,
+    geminiModels?.length,
+    anthropicModels?.length,
+    minimaxModels?.length,
+    grokModels?.length,
+    llamaModels?.length
+  ].some((value) => typeof value === 'number' && value > 0)
+
+  const resolvedLlamaModels = llamaModels
+    ? llamaModels
+    : anySelected
+      ? undefined
+      : [DEFAULT_LLAMA_MODEL]
+
+  const first = (models: string[] | undefined): string | undefined => models?.[0]
 
   return {
-    llamaModel: opts.llamaModel
-      ? opts.llamaModel
-      : anySelected
-        ? undefined
-        : DEFAULT_LLAMA_MODEL,
-    openaiModel: opts.openaiModel,
-    groqModel: opts.groqModel,
-    geminiModel: opts.geminiModel,
-    anthropicModel: opts.anthropicModel,
-    minimaxModel: opts.minimaxModel,
-    grokModel: opts.grokModel,
-    llmService: opts.openaiModel ? 'openai'
-      : opts.groqModel ? 'groq'
-        : opts.geminiModel ? 'gemini'
-          : opts.anthropicModel ? 'anthropic'
-            : opts.minimaxModel ? 'minimax'
-              : opts.grokModel ? 'grok'
-                : (opts.llamaModel || !anySelected) ? 'llama.cpp'
+    llamaModels: resolvedLlamaModels,
+    llamaModel: first(resolvedLlamaModels),
+    openaiModels,
+    openaiModel: first(openaiModels),
+    groqModels,
+    groqModel: first(groqModels),
+    geminiModels,
+    geminiModel: first(geminiModels),
+    anthropicModels,
+    anthropicModel: first(anthropicModels),
+    minimaxModels,
+    minimaxModel: first(minimaxModels),
+    grokModels,
+    grokModel: first(grokModels),
+    llmService: openaiModels?.length ? 'openai'
+      : groqModels?.length ? 'groq'
+        : geminiModels?.length ? 'gemini'
+          : anthropicModels?.length ? 'anthropic'
+            : minimaxModels?.length ? 'minimax'
+              : grokModels?.length ? 'grok'
+                : resolvedLlamaModels?.length ? 'llama.cpp'
                   : undefined,
-    llmModel: opts.openaiModel
-      ?? opts.groqModel
-      ?? opts.geminiModel
-      ?? opts.anthropicModel
-      ?? opts.minimaxModel
-      ?? opts.grokModel
-      ?? opts.llamaModel
+    llmModel: first(openaiModels)
+      ?? first(groqModels)
+      ?? first(geminiModels)
+      ?? first(anthropicModels)
+      ?? first(minimaxModels)
+      ?? first(grokModels)
+      ?? first(resolvedLlamaModels)
       ?? DEFAULT_LLAMA_MODEL,
   }
 }

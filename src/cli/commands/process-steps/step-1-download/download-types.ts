@@ -38,6 +38,10 @@ export type WriteDocumentOutputMetadataOptions = {
   llmInputTokenCount: number
   llmOutputTokenCount: number
   artifactFiles: Record<string, string>
+  completionStatus?: 'full' | 'incomplete' | 'failed' | undefined
+  requestedProviders?: Array<{ service: string, model: string }> | undefined
+  providerStates?: Array<Record<string, unknown>> | undefined
+  missingProviders?: Array<{ service: string, model: string }> | undefined
   web?: WebArticleMetadata | undefined
   errors?: Array<{ service: string, model: string, message: string }> | undefined
 }

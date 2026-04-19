@@ -22,6 +22,8 @@ export type ResumeAdapter = {
 const STT_PROVIDER_SELECTION_FLAGS = [
   'whisper',
   'reverb',
+  'gcloud-stt',
+  'aws-stt',
   'elevenlabs-stt',
   'deepgram-stt',
   'soniox-stt',

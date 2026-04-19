@@ -3,7 +3,7 @@ import type { VideoProvider } from '~/types/provider-types'
 
 export type VideoGenOptions = Pick<
   ProcessingOptions,
-  'geminiVideoModel' | 'minimaxVideoModel' | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'
+  'geminiVideoModels' | 'geminiVideoModel' | 'minimaxVideoModels' | 'minimaxVideoModel' | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'
 >
 
 export type VideoTarget = {

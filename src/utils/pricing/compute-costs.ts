@@ -383,6 +383,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
 type ComputeEstimatedCostsInput = {
   sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
   whisperModel?: string | undefined
+  gcloudSttModel?: string | undefined
+  awsSttModel?: string | undefined
   groqSttModel?: string | undefined
   elevenlabsSttModel?: string | undefined
   deepgramSttModel?: string | undefined
@@ -406,6 +408,12 @@ type ComputeEstimatedCostsInput = {
   extractPageCount?: number | undefined
   useReverb?: boolean | undefined
   audioDurationSeconds?: number | undefined
+  llmTargets?: Array<{
+    service: Step3Metadata['llmService']
+    model: string
+    inputTokens?: number
+    outputTokens?: number
+  }> | undefined
   llmService?: string | undefined
   llmModel?: string | undefined
   llmInputTokenCount?: number | undefined
@@ -422,11 +430,13 @@ type ComputeEstimatedCostsInput = {
   imagenCount?: number | undefined
   geminiVideoModel?: string | undefined
   minimaxVideoModel?: string | undefined
+  videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined
   videoResolution?: string | undefined
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined
+  musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicDuration?: number | undefined
   musicLyricsFile?: string | undefined
   musicInstrumental?: boolean | undefined
@@ -455,6 +465,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
   } else {
     const STT_FIELD_MAP = [
+      { field: 'gcloudSttModel' as const, provider: 'gcloud' },
+      { field: 'awsSttModel' as const, provider: 'aws' },
       { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
       { field: 'deepgramSttModel' as const, provider: 'deepgram' },
       { field: 'sonioxSttModel' as const, provider: 'soniox' },
@@ -537,13 +549,28 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     })
   }
 
-  if (!input.skipLLM && input.llmService && input.llmModel) {
-    const registryService = input.llmService === 'llama.cpp' ? 'llama' : input.llmService
-    const rates = getLlmCost(registryService, input.llmModel)
-    if (rates) {
-      const estimation = getLlmEstimation(registryService, input.llmModel)
-      const estimatedInputTokens = typeof input.llmInputTokenCount === 'number' ? input.llmInputTokenCount : 0
-      const estimatedOutputTokens = typeof input.llmOutputTokenCount === 'number' ? input.llmOutputTokenCount : 0
+  const llmTargets = input.llmTargets && input.llmTargets.length > 0
+    ? input.llmTargets
+    : input.llmService && input.llmModel
+      ? [{
+          service: input.llmService as Step3Metadata['llmService'],
+          model: input.llmModel,
+          ...(typeof input.llmInputTokenCount === 'number' ? { inputTokens: input.llmInputTokenCount } : {}),
+          ...(typeof input.llmOutputTokenCount === 'number' ? { outputTokens: input.llmOutputTokenCount } : {})
+        }]
+      : []
+
+  if (!input.skipLLM) {
+    for (const llmTarget of llmTargets) {
+      const registryService = llmTarget.service === 'llama.cpp' ? 'llama' : llmTarget.service
+      const rates = getLlmCost(registryService, llmTarget.model)
+      if (!rates) {
+        continue
+      }
+
+      const estimation = getLlmEstimation(registryService, llmTarget.model)
+      const estimatedInputTokens = typeof llmTarget.inputTokens === 'number' ? llmTarget.inputTokens : 0
+      const estimatedOutputTokens = typeof llmTarget.outputTokens === 'number' ? llmTarget.outputTokens : 0
       const cost = applyCostMultiplier(
         (estimatedInputTokens / 1_000_000) * rates.inputCostPer1MCents
         + (estimatedOutputTokens / 1_000_000) * rates.outputCostPer1MCents,
@@ -552,8 +579,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       totalCost += cost
       steps.push({
         step: 'llm',
-        provider: input.llmService,
-        model: input.llmModel,
+        provider: llmTarget.service,
+        model: llmTarget.model,
         cost,
         costMultiplier: estimation.costMultiplier,
         inputCostPer1MCents: rates.inputCostPer1MCents,
@@ -622,26 +649,37 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     })
   }
 
-  const videoEstimates = estimateVideoCosts({
-    geminiVideoModel: input.geminiVideoModel,
-    minimaxVideoModel: input.minimaxVideoModel,
-    videoDuration: input.videoDuration,
-    videoSize: input.videoSize,
-    videoResolution: input.videoResolution
-  })
-  for (const estimate of videoEstimates) {
-    const estimation = getVideoEstimation(estimate.provider, estimate.model)
-    const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
-    totalCost += cost
-    steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
+  const hasVideo = input.videoTargets?.length
+    || input.geminiVideoModel
+    || input.minimaxVideoModel
+  if (hasVideo) {
+    const videoEstimates = estimateVideoCosts({
+      geminiVideoModels: input.videoTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
+      geminiVideoModel: input.geminiVideoModel,
+      minimaxVideoModels: input.videoTargets?.filter((target) => target.service === 'minimax').map((target) => target.model),
+      minimaxVideoModel: input.minimaxVideoModel,
+      videoDuration: input.videoTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.videoDuration,
+      videoSize: input.videoSize,
+      videoResolution: input.videoResolution
+    })
+    for (const estimate of videoEstimates) {
+      const estimation = getVideoEstimation(estimate.provider, estimate.model)
+      const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+      totalCost += cost
+      steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
+    }
   }
 
-  const hasMusic = input.elevenlabsMusicModel || input.minimaxMusicModel
+  const hasMusic = input.musicTargets?.length
+    || input.elevenlabsMusicModel
+    || input.minimaxMusicModel
   if (hasMusic) {
     const estimates = estimateMusicCosts({
+      elevenlabsMusicModels: input.musicTargets?.filter((target) => target.service === 'elevenlabs').map((target) => target.model),
       elevenlabsMusicModel: input.elevenlabsMusicModel,
+      minimaxMusicModels: input.musicTargets?.filter((target) => target.service === 'minimax').map((target) => target.model),
       minimaxMusicModel: input.minimaxMusicModel,
-      musicDuration: input.musicDuration,
+      musicDuration: input.musicTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.musicDuration,
       musicLyricsFile: input.musicLyricsFile,
       musicInstrumental: input.musicInstrumental
     })

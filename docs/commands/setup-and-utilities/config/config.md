@@ -77,10 +77,23 @@ Pass any provider, model, or generation flag to persist it as a default:
 ```bash
 bun as config --openai gpt-5.4
 bun as config --whisper large-v3-turbo
+bun as config --gcloud-stt chirp_3
+bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-cents 100
 ```
+
+Model-selecting flags are repeatable. Repeating the same provider flag saves all selected models in first-seen order:
+
+```bash
+bun as config --speechmatics-stt standard --speechmatics-stt enhanced
+bun as config --openai gpt-5.4 --openai gpt-5.4-mini
+```
+
+These model defaults are written as arrays in `config/autoshow.json`. Older config files that still store a single string are accepted and normalized to one-element arrays when loaded.
+
+When you run `bun as setup --gcloud --gcloud-project PROJECT_ID`, AutoShow also saves `gcloudStt: ["chirp_3"]` automatically if no Google STT default has been saved yet, whether the project already existed or AutoShow created it during setup.
 
 Only flags that are explicitly typed on the command line are written. Flags with Clerc-supplied defaults that you did not type are not persisted.
 
@@ -91,7 +104,7 @@ bun as config --show
 ```
 
 ```bash
-bun as config --openai gpt-5.4 --whisper large
+bun as config --openai gpt-5.4 --openai gpt-5.4-mini --whisper large-v3-turbo
 ```
 
 ```bash
@@ -109,49 +122,55 @@ bun as config --minimax-music music-2.5 --config-path /tmp/as-config.json
 
 ## Config schema
 
-Full JSON shape of `config/autoshow.json`:
+Representative JSON shape of `config/autoshow.json`:
 
 ```json
 {
   "version": 2,
   "defaults": {
     "stt": {
-      "whisper": "tiny",
-      "groqStt": "whisper-large-v3-turbo",
-      "elevenlabsStt": "scribe_v2",
-      "deepgramStt": "nova-3",
-      "revStt": "machine",
-      "speechmaticsStt": "enhanced",
-      "mistralStt": "voxtral-mini-2602",
-      "assemblyaiStt": "universal-3-pro",
-      "gladiaStt": "default",
+      "whisper": ["tiny"],
+      "gcloudStt": ["chirp_3"],
+      "awsStt": ["standard"],
+      "awsRegion": "us-east-1",
+      "awsBucket": "my-transcribe-bucket",
+      "groqStt": ["whisper-large-v3-turbo"],
+      "elevenlabsStt": ["scribe_v2"],
+      "deepgramStt": ["nova-3"],
+      "sonioxStt": ["stt-async-v4"],
+      "revStt": ["machine"],
+      "speechmaticsStt": ["standard", "enhanced"],
+      "mistralStt": ["voxtral-mini-2602"],
+      "assemblyaiStt": ["universal-3-pro"],
+      "gladiaStt": ["default"],
       "speakerCount": 2,
       "split": false,
       "reverbVerbatimicity": 0.5
     },
     "llm": {
-      "llama": "ggml-org/gemma-3-270m-it-GGUF",
-      "openai": "gpt-5.4",
-      "groq": "openai/gpt-oss-20b",
-      "gemini": "gemini-3.1-flash-lite-preview",
-      "anthropic": "claude-sonnet-4-6",
-      "minimax": "MiniMax-M2.5"
+      "llama": ["ggml-org/gemma-3-270m-it-GGUF"],
+      "openai": ["gpt-5.4", "gpt-5.4-mini"],
+      "groq": ["openai/gpt-oss-20b"],
+      "gemini": ["gemini-3.1-flash-lite-preview"],
+      "anthropic": ["claude-sonnet-4-6"],
+      "minimax": ["MiniMax-M2.5"],
+      "grok": ["grok-4.20-non-reasoning"]
     },
     "post": {
       "tts": {
-        "kittenTts": "kitten-tts-mini",
+        "kittenTts": ["kitten-tts-mini"],
         "ttsSpeaker": "Jasper"
       },
       "image": {
-        "geminiImage": "imagen-4.0-generate-001",
+        "geminiImage": ["imagen-4.0-generate-001"],
         "imagenCount": 1
       },
       "video": {
-        "geminiVideo": "veo-3.1-fast-generate-preview",
+        "geminiVideo": ["veo-3.1-fast-generate-preview"],
         "videoDuration": 8
       },
       "music": {
-        "minimaxMusic": "music-2.5",
+        "minimaxMusic": ["music-2.5"],
         "musicDuration": 30
       }
     },
@@ -161,7 +180,8 @@ Full JSON shape of `config/autoshow.json`:
       "dpi": 300,
       "psm": 3,
       "oem": 1,
-      "rotate": 0
+      "rotate": 0,
+      "mistralOcr": ["mistral-ocr-2512"]
     },
     "batch": {
       "limit": 5,
@@ -178,34 +198,45 @@ Full JSON shape of `config/autoshow.json`:
 
 ### defaults.stt
 
+Model-selecting fields in this section are arrays of models, not single strings.
+
 | Field | Flag | Description |
 |-------|------|-------------|
-| `whisper` | `--whisper` | Default Whisper model |
-| `groqStt` | `--groq-stt` | Default Groq STT model |
-| `elevenlabsStt` | `--elevenlabs-stt` | Default ElevenLabs STT model |
-| `deepgramStt` | `--deepgram-stt` | Default Deepgram STT model |
-| `sonioxStt` | `--soniox-stt` | Default Soniox STT model |
-| `speechmaticsStt` | `--speechmatics-stt` | Default Speechmatics STT model |
-| `revStt` | `--rev-stt` | Default Rev STT model |
-| `mistralStt` | `--mistral-stt` | Default Mistral STT model |
-| `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model |
-| `gladiaStt` | `--gladia-stt` | Default Gladia STT model |
-| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for ElevenLabs, AssemblyAI, and Gladia; Deepgram, Soniox, Speechmatics, Rev, and Mistral ignore count-only hints |
+| `whisper` | `--whisper` | Default Whisper model list |
+| `gcloudStt` | `--gcloud-stt` | Default Google Cloud STT model list |
+| `awsStt` | `--aws-stt` | Default AWS Transcribe model list |
+| `awsRegion` | `--aws-region` | Default AWS region for AWS CLI Transcribe jobs |
+| `awsBucket` | `--aws-bucket` | Default S3 bucket for AWS CLI Transcribe input/output staging |
+| `groqStt` | `--groq-stt` | Default Groq STT model list |
+| `elevenlabsStt` | `--elevenlabs-stt` | Default ElevenLabs STT model list |
+| `deepgramStt` | `--deepgram-stt` | Default Deepgram STT model list |
+| `sonioxStt` | `--soniox-stt` | Default Soniox STT model list |
+| `speechmaticsStt` | `--speechmatics-stt` | Default Speechmatics STT model list |
+| `revStt` | `--rev-stt` | Default Rev STT model list |
+| `mistralStt` | `--mistral-stt` | Default Mistral STT model list |
+| `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model list |
+| `gladiaStt` | `--gladia-stt` | Default Gladia STT model list |
+| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia; Deepgram, Soniox, Speechmatics, Rev, and Mistral ignore count-only hints |
 | `split` | `--split` | Split audio into 10-minute chunks |
 | `reverbVerbatimicity` | `--reverb-verbatimicity` | Reverb output style (0–1) |
 
 ### defaults.llm
 
+Model-selecting fields in this section are arrays of models, not single strings.
+
 | Field | Flag | Description |
 |-------|------|-------------|
-| `llama` | `--llama` | Default llama.cpp model repo |
-| `openai` | `--openai` | Default OpenAI model |
-| `groq` | `--groq` | Default Groq LLM model |
-| `gemini` | `--gemini` | Default Gemini model |
-| `anthropic` | `--anthropic` | Default Anthropic model |
-| `minimax` | `--minimax` | Default MiniMax model |
-| `grok` | `--grok` | Default Grok model |
+| `llama` | `--llama` | Default llama.cpp model list |
+| `openai` | `--openai` | Default OpenAI model list |
+| `groq` | `--groq` | Default Groq LLM model list |
+| `gemini` | `--gemini` | Default Gemini model list |
+| `anthropic` | `--anthropic` | Default Anthropic model list |
+| `minimax` | `--minimax` | Default MiniMax model list |
+| `grok` | `--grok` | Default Grok model list |
+
 ### defaults.post.tts
+
+Model-selecting fields in this section are arrays of models, not single strings.
 
 | Field | Flag | Description |
 |-------|------|-------------|
@@ -224,6 +255,8 @@ Full JSON shape of `config/autoshow.json`:
 
 ### defaults.post.image
 
+Model-selecting fields in this section are arrays of models, not single strings.
+
 | Field | Flag | Description |
 |-------|------|-------------|
 | `geminiImage` | `--gemini-image` | Gemini image model |
@@ -238,6 +271,8 @@ Full JSON shape of `config/autoshow.json`:
 
 ### defaults.post.video
 
+Model-selecting fields in this section are arrays of models, not single strings.
+
 | Field | Flag | Description |
 |-------|------|-------------|
 | `geminiVideo` | `--gemini-video` | Gemini Veo model |
@@ -249,6 +284,8 @@ Full JSON shape of `config/autoshow.json`:
 
 ### defaults.post.music
 
+Model-selecting fields in this section are arrays of models, not single strings.
+
 | Field | Flag | Description |
 |-------|------|-------------|
 | `elevenlabsMusic` | `--elevenlabs-music` | ElevenLabs music model |
@@ -256,6 +293,8 @@ Full JSON shape of `config/autoshow.json`:
 | `musicDuration` | `--music-duration` | Duration in seconds |
 
 ### defaults.extract
+
+Model-selecting OCR fields in this section are arrays of models, not single strings.
 
 | Field | Flag | Description |
 |-------|------|-------------|
@@ -265,6 +304,8 @@ Full JSON shape of `config/autoshow.json`:
 | `psm` | `--psm` | Page segmentation mode |
 | `oem` | `--oem` | OCR engine mode |
 | `rotate` | `--rotate` | Page rotation in degrees |
+| `mistralOcr` | `--mistral-ocr` | Default Mistral OCR model list |
+| `glmOcr` | `--glm-ocr` | Default GLM OCR model list |
 
 ### defaults.batch
 
@@ -297,6 +338,8 @@ Explicit CLI flags > config file defaults > Clerc framework defaults
 ```
 
 Only flags explicitly typed on the command line override config values. Flags that Clerc auto-populates with default values (e.g. `--whisper tiny` when `--whisper` is not typed) do not override config defaults.
+
+If you type any provider/model flag for a step family at runtime, the configured provider selections for that family are replaced instead of merged. For example, passing `--openai ...` on `write` suppresses configured `defaults.llm.gemini` / `defaults.llm.groq` entries for that run.
 
 ## Always-on preflight
 

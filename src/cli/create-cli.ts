@@ -50,6 +50,15 @@ const cliErrorHandler = (error: unknown): void => {
 
   const ERROR_HINTS: Record<string, string> = {
     'yt-dlp': "Run 'bun as setup' to install yt-dlp and other dependencies",
+    'Google Cloud CLI is required for Google transcription': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
+    'Google Cloud CLI auth is required for Google transcription': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
+    'Google Cloud project is required for Google transcription': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
+    'Google Cloud billing must be linked': "Run 'bun as setup --gcloud --gcloud-project PROJECT_ID' to create or select a project, link billing, and enable Speech-to-Text",
+    'Google Cloud Speech-to-Text API must be enabled': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
+    'AWS CLI is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and auto-create/save S3 staging when missing",
+    'AWS CLI credentials are required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and auto-create/save S3 staging when missing",
+    'AWS region is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and auto-create/save S3 staging when missing",
+    'AWS S3 bucket is required for AWS transcription': "Run 'bun as setup --aws' to auto-create and save an S3 staging bucket when none is configured, or use 'bun as config --aws-region ... --aws-bucket ... --aws-stt standard'",
     'OPENAI_API_KEY': 'Set OPENAI_API_KEY environment variable to use OpenAI models',
     'GEMINI_API_KEY': 'Set GEMINI_API_KEY environment variable to use Gemini models',
     'GROQ_API_KEY': 'Set GROQ_API_KEY environment variable to use Groq models',

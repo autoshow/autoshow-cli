@@ -21,6 +21,8 @@ export type SttTarget = {
   service: TranscribeEngine
   model: string
   local: boolean
+  awsRegion?: string | undefined
+  awsBucket?: string | undefined
   diarizationOptions?: DiarizationOptions | undefined
 }
 
@@ -115,7 +117,7 @@ export type PreparedSttMedia = {
 
 export type SttCompletionStatus = 'full' | 'incomplete' | 'failed'
 
-export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local' | 'diarizationOptions'>
+export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local' | 'awsRegion' | 'awsBucket' | 'diarizationOptions'>
 
 export type SttRecordedProviderError = {
   message: string
@@ -398,6 +400,20 @@ export type AssemblyAiHttpError = Error & {
   headers: Headers
   stage?: 'upload' | 'create' | 'poll'
   retryClass?: RetryClass
+  rawResponse?: unknown
+}
+
+export type GcloudHttpError = Error & {
+  status: number
+  headers: Headers
+  stage?: 'transcribe'
+  retryClass?: RetryClass
+  rawResponse?: unknown
+}
+
+export type AwsCliError = Error & {
+  stage?: 'upload' | 'create' | 'poll' | 'transcript' | 'cleanup'
+  retryable?: boolean
   rawResponse?: unknown
 }
 

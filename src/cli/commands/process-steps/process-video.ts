@@ -11,6 +11,7 @@ import type {
   AggregatedPriceEstimate,
   RuntimeOptions,
   Step2Metadata,
+  SttCompletionStatus,
   SttProviderSuccess,
   SttTarget,
   TranscriptionResult,
@@ -24,7 +25,7 @@ import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-downl
 import { sttTarget } from './step-2-stt/orchestrator'
 import { writeSttResultArtifact } from './step-2-stt/stt-utils/stt-result-artifacts'
 import { formatTranscriptText } from './step-2-stt/stt-utils/stt-utils'
-import { collectSttTargets, getSttTargetDirectoryName } from './step-2-stt/stt-targets'
+import { collectSttTargets, getSttTargetDirectoryName, getSttTargetKey } from './step-2-stt/stt-targets'
 import { prepareSttMedia } from './step-2-stt/media'
 import { runLLM } from './step-3-write/run-llm'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
@@ -35,19 +36,43 @@ import { buildTtsArtifactMap, collectTtsTargets } from './step-4-tts/tts-targets
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } from './step-5-image/image-targets'
 import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
-import { buildVideoArtifactMap } from './step-6-video/video-targets'
+import { buildVideoArtifactMap, collectVideoTargets } from './step-6-video/video-targets'
 import { runMusicGen } from './step-7-music/run-music-gen'
 import { buildMusicArtifactMap, collectMusicTargets } from './step-7-music/music-targets'
 import { buildProviderStepSummaries } from './generation-command-utils'
 import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
-import { classifySttProviderFailure, prioritizeCloudSttTargetIndices, selectPrimaryPromptProvider } from './process-stt'
+import {
+  buildProviderModelLabel,
+  classifySttProviderFailure,
+  logSpeakerCountHintSummary,
+  prioritizeCloudSttTargetIndices,
+  selectPrimaryPromptProvider
+} from './process-stt'
 import { writeRunManifest } from './manifest-utils'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-stt/youtube-captions'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
   & { outputDir?: string | undefined }
+
+const toRequestedProvider = (
+  target: Pick<SttTarget, 'service' | 'model'>
+): { service: string, model: string } => ({
+  service: target.service,
+  model: target.model
+})
+
+const resolveWriteSttCompletionStatus = (
+  requestedTargets: SttTarget[],
+  successes: SttProviderSuccess[]
+): SttCompletionStatus => {
+  if (successes.length === 0) {
+    return 'failed'
+  }
+
+  return successes.length === requestedTargets.length ? 'full' : 'incomplete'
+}
 
 const runTargetPool = async (
   indices: number[],
@@ -115,13 +140,16 @@ export const processVideo = async (
           ...(options.filePath !== undefined ? { filePath: options.filePath } : {})
         },
         targets: sttTargets,
-        outputDir
+        outputDir,
+        noCache: options.noCache,
+        refreshCache: options.refreshCache
       })
     )
     const step1Time = Date.now() - step1Start
     const step1Metadata: Step1Metadata = preparedSttMedia.step1Metadata
     const sourceMetadata = preparedSttMedia.metadata
     const audioPath = preparedSttMedia.executionArtifacts.sourceMediaPath
+    logSpeakerCountHintSummary(sttTargets, processingOptions.diarizationSpeakerCount)
 
     if (processingOptions.youtubeCaptions && processingOptions.url) {
       const captionTranscription = await tryResolveYoutubeCaptionTranscription(
@@ -232,279 +260,352 @@ export const processVideo = async (
       }
     }
 
-  if (!transcriptionResult) {
-    throw new Error('No transcription result was produced for the write pipeline')
-  }
-  const finalizedTranscriptionResult = transcriptionResult
-
-  let step3RunResults: StructuredRunResult[] = []
-  let step3Results: Step3Metadata[] = []
-  if (processingOptions.skipLLM) {
-    await runWithLogContext({ step: 'step-3-write' }, async () => {
-      const promptPath = `${outputDir}/prompt.md`
-      const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
-        exampleFormat: 'json'
-      })
-      const promptContent = buildPrompt(sourceMetadata, finalizedTranscriptionResult.result, instruction, step1Metadata.slug)
-      await Bun.write(promptPath, promptContent)
-    })
-  } else {
-    step3RunResults = await runWithLogContext({ step: 'step-3-write' }, async () =>
-      await runLLM(sourceMetadata, finalizedTranscriptionResult.result, processingOptions, step1Metadata.slug)
-    )
-    step3Results = step3RunResults.map((result) => result.metadata)
-  }
-
-  const renderedArtifacts = step3RunResults.length > 0
-    ? await writeRenderedTextArtifacts({
-        outputDir,
-        results: step3RunResults,
-        writeInternal: processingOptions.renderedText === true,
-        sourcePath: options.filePath,
-        trackListPath: processingOptions.trackList,
-        externalDir: processingOptions.renderedOutDir,
-        externalBaseName: step1Metadata.slug
-      })
-    : { internalArtifacts: {}, externalFiles: [] as string[] }
-
-  if (renderedArtifacts.externalFiles.length > 0) {
-    l.info(`Rendered text saved to ${processingOptions.renderedOutDir} (${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'})`)
-  }
-
-  let step4Metadata: Step4Metadata[] | null = null
-  let step5Metadata: Step5Metadata[] | null = null
-  let step6Metadata: Step6VideoMetadata[] | null = null
-  let step7Metadata: Step7MusicMetadata[] | null = null
-  let ttsCharacterCount: number | undefined
-  const ttsTargets = collectTtsTargets(processingOptions)
-  const imageTargets = collectImageTargets(processingOptions)
-  const musicTargets = collectMusicTargets(processingOptions)
-  const ttsRequested = ttsTargets.length > 0
-  const imageRequested = imageTargets.length > 0
-  const musicRequested = musicTargets.length > 0
-  const videoGenRequested = !!(processingOptions.geminiVideoModel || processingOptions.minimaxVideoModel)
-
-  if ((ttsRequested || imageRequested || musicRequested || videoGenRequested) && step3Results.length > 0) {
-    if (step3Results.length > 1) {
-      if (ttsRequested) l.warn(`TTS skipped: step 4 only runs when write produces exactly one summary, but ${step3Results.length} LLM outputs were generated`)
-      if (imageRequested) l.warn(`Image gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
-      if (musicRequested) l.warn(`Music gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
-      if (videoGenRequested) l.warn(`Video gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
-    } else {
-      const textContent = step3RunResults[0]?.renderedText ?? ''
-      ttsCharacterCount = textContent.length
-
-      const [ttsResult, imageResult, musicResult, videoResult] = await Promise.all([
-        ttsRequested
-          ? runWithLogContext({ step: 'step-4-tts' }, async () => await runTts(textContent, outputDir, processingOptions))
-          : null,
-        imageRequested
-          ? runWithLogContext({ step: 'step-5-image' }, async () => await runImageGen(textContent, outputDir, processingOptions))
-          : null,
-        musicRequested
-          ? runWithLogContext({ step: 'step-7-music' }, async () => await runMusicGen(textContent, outputDir, processingOptions))
-          : null,
-        videoGenRequested
-          ? runWithLogContext({ step: 'step-6-video' }, async () => await runVideoGen(textContent, outputDir, processingOptions))
-          : null
-      ])
-
-      step4Metadata = ttsResult?.metadata ?? null
-      step5Metadata = imageResult?.metadata ?? null
-      step7Metadata = musicResult?.metadata ?? null
-      step6Metadata = videoResult?.metadata ?? null
+    if (!transcriptionResult) {
+      throw new Error('No transcription result was produced for the write pipeline')
     }
-  }
-
-  const step3Serialized = step3Results.length === 1
-    ? step3Results[0]
-    : step3Results.length > 1
-      ? step3Results
+    const finalizedTranscriptionResult = transcriptionResult
+    const promptSource = selectPrimaryPromptProvider(successfulSttProviders)
+    const promptOptions = promptSource
+      ? {
+          promptSourceProvider: buildProviderModelLabel(promptSource.metadata),
+          requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount
+        }
       : undefined
 
-  const llmService = processingOptions.openaiModel ? 'openai'
-    : processingOptions.groqModel ? 'groq'
-      : processingOptions.geminiModel ? 'gemini'
-        : processingOptions.anthropicModel ? 'anthropic'
-          : processingOptions.minimaxModel ? 'minimax'
-            : processingOptions.llamaModel ? 'llama.cpp'
-              : undefined
-  const llmModel = processingOptions.openaiModel
-    ?? processingOptions.groqModel
-    ?? processingOptions.geminiModel
-    ?? processingOptions.anthropicModel
-    ?? processingOptions.minimaxModel
-    ?? processingOptions.llamaModel
-
-  const attemptedTtsTargets = step3Results.length === 1 ? ttsTargets : []
-  const attemptedImageTargets = step3Results.length === 1 ? imageTargets : []
-  const attemptedMusicTargets = step3Results.length === 1 ? musicTargets : []
-  const ttsEstimateTargets = attemptedTtsTargets.map((target) => ({ service: target.service, model: target.model }))
-  const imageEstimateTargets = attemptedImageTargets.map((target) => ({
-    service: target.service,
-    model: target.model,
-    count: getExpectedImageCount(target, processingOptions)
-  }))
-  const llmInputTokenCount = step3Results.length > 0
-    ? step3Results.reduce((sum, s3) => sum + s3.inputTokenCount, 0)
-    : undefined
-  const llmOutputTokenCount = step3Results.length > 0
-    ? step3Results.reduce((sum, s3) => sum + s3.outputTokenCount, 0)
-    : undefined
-  const step2EntriesForEstimation = Array.isArray(transcriptionResult.metadata)
-    ? transcriptionResult.metadata
-    : [transcriptionResult.metadata]
-  const selectedSttTargets = step2EntriesForEstimation.map((entry) => ({
-    service: entry.transcriptionService,
-    model: entry.transcriptionModel
-  }))
-
-  const estimated = preflightEstimate
-    ? preflightToEstimated(preflightEstimate)
-    : computeEstimatedCosts({
-      sttTargets: selectedSttTargets,
-      audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
-      llmService,
-      llmModel,
-      llmInputTokenCount,
-      llmOutputTokenCount,
-      skipLLM: processingOptions.skipLLM,
-      ttsTargets: ttsEstimateTargets,
-      ttsCharacterCount,
-      imageTargets: imageEstimateTargets,
-      geminiVideoModel: processingOptions.geminiVideoModel,
-      minimaxVideoModel: processingOptions.minimaxVideoModel,
-      videoDuration: processingOptions.videoDuration,
-      videoSize: processingOptions.videoSize,
-      videoResolution: processingOptions.videoResolution,
-      elevenlabsMusicModel: processingOptions.elevenlabsMusicModel,
-      minimaxMusicModel: processingOptions.minimaxMusicModel,
-      musicDuration: processingOptions.musicDuration,
-      musicLyricsFile: processingOptions.musicLyricsFile,
-      musicInstrumental: processingOptions.musicInstrumental
-    })
-
-  const actual = computeActualCosts({
-    step1: step1Metadata,
-    step2: transcriptionResult.metadata,
-    ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
-    ...(step4Metadata ? { step4: step4Metadata, ttsCharacterCount } : {}),
-    ...(step5Metadata ? { step5: step5Metadata } : {}),
-    ...(step6Metadata ? { step6: step6Metadata } : {}),
-    ...(step7Metadata ? { step7: step7Metadata } : {})
-  })
-
-  const cost = { estimated, actual }
-  const estimatedTiming = computeEstimatedProcessingTimes({
-    sttTargets: selectedSttTargets,
-    audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
-    llmService,
-    llmModel,
-    llmInputTokenCount,
-    llmOutputTokenCount,
-    skipLLM: processingOptions.skipLLM,
-    ttsTargets: ttsEstimateTargets,
-    ttsCharacterCount,
-    ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
-    ...(step6Metadata && step6Metadata.length > 0
-      ? {
-          videoTargets: step6Metadata.map((m) => ({
-            service: m.videoGenService,
-            model: m.videoGenModel,
-            ...(typeof m.videoDuration === 'number' ? { durationSeconds: m.videoDuration } : {})
-          }))
-        }
-      : {}),
-    ...(attemptedMusicTargets.length > 0
-      ? {
-          musicTargets: attemptedMusicTargets.map((t) => ({
-            service: t.service,
-            model: t.model,
-            ...(processingOptions.musicDuration !== undefined ? { durationSeconds: processingOptions.musicDuration } : {})
-          }))
-        }
-      : {}),
-  })
-  const actualTiming = computeActualProcessingTimes({
-    audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
-    step2: transcriptionResult.metadata,
-    ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
-    ...(step4Metadata ? { step4: step4Metadata, ttsCharacterCount } : {}),
-    ...(step5Metadata ? { step5: step5Metadata } : {}),
-    ...(step6Metadata ? { step6: step6Metadata } : {}),
-    ...(step7Metadata ? { step7: step7Metadata } : {}),
-  })
-  const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
-    ? { estimated: estimatedTiming, actual: actualTiming }
-    : undefined
-
-  const processingMetadata = {
-    step1: step1Metadata,
-    step2: serializeOneOrMany(Array.isArray(transcriptionResult.metadata) ? transcriptionResult.metadata : [transcriptionResult.metadata]),
-    ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
-    ...(step4Metadata ? { step4: serializeOneOrMany(step4Metadata) } : {}),
-    ...(step5Metadata ? { step5: serializeOneOrMany(step5Metadata) } : {}),
-    ...(step6Metadata ? { step6: serializeOneOrMany(step6Metadata) } : {}),
-    ...(step7Metadata ? { step7: serializeOneOrMany(step7Metadata) } : {}),
-    cost,
-    ...(timing ? { timing } : {}),
-    ...(sttFailures.length > 0 ? { errors: sttFailures } : {}),
-  }
-  const metadataJson = JSON.stringify(processingMetadata, null, 2)
-  await writeRunManifest(outputDir, 'write', processingMetadata)
-  l.info(`Run manifest:\n${metadataJson}`)
-
-  const totalTime = Date.now() - processStart
-  const step2Entries = Array.isArray(transcriptionResult.metadata)
-    ? transcriptionResult.metadata
-    : [transcriptionResult.metadata]
-
-  const stepSummaries: StepTimingCost[] = [
-    {
-      label: 'Download',
-      processingTime: step1Time,
-      cost: 0
+    let step3RunResults: StructuredRunResult[] = []
+    let step3Results: Step3Metadata[] = []
+    if (processingOptions.skipLLM) {
+      await runWithLogContext({ step: 'step-3-write' }, async () => {
+        const promptPath = `${outputDir}/prompt.md`
+        const instruction = await resolvePromptNames(processingOptions.prompts ?? [], {
+          exampleFormat: 'json'
+        })
+        const promptContent = buildPrompt(
+          sourceMetadata,
+          finalizedTranscriptionResult.result,
+          instruction,
+          step1Metadata.slug,
+          promptOptions
+        )
+        await Bun.write(promptPath, promptContent)
+      })
+    } else {
+      step3RunResults = await runWithLogContext({ step: 'step-3-write' }, async () =>
+        await runLLM(sourceMetadata, finalizedTranscriptionResult.result, {
+          ...processingOptions,
+          promptBuilder: (instruction: string) =>
+            buildPrompt(
+              sourceMetadata,
+              finalizedTranscriptionResult.result,
+              instruction,
+              step1Metadata.slug,
+              promptOptions
+            )
+        }, step1Metadata.slug)
+      )
+      step3Results = step3RunResults.map((result) => result.metadata)
     }
-  ]
 
-  stepSummaries.push(...buildProviderStepSummaries(
-    'Transcribe',
-    'stt',
-    step2Entries,
-    actual.steps,
-    (entry) => {
-      const displayService = entry.transcriptionService === 'whisper' ? 'whisper.cpp' : entry.transcriptionService
-      const displayModel = entry.transcriptionService === 'whisper'
-        ? (processingOptions.whisperModel ?? entry.transcriptionModel)
-        : entry.transcriptionService === 'reverb'
-          ? 'reverb'
-          : entry.transcriptionModel
-      return `${displayService}/${displayModel}`
-    },
-    (entry) => entry.processingTime
-  ))
+    const renderedArtifacts = step3RunResults.length > 0
+      ? await writeRenderedTextArtifacts({
+          outputDir,
+          results: step3RunResults,
+          writeInternal: processingOptions.renderedText === true,
+          sourcePath: options.filePath,
+          trackListPath: processingOptions.trackList,
+          externalDir: processingOptions.renderedOutDir,
+          externalBaseName: step1Metadata.slug
+        })
+      : { internalArtifacts: {}, externalFiles: [] as string[] }
 
-  if (step3Results.length > 0) {
-    stepSummaries.push(...buildProviderStepSummaries(
-      'LLM',
-      'llm',
-      step3Results,
-      actual.steps,
-      (entry) => `${entry.llmService}/${entry.llmModel}`,
-      (entry) => entry.processingTime
-    ))
-  }
+    if (renderedArtifacts.externalFiles.length > 0) {
+      l.info(`Rendered text saved to ${processingOptions.renderedOutDir} (${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'})`)
+    }
 
-  if (step4Metadata) {
-    stepSummaries.push(...buildProviderStepSummaries(
-      'TTS',
-      'tts',
-      step4Metadata,
-      actual.steps,
-      (entry) => `${entry.ttsService}/${entry.ttsModel}`,
-      (entry) => entry.processingTime
-    ))
-  }
+	    let step4Metadata: Step4Metadata[] | null = null
+	    let step5Metadata: Step5Metadata[] | null = null
+	    let step6Metadata: Step6VideoMetadata[] | null = null
+	    let step7Metadata: Step7MusicMetadata[] | null = null
+	    let ttsCharacterCount: number | undefined
+	    const ttsTargets = collectTtsTargets(processingOptions)
+	    const imageTargets = collectImageTargets(processingOptions)
+	    const videoTargets = collectVideoTargets(processingOptions)
+	    const musicTargets = collectMusicTargets(processingOptions)
+	    const ttsRequested = ttsTargets.length > 0
+	    const imageRequested = imageTargets.length > 0
+	    const videoRequested = videoTargets.length > 0
+	    const musicRequested = musicTargets.length > 0
+
+	    if ((ttsRequested || imageRequested || musicRequested || videoRequested) && step3Results.length > 0) {
+	      if (step3Results.length > 1) {
+	        if (ttsRequested) l.warn(`TTS skipped: step 4 only runs when write produces exactly one summary, but ${step3Results.length} LLM outputs were generated`)
+	        if (imageRequested) l.warn(`Image gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
+	        if (musicRequested) l.warn(`Music gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
+	        if (videoRequested) l.warn(`Video gen skipped: cannot determine which of ${step3Results.length} LLM outputs to use`)
+	      } else {
+	        const textContent = step3RunResults[0]?.renderedText ?? ''
+	        ttsCharacterCount = textContent.length
+
+	        const [ttsResult, imageResult, musicResult, videoResult] = await Promise.all([
+	          ttsRequested
+	            ? runWithLogContext({ step: 'step-4-tts' }, async () => await runTts(textContent, outputDir, processingOptions))
+	            : null,
+	          imageRequested
+	            ? runWithLogContext({ step: 'step-5-image' }, async () => await runImageGen(textContent, outputDir, processingOptions))
+	            : null,
+	          musicRequested
+	            ? runWithLogContext({ step: 'step-7-music' }, async () => await runMusicGen(textContent, outputDir, processingOptions))
+	            : null,
+	          videoRequested
+	            ? runWithLogContext({ step: 'step-6-video' }, async () => await runVideoGen(textContent, outputDir, processingOptions))
+	            : null
+	        ])
+
+	        step4Metadata = ttsResult?.metadata ?? null
+	        step5Metadata = imageResult?.metadata ?? null
+	        step7Metadata = musicResult?.metadata ?? null
+	        step6Metadata = videoResult?.metadata ?? null
+	      }
+	    }
+
+	    const step3Serialized = step3Results.length === 1
+	      ? step3Results[0]
+	      : step3Results.length > 1
+	        ? step3Results
+	        : undefined
+
+	    const attemptedTtsTargets = step3Results.length === 1 ? ttsTargets : []
+	    const attemptedImageTargets = step3Results.length === 1 ? imageTargets : []
+	    const attemptedVideoTargets = step3Results.length === 1 ? videoTargets : []
+	    const attemptedMusicTargets = step3Results.length === 1 ? musicTargets : []
+	    const ttsEstimateTargets = attemptedTtsTargets.map((target) => ({ service: target.service, model: target.model }))
+	    const imageEstimateTargets = attemptedImageTargets.map((target) => ({
+	      service: target.service,
+	      model: target.model,
+	      count: getExpectedImageCount(target, processingOptions)
+	    }))
+	    const llmTargets = step3Results.map((s3) => ({
+	      service: s3.llmService,
+	      model: s3.llmModel,
+	      inputTokens: s3.inputTokenCount,
+	      outputTokens: s3.outputTokenCount
+	    }))
+	    const step2EntriesForEstimation = Array.isArray(transcriptionResult.metadata)
+	      ? transcriptionResult.metadata
+	      : [transcriptionResult.metadata]
+	    const selectedSttTargets = step2EntriesForEstimation.map((entry) => ({
+	      service: entry.transcriptionService,
+	      model: entry.transcriptionModel
+	    }))
+
+	    const estimated = preflightEstimate
+	      ? preflightToEstimated(preflightEstimate)
+	      : computeEstimatedCosts({
+	        sttTargets: selectedSttTargets,
+	        audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+	        llmTargets,
+	        skipLLM: processingOptions.skipLLM,
+	        ttsTargets: ttsEstimateTargets,
+	        ttsCharacterCount,
+	        imageTargets: imageEstimateTargets,
+	        videoTargets: attemptedVideoTargets.map((target) => ({
+	          service: target.service,
+	          model: target.model,
+	          ...(processingOptions.videoDuration !== undefined ? { durationSeconds: processingOptions.videoDuration } : {})
+	        })),
+	        videoDuration: processingOptions.videoDuration,
+	        videoSize: processingOptions.videoSize,
+	        videoResolution: processingOptions.videoResolution,
+	        musicTargets: attemptedMusicTargets.map((t) => ({
+	          service: t.service,
+	          model: t.model,
+	          ...(processingOptions.musicDuration !== undefined ? { durationSeconds: processingOptions.musicDuration } : {})
+	        })),
+	        musicDuration: processingOptions.musicDuration,
+	        musicLyricsFile: processingOptions.musicLyricsFile,
+	        musicInstrumental: processingOptions.musicInstrumental
+	      })
+
+	    const actual = computeActualCosts({
+	      step1: step1Metadata,
+	      step2: transcriptionResult.metadata,
+	      ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
+	      ...(step4Metadata ? { step4: step4Metadata, ttsCharacterCount } : {}),
+	      ...(step5Metadata ? { step5: step5Metadata } : {}),
+	      ...(step6Metadata ? { step6: step6Metadata } : {}),
+	      ...(step7Metadata ? { step7: step7Metadata } : {})
+	    })
+
+	    const cost = { estimated, actual }
+	    const estimatedTiming = computeEstimatedProcessingTimes({
+	      sttTargets: selectedSttTargets,
+	      audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+	      llmTargets,
+	      skipLLM: processingOptions.skipLLM,
+	      ttsTargets: ttsEstimateTargets,
+	      ttsCharacterCount,
+	      ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
+	      ...(attemptedVideoTargets.length > 0
+	        ? {
+	            videoTargets: attemptedVideoTargets.map((t) => ({
+	              service: t.service,
+	              model: t.model,
+	              ...(processingOptions.videoDuration !== undefined ? { durationSeconds: processingOptions.videoDuration } : {})
+	            }))
+	          }
+	        : {}),
+	      ...(attemptedMusicTargets.length > 0
+	        ? {
+	            musicTargets: attemptedMusicTargets.map((t) => ({
+	              service: t.service,
+	              model: t.model,
+	              ...(processingOptions.musicDuration !== undefined ? { durationSeconds: processingOptions.musicDuration } : {})
+	            }))
+	          }
+	        : {}),
+	    })
+	    const actualTiming = computeActualProcessingTimes({
+	      audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+	      step2: transcriptionResult.metadata,
+	      ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
+	      ...(step4Metadata ? { step4: step4Metadata, ttsCharacterCount } : {}),
+	      ...(step5Metadata ? { step5: step5Metadata } : {}),
+	      ...(step6Metadata ? { step6: step6Metadata } : {}),
+	      ...(step7Metadata ? { step7: step7Metadata } : {}),
+	    })
+	    const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
+	      ? { estimated: estimatedTiming, actual: actualTiming }
+	      : undefined
+
+	    const captionOnly = successfulSttProviders.length > 0
+	      && successfulSttProviders.every((entry) => entry.target.service === YOUTUBE_CAPTIONS_SERVICE)
+	    const requestedSttTargets = captionOnly
+	      ? successfulSttProviders.map((entry) => entry.target)
+	      : sttTargets
+	    const successfulKeys = new Set(successfulSttProviders.map((entry) => getSttTargetKey(entry.target)))
+	    const failureByKey = new Map<string, typeof sttFailures[number]>(
+	      sttFailures.map((failure) => [`${failure.service}:${failure.model}`, failure])
+	    )
+	    const sttProviderStates = requestedSttTargets.map((target) => {
+	      const success = successfulSttProviders.find((entry) => getSttTargetKey(entry.target) === getSttTargetKey(target))
+	      if (success) {
+	        return {
+	          service: target.service,
+	          model: target.model,
+	          local: target.local,
+	          artifactDir: success.relativeDir ?? '.',
+	          status: 'succeeded',
+	          attempts: 1
+	        }
+	      }
+
+	      const failure = failureByKey.get(getSttTargetKey(target))
+	      if (failure) {
+	        return {
+	          service: target.service,
+	          model: target.model,
+	          local: target.local,
+	          artifactDir: target.service === YOUTUBE_CAPTIONS_SERVICE ? '.' : `providers/${getSttTargetDirectoryName(target)}`,
+	          status: 'failed',
+	          attempts: 1,
+	          retryable: failure.retryable,
+	          lastError: {
+	            message: failure.message,
+	            retryable: failure.retryable,
+	            ...(failure.stage ? { stage: failure.stage } : {}),
+	            ...(typeof failure.status === 'number' ? { status: failure.status } : {})
+	          }
+	        }
+	      }
+
+	      return {
+	        service: target.service,
+	        model: target.model,
+	        local: target.local,
+	        artifactDir: target.service === YOUTUBE_CAPTIONS_SERVICE ? '.' : `providers/${getSttTargetDirectoryName(target)}`,
+	        status: 'missing',
+	        attempts: 0
+	      }
+	    })
+	    const completionStatus = resolveWriteSttCompletionStatus(requestedSttTargets, successfulSttProviders)
+	    const missingProviders = requestedSttTargets
+	      .filter((target) => !successfulKeys.has(getSttTargetKey(target)))
+	      .map(toRequestedProvider)
+
+	    const processingMetadata = {
+	      step1: step1Metadata,
+	      step2: serializeOneOrMany(Array.isArray(transcriptionResult.metadata) ? transcriptionResult.metadata : [transcriptionResult.metadata]),
+	      completionStatus,
+	      requestedProviders: requestedSttTargets.map(toRequestedProvider),
+	      providerStates: sttProviderStates,
+	      missingProviders,
+	      cache: {
+	        sourceMedia: preparedSttMedia.cache.sourceMedia
+	      },
+	      ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
+	      ...(step4Metadata ? { step4: serializeOneOrMany(step4Metadata) } : {}),
+	      ...(step5Metadata ? { step5: serializeOneOrMany(step5Metadata) } : {}),
+	      ...(step6Metadata ? { step6: serializeOneOrMany(step6Metadata) } : {}),
+	      ...(step7Metadata ? { step7: serializeOneOrMany(step7Metadata) } : {}),
+	      cost,
+	      ...(timing ? { timing } : {}),
+	      ...(sttFailures.length > 0 ? { errors: sttFailures } : {}),
+	    }
+	    const metadataJson = JSON.stringify(processingMetadata, null, 2)
+	    await writeRunManifest(outputDir, 'write', processingMetadata)
+	    l.info(`Run manifest:\n${metadataJson}`)
+
+	    const totalTime = Date.now() - processStart
+	    const step2Entries = Array.isArray(transcriptionResult.metadata)
+	      ? transcriptionResult.metadata
+	      : [transcriptionResult.metadata]
+
+	    const stepSummaries: StepTimingCost[] = [
+	      {
+	        label: 'Download',
+	        processingTime: step1Time,
+	        cost: 0
+	      }
+	    ]
+
+	    stepSummaries.push(...buildProviderStepSummaries(
+	      'Transcribe',
+	      'stt',
+	      step2Entries,
+	      actual.steps,
+	      (entry) => {
+	        const displayService = entry.transcriptionService === 'whisper' ? 'whisper.cpp' : entry.transcriptionService
+	        const displayModel = entry.transcriptionService === 'whisper'
+	          ? (processingOptions.whisperModel ?? entry.transcriptionModel)
+	          : entry.transcriptionService === 'reverb'
+	            ? 'reverb'
+	            : entry.transcriptionModel
+	        return `${displayService}/${displayModel}`
+	      },
+	      (entry) => entry.processingTime
+	    ))
+
+	    if (step3Results.length > 0) {
+	      stepSummaries.push(...buildProviderStepSummaries(
+	        'LLM',
+	        'llm',
+	        step3Results,
+	        actual.steps,
+	        (entry) => `${entry.llmService}/${entry.llmModel}`,
+	        (entry) => entry.processingTime
+	      ))
+	    }
+
+	    if (step4Metadata) {
+	      stepSummaries.push(...buildProviderStepSummaries(
+	        'TTS',
+	        'tts',
+	        step4Metadata,
+	        actual.steps,
+	        (entry) => `${entry.ttsService}/${entry.ttsModel}`,
+	        (entry) => entry.processingTime
+	      ))
+	    }
 
   if (step5Metadata) {
     stepSummaries.push(...buildProviderStepSummaries(

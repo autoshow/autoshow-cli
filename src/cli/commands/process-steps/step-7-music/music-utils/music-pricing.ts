@@ -10,12 +10,11 @@ const DEFAULT_ELEVENLABS_MUSIC_DURATION_SECONDS = 180
 
 export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCostEstimate[] => {
   const results: MusicCostEstimate[] = []
+  const elevenlabsModels = options.elevenlabsMusicModels ?? (options.elevenlabsMusicModel ? [options.elevenlabsMusicModel] : [])
+  const minimaxModels = options.minimaxMusicModels ?? (options.minimaxMusicModel ? [options.minimaxMusicModel] : [])
 
-  const hasElevenlabs = typeof options.elevenlabsMusicModel === 'string' && options.elevenlabsMusicModel.length > 0
-  const hasMinimax = typeof options.minimaxMusicModel === 'string' && options.minimaxMusicModel.length > 0
-
-  if (hasElevenlabs) {
-    const model = validateElevenlabsMusicModel(options.elevenlabsMusicModel as string)
+  for (const rawModel of elevenlabsModels) {
+    const model = validateElevenlabsMusicModel(rawModel)
     const modelMeta = getMusicModelMeta('elevenlabs', model)
     const ratePerMinute = modelMeta?.costPerMinuteCents
     const lyricsSource: MusicCostEstimate['lyricsSource'] = options.musicInstrumental ? 'none' : 'generated'
@@ -40,8 +39,8 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
     })
   }
 
-  if (hasMinimax) {
-    const model = validateMinimaxMusicModel(options.minimaxMusicModel as string)
+  for (const rawModel of minimaxModels) {
+    const model = validateMinimaxMusicModel(rawModel)
     const modelMeta = getMusicModelMeta('minimax', model)
     const baseCost = modelMeta?.costPerTrackCents
     const lyricsAddonCost = modelMeta?.lyricsCostPerTrackCents ?? 0

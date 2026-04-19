@@ -1,6 +1,6 @@
 # video
 
-Generate a video from a text prompt with one of the hosted video providers.
+Generate a video from a text prompt with one or more hosted video providers and models.
 
 ## Outline
 
@@ -25,7 +25,7 @@ bun as video <prompt> [flags]
 | Gemini Veo | `--gemini-video <model>` | `veo-3.1-generate-preview`, `veo-3.1-fast-generate-preview` |
 | MiniMax | `--minimax-video <model>` | `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-02`, `T2V-01-Director`, `T2V-01` |
 
-One or more provider flags can be specified. When both are given, each runs independently and produces its own output file.
+One or more provider flags can be specified. Repeating the same provider flag runs each selected model independently and produces its own output file.
 
 ## Examples
 
@@ -42,6 +42,9 @@ bun as video "a rainy neon city street, slow camera pan" --minimax-video T2V-01
 bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3
 bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --price
 
+# Same provider, multiple models
+bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --gemini-video veo-3.1-generate-preview
+
 # Price preflight
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --video-duration 8 --price
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --price
@@ -55,8 +58,8 @@ bun as write "https://youtube.com/..." --gemini-video veo-3.1-fast-generate-prev
 
 | Flag | Description |
 |------|-------------|
-| `--gemini-video <model>` | Select a Gemini Veo model |
-| `--minimax-video <model>` | Select a MiniMax model |
+| `--gemini-video <model>` | Select one or more Gemini Veo models |
+| `--minimax-video <model>` | Select one or more MiniMax models |
 | `--video-duration <seconds>` | Requested video duration |
 | `--video-aspect-ratio <ratio>` | Gemini aspect ratio: `16:9` or `9:16` |
 | `--video-resolution <res>` | Gemini and MiniMax resolution control |

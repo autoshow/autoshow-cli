@@ -1,7 +1,9 @@
 import type { ClercFlagsDefinition } from 'clerc'
 import {
   SUPPORTED_LLAMA_MODELS,
+  SUPPORTED_AWS_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
+  SUPPORTED_GCLOUD_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_SONIOX_STT_MODELS,
   SUPPORTED_SPEECHMATICS_STT_MODELS,
@@ -55,8 +57,8 @@ export const batchFlags = {
 export const transcriptionFlags = {
   whisper: {
     description: 'Local whisper.cpp model (free): tiny|base|small|medium|large-v3-turbo',
-    type: String,
-    default: 'tiny'
+    type: [String] as [StringConstructor],
+    default: ['tiny'] as string[]
   },
   'youtube-captions': {
     description: 'Prefer English YouTube captions before STT when available; falls back to the normal STT provider path',
@@ -75,41 +77,57 @@ export const transcriptionFlags = {
     type: String,
     default: '0.5'
   },
+  'gcloud-stt': {
+    description: buildModelDescription('Google Cloud STT model', SUPPORTED_GCLOUD_STT_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'aws-stt': {
+    description: buildModelDescription('AWS Transcribe STT model', SUPPORTED_AWS_STT_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'aws-region': {
+    description: 'AWS region for Amazon Transcribe and the configured S3 bucket (for example us-east-1)',
+    type: String
+  },
+  'aws-bucket': {
+    description: 'S3 bucket used for Amazon Transcribe input/output staging',
+    type: String
+  },
   'elevenlabs-stt': {
     description: buildModelDescription('ElevenLabs STT model', SUPPORTED_ELEVENLABS_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'deepgram-stt': {
     description: buildModelDescription('Deepgram STT model', SUPPORTED_DEEPGRAM_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'soniox-stt': {
     description: buildModelDescription('Soniox STT model', SUPPORTED_SONIOX_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'speechmatics-stt': {
     description: buildModelDescription('Speechmatics STT model', SUPPORTED_SPEECHMATICS_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'rev-stt': {
     description: buildModelDescription('Rev STT model', SUPPORTED_REV_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'groq-stt': {
     description: buildModelDescription('Groq Whisper STT model (API, billed)', SUPPORTED_GROQ_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'mistral-stt': {
     description: buildModelDescription('Mistral STT model', SUPPORTED_MISTRAL_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'assemblyai-stt': {
     description: buildModelDescription('AssemblyAI STT model', SUPPORTED_ASSEMBLYAI_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'gladia-stt': {
     description: buildModelDescription('Gladia STT model', SUPPORTED_GLADIA_STT_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'speaker-count': {
     description: 'Optional diarization speaker-count hint for supported STT services; unsupported providers report one aggregated warning at runtime',
@@ -165,31 +183,31 @@ export const resumeMissingFlag = {
 export const llmProviderFlags = {
   llama: {
     description: `llama.cpp model ID or Hugging Face repo ID (namespace/repo_name; omit value for the default local model, ${SUPPORTED_LLAMA_MODELS.length} setup-managed defaults)`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   openai: {
     description: 'OpenAI model (omit value for cheapest supported model): gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano',
-    type: String
+    type: [String] as [StringConstructor]
   },
   groq: {
     description: `Groq model (omit value for cheapest supported model): ${SUPPORTED_GROQ_MODELS.join('|')}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   anthropic: {
     description: 'Anthropic model (omit value for cheapest supported model): claude-sonnet-4-6|claude-opus-4-6|claude-haiku-4-5',
-    type: String
+    type: [String] as [StringConstructor]
   },
   gemini: {
     description: buildModelDescription('Gemini model', SUPPORTED_GEMINI_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   minimax: {
     description: `MiniMax model (omit value for cheapest supported model): ${SUPPORTED_MINIMAX_MODELS.join('|')}`,
-    type: String
+    type: [String] as [StringConstructor]
   },
   grok: {
     description: `Grok model (omit value for cheapest supported model): ${SUPPORTED_GROK_MODELS.join('|')}`,
-    type: String
+    type: [String] as [StringConstructor]
   }
 } as const satisfies ClercFlagsDefinition
 
@@ -235,11 +253,11 @@ export const extractFlags = {
   },
   'mistral-ocr': {
     description: buildModelDescription('Mistral OCR model', SUPPORTED_MISTRAL_OCR_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   'glm-ocr': {
     description: buildModelDescription('GLM OCR model', SUPPORTED_GLM_OCR_MODELS),
-    type: String
+    type: [String] as [StringConstructor]
   },
   chapters: {
     description: 'EPUB native text runs and PDF autodetection: write chapter files under chapters/',

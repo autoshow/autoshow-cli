@@ -1,6 +1,6 @@
 # music
 
-Generate music from a text prompt with one of the hosted music providers.
+Generate music from a text prompt with one or more hosted music providers and models.
 
 ## Outline
 
@@ -25,7 +25,7 @@ bun as music <prompt> [flags]
 | ElevenLabs | `--elevenlabs-music <model>` | `music_v1` | returns audio directly |
 | MiniMax | `--minimax-music <model>` | `music-2.5` | auto-generates lyrics when `--music-lyrics-file` is omitted |
 
-One or more provider flags can be specified. When both are given, each runs independently and produces its own output file.
+One or more provider flags can be specified. Repeating the same provider flag runs each selected model independently and produces its own output file. The current shipped music providers only expose one model ID each, but the flags are still repeatable for config parity and future additions.
 
 ## Shared Flags
 

@@ -27,7 +27,7 @@ export const imageCommand = defineCommand({
   const flags = ctx.flags
 
   const imageMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>)
+  const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
   const imageTargets = collectImageTargets(imageOpts)
   if (imageTargets.length === 0) {
     throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, or --minimax-image.')

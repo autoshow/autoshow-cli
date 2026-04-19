@@ -36,7 +36,7 @@ export const configCommand = defineCommand({
 
   const preprocessedArgv = Bun.argv.slice(2)
   const explicitFlagNames = extractExplicitFlags(preprocessedArgv)
-  const patch = buildConfigPatchFromFlags(flags as Record<string, unknown>, explicitFlagNames)
+  const patch = buildConfigPatchFromFlags(flags as Record<string, unknown>, explicitFlagNames, preprocessedArgv)
 
   if (Object.keys(patch).length === 0) {
     l.info(`No changes to write. Config path: ${resolvedPath}`)

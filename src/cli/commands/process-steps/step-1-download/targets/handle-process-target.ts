@@ -24,6 +24,9 @@ import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/s
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { resolveLLMDefaults } from './llm-defaults'
 import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
+import { collectImageTargets } from '~/cli/commands/process-steps/step-5-image/image-targets'
+import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
+import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
 import type { AggregatedPriceEstimate, ResolvedProcessTargetPlan } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/batch'
@@ -60,13 +63,13 @@ const runWithConcurrency = async <T,>(
 const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   const llmConfig = resolveLLMDefaults(opts)
   return [
-    llmConfig.openaiModel,
-    llmConfig.groqModel,
-    llmConfig.geminiModel,
-    llmConfig.anthropicModel,
-    llmConfig.minimaxModel,
-    llmConfig.grokModel,
-    llmConfig.llamaModel
+    ...(llmConfig.openaiModels ?? (llmConfig.openaiModel ? [llmConfig.openaiModel] : [])),
+    ...(llmConfig.groqModels ?? (llmConfig.groqModel ? [llmConfig.groqModel] : [])),
+    ...(llmConfig.geminiModels ?? (llmConfig.geminiModel ? [llmConfig.geminiModel] : [])),
+    ...(llmConfig.anthropicModels ?? (llmConfig.anthropicModel ? [llmConfig.anthropicModel] : [])),
+    ...(llmConfig.minimaxModels ?? (llmConfig.minimaxModel ? [llmConfig.minimaxModel] : [])),
+    ...(llmConfig.grokModels ?? (llmConfig.grokModel ? [llmConfig.grokModel] : [])),
+    ...(llmConfig.llamaModels ?? (llmConfig.llamaModel ? [llmConfig.llamaModel] : []))
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
 
@@ -140,18 +143,21 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
       files.push(`${opts.renderedOutDir}/*.md`)
     }
     const ttsTargets = collectTtsTargets(opts)
+    const imageTargets = collectImageTargets(opts)
+    const videoTargets = collectVideoTargets(opts)
+    const musicTargets = collectMusicTargets(opts)
     if (ttsTargets.length > 0 && canRunPostGeneration) {
       for (const target of ttsTargets) {
         files.push(getTtsArtifactFileName(target, ttsTargets.length === 1))
       }
     }
-    if (canRunPostGeneration && (opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel)) {
+    if (canRunPostGeneration && imageTargets.length > 0) {
       files.push('generated-image.png')
     }
-    if (canRunPostGeneration && (opts.geminiVideoModel || opts.minimaxVideoModel)) {
+    if (canRunPostGeneration && videoTargets.length > 0) {
       files.push('Video file')
     }
-    if (canRunPostGeneration && (opts.elevenlabsMusicModel || opts.minimaxMusicModel)) {
+    if (canRunPostGeneration && musicTargets.length > 0) {
       files.push('Music file')
     }
     files.push('prompt.md')
@@ -163,14 +169,18 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     && typeof resolvedTarget === 'string'
     && await isDocumentLikeTarget(resolvedTarget, opts)
   if (documentWrite) {
-    const files = [getExpectedOcrArtifact(opts), summaryFile]
+    const files = opts.useEpubBun || opts.useEpubCalibre
+      ? [summaryFile, 'run.json (includes EPUB inspection payload)']
+      : [getExpectedOcrArtifact(opts), summaryFile]
     files.push(...getExpectedOcrExportArtifacts(opts))
     const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
       files.push('providers/<service>-<model>/result.json')
     }
     files.push('prompt.md')
-    files.push('run.json')
+    if (!files.some((entry) => entry.startsWith('run.json'))) {
+      files.push('run.json')
+    }
     return files
   }
   const files = ['Audio file', 'transcription.txt', 'result.json', summaryFile]
@@ -179,19 +189,22 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     files.push('providers/<service>-<model>/result.json')
   }
   const ttsTargets = collectTtsTargets(opts)
+  const imageTargets = collectImageTargets(opts)
+  const videoTargets = collectVideoTargets(opts)
+  const musicTargets = collectMusicTargets(opts)
   const canRunPostGeneration = getEffectiveLlmOutputCount(opts) === 1
   if (ttsTargets.length > 0 && canRunPostGeneration) {
     for (const target of ttsTargets) {
       files.push(getTtsArtifactFileName(target, ttsTargets.length === 1))
     }
   }
-  if (canRunPostGeneration && (opts.geminiImageModel || opts.openaiImageModel || opts.minimaxImageModel)) {
+  if (canRunPostGeneration && imageTargets.length > 0) {
     files.push('generated-image.png')
   }
-  if (canRunPostGeneration && (opts.geminiVideoModel || opts.minimaxVideoModel)) {
+  if (canRunPostGeneration && videoTargets.length > 0) {
     files.push('Video file')
   }
-  if (canRunPostGeneration && (opts.elevenlabsMusicModel || opts.minimaxMusicModel)) {
+  if (canRunPostGeneration && musicTargets.length > 0) {
     files.push('Music file')
   }
   if (opts.youtubeCaptions) {
@@ -221,6 +234,22 @@ const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, double
   }
 
   return false
+}
+
+const validateWriteStep2ProviderSelection = (command: ProcessCommand, opts: RuntimeOptions): void => {
+  if (command !== 'write') {
+    return
+  }
+
+  const sttTargets = collectSttTargets(opts)
+  if (sttTargets.length > 1) {
+    throw CLIUsageError('write accepts at most one STT provider (--whisper, --reverb, --*-stt).')
+  }
+
+  const ocrTargets = collectExplicitOcrTargets(opts)
+  if (ocrTargets.length > 1) {
+    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr).')
+  }
 }
 
 const resolveProcessTargetPlan = async (
@@ -359,8 +388,11 @@ export const handleProcessTarget = async (
     mergedFlags,
     doubleDash,
     {},
-    explicitFlags
+    explicitFlags,
+    Bun.argv.slice(2)
   )
+
+  validateWriteStep2ProviderSelection(command, opts)
 
   const maxCents = resolveMaxCents(config.pricing)
   const resumeMissingRequested = explicitFlags.has('resume-missing') || opts.resumeMissing !== undefined

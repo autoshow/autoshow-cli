@@ -21,6 +21,12 @@ export const sttRegistry: PriceSelectionEntry[] = [
   ...prefix('test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/', [
     command('transcribe-reverb', 'transcribe-reverb', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--reverb', '--reverb-verbatimicity', '0.5', '--price']),
   ]),
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-services/aws/aws.test.ts', [
+    command('transcribe-aws-standard', 'transcribe-aws-standard', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--aws-stt', 'standard', '--price']),
+  ]),
+  ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-services/gcloud/gcloud.test.ts', [
+    command('transcribe-gcloud-chirp_3', 'transcribe-gcloud-chirp_3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--gcloud-stt', 'chirp_3', '--price']),
+  ]),
   ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-services/service-models.test.ts', [
     command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
     command('transcribe-gladia-default', 'transcribe-gladia-default', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--gladia-stt', 'default', '--price']),
