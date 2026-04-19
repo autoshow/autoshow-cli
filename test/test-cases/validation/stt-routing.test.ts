@@ -122,6 +122,10 @@ describe('shouldSplitTranscriptionInput', () => {
     expect(shouldSplitTranscriptionInput(createTarget('gladia'), GLADIA_MAX_ATTACHMENT_BYTES + 1, undefined, false)).toBe(true)
   })
 
+  test('auto-splits Mistral uploads above the empirical attachment cap', () => {
+    expect(shouldSplitTranscriptionInput(createTarget('mistral'), requireSttLimit('mistral', 'effectiveBytes') + 1, undefined, false)).toBe(true)
+  })
+
   test('auto-splits duration-limited ElevenLabs inputs above the model cap', () => {
     expect(shouldSplitTranscriptionInput(createTarget('elevenlabs'), 1024, requireSttLimit('elevenlabs', 'durationSeconds') + 1, false)).toBe(true)
   })
@@ -202,7 +206,7 @@ describe('split policy helpers', () => {
     })
   })
 
-  test('keeps the default split duration when the provider cap is looser than 10 minutes', () => {
+  test('keeps the default split duration when the provider cap is looser than 30 minutes', () => {
     expect(resolveEffectiveSplitSegmentDurationMinutes(resolveSttSplitPolicy(createTarget('assemblyai')))).toBe(DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES)
   })
 

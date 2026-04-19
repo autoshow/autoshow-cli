@@ -92,19 +92,10 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
 
 export const parseStoredRequestedTargets = (
   entry: Record<string, unknown>
-): OcrTarget[] => {
-  const explicit = Array.isArray(entry['requestedProviders'])
+): OcrTarget[] =>
+  Array.isArray(entry['requestedProviders'])
     ? entry['requestedProviders'].map(parseStoredRequestedTarget).filter((target): target is OcrTarget => target !== undefined)
     : []
-  if (explicit.length > 0) {
-    return explicit
-  }
-
-  const providerStates = Array.isArray(entry['providerStates']) ? entry['providerStates'] : []
-  return providerStates
-    .map(parseStoredRequestedTarget)
-    .filter((target): target is OcrTarget => target !== undefined)
-}
 
 export const parseStoredProviderState = (value: unknown): OcrProviderState | undefined => {
   if (!isRecord(value)) {
@@ -208,53 +199,6 @@ export const buildMissingTargetsFromEntry = (
   return requestedTargets.filter((target) => !successfulKeys.has(getOcrTargetKey(target)))
 }
 
-const buildSyntheticResult = (
-  text: string,
-  metadata: ExtractionMetadata
-): ExtractionResult =>
-  validateData(ExtractionResultSchema, {
-    text,
-    pages: text.trim().length > 0
-      ? [{ pageNumber: 1, method: 'ocr', text }]
-      : [],
-    totalPages: metadata.totalPages,
-    ocrPages: metadata.ocrPages,
-    textPages: metadata.textPages
-  }, 'stored OCR result')
-
-const readStoredExtractionResult = async (
-  providerDir: string,
-  metadata: ExtractionMetadata
-): Promise<ExtractionResult | undefined> => {
-  const resultJsonPath = join(providerDir, 'result.json')
-  if (await Bun.file(resultJsonPath).exists()) {
-    const providerResult = await readProviderResultEntry(providerDir)
-    if (providerResult) {
-      return validateData(ExtractionResultSchema, providerResult.result, 'stored OCR result')
-    }
-  }
-
-  const extractionTextPath = join(providerDir, 'extraction.txt')
-  if (await Bun.file(extractionTextPath).exists()) {
-    const text = await Bun.file(extractionTextPath).text()
-    return buildSyntheticResult(text, metadata)
-  }
-
-  const extractionTsvPath = join(providerDir, 'extraction.tsv')
-  if (await Bun.file(extractionTsvPath).exists()) {
-    const text = await Bun.file(extractionTsvPath).text()
-    return buildSyntheticResult(text, metadata)
-  }
-
-  const extractionHocrPath = join(providerDir, 'extraction.hocr')
-  if (await Bun.file(extractionHocrPath).exists()) {
-    const text = await Bun.file(extractionHocrPath).text()
-    return buildSyntheticResult(text, metadata)
-  }
-
-  return undefined
-}
-
 export const readExistingOcrRun = async (
   outputDir: string,
   requestedTargets: OcrTarget[]
@@ -279,10 +223,7 @@ export const readExistingOcrRun = async (
     }
 
     const metadata = validateData(ExtractionMetadataSchema, providerResult.metadata, 'stored OCR provider metadata')
-    const result = await readStoredExtractionResult(providerDir, metadata)
-    if (!result) {
-      return
-    }
+    const result = validateData(ExtractionResultSchema, providerResult.result, 'stored OCR result')
 
     successes[index] = {
       target,

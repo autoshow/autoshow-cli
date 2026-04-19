@@ -1,5 +1,4 @@
 import { Clerc, defaultFormatters, helpPlugin, versionPlugin } from 'clerc'
-import { rootCommand } from './define-root-command'
 import { configCommand } from './commands/setup-and-utilities/config/define-config-command'
 import { cacheCommand } from './commands/setup-and-utilities/cache/define-cache-command'
 import { metadataCommand } from '~/cli/commands/process-steps/step-0-metadata/define-metadata-command'
@@ -93,7 +92,6 @@ type HelpCommandGroupKey = typeof HELP_COMMAND_GROUPS[number][0]
 const HELP_COMMAND_GROUP_DEFINITIONS: [string, string][] = HELP_COMMAND_GROUPS.map(([key, label]) => [key, label])
 
 const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> = {
-  '': 'core',
   version: 'core',
   help: 'core',
   config: 'setup',
@@ -116,7 +114,6 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
 }
 
 const COMMAND_DEFINITIONS = [
-  rootCommand,
   configCommand,
   cacheCommand,
   setupCommand,
@@ -209,6 +206,21 @@ const createCli = () => {
   }
 
   return cli
+    .interceptor({ enforce: 'pre', handler: async (ctx, next) => {
+      const unknownFlags = Object.keys(
+        ((ctx.rawParsed as { unknown?: Record<string, unknown> } | undefined)?.unknown) ?? {}
+      )
+
+      if (ctx.command?.name !== 'links' && unknownFlags.length > 0) {
+        throw CLIUsageError(
+          unknownFlags.length === 1
+            ? `Unexpected flag: ${unknownFlags[0]}`
+            : `Unexpected flags: ${unknownFlags.join(', ')}`
+        )
+      }
+
+      await next()
+    }})
     .globalFlag('help', colorizeHelpDescription('Show help'), {
       short: 'h',
       type: Boolean,
@@ -301,21 +313,13 @@ const main = async (): Promise<void> => {
         await parseCli(['help'])
         return
       }
-
-      const maybeCommand = rest[0]
-      const canonicalCommand = maybeCommand && knownCommands.has(maybeCommand) ? maybeCommand : null
-      if (canonicalCommand) {
-        await parseCli(['help', canonicalCommand])
-        return
-      }
-
-      await parseCli(['help'])
-      return
     }
 
     if (first === '--version' || first === '-v' || first === '-V') {
-      await parseCli(['--version'])
-      return
+      if (rest.length === 0) {
+        await parseCli(['--version'])
+        return
+      }
     }
 
     if (first !== '--' && first!.startsWith('-')) {

@@ -1,4 +1,4 @@
-import { basename, extname, join } from 'node:path'
+import { basename, join } from 'node:path'
 import { stat } from 'node:fs/promises'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -40,7 +40,7 @@ const normalizeEbookToEpub = async (
   return { epubPath }
 }
 
-const mapFormat = (detected: NonNullable<import('~/types/process-types').DetectResult>, filePath: string): DocFormat => {
+const mapFormat = (detected: NonNullable<import('~/types/process-types').DetectResult>): DocFormat => {
   if (detected === 'pdf') return 'pdf'
   if (detected === 'epub') return 'epub'
   if (detected === 'docx') return 'docx'
@@ -60,14 +60,6 @@ const mapFormat = (detected: NonNullable<import('~/types/process-types').DetectR
   if (detected === 'webp') return 'webp'
   if (detected === 'bmp') return 'bmp'
   if (detected === 'gif') return 'gif'
-
-  // fallback for legacy 'image' type - infer from extension
-  const ext = extname(filePath).toLowerCase()
-  if (ext === '.png') return 'png'
-  if (ext === '.jpg' || ext === '.jpeg') return 'jpg'
-  if (ext === '.webp') return 'webp'
-  if (ext === '.bmp') return 'bmp'
-  if (ext === '.gif') return 'gif'
   return 'tif'
 }
 
@@ -96,7 +88,7 @@ export const prepareDocumentMetadata = async (
     throw new Error(`Unsupported document format: ${filePath}`)
   }
 
-  const sourceFormat = mapFormat(detectedFormat, filePath)
+  const sourceFormat = mapFormat(detectedFormat)
   const baseTitle = basename(filePath).replace(/\.[^.]+$/, '')
   let pageCount = 1
   let title = baseTitle

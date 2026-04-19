@@ -431,7 +431,7 @@ const processMediaSingle = async (
   const llmConfig = resolveLLMDefaults(llmDefaults)
 
   if (llmDefaults.split) {
-    l.info('Audio will be split into 10-minute segments for transcription')
+    l.info('Audio will be split into 30-minute segments for transcription')
   }
 
   const isUrl = isLikelyUrl(target)

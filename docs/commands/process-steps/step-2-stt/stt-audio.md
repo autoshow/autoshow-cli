@@ -172,7 +172,7 @@ bun as stt --resume-missing
 | `--gladia-stt <model>` | Select one or more Gladia STT models; omit the value to keep `default` |
 | `--speaker-count <n>` | Diarization speaker-count hint for supported services |
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
-| `--split` | Split audio into 10-minute segments before transcription |
+| `--split` | Split audio into 30-minute segments before transcription |
 | `--prompt <name...>` | Named prompt presets from `src/prompts/entries/*.json` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |

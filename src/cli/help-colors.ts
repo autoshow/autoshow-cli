@@ -51,13 +51,8 @@ const HELP_MODEL_DELIMITER_COLOR = 'steelblue'
 const HELP_MODEL_SEGMENT_PATTERN = /(\bmodel(?:s)?(?:\s+ID)?(?:\s*\([^)]*\))?\s*:\s*)([^\n]+)/gi
 const HELP_FLAG_ROW_PATTERN = /^(\s+)(--.+?)(\s{2,})(.*)$/gm
 const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*m/
-const ANSI_ESCAPE_GLOBAL_PATTERN = /\x1b\[[0-9;]*m/g
-const ROOT_COMMAND_DESCRIPTION = 'Default command (equivalent to metadata <input>)'
-const ROOT_COMMAND_GROUP_LABEL = 'Core Commands'
-const ROOT_COMMAND_GROUP_ROW = `    (root)    ${ROOT_COMMAND_DESCRIPTION}`
 
 const hasAnsiEscapes = (text: string): boolean => ANSI_ESCAPE_PATTERN.test(text)
-const stripAnsiEscapes = (text: string): string => text.replace(ANSI_ESCAPE_GLOBAL_PATTERN, '')
 
 const colorizeModelToken = (token: string): string => {
   const leadingWhitespace = token.match(/^\s*/)?.[0] ?? ''
@@ -96,44 +91,6 @@ const colorizeHelpFlagRows = (rendered: string): string => {
   })
 }
 
-const moveRootCommandIntoCoreGroup = (rendered: string): string => {
-  if (!rendered.includes('\nCommands\n')) {
-    return rendered
-  }
-
-  const lines = rendered.split('\n')
-  const rootIndex = lines.findIndex(line => stripAnsiEscapes(line).trim() === `(root)  ${ROOT_COMMAND_DESCRIPTION}`)
-  const coreIndex = lines.findIndex(line => stripAnsiEscapes(line).trim() === ROOT_COMMAND_GROUP_LABEL)
-
-  if (rootIndex === -1 || coreIndex === -1 || rootIndex > coreIndex) {
-    return rendered
-  }
-
-  lines.splice(rootIndex, 1)
-
-  const updatedCoreIndex = lines.findIndex(line => stripAnsiEscapes(line).trim() === ROOT_COMMAND_GROUP_LABEL)
-  if (updatedCoreIndex === -1) {
-    return rendered
-  }
-
-  if (updatedCoreIndex > 0 && stripAnsiEscapes(lines[updatedCoreIndex - 1] ?? '').trim() === '') {
-    lines.splice(updatedCoreIndex - 1, 1)
-  }
-
-  const insertionIndex = lines.findIndex(line => stripAnsiEscapes(line).trim().startsWith('version'))
-  if (insertionIndex === -1) {
-    return rendered
-  }
-
-  lines.splice(insertionIndex, 0, ROOT_COMMAND_GROUP_ROW)
-  return lines.join('\n')
-}
-
-const transformHelpOutput = (rendered: string): string => {
-  const normalized = moveRootCommandIntoCoreGroup(rendered)
-  return colorizeHelpFlagRows(normalized)
-}
-
 export const withPatchedHelpConsole = async (run: () => Promise<void>): Promise<void> => {
   const originalLog = console.log
   console.log = (...args: unknown[]): void => {
@@ -141,7 +98,7 @@ export const withPatchedHelpConsole = async (run: () => Promise<void>): Promise<
       if (typeof arg !== 'string') {
         return arg
       }
-      return transformHelpOutput(arg)
+      return colorizeHelpFlagRows(arg)
     })
     originalLog(...transformed)
   }

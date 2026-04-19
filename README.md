@@ -30,8 +30,8 @@ Short version:
 ## Common Workflows
 
 ```bash
-# Metadata only (default command, no download)
-bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
+# Metadata only (no download)
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Metadata as Markdown frontmatter YAML
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
@@ -58,7 +58,7 @@ bun as music "an ambient piano instrumental" --minimax-music music-2.5
 
 # Fetch curated provider docs into project/links/bun-links.md
 bun as links --openai
-bun as links --stt
+bun as links stt
 ```
 
 ## Command Map
@@ -71,7 +71,6 @@ bun as links --stt
 
 High-value notes:
 
-- `bun as <input>` is shorthand for `bun as metadata <input>`.
 - `write` is the central orchestration command. It can summarize transcripts or extracted documents, write JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
 - `models` lets you pre-download local runtimes without running inference, for example `bun as models tiny` or `bun as models ggml-org/gemma-3-270m-it-GGUF`.
 - If YouTube starts blocking `yt-dlp`, follow [docs/cookies.md](./docs/cookies.md) to configure `YTDLP_COOKIES_FROM_BROWSER` or `YTDLP_COOKIES`.
@@ -82,7 +81,6 @@ Use command-first order for all examples and scripts:
 
 ```bash
 bun as <command> [input] [flags]
-bun as <input>              # shorthand for metadata
 bun as help <command>       # preferred targeted help
 bun as <command> --help
 bun as --version

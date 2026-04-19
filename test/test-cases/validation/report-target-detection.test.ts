@@ -149,36 +149,6 @@ describe('report target detection', () => {
     }
   })
 
-  test('treats transitional STT runs with result.json plus legacy evidence sidecars as STT', async () => {
-    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-report-detect-transitional-stt-'))
-    const runDir = join(rootDir, 'run')
-    const providerDir = join(runDir, 'providers', 'assemblyai-universal-3-pro')
-
-    try {
-      await writeBaseRun(runDir)
-      await writeSttArtifacts(providerDir)
-      await writeJson(join(providerDir, 'transcription.evidence.json'), {
-        service: 'assemblyai',
-        model: 'universal-3-pro',
-        label: 'assemblyai/universal-3-pro',
-        transcriptText: 'hello world',
-        segments: [],
-        words: [],
-        capabilities: {
-          hasNativeWordTiming: false,
-          hasConfidence: false,
-          hasSpeakerLabels: false
-        },
-        timingQuality: 'segment_interpolated',
-        speakerInventory: []
-      })
-
-      expect(await classifyReportRunDirectory(runDir)).toBe('stt')
-    } finally {
-      await rm(rootDir, { recursive: true, force: true })
-    }
-  })
-
   test('rejects runs that contain both STT and OCR artifacts', async () => {
     const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-report-detect-mixed-run-'))
     const runDir = join(rootDir, 'run')

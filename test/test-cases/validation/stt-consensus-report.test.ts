@@ -9,10 +9,6 @@ import {
 } from '~/cli/commands/setup-and-utilities/report/stt-consensus-report'
 import { writeProviderResultFixture, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
 
-const writeJson = async (path: string, value: unknown): Promise<void> => {
-  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
-}
-
 const toTranscriptText = (segments: Array<{ startSeconds: number, text: string, speaker?: string }>): string =>
   segments.map((segment) => {
     const hh = String(Math.floor(segment.startSeconds / 3600)).padStart(2, '0')
@@ -47,7 +43,6 @@ const writeProviderArtifacts = async (
   model: string,
   segments: Array<{ startSeconds: number, endSeconds: number, text: string, speaker?: string }>,
   options: {
-    writeLegacyEvidence?: boolean
     writeResult?: boolean
     resultOverride?: Record<string, unknown>
   } = {}
@@ -69,23 +64,6 @@ const writeProviderArtifacts = async (
   ))
 
   await writeFile(join(providerDir, 'transcription.txt'), `${transcriptText}\n`, 'utf8')
-  if (options.writeLegacyEvidence === true) {
-    await writeJson(join(providerDir, 'transcription.evidence.json'), {
-      service,
-      model,
-      label: `${service}/${model}`,
-      transcriptText: segments.map((segment) => segment.text).join(' '),
-      segments,
-      words,
-      capabilities: {
-        hasNativeWordTiming: true,
-        hasConfidence: false,
-        hasSpeakerLabels: segments.some((segment) => segment.speaker !== undefined)
-      },
-      timingQuality: 'native_word',
-      speakerInventory: segments.flatMap((segment) => segment.speaker ? [segment.speaker] : [])
-    })
-  }
   if (options.writeResult !== false) {
     await writeProviderResultFixture(providerDir, service, model, {
       transcriptionService: service,
@@ -265,37 +243,7 @@ describe('stt consensus report utilities', () => {
     }
   })
 
-  test('falls back to legacy evidence when result.json is unusable', async () => {
-    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-consensus-fallback-'))
-    const runDir = join(rootDir, '2026-04-15_fallback')
-
-    try {
-      await mkdir(join(runDir, 'providers'), { recursive: true })
-      await writeProviderArtifacts(
-        runDir,
-        'assemblyai-universal-3-pro',
-        'assemblyai',
-        'universal-3-pro',
-        [{ startSeconds: 0, endSeconds: 1, text: 'Fallback transcript' }],
-        {
-          writeLegacyEvidence: true,
-          resultOverride: { ok: true }
-        }
-      )
-      await writeRunManifestFixture(runDir, 'stt', {
-        step1: { title: 'Fallback run', duration: '00:01' },
-        step2: [{ transcriptionService: 'assemblyai', transcriptionModel: 'universal-3-pro', processingTime: 1000, tokenCount: 2 }]
-      })
-
-      const analysis = await analyzeSttRunDirectory(runDir)
-      expect(analysis.providers[0]?.evidencePath).toContain('transcription.evidence.json')
-      expect(analysis.consensusText).toContain('Fallback transcript')
-    } finally {
-      await rm(rootDir, { recursive: true, force: true })
-    }
-  })
-
-  test('fails with a targeted error when result.json is unusable and no legacy evidence exists', async () => {
+  test('fails when result.json is unusable', async () => {
     const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-consensus-invalid-'))
     const runDir = join(rootDir, '2026-04-15_invalid')
 
@@ -308,7 +256,6 @@ describe('stt consensus report utilities', () => {
         'universal-3-pro',
         [{ startSeconds: 0, endSeconds: 1, text: 'Broken transcript' }],
         {
-          writeLegacyEvidence: false,
           resultOverride: { ok: true }
         }
       )

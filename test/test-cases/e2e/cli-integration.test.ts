@@ -25,21 +25,28 @@ afterAll(async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 })
 
-test("bun setup completes successfully", async () => {
-  const result = await runCommand(["src/cli/create-cli.ts", "setup"])
+test("bun setup help completes successfully", async () => {
+  const result = await runCommand(["src/cli/create-cli.ts", "setup", "--help"])
   
   expect(result.exitCode).toBe(0)
 })
 
-test("bun as without a subcommand prints metadata successfully", async () => {
+test("bun as metadata prints metadata successfully", async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 
-  const result = await runCommand(["src/cli/create-cli.ts", STABLE_LOCAL_AUDIO_PATH])
+  const result = await runCommand(["src/cli/create-cli.ts", "metadata", STABLE_LOCAL_AUDIO_PATH])
   
   expect(result.exitCode).toBe(0)
 
   expect(result.stdout).toContain('"title": "1-audio"')
   expect(result.stdout).toContain('"slug": "1-audio"')
+})
+
+test("bun as without a subcommand fails", async () => {
+  const result = await runCommand(["src/cli/create-cli.ts", STABLE_LOCAL_AUDIO_PATH])
+
+  expect(result.exitCode).toBeGreaterThan(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unknown command')
 })
 
 test("bun as write processes audio successfully", async () => {

@@ -19,7 +19,6 @@ Fetch curated provider documentation pages and write one combined markdown file 
 ```bash
 bun as links
 bun as links <global-section>...
-bun as links --<global-section> [<global-section>...]
 bun as links --<provider> [section...]
 bun as links <global-section>... --<provider> [section...] [--<provider> [section...]]
 ```
@@ -36,10 +35,8 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 
 - With no sections or provider selectors, `links` fetches every curated URL in the registry.
 - Bare section names before the first provider selector are global selections. They fetch that section across every provider that has it.
-- Dashed section selectors such as `--stt` and `--tts` are shorthand for global selections across every provider that has that section.
 - A provider selector such as `--openai` starts a provider-scoped selection. Bare tokens after it are treated as section names for that provider until the next provider selector.
 - A provider selector with no sections fetches every curated section for that provider.
-- Dashed section selectors cannot be mixed with provider selectors. Use `bun as links --stt` for global STT docs or `bun as links --deepgram stt` for provider-scoped STT docs.
 - Provider selectors and section names are case-insensitive.
 - Unknown providers or unknown sections exit with a usage error.
 - A valid selection can still match zero URLs if the curated list for that provider/section is currently empty. Right now `--claude stt` is accepted by the parser but resolves to no links.
@@ -81,8 +78,6 @@ Accepted section tokens outside provider selectors:
 - `tts`
 - `video`
 
-The same names are also accepted in dashed shorthand form, for example `--stt` and `--tts`.
-
 Section availability depends on the provider. For example, `ocr` currently only matches GLM links.
 
 ## Examples
@@ -93,9 +88,6 @@ bun as links
 
 # Fetch all TTS docs across every provider
 bun as links tts
-
-# Same as above, using dashed shorthand
-bun as links --tts
 
 # Fetch every curated OpenAI doc
 bun as links --openai
@@ -133,10 +125,8 @@ If a response is empty, it writes:
 
 Global flags like `--config-path` and `--allow-over-budget` may still appear in help output, but they do not change link selection or the output file path for this command.
 
-Dashed selectors like `--stt` and `--tts` are parser-level `links` selectors, not declared Clerc flags, so they also do not appear in the standard help flag list.
-
 ## Notes
 
 - Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links.json`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
-- Provider selectors and dashed global section selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.
+- Provider selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.

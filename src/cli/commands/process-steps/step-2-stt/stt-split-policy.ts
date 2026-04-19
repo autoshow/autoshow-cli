@@ -1,7 +1,7 @@
 import { getSttLimits } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { SttTarget } from '~/types'
 
-export const DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES = 10
+export const DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES = 30
 export const SPLIT_DURATION_SAFETY_SECONDS = 1
 export const SPLIT_ATTACHMENT_CAP_SAFETY_RATIO = 0.95
 

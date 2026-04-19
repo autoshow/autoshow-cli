@@ -12,7 +12,6 @@ import { computeWordSimilarity, tokenizeWords } from '~/cli/commands/setup-and-u
 
 import type {
   ComparisonRow,
-  PersistedTranscriptionEvidence,
   ProviderSummary,
   ProviderTranscript,
   ReviewWindow,
@@ -22,7 +21,6 @@ import type {
   SpeakerTrack,
   TimeCluster,
   TimeObservation,
-  TranscriptionEvidenceCapabilities,
   TranscriptionEvidenceSegment,
   TranscriptionEvidenceWord,
   WordObservation
@@ -181,120 +179,17 @@ const summarizeRunMetadata = (metadata: unknown): RunMetadataSummary => ({
   producedProviderKeys: extractProducedProviderKeys(metadata)
 })
 
-const normalizeEvidenceCapabilities = (value: unknown): TranscriptionEvidenceCapabilities => {
-  const record = isRecord(value) ? value : {}
-  return {
-    hasNativeWordTiming: record['hasNativeWordTiming'] === true,
-    hasConfidence: record['hasConfidence'] === true,
-    hasSpeakerLabels: record['hasSpeakerLabels'] === true
-  }
-}
-
-const normalizeEvidenceSegments = (value: unknown): TranscriptionEvidenceSegment[] => {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.flatMap((entry) => {
-    if (!isRecord(entry)) {
-      return []
-    }
-
-    const startSeconds = getFiniteNumber(entry['startSeconds'])
-    const endSeconds = getFiniteNumber(entry['endSeconds'])
-    const text = getString(entry['text'])
-    if (startSeconds === null || endSeconds === null || text === null) {
-      return []
-    }
-
-    return [{
-      startSeconds,
-      endSeconds,
-      text,
-      ...(getString(entry['speaker']) ? { speaker: getString(entry['speaker']) ?? undefined } : {}),
-      ...(getFiniteNumber(entry['confidence']) !== null ? { confidence: getFiniteNumber(entry['confidence']) ?? undefined } : {})
-    }]
-  })
-}
-
-const normalizeEvidenceWords = (value: unknown): TranscriptionEvidenceWord[] => {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.flatMap((entry) => {
-    if (!isRecord(entry)) {
-      return []
-    }
-
-    const startSeconds = getFiniteNumber(entry['startSeconds'])
-    const endSeconds = getFiniteNumber(entry['endSeconds'])
-    const text = getString(entry['text'])
-    if (startSeconds === null || endSeconds === null || text === null) {
-      return []
-    }
-
-    const normalized = getString(entry['normalized']) ?? text.toLowerCase()
-    const timingSource = entry['timingSource'] === 'native' ? 'native' : 'interpolated'
-    return [{
-      startSeconds,
-      endSeconds,
-      text,
-      normalized,
-      ...(getString(entry['speaker']) ? { speaker: getString(entry['speaker']) ?? undefined } : {}),
-      ...(getFiniteNumber(entry['confidence']) !== null ? { confidence: getFiniteNumber(entry['confidence']) ?? undefined } : {}),
-      timingSource
-    }]
-  })
-}
-
-const normalizePersistedEvidence = (value: unknown): PersistedTranscriptionEvidence | null => {
-  if (!isRecord(value)) {
-    return null
-  }
-
-  const service = getString(value['service'])
-  const model = getString(value['model'])
-  const label = getString(value['label'])
-  const transcriptText = getString(value['transcriptText'])
-  if (!service || !model || !label || transcriptText === null) {
-    return null
-  }
-
-  const segments = normalizeEvidenceSegments(value['segments'])
-  const words = normalizeEvidenceWords(value['words'])
-  return {
-    service,
-    model,
-    label,
-    transcriptText,
-    segments,
-    words,
-    capabilities: normalizeEvidenceCapabilities(value['capabilities']),
-    timingQuality: value['timingQuality'] === 'native_word'
-      ? 'native_word'
-      : value['timingQuality'] === 'coarse'
-        ? 'coarse'
-        : 'segment_interpolated',
-    speakerInventory: Array.isArray(value['speakerInventory'])
-      ? value['speakerInventory'].filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
-      : []
-  }
-}
-
 const loadTranscriptArtifact = async (
   artifactId: string,
   transcriptPath: string,
-  evidencePath: string,
   resultPath: string,
   costActualByKey: Map<string, number>,
   costEstimatedByKey: Map<string, number>,
   timingActualByKey: Map<string, number>,
   timingEstimatedByKey: Map<string, number>
 ): Promise<ProviderTranscript | null> => {
-  const [transcriptRaw, legacyEvidenceArtifact, resultArtifact] = await Promise.all([
+  const [transcriptRaw, resultArtifact] = await Promise.all([
     readFile(transcriptPath, 'utf8').catch(() => null),
-    readJsonArtifact(evidencePath),
     readJsonArtifact(resultPath)
   ])
 
@@ -302,44 +197,39 @@ const loadTranscriptArtifact = async (
     return null
   }
 
-  const legacyEvidence = legacyEvidenceArtifact.parsed
-    ? normalizePersistedEvidence(legacyEvidenceArtifact.value)
-    : null
   const derivedEvidence = resultArtifact.parsed
     ? derivePersistedTranscriptionEvidenceFromProviderResult(resultArtifact.value)
     : undefined
 
-  if (resultArtifact.exists && !resultArtifact.parsed && !legacyEvidence) {
+  if (resultArtifact.exists && !resultArtifact.parsed) {
     throw new Error(`Stored STT result at ${resultPath} could not be parsed as JSON.`)
   }
 
-  if (resultArtifact.exists && resultArtifact.parsed && !derivedEvidence && !legacyEvidence) {
+  if (resultArtifact.exists && resultArtifact.parsed && !derivedEvidence) {
     throw new Error(
       `Stored STT result at ${resultPath} is not a parseable STT provider result. Expected STT metadata plus a transcription payload.`
     )
   }
 
-  const evidence = derivedEvidence ?? legacyEvidence
-  if (!evidence) {
-    throw new Error(`Run requires result.json or legacy transcription.evidence.json for ${artifactId}.`)
+  if (!derivedEvidence) {
+    throw new Error(`Run requires a valid STT result.json for ${artifactId}.`)
   }
 
   const providerResultEnvelope = resultArtifact.parsed
     ? parseProviderResultEnvelope(resultArtifact.value)
     : undefined
   const providerMetadataRecord = isRecord(providerResultEnvelope?.metadata) ? providerResultEnvelope.metadata : {}
-  const providerKey = normalizeProviderKey(evidence.service, evidence.model)
+  const providerKey = normalizeProviderKey(derivedEvidence.service, derivedEvidence.model)
 
   return {
     id: artifactId,
-    service: evidence.service,
-    model: evidence.model,
-    label: evidence.label,
+    service: derivedEvidence.service,
+    model: derivedEvidence.model,
+    label: derivedEvidence.label,
     transcriptPath,
-    evidencePath: derivedEvidence ? resultPath : evidencePath,
     resultPath,
     rawText: transcriptRaw,
-    evidence,
+    evidence: derivedEvidence,
     tokenCount: getFiniteNumber(providerMetadataRecord['tokenCount']),
     actualCostCents: costActualByKey.get(providerKey) ?? null,
     estimatedCostCents: costEstimatedByKey.get(providerKey) ?? null,
@@ -360,7 +250,6 @@ const loadProviderTranscript = async (
   return await loadTranscriptArtifact(
     providerDirName,
     join(providerDir, 'transcription.txt'),
-    join(providerDir, 'transcription.evidence.json'),
     join(providerDir, 'result.json'),
     costActualByKey,
     costEstimatedByKey,
@@ -379,7 +268,6 @@ const loadRootTranscript = async (
   await loadTranscriptArtifact(
     'root',
     join(runDir, 'transcription.txt'),
-    join(runDir, 'transcription.evidence.json'),
     join(runDir, 'result.json'),
     costActualByKey,
     costEstimatedByKey,

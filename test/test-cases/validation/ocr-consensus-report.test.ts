@@ -16,10 +16,6 @@ import { validateData } from '~/utils/validate/validation'
 import { runCommand } from '../../test-utils/test-helpers'
 import { writeProviderResultFixture, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
 
-const writeJson = async (path: string, value: unknown): Promise<void> => {
-  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
-}
-
 const createMetadata = (
   overrides: Partial<ExtractionMetadata>
 ): ExtractionMetadata =>
@@ -54,18 +50,11 @@ const writeOcrProviderArtifacts = async (
   runDir: string,
   providerDirName: string,
   metadata: ExtractionMetadata,
-  result: ExtractionResult,
-  artifactMode: 'result' | 'legacy-text' = 'result'
+  result: ExtractionResult
 ): Promise<void> => {
   const providerDir = join(runDir, 'providers', providerDirName)
   await mkdir(providerDir, { recursive: true })
   await writeProviderResultFixture(providerDir, metadata.ocrService ?? providerDirName, metadata.ocrModel, metadata as unknown as Record<string, unknown>, result as unknown as Record<string, unknown>)
-
-  if (artifactMode === 'result') {
-    return
-  }
-
-  await writeFile(join(providerDir, 'extraction.txt'), `${result.text}\n`, 'utf8')
 }
 
 const writeMinimalSttClassificationArtifacts = async (
@@ -74,27 +63,6 @@ const writeMinimalSttClassificationArtifacts = async (
   const providerDir = join(runDir, 'providers', 'assemblyai-universal-3-pro')
   await mkdir(providerDir, { recursive: true })
   await writeFile(join(providerDir, 'transcription.txt'), '[00:00:00] hello world\n', 'utf8')
-  await writeJson(join(providerDir, 'transcription.evidence.json'), {
-    service: 'assemblyai',
-    model: 'universal-3-pro',
-    label: 'assemblyai/universal-3-pro',
-    transcriptText: 'hello world',
-    segments: [{ startSeconds: 0, endSeconds: 1, text: 'hello world' }],
-    words: [{
-      startSeconds: 0,
-      endSeconds: 1,
-      text: 'hello',
-      normalized: 'hello',
-      timingSource: 'native'
-    }],
-    capabilities: {
-      hasNativeWordTiming: true,
-      hasConfidence: false,
-      hasSpeakerLabels: false
-    },
-    timingQuality: 'native_word',
-    speakerInventory: []
-  })
   await writeProviderResultFixture(providerDir, 'assemblyai', 'universal-3-pro', {
     transcriptionService: 'assemblyai',
     transcriptionModel: 'universal-3-pro',
@@ -284,6 +252,40 @@ describe('ocr consensus report utilities', () => {
       expect(await readFile(join(runDir, 'consensus-extraction.txt'), 'utf8')).toContain('Legacy fallback text only')
       expect(await readFile(join(runDir, 'consensus-review.md'), 'utf8')).toContain('Only one provider contributed this page window')
       expect(await readFile(join(runDir, 'consensus-report.md'), 'utf8')).toContain('paddle-ocr/paddle-ocr')
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
+  })
+
+  test('fails when a historical OCR run only has providerStates and flat extraction files', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-consensus-hard-break-'))
+    const runDir = join(rootDir, '2026-04-15_hard_break')
+    const providerDir = join(runDir, 'providers', 'ocrmypdf-ocrmypdf')
+
+    try {
+      await mkdir(providerDir, { recursive: true })
+      await writeFile(join(providerDir, 'extraction.txt'), 'Legacy text only.\n', 'utf8')
+      await writeRunManifestFixture(runDir, 'ocr', {
+        step1: {
+          title: 'Historical OCR run',
+          author: 'Archive',
+          pageCount: 1,
+          format: 'pdf'
+        },
+        requestedProviders: [{ service: 'ocrmypdf', model: 'ocrmypdf' }],
+        providerStates: [{
+          service: 'ocrmypdf',
+          model: 'ocrmypdf',
+          artifactDir: 'providers/ocrmypdf-ocrmypdf',
+          status: 'succeeded',
+          attempts: 1
+        }],
+        completionStatus: 'full'
+      })
+
+      await expect(analyzeOcrRunDirectory(runDir)).rejects.toThrow(
+        'No analyzable OCR provider artifacts found'
+      )
     } finally {
       await rm(rootDir, { recursive: true, force: true })
     }

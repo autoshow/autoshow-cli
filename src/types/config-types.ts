@@ -2,11 +2,11 @@ import * as v from 'valibot'
 
 const ModelArraySchema = v.optional(v.array(v.string()), undefined)
 
-const PricingConfigSchema = v.object({
+const PricingConfigSchema = v.strictObject({
   maxCents: v.optional(v.pipe(v.number(), v.minValue(0)), undefined)
 })
 
-const SttDefaultsSchema = v.object({
+const SttDefaultsSchema = v.strictObject({
   whisper: ModelArraySchema,
   gcloudStt: ModelArraySchema,
   awsStt: ModelArraySchema,
@@ -32,7 +32,7 @@ const SttDefaultsSchema = v.object({
   noCache: v.optional(v.boolean(), undefined)
 })
 
-const LlmDefaultsSchema = v.object({
+const LlmDefaultsSchema = v.strictObject({
   llama: ModelArraySchema,
   openai: ModelArraySchema,
   groq: ModelArraySchema,
@@ -42,7 +42,7 @@ const LlmDefaultsSchema = v.object({
   grok: ModelArraySchema
 })
 
-const TtsDefaultsSchema = v.object({
+const TtsDefaultsSchema = v.strictObject({
   kittenTts: ModelArraySchema,
   elevenlabsTts: ModelArraySchema,
   minimaxTts: ModelArraySchema,
@@ -57,7 +57,7 @@ const TtsDefaultsSchema = v.object({
   minimaxTtsVoice: v.optional(v.string(), undefined)
 })
 
-const ImageDefaultsSchema = v.object({
+const ImageDefaultsSchema = v.strictObject({
   geminiImage: ModelArraySchema,
   openaiImage: ModelArraySchema,
   minimaxImage: ModelArraySchema,
@@ -69,7 +69,7 @@ const ImageDefaultsSchema = v.object({
   imagenCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
-const VideoDefaultsSchema = v.object({
+const VideoDefaultsSchema = v.strictObject({
   geminiVideo: ModelArraySchema,
   minimaxVideo: ModelArraySchema,
   videoDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
@@ -78,13 +78,13 @@ const VideoDefaultsSchema = v.object({
   videoResolution: v.optional(v.string(), undefined)
 })
 
-const MusicDefaultsSchema = v.object({
+const MusicDefaultsSchema = v.strictObject({
   elevenlabsMusic: ModelArraySchema,
   minimaxMusic: ModelArraySchema,
   musicDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
-const ExtractDefaultsSchema = v.object({
+const ExtractDefaultsSchema = v.strictObject({
   lang: v.optional(v.string(), undefined),
   out: v.optional(v.picklist(['text', 'json', 'tsv', 'hocr']), undefined),
   dpi: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
@@ -98,20 +98,20 @@ const ExtractDefaultsSchema = v.object({
   pdfChapterMode: v.optional(v.picklist(['local', 'auto', 'llm']), undefined)
 })
 
-const BatchDefaultsSchema = v.object({
+const BatchDefaultsSchema = v.strictObject({
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   order: v.optional(v.picklist(['newest', 'oldest']), undefined),
   concurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
-const PostDefaultsSchema = v.object({
+const PostDefaultsSchema = v.strictObject({
   tts: v.optional(TtsDefaultsSchema, undefined),
   image: v.optional(ImageDefaultsSchema, undefined),
   video: v.optional(VideoDefaultsSchema, undefined),
   music: v.optional(MusicDefaultsSchema, undefined)
 })
 
-const ConfigDefaultsSchema = v.object({
+const ConfigDefaultsSchema = v.strictObject({
   stt: v.optional(SttDefaultsSchema, undefined),
   llm: v.optional(LlmDefaultsSchema, undefined),
   post: v.optional(PostDefaultsSchema, undefined),
@@ -120,7 +120,7 @@ const ConfigDefaultsSchema = v.object({
   prompts: v.optional(v.array(v.string()), undefined)
 })
 
-export const AutoshowConfigSchema = v.object({
+export const AutoshowConfigSchema = v.strictObject({
   version: v.literal(2),
   defaults: v.optional(ConfigDefaultsSchema, undefined),
   pricing: v.optional(PricingConfigSchema, undefined)

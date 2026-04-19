@@ -39,7 +39,7 @@ AutoShow is a Bun-native CLI for turning media, documents, HTML/articles, and te
 
 This release brings together:
 
-- a single CLI entrypoint with a root shorthand
+- a single CLI entrypoint with explicit command-first invocation
 - a step-oriented processing model from setup through post-generation
 - local and service-backed engines across STT, OCR, LLM, TTS, image, video, and music
 - persistent CLI defaults in `config/autoshow.json`
@@ -89,7 +89,6 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 
 ### High-value behaviors
 
-- `bun as <input>` is a root shorthand for `bun as metadata <input>`.
 - Hosted and mixed-provider runnable commands run an automatic cost preflight before execution.
 - `--price` prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting. Local-only commands such as `lyrics` are excluded.
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
@@ -181,11 +180,10 @@ estimated and actual cost, and estimated and actual processing time.
 
 ## Command Surface
 
-AutoShow exposes 17 workflow/support commands, plus `help`, `version`, and the root shorthand.
+AutoShow exposes 17 workflow/support commands, plus `help` and `version`.
 
 | Command | Primary purpose | Typical input |
 |---------|-----------------|---------------|
-| `(root)` | shorthand for `metadata` | URL, local file, directory, or list |
 | `metadata` | metadata-only inspection | URL, file, directory, list |
 | `download` | download/normalization without OCR, STT, or write | URL, file, directory, list |
 | `ocr` | document/image/article extraction | URL, file, directory, list |

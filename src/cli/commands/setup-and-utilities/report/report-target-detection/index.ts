@@ -44,7 +44,6 @@ const classifyArtifactDirectory = async (
   allowGenericProviderResultOcr = false
 ): Promise<{ hasSttArtifacts: boolean, hasOcrArtifacts: boolean }> => {
   const hasTranscript = entries.includes('transcription.txt')
-  const hasLegacySttEvidence = entries.includes('transcription.evidence.json')
   const hasOcrExtraction = entries.some((entry) => OCR_EXTRACTION_ARTIFACT_FILES.has(entry))
   const rawResult = await readArtifactResult(artifactDir)
 
@@ -52,7 +51,7 @@ const classifyArtifactDirectory = async (
   const hasSttResultMetadata = rawResult !== RESULT_PARSE_FAILED && hasSttProviderResultMetadata(rawResult)
   const hasGenericProviderResult = rawResult !== RESULT_PARSE_FAILED && parseProviderResultEnvelope(rawResult) !== undefined
 
-  if (hasTranscript && hasResult && !hasSttResultMetadata && !hasLegacySttEvidence && !hasOcrExtraction) {
+  if (hasTranscript && hasResult && !hasSttResultMetadata && !hasOcrExtraction) {
     const resultPath = join(artifactDir, 'result.json')
     throw new Error(
       rawResult === RESULT_PARSE_FAILED
@@ -62,7 +61,7 @@ const classifyArtifactDirectory = async (
   }
 
   return {
-    hasSttArtifacts: hasLegacySttEvidence || hasSttResultMetadata,
+    hasSttArtifacts: hasSttResultMetadata,
     hasOcrArtifacts: hasResult && (
       hasOcrExtraction
       || (
@@ -132,7 +131,7 @@ export const detectReportTarget = async (targetPath: string): Promise<DetectedRe
   const unclassifiedRuns = classifications.filter((entry) => entry.kind === null)
   if (unclassifiedRuns.length > 0) {
     throw new Error(
-      `Could not infer report type from these runs: ${unclassifiedRuns.map((entry) => entry.runDir).join(', ')}. STT runs need result.json with STT metadata or a legacy transcription.evidence.json fallback; OCR runs need result.json plus extraction.* artifacts.`
+      `Could not infer report type from these runs: ${unclassifiedRuns.map((entry) => entry.runDir).join(', ')}. STT runs need result.json with STT metadata; OCR runs need current provider result artifacts.`
     )
   }
 

@@ -286,6 +286,35 @@ test('metadata help includes markdown output flag', async () => {
   expect(result.stdout).toContain('Markdown frontmatter YAML')
 })
 
+test('canonical help forms still work for metadata', async () => {
+  const helpCommandResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'help',
+    'metadata'
+  ])
+  const commandFlagResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'metadata',
+    '--help'
+  ])
+
+  expect(helpCommandResult.exitCode).toBe(0)
+  expect(helpCommandResult.stdout).toContain('bun as metadata')
+  expect(commandFlagResult.exitCode).toBe(0)
+  expect(commandFlagResult.stdout).toContain('bun as metadata')
+})
+
+test('legacy help argument order fails', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    '--help',
+    'metadata'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unsupported argument order')
+})
+
 test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -439,7 +468,7 @@ test('write --resume-missing rejects unsupported command', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--resume-missing is not supported with "write".')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: resumeMissing')
 })
 
 test('write EPUB inspect mode rejects explicit non-JSON output the same way as ocr', async () => {
@@ -814,7 +843,7 @@ test('write rejects removed --json-output flag', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--json-output')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: jsonOutput')
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('was removed')
 })
 
@@ -835,7 +864,7 @@ test('write rejects removed --md-output flag', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--md-output')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: mdOutput')
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('was removed')
 })
 
@@ -1053,7 +1082,7 @@ test('stt rejects removed generic --provider aliases', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--provider')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: provider')
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('Use provider-named flags')
 })
 
@@ -1192,7 +1221,7 @@ test('ocr rejects removed generic --provider aliases', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--provider')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: provider')
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('Use provider-named flags')
 })
 
@@ -1264,7 +1293,7 @@ test('write rejects removed structured output flags', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--structured')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: structured')
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('Structured output is now internal')
 })
 
@@ -1286,7 +1315,7 @@ test('loadConfig rejects legacy pricing.maxUsd', async () => {
   }
 })
 
-test('loadConfig normalizes legacy scalar model selections to arrays', async () => {
+test('loadConfig rejects scalar model selections that do not match the v2 schema', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-config-normalize-'))
   const configPath = join(tempDir, 'autoshow.json')
 
@@ -1312,26 +1341,7 @@ test('loadConfig normalizes legacy scalar model selections to arrays', async () 
       }
     }, null, 2))
 
-    await expect(loadConfig(configPath)).resolves.toEqual({
-      version: 2,
-      defaults: {
-        stt: {
-          speechmaticsStt: ['enhanced']
-        },
-        llm: {
-          openai: ['gpt-5.4-mini'],
-          grok: ['grok-4.20-non-reasoning']
-        },
-        post: {
-          video: {
-            geminiVideo: ['veo-3.1-fast-generate-preview']
-          }
-        },
-        extract: {
-          mistralOcr: ['mistral-ocr-2512']
-        }
-      }
-    })
+    await expect(loadConfig(configPath)).rejects.toThrow('autoshow config')
   } finally {
     await rm(tempDir, { recursive: true, force: true })
   }
@@ -1351,9 +1361,7 @@ test('loadConfig rejects removed defaults.stt.openaiStt', async () => {
       }
     }, null, 2))
 
-    await expect(loadConfig(configPath)).rejects.toThrow(
-      'defaults.stt.openaiStt is no longer supported'
-    )
+    await expect(loadConfig(configPath)).rejects.toThrow('autoshow config')
   } finally {
     await rm(tempDir, { recursive: true, force: true })
   }

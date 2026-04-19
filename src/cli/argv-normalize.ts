@@ -26,25 +26,12 @@ const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = new Set<string>([
   '--llama'
 ])
 
-const UNSUPPORTED_LEGACY_FLAGS = new Set<string>([
-  '--dry-run',
-  '--provider',
-  '--json-output',
-  '--md-output',
-  '--structured',
-  '--no-structured',
-  '--structured-strict',
-  '--no-structured-strict',
-  '--structured-compat-retries'
-])
-
 export const formatInput = (argv: string[]): string => {
   const redacted = redactCliArgv(argv)
   return `bun as ${redacted.join(' ')}`.trim()
 }
 
 export const validateSttFlagCompatibility = (argv: string[]): void => {
-  validateUnsupportedLegacyFlags(argv)
   validateLyricsFlagCompatibility(argv)
 
   if (argv[0] !== 'stt') {
@@ -62,39 +49,14 @@ const validateLyricsFlagCompatibility = (argv: string[]): void => {
     return
   }
 
-  const REMOVED_FLAG_MESSAGES: Record<string, string> = {
-    '--out': '--out has been removed. Lyrics outputs always go to autoshow run directories under ./output.',
-    '--res': '--res has been removed. Lyrics rendering always uses 1920x1080.',
-    '--fps': '--fps has been removed. Lyrics rendering always uses 30fps.',
-    '--tmp': '--tmp has been removed. Lyrics uses a per-run .lyrics-tmp workspace inside each output directory.'
-  }
-
   for (const token of argv) {
     if (!token.startsWith('--')) {
       continue
     }
 
     const flag = token.includes('=') ? token.slice(0, token.indexOf('=')) : token
-    const removedMessage = REMOVED_FLAG_MESSAGES[flag]
-    if (removedMessage) {
-      throw CLIUsageError(removedMessage)
-    }
-
     if (flag === '--price') {
       throw CLIUsageError('The "lyrics" command is local-only and does not support --price.')
-    }
-  }
-}
-
-const validateUnsupportedLegacyFlags = (argv: string[]): void => {
-  for (const token of argv) {
-    if (!token.startsWith('--')) {
-      continue
-    }
-
-    const flag = token.includes('=') ? token.slice(0, token.indexOf('=')) : token
-    if (UNSUPPORTED_LEGACY_FLAGS.has(flag)) {
-      throw CLIUsageError(`Unknown option ${flag}`)
     }
   }
 }

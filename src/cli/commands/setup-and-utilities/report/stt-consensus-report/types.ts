@@ -11,7 +11,6 @@ export type ProviderTranscript = {
   model: string
   label: string
   transcriptPath: string
-  evidencePath: string
   resultPath: string
   rawText: string
   evidence: PersistedTranscriptionEvidence

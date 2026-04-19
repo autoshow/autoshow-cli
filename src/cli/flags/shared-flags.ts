@@ -134,7 +134,7 @@ export const transcriptionFlags = {
     type: String
   },
   split: {
-    description: 'Split audio into 10-minute segments for transcription',
+    description: 'Split audio into 30-minute segments for transcription',
     type: Boolean,
     default: false,
     negatable: false

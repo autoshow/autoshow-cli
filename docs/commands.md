@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 17 named commands plus the root shorthand. `bun as <input>` is equivalent to `bun as metadata <input>`.
+AutoShow currently exposes 17 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -33,11 +33,8 @@ bun as report output/2026-04-15_episode
 # full pipeline (download/transcribe + LLM write)
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 
-# root shorthand for metadata (default command)
-bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
-
 # metadata with save
-bun as --save "https://www.youtube.com/watch?v=u1-WHqATSQU"
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --save
 
 # metadata as Markdown frontmatter YAML
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
@@ -71,7 +68,6 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 
 ## Command Map
 
-- `(root)` shorthand: `bun as <input>` = `bun as metadata <input>`
 - `metadata`: [metadata](./commands/setup-and-utilities/metadata/metadata.md)
 - `setup` / model pre-downloads: [setup](./commands/process-steps/step-0-setup/setup.md)
 - `sample`: [sample](./commands/setup-and-utilities/sample/sample.md)
@@ -92,7 +88,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 
 ## Selection Guide
 
-- Use `metadata` (or just `bun as <input>`) for quick metadata inspection without downloading.
+- Use `metadata` for quick metadata inspection without downloading.
 - Use `download` for downloading media/documents and collecting metadata.
 - Use `ocr` for documents/images when you only need OCR/text extraction.
 - Use `stt` for audio/video when you only need transcript + prompt output.

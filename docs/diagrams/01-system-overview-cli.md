@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 17 named commands plus the root shorthand (`bun as <input>` => `metadata <input>`): `metadata`, `download`, `ocr`, `stt`, `report`, `write`, `tts`, `image`, `video`, `music`, `lyrics`, `config`, `cache`, `setup`, `sample`, `models`, `links`
+   - Defines 17 named commands: `metadata`, `download`, `ocr`, `stt`, `report`, `write`, `tts`, `image`, `video`, `music`, `lyrics`, `config`, `cache`, `setup`, `sample`, `models`, `links`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -51,9 +51,9 @@ src/cli/create-cli.ts
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  validateSttFlagCompatibility()                                              │
-│  - Blocks LLM provider flags on `stt` and removed legacy flags on `lyrics`   │
-│  normalizeCommandHelpShortcut()                                              │
-│  - Maps "--help write" style input to "help write"                           │
+│  - Blocks LLM provider flags on `stt`                                        │
+│  rejectUnexpectedFlags()                                                     │
+│  - Fails unknown flags before command execution                              │
 │  validateArgumentOrder()                                                     │
 │  - Rejects flag-first invocation order such as "bun as --openai ... write"   │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -78,7 +78,7 @@ src/cli/create-cli.ts
 │  COMMANDS  (src/cli/create-cli.ts + per-step define-*-command.ts files)      │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
-│  │ (root) / metadata│  │      write       │  │   stt            │            │
+│  │    metadata      │  │      write       │  │   stt            │            │
 │  │                  │  │                  │  │                  │            │
 │  │ Metadata only    │  │ Download +       │  │ Download +       │            │
 │  │ (no download)    │  │ Transcribe +     │  │ Transcribe only  │            │

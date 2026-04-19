@@ -2,7 +2,7 @@
 
 Collect and display metadata for media or documents without downloading files, running transcription, extraction, or LLM steps.
 
-This is the most fundamental command in the pipeline hierarchy: `metadata` → `download` → `stt`/`ocr` → `write`. It is also the default command when no subcommand is specified (`bun as <input>` is equivalent to `bun as metadata <input>`).
+This is the most fundamental command in the pipeline hierarchy: `metadata` → `download` → `stt`/`ocr` → `write`.
 
 ## Outline
 
@@ -15,7 +15,6 @@ This is the most fundamental command in the pipeline hierarchy: `metadata` → `
 
 ```bash
 bun as metadata <input>
-bun as <input>               # root shorthand
 ```
 
 ## Supported Inputs
@@ -115,14 +114,11 @@ output/YYYY-MM-DD_HH-MM-SS_title/
 ## Examples
 
 ```bash
-# Display metadata for a YouTube video (default command)
-bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"
-
-# Same thing, explicit metadata command
+# Display metadata for a YouTube video
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Display and save metadata to disk
-bun as --save "https://www.youtube.com/watch?v=u1-WHqATSQU"
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --save
 
 # Display metadata as Markdown frontmatter YAML
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
