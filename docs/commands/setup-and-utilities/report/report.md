@@ -21,8 +21,8 @@ bun as report <outputDir>
 
 The target can be:
 
-- a single run directory that already contains `providers/` and `run.json`
-- a batch root whose immediate child directories each contain `providers/` and `run.json`
+- a single run directory that contains `run.json` plus reportable STT or OCR artifacts
+- a batch root whose immediate child directories each contain `run.json` plus reportable artifacts
 
 ## Target Detection
 
@@ -30,10 +30,11 @@ The target can be:
 
 Detection rules:
 
-- if the target itself contains `providers/` and `run.json`, it is treated as one run
+- if the target itself contains `run.json` plus reportable artifacts, it is treated as one run
 - otherwise, `report` scans only the immediate child directories and treats matching children as batch runs
-- a run is classified as STT if any provider directory contains `transcription.evidence.json`
-- a run is classified as OCR if any provider directory contains `result.json`
+- a run is classified as STT when a provider or root `result.json` contains STT metadata (`metadata.transcriptionService` and `metadata.transcriptionModel`)
+- legacy `transcription.evidence.json` files are only a compatibility fallback for historical STT runs
+- a run is classified as OCR when OCR extraction artifacts are present alongside `result.json`
 - all discovered runs in one invocation must resolve to the same kind
 
 Failures:
@@ -48,9 +49,9 @@ STT reporting analyzes persisted evidence-rich STT runs. It is most useful after
 
 STT prerequisites and behavior:
 
-- successful provider directories must include `transcription.evidence.json`
-- older STT runs without `transcription.evidence.json` are rejected
-- when native payloads were available during transcription, provider directories may also contain `transcription.raw.json`
+- new STT runs use `result.json` as the canonical structured artifact
+- STT evidence is derived from `result.json` first and falls back to legacy `transcription.evidence.json` only for historical runs
+- single-provider root-output STT runs can be analyzed directly from root `transcription.txt` plus root `result.json`
 - if the source audio file is still present and `ffmpeg` is available on `PATH`, flagged review windows can also produce `review-clips/*.mp3`
 
 Per run, STT reporting writes:

@@ -1,7 +1,11 @@
 import { mkdir, readdir, readFile } from 'node:fs/promises'
 import { basename, extname, join, resolve } from 'node:path'
 
-import { readProviderResultEntry, readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import {
+  derivePersistedTranscriptionEvidenceFromProviderResult,
+  parseProviderResultEnvelope
+} from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-result-artifacts'
 import { commandExists, exec, fileExists } from '~/utils/cli-utils'
 import { average, clamp, getFiniteNumber, getString, isRecord, median } from '~/cli/commands/setup-and-utilities/report/report-internals/primitives'
 import { computeWordSimilarity, tokenizeWords } from '~/cli/commands/setup-and-utilities/report/report-internals/text'
@@ -44,11 +48,29 @@ const cleanSpacing = (text: string): string =>
 
 const joinWordTexts = (words: Array<{ text: string }>): string => cleanSpacing(words.map((word) => word.text).join(' '))
 
-const readJsonFile = async (path: string): Promise<unknown> => {
+const readJsonArtifact = async (
+  path: string
+): Promise<{ exists: boolean, parsed: boolean, value: unknown | null }> => {
   try {
-    return JSON.parse(await readFile(path, 'utf8')) as unknown
-  } catch {
-    return null
+    return {
+      exists: true,
+      parsed: true,
+      value: JSON.parse(await readFile(path, 'utf8')) as unknown
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return {
+        exists: false,
+        parsed: false,
+        value: null
+      }
+    }
+
+    return {
+      exists: true,
+      parsed: false,
+      value: null
+    }
   }
 }
 
@@ -260,44 +282,61 @@ const normalizePersistedEvidence = (value: unknown): PersistedTranscriptionEvide
   }
 }
 
-const loadProviderTranscript = async (
-  runDir: string,
-  providerDirName: string,
+const loadTranscriptArtifact = async (
+  artifactId: string,
+  transcriptPath: string,
+  evidencePath: string,
+  resultPath: string,
   costActualByKey: Map<string, number>,
   costEstimatedByKey: Map<string, number>,
   timingActualByKey: Map<string, number>,
   timingEstimatedByKey: Map<string, number>
 ): Promise<ProviderTranscript | null> => {
-  const providerDir = join(runDir, 'providers', providerDirName)
-  const transcriptPath = join(providerDir, 'transcription.txt')
-  const evidencePath = join(providerDir, 'transcription.evidence.json')
-  const resultPath = join(providerDir, 'result.json')
-
-  const [transcriptRaw, evidenceRaw, providerResult] = await Promise.all([
+  const [transcriptRaw, legacyEvidenceArtifact, resultArtifact] = await Promise.all([
     readFile(transcriptPath, 'utf8').catch(() => null),
-    readJsonFile(evidencePath),
-    readProviderResultEntry(providerDir)
+    readJsonArtifact(evidencePath),
+    readJsonArtifact(resultPath)
   ])
 
   if (typeof transcriptRaw !== 'string' || transcriptRaw.trim().length === 0) {
     return null
   }
 
-  const evidence = normalizePersistedEvidence(evidenceRaw)
-  if (!evidence) {
-    throw new Error(`Run requires transcription.evidence.json for providers/${providerDirName}. Rerun STT with the updated evidence persistence before generating a consensus report.`)
+  const legacyEvidence = legacyEvidenceArtifact.parsed
+    ? normalizePersistedEvidence(legacyEvidenceArtifact.value)
+    : null
+  const derivedEvidence = resultArtifact.parsed
+    ? derivePersistedTranscriptionEvidenceFromProviderResult(resultArtifact.value)
+    : undefined
+
+  if (resultArtifact.exists && !resultArtifact.parsed && !legacyEvidence) {
+    throw new Error(`Stored STT result at ${resultPath} could not be parsed as JSON.`)
   }
 
-  const providerMetadataRecord = isRecord(providerResult?.metadata) ? providerResult.metadata : {}
+  if (resultArtifact.exists && resultArtifact.parsed && !derivedEvidence && !legacyEvidence) {
+    throw new Error(
+      `Stored STT result at ${resultPath} is not a parseable STT provider result. Expected STT metadata plus a transcription payload.`
+    )
+  }
+
+  const evidence = derivedEvidence ?? legacyEvidence
+  if (!evidence) {
+    throw new Error(`Run requires result.json or legacy transcription.evidence.json for ${artifactId}.`)
+  }
+
+  const providerResultEnvelope = resultArtifact.parsed
+    ? parseProviderResultEnvelope(resultArtifact.value)
+    : undefined
+  const providerMetadataRecord = isRecord(providerResultEnvelope?.metadata) ? providerResultEnvelope.metadata : {}
   const providerKey = normalizeProviderKey(evidence.service, evidence.model)
 
   return {
-    id: providerDirName,
+    id: artifactId,
     service: evidence.service,
     model: evidence.model,
     label: evidence.label,
     transcriptPath,
-    evidencePath,
+    evidencePath: derivedEvidence ? resultPath : evidencePath,
     resultPath,
     rawText: transcriptRaw,
     evidence,
@@ -308,6 +347,45 @@ const loadProviderTranscript = async (
     estimatedProcessingTimeMs: timingEstimatedByKey.get(providerKey) ?? null
   }
 }
+
+const loadProviderTranscript = async (
+  runDir: string,
+  providerDirName: string,
+  costActualByKey: Map<string, number>,
+  costEstimatedByKey: Map<string, number>,
+  timingActualByKey: Map<string, number>,
+  timingEstimatedByKey: Map<string, number>
+): Promise<ProviderTranscript | null> => {
+  const providerDir = join(runDir, 'providers', providerDirName)
+  return await loadTranscriptArtifact(
+    providerDirName,
+    join(providerDir, 'transcription.txt'),
+    join(providerDir, 'transcription.evidence.json'),
+    join(providerDir, 'result.json'),
+    costActualByKey,
+    costEstimatedByKey,
+    timingActualByKey,
+    timingEstimatedByKey
+  )
+}
+
+const loadRootTranscript = async (
+  runDir: string,
+  costActualByKey: Map<string, number>,
+  costEstimatedByKey: Map<string, number>,
+  timingActualByKey: Map<string, number>,
+  timingEstimatedByKey: Map<string, number>
+): Promise<ProviderTranscript | null> =>
+  await loadTranscriptArtifact(
+    'root',
+    join(runDir, 'transcription.txt'),
+    join(runDir, 'transcription.evidence.json'),
+    join(runDir, 'result.json'),
+    costActualByKey,
+    costEstimatedByKey,
+    timingActualByKey,
+    timingEstimatedByKey
+  )
 
 const buildSpeakerTracks = (providers: ProviderTranscript[]): SpeakerTrack[] =>
   providers.flatMap((provider) => {
@@ -953,7 +1031,7 @@ const addReviewArtifacts = async (
 
 export const analyzeSttRunDirectory = async (runDir: string): Promise<RunConsensusAnalysis> => {
   const resolvedRunDir = resolve(runDir)
-  const rootMetadata = (await readRunManifest(resolvedRunDir, 'stt'))?.metadata ?? null
+  const rootMetadata = (await readRunManifest(resolvedRunDir))?.metadata ?? null
   const metadataSummary = summarizeRunMetadata(rootMetadata)
   const costActualByKey = extractCostStepMap(rootMetadata, 'actual')
   const costEstimatedByKey = extractCostStepMap(rootMetadata, 'estimated')
@@ -977,7 +1055,17 @@ export const analyzeSttRunDirectory = async (runDir: string): Promise<RunConsens
   )).filter((provider): provider is ProviderTranscript => provider !== null)
 
   if (providers.length === 0) {
-    throw new Error(`No provider evidence artifacts found under ${resolvedRunDir}`)
+    const rootTranscript = await loadRootTranscript(
+      resolvedRunDir,
+      costActualByKey,
+      costEstimatedByKey,
+      timingActualByKey,
+      timingEstimatedByKey
+    )
+    if (!rootTranscript) {
+      throw new Error(`No STT evidence artifacts found under ${resolvedRunDir}`)
+    }
+    providers = [rootTranscript]
   }
 
   providers = applyCanonicalSpeakers(providers)

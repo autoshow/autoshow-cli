@@ -23,7 +23,8 @@ import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblya
 import { runGladiaStt } from './stt-services/gladia/run-gladia-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
 import { formatTranscriptText } from './stt-utils/stt-utils'
-import { buildPersistedTranscriptionEvidence, mergeTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/stt-evidence'
+import { mergeTranscriptionEvidence } from './stt-utils/stt-evidence'
+import { writeSttResultArtifact } from './stt-utils/stt-result-artifacts'
 import { resolveDiarizationOptions } from './cli'
 import { ensureSttTargetSetup as ensureSttTargetSetupViaBroker } from './bootstrap'
 import {
@@ -209,18 +210,12 @@ const resolveSttEngine = (options: ProcessingOptions): TranscribeEngine => {
   return 'whisper'
 }
 
-const persistTranscriptionEvidenceArtifacts = async (
+const persistTranscriptionStructuredArtifact = async (
   outputDir: string,
   result: TranscriptionResult,
-  metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
+  metadata: Step2Metadata
 ): Promise<void> => {
-  const evidence = buildPersistedTranscriptionEvidence(result, metadata)
-  await Bun.write(`${outputDir}/transcription.evidence.json`, `${JSON.stringify(evidence, null, 2)}\n`)
-
-  const rawResponse = serializeEvidenceRawResponse(result)
-  if (rawResponse !== null) {
-    await Bun.write(`${outputDir}/transcription.raw.json`, rawResponse)
-  }
+  await writeSttResultArtifact(outputDir, metadata, result)
 }
 
 export const ensureSttTargetSetup = async (
@@ -471,7 +466,7 @@ const runSplitTranscription = async (
 
   const combined = mergeSplitTranscriptionChunks(results)
   await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(combined.result.segments))
-  await persistTranscriptionEvidenceArtifacts(outputDir, combined.result, combined.metadata)
+  await persistTranscriptionStructuredArtifact(outputDir, combined.result, combined.metadata)
   return combined
 }
 
@@ -501,7 +496,7 @@ export const sttTarget = async (
 
   try {
     const transcription = await dispatchStt(target, audioPath, outputDir, 0, options)
-    await persistTranscriptionEvidenceArtifacts(outputDir, transcription.result, transcription.metadata)
+    await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
     return transcription
   } catch (error) {
     const splitRetryReason = resolveSplitRetryReason(target, options.split === true, error)

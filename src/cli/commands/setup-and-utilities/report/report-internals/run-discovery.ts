@@ -7,7 +7,16 @@ const isRunDirectory = async (targetDir: string): Promise<boolean> => {
     return false
   }
 
-  return entries.includes('providers') && entries.includes('run.json')
+  if (!entries.includes('run.json')) {
+    return false
+  }
+
+  return entries.includes('providers')
+    || entries.includes('result.json')
+    || entries.includes('transcription.txt')
+    || entries.includes('extraction.txt')
+    || entries.includes('extraction.tsv')
+    || entries.includes('extraction.hocr')
 }
 
 export const listProviderDirectories = async (runDir: string): Promise<string[]> => {

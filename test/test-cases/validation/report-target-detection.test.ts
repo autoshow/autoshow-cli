@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, test } from 'bun:test'
+import { writeProviderResultFixture } from '../../test-utils/manifest-helpers'
 
 import {
   classifyReportRunDirectory,
@@ -14,30 +15,27 @@ const writeJson = async (path: string, value: unknown): Promise<void> => {
 }
 
 const writeBaseRun = async (runDir: string): Promise<void> => {
-  await mkdir(join(runDir, 'providers'), { recursive: true })
+  await mkdir(runDir, { recursive: true })
   await writeJson(join(runDir, 'run.json'), { metadata: {} })
 }
 
 const writeSttArtifacts = async (
-  runDir: string,
-  providerDirName = 'assemblyai-universal-3-pro'
+  artifactDir: string,
+  service = 'assemblyai',
+  model = 'universal-3-pro'
 ): Promise<void> => {
-  const providerDir = join(runDir, 'providers', providerDirName)
-  await mkdir(providerDir, { recursive: true })
-  await writeJson(join(providerDir, 'transcription.evidence.json'), {
-    service: 'assemblyai',
-    model: 'universal-3-pro',
-    label: 'assemblyai/universal-3-pro',
-    transcriptText: 'hello world',
-    segments: [],
-    words: [],
-    capabilities: {
-      hasNativeWordTiming: true,
-      hasConfidence: false,
-      hasSpeakerLabels: false
-    },
-    timingQuality: 'native_word',
-    speakerInventory: []
+  await mkdir(artifactDir, { recursive: true })
+  await writeFile(join(artifactDir, 'transcription.txt'), '[00:00:00] hello world\n', 'utf8')
+  await writeProviderResultFixture(artifactDir, service, model, {
+    transcriptionService: service,
+    transcriptionModel: model,
+    processingTime: 1000,
+    tokenCount: 2
+  }, {
+    text: 'hello world',
+    segments: [
+      { start: '00:00:00', end: '00:00:00', text: 'hello world' }
+    ]
   })
 }
 
@@ -47,13 +45,37 @@ const writeOcrArtifacts = async (
 ): Promise<void> => {
   const providerDir = join(runDir, 'providers', providerDirName)
   await mkdir(providerDir, { recursive: true })
-  await writeJson(join(providerDir, 'result.json'), { metadata: {}, result: {} })
+  await writeProviderResultFixture(providerDir, 'ocrmypdf', 'ocrmypdf', {
+    ocrService: 'ocrmypdf',
+    ocrModel: 'ocrmypdf'
+  }, {
+    pages: [],
+    text: 'Only OCR text.'
+  })
   await writeFile(join(providerDir, 'extraction.txt'), 'Only OCR text.\n', 'utf8')
 }
 
 describe('report target detection', () => {
   test('detects a single STT run', async () => {
     const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-report-detect-stt-'))
+    const runDir = join(rootDir, 'run')
+
+    try {
+      await writeBaseRun(runDir)
+      await writeSttArtifacts(join(runDir, 'providers', 'assemblyai-universal-3-pro'))
+
+      expect(await classifyReportRunDirectory(runDir)).toBe('stt')
+
+      const detected = await detectReportTarget(runDir)
+      expect(detected.kind).toBe('stt')
+      expect(detected.runDirectories).toEqual([runDir])
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
+  })
+
+  test('detects a root-output single-provider STT run', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-report-detect-root-stt-'))
     const runDir = join(rootDir, 'run')
 
     try {
@@ -76,6 +98,7 @@ describe('report target detection', () => {
 
     try {
       await writeBaseRun(runDir)
+      await mkdir(join(runDir, 'providers'), { recursive: true })
       await writeOcrArtifacts(runDir)
 
       expect(await classifyReportRunDirectory(runDir)).toBe('ocr')
@@ -97,6 +120,8 @@ describe('report target detection', () => {
     try {
       await writeBaseRun(runA)
       await writeBaseRun(runB)
+      await mkdir(join(runA, 'providers'), { recursive: true })
+      await mkdir(join(runB, 'providers'), { recursive: true })
 
       const discovered = await discoverReportRunDirectories(batchDir)
       expect(discovered).toEqual([runA, runB])
@@ -113,8 +138,9 @@ describe('report target detection', () => {
 
     try {
       await writeBaseRun(sttRun)
-      await writeSttArtifacts(sttRun)
+      await writeSttArtifacts(join(sttRun, 'providers', 'assemblyai-universal-3-pro'))
       await writeBaseRun(ocrRun)
+      await mkdir(join(ocrRun, 'providers'), { recursive: true })
       await writeOcrArtifacts(ocrRun)
 
       await expect(detectReportTarget(batchDir)).rejects.toThrow('Mixed report kinds are not supported')
@@ -123,14 +149,45 @@ describe('report target detection', () => {
     }
   })
 
-  test('rejects runs that contain both STT and OCR artifacts', async () => {
-    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-report-detect-mixed-run-'))
+  test('treats transitional STT runs with result.json plus legacy evidence sidecars as STT', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-report-detect-transitional-stt-'))
     const runDir = join(rootDir, 'run')
+    const providerDir = join(runDir, 'providers', 'assemblyai-universal-3-pro')
 
     try {
       await writeBaseRun(runDir)
-      await writeSttArtifacts(runDir, 'mixed-provider')
-      await writeOcrArtifacts(runDir, 'mixed-provider')
+      await writeSttArtifacts(providerDir)
+      await writeJson(join(providerDir, 'transcription.evidence.json'), {
+        service: 'assemblyai',
+        model: 'universal-3-pro',
+        label: 'assemblyai/universal-3-pro',
+        transcriptText: 'hello world',
+        segments: [],
+        words: [],
+        capabilities: {
+          hasNativeWordTiming: false,
+          hasConfidence: false,
+          hasSpeakerLabels: false
+        },
+        timingQuality: 'segment_interpolated',
+        speakerInventory: []
+      })
+
+      expect(await classifyReportRunDirectory(runDir)).toBe('stt')
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects runs that contain both STT and OCR artifacts', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-report-detect-mixed-run-'))
+    const runDir = join(rootDir, 'run')
+    const providerDir = join(runDir, 'providers', 'mixed-provider')
+
+    try {
+      await writeBaseRun(runDir)
+      await writeSttArtifacts(providerDir)
+      await writeFile(join(providerDir, 'extraction.txt'), 'Only OCR text.\n', 'utf8')
 
       expect(await classifyReportRunDirectory(runDir)).toBe('mixed')
       await expect(detectReportTarget(runDir)).rejects.toThrow('mixed STT and OCR artifacts')

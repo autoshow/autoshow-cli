@@ -30,6 +30,7 @@ import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { collectSttTargets, formatSttTargetLabel, getSttTargetDirectoryName, getSttTargetKey } from './step-2-stt/stt-targets'
 import { prepareSttMedia, resolveSttSourceMetadata } from './step-2-stt/media'
 import { getSttEngineCapabilities, sttTarget } from './step-2-stt/orchestrator'
+import { writeSttResultArtifact } from './step-2-stt/stt-utils/stt-result-artifacts'
 import { mergeStep2TimingMetadata } from './step-2-stt/stt-timing-metadata'
 import {
   buildMetadataErrorEntries,
@@ -657,6 +658,7 @@ export const processStt = async (
         const artifactFiles: Record<string, string> = {
           audio: prepared.step1Metadata.audioFileName,
           transcript: 'transcription.txt',
+          result: 'result.json',
           captions: 'youtube-captions.vtt',
           captionMetadata: 'youtube-captions.json',
           prompt: 'prompt.md',
@@ -735,6 +737,7 @@ export const processStt = async (
       const artifactFiles: Record<string, string> = {
         audio: prepared.step1Metadata.audioFileName,
         transcript: 'transcription.txt',
+        result: 'result.json',
         prompt: 'prompt.md',
         run: 'run.json'
       }
@@ -889,14 +892,7 @@ export const processStt = async (
           transcription.metadata,
           queueWaitMs > 0 ? { queueWaitMs } : undefined
         )
-        await Bun.write(join(providerDir, 'result.json'), JSON.stringify({
-          schemaVersion: 2,
-          kind: 'provider-result',
-          provider: target.service,
-          model: target.model,
-          metadata: metadataWithQueueTiming,
-          result: transcription.result
-        }, null, 2))
+        await writeSttResultArtifact(providerDir, metadataWithQueueTiming, transcription.result)
         successes[index] = {
           target,
           metadata: metadataWithQueueTiming,

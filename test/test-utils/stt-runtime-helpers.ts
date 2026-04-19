@@ -31,11 +31,12 @@ export const snapshotEnv = <const T extends readonly string[]>(keys: T): (() => 
 
   return () => {
     for (const key of keys) {
-      const value = snapshot[key]
+      const envKey = key as T[number]
+      const value = snapshot[envKey]
       if (value === undefined) {
-        delete process.env[key]
+        delete process.env[envKey]
       } else {
-        process.env[key] = value
+        process.env[envKey] = value
       }
     }
   }

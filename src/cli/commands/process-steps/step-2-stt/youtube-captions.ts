@@ -14,10 +14,9 @@ import { exec } from '~/utils/cli-utils'
 import { getVideoInfo } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { buildYtDlpFailureMessage, buildYtDlpSubtitleDownloadArgs } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-options'
 import { readExistingSttRun } from './stt-batch/stt-run-state'
-import { buildPersistedTranscriptionEvidence, serializeEvidenceRawResponse } from './stt-utils/stt-evidence'
 import { countTokens, formatTranscriptText, toTimestamp } from './stt-utils/stt-utils'
+import { writeSttResultArtifact } from './stt-utils/stt-result-artifacts'
 import { getSttTargetDirectoryName } from './stt-targets'
-import { writeProviderResult } from '../manifest-utils'
 
 export const YOUTUBE_CAPTIONS_SERVICE = 'youtube-captions' as const
 export const YOUTUBE_CAPTIONS_MODEL = 'subtitle-track' as const
@@ -449,8 +448,7 @@ const syncRootArtifacts = async (
     syncRootArtifact(providerDir, outputDir, 'transcription.txt'),
     syncRootArtifact(providerDir, outputDir, 'youtube-captions.vtt'),
     syncRootArtifact(providerDir, outputDir, 'youtube-captions.json'),
-    syncRootArtifact(providerDir, outputDir, 'transcription.evidence.json'),
-    syncRootArtifact(providerDir, outputDir, 'transcription.raw.json')
+    syncRootArtifact(providerDir, outputDir, 'result.json')
   ])
 }
 
@@ -553,20 +551,7 @@ export const tryResolveYoutubeCaptionTranscription = async (
     await copyFile(downloadedVttPath, providerVttPath)
     await Bun.write(providerMetadataPath, `${JSON.stringify(metadataFile, null, 2)}\n`)
 
-    const evidence = buildPersistedTranscriptionEvidence(transcription, step2Metadata)
-    await Bun.write(join(providerDir, 'transcription.evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`)
-    const rawResponse = serializeEvidenceRawResponse(transcription)
-    if (rawResponse !== null) {
-      await Bun.write(join(providerDir, 'transcription.raw.json'), rawResponse)
-    }
-
-    await writeProviderResult(
-      providerDir,
-      step2Metadata.transcriptionService,
-      step2Metadata.transcriptionModel,
-      step2Metadata,
-      transcription
-    )
+    await writeSttResultArtifact(providerDir, step2Metadata, transcription)
     await syncRootArtifacts(providerDir, outputDir)
 
     return {

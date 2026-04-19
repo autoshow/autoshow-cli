@@ -45,7 +45,12 @@ const writeProviderArtifacts = async (
   providerDirName: string,
   service: string,
   model: string,
-  segments: Array<{ startSeconds: number, endSeconds: number, text: string, speaker?: string }>
+  segments: Array<{ startSeconds: number, endSeconds: number, text: string, speaker?: string }>,
+  options: {
+    writeLegacyEvidence?: boolean
+    writeResult?: boolean
+    resultOverride?: Record<string, unknown>
+  } = {}
 ): Promise<void> => {
   const providerDir = join(runDir, 'providers', providerDirName)
   await mkdir(providerDir, { recursive: true })
@@ -64,27 +69,53 @@ const writeProviderArtifacts = async (
   ))
 
   await writeFile(join(providerDir, 'transcription.txt'), `${transcriptText}\n`, 'utf8')
-  await writeJson(join(providerDir, 'transcription.evidence.json'), {
-    service,
-    model,
-    label: `${service}/${model}`,
-    transcriptText: segments.map((segment) => segment.text).join(' '),
-    segments,
-    words,
-    capabilities: {
-      hasNativeWordTiming: true,
-      hasConfidence: false,
-      hasSpeakerLabels: segments.some((segment) => segment.speaker !== undefined)
-    },
-    timingQuality: 'native_word',
-    speakerInventory: segments.flatMap((segment) => segment.speaker ? [segment.speaker] : [])
-  })
-  await writeProviderResultFixture(providerDir, service, model, {
-    transcriptionService: service,
-    transcriptionModel: model,
-    tokenCount: words.length,
-    processingTime: 1000
-  }, {})
+  if (options.writeLegacyEvidence === true) {
+    await writeJson(join(providerDir, 'transcription.evidence.json'), {
+      service,
+      model,
+      label: `${service}/${model}`,
+      transcriptText: segments.map((segment) => segment.text).join(' '),
+      segments,
+      words,
+      capabilities: {
+        hasNativeWordTiming: true,
+        hasConfidence: false,
+        hasSpeakerLabels: segments.some((segment) => segment.speaker !== undefined)
+      },
+      timingQuality: 'native_word',
+      speakerInventory: segments.flatMap((segment) => segment.speaker ? [segment.speaker] : [])
+    })
+  }
+  if (options.writeResult !== false) {
+    await writeProviderResultFixture(providerDir, service, model, {
+      transcriptionService: service,
+      transcriptionModel: model,
+      tokenCount: words.length,
+      processingTime: 1000
+    }, options.resultOverride ?? {
+      text: segments.map((segment) => segment.text).join(' '),
+      segments: segments.map((segment) => ({
+        start: `00:00:${String(segment.startSeconds).padStart(2, '0')}`,
+        end: `00:00:${String(segment.endSeconds).padStart(2, '0')}`,
+        text: segment.text,
+        ...(segment.speaker ? { speaker: segment.speaker } : {})
+      })),
+      evidence: {
+        segments,
+        words,
+        capabilities: {
+          hasNativeWordTiming: true,
+          hasConfidence: false,
+          hasSpeakerLabels: segments.some((segment) => segment.speaker !== undefined)
+        },
+        timingQuality: 'native_word',
+        rawResponse: {
+          provider: service,
+          words
+        }
+      }
+    })
+  }
 }
 
 describe('stt consensus report utilities', () => {
@@ -173,26 +204,120 @@ describe('stt consensus report utilities', () => {
     }
   })
 
-  test('rejects v2 runs without persisted evidence artifacts', async () => {
-    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-consensus-legacy-'))
-    const runDir = join(rootDir, '2026-04-15_legacy')
-    const providerDir = join(runDir, 'providers', 'assemblyai-universal-3-pro')
+  test('supports root-output single-provider STT runs', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-consensus-root-'))
+    const runDir = join(rootDir, '2026-04-15_root')
 
     try {
-      await mkdir(providerDir, { recursive: true })
-      await writeFile(join(providerDir, 'transcription.txt'), '[00:00:00] hello\n', 'utf8')
-      await writeProviderResultFixture(providerDir, 'assemblyai', 'universal-3-pro', {
+      await mkdir(runDir, { recursive: true })
+      await writeFile(join(runDir, 'transcription.txt'), '[00:00:00] Root transcript\n', 'utf8')
+      await writeProviderResultFixture(runDir, 'assemblyai', 'universal-3-pro', {
         transcriptionService: 'assemblyai',
         transcriptionModel: 'universal-3-pro',
-        tokenCount: 1,
+        tokenCount: 2,
         processingTime: 1000
-      }, {})
-      await writeRunManifestFixture(runDir, 'stt', {
-        step1: { title: 'Legacy run', duration: '00:01' },
-        step2: [{ transcriptionService: 'assemblyai', transcriptionModel: 'universal-3-pro', processingTime: 1000, tokenCount: 1 }]
+      }, {
+        text: 'Root transcript',
+        segments: [
+          { start: '00:00:00', end: '00:00:01', text: 'Root transcript' }
+        ],
+        evidence: {
+          words: [
+            {
+              startSeconds: 0,
+              endSeconds: 0.4,
+              text: 'Root',
+              normalized: 'root',
+              timingSource: 'native'
+            },
+            {
+              startSeconds: 0.4,
+              endSeconds: 1,
+              text: 'transcript',
+              normalized: 'transcript',
+              timingSource: 'native'
+            }
+          ],
+          capabilities: {
+            hasNativeWordTiming: true,
+            hasConfidence: false,
+            hasSpeakerLabels: false
+          },
+          timingQuality: 'native_word'
+        }
+      })
+      await writeRunManifestFixture(runDir, 'write', {
+        step1: { title: 'Root run', duration: '00:01' },
+        step2: {
+          transcriptionService: 'assemblyai',
+          transcriptionModel: 'universal-3-pro',
+          processingTime: 1000,
+          tokenCount: 2
+        }
       })
 
-      await expect(analyzeSttRunDirectory(runDir)).rejects.toThrow('transcription.evidence.json')
+      const analysis = await analyzeSttRunDirectory(runDir)
+      expect(analysis.providers).toHaveLength(1)
+      expect(analysis.providers[0]?.label).toBe('assemblyai/universal-3-pro')
+      expect(analysis.consensusText).toContain('Root transcript')
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
+  })
+
+  test('falls back to legacy evidence when result.json is unusable', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-consensus-fallback-'))
+    const runDir = join(rootDir, '2026-04-15_fallback')
+
+    try {
+      await mkdir(join(runDir, 'providers'), { recursive: true })
+      await writeProviderArtifacts(
+        runDir,
+        'assemblyai-universal-3-pro',
+        'assemblyai',
+        'universal-3-pro',
+        [{ startSeconds: 0, endSeconds: 1, text: 'Fallback transcript' }],
+        {
+          writeLegacyEvidence: true,
+          resultOverride: { ok: true }
+        }
+      )
+      await writeRunManifestFixture(runDir, 'stt', {
+        step1: { title: 'Fallback run', duration: '00:01' },
+        step2: [{ transcriptionService: 'assemblyai', transcriptionModel: 'universal-3-pro', processingTime: 1000, tokenCount: 2 }]
+      })
+
+      const analysis = await analyzeSttRunDirectory(runDir)
+      expect(analysis.providers[0]?.evidencePath).toContain('transcription.evidence.json')
+      expect(analysis.consensusText).toContain('Fallback transcript')
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
+  })
+
+  test('fails with a targeted error when result.json is unusable and no legacy evidence exists', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-consensus-invalid-'))
+    const runDir = join(rootDir, '2026-04-15_invalid')
+
+    try {
+      await mkdir(join(runDir, 'providers'), { recursive: true })
+      await writeProviderArtifacts(
+        runDir,
+        'assemblyai-universal-3-pro',
+        'assemblyai',
+        'universal-3-pro',
+        [{ startSeconds: 0, endSeconds: 1, text: 'Broken transcript' }],
+        {
+          writeLegacyEvidence: false,
+          resultOverride: { ok: true }
+        }
+      )
+      await writeRunManifestFixture(runDir, 'stt', {
+        step1: { title: 'Broken run', duration: '00:01' },
+        step2: [{ transcriptionService: 'assemblyai', transcriptionModel: 'universal-3-pro', processingTime: 1000, tokenCount: 2 }]
+      })
+
+      await expect(analyzeSttRunDirectory(runDir)).rejects.toThrow('not a parseable STT provider result')
     } finally {
       await rm(rootDir, { recursive: true, force: true })
     }

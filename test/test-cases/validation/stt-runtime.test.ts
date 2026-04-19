@@ -37,6 +37,31 @@ describe('STT runtime helpers', () => {
     ])
   })
 
+  test('advertises root result.json for single-provider STT outputs', async () => {
+    expect(await buildExpectedFilesList('stt', {
+      whisperExplicit: false,
+      whisperModel: 'tiny'
+    } as RuntimeOptions)).toEqual([
+      'Audio file',
+      'transcription.txt',
+      'result.json',
+      'prompt.md',
+      'run.json'
+    ])
+  })
+
+  test('advertises root result.json for write outputs that materialize a root transcript', async () => {
+    expect(await buildExpectedFilesList('write', {
+      whisperExplicit: false,
+      whisperModel: 'tiny',
+      skipLLM: false
+    } as RuntimeOptions, '/tmp/sample.mp3')).toEqual(expect.arrayContaining([
+      'transcription.txt',
+      'result.json',
+      'text.json'
+    ]))
+  })
+
   test('filters preflight estimates down to STT steps only', () => {
     const estimate: AggregatedPriceEstimate = {
       totalEstimatedCost: 65,

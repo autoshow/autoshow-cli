@@ -157,7 +157,8 @@ bun as stt --resume-missing
 ## Notes
 
 - Before any hosted STT provider upload, Autoshow now extracts/persists a shared compressed audio-only artifact and avoids fresh lossy re-encoding whenever it can preserve the original audio stream.
-- Hosted multi-provider runs write one transcript and metadata set per provider under `providers/<service>-<model>/`.
+- Single-provider STT runs write root `transcription.txt` plus root `result.json`.
+- Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
 - `--speaker-count` is currently honored by ElevenLabs, AssemblyAI, and Gladia. It is ignored by local engines and the other hosted STT providers.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.

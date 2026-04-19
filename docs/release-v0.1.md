@@ -451,7 +451,7 @@ Common output artifacts include:
 - downloaded media or normalized document/image files
 - `prompt.md`
 - `transcription.txt`
-- `transcription.evidence.json`
+- `result.json` for canonical structured STT or OCR payloads
 - extracted text or OCR output in the requested format such as `extraction.txt`, `result.json`, `*.tsv`, or `*.hocr`
 - `chapters/*.txt` or `chunks/*.txt` for native EPUB text runs, plus `chapters/*.txt` for PDF chapter autodetection when `--chapters` is active
 - `text.json` or `text-<model>.json`
@@ -466,7 +466,6 @@ Common output artifacts include:
 Provider directories can additionally include:
 
 - `providers/<service>-<model>/transcription.txt`
-- `providers/<service>-<model>/transcription.evidence.json`
 - `providers/<service>-<model>/result.json`
 - `providers/<service>-<model>/checkpoint.json`
 

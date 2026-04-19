@@ -1,6 +1,5 @@
 import type {
   PersistedTranscriptionEvidence,
-  Step2Metadata,
   TokenizedWord,
   TranscriptionEvidence,
   TranscriptionEvidenceCapabilities,
@@ -167,7 +166,7 @@ const collectSpeakerInventory = (
 
 export const buildPersistedTranscriptionEvidence = (
   result: TranscriptionResult,
-  metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
+  metadata: { transcriptionService: string, transcriptionModel: string }
 ): PersistedTranscriptionEvidence => {
   const evidence = result.evidence
   const segments = sortByTime(
@@ -250,14 +249,4 @@ export const mergeTranscriptionEvidence = (
     capabilities: mergedCapabilities,
     timingQuality
   }
-}
-
-export const serializeEvidenceRawResponse = (
-  result: TranscriptionResult
-): string | null => {
-  if (result.evidence?.rawResponse === undefined) {
-    return null
-  }
-
-  return `${JSON.stringify(result.evidence.rawResponse, null, 2)}\n`
 }

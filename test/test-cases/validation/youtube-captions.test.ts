@@ -173,7 +173,6 @@ Hello from captions
       },
       automaticCaptionInventory: {}
     }, null, 2)}\n`)
-    await Bun.write(join(providerDir, 'transcription.evidence.json'), `${JSON.stringify({ ok: true }, null, 2)}\n`)
     await writeRunManifestFixture(outputDir, 'stt', {})
 
     await writeProviderResultFixture(providerDir, YOUTUBE_CAPTIONS_SERVICE, YOUTUBE_CAPTIONS_MODEL, {
@@ -204,6 +203,10 @@ Hello from captions
     expect(await Bun.file(join(outputDir, 'youtube-captions.json')).json()).toMatchObject({
       captionKind: 'manual',
       captionLanguage: 'en'
+    })
+    expect(await Bun.file(join(outputDir, 'result.json')).json()).toMatchObject({
+      provider: YOUTUBE_CAPTIONS_SERVICE,
+      model: YOUTUBE_CAPTIONS_MODEL
     })
   })
 })

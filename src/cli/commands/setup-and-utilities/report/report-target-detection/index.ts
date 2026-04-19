@@ -2,6 +2,10 @@ import { readdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
 import { discoverRunDirectories, listProviderDirectories } from '~/cli/commands/setup-and-utilities/report/report-internals/run-discovery'
+import {
+  hasSttProviderResultMetadata,
+  parseProviderResultEnvelope
+} from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-result-artifacts'
 
 export type ReportKind = 'stt' | 'ocr'
 
@@ -11,32 +15,84 @@ export type DetectedReportTarget = {
   kind: ReportKind
 }
 
-const OCR_ARTIFACT_FILES = new Set([
-  'result.json',
+const OCR_EXTRACTION_ARTIFACT_FILES = new Set([
   'extraction.txt',
   'extraction.tsv',
   'extraction.hocr'
 ])
 
+const RESULT_PARSE_FAILED = Symbol('result-parse-failed')
+
+const readArtifactResult = async (
+  artifactDir: string
+): Promise<unknown | typeof RESULT_PARSE_FAILED | undefined> => {
+  const resultPath = join(artifactDir, 'result.json')
+  if (!await Bun.file(resultPath).exists()) {
+    return undefined
+  }
+
+  try {
+    return await Bun.file(resultPath).json() as unknown
+  } catch {
+    return RESULT_PARSE_FAILED
+  }
+}
+
+const classifyArtifactDirectory = async (
+  artifactDir: string,
+  entries: string[],
+  allowGenericProviderResultOcr = false
+): Promise<{ hasSttArtifacts: boolean, hasOcrArtifacts: boolean }> => {
+  const hasTranscript = entries.includes('transcription.txt')
+  const hasLegacySttEvidence = entries.includes('transcription.evidence.json')
+  const hasOcrExtraction = entries.some((entry) => OCR_EXTRACTION_ARTIFACT_FILES.has(entry))
+  const rawResult = await readArtifactResult(artifactDir)
+
+  const hasResult = rawResult !== undefined
+  const hasSttResultMetadata = rawResult !== RESULT_PARSE_FAILED && hasSttProviderResultMetadata(rawResult)
+  const hasGenericProviderResult = rawResult !== RESULT_PARSE_FAILED && parseProviderResultEnvelope(rawResult) !== undefined
+
+  if (hasTranscript && hasResult && !hasSttResultMetadata && !hasLegacySttEvidence && !hasOcrExtraction) {
+    const resultPath = join(artifactDir, 'result.json')
+    throw new Error(
+      rawResult === RESULT_PARSE_FAILED
+        ? `Stored STT artifact ${resultPath} could not be parsed as JSON.`
+        : `Stored STT artifact ${resultPath} does not contain STT metadata (expected metadata.transcriptionService and metadata.transcriptionModel).`
+    )
+  }
+
+  return {
+    hasSttArtifacts: hasLegacySttEvidence || hasSttResultMetadata,
+    hasOcrArtifacts: hasResult && (
+      hasOcrExtraction
+      || (
+        allowGenericProviderResultOcr
+        && !hasTranscript
+        && !hasSttResultMetadata
+        && hasGenericProviderResult
+      )
+    )
+  }
+}
+
 export const classifyReportRunDirectory = async (
   runDir: string
 ): Promise<ReportKind | 'mixed' | null> => {
   const providerDirectories = await listProviderDirectories(runDir)
+  const rootEntries = await readdir(runDir).catch((): string[] => [])
   let hasSttArtifacts = false
   let hasOcrArtifacts = false
 
-  for (const providerDirectory of providerDirectories) {
-    const providerEntries = await readdir(join(runDir, 'providers', providerDirectory)).catch((): string[] => [])
-    if (providerEntries.includes('transcription.evidence.json')) {
-      hasSttArtifacts = true
-    }
+  const rootClassification = await classifyArtifactDirectory(runDir, rootEntries)
+  hasSttArtifacts ||= rootClassification.hasSttArtifacts
+  hasOcrArtifacts ||= rootClassification.hasOcrArtifacts
 
-    if (
-      providerEntries.includes('result.json')
-      && providerEntries.some((entry) => OCR_ARTIFACT_FILES.has(entry))
-    ) {
-      hasOcrArtifacts = true
-    }
+  for (const providerDirectory of providerDirectories) {
+    const artifactDir = join(runDir, 'providers', providerDirectory)
+    const providerEntries = await readdir(artifactDir).catch((): string[] => [])
+    const classification = await classifyArtifactDirectory(artifactDir, providerEntries, true)
+    hasSttArtifacts ||= classification.hasSttArtifacts
+    hasOcrArtifacts ||= classification.hasOcrArtifacts
   }
 
   if (hasSttArtifacts && hasOcrArtifacts) {
@@ -55,7 +111,7 @@ export const classifyReportRunDirectory = async (
 export const discoverReportRunDirectories = async (targetPath: string): Promise<string[]> =>
   discoverRunDirectories(
     targetPath,
-    (resolvedTarget) => `No reportable runs found under ${resolvedTarget}. Expected a run directory with providers/ and run.json, or a batch root whose immediate child directories contain those artifacts.`
+    (resolvedTarget) => `No reportable runs found under ${resolvedTarget}. Expected a run directory with run.json plus report artifacts, or a batch root whose immediate child directories contain those artifacts.`
   )
 
 export const detectReportTarget = async (targetPath: string): Promise<DetectedReportTarget> => {
@@ -76,7 +132,7 @@ export const detectReportTarget = async (targetPath: string): Promise<DetectedRe
   const unclassifiedRuns = classifications.filter((entry) => entry.kind === null)
   if (unclassifiedRuns.length > 0) {
     throw new Error(
-      `Could not infer report type from these runs: ${unclassifiedRuns.map((entry) => entry.runDir).join(', ')}. STT runs need transcription.evidence.json; OCR runs need provider result.json plus extraction.* artifacts.`
+      `Could not infer report type from these runs: ${unclassifiedRuns.map((entry) => entry.runDir).join(', ')}. STT runs need result.json with STT metadata or a legacy transcription.evidence.json fallback; OCR runs need result.json plus extraction.* artifacts.`
     )
   }
 

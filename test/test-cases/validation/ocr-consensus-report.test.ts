@@ -408,7 +408,7 @@ describe('ocr consensus report utilities', () => {
       ])
 
       expect(result.exitCode).toBeGreaterThan(0)
-      expect(result.stderr).toContain('mixed STT and OCR artifacts')
+      expect(result.stderr).toContain('Mixed report kinds are not supported')
     } finally {
       await rm(rootDir, { recursive: true, force: true })
     }

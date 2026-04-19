@@ -78,6 +78,10 @@ export const defineSTTServiceTest = ({
         expect(transcriptContent.length).toBeGreaterThan(0)
         expect(transcriptContent).toMatch(/\[\d{2}:\d{2}:\d{2}\]/)
 
+        expect(await fileExists(`${outputDir}/result.json`)).toBe(true)
+        expect(await fileExists(`${outputDir}/transcription.evidence.json`)).toBe(false)
+        expect(await fileExists(`${outputDir}/transcription.raw.json`)).toBe(false)
+
         const metadata = await readRunMetadata(outputDir) as {
           step2?: { transcriptionService?: string, transcriptionModel?: string }
         }

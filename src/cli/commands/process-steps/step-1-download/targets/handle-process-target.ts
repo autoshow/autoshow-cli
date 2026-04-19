@@ -123,7 +123,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   if (isSttCommand(command)) {
     const files = collectSttTargets(opts).length > 1
       ? ['Shared audio artifact(s)', 'providers/<service>-<model>/transcription.txt', 'providers/<service>-<model>/result.json', 'prompt.md', 'run.json']
-      : ['Audio file', 'transcription.txt', 'prompt.md', 'run.json']
+      : ['Audio file', 'transcription.txt', 'result.json', 'prompt.md', 'run.json']
     if (opts.youtubeCaptions) {
       files.splice(files.length - 2, 0, 'youtube-captions.vtt (when available)', 'youtube-captions.json (when available)')
     }
@@ -173,7 +173,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     files.push('run.json')
     return files
   }
-  const files = ['Audio file', 'transcription.txt', summaryFile]
+  const files = ['Audio file', 'transcription.txt', 'result.json', summaryFile]
   if (collectSttTargets(opts).length > 1) {
     files.push('providers/<service>-<model>/transcription.txt')
     files.push('providers/<service>-<model>/result.json')

@@ -22,6 +22,7 @@ import type { StepTimingCost } from '~/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { sttTarget } from './step-2-stt/orchestrator'
+import { writeSttResultArtifact } from './step-2-stt/stt-utils/stt-result-artifacts'
 import { formatTranscriptText } from './step-2-stt/stt-utils/stt-utils'
 import { collectSttTargets, getSttTargetDirectoryName } from './step-2-stt/stt-targets'
 import { prepareSttMedia } from './step-2-stt/media'
@@ -42,7 +43,7 @@ import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, pref
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
 import { classifySttProviderFailure, prioritizeCloudSttTargetIndices, selectPrimaryPromptProvider } from './process-stt'
-import { writeProviderResult, writeRunManifest } from './manifest-utils'
+import { writeRunManifest } from './manifest-utils'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-stt/youtube-captions'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
@@ -182,13 +183,6 @@ export const processVideo = async (
               audioDurationSeconds
             })
           )
-          await writeProviderResult(
-            providerDir,
-            target.service,
-            target.model,
-            providerTranscription.metadata as Record<string, unknown>,
-            providerTranscription.result as Record<string, unknown>
-          )
           successes[index] = {
             target,
             metadata: providerTranscription.metadata,
@@ -231,6 +225,7 @@ export const processVideo = async (
       }
 
       await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(promptSource.result.segments))
+      await writeSttResultArtifact(outputDir, promptSource.metadata, promptSource.result)
       transcriptionResult = {
         result: promptSource.result,
         metadata: successfulSttProviders.map((entry) => entry.metadata)
@@ -547,6 +542,7 @@ export const processVideo = async (
   const artifactFiles: Record<string, string> = {
     audio: step1Metadata.audioFileName,
     transcript: 'transcription.txt',
+    result: 'result.json',
     ...renderedArtifacts.internalArtifacts
   }
   if (step2Entries.some((entry) => entry.transcriptionService === YOUTUBE_CAPTIONS_SERVICE)) {
