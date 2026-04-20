@@ -1,5 +1,7 @@
+import { extname } from 'node:path'
 import * as l from '~/logger'
 import { exec } from '~/utils/cli-utils'
+import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
 import { buildYtDlpDownloadArgs, buildYtDlpFailureMessage } from './yt-dlp-options'
 
 const isProgressLine = (line: string): boolean => {
@@ -14,9 +16,15 @@ const relayYtDlpLine = (line: string): void => {
   l.info(clean)
 }
 
+const DOWNLOADED_MEDIA_EXTENSIONS: ReadonlySet<string> = new Set(MEDIA_EXTENSIONS)
+
 const findDownloadedAudio = async (outputDir: string): Promise<string> => {
-  const files = await Bun.$`find ${outputDir} -type f \( -name "*.mp3" -o -name "*.m4a" -o -name "*.webm" -o -name "*.mp4" -o -name "*.opus" -o -name "*.ogg" -o -name "*.aac" -o -name "*.flac" -o -name "*.wav" \)`.text()
-  const list = files.trim().split('\n').filter(f => f.length > 0)
+  const files = await Bun.$`find ${outputDir} -type f`.text()
+  const list = files
+    .trim()
+    .split('\n')
+    .filter(f => f.length > 0)
+    .filter((filePath) => DOWNLOADED_MEDIA_EXTENSIONS.has(extname(filePath).toLowerCase()))
   const first = list[0]
   if (!first) {
     l.error(`No files found in ${outputDir}`)

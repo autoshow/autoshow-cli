@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import * as v from 'valibot'
 import type { Step4Metadata } from '~/types'
 import * as l from '~/logger'
@@ -102,7 +103,7 @@ const concatAndConvertToWav = async (chunkPaths: string[], outputDir: string): P
   const concatListPath = `${outputDir}/speech-minimax-chunks.txt`
   const mergedPath = `${outputDir}/speech-minimax-merged.mp3`
   const concatList = chunkPaths
-    .map(path => `file '${path.replace(/'/g, `'\\''`)}'`)
+    .map(path => `file '${resolve(path).replace(/'/g, `'\\''`)}'`)
     .join('\n')
   await Bun.write(concatListPath, `${concatList}\n`)
 

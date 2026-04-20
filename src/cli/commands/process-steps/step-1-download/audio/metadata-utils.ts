@@ -2,7 +2,7 @@ import * as l from '~/logger'
 import { validateData, validateDataSafe } from '~/utils/validate/validation'
 import { exec } from '~/utils/cli-utils'
 import { YtDlpVideoInfoSchema, VideoMetadataSchema, type Step1SourceRef, type VideoMetadata, type YtDlpVideoInfo } from '~/types'
-import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
+import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
 import { buildYtDlpFailureMessage, buildYtDlpMetadataArgs } from './yt-dlp-options'
 
 export const getVideoInfo = async (url: string): Promise<YtDlpVideoInfo | null> => {

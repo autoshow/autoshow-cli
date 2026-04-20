@@ -4,6 +4,7 @@ import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
+import { MEDIA_EXTENSIONS } from '../media-extensions'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import type {
@@ -266,7 +267,6 @@ export const DOCUMENT_EXTENSIONS = [
   '.html', '.htm'
 ]
 export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.bmp', '.gif']
-export const MEDIA_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.mp4', '.webm', '.mkv', '.opus', '.ogg', '.aac', '.mov', '.flac']
 const URL_LIST_EXTENSIONS = ['.md', '.txt']
 const HTML_DOCUMENT_EXTENSIONS = ['.html', '.htm'] as const
 const DOCUMENT_MIME_HINTS = [

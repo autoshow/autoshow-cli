@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { exec } from '~/utils/cli-utils'
 
 export const splitTextIntoChunks = (text: string, maxChars: number): string[] => {
@@ -51,7 +52,7 @@ export const concatAndConvertToWav = async (
 
   const concatListPath = `${outputDir}/speech-${providerLabel.toLowerCase()}-chunks.txt`
   const concatList = chunkPaths
-    .map(path => `file '${path.replace(/'/g, `'\\''`)}'`)
+    .map(path => `file '${resolve(path).replace(/'/g, `'\\''`)}'`)
     .join('\n')
   await Bun.write(concatListPath, `${concatList}\n`)
 
