@@ -294,6 +294,12 @@ afterEach(async () => {
   await rm(tempDir, { recursive: true, force: true })
 })
 
+const gcloudCommandEnv = (): Record<string, string> => ({
+  PATH: `${tempDir}:${originalPath}`,
+  AUTOSHOW_TEST_GCLOUD_STATE: statePath,
+  AUTOSHOW_GCLOUD_BIN: join(tempDir, 'gcloud')
+})
+
 test('setupGcloudStt creates the project, auto-links the single billing account, enables speech, and saves the default model when requested', async () => {
   await setupGcloudStt({
     preferredProject: 'autoshow-gcloud-test',
@@ -341,7 +347,9 @@ test('setup --gcloud suggests the bootstrap command when no project is configure
     'src/cli/create-cli.ts',
     'setup',
     '--gcloud'
-  ])
+  ], {
+    env: gcloudCommandEnv()
+  })
 
   expect(result.exitCode).toBe(0)
   expect(`${result.stdout}\n${result.stderr}`).toContain('gcloud projects list')
@@ -500,7 +508,9 @@ test('setup command passes the extended gcloud bootstrap flags through to gcloud
     '123456789',
     '--config-path',
     configPath
-  ])
+  ], {
+    env: gcloudCommandEnv()
+  })
 
   expect(result.exitCode).toBe(0)
   expect(await readFakeGcloudState()).toEqual({

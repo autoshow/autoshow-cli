@@ -75,8 +75,10 @@
       "https://developers.openai.com/api/docs/guides/text.md",
       "https://developers.openai.com/api/docs/guides/structured-outputs.md",
       "https://developers.openai.com/api/docs/guides/migrate-to-responses.md",
-      "https://developers.openai.com/api/reference/resources/responses/methods/create/index.md",
-      "https://developers.openai.com/api/docs/guides/embeddings.md"
+      "https://developers.openai.com/api/reference/resources/responses/methods/create/index.md"
+    ],
+    "OCR": [
+      "https://developers.openai.com/api/docs/guides/images-vision.md"
     ],
     "TTS": [
       "https://developers.openai.com/api/docs/guides/audio.md",
@@ -106,17 +108,22 @@
       "https://ai.google.dev/gemini-api/docs.md.txt",
       "https://ai.google.dev/gemini-api/docs/quickstart.md.txt",
       "https://ai.google.dev/gemini-api/docs/pricing.md.txt",
-      "https://ai.google.dev/gemini-api/docs/models.md.txt"
+      "https://ai.google.dev/gemini-api/docs/models.md.txt",
+      "https://ai.google.dev/gemini-api/docs/file-input-methods.md.txt",
+      "https://ai.google.dev/gemini-api/docs/files.md.txt"
     ],
     "Text": [
       "https://ai.google.dev/gemini-api/docs/gemini-3.md.txt",
       "https://ai.google.dev/gemini-api/docs/text-generation.md.txt",
-      "https://ai.google.dev/gemini-api/docs/embeddings.md.txt",
       "https://ai.google.dev/gemini-api/docs/structured-output.md.txt"
+    ],
+    "OCR": [
+      "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt"
     ],
     "TTS": [
       "https://ai.google.dev/gemini-api/docs/speech-generation.md.txt",
-      "https://ai.google.dev/gemini-api/docs/audio.md.txt"
+      "https://ai.google.dev/gemini-api/docs/audio.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-tts-preview.md.txt"
     ],
     "Image": [
       "https://ai.google.dev/gemini-api/docs/image-generation.md.txt",
@@ -253,24 +260,26 @@
     "General": [
       "https://platform.claude.com/docs/en/api/sdks/typescript.md",
       "https://platform.claude.com/docs/en/about-claude/models/overview.md",
-      "https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6.md",
       "https://platform.claude.com/docs/en/about-claude/pricing.md",
       "https://platform.claude.com/docs/en/build-with-claude/overview.md",
-      "https://platform.claude.com/docs/en/build-with-claude/pdf-support.md",
-      "https://platform.claude.com/docs/en/build-with-claude/vision.md",
       "https://platform.claude.com/docs/en/api/overview.md",
       "https://platform.claude.com/docs/en/api/errors.md",
       "https://platform.claude.com/docs/en/api/typescript/models/list.md",
       "https://platform.claude.com/docs/en/api/typescript/models/retrieve.md"
     ],
     "Text": [
+      "https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7.md",
+      "https://platform.claude.com/docs/en/about-claude/models/migration-guide.md",
       "https://platform.claude.com/docs/en/build-with-claude/working-with-messages.md",
       "https://platform.claude.com/docs/en/build-with-claude/structured-outputs.md",
-      "https://platform.claude.com/docs/en/build-with-claude/embeddings.md",
       "https://platform.claude.com/docs/en/api/typescript/messages/create.md",
       "https://platform.claude.com/docs/en/api/typescript/messages/count_tokens.md"
     ],
-    "STT": []
+    "OCR": [
+      "https://platform.claude.com/docs/en/build-with-claude/pdf-support.md",
+      "https://platform.claude.com/docs/en/build-with-claude/files.md",
+      "https://platform.claude.com/docs/en/build-with-claude/vision.md"
+    ]
   },
   "Assembly": {
     "STT": [

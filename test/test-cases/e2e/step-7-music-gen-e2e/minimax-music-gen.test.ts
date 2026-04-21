@@ -94,12 +94,12 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and l
     expect(await fileExists(`${outputDir}/generated-music.mp3`)).toBe(true)
 
     const metadata = await readRunMetadata(outputDir) as {
-      step7?: Array<{ musicService?: string; musicModel?: string; lyricsSource?: string; musicFileName?: string }>
+      step7?: { musicService?: string; musicModel?: string; lyricsSource?: string; musicFileName?: string }
     }
-    expect(metadata.step7?.[0]?.musicService).toBe('minimax')
-    expect(metadata.step7?.[0]?.musicModel).toBe('music-2.5')
-    expect(metadata.step7?.[0]?.lyricsSource).toBe('provided')
-    expect(metadata.step7?.[0]?.musicFileName).toBe('generated-music.mp3')
+    expect(metadata.step7?.musicService).toBe('minimax')
+    expect(metadata.step7?.musicModel).toBe('music-2.5')
+    expect(metadata.step7?.lyricsSource).toBe('provided')
+    expect(metadata.step7?.musicFileName).toBe('generated-music.mp3')
   }
 })
 

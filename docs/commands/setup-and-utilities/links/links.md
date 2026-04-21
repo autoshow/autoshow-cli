@@ -48,18 +48,18 @@ Accepted provider selectors are the lowercase names below.
 | Provider selector | Sections |
 |-------------------|----------|
 | `--assembly` | `stt` |
-| `--claude` | `general`, `text`, `stt` |
+| `--claude` | `general`, `text`, `ocr`, `stt` |
 | `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
 | `--deepgram` | `stt` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
-| `--gemini` | `general`, `text`, `tts`, `image`, `video` |
+| `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--gladia` | `general`, `stt` |
 | `--glm` | `general`, `text`, `ocr`, `image`, `video`, `stt` |
 | `--grok` | `general`, `text`, `image`, `video`, `tts` |
 | `--groq` | `general`, `text`, `stt`, `tts` |
 | `--happyscribe` | `stt` |
 | `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
-| `--openai` | `general`, `text`, `tts`, `image`, `video` |
+| `--openai` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--rev` | `general`, `stt` |
 | `--soniox` | `stt` |
 | `--speechmatics` | `general`, `stt` |

@@ -115,6 +115,12 @@ const copyRunManifestToArtifacts = async (outputDir: string | null): Promise<voi
 }
 
 const SUBPROCESS_TIMEOUT = 900000
+const BASE_CHILD_ENV = Object.entries(process.env).reduce<Record<string, string>>((env, [key, value]) => {
+  if (typeof value === 'string') {
+    env[key] = value
+  }
+  return env
+}, {})
 
 export type RunCommandOptions = {
   testName?: string
@@ -156,7 +162,7 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
   const metricsLogPath = process.env['AUTOSHOW_TEST_METRICS_LOG']
 
   const env = {
-    ...process.env,
+    ...BASE_CHILD_ENV,
     ...(opts?.env ?? {})
   }
 

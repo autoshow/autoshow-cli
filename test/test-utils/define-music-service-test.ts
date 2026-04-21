@@ -14,6 +14,7 @@ import {
 import { readRunMetadata } from './manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
+const LIVE_MUSIC_TIMEOUT_MS = 120_000
 
 export const defineMusicServiceTest = ({
   models,
@@ -78,6 +79,6 @@ export const defineMusicServiceTest = ({
         expect(metadata.music?.[0]?.musicModel).toBe(model)
         expect(metadata.music?.[0]?.musicFileName).toBe('generated-music.mp3')
       }
-    })
+    }, LIVE_MUSIC_TIMEOUT_MS)
   }
 }

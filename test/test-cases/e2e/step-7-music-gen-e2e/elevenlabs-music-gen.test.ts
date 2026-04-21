@@ -10,6 +10,7 @@ import {
 import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
+const ELEVENLABS_MUSIC_TIMEOUT_MS = 120_000
 
 defineMusicServiceTest({
   models: [
@@ -68,7 +69,7 @@ test('music_v1 generates cinematic orchestral music', async () => {
     expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
     expect(metadata.music?.[0]?.musicModel).toBe('music_v1')
   }
-})
+}, ELEVENLABS_MUSIC_TIMEOUT_MS)
 
 test('music_v1 generates lo-fi with duration and instrumental flag', async () => {
   const hasApiKey = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
@@ -98,7 +99,7 @@ test('music_v1 generates lo-fi with duration and instrumental flag', async () =>
     expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
     expect(metadata.music?.[0]?.lyricsSource).toBe('none')
   }
-})
+}, ELEVENLABS_MUSIC_TIMEOUT_MS)
 
 test('write with elevenlabs music pipeline writes music artifacts and metadata', async () => {
   const hasOpenai = await hasConfiguredEnvVar('OPENAI_API_KEY')
@@ -123,10 +124,10 @@ test('write with elevenlabs music pipeline writes music artifacts and metadata',
     expect(await fileExists(`${outputDir}/generated-music.mp3`)).toBe(true)
 
     const metadata = await readRunMetadata(outputDir) as {
-      step7?: Array<{ musicService?: string; musicModel?: string; lyricsSource?: string }>
+      step7?: { musicService?: string; musicModel?: string; lyricsSource?: string }
     }
-    expect(metadata.step7?.[0]?.musicService).toBe('elevenlabs')
-    expect(metadata.step7?.[0]?.musicModel).toBe('music_v1')
-    expect(metadata.step7?.[0]?.lyricsSource).toBe('generated')
+    expect(metadata.step7?.musicService).toBe('elevenlabs')
+    expect(metadata.step7?.musicModel).toBe('music_v1')
+    expect(metadata.step7?.lyricsSource).toBe('generated')
   }
-})
+}, ELEVENLABS_MUSIC_TIMEOUT_MS)
