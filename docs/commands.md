@@ -53,6 +53,9 @@ bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-0
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
 bun as lyrics --audio input/examples/lyrics/01-example-song.wav
 
+# lyric draft generation from album text
+bun as lyrics album-title --prompt rockSong
+
 # music generation
 bun as music "an ambient piano instrumental with soft strings" --minimax-music music-2.5
 
@@ -89,18 +92,19 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - Use `ocr` for documents/images when you only need OCR/text extraction.
 - Use `stt` for audio/video when you only need transcript + prompt output.
 - Use `write` for full summary pipeline with optional TTS/image/video generation.
-- Use `lyrics` for local-only lyric videos from repo audio under `input/`, with optional rerender from edited caption files under `output/`.
+- Use `lyrics` either for lyric-video rendering from repo audio under `input/` or for album-style lyric draft generation from `prompt.md` + `text/` directories.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
 
 ## Pricing Preflight
 
-Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. Local-only commands such as `lyrics` do not:
+Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `lyrics` supports `--price` only in text-generation mode:
 
 ```bash
 bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
+bun as lyrics album-title --price
 bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/document/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts --price
