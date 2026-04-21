@@ -67,12 +67,13 @@ bun as links stt
 |------|----------|
 | Inspect and process | `metadata`, `download`, `ocr`, `stt`, `write` |
 | Generate | `tts`, `image`, `video`, `music` |
-| Setup & Utilities | `config`, `cache`, `setup`, `sample`, `models`, `links` |
+| Setup & Utilities | `config`, `cache`, `setup`, `links` |
 
 High-value notes:
 
 - `write` is the central orchestration command. It can summarize transcripts or extracted documents, write JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
-- `models` lets you pre-download local runtimes without running inference, for example `bun as models tiny` or `bun as models ggml-org/gemma-3-270m-it-GGUF`.
+- `setup --models` lets you pre-download local runtimes without running inference, for example `bun as setup --models tiny` or `bun as setup --models ggml-org/gemma-3-270m-it-GGUF`.
+- `setup --sample` generates or validates the deterministic fixture set used by tests.
 - If YouTube starts blocking `yt-dlp`, follow [docs/cookies.md](./docs/cookies.md) to configure `YTDLP_COOKIES_FROM_BROWSER` or `YTDLP_COOKIES`.
 
 ## Usage Basics
@@ -167,7 +168,7 @@ Notable exceptions:
 
 - `metadata --save` reports `run.json`, and `metadata --markdown --save` also reports `metadata.md`
 - `links` writes to `project/links/bun-links.md`
-- utility commands such as `config`, `setup`, `sample`, and `models` do not use the `output/` run-directory pattern
+- utility commands such as `config`, `setup`, and `links` do not use the `output/` run-directory pattern
 
 ## Development
 
@@ -177,4 +178,4 @@ bun t
 ```
 
 - `bun t` uses the repo's custom test runner and performs setup/sample preflight, so run `bun as setup` first if local dependencies are missing.
-- `bun as sample --verify-only` validates the deterministic fixture set used by tests.
+- `bun as setup --sample --verify-only` validates the deterministic fixture set used by tests.

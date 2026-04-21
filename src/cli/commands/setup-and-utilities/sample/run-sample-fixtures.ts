@@ -1,8 +1,6 @@
-import { defineCommand } from 'clerc'
 import { join, resolve } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import * as l from '~/logger'
-import { sampleFlags } from '~/cli/flags'
 import { ALL_FIXTURES } from './registry'
 import { generateFixture } from './generate'
 import { validateFixture } from './validate'
@@ -11,45 +9,37 @@ import { checkAllTools } from './tools'
 import type { SampleFixtureEntry, SampleSkippedEntry } from '~/types'
 import type { ToolName } from './tools'
 
-export const sampleCommand = defineCommand({
-  name: 'sample',
-  description: 'Generate and validate deterministic fixture files for all supported formats',
-  flags: sampleFlags,
-  help: {
-    examples: [
-      ['bun as sample', 'Generate all fixture files'],
-      ['bun as sample --verify-only', 'Validate existing fixtures without regenerating']
-    ]
-  }
-}, async (ctx) => {
-  const outDir = resolve(ctx.flags.out as string)
-  const refresh = ctx.flags.refresh as boolean
-  const verifyOnly = ctx.flags['verify-only'] as boolean
-  const validOnly = ctx.flags['valid-only'] as boolean
+export type SampleFixtureOptions = {
+  out?: string
+  refresh?: boolean
+  verifyOnly?: boolean
+  validOnly?: boolean
+}
+
+export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Promise<void> => {
+  const outDir = resolve(options.out ?? 'input/samples')
+  const refresh = options.refresh === true
+  const verifyOnly = options.verifyOnly === true
+  const validOnly = options.validOnly === true
 
   await mkdir(outDir, { recursive: true })
   await mkdir(join(outDir, 'valid'), { recursive: true })
   await mkdir(join(outDir, 'invalid'), { recursive: true })
 
-  // Check available tools
   const toolStatuses = checkAllTools()
   const availableTools = new Set<ToolName>(
     (Object.entries(toolStatuses) as [ToolName, { available: boolean }][])
-      .filter(([, s]) => s.available)
+      .filter(([, status]) => status.available)
       .map(([name]) => name)
   )
 
-  // Log missing required tools
   const REQUIRED_TOOLS: ToolName[] = ['ffmpeg', 'ffprobe', 'libreoffice']
   for (const tool of REQUIRED_TOOLS) {
     if (!availableTools.has(tool)) {
-      throw new Error(
-        `Required tool '${tool}' is not installed. Run: bun as setup --step sample`
-      )
+      throw new Error(`Required tool '${tool}' is not installed. Run: bun as setup --step sample`)
     }
   }
 
-  // Log missing optional tools
   const OPTIONAL_TOOLS: ToolName[] = ['calibre', 'imagemagick']
   for (const tool of OPTIONAL_TOOLS) {
     if (!availableTools.has(tool)) {
@@ -57,7 +47,6 @@ export const sampleCommand = defineCommand({
     }
   }
 
-  // Verify-only mode
   if (verifyOnly) {
     const manifest = await readManifest(outDir)
     if (!manifest) {
@@ -74,7 +63,7 @@ export const sampleCommand = defineCommand({
         requiredTools: fixture.requiredTools as ToolName[],
         ...(fixture.invalidReason ? { invalidReason: fixture.invalidReason } : {})
       }
-    const result = await validateFixture(outDir, fixtureDef)
+      const result = await validateFixture(outDir, fixtureDef)
       if (!result.valid) {
         l.error(`Validation failed for ${fixture.path}: ${result.reason}`)
         allValid = false
@@ -89,7 +78,6 @@ export const sampleCommand = defineCommand({
     return
   }
 
-  // Check if manifest is already valid (skip regeneration unless --refresh)
   if (!refresh) {
     const manifest = await readManifest(outDir)
     if (manifest && isManifestValid(manifest, outDir)) {
@@ -98,17 +86,15 @@ export const sampleCommand = defineCommand({
     }
   }
 
-  // Generation mode
   const fixtures: SampleFixtureEntry[] = []
   const skipped: SampleSkippedEntry[] = []
 
   const fixtureList = validOnly
-    ? ALL_FIXTURES.filter(f => f.validity === 'valid')
+    ? ALL_FIXTURES.filter((fixture) => fixture.validity === 'valid')
     : ALL_FIXTURES
 
   for (const fixture of fixtureList) {
-    // Check if all required tools are available
-    const missingTools = fixture.requiredTools.filter(t => !availableTools.has(t))
+    const missingTools = fixture.requiredTools.filter((tool) => !availableTools.has(tool))
     if (missingTools.length > 0) {
       skipped.push({
         path: fixture.path,
@@ -134,7 +120,6 @@ export const sampleCommand = defineCommand({
       continue
     }
 
-    // Validate the generated fixture
     const validation = await validateFixture(outDir, fixture)
 
     fixtures.push({
@@ -154,6 +139,6 @@ export const sampleCommand = defineCommand({
 
   await writeManifest(outDir, fixtures, skipped)
 
-  const verified = fixtures.filter(f => f.verified).length
+  const verified = fixtures.filter((fixture) => fixture.verified).length
   l.success(`Generated ${fixtures.length} fixtures (${verified} verified, ${skipped.length} skipped)`)
-})
+}

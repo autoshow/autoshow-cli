@@ -4,20 +4,29 @@ import { runCommand, fileExists } from '../../../test-utils/test-helpers'
 // ─── Help ────────────────────────────────────────────────────────────────────
 
 test('sample --help exits 0 and contains expected flags', async () => {
-  const result = await runCommand(['src/cli/create-cli.ts', 'sample', '--help'])
+  const result = await runCommand(['src/cli/create-cli.ts', 'setup', '--help'])
 
   expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--sample')
   expect(result.stdout).toContain('--out')
   expect(result.stdout).toContain('--refresh')
   expect(result.stdout).toContain('--verify-only')
   expect(result.stdout).toContain('--valid-only')
 })
 
+test('sample command is removed in favor of setup --sample', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'sample'])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unknown command "sample"')
+})
+
 // ─── verify-only with no manifest ────────────────────────────────────────────
 
 test('sample --verify-only fails when manifest does not exist', async () => {
   const result = await runCommand([
-    'src/cli/create-cli.ts', 'sample',
+    'src/cli/create-cli.ts', 'setup',
+    '--sample',
     '--out', 'output/sample-verify-only-nonexistent-test',
     '--verify-only'
   ])
@@ -35,7 +44,8 @@ test('sample --verify-only passes when input/samples manifest is valid', async (
   }
 
   const result = await runCommand([
-    'src/cli/create-cli.ts', 'sample',
+    'src/cli/create-cli.ts', 'setup',
+    '--sample',
     '--out', 'input/samples',
     '--verify-only'
   ])

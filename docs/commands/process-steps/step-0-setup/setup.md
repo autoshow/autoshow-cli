@@ -1,6 +1,6 @@
 # setup
 
-Install local runtimes and prerequisite tools. Sample fixture generation is handled by `sample`, not by `setup`.
+Install local runtimes and prerequisite tools. Focused setup utilities also cover fixture generation (`--sample`) and model pre-downloads (`--models`).
 
 ## Outline
 
@@ -152,13 +152,17 @@ bun as setup --step tts --repeat 3
 
 ```bash
 # Generate fixtures under input/samples/
-bun as sample
+bun as setup --sample
 
 # Verify an existing manifest without regenerating
-bun as sample --verify-only
+bun as setup --sample --verify-only
 
 # Regenerate fixtures even if the manifest is valid
-bun as sample --refresh
+bun as setup --sample --refresh
+
+# Download a Whisper or llama.cpp model without running inference
+bun as setup --models base
+bun as setup --models ggml-org/gemma-3-270m-it-GGUF
 ```
 
-See [`sample.md`](../../setup-and-utilities/sample/sample.md) for the full `sample` command reference.
+See [`sample.md`](../../setup-and-utilities/sample/sample.md) for the focused `setup --sample` reference.

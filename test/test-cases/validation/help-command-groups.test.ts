@@ -22,10 +22,17 @@ test('root help groups keep setup utilities separate from processing commands', 
   const setupSection = getSection(result.stdout, '  Setup & Utilities\n', '  Processing & Generation\n')
   const processingSection = getSection(result.stdout, '  Processing & Generation\n')
   const linksMatches = result.stdout.match(/^\s+links\s+/gm) ?? []
+  const sampleMatches = result.stdout.match(/^\s+sample\s+/gm) ?? []
+  const modelsMatches = result.stdout.match(/^\s+models\s+/gm) ?? []
 
   expect(setupSection).toContain('    links')
+  expect(setupSection).toContain('    setup')
+  expect(setupSection).not.toContain('    sample')
+  expect(setupSection).not.toContain('    models')
   expect(processingSection).not.toContain('    links')
   expect(linksMatches).toHaveLength(1)
+  expect(sampleMatches).toHaveLength(0)
+  expect(modelsMatches).toHaveLength(0)
 })
 
 test('removed report command is rejected by help', async () => {

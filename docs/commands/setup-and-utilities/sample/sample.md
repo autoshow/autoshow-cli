@@ -1,4 +1,4 @@
-# sample
+# setup --sample
 
 Generate and validate deterministic fixture files for all supported formats.
 
@@ -18,12 +18,12 @@ Generate and validate deterministic fixture files for all supported formats.
 ## Usage
 
 ```bash
-bun as sample [flags]
+bun as setup --sample [flags]
 ```
 
 ## Overview
 
-`sample` creates a canonical set of test fixtures under `input/samples/` and writes a `manifest.json` tracking every file's format, support level, validity, required tools, and verification status. The test runner runs this command as preflight before executing any tests.
+`setup --sample` creates a canonical set of test fixtures under `input/samples/` and writes a `manifest.json` tracking every file's format, support level, validity, required tools, and verification status. The test runner runs this focused setup mode as preflight before executing any tests.
 
 ## Flags
 
@@ -38,19 +38,19 @@ bun as sample [flags]
 
 ```bash
 # Generate all fixtures (default output: input/samples/)
-bun as sample
+bun as setup --sample
 
 # Generate to a custom directory
-bun as sample --out /tmp/fixtures
+bun as setup --sample --out /tmp/fixtures
 
 # Verify existing fixtures only
-bun as sample --verify-only
+bun as setup --sample --verify-only
 
 # Force full regeneration
-bun as sample --refresh
+bun as setup --sample --refresh
 
 # Generate valid fixtures only (skip intentionally-corrupt files)
-bun as sample --valid-only
+bun as setup --sample --valid-only
 ```
 
 ## Fixture matrix
@@ -166,5 +166,5 @@ Skipped fixtures are recorded in `manifest.json` under `skipped[]`.
 
 - Determinism is enforced at file-set/name/structure level; byte-level hashes are not enforced across platforms.
 - Every fixture must be structurally valid for its declared format (no placeholder stubs).
-- `bun t` automatically runs `bun as setup --step sample` and `bun as sample` as preflight before executing tests.
+- `bun t` automatically runs `bun as setup --step sample` and then `bun as setup --sample` as preflight before executing tests.
 - See [`sample-tests.md`](./sample-tests.md) for test coverage.

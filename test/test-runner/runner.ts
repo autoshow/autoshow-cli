@@ -594,9 +594,9 @@ const runPreflight = async (): Promise<void> => {
     }
   }
 
-  // Step 2: run sample --out input/samples
+  // Step 2: run setup --sample --out input/samples
   const sampleVerifyProc = Bun.spawn(
-    ['bun', `--env-file=${envFile}`, cliEntry, 'sample', '--out', 'input/samples', '--verify-only'],
+    ['bun', `--env-file=${envFile}`, cliEntry, 'setup', '--sample', '--out', 'input/samples', '--verify-only'],
     { stdout: 'inherit', stderr: 'inherit' }
   )
   const sampleVerifyExit = await sampleVerifyProc.exited
@@ -607,7 +607,7 @@ const runPreflight = async (): Promise<void> => {
 
   // Step 3: generate sample fixtures when verify-only cannot reuse the existing manifest
   const sampleProc = Bun.spawn(
-    ['bun', `--env-file=${envFile}`, cliEntry, 'sample', '--out', 'input/samples'],
+    ['bun', `--env-file=${envFile}`, cliEntry, 'setup', '--sample', '--out', 'input/samples'],
     { stdout: 'inherit', stderr: 'inherit' }
   )
   const sampleExit = await sampleProc.exited

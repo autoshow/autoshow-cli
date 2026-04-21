@@ -41,7 +41,8 @@ describe('sample generate', () => {
 
   test('sample generates manifest.json and valid/invalid fixture directories', async () => {
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'sample',
+      'src/cli/create-cli.ts', 'setup',
+      '--sample',
       '--out', TEST_OUT
     ])
 
@@ -98,7 +99,8 @@ describe('sample generate', () => {
 
   test('sample --verify-only passes after successful generation', async () => {
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'sample',
+      'src/cli/create-cli.ts', 'setup',
+      '--sample',
       '--out', TEST_OUT,
       '--verify-only'
     ])
@@ -108,7 +110,8 @@ describe('sample generate', () => {
 
   test('sample --refresh regenerates and produces a valid manifest', async () => {
     const result = await runCommand([
-      'src/cli/create-cli.ts', 'sample',
+      'src/cli/create-cli.ts', 'setup',
+      '--sample',
       '--out', TEST_OUT,
       '--refresh'
     ])
@@ -126,7 +129,8 @@ describe('sample generate', () => {
 
     try {
       const result = await runCommand([
-        'src/cli/create-cli.ts', 'sample',
+        'src/cli/create-cli.ts', 'setup',
+        '--sample',
         '--out', validOnlyOut,
         '--valid-only'
       ])

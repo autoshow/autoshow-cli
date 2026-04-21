@@ -8,8 +8,6 @@ export const knownCommands = new Set<string>([
   'config',
   'cache',
   'setup',
-  'sample',
-  'models',
   'links',
   'help',
   'version'

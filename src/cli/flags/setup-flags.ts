@@ -1,5 +1,25 @@
 import type { ClercFlagsDefinition } from 'clerc'
 import { transcriptionFlags } from './shared-flags'
+import { sampleFlags } from './sample-flags'
+
+const setupSampleFlags = {
+  out: {
+    ...sampleFlags.out,
+    description: 'With --sample, output directory for fixture files (default: input/samples)'
+  },
+  refresh: {
+    ...sampleFlags.refresh,
+    description: 'With --sample, regenerate all fixtures even if the manifest is already valid'
+  },
+  'verify-only': {
+    ...sampleFlags['verify-only'],
+    description: 'With --sample, validate the fixture set without regenerating'
+  },
+  'valid-only': {
+    ...sampleFlags['valid-only'],
+    description: 'With --sample, skip invalid fixture generation'
+  }
+} as const satisfies ClercFlagsDefinition
 
 export const setupFlags = {
   gcloud: {
@@ -48,6 +68,17 @@ export const setupFlags = {
     default: false,
     negatable: false
   },
+  sample: {
+    description: 'Generate or validate deterministic fixture files for all supported formats',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  models: {
+    description: 'Download one or more local Whisper or llama.cpp models without running inference (repeatable)',
+    type: [String] as [StringConstructor]
+  },
+  ...setupSampleFlags,
   step: {
     description: 'Run only a specific setup step: uv|yt-dlp|whisper-binary|whisper-model|llama-binary|reverb|calibre|all|transcription|write|tts|image|lyrics|sample (default: all). Assumes prerequisites are already installed for isolated steps.',
     type: String,

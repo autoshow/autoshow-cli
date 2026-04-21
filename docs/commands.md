@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 16 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 14 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -69,9 +69,8 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 ## Command Map
 
 - `metadata`: [metadata](./commands/setup-and-utilities/metadata/metadata.md)
-- `setup` / model pre-downloads: [setup](./commands/process-steps/step-0-setup/setup.md)
-- `sample`: [sample](./commands/setup-and-utilities/sample/sample.md)
-- `models`: download a Whisper or llama.cpp model without running inference (`bun as models <model>`)
+- `setup` / model pre-downloads / sample fixtures: [setup](./commands/process-steps/step-0-setup/setup.md)
+- `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
 - `cache`: manage the persistent STT media cache (`bun as cache prune` / `bun as cache clear`)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
 - `ocr`: [command](./commands/process-steps/step-2-ocr/ocr-document.md) | [setup](./commands/process-steps/step-2-ocr/ocr-document.md#setup)

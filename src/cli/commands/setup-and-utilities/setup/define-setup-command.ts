@@ -5,10 +5,48 @@ import { runCompleteSetup, runSetupStep, type SetupStepId } from './setup-orches
 import { runDoctor } from './run-doctor'
 import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
 import { setupGcloudStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
+import { runSampleFixtures } from '~/cli/commands/setup-and-utilities/sample/run-sample-fixtures'
+import { runModelDownloads } from '~/cli/commands/setup-and-utilities/models/run-model-downloads'
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 
 const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'lyrics', 'sample']
+const SAMPLE_ONLY_FLAGS = ['--out', '--refresh', '--verify-only', '--valid-only'] as const
+const FOCUSED_SETUP_CONFLICT_FLAGS = [
+  '--sample',
+  '--models',
+  '--gcloud',
+  '--gcloud-project',
+  '--gcloud-billing-account',
+  '--gcloud-project-name',
+  '--gcloud-organization',
+  '--gcloud-folder',
+  '--aws',
+  '--aws-create-bucket',
+  '--aws-region',
+  '--aws-bucket',
+  '--doctor',
+  '--step',
+  '--force-redownload',
+  '--repeat'
+] as const
+
+const hasLongFlag = (argv: string[], flag: string): boolean =>
+  argv.some((token) => token === flag || token.startsWith(`${flag}=`))
+
+const getUsedLongFlags = (argv: string[], flags: readonly string[]): string[] =>
+  flags.filter((flag) => hasLongFlag(argv, flag))
+
+const normalizeStringArrayFlag = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean)
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? [trimmed] : []
+  }
+  return []
+}
 
 export const setupCommand = defineCommand({
   name: 'setup',
@@ -22,16 +60,24 @@ export const setupCommand = defineCommand({
       ['bun as setup --gcloud --gcloud-project my-project --gcloud-billing-account 000000-000000-000000', 'Bootstrap a Google Cloud project with an explicit billing account'],
       ['bun as setup --aws', 'Check AWS CLI auth/config for Amazon Transcribe and auto-create/save a staging bucket when missing'],
       ['bun as setup --aws --aws-create-bucket', 'Create and save an S3 staging bucket for Amazon Transcribe'],
+      ['bun as setup --sample --verify-only', 'Validate deterministic sample fixtures without regenerating'],
+      ['bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF', 'Download Whisper and llama.cpp models without running inference'],
       ['bun as setup --doctor', 'Check prerequisites without installing'],
       ['bun as setup --step whisper-binary --force-redownload', 'Reinstall whisper binary']
     ]
   }
 }, async (ctx) => {
+  const rawArgv = Bun.argv.slice(2)
   const gcloudProject = typeof ctx.flags['gcloud-project'] === 'string' ? ctx.flags['gcloud-project'] : undefined
   const gcloudBillingAccount = typeof ctx.flags['gcloud-billing-account'] === 'string' ? ctx.flags['gcloud-billing-account'] : undefined
   const gcloudProjectName = typeof ctx.flags['gcloud-project-name'] === 'string' ? ctx.flags['gcloud-project-name'] : undefined
   const gcloudOrganization = typeof ctx.flags['gcloud-organization'] === 'string' ? ctx.flags['gcloud-organization'] : undefined
   const gcloudFolder = typeof ctx.flags['gcloud-folder'] === 'string' ? ctx.flags['gcloud-folder'] : undefined
+  const sampleMode = ctx.flags.sample === true
+  const usedModelsFlag = hasLongFlag(rawArgv, '--models')
+  const modelTargets = normalizeStringArrayFlag(ctx.flags.models)
+  const usedSampleOnlyFlags = getUsedLongFlags(rawArgv, SAMPLE_ONLY_FLAGS)
+
   const gcloudSpecificFlags: string[] = []
   if (gcloudProject) {
     gcloudSpecificFlags.push('--gcloud-project')
@@ -83,6 +129,22 @@ export const setupCommand = defineCommand({
   }
   if (!ctx.flags.aws && awsSpecificFlags.length > 0) {
     throw CLIUsageError(`${awsSpecificFlags.join(', ')} require --aws`)
+  }
+  if (!sampleMode && usedSampleOnlyFlags.length > 0) {
+    throw CLIUsageError(`${usedSampleOnlyFlags.join(', ')} require --sample`)
+  }
+  if (usedModelsFlag && modelTargets.length === 0) {
+    throw CLIUsageError('--models requires at least one value')
+  }
+  if (sampleMode || usedModelsFlag) {
+    const modeFlag = sampleMode ? '--sample' : '--models'
+    const conflicts = getUsedLongFlags(
+      rawArgv,
+      FOCUSED_SETUP_CONFLICT_FLAGS.filter((flag) => flag !== modeFlag)
+    )
+    if (conflicts.length > 0) {
+      throw CLIUsageError(`${modeFlag} cannot be combined with ${conflicts.join(', ')}`)
+    }
   }
 
   if (ctx.flags.gcloud) {
@@ -163,6 +225,25 @@ export const setupCommand = defineCommand({
         focused: true,
         verifyTranscribe: true
       })
+    })
+    return
+  }
+
+  if (sampleMode) {
+    await runWithLogContext({ step: 'setup' }, async () => {
+      await runSampleFixtures({
+        out: ctx.flags.out as string,
+        refresh: ctx.flags.refresh as boolean,
+        verifyOnly: ctx.flags['verify-only'] as boolean,
+        validOnly: ctx.flags['valid-only'] as boolean
+      })
+    })
+    return
+  }
+
+  if (usedModelsFlag) {
+    await runWithLogContext({ step: 'setup' }, async () => {
+      await runModelDownloads(modelTargets)
     })
     return
   }

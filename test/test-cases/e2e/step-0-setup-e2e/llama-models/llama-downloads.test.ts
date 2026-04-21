@@ -18,7 +18,7 @@ describe("llama model downloads", () => {
       await stopLlamaServer()
 
       const result = await runCommand(
-        ["src/cli/create-cli.ts", "models", model],
+        ["src/cli/create-cli.ts", "setup", "--models", model],
         { testName: downloadTestName },
       )
 

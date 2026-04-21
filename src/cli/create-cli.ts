@@ -12,11 +12,9 @@ import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-m
 import { videoCommand } from '~/cli/commands/process-steps/step-6-video/define-video-command'
 import { lyricsCommand } from '~/cli/commands/process-steps/step-8-lyrics/define-lyrics-command'
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
-import { sampleCommand } from '~/cli/commands/setup-and-utilities/sample/define-sample-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
 import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
-import { modelsCommand } from '~/cli/commands/setup-and-utilities/models/define-models-command'
 import { linksCommand } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import * as l from '~/logger'
 import { runWithLogContext, reconfigureLogger } from '~/logger'
@@ -96,8 +94,6 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   config: 'setup',
   cache: 'setup',
   setup: 'setup',
-  sample: 'setup',
-  models: 'setup',
   links: 'setup',
   metadata: 'processing',
   download: 'processing',
@@ -115,8 +111,6 @@ const COMMAND_DEFINITIONS = [
   configCommand,
   cacheCommand,
   setupCommand,
-  sampleCommand,
-  modelsCommand,
   linksCommand,
   metadataCommand,
   downloadCommand,

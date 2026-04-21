@@ -181,6 +181,63 @@ test('setup help includes calibre step', async () => {
   expect(result.stdout).toContain('--aws-create-bucket')
   expect(result.stdout).toContain('--aws-region')
   expect(result.stdout).toContain('--aws-bucket')
+  expect(result.stdout).toContain('--sample')
+  expect(result.stdout).toContain('--models')
+  expect(result.stdout).toContain('--out')
+  expect(result.stdout).toContain('--verify-only')
+})
+
+test('setup rejects sample-only flags without --sample', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--verify-only'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--verify-only require --sample')
+})
+
+test('setup rejects combining --sample with --step', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--sample',
+    '--step',
+    'sample'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--sample cannot be combined with --step')
+})
+
+test('setup rejects combining --models with --doctor', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'setup',
+    '--models',
+    'base',
+    '--doctor'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--models cannot be combined with --doctor')
+})
+
+test('removed sample and models commands return unknown-command usage errors', async () => {
+  const sampleResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'sample'
+  ])
+  const modelsResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'models'
+  ])
+
+  expect(sampleResult.exitCode).toBe(2)
+  expect(modelsResult.exitCode).toBe(2)
+  expect(`${sampleResult.stdout}\n${sampleResult.stderr}`).toContain('Unknown command "sample"')
+  expect(`${modelsResult.stdout}\n${modelsResult.stderr}`).toContain('Unknown command "models"')
 })
 
 test('setup rejects combining --gcloud with --step', async () => {

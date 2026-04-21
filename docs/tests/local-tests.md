@@ -27,7 +27,7 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
 
 ## Shared Runner Behavior
 
-- `bun t` always runs the sample/setup preflight before test discovery: `setup --step sample`, fallback `setup`, then `sample --out input/samples --verify-only`, and finally fixture regeneration if verification fails.
+- `bun t` always runs the sample/setup preflight before test discovery: `setup --step sample`, fallback `setup`, then `setup --sample --out input/samples --verify-only`, and finally fixture regeneration if verification fails.
 - Test discovery comes from `test/test-cases/**/*.test.ts`.
 - Selection is path-based only.
 - `--test-price` and `--budget <whole-number-cents>` operate on the same selected paths as normal test mode.

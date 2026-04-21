@@ -75,8 +75,6 @@ bun as ocr --resume-missing [batch-dir] [provider flags]
 | WebP / BMP | normalize locally when possible, then OCR | hosted OCR may reject unsupported formats |
 | GIF | local OCR only | hosted OCR rejects it |
 
-Only one OCR engine flag may be active at a time: `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, or `--glm-ocr`.
-
 ## Article Backends
 
 - `defuddle` is the default backend for article-like HTML inputs.
