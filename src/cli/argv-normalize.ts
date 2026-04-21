@@ -11,7 +11,6 @@ export const knownCommands = new Set<string>([
   'sample',
   'models',
   'links',
-  'report',
   'help',
   'version'
 ])

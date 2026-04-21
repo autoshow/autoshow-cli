@@ -12,7 +12,7 @@ const getSection = (output: string, heading: string, nextHeading?: string): stri
   return output.slice(sectionStart, end)
 }
 
-test('root help groups report under setup and utilities', async () => {
+test('root help groups keep setup utilities separate from processing commands', async () => {
   const result = await runCommand(['src/cli/create-cli.ts', '--help'], {
     env: { NO_COLOR: '1' }
   })
@@ -21,9 +21,18 @@ test('root help groups report under setup and utilities', async () => {
 
   const setupSection = getSection(result.stdout, '  Setup & Utilities\n', '  Processing & Generation\n')
   const processingSection = getSection(result.stdout, '  Processing & Generation\n')
-  const reportMatches = result.stdout.match(/^\s+report\s+/gm) ?? []
+  const linksMatches = result.stdout.match(/^\s+links\s+/gm) ?? []
 
-  expect(setupSection).toContain('    report')
-  expect(processingSection).not.toContain('    report')
-  expect(reportMatches).toHaveLength(1)
+  expect(setupSection).toContain('    links')
+  expect(processingSection).not.toContain('    links')
+  expect(linksMatches).toHaveLength(1)
+})
+
+test('removed report command is rejected by help', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'help', 'report'], {
+    env: { NO_COLOR: '1' }
+  })
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Usage error: Unknown command "report". Run: bun as help')
 })

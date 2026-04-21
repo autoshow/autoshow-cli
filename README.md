@@ -67,7 +67,7 @@ bun as links stt
 |------|----------|
 | Inspect and process | `metadata`, `download`, `ocr`, `stt`, `write` |
 | Generate | `tts`, `image`, `video`, `music` |
-| Setup & Utilities | `config`, `cache`, `setup`, `sample`, `models`, `links`, `report` |
+| Setup & Utilities | `config`, `cache`, `setup`, `sample`, `models`, `links` |
 
 High-value notes:
 

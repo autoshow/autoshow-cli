@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 17 named commands: `metadata`, `download`, `ocr`, `stt`, `report`, `write`, `tts`, `image`, `video`, `music`, `lyrics`, `config`, `cache`, `setup`, `sample`, `models`, `links`
+   - Defines 16 named commands: `metadata`, `download`, `ocr`, `stt`, `write`, `tts`, `image`, `video`, `music`, `lyrics`, `config`, `cache`, `setup`, `sample`, `models`, `links`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -122,12 +122,12 @@ src/cli/create-cli.ts
 │  │ model by ID      │  │ autoshow.json    │  │ STT media cache  │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
-│  │     sample       │  │      links       │  │      report      │            │
-│  │                  │  │                  │  │                  │            │
-│  │ Generate test    │  │ Fetch provider   │  │ Generate STT/OCR │            │
-│  │ fixtures         │  │ reference docs   │  │ consensus reports│            │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
+│  ┌──────────────────┐  ┌──────────────────┐                                  │
+│  │     sample       │  │      links       │                                  │
+│  │                  │  │                  │                                  │
+│  │ Generate test    │  │ Fetch provider   │                                  │
+│  │ fixtures         │  │ reference docs   │                                  │
+│  └──────────────────┘  └──────────────────┘                                  │
 │                                                                              │
 │  Most process commands → handleProcessTarget(command, target, flags)         │
 │  Standalone local commands such as `lyrics` route to their own runner        │

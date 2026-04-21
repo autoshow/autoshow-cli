@@ -13,7 +13,6 @@ import { videoCommand } from '~/cli/commands/process-steps/step-6-video/define-v
 import { lyricsCommand } from '~/cli/commands/process-steps/step-8-lyrics/define-lyrics-command'
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { sampleCommand } from '~/cli/commands/setup-and-utilities/sample/define-sample-command'
-import { reportCommand } from '~/cli/commands/setup-and-utilities/report/define-report-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
 import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
@@ -100,7 +99,6 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   sample: 'setup',
   models: 'setup',
   links: 'setup',
-  report: 'setup',
   metadata: 'processing',
   download: 'processing',
   ocr: 'processing',
@@ -124,7 +122,6 @@ const COMMAND_DEFINITIONS = [
   downloadCommand,
   ocrCommand,
   sttCommand,
-  reportCommand,
   writeCommand,
   ttsCommand,
   imageCommand,

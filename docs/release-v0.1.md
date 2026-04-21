@@ -46,7 +46,6 @@ This release brings together:
 - automatic cost preflight and budget enforcement for hosted and mixed-provider runs
 - a persistent STT media cache plus cache-management utilities
 - a `links` command for fetching provider documentation into one local markdown file
-- a `report` command for generating consensus report artifacts from completed run directories
 - a `lyrics` command for local lyric-video rendering with Whisper captions
 
 ## What AutoShow Is
@@ -73,7 +72,6 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 | Download | Fetch or normalize media/documents, then stop after download + metadata |
 | OCR | Document OCR and text extraction (`ocr`) |
 | STT | Audio/video transcription plus prompt artifact (`stt`) |
-| Report | Generate consensus report artifacts for STT or OCR run outputs (`report`) |
 | Write | Full download/ocr/stt + prompt + summary pipeline |
 | TTS | Generate speech from local markdown or text |
 | Image | Generate images from text prompts |
@@ -98,7 +96,6 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 - HTML/article inputs can use `defuddle`, `firecrawl`, or `glm-reader` backends through `--url-backend`.
 - Native EPUB text extraction writes cleaned section-aware text by default, strips common footnote/reference noise, and can additionally emit `chapters/` or `chunks/` side artifacts.
 - The persistent STT cache can be managed with `bun as cache prune` and `bun as cache clear`, and runs can force refresh or bypass via `--refresh-cache` and `--no-cache`.
-- `report` can generate consensus markdown, JSON, and review artifacts from STT or OCR runs after the original pipeline completes.
 - Global runtime flags include `--config-path` for alternate config files plus `--verbose`, `--quiet/-q`, and `--json` for log-output control.
 
 ### Quick start
@@ -139,9 +136,6 @@ bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
 bun as lyrics --audio input/examples/lyrics/01-example-song.wav
 
-# generate consensus artifacts for a previous STT or OCR run
-bun as report ./output/2026-04-17_episode
-
 # fetch curated OpenAI provider docs
 bun as links --openai
 ```
@@ -180,7 +174,7 @@ estimated and actual cost, and estimated and actual processing time.
 
 ## Command Surface
 
-AutoShow exposes 17 workflow/support commands, plus `help` and `version`.
+AutoShow exposes 16 workflow/support commands, plus `help` and `version`.
 
 | Command | Primary purpose | Typical input |
 |---------|-----------------|---------------|
@@ -188,7 +182,6 @@ AutoShow exposes 17 workflow/support commands, plus `help` and `version`.
 | `download` | download/normalization without OCR, STT, or write | URL, file, directory, list |
 | `ocr` | document/image/article extraction | URL, file, directory, list |
 | `stt` | media transcription only | URL, file, directory, list |
-| `report` | generate consensus report artifacts for prior STT/OCR runs | run directory or batch root |
 | `write` | full pipeline orchestration | URL, file, directory, list |
 | `tts` | text-to-speech | local `.md` or `.txt` |
 | `image` | text-to-image | prompt |
@@ -471,13 +464,6 @@ Batch runs additionally write:
 
 - `batch.json`
 - one child lyric run directory per discovered audio file for `lyrics --batch`
-
-Consensus report generation additionally writes artifacts such as:
-
-- `consensus-report.md`
-- `consensus-report.json`
-- `consensus-review.md`
-- `consensus-transcription.txt` for STT or `consensus-extraction.txt` for OCR
 
 ### Report snapshot as of April 17, 2026
 

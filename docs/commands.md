@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 17 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 16 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -26,9 +26,6 @@ bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 
 # stt with AssemblyAI STT
 bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-3-pro
-
-# consensus report for an existing STT or OCR output directory
-bun as report output/2026-04-15_episode
 
 # full pipeline (download/transcribe + LLM write)
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
@@ -76,7 +73,6 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
 - `ocr`: [command](./commands/process-steps/step-2-ocr/ocr-document.md) | [setup](./commands/process-steps/step-2-ocr/ocr-document.md#setup)
 - `stt`: [command](./commands/process-steps/step-2-stt/stt-audio.md) | [setup](./commands/process-steps/step-2-stt/stt-audio.md#setup)
-- `report`: [report](./commands/setup-and-utilities/report/report.md)
 - `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
 - `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
 - `image`: [command](./commands/process-steps/step-5-image/text-to-image.md) | [setup](./commands/process-steps/step-5-image/text-to-image.md#setup)
@@ -92,7 +88,6 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - Use `download` for downloading media/documents and collecting metadata.
 - Use `ocr` for documents/images when you only need OCR/text extraction.
 - Use `stt` for audio/video when you only need transcript + prompt output.
-- Use `report` when you already have STT or OCR run artifacts under `providers/` and want consensus outputs plus review files.
 - Use `write` for full summary pipeline with optional TTS/image/video generation.
 - Use `lyrics` for local-only lyric videos from repo audio under `input/`, with optional rerender from edited caption files under `output/`.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
