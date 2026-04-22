@@ -63,6 +63,7 @@ const EXPECTED_BUDGET_KEYS = [
   'tts-elevenlabs-eleven_flash_v2_5',
   'tts-elevenlabs-eleven_turbo_v2_5',
   'tts-elevenlabs-eleven_v3',
+  'tts-gemini-gemini-3.1-flash-tts-preview',
   'tts-gemini-gemini-2.5-flash-preview-tts',
   'tts-gemini-gemini-2.5-pro-preview-tts',
   'tts-groq-canopylabs/orpheus-v1-english',

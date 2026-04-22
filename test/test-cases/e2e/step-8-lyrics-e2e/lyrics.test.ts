@@ -17,7 +17,7 @@ import { exec } from '~/utils/cli-utils'
 const SHORT_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
 const SHORT_AUDIO_SUFFIX = 'lyrics-0-audio-short'
 const RERENDER_SUFFIX = 'lyrics-0-audio-short-fixed'
-const EXAMPLE_SONG_AUDIO_PATH = 'input/examples/lyrics/01-example-song.wav'
+const EXAMPLE_SONG_AUDIO_PATH = 'input/examples/lyrics/01-example-song.mp3'
 const EXAMPLE_SONG_SUFFIX = 'lyrics-01-example-song'
 const BATCH_SUFFIX = 'lyrics-batch'
 const GENERATION_BATCH_SUFFIX = 'lyrics-gen-batch'
@@ -192,7 +192,7 @@ budgetedTest('lyrics-whisper-tiny', 'lyrics transcribes local audio with whisper
   }
 }, 30000)
 
-budgetedTest('lyrics-default-example-song', 'bun as lyrics --audio input/examples/lyrics/01-example-song.wav renders the bundled example with the default whisper model', async () => {
+budgetedTest('lyrics-default-example-song', 'bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 renders the bundled example with the default whisper model', async () => {
   await cleanupTestOutput(EXAMPLE_SONG_SUFFIX)
 
   const result = await runCommand([

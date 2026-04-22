@@ -126,15 +126,15 @@ bun as ocr input/examples/document/1-epub.epub --chapters --length 50
 bun as ocr https://ajcwebdev.com --url-backend firecrawl
 
 # standalone text-to-speech
-bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
+bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
 
 # standalone image generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 
 # local lyric-video render from repo audio
-# bundled lyrics fixtures: input/examples/lyrics/01-example-song.wav,
+# bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
 
 # fetch curated OpenAI provider docs
 bun as links --openai

@@ -97,6 +97,10 @@ export const mergeConfigIntoRawFlags = (
     inject('groq-voice', d.post.tts.groqVoice)
     inject('openai-voice', d.post.tts.openaiVoice)
     inject('gemini-voice', d.post.tts.geminiVoice)
+    inject('gemini-speaker-1-name', d.post.tts.geminiSpeaker1Name)
+    inject('gemini-speaker-1-voice', d.post.tts.geminiSpeaker1Voice)
+    inject('gemini-speaker-2-name', d.post.tts.geminiSpeaker2Name)
+    inject('gemini-speaker-2-voice', d.post.tts.geminiSpeaker2Voice)
     inject('elevenlabs-voice', d.post.tts.elevenlabsVoice)
     inject('minimax-tts-voice', d.post.tts.minimaxTtsVoice)
   }
@@ -202,6 +206,10 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'groq-voice':        ['defaults', 'post', 'tts', 'groqVoice'],
   'openai-voice':      ['defaults', 'post', 'tts', 'openaiVoice'],
   'gemini-voice':      ['defaults', 'post', 'tts', 'geminiVoice'],
+  'gemini-speaker-1-name': ['defaults', 'post', 'tts', 'geminiSpeaker1Name'],
+  'gemini-speaker-1-voice': ['defaults', 'post', 'tts', 'geminiSpeaker1Voice'],
+  'gemini-speaker-2-name': ['defaults', 'post', 'tts', 'geminiSpeaker2Name'],
+  'gemini-speaker-2-voice': ['defaults', 'post', 'tts', 'geminiSpeaker2Voice'],
   'elevenlabs-voice':  ['defaults', 'post', 'tts', 'elevenlabsVoice'],
   'minimax-tts-voice': ['defaults', 'post', 'tts', 'minimaxTtsVoice'],
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],

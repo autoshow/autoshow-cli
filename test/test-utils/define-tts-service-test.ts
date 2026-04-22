@@ -16,6 +16,8 @@ import {
 } from './service-test-kit'
 import { readRunMetadata } from './manifest-helpers'
 
+const LIVE_TTS_TIMEOUT_MS = 30_000
+
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
 const isTransientMinimaxTtsFailure = (output: string): boolean => {
@@ -35,6 +37,7 @@ export const defineTTSServiceTest = ({
   envVarDescription,
   extraArgs,
   resolveExpectedSpeaker,
+  generationTimeoutMs,
 }: {
   models: readonly string[]
   cliFlag: string
@@ -43,6 +46,7 @@ export const defineTTSServiceTest = ({
   envVarDescription: string
   extraArgs?: string[]
   resolveExpectedSpeaker?: () => Promise<string>
+  generationTimeoutMs?: number
 }): void => {
   withOutputLifecycle(STABLE_TTS_MD_TITLE)
 
@@ -127,6 +131,6 @@ export const defineTTSServiceTest = ({
         }
         expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
       }
-    })
+    }, generationTimeoutMs ?? LIVE_TTS_TIMEOUT_MS)
   }
 }

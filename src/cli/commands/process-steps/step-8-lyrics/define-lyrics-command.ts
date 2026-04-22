@@ -846,8 +846,8 @@ export const lyricsCommand = defineCommand({
     examples: [
       ['bun as lyrics album-title', 'Generate lyric drafts from ./albums/album-title/text into ./albums/album-title/lyrics'],
       ['bun as lyrics ./albums/demo 01-track --openai gpt-5.4 --prompt rockSong', 'Generate one lyric draft with the existing LLM write pipeline'],
-      ['bun as lyrics --audio input/examples/lyrics/01-example-song.wav', 'Render a lyric video from local audio'],
-      ['bun as lyrics --audio input/examples/lyrics/01-example-song.wav --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
+      ['bun as lyrics --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
+      ['bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
       ['bun as lyrics --batch --model small', 'Render lyric videos for every supported audio file under ./input']
     ]
   }

@@ -123,8 +123,23 @@ const parseOptionalPositiveIntFlag = (
   return parsed
 }
 
+const toCamelFlagKey = (key: string): string => {
+  return key.replace(/-([a-z0-9])/g, (_match, char: string) => char.toUpperCase())
+}
+
+const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
+  if (key in flags) {
+    return flags[key]
+  }
+  const camelKey = toCamelFlagKey(key)
+  if (camelKey in flags) {
+    return flags[camelKey]
+  }
+  return undefined
+}
+
 const readStringFlag = (flags: Record<string, unknown>, key: string, fallback: string): string => {
-  const value = flags[key]
+  const value = readFlagValue(flags, key)
   if (typeof value === 'string' && value.length > 0) {
     return value
   }
@@ -132,7 +147,7 @@ const readStringFlag = (flags: Record<string, unknown>, key: string, fallback: s
 }
 
 const readOptionalStringFlag = (flags: Record<string, unknown>, key: string): string | undefined => {
-  const value = flags[key]
+  const value = readFlagValue(flags, key)
   if (typeof value === 'string' && value.length > 0) {
     return value
   }
@@ -225,11 +240,11 @@ export const normalizeModelFlagOccurrences = (
 }
 
 const readBooleanFlag = (flags: Record<string, unknown>, key: string): boolean => {
-  return flags[key] === true
+  return readFlagValue(flags, key) === true
 }
 
 const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
-  const v = flags['batch-order']
+  const v = readFlagValue(flags, 'batch-order')
   return v === 'oldest' ? 'oldest' : 'newest'
 }
 
@@ -279,6 +294,28 @@ const parseDoubleDashArgs = (args: string[]): Record<string, string | boolean> =
     }
   }
   return result
+}
+
+const readOptionalRawStringFlag = (args: string[], flagName: string): string | undefined => {
+  for (let i = args.length - 1; i >= 0; i--) {
+    const arg = args[i] as string
+    if (arg === `--${flagName}`) {
+      const next = args[i + 1]
+      if (typeof next === 'string' && !next.startsWith('--') && next.length > 0) {
+        return next
+      }
+      continue
+    }
+
+    if (arg.startsWith(`--${flagName}=`)) {
+      const value = arg.slice(flagName.length + 3)
+      if (value.length > 0) {
+        return value
+      }
+    }
+  }
+
+  return undefined
 }
 
 export const buildOptsFromFlags = (
@@ -523,6 +560,10 @@ export const buildOptsFromFlags = (
     })(),
     openaiVoiceId: readOptionalStringFlag(mergedFlags, 'openai-voice'),
     geminiVoiceId: readOptionalStringFlag(mergedFlags, 'gemini-voice'),
+    geminiSpeaker1Name: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-1-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-name'),
+    geminiSpeaker1Voice: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-1-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-voice'),
+    geminiSpeaker2Name: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-2-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-name'),
+    geminiSpeaker2Voice: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-2-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-voice'),
     elevenlabsTtsModels,
     elevenlabsTtsModel: first(elevenlabsTtsModels),
     minimaxTtsModels,

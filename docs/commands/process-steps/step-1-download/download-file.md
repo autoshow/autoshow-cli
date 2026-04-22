@@ -120,7 +120,7 @@ bun as download https://example.com/feed --batch-all --keep-original-media --fla
 bun as download https://www.youtube.com/@channelname --batch-limit 2
 
 # Download all items from a URL list
-bun as download input/examples/document/2-urls.md --batch-all
+bun as download input/examples/batch/2-urls.md --batch-all
 ```
 
 ## Setup and Environment

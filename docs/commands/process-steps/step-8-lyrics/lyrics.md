@@ -24,12 +24,12 @@ bun as lyrics album-title
 bun as lyrics ./albums/demo 01-track --openai gpt-5.4 --prompt rockSong
 
 # single file (audio must be inside ./input)
-# bundled example fixtures: input/examples/lyrics/01-example-song.wav,
+# bundled example fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, input/examples/lyrics/01-example-song.txt
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
 
 # rerender from edited captions after the first run (caption file must be inside ./output)
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav --captions output/<run-dir>/01-example-song.vtt
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt
 
 # batch mode (scan ./input recursively for supported audio files)
 bun as lyrics --batch
@@ -73,16 +73,16 @@ bun as lyrics ./albums/demo 01-track --openai gpt-5.4 --prompt folkSong
 bun as lyrics album-title --price
 
 # default local Whisper render with the bundled lyrics fixture set
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
 
 # smaller local Whisper model
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav --model small
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 --model small
 
 # rerender after editing the generated captions from the example run
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav --captions output/<run-dir>/01-example-song.vtt
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt
 
 # keep the temp workspace for inspection
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav --keep-tmp
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 --keep-tmp
 
 # batch mode
 bun as lyrics --batch --model tiny
@@ -176,6 +176,6 @@ Render-mode `run.json` records:
 - `--price` is only available in generation mode.
 - In rerender mode, the output stem comes from the caption filename, not the audio filename.
 - The title displayed in the video comes from the audio filename.
-- The bundled example run uses `input/examples/lyrics/01-example-song.wav`; `input/examples/lyrics/01-cover.jpeg` is auto-detected as background art, and `input/examples/lyrics/01-example-song.txt` mirrors the reference lyrics text for caption review.
+- The bundled example run uses `input/examples/lyrics/01-example-song.mp3`; `input/examples/lyrics/01-cover.jpeg` is auto-detected as background art, and `input/examples/lyrics/01-example-song.txt` mirrors the reference lyrics text for caption review.
 - If an image beside the audio file matches by exact basename or track number, it is used as the background; otherwise a spectrogram background is rendered.
 - When ffmpeg lacks the `ass` subtitle filter, AutoShow falls back to image-based text overlays rendered with `pango-view` plus ImageMagick and still writes the same MP4/VTT/SRT outputs.

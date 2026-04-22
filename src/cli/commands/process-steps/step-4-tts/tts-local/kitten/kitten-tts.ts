@@ -85,7 +85,7 @@ export const setupKittenTts = async (): Promise<void> => {
     l.success('Kitten TTS setup complete!')
     l.success('')
     l.success('You can now use Kitten TTS:')
-    l.success('bun as tts notes.md --kitten-tts kitten-tts-mini')
+    l.success('bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini')
     l.success('bun as write "URL" --kitten-tts kitten-tts-mini')
     l.success('========================================')
   }

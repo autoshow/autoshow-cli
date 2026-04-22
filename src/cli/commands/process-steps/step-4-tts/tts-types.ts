@@ -20,6 +20,10 @@ export type TtsOptions = Pick<
   | 'geminiTtsModels'
   | 'geminiTtsModel'
   | 'geminiVoiceId'
+  | 'geminiSpeaker1Name'
+  | 'geminiSpeaker1Voice'
+  | 'geminiSpeaker2Name'
+  | 'geminiSpeaker2Voice'
 >
 
 export type TtsTarget = {

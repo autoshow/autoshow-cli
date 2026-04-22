@@ -18,8 +18,8 @@ export const ttsCommand = defineCommand({
   flags: ttsFlags,
   help: {
     examples: [
-      ['bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8', 'Generate speech with local Kitten TTS'],
-      ['bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3', 'Generate speech with ElevenLabs']
+      ['bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8', 'Generate speech with local Kitten TTS'],
+      ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3', 'Generate speech with ElevenLabs']
     ]
   }
 }, async (ctx) => {

@@ -55,7 +55,7 @@ bun as tts <input> [flags]
 | MiniMax | `--minimax-tts <model>` | `speech-2.8-hd`, `speech-2.8-turbo` | `--minimax-tts-voice`, default `English_expressive_narrator` |
 | Groq | `--groq-tts <model>` | `canopylabs/orpheus-v1-english` | `--groq-voice`, default `troy` |
 | OpenAI | `--openai-tts <model>` | `gpt-4o-mini-tts` | `--openai-voice`, default `alloy` |
-| Gemini | `--gemini-tts <model>` | `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` | `--gemini-voice`, default `Kore` |
+| Gemini | `--gemini-tts <model>` | `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` | `--gemini-voice`, default `Kore` |
 
 If no engine flag is provided, `tts` defaults to Kitten TTS with `kitten-tts-nano-0.8-int8`.
 
@@ -66,23 +66,31 @@ Model-selecting flags are repeatable, including repeated flags from the same pro
 
 ```bash
 # Default local Kitten TTS
-bun as tts input/examples/document/1-tts.md
+bun as tts input/examples/tts/1-tts.md
 
 # Local Kitten TTS with explicit model and speaker
-bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-mini --kitten-voice Luna
+bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini --kitten-voice Luna
 
 # Hosted providers
-bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
-bun as tts input/examples/document/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts --gemini-voice Kore
+bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
+bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview --gemini-voice Kore
+
+# Gemini multispeaker dialogue
+bun as tts input/examples/tts/tts-dialogue.txt \
+  --gemini-tts gemini-3.1-flash-tts-preview \
+  --gemini-speaker-1-name Host \
+  --gemini-speaker-1-voice Kore \
+  --gemini-speaker-2-name Guest \
+  --gemini-speaker-2-voice Puck
 
 # Multi-target run
-bun as tts input/examples/document/1-tts.md \
+bun as tts input/examples/tts/1-tts.md \
   --kitten-tts kitten-tts-mini \
   --openai-tts gpt-4o-mini-tts \
   --openai-voice alloy
 
 # Same provider, multiple models
-bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts eleven_flash_v2_5
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts eleven_flash_v2_5
 ```
 
 ## Flags
@@ -101,7 +109,18 @@ bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --elevenl
 | `--groq-voice <id>` | Override the Groq voice ID |
 | `--openai-voice <id>` | Override the OpenAI voice ID |
 | `--gemini-voice <name>` | Override the Gemini voice name |
+| `--gemini-speaker-1-name <name>` | Gemini multispeaker speaker 1 label; requires all four Gemini speaker flags |
+| `--gemini-speaker-1-voice <name>` | Gemini multispeaker speaker 1 voice; requires all four Gemini speaker flags |
+| `--gemini-speaker-2-name <name>` | Gemini multispeaker speaker 2 label; requires all four Gemini speaker flags |
+| `--gemini-speaker-2-voice <name>` | Gemini multispeaker speaker 2 voice; requires all four Gemini speaker flags |
 | `--price` | Show the aggregated estimate and exit |
+
+## Gemini Multispeaker
+
+- Gemini multispeaker mode is enabled only when all four `--gemini-speaker-*` flags are provided together.
+- Do not combine the multispeaker flags with `--gemini-voice`.
+- The input text must include explicit speaker labels such as `Host:` and `Guest:` that match the configured speaker names.
+- Inline Gemini-style delivery tags like `[whispers]` or `[excitedly]` stay in the source text and are passed through unchanged.
 
 ## Output
 

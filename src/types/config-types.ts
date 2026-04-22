@@ -53,6 +53,10 @@ const TtsDefaultsSchema = v.strictObject({
   groqVoice: v.optional(v.string(), undefined),
   openaiVoice: v.optional(v.string(), undefined),
   geminiVoice: v.optional(v.string(), undefined),
+  geminiSpeaker1Name: v.optional(v.string(), undefined),
+  geminiSpeaker1Voice: v.optional(v.string(), undefined),
+  geminiSpeaker2Name: v.optional(v.string(), undefined),
+  geminiSpeaker2Voice: v.optional(v.string(), undefined),
   elevenlabsVoice: v.optional(v.string(), undefined),
   minimaxTtsVoice: v.optional(v.string(), undefined)
 })

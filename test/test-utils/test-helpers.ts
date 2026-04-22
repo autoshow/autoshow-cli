@@ -8,7 +8,7 @@ export const STABLE_AUDIO_URL = 'https://ajc.pics/autoshow/1-audio.mp3'
 export const STABLE_AUDIO_TITLE = new URL(STABLE_AUDIO_URL).pathname.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
 export const STABLE_LOCAL_AUDIO_PATH = 'input/examples/audio/1-audio.mp3'
 export const STABLE_LOCAL_AUDIO_TITLE = STABLE_LOCAL_AUDIO_PATH.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
-export const STABLE_TTS_MD_PATH = 'input/examples/document/1-tts.md'
+export const STABLE_TTS_MD_PATH = 'input/examples/tts/1-tts.md'
 export const STABLE_TTS_MD_TITLE = '1-tts'
 const PAGE_IMAGE_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAN0lEQVR4nO3RwQ0AMAjDwJT9d05HMB9+vgGCZF7bXJrT9XhgwR8gEyETIRMhEyETIRMhEyEThXzH8QM9OMM6fAAAAABJRU5ErkJggg=='
 

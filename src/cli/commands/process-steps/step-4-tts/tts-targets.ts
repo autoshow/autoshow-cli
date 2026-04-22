@@ -27,6 +27,11 @@ import { runMinimaxTts } from './tts-services/minimax/run-minimax-tts'
 import { runGroqTts } from './tts-services/groq/run-groq-tts'
 import { runOpenAITts } from './tts-services/openai/run-openai-tts'
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
+import {
+  formatGeminiSpeakerSummary,
+  resolveGeminiMultiSpeakerConfig,
+  validateGeminiMultiSpeakerTranscript
+} from './tts-services/gemini/gemini-tts-config'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import * as l from '~/logger'
 
@@ -95,6 +100,18 @@ export const buildTtsArtifactMap = (
     getFileName: (entry) => entry.audioFileName
   })
 
+export const validateTtsInput = (text: string, options: TtsOptions): void => {
+  const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
+  if (geminiModels.length === 0) {
+    return
+  }
+
+  const geminiMultiSpeakerConfig = resolveGeminiMultiSpeakerConfig(options)
+  if (geminiMultiSpeakerConfig) {
+    validateGeminiMultiSpeakerTranscript(text, geminiMultiSpeakerConfig)
+  }
+}
+
 export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const targets: TtsTarget[] = []
   const kittenModels = options.kittenTtsModels ?? (options.kittenTtsModel ? [options.kittenTtsModel] : [])
@@ -103,6 +120,7 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const groqModels = options.groqTtsModels ?? (options.groqTtsModel ? [options.groqTtsModel] : [])
   const openaiModels = options.openaiTtsModels ?? (options.openaiTtsModel ? [options.openaiTtsModel] : [])
   const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
+  const geminiMultiSpeakerConfig = resolveGeminiMultiSpeakerConfig(options)
 
   for (const rawModel of kittenModels) {
     const model: KittenTtsModel = validateKittenTtsModel(rawModel)
@@ -183,14 +201,15 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   for (const rawModel of geminiModels) {
     const model: GeminiTtsModel = validateGeminiTtsModel(rawModel)
     const voiceId = options.geminiVoiceId?.trim() || undefined
+    const speaker = geminiMultiSpeakerConfig ? formatGeminiSpeakerSummary(geminiMultiSpeakerConfig) : voiceId
 
     targets.push({
       service: 'gemini',
       model,
-      ...(voiceId ? { voice: voiceId } : {}),
+      ...(speaker ? { voice: speaker } : {}),
       run: async (text, outputDir) => {
         await ensureGeminiTtsSetup()
-        return await runGeminiTts(text, outputDir, { model, voiceId })
+        return await runGeminiTts(text, outputDir, { model, voiceId, multiSpeakerConfig: geminiMultiSpeakerConfig })
       }
     })
   }

@@ -40,18 +40,18 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 bun as ocr input/examples/document/1-document.pdf
 
 # text-to-speech from local markdown/txt
-bun as tts input/examples/document/1-tts.md --kitten-tts kitten-tts-mini
+bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini
 
 # text-to-speech with Gemini
-bun as tts input/examples/document/1-tts.md --gemini-tts gemini-2.5-flash-preview-tts
+bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview
 
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
 
 # local lyric-video render from repo audio
-# bundled lyrics fixtures: input/examples/lyrics/01-example-song.wav,
+# bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
-bun as lyrics --audio input/examples/lyrics/01-example-song.wav
+bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
 
 # lyric draft generation from album text
 bun as lyrics album-title --prompt rockSong
@@ -104,9 +104,9 @@ bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as lyrics album-title --price
-bun as tts input/examples/document/1-tts.md --elevenlabs-tts eleven_v3 --price
-bun as tts input/examples/document/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
-bun as tts input/examples/document/1-tts.md --openai-tts gpt-4o-mini-tts --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
+bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
+bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as image "a sunset" --openai-image gpt-image-1 --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --price

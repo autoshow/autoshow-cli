@@ -14,7 +14,7 @@ const MUSIC_GEN_TITLE = 'music-gen'
 
 defineMusicServiceTest({
   models: [
-    { model: 'music-2.5', prompt: 'uplifting indie rock with bright guitars', extraArgs: ['--music-lyrics-file', 'input/examples/document/0-tts-short.txt'] },
+    { model: 'music-2.5', prompt: 'uplifting indie rock with bright guitars', extraArgs: ['--music-lyrics-file', 'input/examples/tts/0-tts-short.txt'] },
   ],
   cliFlag: '--minimax-music',
   musicService: 'minimax',
@@ -38,7 +38,7 @@ budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop music', a
       '--minimax-music',
       'music-2.5',
       '--music-lyrics-file',
-      'input/examples/document/1-tts.md'
+      'input/examples/tts/1-tts.md'
     ],
   )
 
@@ -83,7 +83,7 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and l
   await cleanupTestOutput('1-audio')
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/examples/document/1-tts.md'],
+    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/examples/tts/1-tts.md'],
   )
   expect(result.exitCode).toBe(0)
 

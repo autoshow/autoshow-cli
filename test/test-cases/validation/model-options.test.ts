@@ -50,11 +50,11 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid MiniMax model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'not-a-real-minimax-model'] },
   { label: 'CLI invalid Grok model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--grok', 'not-a-real-grok-model'] },
   { label: 'CLI removed Groq short model compatibility id exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--groq', 'gpt-oss-20b'] },
-  { label: 'CLI invalid ElevenLabs TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--elevenlabs-tts', 'eleven_v4', '--elevenlabs-voice', 'voice_123'] },
-  { label: 'CLI invalid MiniMax TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--minimax-tts', 'speech-3.0-hd'] },
-  { label: 'CLI invalid Groq TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--groq-tts', 'canopylabs/orpheus-v2-english'] },
-  { label: 'CLI invalid OpenAI TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--openai-tts', 'tts-1'] },
-  { label: 'CLI invalid Gemini TTS model exits with usage error code 2', args: ['tts', 'input/examples/document/1-tts.md', '--gemini-tts', 'gemini-2.5-flash-tts'] },
+  { label: 'CLI invalid ElevenLabs TTS model exits with usage error code 2', args: ['tts', 'input/examples/tts/1-tts.md', '--elevenlabs-tts', 'eleven_v4', '--elevenlabs-voice', 'voice_123'] },
+  { label: 'CLI invalid MiniMax TTS model exits with usage error code 2', args: ['tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-3.0-hd'] },
+  { label: 'CLI invalid Groq TTS model exits with usage error code 2', args: ['tts', 'input/examples/tts/1-tts.md', '--groq-tts', 'canopylabs/orpheus-v2-english'] },
+  { label: 'CLI invalid OpenAI TTS model exits with usage error code 2', args: ['tts', 'input/examples/tts/1-tts.md', '--openai-tts', 'tts-1'] },
+  { label: 'CLI invalid Gemini TTS model exits with usage error code 2', args: ['tts', 'input/examples/tts/1-tts.md', '--gemini-tts', 'gemini-2.5-flash-tts'] },
   { label: 'CLI invalid MiniMax image model exits with usage error code 2', args: ['image', 'a sunset', '--minimax-image', 'image-02'] },
   { label: 'CLI invalid MiniMax video model exits with usage error code 2', args: ['video', 'a sunset', '--minimax-video', 'MiniMax-Hailuo-2.4'] },
   { label: 'CLI invalid ElevenLabs music model exits with usage error code 2', args: ['music', 'an ambient piano song', '--elevenlabs-music', 'music_v2'] },
@@ -156,6 +156,20 @@ test('write help includes text-input lyric workflow flags', async () => {
   expect(result.stdout).toContain('--epub-calibre')
 })
 
+test('tts help includes Gemini multispeaker flags', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--gemini-speaker-1-name')
+  expect(result.stdout).toContain('--gemini-speaker-1-voice')
+  expect(result.stdout).toContain('--gemini-speaker-2-name')
+  expect(result.stdout).toContain('--gemini-speaker-2-voice')
+})
+
 test('music help advertises local markdown and text prompt files', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -165,7 +179,7 @@ test('music help advertises local markdown and text prompt files', async () => {
 
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('local .md/.txt file')
-  expect(result.stdout).toContain('input/examples/document/1-tts.md')
+  expect(result.stdout).toContain('input/examples/tts/1-tts.md')
 })
 
 test('setup help includes calibre step', async () => {
@@ -382,7 +396,7 @@ test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () =
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'tts',
-    'input/examples/document/1-tts.md',
+    'input/examples/tts/1-tts.md',
     '--elevenlabs-tts',
     'eleven_v3',
     '--price'
@@ -442,9 +456,15 @@ const barePriceSelectionCases = [
   },
   {
     name: 'CLI bare OpenAI TTS flag resolves to the cheapest model in price mode',
-    args: ['src/cli/create-cli.ts', 'tts', 'input/examples/document/1-tts.md', '--openai-tts', '--price'],
+    args: ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--openai-tts', '--price'],
     provider: 'openai',
     model: 'gpt-4o-mini-tts',
+  },
+  {
+    name: 'CLI bare Gemini TTS flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gemini-tts', '--price'],
+    provider: 'gemini',
+    model: 'gemini-2.5-flash-preview-tts',
   },
   {
     name: 'CLI bare OpenAI image flag resolves to the cheapest model in price mode',
@@ -717,6 +737,35 @@ test('buildConfigPatchFromFlags stores AWS region and bucket defaults', () => {
   })
 })
 
+test('buildConfigPatchFromFlags stores Gemini multispeaker defaults', () => {
+  expect(buildConfigPatchFromFlags({
+    'gemini-tts': 'gemini-3.1-flash-tts-preview',
+    'gemini-speaker-1-name': 'Host',
+    'gemini-speaker-1-voice': 'Kore',
+    'gemini-speaker-2-name': 'Guest',
+    'gemini-speaker-2-voice': 'Puck'
+  }, new Set([
+    'gemini-tts',
+    'gemini-speaker-1-name',
+    'gemini-speaker-1-voice',
+    'gemini-speaker-2-name',
+    'gemini-speaker-2-voice'
+  ]))).toEqual({
+    version: 2,
+    defaults: {
+      post: {
+        tts: {
+          geminiTts: ['gemini-3.1-flash-tts-preview'],
+          geminiSpeaker1Name: 'Host',
+          geminiSpeaker1Voice: 'Kore',
+          geminiSpeaker2Name: 'Guest',
+          geminiSpeaker2Voice: 'Puck'
+        }
+      }
+    }
+  })
+})
+
 test('buildConfigPatchFromFlags stores repeated same-provider flags as ordered arrays', () => {
   const rawArgs = [
     'config',
@@ -771,6 +820,7 @@ test('resolveCheapestModelForFlag uses current registry-driven cheapest selectio
   expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
   expect(resolveCheapestModelForFlag('grok')).toBe('grok-4.20-non-reasoning')
   expect(resolveCheapestModelForFlag('openai-tts')).toBe('gpt-4o-mini-tts')
+  expect(resolveCheapestModelForFlag('gemini-tts')).toBe('gemini-2.5-flash-preview-tts')
   expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1-mini')
   expect(resolveCheapestModelForFlag('mistral-ocr')).toBe('mistral-ocr-2512')
   expect(resolveCheapestModelForFlag('openai-ocr')).toBe('gpt-5.4-nano')
@@ -944,6 +994,101 @@ test('buildOptsFromFlags maps --gemini-voice to geminiVoiceId', () => {
 
   expect(opts.geminiTtsModel).toBe('gemini-2.5-flash-preview-tts')
   expect(opts.geminiVoiceId).toBe('Kore')
+})
+
+test('buildOptsFromFlags maps Gemini multispeaker flags', () => {
+  const opts = buildOptsFromFlags(false, {
+    'gemini-tts': 'gemini-3.1-flash-tts-preview',
+    'gemini-speaker-1-name': 'Host',
+    'gemini-speaker-1-voice': 'Kore',
+    'gemini-speaker-2-name': 'Guest',
+    'gemini-speaker-2-voice': 'Puck'
+  })
+
+  expect(opts.geminiTtsModel).toBe('gemini-3.1-flash-tts-preview')
+  expect(opts.geminiSpeaker1Name).toBe('Host')
+  expect(opts.geminiSpeaker1Voice).toBe('Kore')
+  expect(opts.geminiSpeaker2Name).toBe('Guest')
+  expect(opts.geminiSpeaker2Voice).toBe('Puck')
+})
+
+test('Gemini multispeaker TTS rejects incomplete speaker flag sets in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    'input/examples/tts/1-tts.md',
+    '--gemini-tts',
+    'gemini-3.1-flash-tts-preview',
+    '--gemini-speaker-1-name',
+    'Host',
+    '--gemini-speaker-1-voice',
+    'Kore',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Gemini multispeaker TTS requires --gemini-speaker-2-name.')
+})
+
+test('Gemini multispeaker TTS rejects --gemini-voice conflicts in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    'input/examples/tts/1-tts.md',
+    '--gemini-tts',
+    'gemini-3.1-flash-tts-preview',
+    '--gemini-voice',
+    'Kore',
+    '--gemini-speaker-1-name',
+    'Host',
+    '--gemini-speaker-1-voice',
+    'Kore',
+    '--gemini-speaker-2-name',
+    'Guest',
+    '--gemini-speaker-2-voice',
+    'Puck',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Gemini multispeaker TTS cannot be combined with --gemini-voice.')
+})
+
+test('Gemini multispeaker TTS validates transcript speaker labels before API calls', async () => {
+  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-cli-gemini-speaker-validation-'))
+  const inputPath = join(tempRoot, 'missing-speaker-labels.txt')
+
+  try {
+    await writeFile(inputPath, [
+      'Narrator: Welcome back to the show.',
+      'Narrator: Today we are covering release notes.'
+    ].join('\n'))
+
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'tts',
+      inputPath,
+      '--gemini-tts',
+      'gemini-3.1-flash-tts-preview',
+      '--gemini-speaker-1-name',
+      'Host',
+      '--gemini-speaker-1-voice',
+      'Kore',
+      '--gemini-speaker-2-name',
+      'Guest',
+      '--gemini-speaker-2-voice',
+      'Puck'
+    ], {
+      env: {
+        GEMINI_API_KEY: ''
+      }
+    })
+
+    expect(result.exitCode).toBe(2)
+    expect(`${result.stdout}\n${result.stderr}`).toContain('Gemini multispeaker TTS requires the input text to include "Host:" labels.')
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true })
+  }
 })
 
 test('write rejects removed --json-output flag', async () => {

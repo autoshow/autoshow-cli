@@ -163,8 +163,8 @@ describe('test runner cost/time metrics', () => {
     const metrics: ParsedCommandMetric[] = [
       {
         source: 'runCommand',
-        command: 'bun src/cli/create-cli.ts tts input/examples/document/1-tts.md --gemini-tts gemini-2.5-pro-preview-tts',
-        args: ['src/cli/create-cli.ts', 'tts', 'input/examples/document/1-tts.md', '--gemini-tts', 'gemini-2.5-pro-preview-tts'],
+        command: 'bun src/cli/create-cli.ts tts input/examples/tts/1-tts.md --gemini-tts gemini-2.5-pro-preview-tts',
+        args: ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gemini-tts', 'gemini-2.5-pro-preview-tts'],
         exitCode: 0,
         durationMs: 17_552,
         outputDir: null,

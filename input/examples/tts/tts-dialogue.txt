@@ -1,0 +1,6 @@
+Host: [warmly] Welcome back to the show. Today we're testing Gemini multispeaker text to speech.
+Guest: Thanks for having me. I am ready to help with the demo.
+Host: [curious] What changed in the newest Gemini TTS model?
+Guest: It adds a newer low-latency TTS option and supports clear two-speaker voice mapping.
+Host: Nice. Give us one line with a little energy.
+Guest: [excitedly] This should produce a short dialogue where each speaker keeps a distinct voice.

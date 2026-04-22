@@ -142,7 +142,7 @@ bun as metadata https://example.com/feed --batch-limit 3
 bun as metadata https://www.youtube.com/@channelname --batch-limit 5
 
 # Batch metadata from a URL list, save all to disk
-bun as metadata input/examples/document/2-urls.md --batch-all --save
+bun as metadata input/examples/batch/2-urls.md --batch-all --save
 ```
 
 ## How It Works

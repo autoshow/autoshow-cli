@@ -8,6 +8,11 @@ import { withRetry } from '~/utils/retries'
 import { GEMINI_DEFAULT_TTS_VOICE, type GeminiTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyGeminiRetry } from '~/utils/gemini-utils'
+import {
+  formatGeminiSpeakerSummary,
+  type GeminiMultiSpeakerConfig,
+  validateGeminiMultiSpeakerTranscript
+} from './gemini-tts-config'
 
 const MAX_CHARS_PER_CHUNK = 4000
 
@@ -36,24 +41,42 @@ const parseGeminiInlineAudioInfo = (mimeType: string | undefined): GeminiInlineA
 export const runGeminiTts = async (
   text: string,
   outputDir: string,
-  options: { model: GeminiTtsModel, voiceId?: string | undefined }
-): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
-  const apiKey = readEnv('GEMINI_API_KEY')
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY environment variable is required for Gemini TTS')
+  options: {
+    model: GeminiTtsModel
+    voiceId?: string | undefined
+    multiSpeakerConfig?: GeminiMultiSpeakerConfig | undefined
   }
-
-  const voiceId = options.voiceId?.trim() || readEnv('GEMINI_TTS_VOICE') || GEMINI_DEFAULT_TTS_VOICE
+): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
+  const voiceId = options.multiSpeakerConfig
+    ? undefined
+    : options.voiceId?.trim() || readEnv('GEMINI_TTS_VOICE') || GEMINI_DEFAULT_TTS_VOICE
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
   if (chunks.length === 0) {
     throw new Error('Gemini TTS input text is empty')
   }
 
-  logTtsConfig('Gemini', [
-    { label: 'model', value: options.model },
-    { label: 'voice', value: voiceId },
-    { label: 'chunk count', value: chunks.length }
-  ])
+  if (options.multiSpeakerConfig) {
+    validateGeminiMultiSpeakerTranscript(text, options.multiSpeakerConfig)
+  }
+
+  const apiKey = readEnv('GEMINI_API_KEY')
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is required for Gemini TTS')
+  }
+
+  logTtsConfig('Gemini', options.multiSpeakerConfig
+    ? [
+        { label: 'model', value: options.model },
+        { label: 'mode', value: 'multispeaker' },
+        { label: 'speaker 1', value: `${options.multiSpeakerConfig.speaker1Name}=${options.multiSpeakerConfig.speaker1Voice}` },
+        { label: 'speaker 2', value: `${options.multiSpeakerConfig.speaker2Name}=${options.multiSpeakerConfig.speaker2Voice}` },
+        { label: 'chunk count', value: chunks.length }
+      ]
+    : [
+        { label: 'model', value: options.model },
+        { label: 'voice', value: voiceId },
+        { label: 'chunk count', value: chunks.length }
+      ])
 
   const ai = new GoogleGenAI({ apiKey })
   const startTime = Date.now()
@@ -75,11 +98,36 @@ export const runGeminiTts = async (
           config: {
             responseModalities: ['AUDIO'],
             speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: voiceId
-                }
-              }
+              ...(options.multiSpeakerConfig
+                ? {
+                    multiSpeakerVoiceConfig: {
+                      speakerVoiceConfigs: [
+                        {
+                          speaker: options.multiSpeakerConfig.speaker1Name,
+                          voiceConfig: {
+                            prebuiltVoiceConfig: {
+                              voiceName: options.multiSpeakerConfig.speaker1Voice
+                            }
+                          }
+                        },
+                        {
+                          speaker: options.multiSpeakerConfig.speaker2Name,
+                          voiceConfig: {
+                            prebuiltVoiceConfig: {
+                              voiceName: options.multiSpeakerConfig.speaker2Voice
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                : {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: {
+                        voiceName: voiceId as string
+                      }
+                    }
+                  })
             }
           }
         })
@@ -152,7 +200,7 @@ export const runGeminiTts = async (
   return finalizeTtsRun({
     service: 'gemini',
     model: options.model,
-    speaker: voiceId,
+    speaker: options.multiSpeakerConfig ? formatGeminiSpeakerSummary(options.multiSpeakerConfig) : voiceId,
     audioPath,
     chunkCount: chunkPaths.length,
     startTime

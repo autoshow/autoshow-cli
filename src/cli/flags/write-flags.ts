@@ -71,6 +71,22 @@ const writeTtsFlags = {
     description: 'Gemini TTS voice name override (default: Kore)',
     type: String
   },
+  'gemini-speaker-1-name': {
+    description: 'Gemini multispeaker speaker 1 name override (requires all Gemini speaker flags)',
+    type: String
+  },
+  'gemini-speaker-1-voice': {
+    description: 'Gemini multispeaker speaker 1 voice name override (requires all Gemini speaker flags)',
+    type: String
+  },
+  'gemini-speaker-2-name': {
+    description: 'Gemini multispeaker speaker 2 name override (requires all Gemini speaker flags)',
+    type: String
+  },
+  'gemini-speaker-2-voice': {
+    description: 'Gemini multispeaker speaker 2 voice name override (requires all Gemini speaker flags)',
+    type: String
+  },
   'groq-voice': {
     description: 'Groq TTS voice ID override (default: troy)',
     type: String

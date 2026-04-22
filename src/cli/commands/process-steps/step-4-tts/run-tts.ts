@@ -4,6 +4,7 @@ import { sanitizeModelName, runTargets } from '~/cli/commands/process-steps/targ
 import {
   collectTtsTargets,
   getTtsArtifactFileName,
+  validateTtsInput,
 } from './tts-targets'
 
 const getMetadataAudioPath = (outputDir: string, metadata: Step4Metadata): string =>
@@ -47,6 +48,7 @@ export const runTts = async (
   outputDir: string,
   options: TtsOptions
 ): Promise<{ audioPaths: string[], metadata: Step4Metadata[] }> => {
+  validateTtsInput(text, options)
   const targets = collectTtsTargets(options)
   if (targets.length === 0) {
     throw new Error('No TTS provider configured')

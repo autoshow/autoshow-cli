@@ -22,7 +22,7 @@ export const musicCommand = defineCommand({
     examples: [
       ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
       ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax'],
-      ['bun as music input/examples/document/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body']
+      ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body']
     ]
   }
 }, async (ctx) => {

@@ -1,3 +1,6 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { test, expect } from 'bun:test'
 import { defineTTSServiceTest } from '../../../../test-utils/define-tts-service-test'
 import {
@@ -30,16 +33,73 @@ defineTTSServiceTest({
 })
 
 defineTTSServiceTest({
-  models: ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'],
+  models: ['gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'],
   cliFlag: '--gemini-tts',
   ttsService: 'gemini',
   envVarKey: 'GEMINI_API_KEY',
   envVarDescription: 'Gemini TTS',
+  generationTimeoutMs: 30_000,
   resolveExpectedSpeaker: async () => {
     const voice = await readConfiguredEnvVar('GEMINI_TTS_VOICE')
     return voice ?? GEMINI_DEFAULT_TTS_VOICE
   },
 })
+
+test('gemini multispeaker with explicit speaker mappings generates speech.wav', async () => {
+  if (!await hasConfiguredEnvVar('GEMINI_API_KEY')) {
+    console.log('Skipping: GEMINI_API_KEY is required for Gemini TTS test')
+    return
+  }
+
+  await cleanupTestOutput('gemini-multispeaker-dialogue')
+
+  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-cli-gemini-tts-'))
+  const inputPath = join(tempRoot, 'gemini-multispeaker-dialogue.txt')
+
+  try {
+    await writeFile(inputPath, [
+      'Host: [warmly] Welcome back to the show.',
+      'Guest: Thanks for having me.',
+      'Host: What stood out most this week?',
+      'Guest: The pacing and voice control improvements.'
+    ].join('\n'))
+
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'tts',
+      inputPath,
+      '--gemini-tts',
+      'gemini-3.1-flash-tts-preview',
+      '--gemini-speaker-1-name',
+      'Host',
+      '--gemini-speaker-1-voice',
+      'Kore',
+      '--gemini-speaker-2-name',
+      'Guest',
+      '--gemini-speaker-2-voice',
+      'Puck'
+    ])
+
+    expect(result.exitCode).toBe(0)
+
+    const outputDir = result.outputDir ?? await findLatestDirectory('gemini-multispeaker-dialogue')
+    expect(outputDir).not.toBeNull()
+
+    if (outputDir) {
+      expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
+
+      const metadata = await readRunMetadata(outputDir) as {
+        tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
+      }
+      expect(metadata.tts?.[0]?.ttsService).toBe('gemini')
+      expect(metadata.tts?.[0]?.ttsModel).toBe('gemini-3.1-flash-tts-preview')
+      expect(metadata.tts?.[0]?.speaker).toBe('Host=Kore, Guest=Puck')
+    }
+  } finally {
+    await cleanupTestOutput('gemini-multispeaker-dialogue')
+    await rm(tempRoot, { recursive: true, force: true })
+  }
+}, 30_000)
 
 defineTTSServiceTest({
   models: ['speech-2.8-turbo', 'speech-2.8-hd'],
@@ -47,6 +107,7 @@ defineTTSServiceTest({
   ttsService: 'minimax',
   envVarKey: 'MINIMAX_API_KEY',
   envVarDescription: 'MiniMax TTS',
+  generationTimeoutMs: 120_000,
   extraArgs: ['--minimax-tts-voice', 'English_expressive_narrator'],
   resolveExpectedSpeaker: async () => 'English_expressive_narrator',
 })

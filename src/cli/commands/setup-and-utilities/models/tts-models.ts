@@ -93,6 +93,7 @@ export const OPENAI_DEFAULT_TTS_VOICE = 'alloy'
 export const validateOpenAITtsModel = createModelValidator<OpenAITtsModel>(SUPPORTED_OPENAI_TTS_MODELS, 'openai-tts')
 
 export const SUPPORTED_GEMINI_TTS_MODELS = [
+  'gemini-3.1-flash-tts-preview',
   'gemini-2.5-flash-preview-tts',
   'gemini-2.5-pro-preview-tts'
 ] as const satisfies readonly string[]
