@@ -12,7 +12,7 @@ const appendProviderSpec = (
 }
 
 export const collectOcrProviderSpecs = (
-  options: Pick<RuntimeOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'mistralOcrModels' | 'glmOcrModel' | 'glmOcrModels'>
+  options: Pick<RuntimeOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'mistralOcrModels' | 'glmOcrModel' | 'glmOcrModels' | 'openaiOcrModel' | 'openaiOcrModels'>
 ): ProviderSpec[] => {
   const specs: ProviderSpec[] = []
   const appendModels = (provider: ProviderSpec['provider'], models: string[] | undefined, fallback?: string): void => {
@@ -29,6 +29,7 @@ export const collectOcrProviderSpecs = (
   }
   appendModels('mistral-ocr', options.mistralOcrModels, options.mistralOcrModel)
   appendModels('glm-ocr', options.glmOcrModels, options.glmOcrModel)
+  appendModels('openai-ocr', options.openaiOcrModels, options.openaiOcrModel)
 
   return specs
 }

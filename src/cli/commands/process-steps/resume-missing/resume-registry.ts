@@ -39,7 +39,8 @@ const OCR_PROVIDER_SELECTION_FLAGS = [
   'ocrmypdf',
   'paddle-ocr',
   'mistral-ocr',
-  'glm-ocr'
+  'glm-ocr',
+  'openai-ocr'
 ] as const
 
 const sttResumeAdapter: ResumeAdapter = {

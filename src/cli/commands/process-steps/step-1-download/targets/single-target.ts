@@ -53,7 +53,11 @@ const buildDocumentMetadataView = (
 })
 
 const hasOcrExtractionFlags = (opts: RuntimeOptions): boolean =>
-  opts.useOcrmypdf || opts.usePaddleOcr || typeof opts.mistralOcrModel === 'string' || typeof opts.glmOcrModel === 'string'
+  opts.useOcrmypdf
+  || opts.usePaddleOcr
+  || typeof opts.mistralOcrModel === 'string'
+  || typeof opts.glmOcrModel === 'string'
+  || typeof opts.openaiOcrModel === 'string'
 
 const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
   [
@@ -68,9 +72,9 @@ const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel'>
+  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'firecrawl'
+  provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -79,7 +83,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -122,6 +126,19 @@ const collectEstimatedExtractTargets = (
         model: entry.ocrModel ?? opts.mistralOcrModel ?? 'mistral-ocr-2512',
         pageCount: entry.totalPages,
         estimateType: 'exact' as const
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'openai' || entry.extractionMethod.includes('openai-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'openai' as const,
+        model: entry.ocrModel ?? opts.openaiOcrModel ?? 'gpt-5.4-nano',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
+        note: 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
       })
     }
   }
@@ -200,6 +217,9 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.glmOcrModel) {
     extractionOpts.glmOcrModel = opts.glmOcrModel
   }
+  if (opts.openaiOcrModel) {
+    extractionOpts.openaiOcrModel = opts.openaiOcrModel
+  }
   if (opts.epubChapterFiles) {
     extractionOpts.epubChapterFiles = true
   }
@@ -225,6 +245,7 @@ const writeDocumentOutputMetadata = async (
     step3,
     mistralOcrModel,
     glmOcrModel,
+    openaiOcrModel,
     artifactFiles,
     completionStatus,
     requestedProviders,
@@ -235,7 +256,8 @@ const writeDocumentOutputMetadata = async (
   } = params
   const extractTargets = collectEstimatedExtractTargets(step2, {
     mistralOcrModel,
-    glmOcrModel
+    glmOcrModel,
+    openaiOcrModel
   })
 
   const estimated = computeEstimatedCosts({
@@ -406,6 +428,7 @@ const runDocumentWrite = async (
     step3: step3Serialized,
     mistralOcrModel: opts.mistralOcrModel,
     glmOcrModel: opts.glmOcrModel,
+    openaiOcrModel: opts.openaiOcrModel,
     llmService,
     llmModel,
     llmInputTokenCount,
@@ -557,7 +580,9 @@ const processMediaSingle = async (
     mistralOcrModels: llmDefaults.mistralOcrModels,
     mistralOcrModel: llmDefaults.mistralOcrModel,
     glmOcrModels: llmDefaults.glmOcrModels,
-    glmOcrModel: llmDefaults.glmOcrModel
+    glmOcrModel: llmDefaults.glmOcrModel,
+    openaiOcrModels: llmDefaults.openaiOcrModels,
+    openaiOcrModel: llmDefaults.openaiOcrModel
   }
 
   const options: ProcessingOptions = validateData(ProcessingOptionsSchema, baseOptions, 'processing options')

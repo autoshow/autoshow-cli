@@ -271,6 +271,7 @@ Notable behavior:
 | Gladia STT | `default` |
 | Mistral OCR | `mistral-ocr-2512` |
 | GLM OCR | `glm-ocr` |
+| OpenAI OCR | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Firecrawl extract | `firecrawl` |
 | llama.cpp | setup-managed defaults `ggml-org/gemma-3-270m-it-GGUF`, `ggml-org/Qwen3-0.6B-GGUF`, plus arbitrary Hugging Face repo IDs in `namespace/repo_name` form |
 | OpenAI LLM | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |

@@ -21,6 +21,7 @@ import {
   validateGladiaSttModel,
   validateGlmOcrModel,
   validateMistralOcrModel,
+  validateOpenAIOcrModel,
   validateKittenTtsModel,
   validateElevenlabsTtsModel,
   validateMinimaxTtsModel,
@@ -56,6 +57,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'gladia-stt',
   'mistral-ocr',
   'glm-ocr',
+  'openai-ocr',
   'llama',
   'openai',
   'groq',
@@ -331,6 +333,7 @@ export const buildOptsFromFlags = (
   const gladiaSttModels = readValidatedMany('gladia-stt', validateGladiaSttModel)
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
+  const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
   const llamaModels = readValidatedMany('llama', validateLlamaModel)
   const openaiModels = readValidatedMany('openai', validateOpenAIModel)
   const groqModels = readValidatedMany('groq', validateGroqModel)
@@ -351,6 +354,7 @@ export const buildOptsFromFlags = (
   const gladiaSttModel = first(gladiaSttModels)
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
+  const openaiOcrModel = first(openaiOcrModels)
   const llamaModel = first(llamaModels)
   const openaiModel = first(openaiModels)
   const groqModel = first(groqModels)
@@ -459,6 +463,8 @@ export const buildOptsFromFlags = (
     mistralOcrModel,
     glmOcrModels,
     glmOcrModel,
+    openaiOcrModels,
+    openaiOcrModel,
     epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
     epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
     pdfChapterMode,

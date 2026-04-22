@@ -166,6 +166,7 @@ src/cli/flags/
 │  ├── --paddle-ocr        Use PaddleOCR engine              │
 │  ├── --mistral-ocr MODEL Mistral OCR (API)                 │
 │  ├── --glm-ocr MODEL     GLM OCR (API)                     │
+│  ├── --openai-ocr MODEL  OpenAI OCR (API)                  │
 │  └── --url-backend NAME  defuddle|firecrawl|glm-reader     │
 │                                                            │
 │  advancedExtractFlags                                      │

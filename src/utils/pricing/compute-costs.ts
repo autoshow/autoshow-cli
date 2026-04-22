@@ -34,6 +34,7 @@ import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
+import { OPENAI_OCR_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 
 export const parseDurationToSeconds = (duration: string): number => {
   if (!duration || duration === 'Unknown') return 0
@@ -116,6 +117,12 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'mistral-ocr'
     }
   }
+  if (metadata.ocrService === 'openai') {
+    return {
+      provider: 'openai',
+      model: metadata.ocrModel ?? 'gpt-5.4-nano'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
@@ -126,6 +133,12 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'glm',
       model: metadata.ocrModel ?? 'glm-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('openai-ocr')) {
+    return {
+      provider: 'openai',
+      model: metadata.ocrModel ?? 'gpt-5.4-nano'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -213,6 +226,22 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
+    } else if (provider === 'openai' && input.step2.ocrModel) {
+      const extractPricing = getExtractPricing('openai', input.step2.ocrModel)
+      const promptTokens = input.step2.promptTokens ?? 0
+      const completionTokens = input.step2.completionTokens ?? 0
+      const cost = (promptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
+        + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0)
+      steps.push({
+        step: 'extract',
+        provider: 'openai',
+        model: input.step2.ocrModel,
+        cost,
+        inputMetric: 'tokens',
+        inputValue: promptTokens + completionTokens,
+        promptTokens,
+        completionTokens
+      })
     } else if (provider !== 'extract') {
       steps.push({
         step: 'extract',
@@ -255,15 +284,18 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         : provider === 'glm' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
+          : provider === 'openai' && step2Entry.ocrModel
+            ? (promptTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
+              + (completionTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
           : 0
       steps.push({
         step: 'extract',
         provider,
         model,
         cost,
-        inputMetric: provider === 'glm' ? 'tokens' : 'pages',
-        inputValue: provider === 'glm' ? promptTokens + completionTokens : step2Entry.totalPages,
-        ...(provider === 'glm' ? { promptTokens, completionTokens } : {})
+        inputMetric: provider === 'glm' || provider === 'openai' ? 'tokens' : 'pages',
+        inputValue: provider === 'glm' || provider === 'openai' ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(provider === 'glm' || provider === 'openai' ? { promptTokens, completionTokens } : {})
       })
     }
   }
@@ -396,8 +428,9 @@ type ComputeEstimatedCostsInput = {
   gladiaSttModel?: string | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
+  openaiOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -498,6 +531,15 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
           : []),
         ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount, estimateType: 'heuristic' as const }]
+          : []),
+        ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'openai' as const,
+              model: input.openaiOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const,
+              note: OPENAI_OCR_PRICE_NOTE
+            }]
           : [])
       ]
 
@@ -524,7 +566,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       continue
     }
 
-    const extractPricing = getExtractPricing('glm', target.model)
+    const extractPricing = getExtractPricing(target.provider, target.model)
     const promptTokens = target.promptTokens ?? 0
     const completionTokens = target.completionTokens ?? 0
     const effectivePromptTokens = promptTokens > 0 ? promptTokens : ((target.pageCount ?? input.extractPageCount ?? 0) * 4000)
@@ -532,11 +574,11 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       (effectivePromptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
       + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0),
       estimation.costMultiplier
-    )
+      )
     totalCost += cost
     steps.push({
       step: 'extract',
-      provider: 'glm',
+      provider: target.provider,
       model: target.model,
       cost,
       costMultiplier: estimation.costMultiplier,
@@ -545,6 +587,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
       promptTokens: effectivePromptTokens,
       completionTokens,
+      ...(typeof target.note === 'string' ? { note: target.note } : {}),
       estimateType: target.estimateType ?? (promptTokens > 0 || completionTokens > 0 ? 'exact' : 'heuristic')
     })
   }

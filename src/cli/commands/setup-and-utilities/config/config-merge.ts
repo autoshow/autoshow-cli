@@ -140,6 +140,7 @@ export const mergeConfigIntoRawFlags = (
     inject('rotate', d.extract.rotate)
     inject('mistral-ocr', d.extract.mistralOcr)
     inject('glm-ocr', d.extract.glmOcr)
+    inject('openai-ocr', d.extract.openaiOcr)
     inject('chapters', d.extract.chapters)
     inject('length', d.extract.length)
     inject('pdf-chapter-mode', d.extract.pdfChapterMode)
@@ -227,6 +228,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'rotate':            ['defaults', 'extract', 'rotate'],
   'mistral-ocr':       ['defaults', 'extract', 'mistralOcr'],
   'glm-ocr':           ['defaults', 'extract', 'glmOcr'],
+  'openai-ocr':        ['defaults', 'extract', 'openaiOcr'],
   'chapters':          ['defaults', 'extract', 'chapters'],
   'length':            ['defaults', 'extract', 'length'],
   'pdf-chapter-mode':  ['defaults', 'extract', 'pdfChapterMode'],

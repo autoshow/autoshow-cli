@@ -25,7 +25,8 @@ import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import {
   estimateFirecrawlScrapeCost,
   estimateGlmOcrCost,
-  estimateMistralOcrCost
+  estimateMistralOcrCost,
+  estimateOpenAIOcrCost
 } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import type { SttStepEstimate, ExtractStepEstimate, LlmStepEstimate, TtsStepEstimate, ImageStepEstimate, MusicStepEstimate, VideoStepEstimate, StepEstimate, AggregatedPriceEstimate } from '~/types'
@@ -43,6 +44,8 @@ const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
   || typeof opts.mistralOcrModel === 'string'
   || (opts.glmOcrModels?.length ?? 0) > 0
   || typeof opts.glmOcrModel === 'string'
+  || (opts.openaiOcrModels?.length ?? 0) > 0
+  || typeof opts.openaiOcrModel === 'string'
 
 const buildCloudSttEstimate = async (
   provider: string,
@@ -151,6 +154,26 @@ const buildExtractEstimates = async (
       costMultiplier: estimation.costMultiplier,
       estimateType: estimate.estimateType,
       note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+    })
+  }
+
+  const openaiModels = opts.openaiOcrModels ?? (opts.openaiOcrModel ? [opts.openaiOcrModel] : [])
+  for (const model of openaiModels) {
+    const estimate = await estimateOpenAIOcrCost(model, resolvedTarget)
+    const estimation = getExtractEstimation(estimate.provider, estimate.model)
+    estimates.push({
+      step: 'extract',
+      provider: estimate.provider,
+      model: estimate.model,
+      inputCostPer1MCents: estimate.inputCostPer1MCents,
+      outputCostPer1MCents: estimate.outputCostPer1MCents,
+      pageCount: estimate.pageCount,
+      promptTokens: estimate.promptTokens,
+      completionTokens: estimate.completionTokens,
+      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+      costMultiplier: estimation.costMultiplier,
+      estimateType: estimate.estimateType,
+      note: estimate.note
     })
   }
 

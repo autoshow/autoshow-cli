@@ -15,6 +15,8 @@ const toBootstrapProviderId = (
       return 'mistral-ocr'
     case 'glm':
       return 'glm-ocr'
+    case 'openai':
+      return 'openai-ocr'
   }
 }
 

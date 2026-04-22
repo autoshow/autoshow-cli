@@ -61,6 +61,12 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'mistral-ocr'
     }
   }
+  if (metadata.ocrService === 'openai') {
+    return {
+      provider: 'openai',
+      model: metadata.ocrModel ?? 'gpt-5.4-nano'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
@@ -71,6 +77,12 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'glm',
       model: metadata.ocrModel ?? 'glm-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('openai-ocr')) {
+    return {
+      provider: 'openai',
+      model: metadata.ocrModel ?? 'gpt-5.4-nano'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -117,7 +129,8 @@ type ComputeEstimatedProcessingTimesInput = {
   audioDurationSeconds?: number | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'firecrawl', model: string, pageCount?: number }> | undefined
+  openaiOcrModel?: string | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'firecrawl', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']
@@ -205,6 +218,9 @@ export const computeEstimatedProcessingTimes = (
           : []),
         ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'openai' as const, model: input.openaiOcrModel, pageCount: input.extractPageCount }]
           : [])
       ]
 

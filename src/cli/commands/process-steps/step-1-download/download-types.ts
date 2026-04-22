@@ -33,6 +33,7 @@ export type WriteDocumentOutputMetadataOptions = {
   step3: Step3Metadata | Step3Metadata[]
   mistralOcrModel: string | undefined
   glmOcrModel: string | undefined
+  openaiOcrModel: string | undefined
   llmService: string
   llmModel: string
   llmInputTokenCount: number

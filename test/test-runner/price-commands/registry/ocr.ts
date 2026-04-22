@@ -5,6 +5,7 @@ export const ocrRegistry: PriceSelectionEntry[] = [
   ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts', [
     command('extract-mistral-mistral-ocr-2512', 'extract-mistral-mistral-ocr-2512', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2512', '--price']),
     command('extract-glm-glm-ocr', 'extract-glm-glm-ocr', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr', '--price']),
+    command('extract-openai-gpt-5.4-nano', 'extract-openai-gpt-5.4-nano', ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-nano', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts', [
     command('extract-firecrawl-url', 'extract-firecrawl-url', ['src/cli/create-cli.ts', 'ocr', 'https://ajcwebdev.com', '--url-backend', 'firecrawl', '--price']),

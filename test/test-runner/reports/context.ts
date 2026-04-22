@@ -32,6 +32,7 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--mistral-stt': { service: 'mistral', kind: 'transcribe' },
   '--mistral-ocr': { service: 'mistral', kind: 'extract' },
   '--glm-ocr': { service: 'glm', kind: 'extract' },
+  '--openai-ocr': { service: 'openai', kind: 'extract' },
   '--elevenlabs-tts': { service: 'elevenlabs', kind: 'tts' },
   '--minimax-tts': { service: 'minimax', kind: 'tts' },
   '--groq-tts': { service: 'groq', kind: 'tts' },
@@ -204,6 +205,8 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
         ? 'mistral'
         : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-ocr')
           ? 'glm'
+          : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('openai-ocr')
+            ? 'openai'
           : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
             ? 'glm'
             : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('firecrawl')
@@ -367,6 +370,7 @@ const inferModelHints = (testCase: ParsedJunitCase): Set<string> => {
   addModelHint(models, name.match(/uses cheapest model (.+?)(?: at minimal cost settings)?$/i)?.[1])
   addModelHint(models, name.match(/with --mistral-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/with --glm-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
+  addModelHint(models, name.match(/with --openai-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/^([A-Za-z0-9./_-]+) (?:model generates|generates|runs in parallel|uses cheapest model)/i)?.[1])
 
   for (const match of name.matchAll(/--[a-z-]+\s+([A-Za-z0-9./_-]+)/gi)) {

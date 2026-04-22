@@ -76,6 +76,7 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
     && value['service'] !== 'paddle-ocr'
     && value['service'] !== 'mistral'
     && value['service'] !== 'glm'
+    && value['service'] !== 'openai'
   ) {
     return undefined
   }

@@ -1,6 +1,6 @@
 import type { OcrSourceKind } from './normalize'
 
-export type OcrProviderKey = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr'
+export type OcrProviderKey = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr'
 
 type OcrProviderCapability = {
   supports: OcrSourceKind[]
@@ -27,6 +27,10 @@ export const OCR_CAPABILITY_MATRIX: Record<OcrProviderKey, OcrProviderCapability
   'glm-ocr': {
     supports: ['article', 'pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
     fallbackOrder: ['mistral-ocr', 'paddle-ocr', 'tesseract']
+  },
+  'openai-ocr': {
+    supports: ['pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
+    fallbackOrder: ['glm-ocr', 'mistral-ocr', 'paddle-ocr', 'tesseract']
   }
 }
 

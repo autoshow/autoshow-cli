@@ -79,6 +79,8 @@ export type RuntimeOptions = {
   mistralOcrModel: string | undefined
   glmOcrModels: string[] | undefined
   glmOcrModel: string | undefined
+  openaiOcrModels: string[] | undefined
+  openaiOcrModel: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined
   pdfChapterMode: 'local' | 'auto' | 'llm'

@@ -12,6 +12,7 @@ import {
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
+  SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
   SUPPORTED_MINIMAX_MODELS,
@@ -257,6 +258,10 @@ export const extractFlags = {
   },
   'glm-ocr': {
     description: buildModelDescription('GLM OCR model', SUPPORTED_GLM_OCR_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'openai-ocr': {
+    description: buildModelDescription('OpenAI OCR model', SUPPORTED_OPENAI_OCR_MODELS),
     type: [String] as [StringConstructor]
   },
   chapters: {

@@ -20,6 +20,12 @@ const createGlmOptions = (filePath: string, outputDir: string) => validateData(E
   glmOcrModel: 'glm-ocr'
 }, 'GLM OCR extraction options')
 
+const createOpenAIOptions = (filePath: string, outputDir: string) => validateData(ExtractionOptionsSchema, {
+  filePath,
+  outputDir,
+  openaiOcrModel: 'gpt-5.4-nano'
+}, 'OpenAI OCR extraction options')
+
 const createStep1Metadata = (overrides: Partial<DocumentMetadata>): DocumentMetadata => ({
   title: 'OCR Fixture',
   slug: 'ocr-fixture',
@@ -67,6 +73,13 @@ describe('getExtractLimits', () => {
     expect(firecrawlLimits.effectiveBytes).toBeUndefined()
     expect(firecrawlLimits.pageCount).toBeUndefined()
     expect(firecrawlLimits.notes).toContain('No Firecrawl article-extraction file-size or page-count limits were found')
+  })
+
+  test('returns OpenAI OCR PDF limits from the bundled OpenAI reference', () => {
+    expect(getExtractLimits('openai', 'gpt-5.4-nano', 'pdf')).toEqual(expect.objectContaining({
+      effectiveBytes: 52428800,
+      pdfBytes: 52428800
+    }))
   })
 })
 
@@ -126,6 +139,26 @@ describe('GLM OCR runtime limits', () => {
 
     await expect(runOcr(pdfPath, step1Metadata, opts)).rejects.toThrow(
       'GLM OCR supports PDF inputs up to 100 pages based on project/links/bun-links.md.'
+    )
+  })
+
+  test('rejects OpenAI OCR PDFs above the documented file-size limit before making an API call', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-limits-openai-pdf-'))
+    tempDirs.push(tempDir)
+
+    const pdfPath = join(tempDir, 'oversized-openai.pdf')
+    await Bun.write(pdfPath, await Bun.file('input/examples/document/1-document.pdf').arrayBuffer())
+    await padFileToSize(pdfPath, 52428801)
+
+    const opts = createOpenAIOptions(pdfPath, tempDir)
+    const step1Metadata = createStep1Metadata({
+      format: 'pdf',
+      pageCount: 1,
+      fileSize: 1
+    })
+
+    await expect(runOcr(pdfPath, step1Metadata, opts)).rejects.toThrow(
+      'OpenAI OCR supports PDF inputs up to 50.0 MB based on project/links/openai-links.md.'
     )
   })
 })

@@ -1,11 +1,12 @@
 import { extname } from 'node:path'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { validateGlmOcrModel, validateMistralOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { validateGlmOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
-const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff'] as const
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.gif', '.bmp'] as const
 const DEFAULT_EXTRACT_PAGE_COUNT = 1
 const FIRECRAWL_MODEL = 'firecrawl'
+const OPENAI_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
 
 export const FIRECRAWL_PRICE_NOTE = 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
 
@@ -83,6 +84,44 @@ export const estimateGlmOcrCost = async (
   }
 }
 
+export const estimateOpenAIOcrCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{
+  provider: 'openai'
+  model: string
+  pageCount: number
+  promptTokens: number
+  completionTokens: number
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+  estimateType: 'heuristic'
+  note: string
+}> => {
+  const model = validateOpenAIOcrModel(modelRaw)
+  const pricing = getExtractPricing('openai', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 20
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 125
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+  const promptTokens = pageCount * 4000
+  const completionTokens = 0
+
+  return {
+    provider: 'openai',
+    model,
+    pageCount,
+    promptTokens,
+    completionTokens,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents,
+    estimateType: 'heuristic',
+    note: OPENAI_OCR_PRICE_NOTE
+  }
+}
+
 export const estimateFirecrawlScrapeCost = (): {
   provider: 'firecrawl'
   model: string
@@ -132,3 +171,31 @@ export const computeActualGlmOcrCost = (
       + (completionTokens / 1_000_000) * outputCostPer1MCents
   }
 }
+
+export const computeActualOpenAIOcrCost = (
+  modelRaw: string,
+  promptTokens: number,
+  completionTokens: number
+): {
+  provider: 'openai'
+  model: string
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+} => {
+  const model = validateOpenAIOcrModel(modelRaw)
+  const pricing = getExtractPricing('openai', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 20
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 125
+
+  return {
+    provider: 'openai',
+    model,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents
+  }
+}
+
+export { OPENAI_OCR_PRICE_NOTE }

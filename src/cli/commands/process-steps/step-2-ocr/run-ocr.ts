@@ -23,12 +23,14 @@ import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
 import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
 import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
+import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
 import { convertDocumentToPdf, getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { extractDocx, extractPptx, extractXlsx, extractOdf, type ZipXmlPage } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ZipXmlFormat } from '~/types'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
+import { ensureOpenAIOcrSetup } from './ocr-services/openai-ocr/openai-ocr'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
 import { buildEpubTextOutput, type EpubArtifactFile } from './epub/export'
 import { buildPdfChapterArtifacts } from './pdf/chapters'
@@ -90,8 +92,11 @@ const hasMistralOcr = (opts: ExtractionOptions): boolean =>
 const hasGlmOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.glmOcrModel === 'string' && opts.glmOcrModel.length > 0
 
+const hasOpenAIOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.openaiOcrModel === 'string' && opts.openaiOcrModel.length > 0
+
 const hasHostedOcr = (opts: ExtractionOptions): boolean =>
-  hasMistralOcr(opts) || hasGlmOcr(opts)
+  hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts)
 
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
   opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
@@ -106,8 +111,19 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-const formatHostedOcrLabel = (service: 'mistral' | 'glm'): string =>
-  service === 'glm' ? 'GLM OCR' : 'Mistral OCR'
+const formatHostedOcrLabel = (service: 'mistral' | 'glm' | 'openai'): string => {
+  switch (service) {
+    case 'glm':
+      return 'GLM OCR'
+    case 'mistral':
+      return 'Mistral OCR'
+    case 'openai':
+      return 'OpenAI OCR'
+  }
+}
+
+const getHostedOcrLimitSource = (service: 'mistral' | 'glm' | 'openai'): string =>
+  service === 'openai' ? 'project/links/openai-links.md' : 'project/links/bun-links.md'
 
 const resolvePdfPageCount = async (
   filePath: string,
@@ -347,6 +363,10 @@ const warnGlmOnlyFlags = (opts: ExtractionOptions): void => {
   warnHostedOnlyFlags('glm-ocr', opts)
 }
 
+const warnOpenAIOnlyFlags = (opts: ExtractionOptions): void => {
+  warnHostedOnlyFlags('openai-ocr', opts)
+}
+
 // Run OCR on a single image and return a PageResult
 const ocrSingleImage = async (
   imagePath: string,
@@ -401,7 +421,10 @@ const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine): strin
   if (engine === 'glm-ocr') {
     return 'The --glm-ocr engine supports PDF and standard image files (PNG/JPG) only.'
   }
-  return 'The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.'
+  if (engine === 'mistral-ocr') {
+    return 'The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.'
+  }
+  return 'The --openai-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. Convert BMP/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
 }
 
 const assertSupportedHostedDirectImageFormat = (
@@ -410,16 +433,57 @@ const assertSupportedHostedDirectImageFormat = (
 ): void => {
   const supportedFormats = engine === 'glm-ocr'
     ? new Set(['png', 'jpg'])
-    : new Set(['png', 'jpg', 'tif'])
+    : engine === 'mistral-ocr'
+      ? new Set(['png', 'jpg', 'tif'])
+      : new Set(['png', 'jpg', 'webp', 'gif'])
 
   if (!supportedFormats.has(format)) {
     throw CLIUsageError(getHostedDirectImageSupportError(engine))
   }
 }
 
+const normalizeHostedDirectImageInput = async (
+  imagePath: string,
+  engine: HostedExtractOcrEngine,
+  tempDir: string,
+  outputStem: string
+): Promise<{ filePath: string, format: DocumentMetadata['format'] }> => {
+  const ext = extname(imagePath).toLowerCase()
+  const normalizedFormat = ext === '.jpeg'
+    ? 'jpg'
+    : ext === '.tiff'
+      ? 'tif'
+      : ext.slice(1).toLowerCase()
+
+  if (engine !== 'openai-ocr') {
+    assertSupportedHostedDirectImageFormat(normalizedFormat, engine)
+    return { filePath: imagePath, format: normalizedFormat as DocumentMetadata['format'] }
+  }
+
+  if (normalizedFormat === 'png' || normalizedFormat === 'jpg' || normalizedFormat === 'webp' || normalizedFormat === 'gif') {
+    return { filePath: imagePath, format: normalizedFormat }
+  }
+
+  if (normalizedFormat !== 'bmp' && normalizedFormat !== 'tif') {
+    throw CLIUsageError(getHostedDirectImageSupportError(engine))
+  }
+
+  if (!commandExists('convert')) {
+    throw CLIUsageError(getHostedDirectImageSupportError(engine))
+  }
+
+  const pngPath = join(tempDir, `${outputStem}.png`)
+  const result = await exec('convert', [imagePath, pngPath])
+  if (result.exitCode !== 0) {
+    throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --openai-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
+  }
+
+  return { filePath: pngPath, format: 'png' }
+}
+
 const resolveHostedOcrSelection = (
   opts: ExtractionOptions
-): { service: 'mistral' | 'glm', model: string } | undefined => {
+): { service: 'mistral' | 'glm' | 'openai', model: string } | undefined => {
   if (hasMistralOcr(opts)) {
     return { service: 'mistral', model: opts.mistralOcrModel as string }
   }
@@ -428,6 +492,17 @@ const resolveHostedOcrSelection = (
     return { service: 'glm', model: opts.glmOcrModel as string }
   }
 
+  if (hasOpenAIOcr(opts)) {
+    return { service: 'openai', model: opts.openaiOcrModel as string }
+  }
+
+  return undefined
+}
+
+const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEngine | undefined => {
+  if (hasMistralOcr(opts)) return 'mistral-ocr'
+  if (hasGlmOcr(opts)) return 'glm-ocr'
+  if (hasOpenAIOcr(opts)) return 'openai-ocr'
   return undefined
 }
 
@@ -452,7 +527,7 @@ const assertHostedOcrWithinLimits = async (
 
   if (typeof limits.effectiveBytes === 'number' && fileStats.size > limits.effectiveBytes) {
     throw CLIUsageError(
-      `${formatHostedOcrLabel(selection.service)} supports ${inputLabel} inputs up to ${formatBytes(limits.effectiveBytes)} based on project/links/bun-links.md. ` +
+      `${formatHostedOcrLabel(selection.service)} supports ${inputLabel} inputs up to ${formatBytes(limits.effectiveBytes)} based on ${getHostedOcrLimitSource(selection.service)}. ` +
       `Got ${formatBytes(fileStats.size)} for ${basename(filePath)}.`
     )
   }
@@ -461,7 +536,7 @@ const assertHostedOcrWithinLimits = async (
     const pageCount = await resolvePdfPageCount(filePath, opts.password, step1Metadata.pageCount)
     if (typeof pageCount === 'number' && pageCount > limits.pageCount) {
       throw CLIUsageError(
-        `${formatHostedOcrLabel(selection.service)} supports PDF inputs up to ${limits.pageCount} pages based on project/links/bun-links.md. ` +
+        `${formatHostedOcrLabel(selection.service)} supports PDF inputs up to ${limits.pageCount} pages based on ${getHostedOcrLimitSource(selection.service)}. ` +
         `Got ${pageCount} pages for ${basename(filePath)}.`
       )
     }
@@ -505,6 +580,22 @@ const runHostedOcr = async (
     }
   }
 
+  if (hasOpenAIOcr(opts)) {
+    await ensureOpenAIOcrSetup()
+    warnOpenAIOnlyFlags(opts)
+    const ocrModel = opts.openaiOcrModel as string
+    const run = await runOpenAIOcr(filePath, step1Metadata, ocrModel)
+    return {
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'openai',
+      ocrModel,
+      totalPages: run.totalPages,
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+    }
+  }
+
   throw CLIUsageError('Hosted OCR requested without a configured hosted OCR model.')
 }
 
@@ -539,11 +630,12 @@ export const runOcr = async (
     opts.useOcrmypdf === true,
     opts.usePaddleOcr === true,
     hasMistralOcr(opts),
-    hasGlmOcr(opts)
+    hasGlmOcr(opts),
+    hasOpenAIOcr(opts)
   ].filter(Boolean).length
 
   if ((typeof opts.preparedMarkdown !== 'string' || opts.preparedMarkdown.trim().length === 0) && ocrEngineCount > 1) {
-    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr).')
+    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --openai-ocr).')
   }
 
   if (useEpubBun && useEpubCalibre) {
@@ -758,20 +850,32 @@ export const runOcr = async (
       l.info(`Processing ${images.length} images from CBZ`)
 
       if (hasHostedOcr(opts)) {
-        const hostedEngine: HostedExtractOcrEngine = hasGlmOcr(opts) ? 'glm-ocr' : 'mistral-ocr'
+        const hostedEngine = getHostedOcrEngine(opts)
+        if (!hostedEngine) {
+          throw CLIUsageError('Hosted OCR requested without a configured hosted OCR model.')
+        }
         const imagePages: PageResult[] = []
         let totalPromptTokens = 0
         let totalCompletionTokens = 0
-        for (let i = 0; i < images.length; i++) {
-          const imgPath = images[i]!
-          assertSupportedHostedDirectImageFormat(extname(imgPath).toLowerCase() === '.jpeg' ? 'jpg' : extname(imgPath).slice(1).toLowerCase(), hostedEngine)
-          const imageFormat = extname(imgPath).toLowerCase() === '.png' ? 'png' : 'jpg'
-          const tempMeta = await buildHostedUploadMetadata(imgPath, step1Metadata, imageFormat)
-          const r = await runHostedOcr(imgPath, tempMeta, opts)
-          imagePages.push(...r.pages.map(p => ({ ...p, pageNumber: i + 1 })))
-          ocrService = r.ocrService
-          totalPromptTokens += r.promptTokens ?? 0
-          totalCompletionTokens += r.completionTokens ?? 0
+        const hostedNormDir = await mkdtemp(join(tmpdir(), 'autoshow-cbz-hosted-'))
+        try {
+          for (let i = 0; i < images.length; i++) {
+            const imgPath = images[i]!
+            const normalized = await normalizeHostedDirectImageInput(
+              imgPath,
+              hostedEngine,
+              hostedNormDir,
+              `cbz-page-${String(i + 1).padStart(4, '0')}`
+            )
+            const tempMeta = await buildHostedUploadMetadata(normalized.filePath, step1Metadata, normalized.format)
+            const r = await runHostedOcr(normalized.filePath, tempMeta, opts)
+            imagePages.push(...r.pages.map(p => ({ ...p, pageNumber: i + 1 })))
+            ocrService = r.ocrService
+            totalPromptTokens += r.promptTokens ?? 0
+            totalCompletionTokens += r.completionTokens ?? 0
+          }
+        } finally {
+          await rm(hostedNormDir, { recursive: true, force: true })
         }
         pages = imagePages
         extractionMethod = `cbz+${hostedEngine}`
@@ -804,16 +908,28 @@ export const runOcr = async (
     inputFamily = 'image'
 
     if (hasHostedOcr(opts)) {
-      const hostedEngine: HostedExtractOcrEngine = hasGlmOcr(opts) ? 'glm-ocr' : 'mistral-ocr'
-      assertSupportedHostedDirectImageFormat(format, hostedEngine)
-      const r = await runHostedOcr(filePath, step1Metadata, opts)
-      pages = r.pages
-      extractionMethod = `image+${r.extractionMethod}`
-      ocrService = r.ocrService
-      canonicalText = r.canonicalText
-      reportedTotalPages = r.totalPages
-      promptTokens = r.promptTokens
-      completionTokens = r.completionTokens
+      const hostedEngine = getHostedOcrEngine(opts)
+      if (!hostedEngine) {
+        throw CLIUsageError('Hosted OCR requested without a configured hosted OCR model.')
+      }
+
+      const hostedNormDir = await mkdtemp(join(tmpdir(), 'autoshow-img-hosted-'))
+      try {
+        const normalized = await normalizeHostedDirectImageInput(filePath, hostedEngine, hostedNormDir, 'input-image')
+        const tempMeta = normalized.filePath === filePath && normalized.format === step1Metadata.format
+          ? step1Metadata
+          : await buildHostedUploadMetadata(normalized.filePath, step1Metadata, normalized.format, opts.password)
+        const r = await runHostedOcr(normalized.filePath, tempMeta, opts)
+        pages = r.pages
+        extractionMethod = `image+${r.extractionMethod}`
+        ocrService = r.ocrService
+        canonicalText = r.canonicalText
+        reportedTotalPages = r.totalPages
+        promptTokens = r.promptTokens
+        completionTokens = r.completionTokens
+      } finally {
+        await rm(hostedNormDir, { recursive: true, force: true })
+      }
     } else {
       const engine = resolveExtractEngine(opts)
       if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
@@ -834,7 +950,7 @@ export const runOcr = async (
 
     if (hasHostedOcr(opts)) {
       if (format !== 'pdf') {
-        const hostedEngine: HostedExtractOcrEngine = hasGlmOcr(opts) ? 'glm-ocr' : 'mistral-ocr'
+        const hostedEngine = getHostedOcrEngine(opts) ?? 'mistral-ocr'
         throw CLIUsageError(getHostedDirectImageSupportError(hostedEngine))
       }
       const r = await runHostedOcr(filePath, step1Metadata, opts)
@@ -933,6 +1049,9 @@ export const runOcr = async (
   }
   if (typeof opts.glmOcrModel === 'string' && extractionMethod.includes('glm-ocr')) {
     step2MetadataPayload['ocrModel'] = opts.glmOcrModel
+  }
+  if (typeof opts.openaiOcrModel === 'string' && extractionMethod.includes('openai-ocr')) {
+    step2MetadataPayload['ocrModel'] = opts.openaiOcrModel
   }
   if (typeof promptTokens === 'number') {
     step2MetadataPayload['promptTokens'] = promptTokens

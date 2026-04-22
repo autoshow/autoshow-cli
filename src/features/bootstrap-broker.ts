@@ -13,6 +13,7 @@ import { ensureReverbRuntimeSetup, setupReverb } from '~/cli/commands/process-st
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
 import { ensureGlmOcrSetup, setupGlmOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/glm-ocr/glm'
 import { ensureMistralOcrSetup, setupMistralOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
+import { ensureOpenAIOcrSetup, setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/tesseract-utils'
@@ -107,6 +108,10 @@ const handlers: Record<string, BootstrapHandler> = {
   'glm-ocr': {
     ensure: async () => await ensureGlmOcrSetup(),
     setup: async () => await setupGlmOcr()
+  },
+  'openai-ocr': {
+    ensure: async () => await ensureOpenAIOcrSetup(),
+    setup: async () => await setupOpenAIOcr()
   }
 }
 

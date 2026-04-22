@@ -80,7 +80,8 @@ export const buildApiCheapSelections = () => {
 
   const extractSelections = [
     { service: 'mistral', flag: '--mistral-ocr', envVar: 'MISTRAL_API_KEY', model: selectCheapestExtractModel('mistral') },
-    { service: 'glm', flag: '--glm-ocr', envVar: 'GLM_API_KEY', model: selectCheapestExtractModel('glm') }
+    { service: 'glm', flag: '--glm-ocr', envVar: 'GLM_API_KEY', model: selectCheapestExtractModel('glm') },
+    { service: 'openai', flag: '--openai-ocr', envVar: 'OPENAI_API_KEY', model: selectCheapestExtractModel('openai') }
   ]
 
   return {

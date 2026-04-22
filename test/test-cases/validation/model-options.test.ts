@@ -37,6 +37,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Google Cloud STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', 'chirp_2'] },
   { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
   { label: 'CLI invalid GLM OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr-v2'] },
+  { label: 'CLI invalid OpenAI OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-4o'] },
   { label: 'stt rejects invalid speaker-count with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
   { label: 'stt rejects LLM provider flags with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4'] },
   { label: 'stt rejects MiniMax LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
@@ -116,6 +117,7 @@ test('ocr help includes hosted OCR flags', async () => {
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--mistral-ocr')
   expect(result.stdout).toContain('--glm-ocr')
+  expect(result.stdout).toContain('--openai-ocr')
   expect(result.stdout).not.toContain('--provider')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--epub-calibre')
@@ -611,6 +613,14 @@ test('buildOptsFromFlags maps --glm-ocr to glmOcrModel', () => {
   expect(opts.glmOcrModel).toBe('glm-ocr')
 })
 
+test('buildOptsFromFlags maps --openai-ocr to openaiOcrModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'openai-ocr': 'gpt-5.4-nano'
+  })
+
+  expect(opts.openaiOcrModel).toBe('gpt-5.4-nano')
+})
+
 test('buildConfigPatchFromFlags resolves bare provider flags before writing config', () => {
   expect(buildConfigPatchFromFlags({
     'gcloud-stt': true,
@@ -621,8 +631,9 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
     'openai-tts': true,
     'openai-image': true,
     'mistral-ocr': true,
+    'openai-ocr': true,
     'gemini-video': true
-  }, new Set(['gcloud-stt', 'aws-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'gemini-video']))).toEqual({
+  }, new Set(['gcloud-stt', 'aws-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'openai-ocr', 'gemini-video']))).toEqual({
     version: 2,
     defaults: {
       stt: {
@@ -646,7 +657,8 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
         }
       },
       extract: {
-        mistralOcr: ['mistral-ocr-2512']
+        mistralOcr: ['mistral-ocr-2512'],
+        openaiOcr: ['gpt-5.4-nano']
       }
     }
   })
@@ -725,6 +737,7 @@ test('resolveCheapestModelForFlag uses current registry-driven cheapest selectio
   expect(resolveCheapestModelForFlag('openai-tts')).toBe('gpt-4o-mini-tts')
   expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1-mini')
   expect(resolveCheapestModelForFlag('mistral-ocr')).toBe('mistral-ocr-2512')
+  expect(resolveCheapestModelForFlag('openai-ocr')).toBe('gpt-5.4-nano')
   expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-fast-generate-preview')
   expect(resolveCheapestModelForFlag('minimax-video')).toBe('T2V-01')
 })
@@ -757,6 +770,7 @@ test('buildOptsFromFlags resolves bare provider flags to cheapest models', () =>
     'openai-tts': true,
     'openai-image': true,
     'mistral-ocr': true,
+    'openai-ocr': true,
     'gemini-video': true
   })
 
@@ -768,6 +782,7 @@ test('buildOptsFromFlags resolves bare provider flags to cheapest models', () =>
   expect(opts.openaiTtsModel).toBe('gpt-4o-mini-tts')
   expect(opts.openaiImageModel).toBe('gpt-image-1-mini')
   expect(opts.mistralOcrModel).toBe('mistral-ocr-2512')
+  expect(opts.openaiOcrModel).toBe('gpt-5.4-nano')
   expect(opts.geminiVideoModel).toBe('veo-3.1-fast-generate-preview')
 })
 
@@ -971,12 +986,14 @@ test('collectSttTargets deduplicates identical provider-specific specs', () => {
 test('collectExplicitOcrTargets collects canonical OCR provider flags', () => {
   const opts = buildOptsFromFlags(false, {
     'paddle-ocr': true,
-    'mistral-ocr': 'mistral-ocr-2512'
+    'mistral-ocr': 'mistral-ocr-2512',
+    'openai-ocr': 'gpt-5.4-nano'
   })
 
   expect(collectExplicitOcrTargets(opts)).toEqual([
     { service: 'paddle-ocr', model: 'paddle-ocr' },
-    { service: 'mistral', model: 'mistral-ocr-2512' }
+    { service: 'mistral', model: 'mistral-ocr-2512' },
+    { service: 'openai', model: 'gpt-5.4-nano' }
   ])
 })
 
@@ -1259,6 +1276,8 @@ test('ocr accepts multiple OCR providers in price mode', async () => {
     'mistral-ocr-2512',
     '--glm-ocr',
     'glm-ocr',
+    '--openai-ocr',
+    'gpt-5.4-nano',
     '--price'
   ])
 
@@ -1290,8 +1309,8 @@ test('write rejects multiple OCR providers in price mode', async () => {
     '--paddle-ocr',
     '--mistral-ocr',
     'mistral-ocr-2512',
-    '--glm-ocr',
-    'glm-ocr',
+    '--openai-ocr',
+    'gpt-5.4-nano',
     '--openai',
     'gpt-5.4',
     '--price'

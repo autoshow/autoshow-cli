@@ -44,9 +44,9 @@ const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel'>
+  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'firecrawl'
+  provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -55,7 +55,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -98,6 +98,19 @@ const collectEstimatedExtractTargets = (
         model: entry.ocrModel ?? opts.mistralOcrModel ?? 'mistral-ocr-2512',
         pageCount: entry.totalPages,
         estimateType: 'exact' as const
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'openai' || entry.extractionMethod.includes('openai-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'openai' as const,
+        model: entry.ocrModel ?? opts.openaiOcrModel ?? 'gpt-5.4-nano',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
+        note: 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
       })
     }
   }
@@ -298,6 +311,7 @@ export const processOcr = async (
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
     ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
+    ...(rawOpts.openaiOcrModel ? { openaiOcrModel: rawOpts.openaiOcrModel } : {}),
     ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
     ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),
     pdfChapterMode: rawOpts.pdfChapterMode ?? 'local',

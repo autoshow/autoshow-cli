@@ -40,6 +40,56 @@
       }
     }
   },
+  "openai": {
+    "description": "OpenAI GPT-5.4 OCR via Responses API",
+    "type": "api",
+    "models": {
+      "gpt-5.4": {
+        "description": "GPT-5.4 OCR",
+        "costPerMInputTokensUSD": 2.5,
+        "costPerMOutputTokensUSD": 15,
+        "costPerMInputTokensCents": 250,
+        "costPerMOutputTokensCents": 1500,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        }
+      },
+      "gpt-5.4-mini": {
+        "description": "GPT-5.4 mini OCR",
+        "costPerMInputTokensUSD": 0.75,
+        "costPerMOutputTokensUSD": 4.5,
+        "costPerMInputTokensCents": 75,
+        "costPerMOutputTokensCents": 450,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        }
+      },
+      "gpt-5.4-nano": {
+        "description": "GPT-5.4 nano OCR",
+        "costPerMInputTokensUSD": 0.2,
+        "costPerMOutputTokensUSD": 1.25,
+        "costPerMInputTokensCents": 20,
+        "costPerMOutputTokensCents": 125,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        }
+      },
+      "gpt-5.4-pro": {
+        "description": "GPT-5.4 pro OCR",
+        "costPerMInputTokensUSD": 30,
+        "costPerMOutputTokensUSD": 180,
+        "costPerMInputTokensCents": 3000,
+        "costPerMOutputTokensCents": 18000,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        }
+      }
+    }
+  },
   "firecrawl": {
     "description": "Firecrawl hosted article extraction",
     "type": "api",

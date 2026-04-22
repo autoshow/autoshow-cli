@@ -17,3 +17,13 @@ defineOCRServiceTest({
   imageExtractionMethod: 'image+mistral-ocr',
   envVarKey: 'MISTRAL_API_KEY',
 })
+
+defineOCRServiceTest({
+  models: ['gpt-5.4-nano'],
+  cliFlag: '--openai-ocr',
+  extractionMethod: 'openai-ocr',
+  imageExtractionMethod: 'image+openai-ocr',
+  envVarKey: 'OPENAI_API_KEY',
+  imageInput: 'input/examples/document/1-document.jpg',
+  timeoutMs: 30000,
+})

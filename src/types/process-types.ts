@@ -220,6 +220,7 @@ export const ExtractionOptionsSchema = v.object({
   usePaddleOcr: v.optional(v.boolean(), undefined),
   mistralOcrModel: v.optional(v.string(), undefined),
   glmOcrModel: v.optional(v.string(), undefined),
+  openaiOcrModel: v.optional(v.string(), undefined),
   epubChapterFiles: v.optional(v.boolean(), undefined),
   epubChunkLimitChars: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   pdfChapterMode: v.optional(v.picklist(['local', 'auto', 'llm']), 'local'),
@@ -246,7 +247,7 @@ export const ExtractionResultSchema = v.object({
   textPages: v.number()
 })
 
-export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr'
+export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr'
 
 export type { EpubInspectEngine } from '~/cli/commands/process-steps/step-2-ocr/ocr-types'
 export type EpubInspection = Record<string, unknown>
@@ -266,15 +267,16 @@ const ChapterExportSummarySchema = v.object({
 
 export const ExtractionMetadataSchema = v.object({
   extractionMethod: v.picklist([
-    'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'ocrmypdf', 'mistral-ocr', 'epub-bun', 'epub-calibre',
+    'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'ocrmypdf', 'mistral-ocr', 'openai-ocr', 'epub-bun', 'epub-calibre',
     'epub-text',
-    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr',
-    'office-native', 'office+tesseract', 'office+ocrmypdf', 'office+paddle-ocr', 'office+mistral-ocr', 'office+glm-ocr',
-    'rtf+tesseract', 'rtf+ocrmypdf', 'rtf+paddle-ocr', 'rtf+mistral-ocr', 'rtf+glm-ocr',
-    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr',
+    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+openai-ocr',
+    'office-native', 'office+tesseract', 'office+ocrmypdf', 'office+paddle-ocr', 'office+mistral-ocr', 'office+glm-ocr', 'office+openai-ocr',
+    'rtf+tesseract', 'rtf+ocrmypdf', 'rtf+paddle-ocr', 'rtf+mistral-ocr', 'rtf+glm-ocr', 'rtf+openai-ocr',
+    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+openai-ocr',
     'csv-raw',
-    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr',
+    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+openai-ocr',
     'glm-ocr',
+    'openai-ocr',
     'html+defuddle', 'html+firecrawl', 'html+glm-reader'
   ]),
   totalPages: v.number(),

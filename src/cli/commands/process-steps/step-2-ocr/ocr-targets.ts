@@ -3,7 +3,7 @@ import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { collectOcrProviderSpecs } from './cli'
 
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel'> & {
+  opts: Pick<ExtractionOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel'> & {
     provider?: string[] | undefined
   }
 ): OcrTarget[] => {
@@ -12,6 +12,8 @@ export const collectExplicitOcrTargets = (
       ? 'mistral'
       : spec.provider === 'glm-ocr'
         ? 'glm'
+        : spec.provider === 'openai-ocr'
+          ? 'openai'
         : spec.provider) as OcrTarget['service'],
     model: spec.model ?? spec.provider
   }))
@@ -28,5 +30,6 @@ export const buildExtractionOptionsForTarget = (
   useOcrmypdf: target.service === 'ocrmypdf' ? true : undefined,
   usePaddleOcr: target.service === 'paddle-ocr' ? true : undefined,
   mistralOcrModel: target.service === 'mistral' ? target.model : undefined,
-  glmOcrModel: target.service === 'glm' ? target.model : undefined
+  glmOcrModel: target.service === 'glm' ? target.model : undefined,
+  openaiOcrModel: target.service === 'openai' ? target.model : undefined
 })

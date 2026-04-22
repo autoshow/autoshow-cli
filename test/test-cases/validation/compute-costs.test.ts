@@ -328,6 +328,23 @@ describe('computeActualCosts extract routing', () => {
     expect(extractStep?.cost).toBeCloseTo(0.024, 6)
   })
 
+  test('estimates OpenAI OCR extract costs with heuristic prompt token counts', () => {
+    const result = computeEstimatedCosts({
+      openaiOcrModel: 'gpt-5.4-nano',
+      extractPageCount: 2
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('openai')
+    expect(extractStep?.model).toBe('gpt-5.4-nano')
+    expect(extractStep?.promptTokens).toBe(8000)
+    expect(extractStep?.completionTokens).toBe(0)
+    expect(extractStep?.estimateType).toBe('heuristic')
+    expect(extractStep?.note).toContain('Actual OpenAI OCR cost is computed from response usage after execution')
+    expect(extractStep?.cost).toBeCloseTo(0.16, 6)
+  })
+
   test('estimates Firecrawl article extraction cost from the configured credit rate', () => {
     const result = computeEstimatedCosts({
       extractTargets: [{
@@ -377,6 +394,35 @@ describe('computeActualCosts extract routing', () => {
     expect(extractStep?.promptTokens).toBe(16000)
     expect(extractStep?.completionTokens).toBe(500)
     expect(extractStep?.cost).toBeCloseTo(0.0495, 6)
+  })
+
+  test('computes actual OpenAI OCR cost from token usage metadata', () => {
+    const result = computeActualCosts({
+      step2: {
+        extractionMethod: 'openai-ocr',
+        totalPages: 4,
+        ocrPages: 4,
+        textPages: 0,
+        processingTime: 800,
+        dpi: 300,
+        languages: 'eng',
+        tokenEstimate: 100,
+        ocrService: 'openai',
+        ocrModel: 'gpt-5.4-nano',
+        promptTokens: 16000,
+        completionTokens: 500
+      }
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('openai')
+    expect(extractStep?.model).toBe('gpt-5.4-nano')
+    expect(extractStep?.inputMetric).toBe('tokens')
+    expect(extractStep?.inputValue).toBe(16500)
+    expect(extractStep?.promptTokens).toBe(16000)
+    expect(extractStep?.completionTokens).toBe(500)
+    expect(extractStep?.cost).toBeCloseTo(0.3825, 6)
   })
 
   test('computes actual Firecrawl article extraction cost from extraction metadata', () => {
@@ -441,6 +487,20 @@ describe('computeActualCosts extract routing', () => {
           completionTokens: 0
         },
         {
+          extractionMethod: 'openai-ocr',
+          totalPages: 4,
+          ocrPages: 4,
+          textPages: 0,
+          processingTime: 650,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 100,
+          ocrService: 'openai',
+          ocrModel: 'gpt-5.4-nano',
+          promptTokens: 16000,
+          completionTokens: 0
+        },
+        {
           extractionMethod: 'html+firecrawl',
           totalPages: 1,
           ocrPages: 0,
@@ -454,11 +514,12 @@ describe('computeActualCosts extract routing', () => {
     })
 
     const extractSteps = result.steps.filter((step) => step.step === 'extract')
-    expect(extractSteps).toHaveLength(4)
+    expect(extractSteps).toHaveLength(5)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'ocrmypdf:ocrmypdf',
       'mistral:mistral-ocr-2512',
       'glm:glm-ocr',
+      'openai:gpt-5.4-nano',
       'firecrawl:firecrawl'
     ])
   })
@@ -500,16 +561,31 @@ describe('computeActualCosts extract routing', () => {
           ocrModel: 'glm-ocr',
           promptTokens: 12000,
           completionTokens: 0
+        },
+        {
+          extractionMethod: 'openai-ocr',
+          totalPages: 3,
+          ocrPages: 3,
+          textPages: 0,
+          processingTime: 550,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 90,
+          ocrService: 'openai',
+          ocrModel: 'gpt-5.4-nano',
+          promptTokens: 12000,
+          completionTokens: 0
         }
       ]
     })
 
     const extractSteps = result.steps.filter((step) => step.step === 'extract')
-    expect(extractSteps).toHaveLength(3)
+    expect(extractSteps).toHaveLength(4)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'paddle-ocr:paddle-ocr',
       'mistral:mistral-ocr-2512',
-      'glm:glm-ocr'
+      'glm:glm-ocr',
+      'openai:gpt-5.4-nano'
     ])
   })
 
