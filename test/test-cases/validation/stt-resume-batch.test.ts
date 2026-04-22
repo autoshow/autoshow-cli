@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { discoverLatestResumableSttBatchDir, resumeSttMissingFromBatchDir } from '~/cli/commands/process-steps/step-2-stt/resume'
 import { YOUTUBE_CAPTIONS_MODEL, YOUTUBE_CAPTIONS_SERVICE } from '~/cli/commands/process-steps/step-2-stt/youtube-captions'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { l, type LogSink, type LogSinkEvent } from '~/logger'
 import {
   readBatchItems,
   readProviderResultMetadata,
@@ -40,6 +41,27 @@ afterEach(async () => {
     await rm(dir, { recursive: true, force: true })
   }))
 })
+
+const withCapturedLogs = async <T>(run: (events: LogSinkEvent[]) => Promise<T>): Promise<T> => {
+  const events: LogSinkEvent[] = []
+  const sink: LogSink = (event) => {
+    events.push(event)
+  }
+  const originalMinLevel = l.config.minLevel
+  const originalSinks = [...l.config.sinks]
+
+  l.config.minLevel = 'debug'
+  l.config.sinks.length = 0
+  l.config.sinks.push(sink)
+
+  try {
+    return await run(events)
+  } finally {
+    l.config.minLevel = originalMinLevel
+    l.config.sinks.length = 0
+    l.config.sinks.push(...originalSinks)
+  }
+}
 
 const createResumeDiscoveryBatch = async (
   outputRoot: string,
@@ -492,10 +514,54 @@ test('resumeSttMissingFromBatchDir reruns only missing providers into the existi
     'no-cache': true
   })
 
-  await resumeSttMissingFromBatchDir(batchDir, opts)
+  const events = await withCapturedLogs(async (captured) => {
+    await resumeSttMissingFromBatchDir(batchDir, opts)
+    return captured
+  })
 
   expect(createCalls).toBe(1)
   expect(await Bun.file(join(outputDir, 'providers', 'soniox-stt-async-v4', 'transcription.txt')).exists()).toBe(true)
+
+  const resumeItemEvents = events.filter((event) => event.message === 'Resume Item')
+  expect(resumeItemEvents.map((event) => ({
+    level: event.level,
+    rows: event.humanTable?.rows
+  }))).toEqual([
+    {
+      level: 'info',
+      rows: [{
+        item: '1/1',
+        status: 'processing',
+        outputDir,
+        providers: 'soniox/stt-async-v4',
+        detail: 'resuming missing providers'
+      }]
+    },
+    {
+      level: 'success',
+      rows: [{
+        item: '1/1',
+        status: 'full',
+        outputDir,
+        providers: 'soniox/stt-async-v4',
+        detail: 'resume complete'
+      }]
+    }
+  ])
+  const asyncJobEvent = events.find((event) => event.message === 'Async STT Job')
+  expect(asyncJobEvent?.humanTable?.rows).toEqual([{
+    provider: 'soniox/stt-async-v4',
+    action: 'created',
+    remoteId: 'tx-1',
+    state: 'polling'
+  }])
+
+  const resumeSummaryEvent = events.find((event) => event.message === 'Resume Summary')
+  expect(resumeSummaryEvent?.humanTable?.rows).toEqual([{
+    full: 1,
+    incomplete: 0,
+    failed: 0
+  }])
 
   const updatedMetadata = await readRunMetadata(outputDir)
   expect(updatedMetadata['completionStatus']).toBe('full')

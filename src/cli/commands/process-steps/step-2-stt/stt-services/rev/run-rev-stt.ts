@@ -16,6 +16,7 @@ import {
   RevTranscriptResponseSchema
 } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -471,7 +472,12 @@ export const runRevStt = async (
     }
 
     const activeJobId = jobId
-    l.info(`${resumedExistingJob ? 'Rev job resumed' : 'Rev job created'}: ${activeJobId}, polling for completion...`)
+    logSttAsyncJobLifecycle(l, {
+      provider: `rev/${modelName}`,
+      action: resumedExistingJob ? 'resumed' : 'created',
+      remoteId: activeJobId,
+      state: 'polling'
+    })
 
     const pollResult = await pollAsyncSttJobUntilComplete({
       jobId: activeJobId,

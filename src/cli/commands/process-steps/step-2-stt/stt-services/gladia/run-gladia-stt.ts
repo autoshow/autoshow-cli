@@ -18,6 +18,7 @@ import {
   GladiaUploadResponseSchema
 } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildSegmentsFromWords,
   buildTranscriptionOutputBase,
@@ -427,7 +428,12 @@ export const runGladiaStt = async (
   }
 
   const activeTranscriptionId = transcriptionId
-  l.info(`${resumedExistingJob ? 'Gladia transcription resumed' : 'Gladia transcription created'}: ${activeTranscriptionId}, polling for completion...`)
+  logSttAsyncJobLifecycle(l, {
+    provider: `gladia/${modelName}`,
+    action: resumedExistingJob ? 'resumed' : 'created',
+    remoteId: activeTranscriptionId,
+    state: 'polling'
+  })
 
   const pollResult = await pollAsyncSttJobUntilComplete({
     jobId: activeTranscriptionId,

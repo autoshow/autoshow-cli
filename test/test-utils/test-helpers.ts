@@ -69,10 +69,9 @@ const parseCallerLocation = (): { file: string | null, line: number | null, colu
 const parseOutputDirFromText = (text: string): string | null => {
   const clean = stripAnsi(text)
   const patterns = [
-    /Locations[\s\S]*?│\s*outputDir\s*│\s*([^\n\r│]+?)\s*│/g,
+    /Locations[\s\S]*?│\s*(?:outputDir|retryOutputDir)\s*│\s*([^\n\r│]+?)\s*│/g,
+    /Artifacts[\s\S]*?│\s*run\s*│\s*([^\n\r│]+\/run\.json)\s*│/g,
     /"artifact"\s*:\s*"outputDir"[\s\S]*?"path"\s*:\s*"([^"\n\r]+)"/g,
-    /Output directory:\s*([^\n\r]+)/g,
-    /Extraction complete:\s*([^\n\r]+)/g,
     /"run"\s*:\s*"([^"\n\r]+\/run\.json)"/g,
   ]
 

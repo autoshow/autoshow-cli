@@ -51,6 +51,18 @@ const pricingFlags = {
   }
 } as const satisfies ClercFlagsDefinition
 
+const omitFlags = (
+  flags: ClercFlagsDefinition,
+  omittedKeys: string[]
+): ClercFlagsDefinition => Object.fromEntries(
+  Object.entries(flags).filter(([name]) => !omittedKeys.includes(name))
+)
+
+const configTtsFlags = omitFlags(ttsFlags, ['all-tts'])
+const configImageFlags = omitFlags(imageGenFlags, ['all-image'])
+const configVideoFlags = omitFlags(videoGenFlags, ['all-video'])
+const configMusicFlags = omitFlags(musicGenFlags, ['all-music'])
+
 export const configCommandFlags = {
   ...withHelpGroup(configFlags, 'config'),
   ...withHelpGroup(pricingFlags, 'pricing'),
@@ -60,9 +72,9 @@ export const configCommandFlags = {
   ...withHelpGroup(advancedExtractFlags, 'step-2-ocr'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
-  ...withHelpGroup(ttsFlags, 'step-4-tts'),
-  ...withHelpGroup(imageGenFlags, 'step-5-image'),
-  ...withHelpGroup(videoGenFlags, 'step-6-video'),
-  ...withHelpGroup(musicGenFlags, 'step-7-music'),
+  ...withHelpGroup(configTtsFlags, 'step-4-tts'),
+  ...withHelpGroup(configImageFlags, 'step-5-image'),
+  ...withHelpGroup(configVideoFlags, 'step-6-video'),
+  ...withHelpGroup(configMusicFlags, 'step-7-music'),
   ...withHelpGroup(priceFlag, 'pricing')
 } as const satisfies ClercFlagsDefinition

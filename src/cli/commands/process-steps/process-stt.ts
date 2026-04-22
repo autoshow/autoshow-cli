@@ -59,6 +59,12 @@ import {
 import { createMistralSttPassController } from './step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
 import { logRunManifestLocation } from './write-manifest-log'
 import { logLocationsTable } from '~/logger/human-table'
+import {
+  logSttAcquireSummary,
+  logSttProviderConcurrency,
+  logSttProviderFailures,
+  logSttRunStatus
+} from './step-2-stt/stt-logging'
 
 export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/batch'
 export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from '~/types'
@@ -85,13 +91,19 @@ const emittedInfoMessages = new Set<string>()
 const emittedWarnMessages = new Set<string>()
 const RETRYABLE_DEADLINE_MESSAGE_PATTERN = /\bdeadline exceeded\b|\btimed out waiting for transcription completion\b/i
 
-const logInfoOnce = (message: string): void => {
-  if (emittedInfoMessages.has(message)) {
+const emitInfoOnce = (key: string, emit: () => void): void => {
+  if (emittedInfoMessages.has(key)) {
     return
   }
 
-  emittedInfoMessages.add(message)
-  l.info(message)
+  emittedInfoMessages.add(key)
+  emit()
+}
+
+const logInfoOnce = (message: string): void => {
+  emitInfoOnce(message, () => {
+    l.info(message)
+  })
 }
 
 const logWarnOnce = (message: string): void => {
@@ -370,12 +382,25 @@ const logEffectiveProviderConcurrency = (
     return
   }
 
-  if (coordinatedAcrossBatch) {
-    logInfoOnce(`STT batch scheduler active: itemProviderConcurrency=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}, providerSlots=${describeSttBatchProviderSlotLimits(targets, batchConcurrency)}`)
-    return
-  }
+  const providerSlots = describeSttBatchProviderSlotLimits(targets, batchConcurrency)
+  const dedupeKey = [
+    coordinatedAcrossBatch ? 'batch_scheduler' : 'cloud_provider_concurrency',
+    resolution.requested,
+    resolution.effective,
+    batchConcurrency,
+    resolution.hostedProviderCount,
+    providerSlots
+  ].join(':')
 
-  logInfoOnce(`STT cloud provider concurrency: requested=${resolution.requested}, effective=${resolution.effective}, batchConcurrency=${batchConcurrency}, hostedProviders=${resolution.hostedProviderCount}`)
+  emitInfoOnce(dedupeKey, () => {
+    logSttProviderConcurrency(
+      l,
+      resolution,
+      batchConcurrency,
+      coordinatedAcrossBatch,
+      providerSlots
+    )
+  })
 }
 
 const formatProviderFailure = (failure: ProviderFailure): string => {
@@ -447,14 +472,6 @@ export const prioritizeCloudSttTargetIndices = (targets: SttTarget[]): number[] 
       return left.index - right.index
     })
     .map((entry) => entry.index)
-
-const buildAcquireSummary = (
-  itemLabel: string,
-  prepared: PreparedSttMedia
-): string => {
-  const sourceMedia = `${prepared.cache.sourceMedia}${prepared.timings.sourceMediaMs !== undefined ? `(${prepared.timings.sourceMediaMs}ms)` : ''}`
-  return `stt-acquire item=${itemLabel} sourceMedia=${sourceMedia}`
-}
 
 const resolveTargetAudioPath = (
   _target: SttTarget,
@@ -640,7 +657,11 @@ export const processStt = async (
     )
     const preparedStepMedia = prepared
     const acquisitionTimeMs = Date.now() - acquisitionStartedAt
-    l.info(buildAcquireSummary(preparedStepMedia.step1Metadata.slug, preparedStepMedia))
+    logSttAcquireSummary(l, {
+      item: preparedStepMedia.step1Metadata.slug,
+      sourceMedia: preparedStepMedia.cache.sourceMedia,
+      elapsedMs: acquisitionTimeMs
+    })
     logSpeakerCountHintSummary(requestedTargets, options.diarizationSpeakerCount)
 
     if (options.youtubeCaptions && source.url) {
@@ -1223,10 +1244,14 @@ export const processStt = async (
       return outputDir
     }
 
-    l.warn(`stt run incomplete: completionStatus=${completionStatus}, missingProviders=${missingProviders.map(formatSttTargetLabel).join(', ')}`)
-    if (failures.length > 0) {
-      l.warn(`stt run completed with partial failures: ${failures.map(formatProviderFailure).join('; ')}`)
-    }
+    logSttRunStatus(l, {
+      completionStatus,
+      requested: requestedTargets.length,
+      succeeded: successfulProviders.length,
+      failed: failures.length,
+      missing: missingProviders.length
+    })
+    logSttProviderFailures(l, failures)
     l.warn('Output directory preserved for retry/backfill')
     logLocationsTable(l, [{ artifact: 'retryOutputDir', path: outputDir }], { level: 'warn' })
 

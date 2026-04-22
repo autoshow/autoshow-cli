@@ -31,6 +31,7 @@ import { downloadVideo } from '~/cli/commands/process-steps/step-1-download/audi
 import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
 import { commandExists, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
+import { logSttCacheEvent } from './stt-logging'
 
 const METADATA_SCHEMA_VERSION = 1
 const SOURCE_MEDIA_ARTIFACT_VERSION = 7
@@ -554,7 +555,12 @@ export const prepareSttMedia = async (
 
   const cacheLookup = await resolveCacheLookup(source)
   if (cacheLookup.weakFingerprint) {
-    l.info(`cache.weak_fingerprint key=${cacheLookup.cacheKey}`)
+    logSttCacheEvent(l, {
+      artifact: 'source_media',
+      status: 'weak_fingerprint',
+      key: cacheLookup.cacheKey,
+      detail: 'metadata-derived fingerprint'
+    })
   }
 
   const buildUncached = async (): Promise<PreparedSttMedia> => {
@@ -571,7 +577,12 @@ export const prepareSttMedia = async (
         timings.sourceMediaMs = Date.now() - startedAt
         return stagedPath
       })
-      l.info(`cache.bypass artifact=source_media`)
+      logSttCacheEvent(l, {
+        artifact: 'source_media',
+        status: 'bypass',
+        key: cacheLookup.cacheKey,
+        detail: 'no-cache requested'
+      })
 
       const outputPaths = buildPrimaryOutputPaths(
         cacheLookup.metadata,
@@ -673,12 +684,20 @@ export const prepareSttMedia = async (
           entry.artifactVersions = {
             source_media: SOURCE_MEDIA_ARTIFACT_VERSION
           }
-          l.info(`${refreshCache ? 'cache.rebuild' : 'cache.miss'} artifact=source_media key=${cacheLookup.cacheKey}`)
+          logSttCacheEvent(l, {
+            artifact: 'source_media',
+            status: refreshCache ? 'rebuild' : 'miss',
+            key: cacheLookup.cacheKey
+          })
         } finally {
           await rm(workspaceDir, { recursive: true, force: true })
         }
       } else if (sourceMediaExecutionPath) {
-        l.info(`cache.hit artifact=source_media key=${cacheLookup.cacheKey}`)
+        logSttCacheEvent(l, {
+          artifact: 'source_media',
+          status: 'hit',
+          key: cacheLookup.cacheKey
+        })
       }
 
       if (!sourceMediaExecutionPath) {

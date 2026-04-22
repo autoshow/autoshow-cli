@@ -2,7 +2,7 @@ import * as l from '~/logger'
 import { createHumanTable } from '~/logger/human-table'
 import type { BatchProcessResult, BatchRunOptions, RuntimeOptions } from '~/types'
 import { collectSttTargets } from '../stt-targets'
-import { buildSttBatchSchedulerRows, formatSttBatchSchedulerSummary } from './stt-batch-policy'
+import { buildSttBatchSchedulerRows } from './stt-batch-policy'
 import { SttBatchCoordinator } from './stt-batch-coordinator'
 import { runResumeSttMissingFromBatchDir } from '../resume'
 import { logSttBatchFinalSummary, processBatch } from '../../step-1-download/targets/target-utils'
@@ -76,15 +76,15 @@ export const runSttBatch = async (
 
   if (coordinator) {
     const snapshot = coordinator.getSchedulerSnapshot()
-    const summary = formatSttBatchSchedulerSummary(snapshot)
-    if (summary) {
-      l.info(`STT batch scheduler summary: ${summary}`)
+    if (snapshot.providers.length > 0) {
+      const rows = buildSttBatchSchedulerRows(snapshot)
       l.write('info', 'STT batch scheduler summary', {
         category: 'pipeline',
         humanTable: createHumanTable(
-          buildSttBatchSchedulerRows(snapshot),
+          rows,
           ['provider', 'kind', 'launchSlots', 'pollSlots', 'launched', 'completed', 'queueWaitMs', 'polls', 'blocked', 'degraded', 'backfill', 'warm']
-        )
+        ),
+        metadata: { providers: rows }
       })
     }
   }

@@ -1,5 +1,46 @@
 import { CLIUsageError } from '~/utils/error-handler'
 import {
+  SUPPORTED_OPENAI_MODELS,
+  SUPPORTED_GROQ_MODELS,
+  SUPPORTED_GEMINI_MODELS,
+  SUPPORTED_ANTHROPIC_MODELS,
+  SUPPORTED_MINIMAX_MODELS,
+  SUPPORTED_GROK_MODELS,
+  SUPPORTED_LLAMA_MODELS,
+  SUPPORTED_WHISPER_MODELS,
+  SUPPORTED_GCLOUD_STT_MODELS,
+  SUPPORTED_AWS_STT_MODELS,
+  SUPPORTED_DEEPINFRA_STT_MODELS,
+  SUPPORTED_DEAPI_STT_MODELS,
+  SUPPORTED_GROQ_STT_MODELS,
+  SUPPORTED_ELEVENLABS_STT_MODELS,
+  SUPPORTED_DEEPGRAM_STT_MODELS,
+  SUPPORTED_SONIOX_STT_MODELS,
+  SUPPORTED_SPEECHMATICS_STT_MODELS,
+  SUPPORTED_REV_STT_MODELS,
+  SUPPORTED_MISTRAL_STT_MODELS,
+  SUPPORTED_ASSEMBLYAI_STT_MODELS,
+  SUPPORTED_GLADIA_STT_MODELS,
+  SUPPORTED_HAPPYSCRIBE_STT_MODELS,
+  SUPPORTED_SUPADATA_STT_MODELS,
+  SUPPORTED_MISTRAL_OCR_MODELS,
+  SUPPORTED_GLM_OCR_MODELS,
+  SUPPORTED_OPENAI_OCR_MODELS,
+  SUPPORTED_ANTHROPIC_OCR_MODELS,
+  SUPPORTED_GEMINI_OCR_MODELS,
+  SUPPORTED_KITTEN_TTS_MODELS,
+  SUPPORTED_ELEVENLABS_TTS_MODELS,
+  SUPPORTED_MINIMAX_TTS_MODELS,
+  SUPPORTED_GROQ_TTS_MODELS,
+  SUPPORTED_OPENAI_TTS_MODELS,
+  SUPPORTED_GEMINI_TTS_MODELS,
+  SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_MINIMAX_IMAGE_MODELS,
+  SUPPORTED_OPENAI_IMAGE_MODELS,
+  SUPPORTED_ELEVENLABS_MUSIC_MODELS,
+  SUPPORTED_MINIMAX_MUSIC_MODELS,
+  SUPPORTED_GEMINI_VIDEO_MODELS,
+  SUPPORTED_MINIMAX_VIDEO_MODELS,
   validateLlamaModel,
   validateOpenAIModel,
   validateGroqModel,
@@ -94,8 +135,59 @@ export const REPEATABLE_MODEL_FLAGS = [
 
 export type RepeatableModelFlag = typeof REPEATABLE_MODEL_FLAGS[number]
 type FlagOccurrenceValue = string | boolean
+type AllShortcutFlag =
+  | 'all-stt'
+  | 'all-ocr'
+  | 'all-llm'
+  | 'all-tts'
+  | 'all-image'
+  | 'all-video'
+  | 'all-music'
 
 const REPEATABLE_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
+const ALL_SHORTCUT_MODEL_EXPANSIONS = {
+  whisper: { shortcut: 'all-stt', supported: SUPPORTED_WHISPER_MODELS },
+  'gcloud-stt': { shortcut: 'all-stt', supported: SUPPORTED_GCLOUD_STT_MODELS },
+  'aws-stt': { shortcut: 'all-stt', supported: SUPPORTED_AWS_STT_MODELS },
+  'deepinfra-stt': { shortcut: 'all-stt', supported: SUPPORTED_DEEPINFRA_STT_MODELS },
+  'deapi-stt': { shortcut: 'all-stt', supported: SUPPORTED_DEAPI_STT_MODELS },
+  'groq-stt': { shortcut: 'all-stt', supported: SUPPORTED_GROQ_STT_MODELS },
+  'elevenlabs-stt': { shortcut: 'all-stt', supported: SUPPORTED_ELEVENLABS_STT_MODELS },
+  'deepgram-stt': { shortcut: 'all-stt', supported: SUPPORTED_DEEPGRAM_STT_MODELS },
+  'soniox-stt': { shortcut: 'all-stt', supported: SUPPORTED_SONIOX_STT_MODELS },
+  'speechmatics-stt': { shortcut: 'all-stt', supported: SUPPORTED_SPEECHMATICS_STT_MODELS },
+  'rev-stt': { shortcut: 'all-stt', supported: SUPPORTED_REV_STT_MODELS },
+  'mistral-stt': { shortcut: 'all-stt', supported: SUPPORTED_MISTRAL_STT_MODELS },
+  'assemblyai-stt': { shortcut: 'all-stt', supported: SUPPORTED_ASSEMBLYAI_STT_MODELS },
+  'gladia-stt': { shortcut: 'all-stt', supported: SUPPORTED_GLADIA_STT_MODELS },
+  'happyscribe-stt': { shortcut: 'all-stt', supported: SUPPORTED_HAPPYSCRIBE_STT_MODELS },
+  'supadata-stt': { shortcut: 'all-stt', supported: SUPPORTED_SUPADATA_STT_MODELS },
+  'mistral-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_MISTRAL_OCR_MODELS },
+  'glm-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_GLM_OCR_MODELS },
+  'openai-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_OPENAI_OCR_MODELS },
+  'anthropic-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_ANTHROPIC_OCR_MODELS },
+  'gemini-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_GEMINI_OCR_MODELS },
+  llama: { shortcut: 'all-llm', supported: SUPPORTED_LLAMA_MODELS },
+  openai: { shortcut: 'all-llm', supported: SUPPORTED_OPENAI_MODELS },
+  groq: { shortcut: 'all-llm', supported: SUPPORTED_GROQ_MODELS },
+  gemini: { shortcut: 'all-llm', supported: SUPPORTED_GEMINI_MODELS },
+  anthropic: { shortcut: 'all-llm', supported: SUPPORTED_ANTHROPIC_MODELS },
+  minimax: { shortcut: 'all-llm', supported: SUPPORTED_MINIMAX_MODELS },
+  grok: { shortcut: 'all-llm', supported: SUPPORTED_GROK_MODELS },
+  'kitten-tts': { shortcut: 'all-tts', supported: SUPPORTED_KITTEN_TTS_MODELS },
+  'elevenlabs-tts': { shortcut: 'all-tts', supported: SUPPORTED_ELEVENLABS_TTS_MODELS },
+  'minimax-tts': { shortcut: 'all-tts', supported: SUPPORTED_MINIMAX_TTS_MODELS },
+  'groq-tts': { shortcut: 'all-tts', supported: SUPPORTED_GROQ_TTS_MODELS },
+  'openai-tts': { shortcut: 'all-tts', supported: SUPPORTED_OPENAI_TTS_MODELS },
+  'gemini-tts': { shortcut: 'all-tts', supported: SUPPORTED_GEMINI_TTS_MODELS },
+  'gemini-image': { shortcut: 'all-image', supported: SUPPORTED_GEMINI_IMAGE_MODELS },
+  'openai-image': { shortcut: 'all-image', supported: SUPPORTED_OPENAI_IMAGE_MODELS },
+  'minimax-image': { shortcut: 'all-image', supported: SUPPORTED_MINIMAX_IMAGE_MODELS },
+  'elevenlabs-music': { shortcut: 'all-music', supported: SUPPORTED_ELEVENLABS_MUSIC_MODELS },
+  'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
+  'gemini-video': { shortcut: 'all-video', supported: SUPPORTED_GEMINI_VIDEO_MODELS },
+  'minimax-video': { shortcut: 'all-video', supported: SUPPORTED_MINIMAX_VIDEO_MODELS }
+} as const satisfies Partial<Record<RepeatableModelFlag, { shortcut: AllShortcutFlag, supported: readonly string[] }>>
 
 const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
   if (!value) return fallback
@@ -251,6 +343,35 @@ const readBooleanFlag = (flags: Record<string, unknown>, key: string): boolean =
   return readFlagValue(flags, key) === true
 }
 
+const readAllShortcutFlags = (flags: Record<string, unknown>): Record<AllShortcutFlag, boolean> => ({
+  'all-stt': readBooleanFlag(flags, 'all-stt'),
+  'all-ocr': readBooleanFlag(flags, 'all-ocr'),
+  'all-llm': readBooleanFlag(flags, 'all-llm'),
+  'all-tts': readBooleanFlag(flags, 'all-tts'),
+  'all-image': readBooleanFlag(flags, 'all-image'),
+  'all-video': readBooleanFlag(flags, 'all-video'),
+  'all-music': readBooleanFlag(flags, 'all-music')
+})
+
+const expandAllShortcutModels = (
+  flagName: RepeatableModelFlag,
+  flags: Record<string, unknown>,
+  rawOccurrences: Partial<Record<RepeatableModelFlag, FlagOccurrenceValue[]>>,
+  allShortcutFlags: Record<AllShortcutFlag, boolean>
+): string[] | undefined => {
+  const explicitSelections = normalizeModelFlagOccurrences(flagName, flags, rawOccurrences)
+  const expansion = ALL_SHORTCUT_MODEL_EXPANSIONS[flagName]
+  if (!expansion || !allShortcutFlags[expansion.shortcut]) {
+    return explicitSelections
+  }
+
+  const mergedSelections = [...expansion.supported]
+  for (const value of explicitSelections ?? []) {
+    appendUnique(mergedSelections, value)
+  }
+  return mergedSelections.length > 0 ? mergedSelections : undefined
+}
+
 const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
   const v = readFlagValue(flags, 'batch-order')
   return v === 'oldest' ? 'oldest' : 'newest'
@@ -338,6 +459,7 @@ export const buildOptsFromFlags = (
   const rawModelOccurrences = parseRepeatableModelFlagOccurrences(rawArgs)
 
   const mergedFlags: Record<string, unknown> = { ...ddArgs, ...flags }
+  const allShortcutFlags = readAllShortcutFlags(mergedFlags)
   const validateCliValue = <T>(validator: (value: string) => T, value: string): T => {
     try {
       return validator(value)
@@ -349,7 +471,7 @@ export const buildOptsFromFlags = (
     key: RepeatableModelFlag,
     validator: (value: string) => T
   ): T[] | undefined => {
-    const values = normalizeModelFlagOccurrences(key, mergedFlags, rawModelOccurrences)
+    const values = expandAllShortcutModels(key, mergedFlags, rawModelOccurrences, allShortcutFlags)
     if (!values || values.length === 0) {
       return undefined
     }
@@ -451,11 +573,15 @@ export const buildOptsFromFlags = (
   const urlBackendFlag = readOptionalStringFlag(mergedFlags, 'url-backend')
   const urlBackendEnv = readEnv('AUTOSHOW_URL_BACKEND')
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
+  const useReverb = allShortcutFlags['all-stt'] || readBooleanFlag(mergedFlags, 'reverb')
+  const whisperExplicit = allShortcutFlags['all-stt'] || explicitFlags.has('whisper')
+  const useOcrmypdf = allShortcutFlags['all-ocr'] || readBooleanFlag(mergedFlags, 'ocrmypdf')
+  const usePaddleOcr = allShortcutFlags['all-ocr'] || readBooleanFlag(mergedFlags, 'paddle-ocr')
 
   return {
-    useReverb: readBooleanFlag(mergedFlags, 'reverb'),
+    useReverb,
     youtubeCaptions: readBooleanFlag(mergedFlags, 'youtube-captions'),
-    whisperExplicit: explicitFlags.has('whisper'),
+    whisperExplicit,
     llamaModels,
     llamaModel,
     openaiModels,
@@ -527,8 +653,8 @@ export const buildOptsFromFlags = (
     pageSeparator: readOptionalStringFlag(mergedFlags, 'page-separator'),
     preserveSpaces: readBooleanFlag(mergedFlags, 'preserve-spaces'),
     rotate: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'rotate'), 0),
-    useOcrmypdf: readBooleanFlag(mergedFlags, 'ocrmypdf'),
-    usePaddleOcr: readBooleanFlag(mergedFlags, 'paddle-ocr'),
+    useOcrmypdf,
+    usePaddleOcr,
     mistralOcrModels,
     mistralOcrModel,
     glmOcrModels,

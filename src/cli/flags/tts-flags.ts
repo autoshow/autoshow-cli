@@ -11,6 +11,12 @@ import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models
 import { priceFlag } from './shared-flags'
 
 export const ttsFlags = {
+  'all-tts': {
+    description: 'Enable every supported TTS provider/model for this command',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   'kitten-voice': {
     description: 'Kitten TTS speaker: Bella|Jasper|Luna|Bruno|Rosie|Hugo|Kiki|Leo',
     type: String,

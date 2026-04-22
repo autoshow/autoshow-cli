@@ -9,6 +9,7 @@ import type {
   TranscriptionSegment
 } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -630,7 +631,12 @@ export const runDeapiStt = async (
   }
   const activeRequestId = requestId
 
-  l.info(`${resumedExistingJob ? 'deAPI transcription resumed' : 'deAPI transcription created'}: ${activeRequestId}, polling for completion...`)
+  logSttAsyncJobLifecycle(l, {
+    provider: `deapi/${modelName}`,
+    action: resumedExistingJob ? 'resumed' : 'created',
+    remoteId: activeRequestId,
+    state: 'polling'
+  })
 
   const pollResult = await pollAsyncSttJobUntilComplete<DeapiStatusPayload>({
     jobId: activeRequestId,

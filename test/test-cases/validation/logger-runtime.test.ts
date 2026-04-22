@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { createLogger } from '~/logger/core'
 import { runWithLogContext } from '~/logger/context-store'
+import { createHumanTable } from '~/logger/human-table'
 import { buildCompleteResultData, buildHumanCompletionTables, createReporter } from '~/logger/reporter'
 import type { LogSinkEvent } from '~/logger/types'
 
@@ -102,6 +103,43 @@ describe('logger context', () => {
       .sort()
 
     expect(batchIds).toEqual(['A', 'B'])
+  })
+
+  test('structured table events preserve metadata alongside humanTable payloads', () => {
+    const { events, logger } = createCollector()
+
+    logger.write('warn', 'Run Status', {
+      category: 'pipeline',
+      metadata: {
+        completionStatus: 'incomplete',
+        requested: 2,
+        succeeded: 1,
+        failed: 1,
+        missing: 1
+      },
+      humanTable: createHumanTable([{
+        completionStatus: 'incomplete',
+        requested: 2,
+        succeeded: 1,
+        failed: 1,
+        missing: 1
+      }], ['completionStatus', 'requested', 'succeeded', 'failed', 'missing'])
+    })
+
+    expect(events[0]?.metadata).toEqual({
+      completionStatus: 'incomplete',
+      requested: 2,
+      succeeded: 1,
+      failed: 1,
+      missing: 1
+    })
+    expect(events[0]?.humanTable?.rows).toEqual([{
+      completionStatus: 'incomplete',
+      requested: 2,
+      succeeded: 1,
+      failed: 1,
+      missing: 1
+    }])
   })
 })
 

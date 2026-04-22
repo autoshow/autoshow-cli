@@ -10,6 +10,7 @@ import type {
   TranscriptionResult
 } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -395,7 +396,12 @@ export const runAwsStt = async (
     }
 
     const activeJobName = jobName
-    l.info(`${resumedExistingJob ? 'AWS Transcribe job resumed' : 'AWS Transcribe job created'}: ${activeJobName}, polling for completion...`)
+    logSttAsyncJobLifecycle(l, {
+      provider: `aws/${modelName}`,
+      action: resumedExistingJob ? 'resumed' : 'created',
+      remoteId: activeJobName,
+      state: 'polling'
+    })
 
     const pollResult = await pollAsyncSttJobUntilComplete({
       jobId: activeJobName,

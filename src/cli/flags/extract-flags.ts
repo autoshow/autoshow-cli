@@ -17,6 +17,12 @@ export const epubInspectFlags = {
 } as const satisfies ClercFlagsDefinition
 
 export const extractCommandFlags = {
+  'all-ocr': {
+    description: 'Enable every supported OCR engine/provider model for this command',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   ...extractFlags,
   ...articleFlags,
   ...batchFlags,

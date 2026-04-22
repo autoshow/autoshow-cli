@@ -10,6 +10,7 @@ import type {
 } from '~/types'
 import { AssemblyAiTranscriptResponseSchema } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import {
   pollAsyncSttJobUntilComplete,
@@ -345,7 +346,12 @@ export const runAssemblyAiTranscribe = async (
     throw new Error('AssemblyAI transcript creation did not produce a transcript id')
   }
   const activeTranscriptId = transcriptId
-  l.info(`${resumedExistingTranscript ? 'AssemblyAI transcript resumed' : 'AssemblyAI transcript created'}: ${activeTranscriptId}, polling for completion...`)
+  logSttAsyncJobLifecycle(l, {
+    provider: `assemblyai/${modelName}`,
+    action: resumedExistingTranscript ? 'resumed' : 'created',
+    remoteId: activeTranscriptId,
+    state: 'polling'
+  })
 
   const pollResult = await pollAsyncSttJobUntilComplete({
     jobId: activeTranscriptId,

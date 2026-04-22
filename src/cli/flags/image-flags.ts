@@ -8,6 +8,12 @@ import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models
 import { priceFlag } from './shared-flags'
 
 export const imageGenFlags = {
+  'all-image': {
+    description: 'Enable every supported image provider/model for this command',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   'gemini-image': {
     description: buildModelDescription('Gemini image model', SUPPORTED_GEMINI_IMAGE_MODELS),
     type: [String] as [StringConstructor]

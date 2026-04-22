@@ -160,6 +160,15 @@ const writeTextInputFlags = {
   }
 } as const satisfies ClercFlagsDefinition
 
+const writeLlmShortcutFlags = {
+  'all-llm': {
+    description: 'Enable every supported LLM provider/model for this command',
+    type: Boolean,
+    default: false,
+    negatable: false
+  }
+} as const satisfies ClercFlagsDefinition
+
 export const writeFlags = {
   ...withHelpGroup(batchFlags, 'step-1-download'),
   ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
@@ -167,6 +176,7 @@ export const writeFlags = {
   ...withHelpGroup(advancedExtractFlags, 'step-2-ocr'),
   ...withHelpGroup(articleFlags, 'step-2-ocr'),
   ...withHelpGroup(epubInspectFlags, 'step-2-ocr'),
+  ...withHelpGroup(writeLlmShortcutFlags, 'step-3-write'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
   ...withHelpGroup(writeTextInputFlags, 'step-3-write'),

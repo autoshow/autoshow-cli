@@ -10,6 +10,7 @@ import type {
   TranscriptionEvidenceWord
 } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildSegmentsFromWords,
   buildTranscriptionOutputBase,
@@ -1103,7 +1104,12 @@ export const runHappyScribeStt = async (
     throw new Error('Happy Scribe order creation did not return an order id')
   }
 
-  l.info(`${resumedExistingOrder ? 'Happy Scribe order resumed' : 'Happy Scribe order created'}: ${orderId}, polling for completion...`)
+  logSttAsyncJobLifecycle(l, {
+    provider: `happyscribe/${modelName}`,
+    action: resumedExistingOrder ? 'resumed' : 'created',
+    remoteId: orderId,
+    state: 'polling'
+  })
 
   const orderPollResult = await pollAsyncSttJobUntilComplete({
     jobId: orderId,

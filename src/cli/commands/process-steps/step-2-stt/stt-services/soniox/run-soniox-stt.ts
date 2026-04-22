@@ -17,6 +17,7 @@ import {
   SonioxTranscriptionStatusSchema
 } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -632,7 +633,12 @@ export const runSonioxStt = async (
       throw new Error('Soniox transcription creation did not produce a transcription id')
     }
     const activeTranscriptionId = transcriptionId
-    l.info(`${resumedExistingTranscription ? 'Soniox transcription resumed' : 'Soniox transcription created'}: ${activeTranscriptionId}, polling for completion...`)
+    logSttAsyncJobLifecycle(l, {
+      provider: `soniox/${modelName}`,
+      action: resumedExistingTranscription ? 'resumed' : 'created',
+      remoteId: activeTranscriptionId,
+      state: 'polling'
+    })
 
     const pollResult = await pollAsyncSttJobUntilComplete({
       jobId: activeTranscriptionId,

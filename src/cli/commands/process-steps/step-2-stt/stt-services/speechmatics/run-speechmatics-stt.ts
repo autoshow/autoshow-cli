@@ -18,6 +18,7 @@ import {
   SpeechmaticsTranscriptResponseSchema
 } from '~/types'
 import * as l from '~/logger'
+import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   appendToken,
   buildTranscriptionOutputBase,
@@ -516,7 +517,12 @@ export const runSpeechmaticsStt = async (
     }
 
     const activeJobId = jobId
-    l.info(`${resumedExistingJob ? 'Speechmatics job resumed' : 'Speechmatics job created'}: ${activeJobId}, polling for completion...`)
+    logSttAsyncJobLifecycle(l, {
+      provider: `speechmatics/${modelName}`,
+      action: resumedExistingJob ? 'resumed' : 'created',
+      remoteId: activeJobId,
+      state: 'polling'
+    })
 
     const pollResult = await pollAsyncSttJobUntilComplete({
       jobId: activeJobId,

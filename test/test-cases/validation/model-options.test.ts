@@ -9,6 +9,49 @@ import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-o
 import { loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { buildConfigPatchFromFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { resolveCheapestModelForFlag, selectCheapestVideoSelection } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
+import {
+  SUPPORTED_WHISPER_MODELS,
+  SUPPORTED_GCLOUD_STT_MODELS,
+  SUPPORTED_AWS_STT_MODELS,
+  SUPPORTED_DEEPINFRA_STT_MODELS,
+  SUPPORTED_DEAPI_STT_MODELS,
+  SUPPORTED_ELEVENLABS_STT_MODELS,
+  SUPPORTED_DEEPGRAM_STT_MODELS,
+  SUPPORTED_SONIOX_STT_MODELS,
+  SUPPORTED_SPEECHMATICS_STT_MODELS,
+  SUPPORTED_REV_STT_MODELS,
+  SUPPORTED_GROQ_STT_MODELS,
+  SUPPORTED_MISTRAL_STT_MODELS,
+  SUPPORTED_ASSEMBLYAI_STT_MODELS,
+  SUPPORTED_GLADIA_STT_MODELS,
+  SUPPORTED_HAPPYSCRIBE_STT_MODELS,
+  SUPPORTED_SUPADATA_STT_MODELS,
+  SUPPORTED_MISTRAL_OCR_MODELS,
+  SUPPORTED_GLM_OCR_MODELS,
+  SUPPORTED_OPENAI_OCR_MODELS,
+  SUPPORTED_ANTHROPIC_OCR_MODELS,
+  SUPPORTED_GEMINI_OCR_MODELS,
+  SUPPORTED_OPENAI_MODELS,
+  SUPPORTED_GROQ_MODELS,
+  SUPPORTED_GEMINI_MODELS,
+  SUPPORTED_ANTHROPIC_MODELS,
+  SUPPORTED_MINIMAX_MODELS,
+  SUPPORTED_GROK_MODELS,
+  SUPPORTED_LLAMA_MODELS,
+  SUPPORTED_KITTEN_TTS_MODELS,
+  SUPPORTED_ELEVENLABS_TTS_MODELS,
+  SUPPORTED_MINIMAX_TTS_MODELS,
+  SUPPORTED_GROQ_TTS_MODELS,
+  SUPPORTED_OPENAI_TTS_MODELS,
+  SUPPORTED_GEMINI_TTS_MODELS,
+  SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_OPENAI_IMAGE_MODELS,
+  SUPPORTED_MINIMAX_IMAGE_MODELS,
+  SUPPORTED_GEMINI_VIDEO_MODELS,
+  SUPPORTED_MINIMAX_VIDEO_MODELS,
+  SUPPORTED_ELEVENLABS_MUSIC_MODELS,
+  SUPPORTED_MINIMAX_MUSIC_MODELS
+} from '~/cli/commands/setup-and-utilities/models/model-options'
 
 const expectPriceSelection = (
   result: Awaited<ReturnType<typeof runCommand>>,
@@ -23,6 +66,23 @@ const expectPriceSelection = (
   expect(
     combined.includes(`"model": "${model}"`) || combined.includes(model)
   ).toBe(true)
+}
+
+const expectCombinedOutputToContain = (
+  result: Awaited<ReturnType<typeof runCommand>>,
+  expected: string[]
+): string => {
+  const combined = `${result.stdout}\n${result.stderr}`
+  for (const value of expected) {
+    expect(combined).toContain(value)
+  }
+  return combined
+}
+
+const expectTextToExclude = (text: string, excluded: string[]): void => {
+  for (const value of excluded) {
+    expect(text).not.toContain(value)
+  }
 }
 
 const invalidCliCases: Array<{ label: string; args: string[] }> = [
@@ -122,6 +182,29 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).not.toMatch(/--llama(\s|$)/)
 })
 
+const commandAllShortcutHelpCases = [
+  { command: 'stt', flag: '--all-stt' },
+  { command: 'ocr', flag: '--all-ocr' },
+  { command: 'write', flag: '--all-llm' },
+  { command: 'tts', flag: '--all-tts' },
+  { command: 'image', flag: '--all-image' },
+  { command: 'video', flag: '--all-video' },
+  { command: 'music', flag: '--all-music' }
+] as const
+
+for (const helpCase of commandAllShortcutHelpCases) {
+  test(`${helpCase.command} help exposes ${helpCase.flag}`, async () => {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      helpCase.command,
+      '--help'
+    ])
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain(helpCase.flag)
+  })
+}
+
 test('ocr help includes hosted OCR flags', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -162,6 +245,26 @@ test('resume help exposes combined STT and OCR resume flags', async () => {
   expect(result.stdout).toContain('--glm-ocr')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--batch-concurrency')
+})
+
+test('config and resume help do not expose command-level --all-* shortcuts', async () => {
+  const configResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'config',
+    '--help'
+  ])
+  const resumeResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'resume',
+    '--help'
+  ])
+
+  expect(configResult.exitCode).toBe(0)
+  expect(resumeResult.exitCode).toBe(0)
+
+  const shortcuts = ['--all-stt', '--all-ocr', '--all-llm', '--all-tts', '--all-image', '--all-video', '--all-music']
+  expectTextToExclude(configResult.stdout, shortcuts)
+  expectTextToExclude(resumeResult.stdout, shortcuts)
 })
 
 test('write help excludes top-level resume surface', async () => {
@@ -1040,6 +1143,142 @@ test('buildOptsFromFlags resolves bare provider flags to cheapest models', () =>
   expect(opts.geminiVideoModel).toBe('veo-3.1-fast-generate-preview')
 })
 
+test('buildOptsFromFlags expands --all-stt to every supported STT target and keeps whisper explicit', () => {
+  const opts = buildOptsFromFlags(false, {
+    'all-stt': true
+  })
+
+  expect(opts.useReverb).toBe(true)
+  expect(opts.whisperExplicit).toBe(true)
+  expect(opts.whisperModels).toEqual([...SUPPORTED_WHISPER_MODELS])
+  expect(opts.gcloudSttModels).toEqual([...SUPPORTED_GCLOUD_STT_MODELS])
+  expect(opts.awsSttModels).toEqual([...SUPPORTED_AWS_STT_MODELS])
+  expect(opts.deepinfraSttModels).toEqual([...SUPPORTED_DEEPINFRA_STT_MODELS])
+  expect(opts.deapiSttModels).toEqual([...SUPPORTED_DEAPI_STT_MODELS])
+  expect(opts.elevenlabsSttModels).toEqual([...SUPPORTED_ELEVENLABS_STT_MODELS])
+  expect(opts.deepgramSttModels).toEqual([...SUPPORTED_DEEPGRAM_STT_MODELS])
+  expect(opts.sonioxSttModels).toEqual([...SUPPORTED_SONIOX_STT_MODELS])
+  expect(opts.speechmaticsSttModels).toEqual([...SUPPORTED_SPEECHMATICS_STT_MODELS])
+  expect(opts.revSttModels).toEqual([...SUPPORTED_REV_STT_MODELS])
+  expect(opts.groqSttModels).toEqual([...SUPPORTED_GROQ_STT_MODELS])
+  expect(opts.mistralSttModels).toEqual([...SUPPORTED_MISTRAL_STT_MODELS])
+  expect(opts.assemblyaiSttModels).toEqual([...SUPPORTED_ASSEMBLYAI_STT_MODELS])
+  expect(opts.gladiaSttModels).toEqual([...SUPPORTED_GLADIA_STT_MODELS])
+  expect(opts.happyscribeSttModels).toEqual([...SUPPORTED_HAPPYSCRIBE_STT_MODELS])
+  expect(opts.supadataSttModels).toEqual([...SUPPORTED_SUPADATA_STT_MODELS])
+  expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
+    'reverb:reverb',
+    ...SUPPORTED_GCLOUD_STT_MODELS.map((model) => `gcloud:${model}`),
+    ...SUPPORTED_AWS_STT_MODELS.map((model) => `aws:${model}`),
+    ...SUPPORTED_DEEPINFRA_STT_MODELS.map((model) => `deepinfra:${model}`),
+    ...SUPPORTED_DEAPI_STT_MODELS.map((model) => `deapi:${model}`),
+    ...SUPPORTED_ELEVENLABS_STT_MODELS.map((model) => `elevenlabs:${model}`),
+    ...SUPPORTED_DEEPGRAM_STT_MODELS.map((model) => `deepgram:${model}`),
+    ...SUPPORTED_SONIOX_STT_MODELS.map((model) => `soniox:${model}`),
+    ...SUPPORTED_SPEECHMATICS_STT_MODELS.map((model) => `speechmatics:${model}`),
+    ...SUPPORTED_REV_STT_MODELS.map((model) => `rev:${model}`),
+    ...SUPPORTED_GROQ_STT_MODELS.map((model) => `groq:${model}`),
+    ...SUPPORTED_MISTRAL_STT_MODELS.map((model) => `mistral:${model}`),
+    ...SUPPORTED_ASSEMBLYAI_STT_MODELS.map((model) => `assemblyai:${model}`),
+    ...SUPPORTED_GLADIA_STT_MODELS.map((model) => `gladia:${model}`),
+    ...SUPPORTED_HAPPYSCRIBE_STT_MODELS.map((model) => `happyscribe:${model}`),
+    ...SUPPORTED_SUPADATA_STT_MODELS.map((model) => `supadata:${model}`),
+    ...SUPPORTED_WHISPER_MODELS.map((model) => `whisper:${model}`)
+  ])
+})
+
+test('buildOptsFromFlags expands --all-ocr to every supported OCR engine', () => {
+  const opts = buildOptsFromFlags(false, {
+    'all-ocr': true
+  })
+
+  expect(opts.useOcrmypdf).toBe(true)
+  expect(opts.usePaddleOcr).toBe(true)
+  expect(opts.mistralOcrModels).toEqual([...SUPPORTED_MISTRAL_OCR_MODELS])
+  expect(opts.glmOcrModels).toEqual([...SUPPORTED_GLM_OCR_MODELS])
+  expect(opts.openaiOcrModels).toEqual([...SUPPORTED_OPENAI_OCR_MODELS])
+  expect(opts.anthropicOcrModels).toEqual([...SUPPORTED_ANTHROPIC_OCR_MODELS])
+  expect(opts.geminiOcrModels).toEqual([...SUPPORTED_GEMINI_OCR_MODELS])
+  expect(collectExplicitOcrTargets(opts)).toEqual([
+    { service: 'ocrmypdf', model: 'ocrmypdf' },
+    { service: 'paddle-ocr', model: 'paddle-ocr' },
+    ...SUPPORTED_MISTRAL_OCR_MODELS.map((model) => ({ service: 'mistral' as const, model })),
+    ...SUPPORTED_GLM_OCR_MODELS.map((model) => ({ service: 'glm' as const, model })),
+    ...SUPPORTED_OPENAI_OCR_MODELS.map((model) => ({ service: 'openai' as const, model })),
+    ...SUPPORTED_ANTHROPIC_OCR_MODELS.map((model) => ({ service: 'anthropic' as const, model })),
+    ...SUPPORTED_GEMINI_OCR_MODELS.map((model) => ({ service: 'gemini' as const, model }))
+  ])
+})
+
+test('buildOptsFromFlags expands --all-llm to every supported LLM model', () => {
+  const opts = buildOptsFromFlags(false, {
+    'all-llm': true
+  })
+
+  expect(opts.openaiModels).toEqual([...SUPPORTED_OPENAI_MODELS])
+  expect(opts.groqModels).toEqual([...SUPPORTED_GROQ_MODELS])
+  expect(opts.geminiModels).toEqual([...SUPPORTED_GEMINI_MODELS])
+  expect(opts.anthropicModels).toEqual([...SUPPORTED_ANTHROPIC_MODELS])
+  expect(opts.minimaxModels).toEqual([...SUPPORTED_MINIMAX_MODELS])
+  expect(opts.grokModels).toEqual([...SUPPORTED_GROK_MODELS])
+  expect(opts.llamaModels).toEqual([...SUPPORTED_LLAMA_MODELS])
+})
+
+test('buildOptsFromFlags expands --all-tts to every supported TTS model', () => {
+  const opts = buildOptsFromFlags(true, {
+    'all-tts': true
+  }, [], { defaultTtsEngine: 'kitten' })
+
+  expect(opts.kittenTtsModels).toEqual([...SUPPORTED_KITTEN_TTS_MODELS])
+  expect(opts.elevenlabsTtsModels).toEqual([...SUPPORTED_ELEVENLABS_TTS_MODELS])
+  expect(opts.minimaxTtsModels).toEqual([...SUPPORTED_MINIMAX_TTS_MODELS])
+  expect(opts.groqTtsModels).toEqual([...SUPPORTED_GROQ_TTS_MODELS])
+  expect(opts.openaiTtsModels).toEqual([...SUPPORTED_OPENAI_TTS_MODELS])
+  expect(opts.geminiTtsModels).toEqual([...SUPPORTED_GEMINI_TTS_MODELS])
+})
+
+test('buildOptsFromFlags expands --all-image to every supported image model', () => {
+  const opts = buildOptsFromFlags(true, {
+    'all-image': true
+  })
+
+  expect(opts.geminiImageModels).toEqual([...SUPPORTED_GEMINI_IMAGE_MODELS])
+  expect(opts.openaiImageModels).toEqual([...SUPPORTED_OPENAI_IMAGE_MODELS])
+  expect(opts.minimaxImageModels).toEqual([...SUPPORTED_MINIMAX_IMAGE_MODELS])
+})
+
+test('buildOptsFromFlags expands --all-video to every supported video model', () => {
+  const opts = buildOptsFromFlags(true, {
+    'all-video': true
+  })
+
+  expect(opts.geminiVideoModels).toEqual([...SUPPORTED_GEMINI_VIDEO_MODELS])
+  expect(opts.minimaxVideoModels).toEqual([...SUPPORTED_MINIMAX_VIDEO_MODELS])
+})
+
+test('buildOptsFromFlags expands --all-music to every supported music model', () => {
+  const opts = buildOptsFromFlags(true, {
+    'all-music': true
+  })
+
+  expect(opts.elevenlabsMusicModels).toEqual([...SUPPORTED_ELEVENLABS_MUSIC_MODELS])
+  expect(opts.minimaxMusicModels).toEqual([...SUPPORTED_MINIMAX_MUSIC_MODELS])
+})
+
+test('buildOptsFromFlags unions explicit provider selections with --all-llm and deduplicates repeats', () => {
+  const opts = buildOptsFromFlags(false, {
+    'all-llm': true,
+    openai: ['gpt-5.4-mini', 'gpt-5.4-mini'],
+    llama: ['ggml-org/Qwen3-0.6B-GGUF', 'unsloth/Qwen3.5-0.8B-GGUF']
+  })
+
+  expect(opts.openaiModels).toEqual([...SUPPORTED_OPENAI_MODELS])
+  expect(opts.llamaModels).toEqual([
+    ...SUPPORTED_LLAMA_MODELS,
+    'unsloth/Qwen3.5-0.8B-GGUF'
+  ])
+})
+
 test('buildOptsFromFlags preserves repeated same-provider flags in first-seen order', () => {
   const opts = buildOptsFromFlags(false, {
     'speechmatics-stt': ['standard', 'enhanced'],
@@ -1565,6 +1804,26 @@ test('stt accepts multiple STT providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('stt --all-stt price shows multi-provider estimates and shared provider artifacts', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--all-stt',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expectCombinedOutputToContain(result, [
+    'reverb',
+    'chirp_3',
+    'universal-3-pro',
+    'large-v3-turbo',
+    'providers/<service>-<model>/transcription.txt',
+    'providers/<service>-<model>/result.json'
+  ])
+})
+
 test('stt rejects removed generic --provider aliases', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -1643,6 +1902,34 @@ test('write accepts multiple LLM providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('write --all-llm price shows multiple LLM estimates and omits downstream artifacts', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--all-llm',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  const combined = expectCombinedOutputToContain(result, [
+    'gpt-5.4',
+    'openai/gpt-oss-20b',
+    'gemini-3.1-pro-preview',
+    'claude-opus-4-7',
+    'MiniMax-M2.5',
+    'grok-4.20-reasoning',
+    'ggml-org/gemma-3-270m-it-GGUF',
+    'Audio file',
+    'transcription.txt',
+    'result.json',
+    'text.json',
+    'prompt.md',
+    'run.json'
+  ])
+  expectTextToExclude(combined, ['speech.wav', 'generated-image.png', 'Video file', 'Music file'])
+})
+
 test('write accepts multiple TTS providers in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -1656,6 +1943,26 @@ test('write accepts multiple TTS providers in price mode', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
+})
+
+test('tts --all-tts price shows multiple provider/model estimates and artifact names', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    'input/examples/tts/1-tts.md',
+    '--all-tts',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expectCombinedOutputToContain(result, [
+    'kitten-tts-mini',
+    'eleven_v3',
+    'gpt-4o-mini-tts',
+    'speech-kitten-kitten-tts-mini.wav',
+    'speech-openai-gpt-4o-mini-tts.wav',
+    'speech-gemini-gemini-3.1-flash-tts-preview.wav'
+  ])
 })
 
 test('write accepts multiple image providers in price mode', async () => {
@@ -1673,6 +1980,26 @@ test('write accepts multiple image providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('image --all-image price shows multiple provider/model estimates and artifact names', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'image',
+    'a sunset',
+    '--all-image',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expectCombinedOutputToContain(result, [
+    'imagen-4.0-fast-generate-001',
+    'gpt-image-1-mini',
+    'image-01',
+    'generated-image-gemini-imagen-4.0-fast-generate-001.png',
+    'generated-image-openai-gpt-image-1-mini.png',
+    'generated-image-minimax-image-01.jpeg'
+  ])
+})
+
 test('write accepts multiple video providers in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -1688,6 +2015,24 @@ test('write accepts multiple video providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
+test('video --all-video price shows multiple provider/model estimates and artifact names', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'video',
+    'a cinematic mountain sunrise',
+    '--all-video',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expectCombinedOutputToContain(result, [
+    'veo-3.1-fast-generate-preview',
+    'T2V-01',
+    'generated-video-gemini-veo-3.1-fast-generate-preview.mp4',
+    'generated-video-minimax-T2V-01.mp4'
+  ])
+})
+
 test('write accepts multiple music providers in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -1701,6 +2046,24 @@ test('write accepts multiple music providers in price mode', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
+})
+
+test('music --all-music price shows multiple provider/model estimates and artifact names', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'music',
+    'an ambient piano song',
+    '--all-music',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expectCombinedOutputToContain(result, [
+    'music_v1',
+    'music-2.5',
+    'generated-music-elevenlabs-music_v1.mp3',
+    'generated-music-minimax-music-2.5.mp3'
+  ])
 })
 
 test('ocr accepts multiple OCR providers in price mode', async () => {
@@ -1721,6 +2084,25 @@ test('ocr accepts multiple OCR providers in price mode', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
+})
+
+test('ocr --all-ocr price shows multi-provider estimates and provider result artifacts', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'ocr',
+    'input/examples/document/1-document.pdf',
+    '--all-ocr',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expectCombinedOutputToContain(result, [
+    'mistral-ocr-2512',
+    'claude-haiku-4-5',
+    'gemini-3.1-flash-lite-preview',
+    'extraction.txt',
+    'providers/<service>-<model>/result.json'
+  ])
 })
 
 test('ocr rejects removed generic --provider aliases', async () => {

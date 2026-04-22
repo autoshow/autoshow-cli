@@ -7,6 +7,12 @@ import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models
 import { priceFlag } from './shared-flags'
 
 export const musicGenFlags = {
+  'all-music': {
+    description: 'Enable every supported music provider/model for this command',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   'elevenlabs-music': {
     description: buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS),
     type: [String] as [StringConstructor]

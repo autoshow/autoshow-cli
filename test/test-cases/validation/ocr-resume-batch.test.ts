@@ -18,12 +18,6 @@ const parseBatchDir = (output: string): string => {
     return resolve(tablePath.slice(0, -'/batch.json'.length))
   }
 
-  const plainMatches = Array.from(clean.matchAll(/Batch manifest:\s*([^\n\r]+\/batch\.json)/g))
-  const plainPath = plainMatches.at(-1)?.[1]?.trim()
-  if (plainPath) {
-    return resolve(plainPath.slice(0, -'/batch.json'.length))
-  }
-
   throw new Error(`Could not find batch manifest location in command output:\n${output}`)
 }
 
@@ -181,6 +175,8 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     })
 
     expect(initial.exitCode).toBe(0)
+    expect(`${initial.stdout}\n${initial.stderr}`).toContain('Run Status')
+    expect(`${initial.stdout}\n${initial.stderr}`).toContain('Provider Failures')
     const batchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
     cleanupPaths.add(batchDir)
 
@@ -213,6 +209,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     expect(resumed.exitCode).toBe(0)
     expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Auto-discovered resumable OCR batch')
     expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('resumeBatch')
+    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Resume Summary')
 
     const updatedInfo = await readBatchItems(batchDir)
     const updatedEntry = updatedInfo[0] as Record<string, unknown>
@@ -261,6 +258,8 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     })
 
     expect(initial.exitCode).toBe(0)
+    expect(`${initial.stdout}\n${initial.stderr}`).toContain('Run Status')
+    expect(`${initial.stdout}\n${initial.stderr}`).toContain('Provider Failures')
     const batchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
     cleanupPaths.add(batchDir)
 
@@ -283,6 +282,7 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     })
 
     expect(resumed.exitCode).toBe(0)
+    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Resume Summary')
     expect(state.reportRequests).toBeGreaterThan(reportRequestsAfterInitial)
 
     const updatedInfo = await readBatchItems(batchDir)
@@ -351,6 +351,7 @@ test('resume accepts an explicit single OCR output directory and updates only th
     })
 
     expect(resumed.exitCode).toBe(0)
+    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Resume Summary')
 
     const afterMetadata = await readRunMetadata(outputDir as string)
     expect(afterMetadata['completionStatus']).toBe('full')

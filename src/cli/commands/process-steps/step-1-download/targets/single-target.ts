@@ -1,6 +1,6 @@
 import { basename, resolve as pathResolve } from 'node:path'
 import * as l from '~/logger'
-import { logLocationsTable } from '~/logger/human-table'
+import { createHumanTable, logLocationsTable } from '~/logger/human-table'
 import { validateData } from '~/utils/validate/validation'
 import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { ProcessingOptionsSchema, type BatchChildRunContext, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
@@ -688,7 +688,85 @@ const processExtractSingle = async (
     sourceRef,
     resolvedPreparedDocument
   )
-  l.success(`Extraction complete: ${extraction.outputDir}`)
+
+  const artifactFiles: Record<string, string> = {
+    run: 'run.json'
+  }
+  switch (opts.out) {
+    case 'json':
+      artifactFiles['result'] = 'result.json'
+      break
+    case 'tsv':
+      artifactFiles['extraction'] = 'extraction.tsv'
+      break
+    case 'hocr':
+      artifactFiles['extraction'] = 'extraction.hocr'
+      break
+    default:
+      artifactFiles['extraction'] = 'extraction.txt'
+      break
+  }
+  appendChapterExportArtifacts(artifactFiles, extraction.step2Metadata)
+
+  const requestedCount = extraction.requestedProviders?.length ?? 0
+  const succeededCount = Array.isArray(extraction.step2Metadata) ? extraction.step2Metadata.length : 1
+  const failedCount = extraction.step2Errors?.length ?? 0
+  const missingCount = extraction.missingProviders?.length ?? 0
+  const requestedMultipleProviders = requestedCount > 1
+
+  if (requestedMultipleProviders && Array.isArray(extraction.providerStates)) {
+    for (const state of extraction.providerStates) {
+      const artifactDir = typeof state['artifactDir'] === 'string' ? state['artifactDir'] : undefined
+      const service = typeof state['service'] === 'string' ? state['service'] : undefined
+      const model = typeof state['model'] === 'string' ? state['model'] : undefined
+      if (!artifactDir || !service || !model || state['status'] !== 'succeeded') {
+        continue
+      }
+      artifactFiles[`result-${service}-${model}`] = `${artifactDir}/result.json`
+    }
+  }
+
+  if (extraction.completionStatus === 'incomplete' || extraction.completionStatus === 'failed') {
+    const runStatus = {
+      completionStatus: extraction.completionStatus,
+      requested: requestedCount,
+      succeeded: succeededCount,
+      failed: failedCount,
+      missing: missingCount
+    }
+    l.write('warn', 'Run Status', {
+      category: 'pipeline',
+      humanTable: createHumanTable([runStatus], ['completionStatus', 'requested', 'succeeded', 'failed', 'missing']),
+      metadata: runStatus
+    })
+
+    if (failedCount > 0 && extraction.step2Errors) {
+      const failureRows = extraction.step2Errors.map((failure) => ({
+        provider: `${failure.service}/${failure.model}`,
+        detail: failure.message
+      }))
+      l.write('warn', 'Provider Failures', {
+        category: 'pipeline',
+        humanTable: createHumanTable(failureRows, ['provider', 'detail']),
+        metadata: { failures: failureRows }
+      })
+    }
+
+    logLocationsTable(l, [{ artifact: 'retryOutputDir', path: extraction.outputDir }], { level: 'warn' })
+    return { outputDir: extraction.outputDir }
+  }
+
+  l.report.complete(extraction.outputDir, artifactFiles, requestedMultipleProviders
+    ? {
+        metrics: {
+          providersRequested: requestedCount,
+          providersSucceeded: succeededCount,
+          providersFailed: failedCount,
+          partial: false,
+          completionStatus: extraction.completionStatus ?? 'full'
+        }
+      }
+    : undefined)
   return { outputDir: extraction.outputDir }
 }
 

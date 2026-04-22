@@ -41,7 +41,6 @@ const DEFAULT_INPUT_ROOT = join(PROJECT_ROOT, 'input')
 const OUTPUT_ROOT = join(PROJECT_ROOT, 'output')
 
 const logLyricsBatchSummary = (total: number, succeeded: number, failed: number): void => {
-  l.info(`Batch summary: total=${total}, succeeded=${succeeded}, failed=${failed}`)
   l.write(failed > 0 ? 'warn' : 'success', 'Batch Summary', {
     category: 'pipeline',
     humanTable: createHumanTable([{

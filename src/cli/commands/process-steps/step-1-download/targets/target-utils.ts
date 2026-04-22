@@ -119,56 +119,6 @@ const summarizeSttBatchManifestEntries = (
     providers: parseSttManifestProviderSummaries(entry)
   }))
 
-const formatSttProviderSummaryLine = (
-  label: 'working' | 'failed' | 'skipped' | 'missing',
-  providers: SttManifestProviderSummary[]
-): string => {
-  if (label === 'working') {
-    return `working: ${providers.map((provider) => provider.label).join(', ')}`
-  }
-
-  return `${label}: ${providers.map((provider) =>
-    provider.message ? `${provider.label} — ${provider.message}` : provider.label
-  ).join('; ')}`
-}
-
-export const buildSttBatchFinalSummaryLines = (
-  entries: BatchManifestEntry[]
-): string[] => {
-  const summaries = summarizeSttBatchManifestEntries(entries)
-  if (summaries.length === 0) {
-    return []
-  }
-
-  const lines = ['STT final provider status by item:']
-  for (const [index, summary] of summaries.entries()) {
-    lines.push(`${index + 1}/${summaries.length} ${summary.label} [${summary.completionStatus}]`)
-
-    const working = summary.providers.filter((provider) => provider.status === 'succeeded')
-    const failed = summary.providers.filter((provider) => provider.status === 'failed')
-    const skipped = summary.providers.filter((provider) => provider.status === 'skipped')
-    const missing = summary.providers.filter((provider) => provider.status === 'missing')
-
-    if (working.length > 0) {
-      lines.push(formatSttProviderSummaryLine('working', working))
-    }
-    if (failed.length > 0) {
-      lines.push(formatSttProviderSummaryLine('failed', failed))
-    }
-    if (skipped.length > 0) {
-      lines.push(formatSttProviderSummaryLine('skipped', skipped))
-    }
-    if (missing.length > 0) {
-      lines.push(formatSttProviderSummaryLine('missing', missing))
-    }
-    if (summary.providers.length === 0) {
-      lines.push('providers: unavailable')
-    }
-  }
-
-  return lines
-}
-
 export const buildSttBatchFinalSummaryTable = (
   entries: BatchManifestEntry[]
 ) => {
@@ -206,22 +156,34 @@ export const logSttBatchFinalSummary = async (batchDir: string): Promise<void> =
     return
   }
 
-  const lines = buildSttBatchFinalSummaryLines(manifest.manifest.items)
-  if (lines.length === 0) {
+  const summaries = summarizeSttBatchManifestEntries(manifest.manifest.items)
+  if (summaries.length === 0) {
     return
   }
 
   const table = buildSttBatchFinalSummaryTable(manifest.manifest.items)
-  const hasFailed = lines.some(line => line.includes('[failed]') || line.startsWith('failed:'))
-  const hasWarnings = hasFailed || lines.some(line =>
-    line.includes('[incomplete]')
-    || line.startsWith('skipped:')
-    || line.startsWith('missing:')
+  const hasFailed = summaries.some((summary) =>
+    summary.completionStatus === 'failed'
+    || summary.providers.some((provider) => provider.status === 'failed')
+  )
+  const hasWarnings = hasFailed || summaries.some((summary) =>
+    summary.completionStatus === 'incomplete'
+    || summary.providers.some((provider) =>
+      provider.status === 'skipped' || provider.status === 'missing'
+    )
   )
   const level = hasFailed ? 'error' : hasWarnings ? 'warn' : 'success'
   l.write(level, 'STT final provider status by item', {
     category: 'artifact',
-    humanTable: table
+    humanTable: table,
+    metadata: {
+      items: summaries.map((summary, index) => ({
+        item: `${index + 1}/${summaries.length}`,
+        label: summary.label,
+        status: summary.completionStatus,
+        providers: summary.providers
+      }))
+    }
   })
 }
 
@@ -245,42 +207,28 @@ export const getBatchManifestErrors = (entry: BatchManifestEntry | null): BatchM
     : []
 }
 
-export const formatBatchCompletionSummary = (
+const buildNonSttBatchSummaryTable = (
   ok: number,
   partial: number,
   fail: number
-): string =>
-  `Batch complete: ${ok} completed (${ok - partial} full, ${partial} partial, ${fail} failed)`
+) =>
+  createHumanTable([{
+    completed: ok,
+    full: ok - partial,
+    partial,
+    failed: fail
+  }], ['completed', 'full', 'partial', 'failed'])
 
-export const formatSttBatchCompletionSummary = (
+const buildSttBatchSummaryTable = (
   ok: number,
   incomplete: number,
   fail: number
-): string => `Batch complete: ${ok} full, ${incomplete} incomplete, ${fail} failed`
-
-export const formatBatchPartialFailureSummary = (
-  entries: BatchManifestErrorEntry[]
-): string | undefined => {
-  const counts = new Map<string, number>()
-
-  for (const entry of entries) {
-    if (typeof entry.service !== 'string' || typeof entry.model !== 'string') {
-      continue
-    }
-
-    const key = `${entry.service}/${entry.model}`
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-
-  if (counts.size === 0) {
-    return undefined
-  }
-
-  return `Partial provider failures: ${[...counts.entries()]
-    .sort((left, right) => left[0].localeCompare(right[0]))
-    .map(([label, count]) => `${label} x${count}`)
-    .join(', ')}`
-}
+) =>
+  createHumanTable([{
+    full: ok,
+    incomplete,
+    failed: fail
+  }], ['full', 'incomplete', 'failed'])
 
 export const buildBatchPartialFailureTable = (
   entries: BatchManifestErrorEntry[]
@@ -319,6 +267,17 @@ const logBatchItemStatus = (
   }], { level })
 }
 
+export const buildBatchCompletionTable = (
+  command: ProcessCommand,
+  ok: number,
+  partial: number,
+  incomplete: number,
+  fail: number
+)=>
+  isSttCommand(command)
+    ? buildSttBatchSummaryTable(ok, incomplete, fail)
+    : buildNonSttBatchSummaryTable(ok, partial, fail)
+
 const logBatchCompletionTable = (
   command: ProcessCommand,
   ok: number,
@@ -326,27 +285,19 @@ const logBatchCompletionTable = (
   incomplete: number,
   fail: number
 ): void => {
-  if (isSttCommand(command)) {
-    l.write(incomplete > 0 || fail > 0 ? 'warn' : 'success', 'Batch Summary', {
+  l.write(
+    isSttCommand(command)
+      ? (incomplete > 0 || fail > 0 ? 'warn' : 'success')
+      : (partial > 0 || fail > 0 ? 'warn' : 'success'),
+    'Batch Summary',
+    {
       category: 'pipeline',
-      humanTable: createHumanTable([{
-        full: ok,
-        incomplete,
-        failed: fail
-      }], ['full', 'incomplete', 'failed'])
-    })
-    return
-  }
-
-  l.write(partial > 0 || fail > 0 ? 'warn' : 'success', 'Batch Summary', {
-    category: 'pipeline',
-    humanTable: createHumanTable([{
-      completed: ok,
-      full: ok - partial,
-      partial,
-      failed: fail
-    }], ['completed', 'full', 'partial', 'failed'])
-  })
+      humanTable: buildBatchCompletionTable(command, ok, partial, incomplete, fail),
+      metadata: isSttCommand(command)
+        ? { full: ok, incomplete, failed: fail }
+        : { completed: ok, full: ok - partial, partial, failed: fail }
+    }
+  )
 }
 
 export const DOCUMENT_EXTENSIONS = [
@@ -961,18 +912,17 @@ export const processBatch = async (
     }
   }
 
-  const partialFailureSummary = formatBatchPartialFailureSummary(partialFailureEntries)
-  if (partialFailureSummary) {
-    l.warn(partialFailureSummary)
+  if (partialFailureEntries.length > 0) {
+    const partialFailureTable = buildBatchPartialFailureTable(partialFailureEntries)
     l.write('warn', 'Partial provider failures', {
       category: 'pipeline',
-      humanTable: buildBatchPartialFailureTable(partialFailureEntries)
+      humanTable: partialFailureTable,
+      metadata: {
+        failures: partialFailureTable.rows
+      }
     })
   }
 
-  l.info(isSttCommand(command)
-    ? formatSttBatchCompletionSummary(ok, incomplete, fail)
-    : formatBatchCompletionSummary(ok, partial, fail))
   logBatchCompletionTable(command, ok, partial, incomplete, fail)
   if (isSttCommand(command)) {
     await writeSttBatchManifest(batchDir, finalInfoEntries, batchSource)

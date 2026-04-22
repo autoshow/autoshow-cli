@@ -7,6 +7,12 @@ import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models
 import { priceFlag } from './shared-flags'
 
 export const videoGenFlags = {
+  'all-video': {
+    description: 'Enable every supported video provider/model for this command',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   'gemini-video': {
     description: buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS),
     type: [String] as [StringConstructor]

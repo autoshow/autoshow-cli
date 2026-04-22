@@ -2,6 +2,7 @@ import { readdir } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as l from '~/logger'
+import { logResumeItem, logResumeSummary } from '../resume/resume-logging'
 import {
   DocumentMetadataSchema,
   type BatchManifestEntry,
@@ -280,12 +281,6 @@ const buildResumeExtractionOpts = (
   ...(opts.useEpubCalibre ? { useEpubCalibre: true } : {})
 })
 
-const formatResumeSummary = (
-  full: number,
-  incomplete: number,
-  failed: number
-): string => `Resume complete: ${full} full, ${incomplete} incomplete, ${failed} failed`
-
 const runResumeOcrTarget = async (
   target: ResumeTarget,
   opts: RuntimeOptions,
@@ -320,16 +315,29 @@ const runResumeOcrTarget = async (
     }
 
     const entryLabel = `${index + 1}/${parsedEntries.length}`
+    const providerLabels = entry.missingTargets.map((runTarget) => `${runTarget.service}/${runTarget.model}`)
     const wasComplete = entry.completionStatus === 'full' && entry.missingTargets.length === 0
     if (wasComplete) {
-      l.success(`Resume ${entryLabel}: already full (${entry.outputDir})`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: 'full',
+        outputDir: entry.outputDir,
+        providers: 'none',
+        detail: 'already full'
+      }, 'success')
       full += 1
       updatedEntries.push(withOutputDir(entry.rawEntry, entry.outputDir))
       continue
     }
 
     if (entry.missingTargets.length === 0) {
-      l.warn(`Resume ${entryLabel}: no matching missing providers selected; keeping ${entry.completionStatus} state (${entry.outputDir})`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: entry.completionStatus,
+        outputDir: entry.outputDir,
+        providers: 'none',
+        detail: 'no matching missing providers selected'
+      }, 'warn')
       const metadata = await readOutputMetadata(entry.outputDir)
       updatedEntries.push(withOutputDir(metadata, entry.outputDir))
       if (metadata['completionStatus'] === 'failed') {
@@ -342,7 +350,13 @@ const runResumeOcrTarget = async (
       continue
     }
 
-    l.info(`Resume ${entryLabel}: ${entry.outputDir} -> ${entry.missingTargets.map((runTarget) => `${runTarget.service}/${runTarget.model}`).join(', ')}`)
+    logResumeItem(l, {
+      item: entryLabel,
+      status: 'processing',
+      outputDir: entry.outputDir,
+      providers: providerLabels,
+      detail: 'resuming missing providers'
+    }, 'info')
 
     const preparedDocument = await readPreparedDocument(entry.outputDir)
     let resumeFilePath = entry.source.filePath
@@ -383,13 +397,31 @@ const runResumeOcrTarget = async (
     updatedEntries.push(withOutputDir(metadata, entry.outputDir))
     if (metadata['completionStatus'] === 'failed') {
       failed += 1
-      l.warn(`Resume ${entryLabel}: failed`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: 'failed',
+        outputDir: entry.outputDir,
+        providers: providerLabels,
+        detail: 'resume failed'
+      }, 'error')
     } else if (metadata['completionStatus'] === 'full') {
       full += 1
-      l.success(`Resume ${entryLabel}: complete`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: 'full',
+        outputDir: entry.outputDir,
+        providers: providerLabels,
+        detail: 'resume complete'
+      }, 'success')
     } else {
       incomplete += 1
-      l.warn(`Resume ${entryLabel}: incomplete`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: 'incomplete',
+        outputDir: entry.outputDir,
+        providers: providerLabels,
+        detail: 'resume incomplete'
+      }, 'warn')
     }
   }
 
@@ -398,7 +430,7 @@ const runResumeOcrTarget = async (
   } else if (updatedEntries[0]) {
     await writeOcrRunManifest(target.dir, stripOutputDir(updatedEntries[0]))
   }
-  l.info(formatResumeSummary(full, incomplete, failed))
+  logResumeSummary(l, { full, incomplete, failed })
 
   if (incomplete > 0 || failed > 0) {
     const error = new Error(`OCR resume still has ${incomplete} incomplete and ${failed} failed item(s)`)

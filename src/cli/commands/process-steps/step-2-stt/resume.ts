@@ -16,7 +16,7 @@ import type {
 import { CLIUsageError } from '~/utils/error-handler'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
 import { logSttBatchFinalSummary } from '../step-1-download/targets/target-utils'
-import { buildSttBatchSchedulerRows, formatSttBatchSchedulerSummary } from './stt-batch/stt-batch-policy'
+import { buildSttBatchSchedulerRows } from './stt-batch/stt-batch-policy'
 import { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
 import {
   buildMissingTargetsFromEntry,
@@ -29,6 +29,7 @@ import { readSttRunManifestEntry, writeSttBatchManifest, writeSttRunManifest } f
 import { readBatchManifest } from '../manifest-utils'
 import { YOUTUBE_CAPTIONS_SERVICE } from './youtube-captions'
 import type { ResumeTarget } from '../resume/resume-types'
+import { logResumeItem, logResumeSummary } from '../resume/resume-logging'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -277,12 +278,6 @@ export const resolveResumeSttBatchDir = async (
   throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput}. Pass a batch directory explicitly.`)
 }
 
-const formatResumeSummary = (
-  full: number,
-  incomplete: number,
-  failed: number
-): string => `Resume complete: ${full} full, ${incomplete} incomplete, ${failed} failed`
-
 const collectPartialFailureLabels = (
   metadata: Record<string, unknown>,
   partialFailureLabels: Map<string, number>
@@ -347,16 +342,29 @@ const runResumePass = async (
     }
 
     const entryLabel = `${index + 1}/${parsedEntries.length}`
+    const providerLabels = entry.missingTargets.map(formatSttTargetLabel)
     const wasComplete = entry.completionStatus === 'full' && entry.missingTargets.length === 0
     if (wasComplete) {
-      l.success(`Resume ${entryLabel}: already full (${entry.outputDir})`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: 'full',
+        outputDir: entry.outputDir,
+        providers: 'none',
+        detail: 'already full'
+      }, 'success')
       full += 1
       updatedEntries.push(withOutputDir(entry.rawEntry, entry.outputDir))
       continue
     }
 
     if (entry.missingTargets.length === 0) {
-      l.warn(`Resume ${entryLabel}: no matching missing providers selected; keeping ${entry.completionStatus} state (${entry.outputDir})`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: entry.completionStatus,
+        outputDir: entry.outputDir,
+        providers: 'none',
+        detail: 'no matching missing providers selected'
+      }, 'warn')
       const metadata = await readOutputMetadata(entry.outputDir)
       updatedEntries.push(withOutputDir(metadata, entry.outputDir))
       collectPartialFailureLabels(metadata, partialFailureLabels)
@@ -369,7 +377,13 @@ const runResumePass = async (
     }
 
     attemptedEntries += 1
-    l.info(`Resume ${entryLabel}: ${entry.outputDir} -> ${entry.missingTargets.map(formatSttTargetLabel).join(', ')}`)
+    logResumeItem(l, {
+      item: entryLabel,
+      status: 'processing',
+      outputDir: entry.outputDir,
+      providers: providerLabels,
+      detail: 'resuming missing providers'
+    }, 'info')
     try {
       const outputDir = await processStt(entry.source, target.dir, opts, undefined, {
         outputDir: entry.outputDir,
@@ -381,7 +395,13 @@ const runResumePass = async (
       const metadata = await readOutputMetadata(outputDir)
       updatedEntries.push(withOutputDir(metadata, outputDir))
       full += 1
-      l.success(`Resume ${entryLabel}: complete`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: 'full',
+        outputDir,
+        providers: providerLabels,
+        detail: 'resume complete'
+      }, 'success')
     } catch (error) {
       if (!isSttPartialCompletionError(error)) {
         throw error
@@ -397,7 +417,13 @@ const runResumePass = async (
       }
 
       collectPartialFailureLabels(metadata, partialFailureLabels)
-      l.warn(`Resume ${entryLabel}: ${error.completionStatus} (${error.message})`)
+      logResumeItem(l, {
+        item: entryLabel,
+        status: error.completionStatus,
+        outputDir: error.outputDir,
+        providers: providerLabels,
+        detail: error.message
+      }, error.completionStatus === 'failed' ? 'error' : 'warn')
     }
   }
 
@@ -408,28 +434,32 @@ const runResumePass = async (
   }
 
   if (partialFailureLabels.size > 0) {
-    l.warn(`Partial provider failures: ${[...partialFailureLabels.entries()]
+    const rows = [...partialFailureLabels.entries()]
       .sort((left, right) => left[0].localeCompare(right[0]))
-      .map(([label, count]) => `${label} x${count}`)
-      .join(', ')}`)
+      .map(([provider, failures]) => ({ provider, failures }))
+    l.write('warn', 'Partial provider failures', {
+      category: 'pipeline',
+      humanTable: createHumanTable(rows, ['provider', 'failures']),
+      metadata: { failures: rows }
+    })
   }
 
   if (batchCoordinator) {
     const snapshot = batchCoordinator.getSchedulerSnapshot()
-    const summary = formatSttBatchSchedulerSummary(snapshot)
-    if (summary) {
-      l.info(`STT batch backfill scheduler summary: ${summary}`)
+    if (snapshot.providers.length > 0) {
+      const rows = buildSttBatchSchedulerRows(snapshot)
       l.write('info', 'STT batch backfill scheduler summary', {
         category: 'pipeline',
         humanTable: createHumanTable(
-          buildSttBatchSchedulerRows(snapshot),
+          rows,
           ['provider', 'kind', 'launchSlots', 'pollSlots', 'launched', 'completed', 'queueWaitMs', 'polls', 'blocked', 'degraded', 'backfill', 'warm']
-        )
+        ),
+        metadata: { providers: rows }
       })
     }
   }
 
-  l.info(formatResumeSummary(full, incomplete, failed))
+  logResumeSummary(l, { full, incomplete, failed })
 
   return {
     ok: full,
