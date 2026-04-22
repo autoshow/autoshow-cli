@@ -271,9 +271,7 @@
       "https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7.md",
       "https://platform.claude.com/docs/en/about-claude/models/migration-guide.md",
       "https://platform.claude.com/docs/en/build-with-claude/working-with-messages.md",
-      "https://platform.claude.com/docs/en/build-with-claude/structured-outputs.md",
-      "https://platform.claude.com/docs/en/api/typescript/messages/create.md",
-      "https://platform.claude.com/docs/en/api/typescript/messages/count_tokens.md"
+      "https://platform.claude.com/docs/en/build-with-claude/structured-outputs.md"
     ],
     "OCR": [
       "https://platform.claude.com/docs/en/build-with-claude/pdf-support.md",

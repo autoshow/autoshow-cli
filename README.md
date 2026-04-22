@@ -56,8 +56,10 @@ bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-fast-generate-preview
 bun as music "an ambient piano instrumental" --minimax-music music-2.5
 
-# Fetch curated provider docs into project/links/bun-links.md
+# Fetch curated OpenAI docs into project/links/openai-all-links.md
 bun as links --openai
+
+# Fetch STT docs across providers into project/links/all-stt-links.md
 bun as links stt
 ```
 
@@ -167,7 +169,7 @@ Batch runs write `batch.json`, and some structured remote sources add `source.js
 Notable exceptions:
 
 - `metadata --save` reports `run.json`, and `metadata --markdown --save` also reports `metadata.md`
-- `links` writes to `project/links/bun-links.md`
+- `links` writes to a selection-based file under `project/links/`, for example `project/links/all-all-links.md`
 - utility commands such as `config`, `setup`, and `links` do not use the `output/` run-directory pattern
 
 ## Development

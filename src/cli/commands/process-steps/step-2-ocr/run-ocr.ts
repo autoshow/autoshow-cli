@@ -147,13 +147,15 @@ const formatHostedOcrLabel = (service: 'mistral' | 'glm' | 'openai' | 'anthropic
 const getHostedOcrLimitSource = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini'): string => {
   switch (service) {
     case 'openai':
-      return 'project/links/openai-links.md'
+      return 'project/links/openai-all-links.md'
     case 'anthropic':
       return ANTHROPIC_OCR_LIMIT_SOURCE
     case 'gemini':
       return GEMINI_OCR_LIMIT_SOURCE
+    case 'glm':
+      return 'project/links/glm-all-links.md'
     default:
-      return 'project/links/bun-links.md'
+      return 'project/links/all-all-links.md'
   }
 }
 

@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import {
   LINKS_OUTPUT_DIR,
   collectLinks,
+  getDefaultLinksOutputFileName,
   parseLinksArgv,
   runLinksWithArgv
 } from '~/cli/commands/setup-and-utilities/links/define-links-command'
@@ -129,6 +130,60 @@ test('links collector includes Gladia general and STT links', () => {
 
 test('links default output directory points to project/links', () => {
   expect(decodeURIComponent(LINKS_OUTPUT_DIR.pathname).endsWith('/project/links/')).toBe(true)
+})
+
+test('links default output filename uses all-all for an unfiltered run', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links'
+  ])
+
+  expect(getDefaultLinksOutputFileName(parsed.serviceSelections, parsed.globalSections)).toBe('all-all-links.md')
+})
+
+test('links default output filename uses all for a bare provider selection', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--gemini'
+  ])
+
+  expect(getDefaultLinksOutputFileName(parsed.serviceSelections, parsed.globalSections)).toBe('gemini-all-links.md')
+})
+
+test('links default output filename keeps provider sections in a stable canonical order', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--gemini',
+    'tts',
+    'general'
+  ])
+
+  expect(getDefaultLinksOutputFileName(parsed.serviceSelections, parsed.globalSections)).toBe('gemini-general-tts-links.md')
+})
+
+test('links default output filename lowercases, dedupes, and sorts mixed selections', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'TTS',
+    'stt',
+    'tts',
+    '--OpenAI',
+    'TEXT',
+    'general',
+    'text',
+    '--Gemini'
+  ])
+
+  expect(getDefaultLinksOutputFileName(parsed.serviceSelections, parsed.globalSections)).toBe(
+    'all-stt-tts--gemini-all--openai-general-text-links.md'
+  )
 })
 
 test('links command writes combined fetched markdown to a single file', async () => {

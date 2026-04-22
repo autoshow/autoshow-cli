@@ -5,7 +5,7 @@ export const GEMINI_INLINE_PDF_BYTES = 50 * 1024 * 1024
 export const GEMINI_INLINE_NON_PDF_BYTES = 100 * 1024 * 1024
 export const GEMINI_FILE_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
 export const GEMINI_PDF_PAGE_COUNT_LIMIT = 1000
-export const GEMINI_OCR_LIMIT_SOURCE = 'project/links/gemini-links.md'
+export const GEMINI_OCR_LIMIT_SOURCE = 'project/links/gemini-all-links.md'
 
 export const setupGeminiOcr = async (): Promise<void> => {
   const apiKey = readEnv('GEMINI_API_KEY')

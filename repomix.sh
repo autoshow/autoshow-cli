@@ -14,7 +14,7 @@ IGNORE_PATHS=(
   "TODO.md"
   "repomix.sh"
   "project/reports"
-  "project/links/bun-links.md"
+  "project/links/all-all-links.md"
 )
 
 INCLUDE_STRING=$(IFS=,; echo "${INCLUDE_PATHS[*]}")

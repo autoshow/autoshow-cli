@@ -135,7 +135,7 @@ describe('GLM OCR runtime limits', () => {
     })
 
     await expect(runOcr(imagePath, step1Metadata, opts)).rejects.toThrow(
-      'GLM OCR supports image inputs up to 10.0 MB based on project/links/bun-links.md.'
+      'GLM OCR supports image inputs up to 10.0 MB based on project/links/glm-all-links.md.'
     )
   })
 
@@ -155,7 +155,7 @@ describe('GLM OCR runtime limits', () => {
     })
 
     await expect(runOcr(pdfPath, step1Metadata, opts)).rejects.toThrow(
-      'GLM OCR supports PDF inputs up to 50.0 MB based on project/links/bun-links.md.'
+      'GLM OCR supports PDF inputs up to 50.0 MB based on project/links/glm-all-links.md.'
     )
   })
 
@@ -174,7 +174,7 @@ describe('GLM OCR runtime limits', () => {
     })
 
     await expect(runOcr(pdfPath, step1Metadata, opts)).rejects.toThrow(
-      'GLM OCR supports PDF inputs up to 100 pages based on project/links/bun-links.md.'
+      'GLM OCR supports PDF inputs up to 100 pages based on project/links/glm-all-links.md.'
     )
   })
 
@@ -194,7 +194,7 @@ describe('GLM OCR runtime limits', () => {
     })
 
     await expect(runOcr(pdfPath, step1Metadata, opts)).rejects.toThrow(
-      'OpenAI OCR supports PDF inputs up to 50.0 MB based on project/links/openai-links.md.'
+      'OpenAI OCR supports PDF inputs up to 50.0 MB based on project/links/openai-all-links.md.'
     )
   })
 
@@ -219,7 +219,7 @@ describe('GLM OCR runtime limits', () => {
     })
 
     await expect(runOcr(pdfPath, step1Metadata, opts)).rejects.toThrow(
-      'Gemini OCR supports PDF inputs up to 2.00 GB based on project/links/gemini-links.md.'
+      'Gemini OCR supports PDF inputs up to 2.00 GB based on project/links/gemini-all-links.md.'
     )
   })
 
@@ -238,7 +238,7 @@ describe('GLM OCR runtime limits', () => {
     })
 
     await expect(runOcr(pdfPath, step1Metadata, opts)).rejects.toThrow(
-      'Gemini OCR supports PDF inputs up to 1000 pages based on project/links/gemini-links.md.'
+      'Gemini OCR supports PDF inputs up to 1000 pages based on project/links/gemini-all-links.md.'
     )
   })
 
@@ -257,7 +257,7 @@ describe('GLM OCR runtime limits', () => {
     })
 
     await expect(runOcr(imagePath, step1Metadata, opts)).rejects.toThrow(
-      'Anthropic OCR supports image inputs up to 5.0 MB based on project/links/claude-links.md.'
+      'Anthropic OCR supports image inputs up to 5.0 MB based on project/links/claude-all-links.md.'
     )
   })
 

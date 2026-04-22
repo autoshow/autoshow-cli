@@ -8,7 +8,7 @@
         "costPer1kPagesUSD": 2,
         "costPer1kPagesCents": 200,
         "limits": {
-          "notes": "No Mistral OCR file-size or page-count limits were found in project/links/bun-links.md."
+          "notes": "No Mistral OCR file-size or page-count limits were found in project/links/all-all-links.md."
         },
         "estimation": {
           "costMultiplier": 1,
@@ -31,7 +31,7 @@
           "imageBytes": 10485760,
           "pdfBytes": 52428800,
           "pageCount": 100,
-          "notes": "project/links/bun-links.md documents GLM OCR input caps of 10 MB per image, 50 MB per PDF, and a maximum of 100 pages."
+          "notes": "project/links/glm-all-links.md documents GLM OCR input caps of 10 MB per image, 50 MB per PDF, and a maximum of 100 pages."
         },
         "estimation": {
           "costMultiplier": 1,
@@ -52,7 +52,7 @@
         "costPerMOutputTokensCents": 1500,
         "limits": {
           "pdfBytes": 52428800,
-          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         }
       },
       "gpt-5.4-mini": {
@@ -63,7 +63,7 @@
         "costPerMOutputTokensCents": 450,
         "limits": {
           "pdfBytes": 52428800,
-          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         }
       },
       "gpt-5.4-nano": {
@@ -74,7 +74,7 @@
         "costPerMOutputTokensCents": 125,
         "limits": {
           "pdfBytes": 52428800,
-          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         }
       },
       "gpt-5.4-pro": {
@@ -85,7 +85,7 @@
         "costPerMOutputTokensCents": 18000,
         "limits": {
           "pdfBytes": 52428800,
-          "notes": "project/links/openai-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         }
       }
     }
@@ -102,7 +102,7 @@
         "costPerMOutputTokensCents": 500,
         "limits": {
           "imageBytes": 5242880,
-          "notes": "project/links/claude-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
         }
       },
       "claude-sonnet-4-6": {
@@ -113,7 +113,7 @@
         "costPerMOutputTokensCents": 1500,
         "limits": {
           "imageBytes": 5242880,
-          "notes": "project/links/claude-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
         }
       },
       "claude-opus-4-7": {
@@ -124,7 +124,7 @@
         "costPerMOutputTokensCents": 2500,
         "limits": {
           "imageBytes": 5242880,
-          "notes": "project/links/claude-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
         }
       }
     }
@@ -143,7 +143,7 @@
           "pdfBytes": 2147483648,
           "imageBytes": 2147483648,
           "pageCount": 1000,
-          "notes": "project/links/gemini-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+          "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
         }
       },
       "gemini-3.1-flash-lite-preview": {
@@ -156,7 +156,7 @@
           "pdfBytes": 2147483648,
           "imageBytes": 2147483648,
           "pageCount": 1000,
-          "notes": "project/links/gemini-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+          "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
         }
       }
     }
@@ -170,7 +170,7 @@
         "costPer1kPagesUSD": 0.83,
         "costPer1kPagesCents": 83,
         "limits": {
-          "notes": "No Firecrawl article-extraction file-size or page-count limits were found in project/links/bun-links.md."
+          "notes": "No Firecrawl article-extraction file-size or page-count limits were found in project/links/all-all-links.md."
         }
       }
     }

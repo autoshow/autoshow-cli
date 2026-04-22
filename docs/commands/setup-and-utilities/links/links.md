@@ -1,6 +1,6 @@
 # links
 
-Fetch curated provider documentation pages and write one combined markdown file to `project/links/bun-links.md`.
+Fetch curated provider documentation pages and write one combined markdown file to a selection-based path under `project/links/`.
 
 ## Outline
 
@@ -27,7 +27,8 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 
 `links` reads the curated URL registry from `src/cli/commands/setup-and-utilities/links/model-links.json`, fetches every matched page, and concatenates the results into a single local file.
 
-- Output path: `project/links/bun-links.md`
+- Output path: `project/links/<normalized-selection>-links.md`
+- Examples: `project/links/all-all-links.md`, `project/links/all-stt-links.md`, `project/links/gemini-all-links.md`, `project/links/gemini-general-tts-links.md`
 - Existing output is overwritten on each run
 - Duplicate URLs are removed before fetching, so overlapping selections only fetch once
 
@@ -129,4 +130,5 @@ Global flags like `--config-path` and `--allow-over-budget` may still appear in 
 
 - Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links.json`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
+- The filename is derived from the normalized provider and section selections, lowercased, deduped, and sorted into a stable order.
 - Provider selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.
