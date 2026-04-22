@@ -3,6 +3,10 @@ import type { LogSink, LogSinkEvent } from '~/logger/types'
 
 const logIndent = '  '
 
+type HumanSinkOptions = {
+  interactive?: boolean
+}
+
 const getBatchItemPrefix = (event: LogSinkEvent): string => {
   const itemIndex = event.context?.['itemIndex']
   const itemCount = event.context?.['itemCount']
@@ -45,7 +49,9 @@ const formatMessage = (event: LogSinkEvent): string => {
   return `${timestamp} ${levelPrefix}${batchPrefix}${message}`
 }
 
-export const createHumanSink = (): LogSink => {
+export const createHumanSink = (options: HumanSinkOptions = {}): LogSink => {
+  const interactive = options.interactive ?? process.stdout.isTTY === true
+
   return (event) => {
     const filteredArgs = event.args.filter(arg => arg !== undefined)
     const renderedParts = [formatMessage(event)]
@@ -64,6 +70,11 @@ export const createHumanSink = (): LogSink => {
         console.error(message, ...filteredArgs)
         return
       default:
+        if (interactive) {
+          console.log(message, ...filteredArgs)
+          return
+        }
+
         console.error(message, ...filteredArgs)
     }
   }

@@ -23,6 +23,7 @@ import { runRevStt } from './stt-services/rev/run-rev-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
 import { runGladiaStt } from './stt-services/gladia/run-gladia-stt'
+import { runHappyScribeStt } from './stt-services/happyscribe/run-happyscribe-stt'
 import { isDeapiSupportedSourceUrl } from './stt-services/deapi/deapi'
 import { isSupadataSupportedSourceUrl } from './stt-services/supadata/supadata'
 import { runSupadataStt } from './stt-services/supadata/run-supadata-stt'
@@ -68,7 +69,8 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'groq',
   'mistral',
   'assemblyai',
-  'gladia'
+  'gladia',
+  'happyscribe'
 ])
 
 const formatBytes = (bytes: number): string => {
@@ -388,6 +390,19 @@ const dispatchStt = async (
     })
   }
 
+  if (target.service === 'happyscribe') {
+    return await runHappyScribeStt(audioPath, outputDir, {
+      model: target.model,
+      happyscribeOrganizationId: options.happyscribeOrganizationId,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
+    })
+  }
+
   if (target.service === 'supadata') {
     return await runSupadataStt(audioPath, outputDir, {
       model: target.model,
@@ -435,15 +450,35 @@ export const mergeSplitTranscriptionChunks = (
   const totalProcessingTime = segmentResults.reduce((sum, s) => sum + s.metadata.processingTime, 0)
   const totalTokenCount = segmentResults.reduce((sum, s) => sum + s.metadata.tokenCount, 0)
   const mergedTimings = mergeStep2TimingMetadata(segmentResults.map((segment) => segment.metadata.timings))
-  const mergedBilling = segmentResults[0]!.metadata.transcriptionService === 'deapi'
-    && segmentResults.every((segment) => typeof segment.metadata.billing?.totalCost === 'number')
-    ? {
-        totalCost: segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.totalCost ?? 0), 0),
-        source: segmentResults.every((segment) => segment.metadata.billing?.source === 'provider_quote')
-          ? 'provider_quote' as const
-          : 'registry_fallback' as const,
-        mode: 'segment_sum' as const
-      }
+  const canMergeBilling = segmentResults.every((segment) => typeof segment.metadata.billing?.totalCost === 'number')
+  const mergedBilling = canMergeBilling
+    ? (() => {
+        const totalCost = segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.totalCost ?? 0), 0)
+        const totalCredits = segmentResults.every((segment) => typeof segment.metadata.billing?.creditsUsed === 'number')
+          ? segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.creditsUsed ?? 0), 0)
+          : undefined
+        const explicitCreditRates = segmentResults
+          .map((segment) => segment.metadata.billing?.creditRateCents)
+          .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+        const sharedCreditRate = explicitCreditRates.length === segmentResults.length
+          && explicitCreditRates.every((value) => Math.abs(value - explicitCreditRates[0]!) < 1e-9)
+          ? explicitCreditRates[0]
+          : undefined
+
+        return {
+          totalCost,
+          ...(typeof totalCredits === 'number' ? { creditsUsed: totalCredits } : {}),
+          ...(typeof sharedCreditRate === 'number'
+            ? { creditRateCents: sharedCreditRate }
+            : typeof totalCredits === 'number' && totalCredits > 0
+              ? { creditRateCents: totalCost / totalCredits }
+              : {}),
+          source: segmentResults.every((segment) => segment.metadata.billing?.source === 'provider_quote')
+            ? 'provider_quote' as const
+            : 'registry_fallback' as const,
+          mode: 'segment_sum' as const
+        }
+      })()
     : undefined
 
   return {
@@ -624,6 +659,7 @@ export const stt = async (
     audioDurationSeconds: (options as ProcessingOptions & { audioDurationSeconds?: number }).audioDurationSeconds,
     sourceUrl: options.url,
     language: (options as ProcessingOptions & { supadataLang?: string }).supadataLang,
+    happyscribeOrganizationId: (options as ProcessingOptions & { happyscribeOrganizationId?: string }).happyscribeOrganizationId,
     runMode: 'initial'
   })
 }

@@ -21,6 +21,7 @@ import {
   validateMistralSttModel,
   validateAssemblyaiSttModel,
   validateGladiaSttModel,
+  validateHappyscribeSttModel,
   validateSupadataSttModel,
   validateGlmOcrModel,
   validateAnthropicOcrModel,
@@ -62,6 +63,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'mistral-stt',
   'assemblyai-stt',
   'gladia-stt',
+  'happyscribe-stt',
   'supadata-stt',
   'mistral-ocr',
   'glm-ocr',
@@ -380,6 +382,7 @@ export const buildOptsFromFlags = (
   const mistralSttModels = readValidatedMany('mistral-stt', validateMistralSttModel)
   const assemblyaiSttModels = readValidatedMany('assemblyai-stt', validateAssemblyaiSttModel)
   const gladiaSttModels = readValidatedMany('gladia-stt', validateGladiaSttModel)
+  const happyscribeSttModels = readValidatedMany('happyscribe-stt', validateHappyscribeSttModel)
   const supadataSttModels = readValidatedMany('supadata-stt', validateSupadataSttModel)
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
@@ -406,6 +409,7 @@ export const buildOptsFromFlags = (
   const mistralSttModel = first(mistralSttModels)
   const assemblyaiSttModel = first(assemblyaiSttModels)
   const gladiaSttModel = first(gladiaSttModels)
+  const happyscribeSttModel = first(happyscribeSttModels)
   const supadataSttModel = first(supadataSttModels)
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
@@ -496,6 +500,9 @@ export const buildOptsFromFlags = (
     assemblyaiSttModel,
     gladiaSttModels,
     gladiaSttModel,
+    happyscribeSttModels,
+    happyscribeSttModel,
+    happyscribeOrganizationId: readOptionalStringFlag(mergedFlags, 'happyscribe-organization-id'),
     supadataSttModels,
     supadataSttModel,
     supadataLang: readOptionalStringFlag(mergedFlags, 'supadata-lang'),

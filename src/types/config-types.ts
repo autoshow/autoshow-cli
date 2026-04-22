@@ -20,6 +20,8 @@ const SttDefaultsSchema = v.strictObject({
   mistralStt: ModelArraySchema,
   assemblyaiStt: ModelArraySchema,
   gladiaStt: ModelArraySchema,
+  happyscribeStt: ModelArraySchema,
+  happyscribeOrganizationId: v.optional(v.string(), undefined),
   supadataStt: ModelArraySchema,
   supadataLang: v.optional(v.string(), undefined),
   speechmaticsStt: ModelArraySchema,

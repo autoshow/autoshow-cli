@@ -34,6 +34,7 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Speechmatics STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', 'premium'] },
   { label: 'CLI invalid Rev STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'human'] },
   { label: 'CLI unsupported Rev STT fusion model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'fusion'] },
+  { label: 'CLI invalid Happy Scribe STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--happyscribe-stt', 'premium'] },
   { label: 'CLI invalid DeepInfra STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deepinfra-stt', 'openai/whisper-large-v4'] },
   { label: 'CLI invalid deAPI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deapi-stt', 'whisper-large-v3'] },
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
@@ -103,6 +104,8 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--groq-stt')
   expect(result.stdout).toContain('--mistral-stt')
   expect(result.stdout).toContain('--gladia-stt')
+  expect(result.stdout).toContain('--happyscribe-stt')
+  expect(result.stdout).toContain('--happyscribe-organization-id')
   expect(result.stdout).toContain('--supadata-stt')
   expect(result.stdout).toContain('--supadata-lang')
   expect(result.stdout).toContain('--stt-provider-concurrency')
@@ -151,6 +154,8 @@ test('resume help exposes combined STT and OCR resume flags', async () => {
   expect(result.stdout).toContain('--stt-provider-concurrency')
   expect(result.stdout).toContain('--deepinfra-stt')
   expect(result.stdout).toContain('--deapi-stt')
+  expect(result.stdout).toContain('--happyscribe-stt')
+  expect(result.stdout).toContain('--happyscribe-organization-id')
   expect(result.stdout).toContain('--supadata-stt')
   expect(result.stdout).toContain('--supadata-lang')
   expect(result.stdout).toContain('--mistral-ocr')
@@ -498,6 +503,12 @@ const barePriceSelectionCases = [
     model: 'auto',
   },
   {
+    name: 'CLI bare Happy Scribe STT flag resolves to auto mode in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--happyscribe-stt', '--price'],
+    provider: 'happyscribe',
+    model: 'auto',
+  },
+  {
     name: 'CLI bare Groq LLM flag resolves to the cheapest model in price mode',
     args: ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--groq', '--price'],
     provider: 'groq',
@@ -782,6 +793,7 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
     'aws-stt': true,
     'deepinfra-stt': true,
     'deapi-stt': true,
+    'happyscribe-stt': true,
     'supadata-stt': true,
     'groq-stt': true,
     'openai': true,
@@ -793,7 +805,7 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
     'anthropic-ocr': true,
     'gemini-ocr': true,
     'gemini-video': true
-  }, new Set(['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'supadata-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'openai-ocr', 'anthropic-ocr', 'gemini-ocr', 'gemini-video']))).toEqual({
+  }, new Set(['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'happyscribe-stt', 'supadata-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'openai-ocr', 'anthropic-ocr', 'gemini-ocr', 'gemini-video']))).toEqual({
     version: 2,
     defaults: {
       stt: {
@@ -801,6 +813,7 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
         awsStt: ['standard'],
         deepinfraStt: ['openai/whisper-large-v3-turbo'],
         deapiStt: ['WhisperLargeV3'],
+        happyscribeStt: ['auto'],
         supadataStt: ['auto'],
         groqStt: ['whisper-large-v3-turbo']
       },
@@ -856,6 +869,21 @@ test('buildConfigPatchFromFlags stores Supadata STT defaults and language prefer
       stt: {
         supadataStt: ['native'],
         supadataLang: 'en'
+      }
+    }
+  })
+})
+
+test('buildConfigPatchFromFlags stores Happy Scribe STT defaults and organization preference', () => {
+  expect(buildConfigPatchFromFlags({
+    'happyscribe-stt': 'auto',
+    'happyscribe-organization-id': 'org-123'
+  }, new Set(['happyscribe-stt', 'happyscribe-organization-id']))).toEqual({
+    version: 2,
+    defaults: {
+      stt: {
+        happyscribeStt: ['auto'],
+        happyscribeOrganizationId: 'org-123'
       }
     }
   })
@@ -1473,6 +1501,24 @@ test('collectSttTargets includes Gladia targets with speaker-count hints', () =>
       model: 'default',
       local: false,
       diarizationOptions: { enabled: true, speakerCount: 2 }
+    }
+  ])
+})
+
+test('collectSttTargets includes Happy Scribe targets with ignored speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'happyscribe-stt': ['auto'],
+    'speaker-count': '2',
+    'happyscribe-organization-id': 'org-123'
+  })
+
+  expect(opts.happyscribeOrganizationId).toBe('org-123')
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'happyscribe',
+      model: 'auto',
+      local: false,
+      diarizationOptions: { enabled: true }
     }
   ])
 })

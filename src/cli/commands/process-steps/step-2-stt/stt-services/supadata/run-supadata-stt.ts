@@ -601,7 +601,7 @@ export const runSupadataStt = async (
     await persistProgressMetadata(resumedRuntime)
     await notifyJobReady(resumedRuntime)
   } else {
-    let createResult: Awaited<ReturnType<typeof fetchTranscript>>
+    let createResult: Awaited<ReturnType<typeof fetchTranscript>> | undefined
     try {
       const createStartedAt = Date.now()
       createResult = await fetchTranscript()
@@ -609,6 +609,9 @@ export const runSupadataStt = async (
       createCount += 1
     } catch (error) {
       attachSupadataErrorContext(error, 'create', 'runtime_http_create_conservative')
+    }
+    if (!createResult) {
+      throw new Error('Supadata transcript request did not return a response')
     }
 
     if (createResult.status === 202) {

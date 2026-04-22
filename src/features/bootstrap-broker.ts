@@ -7,6 +7,7 @@ import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-st
 import { ensureGcloudSttSetup, setupGcloudStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
 import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/groq/groq'
+import { ensureHappyScribeSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/happyscribe/happyscribe'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/rev'
 import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/soniox/soniox'
@@ -102,6 +103,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'gladia-stt': {
     ensure: async () => await ensureGladiaSttSetup()
+  },
+  'happyscribe-stt': {
+    ensure: async () => await ensureHappyScribeSttSetup()
   },
   'supadata-stt': {
     ensure: async () => await ensureSupadataSttSetup()

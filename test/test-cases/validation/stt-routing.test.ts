@@ -31,6 +31,7 @@ const TARGET_MODELS = {
   mistral: 'voxtral-mini-2602',
   assemblyai: 'universal-3-pro',
   gladia: 'default',
+  happyscribe: 'auto',
   reverb: 'test-model'
 } as const
 
@@ -257,6 +258,7 @@ describe('shouldRetrySplitTranscriptionAfterError', () => {
     expect(shouldRetrySplitTranscriptionAfterError(createTarget('deapi'), false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError(createTarget('groq'), false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError(createTarget('speechmatics'), false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('happyscribe'), false, error)).toBe(true)
   })
 
   test('retries duration-limited models when the provider rejects audio that exceeds the model cap', () => {
@@ -329,6 +331,12 @@ describe('resolveDiarizationOptions', () => {
     expect(resolveDiarizationOptions({
       diarizationSpeakerCount: 2
     }, 'rev')).toEqual({ enabled: true })
+  })
+
+  test('ignores speaker-count for Happy Scribe while keeping diarization enabled', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2
+    }, 'happyscribe')).toEqual({ enabled: true })
   })
 
   test('enables diarization by default for diarized ElevenLabs models', () => {
@@ -452,6 +460,63 @@ describe('mergeSplitTranscriptionChunks', () => {
 
     expect(merged.metadata.billing).toEqual({
       totalCost: 2,
+      source: 'provider_quote',
+      mode: 'segment_sum'
+    })
+  })
+
+  test('sums Happy Scribe segment quotes, credits, and shared credit rate into merged billing metadata', () => {
+    const merged = mergeSplitTranscriptionChunks([
+      {
+        segmentIndex: 1,
+        data: {
+          result: {
+            text: 'second',
+            segments: [{ start: '00:00:10', end: '00:00:19', text: 'second' }]
+          },
+          metadata: {
+            transcriptionService: 'happyscribe',
+            transcriptionModel: 'auto',
+            processingTime: 200,
+            tokenCount: 2,
+            billing: {
+              totalCost: 12,
+              creditsUsed: 60,
+              creditRateCents: 0.2,
+              source: 'provider_quote',
+              mode: 'order'
+            }
+          }
+        }
+      },
+      {
+        segmentIndex: 0,
+        data: {
+          result: {
+            text: 'first',
+            segments: [{ start: '00:00:00', end: '00:00:09', text: 'first' }]
+          },
+          metadata: {
+            transcriptionService: 'happyscribe',
+            transcriptionModel: 'auto',
+            processingTime: 100,
+            tokenCount: 1,
+            billing: {
+              totalCost: 8,
+              creditsUsed: 40,
+              creditRateCents: 0.2,
+              source: 'provider_quote',
+              mode: 'order'
+            }
+          }
+        }
+      }
+    ])
+
+    expect(merged.metadata.billing).toEqual({
+      totalCost: 20,
+      creditsUsed: 100,
+      creditRateCents: 0.2,
       source: 'provider_quote',
       mode: 'segment_sum'
     })

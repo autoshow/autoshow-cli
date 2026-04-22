@@ -141,7 +141,7 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt
 
 ## Notes
 
-- `write` accepts the same step-2 OCR and STT flags documented in [`ocr`](../step-2-ocr/ocr-document.md) and [`stt`](../step-2-stt/stt-audio.md), including `--gcloud-stt`, but each `write` run may select at most one STT provider and at most one OCR provider.
+- `write` accepts the same step-2 OCR and STT flags documented in [`ocr`](../step-2-ocr/ocr-document.md) and [`stt`](../step-2-stt/stt-audio.md), including `--gcloud-stt`, `--happyscribe-stt`, and `--happyscribe-organization-id`, but each `write` run may select at most one STT provider and at most one OCR provider.
 - `write` also accepts `--epub-bun` and `--epub-calibre`; when `--out` is set alongside either flag, it must be `json`.
 - Resume is exposed as the top-level `resume` command for STT and OCR outputs, not as a `write` flag.
 - `write` also accepts post-generation flags for [`tts`](../step-4-tts/text-to-speech.md), [`image`](../step-5-image/text-to-image.md), video, and music. Those options are documented on their own command pages instead of being repeated here.

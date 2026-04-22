@@ -1,4 +1,5 @@
 import { mkdir, rm } from 'node:fs/promises'
+import { join } from 'node:path'
 import type {
   ProcessingOptions,
   Step1Metadata,
@@ -152,17 +153,18 @@ export const processVideo = async (
         refreshCache: options.refreshCache
       })
     )
+    const preparedMedia = preparedSttMedia
     const step1Time = Date.now() - step1Start
-    const step1Metadata: Step1Metadata = preparedSttMedia.step1Metadata
-    const sourceMetadata = preparedSttMedia.metadata
-    const audioPath = preparedSttMedia.executionArtifacts.sourceMediaPath
+    const step1Metadata: Step1Metadata = preparedMedia.step1Metadata
+    const sourceMetadata = preparedMedia.metadata
+    const audioPath = preparedMedia.executionArtifacts.sourceMediaPath
     logSpeakerCountHintSummary(sttTargets, processingOptions.diarizationSpeakerCount)
 
     if (processingOptions.youtubeCaptions && processingOptions.url) {
       const captionTranscription = await tryResolveYoutubeCaptionTranscription(
         processingOptions.url,
         outputDir,
-        preparedSttMedia.sourceVideoInfo
+        preparedMedia.sourceVideoInfo
       )
 
       if (captionTranscription) {
@@ -180,14 +182,14 @@ export const processVideo = async (
 
     if (successfulSttProviders.length === 0 && sttTargets.length === 1 && sttTargets[0]?.service !== 'supadata') {
       const target = sttTargets[0] as SttTarget
-      const audioDurationSeconds = preparedSttMedia.durationSeconds
+      const audioDurationSeconds = preparedMedia.durationSeconds
       const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
         await sttTarget(audioPath, outputDir, target, {
           split: processingOptions.split,
           reverbVerbatimicity: processingOptions.reverbVerbatimicity,
           sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
           audioDurationSeconds,
-          sourceUrl: preparedSttMedia.step1Metadata.url,
+          sourceUrl: preparedMedia.step1Metadata.url,
           language: processingOptions.supadataLang,
           ...(mistralPassController ? { mistralPassController } : {})
         })
@@ -200,7 +202,7 @@ export const processVideo = async (
       }]
     } else if (successfulSttProviders.length === 0) {
       const providersDir = `${outputDir}/providers`
-      const audioDurationSeconds = preparedSttMedia.durationSeconds
+      const audioDurationSeconds = preparedMedia.durationSeconds
       await mkdir(providersDir, { recursive: true })
 
       const successes: Array<SttProviderSuccess | undefined> = new Array(sttTargets.length)
@@ -219,7 +221,7 @@ export const processVideo = async (
               reverbVerbatimicity: processingOptions.reverbVerbatimicity,
               sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
               audioDurationSeconds,
-              sourceUrl: preparedSttMedia.step1Metadata.url,
+              sourceUrl: preparedMedia.step1Metadata.url,
               language: processingOptions.supadataLang,
               ...(mistralPassController ? { mistralPassController } : {})
             })

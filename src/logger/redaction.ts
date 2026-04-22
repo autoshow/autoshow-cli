@@ -20,6 +20,7 @@ const SENSITIVE_FLAG_NAMES = new Set<string>([
   'deapi-api-key',
   'assemblyai-api-key',
   'gladia-api-key',
+  'happyscribe-api-key',
   'supadata-api-key',
   'elevenlabs-api-key',
   'minimax-api-key'

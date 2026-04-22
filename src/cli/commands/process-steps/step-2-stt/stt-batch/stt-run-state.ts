@@ -34,6 +34,7 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'mistral',
   'assemblyai',
   'gladia',
+  'happyscribe',
   'supadata',
   'youtube-captions'
 ])
@@ -122,6 +123,7 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
     if (
       value['billing']['mode'] === 'url'
       || value['billing']['mode'] === 'duration'
+      || value['billing']['mode'] === 'order'
       || value['billing']['mode'] === 'segment_sum'
     ) {
       parsedBilling.mode = value['billing']['mode']

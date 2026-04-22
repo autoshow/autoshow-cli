@@ -51,6 +51,9 @@ export type RuntimeOptions = {
   assemblyaiSttModel: string | undefined
   gladiaSttModels: string[] | undefined
   gladiaSttModel: string | undefined
+  happyscribeSttModels: string[] | undefined
+  happyscribeSttModel: string | undefined
+  happyscribeOrganizationId: string | undefined
   supadataSttModels: string[] | undefined
   supadataSttModel: string | undefined
   supadataLang: string | undefined

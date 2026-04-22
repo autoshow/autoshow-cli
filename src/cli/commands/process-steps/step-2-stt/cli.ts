@@ -15,6 +15,7 @@ export const STT_ENGINE_CAPABILITIES = {
   mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true },
+  happyscribe: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   supadata: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'youtube-captions': { diarizationByDefault: false, supportsSpeakerCountHint: false }
@@ -90,6 +91,8 @@ export const collectSttProviderSpecs = (
     | 'assemblyaiSttModels'
     | 'gladiaSttModel'
     | 'gladiaSttModels'
+    | 'happyscribeSttModel'
+    | 'happyscribeSttModels'
     | 'supadataSttModel'
     | 'supadataSttModels'
   >
@@ -117,6 +120,7 @@ export const collectSttProviderSpecs = (
   appendModels('mistral', options.mistralSttModels, options.mistralSttModel)
   appendModels('assemblyai', options.assemblyaiSttModels, options.assemblyaiSttModel)
   appendModels('gladia', options.gladiaSttModels, options.gladiaSttModel)
+  appendModels('happyscribe', options.happyscribeSttModels, options.happyscribeSttModel)
   appendModels('supadata', options.supadataSttModels, options.supadataSttModel)
 
   const whisperRequested = specs.some((entry) => entry.provider === 'whisper')

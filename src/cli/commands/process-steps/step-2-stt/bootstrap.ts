@@ -40,6 +40,8 @@ const toBootstrapProviderId = (
       return 'assemblyai-stt'
     case 'gladia':
       return 'gladia-stt'
+    case 'happyscribe':
+      return 'happyscribe-stt'
     case 'supadata':
       return 'supadata-stt'
     case 'youtube-captions':

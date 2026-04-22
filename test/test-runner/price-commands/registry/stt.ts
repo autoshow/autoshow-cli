@@ -31,6 +31,7 @@ export const sttRegistry: PriceSelectionEntry[] = [
     command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--assemblyai-stt', 'universal-3-pro', '--price']),
     command('transcribe-deapi-WhisperLargeV3', 'transcribe-deapi-WhisperLargeV3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deapi-stt', 'WhisperLargeV3', '--price']),
     command('transcribe-gladia-default', 'transcribe-gladia-default', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--gladia-stt', 'default', '--price']),
+    command('transcribe-happyscribe-auto', 'transcribe-happyscribe-auto', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--happyscribe-stt', 'auto', '--price']),
     command('transcribe-deepgram-nova-3', 'transcribe-deepgram-nova-3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deepgram-stt', 'nova-3', '--price']),
     command('transcribe-deepinfra-openai-whisper-large-v3', 'transcribe-deepinfra-openai-whisper-large-v3', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deepinfra-stt', 'openai/whisper-large-v3', '--price']),
     command('transcribe-deepinfra-openai-whisper-large-v3-turbo', 'transcribe-deepinfra-openai-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'stt', 'input/examples/audio/1-audio.mp3', '--deepinfra-stt', 'openai/whisper-large-v3-turbo', '--price']),

@@ -526,6 +526,7 @@ type ComputeEstimatedCostsInput = {
   mistralSttModel?: string | undefined
   assemblyaiSttModel?: string | undefined
   gladiaSttModel?: string | undefined
+  happyscribeSttModel?: string | undefined
   supadataSttModel?: string | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
@@ -631,6 +632,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'mistralSttModel' as const, provider: 'mistral' },
       { field: 'assemblyaiSttModel' as const, provider: 'assemblyai' },
       { field: 'gladiaSttModel' as const, provider: 'gladia' },
+      { field: 'happyscribeSttModel' as const, provider: 'happyscribe' },
       { field: 'supadataSttModel' as const, provider: 'supadata' },
       { field: 'whisperModel' as const, provider: 'whisper' },
     ]

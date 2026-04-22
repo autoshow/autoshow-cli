@@ -33,6 +33,9 @@ export const ProcessingOptionsSchema = v.pipe(
     assemblyaiSttModel: v.optional(v.string(), undefined),
     gladiaSttModels: v.optional(v.array(v.string()), undefined),
     gladiaSttModel: v.optional(v.string(), undefined),
+    happyscribeSttModels: v.optional(v.array(v.string()), undefined),
+    happyscribeSttModel: v.optional(v.string(), undefined),
+    happyscribeOrganizationId: v.optional(v.string(), undefined),
     supadataSttModels: v.optional(v.array(v.string()), undefined),
     supadataSttModel: v.optional(v.string(), undefined),
     supadataLang: v.optional(v.string(), undefined),
@@ -490,11 +493,11 @@ export type Step2BillingMetadata = {
   creditRateCents?: number | undefined
   totalCost?: number | undefined
   source?: 'response-header' | 'fallback-estimate' | 'provider_quote' | 'registry_fallback' | undefined
-  mode?: 'url' | 'duration' | 'segment_sum' | undefined
+  mode?: 'url' | 'duration' | 'order' | 'segment_sum' | undefined
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'supadata' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number

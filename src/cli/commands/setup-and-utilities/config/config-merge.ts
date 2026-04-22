@@ -7,7 +7,7 @@ import {
   type RepeatableModelFlag
 } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 
-const STT_PROVIDER_FLAGS = ['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt', 'supadata-stt'] as const
+const STT_PROVIDER_FLAGS = ['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt', 'happyscribe-stt', 'supadata-stt'] as const
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
@@ -67,8 +67,10 @@ export const mergeConfigIntoRawFlags = (
       ['mistral-stt', d.stt.mistralStt],
       ['assemblyai-stt', d.stt.assemblyaiStt],
       ['gladia-stt', d.stt.gladiaStt],
+      ['happyscribe-stt', d.stt.happyscribeStt],
       ['supadata-stt', d.stt.supadataStt],
     ])
+    inject('happyscribe-organization-id', d.stt.happyscribeOrganizationId)
     inject('supadata-lang', d.stt.supadataLang)
     inject('aws-region', d.stt.awsRegion)
     inject('aws-bucket', d.stt.awsBucket)
@@ -184,6 +186,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'mistral-stt':       ['defaults', 'stt', 'mistralStt'],
   'assemblyai-stt':    ['defaults', 'stt', 'assemblyaiStt'],
   'gladia-stt':        ['defaults', 'stt', 'gladiaStt'],
+  'happyscribe-stt':   ['defaults', 'stt', 'happyscribeStt'],
+  'happyscribe-organization-id': ['defaults', 'stt', 'happyscribeOrganizationId'],
   'supadata-stt':      ['defaults', 'stt', 'supadataStt'],
   'supadata-lang':     ['defaults', 'stt', 'supadataLang'],
   'aws-region':        ['defaults', 'stt', 'awsRegion'],

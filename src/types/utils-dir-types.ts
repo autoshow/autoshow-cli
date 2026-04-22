@@ -11,6 +11,7 @@ import {
   SUPPORTED_SONIOX_STT_MODELS,
   SUPPORTED_SPEECHMATICS_STT_MODELS,
   SUPPORTED_REV_STT_MODELS,
+  SUPPORTED_HAPPYSCRIBE_STT_MODELS,
   SUPPORTED_GLADIA_STT_MODELS,
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
@@ -53,6 +54,7 @@ export type GroqSttModel = typeof SUPPORTED_GROQ_STT_MODELS[number]
 export type MistralSttModel = typeof SUPPORTED_MISTRAL_STT_MODELS[number]
 export type AssemblyaiSttModel = typeof SUPPORTED_ASSEMBLYAI_STT_MODELS[number]
 export type GladiaSttModel = typeof SUPPORTED_GLADIA_STT_MODELS[number]
+export type HappyscribeSttModel = typeof SUPPORTED_HAPPYSCRIBE_STT_MODELS[number]
 export type SupadataSttModel = typeof SUPPORTED_SUPADATA_STT_MODELS[number]
 export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
 export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]

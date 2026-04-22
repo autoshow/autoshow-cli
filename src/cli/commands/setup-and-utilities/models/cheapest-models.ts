@@ -296,6 +296,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('assemblyai')
     case 'gladia-stt':
       return selectCheapestSttModel('gladia')
+    case 'happyscribe-stt':
+      return selectCheapestSttModel('happyscribe')
     case 'supadata-stt':
       return 'auto'
     case 'mistral-ocr':

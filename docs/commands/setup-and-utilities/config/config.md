@@ -143,6 +143,8 @@ Representative JSON shape of `config/autoshow.json`:
       "mistralStt": ["voxtral-mini-2602"],
       "assemblyaiStt": ["universal-3-pro"],
       "gladiaStt": ["default"],
+      "happyscribeStt": ["auto"],
+      "happyscribeOrganizationId": "org_123",
       "speakerCount": 2,
       "split": false,
       "reverbVerbatimicity": 0.5
@@ -216,7 +218,9 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `mistralStt` | `--mistral-stt` | Default Mistral STT model list |
 | `assemblyaiStt` | `--assemblyai-stt` | Default AssemblyAI STT model list |
 | `gladiaStt` | `--gladia-stt` | Default Gladia STT model list |
-| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia; Deepgram, Soniox, Speechmatics, Rev, and Mistral ignore count-only hints |
+| `happyscribeStt` | `--happyscribe-stt` | Default Happy Scribe STT model list |
+| `happyscribeOrganizationId` | `--happyscribe-organization-id` | Default Happy Scribe organization/workspace ID |
+| `speakerCount` | `--speaker-count` | Optional diarization speaker count hint for Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia; Deepgram, Happy Scribe, Soniox, Speechmatics, Rev, and Mistral ignore count-only hints |
 | `split` | `--split` | Split audio into 10-minute chunks |
 | `reverbVerbatimicity` | `--reverb-verbatimicity` | Reverb output style (0–1) |
 

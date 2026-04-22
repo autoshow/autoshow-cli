@@ -41,6 +41,8 @@ const resumeSttFlags = pickFlags(transcriptionFlags, [
   'mistral-stt',
   'assemblyai-stt',
   'gladia-stt',
+  'happyscribe-stt',
+  'happyscribe-organization-id',
   'supadata-stt',
   'supadata-lang',
   'speaker-count',

@@ -129,6 +129,13 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('default')
   })
 
+  test('happyscribeSttModel routes to happyscribe', () => {
+    const result = computeEstimatedCosts({ happyscribeSttModel: 'auto', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('happyscribe')
+    expect(result.steps[0]?.model).toBe('auto')
+    expect(result.steps[0]?.cost).toBeCloseTo(20, 8)
+  })
+
   test('supadataSttModel routes to supadata with a conservative numeric cost estimate', () => {
     const result = computeEstimatedCosts({ supadataSttModel: 'auto', audioDurationSeconds: 90 })
     expect(result.totalCost).toBeCloseTo(3, 8)
@@ -271,6 +278,41 @@ describe('computeActualCosts STT', () => {
     expect(sttStep?.provider).toBe('deapi')
     expect(sttStep?.model).toBe('WhisperLargeV3')
     expect(sttStep?.cost).toBe(1.75)
+    expect(sttStep?.inputMetric).toBe('durationSeconds')
+    expect(sttStep?.inputValue).toBe(60)
+  })
+
+  test('prefers exact Happy Scribe billing totalCost over registry duration billing', () => {
+    const result = computeActualCosts({
+      step1: {
+        url: 'https://example.com/audio.mp3',
+        duration: '1:00',
+        title: 'Test',
+        description: '',
+        author: '',
+        slug: 'test',
+        audioFileName: 'test.mp3',
+        audioFileSize: 0
+      },
+      step2: {
+        transcriptionService: 'happyscribe',
+        transcriptionModel: 'auto',
+        processingTime: 1200,
+        tokenCount: 100,
+        billing: {
+          totalCost: 20,
+          creditsUsed: 100,
+          creditRateCents: 0.2,
+          source: 'provider_quote',
+          mode: 'order'
+        }
+      }
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('happyscribe')
+    expect(sttStep?.model).toBe('auto')
+    expect(sttStep?.cost).toBe(20)
     expect(sttStep?.inputMetric).toBe('durationSeconds')
     expect(sttStep?.inputValue).toBe(60)
   })

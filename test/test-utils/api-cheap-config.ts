@@ -57,6 +57,7 @@ export const buildApiCheapSelections = () => {
     { service: 'soniox', flag: '--soniox-stt', envVar: 'SONIOX_API_KEY', model: selectCheapestSttModel('soniox') },
     { service: 'speechmatics', flag: '--speechmatics-stt', envVar: 'SPEECHMATICS_API_KEY', model: selectCheapestSttModel('speechmatics') },
     { service: 'gladia', flag: '--gladia-stt', envVar: 'GLADIA_API_KEY', model: selectCheapestSttModel('gladia') },
+    { service: 'happyscribe', flag: '--happyscribe-stt', envVar: 'HAPPYSCRIBE_API_KEY', model: selectCheapestSttModel('happyscribe') },
     { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') }
   ]
 

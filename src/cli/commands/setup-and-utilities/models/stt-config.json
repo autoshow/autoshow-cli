@@ -372,6 +372,24 @@
       }
     }
   },
+  "happyscribe": {
+    "description": "Happy Scribe hosted automatic speech-to-text via signed upload and orders",
+    "type": "api",
+    "models": {
+      "auto": {
+        "description": "Automatic Happy Scribe STT with fixed en-US language and diarization enabled by default",
+        "costPerHourUSD": 12,
+        "costPerHourCents": 1200,
+        "limits": {
+          "notes": "Happy Scribe documents a signed-upload plus orders workflow for automatic transcription, but current public Product API docs do not publish fixed upload-size or audio-duration caps for automatic STT. AutoShow keeps Happy Scribe v1 split policy note-only and relies on explicit --split or retry-with-split if the provider rejects an oversized input."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 240
+        }
+      }
+    }
+  },
   "supadata": {
     "description": "Supadata hosted transcript retrieval and AI transcript generation from public source URLs",
     "type": "api",

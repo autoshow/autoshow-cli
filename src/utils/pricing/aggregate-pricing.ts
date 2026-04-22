@@ -15,6 +15,10 @@ import {
   logDeapiPricingFallbackWarning,
   resolveDeapiTranscriptionPrice
 } from '~/cli/commands/process-steps/step-2-stt/stt-services/deapi/deapi-pricing'
+import {
+  buildHappyScribeRegistryEstimate,
+  resolveHappyScribePriceNotes
+} from '~/cli/commands/process-steps/step-2-stt/stt-services/happyscribe/happyscribe-pricing'
 import { resolveYoutubeCaptionEstimateTargets } from '~/cli/commands/process-steps/step-2-stt/youtube-captions'
 import {
   getExtractEstimation,
@@ -110,6 +114,26 @@ const buildDeapiSttEstimate = async (
   }
 }
 
+const buildHappyScribeSttEstimate = async (
+  model: string,
+  durationSeconds: number,
+  preferredOrganizationId: string | undefined
+): Promise<SttStepEstimate> => {
+  const estimation = getSttEstimation('happyscribe', model)
+  const totalCost = applyCostMultiplier(buildHappyScribeRegistryEstimate(model, durationSeconds), estimation.costMultiplier)
+  const notes = await resolveHappyScribePriceNotes({ preferredOrganizationId })
+
+  return {
+    step: 'stt',
+    provider: 'happyscribe',
+    model,
+    durationSeconds,
+    totalCost,
+    costMultiplier: estimation.costMultiplier,
+    ...(notes.length > 0 ? { note: notes.join(' ') } : {})
+  }
+}
+
 const buildSttEstimates = async (
   resolvedTarget: string,
   opts: RuntimeOptions
@@ -169,6 +193,11 @@ const buildSttEstimates = async (
 
     if (target.service === 'deapi') {
       estimates.push(await buildDeapiSttEstimate(target.model, resolvedTarget, durationSeconds))
+      continue
+    }
+
+    if (target.service === 'happyscribe') {
+      estimates.push(await buildHappyScribeSttEstimate(target.model, durationSeconds, opts.happyscribeOrganizationId))
       continue
     }
 

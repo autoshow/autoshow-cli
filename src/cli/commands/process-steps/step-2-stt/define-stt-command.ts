@@ -25,6 +25,7 @@ export const sttCommand = defineCommand({
       ['bun as stt file.mp3 --rev-stt', 'Transcribe with the cheapest Rev async model'],
       ['bun as stt file.mp3 --gladia-stt', 'Transcribe with Gladia pre-recorded diarization'],
       ['bun as stt file.mp3 --gladia-stt --speaker-count 2', 'Transcribe with Gladia diarization and an exact speaker-count hint'],
+      ['bun as stt file.mp3 --happyscribe-stt', 'Transcribe with Happy Scribe automatic STT (fixed en-US, diarization on by default)'],
       ['bun as stt https://www.youtube.com/watch?v=abc --supadata-stt', 'Transcribe from a public source URL with Supadata auto mode'],
       ['bun as stt https://www.youtube.com/watch?v=abc --supadata-stt native --supadata-lang en', 'Fetch only native transcripts from Supadata with a preferred language'],
       ['bun as stt file.mp3 --elevenlabs-stt', 'Transcribe with ElevenLabs speaker diarization'],

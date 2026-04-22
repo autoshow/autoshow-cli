@@ -33,7 +33,7 @@ export type OpenAICompatibleTranscriptionResponse = {
 export type GroqTranscriptionSegment = OpenAICompatibleTranscriptionSegment
 export type GroqTranscriptionResponse = OpenAICompatibleTranscriptionResponse
 
-export type TranscribeEngine = 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'supadata' | 'whisper' | 'youtube-captions'
+export type TranscribeEngine = 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'whisper' | 'youtube-captions'
 
 export type TranscribeEngineCapabilities = {
   diarizationByDefault: boolean

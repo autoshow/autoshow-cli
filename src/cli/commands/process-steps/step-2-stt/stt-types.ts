@@ -325,6 +325,7 @@ export type SttTargetOptions = {
   audioDurationSeconds?: number | undefined
   sourceUrl?: string | undefined
   language?: string | undefined
+  happyscribeOrganizationId?: string | undefined
   runMode?: 'initial' | 'backfill' | undefined
   asyncLifecycle?: AsyncSttLifecycleHooks | undefined
   mistralPassController?: MistralSttPassController | undefined

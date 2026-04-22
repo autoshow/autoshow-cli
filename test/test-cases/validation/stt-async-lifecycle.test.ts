@@ -6,6 +6,7 @@ import {
 } from '~/cli/commands/process-steps/step-2-stt/async-lifecycle'
 import { runAssemblyAiTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/run-assemblyai-stt'
 import { runGladiaStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/run-gladia-stt'
+import { runHappyScribeStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/happyscribe/run-happyscribe-stt'
 import { runRevStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/run-rev-stt'
 import { runSpeechmaticsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/speechmatics/run-speechmatics-stt'
 import { readProviderCheckpointMetadata, writeProviderCheckpointFixture } from '../../test-utils/manifest-helpers'
@@ -23,6 +24,9 @@ const restoreEnv = snapshotEnv([
   'ASSEMBLYAI_BASE_URL',
   'GLADIA_API_KEY',
   'GLADIA_BASE_URL',
+  'HAPPYSCRIBE_API_KEY',
+  'HAPPYSCRIBE_BASE_URL',
+  'HAPPYSCRIBE_ORGANIZATION_ID',
   'REVAI_ACCESS_TOKEN',
   'REVAI_BASE_URL',
   'SPEECHMATICS_API_KEY',
@@ -40,7 +44,7 @@ type ResumeProbeCounts = {
 type ResumeProbeCase = {
   name: string
   fixturePrefix: string
-  service: 'assemblyai' | 'gladia' | 'speechmatics' | 'rev'
+  service: 'assemblyai' | 'gladia' | 'happyscribe' | 'speechmatics' | 'rev'
   model: string
   runtime: Record<string, unknown>
   setupEnv: () => void
@@ -249,6 +253,88 @@ const RESUME_PROBE_CASES: ResumeProbeCase[] = [
         remoteJobId: 'tx-existing',
         remoteAssetId: 'asset-existing',
         remoteAssetUrl: 'https://cdn.gladia.test/audio.wav'
+      }))
+    }
+  },
+  {
+    name: 'Happy Scribe resumes a persisted order without uploading or creating a new order',
+    fixturePrefix: 'autoshow-happyscribe-stt-',
+    service: 'happyscribe',
+    model: 'auto',
+    runtime: {
+      mode: 'fresh',
+      stage: 'polling',
+      remoteJobId: 'order-existing',
+      remoteAssetUrl: 'https://uploads.happyscribe.test/upload-existing',
+      createCompletedAt: '2026-04-15T00:00:00.000Z'
+    },
+    setupEnv: () => {
+      process.env['HAPPYSCRIBE_API_KEY'] = 'test-key'
+      process.env['HAPPYSCRIBE_BASE_URL'] = 'https://happyscribe.test'
+    },
+    installFetch: (counts) => {
+      globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+
+        if (url === 'https://happyscribe.test/organizations' && method === 'GET') {
+          return new Response(JSON.stringify({
+            organizations: [
+              { id: 'org-existing', name: 'Existing Org', currency: 'usd' }
+            ]
+          }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+          })
+        }
+
+        if (url.startsWith('https://happyscribe.test/uploads/new') && method === 'GET') {
+          counts.uploadAttempts += 1
+          throw new Error('unexpected upload-url request')
+        }
+
+        if (url === 'https://happyscribe.test/orders' && method === 'POST') {
+          counts.createAttempts += 1
+          throw new Error('unexpected create')
+        }
+
+        if (url === 'https://happyscribe.test/orders/order-existing' && method === 'GET') {
+          counts.pollAttempts += 1
+          return new Response(JSON.stringify({
+            id: 'order-existing',
+            state: 'submitted',
+            outputsIds: ['tx-existing'],
+            transcriptions: [
+              { id: 'tx-existing', uuid: 'tx-existing', state: 'submitted' }
+            ]
+          }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+          })
+        }
+
+        throw new Error(`Unexpected fetch: ${method} ${url}`)
+      }) as unknown as typeof fetch
+    },
+    invoke: async (audioPath, outputDir) => await runHappyScribeStt(audioPath, outputDir, {
+      model: 'auto',
+      segmentOffsetMinutes: 0,
+      runMode: 'backfill'
+    }),
+    assertCounts: (counts) => {
+      expect(counts).toEqual({
+        uploadAttempts: 0,
+        createAttempts: 0,
+        pollAttempts: 5,
+        deleteAttempts: 0
+      })
+    },
+    assertRuntime: (runtime) => {
+      expect(runtime).toEqual(expect.objectContaining({
+        mode: 'resumed',
+        stage: 'polling',
+        remoteJobId: 'order-existing',
+        remoteAssetUrl: 'https://uploads.happyscribe.test/upload-existing'
       }))
     }
   },

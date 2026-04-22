@@ -26,6 +26,7 @@ const STT_PROVIDER_SELECTION_FLAGS = [
   'mistral-stt',
   'assemblyai-stt',
   'gladia-stt',
+  'happyscribe-stt',
   'supadata-stt'
 ] as const
 

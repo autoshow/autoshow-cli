@@ -638,27 +638,28 @@ export const processStt = async (
         refreshCache: options.refreshCache
       })
     )
+    const preparedStepMedia = prepared
     const acquisitionTimeMs = Date.now() - acquisitionStartedAt
-    l.info(buildAcquireSummary(prepared.step1Metadata.slug, prepared))
+    l.info(buildAcquireSummary(preparedStepMedia.step1Metadata.slug, preparedStepMedia))
     logSpeakerCountHintSummary(requestedTargets, options.diarizationSpeakerCount)
 
     if (options.youtubeCaptions && source.url) {
       const captionTranscription = await readStoredYoutubeCaptionSuccess(outputDir)
-        ?? await tryResolveYoutubeCaptionTranscription(source.url, outputDir, prepared.sourceVideoInfo)
+        ?? await tryResolveYoutubeCaptionTranscription(source.url, outputDir, preparedStepMedia.sourceVideoInfo)
 
       if (captionTranscription) {
         if (requestedTargets.length > 0) {
           l.info(`YouTube captions selected; skipping requested STT providers: ${requestedTargets.map(formatSttTargetLabel).join(', ')}`)
         }
 
-        await buildPromptFile(outputDir, prepared.metadata, captionTranscription.result, prepared.step1Metadata.slug, {
+        await buildPromptFile(outputDir, preparedStepMedia.metadata, captionTranscription.result, preparedStepMedia.step1Metadata.slug, {
           prompts: options.prompts,
           promptSourceProvider: buildProviderModelLabel(captionTranscription.metadata)
         })
 
-        const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], prepared.durationSeconds))
+        const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], preparedStepMedia.durationSeconds))
         const actual = computeActualCosts({
-          step1: prepared.step1Metadata,
+          step1: preparedStepMedia.step1Metadata,
           step2: captionTranscription.metadata
         })
         const cost = { estimated, actual }
@@ -667,10 +668,10 @@ export const processStt = async (
             service: captionTranscription.target.service,
             model: captionTranscription.target.model
           }],
-          audioDurationSeconds: prepared.durationSeconds
+          audioDurationSeconds: preparedStepMedia.durationSeconds
         })
         const actualTiming = computeActualProcessingTimes({
-          audioDurationSeconds: prepared.durationSeconds,
+          audioDurationSeconds: preparedStepMedia.durationSeconds,
           step2: captionTranscription.metadata
         })
         const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
@@ -678,7 +679,7 @@ export const processStt = async (
           : undefined
 
         const metadataJson = JSON.stringify({
-          step1: prepared.step1Metadata,
+          step1: preparedStepMedia.step1Metadata,
           step2: captionTranscription.metadata,
           completionStatus: 'full' as SttCompletionStatus,
           requestedProviders: [toRequestedProvider(captionTranscription.target)],
@@ -699,7 +700,7 @@ export const processStt = async (
         l.debug(`Run manifest:\n${metadataJson}`)
 
         const artifactFiles: Record<string, string> = {
-          audio: prepared.step1Metadata.audioFileName,
+          audio: preparedStepMedia.step1Metadata.audioFileName,
           transcript: 'transcription.txt',
           result: 'result.json',
           captions: 'youtube-captions.vtt',
@@ -720,38 +721,39 @@ export const processStt = async (
 
     if (requestedTargets.length === 1 && requestedTargets[0]?.service !== 'supadata') {
       const target = requestedTargets[0] as SttTarget
-      const audioPath = resolveTargetAudioPath(target, prepared)
-      const audioDurationSeconds = prepared.durationSeconds
+      const audioPath = resolveTargetAudioPath(target, preparedStepMedia)
+      const audioDurationSeconds = preparedStepMedia.durationSeconds
       const transcription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
         await sttTarget(audioPath, outputDir, target, {
           split: options.split,
           reverbVerbatimicity: options.reverbVerbatimicity,
           sttSegmentConcurrency: options.sttSegmentConcurrency,
           audioDurationSeconds,
-          sourceUrl: prepared.step1Metadata.url,
+          sourceUrl: preparedStepMedia.step1Metadata.url,
           language: options.supadataLang,
+          happyscribeOrganizationId: options.happyscribeOrganizationId,
           ...(mistralPassController ? { mistralPassController } : {})
         })
       )
 
-      await buildPromptFile(outputDir, prepared.metadata, transcription.result, prepared.step1Metadata.slug, {
+      await buildPromptFile(outputDir, preparedStepMedia.metadata, transcription.result, preparedStepMedia.step1Metadata.slug, {
         prompts: options.prompts,
         promptSourceProvider: buildProviderModelLabel(transcription.metadata),
         requestedSpeakerCount: target.diarizationOptions?.speakerCount
       })
 
-      const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, prepared.durationSeconds))
+      const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, preparedStepMedia.durationSeconds))
       const actual = computeActualCosts({
-        step1: prepared.step1Metadata,
+        step1: preparedStepMedia.step1Metadata,
         step2: transcription.metadata
       })
       const cost = { estimated, actual }
       const estimatedTiming = computeEstimatedProcessingTimes({
         sttTargets: requestedTargets.map((entry) => ({ service: entry.service, model: entry.model })),
-        audioDurationSeconds: prepared.durationSeconds
+        audioDurationSeconds: preparedStepMedia.durationSeconds
       })
       const actualTiming = computeActualProcessingTimes({
-        audioDurationSeconds: prepared.durationSeconds,
+        audioDurationSeconds: preparedStepMedia.durationSeconds,
         step2: transcription.metadata
       })
       const timing = estimatedTiming.steps.length > 0 || actualTiming.steps.length > 0
@@ -924,6 +926,7 @@ export const processStt = async (
             audioDurationSeconds: preparedMedia.durationSeconds,
             sourceUrl: preparedMedia.step1Metadata.url,
             language: options.supadataLang,
+            happyscribeOrganizationId: options.happyscribeOrganizationId,
             runMode: runOptions.outputDir ? 'backfill' : 'initial',
             ...(mistralPassController ? { mistralPassController } : {}),
             asyncLifecycle: batchCoordinator

@@ -20,6 +20,7 @@ import {
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
+  SUPPORTED_HAPPYSCRIBE_STT_MODELS,
   SUPPORTED_SUPADATA_STT_MODELS,
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROQ_MODELS,
@@ -143,6 +144,14 @@ export const transcriptionFlags = {
   'gladia-stt': {
     description: buildModelDescription('Gladia STT model', SUPPORTED_GLADIA_STT_MODELS),
     type: [String] as [StringConstructor]
+  },
+  'happyscribe-stt': {
+    description: buildModelDescription('Happy Scribe automatic STT model (fixed en-US only)', SUPPORTED_HAPPYSCRIBE_STT_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'happyscribe-organization-id': {
+    description: 'Happy Scribe organization/workspace ID; required when the API key can access multiple organizations',
+    type: String
   },
   'supadata-stt': {
     description: buildModelDescription('Supadata STT mode', SUPPORTED_SUPADATA_STT_MODELS),

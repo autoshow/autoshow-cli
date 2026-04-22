@@ -30,6 +30,7 @@ const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'mistral',
   'assemblyai',
   'gladia',
+  'happyscribe',
   'supadata',
   'youtube-captions'
 ])
@@ -172,7 +173,7 @@ const parseStoredStep2BillingMetadata = (
   ) {
     billing.source = value['source']
   }
-  if (value['mode'] === 'url' || value['mode'] === 'duration' || value['mode'] === 'segment_sum') {
+  if (value['mode'] === 'url' || value['mode'] === 'duration' || value['mode'] === 'order' || value['mode'] === 'segment_sum') {
     billing.mode = value['mode']
   }
 

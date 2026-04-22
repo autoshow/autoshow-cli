@@ -57,6 +57,7 @@ bun as setup --step reverb
 | Groq | `GROQ_API_KEY` | - |
 | DeepInfra | `DEEPINFRA_API_KEY` | `DEEPINFRA_BASE_URL` |
 | deAPI | `DEAPI_API_KEY` | `DEAPI_BASE_URL` |
+| Happy Scribe | `HAPPYSCRIBE_API_KEY` | `HAPPYSCRIBE_BASE_URL`, `HAPPYSCRIBE_ORGANIZATION_ID` |
 | ElevenLabs | `ELEVENLABS_API_KEY` | - |
 | Deepgram | `DEEPGRAM_API_KEY` | `DEEPGRAM_BASE_URL` |
 | Soniox | `SONIOX_API_KEY` | `SONIOX_BASE_URL` |
@@ -109,6 +110,7 @@ If no engine flag is provided, `stt` defaults to Whisper with the `tiny` model.
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3-turbo`, `whisper-large-v3` |
 | DeepInfra Whisper | `--deepinfra-stt <model>` | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
 | deAPI | `--deapi-stt <model>` | `WhisperLargeV3`; hosted async STT with exact provider quote support, no diarization by default, and no speaker-count hint support |
+| Happy Scribe | `--happyscribe-stt <model>` | `auto`; hosted async STT with fixed `en-US`, diarization enabled by default, ignored speaker-count hints, and exact billing capture only for USD organizations |
 | ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
 | Google Cloud STT | `--gcloud-stt <model>` | `chirp_3`; sync REST via gcloud CLI auth with diarization always enabled |
 | AWS Transcribe | `--aws-stt <model>` | `standard`; async batch via AWS CLI with diarization always enabled |
@@ -143,6 +145,8 @@ bun as stt input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt
 bun as stt input/examples/audio/1-audio.mp3 --deepinfra-stt
 bun as stt input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
+bun as stt input/examples/audio/1-audio.mp3 --happyscribe-stt auto
+bun as stt input/examples/audio/1-audio.mp3 --happyscribe-stt --happyscribe-organization-id org_123
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 
 # Same provider, multiple models
@@ -178,6 +182,8 @@ bun as stt https://www.youtube.com/@channelname --youtube-captions --batch-all
 | `--groq-stt <model>` | Select one or more Groq STT models; omit the value to use the cheapest supported model |
 | `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models; omit the value to use `openai/whisper-large-v3-turbo` |
 | `--deapi-stt <model>` | Select one or more deAPI STT models; omit the value to keep `WhisperLargeV3` |
+| `--happyscribe-stt <model>` | Select one or more Happy Scribe STT models; omit the value to keep `auto` |
+| `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID; required when the API key can access multiple organizations |
 | `--mistral-stt <model>` | Select one or more Mistral STT models; omit the value to use `voxtral-mini-2602` |
 | `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models; omit the value to use `universal-3-pro` |
 | `--gladia-stt <model>` | Select one or more Gladia STT models; omit the value to keep `default` |
@@ -207,14 +213,23 @@ deAPI uses live provider pricing when its quote endpoint succeeds.
 - deAPI runs stay on the existing async checkpoint flow. Supported passthrough URLs use remote URL mode, while local files and unsupported URLs use prepared-media multipart upload mode. `providers/<service>-<model>/checkpoint.json` keeps the remote request id so `resume` can continue polling without recreating the job.
 - If deAPI rejects an upload as too large, AutoShow falls back to the normal split-and-merge path, re-quotes each segment, and records the summed billed amount with `step2.billing.mode: 'segment_sum'`.
 
+Happy Scribe price preflight is intentionally side-effect free.
+
+- `--price` never creates Happy Scribe uploads or draft orders. Preflight uses the published AI rate of `$0.20/min` and the local timing registry.
+- Organization resolution order is CLI `--happyscribe-organization-id`, config default, `HAPPYSCRIBE_ORGANIZATION_ID`, then auto-select only when the API key can access exactly one organization.
+- If preflight cannot resolve a unique organization, AutoShow still prints the generic estimate and adds a note that execution needs an explicit organization override.
+- During execution, AutoShow records Happy Scribe billing in `step2.billing` using `totalCost`, `creditsUsed`, `creditRateCents`, `source: "provider_quote"`, and `mode: "order"` when the selected organization reports `currency: "usd"`. Non-USD execution is rejected in v1. If exact provider billing is unavailable, AutoShow falls back to registry math with `source: "registry_fallback"`.
+- Happy Scribe split runs submit one order per segment and merge segment billing into `step2.billing.mode: "segment_sum"`.
+
 ## Notes
 
 - Before any hosted STT provider upload, Autoshow now stages one shared stripped audio-only artifact. The default hosted artifact is mono AAC-LC in `.m4a` capped at 96 kbps, preserves the original sample rate, and drops cover art/chapters/metadata/extra streams. Low-bitrate mono `.m4a`/AAC and `.mp3` inputs stay on a stream-copy cleanup path instead of taking a second lossy encode.
 - Single-provider STT runs write root `transcription.txt` plus root `result.json`.
 - Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
-- `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI v1. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
+- `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI, Happy Scribe, Soniox, Speechmatics, Rev, and Mistral. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
 - Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request.
 - Mistral STT requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
+- Happy Scribe STT is fixed to `en-US` in v1. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.

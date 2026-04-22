@@ -417,7 +417,7 @@ export async function prepareHtmlArticle(
       const extracted = await extractHtmlToMarkdown({
         html: htmlInput.html,
         documentUrl: htmlInput.finalUrl,
-        sourceUrl,
+        ...(sourceUrl ? { sourceUrl } : {}),
         finalUrl: htmlInput.finalUrl
       })
       markdown = extracted.markdown
