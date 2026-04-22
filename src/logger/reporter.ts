@@ -1,8 +1,9 @@
 import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/aggregate-pricing'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration } from '~/logger/formatters'
-import { emitResult, isJsonResultActive } from '~/logger/result-emitter'
-import type { Logger } from '~/logger/types'
+import { createHumanTable, toHumanTableCell } from '~/logger/human-table'
+import { emitResult } from '~/logger/result-emitter'
+import type { HumanLogTable, HumanLogTableRow, Logger } from '~/logger/types'
 
 export type StepTimingCost = {
   label: string
@@ -13,11 +14,15 @@ export type StepTimingCost = {
 
 export type ReporterMetricValue = string | number | boolean | null
 
+export type HumanCompletionSection = keyof HumanCompletionTables
+
 export type CompleteOptions = {
   metrics?: Record<string, ReporterMetricValue>
   steps?: StepTimingCost[]
   totalTimeMs?: number
   totalCost?: number
+  summaryMessage?: string
+  hideHumanSections?: readonly HumanCompletionSection[]
 }
 
 export type Reporter = {
@@ -111,139 +116,125 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
 }
 
 type StepSummaryEntry = {
-  label: string
+  step: string
   providerModel?: string
   time: string
   cost: string
 }
 
-type DetailedCompletionSummary = Record<string, unknown>
+export type HumanCompletionTables = {
+  artifacts?: HumanLogTable
+  providers?: HumanLogTable
+  metrics?: HumanLogTable
+  timing?: HumanLogTable
+}
 
-const HUMAN_PRIMARY_ARTIFACT_KEYS = ['prompt', 'run', 'audio', 'transcript', 'video', 'vtt', 'srt'] as const
+const collectColumns = (rows: ReadonlyArray<Record<string, unknown>>): string[] => {
+  const columns: string[] = []
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      if (!columns.includes(key)) {
+        columns.push(key)
+      }
+    }
+  }
+  return columns
+}
 
 const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCost: number) => {
   const entries: StepSummaryEntry[] = steps.map(step => ({
-    label: step.label,
+    step: step.label,
     ...(step.providerModel ? { providerModel: step.providerModel } : {}),
     time: formatDuration(step.processingTime),
     cost: formatCost(step.cost)
   }))
   return {
     steps: entries,
-    total: { time: formatDuration(totalTimeMs), cost: formatCost(totalCost) }
+    total: {
+      step: 'Total',
+      providerModel: '',
+      time: formatDuration(totalTimeMs),
+      cost: formatCost(totalCost)
+    } satisfies StepSummaryEntry
   }
 }
 
-const buildHumanArtifactSummary = (outputDir: string, files: Record<string, string>): Record<string, unknown> => {
-  const artifacts = Object.fromEntries(
-    HUMAN_PRIMARY_ARTIFACT_KEYS
-      .flatMap((key) => {
-        const file = files[key]
-        return file ? [[key, `${outputDir}/${file}`] as const] : []
-      })
-  )
+const buildHumanArtifactRows = (
+  outputDir: string,
+  files: Record<string, string>
+): HumanLogTableRow[] =>
+  Object.entries(files)
+    .filter(([, file]) => !file.startsWith('providers/'))
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([artifact, file]) => ({
+      artifact,
+      path: `${outputDir}/${file}`
+    }))
 
+const buildHumanProviderRows = (
+  outputDir: string,
+  files: Record<string, string>
+): HumanLogTableRow[] => {
   const providerFiles = Object.entries(files).filter(([, file]) => file.startsWith('providers/'))
-  const providerTranscripts = providerFiles.filter(([key]) => key.startsWith('transcript-')).length
-  const providerResults = providerFiles.filter(([key]) => key.startsWith('result-')).length
-
-  const summary: Record<string, unknown> = {}
-  if (Object.keys(artifacts).length > 0) {
-    summary['artifacts'] = artifacts
-  }
-  if (providerFiles.length > 0) {
-    summary['providers'] = {
-      dir: `${outputDir}/providers`,
-      transcripts: providerTranscripts,
-      results: providerResults
-    }
+  if (providerFiles.length === 0) {
+    return []
   }
 
-  return summary
+  return [{
+    dir: `${outputDir}/providers`,
+    transcripts: providerFiles.filter(([key]) => key.startsWith('transcript-')).length,
+    results: providerFiles.filter(([key]) => key.startsWith('result-')).length
+  }]
 }
 
-const formatMetricValue = (value: ReporterMetricValue): string => {
-  if (value === null) {
-    return 'null'
-  }
+const buildMetricRows = (
+  metrics: Record<string, ReporterMetricValue>
+): HumanLogTableRow[] =>
+  Object.entries(metrics).map(([metric, value]) => ({
+    metric,
+    value: toHumanTableCell(value)
+  }))
 
-  return String(value)
+const buildTimingRows = (
+  steps: StepTimingCost[],
+  totalTimeMs: number,
+  totalCost: number
+): HumanLogTableRow[] => {
+  const { steps: summarySteps, total } = formatStepSummary(steps, totalTimeMs, totalCost)
+  return [...summarySteps, total].map((entry) => ({
+    step: entry.step,
+    providerModel: entry.providerModel ?? '',
+    time: entry.time,
+    cost: entry.cost
+  }))
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const formatKeyValueLine = (label: string, entries: Array<[string, unknown]>): string | undefined => {
-  if (entries.length === 0) {
-    return undefined
-  }
-
-  return `${label}: ${entries.map(([key, value]) => `${key}=${String(value)}`).join(', ')}`
-}
-
-export const buildHumanCompletionMessages = (
+export const buildHumanCompletionTables = (
   outputDir: string,
   files: Record<string, string>,
   options?: CompleteOptions
-): string[] => {
-  const summary = buildHumanArtifactSummary(outputDir, files)
-  const lines: string[] = []
-  const artifacts = summary['artifacts']
-  const providers = summary['providers']
+): HumanCompletionTables => {
+  const artifactRows = buildHumanArtifactRows(outputDir, files)
+  const providerRows = buildHumanProviderRows(outputDir, files)
+  const metricRows = options?.metrics ? buildMetricRows(options.metrics) : []
+  const timingRows = options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined
+    ? buildTimingRows(options.steps, options.totalTimeMs, options.totalCost)
+    : []
 
-  if (isRecord(artifacts)) {
-    const artifactsLine = formatKeyValueLine('Artifacts', Object.entries(artifacts))
-    if (artifactsLine) {
-      lines.push(artifactsLine)
-    }
+  return {
+    ...(artifactRows.length > 0 ? { artifacts: createHumanTable(artifactRows, ['artifact', 'path']) } : {}),
+    ...(providerRows.length > 0 ? { providers: createHumanTable(providerRows, ['dir', 'transcripts', 'results']) } : {}),
+    ...(metricRows.length > 0 ? { metrics: createHumanTable(metricRows, ['metric', 'value']) } : {}),
+    ...(timingRows.length > 0 ? { timing: createHumanTable(timingRows, ['step', 'providerModel', 'time', 'cost']) } : {})
   }
-
-  if (isRecord(providers)) {
-    const providersLine = formatKeyValueLine('Providers', Object.entries(providers))
-    if (providersLine) {
-      lines.push(providersLine)
-    }
-  }
-
-  if (options?.metrics !== undefined) {
-    const metricsLine = formatKeyValueLine(
-      'Metrics',
-      Object.entries(options.metrics).map(([key, value]) => [key, formatMetricValue(value)])
-    )
-    if (metricsLine) {
-      lines.push(metricsLine)
-    }
-  }
-
-  if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
-    const { steps, total } = formatStepSummary(options.steps, options.totalTimeMs, options.totalCost)
-    for (const step of steps) {
-      lines.push(
-        `Step: ${step.label}${step.providerModel ? ` ${step.providerModel}` : ''}, time=${step.time}, cost=${step.cost}`
-      )
-    }
-    lines.push(`Total: time=${total.time}, cost=${total.cost}`)
-  }
-
-  return lines
 }
 
-const buildDetailedCompletionSummary = (
-  outputDir: string,
-  files: Record<string, string>,
-  options?: CompleteOptions
-): DetailedCompletionSummary => {
-  const result: DetailedCompletionSummary = buildHumanArtifactSummary(outputDir, files)
-  if (options?.metrics !== undefined) {
-    result['metrics'] = options.metrics
-  }
-  if (options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined) {
-    const { steps: summarySteps, total } = formatStepSummary(options.steps, options.totalTimeMs, options.totalCost)
-    result['steps'] = summarySteps
-    result['total'] = total
-  }
-  return result
-}
+const buildEstimateRows = (estimate: AggregatedPriceEstimate): HumanLogTableRow[] =>
+  estimate.steps.map((step) =>
+    Object.fromEntries(
+      Object.entries(mapStepEstimate(step, 'human')).map(([key, value]) => [key, toHumanTableCell(value)])
+    ) as HumanLogTableRow
+  )
 
 export const buildCompleteResultData = (
   outputDir: string,
@@ -275,31 +266,27 @@ export const buildCompleteResultData = (
   return resultData
 }
 
-const shouldLogDetailedCompletionSummary = (logger: Logger): boolean => {
-  if (logger.config.minLevel === 'debug' || isJsonResultActive()) {
-    return true
-  }
-
-  const format = process.env['AUTOSHOW_LOG_FORMAT']?.trim().toLowerCase()
-  return format === 'json' || format === 'both'
-}
-
 export const createReporter = (logger: Logger): Reporter => {
   return {
     expectedOutput: (outputDir, files) => {
       logger.write('info', `Expected output directory: ${outputDir}`, { category: 'command' })
-      logger.write('info', 'Expected files:', { category: 'command' })
-      for (const file of files) {
-        logger.write('info', `  - ${file}`, { category: 'command' })
-      }
+      logger.write('info', 'Expected files', {
+        category: 'command',
+        humanTable: createHumanTable(files.map(file => ({ file })), ['file'])
+      })
     },
     estimate: (estimate) => {
-      const obj = {
-        steps: estimate.steps.map(s => mapStepEstimate(s, 'human')),
-        totalEstimatedCost: formatCost(estimate.totalEstimatedCost),
-        ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
+      const estimateRows = buildEstimateRows(estimate)
+      logger.write('info', `Total estimated cost: ${formatCost(estimate.totalEstimatedCost)}`, { category: 'pricing' })
+      logger.write('info', 'Cost Estimate', {
+        category: 'pricing',
+        humanTable: createHumanTable(estimateRows, collectColumns(estimateRows))
+      })
+      if (estimate.notes && estimate.notes.length > 0) {
+        for (const note of estimate.notes) {
+          logger.write('info', `Note: ${note}`, { category: 'pricing' })
+        }
       }
-      logger.write('info', `Cost Estimate:\n${JSON.stringify(obj, null, 2)}`, { category: 'pricing' })
 
       emitResult({
         dryRun: true,
@@ -312,14 +299,20 @@ export const createReporter = (logger: Logger): Reporter => {
     },
     complete: (outputDir, files, options) => {
       logger.write('info', `Output directory: ${outputDir}`, { category: 'artifact' })
-      logger.write('success', 'Complete!', { category: 'artifact' })
-      if (shouldLogDetailedCompletionSummary(logger)) {
-        const detailedSummary = buildDetailedCompletionSummary(outputDir, files, options)
-        logger.write('info', JSON.stringify(detailedSummary, null, 2), { category: 'artifact' })
-      } else {
-        for (const line of buildHumanCompletionMessages(outputDir, files, options)) {
-          logger.write('info', line, { category: 'artifact' })
-        }
+      logger.write('success', options?.summaryMessage ?? 'Complete!', { category: 'artifact' })
+      const tables = buildHumanCompletionTables(outputDir, files, options)
+      const hiddenSections = new Set(options?.hideHumanSections ?? [])
+      if (tables.artifacts && !hiddenSections.has('artifacts')) {
+        logger.write('info', 'Artifacts', { category: 'artifact', humanTable: tables.artifacts })
+      }
+      if (tables.providers && !hiddenSections.has('providers')) {
+        logger.write('info', 'Providers', { category: 'artifact', humanTable: tables.providers })
+      }
+      if (tables.metrics && !hiddenSections.has('metrics')) {
+        logger.write('info', 'Metrics', { category: 'artifact', humanTable: tables.metrics })
+      }
+      if (tables.timing && !hiddenSections.has('timing')) {
+        logger.write('info', 'Timing', { category: 'artifact', humanTable: tables.timing })
       }
 
       emitResult(buildCompleteResultData(outputDir, files, options))

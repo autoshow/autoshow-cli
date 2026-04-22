@@ -9,6 +9,7 @@ import {
 } from './video-normalization'
 import type { VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 
 
 const estimateVeo31GeneratePreviewCost = (duration: number | undefined, resolution: string | undefined): VideoCostEstimate => {
@@ -131,12 +132,19 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
 }
 
 export const logVideoEstimate = (estimate: VideoCostEstimate): void => {
-  l.info(`Estimated video cost for ${estimate.provider}/${estimate.model}:`)
-  l.info(`  Requested duration: ${estimate.durationSeconds}s`)
-  l.info(`  Billed duration: ${estimate.billedDurationSeconds}s`)
-  l.info(`  Cost per second: ${estimate.costPerSecond.toFixed(4)}¢`)
-  l.info(`  Total estimated cost: ${estimate.totalCost.toFixed(5)}¢`)
+  l.info(`Total estimated cost: ${estimate.totalCost.toFixed(5)}¢`)
+  l.write('info', `Estimated video cost for ${estimate.provider}/${estimate.model}`, {
+    category: 'pricing',
+    humanTable: createHumanTable([{
+      provider: estimate.provider,
+      model: estimate.model,
+      requestedDuration: `${estimate.durationSeconds}s`,
+      billedDuration: `${estimate.billedDurationSeconds}s`,
+      costPerSecond: `${estimate.costPerSecond.toFixed(4)}¢`,
+      totalCost: `${estimate.totalCost.toFixed(5)}¢`
+    }], ['provider', 'model', 'requestedDuration', 'billedDuration', 'costPerSecond', 'totalCost'])
+  })
   if (estimate.note) {
-    l.info(`  Note: ${estimate.note}`)
+    l.info(`Note: ${estimate.note}`)
   }
 }

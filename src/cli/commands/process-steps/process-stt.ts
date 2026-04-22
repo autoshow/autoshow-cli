@@ -471,8 +471,27 @@ const runTargetPool = async (
 
 export const buildProviderModelLabel = (
   metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
-): string =>
-  `${metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : metadata.transcriptionService}/${metadata.transcriptionModel}`
+): string => {
+  const provider = metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : metadata.transcriptionService
+  const model = metadata.transcriptionService === 'whisper'
+    ? basename(metadata.transcriptionModel.split(' | ')[0] ?? metadata.transcriptionModel)
+      .replace(/^ggml-/, '')
+      .replace(/\.bin$/, '')
+    : metadata.transcriptionModel
+
+  return `${provider}/${model}`
+}
+
+export const buildTimingProviderModelLabel = (
+  metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
+): string => {
+  if (metadata.transcriptionService !== 'whisper') {
+    return buildProviderModelLabel(metadata)
+  }
+
+  const whisperModelPath = metadata.transcriptionModel.split(' | ')[0] ?? metadata.transcriptionModel
+  return `whisper/${basename(whisperModelPath)}`
+}
 
 const buildPromptFile = async (
   outputDir: string,
@@ -542,7 +561,7 @@ const buildSingleStepSummaries = (
   },
   {
     label: 'Transcribe',
-    providerModel: `${step2Metadata.transcriptionService === 'whisper' ? 'whisper.cpp' : step2Metadata.transcriptionService}/${step2Metadata.transcriptionModel}`,
+    providerModel: buildTimingProviderModelLabel(step2Metadata),
     processingTime: step2Metadata.processingTime,
     cost: actualCost.steps.find((step) => step.step === 'stt')?.cost ?? 0
   }
@@ -1100,7 +1119,7 @@ export const processStt = async (
       },
       ...successfulProviders.map((entry) => ({
         label: 'Transcribe',
-        providerModel: buildProviderModelLabel(entry.metadata),
+        providerModel: buildTimingProviderModelLabel(entry.metadata),
         processingTime: entry.metadata.processingTime,
         cost: actual.steps.find((step) =>
           step.step === 'stt'

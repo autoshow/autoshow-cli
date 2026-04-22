@@ -5,6 +5,7 @@ import { collectInputFiles, isDocumentByExtension, isInputDirectoryPath, process
 import { processSingleTarget } from './single-target'
 import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
 import { collectTextInputFiles } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
+import { resolveListBatchItems } from './list-batch-resolver'
 
 export const handleDirectoryTargetBatch = async (
   resolvedTarget: string,
@@ -18,7 +19,10 @@ export const handleDirectoryTargetBatch = async (
     ? allFiles.filter(file => isDocumentByExtension(file))
     : allFiles
   const includeUrlsFromInputDir = !opts.textInput && isInputDirectoryPath(resolvedTarget)
-  const listedInputs = includeUrlsFromInputDir ? await readInputList(`${resolvedTarget}/2-urls.md`) : []
+  const listedInputEntries = includeUrlsFromInputDir ? await readInputList(`${resolvedTarget}/2-urls.md`) : []
+  const listedInputs = listedInputEntries.length > 0
+    ? (await resolveListBatchItems(listedInputEntries, `${resolvedTarget}/2-urls.md`, command, opts)).selectedUrls
+    : []
   const all = includeUrlsFromInputDir ? [...files, ...listedInputs] : files
 
   if (all.length === 0) {

@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  buildBatchPartialFailureTable,
   buildSttBatchFinalSummaryLines,
+  buildSttBatchFinalSummaryTable,
   formatBatchCompletionSummary,
   formatSttBatchCompletionSummary,
   formatBatchPartialFailureSummary,
@@ -35,6 +37,17 @@ describe('batch summary helpers', () => {
       { service: 'soniox', model: 'stt-async-v4', message: 'bad schema' },
       { service: 'mistral', model: 'voxtral-mini-2602', message: '503' }
     ])).toBe('Partial provider failures: mistral/voxtral-mini-2602 x1, soniox/stt-async-v4 x2')
+  })
+
+  test('builds a partial provider failure table grouped by service/model', () => {
+    expect(buildBatchPartialFailureTable([
+      { service: 'soniox', model: 'stt-async-v4', message: 'bad schema' },
+      { service: 'soniox', model: 'stt-async-v4', message: 'bad schema' },
+      { service: 'mistral', model: 'voxtral-mini-2602', message: '503' }
+    ]).rows).toEqual([
+      { provider: 'mistral/voxtral-mini-2602', failures: 1 },
+      { provider: 'soniox/stt-async-v4', failures: 2 }
+    ])
   })
 
   test('builds final STT batch summary lines grouped by item and provider status', () => {
@@ -102,6 +115,41 @@ describe('batch summary helpers', () => {
       'STT final provider status by item:',
       '1/1 example-episode [failed]',
       'providers: unavailable'
+    ])
+  })
+
+  test('builds an STT final summary table with one row per provider outcome', () => {
+    expect(buildSttBatchFinalSummaryTable([
+      {
+        title: 'example-episode',
+        completionStatus: 'incomplete',
+        providerStates: [
+          { service: 'deepgram', model: 'nova-3', status: 'succeeded' },
+          {
+            service: 'rev',
+            model: 'machine',
+            status: 'failed',
+            lastError: { message: 'token missing' }
+          }
+        ]
+      }
+    ]).rows).toEqual([
+      {
+        item: '1/1',
+        label: 'example-episode',
+        status: 'incomplete',
+        provider: 'deepgram/nova-3',
+        providerStatus: 'succeeded',
+        detail: ''
+      },
+      {
+        item: '1/1',
+        label: 'example-episode',
+        status: 'incomplete',
+        provider: 'rev/machine',
+        providerStatus: 'failed',
+        detail: 'token missing'
+      }
     ])
   })
 })

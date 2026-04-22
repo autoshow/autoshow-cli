@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { createHumanTable } from '~/logger/human-table'
 import { createHumanSink } from '~/logger/sinks/human-sink'
 import { createJsonSink } from '~/logger/sinks/json-sink'
 import type { LogSinkEvent } from '~/logger/types'
@@ -82,4 +83,32 @@ test('json sink writes warn/error to stderr and others to stdout', () => {
   expect(infoPayload['level']).toBe('info')
   expect(warnPayload['level']).toBe('warn')
   expect(infoPayload['runId']).toBe('run-id')
+})
+
+test('human sink appends Bun table output for humanTable events', () => {
+  const sink = createHumanSink()
+  const stderrLines: string[] = []
+  const originalError = console.error
+
+  console.error = (...args: unknown[]) => {
+    stderrLines.push(String(args[0] ?? ''))
+  }
+
+  try {
+    sink({
+      ...makeEvent('info'),
+      message: 'Artifacts',
+      humanTable: createHumanTable([
+        { artifact: 'run', path: 'output/run/run.json' }
+      ], ['artifact', 'path'])
+    })
+  } finally {
+    console.error = originalError
+  }
+
+  expect(stderrLines).toHaveLength(1)
+  expect(stderrLines[0]).toContain('Artifacts')
+  expect(stderrLines[0]).toContain('artifact')
+  expect(stderrLines[0]).toContain('output/run/run.json')
+  expect(stderrLines[0]).toContain('┌')
 })

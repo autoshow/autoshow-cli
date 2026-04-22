@@ -21,6 +21,7 @@ import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 import { buildLyricsCues } from './cue-builder'
 import { formatSrt, formatVtt, loadCaptionFile } from './captions'
 import {
@@ -38,6 +39,18 @@ import type { BatchChildRunContext, RuntimeOptions } from '~/types'
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
 const DEFAULT_INPUT_ROOT = join(PROJECT_ROOT, 'input')
 const OUTPUT_ROOT = join(PROJECT_ROOT, 'output')
+
+const logLyricsBatchSummary = (total: number, succeeded: number, failed: number): void => {
+  l.info(`Batch summary: total=${total}, succeeded=${succeeded}, failed=${failed}`)
+  l.write(failed > 0 ? 'warn' : 'success', 'Batch Summary', {
+    category: 'pipeline',
+    humanTable: createHumanTable([{
+      total,
+      succeeded,
+      failed
+    }], ['total', 'succeeded', 'failed'])
+  })
+}
 const AUDIO_EXTENSIONS = new Set(['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac'])
 
 const resolveInputRoot = (): string => {
@@ -672,7 +685,7 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
 
     l.info(`Output directory: ${batchDirRelative}`)
     l.info(`Batch manifest: ${batchDirRelative}/batch.json`)
-    l.info(`Batch summary: total=${items.length}, succeeded=${succeeded}, failed=${failed}`)
+    logLyricsBatchSummary(items.length, succeeded, failed)
 
     if (failed > 0) {
       failWithExitCode(`Lyrics batch completed with ${failed} failed item(s)`, 1)
@@ -827,7 +840,7 @@ const runLyricsGenerationMode = async (options: {
 
   l.info(`Output directory: ${batchDirRelative}`)
   l.info(`Batch manifest: ${batchDirRelative}/batch.json`)
-  l.info(`Batch summary: total=${items.length}, succeeded=${succeeded}, failed=${failed}`)
+  logLyricsBatchSummary(items.length, succeeded, failed)
 
   if (failed > 0) {
     failWithExitCode(`Lyrics generation batch completed with ${failed} failed item(s)`, 1)

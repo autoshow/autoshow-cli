@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 import { exec } from '~/utils/cli-utils'
 import { loadConfig, resolveConfigPath } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { deepMergeConfig } from '~/cli/commands/setup-and-utilities/config/config-merge'
@@ -325,12 +326,6 @@ export const readAwsSttReadiness = async (
   }
 }
 
-const logCheck = (label: string, ok: boolean, detail: string): void => {
-  const prefix = ok ? 'OK' : 'MISSING'
-  const log = ok ? l.success : l.warn
-  log(`${prefix}: ${label} — ${detail}`)
-}
-
 const buildAwsSetupCommands = (
   state: AwsSttReadiness,
   options: {
@@ -404,27 +399,23 @@ export const setupAwsStt = async (
     l.info('AWS STT setup')
   }
 
-  logCheck('aws', state.hasCli, state.details.cli)
-  logCheck('aws auth', state.authConfigured, state.details.auth)
+  const checkRows = [
+    { status: state.hasCli ? 'OK' : 'MISSING', check: 'aws', detail: state.details.cli },
+    { status: state.authConfigured ? 'OK' : 'MISSING', check: 'aws auth', detail: state.details.auth },
+    { status: state.region ? 'OK' : 'MISSING', check: 'aws region', detail: state.region ?? state.details.region },
+    state.bucket
+      ? { status: state.bucketAccessible === true ? 'OK' : 'MISSING', check: 'aws bucket', detail: `${state.bucket} (${state.details.bucket})` }
+      : { status: 'INFO', check: 'aws bucket', detail: 'not configured' },
+    ...(state.region && state.authConfigured
+      ? [{ status: state.transcribeAccessible === true ? 'OK' : 'MISSING', check: 'aws transcribe', detail: state.details.transcribe }]
+      : []),
+    ...(configPath ? [{ status: 'OK', check: 'aws config', detail: `saved ${configPath}` }] : [])
+  ]
 
-  if (state.region) {
-    l.success(`OK: aws region — ${state.region}`)
-  } else {
-    l.warn(`MISSING: aws region — ${state.details.region}`)
-  }
-
-  if (state.bucket) {
-    logCheck('aws bucket', state.bucketAccessible === true, `${state.bucket} (${state.details.bucket})`)
-  } else {
-    l.info('INFO: aws bucket — not configured')
-  }
-
-  if (state.region && state.authConfigured) {
-    logCheck('aws transcribe', state.transcribeAccessible === true, state.details.transcribe)
-  }
-  if (configPath) {
-    l.success(`OK: aws config — saved ${configPath}`)
-  }
+  l.write(checkRows.some((row) => row.status === 'MISSING') ? 'warn' : 'success', 'AWS STT checks', {
+    category: 'command',
+    humanTable: createHumanTable(checkRows, ['status', 'check', 'detail'])
+  })
 
   if (options.focused) {
     const commands = buildAwsSetupCommands(state, {

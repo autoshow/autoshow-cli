@@ -146,7 +146,7 @@ test('lyrics generation mode accepts extensionless file lookup with --price', as
 
   expect(result.exitCode).toBe(0)
   const combined = `${result.stdout}\n${result.stderr}`
-  expect(combined).toContain('Expected files:')
+  expect(combined).toContain('Expected files')
   expect(combined).toContain('/lyrics/*.md')
 })
 

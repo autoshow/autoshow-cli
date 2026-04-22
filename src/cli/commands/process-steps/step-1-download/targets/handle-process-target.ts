@@ -15,6 +15,7 @@ import {
 } from './target-utils'
 import { processResolvedInputListBatch, resolveInputListBatch } from './url-list-target'
 import { handleDirectoryTargetBatch } from './directory-target'
+import { resolveListBatchItems } from './list-batch-resolver'
 import { resolveYoutubeCollectionItems } from './youtube-collection-target'
 import { handleSingleTarget, processSingleTarget } from './single-target'
 import { tryResolveBatchSource } from './batch/batch-router'
@@ -296,8 +297,11 @@ const resolveProcessTargetPlan = async (
       : allFiles
 
     const includeUrlsFromInputDir = isInputDirectoryPath(resolvedTarget)
-    const listedInputs = includeUrlsFromInputDir
+    const listedInputEntries = includeUrlsFromInputDir
       ? await readInputList(`${resolvedTarget}/2-urls.md`)
+      : []
+    const listedInputs = listedInputEntries.length > 0
+      ? (await resolveListBatchItems(listedInputEntries, `${resolvedTarget}/2-urls.md`, command, opts)).selectedUrls
       : []
 
     const all = includeUrlsFromInputDir ? [...files, ...listedInputs] : files
@@ -310,7 +314,7 @@ const resolveProcessTargetPlan = async (
   if (topLevel.kind === 'input_list') {
     return {
       kind: 'input_list',
-      resolvedBatch: await resolveInputListBatch(resolvedTarget, opts)
+      resolvedBatch: await resolveInputListBatch(resolvedTarget, command, opts)
     }
   }
 

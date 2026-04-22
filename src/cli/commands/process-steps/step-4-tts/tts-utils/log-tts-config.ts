@@ -1,10 +1,21 @@
 import type { TtsConfigField } from '~/types'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 
 export const logTtsConfig = (provider: string, fields: readonly TtsConfigField[]): void => {
-  for (const field of fields) {
-    if (field.value !== undefined) {
-      l.info(`${provider} TTS ${field.label}: ${field.value}`)
-    }
+  const rows = fields
+    .filter((field) => field.value !== undefined)
+    .map((field) => ({
+      setting: field.label,
+      value: String(field.value)
+    }))
+
+  if (rows.length === 0) {
+    return
   }
+
+  l.write('info', `${provider} TTS Config`, {
+    category: 'tts',
+    humanTable: createHumanTable(rows, ['setting', 'value'])
+  })
 }

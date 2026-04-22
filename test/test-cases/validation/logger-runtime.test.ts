@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { createLogger } from '~/logger/core'
 import { runWithLogContext } from '~/logger/context-store'
-import { buildCompleteResultData, buildHumanCompletionMessages, createReporter } from '~/logger/reporter'
+import { buildCompleteResultData, buildHumanCompletionTables, createReporter } from '~/logger/reporter'
 import type { LogSinkEvent } from '~/logger/types'
 
 const collectEvents = (): { events: LogSinkEvent[], sink: (event: LogSinkEvent) => void } => {
@@ -104,8 +104,8 @@ describe('logger context', () => {
 })
 
 describe('reporter completion output', () => {
-  test('builds compact human completion lines for non-verbose output', () => {
-    const lines = buildHumanCompletionMessages('output/run', {
+  test('builds human completion tables for artifacts, providers, metrics, and timing', () => {
+    const tables = buildHumanCompletionTables('output/run', {
       prompt: 'prompt.md',
       run: 'run.json',
       audio: 'audio.mp3',
@@ -127,13 +127,25 @@ describe('reporter completion output', () => {
       totalCost: 92.21444
     })
 
-    expect(lines).toEqual([
-      'Artifacts: prompt=output/run/prompt.md, run=output/run/run.json, audio=output/run/audio.mp3',
-      'Providers: dir=output/run/providers, transcripts=1, results=1',
-      'Metrics: providersRequested=4, providersSucceeded=4, providersFailed=0, partial=false, promptSource=elevenlabs/scribe_v2',
-      'Step: Download, time=12.9s, cost=0.00000¢',
-      'Step: Transcribe elevenlabs/scribe_v2, time=1m 27s, cost=17.01944¢',
-      'Total: time=1m 48s, cost=92.21444¢'
+    expect(tables.artifacts?.rows).toEqual([
+      { artifact: 'audio', path: 'output/run/audio.mp3' },
+      { artifact: 'prompt', path: 'output/run/prompt.md' },
+      { artifact: 'run', path: 'output/run/run.json' }
+    ])
+    expect(tables.providers?.rows).toEqual([
+      { dir: 'output/run/providers', transcripts: 1, results: 1 }
+    ])
+    expect(tables.metrics?.rows).toEqual([
+      { metric: 'providersRequested', value: 4 },
+      { metric: 'providersSucceeded', value: 4 },
+      { metric: 'providersFailed', value: 0 },
+      { metric: 'partial', value: false },
+      { metric: 'promptSource', value: 'elevenlabs/scribe_v2' }
+    ])
+    expect(tables.timing?.rows).toEqual([
+      { step: 'Download', providerModel: '', time: '12.9s', cost: '0.00000¢' },
+      { step: 'Transcribe', providerModel: 'elevenlabs/scribe_v2', time: '1m 27s', cost: '17.01944¢' },
+      { step: 'Total', providerModel: '', time: '1m 48s', cost: '92.21444¢' }
     ])
   })
 
@@ -158,20 +170,23 @@ describe('reporter completion output', () => {
     expect(typeof (result['metrics'] as Record<string, unknown>)['providersRequested']).toBe('number')
   })
 
-  test('includes lyrics artifacts in compact human completion lines', () => {
-    const lines = buildHumanCompletionMessages('output/run', {
+  test('includes lyrics artifacts in the artifacts table', () => {
+    const tables = buildHumanCompletionTables('output/run', {
       run: 'run.json',
       video: 'song.mp4',
       vtt: 'song.vtt',
       srt: 'song.srt'
     })
 
-    expect(lines).toEqual([
-      'Artifacts: run=output/run/run.json, video=output/run/song.mp4, vtt=output/run/song.vtt, srt=output/run/song.srt'
+    expect(tables.artifacts?.rows).toEqual([
+      { artifact: 'run', path: 'output/run/run.json' },
+      { artifact: 'srt', path: 'output/run/song.srt' },
+      { artifact: 'video', path: 'output/run/song.mp4' },
+      { artifact: 'vtt', path: 'output/run/song.vtt' }
     ])
   })
 
-  test('keeps detailed completion payloads when verbose logging is active', () => {
+  test('emits human tables instead of JSON blobs when verbose logging is active', () => {
     const events: LogSinkEvent[] = []
     const logger = createLogger({
       minLevel: 'debug',
@@ -189,8 +204,49 @@ describe('reporter completion output', () => {
       }
     })
 
-    expect(events.map((event) => event.message)).toContain(
-      '{\n  "artifacts": {\n    "run": "output/run/run.json"\n  },\n  "metrics": {\n    "providersRequested": 4\n  }\n}'
-    )
+    expect(events.map((event) => event.message)).toEqual([
+      'Output directory: output/run',
+      'Complete!',
+      'Artifacts',
+      'Metrics'
+    ])
+    expect(events[2]?.humanTable?.rows).toEqual([
+      { artifact: 'run', path: 'output/run/run.json' }
+    ])
+    expect(events[3]?.humanTable?.rows).toEqual([
+      { metric: 'providersRequested', value: 4 }
+    ])
+  })
+
+  test('can hide selected human completion tables and override the success message', () => {
+    const events: LogSinkEvent[] = []
+    const logger = createLogger({
+      minLevel: 'debug',
+      sinks: [event => {
+        events.push(event)
+      }]
+    })
+    const reporter = createReporter(logger)
+
+    reporter.complete('output/run', {
+      audio: 'audio.mp3',
+      result: 'result.json',
+      run: 'run.json',
+      transcript: 'transcription.txt'
+    }, {
+      steps: [
+        { label: 'Download', processingTime: 30, cost: 0 },
+        { label: 'Transcribe', providerModel: 'whisper.cpp/tiny', processingTime: 8_900, cost: 0 }
+      ],
+      totalTimeMs: 9_000,
+      totalCost: 0,
+      summaryMessage: 'Complete! whisper.cpp/tiny',
+      hideHumanSections: ['artifacts', 'timing']
+    })
+
+    expect(events.map((event) => event.message)).toEqual([
+      'Output directory: output/run',
+      'Complete! whisper.cpp/tiny'
+    ])
   })
 })

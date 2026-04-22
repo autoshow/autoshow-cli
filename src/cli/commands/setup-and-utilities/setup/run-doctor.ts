@@ -5,6 +5,7 @@ import { resolveConfigPath, loadConfig } from '~/cli/commands/setup-and-utilitie
 import { readAwsSttConfigDefaults, readAwsSttReadiness } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
 import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 
 type CheckResult = { label: string; ok: boolean; detail: string }
 
@@ -96,30 +97,63 @@ export const runDoctor = async (): Promise<void> => {
 
   let hasFailure = false
   for (const check of checks) {
-    const symbol = check.ok ? 'OK' : 'MISSING'
-    const logFn = check.ok ? l.success : l.warn
-    logFn(`${symbol}: ${check.label} — ${check.detail}`)
-    if (!check.ok) hasFailure = true
+    if (!check.ok) {
+      hasFailure = true
+    }
   }
+  l.write(hasFailure ? 'warn' : 'success', 'Environment checks', {
+    category: 'command',
+    humanTable: createHumanTable(
+      checks.map((check) => ({
+        status: check.ok ? 'OK' : 'MISSING',
+        check: check.label,
+        detail: check.detail
+      })),
+      ['status', 'check', 'detail']
+    )
+  })
 
   const youtubeStatus = await inspectYtDlpAuthState()
-  l.info('')
-  l.info('YouTube cookies')
-  l.info(`INFO: mode — ${youtubeStatus.configuredMode}`)
+  const youtubeRows: Array<{ status: string, check: string, detail: string }> = [{
+    status: 'INFO',
+    check: 'mode',
+    detail: youtubeStatus.configuredMode
+  }]
 
   if (youtubeStatus.configuredMode === 'cookies-file') {
     const cookieDetail = youtubeStatus.resolvedCookiesPath ?? youtubeStatus.cookiesPath ?? 'not configured'
     if (youtubeStatus.cookiesReadable === true) {
-      l.success(`OK: cookies file — ${cookieDetail}`)
+      youtubeRows.push({
+        status: 'OK',
+        check: 'cookies file',
+        detail: cookieDetail
+      })
     } else {
-      l.warn(`MISSING: cookies file — ${cookieDetail}`)
+      youtubeRows.push({
+        status: 'MISSING',
+        check: 'cookies file',
+        detail: cookieDetail
+      })
       hasFailure = true
     }
   } else if (youtubeStatus.configuredMode === 'cookies-from-browser') {
-    l.success('OK: cookies source — browser import via YTDLP_COOKIES_FROM_BROWSER')
+    youtubeRows.push({
+      status: 'OK',
+      check: 'cookies source',
+      detail: 'browser import via YTDLP_COOKIES_FROM_BROWSER'
+    })
   } else {
-    l.info('INFO: cookies source — not configured')
+    youtubeRows.push({
+      status: 'INFO',
+      check: 'cookies source',
+      detail: 'not configured'
+    })
   }
+
+  l.write(hasFailure ? 'warn' : 'info', 'YouTube cookies', {
+    category: 'command',
+    humanTable: createHumanTable(youtubeRows, ['status', 'check', 'detail'])
+  })
 
   if (youtubeStatus.warning) {
     l.warn(youtubeStatus.warning)

@@ -2,6 +2,7 @@ import { getLogContext } from '~/logger/context-store'
 import {
   sanitizeLogArgs,
   sanitizeLogContext,
+  sanitizeHumanTable,
   sanitizeLogMetadata,
   sanitizeLogText
 } from '~/logger/redaction'
@@ -84,6 +85,7 @@ const makeSinkEvent = (
     ...(step ? { step } : {}),
     ...(contextKeys.length > 0 ? { context: mergedContext } : {}),
     ...(options?.metadata ? { metadata: sanitizeLogMetadata(options.metadata) } : {}),
+    ...(options?.humanTable ? { humanTable: sanitizeHumanTable(options.humanTable) } : {}),
     indent: options?.indent ?? true,
     args: sanitizeLogArgs(options?.args ?? [])
   }

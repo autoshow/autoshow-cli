@@ -1,4 +1,4 @@
-import type { LogContext, LogMetadata } from '~/logger/types'
+import type { HumanLogTable, HumanLogTableCell, LogContext, LogMetadata } from '~/logger/types'
 
 const REDACTED = 'REDACTED'
 
@@ -215,3 +215,20 @@ export const sanitizeLogMetadata = (metadata: LogMetadata): LogMetadata => {
   }
   return {}
 }
+
+const sanitizeHumanTableCell = (value: HumanLogTableCell): HumanLogTableCell => {
+  if (typeof value === 'string') {
+    return sanitizeLogText(value)
+  }
+
+  return value
+}
+
+export const sanitizeHumanTable = (table: HumanLogTable): HumanLogTable => ({
+  rows: table.rows.map((row) =>
+    Object.fromEntries(
+      Object.entries(row).map(([key, value]) => [sanitizeLogText(key), sanitizeHumanTableCell(value)])
+    ) as HumanLogTable['rows'][number]
+  ),
+  ...(table.columns ? { columns: table.columns.map(column => sanitizeLogText(column)) } : {})
+})

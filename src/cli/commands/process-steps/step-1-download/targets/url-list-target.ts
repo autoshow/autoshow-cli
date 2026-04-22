@@ -1,20 +1,15 @@
 import * as l from '~/logger'
-import type { BatchItem, ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
+import type { ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
 import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import { processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
-import { selectBatchItems } from './batch/batch-select'
 import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
-
-const buildInputListBatchItems = (items: string[]): BatchItem[] =>
-  items.map((item, index) => ({
-    id: String(index + 1),
-    url: item
-  }))
+import { resolveListBatchItems } from './list-batch-resolver'
 
 export const resolveInputListBatch = async (
   resolvedTarget: string,
+  command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<ResolvedBatch> => {
   l.info(`Reading inputs from ${resolvedTarget}`)
@@ -23,24 +18,7 @@ export const resolveInputListBatch = async (
     throw CLIUsageError(`No valid inputs found in ${resolvedTarget}. Provide newline-delimited URLs or local file paths in a .md or .txt file.`)
   }
 
-  const batchOpts = {
-    limit: opts.batchLimit,
-    all: opts.batchAll,
-    order: opts.batchOrder
-  }
-  const selectedItems = selectBatchItems(buildInputListBatchItems(items), batchOpts)
-
-  return {
-    source: {
-      sourceKind: 'url_list',
-      sourceUrl: resolvedTarget,
-      title: 'Input list',
-      items: selectedItems
-    },
-    selectedUrls: selectedItems.map(item => item.url),
-    selectedItems,
-    totalCount: items.length
-  }
+  return await resolveListBatchItems(items, resolvedTarget, command, opts)
 }
 
 export const processResolvedInputListBatch = async (
@@ -93,6 +71,6 @@ export const handleInputListTargetBatch = async (
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<void> => {
-  const resolvedBatch = await resolveInputListBatch(resolvedTarget, opts)
+  const resolvedBatch = await resolveInputListBatch(resolvedTarget, command, opts)
   await processResolvedInputListBatch(resolvedBatch, command, opts)
 }

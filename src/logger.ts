@@ -144,6 +144,7 @@ export const withContext = (context: LogContext): GlobalLogger => {
 }
 
 export const report = l.report
+export const write = l.write
 export const debug = l.debug
 export const info = l.info
 export const success = l.success

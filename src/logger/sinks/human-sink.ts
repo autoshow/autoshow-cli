@@ -1,3 +1,4 @@
+import { renderHumanTable } from '~/logger/human-table'
 import type { LogSink, LogSinkEvent } from '~/logger/types'
 
 const logIndent = '  '
@@ -89,7 +90,13 @@ const formatMessage = (event: LogSinkEvent): string => {
 export const createHumanSink = (): LogSink => {
   return (event) => {
     const filteredArgs = event.args.filter(arg => arg !== undefined)
-    const message = formatMessage(event)
+    const renderedParts = [formatMessage(event)]
+
+    if (event.humanTable) {
+      renderedParts.push(renderHumanTable(event.humanTable))
+    }
+
+    const message = renderedParts.join('\n')
 
     switch (event.level) {
       case 'warn':

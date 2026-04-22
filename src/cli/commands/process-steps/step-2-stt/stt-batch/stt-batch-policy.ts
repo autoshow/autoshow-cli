@@ -1,3 +1,4 @@
+import type { HumanLogTableRow } from '~/logger/types'
 import type { SttBatchProviderProfile, SttBatchSchedulerSnapshot, SttTarget } from '~/types'
 import { formatSttTargetLabel, getSttTargetKey } from '../stt-targets'
 
@@ -158,3 +159,21 @@ export const formatSttBatchSchedulerSummary = (
     })
     .join(' | ')
 }
+
+export const buildSttBatchSchedulerRows = (
+  snapshot: SttBatchSchedulerSnapshot
+): HumanLogTableRow[] =>
+  snapshot.providers.map((provider) => ({
+    provider: formatSttTargetLabel(provider),
+    kind: provider.kind,
+    launchSlots: provider.launchSlotLimit,
+    pollSlots: provider.kind === 'async' ? provider.pollSlotLimit : '',
+    launched: provider.launchedCount,
+    completed: provider.completedCount,
+    queueWaitMs: provider.queueWaitMs,
+    polls: provider.kind === 'async' ? provider.pollCount : '',
+    blocked: provider.blockedCount,
+    degraded: provider.degradedCount,
+    backfill: provider.backfillCount,
+    warm: provider.warmupComplete
+  }))

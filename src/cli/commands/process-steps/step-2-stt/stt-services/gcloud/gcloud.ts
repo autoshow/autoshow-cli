@@ -1,4 +1,5 @@
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 import { loadConfig, resolveConfigPath } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { deepMergeConfig } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { writeConfig } from '~/cli/commands/setup-and-utilities/config/config-writer'
@@ -426,12 +427,6 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
   }
 }
 
-const logCheck = (label: string, ok: boolean, detail: string): void => {
-  const prefix = ok ? 'OK' : 'MISSING'
-  const log = ok ? l.success : l.warn
-  log(`${prefix}: ${label} — ${detail}`)
-}
-
 const buildSetupCommands = (
   state: GcloudSttReadiness,
   options: {
@@ -574,16 +569,23 @@ export const setupGcloudStt = async (
     l.info('Google Cloud STT setup')
   }
 
-  logCheck('gcloud', state.hasCli, state.details.cli)
-  logCheck('gcloud auth', state.authConfigured, state.details.auth)
-  logCheck('gcloud project', state.projectId !== undefined, state.details.project)
-  if (state.authConfigured && state.projectId) {
-    logCheck('gcloud billing', state.billingEnabled === true, state.details.billing)
-    logCheck('speech.googleapis.com', state.speechApiEnabled === true, state.details.speechApi)
-  }
-  if (savedConfigPath) {
-    l.success(`OK: gcloud config — saved ${savedConfigPath}`)
-  }
+  const checkRows = [
+    { status: state.hasCli ? 'OK' : 'MISSING', check: 'gcloud', detail: state.details.cli },
+    { status: state.authConfigured ? 'OK' : 'MISSING', check: 'gcloud auth', detail: state.details.auth },
+    { status: state.projectId !== undefined ? 'OK' : 'MISSING', check: 'gcloud project', detail: state.details.project },
+    ...(state.authConfigured && state.projectId
+      ? [
+          { status: state.billingEnabled === true ? 'OK' : 'MISSING', check: 'gcloud billing', detail: state.details.billing },
+          { status: state.speechApiEnabled === true ? 'OK' : 'MISSING', check: 'speech.googleapis.com', detail: state.details.speechApi }
+        ]
+      : []),
+    ...(savedConfigPath ? [{ status: 'OK', check: 'gcloud config', detail: `saved ${savedConfigPath}` }] : [])
+  ]
+
+  l.write(checkRows.some((row) => row.status === 'MISSING') ? 'warn' : 'success', 'Google Cloud STT checks', {
+    category: 'command',
+    humanTable: createHumanTable(checkRows, ['status', 'check', 'detail'])
+  })
 
   if (options.focused) {
     l.info('INFO: gcloud STT location — us')

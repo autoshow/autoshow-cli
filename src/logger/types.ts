@@ -26,6 +26,15 @@ export type LogContext = Readonly<Record<string, string | number | boolean | nul
 
 export type LogMetadata = Readonly<Record<string, unknown>>
 
+export type HumanLogTableCell = string | number | boolean | null
+
+export type HumanLogTableRow = Readonly<Record<string, HumanLogTableCell>>
+
+export type HumanLogTable = {
+  rows: readonly HumanLogTableRow[]
+  columns?: readonly string[]
+}
+
 export type LogEvent = {
   timestamp: string
   level: LogLevel
@@ -44,11 +53,13 @@ export type LogWriteOptions = {
   context?: LogContext
   indent?: boolean
   args?: readonly unknown[]
+  humanTable?: HumanLogTable
 }
 
 export type LogSinkEvent = LogEvent & {
   indent: boolean
   args: readonly unknown[]
+  humanTable?: HumanLogTable
 }
 
 export type LogSink = (event: LogSinkEvent) => void

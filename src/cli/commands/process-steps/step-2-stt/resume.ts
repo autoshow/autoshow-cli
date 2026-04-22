@@ -2,6 +2,7 @@ import { readdir } from 'node:fs/promises'
 import { resolve as resolvePath, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 import type {
   BatchManifestEntry,
   NormalizedResumeSttBatchRunOptions,
@@ -15,7 +16,7 @@ import type {
 import { CLIUsageError } from '~/utils/error-handler'
 import { processStt } from '~/cli/commands/process-steps/process-stt'
 import { logSttBatchFinalSummary } from '../step-1-download/targets/target-utils'
-import { formatSttBatchSchedulerSummary } from './stt-batch/stt-batch-policy'
+import { buildSttBatchSchedulerRows, formatSttBatchSchedulerSummary } from './stt-batch/stt-batch-policy'
 import { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
 import {
   buildMissingTargetsFromEntry,
@@ -385,9 +386,17 @@ const runResumePass = async (
   }
 
   if (batchCoordinator) {
-    const summary = formatSttBatchSchedulerSummary(batchCoordinator.getSchedulerSnapshot())
+    const snapshot = batchCoordinator.getSchedulerSnapshot()
+    const summary = formatSttBatchSchedulerSummary(snapshot)
     if (summary) {
       l.info(`STT batch backfill scheduler summary: ${summary}`)
+      l.write('info', 'STT batch backfill scheduler summary', {
+        category: 'pipeline',
+        humanTable: createHumanTable(
+          buildSttBatchSchedulerRows(snapshot),
+          ['provider', 'kind', 'launchSlots', 'pollSlots', 'launched', 'completed', 'queueWaitMs', 'polls', 'blocked', 'degraded', 'backfill', 'warm']
+        )
+      })
     }
   }
 
