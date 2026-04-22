@@ -37,6 +37,7 @@ import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compu
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
 
 const buildTextInputMetadata = (inputPath: string): VideoMetadata => {
   const title = getTextInputTitle(inputPath)
@@ -331,7 +332,7 @@ export const runTextWrite = async (
     ? { estimated: estimatedTiming, actual: actualTiming }
     : undefined
 
-  await writeRunManifest(outputDir, 'write', {
+  const manifestMetadata = {
     title,
     source: {
       kind: 'text-input',
@@ -345,6 +346,14 @@ export const runTextWrite = async (
     ...(step7Metadata ? { step7: serializeOneOrMany(step7Metadata) } : {}),
     cost,
     ...(timing ? { timing } : {}),
+  }
+
+  await writeRunManifest(outputDir, 'write', manifestMetadata)
+  logWriteManifestConsoleSummary(outputDir, manifestMetadata, {
+    promptArtifact: 'prompt.md',
+    ...(step3Results.length === 1 && typeof renderedArtifacts.internalArtifacts['rendered'] === 'string'
+      ? { step3RenderedOutput: renderedArtifacts.internalArtifacts['rendered'] }
+      : {})
   })
 
   const totalTimeMs = actualTiming.totalProcessingTimeMs

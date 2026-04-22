@@ -51,6 +51,7 @@ import {
   selectPrimaryPromptProvider
 } from './process-stt'
 import { writeRunManifest } from './manifest-utils'
+import { logWriteManifestConsoleSummary } from './write-manifest-log'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-stt/youtube-captions'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
@@ -551,9 +552,13 @@ export const processVideo = async (
 	      ...(timing ? { timing } : {}),
 	      ...(sttFailures.length > 0 ? { errors: sttFailures } : {}),
 	    }
-	    const metadataJson = JSON.stringify(processingMetadata, null, 2)
 	    await writeRunManifest(outputDir, 'write', processingMetadata)
-	    l.info(`Run manifest:\n${metadataJson}`)
+	    logWriteManifestConsoleSummary(outputDir, processingMetadata, {
+	      promptArtifact: 'prompt.md',
+	      ...(step3Results.length === 1 && typeof renderedArtifacts.internalArtifacts['rendered'] === 'string'
+	        ? { step3RenderedOutput: renderedArtifacts.internalArtifacts['rendered'] }
+	        : {})
+	    })
 
 	    const totalTime = Date.now() - processStart
 	    const step2Entries = Array.isArray(transcriptionResult.metadata)

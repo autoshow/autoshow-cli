@@ -29,9 +29,21 @@ describe('write subcommand with llama', () => {
 
     const result = await runCommand(
       ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'ggml-org/Qwen3-0.6B-GGUF'],
+      {
+        env: {
+          AUTOSHOW_LOG_FORMAT: 'human',
+          AUTOSHOW_LOG_LEVEL: 'info'
+        }
+      }
     )
 
     expect(result.exitCode).toBe(0)
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(output).toContain('Run manifest:')
+    expect(output).toContain('Run Summary')
+    expect(output).toContain('Prompt Usage')
+    expect(output).not.toContain('Run manifest:\n{')
+    expect(output).not.toContain('"step1": {')
 
     const outputDir = await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
     expect(outputDir).not.toBeNull()

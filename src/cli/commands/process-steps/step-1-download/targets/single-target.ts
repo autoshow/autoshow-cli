@@ -34,6 +34,7 @@ import type { BatchItem, BatchItemProcessResult } from '~/types'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
 import { isTextInputPath, writeRenderedTextArtifacts } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
+import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
 
 const buildDocumentMetadataView = (
   step1: DocumentMetadata,
@@ -329,7 +330,7 @@ const writeDocumentOutputMetadata = async (
     ? { estimated: estimatedTiming, actual: actualTiming }
     : undefined
 
-  await writeRunManifest(outputDir, 'write', {
+  const manifestMetadata = {
     step1,
     step2,
     ...(completionStatus ? { completionStatus } : {}),
@@ -341,6 +342,12 @@ const writeDocumentOutputMetadata = async (
     cost,
     ...(timing ? { timing } : {}),
     ...(errors && errors.length > 0 ? { errors } : {}),
+  }
+
+  await writeRunManifest(outputDir, 'write', manifestMetadata)
+  logWriteManifestConsoleSummary(outputDir, manifestMetadata, {
+    promptArtifact: typeof artifactFiles['prompt'] === 'string' ? artifactFiles['prompt'] : 'prompt.md',
+    ...(typeof artifactFiles['rendered'] === 'string' ? { step3RenderedOutput: artifactFiles['rendered'] } : {})
   })
 
   l.report.complete(outputDir, artifactFiles)
