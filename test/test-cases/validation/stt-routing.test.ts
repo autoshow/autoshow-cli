@@ -82,6 +82,14 @@ describe('getSttLimits', () => {
       remoteUrlBytes: 1048576000
     }))
   })
+
+  test('returns documented Mistral upload and duration limits', () => {
+    expect(getSttLimits('mistral', TARGET_MODELS.mistral)).toEqual(expect.objectContaining({
+      effectiveBytes: 524288000,
+      directUploadBytes: 524288000,
+      durationSeconds: 10800
+    }))
+  })
 })
 
 describe('shouldSplitTranscriptionInput', () => {
@@ -122,7 +130,7 @@ describe('shouldSplitTranscriptionInput', () => {
     expect(shouldSplitTranscriptionInput(createTarget('gladia'), GLADIA_MAX_ATTACHMENT_BYTES + 1, undefined, false)).toBe(true)
   })
 
-  test('auto-splits Mistral uploads above the empirical attachment cap', () => {
+  test('auto-splits Mistral uploads above the documented attachment cap', () => {
     expect(shouldSplitTranscriptionInput(createTarget('mistral'), requireSttLimit('mistral', 'effectiveBytes') + 1, undefined, false)).toBe(true)
   })
 

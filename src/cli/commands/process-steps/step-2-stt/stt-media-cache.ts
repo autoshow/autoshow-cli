@@ -16,6 +16,7 @@ import { basename, dirname, extname, join, resolve } from 'node:path'
 import * as l from '~/logger'
 import type {
   AcquireArtifactOptions,
+  SttTarget,
   CacheArtifactRecord,
   CacheArtifactStatus,
   CacheLookup,
@@ -25,19 +26,34 @@ import type {
   VideoMetadata
 } from '~/types'
 import { buildMediaStep1Slug, buildVideoMetadataFromInfo, extractLocalFileMetadata, getVideoInfo, isDirectMediaUrl, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
+import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact, type AudioNormalizationProfile } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
 import { downloadVideo } from '~/cli/commands/process-steps/step-1-download/audio/yt-utils'
 import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
 import { commandExists, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
 
 const METADATA_SCHEMA_VERSION = 1
-const SOURCE_MEDIA_ARTIFACT_VERSION = 4
+const SOURCE_MEDIA_ARTIFACT_VERSION = 6
 const DEFAULT_CACHE_MAX_GB = 20
 const DEFAULT_CACHE_MAX_AGE_DAYS = 30
 const DEFAULT_STT_ACQUIRE_CONCURRENCY = 2
 const LOCK_WAIT_MS = 50
 const LOCK_TIMEOUT_MS = 30000
+
+// New hosted STT providers must explicitly confirm .m4a support before joining this shared artifact path.
+const HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES = new Set<SttTarget['service']>([
+  'assemblyai',
+  'aws',
+  'deepgram',
+  'elevenlabs',
+  'gcloud',
+  'gladia',
+  'groq',
+  'mistral',
+  'rev',
+  'soniox',
+  'speechmatics'
+])
 
 const sourceMediaAcquireQueue: Array<() => void> = []
 let activeSourceMediaAcquireCount = 0
@@ -56,6 +72,24 @@ const parsePositiveIntegerEnv = (key: string, fallback: number): number => {
 
 const getSourceMediaAcquireConcurrency = (): number =>
   Math.max(1, parsePositiveIntegerEnv('AUTOSHOW_STT_ACQUIRE_CONCURRENCY', DEFAULT_STT_ACQUIRE_CONCURRENCY))
+
+const isHostedSttTarget = (target: SttTarget): boolean =>
+  !target.local && target.service !== 'youtube-captions'
+
+const resolveSourceMediaProfile = (targets: SttTarget[]): AudioNormalizationProfile =>
+  targets.some(isHostedSttTarget) ? 'hosted-stt' : 'default'
+
+const assertHostedTargetsSupportSharedSourceMedia = (targets: SttTarget[]): void => {
+  for (const target of targets) {
+    if (!isHostedSttTarget(target)) {
+      continue
+    }
+
+    if (!HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES.has(target.service)) {
+      throw new Error(`Hosted STT shared source_media defaults to AAC .m4a uploads. Confirm ${target.service} supports .m4a before adding it to the shared path.`)
+    }
+  }
+}
 
 const withSourceMediaAcquireSlot = async <T,>(fn: () => Promise<T>): Promise<T> => {
   const maxConcurrency = getSourceMediaAcquireConcurrency()
@@ -204,13 +238,14 @@ const fetchDirectMedia = async (url: string, outputPath: string): Promise<void> 
 
 const stageSourceMediaArtifact = async (
   source: { url?: string, filePath?: string },
-  workspaceDir: string
+  workspaceDir: string,
+  profile: AudioNormalizationProfile
 ): Promise<string> => {
   const materializeFromSourcePath = async (
     sourcePath: string,
     options: { removeOriginal?: boolean } = {}
   ): Promise<string> => {
-    const { plan } = await planNormalizedAudioArtifact(sourcePath)
+    const { plan } = await planNormalizedAudioArtifact(sourcePath, profile)
     const stagedPath = join(workspaceDir, `source_media${plan.outputExtension}`)
     await materializeNormalizedAudioArtifact(sourcePath, stagedPath, plan)
     if (options.removeOriginal && sourcePath !== stagedPath) {
@@ -518,7 +553,11 @@ export const clearMediaCache = async (): Promise<void> => {
 export const prepareSttMedia = async (
   options: AcquireArtifactOptions
 ): Promise<PreparedSttMedia> => {
-  const { source, outputDir, noCache = false, refreshCache = false } = options
+  const { source, targets, outputDir, noCache = false, refreshCache = false } = options
+  const sourceMediaProfile = resolveSourceMediaProfile(targets)
+  if (sourceMediaProfile === 'hosted-stt') {
+    assertHostedTargetsSupportSharedSourceMedia(targets)
+  }
 
   const cacheLookup = await resolveCacheLookup(source)
   if (cacheLookup.weakFingerprint) {
@@ -535,7 +574,7 @@ export const prepareSttMedia = async (
         await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
 
         const startedAt = Date.now()
-        const stagedPath = await stageSourceMediaArtifact(source, workspaceDir)
+        const stagedPath = await stageSourceMediaArtifact(source, workspaceDir, sourceMediaProfile)
         timings.sourceMediaMs = Date.now() - startedAt
         return stagedPath
       })
@@ -617,7 +656,7 @@ export const prepareSttMedia = async (
           const builtSourcePath = await withSourceMediaAcquireSlot(async () => {
             await ensureMediaTooling(!source.filePath && !isDirectMediaUrl(source.url ?? ''))
             const startedAt = Date.now()
-            const stagedPath = await stageSourceMediaArtifact(source, workspaceDir)
+            const stagedPath = await stageSourceMediaArtifact(source, workspaceDir, sourceMediaProfile)
             timings.sourceMediaMs = Date.now() - startedAt
             return stagedPath
           })

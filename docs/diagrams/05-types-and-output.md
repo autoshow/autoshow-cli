@@ -68,6 +68,8 @@ output/
             └── (individual item output files)
 ```
 
+Hosted STT also reuses an internal cached `source_media.(m4a|mp3)` execution artifact. `.m4a` is the default shared mono AAC upload, while low-bitrate mono `.mp3` stays on a stream-copy cleanup fast path. This stays out of the public run schema.
+
 ## Runtime Directory Structure
 
 ```

@@ -6,6 +6,9 @@ type FfprobeStream = {
   index?: unknown
   codec_type?: unknown
   codec_name?: unknown
+  sample_rate?: unknown
+  channels?: unknown
+  bit_rate?: unknown
   disposition?: unknown
 }
 
@@ -22,11 +25,15 @@ type FfprobePayload = {
 
 export type NormalizedAudioExtension = '.mp3' | '.m4a' | '.ogg' | '.flac'
 export type NormalizedAudioFormat = 'mp3' | 'ipod' | 'ogg' | 'flac'
-export type AudioNormalizationMode = 'copy-file' | 'copy-stream' | 'transcode-flac'
+export type AudioNormalizationMode = 'copy-file' | 'copy-stream' | 'transcode-aac' | 'transcode-flac'
+export type AudioNormalizationProfile = 'default' | 'hosted-stt'
 
 export type AudioStreamProbe = {
   index: number
   codecName: string
+  sampleRate?: number | undefined
+  channels?: number | undefined
+  bitRate?: number | undefined
 }
 
 export type MediaProbe = {
@@ -34,16 +41,27 @@ export type MediaProbe = {
   durationSeconds?: number | undefined
   bitRate?: number | undefined
   hasVideo: boolean
+  hasNonAudioStreams: boolean
+  audioStreamCount: number
   audioStream: AudioStreamProbe
 }
 
 export type NormalizedAudioPlan = {
+  profile: AudioNormalizationProfile
   mode: AudioNormalizationMode
   outputExtension: NormalizedAudioExtension
   outputFormat: NormalizedAudioFormat
+  outputCodecName: string
   sourceCodecName: string
   reason: string
+  stripMetadata: boolean
+  stripChapters: boolean
+  targetBitRate?: number | undefined
+  targetSampleRate?: number | undefined
+  targetChannels?: number | undefined
 }
+
+const HOSTED_STT_MAX_BIT_RATE = 96_000
 
 const toFiniteNumber = (value: unknown): number | undefined => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -80,23 +98,37 @@ const getLowercaseExtension = (filePath: string): string =>
   extname(filePath).toLowerCase()
 
 const buildPlan = (
+  profile: AudioNormalizationProfile,
   mode: AudioNormalizationMode,
   outputExtension: NormalizedAudioExtension,
   outputFormat: NormalizedAudioFormat,
   sourceCodecName: string,
-  reason: string
+  outputCodecName: string,
+  reason: string,
+  options: {
+    targetBitRate?: number | undefined
+    targetSampleRate?: number | undefined
+    targetChannels?: number | undefined
+  } = {}
 ): NormalizedAudioPlan => ({
+  profile,
   mode,
   outputExtension,
   outputFormat,
+  outputCodecName,
   sourceCodecName,
-  reason
+  reason,
+  stripMetadata: profile === 'hosted-stt',
+  stripChapters: profile === 'hosted-stt',
+  ...(options.targetBitRate !== undefined ? { targetBitRate: options.targetBitRate } : {}),
+  ...(options.targetSampleRate !== undefined ? { targetSampleRate: options.targetSampleRate } : {}),
+  ...(options.targetChannels !== undefined ? { targetChannels: options.targetChannels } : {})
 })
 
 export const probeMediaFile = async (inputPath: string): Promise<MediaProbe> => {
   const result = await exec('ffprobe', [
     '-v', 'error',
-    '-show_entries', 'format=format_name,duration,bit_rate:stream=index,codec_type,codec_name:stream_disposition=attached_pic',
+    '-show_entries', 'format=format_name,duration,bit_rate:stream=index,codec_type,codec_name,sample_rate,channels,bit_rate:stream_disposition=attached_pic',
     '-of', 'json',
     inputPath
   ])
@@ -117,7 +149,10 @@ export const probeMediaFile = async (inputPath: string): Promise<MediaProbe> => 
 
   const audioStream: AudioStreamProbe = {
     index: typeof audioStreamRaw.index === 'number' ? audioStreamRaw.index : 0,
-    codecName: audioStreamRaw.codec_name.toLowerCase()
+    codecName: audioStreamRaw.codec_name.toLowerCase(),
+    sampleRate: toFiniteNumber(audioStreamRaw.sample_rate),
+    channels: toFiniteNumber(audioStreamRaw.channels),
+    bitRate: toFiniteNumber(audioStreamRaw.bit_rate) ?? toFiniteNumber(format?.bit_rate)
   }
 
   const isAttachedPicture = (stream: FfprobeStream): boolean => {
@@ -134,62 +169,175 @@ export const probeMediaFile = async (inputPath: string): Promise<MediaProbe> => 
   return {
     formatNames: parseFormatNames(format),
     durationSeconds: toFiniteNumber(format?.duration),
-    bitRate: toFiniteNumber(format?.bit_rate),
+    bitRate: audioStream.bitRate,
     hasVideo: streams.some((stream) => stream.codec_type === 'video' && !isAttachedPicture(stream)),
+    hasNonAudioStreams: streams.some((stream) => stream.codec_type !== 'audio'),
+    audioStreamCount: streams.filter((stream) => stream.codec_type === 'audio').length,
     audioStream
   }
 }
 
-export const resolveNormalizedAudioPlan = (
+const isHostedPreserveCandidate = (
   inputPath: string,
   probe: MediaProbe
+): boolean => {
+  const sourceExtension = getLowercaseExtension(inputPath)
+  const codecName = probe.audioStream.codecName
+  const bitRate = probe.bitRate
+
+  if (probe.audioStreamCount !== 1 || probe.hasNonAudioStreams || probe.audioStream.channels !== 1) {
+    return false
+  }
+
+  if (bitRate === undefined || bitRate <= 0 || bitRate > HOSTED_STT_MAX_BIT_RATE) {
+    return false
+  }
+
+  return (codecName === 'mp3' && sourceExtension === '.mp3')
+    || (codecName === 'aac' && sourceExtension === '.m4a')
+}
+
+const resolveHostedTargetBitRate = (probe: MediaProbe): number => {
+  if (probe.bitRate !== undefined && probe.bitRate > 0) {
+    return Math.min(Math.round(probe.bitRate), HOSTED_STT_MAX_BIT_RATE)
+  }
+
+  return HOSTED_STT_MAX_BIT_RATE
+}
+
+export const resolveNormalizedAudioPlan = (
+  inputPath: string,
+  probe: MediaProbe,
+  profile: AudioNormalizationProfile = 'default'
 ): NormalizedAudioPlan => {
   const sourceExtension = getLowercaseExtension(inputPath)
   const codecName = probe.audioStream.codecName
   const isAudioOnly = probe.hasVideo === false
 
-  if (codecName === 'mp3') {
-    if (isAudioOnly && sourceExtension === '.mp3') {
-      return buildPlan('copy-file', '.mp3', 'mp3', codecName, 'audio-only mp3 fast path')
+  if (profile === 'hosted-stt') {
+    if (isHostedPreserveCandidate(inputPath, probe)) {
+      if (codecName === 'mp3') {
+        return buildPlan(
+          profile,
+          'copy-stream',
+          '.mp3',
+          'mp3',
+          codecName,
+          'mp3',
+          'preserve low-bitrate mono hosted-STT mp3 while stripping non-audio baggage'
+        )
+      }
+
+      return buildPlan(
+        profile,
+        'copy-stream',
+        '.m4a',
+        'ipod',
+        codecName,
+        'aac',
+        'preserve low-bitrate mono hosted-STT AAC in .m4a while stripping non-audio baggage'
+      )
     }
 
-    return buildPlan('copy-stream', '.mp3', 'mp3', codecName, 'extract or remux mp3 audio without re-encoding')
+    return buildPlan(
+      profile,
+      'transcode-aac',
+      '.m4a',
+      'ipod',
+      codecName,
+      'aac',
+      'compress hosted-STT source media to mono AAC-LC in .m4a with a 96 kbps ceiling',
+      {
+        targetBitRate: resolveHostedTargetBitRate(probe),
+        ...(probe.audioStream.sampleRate !== undefined ? { targetSampleRate: probe.audioStream.sampleRate } : {}),
+        targetChannels: 1
+      }
+    )
+  }
+
+  if (codecName === 'mp3') {
+    if (profile === 'default' && isAudioOnly && sourceExtension === '.mp3') {
+      return buildPlan(profile, 'copy-file', '.mp3', 'mp3', codecName, 'mp3', 'audio-only mp3 fast path')
+    }
+
+    return buildPlan(
+      profile,
+      'copy-stream',
+      '.mp3',
+      'mp3',
+      codecName,
+      'mp3',
+      'extract or remux mp3 audio without re-encoding'
+    )
   }
 
   if (codecName === 'aac' || codecName === 'alac') {
-    if (isAudioOnly && sourceExtension === '.m4a') {
-      return buildPlan('copy-file', '.m4a', 'ipod', codecName, 'audio-only m4a fast path')
+    if (profile === 'default' && isAudioOnly && sourceExtension === '.m4a') {
+      return buildPlan(profile, 'copy-file', '.m4a', 'ipod', codecName, codecName, 'audio-only m4a fast path')
     }
 
-    return buildPlan('copy-stream', '.m4a', 'ipod', codecName, 'extract or remux AAC/ALAC audio without re-encoding')
+    return buildPlan(
+      profile,
+      'copy-stream',
+      '.m4a',
+      'ipod',
+      codecName,
+      codecName,
+      'extract or remux AAC/ALAC audio without re-encoding'
+    )
   }
 
   if (codecName === 'opus' || codecName === 'vorbis') {
-    if (isAudioOnly && sourceExtension === '.ogg') {
-      return buildPlan('copy-file', '.ogg', 'ogg', codecName, 'audio-only ogg fast path')
+    if (profile === 'default' && isAudioOnly && sourceExtension === '.ogg') {
+      return buildPlan(profile, 'copy-file', '.ogg', 'ogg', codecName, codecName, 'audio-only ogg fast path')
     }
 
-    return buildPlan('copy-stream', '.ogg', 'ogg', codecName, 'extract or remux Opus/Vorbis audio without re-encoding')
+    return buildPlan(
+      profile,
+      'copy-stream',
+      '.ogg',
+      'ogg',
+      codecName,
+      codecName,
+      'extract or remux Opus/Vorbis audio without re-encoding'
+    )
   }
 
   if (codecName === 'flac') {
-    if (isAudioOnly && sourceExtension === '.flac') {
-      return buildPlan('copy-file', '.flac', 'flac', codecName, 'audio-only flac fast path')
+    if (profile === 'default' && isAudioOnly && sourceExtension === '.flac') {
+      return buildPlan(profile, 'copy-file', '.flac', 'flac', codecName, 'flac', 'audio-only flac fast path')
     }
 
-    return buildPlan('copy-stream', '.flac', 'flac', codecName, 'extract or remux FLAC audio without re-encoding')
+    return buildPlan(
+      profile,
+      'copy-stream',
+      '.flac',
+      'flac',
+      codecName,
+      'flac',
+      'extract or remux FLAC audio without re-encoding'
+    )
   }
 
-  return buildPlan('transcode-flac', '.flac', 'flac', codecName, 'transcode unsupported or uncompressed audio once to FLAC')
+  return buildPlan(
+    profile,
+    'transcode-flac',
+    '.flac',
+    'flac',
+    codecName,
+    'flac',
+    'transcode unsupported or uncompressed audio once to FLAC'
+  )
 }
 
 export const planNormalizedAudioArtifact = async (
-  inputPath: string
+  inputPath: string,
+  profile: AudioNormalizationProfile = 'default'
 ): Promise<{ probe: MediaProbe, plan: NormalizedAudioPlan }> => {
   const probe = await probeMediaFile(inputPath)
   return {
     probe,
-    plan: resolveNormalizedAudioPlan(inputPath, probe)
+    plan: resolveNormalizedAudioPlan(inputPath, probe, profile)
   }
 }
 
@@ -213,8 +361,28 @@ export const materializeNormalizedAudioArtifact = async (
     '-vn'
   ]
 
+  if (plan.stripMetadata) {
+    args.push('-map_metadata', '-1')
+  }
+
+  if (plan.stripChapters) {
+    args.push('-map_chapters', '-1')
+  }
+
   if (plan.mode === 'copy-stream') {
     args.push('-c:a', 'copy', '-f', plan.outputFormat, '-y', outputPath)
+  } else if (plan.mode === 'transcode-aac') {
+    args.push('-c:a', 'aac', '-profile:a', 'aac_low')
+    if (plan.targetBitRate !== undefined) {
+      args.push('-b:a', String(plan.targetBitRate))
+    }
+    if (plan.targetSampleRate !== undefined) {
+      args.push('-ar', String(plan.targetSampleRate))
+    }
+    if (plan.targetChannels !== undefined) {
+      args.push('-ac', String(plan.targetChannels))
+    }
+    args.push('-f', plan.outputFormat, '-y', outputPath)
   } else {
     args.push('-c:a', 'flac', '-compression_level', '12', '-y', outputPath)
   }
@@ -229,7 +397,7 @@ export const resolveSplitAudioPlan = (
   inputPath: string,
   probe: MediaProbe
 ): Pick<NormalizedAudioPlan, 'mode' | 'outputExtension' | 'outputFormat'> => {
-  const normalizedPlan = resolveNormalizedAudioPlan(inputPath, probe)
+  const normalizedPlan = resolveNormalizedAudioPlan(inputPath, probe, 'default')
   if (normalizedPlan.mode === 'transcode-flac') {
     return {
       mode: 'transcode-flac',

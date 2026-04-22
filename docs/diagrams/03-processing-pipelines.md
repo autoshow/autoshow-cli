@@ -45,6 +45,11 @@ src/cli/commands/process-steps/process-video.ts
 │                      STEP 2: STT                                             │
 │       src/cli/commands/process-steps/step-2-stt/run-stt.ts           │
 │                                                                              │
+│  Hosted STT first stages one shared source_media.(m4a|mp3):                  │
+│  ├── keep only the primary audio stream                                     │
+│  ├── strip cover art, chapters, metadata, and extra streams                │
+│  └── default to mono AAC-LC .m4a at a 96 kbps ceiling                      │
+│                                                                              │
 │  resolveSttEngine() - picks exactly one engine:                              │
 │                                                                              │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐│
