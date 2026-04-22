@@ -455,6 +455,12 @@ const barePriceSelectionCases = [
     model: 'openai/gpt-oss-20b',
   },
   {
+    name: 'CLI bare Anthropic LLM flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--anthropic', '--price'],
+    provider: 'anthropic',
+    model: 'claude-haiku-4-5',
+  },
+  {
     name: 'CLI bare OpenAI TTS flag resolves to the cheapest model in price mode',
     args: ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--openai-tts', '--price'],
     provider: 'openai',
@@ -529,6 +535,19 @@ test('CLI custom llama Hugging Face repo ID is accepted in price mode', async ()
   ])
 
   expect(result.exitCode).toBe(0)
+})
+
+test('CLI explicit Anthropic Opus 4.7 flag is accepted in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'write',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--anthropic',
+    'claude-opus-4-7',
+    '--price'
+  ])
+
+  expectPriceSelection(result, 'anthropic', 'claude-opus-4-7')
 })
 
 test('stt bare --resume-missing rejects positional input instead of starting a fresh run', async () => {
@@ -818,6 +837,7 @@ test('resolveCheapestModelForFlag uses current registry-driven cheapest selectio
   expect(resolveCheapestModelForFlag('aws-stt')).toBe('standard')
   expect(resolveCheapestModelForFlag('groq-stt')).toBe('whisper-large-v3-turbo')
   expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
+  expect(resolveCheapestModelForFlag('anthropic')).toBe('claude-haiku-4-5')
   expect(resolveCheapestModelForFlag('grok')).toBe('grok-4.20-non-reasoning')
   expect(resolveCheapestModelForFlag('openai-tts')).toBe('gpt-4o-mini-tts')
   expect(resolveCheapestModelForFlag('gemini-tts')).toBe('gemini-2.5-flash-preview-tts')
@@ -854,6 +874,7 @@ test('buildOptsFromFlags resolves bare provider flags to cheapest models', () =>
     'aws-stt': true,
     'groq-stt': true,
     'openai': true,
+    'anthropic': true,
     'grok': true,
     'openai-tts': true,
     'openai-image': true,
@@ -867,6 +888,7 @@ test('buildOptsFromFlags resolves bare provider flags to cheapest models', () =>
   expect(opts.awsSttModel).toBe('standard')
   expect(opts.groqSttModel).toBe('whisper-large-v3-turbo')
   expect(opts.openaiModel).toBe('gpt-5.4-nano')
+  expect(opts.anthropicModel).toBe('claude-haiku-4-5')
   expect(opts.grokModel).toBe('grok-4.20-non-reasoning')
   expect(opts.openaiTtsModel).toBe('gpt-4o-mini-tts')
   expect(opts.openaiImageModel).toBe('gpt-image-1-mini')

@@ -22,9 +22,10 @@ export const SUPPORTED_GEMINI_MODELS = [
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_ANTHROPIC_MODELS = [
+  'claude-opus-4-7',
   'claude-sonnet-4-6',
-  'claude-opus-4-6',
   'claude-haiku-4-5',
+  'claude-opus-4-6',
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_MINIMAX_MODELS = [

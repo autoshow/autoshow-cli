@@ -151,7 +151,8 @@ src/cli/flags/
 │  ├── --llama MODEL       llama.cpp model ID                │
 │  ├── --openai MODEL      gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano│
 │  ├── --groq MODEL        openai/gpt-oss-20b|openai/gpt-oss-120b│
-│  ├── --anthropic MODEL   claude-opus-4-6|claude-sonnet-4-6|claude-haiku-4-5│
+│  ├── --anthropic MODEL   claude-opus-4-7|claude-sonnet-4-6| │
+│  │                       claude-haiku-4-5|claude-opus-4-6    │
 │  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
 │  ├── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
 │  └── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│

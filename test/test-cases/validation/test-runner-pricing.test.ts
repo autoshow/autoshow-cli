@@ -81,6 +81,7 @@ const EXPECTED_BUDGET_KEYS = [
   'video-minimax-T2V-01',
   'video-minimax-T2V-01-Director',
   'write-anthropic-claude-haiku-4-5',
+  'write-anthropic-claude-opus-4-7',
   'write-anthropic-claude-opus-4-6',
   'write-anthropic-claude-sonnet-4-6',
   'write-gemini-gemini-3.1-flash-lite-preview',

@@ -38,9 +38,10 @@ collectTargets() checks all flags - multiple providers can run sequentially:
   │  Requires: GEMINI_API_KEY                                    │
   │                                                              │
   │  Anthropic:                                                  │
-  │  ├── claude-opus-4-6                                         │
+  │  ├── claude-opus-4-7                                         │
   │  ├── claude-sonnet-4-6                                       │
-  │  └── claude-haiku-4-5                                        │
+  │  ├── claude-haiku-4-5                                        │
+  │  └── claude-opus-4-6                                         │
   │  Requires: ANTHROPIC_API_KEY                                 │
   │                                                              │
   │  OpenAI:                                                     │

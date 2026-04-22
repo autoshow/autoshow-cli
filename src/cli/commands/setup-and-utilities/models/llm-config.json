@@ -109,12 +109,19 @@
     "description": "Anthropic Claude language models",
     "type": "api",
     "models": {
+      "claude-opus-4-7": {
+        "description": "Claude Opus 4.7 — most capable generally available model",
+        "inputCostPer1MUSD": 5,
+        "inputCostPer1MCents": 500,
+        "outputCostPer1MUSD": 25,
+        "outputCostPer1MCents": 2500
+      },
       "claude-opus-4-6": {
-        "description": "Claude Opus 4.6 — most capable",
-        "inputCostPer1MUSD": 15,
-        "inputCostPer1MCents": 1500,
-        "outputCostPer1MUSD": 75,
-        "outputCostPer1MCents": 7500,
+        "description": "Claude Opus 4.6 — previous Opus release",
+        "inputCostPer1MUSD": 5,
+        "inputCostPer1MCents": 500,
+        "outputCostPer1MUSD": 25,
+        "outputCostPer1MCents": 2500,
         "estimation": {
           "costMultiplier": 0.5165,
           "msPer1KTokens": 14920

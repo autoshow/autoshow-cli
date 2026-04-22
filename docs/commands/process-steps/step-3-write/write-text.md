@@ -67,7 +67,7 @@ If you pass `--llama` without a value, `write` uses the default local model `ggm
 | Provider | Selection | Models |
 |----------|-----------|--------|
 | OpenAI | `--openai <model>` | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
-| Anthropic | `--anthropic <model>` | `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-haiku-4-5` |
+| Anthropic | `--anthropic <model>` | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-6` |
 | Gemini | `--gemini <model>` | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
 | Groq | `--groq <model>` | `openai/gpt-oss-20b`, `openai/gpt-oss-120b` |
 | MiniMax | `--minimax <model>` | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
@@ -103,7 +103,7 @@ bun as write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF
 
 # Hosted providers
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
-bun as write input/examples/audio/1-audio.mp3 --anthropic claude-sonnet-4-6
+bun as write input/examples/audio/1-audio.mp3 --anthropic claude-opus-4-7
 bun as write input/examples/audio/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview
 
 # Hosted STT plus hosted write

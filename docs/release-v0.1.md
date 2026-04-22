@@ -278,7 +278,7 @@ Notable behavior:
 | llama.cpp | setup-managed defaults `ggml-org/gemma-3-270m-it-GGUF`, `ggml-org/Qwen3-0.6B-GGUF`, plus arbitrary Hugging Face repo IDs in `namespace/repo_name` form |
 | OpenAI LLM | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Groq LLM | `openai/gpt-oss-20b`, `openai/gpt-oss-120b` |
-| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-haiku-4-5` |
+| Anthropic | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-6` |
 | Gemini LLM | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
 | MiniMax LLM | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
 | Grok LLM | `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |

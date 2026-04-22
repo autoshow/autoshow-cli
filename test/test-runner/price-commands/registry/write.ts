@@ -7,6 +7,7 @@ export const writeRegistry: PriceSelectionEntry[] = [
     command('write-openai-gpt-5.4-pro', 'write-openai-gpt-5.4-pro', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4-pro', '--price']),
     command('write-openai-gpt-5.4-mini', 'write-openai-gpt-5.4-mini', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4-mini', '--price']),
     command('write-openai-gpt-5.4-nano', 'write-openai-gpt-5.4-nano', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4-nano', '--price']),
+    command('write-anthropic-claude-opus-4-7', 'write-anthropic-claude-opus-4-7', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--anthropic', 'claude-opus-4-7', '--price']),
     command('write-anthropic-claude-opus-4-6', 'write-anthropic-claude-opus-4-6', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--anthropic', 'claude-opus-4-6', '--price']),
     command('write-anthropic-claude-sonnet-4-6', 'write-anthropic-claude-sonnet-4-6', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--anthropic', 'claude-sonnet-4-6', '--price']),
     command('write-anthropic-claude-haiku-4-5', 'write-anthropic-claude-haiku-4-5', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--anthropic', 'claude-haiku-4-5', '--price']),

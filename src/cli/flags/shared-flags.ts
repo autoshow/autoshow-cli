@@ -11,6 +11,7 @@ import {
   SUPPORTED_GLADIA_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
+  SUPPORTED_ANTHROPIC_MODELS,
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
@@ -197,7 +198,7 @@ export const llmProviderFlags = {
     type: [String] as [StringConstructor]
   },
   anthropic: {
-    description: 'Anthropic model (omit value for cheapest supported model): claude-sonnet-4-6|claude-opus-4-6|claude-haiku-4-5',
+    description: buildModelDescription('Anthropic model', SUPPORTED_ANTHROPIC_MODELS),
     type: [String] as [StringConstructor]
   },
   gemini: {
