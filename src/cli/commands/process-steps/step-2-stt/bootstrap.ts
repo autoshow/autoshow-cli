@@ -18,6 +18,10 @@ const toBootstrapProviderId = (
       return 'gcloud-stt'
     case 'aws':
       return 'aws-stt'
+    case 'deepinfra':
+      return 'deepinfra-stt'
+    case 'deapi':
+      return 'deapi-stt'
     case 'elevenlabs':
       return 'elevenlabs-stt'
     case 'deepgram':
@@ -36,6 +40,8 @@ const toBootstrapProviderId = (
       return 'assemblyai-stt'
     case 'gladia':
       return 'gladia-stt'
+    case 'supadata':
+      return 'supadata-stt'
     case 'youtube-captions':
       return ''
   }

@@ -19,18 +19,21 @@ export type EmbeddedJson = {
   }>
 }
 
-export type GroqTranscriptionSegment = {
+export type OpenAICompatibleTranscriptionSegment = {
   start?: unknown
   end?: unknown
   text?: unknown
 }
 
-export type GroqTranscriptionResponse = {
+export type OpenAICompatibleTranscriptionResponse = {
   text?: unknown
   segments?: unknown
 }
 
-export type TranscribeEngine = 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'whisper' | 'youtube-captions'
+export type GroqTranscriptionSegment = OpenAICompatibleTranscriptionSegment
+export type GroqTranscriptionResponse = OpenAICompatibleTranscriptionResponse
+
+export type TranscribeEngine = 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'supadata' | 'whisper' | 'youtube-captions'
 
 export type TranscribeEngineCapabilities = {
   diarizationByDefault: boolean

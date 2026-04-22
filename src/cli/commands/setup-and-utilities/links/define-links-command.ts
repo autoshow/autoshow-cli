@@ -1,6 +1,7 @@
 import { defineCommand } from 'clerc'
 import modelLinks from './model-links.json'
 import * as l from '~/logger'
+import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { CLIUsageError } from '~/utils/error-handler'
 
 type ModelLinksData = Record<string, Record<string, string[]>>
@@ -16,8 +17,13 @@ type RunLinksOptions = {
 
 const data = modelLinks as ModelLinksData
 export const LINKS_OUTPUT_DIR = new URL('../../../../../project/links/', import.meta.url)
+const HTML_MIME_HINTS = ['text/html', 'application/xhtml+xml'] as const
 
 const normalizeTokens = (tokens: string[]): string[] => [...new Set(tokens.map(token => token.toLowerCase()))].sort()
+const isHtmlContentType = (contentType: string): boolean =>
+  HTML_MIME_HINTS.some((hint) => contentType.includes(hint))
+const looksLikeHtmlDocument = (content: string): boolean =>
+  /^(?:<!doctype html\b|<html\b|<head\b|<body\b)/i.test(content.trimStart())
 
 export const getDefaultLinksOutputFileName = (
   serviceSelections: Map<string, string[]>,
@@ -156,11 +162,21 @@ const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<string> => {
       throw new Error(`HTTP ${response.status} ${response.statusText}`)
     }
 
-    const content = (await response.text()).trim()
-    if (content.length === 0) {
+    const contentType = (response.headers.get('content-type') ?? '').toLowerCase()
+    const fetchedText = (await response.text()).trim()
+    if (fetchedText.length === 0) {
       l.warn(`Fetched empty response from ${url}`)
       return `<!-- Empty response from ${url} -->`
     }
+
+    const content = (isHtmlContentType(contentType) || looksLikeHtmlDocument(fetchedText))
+      ? (await extractHtmlToMarkdown({
+          html: fetchedText,
+          documentUrl: response.url || url,
+          sourceUrl: url,
+          finalUrl: response.url || url
+        })).markdown
+      : fetchedText
 
     return `<!-- Source: ${url} -->\n\n${content}`
   } catch (error) {

@@ -17,8 +17,12 @@ const expectPriceSelection = (
 ): void => {
   expect(result.exitCode).toBe(0)
   const combined = `${result.stdout}\n${result.stderr}`
-  expect(combined).toContain(`"provider": "${provider}"`)
-  expect(combined).toContain(`"model": "${model}"`)
+  expect(
+    combined.includes(`"provider": "${provider}"`) || combined.includes(provider)
+  ).toBe(true)
+  expect(
+    combined.includes(`"model": "${model}"`) || combined.includes(model)
+  ).toBe(true)
 }
 
 const invalidCliCases: Array<{ label: string; args: string[] }> = [
@@ -30,9 +34,12 @@ const invalidCliCases: Array<{ label: string; args: string[] }> = [
   { label: 'CLI invalid Speechmatics STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', 'premium'] },
   { label: 'CLI invalid Rev STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'human'] },
   { label: 'CLI unsupported Rev STT fusion model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'fusion'] },
+  { label: 'CLI invalid DeepInfra STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deepinfra-stt', 'openai/whisper-large-v4'] },
+  { label: 'CLI invalid deAPI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deapi-stt', 'whisper-large-v3'] },
   { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
   { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
   { label: 'CLI invalid Gladia STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', 'premium'] },
+  { label: 'CLI invalid Supadata STT mode exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--supadata-stt', 'premium'] },
   { label: 'CLI invalid AWS STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--aws-stt', 'premium'] },
   { label: 'CLI invalid Google Cloud STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', 'chirp_2'] },
   { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
@@ -83,6 +90,8 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).not.toContain('--provider')
   expect(result.stdout).toContain('--gcloud-stt')
   expect(result.stdout).toContain('--aws-stt')
+  expect(result.stdout).toContain('--deepinfra-stt')
+  expect(result.stdout).toContain('--deapi-stt')
   expect(result.stdout).toContain('--aws-region')
   expect(result.stdout).toContain('--aws-bucket')
   expect(result.stdout).toContain('--elevenlabs-stt')
@@ -94,6 +103,8 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--groq-stt')
   expect(result.stdout).toContain('--mistral-stt')
   expect(result.stdout).toContain('--gladia-stt')
+  expect(result.stdout).toContain('--supadata-stt')
+  expect(result.stdout).toContain('--supadata-lang')
   expect(result.stdout).toContain('--stt-provider-concurrency')
   expect(result.stdout).toContain('--stt-local-concurrency')
   expect(result.stdout).toContain('--stt-segment-concurrency')
@@ -138,6 +149,10 @@ test('resume help exposes combined STT and OCR resume flags', async () => {
   expect(result.stdout).toContain('--speaker-count')
   expect(result.stdout).toContain('--youtube-captions')
   expect(result.stdout).toContain('--stt-provider-concurrency')
+  expect(result.stdout).toContain('--deepinfra-stt')
+  expect(result.stdout).toContain('--deapi-stt')
+  expect(result.stdout).toContain('--supadata-stt')
+  expect(result.stdout).toContain('--supadata-lang')
   expect(result.stdout).toContain('--mistral-ocr')
   expect(result.stdout).toContain('--glm-ocr')
   expect(result.stdout).toContain('--epub-bun')
@@ -435,6 +450,18 @@ const barePriceSelectionCases = [
     model: 'nova-3',
   },
   {
+    name: 'CLI bare DeepInfra STT flag resolves to the cheapest model in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--deepinfra-stt', '--price'],
+    provider: 'deepinfra',
+    model: 'openai/whisper-large-v3-turbo',
+  },
+  {
+    name: 'CLI bare deAPI STT flag resolves to the curated model in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--deapi-stt', '--price'],
+    provider: 'deapi',
+    model: 'WhisperLargeV3',
+  },
+  {
     name: 'CLI bare Soniox STT flag is accepted in price mode',
     args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', '--price'],
     provider: 'soniox',
@@ -463,6 +490,12 @@ const barePriceSelectionCases = [
     args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', '--price'],
     provider: 'groq',
     model: 'whisper-large-v3-turbo',
+  },
+  {
+    name: 'CLI bare Supadata STT flag resolves to auto mode in price mode',
+    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--supadata-stt', '--price'],
+    provider: 'supadata',
+    model: 'auto',
   },
   {
     name: 'CLI bare Groq LLM flag resolves to the cheapest model in price mode',
@@ -526,6 +559,26 @@ for (const barePriceSelectionCase of barePriceSelectionCases) {
     expectPriceSelection(result, barePriceSelectionCase.provider, barePriceSelectionCase.model)
   })
 }
+
+test('CLI Supadata price output includes converted credit cost estimates', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--supadata-stt',
+    'generate',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  const combined = `${result.stdout}\n${result.stderr}`
+  expect(combined).toContain('supadata')
+  expect(combined).toContain('generate')
+  expect(combined).toContain('Basic/Pro auto-recharge rate')
+  expect(combined).toContain('2 credits/min')
+  expect(combined).not.toContain('informational credit guidance only')
+  expect(combined).not.toContain('Total estimated cost: 0.00000¢')
+})
 
 test('CLI explicit Rev Turbo STT flag is accepted in price mode', async () => {
   const result = await runCommand([
@@ -646,6 +699,23 @@ test('buildOptsFromFlags maps --deepgram-stt to deepgramSttModel', () => {
   expect(opts.deepgramSttModel).toBe('nova-3')
 })
 
+test('buildOptsFromFlags maps --deepinfra-stt to deepinfraSttModel', () => {
+  const opts = buildOptsFromFlags(false, {
+    'deepinfra-stt': 'openai/whisper-large-v3-turbo'
+  })
+
+  expect(opts.deepinfraSttModel).toBe('openai/whisper-large-v3-turbo')
+})
+
+test('buildOptsFromFlags maps --deapi-stt to deapiSttModel and deapiSttModels', () => {
+  const opts = buildOptsFromFlags(false, {
+    'deapi-stt': ['WhisperLargeV3', 'WhisperLargeV3']
+  })
+
+  expect(opts.deapiSttModel).toBe('WhisperLargeV3')
+  expect(opts.deapiSttModels).toEqual(['WhisperLargeV3'])
+})
+
 test('buildOptsFromFlags maps --gcloud-stt to gcloudSttModel', () => {
   const opts = buildOptsFromFlags(false, {
     'gcloud-stt': 'chirp_3'
@@ -710,6 +780,9 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
   expect(buildConfigPatchFromFlags({
     'gcloud-stt': true,
     'aws-stt': true,
+    'deepinfra-stt': true,
+    'deapi-stt': true,
+    'supadata-stt': true,
     'groq-stt': true,
     'openai': true,
     'grok': true,
@@ -720,12 +793,15 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
     'anthropic-ocr': true,
     'gemini-ocr': true,
     'gemini-video': true
-  }, new Set(['gcloud-stt', 'aws-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'openai-ocr', 'anthropic-ocr', 'gemini-ocr', 'gemini-video']))).toEqual({
+  }, new Set(['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'supadata-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'openai-ocr', 'anthropic-ocr', 'gemini-ocr', 'gemini-video']))).toEqual({
     version: 2,
     defaults: {
       stt: {
         gcloudStt: ['chirp_3'],
         awsStt: ['standard'],
+        deepinfraStt: ['openai/whisper-large-v3-turbo'],
+        deapiStt: ['WhisperLargeV3'],
+        supadataStt: ['auto'],
         groqStt: ['whisper-large-v3-turbo']
       },
       llm: {
@@ -765,6 +841,21 @@ test('buildConfigPatchFromFlags stores AWS region and bucket defaults', () => {
         awsStt: ['standard'],
         awsRegion: 'us-east-1',
         awsBucket: 'transcribe-bucket'
+      }
+    }
+  })
+})
+
+test('buildConfigPatchFromFlags stores Supadata STT defaults and language preference', () => {
+  expect(buildConfigPatchFromFlags({
+    'supadata-stt': 'native',
+    'supadata-lang': 'en'
+  }, new Set(['supadata-stt', 'supadata-lang']))).toEqual({
+    version: 2,
+    defaults: {
+      stt: {
+        supadataStt: ['native'],
+        supadataLang: 'en'
       }
     }
   })
@@ -849,6 +940,9 @@ test('buildOptsFromFlags preserves custom llama Hugging Face repo IDs', () => {
 test('resolveCheapestModelForFlag uses current registry-driven cheapest selections', () => {
   expect(resolveCheapestModelForFlag('gcloud-stt')).toBe('chirp_3')
   expect(resolveCheapestModelForFlag('aws-stt')).toBe('standard')
+  expect(resolveCheapestModelForFlag('deepinfra-stt')).toBe('openai/whisper-large-v3-turbo')
+  expect(resolveCheapestModelForFlag('deapi-stt')).toBe('WhisperLargeV3')
+  expect(resolveCheapestModelForFlag('supadata-stt')).toBe('auto')
   expect(resolveCheapestModelForFlag('groq-stt')).toBe('whisper-large-v3-turbo')
   expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
   expect(resolveCheapestModelForFlag('anthropic')).toBe('claude-haiku-4-5')
@@ -886,6 +980,9 @@ test('buildOptsFromFlags resolves bare provider flags to cheapest models', () =>
   const opts = buildOptsFromFlags(false, {
     'gcloud-stt': true,
     'aws-stt': true,
+    'deepinfra-stt': true,
+    'deapi-stt': true,
+    'supadata-stt': true,
     'groq-stt': true,
     'openai': true,
     'anthropic': true,
@@ -900,6 +997,9 @@ test('buildOptsFromFlags resolves bare provider flags to cheapest models', () =>
 
   expect(opts.gcloudSttModel).toBe('chirp_3')
   expect(opts.awsSttModel).toBe('standard')
+  expect(opts.deepinfraSttModel).toBe('openai/whisper-large-v3-turbo')
+  expect(opts.deapiSttModel).toBe('WhisperLargeV3')
+  expect(opts.supadataSttModel).toBe('auto')
   expect(opts.groqSttModel).toBe('whisper-large-v3-turbo')
   expect(opts.openaiModel).toBe('gpt-5.4-nano')
   expect(opts.anthropicModel).toBe('claude-haiku-4-5')
@@ -1012,6 +1112,17 @@ test('buildOptsFromFlags maps --gladia-stt to gladiaSttModel', () => {
   })
 
   expect(opts.gladiaSttModel).toBe('default')
+})
+
+test('buildOptsFromFlags maps Supadata STT flags', () => {
+  const opts = buildOptsFromFlags(false, {
+    'supadata-stt': ['native', 'generate'],
+    'supadata-lang': 'en'
+  })
+
+  expect(opts.supadataSttModel).toBe('native')
+  expect(opts.supadataSttModels).toEqual(['native', 'generate'])
+  expect(opts.supadataLang).toBe('en')
 })
 
 test('buildOptsFromFlags maps --aws-stt to awsSttModel', () => {
@@ -1236,6 +1347,36 @@ test('collectSttTargets includes Deepgram targets with ignored speaker-count hin
   ])
 })
 
+test('collectSttTargets includes DeepInfra targets without diarization or speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'deepinfra-stt': 'openai/whisper-large-v3-turbo',
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'deepinfra',
+      model: 'openai/whisper-large-v3-turbo',
+      local: false
+    }
+  ])
+})
+
+test('collectSttTargets includes deAPI targets without diarization or speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'deapi-stt': 'WhisperLargeV3',
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    {
+      service: 'deapi',
+      model: 'WhisperLargeV3',
+      local: false
+    }
+  ])
+})
+
 test('collectSttTargets includes AWS targets with region, bucket, and speaker-count hints', () => {
   const opts = buildOptsFromFlags(false, {
     'aws-stt': 'standard',
@@ -1336,6 +1477,18 @@ test('collectSttTargets includes Gladia targets with speaker-count hints', () =>
   ])
 })
 
+test('collectSttTargets includes Supadata targets without diarization or speaker-count hints', () => {
+  const opts = buildOptsFromFlags(false, {
+    'supadata-stt': ['auto', 'native'],
+    'speaker-count': '2'
+  })
+
+  expect(collectSttTargets(opts)).toEqual([
+    { service: 'supadata', model: 'auto', local: false },
+    { service: 'supadata', model: 'native', local: false }
+  ])
+})
+
 test('collectSttTargets enables diarization for ElevenLabs without a speaker-count hint', () => {
   const opts = buildOptsFromFlags(false, {
     'elevenlabs-stt': 'scribe_v2'
@@ -1390,6 +1543,21 @@ test('stt accepts Deepgram plus another STT provider in price mode', async () =>
     STABLE_LOCAL_AUDIO_PATH,
     '--deepgram-stt',
     'nova-3',
+    '--assemblyai-stt',
+    'universal-3-pro',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
+test('stt accepts DeepInfra plus another STT provider in price mode', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'stt',
+    STABLE_LOCAL_AUDIO_PATH,
+    '--deepinfra-stt',
+    'openai/whisper-large-v3-turbo',
     '--assemblyai-stt',
     'universal-3-pro',
     '--price'

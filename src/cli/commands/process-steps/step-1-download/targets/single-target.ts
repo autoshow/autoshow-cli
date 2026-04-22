@@ -536,6 +536,8 @@ const processMediaSingle = async (
     gcloudSttModel: llmDefaults.gcloudSttModel,
     awsSttModels: llmDefaults.awsSttModels,
     awsSttModel: llmDefaults.awsSttModel,
+    deepinfraSttModels: llmDefaults.deepinfraSttModels,
+    deepinfraSttModel: llmDefaults.deepinfraSttModel,
     awsRegion: llmDefaults.awsRegion,
     awsBucket: llmDefaults.awsBucket,
     groqSttModels: llmDefaults.groqSttModels,

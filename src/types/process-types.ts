@@ -13,6 +13,10 @@ export const ProcessingOptionsSchema = v.pipe(
     gcloudSttModel: v.optional(v.string(), undefined),
     awsSttModels: v.optional(v.array(v.string()), undefined),
     awsSttModel: v.optional(v.string(), undefined),
+    deepinfraSttModels: v.optional(v.array(v.string()), undefined),
+    deepinfraSttModel: v.optional(v.string(), undefined),
+    deapiSttModels: v.optional(v.array(v.string()), undefined),
+    deapiSttModel: v.optional(v.string(), undefined),
     awsRegion: v.optional(v.string(), undefined),
     awsBucket: v.optional(v.string(), undefined),
     groqSttModels: v.optional(v.array(v.string()), undefined),
@@ -29,6 +33,9 @@ export const ProcessingOptionsSchema = v.pipe(
     assemblyaiSttModel: v.optional(v.string(), undefined),
     gladiaSttModels: v.optional(v.array(v.string()), undefined),
     gladiaSttModel: v.optional(v.string(), undefined),
+    supadataSttModels: v.optional(v.array(v.string()), undefined),
+    supadataSttModel: v.optional(v.string(), undefined),
+    supadataLang: v.optional(v.string(), undefined),
     speechmaticsSttModels: v.optional(v.array(v.string()), undefined),
     speechmaticsSttModel: v.optional(v.string(), undefined),
     deepgramSttModels: v.optional(v.array(v.string()), undefined),
@@ -478,8 +485,16 @@ export type Step2RuntimeMetadata = {
   } | undefined
 }
 
+export type Step2BillingMetadata = {
+  creditsUsed?: number | undefined
+  creditRateCents?: number | undefined
+  totalCost?: number | undefined
+  source?: 'response-header' | 'fallback-estimate' | 'provider_quote' | 'registry_fallback' | undefined
+  mode?: 'url' | 'duration' | 'segment_sum' | undefined
+}
+
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'supadata' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number
@@ -488,6 +503,7 @@ export type Step2Metadata = {
   captionFormat?: 'vtt' | undefined
   timings?: Step2TimingMetadata | undefined
   runtime?: Step2RuntimeMetadata | undefined
+  billing?: Step2BillingMetadata | undefined
 }
 
 export const GladiaWordSchema = v.object({

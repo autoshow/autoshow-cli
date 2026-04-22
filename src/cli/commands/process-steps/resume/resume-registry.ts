@@ -16,6 +16,7 @@ const STT_PROVIDER_SELECTION_FLAGS = [
   'reverb',
   'gcloud-stt',
   'aws-stt',
+  'deepinfra-stt',
   'elevenlabs-stt',
   'deepgram-stt',
   'soniox-stt',
@@ -24,7 +25,8 @@ const STT_PROVIDER_SELECTION_FLAGS = [
   'groq-stt',
   'mistral-stt',
   'assemblyai-stt',
-  'gladia-stt'
+  'gladia-stt',
+  'supadata-stt'
 ] as const
 
 const OCR_PROVIDER_SELECTION_FLAGS = [

@@ -21,6 +21,11 @@ const CLOUD_STT_TARGET: SttTarget = {
   model: 'whisper-large-v3-turbo',
   local: false
 }
+const DEEPINFRA_STT_TARGET: SttTarget = {
+  service: 'deepinfra',
+  model: 'openai/whisper-large-v3-turbo',
+  local: false
+}
 
 const tempDirs: string[] = []
 const envSnapshots = new Map<string, string | undefined>()
@@ -165,6 +170,23 @@ const expectHostedAacArtifact = async (
 ): Promise<void> => {
   const audio = await probePrimaryAudioStream(artifactPath)
   expect(audio.codecName).toBe('aac')
+  expect(audio.channels).toBe(1)
+  expect(audio.sampleRate).toBe(sampleRate)
+  if (audio.bitRate !== null) {
+    expect(audio.bitRate).toBeLessThanOrEqual(HOSTED_AAC_BIT_RATE_CEILING + HOSTED_AAC_BIT_RATE_TOLERANCE)
+  }
+
+  const similarity = await measureMonoAudioSiSdr(referencePath, artifactPath, sampleRate)
+  expect(similarity).toBeGreaterThan(HOSTED_AUDIO_SIMILARITY_FLOOR_DB)
+}
+
+const expectHostedMp3Artifact = async (
+  referencePath: string,
+  artifactPath: string,
+  sampleRate: number
+): Promise<void> => {
+  const audio = await probePrimaryAudioStream(artifactPath)
+  expect(audio.codecName).toBe('mp3')
   expect(audio.channels).toBe(1)
   expect(audio.sampleRate).toBe(sampleRate)
   if (audio.bitRate !== null) {
@@ -351,6 +373,31 @@ describe('audio normalization', () => {
       await expectHostedAacArtifact(inputPath, prepared.executionArtifacts.sourceMediaPath, inputAudio.sampleRate)
       expect(Object.keys(prepared.executionArtifacts)).toEqual(['sourceMediaPath'])
       expect(Object.keys(prepared.outputArtifacts)).toEqual(['sourceMediaPath'])
+    } finally {
+      await prepared.cleanup?.()
+    }
+  })
+
+  test('prepareSttMedia compresses DeepInfra shared hosted inputs to mono mp3 instead of .m4a', async () => {
+    const tempDir = await createTempDir()
+    const inputPath = join(tempDir, 'stereo.mp3')
+    const outputDir = join(tempDir, 'output')
+    await createAudioOnlyMp3Input(inputPath)
+    const inputAudio = await probePrimaryAudioStream(inputPath)
+
+    const prepared = await prepareSttMedia({
+      source: { filePath: inputPath },
+      targets: [DEEPINFRA_STT_TARGET],
+      outputDir,
+      noCache: true
+    })
+
+    try {
+      expect(basename(prepared.executionArtifacts.sourceMediaPath)).toBe('source_media.mp3')
+      expect(prepared.executionArtifacts.sourceMediaPath.endsWith('.mp3')).toBe(true)
+      expect(prepared.outputArtifacts.sourceMediaPath.endsWith('.mp3')).toBe(true)
+      expect(prepared.step1Metadata.audioFileName.endsWith('.mp3')).toBe(true)
+      await expectHostedMp3Artifact(inputPath, prepared.executionArtifacts.sourceMediaPath, inputAudio.sampleRate)
     } finally {
       await prepared.cleanup?.()
     }
@@ -575,6 +622,30 @@ describe('audio normalization', () => {
     expect(rebuiltLayout.videoStreamCount).toBe(0)
     expect(rebuiltLayout.attachedPictureCount).toBe(0)
     await expectHostedAacArtifact(inputPath, rebuilt.executionArtifacts.sourceMediaPath, inputAudio.sampleRate)
+  })
+
+  test('prepareSttMedia rebuilds cached source_media artifacts when hosted provider compatibility changes', async () => {
+    const tempDir = await createTempDir()
+    const cacheDir = join(tempDir, 'cache')
+    const inputPath = join(tempDir, 'compatibility.mp3')
+    await createAudioOnlyMp3Input(inputPath)
+    setEnv('AUTOSHOW_CACHE_DIR', cacheDir)
+
+    const hostedPrepared = await prepareSttMedia({
+      source: { filePath: inputPath },
+      targets: [CLOUD_STT_TARGET]
+    })
+
+    expect(hostedPrepared.cache.sourceMedia).toBe('miss')
+    expect(hostedPrepared.executionArtifacts.sourceMediaPath.endsWith('.m4a')).toBe(true)
+
+    const deepinfraPrepared = await prepareSttMedia({
+      source: { filePath: inputPath },
+      targets: [DEEPINFRA_STT_TARGET]
+    })
+
+    expect(deepinfraPrepared.cache.sourceMedia).toBe('miss')
+    expect(deepinfraPrepared.executionArtifacts.sourceMediaPath.endsWith('.mp3')).toBe(true)
   })
 
   test('hosted STT planner no longer emits .ogg or .flac shared artifacts', async () => {

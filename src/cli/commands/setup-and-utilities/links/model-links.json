@@ -292,6 +292,20 @@
       "https://developers.deepgram.com/docs/stt-pre-recorded-feature-overview.md"
     ]
   },
+  "DeepInfra": {
+    "General": [
+      "https://docs.deepinfra.com/.md"
+    ],
+    "STT": [
+      "https://docs.deepinfra.com/api-reference/audio/openai-audio-transcriptions.md",
+      "https://deepinfra.com/openai/whisper-large-v3/api",
+      "https://deepinfra.com/openai/whisper-large-v3/api?example=openai-speech-http",
+      "https://deepinfra.com/openai/whisper-large-v3/api?example=openai-speech-js",
+      "https://deepinfra.com/openai/whisper-large-v3-turbo/api",
+      "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-http",
+      "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-js"
+    ]
+  },
   "Soniox": {
     "STT": [
       "https://soniox.com/docs/stt/api-reference/transcriptions/create_transcription.mdx",
@@ -366,7 +380,8 @@
   },
   "HappyScribe": {
     "STT": [
-      "https://dev.happyscribe.com/sections/product/#style-guides-list-style-guides"
+      "https://dev.happyscribe.com/sections/general/",
+      "https://dev.happyscribe.com/sections/product/"
     ]
   },
   "DeAPI": {

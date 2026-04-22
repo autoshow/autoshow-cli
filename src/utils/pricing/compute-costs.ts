@@ -39,6 +39,11 @@ import {
   computeActualGeminiOcrCost,
   OPENAI_OCR_PRICE_NOTE
 } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
+import {
+  computeSupadataActualCost,
+  estimateSupadataCost,
+  getSupadataCreditRateCents
+} from './supadata-pricing'
 
 export const parseDurationToSeconds = (duration: string): number => {
   if (!duration || duration === 'Unknown') return 0
@@ -198,6 +203,42 @@ const applyCostMultiplier = (cost: number, multiplier: number): number => cost *
 const computeSttCost = (service: string, model: string, durationSeconds: number): number =>
   computeBilledSttCost(service, model, durationSeconds).cost
 
+const computeActualSttCharge = (
+  metadata: Step2Metadata,
+  durationSeconds: number
+): { cost: number, inputMetric: string, inputValue: number } => {
+  const service = metadata.transcriptionService
+  const model = resolveTranscriptionModel(metadata)
+
+  if (service === 'supadata') {
+    const actual = computeSupadataActualCost(
+      model,
+      durationSeconds,
+      metadata.billing?.creditsUsed,
+      metadata.billing?.creditRateCents ?? getSupadataCreditRateCents()
+    )
+    return {
+      cost: actual.totalCost,
+      inputMetric: 'credits',
+      inputValue: actual.creditsUsed
+    }
+  }
+
+  if (typeof metadata.billing?.totalCost === 'number' && Number.isFinite(metadata.billing.totalCost)) {
+    return {
+      cost: metadata.billing.totalCost,
+      inputMetric: 'durationSeconds',
+      inputValue: durationSeconds
+    }
+  }
+
+  return {
+    cost: computeSttCost(service, model, durationSeconds),
+    inputMetric: 'durationSeconds',
+    inputValue: durationSeconds
+  }
+}
+
 type ComputeActualCostsInput = {
   step1?: Step1Metadata | undefined
   step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
@@ -314,17 +355,15 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     const durationSeconds = parseDurationToSeconds(input.step1.duration)
     const service = input.step2.transcriptionService
     const model = resolveTranscriptionModel(input.step2)
-    let cost = 0
-
-    cost = computeSttCost(service, model, durationSeconds)
+    const actual = computeActualSttCharge(input.step2, durationSeconds)
 
     steps.push({
       step: 'stt',
       provider: service,
       model,
-      cost,
-      inputMetric: 'durationSeconds',
-      inputValue: durationSeconds
+      cost: actual.cost,
+      inputMetric: actual.inputMetric,
+      inputValue: actual.inputValue
     })
   }
 
@@ -363,13 +402,14 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     for (const step2Entry of input.step2) {
       const service = step2Entry.transcriptionService
       const model = resolveTranscriptionModel(step2Entry)
+      const actual = computeActualSttCharge(step2Entry, durationSeconds)
       steps.push({
         step: 'stt',
         provider: service,
         model,
-        cost: computeSttCost(service, model, durationSeconds),
-        inputMetric: 'durationSeconds',
-        inputValue: durationSeconds
+        cost: actual.cost,
+        inputMetric: actual.inputMetric,
+        inputValue: actual.inputValue
       })
     }
   }
@@ -475,6 +515,8 @@ type ComputeEstimatedCostsInput = {
   whisperModel?: string | undefined
   gcloudSttModel?: string | undefined
   awsSttModel?: string | undefined
+  deepinfraSttModel?: string | undefined
+  deapiSttModel?: string | undefined
   groqSttModel?: string | undefined
   elevenlabsSttModel?: string | undefined
   deepgramSttModel?: string | undefined
@@ -484,6 +526,7 @@ type ComputeEstimatedCostsInput = {
   mistralSttModel?: string | undefined
   assemblyaiSttModel?: string | undefined
   gladiaSttModel?: string | undefined
+  supadataSttModel?: string | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
@@ -549,6 +592,23 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         continue
       }
 
+      if (target.service === 'supadata') {
+        const estimation = getSttEstimation(target.service, target.model)
+        const supadataEstimate = estimateSupadataCost(target.model, durationSeconds)
+        const cost = applyCostMultiplier(supadataEstimate.totalCost, estimation.costMultiplier)
+        totalCost += cost
+        steps.push({
+          step: 'stt',
+          provider: target.service,
+          model: target.model,
+          cost,
+          costMultiplier: estimation.costMultiplier,
+          durationSeconds,
+          note: supadataEstimate.note
+        })
+        continue
+      }
+
       const estimation = getSttEstimation(target.service, target.model)
       const cost = applyCostMultiplier(computeSttCost(target.service, target.model, durationSeconds), estimation.costMultiplier)
       totalCost += cost
@@ -560,6 +620,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     const STT_FIELD_MAP = [
       { field: 'gcloudSttModel' as const, provider: 'gcloud' },
       { field: 'awsSttModel' as const, provider: 'aws' },
+      { field: 'deepinfraSttModel' as const, provider: 'deepinfra' },
+      { field: 'deapiSttModel' as const, provider: 'deapi' },
       { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
       { field: 'deepgramSttModel' as const, provider: 'deepgram' },
       { field: 'sonioxSttModel' as const, provider: 'soniox' },
@@ -569,15 +631,39 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'mistralSttModel' as const, provider: 'mistral' },
       { field: 'assemblyaiSttModel' as const, provider: 'assemblyai' },
       { field: 'gladiaSttModel' as const, provider: 'gladia' },
+      { field: 'supadataSttModel' as const, provider: 'supadata' },
       { field: 'whisperModel' as const, provider: 'whisper' },
     ]
     for (const { field, provider } of STT_FIELD_MAP) {
       const model = input[field]
       if (typeof model === 'string' && model.length > 0) {
         const estimation = getSttEstimation(provider, model)
+        if (provider === 'supadata') {
+          const supadataEstimate = estimateSupadataCost(model, durationSeconds)
+          const cost = applyCostMultiplier(supadataEstimate.totalCost, estimation.costMultiplier)
+          totalCost += cost
+          steps.push({
+            step: 'stt',
+            provider,
+            model,
+            cost,
+            costMultiplier: estimation.costMultiplier,
+            durationSeconds,
+            note: supadataEstimate.note
+          })
+          break
+        }
+
         const cost = applyCostMultiplier(computeSttCost(provider, model, durationSeconds), estimation.costMultiplier)
         totalCost += cost
-        steps.push({ step: 'stt', provider, model, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
+        steps.push({
+          step: 'stt',
+          provider,
+          model,
+          cost,
+          costMultiplier: estimation.costMultiplier,
+          durationSeconds,
+        })
         break
       }
     }
@@ -826,7 +912,9 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           model: s.model,
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
-          durationSeconds: s.durationSeconds
+          durationSeconds: s.durationSeconds,
+          ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {}),
+          ...(typeof s.note === 'string' ? { note: s.note } : {})
         })
         break
       case 'extract':
@@ -896,6 +984,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           model: s.model,
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          ...(typeof s.note === 'string' ? { note: s.note } : {}),
         })
         break
     }

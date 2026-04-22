@@ -25,6 +25,7 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'gcloud',
   'aws',
   'deepgram',
+  'deapi',
   'elevenlabs',
   'soniox',
   'speechmatics',
@@ -33,6 +34,7 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'mistral',
   'assemblyai',
   'gladia',
+  'supadata',
   'youtube-captions'
 ])
 
@@ -97,6 +99,35 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
 
   const timings = parseStoredStep2TimingMetadata(value['timings'])
   const runtime = parseStep2RuntimeMetadata(value['runtime'])
+  let billing: Step2Metadata['billing'] | undefined
+  if (isRecord(value['billing'])) {
+    const parsedBilling: NonNullable<Step2Metadata['billing']> = {}
+    if (typeof value['billing']['creditsUsed'] === 'number') {
+      parsedBilling.creditsUsed = value['billing']['creditsUsed']
+    }
+    if (typeof value['billing']['creditRateCents'] === 'number') {
+      parsedBilling.creditRateCents = value['billing']['creditRateCents']
+    }
+    if (typeof value['billing']['totalCost'] === 'number') {
+      parsedBilling.totalCost = value['billing']['totalCost']
+    }
+    if (
+      value['billing']['source'] === 'response-header'
+      || value['billing']['source'] === 'fallback-estimate'
+      || value['billing']['source'] === 'provider_quote'
+      || value['billing']['source'] === 'registry_fallback'
+    ) {
+      parsedBilling.source = value['billing']['source']
+    }
+    if (
+      value['billing']['mode'] === 'url'
+      || value['billing']['mode'] === 'duration'
+      || value['billing']['mode'] === 'segment_sum'
+    ) {
+      parsedBilling.mode = value['billing']['mode']
+    }
+    billing = Object.keys(parsedBilling).length > 0 ? parsedBilling : undefined
+  }
 
   return {
     transcriptionService: value['transcriptionService'],
@@ -109,7 +140,8 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
     ...(typeof value['captionLanguage'] === 'string' ? { captionLanguage: value['captionLanguage'] } : {}),
     ...(value['captionFormat'] === 'vtt' ? { captionFormat: value['captionFormat'] } : {}),
     ...(timings ? { timings } : {}),
-    ...(runtime ? { runtime } : {})
+    ...(runtime ? { runtime } : {}),
+    ...(billing && Object.keys(billing).length > 0 ? { billing } : {})
   }
 }
 

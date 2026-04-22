@@ -1,6 +1,8 @@
 import {
   SUPPORTED_ANTHROPIC_MODELS,
   SUPPORTED_AWS_STT_MODELS,
+  SUPPORTED_DEAPI_STT_MODELS,
+  SUPPORTED_DEEPINFRA_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
@@ -24,6 +26,7 @@ import {
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
+  SUPPORTED_SUPADATA_STT_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MODELS,
@@ -38,8 +41,10 @@ export type GroqModel = typeof SUPPORTED_GROQ_MODELS[number]
 export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
 export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
+export type DeapiSttModel = typeof SUPPORTED_DEAPI_STT_MODELS[number]
 export type GcloudSttModel = typeof SUPPORTED_GCLOUD_STT_MODELS[number]
 export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
+export type DeepinfraSttModel = typeof SUPPORTED_DEEPINFRA_STT_MODELS[number]
 export type ElevenlabsSttModel = typeof SUPPORTED_ELEVENLABS_STT_MODELS[number]
 export type SonioxSttModel = typeof SUPPORTED_SONIOX_STT_MODELS[number]
 export type SpeechmaticsSttModel = typeof SUPPORTED_SPEECHMATICS_STT_MODELS[number]
@@ -48,6 +53,7 @@ export type GroqSttModel = typeof SUPPORTED_GROQ_STT_MODELS[number]
 export type MistralSttModel = typeof SUPPORTED_MISTRAL_STT_MODELS[number]
 export type AssemblyaiSttModel = typeof SUPPORTED_ASSEMBLYAI_STT_MODELS[number]
 export type GladiaSttModel = typeof SUPPORTED_GLADIA_STT_MODELS[number]
+export type SupadataSttModel = typeof SUPPORTED_SUPADATA_STT_MODELS[number]
 export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
 export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
 export type OpenAIOcrModel = typeof SUPPORTED_OPENAI_OCR_MODELS[number]
@@ -192,6 +198,7 @@ export type EstimateVideoCostOptions = {
 export type SttStepEstimate = CostEstimateBase & {
   step: 'stt'
   durationSeconds: number
+  estimateType?: 'heuristic' | 'exact'
 }
 
 export type LlmStepEstimate = ProviderModelBase & {

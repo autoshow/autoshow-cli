@@ -10,6 +10,7 @@ Download audio and transcribe it with local or hosted speech-to-text engines.
 - [Engines](#engines)
 - [Examples](#examples)
 - [Flags](#flags)
+- [Pricing And Manifests](#pricing-and-manifests)
 - [Notes](#notes)
 
 ## Setup
@@ -54,6 +55,8 @@ bun as setup --step reverb
 | Provider | Required env | Optional override |
 |----------|--------------|-------------------|
 | Groq | `GROQ_API_KEY` | - |
+| DeepInfra | `DEEPINFRA_API_KEY` | `DEEPINFRA_BASE_URL` |
+| deAPI | `DEAPI_API_KEY` | `DEAPI_BASE_URL` |
 | ElevenLabs | `ELEVENLABS_API_KEY` | - |
 | Deepgram | `DEEPGRAM_API_KEY` | `DEEPGRAM_BASE_URL` |
 | Soniox | `SONIOX_API_KEY` | `SONIOX_BASE_URL` |
@@ -104,6 +107,8 @@ If no engine flag is provided, `stt` defaults to Whisper with the `tiny` model.
 | Engine | Selection | Models / behavior |
 |--------|-----------|-------------------|
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3-turbo`, `whisper-large-v3` |
+| DeepInfra Whisper | `--deepinfra-stt <model>` | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
+| deAPI | `--deapi-stt <model>` | `WhisperLargeV3`; hosted async STT with exact provider quote support, no diarization by default, and no speaker-count hint support |
 | ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
 | Google Cloud STT | `--gcloud-stt <model>` | `chirp_3`; sync REST via gcloud CLI auth with diarization always enabled |
 | AWS Transcribe | `--aws-stt <model>` | `standard`; async batch via AWS CLI with diarization always enabled |
@@ -136,10 +141,15 @@ bun as stt input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
 bun as stt input/examples/audio/1-audio.mp3 --aws-stt
 bun as stt input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt
+bun as stt input/examples/audio/1-audio.mp3 --deepinfra-stt
+bun as stt input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 
 # Same provider, multiple models
 bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt standard --speechmatics-stt enhanced
+
+# deAPI exact preflight on a supported passthrough URL
+bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
 
 # Prefer YouTube captions, then fall back to STT
 bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
@@ -166,6 +176,8 @@ bun as stt https://www.youtube.com/@channelname --youtube-captions --batch-all
 | `--speechmatics-stt <model>` | Select one or more Speechmatics STT models; omit the value to use `standard` |
 | `--rev-stt <model>` | Select one or more Rev STT models; omit the value to use `low_cost` |
 | `--groq-stt <model>` | Select one or more Groq STT models; omit the value to use the cheapest supported model |
+| `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models; omit the value to use `openai/whisper-large-v3-turbo` |
+| `--deapi-stt <model>` | Select one or more deAPI STT models; omit the value to keep `WhisperLargeV3` |
 | `--mistral-stt <model>` | Select one or more Mistral STT models; omit the value to use `voxtral-mini-2602` |
 | `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models; omit the value to use `universal-3-pro` |
 | `--gladia-stt <model>` | Select one or more Gladia STT models; omit the value to keep `default` |
@@ -185,12 +197,22 @@ bun as stt https://www.youtube.com/@channelname --youtube-captions --batch-all
 | `--no-cache` | Bypass the media cache for this run |
 | `--price` | Show the aggregated estimate and exit |
 
+## Pricing And Manifests
+
+deAPI uses live provider pricing when its quote endpoint succeeds.
+
+- `--price` and budget preflight call deAPI pricing before execution. When the original source URL is a recognized deAPI passthrough host such as YouTube, X/Twitter, Twitch, Kick, or TikTok, AutoShow quotes with `source_url`. Otherwise it quotes by prepared-media `duration_seconds`. Both quote modes request timestamps.
+- Successful deAPI preflight quotes are recorded as `estimateType: exact`. If the pricing endpoint fails or returns `429`, AutoShow retries normally, warns on fallback, and uses local registry pricing instead.
+- During execution, AutoShow captures the deAPI quote before each remote job submission and writes it into `run.json` under `step2.billing` with `totalCost`, `source`, and `mode`. Actual STT cost prefers this stored provider quote over duration-based registry math.
+- deAPI runs stay on the existing async checkpoint flow. Supported passthrough URLs use remote URL mode, while local files and unsupported URLs use prepared-media multipart upload mode. `providers/<service>-<model>/checkpoint.json` keeps the remote request id so `resume` can continue polling without recreating the job.
+- If deAPI rejects an upload as too large, AutoShow falls back to the normal split-and-merge path, re-quotes each segment, and records the summed billed amount with `step2.billing.mode: 'segment_sum'`.
+
 ## Notes
 
 - Before any hosted STT provider upload, Autoshow now stages one shared stripped audio-only artifact. The default hosted artifact is mono AAC-LC in `.m4a` capped at 96 kbps, preserves the original sample rate, and drops cover art/chapters/metadata/extra streams. Low-bitrate mono `.m4a`/AAC and `.mp3` inputs stay on a stream-copy cleanup path instead of taking a second lossy encode.
 - Single-provider STT runs write root `transcription.txt` plus root `result.json`.
 - Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
-- `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
+- `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI v1. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
 - Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request.
 - Mistral STT requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.

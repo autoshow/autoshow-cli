@@ -133,6 +133,7 @@ export const processVideo = async (
     model: string
     message: string
     retryable: boolean
+    skipped?: boolean | undefined
     stage?: string | undefined
     status?: number | undefined
   }> = []
@@ -177,7 +178,7 @@ export const processVideo = async (
       }
     }
 
-    if (successfulSttProviders.length === 0 && sttTargets.length === 1) {
+    if (successfulSttProviders.length === 0 && sttTargets.length === 1 && sttTargets[0]?.service !== 'supadata') {
       const target = sttTargets[0] as SttTarget
       const audioDurationSeconds = preparedSttMedia.durationSeconds
       const singleTranscription = await runWithLogContext({ step: 'step-2-stt' }, async () =>
@@ -186,6 +187,8 @@ export const processVideo = async (
           reverbVerbatimicity: processingOptions.reverbVerbatimicity,
           sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
           audioDurationSeconds,
+          sourceUrl: preparedSttMedia.step1Metadata.url,
+          language: processingOptions.supadataLang,
           ...(mistralPassController ? { mistralPassController } : {})
         })
       )
@@ -216,6 +219,8 @@ export const processVideo = async (
               reverbVerbatimicity: processingOptions.reverbVerbatimicity,
               sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
               audioDurationSeconds,
+              sourceUrl: preparedSttMedia.step1Metadata.url,
+              language: processingOptions.supadataLang,
               ...(mistralPassController ? { mistralPassController } : {})
             })
           )
@@ -227,12 +232,27 @@ export const processVideo = async (
           }
           failuresByIndex.delete(index)
         } catch (error) {
-          await rm(providerDir, { recursive: true, force: true })
-          failuresByIndex.set(index, {
+          const failure = {
             service: target.service,
             model: target.model,
             ...classifySttProviderFailure(error)
-          })
+          }
+
+          if (failure.skipped === true) {
+            await Bun.write(join(providerDir, 'error.json'), JSON.stringify({
+              service: failure.service,
+              model: failure.model,
+              message: failure.message,
+              retryable: failure.retryable,
+              skipped: true,
+              ...(failure.stage ? { stage: failure.stage } : {}),
+              ...(typeof failure.status === 'number' ? { status: failure.status } : {})
+            }, null, 2))
+          } else {
+            await rm(providerDir, { recursive: true, force: true })
+          }
+
+          failuresByIndex.set(index, failure)
         }
       }
 
@@ -518,12 +538,13 @@ export const processVideo = async (
 	          model: target.model,
 	          local: target.local,
 	          artifactDir: target.service === YOUTUBE_CAPTIONS_SERVICE ? '.' : `providers/${getSttTargetDirectoryName(target)}`,
-	          status: 'failed',
+	          status: failure.skipped === true ? 'skipped' : 'failed',
 	          attempts: 1,
 	          retryable: failure.retryable,
 	          lastError: {
 	            message: failure.message,
 	            retryable: failure.retryable,
+	            ...(failure.skipped === true ? { skipped: true } : {}),
 	            ...(failure.stage ? { stage: failure.stage } : {}),
 	            ...(typeof failure.status === 'number' ? { status: failure.status } : {})
 	          }
@@ -696,7 +717,7 @@ export const processVideo = async (
   l.report.complete(outputDir, artifactFiles, { steps: stepSummaries, totalTimeMs: totalTime, totalCost: actual.totalCost })
 
   if (sttFailures.length > 0) {
-    l.warn(`write run completed with partial STT failures: ${sttFailures.map((failure) => `${failure.service}/${failure.model}: ${failure.message}`).join('; ')}`)
+    l.warn(`write run completed with partial STT failures/skips: ${sttFailures.map((failure) => `${failure.service}/${failure.model}: ${failure.message}`).join('; ')}`)
   }
 
     return outputDir

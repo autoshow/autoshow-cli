@@ -33,14 +33,14 @@ import { commandExists, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
 
 const METADATA_SCHEMA_VERSION = 1
-const SOURCE_MEDIA_ARTIFACT_VERSION = 6
+const SOURCE_MEDIA_ARTIFACT_VERSION = 7
 const DEFAULT_CACHE_MAX_GB = 20
 const DEFAULT_CACHE_MAX_AGE_DAYS = 30
 const DEFAULT_STT_ACQUIRE_CONCURRENCY = 2
 const LOCK_WAIT_MS = 50
 const LOCK_TIMEOUT_MS = 30000
 
-// New hosted STT providers must explicitly confirm .m4a support before joining this shared artifact path.
+// New hosted STT providers default to shared mp3 artifacts until .m4a support is explicitly confirmed.
 const HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES = new Set<SttTarget['service']>([
   'assemblyai',
   'aws',
@@ -74,21 +74,17 @@ const getSourceMediaAcquireConcurrency = (): number =>
   Math.max(1, parsePositiveIntegerEnv('AUTOSHOW_STT_ACQUIRE_CONCURRENCY', DEFAULT_STT_ACQUIRE_CONCURRENCY))
 
 const isHostedSttTarget = (target: SttTarget): boolean =>
-  !target.local && target.service !== 'youtube-captions'
+  !target.local && target.service !== 'youtube-captions' && target.service !== 'supadata'
 
-const resolveSourceMediaProfile = (targets: SttTarget[]): AudioNormalizationProfile =>
-  targets.some(isHostedSttTarget) ? 'hosted-stt' : 'default'
-
-const assertHostedTargetsSupportSharedSourceMedia = (targets: SttTarget[]): void => {
-  for (const target of targets) {
-    if (!isHostedSttTarget(target)) {
-      continue
-    }
-
-    if (!HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES.has(target.service)) {
-      throw new Error(`Hosted STT shared source_media defaults to AAC .m4a uploads. Confirm ${target.service} supports .m4a before adding it to the shared path.`)
-    }
+const resolveSourceMediaProfile = (targets: SttTarget[]): AudioNormalizationProfile => {
+  const hostedTargets = targets.filter(isHostedSttTarget)
+  if (hostedTargets.length === 0) {
+    return 'default'
   }
+
+  return hostedTargets.every((target) => HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES.has(target.service))
+    ? 'hosted-stt'
+    : 'hosted-stt-mp3'
 }
 
 const withSourceMediaAcquireSlot = async <T,>(fn: () => Promise<T>): Promise<T> => {
@@ -555,9 +551,6 @@ export const prepareSttMedia = async (
 ): Promise<PreparedSttMedia> => {
   const { source, targets, outputDir, noCache = false, refreshCache = false } = options
   const sourceMediaProfile = resolveSourceMediaProfile(targets)
-  if (sourceMediaProfile === 'hosted-stt') {
-    assertHostedTargetsSupportSharedSourceMedia(targets)
-  }
 
   const cacheLookup = await resolveCacheLookup(source)
   if (cacheLookup.weakFingerprint) {
@@ -642,12 +635,14 @@ export const prepareSttMedia = async (
 
       await writeFile(entryMetadataPath, JSON.stringify(cacheLookup.metadata, null, 2))
 
-      let sourceMediaExecutionPath = getEntryArtifactPath(cacheLookup.cacheKey, entry.artifacts?.source_media)
+      const sourceMediaRecord = entry.artifacts?.source_media
+      let sourceMediaExecutionPath = getEntryArtifactPath(cacheLookup.cacheKey, sourceMediaRecord)
       let sourceMediaStatus: CacheArtifactStatus = 'hit'
 
       const sourceMediaValid = sourceMediaExecutionPath
         && !refreshCache
         && entry.artifactVersions?.source_media === SOURCE_MEDIA_ARTIFACT_VERSION
+        && sourceMediaRecord?.profile === sourceMediaProfile
         && await Bun.file(sourceMediaExecutionPath).exists()
       if (!sourceMediaValid) {
         sourceMediaStatus = 'miss'
@@ -671,7 +666,8 @@ export const prepareSttMedia = async (
           entry.artifacts = {
             source_media: {
               fileName: basename(finalPath),
-              size: artifactStats.size
+              size: artifactStats.size,
+              profile: sourceMediaProfile
             }
           }
           entry.artifactVersions = {

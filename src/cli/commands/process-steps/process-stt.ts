@@ -145,6 +145,7 @@ export const classifySttProviderFailure = (
   const headers = chain.find((entry) => entry.headers instanceof Headers)?.headers
   const stage = chain.find((entry) => typeof entry.stage === 'string')?.stage
   const explicitRetryable = chain.find((entry) => typeof entry.retryable === 'boolean')?.retryable
+  const skipped = chain.some((entry) => entry.skipped === true)
   const retryAfterMs = parseRetryAfterMs(headers)
 
   let retryable = false
@@ -179,6 +180,7 @@ export const classifySttProviderFailure = (
   return {
     message,
     retryable,
+    ...(skipped ? { skipped: true } : {}),
     ...(stage ? { stage } : {}),
     ...(typeof status === 'number' ? { status } : {}),
     ...(typeof retryAfterMs === 'number' ? { retryAfterMs } : {})
@@ -212,8 +214,12 @@ const resolveTransientProviderCooldownMs = (
 }
 
 export const shouldBlockSttProviderForBatch = (
-  failure: Pick<ProviderFailure, 'message' | 'retryable' | 'stage' | 'status'>
+  failure: Pick<ProviderFailure, 'message' | 'retryable' | 'stage' | 'status' | 'skipped'>
 ): boolean => {
+  if (failure.skipped === true) {
+    return false
+  }
+
   if (failure.retryable) {
     return false
   }
@@ -284,9 +290,16 @@ const writeProviderFailureArtifacts = async (
 
 const writeSkippedProviderArtifact = async (
   providerDir: string,
-  reason: SttBatchBlockedProviderReason
-): Promise<Pick<ProviderFailure, 'errorFile'>> => {
+  reason: Pick<SttBatchBlockedProviderReason, 'service' | 'model' | 'message' | 'retryable' | 'stage' | 'status' | 'degraded'>,
+  rawResponse?: unknown
+): Promise<Pick<ProviderFailure, 'errorFile' | 'rawResponseFile'>> => {
   const errorFile = 'error.json'
+  let rawResponseFile: string | undefined
+  if (rawResponse !== undefined) {
+    rawResponseFile = 'raw-response.json'
+    await Bun.write(join(providerDir, rawResponseFile), toDiagnosticJson(rawResponse))
+  }
+
   await Bun.write(join(providerDir, errorFile), JSON.stringify({
     service: reason.service,
     model: reason.model,
@@ -295,10 +308,14 @@ const writeSkippedProviderArtifact = async (
     skipped: true,
     ...(reason.stage ? { stage: reason.stage } : {}),
     ...(typeof reason.status === 'number' ? { status: reason.status } : {}),
-    ...(reason.degraded === true ? { degraded: true } : {})
+    ...(reason.degraded === true ? { degraded: true } : {}),
+    ...(rawResponseFile ? { rawResponseFile } : {})
   }, null, 2))
 
-  return { errorFile }
+  return {
+    errorFile,
+    ...(rawResponseFile ? { rawResponseFile } : {})
+  }
 }
 
 export const resolveEffectiveSttProviderConcurrency = (
@@ -394,7 +411,8 @@ export const filterSttPreflightEstimate = (
   const steps = estimate.steps.filter((step) => step.step === 'stt')
   return {
     steps,
-    totalEstimatedCost: steps.reduce((sum, step) => sum + step.totalCost, 0)
+    totalEstimatedCost: steps.reduce((sum, step) => sum + step.totalCost, 0),
+    ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
   }
 }
 
@@ -700,7 +718,7 @@ export const processStt = async (
       }
     }
 
-    if (requestedTargets.length === 1) {
+    if (requestedTargets.length === 1 && requestedTargets[0]?.service !== 'supadata') {
       const target = requestedTargets[0] as SttTarget
       const audioPath = resolveTargetAudioPath(target, prepared)
       const audioDurationSeconds = prepared.durationSeconds
@@ -710,6 +728,8 @@ export const processStt = async (
           reverbVerbatimicity: options.reverbVerbatimicity,
           sttSegmentConcurrency: options.sttSegmentConcurrency,
           audioDurationSeconds,
+          sourceUrl: prepared.step1Metadata.url,
+          language: options.supadataLang,
           ...(mistralPassController ? { mistralPassController } : {})
         })
       )
@@ -831,21 +851,25 @@ export const processStt = async (
 
     const markTargetSkipped = async (
       index: number,
-      reason: SttBatchBlockedProviderReason
+      reason: Pick<SttBatchBlockedProviderReason, 'service' | 'model' | 'message' | 'retryable' | 'stage' | 'status' | 'degraded'>,
+      options: {
+        rawResponse?: unknown
+        attempts?: number | undefined
+      } = {}
     ): Promise<void> => {
       const target = requestedTargets[index] as SttTarget
       const providerDir = join(providersDir, getSttTargetDirectoryName(target))
       const relativeDir = getSttProviderArtifactDir(target)
       const targetKey = getSttTargetKey(target)
       await mkdir(providerDir, { recursive: true })
-      const skippedArtifacts = await writeSkippedProviderArtifact(providerDir, reason)
+      const skippedArtifacts = await writeSkippedProviderArtifact(providerDir, reason, options.rawResponse)
       providerStateMap.set(targetKey, {
         service: target.service,
         model: target.model,
         local: target.local,
         artifactDir: relativeDir,
         status: 'skipped',
-        attempts: providerStateMap.get(targetKey)?.attempts ?? 0,
+        attempts: options.attempts ?? providerStateMap.get(targetKey)?.attempts ?? 0,
         retryable: reason.retryable,
         lastError: toRecordedProviderError({
           message: reason.message,
@@ -853,7 +877,8 @@ export const processStt = async (
           skipped: true,
           ...(reason.stage ? { stage: reason.stage } : {}),
           ...(typeof reason.status === 'number' ? { status: reason.status } : {}),
-          errorFile: `${relativeDir}/${skippedArtifacts.errorFile}`
+          errorFile: `${relativeDir}/${skippedArtifacts.errorFile}`,
+          ...(skippedArtifacts.rawResponseFile ? { rawResponseFile: `${relativeDir}/${skippedArtifacts.rawResponseFile}` } : {})
         } as Omit<ProviderFailure, 'index' | 'service' | 'model'>)
       })
       failuresByIndex.delete(index)
@@ -897,6 +922,8 @@ export const processStt = async (
             reverbVerbatimicity: options.reverbVerbatimicity,
             sttSegmentConcurrency: options.sttSegmentConcurrency,
             audioDurationSeconds: preparedMedia.durationSeconds,
+            sourceUrl: preparedMedia.step1Metadata.url,
+            language: options.supadataLang,
             runMode: runOptions.outputDir ? 'backfill' : 'initial',
             ...(mistralPassController ? { mistralPassController } : {}),
             asyncLifecycle: batchCoordinator
@@ -944,6 +971,22 @@ export const processStt = async (
           ...classifySttProviderFailure(error)
         }
         const rawResponse = extractProviderRawResponse(error)
+
+        if (failure.skipped === true) {
+          batchCoordinator?.reportProviderFailure(target, failure)
+          await markTargetSkipped(index, {
+            service: target.service,
+            model: target.model,
+            message: failure.message,
+            retryable: failure.retryable,
+            ...(failure.stage ? { stage: failure.stage } : {}),
+            ...(typeof failure.status === 'number' ? { status: failure.status } : {})
+          }, {
+            rawResponse,
+            attempts: nextAttemptCount
+          })
+          return
+        }
 
         try {
           Object.assign(failure, await writeProviderFailureArtifacts(providerDir, failure, rawResponse))
@@ -1043,6 +1086,12 @@ export const processStt = async (
     const providerStates = buildProviderStates(requestedTargets, successes, failuresByIndex, providerStateMap)
     const missingProviders = buildMissingProviders(providerStates, requestedTargets)
     const metadataErrors = buildMetadataErrorEntries(providerStates)
+    const providerIssueMessages = providerStates
+      .filter((state) => state.status !== 'succeeded')
+      .map((state) => {
+        const label = formatSttTargetLabel(state)
+        return state.lastError?.message ? `${label}: ${state.lastError.message}` : label
+      })
 
     queuePromptRefresh()
     await promptRefreshChain
@@ -1183,8 +1232,12 @@ export const processStt = async (
       completionStatus,
       missingProviders,
       completionStatus === 'failed'
-        ? `All requested STT providers failed: ${failures.map(formatProviderFailure).join('; ')}`
-        : `Missing STT provider outputs: ${missingProviders.map(formatSttTargetLabel).join(', ')}`
+        ? failures.length > 0
+          ? `All requested STT providers failed: ${failures.map(formatProviderFailure).join('; ')}`
+          : `No requested STT provider produced a transcript: ${providerIssueMessages.join('; ')}`
+        : providerIssueMessages.length > 0
+          ? `Missing STT provider outputs: ${providerIssueMessages.join('; ')}`
+          : `Missing STT provider outputs: ${missingProviders.map(formatSttTargetLabel).join(', ')}`
     )
   } finally {
     await prepared?.cleanup?.()

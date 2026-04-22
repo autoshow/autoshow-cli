@@ -51,6 +51,7 @@ export type ProviderErrorLike = Error & {
   stage?: string
   status?: number
   retryable?: boolean
+  skipped?: boolean
   rawResponse?: unknown
 }
 
@@ -65,6 +66,7 @@ export type CacheArtifactStatus = 'hit' | 'miss'
 export type CacheArtifactRecord = {
   fileName: string
   size: number
+  profile?: 'default' | 'hosted-stt' | 'hosted-stt-mp3' | undefined
 }
 
 export type MediaCacheEntry = {
@@ -321,6 +323,8 @@ export type SttTargetOptions = {
   reverbVerbatimicity?: number | undefined
   sttSegmentConcurrency?: number | undefined
   audioDurationSeconds?: number | undefined
+  sourceUrl?: string | undefined
+  language?: string | undefined
   runMode?: 'initial' | 'backfill' | undefined
   asyncLifecycle?: AsyncSttLifecycleHooks | undefined
   mistralPassController?: MistralSttPassController | undefined
@@ -427,6 +431,15 @@ export type DeepgramHttpError = Error & {
   retryClass?: RetryClass
 }
 
+export type DeapiHttpError = Error & {
+  status?: number
+  headers?: Headers
+  stage?: 'create' | 'poll' | 'result' | 'price'
+  retryClass?: RetryClass
+  retryable?: boolean
+  rawResponse?: unknown
+}
+
 export type DeepgramAlternative = NonNullable<DeepgramResponse['results']['channels'][number]['alternatives']>[number]
 export type DeepgramWords = DeepgramAlternative['words']
 
@@ -435,6 +448,16 @@ export type GladiaHttpError = Error & {
   headers: Headers
   stage?: 'upload' | 'create' | 'poll'
   retryClass?: RetryClass
+  rawResponse?: unknown
+}
+
+export type SupadataHttpError = Error & {
+  status?: number
+  headers?: Headers
+  stage?: 'create' | 'poll'
+  retryClass?: RetryClass
+  retryable?: boolean
+  skipped?: boolean
   rawResponse?: unknown
 }
 

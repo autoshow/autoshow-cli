@@ -17,6 +17,7 @@ export const resumeCommand = defineCommand({
       ['bun as resume', 'Resume the newest incomplete STT or OCR output under ./output'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_item', 'Resume a single run directory in place'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_batch', 'Resume a batch directory in place'],
+      ['bun as resume ./output/2026-04-22_12-00-00-000_batch --deepinfra-stt', 'Resume only missing DeepInfra STT outputs in that target'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_batch --glm-ocr glm-ocr', 'Resume only missing GLM OCR outputs in that target']
     ]
   }

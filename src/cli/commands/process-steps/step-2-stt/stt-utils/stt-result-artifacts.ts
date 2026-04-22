@@ -20,6 +20,8 @@ const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'gcloud',
   'aws',
   'deepgram',
+  'deepinfra',
+  'deapi',
   'elevenlabs',
   'soniox',
   'speechmatics',
@@ -28,6 +30,7 @@ const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'mistral',
   'assemblyai',
   'gladia',
+  'supadata',
   'youtube-captions'
 ])
 
@@ -144,6 +147,38 @@ const parseEvidenceTimingQuality = (
   return undefined
 }
 
+const parseStoredStep2BillingMetadata = (
+  value: unknown
+): Step2Metadata['billing'] | undefined => {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const billing: NonNullable<Step2Metadata['billing']> = {}
+  if (typeof value['creditsUsed'] === 'number' && Number.isFinite(value['creditsUsed']) && value['creditsUsed'] >= 0) {
+    billing.creditsUsed = value['creditsUsed']
+  }
+  if (typeof value['creditRateCents'] === 'number' && Number.isFinite(value['creditRateCents']) && value['creditRateCents'] >= 0) {
+    billing.creditRateCents = value['creditRateCents']
+  }
+  if (typeof value['totalCost'] === 'number' && Number.isFinite(value['totalCost']) && value['totalCost'] >= 0) {
+    billing.totalCost = value['totalCost']
+  }
+  if (
+    value['source'] === 'response-header'
+    || value['source'] === 'fallback-estimate'
+    || value['source'] === 'provider_quote'
+    || value['source'] === 'registry_fallback'
+  ) {
+    billing.source = value['source']
+  }
+  if (value['mode'] === 'url' || value['mode'] === 'duration' || value['mode'] === 'segment_sum') {
+    billing.mode = value['mode']
+  }
+
+  return Object.keys(billing).length > 0 ? billing : undefined
+}
+
 const parseTranscriptionEvidence = (
   value: unknown
 ): TranscriptionEvidence | undefined => {
@@ -216,6 +251,7 @@ export const parseStoredStep2Metadata = (
 
   const timings = parseStoredStep2TimingMetadata(value['timings'])
   const runtime = parseStep2RuntimeMetadata(value['runtime'])
+  const billing = parseStoredStep2BillingMetadata(value['billing'])
 
   return {
     transcriptionService: value['transcriptionService'],
@@ -228,7 +264,8 @@ export const parseStoredStep2Metadata = (
     ...(typeof value['captionLanguage'] === 'string' ? { captionLanguage: value['captionLanguage'] } : {}),
     ...(value['captionFormat'] === 'vtt' ? { captionFormat: value['captionFormat'] } : {}),
     ...(timings ? { timings } : {}),
-    ...(runtime ? { runtime } : {})
+    ...(runtime ? { runtime } : {}),
+    ...(billing ? { billing } : {})
   }
 }
 

@@ -21,6 +21,8 @@ const TARGET_MODELS = {
   whisper: 'large-v3-turbo',
   gcloud: 'chirp_3',
   deepgram: 'nova-3',
+  deepinfra: 'openai/whisper-large-v3-turbo',
+  deapi: 'WhisperLargeV3',
   groq: 'whisper-large-v3-turbo',
   soniox: 'stt-async-v4',
   speechmatics: 'standard',
@@ -179,6 +181,7 @@ describe('shouldSplitTranscriptionInput', () => {
 
   test('does not auto-split engines without a documented upload cap', () => {
     expect(shouldSplitTranscriptionInput(createTarget('whisper'), GROQ_MAX_ATTACHMENT_BYTES * 10, undefined, false)).toBe(false)
+    expect(shouldSplitTranscriptionInput(createTarget('deepinfra'), GROQ_MAX_ATTACHMENT_BYTES * 10, undefined, false)).toBe(false)
   })
 
   test('returns detailed split reasons for size and duration caps', () => {
@@ -250,6 +253,8 @@ describe('shouldRetrySplitTranscriptionAfterError', () => {
     const error = new Error('Mistral transcription failed (413): {"message":"Request size limit exceeded"}')
     expect(shouldRetrySplitTranscriptionAfterError(createTarget('mistral'), false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError(createTarget('deepgram'), false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('deepinfra'), false, error)).toBe(true)
+    expect(shouldRetrySplitTranscriptionAfterError(createTarget('deapi'), false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError(createTarget('groq'), false, error)).toBe(true)
     expect(shouldRetrySplitTranscriptionAfterError(createTarget('speechmatics'), false, error)).toBe(true)
   })
@@ -300,6 +305,12 @@ describe('resolveDiarizationOptions', () => {
     expect(resolveDiarizationOptions({
       diarizationSpeakerCount: 2
     }, 'deepgram')).toEqual({ enabled: true })
+  })
+
+  test('ignores speaker-count for DeepInfra single-speaker Whisper models', () => {
+    expect(resolveDiarizationOptions({
+      diarizationSpeakerCount: 2
+    }, 'deepinfra')).toBeUndefined()
   })
 
   test('ignores speaker-count for Soniox while keeping diarization enabled', () => {
@@ -393,5 +404,56 @@ describe('mergeSplitTranscriptionChunks', () => {
     expect(merged.result.segments.map((segment) => segment.text)).toEqual(['first', 'second', 'third'])
     expect(merged.metadata.processingTime).toBe(600)
     expect(merged.metadata.tokenCount).toBe(6)
+  })
+
+  test('sums deAPI segment quotes into merged billing metadata', () => {
+    const merged = mergeSplitTranscriptionChunks([
+      {
+        segmentIndex: 1,
+        data: {
+          result: {
+            text: 'second',
+            segments: [{ start: '00:00:10', end: '00:00:19', text: 'second' }]
+          },
+          metadata: {
+            transcriptionService: 'deapi',
+            transcriptionModel: 'WhisperLargeV3',
+            processingTime: 200,
+            tokenCount: 2,
+            billing: {
+              totalCost: 1.25,
+              source: 'provider_quote',
+              mode: 'duration'
+            }
+          }
+        }
+      },
+      {
+        segmentIndex: 0,
+        data: {
+          result: {
+            text: 'first',
+            segments: [{ start: '00:00:00', end: '00:00:09', text: 'first' }]
+          },
+          metadata: {
+            transcriptionService: 'deapi',
+            transcriptionModel: 'WhisperLargeV3',
+            processingTime: 100,
+            tokenCount: 1,
+            billing: {
+              totalCost: 0.75,
+              source: 'provider_quote',
+              mode: 'duration'
+            }
+          }
+        }
+      }
+    ])
+
+    expect(merged.metadata.billing).toEqual({
+      totalCost: 2,
+      source: 'provider_quote',
+      mode: 'segment_sum'
+    })
   })
 })

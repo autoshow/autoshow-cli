@@ -10,6 +10,11 @@ import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/vi
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-duration'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-stt/stt-utils/elevenlabs-stt-pricing'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { isDeapiSupportedSourceUrl } from '~/cli/commands/process-steps/step-2-stt/stt-services/deapi/deapi'
+import {
+  logDeapiPricingFallbackWarning,
+  resolveDeapiTranscriptionPrice
+} from '~/cli/commands/process-steps/step-2-stt/stt-services/deapi/deapi-pricing'
 import { resolveYoutubeCaptionEstimateTargets } from '~/cli/commands/process-steps/step-2-stt/youtube-captions'
 import {
   getExtractEstimation,
@@ -22,6 +27,7 @@ import {
   getVideoEstimation,
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
+import { estimateSupadataCost, SUPADATA_STT_AGGREGATE_NOTE } from '~/utils/pricing/supadata-pricing'
 import {
   estimateFirecrawlScrapeCost,
   estimateAnthropicOcrCost,
@@ -61,6 +67,47 @@ const buildCloudSttEstimate = async (
   const estimation = getSttEstimation(provider, model)
   const totalCost = applyCostMultiplier(computeBilledSttCost(provider, model, durationSeconds).cost, estimation.costMultiplier)
   return { step: 'stt', provider, model, durationSeconds, totalCost, costMultiplier: estimation.costMultiplier }
+}
+
+const buildSupadataSttEstimate = (
+  model: string,
+  durationSeconds: number
+): SttStepEstimate => {
+  const estimation = getSttEstimation('supadata', model)
+  const cost = estimateSupadataCost(model, durationSeconds)
+  return {
+    step: 'stt',
+    provider: 'supadata',
+    model,
+    durationSeconds,
+    totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
+    costMultiplier: estimation.costMultiplier,
+    note: cost.note
+  }
+}
+
+const buildDeapiSttEstimate = async (
+  model: string,
+  resolvedTarget: string,
+  durationSeconds: number
+): Promise<SttStepEstimate> => {
+  const price = await resolveDeapiTranscriptionPrice({
+    model,
+    ...(isDeapiSupportedSourceUrl(resolvedTarget) ? { sourceUrl: resolvedTarget } : {}),
+    durationSeconds
+  })
+  logDeapiPricingFallbackWarning(price.warning)
+
+  return {
+    step: 'stt',
+    provider: 'deapi',
+    model,
+    durationSeconds,
+    totalCost: price.totalCost,
+    costMultiplier: price.source === 'provider_quote' ? 1 : getSttEstimation('deapi', model).costMultiplier,
+    estimateType: price.estimateType,
+    ...(price.warning ? { note: price.warning } : {})
+  }
 }
 
 const buildSttEstimates = async (
@@ -112,6 +159,16 @@ const buildSttEstimates = async (
         totalCost: applyCostMultiplier((durationSeconds / 3600) * rate.costPerHourCents, estimation.costMultiplier),
         costMultiplier: estimation.costMultiplier
       })
+      continue
+    }
+
+    if (target.service === 'supadata') {
+      estimates.push(buildSupadataSttEstimate(target.model, durationSeconds))
+      continue
+    }
+
+    if (target.service === 'deapi') {
+      estimates.push(await buildDeapiSttEstimate(target.model, resolvedTarget, durationSeconds))
       continue
     }
 
@@ -395,6 +452,9 @@ export const buildAggregatedPriceEstimate = async (
     for (const stt of await buildSttEstimates(resolvedTarget, opts)) {
       steps.push(stt)
       totalEstimatedCost += stt.totalCost
+      if (typeof stt.note === 'string' && stt.note.length > 0) {
+        notes.push(stt.note)
+      }
     }
   }
 
@@ -511,6 +571,10 @@ export const buildAggregatedPriceEstimate = async (
       steps.push(music)
       totalEstimatedCost += music.totalCost
     }
+  }
+
+  if (steps.some((step) => step.step === 'stt' && step.provider === 'supadata')) {
+    notes.push(SUPADATA_STT_AGGREGATE_NOTE)
   }
 
   return {

@@ -57,6 +57,12 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --glm-ocr glm-ocr
 
 # Resume only Deepgram outputs from an STT batch
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deepgram-stt nova-3
+
+# Resume only DeepInfra Whisper outputs from an STT batch
+bun as resume ./output/2026-04-22_12-00-00-000_batch --deepinfra-stt
+
+# Resume only deAPI outputs from an STT batch
+bun as resume ./output/2026-04-22_12-00-00-000_batch --deapi-stt WhisperLargeV3
 ```
 
 ## Flags
@@ -85,6 +91,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --deepgram-stt nova-3
 | `--speechmatics-stt <model>` | Select one or more Speechmatics STT models |
 | `--rev-stt <model>` | Select one or more Rev STT models |
 | `--groq-stt <model>` | Select one or more Groq STT models |
+| `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models |
+| `--deapi-stt <model>` | Select one or more deAPI STT models |
 | `--mistral-stt <model>` | Select one or more Mistral STT models |
 | `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models |
 | `--gladia-stt <model>` | Select one or more Gladia STT models |
@@ -124,5 +132,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --deepgram-stt nova-3
 
 - `resume` updates the existing output directory in place.
 - STT and OCR batch resumes rewrite the existing `batch.json` with updated per-item status.
+- Async STT providers with checkpointed remote jobs, including deAPI, reuse saved provider state when possible instead of recreating the remote request.
 - `resume` does not define `--price`.
 - `resume` exits with code `2` when items are still incomplete or failed after the backfill attempt.

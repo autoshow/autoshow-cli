@@ -16,6 +16,8 @@ export const sttCommand = defineCommand({
       ['bun as stt file.mp3 --gcloud-stt --speaker-count 2', 'Transcribe with Google diarization and an exact speaker-count hint'],
       ['bun as stt file.mp3 --aws-stt', 'Transcribe with AWS CLI Amazon Transcribe batch STT'],
       ['bun as stt file.mp3 --aws-stt --speaker-count 2', 'Transcribe with AWS diarization and a max-speaker hint'],
+      ['bun as stt file.mp3 --deepinfra-stt', 'Transcribe with the cheapest DeepInfra Whisper API model'],
+      ['bun as stt https://www.youtube.com/watch?v=abc --deapi-stt', 'Transcribe with deAPI URL passthrough and exact provider pricing when available'],
       ['bun as stt file.mp3 --groq-stt', 'Transcribe with the cheapest Groq Whisper API model'],
       ['bun as stt file.mp3 --deepgram-stt', 'Transcribe with the cheapest Deepgram model'],
       ['bun as stt file.mp3 --soniox-stt', 'Transcribe with Soniox async diarization'],
@@ -23,6 +25,8 @@ export const sttCommand = defineCommand({
       ['bun as stt file.mp3 --rev-stt', 'Transcribe with the cheapest Rev async model'],
       ['bun as stt file.mp3 --gladia-stt', 'Transcribe with Gladia pre-recorded diarization'],
       ['bun as stt file.mp3 --gladia-stt --speaker-count 2', 'Transcribe with Gladia diarization and an exact speaker-count hint'],
+      ['bun as stt https://www.youtube.com/watch?v=abc --supadata-stt', 'Transcribe from a public source URL with Supadata auto mode'],
+      ['bun as stt https://www.youtube.com/watch?v=abc --supadata-stt native --supadata-lang en', 'Fetch only native transcripts from Supadata with a preferred language'],
       ['bun as stt file.mp3 --elevenlabs-stt', 'Transcribe with ElevenLabs speaker diarization'],
       ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with ElevenLabs diarization and a speaker-count hint']
     ]

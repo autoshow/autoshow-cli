@@ -120,6 +120,54 @@
       }
     }
   },
+  "deepinfra": {
+    "description": "DeepInfra OpenAI-compatible Whisper speech-to-text",
+    "type": "api",
+    "models": {
+      "openai/whisper-large-v3-turbo": {
+        "description": "OpenAI Whisper large v3 turbo via DeepInfra's OpenAI-compatible transcription API",
+        "costPerHourUSD": 0.012,
+        "costPerHourCents": 1.2,
+        "limits": {
+          "notes": "DeepInfra publishes OpenAI-compatible speech-to-text routes and model pages for whisper-large-v3 and whisper-large-v3-turbo, but current public docs do not publish fixed multipart upload or duration caps for the OpenAI-compatible transcription endpoint. AutoShow therefore keeps v1 split policy metadata notes-only and relies on retry-with-split when the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 0.9951,
+          "msPerSecond": 40
+        }
+      },
+      "openai/whisper-large-v3": {
+        "description": "OpenAI Whisper large v3 via DeepInfra's OpenAI-compatible transcription API",
+        "costPerHourUSD": 0.027,
+        "costPerHourCents": 2.7,
+        "limits": {
+          "notes": "DeepInfra publishes OpenAI-compatible speech-to-text routes and model pages for whisper-large-v3 and whisper-large-v3-turbo, but current public docs do not publish fixed multipart upload or duration caps for the OpenAI-compatible transcription endpoint. AutoShow therefore keeps v1 split policy metadata notes-only and relies on retry-with-split when the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 32
+        }
+      }
+    }
+  },
+  "deapi": {
+    "description": "deAPI hosted Whisper transcription with exact provider quote support",
+    "type": "api",
+    "models": {
+      "WhisperLargeV3": {
+        "description": "Whisper Large V3 via deAPI unified transcription endpoints",
+        "costPerHourUSD": 0.25,
+        "costPerHourCents": 25,
+        "limits": {
+          "notes": "deAPI publishes conflicting current upload limits for audio transcription: the audiofile2txt endpoint doc lists 10 MB, while the global Limits & Quotas page lists 80 MB for audio uploads. AutoShow keeps deAPI v1 split policy note-only and relies on exact provider pricing plus retry-with-split when the upload path is rejected as too large. Supported passthrough URLs are documented for YouTube, X/Twitter, Twitch, Kick, TikTok, and X Spaces."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 220
+        }
+      }
+    }
+  },
   "groq": {
     "description": "Groq cloud speech-to-text",
     "type": "api",
@@ -320,6 +368,48 @@
           "remoteUrlBytes": 1048576000,
           "durationSeconds": 8100,
           "notes": "Direct YouTube links are limited to 120 minutes. Current CLI uploads files instead. Enterprise plans can raise the audio-length cap to 4 hours 15 minutes."
+        }
+      }
+    }
+  },
+  "supadata": {
+    "description": "Supadata hosted transcript retrieval and AI transcript generation from public source URLs",
+    "type": "api",
+    "models": {
+      "auto": {
+        "description": "Auto mode — fetch a native transcript when available, otherwise fall back to AI generation",
+        "costPerHourUSD": 0,
+        "costPerHourCents": 0,
+        "limits": {
+          "remoteUrlBytes": 1073741824,
+          "notes": "Supadata accepts public YouTube, TikTok, Instagram, X/Twitter, Facebook, and direct media/file URLs. Pricing is credit-based rather than USD-based: auto mode is approximately 1 credit when a native transcript exists, otherwise approximately 2 credits per minute when AI generation is required."
+        },
+        "estimation": {
+          "msPerSecond": 160
+        }
+      },
+      "native": {
+        "description": "Native mode — only fetch an existing transcript from the source platform",
+        "costPerHourUSD": 0,
+        "costPerHourCents": 0,
+        "limits": {
+          "remoteUrlBytes": 1073741824,
+          "notes": "Supadata native mode only fetches existing transcripts from public source URLs. Responses indicating transcript-unavailable still consume approximately 1 credit per request."
+        },
+        "estimation": {
+          "msPerSecond": 60
+        }
+      },
+      "generate": {
+        "description": "Generate mode — always create a transcript with AI from the public source URL",
+        "costPerHourUSD": 0,
+        "costPerHourCents": 0,
+        "limits": {
+          "remoteUrlBytes": 1073741824,
+          "notes": "Supadata generate mode accepts supported public source URLs and bills approximately 2 credits per minute. The provider uses async jobs for longer content and does not accept local file uploads through the AutoShow CLI."
+        },
+        "estimation": {
+          "msPerSecond": 220
         }
       }
     }

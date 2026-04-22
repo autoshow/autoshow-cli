@@ -21,6 +21,12 @@ bun as stt input/examples/audio/1-audio.mp3
 # stt with Groq STT
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 
+# stt with DeepInfra Whisper STT
+bun as stt input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo
+
+# stt with deAPI STT
+bun as stt input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
+
 # stt with Deepgram STT
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 
@@ -102,6 +108,8 @@ Most hosted or mixed-provider runtime commands support `--price` to print estima
 
 ```bash
 bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
+bun as stt input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo --price
+bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
 bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
@@ -115,3 +123,5 @@ bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview -
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --price
 ```
+
+For `stt --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails.

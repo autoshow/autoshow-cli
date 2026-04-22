@@ -7,7 +7,7 @@ import {
   type RepeatableModelFlag
 } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 
-const STT_PROVIDER_FLAGS = ['gcloud-stt', 'aws-stt', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt'] as const
+const STT_PROVIDER_FLAGS = ['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt', 'supadata-stt'] as const
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
@@ -57,6 +57,8 @@ export const mergeConfigIntoRawFlags = (
     injectProviderGroup(STT_PROVIDER_FLAGS, [
       ['gcloud-stt', d.stt.gcloudStt],
       ['aws-stt', d.stt.awsStt],
+      ['deepinfra-stt', d.stt.deepinfraStt],
+      ['deapi-stt', d.stt.deapiStt],
       ['groq-stt', d.stt.groqStt], ['elevenlabs-stt', d.stt.elevenlabsStt],
       ['deepgram-stt', d.stt.deepgramStt],
       ['soniox-stt', d.stt.sonioxStt],
@@ -65,7 +67,9 @@ export const mergeConfigIntoRawFlags = (
       ['mistral-stt', d.stt.mistralStt],
       ['assemblyai-stt', d.stt.assemblyaiStt],
       ['gladia-stt', d.stt.gladiaStt],
+      ['supadata-stt', d.stt.supadataStt],
     ])
+    inject('supadata-lang', d.stt.supadataLang)
     inject('aws-region', d.stt.awsRegion)
     inject('aws-bucket', d.stt.awsBucket)
     inject('speaker-count', d.stt.speakerCount)
@@ -169,6 +173,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'whisper':           ['defaults', 'stt', 'whisper'],
   'gcloud-stt':        ['defaults', 'stt', 'gcloudStt'],
   'aws-stt':           ['defaults', 'stt', 'awsStt'],
+  'deepinfra-stt':     ['defaults', 'stt', 'deepinfraStt'],
+  'deapi-stt':         ['defaults', 'stt', 'deapiStt'],
   'groq-stt':          ['defaults', 'stt', 'groqStt'],
   'elevenlabs-stt':    ['defaults', 'stt', 'elevenlabsStt'],
   'deepgram-stt':      ['defaults', 'stt', 'deepgramStt'],
@@ -178,6 +184,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'mistral-stt':       ['defaults', 'stt', 'mistralStt'],
   'assemblyai-stt':    ['defaults', 'stt', 'assemblyaiStt'],
   'gladia-stt':        ['defaults', 'stt', 'gladiaStt'],
+  'supadata-stt':      ['defaults', 'stt', 'supadataStt'],
+  'supadata-lang':     ['defaults', 'stt', 'supadataLang'],
   'aws-region':        ['defaults', 'stt', 'awsRegion'],
   'aws-bucket':        ['defaults', 'stt', 'awsBucket'],
   'speaker-count':     ['defaults', 'stt', 'speakerCount'],

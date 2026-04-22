@@ -13,6 +13,8 @@ import * as l from '~/logger'
 import { runWhisperTranscribe } from './stt-local/whisper/run-whisper'
 import { runReverbTranscribe } from './stt-local/reverb/run-reverb'
 import { runGroqTranscribe } from './stt-services/groq/run-whisper-groq'
+import { runDeepinfraTranscribe } from './stt-services/deepinfra/run-deepinfra-stt'
+import { runDeapiStt } from './stt-services/deapi/run-deapi-stt'
 import { runElevenLabsTranscribe } from './stt-services/elevenlabs/run-elevenlabs-stt'
 import { runDeepgramTranscribe } from './stt-services/deepgram/run-deepgram-stt'
 import { runSonioxStt } from './stt-services/soniox/run-soniox-stt'
@@ -21,6 +23,9 @@ import { runRevStt } from './stt-services/rev/run-rev-stt'
 import { runMistralStt } from './stt-services/mistral/run-mistral-stt'
 import { runAssemblyAiTranscribe } from './stt-services/assemblyai/run-assemblyai-stt'
 import { runGladiaStt } from './stt-services/gladia/run-gladia-stt'
+import { isDeapiSupportedSourceUrl } from './stt-services/deapi/deapi'
+import { isSupadataSupportedSourceUrl } from './stt-services/supadata/supadata'
+import { runSupadataStt } from './stt-services/supadata/run-supadata-stt'
 import { runGcloudStt } from './stt-services/gcloud/run-gcloud-stt'
 import { runAwsStt } from './stt-services/aws/run-aws-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
@@ -56,6 +61,8 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'aws',
   'elevenlabs',
   'deepgram',
+  'deepinfra',
+  'deapi',
   'speechmatics',
   'rev',
   'groq',
@@ -167,11 +174,11 @@ export const shouldSplitTranscriptionInput = (
 
 export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
   if (error instanceof Error) {
-    return error.message.includes('(413)') || /payload too large|request size limit exceeded/i.test(error.message)
+    return error.message.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds/i.test(error.message)
   }
 
   if (typeof error === 'string') {
-    return error.includes('(413)') || /payload too large|request size limit exceeded/i.test(error)
+    return error.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds/i.test(error)
   }
 
   return false
@@ -243,6 +250,28 @@ const dispatchStt = async (
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments
+    })
+  }
+
+  if (target.service === 'deepinfra') {
+    return await runDeepinfraTranscribe(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments
+    })
+  }
+
+  if (target.service === 'deapi') {
+    return await runDeapiStt(audioPath, outputDir, {
+      model: target.model,
+      sourceUrl: options.sourceUrl,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
     })
   }
 
@@ -359,6 +388,20 @@ const dispatchStt = async (
     })
   }
 
+  if (target.service === 'supadata') {
+    return await runSupadataStt(audioPath, outputDir, {
+      model: target.model,
+      sourceUrl: options.sourceUrl,
+      language: options.language,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds,
+      runMode: options.runMode,
+      lifecycle: options.asyncLifecycle
+    })
+  }
+
   if (target.service === 'youtube-captions') {
     throw new Error('youtube-captions is resolved before STT provider dispatch')
   }
@@ -392,6 +435,16 @@ export const mergeSplitTranscriptionChunks = (
   const totalProcessingTime = segmentResults.reduce((sum, s) => sum + s.metadata.processingTime, 0)
   const totalTokenCount = segmentResults.reduce((sum, s) => sum + s.metadata.tokenCount, 0)
   const mergedTimings = mergeStep2TimingMetadata(segmentResults.map((segment) => segment.metadata.timings))
+  const mergedBilling = segmentResults[0]!.metadata.transcriptionService === 'deapi'
+    && segmentResults.every((segment) => typeof segment.metadata.billing?.totalCost === 'number')
+    ? {
+        totalCost: segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.totalCost ?? 0), 0),
+        source: segmentResults.every((segment) => segment.metadata.billing?.source === 'provider_quote')
+          ? 'provider_quote' as const
+          : 'registry_fallback' as const,
+        mode: 'segment_sum' as const
+      }
+    : undefined
 
   return {
     result: combinedResult,
@@ -400,7 +453,8 @@ export const mergeSplitTranscriptionChunks = (
       transcriptionModel: segmentResults[0]!.metadata.transcriptionModel,
       processingTime: totalProcessingTime,
       tokenCount: totalTokenCount,
-      ...(mergedTimings ? { timings: mergedTimings } : {})
+      ...(mergedTimings ? { timings: mergedTimings } : {}),
+      ...(mergedBilling ? { billing: mergedBilling } : {})
     }
   }
 }
@@ -483,6 +537,10 @@ export const sttTarget = async (
   target: SttTarget,
   options: SttTargetOptions
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
+  if (target.service === 'supadata' && !isSupadataSupportedSourceUrl(options.sourceUrl)) {
+    return await dispatchStt(target, audioPath, outputDir, 0, options)
+  }
+
   await ensureSttTargetSetup(target)
   const effectiveOptions = target.service === 'mistral' && options.mistralPassController === undefined
     ? {
@@ -490,6 +548,18 @@ export const sttTarget = async (
         mistralPassController: createMistralSttPassController()
       }
     : options
+
+  if (target.service === 'supadata') {
+    const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
+    await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
+    return transcription
+  }
+
+  if (target.service === 'deapi' && effectiveOptions.split !== true && isDeapiSupportedSourceUrl(effectiveOptions.sourceUrl)) {
+    const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
+    await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
+    return transcription
+  }
 
   const audioFileSize = Bun.file(audioPath).size
   const splitDecision = resolveTranscriptionSplitDecision(target, {
@@ -552,6 +622,8 @@ export const stt = async (
     reverbVerbatimicity: options.reverbVerbatimicity,
     sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency,
     audioDurationSeconds: (options as ProcessingOptions & { audioDurationSeconds?: number }).audioDurationSeconds,
+    sourceUrl: options.url,
+    language: (options as ProcessingOptions & { supadataLang?: string }).supadataLang,
     runMode: 'initial'
   })
 }

@@ -20,6 +20,7 @@ import { setupRevStt } from '~/cli/commands/process-steps/step-2-stt/stt-service
 import { setupMistralStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
+import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/supadata/supadata'
 import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
 import { setupCalibreDocumentTools } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
 import { setupExtractionOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/extract'
@@ -251,6 +252,8 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupAssemblyAiStt)
 
   await withCompactSetup(setupGladiaStt)
+
+  await withCompactSetup(setupSupadataStt)
 
   await withCompactSetup(async () => {
     await setupAwsStt({

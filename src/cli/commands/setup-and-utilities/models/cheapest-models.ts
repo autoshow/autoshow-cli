@@ -274,6 +274,10 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('gcloud')
     case 'aws-stt':
       return selectCheapestSttModel('aws')
+    case 'deepinfra-stt':
+      return selectCheapestSttModel('deepinfra')
+    case 'deapi-stt':
+      return selectCheapestSttModel('deapi')
     case 'elevenlabs-stt':
       return selectCheapestSttModel('elevenlabs')
     case 'deepgram-stt':
@@ -292,6 +296,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('assemblyai')
     case 'gladia-stt':
       return selectCheapestSttModel('gladia')
+    case 'supadata-stt':
+      return 'auto'
     case 'mistral-ocr':
       return selectCheapestExtractModel('mistral')
     case 'glm-ocr':

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { runDeepgramTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/run-deepgram-stt'
+import { runDeepinfraTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepinfra/run-deepinfra-stt'
 import { runElevenLabsTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/run-elevenlabs-stt'
 import { createMistralSttPassController } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
 import { runMistralStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/run-mistral-stt'
@@ -15,6 +16,8 @@ const originalBunSleep = Bun.sleep
 const restoreEnv = snapshotEnv([
   'DEEPGRAM_API_KEY',
   'DEEPGRAM_BASE_URL',
+  'DEEPINFRA_API_KEY',
+  'DEEPINFRA_BASE_URL',
   'ELEVENLABS_API_KEY',
   'ELEVENLABS_BASE_URL',
   'MISTRAL_API_KEY',
@@ -199,6 +202,96 @@ describe('runDeepgramTranscribe', () => {
         start: '00:01:00',
         end: '00:01:00',
         text: 'plain transcript only'
+      }
+    ])
+  })
+})
+
+describe('runDeepinfraTranscribe', () => {
+  test('normalizes legacy /openai base URLs to the documented transcription endpoint, preserves openai/ model ids, and writes timestamped segments', async () => {
+    const { audioPath, outputDir } = await tempOutput.createAudioFixture('autoshow-deepinfra-stt-')
+    process.env['DEEPINFRA_API_KEY'] = 'test-token'
+    process.env['DEEPINFRA_BASE_URL'] = 'https://deepinfra.test/v1/openai'
+
+    let attempts = 0
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      attempts += 1
+      const { url, method } = readFetchRequest(input, init)
+      expect(url).toBe('https://deepinfra.test/v1/audio/transcriptions')
+      expect(method).toBe('POST')
+
+      const body = init?.body
+      expect(body).toBeInstanceOf(FormData)
+      expect((body as FormData).get('model')).toBe('openai/whisper-large-v3-turbo')
+      expect((body as FormData).get('response_format')).toBe('verbose_json')
+      expect((body as FormData).get('timestamp_granularities[]')).toBe('segment')
+
+      return new Response(JSON.stringify({
+        text: 'Hello from DeepInfra',
+        segments: [
+          {
+            start: 0.2,
+            end: 1.8,
+            text: 'Hello from DeepInfra'
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as unknown as typeof fetch
+
+    const { result, metadata } = await runDeepinfraTranscribe(audioPath, outputDir, {
+      model: 'openai/whisper-large-v3-turbo',
+      segmentOffsetMinutes: 1
+    })
+
+    expect(attempts).toBe(1)
+    expect(result.text).toBe('Hello from DeepInfra')
+    expect(result.segments).toEqual([
+      {
+        start: '00:01:00',
+        end: '00:01:01',
+        text: 'Hello from DeepInfra'
+      }
+    ])
+    expect(result.evidence?.capabilities).toEqual({
+      hasNativeWordTiming: false,
+      hasConfidence: false,
+      hasSpeakerLabels: false
+    })
+    expect(result.evidence?.timingQuality).toBe('segment_interpolated')
+    expect(metadata.transcriptionService).toBe('deepinfra')
+    expect(metadata.transcriptionModel).toBe('openai/whisper-large-v3-turbo')
+
+    const transcript = await Bun.file(`${outputDir}/transcription.txt`).text()
+    expect(transcript).toBe('[00:01:00] Hello from DeepInfra')
+  })
+
+  test('defaults to the documented DeepInfra transcription base URL when DEEPINFRA_BASE_URL is unset', async () => {
+    const { audioPath, outputDir } = await tempOutput.createAudioFixture('autoshow-deepinfra-stt-')
+    process.env['DEEPINFRA_API_KEY'] = 'test-token'
+    delete process.env['DEEPINFRA_BASE_URL']
+
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      expect(String(input)).toBe('https://api.deepinfra.com/v1/audio/transcriptions')
+      return new Response(JSON.stringify({ text: 'ok', segments: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as unknown as typeof fetch
+
+    const { result } = await runDeepinfraTranscribe(audioPath, outputDir, {
+      model: 'openai/whisper-large-v3',
+      segmentOffsetMinutes: 0
+    })
+
+    expect(result.text).toBe('ok')
+    expect(result.segments).toEqual([
+      {
+        start: '00:00:00',
+        end: '00:00:00',
+        text: 'ok'
       }
     ])
   })

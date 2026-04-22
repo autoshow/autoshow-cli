@@ -51,6 +51,18 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('nova-3')
   })
 
+  test('deepinfraSttModel routes to deepinfra', () => {
+    const result = computeEstimatedCosts({ deepinfraSttModel: 'openai/whisper-large-v3-turbo', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('deepinfra')
+    expect(result.steps[0]?.model).toBe('openai/whisper-large-v3-turbo')
+  })
+
+  test('deapiSttModel routes to deapi', () => {
+    const result = computeEstimatedCosts({ deapiSttModel: 'WhisperLargeV3', audioDurationSeconds: 60 })
+    expect(result.steps[0]?.provider).toBe('deapi')
+    expect(result.steps[0]?.model).toBe('WhisperLargeV3')
+  })
+
   test('awsSttModel routes to aws', () => {
     const result = computeEstimatedCosts({ awsSttModel: 'standard', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('aws')
@@ -117,6 +129,16 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(result.steps[0]?.model).toBe('default')
   })
 
+  test('supadataSttModel routes to supadata with a conservative numeric cost estimate', () => {
+    const result = computeEstimatedCosts({ supadataSttModel: 'auto', audioDurationSeconds: 90 })
+    expect(result.totalCost).toBeCloseTo(3, 8)
+    expect(result.steps[0]?.provider).toBe('supadata')
+    expect(result.steps[0]?.model).toBe('auto')
+    expect(result.steps[0]?.cost).toBeCloseTo(3, 8)
+    expect(result.steps[0]?.note).toContain('Basic/Pro auto-recharge rate')
+    expect(result.steps[0]?.note).toContain('higher of 1 credit')
+  })
+
   test('whisperModel routes to whisper', () => {
     const result = computeEstimatedCosts({ whisperModel: 'large-v3-turbo', audioDurationSeconds: 60 })
     expect(result.steps[0]?.provider).toBe('whisper')
@@ -170,6 +192,22 @@ describe('computeEstimatedCosts STT routing', () => {
     expect(sttStep?.cost).toBe(0)
   })
 
+  test('explicit supadata STT targets include numeric cost estimates in the total', () => {
+    const result = computeEstimatedCosts({
+      sttTargets: [
+        { service: 'supadata', model: 'generate' },
+        { service: 'aws', model: 'standard' }
+      ],
+      audioDurationSeconds: 120
+    })
+
+    const supadataStep = result.steps.find((step) => step.step === 'stt' && step.provider === 'supadata')
+    const awsStep = result.steps.find((step) => step.step === 'stt' && step.provider === 'aws')
+    expect(supadataStep?.cost).toBeCloseTo(4, 8)
+    expect(supadataStep?.note).toContain('2 credits/min')
+    expect(result.totalCost).toBeCloseTo((awsStep?.cost ?? 0) + 4, 8)
+  })
+
   test('no STT step when no model set and useReverb is false', () => {
     const result = computeEstimatedCosts({ audioDurationSeconds: 60 })
     const sttSteps = result.steps.filter(s => s.step === 'stt')
@@ -202,6 +240,39 @@ describe('computeActualCosts STT', () => {
     expect(sttStep?.provider).toBe('deepgram')
     expect(sttStep?.model).toBe('nova-3')
     expect(typeof sttStep?.cost).toBe('number')
+  })
+
+  test('prefers exact deAPI billing totalCost over registry duration billing', () => {
+    const result = computeActualCosts({
+      step1: {
+        url: 'https://example.com/audio.mp3',
+        duration: '1:00',
+        title: 'Test',
+        description: '',
+        author: '',
+        slug: 'test',
+        audioFileName: 'test.mp3',
+        audioFileSize: 0
+      },
+      step2: {
+        transcriptionService: 'deapi',
+        transcriptionModel: 'WhisperLargeV3',
+        processingTime: 1200,
+        tokenCount: 100,
+        billing: {
+          totalCost: 1.75,
+          source: 'provider_quote',
+          mode: 'duration'
+        }
+      }
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('deapi')
+    expect(sttStep?.model).toBe('WhisperLargeV3')
+    expect(sttStep?.cost).toBe(1.75)
+    expect(sttStep?.inputMetric).toBe('durationSeconds')
+    expect(sttStep?.inputValue).toBe(60)
   })
 
   test('computes one actual STT cost step per provider metadata entry', () => {
@@ -308,6 +379,65 @@ describe('computeActualCosts STT', () => {
     expect(sttStep?.provider).toBe('rev')
     expect(sttStep?.model).toBe('machine')
     expect(sttStep?.cost).toBeCloseTo((61 / 3600) * 20, 8)
+  })
+
+  test('computes Supadata actual cost from billed credits when metadata is present', () => {
+    const result = computeActualCosts({
+      step1: {
+        url: 'https://www.youtube.com/watch?v=abc123',
+        duration: '1:30',
+        title: 'Test',
+        description: '',
+        author: '',
+        slug: 'test',
+        audioFileName: 'test.mp3',
+        audioFileSize: 0
+      },
+      step2: {
+        transcriptionService: 'supadata',
+        transcriptionModel: 'auto',
+        processingTime: 1500,
+        tokenCount: 100,
+        billing: {
+          creditsUsed: 1,
+          creditRateCents: 1,
+          source: 'response-header'
+        }
+      }
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('supadata')
+    expect(sttStep?.inputMetric).toBe('credits')
+    expect(sttStep?.inputValue).toBe(1)
+    expect(sttStep?.cost).toBeCloseTo(1, 8)
+  })
+
+  test('falls back to conservative Supadata auto billing when billed credits are unavailable', () => {
+    const result = computeActualCosts({
+      step1: {
+        url: 'https://www.youtube.com/watch?v=abc123',
+        duration: '1:30',
+        title: 'Test',
+        description: '',
+        author: '',
+        slug: 'test',
+        audioFileName: 'test.mp3',
+        audioFileSize: 0
+      },
+      step2: {
+        transcriptionService: 'supadata',
+        transcriptionModel: 'auto',
+        processingTime: 1500,
+        tokenCount: 100
+      }
+    })
+
+    const sttStep = result.steps.find((step) => step.step === 'stt')
+    expect(sttStep?.provider).toBe('supadata')
+    expect(sttStep?.inputMetric).toBe('credits')
+    expect(sttStep?.inputValue).toBe(3)
+    expect(sttStep?.cost).toBeCloseTo(3, 8)
   })
 })
 

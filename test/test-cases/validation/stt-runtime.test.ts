@@ -13,6 +13,7 @@ import {
 import type { SttTarget } from '~/types'
 import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { ensureSttTargetSetup } from '~/cli/commands/process-steps/step-2-stt/bootstrap'
+import { isAsyncSttBatchProvider } from '~/cli/commands/process-steps/step-2-stt/stt-batch/stt-batch-policy'
 
 describe('STT runtime helpers', () => {
   test('skips command preflight when neither --price nor budget is active', () => {
@@ -312,6 +313,10 @@ describe('STT runtime helpers', () => {
     })
   })
 
+  test('treats deAPI as an async STT batch provider', () => {
+    expect(isAsyncSttBatchProvider({ service: 'deapi' })).toBe(true)
+  })
+
   test('Groq STT bootstrap no longer reports unsupported provider', async () => {
     const hasGroqApiKey = typeof process.env['GROQ_API_KEY'] === 'string' && process.env['GROQ_API_KEY'].length > 0
 
@@ -326,6 +331,42 @@ describe('STT runtime helpers', () => {
       expect(message).not.toContain('Unsupported bootstrap provider')
       if (!hasGroqApiKey) {
         expect(message).toContain('GROQ_API_KEY environment variable is required for Groq STT models')
+      }
+    }
+  })
+
+  test('DeepInfra STT bootstrap no longer reports unsupported provider', async () => {
+    const hasDeepinfraApiKey = typeof process.env['DEEPINFRA_API_KEY'] === 'string' && process.env['DEEPINFRA_API_KEY'].length > 0
+
+    try {
+      await ensureSttTargetSetup({
+        service: 'deepinfra',
+        model: 'openai/whisper-large-v3-turbo'
+      })
+      expect(hasDeepinfraApiKey).toBe(true)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      expect(message).not.toContain('Unsupported bootstrap provider')
+      if (!hasDeepinfraApiKey) {
+        expect(message).toContain('DEEPINFRA_API_KEY environment variable is required for DeepInfra transcription')
+      }
+    }
+  })
+
+  test('deAPI STT bootstrap no longer reports unsupported provider', async () => {
+    const hasDeapiApiKey = typeof process.env['DEAPI_API_KEY'] === 'string' && process.env['DEAPI_API_KEY'].length > 0
+
+    try {
+      await ensureSttTargetSetup({
+        service: 'deapi',
+        model: 'WhisperLargeV3'
+      })
+      expect(hasDeapiApiKey).toBe(true)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      expect(message).not.toContain('Unsupported bootstrap provider')
+      if (!hasDeapiApiKey) {
+        expect(message).toContain('DEAPI_API_KEY environment variable is required for deAPI transcription')
       }
     }
   })

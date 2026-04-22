@@ -53,6 +53,7 @@ export const buildApiCheapSelections = () => {
   const sttSelections = [
     { service: 'elevenlabs', flag: '--elevenlabs-stt', envVar: 'ELEVENLABS_API_KEY', model: selectCheapestSttModel('elevenlabs') },
     { service: 'deepgram', flag: '--deepgram-stt', envVar: 'DEEPGRAM_API_KEY', model: selectCheapestSttModel('deepgram') },
+    { service: 'deepinfra', flag: '--deepinfra-stt', envVar: 'DEEPINFRA_API_KEY', model: selectCheapestSttModel('deepinfra') },
     { service: 'soniox', flag: '--soniox-stt', envVar: 'SONIOX_API_KEY', model: selectCheapestSttModel('soniox') },
     { service: 'speechmatics', flag: '--speechmatics-stt', envVar: 'SPEECHMATICS_API_KEY', model: selectCheapestSttModel('speechmatics') },
     { service: 'gladia', flag: '--gladia-stt', envVar: 'GLADIA_API_KEY', model: selectCheapestSttModel('gladia') },

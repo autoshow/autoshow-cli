@@ -11,6 +11,19 @@ import {
 } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 
 const tempDirs: string[] = []
+const HTML_DOC_PAGE = `<!doctype html>
+<html lang="en">
+  <head>
+    <title>DeepInfra Whisper API</title>
+  </head>
+  <body>
+    <article>
+      <h1>DeepInfra Whisper API</h1>
+      <p>This HTML documentation page has enough text for the local markdown extraction path to treat it as meaningful content.</p>
+      <p>It includes a second paragraph so the extracted output is clearly markdown instead of raw HTML markup.</p>
+    </article>
+  </body>
+</html>`
 
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map(dir => rm(dir, { recursive: true, force: true })))
@@ -82,6 +95,43 @@ test('links collector treats a bare global section selector consistently', () =>
   expect(collectLinks(parsed.serviceSelections, parsed.globalSections)).toContain(
     'https://developers.deepgram.com/reference/speech-to-text/listen-pre-recorded.md'
   )
+  expect(collectLinks(parsed.serviceSelections, parsed.globalSections)).toContain(
+    'https://deepinfra.com/openai/whisper-large-v3/api'
+  )
+})
+
+test('links collector includes DeepInfra general and STT links', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--deepinfra'
+  ])
+  const deepInfraLinks = collectLinks(parsed.serviceSelections, parsed.globalSections)
+
+  expect(deepInfraLinks).toHaveLength(8)
+  expect(deepInfraLinks).toContain('https://docs.deepinfra.com/.md')
+  expect(deepInfraLinks).toContain('https://docs.deepinfra.com/api-reference/audio/openai-audio-transcriptions.md')
+  expect(deepInfraLinks).toContain('https://deepinfra.com/openai/whisper-large-v3/api')
+  expect(deepInfraLinks).toContain('https://deepinfra.com/openai/whisper-large-v3/api?example=openai-speech-http')
+  expect(deepInfraLinks).toContain('https://deepinfra.com/openai/whisper-large-v3/api?example=openai-speech-js')
+  expect(deepInfraLinks).toContain('https://deepinfra.com/openai/whisper-large-v3-turbo/api')
+  expect(deepInfraLinks).toContain('https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-http')
+  expect(deepInfraLinks).toContain('https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-js')
+})
+
+test('links collector includes HappyScribe STT links', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--happyscribe'
+  ])
+  const happyScribeLinks = collectLinks(parsed.serviceSelections, parsed.globalSections)
+
+  expect(happyScribeLinks).toHaveLength(2)
+  expect(happyScribeLinks).toContain('https://dev.happyscribe.com/sections/general/')
+  expect(happyScribeLinks).toContain('https://dev.happyscribe.com/sections/product/')
 })
 
 test('links collector includes Speechmatics general and STT links', () => {
@@ -244,6 +294,52 @@ test('links command writes combined fetched markdown to a single file', async ()
   expect(content).not.toContain(String(LINKS_OUTPUT_DIR))
 })
 
+test('links command converts html docs pages to markdown before writing output', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-links-html-'))
+  tempDirs.push(tempDir)
+
+  const outputPath = join(tempDir, 'deepinfra-links.md')
+  const result = await runLinksWithArgv(
+    [
+      'bun',
+      'src/cli/create-cli.ts',
+      'links',
+      '--deepinfra',
+      'stt'
+    ],
+    {
+      outputPath,
+      fetchImpl: async (input) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if (url.includes('deepinfra.com/openai/whisper-large-v3/api')) {
+          return new Response(HTML_DOC_PAGE, {
+            headers: {
+              'content-type': 'text/html; charset=utf-8'
+            }
+          })
+        }
+
+        return new Response(`# Mocked\n\nFetched from ${url}`, {
+          headers: {
+            'content-type': 'text/markdown; charset=utf-8'
+          }
+        })
+      }
+    }
+  )
+
+  const content = await Bun.file(outputPath).text()
+
+  expect(result.outputPath).toBe(outputPath)
+  expect(result.urlCount).toBe(7)
+  expect(content).toContain('<!-- Source: https://deepinfra.com/openai/whisper-large-v3/api -->')
+  expect(content).toContain('<!-- Source: https://deepinfra.com/openai/whisper-large-v3-turbo/api -->')
+  expect(content).toContain('This HTML documentation page has enough text for the local markdown extraction path to treat it as meaningful content.')
+  expect(content).toContain('Fetched from https://docs.deepinfra.com/api-reference/audio/openai-audio-transcriptions.md')
+  expect(content).not.toContain('<article>')
+  expect(content).not.toContain('<p>')
+})
+
 test('links command rejects unknown sections', async () => {
   await expect(runLinksWithArgv([
     'bun',
@@ -280,5 +376,5 @@ test('links command rejects unknown dashed selectors with provider and section g
     'src/cli/create-cli.ts',
     'links',
     '--bogus'
-  ])).rejects.toThrow('Unknown links selector "--bogus". Known providers: assembly, claude, deapi, deepgram, elevenlabs, gemini, gladia, glm, grok, groq, happyscribe, minimax, openai, resend, rev, soniox, speechmatics, supadata. Known sections: general, image, music, ocr, stt, text, tts, video.')
+  ])).rejects.toThrow('Unknown links selector "--bogus". Known providers: assembly, claude, deapi, deepgram, deepinfra, elevenlabs, gemini, gladia, glm, grok, groq, happyscribe, minimax, openai, resend, rev, soniox, speechmatics, supadata. Known sections: general, image, music, ocr, stt, text, tts, video.')
 })

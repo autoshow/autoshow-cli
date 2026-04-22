@@ -2,6 +2,8 @@ import type { ClercFlagsDefinition } from 'clerc'
 import {
   SUPPORTED_LLAMA_MODELS,
   SUPPORTED_AWS_STT_MODELS,
+  SUPPORTED_DEAPI_STT_MODELS,
+  SUPPORTED_DEEPINFRA_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_GCLOUD_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
@@ -18,6 +20,7 @@ import {
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
+  SUPPORTED_SUPADATA_STT_MODELS,
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_GEMINI_MODELS,
@@ -89,6 +92,14 @@ export const transcriptionFlags = {
     description: buildModelDescription('AWS Transcribe STT model', SUPPORTED_AWS_STT_MODELS),
     type: [String] as [StringConstructor]
   },
+  'deepinfra-stt': {
+    description: buildModelDescription('DeepInfra Whisper STT model (API, billed)', SUPPORTED_DEEPINFRA_STT_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'deapi-stt': {
+    description: buildModelDescription('deAPI STT model', SUPPORTED_DEAPI_STT_MODELS),
+    type: [String] as [StringConstructor]
+  },
   'aws-region': {
     description: 'AWS region for Amazon Transcribe and the configured S3 bucket (for example us-east-1)',
     type: String
@@ -132,6 +143,14 @@ export const transcriptionFlags = {
   'gladia-stt': {
     description: buildModelDescription('Gladia STT model', SUPPORTED_GLADIA_STT_MODELS),
     type: [String] as [StringConstructor]
+  },
+  'supadata-stt': {
+    description: buildModelDescription('Supadata STT mode', SUPPORTED_SUPADATA_STT_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'supadata-lang': {
+    description: 'Supadata preferred transcript language (ISO 639-1); only used with auto/native modes',
+    type: String
   },
   'speaker-count': {
     description: 'Optional diarization speaker-count hint for supported STT services; unsupported providers report one aggregated warning at runtime',

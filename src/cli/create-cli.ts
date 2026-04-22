@@ -59,12 +59,15 @@ const cliErrorHandler = (error: unknown): void => {
     'OPENAI_API_KEY': 'Set OPENAI_API_KEY environment variable to use OpenAI models',
     'GEMINI_API_KEY': 'Set GEMINI_API_KEY environment variable to use Gemini models',
     'GROQ_API_KEY': 'Set GROQ_API_KEY environment variable to use Groq models',
+    'DEEPINFRA_API_KEY': 'Set DEEPINFRA_API_KEY environment variable to use DeepInfra transcription',
+    'DEAPI_API_KEY': 'Set DEAPI_API_KEY environment variable to use deAPI transcription and exact STT pricing',
     'ANTHROPIC_API_KEY': 'Set ANTHROPIC_API_KEY environment variable to use Anthropic Claude models',
     'MINIMAX_API_KEY': 'Set MINIMAX_API_KEY environment variable to use MiniMax models',
     'ELEVENLABS_API_KEY': 'Set ELEVENLABS_API_KEY environment variable to use ElevenLabs transcription/TTS/music',
     'SPEECHMATICS_API_KEY': 'Set SPEECHMATICS_API_KEY environment variable to use Speechmatics transcription',
     'REVAI_ACCESS_TOKEN': 'Set REVAI_ACCESS_TOKEN environment variable to use Rev transcription',
-    'GLADIA_API_KEY': 'Set GLADIA_API_KEY environment variable to use Gladia transcription'
+    'GLADIA_API_KEY': 'Set GLADIA_API_KEY environment variable to use Gladia transcription',
+    'SUPADATA_API_KEY': 'Set SUPADATA_API_KEY environment variable to use Supadata transcription'
   }
 
   if (error instanceof Error) {

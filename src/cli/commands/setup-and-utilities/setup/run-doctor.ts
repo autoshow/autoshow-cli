@@ -42,6 +42,8 @@ export const runDoctor = async (): Promise<void> => {
   checks.push(checkEnvVar('GEMINI_API_KEY', 'GEMINI_API_KEY'))
   checks.push(checkEnvVar('ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY'))
   checks.push(checkEnvVar('GROQ_API_KEY', 'GROQ_API_KEY'))
+  checks.push(checkEnvVar('DEEPINFRA_API_KEY', 'DEEPINFRA_API_KEY'))
+  checks.push(checkEnvVar('DEAPI_API_KEY', 'DEAPI_API_KEY'))
   checks.push(checkEnvVar('MINIMAX_API_KEY', 'MINIMAX_API_KEY'))
   checks.push(checkEnvVar('ELEVENLABS_API_KEY', 'ELEVENLABS_API_KEY'))
   checks.push(checkEnvVar('ASSEMBLYAI_API_KEY', 'ASSEMBLYAI_API_KEY'))

@@ -33,6 +33,10 @@ export type RuntimeOptions = {
   awsSttModel: string | undefined
   awsRegion: string | undefined
   awsBucket: string | undefined
+  deepinfraSttModels: string[] | undefined
+  deepinfraSttModel: string | undefined
+  deapiSttModels: string[] | undefined
+  deapiSttModel: string | undefined
   groqSttModels: string[] | undefined
   groqSttModel: string | undefined
   elevenlabsSttModels: string[] | undefined
@@ -47,6 +51,9 @@ export type RuntimeOptions = {
   assemblyaiSttModel: string | undefined
   gladiaSttModels: string[] | undefined
   gladiaSttModel: string | undefined
+  supadataSttModels: string[] | undefined
+  supadataSttModel: string | undefined
+  supadataLang: string | undefined
   speechmaticsSttModels: string[] | undefined
   speechmaticsSttModel: string | undefined
   deepgramSttModels: string[] | undefined

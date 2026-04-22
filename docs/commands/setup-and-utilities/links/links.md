@@ -31,6 +31,7 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 - Examples: `project/links/all-all-links.md`, `project/links/all-stt-links.md`, `project/links/gemini-all-links.md`, `project/links/gemini-general-tts-links.md`
 - Existing output is overwritten on each run
 - Duplicate URLs are removed before fetching, so overlapping selections only fetch once
+- Raw markdown/text docs are appended as-is; HTML docs pages are converted to markdown locally before they are appended
 
 ## Selection syntax
 
@@ -52,6 +53,7 @@ Accepted provider selectors are the lowercase names below.
 | `--claude` | `general`, `text`, `ocr`, `stt` |
 | `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
 | `--deepgram` | `stt` |
+| `--deepinfra` | `general`, `stt` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--gladia` | `general`, `stt` |
@@ -94,6 +96,9 @@ bun as links tts
 # Fetch every curated OpenAI doc
 bun as links --openai
 
+# Fetch DeepInfra STT docs, including normal HTML doc pages
+bun as links --deepinfra stt
+
 # Fetch only OpenAI general and text docs
 bun as links --openai general text
 
@@ -131,5 +136,6 @@ Global flags like `--config-path` and `--allow-over-budget` may still appear in 
 
 - Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links.json`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
+- Curated `.md` / `.txt` endpoints and normal HTML docs pages can be mixed in the same provider/section selection.
 - The filename is derived from the normalized provider and section selections, lowercased, deduped, and sorted into a stable order.
 - Provider selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.

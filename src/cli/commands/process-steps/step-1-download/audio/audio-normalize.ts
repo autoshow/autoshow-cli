@@ -25,8 +25,8 @@ type FfprobePayload = {
 
 export type NormalizedAudioExtension = '.mp3' | '.m4a' | '.ogg' | '.flac'
 export type NormalizedAudioFormat = 'mp3' | 'ipod' | 'ogg' | 'flac'
-export type AudioNormalizationMode = 'copy-file' | 'copy-stream' | 'transcode-aac' | 'transcode-flac'
-export type AudioNormalizationProfile = 'default' | 'hosted-stt'
+export type AudioNormalizationMode = 'copy-file' | 'copy-stream' | 'transcode-aac' | 'transcode-mp3' | 'transcode-flac'
+export type AudioNormalizationProfile = 'default' | 'hosted-stt' | 'hosted-stt-mp3'
 
 export type AudioStreamProbe = {
   index: number
@@ -62,6 +62,10 @@ export type NormalizedAudioPlan = {
 }
 
 const HOSTED_STT_MAX_BIT_RATE = 96_000
+
+const isHostedSttProfile = (
+  profile: AudioNormalizationProfile
+): boolean => profile === 'hosted-stt' || profile === 'hosted-stt-mp3'
 
 const toFiniteNumber = (value: unknown): number | undefined => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -118,8 +122,8 @@ const buildPlan = (
   outputCodecName,
   sourceCodecName,
   reason,
-  stripMetadata: profile === 'hosted-stt',
-  stripChapters: profile === 'hosted-stt',
+  stripMetadata: isHostedSttProfile(profile),
+  stripChapters: isHostedSttProfile(profile),
   ...(options.targetBitRate !== undefined ? { targetBitRate: options.targetBitRate } : {}),
   ...(options.targetSampleRate !== undefined ? { targetSampleRate: options.targetSampleRate } : {}),
   ...(options.targetChannels !== undefined ? { targetChannels: options.targetChannels } : {})
@@ -197,6 +201,25 @@ const isHostedPreserveCandidate = (
     || (codecName === 'aac' && sourceExtension === '.m4a')
 }
 
+const isHostedMp3PreserveCandidate = (
+  inputPath: string,
+  probe: MediaProbe
+): boolean => {
+  const sourceExtension = getLowercaseExtension(inputPath)
+  const codecName = probe.audioStream.codecName
+  const bitRate = probe.bitRate
+
+  if (probe.audioStreamCount !== 1 || probe.hasNonAudioStreams || probe.audioStream.channels !== 1) {
+    return false
+  }
+
+  if (bitRate === undefined || bitRate <= 0 || bitRate > HOSTED_STT_MAX_BIT_RATE) {
+    return false
+  }
+
+  return codecName === 'mp3' && sourceExtension === '.mp3'
+}
+
 const resolveHostedTargetBitRate = (probe: MediaProbe): number => {
   if (probe.bitRate !== undefined && probe.bitRate > 0) {
     return Math.min(Math.round(probe.bitRate), HOSTED_STT_MAX_BIT_RATE)
@@ -247,6 +270,35 @@ export const resolveNormalizedAudioPlan = (
       codecName,
       'aac',
       'compress hosted-STT source media to mono AAC-LC in .m4a with a 96 kbps ceiling',
+      {
+        targetBitRate: resolveHostedTargetBitRate(probe),
+        ...(probe.audioStream.sampleRate !== undefined ? { targetSampleRate: probe.audioStream.sampleRate } : {}),
+        targetChannels: 1
+      }
+    )
+  }
+
+  if (profile === 'hosted-stt-mp3') {
+    if (isHostedMp3PreserveCandidate(inputPath, probe)) {
+      return buildPlan(
+        profile,
+        'copy-stream',
+        '.mp3',
+        'mp3',
+        codecName,
+        'mp3',
+        'preserve low-bitrate mono hosted-STT mp3 while stripping non-audio baggage'
+      )
+    }
+
+    return buildPlan(
+      profile,
+      'transcode-mp3',
+      '.mp3',
+      'mp3',
+      codecName,
+      'mp3',
+      'compress hosted-STT source media to mono mp3 with a 96 kbps ceiling',
       {
         targetBitRate: resolveHostedTargetBitRate(probe),
         ...(probe.audioStream.sampleRate !== undefined ? { targetSampleRate: probe.audioStream.sampleRate } : {}),
@@ -373,6 +425,18 @@ export const materializeNormalizedAudioArtifact = async (
     args.push('-c:a', 'copy', '-f', plan.outputFormat, '-y', outputPath)
   } else if (plan.mode === 'transcode-aac') {
     args.push('-c:a', 'aac', '-profile:a', 'aac_low')
+    if (plan.targetBitRate !== undefined) {
+      args.push('-b:a', String(plan.targetBitRate))
+    }
+    if (plan.targetSampleRate !== undefined) {
+      args.push('-ar', String(plan.targetSampleRate))
+    }
+    if (plan.targetChannels !== undefined) {
+      args.push('-ac', String(plan.targetChannels))
+    }
+    args.push('-f', plan.outputFormat, '-y', outputPath)
+  } else if (plan.mode === 'transcode-mp3') {
+    args.push('-c:a', 'libmp3lame')
     if (plan.targetBitRate !== undefined) {
       args.push('-b:a', String(plan.targetBitRate))
     }

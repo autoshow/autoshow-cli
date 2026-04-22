@@ -47,8 +47,15 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
   const base = { step: estimate.step, provider: estimate.provider, model: estimate.model }
 
   switch (estimate.step) {
-    case 'stt':
-      return { ...base, provider: formatSttProvider(estimate.provider), [costKey(mode)]: costField(mode, estimate.totalCost) }
+    case 'stt': {
+      const entry: Record<string, string | number> = {
+        ...base,
+        provider: formatSttProvider(estimate.provider),
+        [costKey(mode)]: costField(mode, estimate.totalCost)
+      }
+      if (estimate.note) entry['note'] = estimate.note
+      return entry
+    }
     case 'llm': {
       const entry: Record<string, string | number> = { ...base }
       if (mode === 'human') {

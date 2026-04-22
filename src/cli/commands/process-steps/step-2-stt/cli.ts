@@ -4,6 +4,8 @@ export const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   gcloud: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   aws: { diarizationByDefault: true, supportsSpeakerCountHint: true },
+  deepinfra: { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  deapi: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false },
@@ -13,6 +15,7 @@ export const STT_ENGINE_CAPABILITIES = {
   mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true },
+  supadata: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'youtube-captions': { diarizationByDefault: false, supportsSpeakerCountHint: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
@@ -65,6 +68,10 @@ export const collectSttProviderSpecs = (
     | 'gcloudSttModels'
     | 'awsSttModel'
     | 'awsSttModels'
+    | 'deepinfraSttModel'
+    | 'deepinfraSttModels'
+    | 'deapiSttModel'
+    | 'deapiSttModels'
     | 'elevenlabsSttModel'
     | 'elevenlabsSttModels'
     | 'deepgramSttModel'
@@ -83,6 +90,8 @@ export const collectSttProviderSpecs = (
     | 'assemblyaiSttModels'
     | 'gladiaSttModel'
     | 'gladiaSttModels'
+    | 'supadataSttModel'
+    | 'supadataSttModels'
   >
 ): ProviderSpec[] => {
   const specs: ProviderSpec[] = []
@@ -97,6 +106,8 @@ export const collectSttProviderSpecs = (
   }
   appendModels('gcloud', options.gcloudSttModels, options.gcloudSttModel)
   appendModels('aws', options.awsSttModels, options.awsSttModel)
+  appendModels('deepinfra', options.deepinfraSttModels, options.deepinfraSttModel)
+  appendModels('deapi', options.deapiSttModels, options.deapiSttModel)
   appendModels('elevenlabs', options.elevenlabsSttModels, options.elevenlabsSttModel)
   appendModels('deepgram', options.deepgramSttModels, options.deepgramSttModel)
   appendModels('soniox', options.sonioxSttModels, options.sonioxSttModel)
@@ -106,6 +117,7 @@ export const collectSttProviderSpecs = (
   appendModels('mistral', options.mistralSttModels, options.mistralSttModel)
   appendModels('assemblyai', options.assemblyaiSttModels, options.assemblyaiSttModel)
   appendModels('gladia', options.gladiaSttModels, options.gladiaSttModel)
+  appendModels('supadata', options.supadataSttModels, options.supadataSttModel)
 
   const whisperRequested = specs.some((entry) => entry.provider === 'whisper')
   if (options.whisperExplicit && !whisperRequested) {

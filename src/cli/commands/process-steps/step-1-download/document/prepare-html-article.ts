@@ -192,6 +192,20 @@ const normalizeMarkdown = (value: unknown): string => {
   return value.trim()
 }
 
+type ExtractHtmlToMarkdownInput = {
+  html: string
+  documentUrl: string
+  sourceUrl?: string
+  finalUrl?: string
+}
+
+type ExtractHtmlToMarkdownResult = {
+  markdown: string
+  web: WebArticleMetadata
+  title?: string
+  author?: string
+}
+
 const ensureMeaningfulMarkdown = (
   markdown: string,
   backend: HtmlArticleBackend
@@ -212,6 +226,27 @@ const ensureMeaningfulMarkdown = (
   }
 
   throw new Error('Firecrawl returned empty article markdown.')
+}
+
+export const extractHtmlToMarkdown = async (
+  input: ExtractHtmlToMarkdownInput
+): Promise<ExtractHtmlToMarkdownResult> => {
+  const { document } = parseHTML(input.html)
+  const parsed = await Defuddle(document, input.documentUrl, {
+    markdown: true,
+    useAsync: false
+  }) as unknown as Record<string, unknown>
+
+  const markdown = ensureMeaningfulMarkdown(normalizeMarkdown(parsed['content']), 'defuddle')
+  const title = cleanString(parsed['title'])
+  const author = cleanString(parsed['author'])
+
+  return {
+    markdown,
+    web: buildDefuddleWebMetadata(input.sourceUrl, input.finalUrl, parsed, markdown),
+    ...(title ? { title } : {}),
+    ...(author ? { author } : {})
+  }
 }
 
 const buildDefuddleWebMetadata = (
@@ -379,30 +414,28 @@ export async function prepareHtmlArticle(
   if (resolvedBackend === 'defuddle') {
     if (remote) {
       const htmlInput = await fetchRemoteHtml(source)
-      const { document } = parseHTML(htmlInput.html)
-      const parsed = await Defuddle(document, htmlInput.finalUrl, {
-        markdown: true,
-        useAsync: false
-      }) as unknown as Record<string, unknown>
-
-      markdown = ensureMeaningfulMarkdown(normalizeMarkdown(parsed['content']), 'defuddle')
-      web = buildDefuddleWebMetadata(sourceUrl, htmlInput.finalUrl, parsed, markdown)
+      const extracted = await extractHtmlToMarkdown({
+        html: htmlInput.html,
+        documentUrl: htmlInput.finalUrl,
+        sourceUrl,
+        finalUrl: htmlInput.finalUrl
+      })
+      markdown = extracted.markdown
+      web = extracted.web
       fileSize = htmlInput.fileSize
-      title = cleanString(parsed['title']) ?? fallbackTitleFromSource(source)
-      author = cleanString(parsed['author'])
+      title = extracted.title ?? fallbackTitleFromSource(source)
+      author = extracted.author
     } else {
       const htmlInput = await readLocalHtml(source)
-      const { document } = parseHTML(htmlInput.html)
-      const parsed = await Defuddle(document, htmlInput.localFileUrl, {
-        markdown: true,
-        useAsync: false
-      }) as unknown as Record<string, unknown>
-
-      markdown = ensureMeaningfulMarkdown(normalizeMarkdown(parsed['content']), 'defuddle')
-      web = buildDefuddleWebMetadata(undefined, undefined, parsed, markdown)
+      const extracted = await extractHtmlToMarkdown({
+        html: htmlInput.html,
+        documentUrl: htmlInput.localFileUrl
+      })
+      markdown = extracted.markdown
+      web = extracted.web
       fileSize = htmlInput.fileSize
-      title = cleanString(parsed['title']) ?? fallbackTitleFromSource(source)
-      author = cleanString(parsed['author'])
+      title = extracted.title ?? fallbackTitleFromSource(source)
+      author = extracted.author
     }
   } else if (resolvedBackend === 'firecrawl') {
     l.info('Using Firecrawl backend for article extraction')

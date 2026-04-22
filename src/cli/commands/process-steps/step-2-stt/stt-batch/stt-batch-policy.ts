@@ -33,6 +33,8 @@ export const isAsyncSttBatchProvider = (
   target.service === 'aws'
   || target.service === 'assemblyai'
   || target.service === 'gladia'
+  || target.service === 'deapi'
+  || target.service === 'supadata'
   || target.service === 'soniox'
   || target.service === 'speechmatics'
   || target.service === 'rev'

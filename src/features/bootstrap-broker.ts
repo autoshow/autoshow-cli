@@ -1,6 +1,8 @@
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/assemblyai/assemblyai'
 import { ensureAwsSttSetup, setupAwsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
 import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/deepgram'
+import { ensureDeepinfraSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepinfra/deepinfra'
+import { ensureDeapiSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/deapi/deapi'
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/elevenlabs'
 import { ensureGcloudSttSetup, setupGcloudStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/gladia/gladia'
@@ -8,6 +10,7 @@ import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral'
 import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/rev/rev'
 import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/soniox/soniox'
+import { ensureSupadataSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/supadata/supadata'
 import { ensureSpeechmaticsSttSetup } from '~/cli/commands/process-steps/step-2-stt/stt-services/speechmatics/speechmatics'
 import { ensureReverbRuntimeSetup, setupReverb } from '~/cli/commands/process-steps/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
@@ -73,6 +76,12 @@ const handlers: Record<string, BootstrapHandler> = {
   'deepgram-stt': {
     ensure: async () => await ensureDeepgramSttSetup()
   },
+  'deepinfra-stt': {
+    ensure: async () => await ensureDeepinfraSttSetup()
+  },
+  'deapi-stt': {
+    ensure: async () => await ensureDeapiSttSetup()
+  },
   'soniox-stt': {
     ensure: async () => await ensureSonioxSttSetup()
   },
@@ -93,6 +102,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'gladia-stt': {
     ensure: async () => await ensureGladiaSttSetup()
+  },
+  'supadata-stt': {
+    ensure: async () => await ensureSupadataSttSetup()
   },
   tesseract: {
     ensure: async () => await ensureTesseractSetup()

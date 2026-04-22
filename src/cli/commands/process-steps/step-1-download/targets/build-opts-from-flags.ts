@@ -10,6 +10,8 @@ import {
   validateWhisperModel,
   validateGcloudSttModel,
   validateAwsSttModel,
+  validateDeapiSttModel,
+  validateDeepinfraSttModel,
   validateElevenlabsSttModel,
   validateDeepgramSttModel,
   validateSonioxSttModel,
@@ -19,6 +21,7 @@ import {
   validateMistralSttModel,
   validateAssemblyaiSttModel,
   validateGladiaSttModel,
+  validateSupadataSttModel,
   validateGlmOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
@@ -48,6 +51,8 @@ export const REPEATABLE_MODEL_FLAGS = [
   'whisper',
   'gcloud-stt',
   'aws-stt',
+  'deepinfra-stt',
+  'deapi-stt',
   'groq-stt',
   'elevenlabs-stt',
   'deepgram-stt',
@@ -57,6 +62,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'mistral-stt',
   'assemblyai-stt',
   'gladia-stt',
+  'supadata-stt',
   'mistral-ocr',
   'glm-ocr',
   'openai-ocr',
@@ -363,6 +369,8 @@ export const buildOptsFromFlags = (
   const whisperModel = first(whisperModels) ?? validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper', 'tiny'))
   const gcloudSttModels = readValidatedMany('gcloud-stt', validateGcloudSttModel)
   const awsSttModels = readValidatedMany('aws-stt', validateAwsSttModel)
+  const deepinfraSttModels = readValidatedMany('deepinfra-stt', validateDeepinfraSttModel)
+  const deapiSttModels = readValidatedMany('deapi-stt', validateDeapiSttModel)
   const groqSttModels = readValidatedMany('groq-stt', validateGroqSttModel)
   const elevenlabsSttModels = readValidatedMany('elevenlabs-stt', validateElevenlabsSttModel)
   const deepgramSttModels = readValidatedMany('deepgram-stt', validateDeepgramSttModel)
@@ -372,6 +380,7 @@ export const buildOptsFromFlags = (
   const mistralSttModels = readValidatedMany('mistral-stt', validateMistralSttModel)
   const assemblyaiSttModels = readValidatedMany('assemblyai-stt', validateAssemblyaiSttModel)
   const gladiaSttModels = readValidatedMany('gladia-stt', validateGladiaSttModel)
+  const supadataSttModels = readValidatedMany('supadata-stt', validateSupadataSttModel)
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
   const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
@@ -386,6 +395,8 @@ export const buildOptsFromFlags = (
   const grokModels = readValidatedMany('grok', validateGrokModel)
   const gcloudSttModel = first(gcloudSttModels)
   const awsSttModel = first(awsSttModels)
+  const deepinfraSttModel = first(deepinfraSttModels)
+  const deapiSttModel = first(deapiSttModels)
   const groqSttModel = first(groqSttModels)
   const elevenlabsSttModel = first(elevenlabsSttModels)
   const deepgramSttModel = first(deepgramSttModels)
@@ -395,6 +406,7 @@ export const buildOptsFromFlags = (
   const mistralSttModel = first(mistralSttModels)
   const assemblyaiSttModel = first(assemblyaiSttModels)
   const gladiaSttModel = first(gladiaSttModels)
+  const supadataSttModel = first(supadataSttModels)
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
   const openaiOcrModel = first(openaiOcrModels)
@@ -462,6 +474,10 @@ export const buildOptsFromFlags = (
     awsSttModel,
     awsRegion: readOptionalStringFlag(mergedFlags, 'aws-region'),
     awsBucket: readOptionalStringFlag(mergedFlags, 'aws-bucket'),
+    deepinfraSttModels,
+    deepinfraSttModel,
+    deapiSttModels,
+    deapiSttModel,
     groqSttModels,
     groqSttModel,
     elevenlabsSttModels,
@@ -480,6 +496,9 @@ export const buildOptsFromFlags = (
     assemblyaiSttModel,
     gladiaSttModels,
     gladiaSttModel,
+    supadataSttModels,
+    supadataSttModel,
+    supadataLang: readOptionalStringFlag(mergedFlags, 'supadata-lang'),
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
     sttProviderConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-provider-concurrency'), 2)),
     sttLocalConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-local-concurrency'), 1)),
