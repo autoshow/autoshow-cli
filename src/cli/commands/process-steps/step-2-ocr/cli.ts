@@ -46,9 +46,6 @@ export const buildOcrPolicy = (
     order: options.batchOrder,
     concurrency: options.batchConcurrency
   },
-  resume: {
-    ...(options.resumeMissing ? { path: options.resumeMissing } : {})
-  },
   render: {
     outputFormat: options.out,
     languages: options.lang,

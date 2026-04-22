@@ -143,6 +143,6 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt
 
 - `write` accepts the same step-2 OCR and STT flags documented in [`ocr`](../step-2-ocr/ocr-document.md) and [`stt`](../step-2-stt/stt-audio.md), including `--gcloud-stt`, but each `write` run may select at most one STT provider and at most one OCR provider.
 - `write` also accepts `--epub-bun` and `--epub-calibre`; when `--out` is set alongside either flag, it must be `json`.
-- `--resume-missing` remains supported only on [`stt`](../step-2-stt/stt-audio.md) and [`ocr`](../step-2-ocr/ocr-document.md), not on `write`.
+- Resume is exposed as the top-level `resume` command for STT and OCR outputs, not as a `write` flag.
 - `write` also accepts post-generation flags for [`tts`](../step-4-tts/text-to-speech.md), [`image`](../step-5-image/text-to-image.md), video, and music. Those options are documented on their own command pages instead of being repeated here.
 - Post-generation steps still require exactly one step-3 LLM output. Repeating `--openai`, `--llama`, or any other LLM flag produces multiple step-3 outputs and therefore skips TTS, image, video, and music generation for that run.

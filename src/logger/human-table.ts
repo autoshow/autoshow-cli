@@ -1,4 +1,12 @@
-import type { HumanLogTable, HumanLogTableCell, HumanLogTableRow } from '~/logger/types'
+import type {
+  HumanLogTable,
+  HumanLogTableCell,
+  HumanLogTableRow,
+  LogCategory,
+  LogLevel,
+  LogMetadata,
+  Logger
+} from '~/logger/types'
 
 const tableIndent = '  '
 
@@ -60,6 +68,92 @@ export const createSingleRowTable = (
       Object.entries(row).map(([key, value]) => [key, normalizeTableCell(value)])
     ) as HumanLogTableRow
   ], columns)
+
+export type LocationTableRow = {
+  artifact: string
+  path: unknown
+  detail?: unknown
+}
+
+export type BatchItemTableRow = {
+  status: string
+  input: unknown
+  detail?: unknown
+}
+
+const appendDetailColumnIfNeeded = (
+  rows: readonly HumanLogTableRow[],
+  baseColumns: readonly string[]
+): readonly string[] =>
+  rows.some((row) => row['detail'] !== undefined)
+    ? [...baseColumns, 'detail']
+    : baseColumns
+
+export const createLocationsTable = (
+  rows: readonly LocationTableRow[]
+): HumanLogTable => {
+  const normalizedRows = rows.map((row) => {
+    const detail = toHumanTableCell(row.detail)
+    return {
+      artifact: toHumanTableCell(row.artifact),
+      path: toHumanTableCell(row.path),
+      ...(detail !== '' ? { detail } : {})
+    }
+  })
+
+  return createHumanTable(
+    normalizedRows,
+    appendDetailColumnIfNeeded(normalizedRows, ['artifact', 'path'])
+  )
+}
+
+export const createBatchItemTable = (
+  rows: readonly BatchItemTableRow[]
+): HumanLogTable => {
+  const normalizedRows = rows.map((row) => {
+    const detail = toHumanTableCell(row.detail)
+    return {
+      status: toHumanTableCell(row.status),
+      input: toHumanTableCell(row.input),
+      ...(detail !== '' ? { detail } : {})
+    }
+  })
+
+  return createHumanTable(
+    normalizedRows,
+    appendDetailColumnIfNeeded(normalizedRows, ['status', 'input'])
+  )
+}
+
+type HumanTableLogOptions = {
+  level?: LogLevel
+  category?: LogCategory
+  metadata?: LogMetadata
+}
+
+export const logLocationsTable = (
+  logger: Pick<Logger, 'write'>,
+  rows: readonly LocationTableRow[],
+  options: HumanTableLogOptions = {}
+): void => {
+  logger.write(options.level ?? 'info', 'Locations', {
+    category: options.category ?? 'artifact',
+    humanTable: createLocationsTable(rows),
+    ...(options.metadata ? { metadata: options.metadata } : {})
+  })
+}
+
+export const logBatchItemTable = (
+  logger: Pick<Logger, 'write'>,
+  rows: readonly BatchItemTableRow[],
+  options: HumanTableLogOptions = {}
+): void => {
+  logger.write(options.level ?? 'info', 'Batch Item', {
+    category: options.category ?? 'pipeline',
+    humanTable: createBatchItemTable(rows),
+    ...(options.metadata ? { metadata: options.metadata } : {})
+  })
+}
 
 export const renderHumanTable = (table: HumanLogTable): string => {
   if (table.rows.length === 0) {

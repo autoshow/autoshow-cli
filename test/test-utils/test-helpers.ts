@@ -69,6 +69,8 @@ const parseCallerLocation = (): { file: string | null, line: number | null, colu
 const parseOutputDirFromText = (text: string): string | null => {
   const clean = stripAnsi(text)
   const patterns = [
+    /Locations[\s\S]*?│\s*outputDir\s*│\s*([^\n\r│]+?)\s*│/g,
+    /"artifact"\s*:\s*"outputDir"[\s\S]*?"path"\s*:\s*"([^"\n\r]+)"/g,
     /Output directory:\s*([^\n\r]+)/g,
     /Extraction complete:\s*([^\n\r]+)/g,
     /"run"\s*:\s*"([^"\n\r]+\/run\.json)"/g,
@@ -125,6 +127,7 @@ const BASE_CHILD_ENV = Object.entries(process.env).reduce<Record<string, string>
 export type RunCommandOptions = {
   testName?: string
   env?: Record<string, string | undefined>
+  cwd?: string
 }
 
 export type RunCommandResult = {
@@ -166,7 +169,12 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
     ...(opts?.env ?? {})
   }
 
-  const proc = Bun.spawn(['bun', ...args], { stdout: 'pipe', stderr: 'pipe', env })
+  const proc = Bun.spawn(['bun', ...args], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+    env,
+    ...(opts?.cwd ? { cwd: opts.cwd } : {})
+  })
   const timer = setTimeout(() => {
     try {
       process.kill(-proc.pid, 'SIGTERM')

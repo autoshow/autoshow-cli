@@ -1,7 +1,7 @@
 import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/aggregate-pricing'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration } from '~/logger/formatters'
-import { createHumanTable, toHumanTableCell } from '~/logger/human-table'
+import { createHumanTable, logLocationsTable, toHumanTableCell } from '~/logger/human-table'
 import { emitResult } from '~/logger/result-emitter'
 import type { HumanLogTable, HumanLogTableRow, Logger } from '~/logger/types'
 
@@ -298,7 +298,7 @@ export const createReporter = (logger: Logger): Reporter => {
       })
     },
     complete: (outputDir, files, options) => {
-      logger.write('info', `Output directory: ${outputDir}`, { category: 'artifact' })
+      logLocationsTable(logger, [{ artifact: 'outputDir', path: outputDir }], { category: 'artifact' })
       logger.write('success', options?.summaryMessage ?? 'Complete!', { category: 'artifact' })
       const tables = buildHumanCompletionTables(outputDir, files, options)
       const hiddenSections = new Set(options?.hideHumanSections ?? [])

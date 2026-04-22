@@ -18,17 +18,6 @@ import {
   type MutableLoggerConfig
 } from '~/logger/types'
 
-const ansiReset = '\x1b[0m'
-const sinkFailureColor = Bun.color('tomato', 'ansi') ?? ''
-const sinkFailureTimestampColor = Bun.color('gray', 'ansi') ?? ''
-
-const colorText = (text: string, ansiCode: string): string => {
-  if (ansiCode.length === 0 || text.length === 0) {
-    return text
-  }
-  return `${ansiCode}${text}${ansiReset}`
-}
-
 const getTimestamp = (): string => {
   return new Date().toISOString()
 }
@@ -94,9 +83,7 @@ const makeSinkEvent = (
 const writeSinkFailure = (error: unknown): void => {
   const message = sanitizeLogText(error instanceof Error ? error.message : String(error))
   const timestamp = getTimestamp()
-  const prefix = colorText('\u2716', sinkFailureColor)
-  const content = colorText(`Logger sink failure: ${message}`, sinkFailureColor)
-  console.error(`${colorText(`[${timestamp}]`, sinkFailureTimestampColor)} ${prefix}   ${content}`)
+  console.error(`[${timestamp}] \u2716   Logger sink failure: ${message}`)
 }
 
 export const createLogger = (options: CreateLoggerOptions = {}): Logger => {

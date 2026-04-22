@@ -113,6 +113,33 @@ test('links collector includes Rev general and STT links', () => {
   expect(revLinks).toContain('https://docs.rev.ai/faq.md')
 })
 
+test('links collector includes Resend general links', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--resend'
+  ])
+  const resendLinks = collectLinks(parsed.serviceSelections, parsed.globalSections)
+
+  expect(resendLinks).toHaveLength(20)
+  expect(resendLinks).toContain('https://resend.com/docs/cli.md')
+  expect(resendLinks).toContain('https://resend.com/docs/dashboard/emails/batch-sending.md')
+  expect(resendLinks).toContain('https://resend.com/docs/dashboard/receiving/introduction.md')
+  expect(resendLinks).toContain('https://resend.com/docs/dashboard/api-keys/introduction.md')
+})
+
+test('links collector includes Resend docs in the global general selection', () => {
+  const parsed = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'general'
+  ])
+
+  expect(collectLinks(parsed.serviceSelections, parsed.globalSections)).toContain('https://resend.com/docs/cli.md')
+})
+
 test('links collector includes Gladia general and STT links', () => {
   const parsed = parseLinksArgv([
     'bun',
@@ -253,5 +280,5 @@ test('links command rejects unknown dashed selectors with provider and section g
     'src/cli/create-cli.ts',
     'links',
     '--bogus'
-  ])).rejects.toThrow('Unknown links selector "--bogus". Known providers: assembly, claude, deapi, deepgram, elevenlabs, gemini, gladia, glm, grok, groq, happyscribe, minimax, openai, rev, soniox, speechmatics, supadata. Known sections: general, image, music, ocr, stt, text, tts, video.')
+  ])).rejects.toThrow('Unknown links selector "--bogus". Known providers: assembly, claude, deapi, deepgram, elevenlabs, gemini, gladia, glm, grok, groq, happyscribe, minimax, openai, resend, rev, soniox, speechmatics, supadata. Known sections: general, image, music, ocr, stt, text, tts, video.')
 })

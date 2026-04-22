@@ -4,6 +4,8 @@ import { runWithLogContext } from '~/logger/context-store'
 import { buildCompleteResultData, buildHumanCompletionTables, createReporter } from '~/logger/reporter'
 import type { LogSinkEvent } from '~/logger/types'
 
+const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*m/
+
 const collectEvents = (): { events: LogSinkEvent[], sink: (event: LogSinkEvent) => void } => {
   const events: LogSinkEvent[] = []
   return {
@@ -100,6 +102,34 @@ describe('logger context', () => {
       .sort()
 
     expect(batchIds).toEqual(['A', 'B'])
+  })
+})
+
+describe('logger sink failures', () => {
+  test('emits a plain-text fallback once when a sink throws', () => {
+    const logger = createLogger({
+      minLevel: 'debug',
+      sinks: [() => {
+        throw new Error('sink exploded')
+      }]
+    })
+    const stderrLines: string[] = []
+    const originalError = console.error
+
+    console.error = (...args: unknown[]) => {
+      stderrLines.push(String(args[0] ?? ''))
+    }
+
+    try {
+      logger.info('first event')
+      logger.info('second event')
+    } finally {
+      console.error = originalError
+    }
+
+    expect(stderrLines).toHaveLength(1)
+    expect(stderrLines[0]).toMatch(/^\[[^\]]+\] ✖   Logger sink failure: sink exploded$/)
+    expect(stderrLines[0]).not.toMatch(ANSI_ESCAPE_PATTERN)
   })
 })
 
@@ -205,10 +235,13 @@ describe('reporter completion output', () => {
     })
 
     expect(events.map((event) => event.message)).toEqual([
-      'Output directory: output/run',
+      'Locations',
       'Complete!',
       'Artifacts',
       'Metrics'
+    ])
+    expect(events[0]?.humanTable?.rows).toEqual([
+      { artifact: 'outputDir', path: 'output/run' }
     ])
     expect(events[2]?.humanTable?.rows).toEqual([
       { artifact: 'run', path: 'output/run/run.json' }
@@ -245,8 +278,11 @@ describe('reporter completion output', () => {
     })
 
     expect(events.map((event) => event.message)).toEqual([
-      'Output directory: output/run',
+      'Locations',
       'Complete! whisper.cpp/tiny'
+    ])
+    expect(events[0]?.humanTable?.rows).toEqual([
+      { artifact: 'outputDir', path: 'output/run' }
     ])
   })
 })

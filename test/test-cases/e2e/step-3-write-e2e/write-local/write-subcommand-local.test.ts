@@ -39,7 +39,8 @@ describe('write subcommand with llama', () => {
 
     expect(result.exitCode).toBe(0)
     const output = `${result.stdout}\n${result.stderr}`
-    expect(output).toContain('Run manifest:')
+    expect(output).toContain('Locations')
+    expect(output).toContain('runManifest')
     expect(output).toContain('Run Summary')
     expect(output).toContain('Prompt Usage')
     expect(output).not.toContain('Run manifest:\n{')

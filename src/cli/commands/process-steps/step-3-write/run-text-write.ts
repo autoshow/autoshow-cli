@@ -14,6 +14,7 @@ import type {
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
+import { logLocationsTable } from '~/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -193,7 +194,11 @@ export const runTextWrite = async (
   })
 
   if (renderedArtifacts.externalFiles.length > 0) {
-    l.info(`Rendered text saved to ${opts.renderedOutDir} (${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'})`)
+    logLocationsTable(l, [{
+      artifact: 'renderedOutDir',
+      path: opts.renderedOutDir,
+      detail: `${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'}`
+    }])
   }
 
   let step4Metadata: Step4Metadata[] | null = null

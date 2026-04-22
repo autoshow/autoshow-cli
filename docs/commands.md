@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 14 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 15 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -75,6 +75,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
 - `ocr`: [command](./commands/process-steps/step-2-ocr/ocr-document.md) | [setup](./commands/process-steps/step-2-ocr/ocr-document.md#setup)
 - `stt`: [command](./commands/process-steps/step-2-stt/stt-audio.md) | [setup](./commands/process-steps/step-2-stt/stt-audio.md#setup)
+- `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
 - `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
 - `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
 - `image`: [command](./commands/process-steps/step-5-image/text-to-image.md) | [setup](./commands/process-steps/step-5-image/text-to-image.md#setup)
@@ -90,6 +91,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - Use `download` for downloading media/documents and collecting metadata.
 - Use `ocr` for documents/images when you only need OCR/text extraction.
 - Use `stt` for audio/video when you only need transcript + prompt output.
+- Use `resume` to backfill missing STT or OCR providers in an existing output directory.
 - Use `write` for full summary pipeline with optional TTS/image/video generation.
 - Use `lyrics` either for lyric-video rendering from repo audio under `input/` or for album-style lyric draft generation from `prompt.md` + `text/` directories.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.

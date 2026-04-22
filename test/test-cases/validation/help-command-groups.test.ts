@@ -30,6 +30,7 @@ test('root help groups keep setup utilities separate from processing commands', 
   expect(setupSection).not.toContain('    sample')
   expect(setupSection).not.toContain('    models')
   expect(processingSection).not.toContain('    links')
+  expect(processingSection).toContain('    resume')
   expect(linksMatches).toHaveLength(1)
   expect(sampleMatches).toHaveLength(0)
   expect(modelsMatches).toHaveLength(0)

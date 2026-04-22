@@ -2,47 +2,6 @@ import { renderHumanTable } from '~/logger/human-table'
 import type { LogSink, LogSinkEvent } from '~/logger/types'
 
 const logIndent = '  '
-const ansiReset = '\x1b[0m'
-
-const getAnsiColor = (input: string): string => {
-  const ansi = Bun.color(input, 'ansi')
-  return ansi ?? ''
-}
-
-const levelColorMap: Record<LogSinkEvent['level'], string> = {
-  debug: getAnsiColor('slategray'),
-  info: getAnsiColor('deepskyblue'),
-  success: getAnsiColor('limegreen'),
-  warn: getAnsiColor('gold'),
-  error: getAnsiColor('tomato')
-}
-
-const infoCategoryColorMap: Record<LogSinkEvent['category'], string> = {
-  general: '',
-  command: getAnsiColor('cornflowerblue'),
-  artifact: getAnsiColor('mediumseagreen'),
-  pricing: getAnsiColor('khaki'),
-  pipeline: getAnsiColor('turquoise'),
-  tts: getAnsiColor('orange'),
-  usage: getAnsiColor('salmon')
-}
-
-const timestampColor = getAnsiColor('gray')
-
-const colorText = (text: string, ansiCode: string): string => {
-  if (ansiCode.length === 0 || text.length === 0) {
-    return text
-  }
-  return `${ansiCode}${text}${ansiReset}`
-}
-
-const getMessageColor = (event: LogSinkEvent): string => {
-  if (event.level === 'info') {
-    const categoryColor = infoCategoryColorMap[event.category]
-    return categoryColor.length > 0 ? categoryColor : levelColorMap.info
-  }
-  return levelColorMap[event.level]
-}
 
 const getBatchItemPrefix = (event: LogSinkEvent): string => {
   const itemIndex = event.context?.['itemIndex']
@@ -78,13 +37,12 @@ const getLevelSymbol = (level: LogSinkEvent['level']): string => {
 }
 
 const formatMessage = (event: LogSinkEvent): string => {
-  const timestamp = colorText(`[${event.timestamp}]`, timestampColor)
+  const timestamp = `[${event.timestamp}]`
   const symbol = getLevelSymbol(event.level)
-  const levelColor = levelColorMap[event.level]
-  const levelPrefix = symbol.length > 0 ? `${colorText(symbol, levelColor)} ` : ''
-  const batchPrefix = colorText(getBatchItemPrefix(event), timestampColor)
+  const levelPrefix = symbol.length > 0 ? `${symbol} ` : ''
+  const batchPrefix = getBatchItemPrefix(event)
   const message = event.indent ? `${logIndent}${event.message}` : event.message
-  return `${timestamp} ${levelPrefix}${batchPrefix}${colorText(message, getMessageColor(event))}`
+  return `${timestamp} ${levelPrefix}${batchPrefix}${message}`
 }
 
 export const createHumanSink = (): LogSink => {

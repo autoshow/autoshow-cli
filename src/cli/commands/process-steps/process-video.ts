@@ -20,6 +20,7 @@ import type {
 import * as l from '~/logger'
 import { runWithLogContext } from '~/logger'
 import type { StepTimingCost } from '~/logger'
+import { logLocationsTable } from '~/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { sttTarget } from './step-2-stt/orchestrator'
@@ -53,6 +54,7 @@ import {
 import { writeRunManifest } from './manifest-utils'
 import { logWriteManifestConsoleSummary } from './write-manifest-log'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-stt/youtube-captions'
+import { createMistralSttPassController } from './step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
   & { outputDir?: string | undefined }
@@ -120,6 +122,9 @@ export const processVideo = async (
     outputDir
   }
   const sttTargets = collectSttTargets(processingOptions as unknown as RuntimeOptions)
+  const mistralPassController = sttTargets.some((target) => target.service === 'mistral')
+    ? createMistralSttPassController()
+    : undefined
   let preparedSttMedia: Awaited<ReturnType<typeof prepareSttMedia>> | undefined
   let transcriptionResult: { result: TranscriptionResult, metadata: Step2Metadata | Step2Metadata[] } | undefined
   let successfulSttProviders: SttProviderSuccess[] = []
@@ -180,7 +185,8 @@ export const processVideo = async (
           split: processingOptions.split,
           reverbVerbatimicity: processingOptions.reverbVerbatimicity,
           sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
-          audioDurationSeconds
+          audioDurationSeconds,
+          ...(mistralPassController ? { mistralPassController } : {})
         })
       )
       transcriptionResult = singleTranscription
@@ -209,7 +215,8 @@ export const processVideo = async (
               split: processingOptions.split,
               reverbVerbatimicity: processingOptions.reverbVerbatimicity,
               sttSegmentConcurrency: runtimeOptions?.sttSegmentConcurrency,
-              audioDurationSeconds
+              audioDurationSeconds,
+              ...(mistralPassController ? { mistralPassController } : {})
             })
           )
           successes[index] = {
@@ -320,7 +327,11 @@ export const processVideo = async (
       : { internalArtifacts: {}, externalFiles: [] as string[] }
 
     if (renderedArtifacts.externalFiles.length > 0) {
-      l.info(`Rendered text saved to ${processingOptions.renderedOutDir} (${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'})`)
+      logLocationsTable(l, [{
+        artifact: 'renderedOutDir',
+        path: processingOptions.renderedOutDir,
+        detail: `${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'}`
+      }])
     }
 
 	    let step4Metadata: Step4Metadata[] | null = null

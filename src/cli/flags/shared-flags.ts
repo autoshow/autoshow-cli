@@ -177,13 +177,6 @@ export const transcriptionFlags = {
   }
 } as const satisfies ClercFlagsDefinition
 
-export const resumeMissingFlag = {
-  'resume-missing': {
-    description: 'Reuse an existing batch directory and rerun only missing provider outputs; omit the path to auto-pick the newest resumable batch under ./output',
-    type: String
-  }
-} as const satisfies ClercFlagsDefinition
-
 export const llmProviderFlags = {
   llama: {
     description: `llama.cpp model ID or Hugging Face repo ID (namespace/repo_name; omit value for the default local model, ${SUPPORTED_LLAMA_MODELS.length} setup-managed defaults)`,

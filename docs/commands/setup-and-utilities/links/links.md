@@ -61,6 +61,7 @@ Accepted provider selectors are the lowercase names below.
 | `--happyscribe` | `stt` |
 | `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
 | `--openai` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
+| `--resend` | `general` |
 | `--rev` | `general`, `stt` |
 | `--soniox` | `stt` |
 | `--speechmatics` | `general`, `stt` |

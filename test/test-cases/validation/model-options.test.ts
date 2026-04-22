@@ -98,7 +98,6 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--stt-local-concurrency')
   expect(result.stdout).toContain('--stt-segment-concurrency')
   expect(result.stdout).toContain('--stt-preflight-concurrency')
-  expect(result.stdout).toContain('--resume-missing')
   expect(result.stdout).toContain('--refresh-cache')
   expect(result.stdout).toContain('--no-cache')
   expect(result.stdout).not.toMatch(/--openai(\s|$)/)
@@ -125,10 +124,27 @@ test('ocr help includes hosted OCR flags', async () => {
   expect(result.stdout).not.toContain('--provider')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--epub-calibre')
-  expect(result.stdout).toContain('--resume-missing')
 })
 
-test('write help excludes STT-only resume flag', async () => {
+test('resume help exposes combined STT and OCR resume flags', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'resume',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('resume [outputDir]')
+  expect(result.stdout).toContain('--speaker-count')
+  expect(result.stdout).toContain('--youtube-captions')
+  expect(result.stdout).toContain('--stt-provider-concurrency')
+  expect(result.stdout).toContain('--mistral-ocr')
+  expect(result.stdout).toContain('--glm-ocr')
+  expect(result.stdout).toContain('--epub-bun')
+  expect(result.stdout).toContain('--batch-concurrency')
+})
+
+test('write help excludes top-level resume surface', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'write',
@@ -136,7 +152,7 @@ test('write help excludes STT-only resume flag', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
-  expect(result.stdout).not.toContain('--resume-missing')
+  expect(result.stdout).not.toContain('resume [output-dir]')
 })
 
 test('write help includes text-input lyric workflow flags', async () => {
@@ -550,31 +566,29 @@ test('CLI explicit Anthropic Opus 4.7 flag is accepted in price mode', async () 
   expectPriceSelection(result, 'anthropic', 'claude-opus-4-7')
 })
 
-test('stt bare --resume-missing rejects positional input instead of starting a fresh run', async () => {
+test('stt rejects removed --resume-missing flag through normal unknown-flag handling', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'stt',
-    STABLE_LOCAL_AUDIO_PATH,
     '--resume-missing'
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--resume-missing does not accept a positional input.')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: resumeMissing')
 })
 
-test('ocr bare --resume-missing rejects positional input instead of starting a fresh run', async () => {
+test('ocr rejects removed --resume-missing flag through normal unknown-flag handling', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'ocr',
-    'input/examples/document/1-document.pdf',
     '--resume-missing'
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--resume-missing does not accept a positional input.')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: resumeMissing')
 })
 
-test('write --resume-missing rejects unsupported command', async () => {
+test('write --resume-missing still fails through normal unknown-flag handling', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'write',
@@ -1153,7 +1167,6 @@ test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
     'stt-local-concurrency': '2',
     'stt-segment-concurrency': '4',
     'stt-preflight-concurrency': '5',
-    'resume-missing': './output/batch-1',
     'refresh-cache': true,
     'no-cache': true
   })
@@ -1162,7 +1175,6 @@ test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
   expect(opts.sttLocalConcurrency).toBe(2)
   expect(opts.sttSegmentConcurrency).toBe(4)
   expect(opts.sttPreflightConcurrency).toBe(5)
-  expect(opts.resumeMissing).toBe('./output/batch-1')
   expect(opts.refreshCache).toBe(true)
   expect(opts.noCache).toBe(true)
 })

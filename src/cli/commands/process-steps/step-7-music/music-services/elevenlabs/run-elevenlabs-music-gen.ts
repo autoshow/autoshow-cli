@@ -1,5 +1,6 @@
 import type { Step7MusicMetadata } from '~/types'
 import * as l from '~/logger'
+import { logLocationsTable } from '~/logger/human-table'
 import type { ElevenlabsMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
@@ -91,7 +92,7 @@ export const runElevenLabsMusicGen = async (
   const processingTime = Date.now() - startTime
   const musicFile = Bun.file(musicPath)
 
-  l.success(`Music saved to ${musicPath}`)
+  logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
 
   const metadata: Step7MusicMetadata = {
     musicService: 'elevenlabs',

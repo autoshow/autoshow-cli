@@ -1,5 +1,5 @@
 import type { ClercFlagsDefinition } from 'clerc'
-import { articleFlags, batchFlags, extractFlags, priceFlag, resumeMissingFlag } from './shared-flags'
+import { articleFlags, batchFlags, extractFlags, priceFlag } from './shared-flags'
 
 export const epubInspectFlags = {
   'epub-bun': {
@@ -20,7 +20,6 @@ export const extractCommandFlags = {
   ...extractFlags,
   ...articleFlags,
   ...batchFlags,
-  ...resumeMissingFlag,
   ...epubInspectFlags,
   ...priceFlag
 } as const satisfies ClercFlagsDefinition

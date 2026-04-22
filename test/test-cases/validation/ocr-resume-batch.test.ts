@@ -5,10 +5,27 @@ import { once } from 'node:events'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { runCommand } from '../../test-utils/test-helpers'
-import { readBatchItems } from '../../test-utils/manifest-helpers'
+import { readBatchItems, readRunMetadata } from '../../test-utils/manifest-helpers'
 
 const cleanupPaths = new Set<string>()
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
+
+const parseBatchDir = (output: string): string => {
+  const clean = stripAnsi(output)
+  const tableMatches = Array.from(clean.matchAll(/Locations[\s\S]*?│\s*batchManifest\s*│\s*([^\n\r│]+\/batch\.json)\s*│/g))
+  const tablePath = tableMatches.at(-1)?.[1]?.trim()
+  if (tablePath) {
+    return resolve(tablePath.slice(0, -'/batch.json'.length))
+  }
+
+  const plainMatches = Array.from(clean.matchAll(/Batch manifest:\s*([^\n\r]+\/batch\.json)/g))
+  const plainPath = plainMatches.at(-1)?.[1]?.trim()
+  if (plainPath) {
+    return resolve(plainPath.slice(0, -'/batch.json'.length))
+  }
+
+  throw new Error(`Could not find batch manifest location in command output:\n${output}`)
+}
 
 afterEach(async () => {
   for (const path of cleanupPaths) {
@@ -16,15 +33,6 @@ afterEach(async () => {
   }
   cleanupPaths.clear()
 })
-
-const parseBatchDir = (output: string): string => {
-  const match = stripAnsi(output).match(/Output directory:\s*([^\n\r]+)/)
-  if (!match || !match[1]) {
-    throw new Error(`Could not find batch output directory in command output:\n${output}`)
-  }
-
-  return resolve(match[1].trim())
-}
 
 const startOcrResumeServer = async () => {
   const pdfBytes = await Bun.file('input/examples/document/1-document.pdf').bytes()
@@ -194,8 +202,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
 
     const resumed = await runCommand([
       'src/cli/create-cli.ts',
-      'ocr',
-      '--resume-missing',
+      'resume',
       '--glm-ocr',
       'glm-ocr'
     ], {
@@ -204,7 +211,8 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     })
 
     expect(resumed.exitCode).toBe(0)
-    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Auto-discovered resumable OCR batch:')
+    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Auto-discovered resumable OCR batch')
+    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('resumeBatch')
 
     const updatedInfo = await readBatchItems(batchDir)
     const updatedEntry = updatedInfo[0] as Record<string, unknown>
@@ -265,8 +273,7 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
 
     const resumed = await runCommand([
       'src/cli/create-cli.ts',
-      'ocr',
-      '--resume-missing',
+      'resume',
       batchDir,
       '--glm-ocr',
       'glm-ocr'
@@ -287,6 +294,70 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     const rootExtraction = await Bun.file(join(itemOutputDir, 'extraction.txt')).text()
     expect(rootExtraction).toContain('Existing Mistral extract.')
     expect(await Bun.file(join(itemOutputDir, 'providers', 'glm-glm-ocr', 'extraction.txt')).text()).toContain('Recovered GLM extract.')
+  } finally {
+    await stopServer(server)
+  }
+})
+
+test('resume accepts an explicit single OCR output directory and updates only that run in place', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-resume-single-'))
+  cleanupPaths.add(tempDir)
+
+  const pdfPath = resolve('input/examples/document/1-document.pdf')
+  const cliEntry = resolve('src/cli/create-cli.ts')
+
+  const { server, baseUrl } = await startOcrResumeServer()
+  try {
+    const env = {
+      MISTRAL_API_KEY: 'mistral-test-key',
+      MISTRAL_BASE_URL: baseUrl,
+      GLM_API_KEY: 'glm-test-key',
+      ZAI_BASE_URL: baseUrl
+    }
+
+    const initial = await runCommand([
+      cliEntry,
+      'ocr',
+      pdfPath,
+      '--mistral-ocr',
+      'mistral-ocr-2512',
+      '--glm-ocr',
+      'glm-ocr'
+    ], {
+      testName: 'ocr resume single initial run',
+      env,
+      cwd: tempDir
+    })
+
+    expect(initial.exitCode).toBe(0)
+    const outputDir = typeof initial.outputDir === 'string'
+      ? resolve(tempDir, initial.outputDir)
+      : null
+    expect(typeof outputDir).toBe('string')
+
+    const beforeMetadata = await readRunMetadata(outputDir as string)
+    expect(beforeMetadata['completionStatus']).toBe('incomplete')
+
+    const resumed = await runCommand([
+      cliEntry,
+      'resume',
+      outputDir as string,
+      '--glm-ocr',
+      'glm-ocr'
+    ], {
+      testName: 'ocr resume explicit single output dir',
+      env,
+      cwd: tempDir
+    })
+
+    expect(resumed.exitCode).toBe(0)
+
+    const afterMetadata = await readRunMetadata(outputDir as string)
+    expect(afterMetadata['completionStatus']).toBe('full')
+    expect(afterMetadata['missingProviders']).toEqual([])
+    expect(Array.isArray(afterMetadata['step2'])).toBe(true)
+    expect((afterMetadata['step2'] as unknown[])).toHaveLength(2)
+    expect(await Bun.file(join(outputDir as string, 'providers', 'glm-glm-ocr', 'extraction.txt')).text()).toContain('Recovered GLM extract.')
   } finally {
     await stopServer(server)
   }

@@ -92,7 +92,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - `write` can run multiple LLM providers in one invocation and writes provider-specific JSON artifacts for each result.
 - Multi-provider STT runs write provider-specific transcripts and result envelopes under `providers/<service>-<model>/`.
-- STT batch runs can resume missing provider outputs with `--resume-missing`; supported diarization services accept `--speaker-count`.
+- STT and OCR outputs can resume missing provider results with the top-level `resume` command; supported diarization services accept `--speaker-count`.
 - HTML/article inputs can use `defuddle`, `firecrawl`, or `glm-reader` backends through `--url-backend`.
 - Native EPUB text extraction writes cleaned section-aware text by default, strips common footnote/reference noise, and can additionally emit `chapters/` or `chunks/` side artifacts.
 - The persistent STT cache can be managed with `bun as cache prune` and `bun as cache clear`, and runs can force refresh or bypass via `--refresh-cache` and `--no-cache`.

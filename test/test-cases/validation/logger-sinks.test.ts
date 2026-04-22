@@ -1,8 +1,10 @@
 import { expect, test } from 'bun:test'
-import { createHumanTable } from '~/logger/human-table'
+import { createBatchItemTable, createHumanTable } from '~/logger/human-table'
 import { createHumanSink } from '~/logger/sinks/human-sink'
 import { createJsonSink } from '~/logger/sinks/json-sink'
 import type { LogSinkEvent } from '~/logger/types'
+
+const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*m/
 
 const makeEvent = (level: LogSinkEvent['level']): LogSinkEvent => ({
   timestamp: '2026-01-01T00:00:00.000Z',
@@ -29,15 +31,18 @@ test('human sink prefixes batch item context for concurrent batch logs', () => {
     sink({
       timestamp: '2026-04-13T02:05:09.186Z',
       level: 'info',
-      message: 'Processing 2/5: input/example.mp3',
-      category: 'general',
+      message: 'Batch Item',
+      category: 'pipeline',
       runId: 'run-id',
       context: {
         itemIndex: 2,
         itemCount: 5
       },
       indent: true,
-      args: []
+      args: [],
+      humanTable: createBatchItemTable([
+        { status: 'processing', input: 'input/example.mp3' }
+      ])
     } satisfies LogSinkEvent)
   } finally {
     console.error = originalError
@@ -45,7 +50,10 @@ test('human sink prefixes batch item context for concurrent batch logs', () => {
 
   expect(stderrLines).toHaveLength(1)
   expect(stderrLines[0]).toContain('[2/5]')
-  expect(stderrLines[0]).toContain('Processing 2/5: input/example.mp3')
+  expect(stderrLines[0]).toContain('Batch Item')
+  expect(stderrLines[0]).toContain('processing')
+  expect(stderrLines[0]).toContain('input/example.mp3')
+  expect(stderrLines[0]).not.toMatch(ANSI_ESCAPE_PATTERN)
 })
 
 test('json sink writes warn/error to stderr and others to stdout', () => {
@@ -83,6 +91,7 @@ test('json sink writes warn/error to stderr and others to stdout', () => {
   expect(infoPayload['level']).toBe('info')
   expect(warnPayload['level']).toBe('warn')
   expect(infoPayload['runId']).toBe('run-id')
+  expect(infoPayload['humanTable']).toEqual(undefined)
 })
 
 test('human sink appends Bun table output for humanTable events', () => {
@@ -111,4 +120,36 @@ test('human sink appends Bun table output for humanTable events', () => {
   expect(stderrLines[0]).toContain('artifact')
   expect(stderrLines[0]).toContain('output/run/run.json')
   expect(stderrLines[0]).toContain('┌')
+  expect(stderrLines[0]).not.toMatch(ANSI_ESCAPE_PATTERN)
+})
+
+test('json sink preserves humanTable payloads', () => {
+  const sink = createJsonSink()
+  const stdoutLines: string[] = []
+  const originalLog = console.log
+
+  console.log = (...args: unknown[]) => {
+    stdoutLines.push(String(args[0] ?? ''))
+  }
+
+  try {
+    sink({
+      ...makeEvent('info'),
+      message: 'Locations',
+      humanTable: createHumanTable([
+        { artifact: 'outputDir', path: 'output/run' }
+      ], ['artifact', 'path'])
+    })
+  } finally {
+    console.log = originalLog
+  }
+
+  expect(stdoutLines).toHaveLength(1)
+  expect(JSON.parse(stdoutLines[0] as string)).toMatchObject({
+    message: 'Locations',
+    humanTable: {
+      rows: [{ artifact: 'outputDir', path: 'output/run' }],
+      columns: ['artifact', 'path']
+    }
+  })
 })

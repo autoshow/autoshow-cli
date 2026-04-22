@@ -16,6 +16,7 @@ import type {
   BatchManifestEntry
 } from '~/types'
 import type { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
+import type { MistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
 
 export type SttTarget = {
   service: TranscribeEngine
@@ -37,6 +38,7 @@ export type ProcessSttRunOptions = {
   requestedTargets?: SttTarget[] | undefined
   targetsToRun?: SttTarget[] | undefined
   batchCoordinator?: SttBatchCoordinator | undefined
+  mistralPassController?: MistralSttPassController | undefined
   batchChildContext?: BatchChildRunContext | undefined
 }
 
@@ -321,6 +323,7 @@ export type SttTargetOptions = {
   audioDurationSeconds?: number | undefined
   runMode?: 'initial' | 'backfill' | undefined
   asyncLifecycle?: AsyncSttLifecycleHooks | undefined
+  mistralPassController?: MistralSttPassController | undefined
 }
 
 export type IndexedTranscriptionChunk = {

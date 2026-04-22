@@ -70,8 +70,9 @@ bun as setup --step reverb
 
 ```bash
 bun as stt [input] [flags]
-bun as stt --resume-missing [batch-dir] [provider flags]
 ```
+
+For backfilling missing provider outputs from an existing STT run or batch, see [`resume`](../../setup-and-utilities/resume/resume.md).
 
 ## Supported Inputs
 
@@ -146,8 +147,6 @@ bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deep
 # Process a whole YouTube channel batch with caption-first routing
 bun as stt https://www.youtube.com/@channelname --youtube-captions --batch-all
 
-# Resume missing provider outputs from an earlier batch
-bun as stt --resume-missing
 ```
 
 ## Flags
@@ -184,7 +183,6 @@ bun as stt --resume-missing
 | `--stt-preflight-concurrency <n>` | Max duration probes running in parallel during preflight |
 | `--refresh-cache` | Rebuild STT cache entries touched by this run |
 | `--no-cache` | Bypass the media cache for this run |
-| `--resume-missing [batch-dir]` | Reuse an STT batch directory and rerun only missing provider outputs |
 | `--price` | Show the aggregated estimate and exit |
 
 ## Notes
@@ -194,8 +192,9 @@ bun as stt --resume-missing
 - Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
 - `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
 - Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request.
+- Mistral STT requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.
 - STT batch roots now include `stt-summary.json`, which records per-item caption-vs-STT routing alongside completion status.
-- `--resume-missing` reuses an earlier STT batch, does not take a positional input, does not support `--price`, and any provider flags must be a subset of the original requested providers.
+- Backfill existing STT outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).

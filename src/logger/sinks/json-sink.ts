@@ -29,6 +29,10 @@ const serializeEvent = (event: Parameters<LogSink>[0]): string => {
     payload['args'] = event.args
   }
 
+  if (event.humanTable) {
+    payload['humanTable'] = event.humanTable
+  }
+
   return JSON.stringify(payload)
 }
 

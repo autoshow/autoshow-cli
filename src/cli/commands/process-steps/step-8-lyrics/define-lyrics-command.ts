@@ -21,7 +21,7 @@ import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import * as l from '~/logger'
-import { createHumanTable } from '~/logger/human-table'
+import { createHumanTable, logLocationsTable } from '~/logger/human-table'
 import { buildLyricsCues } from './cue-builder'
 import { formatSrt, formatVtt, loadCaptionFile } from './captions'
 import {
@@ -540,7 +540,10 @@ const processLyricsRun = async (options: {
         }
       })
     } else {
-      l.info(`Rendered lyrics: ${videoFileName}`)
+      logLocationsTable(l, [{
+        artifact: 'lyricsVideo',
+        path: `${outputDirRelative}/${videoFileName}`
+      }])
     }
 
     return {
@@ -683,8 +686,8 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
       font
     })
 
-    l.info(`Output directory: ${batchDirRelative}`)
-    l.info(`Batch manifest: ${batchDirRelative}/batch.json`)
+    logLocationsTable(l, [{ artifact: 'outputDir', path: batchDirRelative }])
+    logLocationsTable(l, [{ artifact: 'batchManifest', path: `${batchDirRelative}/batch.json` }])
     logLyricsBatchSummary(items.length, succeeded, failed)
 
     if (failed > 0) {
@@ -838,8 +841,8 @@ const runLyricsGenerationMode = async (options: {
     requestedProviderCount: countRequestedTargets(generationOptions)
   })
 
-  l.info(`Output directory: ${batchDirRelative}`)
-  l.info(`Batch manifest: ${batchDirRelative}/batch.json`)
+  logLocationsTable(l, [{ artifact: 'outputDir', path: batchDirRelative }])
+  logLocationsTable(l, [{ artifact: 'batchManifest', path: `${batchDirRelative}/batch.json` }])
   logLyricsBatchSummary(items.length, succeeded, failed)
 
   if (failed > 0) {

@@ -56,6 +56,9 @@ import {
   tryResolveYoutubeCaptionTranscription,
   YOUTUBE_CAPTIONS_SERVICE
 } from './step-2-stt/youtube-captions'
+import { createMistralSttPassController } from './step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
+import { logRunManifestLocation } from './write-manifest-log'
+import { logLocationsTable } from '~/logger/human-table'
 
 export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/batch'
 export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from '~/types'
@@ -586,6 +589,10 @@ export const processStt = async (
 ): Promise<string> => {
   const processStart = Date.now()
   const requestedTargets = runOptions.requestedTargets ?? collectSttTargets(options)
+  const mistralPassController = runOptions.mistralPassController
+    ?? (requestedTargets.some((target) => target.service === 'mistral')
+      ? createMistralSttPassController()
+      : undefined)
   const targetsToRun = runOptions.targetsToRun ?? requestedTargets
   const targetsToRunKeys = new Set(targetsToRun.map((target) => getSttTargetKey(target)))
   const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
@@ -670,8 +677,7 @@ export const processStt = async (
           ...(timing ? { timing } : {})
         }, null, 2)
         await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
-        const metadataPath = `${outputDir}/run.json`
-        l.info(`Run manifest: ${metadataPath}`)
+        logRunManifestLocation(outputDir, l, 'stt')
         l.debug(`Run manifest:\n${metadataJson}`)
 
         const artifactFiles: Record<string, string> = {
@@ -703,7 +709,8 @@ export const processStt = async (
           split: options.split,
           reverbVerbatimicity: options.reverbVerbatimicity,
           sttSegmentConcurrency: options.sttSegmentConcurrency,
-          audioDurationSeconds
+          audioDurationSeconds,
+          ...(mistralPassController ? { mistralPassController } : {})
         })
       )
 
@@ -749,8 +756,7 @@ export const processStt = async (
         ...(timing ? { timing } : {})
       }, null, 2)
       await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
-      const metadataPath = `${outputDir}/run.json`
-      l.info(`Run manifest: ${metadataPath}`)
+      logRunManifestLocation(outputDir, l, 'stt')
       l.debug(`Run manifest:\n${metadataJson}`)
 
       const artifactFiles: Record<string, string> = {
@@ -892,6 +898,7 @@ export const processStt = async (
             sttSegmentConcurrency: options.sttSegmentConcurrency,
             audioDurationSeconds: preparedMedia.durationSeconds,
             runMode: runOptions.outputDir ? 'backfill' : 'initial',
+            ...(mistralPassController ? { mistralPassController } : {}),
             asyncLifecycle: batchCoordinator
               ? {
                   onJobReady: async () => {
@@ -1107,8 +1114,7 @@ export const processStt = async (
       ...(metadataErrors.length > 0 ? { errors: metadataErrors } : {})
     }, null, 2)
     await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
-    const metadataPath = `${outputDir}/run.json`
-    l.info(`Run manifest: ${metadataPath}`)
+    logRunManifestLocation(outputDir, l, 'stt')
     l.debug(`Run manifest:\n${metadataJson}`)
 
     const stepSummaries: StepTimingCost[] = [
@@ -1169,7 +1175,8 @@ export const processStt = async (
     if (failures.length > 0) {
       l.warn(`stt run completed with partial failures: ${failures.map(formatProviderFailure).join('; ')}`)
     }
-    l.warn(`Output directory preserved for retry/backfill: ${outputDir}`)
+    l.warn('Output directory preserved for retry/backfill')
+    logLocationsTable(l, [{ artifact: 'retryOutputDir', path: outputDir }], { level: 'warn' })
 
     throw new SttPartialCompletionError(
       outputDir,

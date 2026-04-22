@@ -7,6 +7,7 @@ import { SttBatchCoordinator } from './stt-batch-coordinator'
 import { runResumeSttMissingFromBatchDir } from '../resume'
 import { logSttBatchFinalSummary, processBatch } from '../../step-1-download/targets/target-utils'
 import { processSingleTarget } from '../../step-1-download/targets/single-target'
+import { createMistralSttPassController } from '../stt-services/mistral/mistral-stt-pass-controller'
 
 export class SttBatchIncompleteError extends Error {
   readonly exitCode: number
@@ -39,8 +40,12 @@ export const runSttBatch = async (
   opts: RuntimeOptions,
   runOpts: BatchRunOptions = {}
 ): Promise<BatchProcessResult> => {
+  const requestedTargets = collectSttTargets(opts)
   const coordinator = shouldEnableCoordinator(items, opts)
     ? new SttBatchCoordinator({ batchConcurrency: opts.batchConcurrency })
+    : undefined
+  const mistralPassController = requestedTargets.some((target) => target.service === 'mistral')
+    ? createMistralSttPassController()
     : undefined
 
   let result = await processBatch(
@@ -51,6 +56,7 @@ export const runSttBatch = async (
     async (command, item, batchDir, batchOpts, batchItem) =>
       await processSingleTarget(command, item, batchDir, batchOpts, undefined, {
         ...(coordinator ? { sttBatchCoordinator: coordinator } : {}),
+        ...(mistralPassController ? { mistralSttPassController: mistralPassController } : {}),
         batchChildContext: {
           batchDir,
           ...(batchItem ? { batchItem } : {})

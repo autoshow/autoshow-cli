@@ -1,5 +1,5 @@
 import { readdir } from 'node:fs/promises'
-import { resolve as resolvePath, join } from 'node:path'
+import { join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as l from '~/logger'
 import { createHumanTable } from '~/logger/human-table'
@@ -25,9 +25,10 @@ import {
   parseStoredRequestedTargets
 } from './stt-batch/stt-run-state'
 import { collectSttTargets, formatSttTargetLabel, getSttTargetKey } from './stt-targets'
-import { readSttRunManifestEntry, writeSttBatchManifest } from './manifest'
+import { readSttRunManifestEntry, writeSttBatchManifest, writeSttRunManifest } from './manifest'
 import { readBatchManifest } from '../manifest-utils'
 import { YOUTUBE_CAPTIONS_SERVICE } from './youtube-captions'
+import type { ResumeTarget } from '../resume/resume-types'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -72,10 +73,10 @@ const parseResumeEntry = async (
   const outputDir = await resolveStoredOutputDir(entry)
   if (!outputDir) {
     if (options.ignoreUnresumableEntries) {
-      l.warn('Skipping STT batch entry with no resumable output directory')
+      l.warn('Skipping STT entry with no resumable output directory')
       return undefined
     }
-    throw CLIUsageError('Batch entry is missing outputDir and could not be matched to an STT output directory.')
+    throw CLIUsageError('Run entry is missing outputDir and could not be matched to an STT output directory.')
   }
 
   const storedRequestedTargets = parseStoredRequestedTargets(entry)
@@ -89,7 +90,7 @@ const parseResumeEntry = async (
       : selectedTargets
 
   if (!requestedTargets || requestedTargets.length === 0) {
-    throw CLIUsageError('Could not determine the original STT provider set for this batch. Re-run with explicit provider flags.')
+    throw CLIUsageError('Could not determine the original STT provider set for this output. Re-run with explicit provider flags.')
   }
 
   const selectedKeys = selectedTargets ? new Set(selectedTargets.map(getSttTargetKey)) : undefined
@@ -97,7 +98,7 @@ const parseResumeEntry = async (
     const requestedKeys = new Set(requestedTargets.map(getSttTargetKey))
     const unexpected = [...selectedKeys].filter((key) => !requestedKeys.has(key))
     if (unexpected.length > 0) {
-      throw CLIUsageError(`Requested resume providers are not a subset of the original batch providers: ${unexpected.join(', ')}`)
+      throw CLIUsageError(`Requested resume providers are not a subset of the original providers: ${unexpected.join(', ')}`)
     }
   }
 
@@ -126,21 +127,6 @@ const parseResumeEntry = async (
   }
 }
 
-const readResumeBatchManifest = async (
-  batchDir: string
-): Promise<(ResumeBatchManifest & { source?: Record<string, unknown> }) | undefined> => {
-  const manifest = await readBatchManifest(batchDir, 'stt')
-  if (!manifest) {
-    return undefined
-  }
-
-  return {
-    infoPath: manifest.manifestPath,
-    entries: manifest.manifest.items,
-    ...(manifest.manifest.source ? { source: manifest.manifest.source } : {})
-  }
-}
-
 const readOutputMetadata = async (outputDir: string): Promise<BatchManifestEntry> => {
   const metadata = await readSttRunManifestEntry(outputDir)
   if (!isRecord(metadata)) {
@@ -158,6 +144,36 @@ const withOutputDir = (
   outputDir
 })
 
+const stripOutputDir = (
+  metadata: BatchManifestEntry
+): Record<string, unknown> => {
+  const { outputDir: _outputDir, ...rest } = metadata
+  return rest
+}
+
+const readResumeTargetManifest = async (
+  target: ResumeTarget
+): Promise<(ResumeBatchManifest & { source?: Record<string, unknown> }) | undefined> => {
+  if (target.scope === 'batch') {
+    const manifest = await readBatchManifest(target.dir, 'stt')
+    if (!manifest) {
+      return undefined
+    }
+
+    return {
+      infoPath: manifest.manifestPath,
+      entries: manifest.manifest.items,
+      ...(manifest.manifest.source ? { source: manifest.manifest.source } : {})
+    }
+  }
+
+  const metadata = await readOutputMetadata(target.dir)
+  return {
+    infoPath: target.manifestPath,
+    entries: [withOutputDir(metadata, target.dir)]
+  }
+}
+
 const parseResumeEntries = async (
   entries: BatchManifestEntry[],
   selectedTargets: SttTarget[] | undefined,
@@ -168,30 +184,23 @@ const parseResumeEntries = async (
     await parseResumeEntry(entry, selectedTargets, options)
   ))
 
-const batchHasResumableWork = async (
-  batchDir: string,
+export const hasResumableSttTargetWork = async (
+  target: ResumeTarget,
   selectedTargets: SttTarget[] | undefined,
   options: { youtubeCaptions: boolean, currentTargets: SttTarget[] }
 ): Promise<boolean> => {
-  const manifest = await readResumeBatchManifest(batchDir)
+  const manifest = await readResumeTargetManifest(target)
   if (!manifest) {
     return false
   }
 
   for (const entry of manifest.entries) {
-    const storedRequestedTargets = parseStoredRequestedTargets(entry)
-    const storedCaptionOnly = storedRequestedTargets.length === 1
-      && storedRequestedTargets[0]?.service === YOUTUBE_CAPTIONS_SERVICE
-    if (storedRequestedTargets.length < 2 && !storedCaptionOnly) {
-      continue
-    }
-
     try {
-        const parsedEntry = await parseResumeEntry(entry, selectedTargets, {
-          retryableOnly: false,
-          ignoreUnresumableEntries: true,
-          ...options
-        })
+      const parsedEntry = await parseResumeEntry(entry, selectedTargets, {
+        retryableOnly: false,
+        ignoreUnresumableEntries: true,
+        ...options
+      })
       if (parsedEntry && parsedEntry.missingTargets.length > 0) {
         return true
       }
@@ -202,6 +211,18 @@ const batchHasResumableWork = async (
 
   return false
 }
+
+const batchHasResumableWork = async (
+  batchDir: string,
+  selectedTargets: SttTarget[] | undefined,
+  options: { youtubeCaptions: boolean, currentTargets: SttTarget[] }
+): Promise<boolean> =>
+  await hasResumableSttTargetWork({
+    kind: 'stt',
+    scope: 'batch',
+    dir: resolvePath(batchDir),
+    manifestPath: join(resolvePath(batchDir), 'batch.json')
+  }, selectedTargets, options)
 
 export const discoverLatestResumableSttBatchDir = async (
   outputRootInput: string,
@@ -250,17 +271,17 @@ export const resolveResumeSttBatchDir = async (
   }
 
   if (selectedTargets && selectedTargets.length > 0) {
-    throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput} that matches the selected provider flags. Pass --resume-missing <batch-dir> explicitly.`)
+    throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput} that matches the selected provider flags. Pass a batch directory explicitly.`)
   }
 
-  throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput}. Pass --resume-missing <batch-dir> explicitly.`)
+  throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput}. Pass a batch directory explicitly.`)
 }
 
 const formatResumeSummary = (
   full: number,
   incomplete: number,
   failed: number
-): string => `Batch complete: ${full} full, ${incomplete} incomplete, ${failed} failed`
+): string => `Resume complete: ${full} full, ${incomplete} incomplete, ${failed} failed`
 
 const collectPartialFailureLabels = (
   metadata: Record<string, unknown>,
@@ -282,16 +303,20 @@ const collectPartialFailureLabels = (
 }
 
 const runResumePass = async (
-  batchDir: string,
+  target: ResumeTarget,
   opts: RuntimeOptions,
   selectedTargets: SttTarget[] | undefined,
   options: NormalizedResumeSttBatchRunOptions & { youtubeCaptions: boolean, currentTargets: SttTarget[] },
   pass: number,
   totalPasses: number
 ): Promise<ResumeSttBatchPassResult> => {
-  const manifest = await readResumeBatchManifest(batchDir)
+  const manifest = await readResumeTargetManifest(target)
   if (!manifest) {
-    throw CLIUsageError(`Invalid batch manifest at ${join(batchDir, 'batch.json')}`)
+    throw CLIUsageError(
+      target.scope === 'batch'
+        ? `Invalid batch manifest at ${join(target.dir, 'batch.json')}`
+        : `Invalid STT manifest at ${join(target.dir, 'run.json')}`
+    )
   }
 
   const parsedEntries = await parseResumeEntries(manifest.entries, selectedTargets, options)
@@ -308,7 +333,7 @@ const runResumePass = async (
   const partialFailureLabels = new Map<string, number>()
 
   if (options.maxPasses > 1) {
-    l.info(`STT batch backfill pass ${pass}/${totalPasses}`)
+    l.info(`STT resume pass ${pass}/${totalPasses}`)
   }
 
   for (let index = 0; index < parsedEntries.length; index++) {
@@ -346,7 +371,7 @@ const runResumePass = async (
     attemptedEntries += 1
     l.info(`Resume ${entryLabel}: ${entry.outputDir} -> ${entry.missingTargets.map(formatSttTargetLabel).join(', ')}`)
     try {
-      const outputDir = await processStt(entry.source, batchDir, opts, undefined, {
+      const outputDir = await processStt(entry.source, target.dir, opts, undefined, {
         outputDir: entry.outputDir,
         requestedTargets: entry.requestedTargets,
         targetsToRun: entry.missingTargets,
@@ -376,7 +401,11 @@ const runResumePass = async (
     }
   }
 
-  await writeSttBatchManifest(batchDir, updatedEntries, manifest.source)
+  if (target.scope === 'batch') {
+    await writeSttBatchManifest(target.dir, updatedEntries, manifest.source)
+  } else if (updatedEntries[0]) {
+    await writeSttRunManifest(target.dir, stripOutputDir(updatedEntries[0]))
+  }
 
   if (partialFailureLabels.size > 0) {
     l.warn(`Partial provider failures: ${[...partialFailureLabels.entries()]
@@ -407,19 +436,18 @@ const runResumePass = async (
     partial: 0,
     incomplete,
     fail: failed,
-    batchDir,
+    ...(target.scope === 'batch' ? { batchDir: target.dir } : {}),
     attemptedEntries,
     ...(incomplete > 0 || failed > 0 ? { failureExitCode: 2 } : {})
   }
 }
 
-export const runResumeSttMissingFromBatchDir = async (
-  batchDirInput: string,
+const runResumeSttTarget = async (
+  target: ResumeTarget,
   opts: RuntimeOptions,
   selectedTargets?: SttTarget[],
   runOptions: ResumeSttBatchRunOptions = {}
 ): Promise<ResumeSttBatchPassResult> => {
-  const batchDir = resolvePath(batchDirInput)
   const currentTargets = selectedTargets && selectedTargets.length > 0 ? selectedTargets : collectSttTargets(opts)
   const normalizedOptions: NormalizedResumeSttBatchRunOptions = {
     retryableOnly: runOptions.retryableOnly === true,
@@ -427,11 +455,12 @@ export const runResumeSttMissingFromBatchDir = async (
     ignoreUnresumableEntries: runOptions.ignoreUnresumableEntries === true
   }
 
-  let result = await runResumePass(batchDir, opts, selectedTargets, {
+  let result = await runResumePass(target, opts, selectedTargets, {
     ...normalizedOptions,
     youtubeCaptions: opts.youtubeCaptions,
     currentTargets
   }, 1, normalizedOptions.maxPasses)
+
   for (let pass = 2; pass <= normalizedOptions.maxPasses; pass++) {
     if (result.incomplete === 0 && result.fail === 0) {
       break
@@ -439,7 +468,7 @@ export const runResumeSttMissingFromBatchDir = async (
     if (result.attemptedEntries === 0) {
       break
     }
-    result = await runResumePass(batchDir, opts, selectedTargets, {
+    result = await runResumePass(target, opts, selectedTargets, {
       ...normalizedOptions,
       youtubeCaptions: opts.youtubeCaptions,
       currentTargets
@@ -449,18 +478,44 @@ export const runResumeSttMissingFromBatchDir = async (
   return result
 }
 
+export const runResumeSttMissingFromBatchDir = async (
+  batchDirInput: string,
+  opts: RuntimeOptions,
+  selectedTargets?: SttTarget[],
+  runOptions: ResumeSttBatchRunOptions = {}
+): Promise<ResumeSttBatchPassResult> =>
+  await runResumeSttTarget({
+    kind: 'stt',
+    scope: 'batch',
+    dir: resolvePath(batchDirInput),
+    manifestPath: join(resolvePath(batchDirInput), 'batch.json')
+  }, opts, selectedTargets, runOptions)
+
+export const resumeSttTarget = async (
+  target: ResumeTarget,
+  opts: RuntimeOptions,
+  selectedTargets?: SttTarget[]
+): Promise<void> => {
+  const result = await runResumeSttTarget(target, opts, selectedTargets)
+  if (target.scope === 'batch' && result.batchDir) {
+    await logSttBatchFinalSummary(result.batchDir)
+  }
+  if (result.incomplete > 0 || result.fail > 0) {
+    const error = new Error(`STT resume still has ${result.incomplete} incomplete and ${result.fail} failed item(s)`)
+    ;(error as Error & { exitCode?: number }).exitCode = 2
+    throw error
+  }
+}
+
 export const resumeSttMissingFromBatchDir = async (
   batchDirInput: string,
   opts: RuntimeOptions,
   selectedTargets?: SttTarget[]
 ): Promise<void> => {
-  const result = await runResumeSttMissingFromBatchDir(batchDirInput, opts, selectedTargets)
-  if (result.batchDir) {
-    await logSttBatchFinalSummary(result.batchDir)
-  }
-  if (result.incomplete > 0 || result.fail > 0) {
-    const error = new Error(`STT batch resume still has ${result.incomplete} incomplete and ${result.fail} failed item(s)`)
-    ;(error as Error & { exitCode?: number }).exitCode = 2
-    throw error
-  }
+  await resumeSttTarget({
+    kind: 'stt',
+    scope: 'batch',
+    dir: resolvePath(batchDirInput),
+    manifestPath: join(resolvePath(batchDirInput), 'batch.json')
+  }, opts, selectedTargets)
 }

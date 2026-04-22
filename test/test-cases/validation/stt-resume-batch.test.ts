@@ -58,7 +58,7 @@ const createResumeDiscoveryBatch = async (
   return batchDir
 }
 
-test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provider STT batch', async () => {
+test('discoverLatestResumableSttBatchDir picks the newest resumable STT batch, including single-provider failures', async () => {
   const outputRoot = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-discovery-'))
   tempDirs.push(outputRoot)
 
@@ -73,7 +73,7 @@ test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provi
     audioFileSize: 1234
   }
 
-  await createResumeDiscoveryBatch(outputRoot, '2026-04-16_09-00-00-000_files', {
+  const expectedBatchDir = await createResumeDiscoveryBatch(outputRoot, '2026-04-16_09-00-00-000_files', {
     step1: baseStep1,
     step2: [],
     completionStatus: 'failed',
@@ -128,7 +128,7 @@ test('discoverLatestResumableSttBatchDir picks the newest incomplete multi-provi
     missingProviders: []
   })
 
-  const expectedBatchDir = await createResumeDiscoveryBatch(outputRoot, '2026-04-14_09-00-00-000_files', {
+  await createResumeDiscoveryBatch(outputRoot, '2026-04-14_09-00-00-000_files', {
     step1: baseStep1,
     step2: [
       {

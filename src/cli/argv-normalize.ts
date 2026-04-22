@@ -4,6 +4,7 @@ import { redactCliArgv } from '~/logger/redaction'
 
 export const knownCommands = new Set<string>([
   ...PROCESS_COMMANDS,
+  'resume',
   'lyrics',
   'config',
   'cache',

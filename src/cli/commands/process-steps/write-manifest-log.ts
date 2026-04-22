@@ -1,6 +1,6 @@
 import { l, type Logger } from '~/logger'
 import { formatCost, formatDuration } from '~/logger/formatters'
-import { createHumanTable } from '~/logger/human-table'
+import { createHumanTable, logLocationsTable } from '~/logger/human-table'
 import type { HumanLogTable } from '~/logger/types'
 import type {
   ActualCostBreakdown,
@@ -651,22 +651,31 @@ export const buildWriteManifestConsoleSummary = (
   }
 }
 
+export const logRunManifestLocation = (
+  outputDir: string,
+  logger: Pick<Logger, 'write'> = l,
+  kind = 'write'
+): string => {
+  const manifestPath = `${outputDir}/run.json`
+  logLocationsTable(logger, [{ artifact: 'runManifest', path: manifestPath }], {
+    category: 'artifact',
+    metadata: {
+      path: manifestPath,
+      kind
+    }
+  })
+  return manifestPath
+}
+
 export const logWriteManifestConsoleSummary = (
   outputDir: string,
   metadata: WriteManifestMetadata,
   refs: WriteManifestSourceRefs = {},
   logger: Pick<Logger, 'write' | 'debug'> = l
 ): void => {
-  const manifestPath = `${outputDir}/run.json`
   const summary = buildWriteManifestConsoleSummary(metadata, refs)
 
-  logger.write('info', `Run manifest: ${manifestPath}`, {
-    category: 'artifact',
-    metadata: {
-      path: manifestPath,
-      kind: 'write'
-    }
-  })
+  logRunManifestLocation(outputDir, logger, 'write')
 
   if (summary.runSummary) {
     logger.write('info', 'Run Summary', {

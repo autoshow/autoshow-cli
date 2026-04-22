@@ -6,6 +6,7 @@ const DEFAULT_PROVIDER_SLOT_LIMIT = 2
 const DEFAULT_DEEPGRAM_SLOT_LIMIT = 4
 const DEFAULT_ELEVENLABS_SLOT_LIMIT = 2
 const DEFAULT_ASYNC_CREATE_SLOT_LIMIT = 2
+const DEFAULT_MISTRAL_SLOT_LIMIT = 1
 const MAX_PROVIDER_SLOT_LIMIT = 8
 const MAX_POLL_SLOT_LIMIT = 8
 
@@ -51,6 +52,10 @@ const getDefaultProviderSlotLimit = (
     return DEFAULT_ELEVENLABS_SLOT_LIMIT
   }
 
+  if (target.service === 'mistral') {
+    return DEFAULT_MISTRAL_SLOT_LIMIT
+  }
+
   if (isAsyncSttBatchProvider(target)) {
     return DEFAULT_ASYNC_CREATE_SLOT_LIMIT
   }
@@ -63,6 +68,10 @@ export const resolveSttBatchProviderSlotLimit = (
 ): number => {
   if (target.local) {
     return 1
+  }
+
+  if (target.service === 'mistral') {
+    return DEFAULT_MISTRAL_SLOT_LIMIT
   }
 
   const serviceKey = normalizeEnvSegment(target.service)

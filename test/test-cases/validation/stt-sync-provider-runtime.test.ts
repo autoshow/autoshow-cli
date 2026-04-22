@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { runDeepgramTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-services/deepgram/run-deepgram-stt'
 import { runElevenLabsTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-services/elevenlabs/run-elevenlabs-stt'
+import { createMistralSttPassController } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
 import { runMistralStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/mistral/run-mistral-stt'
 import {
   createTempOutputTracker,
@@ -25,6 +26,19 @@ const readFetchRequest = (input: string | URL | Request, init?: RequestInit): { 
   url: input instanceof Request ? input.url : String(input),
   method: input instanceof Request ? input.method : init?.method ?? 'GET'
 })
+
+const waitForCondition = async (
+  predicate: () => boolean,
+  timeoutMs = 2_000
+): Promise<void> => {
+  const startedAt = Date.now()
+  while (!predicate()) {
+    if (Date.now() - startedAt > timeoutMs) {
+      throw new Error('Timed out waiting for test condition')
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+}
 
 beforeEach(() => {
   installNoopSleep()
@@ -317,6 +331,169 @@ describe('runMistralStt', () => {
 
     const transcript = await Bun.file(`${outputDir}/transcription.txt`).text()
     expect(transcript).toBe('[00:00:00] [speaker_1] Hello world')
+  })
+
+  test('honors Retry-After on 429 responses before retrying', async () => {
+    const { audioPath, outputDir } = await tempOutput.createAudioFixture('autoshow-mistral-stt-')
+    process.env['MISTRAL_API_KEY'] = 'test-key'
+    process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
+
+    let attempts = 0
+    const sleepCalls: number[] = []
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (delayMs: number) => {
+      sleepCalls.push(delayMs)
+    }) as typeof Bun.sleep
+
+    globalThis.fetch = (async () => {
+      attempts += 1
+      if (attempts === 1) {
+        return new Response('rate limited', {
+          status: 429,
+          headers: { 'retry-after': '7' }
+        })
+      }
+
+      return new Response(JSON.stringify({
+        model: 'voxtral-mini-2602',
+        text: 'Recovered after retry-after',
+        language: null,
+        usage: {},
+        segments: [
+          {
+            start: 0,
+            end: 1,
+            text: 'Recovered after retry-after',
+            speaker_id: 'speaker_1'
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as unknown as typeof fetch
+
+    const { result } = await runMistralStt(audioPath, outputDir, {
+      model: 'voxtral-mini-2602',
+      segmentOffsetMinutes: 0
+    })
+
+    expect(attempts).toBe(2)
+    expect(sleepCalls).toContain(7_000)
+    expect(result.text).toBe('Recovered after retry-after')
+  })
+
+  test('uses the fallback cooldown when 429 omits Retry-After', async () => {
+    const { audioPath, outputDir } = await tempOutput.createAudioFixture('autoshow-mistral-stt-')
+    process.env['MISTRAL_API_KEY'] = 'test-key'
+    process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
+
+    let attempts = 0
+    const sleepCalls: number[] = []
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (delayMs: number) => {
+      sleepCalls.push(delayMs)
+    }) as typeof Bun.sleep
+
+    globalThis.fetch = (async () => {
+      attempts += 1
+      if (attempts === 1) {
+        return new Response('rate limited', {
+          status: 429
+        })
+      }
+
+      return new Response(JSON.stringify({
+        model: 'voxtral-mini-2602',
+        text: 'Recovered after fallback cooldown',
+        language: null,
+        usage: {},
+        segments: [
+          {
+            start: 0,
+            end: 1,
+            text: 'Recovered after fallback cooldown',
+            speaker_id: 'speaker_1'
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as unknown as typeof fetch
+
+    const { result } = await runMistralStt(audioPath, outputDir, {
+      model: 'voxtral-mini-2602',
+      segmentOffsetMinutes: 0
+    })
+
+    expect(attempts).toBe(2)
+    expect(sleepCalls).toContain(60_000)
+    expect(result.text).toBe('Recovered after fallback cooldown')
+  })
+
+  test('serializes concurrent requests that share a pass controller', async () => {
+    const firstFixture = await tempOutput.createAudioFixture('autoshow-mistral-stt-')
+    const secondFixture = await tempOutput.createAudioFixture('autoshow-mistral-stt-')
+    process.env['MISTRAL_API_KEY'] = 'test-key'
+    process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
+
+    let attempts = 0
+    let activeRequests = 0
+    let maxActiveRequests = 0
+    let releaseFirstRequest!: () => void
+    const firstRequestReleased = new Promise<void>((resolve) => {
+      releaseFirstRequest = resolve
+    })
+
+    globalThis.fetch = (async () => {
+      attempts += 1
+      activeRequests += 1
+      maxActiveRequests = Math.max(maxActiveRequests, activeRequests)
+      const currentAttempt = attempts
+
+      if (currentAttempt === 1) {
+        await firstRequestReleased
+      }
+
+      activeRequests -= 1
+      return new Response(JSON.stringify({
+        model: 'voxtral-mini-2602',
+        text: `Concurrent transcript ${currentAttempt}`,
+        language: null,
+        usage: {},
+        segments: [
+          {
+            start: 0,
+            end: 1,
+            text: `Concurrent transcript ${currentAttempt}`,
+            speaker_id: 'speaker_1'
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as unknown as typeof fetch
+
+    const passController = createMistralSttPassController()
+    const firstRun = runMistralStt(firstFixture.audioPath, firstFixture.outputDir, {
+      model: 'voxtral-mini-2602',
+      segmentOffsetMinutes: 0,
+      passController
+    })
+    const secondRun = runMistralStt(secondFixture.audioPath, secondFixture.outputDir, {
+      model: 'voxtral-mini-2602',
+      segmentOffsetMinutes: 0,
+      passController
+    })
+
+    await waitForCondition(() => attempts === 1 && activeRequests === 1)
+    expect(maxActiveRequests).toBe(1)
+
+    releaseFirstRequest()
+    await Promise.all([firstRun, secondRun])
+
+    expect(attempts).toBe(2)
+    expect(maxActiveRequests).toBe(1)
   })
 
   test('does not retry non-retryable 4xx responses', async () => {

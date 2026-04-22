@@ -60,10 +60,11 @@ AUTOSHOW_URL_BACKEND=glm-reader
 
 ```bash
 bun as ocr [input] [flags]
-bun as ocr --resume-missing [batch-dir] [provider flags]
 ```
 
 Batch inputs use the same shared controls as other processing commands. The default batch limit is `5`; use `--batch-all` to process every discovered item.
+
+For backfilling missing provider outputs from an existing OCR run or batch, see [`resume`](../../setup-and-utilities/resume/resume.md).
 
 ## Routing
 
@@ -167,8 +168,6 @@ bun as ocr ./input/article.html --out json
 bun as ocr input/examples/document/1-epub.epub --epub-bun --out json
 bun as ocr input/examples/document/1-epub.epub --epub-calibre --out json
 
-# Resume missing OCR provider outputs from an earlier batch
-bun as ocr --resume-missing
 ```
 
 ## Flags
@@ -195,7 +194,6 @@ bun as ocr --resume-missing
 | `--batch-concurrency <n>` | Number of batch items to process concurrently |
 | `--epub-bun` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | Inspect EPUB structure with Calibre |
-| `--resume-missing [batch-dir]` | Reuse an OCR batch directory and rerun only missing provider outputs; omit the path to auto-pick the newest compatible batch under `./output` |
 | `--price` | Show the aggregated OCR estimate and exit |
 
 ## Notes
@@ -216,5 +214,5 @@ bun as ocr --resume-missing
 - No numeric Mistral OCR or Firecrawl file-size/page-count caps were found in `project/links/all-all-links.md`, so this CLI does not enforce any new numeric limits for those providers from that source.
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
 - Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
-- `--resume-missing` does not accept a positional input and does not support `--price`.
+- Backfill existing OCR outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
 - Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are exposed through [`write`](../step-3-write/write-text.md), not standalone `ocr`.

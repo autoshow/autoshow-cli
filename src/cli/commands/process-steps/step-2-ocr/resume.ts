@@ -21,13 +21,14 @@ import {
   inferStoredCompletionStatus,
   parseStoredRequestedTargets
 } from './ocr-run-state'
-import { readOcrRunManifestEntry, writeOcrBatchManifest } from './manifest'
+import { readOcrRunManifestEntry, writeOcrBatchManifest, writeOcrRunManifest } from './manifest'
 import { readBatchManifest } from '../manifest-utils'
+import type { ResumeTarget } from '../resume/resume-types'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-type ResumeOcrBatchEntry = {
+type ResumeOcrEntry = {
   outputDir: string
   source: Step1SourceRef
   requestedTargets: OcrTarget[]
@@ -61,7 +62,7 @@ const toStoredSource = (entry: Record<string, unknown>): Step1SourceRef => {
   }
 
   if (!url) {
-    throw CLIUsageError('Batch entry is missing source information and cannot be resumed.')
+    throw CLIUsageError('Run entry is missing source information and cannot be resumed.')
   }
 
   if (url.startsWith('file://')) {
@@ -78,7 +79,7 @@ const toStoredSource = (entry: Record<string, unknown>): Step1SourceRef => {
 const parseResumeEntry = async (
   entry: unknown,
   selectedTargets: OcrTarget[] | undefined
-): Promise<ResumeOcrBatchEntry | undefined> => {
+): Promise<ResumeOcrEntry | undefined> => {
   if (!isRecord(entry)) {
     return undefined
   }
@@ -98,7 +99,7 @@ const parseResumeEntry = async (
     const requestedKeys = new Set(requestedTargets.map(getOcrTargetKey))
     const unexpected = [...selectedKeys].filter((key) => !requestedKeys.has(key))
     if (unexpected.length > 0) {
-      throw CLIUsageError(`Requested resume providers are not a subset of the original batch providers: ${unexpected.join(', ')}`)
+      throw CLIUsageError(`Requested resume providers are not a subset of the original providers: ${unexpected.join(', ')}`)
     }
   }
 
@@ -113,21 +114,6 @@ const parseResumeEntry = async (
     missingTargets,
     completionStatus: inferStoredCompletionStatus(entry, requestedTargets),
     rawEntry: entry
-  }
-}
-
-const readResumeBatchManifest = async (
-  batchDir: string
-): Promise<{ infoPath: string, entries: BatchManifestEntry[], source?: Record<string, unknown> } | undefined> => {
-  const manifest = await readBatchManifest(batchDir, 'ocr')
-  if (!manifest) {
-    return undefined
-  }
-
-  return {
-    infoPath: manifest.manifestPath,
-    entries: manifest.manifest.items,
-    ...(manifest.manifest.source ? { source: manifest.manifest.source } : {})
   }
 }
 
@@ -163,29 +149,69 @@ const withOutputDir = (
   outputDir
 })
 
-const batchHasResumableWork = async (
-  batchDir: string,
+const stripOutputDir = (
+  metadata: BatchManifestEntry
+): Record<string, unknown> => {
+  const { outputDir: _outputDir, ...rest } = metadata
+  return rest
+}
+
+const readResumeTargetManifest = async (
+  target: ResumeTarget
+): Promise<{ infoPath: string, entries: BatchManifestEntry[], source?: Record<string, unknown> } | undefined> => {
+  if (target.scope === 'batch') {
+    const manifest = await readBatchManifest(target.dir, 'ocr')
+    if (!manifest) {
+      return undefined
+    }
+
+    return {
+      infoPath: manifest.manifestPath,
+      entries: manifest.manifest.items,
+      ...(manifest.manifest.source ? { source: manifest.manifest.source } : {})
+    }
+  }
+
+  const metadata = await readOutputMetadata(target.dir)
+  return {
+    infoPath: target.manifestPath,
+    entries: [withOutputDir(metadata, target.dir)]
+  }
+}
+
+export const hasResumableOcrTargetWork = async (
+  target: ResumeTarget,
   selectedTargets: OcrTarget[] | undefined
 ): Promise<boolean> => {
-  const manifest = await readResumeBatchManifest(batchDir)
+  const manifest = await readResumeTargetManifest(target)
   if (!manifest) {
     return false
   }
 
   for (const entry of manifest.entries) {
-    const requestedTargets = parseStoredRequestedTargets(entry)
-    if (requestedTargets.length < 2) {
+    try {
+      const parsed = await parseResumeEntry(entry, selectedTargets)
+      if (parsed && parsed.missingTargets.length > 0) {
+        return true
+      }
+    } catch {
       continue
-    }
-
-    const parsed = await parseResumeEntry(entry, selectedTargets)
-    if (parsed && parsed.missingTargets.length > 0) {
-      return true
     }
   }
 
   return false
 }
+
+const batchHasResumableWork = async (
+  batchDir: string,
+  selectedTargets: OcrTarget[] | undefined
+): Promise<boolean> =>
+  await hasResumableOcrTargetWork({
+    kind: 'ocr',
+    scope: 'batch',
+    dir: resolvePath(batchDir),
+    manifestPath: join(resolvePath(batchDir), 'batch.json')
+  }, selectedTargets)
 
 export const discoverLatestResumableOcrBatchDir = async (
   outputRootInput: string,
@@ -229,10 +255,10 @@ export const resolveResumeOcrBatchDir = async (
   }
 
   if (selectedTargets && selectedTargets.length > 0) {
-    throw CLIUsageError(`Could not find a resumable OCR batch under ${outputRootInput} that matches the selected provider flags. Pass --resume-missing <batch-dir> explicitly.`)
+    throw CLIUsageError(`Could not find a resumable OCR batch under ${outputRootInput} that matches the selected provider flags. Pass a batch directory explicitly.`)
   }
 
-  throw CLIUsageError(`Could not find a resumable OCR batch under ${outputRootInput}. Pass --resume-missing <batch-dir> explicitly.`)
+  throw CLIUsageError(`Could not find a resumable OCR batch under ${outputRootInput}. Pass a batch directory explicitly.`)
 }
 
 const buildResumeExtractionOpts = (
@@ -258,17 +284,20 @@ const formatResumeSummary = (
   full: number,
   incomplete: number,
   failed: number
-): string => `Batch complete: ${full} full, ${incomplete} incomplete, ${failed} failed`
+): string => `Resume complete: ${full} full, ${incomplete} incomplete, ${failed} failed`
 
-export const resumeOcrMissingFromBatchDir = async (
-  batchDirInput: string,
+const runResumeOcrTarget = async (
+  target: ResumeTarget,
   opts: RuntimeOptions,
   selectedTargets?: OcrTarget[]
 ): Promise<void> => {
-  const batchDir = resolvePath(batchDirInput)
-  const manifest = await readResumeBatchManifest(batchDir)
+  const manifest = await readResumeTargetManifest(target)
   if (!manifest) {
-    throw CLIUsageError(`Invalid batch manifest at ${join(batchDir, 'batch.json')}`)
+    throw CLIUsageError(
+      target.scope === 'batch'
+        ? `Invalid batch manifest at ${join(target.dir, 'batch.json')}`
+        : `Invalid OCR manifest at ${join(target.dir, 'run.json')}`
+    )
   }
 
   const parsedEntries = await Promise.all(
@@ -299,20 +328,6 @@ export const resumeOcrMissingFromBatchDir = async (
       continue
     }
 
-    if (entry.requestedTargets.length < 2) {
-      l.warn(`Resume ${entryLabel}: OCR resume requires multiple original providers; skipping ${entry.outputDir}`)
-      const metadata = await readOutputMetadata(entry.outputDir)
-      updatedEntries.push(withOutputDir(metadata, entry.outputDir))
-      if (metadata['completionStatus'] === 'failed') {
-        failed += 1
-      } else if (metadata['completionStatus'] === 'full') {
-        full += 1
-      } else {
-        incomplete += 1
-      }
-      continue
-    }
-
     if (entry.missingTargets.length === 0) {
       l.warn(`Resume ${entryLabel}: no matching missing providers selected; keeping ${entry.completionStatus} state (${entry.outputDir})`)
       const metadata = await readOutputMetadata(entry.outputDir)
@@ -327,7 +342,7 @@ export const resumeOcrMissingFromBatchDir = async (
       continue
     }
 
-    l.info(`Resume ${entryLabel}: ${entry.outputDir} -> ${entry.missingTargets.map((target) => `${target.service}/${target.model}`).join(', ')}`)
+    l.info(`Resume ${entryLabel}: ${entry.outputDir} -> ${entry.missingTargets.map((runTarget) => `${runTarget.service}/${runTarget.model}`).join(', ')}`)
 
     const preparedDocument = await readPreparedDocument(entry.outputDir)
     let resumeFilePath = entry.source.filePath
@@ -378,12 +393,37 @@ export const resumeOcrMissingFromBatchDir = async (
     }
   }
 
-  await writeOcrBatchManifest(batchDir, updatedEntries, manifest.source)
+  if (target.scope === 'batch') {
+    await writeOcrBatchManifest(target.dir, updatedEntries, manifest.source)
+  } else if (updatedEntries[0]) {
+    await writeOcrRunManifest(target.dir, stripOutputDir(updatedEntries[0]))
+  }
   l.info(formatResumeSummary(full, incomplete, failed))
 
   if (incomplete > 0 || failed > 0) {
-    const error = new Error(`OCR batch resume still has ${incomplete} incomplete and ${failed} failed item(s)`)
+    const error = new Error(`OCR resume still has ${incomplete} incomplete and ${failed} failed item(s)`)
     ;(error as Error & { exitCode?: number }).exitCode = 2
     throw error
   }
+}
+
+export const resumeOcrTarget = async (
+  target: ResumeTarget,
+  opts: RuntimeOptions,
+  selectedTargets?: OcrTarget[]
+): Promise<void> => {
+  await runResumeOcrTarget(target, opts, selectedTargets)
+}
+
+export const resumeOcrMissingFromBatchDir = async (
+  batchDirInput: string,
+  opts: RuntimeOptions,
+  selectedTargets?: OcrTarget[]
+): Promise<void> => {
+  await resumeOcrTarget({
+    kind: 'ocr',
+    scope: 'batch',
+    dir: resolvePath(batchDirInput),
+    manifestPath: join(resolvePath(batchDirInput), 'batch.json')
+  }, opts, selectedTargets)
 }

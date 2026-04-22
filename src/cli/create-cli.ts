@@ -6,6 +6,7 @@ import { downloadCommand } from '~/cli/commands/process-steps/step-1-download/de
 import { sttCommand } from '~/cli/commands/process-steps/step-2-stt/define-stt-command'
 import { writeCommand } from '~/cli/commands/process-steps/step-3-write/define-write-command'
 import { ocrCommand } from '~/cli/commands/process-steps/step-2-ocr/define-ocr-command'
+import { resumeCommand } from '~/cli/commands/process-steps/resume/define-resume-command'
 import { ttsCommand } from '~/cli/commands/process-steps/step-4-tts/define-tts-command'
 import { imageCommand } from '~/cli/commands/process-steps/step-5-image/define-image-command'
 import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-music-command'
@@ -97,6 +98,7 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   links: 'setup',
   metadata: 'processing',
   download: 'processing',
+  resume: 'processing',
   ocr: 'processing',
   stt: 'processing',
   write: 'processing',
@@ -114,6 +116,7 @@ const COMMAND_DEFINITIONS = [
   linksCommand,
   metadataCommand,
   downloadCommand,
+  resumeCommand,
   ocrCommand,
   sttCommand,
   writeCommand,

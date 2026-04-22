@@ -35,6 +35,7 @@ import {
   resolveTranscriptionSplitDecision
 } from './stt-split-policy'
 import { collectSttTargets } from './stt-targets'
+import { createMistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
 import { assertNever } from '~/utils/validate/assert-never'
 export { STT_ENGINE_CAPABILITIES, getSttEngineCapabilities, resolveDiarizationOptions } from './cli'
 export {
@@ -327,7 +328,8 @@ const dispatchStt = async (
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
-      diarizationOptions: target.diarizationOptions
+      diarizationOptions: target.diarizationOptions,
+      passController: options.mistralPassController
     })
   }
 
@@ -365,9 +367,15 @@ const dispatchStt = async (
 }
 
 export const resolveEffectiveSegmentConcurrency = (
-  target: Pick<SttTarget, 'local'>,
+  target: Pick<SttTarget, 'local' | 'service'>,
   requestedConcurrency: number | undefined
-): number => target.local ? 1 : Math.max(1, requestedConcurrency ?? 2)
+): number => {
+  if (target.local || target.service === 'mistral') {
+    return 1
+  }
+
+  return Math.max(1, requestedConcurrency ?? 2)
+}
 
 export const mergeSplitTranscriptionChunks = (
   chunks: IndexedTranscriptionChunk[]
@@ -476,33 +484,39 @@ export const sttTarget = async (
   options: SttTargetOptions
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   await ensureSttTargetSetup(target)
+  const effectiveOptions = target.service === 'mistral' && options.mistralPassController === undefined
+    ? {
+        ...options,
+        mistralPassController: createMistralSttPassController()
+      }
+    : options
 
   const audioFileSize = Bun.file(audioPath).size
   const splitDecision = resolveTranscriptionSplitDecision(target, {
     audioFileSizeBytes: audioFileSize,
-    audioDurationSeconds: options.audioDurationSeconds,
-    splitRequested: options.split === true
+    audioDurationSeconds: effectiveOptions.audioDurationSeconds,
+    splitRequested: effectiveOptions.split === true
   })
   if (splitDecision.shouldSplit) {
-    if (options.split !== true) {
+    if (effectiveOptions.split !== true) {
       logAutoSplitDecision(target, audioPath, splitDecision)
     }
     return await runSplitTranscription(target, audioPath, outputDir, {
-      ...options,
+      ...effectiveOptions,
       asyncLifecycle: undefined
     }, splitDecision.segmentDurationMinutes)
   }
 
   try {
-    const transcription = await dispatchStt(target, audioPath, outputDir, 0, options)
+    const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
     await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
     return transcription
   } catch (error) {
-    const splitRetryReason = resolveSplitRetryReason(target, options.split === true, error)
+    const splitRetryReason = resolveSplitRetryReason(target, effectiveOptions.split === true, error)
     if (splitRetryReason !== undefined) {
       const splitSegmentDurationMinutes = resolveEffectiveSplitSegmentDurationMinutes(resolveSttSplitPolicy(target), DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES, {
         audioFileSizeBytes: audioFileSize,
-        audioDurationSeconds: options.audioDurationSeconds
+        audioDurationSeconds: effectiveOptions.audioDurationSeconds
       })
       if (splitRetryReason === 'attachment_cap') {
         l.warn(`${formatServiceLabel(target.service)} rejected the upload as too large. Retrying with ${formatSegmentDurationMinutes(splitSegmentDurationMinutes)} split transcription`)
@@ -511,7 +525,7 @@ export const sttTarget = async (
       }
 
       return await runSplitTranscription(target, audioPath, outputDir, {
-        ...options,
+        ...effectiveOptions,
         asyncLifecycle: undefined
       }, splitSegmentDurationMinutes)
     }

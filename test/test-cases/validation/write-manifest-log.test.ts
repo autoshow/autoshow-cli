@@ -445,10 +445,17 @@ describe('write manifest logging', () => {
 
     const infoMessages = events.filter(event => event.level === 'info').map(event => event.message)
     expect(infoMessages).toEqual([
-      'Run manifest: output/run/run.json',
+      'Locations',
       'Run Summary',
       'Prompt Usage'
     ])
+    expect(events[0]?.humanTable?.rows).toEqual([
+      { artifact: 'runManifest', path: 'output/run/run.json' }
+    ])
+    expect(events[0]?.metadata).toEqual({
+      path: 'output/run/run.json',
+      kind: 'write'
+    })
     expect(events[1]?.humanTable?.rows).toHaveLength(4)
     expect(events[1]?.metadata?.['rows']).toEqual(buildWriteManifestConsoleSummary(metadata, {
       promptArtifact: 'prompt.md',

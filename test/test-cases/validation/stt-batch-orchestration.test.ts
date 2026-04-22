@@ -505,6 +505,80 @@ test('runSttBatch blocks a permanently failing provider and marks later items as
   expect(skippedErrors).toHaveLength(1)
 })
 
+test('runSttBatch serializes Mistral requests across concurrent batch items', async () => {
+  const items = await createBatchInputs('autoshow-stt-mistral-single-flight-')
+
+  process.env['MISTRAL_API_KEY'] = 'mistral-test-key'
+  process.env['MISTRAL_BASE_URL'] = 'https://mistral.test/v1'
+
+  let mistralCalls = 0
+  let activeMistralRequests = 0
+  let maxActiveMistralRequests = 0
+  let releaseFirstRequest!: () => void
+  const firstRequestReleased = new Promise<void>((resolve) => {
+    releaseFirstRequest = resolve
+  })
+
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const { url, method } = readFetchRequest(input, init)
+    if (url !== 'https://mistral.test/v1/audio/transcriptions' || method !== 'POST') {
+      throw new Error(`Unexpected request: ${method} ${url}`)
+    }
+
+    mistralCalls += 1
+    activeMistralRequests += 1
+    maxActiveMistralRequests = Math.max(maxActiveMistralRequests, activeMistralRequests)
+    const currentCall = mistralCalls
+
+    if (currentCall === 1) {
+      await firstRequestReleased
+    }
+
+    activeMistralRequests -= 1
+    return new Response(JSON.stringify({
+      model: 'voxtral-mini-2602',
+      text: `Mistral transcript ${currentCall}.`,
+      language: null,
+      usage: {},
+      segments: [
+        {
+          start: 0,
+          end: 1,
+          text: `Mistral transcript ${currentCall}.`,
+          speaker_id: 'speaker_1'
+        }
+      ]
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    })
+  }) as unknown as typeof fetch
+
+  const opts = buildOptsFromFlags(false, {
+    'mistral-stt': 'voxtral-mini-2602',
+    'batch-concurrency': '2',
+    'no-cache': true
+  })
+
+  const batchPromise = runSttBatch(items, 'stt-batch-mistral-single-flight', opts, {
+    concurrency: opts.batchConcurrency
+  })
+
+  await waitFor(() => mistralCalls === 1 && activeMistralRequests === 1)
+  expect(maxActiveMistralRequests).toBe(1)
+
+  releaseFirstRequest()
+
+  const result = await batchPromise
+  registerCleanupPath(result.batchDir)
+
+  expect(result.ok).toBe(2)
+  expect(result.incomplete).toBe(0)
+  expect(result.fail).toBe(0)
+  expect(mistralCalls).toBe(2)
+  expect(maxActiveMistralRequests).toBe(1)
+})
+
 test('runSttBatch uses free provider slots on later items instead of waiting behind slow providers', async () => {
   const items = await createBatchInputs('autoshow-stt-coordinated-')
 

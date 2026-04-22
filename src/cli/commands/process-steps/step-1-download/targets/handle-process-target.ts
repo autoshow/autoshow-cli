@@ -32,7 +32,6 @@ import type { AggregatedPriceEstimate, ResolvedProcessTargetPlan } from '~/types
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
-import { dispatchResumeMissing } from '~/cli/commands/process-steps/resume-missing/resume-dispatch'
 import { collectTextInputFiles, isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 
 const runWithConcurrency = async <T,>(
@@ -405,19 +404,6 @@ export const handleProcessTarget = async (
   validateWriteStep2ProviderSelection(command, opts)
 
   const maxCents = resolveMaxCents(config.pricing)
-  const resumeMissingRequested = explicitFlags.has('resume-missing') || opts.resumeMissing !== undefined
-
-  if (resumeMissingRequested) {
-    await dispatchResumeMissing(
-      command,
-      target,
-      opts,
-      explicitFlags,
-      doubleDash,
-      maxCents
-    )
-    return
-  }
 
   let resolvedTarget: string
   if (typeof target === 'string' && target.length > 0) {

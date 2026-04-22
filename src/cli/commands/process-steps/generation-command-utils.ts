@@ -1,5 +1,6 @@
 import * as l from '~/logger'
 import type { StepTimingCost } from '~/logger'
+import { logLocationsTable } from '~/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
@@ -21,7 +22,7 @@ export const createGenerationOutputDir = async (label: string): Promise<string> 
   const uniqueDirName = createUniqueDirectoryName(label)
   const outputDir = `./output/${uniqueDirName}`
   await ensureDirectory(outputDir)
-  l.info(`Output directory: ${outputDir}`)
+  logLocationsTable(l, [{ artifact: 'outputDir', path: outputDir }])
   return outputDir
 }
 

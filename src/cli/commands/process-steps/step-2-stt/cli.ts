@@ -131,9 +131,6 @@ export const buildSttPolicy = (
       order: options.batchOrder,
       concurrency: options.batchConcurrency
     },
-    resume: {
-      ...(options.resumeMissing ? { path: options.resumeMissing } : {})
-    },
     concurrency: {
       provider: options.sttProviderConcurrency,
       local: options.sttLocalConcurrency,

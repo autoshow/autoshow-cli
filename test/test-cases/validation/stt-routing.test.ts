@@ -327,11 +327,15 @@ describe('resolveDiarizationOptions', () => {
 
 describe('resolveEffectiveSegmentConcurrency', () => {
   test('clamps local providers to 1 even when a higher value is requested', () => {
-    expect(resolveEffectiveSegmentConcurrency({ local: true }, 4)).toBe(1)
+    expect(resolveEffectiveSegmentConcurrency({ local: true, service: 'whisper' }, 4)).toBe(1)
+  })
+
+  test('clamps Mistral providers to 1 even when a higher value is requested', () => {
+    expect(resolveEffectiveSegmentConcurrency({ local: false, service: 'mistral' }, 4)).toBe(1)
   })
 
   test('preserves requested concurrency for cloud providers', () => {
-    expect(resolveEffectiveSegmentConcurrency({ local: false }, 4)).toBe(4)
+    expect(resolveEffectiveSegmentConcurrency({ local: false, service: 'assemblyai' }, 4)).toBe(4)
   })
 })
 

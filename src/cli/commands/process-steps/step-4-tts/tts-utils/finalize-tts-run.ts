@@ -1,5 +1,6 @@
 import type { FinalizeTtsRunOptions, Step4Metadata } from '~/types'
 import * as l from '~/logger'
+import { logLocationsTable } from '~/logger/human-table'
 
 export const finalizeTtsRun = ({
   service,
@@ -12,7 +13,7 @@ export const finalizeTtsRun = ({
   const processingTime = Date.now() - startTime
   const audioFile = Bun.file(audioPath)
 
-  l.success(`Speech saved to ${audioPath}`)
+  logLocationsTable(l, [{ artifact: 'speech', path: audioPath }], { level: 'success' })
 
   return {
     audioPath,

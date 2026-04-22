@@ -1,5 +1,6 @@
 import { basename, resolve as pathResolve } from 'node:path'
 import * as l from '~/logger'
+import { logLocationsTable } from '~/logger/human-table'
 import { validateData } from '~/utils/validate/validation'
 import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { ProcessingOptionsSchema, type BatchChildRunContext, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
@@ -443,7 +444,11 @@ const runDocumentWrite = async (
     externalBaseName: extraction.step1Metadata.slug
   })
   if (renderedArtifacts.externalFiles.length > 0) {
-    l.info(`Rendered text saved to ${opts.renderedOutDir} (${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'})`)
+    logLocationsTable(l, [{
+      artifact: 'renderedOutDir',
+      path: opts.renderedOutDir,
+      detail: `${renderedArtifacts.externalFiles.length} file${renderedArtifacts.externalFiles.length === 1 ? '' : 's'}`
+    }])
   }
 
   const step3Serialized: Step3Metadata | Step3Metadata[] = step3Results.length === 1 ? step3Results[0]! : step3Results
@@ -987,6 +992,7 @@ export const processSingleTarget = async (
   preflightEstimate?: AggregatedPriceEstimate,
   runOptions?: {
     sttBatchCoordinator?: SttBatchCoordinator | undefined
+    mistralSttPassController?: import('~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral-stt-pass-controller').MistralSttPassController | undefined
     batchChildContext?: BatchChildRunContext | undefined
   },
   batchItem?: BatchItem
@@ -1119,6 +1125,7 @@ export const processSingleTarget = async (
       return {
         outputDir: await processStt({ url: item }, baseDir, opts, preflightEstimate, {
           ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
+          ...(runOptions?.mistralSttPassController ? { mistralPassController: runOptions.mistralSttPassController } : {}),
           ...(batchChildContext ? { batchChildContext } : {})
         })
       }
@@ -1170,12 +1177,13 @@ export const processSingleTarget = async (
   }
 
   if (isSttCommand(command)) {
-    return {
-      outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate, {
-        ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
-        ...(batchChildContext ? { batchChildContext } : {})
-      })
-    }
+      return {
+        outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate, {
+          ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
+          ...(runOptions?.mistralSttPassController ? { mistralPassController: runOptions.mistralSttPassController } : {}),
+          ...(batchChildContext ? { batchChildContext } : {})
+        })
+      }
   }
 
   const result = await processMediaSingle(item, baseDir, opts, preflightEstimate, batchChildContext)

@@ -485,7 +485,6 @@ export const buildOptsFromFlags = (
     sttLocalConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-local-concurrency'), 1)),
     sttSegmentConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-segment-concurrency'), 2)),
     sttPreflightConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-preflight-concurrency'), 4)),
-    resumeMissing: readOptionalStringFlag(mergedFlags, 'resume-missing'),
     refreshCache: readBooleanFlag(mergedFlags, 'refresh-cache'),
     noCache: readBooleanFlag(mergedFlags, 'no-cache'),
     price: readBooleanFlag(mergedFlags, 'price'),

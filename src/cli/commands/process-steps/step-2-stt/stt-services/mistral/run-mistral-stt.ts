@@ -5,11 +5,13 @@ import type { DiarizationOptions, MistralHttpError, RetryClass, Step2Metadata, T
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { withRetry, classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
+import { createMistralSttPassController } from './mistral-stt-pass-controller'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
+const MISTRAL_RATE_LIMIT_FALLBACK_COOLDOWN_MS = 60_000
 
 const toMistralHttpError = (status: number, headers: Headers, errText: string): MistralHttpError => {
   return Object.assign(
@@ -51,6 +53,32 @@ const toRetryableMistralError = (error: unknown): Error => {
 
   return error instanceof Error ? error : new Error(String(error))
 }
+
+const getErrorStatus = (error: unknown): number | undefined => {
+  if (error && typeof error === 'object' && 'status' in error) {
+    const status = (error as { status: unknown }).status
+    if (typeof status === 'number') {
+      return status
+    }
+  }
+
+  return undefined
+}
+
+const getErrorHeaders = (error: unknown): Headers | undefined => {
+  if (error && typeof error === 'object' && 'headers' in error) {
+    const headers = (error as { headers: unknown }).headers
+    if (headers instanceof Headers) {
+      return headers
+    }
+  }
+
+  return undefined
+}
+
+const resolveMistralRateLimitCooldownMs = (
+  error: unknown
+): number => parseRetryAfterMs(getErrorHeaders(error)) ?? MISTRAL_RATE_LIMIT_FALLBACK_COOLDOWN_MS
 
 const throwMistralErrorWithContext = (
   error: unknown,
@@ -118,6 +146,7 @@ export const runMistralStt = async (
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
     diarizationOptions?: DiarizationOptions | undefined
+    passController?: import('./mistral-stt-pass-controller').MistralSttPassController | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const apiKey = readEnv('MISTRAL_API_KEY')
@@ -141,6 +170,7 @@ export const runMistralStt = async (
     timeoutMs: REQUEST_TIMEOUT_MS,
     serverURL
   })
+  const passController = options.passController ?? createMistralSttPassController()
   let transcribeMs = 0
 
   let rawPayload: unknown
@@ -154,24 +184,40 @@ export const runMistralStt = async (
         timeoutMs: REQUEST_TIMEOUT_MS
       },
       async (signal) => {
-        try {
-          return await client.audio.transcriptions.complete(
-            {
-              model: modelName,
-              file: {
-                fileName: basename(audioPath),
-                content: fileBytes
+        return await passController.withRequestSlot(async () => {
+          try {
+            return await client.audio.transcriptions.complete(
+              {
+                model: modelName,
+                file: {
+                  fileName: basename(audioPath),
+                  content: fileBytes
+                },
+                diarize: true,
+                timestampGranularities: ['segment']
               },
-              diarize: true,
-              timestampGranularities: ['segment']
-            },
-            signal ? { signal } : undefined
-          )
-        } catch (error) {
-          throw toRetryableMistralError(error)
-        }
+              signal ? { signal } : undefined
+            )
+          } catch (error) {
+            const retryableError = toRetryableMistralError(error)
+            if (getErrorStatus(retryableError) === 429) {
+              passController.noteRateLimit(resolveMistralRateLimitCooldownMs(retryableError))
+            }
+            throw retryableError
+          }
+        })
       },
-      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+      (error) => {
+        if (getErrorStatus(error) === 429) {
+          return {
+            shouldRetry: true,
+            delayMs: resolveMistralRateLimitCooldownMs(error),
+            reason: 'retryable status 429'
+          }
+        }
+
+        return classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+      }
     )
     transcribeMs += Date.now() - transcribeStartedAt
   } catch (error) {

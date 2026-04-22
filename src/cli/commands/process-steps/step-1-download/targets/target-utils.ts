@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises'
 import { basename, dirname, extname, resolve } from 'node:path'
 import * as l from '~/logger'
-import { createHumanTable } from '~/logger/human-table'
+import { createHumanTable, logBatchItemTable, logLocationsTable } from '~/logger/human-table'
 import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -301,6 +301,22 @@ export const buildBatchPartialFailureTable = (
     .map(([provider, failures]) => ({ provider, failures }))
 
   return createHumanTable(rows, ['provider', 'failures'])
+}
+
+const formatProviderFailureDetail = (count: number): string =>
+  `${count} provider failure${count === 1 ? '' : 's'}`
+
+const logBatchItemStatus = (
+  level: 'info' | 'success' | 'warn' | 'error',
+  item: string,
+  status: 'processing' | 'done' | 'incomplete' | 'failed',
+  detail?: string
+): void => {
+  logBatchItemTable(l, [{
+    status,
+    input: item,
+    ...(detail ? { detail } : {})
+  }], { level })
 }
 
 const logBatchCompletionTable = (
@@ -732,7 +748,7 @@ export const processBatch = async (
   const batchDirName = createUniqueDirectoryName(batchLabel)
   const batchDir = `./output/${batchDirName}`
   await ensureDirectory(batchDir)
-  l.info(`Output directory: ${batchDir}`)
+  logLocationsTable(l, [{ artifact: 'outputDir', path: batchDir }])
 
   if (runOpts.source) {
     const sourceData = {
@@ -777,6 +793,7 @@ export const processBatch = async (
   }
 
   await writeBatchManifest(batchDir, toManifestKind(command), infoEntries, batchSource)
+  logLocationsTable(l, [{ artifact: 'batchManifest', path: `${batchDir}/batch.json` }])
 
   const concurrency = Math.max(1, runOpts.concurrency ?? 1)
   let ok = 0
@@ -813,117 +830,107 @@ export const processBatch = async (
     errorCount: number
     status: 'ok' | 'partial' | 'incomplete' | 'failed'
     failureError?: unknown
-  }> => {
-    try {
-      const batchItem = runOpts.selectedItems?.[index]
-      const processed = await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () =>
-        await processSingleTarget(command, item, batchDir, opts, batchItem)
-      )
-      const manifestEntry = processed?.manifestEntry
-        ? (processed.outputDir ? attachOutputDir(processed.manifestEntry, processed.outputDir) : processed.manifestEntry)
-        : processed?.outputDir
-          ? attachOutputDir(await readBatchManifestEntry(processed.outputDir, command), processed.outputDir)
-          : null
-      const errorCount = getBatchManifestErrorCount(manifestEntry)
+  }> =>
+    await runWithLogContext({ batchId: batchDirName, itemIndex: index + 1, itemCount: items.length }, async () => {
+      logBatchItemStatus('info', item, 'processing')
 
-      if (isSttCommand(command)) {
-        const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : 'full')
-        if (completionStatus === 'full') {
-          l.success(`Done ${index + 1}/${items.length}`)
-          return { manifestEntry, errorCount, status: 'ok' }
-        }
-
-        if (completionStatus === 'failed') {
-          l.error(`Failed ${index + 1}/${items.length}: no STT provider outputs completed`)
-          return { manifestEntry, errorCount, status: 'failed' }
-        }
-
-        l.warn(`Incomplete ${index + 1}/${items.length} (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
-        return { manifestEntry, errorCount, status: 'incomplete' }
-      }
-
-      if (errorCount > 0) {
-        l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
-        return { manifestEntry, errorCount, status: 'partial' }
-      }
-
-      l.success(`Done ${index + 1}/${items.length}`)
-      return { manifestEntry, errorCount, status: 'ok' }
-    } catch (error) {
-      if (isSttCommand(command) && isSttPartialCompletionError(error)) {
-        const manifestEntry = attachOutputDir(await readBatchManifestEntry(error.outputDir, command), error.outputDir)
+      try {
+        const batchItem = runOpts.selectedItems?.[index]
+        const processed = await processSingleTarget(command, item, batchDir, opts, batchItem)
+        const manifestEntry = processed?.manifestEntry
+          ? (processed.outputDir ? attachOutputDir(processed.manifestEntry, processed.outputDir) : processed.manifestEntry)
+          : processed?.outputDir
+            ? attachOutputDir(await readBatchManifestEntry(processed.outputDir, command), processed.outputDir)
+            : null
         const errorCount = getBatchManifestErrorCount(manifestEntry)
-        if (error.completionStatus === 'failed') {
-          l.error(`Failed ${index + 1}/${items.length}: ${error.message}`)
-          return { manifestEntry, errorCount, status: 'failed', failureError: error }
+
+        if (isSttCommand(command)) {
+          const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : 'full')
+          if (completionStatus === 'full') {
+            logBatchItemStatus('success', item, 'done')
+            return { manifestEntry, errorCount, status: 'ok' }
+          }
+
+          if (completionStatus === 'failed') {
+            logBatchItemStatus('error', item, 'failed', 'no STT provider outputs completed')
+            return { manifestEntry, errorCount, status: 'failed' }
+          }
+
+          logBatchItemStatus('warn', item, 'incomplete', formatProviderFailureDetail(errorCount))
+          return { manifestEntry, errorCount, status: 'incomplete' }
         }
 
-        l.warn(`Incomplete ${index + 1}/${items.length} (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
-        return { manifestEntry, errorCount, status: 'incomplete', failureError: error }
+        if (errorCount > 0) {
+          logBatchItemStatus('warn', item, 'done', formatProviderFailureDetail(errorCount))
+          return { manifestEntry, errorCount, status: 'partial' }
+        }
+
+        logBatchItemStatus('success', item, 'done')
+        return { manifestEntry, errorCount, status: 'ok' }
+      } catch (error) {
+        if (isSttCommand(command) && isSttPartialCompletionError(error)) {
+          const manifestEntry = attachOutputDir(await readBatchManifestEntry(error.outputDir, command), error.outputDir)
+          const errorCount = getBatchManifestErrorCount(manifestEntry)
+          if (error.completionStatus === 'failed') {
+            logBatchItemStatus('error', item, 'failed', error.message)
+            return { manifestEntry, errorCount, status: 'failed', failureError: error }
+          }
+
+          logBatchItemStatus('warn', item, 'incomplete', formatProviderFailureDetail(errorCount))
+          return { manifestEntry, errorCount, status: 'incomplete', failureError: error }
+        }
+
+        const errorOutputDir = getErrorOutputDir(error)
+        if (errorOutputDir && !isSttCommand(command)) {
+          const manifestEntry = attachOutputDir(await readBatchManifestEntry(errorOutputDir, command), errorOutputDir)
+          const errorCount = getBatchManifestErrorCount(manifestEntry)
+          const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : undefined)
+
+          if (completionStatus === 'failed') {
+            logBatchItemStatus('error', item, 'failed', error instanceof Error ? error.message : String(error))
+            return { manifestEntry, errorCount, status: 'failed', failureError: error }
+          }
+
+          if (completionStatus === 'incomplete') {
+            logBatchItemStatus('warn', item, 'done', formatProviderFailureDetail(errorCount))
+            return { manifestEntry, errorCount, status: 'partial', failureError: error }
+          }
+        }
+
+        const message = error instanceof Error ? error.message : String(error)
+        logBatchItemStatus('error', item, 'failed', message)
+        return { manifestEntry: null, errorCount: 0, status: 'failed', failureError: error }
       }
-
-      const errorOutputDir = getErrorOutputDir(error)
-      if (errorOutputDir && !isSttCommand(command)) {
-        const manifestEntry = attachOutputDir(await readBatchManifestEntry(errorOutputDir, command), errorOutputDir)
-        const errorCount = getBatchManifestErrorCount(manifestEntry)
-        const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : undefined)
-
-        if (completionStatus === 'failed') {
-          l.error(`Failed ${index + 1}/${items.length}: ${error instanceof Error ? error.message : String(error)}`)
-          return { manifestEntry, errorCount, status: 'failed', failureError: error }
-        }
-
-        if (completionStatus === 'incomplete') {
-          l.warn(`Done ${index + 1}/${items.length} with partial failures (${errorCount} provider failure${errorCount === 1 ? '' : 's'})`)
-          return { manifestEntry, errorCount, status: 'partial', failureError: error }
-        }
-      }
-
-      throw error
-    }
-  }
+    })
 
   if (concurrency === 1) {
-
     for (let index = 0; index < items.length; index++) {
       const item = items[index] as string
-      l.info(`Processing ${index + 1}/${items.length}: ${item}`)
-      try {
-        const result = await executeBatchItem(item, index)
-        if (result.manifestEntry) {
-          finalInfoEntries[index] = result.manifestEntry
-        }
-        partialFailureEntries.push(...getBatchManifestErrors(result.manifestEntry))
+      const result = await executeBatchItem(item, index)
+      if (result.manifestEntry) {
+        finalInfoEntries[index] = result.manifestEntry
+      }
+      partialFailureEntries.push(...getBatchManifestErrors(result.manifestEntry))
 
-        if (result.status === 'ok') {
-          ok++
-        } else if (result.status === 'partial') {
-          ok++
-          partial++
-        } else if (result.status === 'incomplete') {
-          incomplete++
-          recordFailureExitCode(result.failureError)
-        } else {
-          fail++
-          recordFailureExitCode(result.failureError)
-        }
-      } catch (error) {
+      if (result.status === 'ok') {
+        ok++
+      } else if (result.status === 'partial') {
+        ok++
+        partial++
+      } else if (result.status === 'incomplete') {
+        incomplete++
+        recordFailureExitCode(result.failureError)
+      } else {
         fail++
-        recordFailureExitCode(error)
-        const message = error instanceof Error ? error.message : String(error)
-        l.error(`Failed ${index + 1}/${items.length}: ${message}`)
+        recordFailureExitCode(result.failureError)
       }
     }
   } else {
-
     l.info(`Processing ${items.length} items with concurrency ${concurrency}`)
     const sem = { active: 0 }
     const results = await Promise.allSettled(
       items.map((item, index) =>
-        runWithSemaphore(concurrency, sem, async () => {
-          l.info(`Processing ${index + 1}/${items.length}: ${item}`)
-          return await executeBatchItem(item, index)
-        })
+        runWithSemaphore(concurrency, sem, async () => await executeBatchItem(item, index))
       )
     )
     for (const [index, r] of results.entries()) {

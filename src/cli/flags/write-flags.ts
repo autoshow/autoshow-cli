@@ -19,7 +19,7 @@ import {
   extractFlags,
   advancedExtractFlags,
   articleFlags,
-  // Shared separately because write excludes --resume-missing but should still expose EPUB inspect flags.
+  // Shared separately because write should still expose batch and EPUB inspect flags without resume-only surface area.
   batchFlags,
   promptFlag,
   priceFlag
