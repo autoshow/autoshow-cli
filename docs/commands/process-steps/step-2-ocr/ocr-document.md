@@ -63,6 +63,8 @@ bun as ocr [input] [flags]
 bun as ocr --resume-missing [batch-dir] [provider flags]
 ```
 
+Batch inputs use the same shared controls as other processing commands. The default batch limit is `5`; use `--batch-all` to process every discovered item.
+
 ## Routing
 
 | Input family | Default path | Other available paths |
@@ -155,6 +157,9 @@ bun as ocr input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-
 bun as ocr https://ajcwebdev.com
 bun as ocr https://ajcwebdev.com --url-backend firecrawl
 
+# Batch URL list extraction
+bun as ocr ./input/examples/batch/2-urls.md --batch-all
+
 # Local HTML always uses defuddle
 bun as ocr ./input/article.html --out json
 
@@ -184,6 +189,10 @@ bun as ocr --resume-missing
 | `--length <n>` | Hard export limit in thousands of characters; for EPUB alone writes `chunks/`, and with `--chapters` splits oversized EPUB or PDF chapter files |
 | `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
 | `--url-backend <backend>` | Article backend: `defuddle`, `firecrawl`, or `glm-reader` |
+| `--batch-limit <n>` | Process at most `n` items from a batch input |
+| `--batch-all` | Process all items from a batch input |
+| `--batch-order <order>` | Batch item order: `newest` or `oldest` |
+| `--batch-concurrency <n>` | Number of batch items to process concurrently |
 | `--epub-bun` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | Inspect EPUB structure with Calibre |
 | `--resume-missing [batch-dir]` | Reuse an OCR batch directory and rerun only missing provider outputs; omit the path to auto-pick the newest compatible batch under `./output` |

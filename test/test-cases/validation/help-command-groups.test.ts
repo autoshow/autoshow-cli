@@ -43,3 +43,15 @@ test('removed report command is rejected by help', async () => {
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Usage error: Unknown command "report". Run: bun as help')
 })
+
+test('ocr help exposes shared batch flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'ocr', '--help'], {
+    env: { NO_COLOR: '1' }
+  })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--batch-limit')
+  expect(result.stdout).toContain('--batch-all')
+  expect(result.stdout).toContain('--batch-order')
+  expect(result.stdout).toContain('--batch-concurrency')
+})
