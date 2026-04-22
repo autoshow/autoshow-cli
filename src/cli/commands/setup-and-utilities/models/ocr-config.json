@@ -90,6 +90,77 @@
       }
     }
   },
+  "anthropic": {
+    "description": "Anthropic Claude OCR via Messages API",
+    "type": "api",
+    "models": {
+      "claude-haiku-4-5": {
+        "description": "Claude Haiku 4.5 OCR",
+        "costPerMInputTokensUSD": 1,
+        "costPerMOutputTokensUSD": 5,
+        "costPerMInputTokensCents": 100,
+        "costPerMOutputTokensCents": 500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        }
+      },
+      "claude-sonnet-4-6": {
+        "description": "Claude Sonnet 4.6 OCR",
+        "costPerMInputTokensUSD": 3,
+        "costPerMOutputTokensUSD": 15,
+        "costPerMInputTokensCents": 300,
+        "costPerMOutputTokensCents": 1500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        }
+      },
+      "claude-opus-4-7": {
+        "description": "Claude Opus 4.7 OCR",
+        "costPerMInputTokensUSD": 5,
+        "costPerMOutputTokensUSD": 25,
+        "costPerMInputTokensCents": 500,
+        "costPerMOutputTokensCents": 2500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        }
+      }
+    }
+  },
+  "gemini": {
+    "description": "Google Gemini OCR via GenerateContent",
+    "type": "api",
+    "models": {
+      "gemini-3.1-pro-preview": {
+        "description": "Gemini 3.1 Pro OCR",
+        "costPerMInputTokensUSD": 2,
+        "costPerMOutputTokensUSD": 12,
+        "costPerMInputTokensCents": 200,
+        "costPerMOutputTokensCents": 1200,
+        "limits": {
+          "pdfBytes": 2147483648,
+          "imageBytes": 2147483648,
+          "pageCount": 1000,
+          "notes": "project/links/gemini-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+        }
+      },
+      "gemini-3.1-flash-lite-preview": {
+        "description": "Gemini 3.1 Flash-Lite OCR",
+        "costPerMInputTokensUSD": 0.25,
+        "costPerMOutputTokensUSD": 1.5,
+        "costPerMInputTokensCents": 25,
+        "costPerMOutputTokensCents": 150,
+        "limits": {
+          "pdfBytes": 2147483648,
+          "imageBytes": 2147483648,
+          "pageCount": 1000,
+          "notes": "project/links/gemini-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+        }
+      }
+    }
+  },
   "firecrawl": {
     "description": "Firecrawl hosted article extraction",
     "type": "api",

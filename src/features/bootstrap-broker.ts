@@ -12,8 +12,10 @@ import { ensureSpeechmaticsSttSetup } from '~/cli/commands/process-steps/step-2-
 import { ensureReverbRuntimeSetup, setupReverb } from '~/cli/commands/process-steps/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/whisper'
 import { ensureGlmOcrSetup, setupGlmOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/glm-ocr/glm'
+import { ensureGeminiOcrSetup, setupGeminiOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/gemini-ocr/gemini'
 import { ensureMistralOcrSetup, setupMistralOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { ensureOpenAIOcrSetup, setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
+import { ensureAnthropicOcrSetup, setupAnthropicOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
 import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/tesseract-utils'
@@ -112,6 +114,14 @@ const handlers: Record<string, BootstrapHandler> = {
   'openai-ocr': {
     ensure: async () => await ensureOpenAIOcrSetup(),
     setup: async () => await setupOpenAIOcr()
+  },
+  'anthropic-ocr': {
+    ensure: async () => await ensureAnthropicOcrSetup(),
+    setup: async () => await setupAnthropicOcr()
+  },
+  'gemini-ocr': {
+    ensure: async () => await ensureGeminiOcrSetup(),
+    setup: async () => await setupGeminiOcr()
   }
 }
 

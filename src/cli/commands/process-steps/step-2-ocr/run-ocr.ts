@@ -24,13 +24,25 @@ import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './ocr-local/paddle-oc
 import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
 import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
-import { convertDocumentToPdf, getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
+import { runAnthropicOcr } from './ocr-services/anthropic-ocr/run-anthropic-ocr'
+import { runGeminiOcr } from './ocr-services/gemini-ocr/run-gemini-ocr'
+import { convertDocumentToPdf, getDocumentInfo, showPdfObject } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { extractDocx, extractPptx, extractXlsx, extractOdf, type ZipXmlPage } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ZipXmlFormat } from '~/types'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
 import { ensureOpenAIOcrSetup } from './ocr-services/openai-ocr/openai-ocr'
+import {
+  ANTHROPIC_OCR_LIMIT_SOURCE,
+  ensureAnthropicOcrSetup
+} from './ocr-services/anthropic-ocr/anthropic-ocr'
+import {
+  ensureGeminiOcrSetup,
+  GEMINI_FILE_UPLOAD_BYTES,
+  GEMINI_OCR_LIMIT_SOURCE,
+  GEMINI_PDF_PAGE_COUNT_LIMIT
+} from './ocr-services/gemini-ocr/gemini'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
 import { buildEpubTextOutput, type EpubArtifactFile } from './epub/export'
 import { buildPdfChapterArtifacts } from './pdf/chapters'
@@ -95,8 +107,14 @@ const hasGlmOcr = (opts: ExtractionOptions): boolean =>
 const hasOpenAIOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.openaiOcrModel === 'string' && opts.openaiOcrModel.length > 0
 
+const hasAnthropicOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.anthropicOcrModel === 'string' && opts.anthropicOcrModel.length > 0
+
+const hasGeminiOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.geminiOcrModel === 'string' && opts.geminiOcrModel.length > 0
+
 const hasHostedOcr = (opts: ExtractionOptions): boolean =>
-  hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts)
+  hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts) || hasAnthropicOcr(opts) || hasGeminiOcr(opts)
 
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
   opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
@@ -111,7 +129,7 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-const formatHostedOcrLabel = (service: 'mistral' | 'glm' | 'openai'): string => {
+const formatHostedOcrLabel = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini'): string => {
   switch (service) {
     case 'glm':
       return 'GLM OCR'
@@ -119,11 +137,25 @@ const formatHostedOcrLabel = (service: 'mistral' | 'glm' | 'openai'): string => 
       return 'Mistral OCR'
     case 'openai':
       return 'OpenAI OCR'
+    case 'anthropic':
+      return 'Anthropic OCR'
+    case 'gemini':
+      return 'Gemini OCR'
   }
 }
 
-const getHostedOcrLimitSource = (service: 'mistral' | 'glm' | 'openai'): string =>
-  service === 'openai' ? 'project/links/openai-links.md' : 'project/links/bun-links.md'
+const getHostedOcrLimitSource = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini'): string => {
+  switch (service) {
+    case 'openai':
+      return 'project/links/openai-links.md'
+    case 'anthropic':
+      return ANTHROPIC_OCR_LIMIT_SOURCE
+    case 'gemini':
+      return GEMINI_OCR_LIMIT_SOURCE
+    default:
+      return 'project/links/bun-links.md'
+  }
+}
 
 const resolvePdfPageCount = async (
   filePath: string,
@@ -135,6 +167,23 @@ const resolvePdfPageCount = async (
     return Math.max(1, info.pageCount)
   } catch {
     return typeof fallbackPageCount === 'number' ? Math.max(1, fallbackPageCount) : undefined
+  }
+}
+
+const isPdfEncrypted = async (
+  filePath: string,
+  password?: string
+): Promise<boolean> => {
+  try {
+    const result = await showPdfObject(filePath, 'trailer/Encrypt', password)
+    if (result.exitCode !== 0) {
+      return false
+    }
+
+    const combined = `${result.stdout}\n${result.stderr}`.trim()
+    return combined.length > 0 && combined !== 'null'
+  } catch {
+    return false
   }
 }
 
@@ -367,6 +416,14 @@ const warnOpenAIOnlyFlags = (opts: ExtractionOptions): void => {
   warnHostedOnlyFlags('openai-ocr', opts)
 }
 
+const warnAnthropicOnlyFlags = (opts: ExtractionOptions): void => {
+  warnHostedOnlyFlags('anthropic-ocr', opts)
+}
+
+const warnGeminiOnlyFlags = (opts: ExtractionOptions): void => {
+  warnHostedOnlyFlags('gemini-ocr', opts)
+}
+
 // Run OCR on a single image and return a PageResult
 const ocrSingleImage = async (
   imagePath: string,
@@ -424,6 +481,12 @@ const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine): strin
   if (engine === 'mistral-ocr') {
     return 'The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.'
   }
+  if (engine === 'anthropic-ocr') {
+    return 'The --anthropic-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. Convert BMP/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
+  }
+  if (engine === 'gemini-ocr') {
+    return 'The --gemini-ocr engine supports PDF and PNG/JPG/WEBP/BMP images directly. Convert GIF/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
+  }
   return 'The --openai-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. Convert BMP/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
 }
 
@@ -435,6 +498,10 @@ const assertSupportedHostedDirectImageFormat = (
     ? new Set(['png', 'jpg'])
     : engine === 'mistral-ocr'
       ? new Set(['png', 'jpg', 'tif'])
+      : engine === 'anthropic-ocr'
+        ? new Set(['png', 'jpg', 'webp', 'gif'])
+      : engine === 'gemini-ocr'
+        ? new Set(['png', 'jpg', 'webp', 'bmp'])
       : new Set(['png', 'jpg', 'webp', 'gif'])
 
   if (!supportedFormats.has(format)) {
@@ -456,6 +523,37 @@ const normalizeHostedDirectImageInput = async (
       : ext.slice(1).toLowerCase()
 
   if (engine !== 'openai-ocr') {
+    if (engine === 'anthropic-ocr') {
+      if (normalizedFormat === 'bmp' || normalizedFormat === 'tif') {
+        if (!commandExists('convert')) {
+          throw CLIUsageError(getHostedDirectImageSupportError(engine))
+        }
+
+        const pngPath = join(tempDir, `${outputStem}.png`)
+        const result = await exec('convert', [imagePath, pngPath])
+        if (result.exitCode !== 0) {
+          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --anthropic-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
+        }
+
+        return { filePath: pngPath, format: 'png' }
+      }
+    }
+
+    if (engine === 'gemini-ocr') {
+      if (normalizedFormat === 'gif' || normalizedFormat === 'tif') {
+        if (!commandExists('convert')) {
+          throw CLIUsageError(getHostedDirectImageSupportError(engine))
+        }
+
+        const pngPath = join(tempDir, `${outputStem}.png`)
+        const result = await exec('convert', [imagePath, pngPath])
+        if (result.exitCode !== 0) {
+          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --gemini-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
+        }
+
+        return { filePath: pngPath, format: 'png' }
+      }
+    }
     assertSupportedHostedDirectImageFormat(normalizedFormat, engine)
     return { filePath: imagePath, format: normalizedFormat as DocumentMetadata['format'] }
   }
@@ -483,7 +581,7 @@ const normalizeHostedDirectImageInput = async (
 
 const resolveHostedOcrSelection = (
   opts: ExtractionOptions
-): { service: 'mistral' | 'glm' | 'openai', model: string } | undefined => {
+): { service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini', model: string } | undefined => {
   if (hasMistralOcr(opts)) {
     return { service: 'mistral', model: opts.mistralOcrModel as string }
   }
@@ -496,6 +594,14 @@ const resolveHostedOcrSelection = (
     return { service: 'openai', model: opts.openaiOcrModel as string }
   }
 
+  if (hasAnthropicOcr(opts)) {
+    return { service: 'anthropic', model: opts.anthropicOcrModel as string }
+  }
+
+  if (hasGeminiOcr(opts)) {
+    return { service: 'gemini', model: opts.geminiOcrModel as string }
+  }
+
   return undefined
 }
 
@@ -503,6 +609,8 @@ const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEngine | u
   if (hasMistralOcr(opts)) return 'mistral-ocr'
   if (hasGlmOcr(opts)) return 'glm-ocr'
   if (hasOpenAIOcr(opts)) return 'openai-ocr'
+  if (hasAnthropicOcr(opts)) return 'anthropic-ocr'
+  if (hasGeminiOcr(opts)) return 'gemini-ocr'
   return undefined
 }
 
@@ -513,6 +621,39 @@ const assertHostedOcrWithinLimits = async (
 ): Promise<void> => {
   const selection = resolveHostedOcrSelection(opts)
   if (!selection) return
+
+  if (selection.service === 'gemini') {
+    const inputLabel = step1Metadata.format === 'pdf' ? 'PDF' : 'image'
+    const fileStats = await stat(filePath)
+    if (fileStats.size > GEMINI_FILE_UPLOAD_BYTES) {
+      throw CLIUsageError(
+        `${formatHostedOcrLabel(selection.service)} supports ${inputLabel} inputs up to ${formatBytes(GEMINI_FILE_UPLOAD_BYTES)} based on ${getHostedOcrLimitSource(selection.service)}. ` +
+        `Got ${formatBytes(fileStats.size)} for ${basename(filePath)}.`
+      )
+    }
+
+    if (step1Metadata.format === 'pdf') {
+      const pageCount = await resolvePdfPageCount(filePath, opts.password, step1Metadata.pageCount)
+      if (typeof pageCount === 'number' && pageCount > GEMINI_PDF_PAGE_COUNT_LIMIT) {
+        throw CLIUsageError(
+          `${formatHostedOcrLabel(selection.service)} supports PDF inputs up to ${GEMINI_PDF_PAGE_COUNT_LIMIT} pages based on ${getHostedOcrLimitSource(selection.service)}. ` +
+          `Got ${pageCount} pages for ${basename(filePath)}.`
+        )
+      }
+    }
+
+    return
+  }
+
+  if (selection.service === 'anthropic' && step1Metadata.format === 'pdf') {
+    if (typeof opts.password === 'string' && opts.password.length > 0) {
+      throw CLIUsageError('Anthropic OCR only supports standard unencrypted PDFs. Remove --password and decrypt the PDF before using --anthropic-ocr.')
+    }
+
+    if (await isPdfEncrypted(filePath)) {
+      throw CLIUsageError('Anthropic OCR only supports standard unencrypted PDFs. Decrypt the PDF before using --anthropic-ocr.')
+    }
+  }
 
   const limits = getExtractLimits(selection.service, selection.model, step1Metadata.format)
   if (
@@ -596,6 +737,38 @@ const runHostedOcr = async (
     }
   }
 
+  if (hasAnthropicOcr(opts)) {
+    await ensureAnthropicOcrSetup()
+    warnAnthropicOnlyFlags(opts)
+    const ocrModel = opts.anthropicOcrModel as string
+    const run = await runAnthropicOcr(filePath, step1Metadata, ocrModel)
+    return {
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'anthropic',
+      ocrModel,
+      totalPages: run.totalPages,
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+    }
+  }
+
+  if (hasGeminiOcr(opts)) {
+    await ensureGeminiOcrSetup()
+    warnGeminiOnlyFlags(opts)
+    const ocrModel = opts.geminiOcrModel as string
+    const run = await runGeminiOcr(filePath, step1Metadata, ocrModel)
+    return {
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'gemini',
+      ocrModel,
+      totalPages: run.totalPages,
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+    }
+  }
+
   throw CLIUsageError('Hosted OCR requested without a configured hosted OCR model.')
 }
 
@@ -631,11 +804,13 @@ export const runOcr = async (
     opts.usePaddleOcr === true,
     hasMistralOcr(opts),
     hasGlmOcr(opts),
-    hasOpenAIOcr(opts)
+    hasOpenAIOcr(opts),
+    hasAnthropicOcr(opts),
+    hasGeminiOcr(opts)
   ].filter(Boolean).length
 
   if ((typeof opts.preparedMarkdown !== 'string' || opts.preparedMarkdown.trim().length === 0) && ocrEngineCount > 1) {
-    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --openai-ocr).')
+    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr).')
   }
 
   if (useEpubBun && useEpubCalibre) {
@@ -1052,6 +1227,12 @@ export const runOcr = async (
   }
   if (typeof opts.openaiOcrModel === 'string' && extractionMethod.includes('openai-ocr')) {
     step2MetadataPayload['ocrModel'] = opts.openaiOcrModel
+  }
+  if (typeof opts.anthropicOcrModel === 'string' && extractionMethod.includes('anthropic-ocr')) {
+    step2MetadataPayload['ocrModel'] = opts.anthropicOcrModel
+  }
+  if (typeof opts.geminiOcrModel === 'string' && extractionMethod.includes('gemini-ocr')) {
+    step2MetadataPayload['ocrModel'] = opts.geminiOcrModel
   }
   if (typeof promptTokens === 'number') {
     step2MetadataPayload['promptTokens'] = promptTokens

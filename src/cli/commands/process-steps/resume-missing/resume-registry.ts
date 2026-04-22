@@ -40,7 +40,9 @@ const OCR_PROVIDER_SELECTION_FLAGS = [
   'paddle-ocr',
   'mistral-ocr',
   'glm-ocr',
-  'openai-ocr'
+  'openai-ocr',
+  'anthropic-ocr',
+  'gemini-ocr'
 ] as const
 
 const sttResumeAdapter: ResumeAdapter = {

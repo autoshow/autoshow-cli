@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
 import * as l from '~/logger'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runAnthropicCompatibleModel } from '../anthropic-compatible'
+import { createAnthropicClient } from '~/utils/anthropic-utils'
 
 export const runAnthropicModel = async (
   prompt: string,
@@ -15,7 +15,7 @@ export const runAnthropicModel = async (
     throw new Error('ANTHROPIC_API_KEY environment variable is required')
   }
 
-  const client = new Anthropic({ apiKey, maxRetries: 0 })
+  const client = createAnthropicClient()
 
   return await runAnthropicCompatibleModel({
     prompt,
@@ -34,7 +34,7 @@ export const checkAnthropicHealth = async (): Promise<boolean> => {
     const apiKey = readEnv('ANTHROPIC_API_KEY')
     if (!apiKey) return false
 
-    const client = new Anthropic({ apiKey, maxRetries: 0 })
+    const client = createAnthropicClient()
     await client.models.list()
     return true
   } catch (error) {

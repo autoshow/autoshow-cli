@@ -79,6 +79,8 @@ const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
   || typeof opts.mistralOcrModel === 'string'
   || typeof opts.glmOcrModel === 'string'
   || typeof opts.openaiOcrModel === 'string'
+  || typeof opts.anthropicOcrModel === 'string'
+  || typeof opts.geminiOcrModel === 'string'
 
 const getExpectedOcrArtifact = (opts: RuntimeOptions): string => {
   if (opts.out === 'tsv') {
@@ -252,7 +254,7 @@ const validateWriteStep2ProviderSelection = (command: ProcessCommand, opts: Runt
 
   const ocrTargets = collectExplicitOcrTargets(opts)
   if (ocrTargets.length > 1) {
-    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --openai-ocr).')
+    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr).')
   }
 }
 

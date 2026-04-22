@@ -24,6 +24,8 @@ const EXPECTED_BUDGET_KEYS = [
   'extract-mistral-mistral-ocr-2512',
   'extract-glm-glm-ocr',
   'extract-openai-gpt-5.4-nano',
+  'extract-anthropic-claude-haiku-4-5',
+  'extract-gemini-gemini-3.1-flash-lite-preview',
   'extract-paddle-ocr-image',
   'image-gemini-gemini-3-pro-image-preview',
   'image-gemini-imagen-4.0-fast-generate-001',
@@ -155,6 +157,8 @@ describe('test runner price selection', () => {
 
     expect(resolved.suiteName).toBe('Selected paths: step-2-ocr-e2e/ocr-services/service-models.test.ts, step-2-stt-e2e/stt-local/whisper/whisper-models-price.test.ts')
     expect(resolved.commands.map(command => command.key).sort()).toEqual([
+      'extract-anthropic-claude-haiku-4-5',
+      'extract-gemini-gemini-3.1-flash-lite-preview',
       'extract-glm-glm-ocr',
       'extract-mistral-mistral-ocr-2512',
       'extract-openai-gpt-5.4-nano',

@@ -34,6 +34,8 @@ export type WriteDocumentOutputMetadataOptions = {
   mistralOcrModel: string | undefined
   glmOcrModel: string | undefined
   openaiOcrModel: string | undefined
+  anthropicOcrModel: string | undefined
+  geminiOcrModel: string | undefined
   llmService: string
   llmModel: string
   llmInputTokenCount: number

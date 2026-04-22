@@ -73,9 +73,11 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --openai-image models                   │
 │  ├── GROQ_API_KEY                    Required for --groq, --groq-stt,        │
 │  │                                   --groq-tts models                       │
-│  ├── ANTHROPIC_API_KEY               Required for --anthropic models         │
-│  ├── GEMINI_API_KEY                  Required for --gemini, --gemini-tts,    │
-│  │                                   --gemini-image, --gemini-video models   │
+│  ├── ANTHROPIC_API_KEY               Required for --anthropic,               │
+│  │                                   --anthropic-ocr models                  │
+│  ├── GEMINI_API_KEY                  Required for --gemini, --gemini-ocr,    │
+│  │                                   --gemini-tts, --gemini-image,           │
+│  │                                   --gemini-video models                   │
 │  ├── MINIMAX_API_KEY                 Required for --minimax, --minimax-tts,  │
 │  │                                   --minimax-image, --minimax-video,       │
 │  │                                   --minimax-music models                  │

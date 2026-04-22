@@ -24,6 +24,8 @@ import {
 import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import {
   estimateFirecrawlScrapeCost,
+  estimateAnthropicOcrCost,
+  estimateGeminiOcrCost,
   estimateGlmOcrCost,
   estimateMistralOcrCost,
   estimateOpenAIOcrCost
@@ -46,6 +48,10 @@ const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
   || typeof opts.glmOcrModel === 'string'
   || (opts.openaiOcrModels?.length ?? 0) > 0
   || typeof opts.openaiOcrModel === 'string'
+  || (opts.anthropicOcrModels?.length ?? 0) > 0
+  || typeof opts.anthropicOcrModel === 'string'
+  || (opts.geminiOcrModels?.length ?? 0) > 0
+  || typeof opts.geminiOcrModel === 'string'
 
 const buildCloudSttEstimate = async (
   provider: string,
@@ -174,6 +180,46 @@ const buildExtractEstimates = async (
       costMultiplier: estimation.costMultiplier,
       estimateType: estimate.estimateType,
       note: estimate.note
+    })
+  }
+
+  const anthropicModels = opts.anthropicOcrModels ?? (opts.anthropicOcrModel ? [opts.anthropicOcrModel] : [])
+  for (const model of anthropicModels) {
+    const estimate = await estimateAnthropicOcrCost(model, resolvedTarget)
+    const estimation = getExtractEstimation(estimate.provider, estimate.model)
+    estimates.push({
+      step: 'extract',
+      provider: estimate.provider,
+      model: estimate.model,
+      inputCostPer1MCents: estimate.inputCostPer1MCents,
+      outputCostPer1MCents: estimate.outputCostPer1MCents,
+      pageCount: estimate.pageCount,
+      promptTokens: estimate.promptTokens,
+      completionTokens: estimate.completionTokens,
+      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+      costMultiplier: estimation.costMultiplier,
+      estimateType: estimate.estimateType,
+      note: estimate.note
+    })
+  }
+
+  const geminiModels = opts.geminiOcrModels ?? (opts.geminiOcrModel ? [opts.geminiOcrModel] : [])
+  for (const model of geminiModels) {
+    const estimate = await estimateGeminiOcrCost(model, resolvedTarget)
+    const estimation = getExtractEstimation(estimate.provider, estimate.model)
+    estimates.push({
+      step: 'extract',
+      provider: estimate.provider,
+      model: estimate.model,
+      inputCostPer1MCents: estimate.inputCostPer1MCents,
+      outputCostPer1MCents: estimate.outputCostPer1MCents,
+      pageCount: estimate.pageCount,
+      promptTokens: estimate.promptTokens,
+      completionTokens: estimate.completionTokens,
+      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+      costMultiplier: estimation.costMultiplier,
+      estimateType: estimate.estimateType,
+      note: 'Heuristic token estimate based on 4,000 total tokens per page.'
     })
   }
 

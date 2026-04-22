@@ -1,12 +1,13 @@
 import { extname } from 'node:path'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { validateGlmOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { validateAnthropicOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.gif', '.bmp'] as const
 const DEFAULT_EXTRACT_PAGE_COUNT = 1
 const FIRECRAWL_MODEL = 'firecrawl'
 const OPENAI_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
+export const ANTHROPIC_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
 
 export const FIRECRAWL_PRICE_NOTE = 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
 
@@ -122,6 +123,80 @@ export const estimateOpenAIOcrCost = async (
   }
 }
 
+export const estimateAnthropicOcrCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{
+  provider: 'anthropic'
+  model: string
+  pageCount: number
+  promptTokens: number
+  completionTokens: number
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+  estimateType: 'heuristic'
+  note: string
+}> => {
+  const model = validateAnthropicOcrModel(modelRaw)
+  const pricing = getExtractPricing('anthropic', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 100
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 500
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+  const promptTokens = pageCount * 4000
+  const completionTokens = 0
+
+  return {
+    provider: 'anthropic',
+    model,
+    pageCount,
+    promptTokens,
+    completionTokens,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents,
+    estimateType: 'heuristic',
+    note: ANTHROPIC_OCR_PRICE_NOTE
+  }
+}
+
+export const estimateGeminiOcrCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{
+  provider: 'gemini'
+  model: string
+  pageCount: number
+  promptTokens: number
+  completionTokens: number
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+  estimateType: 'heuristic'
+}> => {
+  const model = validateGeminiOcrModel(modelRaw)
+  const pricing = getExtractPricing('gemini', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 25
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 150
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+  const promptTokens = pageCount * 4000
+  const completionTokens = 0
+
+  return {
+    provider: 'gemini',
+    model,
+    pageCount,
+    promptTokens,
+    completionTokens,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents,
+    estimateType: 'heuristic'
+  }
+}
+
 export const estimateFirecrawlScrapeCost = (): {
   provider: 'firecrawl'
   model: string
@@ -190,6 +265,58 @@ export const computeActualOpenAIOcrCost = (
 
   return {
     provider: 'openai',
+    model,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents
+  }
+}
+
+export const computeActualAnthropicOcrCost = (
+  modelRaw: string,
+  promptTokens: number,
+  completionTokens: number
+): {
+  provider: 'anthropic'
+  model: string
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+} => {
+  const model = validateAnthropicOcrModel(modelRaw)
+  const pricing = getExtractPricing('anthropic', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 100
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 500
+
+  return {
+    provider: 'anthropic',
+    model,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents
+  }
+}
+
+export const computeActualGeminiOcrCost = (
+  modelRaw: string,
+  promptTokens: number,
+  completionTokens: number
+): {
+  provider: 'gemini'
+  model: string
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+} => {
+  const model = validateGeminiOcrModel(modelRaw)
+  const pricing = getExtractPricing('gemini', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 25
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 150
+
+  return {
+    provider: 'gemini',
     model,
     inputCostPer1MCents,
     outputCostPer1MCents,

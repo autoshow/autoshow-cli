@@ -13,7 +13,7 @@ bun t \
 
 ## Current Coverage
 
-- `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts` covers PDF and image extraction with `--mistral-ocr mistral-ocr-2512`, `--glm-ocr glm-ocr`, and `--openai-ocr gpt-5.4-nano`.
+- `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts` covers PDF and image extraction with `--mistral-ocr mistral-ocr-2512`, `--glm-ocr glm-ocr`, `--openai-ocr gpt-5.4-nano`, `--anthropic-ocr claude-haiku-4-5`, and `--gemini-ocr gemini-3.1-flash-lite-preview`.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts` covers remote article extraction with `--url-backend firecrawl`, writes `extraction.txt`, and records `step2.extractionMethod: "html+firecrawl"` in `run.json`.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts` covers remote article extraction with `--url-backend glm-reader`, writes `extraction.txt`, and records `step2.extractionMethod: "html+glm-reader"` in `run.json`.
 - Hosted article backend validation also lives in `test/test-cases/validation/html-article-inputs.test.ts`.

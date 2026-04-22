@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
-export type { GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
+import type { AnthropicOcrModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
+export type { AnthropicOcrModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
   'mistral-ocr-2512'
@@ -22,3 +22,18 @@ export const SUPPORTED_OPENAI_OCR_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateOpenAIOcrModel = createModelValidator<OpenAIOcrModel>(SUPPORTED_OPENAI_OCR_MODELS, 'openai-ocr')
+
+export const SUPPORTED_ANTHROPIC_OCR_MODELS = [
+  'claude-haiku-4-5',
+  'claude-sonnet-4-6',
+  'claude-opus-4-7'
+] as const satisfies readonly string[]
+
+export const validateAnthropicOcrModel = createModelValidator<AnthropicOcrModel>(SUPPORTED_ANTHROPIC_OCR_MODELS, 'anthropic-ocr')
+
+export const SUPPORTED_GEMINI_OCR_MODELS = [
+  'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite-preview'
+] as const satisfies readonly string[]
+
+export const validateGeminiOcrModel = createModelValidator<GeminiOcrModel>(SUPPORTED_GEMINI_OCR_MODELS, 'gemini-ocr')

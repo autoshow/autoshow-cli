@@ -345,6 +345,39 @@ describe('computeActualCosts extract routing', () => {
     expect(extractStep?.cost).toBeCloseTo(0.16, 6)
   })
 
+  test('estimates Anthropic OCR extract costs with heuristic prompt token counts', () => {
+    const result = computeEstimatedCosts({
+      anthropicOcrModel: 'claude-haiku-4-5',
+      extractPageCount: 2
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('anthropic')
+    expect(extractStep?.model).toBe('claude-haiku-4-5')
+    expect(extractStep?.promptTokens).toBe(8000)
+    expect(extractStep?.completionTokens).toBe(0)
+    expect(extractStep?.estimateType).toBe('heuristic')
+    expect(extractStep?.note).toContain('Actual Anthropic OCR cost is computed from response usage after execution')
+    expect(extractStep?.cost).toBeCloseTo(0.8, 6)
+  })
+
+  test('estimates Gemini OCR extract costs with heuristic prompt token counts', () => {
+    const result = computeEstimatedCosts({
+      geminiOcrModel: 'gemini-3.1-flash-lite-preview',
+      extractPageCount: 2
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('gemini')
+    expect(extractStep?.model).toBe('gemini-3.1-flash-lite-preview')
+    expect(extractStep?.promptTokens).toBe(8000)
+    expect(extractStep?.completionTokens).toBe(0)
+    expect(extractStep?.estimateType).toBe('heuristic')
+    expect(extractStep?.cost).toBeCloseTo(0.2, 6)
+  })
+
   test('estimates Firecrawl article extraction cost from the configured credit rate', () => {
     const result = computeEstimatedCosts({
       extractTargets: [{
@@ -425,6 +458,64 @@ describe('computeActualCosts extract routing', () => {
     expect(extractStep?.cost).toBeCloseTo(0.3825, 6)
   })
 
+  test('computes actual Anthropic OCR cost from token usage metadata', () => {
+    const result = computeActualCosts({
+      step2: {
+        extractionMethod: 'anthropic-ocr',
+        totalPages: 4,
+        ocrPages: 4,
+        textPages: 0,
+        processingTime: 800,
+        dpi: 300,
+        languages: 'eng',
+        tokenEstimate: 100,
+        ocrService: 'anthropic',
+        ocrModel: 'claude-haiku-4-5',
+        promptTokens: 16000,
+        completionTokens: 500
+      }
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('anthropic')
+    expect(extractStep?.model).toBe('claude-haiku-4-5')
+    expect(extractStep?.inputMetric).toBe('tokens')
+    expect(extractStep?.inputValue).toBe(16500)
+    expect(extractStep?.promptTokens).toBe(16000)
+    expect(extractStep?.completionTokens).toBe(500)
+    expect(extractStep?.cost).toBeCloseTo(1.85, 6)
+  })
+
+  test('computes actual Gemini OCR cost from token usage metadata', () => {
+    const result = computeActualCosts({
+      step2: {
+        extractionMethod: 'gemini-ocr',
+        totalPages: 4,
+        ocrPages: 4,
+        textPages: 0,
+        processingTime: 800,
+        dpi: 300,
+        languages: 'eng',
+        tokenEstimate: 100,
+        ocrService: 'gemini',
+        ocrModel: 'gemini-3.1-flash-lite-preview',
+        promptTokens: 16000,
+        completionTokens: 500
+      }
+    })
+
+    const extractStep = result.steps.find((step) => step.step === 'extract')
+    expect(extractStep).toBeDefined()
+    expect(extractStep?.provider).toBe('gemini')
+    expect(extractStep?.model).toBe('gemini-3.1-flash-lite-preview')
+    expect(extractStep?.inputMetric).toBe('tokens')
+    expect(extractStep?.inputValue).toBe(16500)
+    expect(extractStep?.promptTokens).toBe(16000)
+    expect(extractStep?.completionTokens).toBe(500)
+    expect(extractStep?.cost).toBeCloseTo(0.475, 6)
+  })
+
   test('computes actual Firecrawl article extraction cost from extraction metadata', () => {
     const result = computeActualCosts({
       step2: {
@@ -501,6 +592,34 @@ describe('computeActualCosts extract routing', () => {
           completionTokens: 0
         },
         {
+          extractionMethod: 'anthropic-ocr',
+          totalPages: 4,
+          ocrPages: 4,
+          textPages: 0,
+          processingTime: 635,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 100,
+          ocrService: 'anthropic',
+          ocrModel: 'claude-haiku-4-5',
+          promptTokens: 16000,
+          completionTokens: 0
+        },
+        {
+          extractionMethod: 'gemini-ocr',
+          totalPages: 4,
+          ocrPages: 4,
+          textPages: 0,
+          processingTime: 625,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 100,
+          ocrService: 'gemini',
+          ocrModel: 'gemini-3.1-flash-lite-preview',
+          promptTokens: 16000,
+          completionTokens: 0
+        },
+        {
           extractionMethod: 'html+firecrawl',
           totalPages: 1,
           ocrPages: 0,
@@ -514,12 +633,14 @@ describe('computeActualCosts extract routing', () => {
     })
 
     const extractSteps = result.steps.filter((step) => step.step === 'extract')
-    expect(extractSteps).toHaveLength(5)
+    expect(extractSteps).toHaveLength(7)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'ocrmypdf:ocrmypdf',
       'mistral:mistral-ocr-2512',
       'glm:glm-ocr',
       'openai:gpt-5.4-nano',
+      'anthropic:claude-haiku-4-5',
+      'gemini:gemini-3.1-flash-lite-preview',
       'firecrawl:firecrawl'
     ])
   })
@@ -575,17 +696,47 @@ describe('computeActualCosts extract routing', () => {
           ocrModel: 'gpt-5.4-nano',
           promptTokens: 12000,
           completionTokens: 0
+        },
+        {
+          extractionMethod: 'anthropic-ocr',
+          totalPages: 3,
+          ocrPages: 3,
+          textPages: 0,
+          processingTime: 540,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 90,
+          ocrService: 'anthropic',
+          ocrModel: 'claude-haiku-4-5',
+          promptTokens: 12000,
+          completionTokens: 0
+        },
+        {
+          extractionMethod: 'gemini-ocr',
+          totalPages: 3,
+          ocrPages: 3,
+          textPages: 0,
+          processingTime: 525,
+          dpi: 300,
+          languages: 'eng',
+          tokenEstimate: 90,
+          ocrService: 'gemini',
+          ocrModel: 'gemini-3.1-flash-lite-preview',
+          promptTokens: 12000,
+          completionTokens: 0
         }
       ]
     })
 
     const extractSteps = result.steps.filter((step) => step.step === 'extract')
-    expect(extractSteps).toHaveLength(4)
+    expect(extractSteps).toHaveLength(6)
     expect(extractSteps.map((step) => `${step.provider}:${step.model}`)).toEqual([
       'paddle-ocr:paddle-ocr',
       'mistral:mistral-ocr-2512',
       'glm:glm-ocr',
-      'openai:gpt-5.4-nano'
+      'openai:gpt-5.4-nano',
+      'anthropic:claude-haiku-4-5',
+      'gemini:gemini-3.1-flash-lite-preview'
     ])
   })
 

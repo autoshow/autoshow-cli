@@ -87,7 +87,7 @@ export const selectCheapestSttModel = (service: string): string => {
   return selectCheapestRegistryModel(serviceConfig.models, sttHourlyCost)
 }
 
-export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'openai'): string => {
+export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini'): string => {
   const serviceConfig = getModelRegistry().extract[service]
   if (!serviceConfig) {
     throw new Error(`Missing extract service config: ${service}`)
@@ -298,6 +298,10 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestExtractModel('glm')
     case 'openai-ocr':
       return selectCheapestExtractModel('openai')
+    case 'anthropic-ocr':
+      return selectCheapestExtractModel('anthropic')
+    case 'gemini-ocr':
+      return selectCheapestExtractModel('gemini')
     case 'openai':
       return selectCheapestLlmModel('openai')
     case 'groq':

@@ -58,6 +58,8 @@ const hasOcrExtractionFlags = (opts: RuntimeOptions): boolean =>
   || typeof opts.mistralOcrModel === 'string'
   || typeof opts.glmOcrModel === 'string'
   || typeof opts.openaiOcrModel === 'string'
+  || typeof opts.anthropicOcrModel === 'string'
+  || typeof opts.geminiOcrModel === 'string'
 
 const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
   [
@@ -72,9 +74,9 @@ const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel'>
+  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
+  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -83,7 +85,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -139,6 +141,31 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
         note: 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'anthropic' || entry.extractionMethod.includes('anthropic-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'anthropic' as const,
+        model: entry.ocrModel ?? opts.anthropicOcrModel ?? 'claude-haiku-4-5',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
+        note: 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'gemini' || entry.extractionMethod.includes('gemini-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'gemini' as const,
+        model: entry.ocrModel ?? opts.geminiOcrModel ?? 'gemini-3.1-flash-lite-preview',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
       })
     }
   }
@@ -220,6 +247,12 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.openaiOcrModel) {
     extractionOpts.openaiOcrModel = opts.openaiOcrModel
   }
+  if (opts.anthropicOcrModel) {
+    extractionOpts.anthropicOcrModel = opts.anthropicOcrModel
+  }
+  if (opts.geminiOcrModel) {
+    extractionOpts.geminiOcrModel = opts.geminiOcrModel
+  }
   if (opts.epubChapterFiles) {
     extractionOpts.epubChapterFiles = true
   }
@@ -246,6 +279,8 @@ const writeDocumentOutputMetadata = async (
     mistralOcrModel,
     glmOcrModel,
     openaiOcrModel,
+    anthropicOcrModel,
+    geminiOcrModel,
     artifactFiles,
     completionStatus,
     requestedProviders,
@@ -257,7 +292,9 @@ const writeDocumentOutputMetadata = async (
   const extractTargets = collectEstimatedExtractTargets(step2, {
     mistralOcrModel,
     glmOcrModel,
-    openaiOcrModel
+    openaiOcrModel,
+    anthropicOcrModel,
+    geminiOcrModel
   })
 
   const estimated = computeEstimatedCosts({
@@ -429,6 +466,8 @@ const runDocumentWrite = async (
     mistralOcrModel: opts.mistralOcrModel,
     glmOcrModel: opts.glmOcrModel,
     openaiOcrModel: opts.openaiOcrModel,
+    anthropicOcrModel: opts.anthropicOcrModel,
+    geminiOcrModel: opts.geminiOcrModel,
     llmService,
     llmModel,
     llmInputTokenCount,
@@ -582,7 +621,11 @@ const processMediaSingle = async (
     glmOcrModels: llmDefaults.glmOcrModels,
     glmOcrModel: llmDefaults.glmOcrModel,
     openaiOcrModels: llmDefaults.openaiOcrModels,
-    openaiOcrModel: llmDefaults.openaiOcrModel
+    openaiOcrModel: llmDefaults.openaiOcrModel,
+    anthropicOcrModels: llmDefaults.anthropicOcrModels,
+    anthropicOcrModel: llmDefaults.anthropicOcrModel,
+    geminiOcrModels: llmDefaults.geminiOcrModels,
+    geminiOcrModel: llmDefaults.geminiOcrModel
   }
 
   const options: ProcessingOptions = validateData(ProcessingOptionsSchema, baseOptions, 'processing options')

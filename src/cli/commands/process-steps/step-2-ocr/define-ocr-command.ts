@@ -16,6 +16,8 @@ export const ocrCommand = defineCommand({
       ['bun as ocr document.pdf --mistral-ocr mistral-ocr-2512', 'Extract with Mistral OCR API'],
       ['bun as ocr document.pdf --glm-ocr glm-ocr', 'Extract with GLM OCR API'],
       ['bun as ocr document.pdf --openai-ocr gpt-5.4-nano', 'Extract with OpenAI OCR API'],
+      ['bun as ocr document.pdf --anthropic-ocr claude-haiku-4-5', 'Extract with Anthropic OCR API'],
+      ['bun as ocr document.pdf --gemini-ocr gemini-3.1-flash-lite-preview', 'Extract with Gemini OCR API'],
       ['bun as ocr book.epub --lang eng+fra', 'Extract from EPUB with multilingual OCR']
     ]
   }

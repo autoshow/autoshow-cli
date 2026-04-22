@@ -121,6 +121,10 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/setup-orchestrator/r
                                           |
   Step 12 ─── setupMistralStt() ───────── Check Mistral STT (API key only)
               setupMistralOcr() ───────── Check Mistral OCR (API key only)
+              setupGlmOcr() ───────────── Check GLM OCR (API key only)
+              setupOpenAIOcr() ────────── Check OpenAI OCR (API key only)
+              setupAnthropicOcr() ─────── Check Anthropic OCR (API key only)
+              setupGeminiOcr() ────────── Check Gemini OCR (API key only)
                                           |
   Step 13 ─── setupAssemblyAiStt() ────── Check AssemblyAI STT (API key only)
                                           |
@@ -158,7 +162,9 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/setup-orchestrator/r
 |---------|----------------------|
 | `stt` | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
 | `stt --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `ocr` | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`) |
+| `ocr` | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr` API key) |
+| `ocr --anthropic-ocr` | `ANTHROPIC_API_KEY` |
+| `ocr --gemini-ocr` | `GEMINI_API_KEY` |
 | `write` (media) | All of `stt` + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
 | `write` (document) | All of `ocr` + llama.cpp (or LLM API key) |

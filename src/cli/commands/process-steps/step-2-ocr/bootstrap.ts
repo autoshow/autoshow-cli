@@ -17,6 +17,10 @@ const toBootstrapProviderId = (
       return 'glm-ocr'
     case 'openai':
       return 'openai-ocr'
+    case 'anthropic':
+      return 'anthropic-ocr'
+    case 'gemini':
+      return 'gemini-ocr'
   }
 }
 

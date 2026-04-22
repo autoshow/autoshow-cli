@@ -67,6 +67,18 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'gpt-5.4-nano'
     }
   }
+  if (metadata.ocrService === 'anthropic') {
+    return {
+      provider: 'anthropic',
+      model: metadata.ocrModel ?? 'claude-haiku-4-5'
+    }
+  }
+  if (metadata.ocrService === 'gemini') {
+    return {
+      provider: 'gemini',
+      model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
@@ -83,6 +95,18 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'openai',
       model: metadata.ocrModel ?? 'gpt-5.4-nano'
+    }
+  }
+  if (metadata.extractionMethod.includes('anthropic-ocr')) {
+    return {
+      provider: 'anthropic',
+      model: metadata.ocrModel ?? 'claude-haiku-4-5'
+    }
+  }
+  if (metadata.extractionMethod.includes('gemini-ocr')) {
+    return {
+      provider: 'gemini',
+      model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -130,7 +154,9 @@ type ComputeEstimatedProcessingTimesInput = {
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'firecrawl', model: string, pageCount?: number }> | undefined
+  anthropicOcrModel?: string | undefined
+  geminiOcrModel?: string | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']
@@ -221,6 +247,12 @@ export const computeEstimatedProcessingTimes = (
           : []),
         ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'openai' as const, model: input.openaiOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.anthropicOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'anthropic' as const, model: input.anthropicOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.geminiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'gemini' as const, model: input.geminiOcrModel, pageCount: input.extractPageCount }]
           : [])
       ]
 

@@ -81,7 +81,9 @@ export const buildApiCheapSelections = () => {
   const extractSelections = [
     { service: 'mistral', flag: '--mistral-ocr', envVar: 'MISTRAL_API_KEY', model: selectCheapestExtractModel('mistral') },
     { service: 'glm', flag: '--glm-ocr', envVar: 'GLM_API_KEY', model: selectCheapestExtractModel('glm') },
-    { service: 'openai', flag: '--openai-ocr', envVar: 'OPENAI_API_KEY', model: selectCheapestExtractModel('openai') }
+    { service: 'openai', flag: '--openai-ocr', envVar: 'OPENAI_API_KEY', model: selectCheapestExtractModel('openai') },
+    { service: 'anthropic', flag: '--anthropic-ocr', envVar: 'ANTHROPIC_API_KEY', model: selectCheapestExtractModel('anthropic') },
+    { service: 'gemini', flag: '--gemini-ocr', envVar: 'GEMINI_API_KEY', model: selectCheapestExtractModel('gemini') }
   ]
 
   return {

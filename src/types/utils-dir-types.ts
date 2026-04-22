@@ -11,6 +11,7 @@ import {
   SUPPORTED_REV_STT_MODELS,
   SUPPORTED_GLADIA_STT_MODELS,
   SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_GROQ_MODELS,
@@ -19,6 +20,7 @@ import {
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
+  SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
@@ -49,6 +51,8 @@ export type GladiaSttModel = typeof SUPPORTED_GLADIA_STT_MODELS[number]
 export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
 export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
 export type OpenAIOcrModel = typeof SUPPORTED_OPENAI_OCR_MODELS[number]
+export type AnthropicOcrModel = typeof SUPPORTED_ANTHROPIC_OCR_MODELS[number]
+export type GeminiOcrModel = typeof SUPPORTED_GEMINI_OCR_MODELS[number]
 export type KittenTtsModel = typeof SUPPORTED_KITTEN_TTS_MODELS[number]
 export type ElevenlabsTtsModel = typeof SUPPORTED_ELEVENLABS_TTS_MODELS[number]
 export type MinimaxTtsModel = typeof SUPPORTED_MINIMAX_TTS_MODELS[number]
@@ -226,7 +230,7 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type ExtractStepEstimate = ProviderModelBase<'mistral' | 'glm' | 'openai' | 'firecrawl'> & {
+export type ExtractStepEstimate = ProviderModelBase<'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'> & {
   step: 'extract'
   costPer1kPagesCents?: number
   inputCostPer1MCents?: number

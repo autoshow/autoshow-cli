@@ -33,6 +33,8 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--mistral-ocr': { service: 'mistral', kind: 'extract' },
   '--glm-ocr': { service: 'glm', kind: 'extract' },
   '--openai-ocr': { service: 'openai', kind: 'extract' },
+  '--anthropic-ocr': { service: 'anthropic', kind: 'extract' },
+  '--gemini-ocr': { service: 'gemini', kind: 'extract' },
   '--elevenlabs-tts': { service: 'elevenlabs', kind: 'tts' },
   '--minimax-tts': { service: 'minimax', kind: 'tts' },
   '--groq-tts': { service: 'groq', kind: 'tts' },
@@ -207,11 +209,15 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
           ? 'glm'
           : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('openai-ocr')
             ? 'openai'
-          : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
-            ? 'glm'
-            : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('firecrawl')
-              ? 'firecrawl'
-              : null,
+            : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('anthropic-ocr')
+              ? 'anthropic'
+              : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('gemini-ocr')
+                ? 'gemini'
+                : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
+                  ? 'glm'
+                  : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('firecrawl')
+                    ? 'firecrawl'
+                    : null,
     typeof step2?.['ocrModel'] === 'string'
       ? step2['ocrModel']
       : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
@@ -371,6 +377,8 @@ const inferModelHints = (testCase: ParsedJunitCase): Set<string> => {
   addModelHint(models, name.match(/with --mistral-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/with --glm-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/with --openai-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
+  addModelHint(models, name.match(/with --anthropic-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
+  addModelHint(models, name.match(/with --gemini-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/^([A-Za-z0-9./_-]+) (?:model generates|generates|runs in parallel|uses cheapest model)/i)?.[1])
 
   for (const match of name.matchAll(/--[a-z-]+\s+([A-Za-z0-9./_-]+)/gi)) {

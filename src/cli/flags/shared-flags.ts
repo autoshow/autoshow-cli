@@ -11,6 +11,8 @@ import {
   SUPPORTED_GLADIA_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
+  SUPPORTED_ANTHROPIC_OCR_MODELS,
+  SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
@@ -262,6 +264,14 @@ export const extractFlags = {
   },
   'openai-ocr': {
     description: buildModelDescription('OpenAI OCR model', SUPPORTED_OPENAI_OCR_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'anthropic-ocr': {
+    description: buildModelDescription('Anthropic OCR model', SUPPORTED_ANTHROPIC_OCR_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'gemini-ocr': {
+    description: buildModelDescription('Gemini OCR model', SUPPORTED_GEMINI_OCR_MODELS),
     type: [String] as [StringConstructor]
   },
   chapters: {

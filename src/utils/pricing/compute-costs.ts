@@ -34,7 +34,11 @@ import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
-import { OPENAI_OCR_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
+import {
+  computeActualAnthropicOcrCost,
+  computeActualGeminiOcrCost,
+  OPENAI_OCR_PRICE_NOTE
+} from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 
 export const parseDurationToSeconds = (duration: string): number => {
   if (!duration || duration === 'Unknown') return 0
@@ -123,6 +127,18 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'gpt-5.4-nano'
     }
   }
+  if (metadata.ocrService === 'anthropic') {
+    return {
+      provider: 'anthropic',
+      model: metadata.ocrModel ?? 'claude-haiku-4-5'
+    }
+  }
+  if (metadata.ocrService === 'gemini') {
+    return {
+      provider: 'gemini',
+      model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
@@ -139,6 +155,18 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'openai',
       model: metadata.ocrModel ?? 'gpt-5.4-nano'
+    }
+  }
+  if (metadata.extractionMethod.includes('anthropic-ocr')) {
+    return {
+      provider: 'anthropic',
+      model: metadata.ocrModel ?? 'claude-haiku-4-5'
+    }
+  }
+  if (metadata.extractionMethod.includes('gemini-ocr')) {
+    return {
+      provider: 'gemini',
+      model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -242,6 +270,34 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
+    } else if (provider === 'anthropic' && input.step2.ocrModel) {
+      const promptTokens = input.step2.promptTokens ?? 0
+      const completionTokens = input.step2.completionTokens ?? 0
+      const cost = computeActualAnthropicOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      steps.push({
+        step: 'extract',
+        provider: 'anthropic',
+        model: input.step2.ocrModel,
+        cost,
+        inputMetric: 'tokens',
+        inputValue: promptTokens + completionTokens,
+        promptTokens,
+        completionTokens
+      })
+    } else if (provider === 'gemini' && input.step2.ocrModel) {
+      const promptTokens = input.step2.promptTokens ?? 0
+      const completionTokens = input.step2.completionTokens ?? 0
+      const cost = computeActualGeminiOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      steps.push({
+        step: 'extract',
+        provider: 'gemini',
+        model: input.step2.ocrModel,
+        cost,
+        inputMetric: 'tokens',
+        inputValue: promptTokens + completionTokens,
+        promptTokens,
+        completionTokens
+      })
     } else if (provider !== 'extract') {
       steps.push({
         step: 'extract',
@@ -284,18 +340,20 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         : provider === 'glm' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
-          : provider === 'openai' && step2Entry.ocrModel
-            ? (promptTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
-              + (completionTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
+        : provider === 'openai' && step2Entry.ocrModel
+          ? (promptTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
+            + (completionTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
+        : provider === 'anthropic' && step2Entry.ocrModel
+          ? computeActualAnthropicOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
           : 0
       steps.push({
         step: 'extract',
         provider,
         model,
         cost,
-        inputMetric: provider === 'glm' || provider === 'openai' ? 'tokens' : 'pages',
-        inputValue: provider === 'glm' || provider === 'openai' ? promptTokens + completionTokens : step2Entry.totalPages,
-        ...(provider === 'glm' || provider === 'openai' ? { promptTokens, completionTokens } : {})
+        inputMetric: provider === 'glm' || provider === 'openai' || provider === 'anthropic' ? 'tokens' : 'pages',
+        inputValue: provider === 'glm' || provider === 'openai' || provider === 'anthropic' ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(provider === 'glm' || provider === 'openai' || provider === 'anthropic' ? { promptTokens, completionTokens } : {})
       })
     }
   }
@@ -429,8 +487,10 @@ type ComputeEstimatedCostsInput = {
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
+  anthropicOcrModel?: string | undefined
+  geminiOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -539,6 +599,23 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               pageCount: input.extractPageCount,
               estimateType: 'heuristic' as const,
               note: OPENAI_OCR_PRICE_NOTE
+            }]
+          : []),
+        ...(input.anthropicOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'anthropic' as const,
+              model: input.anthropicOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const,
+              note: 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+            }]
+          : []),
+        ...(input.geminiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'gemini' as const,
+              model: input.geminiOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const
             }]
           : [])
       ]

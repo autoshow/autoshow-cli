@@ -20,6 +20,8 @@ import {
   validateAssemblyaiSttModel,
   validateGladiaSttModel,
   validateGlmOcrModel,
+  validateAnthropicOcrModel,
+  validateGeminiOcrModel,
   validateMistralOcrModel,
   validateOpenAIOcrModel,
   validateKittenTtsModel,
@@ -58,6 +60,8 @@ export const REPEATABLE_MODEL_FLAGS = [
   'mistral-ocr',
   'glm-ocr',
   'openai-ocr',
+  'anthropic-ocr',
+  'gemini-ocr',
   'llama',
   'openai',
   'groq',
@@ -334,6 +338,8 @@ export const buildOptsFromFlags = (
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
   const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
+  const anthropicOcrModels = readValidatedMany('anthropic-ocr', validateAnthropicOcrModel)
+  const geminiOcrModels = readValidatedMany('gemini-ocr', validateGeminiOcrModel)
   const llamaModels = readValidatedMany('llama', validateLlamaModel)
   const openaiModels = readValidatedMany('openai', validateOpenAIModel)
   const groqModels = readValidatedMany('groq', validateGroqModel)
@@ -355,6 +361,8 @@ export const buildOptsFromFlags = (
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
   const openaiOcrModel = first(openaiOcrModels)
+  const anthropicOcrModel = first(anthropicOcrModels)
+  const geminiOcrModel = first(geminiOcrModels)
   const llamaModel = first(llamaModels)
   const openaiModel = first(openaiModels)
   const groqModel = first(groqModels)
@@ -465,6 +473,10 @@ export const buildOptsFromFlags = (
     glmOcrModel,
     openaiOcrModels,
     openaiOcrModel,
+    anthropicOcrModels,
+    anthropicOcrModel,
+    geminiOcrModels,
+    geminiOcrModel,
     epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
     epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
     pdfChapterMode,

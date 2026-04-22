@@ -247,7 +247,7 @@ Notable behavior:
 | Step | Local engines | Service engines |
 |------|---------------|-----------------|
 | STT | Whisper.cpp, Reverb | Deepgram, ElevenLabs, Soniox, Speechmatics, Rev, Groq, OpenAI, Mistral, AssemblyAI, Gladia |
-| Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing, Defuddle article extraction | Mistral OCR, GLM OCR, Firecrawl article extraction |
+| Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing, Defuddle article extraction | Mistral OCR, GLM OCR, OpenAI OCR, Anthropic OCR, Gemini OCR, Firecrawl article extraction |
 | LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok |
 | TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini |
 | Image | none | Gemini, OpenAI, MiniMax |
@@ -272,6 +272,8 @@ Notable behavior:
 | Mistral OCR | `mistral-ocr-2512` |
 | GLM OCR | `glm-ocr` |
 | OpenAI OCR | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
+| Anthropic OCR | `claude-haiku-4-5`, `claude-sonnet-4-6`, `claude-opus-4-7` |
+| Gemini OCR | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
 | Firecrawl extract | `firecrawl` |
 | llama.cpp | setup-managed defaults `ggml-org/gemma-3-270m-it-GGUF`, `ggml-org/Qwen3-0.6B-GGUF`, plus arbitrary Hugging Face repo IDs in `namespace/repo_name` form |
 | OpenAI LLM | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |

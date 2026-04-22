@@ -44,9 +44,9 @@ const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel'>
+  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
+  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -55,7 +55,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -111,6 +111,31 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
         note: 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'anthropic' || entry.extractionMethod.includes('anthropic-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'anthropic' as const,
+        model: entry.ocrModel ?? opts.anthropicOcrModel ?? 'claude-haiku-4-5',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
+        note: 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'gemini' || entry.extractionMethod.includes('gemini-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'gemini' as const,
+        model: entry.ocrModel ?? opts.geminiOcrModel ?? 'gemini-3.1-flash-lite-preview',
+        pageCount: entry.totalPages,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
+        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
       })
     }
   }
@@ -312,6 +337,8 @@ export const processOcr = async (
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
     ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
     ...(rawOpts.openaiOcrModel ? { openaiOcrModel: rawOpts.openaiOcrModel } : {}),
+    ...(rawOpts.anthropicOcrModel ? { anthropicOcrModel: rawOpts.anthropicOcrModel } : {}),
+    ...(rawOpts.geminiOcrModel ? { geminiOcrModel: rawOpts.geminiOcrModel } : {}),
     ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
     ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),
     pdfChapterMode: rawOpts.pdfChapterMode ?? 'local',

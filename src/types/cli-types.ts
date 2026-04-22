@@ -81,6 +81,10 @@ export type RuntimeOptions = {
   glmOcrModel: string | undefined
   openaiOcrModels: string[] | undefined
   openaiOcrModel: string | undefined
+  anthropicOcrModels: string[] | undefined
+  anthropicOcrModel: string | undefined
+  geminiOcrModels: string[] | undefined
+  geminiOcrModel: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined
   pdfChapterMode: 'local' | 'auto' | 'llm'
