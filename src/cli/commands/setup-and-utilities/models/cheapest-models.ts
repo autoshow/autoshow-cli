@@ -1,5 +1,7 @@
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { getModelRegistry } from './model-loader'
+import type { CheapestVideoSelection } from '../setup-and-utilities-types'
+export type { CheapestVideoSelection } from '../setup-and-utilities-types'
 
 const PERFORMANCE_TIE_BREAKERS = ['mini', 'nano', 'micro', 'flash', 'turbo', 'fast', 'small']
 
@@ -67,15 +69,6 @@ const qualityRank = (selection: { size?: string | undefined, resolution?: string
   if (selection.size === '1024x1792' || selection.size === '1792x1024') return 2
   if (selection.resolution === '1080p') return 2
   return 1
-}
-
-export type CheapestVideoSelection = {
-  provider: 'gemini' | 'minimax'
-  model: string
-  duration: number
-  size?: string | undefined
-  resolution?: string | undefined
-  totalCost: number
 }
 
 export const selectCheapestSttModel = (service: string): string => {

@@ -1,13 +1,7 @@
 import { createHumanTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, LogLevel, Logger } from '~/utils/logger/types'
-
-type TableLogger = Pick<Logger, 'write'>
-
-export type SetupToolStatus = {
-  tool: string
-  status: string
-  detail?: string
-}
+import type { HumanLogTable, LogLevel } from '~/utils/logger/types'
+import type { SetupToolStatus, TableLogger } from '../setup-and-utilities-types'
+export type { SetupToolStatus } from '../setup-and-utilities-types'
 
 export const buildSetupToolStatusRows = (
   summary: SetupToolStatus

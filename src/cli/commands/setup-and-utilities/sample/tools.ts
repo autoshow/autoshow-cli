@@ -1,13 +1,7 @@
 import { commandExists } from '~/utils/cli-utils'
 import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
-
-export type ToolName = 'ffmpeg' | 'ffprobe' | 'libreoffice' | 'calibre' | 'imagemagick'
-
-type ToolStatus = {
-  available: boolean
-  command: string
-  remediation: string
-}
+import type { ToolName, ToolStatus } from '../setup-and-utilities-types'
+export type { ToolName } from '../setup-and-utilities-types'
 
 const TOOL_DEFS: Record<ToolName, { command: string, remediation: string }> = {
   ffmpeg: {

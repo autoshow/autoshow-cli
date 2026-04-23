@@ -6,15 +6,13 @@ import { generateFixture } from './generate'
 import { validateFixture } from './validate'
 import { readManifest, writeManifest, isManifestValid } from './manifest'
 import { checkAllTools } from './tools'
-import type { SampleFixtureEntry, SampleSkippedEntry } from '~/types'
-import type { ToolName } from './tools'
-
-export type SampleFixtureOptions = {
-  out?: string
-  refresh?: boolean
-  verifyOnly?: boolean
-  validOnly?: boolean
-}
+import type {
+  SampleFixtureEntry,
+  SampleFixtureOptions,
+  SampleSkippedEntry,
+  ToolName
+} from '../setup-and-utilities-types'
+export type { SampleFixtureOptions } from '../setup-and-utilities-types'
 
 export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Promise<void> => {
   const outDir = resolve(options.out ?? 'input/samples')

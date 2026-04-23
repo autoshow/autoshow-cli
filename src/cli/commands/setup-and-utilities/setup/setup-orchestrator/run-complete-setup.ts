@@ -2,6 +2,7 @@ import { stat, mkdir, rm } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import * as v from 'valibot'
 import type { RunResult, RunOptions, SetupPlatform } from '~/types'
+import type { SetupStepId } from '../../setup-and-utilities-types'
 import { downloadFile } from '~/utils/download'
 import { consumeDownloadFallbackEvents } from '~/utils/download'
 import * as l from '~/utils/logger'
@@ -44,6 +45,7 @@ import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tt
 import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
 export type { RunResult, RunOptions } from '~/types'
+export type { SetupStepId } from '../../setup-and-utilities-types'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../../')
 const RUNTIME = join(PROJECT_ROOT, 'runtime')
@@ -150,11 +152,6 @@ export const setupUv = async (): Promise<void> => {
   }
   logSetupToolStatus(l, { tool: 'uv', status: 'installed' })
 }
-
-export type SetupStepId =
-  | 'uv' | 'yt-dlp' | 'whisper-binary' | 'whisper-model' | 'llama-binary'
-  | 'reverb' | 'calibre' | 'all'
-  | 'transcription' | 'write' | 'tts' | 'image' | 'lyrics' | 'sample'
 
 export const defaultWhisperModel = 'tiny'
 export const defaultLlamaModel = 'ggml-org/gemma-3-270m-it-GGUF'

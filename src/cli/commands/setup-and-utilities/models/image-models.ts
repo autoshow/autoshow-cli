@@ -1,7 +1,7 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { isNativeGeminiImage } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import type { GeminiImageModel, OpenAIImageModel, MinimaxImageModel } from '~/types'
-export type { GeminiImageModel, OpenAIImageModel, MinimaxImageModel } from '~/types'
+import type { GeminiImageModel, OpenAIImageModel, MinimaxImageModel } from '../setup-and-utilities-types'
+export type { GeminiImageModel, OpenAIImageModel, MinimaxImageModel } from '../setup-and-utilities-types'
 
 export const SUPPORTED_GEMINI_IMAGE_MODELS = [
   'imagen-4.0-fast-generate-001',
@@ -36,4 +36,3 @@ export const SUPPORTED_MINIMAX_IMAGE_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateMinimaxImageModel = createModelValidator<MinimaxImageModel>(SUPPORTED_MINIMAX_IMAGE_MODELS, 'minimax-image')
-

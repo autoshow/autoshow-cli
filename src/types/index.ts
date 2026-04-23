@@ -6,13 +6,23 @@ export * from './provider-contract-types'
 export * from './download-types'
 export * from './retry-types'
 export * from './cli-dir-types'
-export * from './models-dir-types'
+export type {
+  ModelRegistry,
+  RunResult,
+  RunOptions,
+  SetupPlatform,
+  ModelWeight,
+  ModelWeights,
+  SampleSupportLevel,
+  SampleFixtureEntry,
+  SampleSkippedEntry,
+  SampleManifestSummary,
+  SampleManifest
+} from '../cli/commands/setup-and-utilities/setup-and-utilities-types'
 export * from './utils-dir-types'
 export * from './process-steps-dir-types'
 export * from './prompts-dir-types'
-export * from './setup-dir-types'
 export * from './tests-dir-types'
-export * from './sample-types'
 export type * from '../cli/commands/process-steps/step-5-image/image-types'
 export type * from '../cli/commands/process-steps/step-6-video/video-types'
 export type * from '../cli/commands/process-steps/step-3-write/write-types'

@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel } from '~/types'
-export type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel } from '~/types'
+import type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel } from '../setup-and-utilities-types'
+export type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel } from '../setup-and-utilities-types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',

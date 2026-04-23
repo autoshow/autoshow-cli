@@ -6,8 +6,7 @@ import { readAwsSttConfigDefaults, readAwsSttReadiness } from '~/cli/commands/pr
 import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
-
-type CheckResult = { label: string; ok: boolean; detail: string }
+import type { CheckResult } from '../setup-and-utilities-types'
 
 const checkCommand = (label: string, command: string): CheckResult => {
   const found = commandExists(command)

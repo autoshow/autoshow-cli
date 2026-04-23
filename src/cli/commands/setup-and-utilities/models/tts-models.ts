@@ -12,7 +12,7 @@ import type {
   GroqTtsModel,
   OpenAITtsModel,
   GeminiTtsModel
-} from '~/types'
+} from '../setup-and-utilities-types'
 
 export type {
   KittenTtsModel,
@@ -21,7 +21,7 @@ export type {
   GroqTtsModel,
   OpenAITtsModel,
   GeminiTtsModel
-} from '~/types'
+} from '../setup-and-utilities-types'
 
 export const SUPPORTED_KITTEN_TTS_MODELS = [
   'kitten-tts-mini',

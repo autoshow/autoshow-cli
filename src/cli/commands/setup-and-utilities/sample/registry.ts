@@ -1,16 +1,5 @@
-import type { SampleSupportLevel } from '~/types'
-import type { ToolName } from './tools'
-
-export type FixtureKind = 'valid' | 'invalid'
-
-export type FixtureDef = {
-  path: string
-  format: string
-  supportLevel: SampleSupportLevel
-  validity: FixtureKind
-  requiredTools: ToolName[]
-  invalidReason?: string
-}
+import type { FixtureDef } from '../setup-and-utilities-types'
+export type { FixtureKind, FixtureDef } from '../setup-and-utilities-types'
 
 // ─── Valid fixtures ────────────────────────────────────────────────────────
 

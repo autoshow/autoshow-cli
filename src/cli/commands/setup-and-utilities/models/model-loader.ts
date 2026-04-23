@@ -3,7 +3,32 @@ import { resolve } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
 import type { ModelRegistry } from '~/types'
-export type { ModelRegistry } from '~/types'
+import type {
+  ExtractEstimation,
+  ExtractLimits,
+  ImageEstimation,
+  LlmEstimation,
+  MusicEstimation,
+  SttBilling,
+  SttEstimation,
+  SttLimits,
+  TtsEstimation,
+  VideoEstimation
+} from '../setup-and-utilities-types'
+export type {
+  ModelRegistry,
+  CostEstimation,
+  SttEstimation,
+  SttBilling,
+  SttLimits,
+  ExtractLimits,
+  ExtractEstimation,
+  LlmEstimation,
+  TtsEstimation,
+  ImageEstimation,
+  MusicEstimation,
+  VideoEstimation
+} from '../setup-and-utilities-types'
 
 const SttEstimationSchema = v.object({
   costMultiplier: v.optional(v.number(), undefined),
@@ -15,7 +40,7 @@ const SttBillingSchema = v.object({
   minimumSeconds: v.optional(v.number(), undefined)
 })
 
-const SttLimitsSchema = v.object({
+export const SttLimitsSchema = v.object({
   effectiveBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   directUploadBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   remoteUrlBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
@@ -39,7 +64,7 @@ const SttServiceSchema = v.object({
   models: v.record(v.string(), SttModelSchema)
 })
 
-const ExtractLimitsSchema = v.object({
+export const ExtractLimitsSchema = v.object({
   effectiveBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   imageBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   pdfBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
@@ -236,46 +261,6 @@ export const MODEL_CONFIG_PATHS = {
   music: MUSIC_PATH,
   video: VIDEO_PATH,
 } as const
-
-export type CostEstimation = {
-  costMultiplier: number
-}
-
-export type SttEstimation = CostEstimation & {
-  msPerSecond: number
-}
-
-export type SttBilling = {
-  roundingIncrementSeconds?: number
-  minimumSeconds?: number
-}
-
-export type SttLimits = v.InferOutput<typeof SttLimitsSchema>
-export type ExtractLimits = v.InferOutput<typeof ExtractLimitsSchema>
-
-export type ExtractEstimation = CostEstimation & {
-  msPerPage: number
-}
-
-export type LlmEstimation = CostEstimation & {
-  msPer1KTokens: number
-}
-
-export type TtsEstimation = CostEstimation & {
-  msPer1KChars: number
-}
-
-export type ImageEstimation = CostEstimation & {
-  msPerImage: number
-}
-
-export type MusicEstimation = CostEstimation & {
-  msPerSecond: number
-}
-
-export type VideoEstimation = CostEstimation & {
-  msPerSecond: number
-}
 
 export const getModelRegistry = (): ModelRegistry => {
   if (cached) return cached

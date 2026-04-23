@@ -150,6 +150,8 @@ export const AutoshowConfigSchema = v.strictObject({
   pricing: v.optional(PricingConfigSchema, undefined)
 })
 
-export type AutoshowConfig = v.InferOutput<typeof AutoshowConfigSchema>
-export type ConfigDefaults = NonNullable<AutoshowConfig['defaults']>
-export type PricingConfig = NonNullable<AutoshowConfig['pricing']>
+export type {
+  AutoshowConfig,
+  ConfigDefaults,
+  PricingConfig
+} from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'

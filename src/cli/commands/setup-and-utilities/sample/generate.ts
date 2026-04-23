@@ -4,8 +4,7 @@ import { tmpdir } from 'node:os'
 import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
-import type { FixtureDef } from './registry'
-import type { ToolName } from './tools'
+import type { FixtureDef, GenerateResult, ToolName } from '../setup-and-utilities-types'
 
 // ─── Media generation helpers ─────────────────────────────────────────────
 
@@ -219,11 +218,6 @@ const generateBinaryCsv = async (outPath: string): Promise<void> => {
 }
 
 // ─── Main fixture generator ────────────────────────────────────────────────
-
-type GenerateResult = {
-  generated: boolean
-  reason?: string
-}
 
 export const generateFixture = async (
   fixture: FixtureDef,

@@ -3,17 +3,12 @@ import modelLinks from './model-links.json'
 import * as l from '~/utils/logger'
 import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { CLIUsageError } from '~/utils/error-handler'
-
-type ModelLinksData = Record<string, Record<string, string[]>>
-type LinksSelection = {
-  serviceSelections: Map<string, string[]>
-  globalSections: string[]
-}
-type FetchFn = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
-type RunLinksOptions = {
-  outputPath?: string | URL
-  fetchImpl?: FetchFn
-}
+import type {
+  FetchFn,
+  LinksSelection,
+  ModelLinksData,
+  RunLinksOptions
+} from '../setup-and-utilities-types'
 
 const data = modelLinks as ModelLinksData
 export const LINKS_OUTPUT_DIR = new URL('../../../../../project/links/', import.meta.url)

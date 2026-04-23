@@ -1,79 +1,47 @@
-import {
-  SUPPORTED_ANTHROPIC_MODELS,
-  SUPPORTED_AWS_STT_MODELS,
-  SUPPORTED_DEAPI_STT_MODELS,
-  SUPPORTED_DEEPINFRA_STT_MODELS,
-  SUPPORTED_ELEVENLABS_STT_MODELS,
-  SUPPORTED_ELEVENLABS_MUSIC_MODELS,
-  SUPPORTED_ELEVENLABS_TTS_MODELS,
-  SUPPORTED_GCLOUD_STT_MODELS,
-  SUPPORTED_DEEPGRAM_STT_MODELS,
-  SUPPORTED_SONIOX_STT_MODELS,
-  SUPPORTED_SPEECHMATICS_STT_MODELS,
-  SUPPORTED_REV_STT_MODELS,
-  SUPPORTED_HAPPYSCRIBE_STT_MODELS,
-  SUPPORTED_GLADIA_STT_MODELS,
-  SUPPORTED_GEMINI_IMAGE_MODELS,
-  SUPPORTED_GEMINI_OCR_MODELS,
-  SUPPORTED_GEMINI_TTS_MODELS,
-  SUPPORTED_GEMINI_VIDEO_MODELS,
-  SUPPORTED_GROQ_MODELS,
-  SUPPORTED_GROQ_STT_MODELS,
-  SUPPORTED_GROQ_TTS_MODELS,
-  SUPPORTED_KITTEN_TTS_MODELS,
-  SUPPORTED_GLM_OCR_MODELS,
-  SUPPORTED_MISTRAL_OCR_MODELS,
-  SUPPORTED_ANTHROPIC_OCR_MODELS,
-  SUPPORTED_OPENAI_OCR_MODELS,
-  SUPPORTED_ASSEMBLYAI_STT_MODELS,
-  SUPPORTED_MISTRAL_STT_MODELS,
-  SUPPORTED_SUPADATA_STT_MODELS,
-  SUPPORTED_MINIMAX_IMAGE_MODELS,
-  SUPPORTED_MINIMAX_MUSIC_MODELS,
-  SUPPORTED_MINIMAX_MODELS,
-  SUPPORTED_MINIMAX_TTS_MODELS,
-  SUPPORTED_MINIMAX_VIDEO_MODELS,
-  SUPPORTED_OPENAI_IMAGE_MODELS,
-  SUPPORTED_OPENAI_TTS_MODELS
-} from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { MusicProvider, TtsProvider, VideoProvider } from '~/types/provider-types'
+import type {
+  ElevenlabsSttModel,
+  ElevenlabsTtsModel
+} from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'
 
-export type GroqModel = typeof SUPPORTED_GROQ_MODELS[number]
-export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
-export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
-export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
-export type DeapiSttModel = typeof SUPPORTED_DEAPI_STT_MODELS[number]
-export type GcloudSttModel = typeof SUPPORTED_GCLOUD_STT_MODELS[number]
-export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
-export type DeepinfraSttModel = typeof SUPPORTED_DEEPINFRA_STT_MODELS[number]
-export type ElevenlabsSttModel = typeof SUPPORTED_ELEVENLABS_STT_MODELS[number]
-export type SonioxSttModel = typeof SUPPORTED_SONIOX_STT_MODELS[number]
-export type SpeechmaticsSttModel = typeof SUPPORTED_SPEECHMATICS_STT_MODELS[number]
-export type RevSttModel = typeof SUPPORTED_REV_STT_MODELS[number]
-export type GroqSttModel = typeof SUPPORTED_GROQ_STT_MODELS[number]
-export type MistralSttModel = typeof SUPPORTED_MISTRAL_STT_MODELS[number]
-export type AssemblyaiSttModel = typeof SUPPORTED_ASSEMBLYAI_STT_MODELS[number]
-export type GladiaSttModel = typeof SUPPORTED_GLADIA_STT_MODELS[number]
-export type HappyscribeSttModel = typeof SUPPORTED_HAPPYSCRIBE_STT_MODELS[number]
-export type SupadataSttModel = typeof SUPPORTED_SUPADATA_STT_MODELS[number]
-export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
-export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
-export type OpenAIOcrModel = typeof SUPPORTED_OPENAI_OCR_MODELS[number]
-export type AnthropicOcrModel = typeof SUPPORTED_ANTHROPIC_OCR_MODELS[number]
-export type GeminiOcrModel = typeof SUPPORTED_GEMINI_OCR_MODELS[number]
-export type KittenTtsModel = typeof SUPPORTED_KITTEN_TTS_MODELS[number]
-export type ElevenlabsTtsModel = typeof SUPPORTED_ELEVENLABS_TTS_MODELS[number]
-export type MinimaxTtsModel = typeof SUPPORTED_MINIMAX_TTS_MODELS[number]
-export type GroqTtsModel = typeof SUPPORTED_GROQ_TTS_MODELS[number]
-export type OpenAITtsModel = typeof SUPPORTED_OPENAI_TTS_MODELS[number]
-export type GeminiTtsModel = typeof SUPPORTED_GEMINI_TTS_MODELS[number]
-export type ElevenlabsMusicModel = typeof SUPPORTED_ELEVENLABS_MUSIC_MODELS[number]
-export type MinimaxMusicModel = typeof SUPPORTED_MINIMAX_MUSIC_MODELS[number]
-export type GeminiImageModel = typeof SUPPORTED_GEMINI_IMAGE_MODELS[number]
-export type OpenAIImageModel = typeof SUPPORTED_OPENAI_IMAGE_MODELS[number]
-export type MinimaxImageModel = typeof SUPPORTED_MINIMAX_IMAGE_MODELS[number]
-export type GeminiVideoModel = typeof SUPPORTED_GEMINI_VIDEO_MODELS[number]
-export type MinimaxVideoModel = typeof SUPPORTED_MINIMAX_VIDEO_MODELS[number]
+export type {
+  GroqModel,
+  AnthropicModel,
+  MinimaxModel,
+  AwsSttModel,
+  DeapiSttModel,
+  GcloudSttModel,
+  DeepgramSttModel,
+  DeepinfraSttModel,
+  ElevenlabsSttModel,
+  SonioxSttModel,
+  SpeechmaticsSttModel,
+  RevSttModel,
+  GroqSttModel,
+  MistralSttModel,
+  AssemblyaiSttModel,
+  GladiaSttModel,
+  HappyscribeSttModel,
+  SupadataSttModel,
+  MistralOcrModel,
+  GlmOcrModel,
+  OpenAIOcrModel,
+  AnthropicOcrModel,
+  GeminiOcrModel,
+  KittenTtsModel,
+  ElevenlabsTtsModel,
+  MinimaxTtsModel,
+  GroqTtsModel,
+  OpenAITtsModel,
+  GeminiTtsModel,
+  ElevenlabsMusicModel,
+  MinimaxMusicModel,
+  GeminiImageModel,
+  OpenAIImageModel,
+  MinimaxImageModel,
+  GeminiVideoModel,
+  MinimaxVideoModel
+} from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'
 
 export type GeminiDurationSeconds = 4 | 6 | 8
 export type GeminiResolution = '720p' | '1080p'

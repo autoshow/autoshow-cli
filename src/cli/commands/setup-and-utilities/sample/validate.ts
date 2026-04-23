@@ -1,10 +1,6 @@
 import { join } from 'node:path'
-import type { FixtureDef } from './registry'
-
-export type ValidateResult = {
-  valid: boolean
-  reason?: string
-}
+import type { FixtureDef, ValidateResult } from '../setup-and-utilities-types'
+export type { ValidateResult } from '../setup-and-utilities-types'
 
 const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46] // %PDF
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
