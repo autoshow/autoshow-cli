@@ -1,5 +1,5 @@
-import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, SttPolicy, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
-import { collectStep2ProviderSpecs, type Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
+import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, Step2ProviderSelectionFilter, SttPolicy, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
+import { collectStep2ProviderSpecs } from '../step-2-shared/provider-registry'
 
 export const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false },

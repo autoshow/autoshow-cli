@@ -2,7 +2,6 @@ import { mkdir, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
-import type { StepTimingCost } from '~/utils/logger'
 import { ensureDirectory } from '~/utils/cli-utils'
 import type {
   AggregatedPriceEstimate,
@@ -20,6 +19,7 @@ import type {
   SttCompletionStatus,
   SttProviderState,
   SttProviderSuccess,
+  StepTimingCost,
   SttTarget,
   TranscriptionResult
 } from '~/types'
@@ -72,7 +72,6 @@ import { buildSpeakerCountHintWarning } from '../step-2-shared/inactive-flag-war
 import { resolveSttStep2Execution } from '../step-2-shared/resolved-step2'
 
 export { SttPartialCompletionError, isSttPartialCompletionError } from './batch'
-export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from '~/types'
 
 const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
   value instanceof Error

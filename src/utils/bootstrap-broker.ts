@@ -23,10 +23,7 @@ import { ensureAnthropicOcrSetup } from '~/cli/commands/process-steps/step-2-ext
 import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/tesseract-utils'
-
-type BootstrapHandler = {
-  ensure: (model?: string) => Promise<void>
-}
+import type { BootstrapHandler } from '~/types'
 
 const DEFAULT_WHISPER_MODEL = 'tiny'
 const cache = new Map<string, Promise<void>>()

@@ -2,9 +2,9 @@ import OpenAI from 'openai'
 import * as v from 'valibot'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
-import { getOpenAIClientConfig } from '~/utils/openai-utils'
+import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import type { OpenAIOcrInputContent } from '../../ocr-types'
+import type { OpenAIOcrInputContent } from '~/types'
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
   'gpt-5.4',

@@ -1,5 +1,5 @@
-import type { Step6VideoMetadata, VideoGenOptions, VideoTarget } from '~/types'
-import { type GeminiVideoModel, type MinimaxVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { GeminiVideoModel, MinimaxVideoModel, Step6VideoMetadata, VideoGenOptions, VideoTarget } from '~/types'
+import { validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import { runGeminiVideoGen } from './video-services/gemini/run-gemini-video-gen'
 import { runMinimaxVideoGen } from './video-services/minimax/run-minimax-video-gen'

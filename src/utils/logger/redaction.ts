@@ -1,4 +1,4 @@
-import type { HumanLogTable, HumanLogTableCell, LogContext, LogMetadata } from '~/utils/logger/types'
+import type { HumanLogTable, HumanLogTableCell, LogContext, LogMetadata } from '~/types'
 
 const REDACTED = 'REDACTED'
 

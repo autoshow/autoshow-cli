@@ -1,11 +1,7 @@
 import { renderHumanTable } from '~/utils/logger/human-table'
-import type { LogSink, LogSinkEvent } from '~/utils/logger/types'
+import type { HumanSinkOptions, LogSink, LogSinkEvent } from '~/types'
 
 const logIndent = '  '
-
-type HumanSinkOptions = {
-  interactive?: boolean
-}
 
 const getBatchItemPrefix = (event: LogSinkEvent): string => {
   const itemIndex = event.context?.['itemIndex']

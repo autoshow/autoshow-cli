@@ -1,7 +1,6 @@
 import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { getModelRegistry } from './model-loader'
-import type { CheapestVideoSelection } from '../setup-and-utilities-types'
-export type { CheapestVideoSelection } from '../setup-and-utilities-types'
+import type { CheapestVideoSelection } from '~/types'
 
 const PERFORMANCE_TIE_BREAKERS = ['mini', 'nano', 'micro', 'flash', 'turbo', 'fast', 'small']
 

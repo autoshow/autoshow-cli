@@ -1,4 +1,4 @@
-import type { BatchSource, BatchItem } from './batch/batch-types'
+import type { BatchSource, BatchItem } from '~/types'
 import { exec } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
 import type { YtDlpFlatEntry, YtDlpListOptions } from '~/types'

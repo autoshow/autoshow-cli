@@ -1,6 +1,5 @@
 import * as v from 'valibot'
-import type { Step6VideoMetadata } from '~/types'
-import type { MinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { MinimaxVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -13,7 +12,7 @@ import {
   ensureMinimaxBaseRespSuccess,
   isMinimaxTaskSuccess,
   isMinimaxTaskFailure
-} from '~/utils/minimax-utils'
+} from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const POLL_INTERVAL_MS = 10_000

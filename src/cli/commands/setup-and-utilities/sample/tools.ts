@@ -1,7 +1,6 @@
 import { commandExists } from '~/utils/cli-utils'
-import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
-import type { ToolName, ToolStatus } from '../setup-and-utilities-types'
-export type { ToolName } from '../setup-and-utilities-types'
+import { calibreBin } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
+import type { ToolName, ToolStatus } from '~/types'
 
 const TOOL_DEFS: Record<ToolName, { command: string, remediation: string }> = {
   ffmpeg: {

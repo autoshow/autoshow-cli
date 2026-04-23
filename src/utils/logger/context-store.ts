@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import type { LogContext } from '~/utils/logger/types'
+import type { LogContext } from '~/types'
 
 const contextStore = new AsyncLocalStorage<LogContext>()
 

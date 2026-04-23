@@ -1,26 +1,12 @@
 import { basename } from 'node:path'
 import { createHumanTable, createLocationsTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, LogLevel, Logger } from '~/utils/logger/types'
-import type { NormalizedAudioPlan } from './audio-normalize'
-
-type TableLogger = Pick<Logger, 'write'>
-
-export type AudioDownloadSource = 'yt-dlp' | 'direct-audio-url' | 'direct-media-url'
-export type AudioDownloadStatus = 'started' | 'downloaded'
-
-export type AudioDownloadSummary = {
-  source: AudioDownloadSource
-  status: AudioDownloadStatus
-  target: string
-  detail?: string
-}
-
-export type AudioNormalizeSummary = {
-  status: 'planned'
-  inputPath: string
-  outputPath: string
-  plan: NormalizedAudioPlan
-}
+import type {
+  AudioDownloadSummary,
+  AudioLoggingTableLogger,
+  AudioNormalizeSummary,
+  HumanLogTable,
+  LogLevel
+} from '~/types'
 
 export const buildAudioDownloadRows = (
   summary: AudioDownloadSummary
@@ -37,7 +23,7 @@ export const buildAudioDownloadTable = (
   createHumanTable(buildAudioDownloadRows(summary), ['status', 'source', 'target', 'detail'])
 
 export const logAudioDownload = (
-  logger: TableLogger,
+  logger: AudioLoggingTableLogger,
   summary: AudioDownloadSummary,
   level: LogLevel = summary.status === 'downloaded' ? 'success' : 'info'
 ): void => {
@@ -65,7 +51,7 @@ export const buildAudioNormalizeTable = (
   createHumanTable(buildAudioNormalizeRows(summary), ['status', 'mode', 'input', 'output', 'codec', 'detail'])
 
 export const logAudioNormalize = (
-  logger: TableLogger,
+  logger: AudioLoggingTableLogger,
   summary: AudioNormalizeSummary
 ): void => {
   logger.write('info', 'Audio Normalize', {
@@ -81,7 +67,7 @@ export const logAudioNormalize = (
 }
 
 export const logAudioOutput = (
-  logger: TableLogger,
+  logger: AudioLoggingTableLogger,
   audioPath: string
 ): void => {
   logger.write('success', 'Audio Output', {

@@ -7,9 +7,9 @@ import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-util
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { exec } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
-import { kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import type { KittenTtsModel } from '~/types'
 import {
-  type KittenTtsModel,
   resolveKittenTtsModelId
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 

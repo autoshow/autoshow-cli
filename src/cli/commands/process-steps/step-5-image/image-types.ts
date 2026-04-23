@@ -1,5 +1,9 @@
-import type { ProcessingOptions, Step5Metadata } from '~/types/process-types'
-import type { ImageProvider } from '~/types/provider-types'
+import type {
+  CostEstimateBase,
+  ImageProvider,
+  ProcessingOptions,
+  Step5Metadata
+} from '~/types'
 
 export type ImageGenOptions = Pick<
   ProcessingOptions,
@@ -26,4 +30,19 @@ export type ImageTarget = {
   service: ImageProvider
   model: string
   run: (prompt: string, outputDir: string, opts: ImageGenOptions) => Promise<ImageResult>
+}
+
+export type ImageCostEstimate = CostEstimateBase<'gemini' | 'openai' | 'minimax'> & {
+  imageCount: number
+  costPerImageCents: number
+}
+
+export type EstimateImageCostOptions = {
+  geminiImageModels?: string[] | undefined
+  geminiImageModel?: string | undefined
+  openaiImageModels?: string[] | undefined
+  openaiImageModel?: string | undefined
+  minimaxImageModels?: string[] | undefined
+  minimaxImageModel?: string | undefined
+  imagenCount?: number | undefined
 }

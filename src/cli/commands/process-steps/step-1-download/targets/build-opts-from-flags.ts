@@ -72,7 +72,16 @@ import {
   normalizeStep2ProviderFlagName
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { readEnv } from '~/utils/validate/env-utils'
-import type { BatchOrder, BuildOptsDefaults, OutputFormat, RuntimeOptions, Step2ProviderSelectionOrigin } from '~/types'
+import type {
+  AllShortcutFlag,
+  BatchOrder,
+  BuildOptsDefaults,
+  FlagOccurrenceValue,
+  OutputFormat,
+  RepeatableModelFlag,
+  RuntimeOptions,
+  Step2ProviderSelectionOrigin
+} from '~/types'
 
 export const REPEATABLE_MODEL_FLAGS = [
   'whisper-stt',
@@ -117,17 +126,6 @@ export const REPEATABLE_MODEL_FLAGS = [
   'gemini-video',
   'minimax-video'
 ] as const
-
-export type RepeatableModelFlag = typeof REPEATABLE_MODEL_FLAGS[number]
-type FlagOccurrenceValue = string | boolean
-type AllShortcutFlag =
-  | 'all-stt'
-  | 'all-ocr'
-  | 'all-llm'
-  | 'all-tts'
-  | 'all-image'
-  | 'all-video'
-  | 'all-music'
 
 const REPEATABLE_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
 const STEP2_ALL_SHORTCUT_MODEL_EXPANSIONS = getStep2AllShortcutModelExpansions()

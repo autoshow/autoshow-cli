@@ -1,5 +1,5 @@
 import { CLIUsageError } from '~/utils/error-handler'
-import type { GeminiMultiSpeakerConfig, GeminiTtsSelectionOptions } from '../../tts-types'
+import type { GeminiMultiSpeakerConfig, GeminiTtsSelectionOptions } from '~/types'
 
 const hasNonEmptyString = (value: string | undefined): value is string => {
   return typeof value === 'string' && value.trim().length > 0

@@ -5,12 +5,13 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { logSuitePriceSummary } from '~/cli/commands/process-steps/suite-price-logging'
 import type {
   AggregatedPriceEstimate,
+  BatchExecutionPlan,
   BatchItem,
   BatchManifestEntry,
   BatchProcessResult,
   BatchSource,
+  ExtractChildBatchPlan,
   ExtractBatchManifest,
-  PlannedBatchInput,
   ProcessCommand,
   ResolvedBatch,
   ResolvedProcessTargetPlan,
@@ -345,17 +346,6 @@ const resolveProcessTargetPlan = async (
   return { kind: 'single', target: resolvedTarget }
 }
 
-type BatchExecutionPlan = {
-  label: string
-  items: string[]
-  selectedItems?: Array<BatchItem | undefined>
-  initialEntries: Record<string, unknown>[]
-  resultEntryIndexes: number[]
-  plannedInputs: PlannedBatchInput[]
-  source?: BatchSource
-  totalCount?: number
-}
-
 const planResolvedBatchExecution = async (
   resolvedBatch: ResolvedBatch,
   command: ProcessCommand,
@@ -459,15 +449,6 @@ const planProcessTargetBatchExecution = async (
   }
 
   return undefined
-}
-
-type ExtractChildBatchPlan = {
-  kind: RoutedChildKind
-  items: string[]
-  selectedItems?: Array<BatchItem | undefined>
-  initialEntries: Record<string, unknown>[]
-  resultEntryIndexes: number[]
-  parentIndexes: number[]
 }
 
 const createExtractChildBatchPlan = (

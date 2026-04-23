@@ -1,11 +1,10 @@
-import type { Step7MusicMetadata } from '~/types'
+import type { ElevenlabsMusicModel, Step7MusicMetadata } from '~/types'
 import * as l from '~/utils/logger'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
-import type { ElevenlabsMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import { readElevenLabsError } from '~/utils/elevenlabs-utils'
+import { readElevenLabsError } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-utils'
 
 const ELEVENLABS_MIN_DURATION_MS = 3000
 const ELEVENLABS_MAX_DURATION_MS = 600000

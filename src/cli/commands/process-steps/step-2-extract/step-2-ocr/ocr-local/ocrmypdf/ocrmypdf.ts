@@ -1,4 +1,4 @@
-import { commandExists, runCapture, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { commandExists, runCapture, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 
 const checkOcrmypdf = (): boolean => commandExists('ocrmypdf')

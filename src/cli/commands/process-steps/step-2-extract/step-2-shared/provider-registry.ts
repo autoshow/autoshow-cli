@@ -44,70 +44,21 @@ import {
   validateGeminiOcrModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { ProviderSpec, RuntimeOptions, Step2Modality, Step2ProviderSelectionOrigin } from '~/types'
-
-type Step2ShortcutFlag = 'all-stt' | 'all-ocr'
-type Step2Command = 'stt' | 'ocr'
-type Step2BooleanSelectionKey = 'useReverb' | 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr'
-
-export type Step2ProviderSelectionFilter = {
-  includeOrigins?: readonly Step2ProviderSelectionOrigin[] | undefined
-}
-
-export type Step2ResolvedProviderSelection = {
-  flagName: string
-  step: Step2Command
-  modality: Step2Modality
-  targetService: string
-  providerSpecProvider: string
-  bootstrapProviderId: string
-  configPath: readonly string[]
-  model: string
-  selectionKind: 'boolean' | 'models'
-  origin: Step2ProviderSelectionOrigin
-}
-
-type Step2ProviderRegistryEntryBase = {
-  step: Step2Command
-  modality: Step2Modality
-  flagName: string
-  aliases: readonly string[]
-  targetService: string
-  providerSpecProvider: string
-  bootstrapProviderId: string
-  configPath: readonly string[]
-  resumeSelectable: true
-  allShortcut?: Step2ShortcutFlag
-}
-
-type Step2BooleanProviderRegistryEntry = Step2ProviderRegistryEntryBase & {
-  selection: {
-    type: 'boolean'
-    runtimeKey: Step2BooleanSelectionKey
-    model: string
-  }
-  flag: ClercFlagDefinitionValue
-}
-
-type Step2ModelProviderRegistryEntry = Step2ProviderRegistryEntryBase & {
-  selection: {
-    type: 'models'
-    runtimeModelsKey: keyof RuntimeOptions
-    runtimeModelKey: keyof RuntimeOptions
-    supportedModels: readonly string[]
-    validateModel: (value: string) => string
-  }
-  flag: ClercFlagDefinitionValue
-}
-
-export type Step2ProviderRegistryEntry =
-  | Step2BooleanProviderRegistryEntry
-  | Step2ModelProviderRegistryEntry
-
-type Step2ProviderConfigPathEntry = {
-  flagName: string
-  configPath: readonly string[]
-}
+import type {
+  ProviderSpec,
+  RuntimeOptions,
+  Step2BooleanProviderRegistryEntry,
+  Step2BooleanSelectionKey,
+  Step2Command,
+  Step2ModelProviderRegistryEntry,
+  Step2ProviderConfigPathEntry,
+  Step2ProviderRegistryEntry,
+  Step2ProviderSelectionFilter,
+  Step2ProviderSelectionOrigin,
+  Step2ResolvedProviderSelection,
+  Step2ShortcutFlag,
+  Step2Modality
+} from '~/types'
 
 const createBooleanFlag = (
   description: string

@@ -2,7 +2,7 @@ import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import { exec } from '~/utils/cli-utils'
-import { ensureCalibreDocumentTools, calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
+import { ensureCalibreDocumentTools, calibreBin } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
 import { inspectEpubWithReader, normalizeEntryPath } from './inspect-core'
 import type { EpubContentEntry, EpubContentReader, EpubInspectOutput } from '~/types'
 

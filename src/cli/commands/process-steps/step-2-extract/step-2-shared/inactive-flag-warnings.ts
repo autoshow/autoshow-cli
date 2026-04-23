@@ -1,18 +1,4 @@
-type OcrSelectionState = {
-  useTesseract?: boolean | undefined
-  useOcrmypdf?: boolean | undefined
-  usePaddleOcr?: boolean | undefined
-  mistralOcrModels?: string[] | undefined
-  mistralOcrModel?: string | undefined
-  glmOcrModels?: string[] | undefined
-  glmOcrModel?: string | undefined
-  openaiOcrModels?: string[] | undefined
-  openaiOcrModel?: string | undefined
-  anthropicOcrModels?: string[] | undefined
-  anthropicOcrModel?: string | undefined
-  geminiOcrModels?: string[] | undefined
-  geminiOcrModel?: string | undefined
-}
+import type { OcrSelectionState } from '~/types'
 
 export const HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING = 'OCR flags are ignored for HTML/article inputs.'
 export const CSV_OCR_FLAGS_IGNORED_WARNING = 'OCR flags are ignored for CSV inputs (CSV content is read as raw text).'

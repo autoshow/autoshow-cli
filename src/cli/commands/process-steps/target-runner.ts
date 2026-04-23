@@ -1,43 +1,16 @@
 import { mkdir, rename, rm } from 'node:fs/promises'
 import * as l from '~/utils/logger'
+import type {
+  BuildSingleArtifactMapOptions,
+  RunSingleFileTargetsOptions,
+  RunTargetsOptions,
+  SingleFileArtifactNameOptions,
+  SingleFileRunResult,
+  TargetBase
+} from '~/types'
 
 export const sanitizeModelName = (model: string): string =>
   model.replace(/[/\\:*?"<>|]/g, '-')
-
-export type TargetBase = {
-  service: string
-  model: string
-}
-
-type SingleFileArtifactNameOptions = {
-  singleFileName: string
-  multiFilePrefix: string
-  extension: string
-}
-
-type BuildSingleArtifactMapOptions<T> = {
-  singleKey: string
-  multiKeyPrefix: string
-  getService: (item: T) => string
-  getModel: (item: T) => string
-  getFileName: (item: T) => string
-}
-
-type SingleFileRunResult<TMetadata> = {
-  filePath: string
-  metadata: TMetadata
-}
-
-type RunSingleFileTargetsOptions<TTarget extends TargetBase, TMetadata> = {
-  targets: TTarget[]
-  outputDir: string
-  stepLabel: string
-  noProviderMessage: string
-  workspacePrefix: string
-  runTarget: (target: TTarget, workspaceDir: string) => Promise<SingleFileRunResult<TMetadata>>
-  getArtifactFileName: (target: TTarget, singleTarget: boolean) => string
-  finalizeMetadata: (metadata: TMetadata, finalFileName: string, finalPath: string) => TMetadata
-}
 
 export const getSingleFileArtifactName = (
   target: TargetBase,
@@ -65,16 +38,6 @@ export const buildSingleArtifactMap = <T,>(
       options.getFileName(item)
     ])
   )
-}
-
-export type RunTargetsOptions<TTarget extends TargetBase, TResult> = {
-  targets: TTarget[]
-  outputDir: string
-  stepLabel: string
-  noProviderMessage: string
-  getWorkspaceDir: (outputDir: string, target: TTarget) => string
-  runTarget: (target: TTarget, workspaceDir: string) => Promise<TResult>
-  finalizeTarget: (target: TTarget, result: TResult, singleTarget: boolean) => Promise<TResult>
 }
 
 export const runTargets = async <TTarget extends TargetBase, TResult>(

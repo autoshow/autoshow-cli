@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 import type { OutputFormat } from './cli-types'
 import type { ImageProvider, MusicProvider, TtsProvider, VideoProvider } from './provider-types'
+import type { Step2TimingMetadata } from '../cli/commands/process-steps/step-2-extract/step-2-stt/stt-types'
 
 export const ProcessingOptionsSchema = v.pipe(
   v.object({
@@ -196,12 +197,6 @@ export type DetectResult =
   | 'html'
   | null
 
-export type MutoolDocInfo = {
-  pageCount: number
-  title?: string
-  author?: string
-}
-
 export type HtmlArticleBackend = 'defuddle' | 'firecrawl' | 'glm-reader'
 
 export type WebArticleMetadata = {
@@ -345,12 +340,6 @@ export const DocumentMetadataSchema = v.object({
   metadataSchemaVersion: v.optional(v.number(), undefined)
 })
 
-export type InternalPage = {
-  pageNumber: number
-  text: string
-  needsOcr: boolean
-}
-
 export type PreparedDocument = {
   outputDir: string
   step1Metadata: DocumentMetadata
@@ -385,11 +374,6 @@ export type ExtractionMetadata = v.InferOutput<typeof ExtractionMetadataSchema>
 export type DocumentMetadata = v.InferOutput<typeof DocumentMetadataSchema>
 
 export type { OutputFormat as OcrOutputFormat }
-
-export type OcrResult = {
-  text: string
-  confidence?: number
-}
 
 export type TranscriptionSegment = {
   start: string
@@ -455,26 +439,6 @@ export type TranscriptionResult = {
 export type DiarizationOptions = {
   enabled?: boolean | undefined
   speakerCount?: number | undefined
-}
-
-export type Step2TimingMetadata = {
-  queueWaitMs?: number | undefined
-  transcribeMs?: number | undefined
-  uploadMs?: number | undefined
-  createMs?: number | undefined
-  createCount?: number | undefined
-  pollMs?: number | undefined
-  pollSleepMs?: number | undefined
-  pollCount?: number | undefined
-  transcriptMs?: number | undefined
-  remoteProcessingMs?: number | undefined
-  cleanupMs?: number | undefined
-  requestCount?: number | undefined
-  retryCount?: number | undefined
-  rateLimitCount?: number | undefined
-  blockedCount?: number | undefined
-  degradedCount?: number | undefined
-  backfillCount?: number | undefined
 }
 
 export type Step2RuntimeMetadata = {
@@ -902,22 +866,13 @@ export const SpeechmaticsTranscriptResponseSchema = v.object({
   results: v.array(SpeechmaticsTranscriptResultSchema)
 })
 
-export type WhisperJsonOutput = v.InferOutput<typeof WhisperJsonOutputSchema>
-export type ElevenLabsSttResponse = v.InferOutput<typeof ElevenLabsSttResponseSchema>
 export type AssemblyAiTranscriptResponse = v.InferOutput<typeof AssemblyAiTranscriptResponseSchema>
 export type GladiaUploadResponse = v.InferOutput<typeof GladiaUploadResponseSchema>
 export type GladiaCreateResponse = v.InferOutput<typeof GladiaCreateResponseSchema>
 export type GladiaStatusResponse = v.InferOutput<typeof GladiaStatusResponseSchema>
 export type DeepgramResponse = v.InferOutput<typeof DeepgramResponseSchema>
 export type SonioxFileResponse = v.InferOutput<typeof SonioxFileResponseSchema>
-export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscriptionStatusSchema>
-export type SonioxTranscriptResponse = v.InferOutput<typeof SonioxTranscriptResponseSchema>
-export type RevJob = v.InferOutput<typeof RevJobSchema>
-export type RevTranscriptResponse = v.InferOutput<typeof RevTranscriptResponseSchema>
-export type SpeechmaticsCreateJobResponse = v.InferOutput<typeof SpeechmaticsCreateJobResponseSchema>
-export type SpeechmaticsJob = v.InferOutput<typeof SpeechmaticsJobSchema>
 export type SpeechmaticsJobResponse = v.InferOutput<typeof SpeechmaticsJobResponseSchema>
-export type SpeechmaticsTranscriptResponse = v.InferOutput<typeof SpeechmaticsTranscriptResponseSchema>
 
 export const LlamaResponseSchema = v.object({
   choices: v.array(v.object({
@@ -991,49 +946,6 @@ export type Step7MusicMetadata = {
   lyricsSource: 'provided' | 'generated' | 'none'
 }
 
-export type StepCostEntry = {
-  step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
-  provider: string
-  model: string
-  cost: number
-  inputMetric?: string
-  inputValue?: number
-  promptTokens?: number
-  completionTokens?: number
-}
-
-export type ActualCostBreakdown = {
-  totalCost: number
-  steps: StepCostEntry[]
-}
-
-export type EstimatedStepEntry = {
-  step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
-  provider: string
-  model: string
-  cost: number
-  costMultiplier?: number
-  durationSeconds?: number
-  costPer1kPagesCents?: number
-  pageCount?: number
-  inputCostPer1MCents?: number
-  outputCostPer1MCents?: number
-  estimatedInputTokens?: number
-  estimatedOutputTokens?: number
-  promptTokens?: number
-  completionTokens?: number
-  estimateType?: 'heuristic' | 'exact'
-  note?: string
-  costPer1kCharactersCents?: number
-  inputCostPer1MCharactersCents?: number
-  outputCostPer1MCharactersCents?: number
-}
-
-export type EstimatedCostBreakdown = {
-  totalCost: number
-  steps: EstimatedStepEntry[]
-}
-
 export type TimingStepEntry = {
   step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
   provider: string
@@ -1041,24 +953,4 @@ export type TimingStepEntry = {
   processingTimeMs: number
   inputMetric?: string
   inputValue?: number
-}
-
-export type EstimatedTimingBreakdown = {
-  totalProcessingTimeMs: number
-  steps: TimingStepEntry[]
-}
-
-export type ActualTimingBreakdown = {
-  totalProcessingTimeMs: number
-  steps: TimingStepEntry[]
-}
-
-export type TimingBreakdown = {
-  estimated: EstimatedTimingBreakdown
-  actual: ActualTimingBreakdown
-}
-
-export type CostBreakdown = {
-  estimated: EstimatedCostBreakdown
-  actual: ActualCostBreakdown
 }

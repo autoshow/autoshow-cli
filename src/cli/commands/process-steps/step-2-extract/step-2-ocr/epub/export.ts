@@ -7,7 +7,7 @@ import type {
   EpubTextOutput,
   EpubTextSection,
   TextArtifactFile
-} from '../ocr-types'
+} from '~/types'
 
 const CHAPTER_SLUG_MAX_LENGTH = 60
 

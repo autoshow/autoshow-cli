@@ -1,12 +1,11 @@
 import { resolve } from 'node:path'
 import * as v from 'valibot'
-import type { Step4Metadata } from '~/types'
+import type { MinimaxTtsModel, Step4Metadata } from '~/types'
 import * as l from '~/utils/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
-import type { MinimaxTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'
@@ -16,7 +15,7 @@ import {
   parseMinimaxJsonResponse,
   isMinimaxTaskSuccess,
   isMinimaxTaskFailure
-} from '~/utils/minimax-utils'
+} from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const MINIMAX_DEFAULT_VOICE_ID = 'English_expressive_narrator'

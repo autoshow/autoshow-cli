@@ -1,4 +1,4 @@
-import type { BatchItem, BatchOptions } from './batch-types'
+import type { BatchItem, BatchOptions } from '~/types'
 
 export const selectBatchItems = (items: BatchItem[], opts: BatchOptions): BatchItem[] => {
   const withDate: { item: BatchItem; ts: number }[] = []

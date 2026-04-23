@@ -3,7 +3,7 @@ import type {
   ParsedCommandMetric,
   ParsedJunitCase,
   TestStatus
-} from '../../src/types/tests-dir-types'
+} from '~/types'
 import { decodeXml, normalizeRepoPath, parseXmlAttributes, getFiniteNumber } from './utils'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {

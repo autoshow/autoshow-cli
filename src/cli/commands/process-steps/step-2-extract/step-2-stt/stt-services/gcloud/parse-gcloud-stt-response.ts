@@ -5,7 +5,7 @@ import {
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { validateData } from '~/utils/validate/validation'
-import type { EvidenceWord } from '../../stt-types'
+import type { EvidenceWord } from '~/types'
 
 const parseDurationSeconds = (value: string | undefined): number | undefined => {
   if (typeof value !== 'string') {

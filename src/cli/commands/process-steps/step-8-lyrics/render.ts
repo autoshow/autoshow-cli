@@ -1,8 +1,8 @@
 import { extname, join } from 'node:path'
 import { mkdir, readdir, writeFile } from 'node:fs/promises'
 import { commandExists, exec } from '~/utils/cli-utils'
-import type { CaptionCue, LyricsRenderSummary } from './lyrics-types'
-import type { OverlaySegment } from './lyrics-types'
+import type { CaptionCue, LyricsRenderSummary } from '~/types'
+import type { OverlaySegment } from '~/types'
 
 export const FIXED_RENDER_WIDTH = 1920
 export const FIXED_RENDER_HEIGHT = 1080

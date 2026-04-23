@@ -44,7 +44,6 @@ import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import { resolveInputRoutingForCommand } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { estimatePromptTokensFromText, readPromptFileText } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/inactive-flag-warnings'
-export type { StepEstimate, AggregatedPriceEstimate } from '~/types'
 
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier

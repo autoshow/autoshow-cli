@@ -11,8 +11,7 @@ import type {
   SampleFixtureOptions,
   SampleSkippedEntry,
   ToolName
-} from '../setup-and-utilities-types'
-export type { SampleFixtureOptions } from '../setup-and-utilities-types'
+} from '~/types'
 
 export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Promise<void> => {
   const outDir = resolve(options.out ?? 'input/samples')

@@ -1,4 +1,4 @@
-type MetadataScalar = string | number | boolean | null
+import type { MetadataScalar } from '~/types'
 
 const INDENT = '  '
 

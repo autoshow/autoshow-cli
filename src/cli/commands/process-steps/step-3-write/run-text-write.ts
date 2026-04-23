@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url'
 import type {
   BatchChildRunContext,
   RuntimeOptions,
+  StepTimingCost,
   Step3Metadata,
   Step4Metadata,
   Step5Metadata,
@@ -13,7 +14,6 @@ import type {
 } from '~/types'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
-import type { StepTimingCost } from '~/utils/logger'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'

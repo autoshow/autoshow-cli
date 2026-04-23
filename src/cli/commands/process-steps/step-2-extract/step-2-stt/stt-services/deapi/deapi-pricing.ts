@@ -3,7 +3,7 @@ import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { getDeapiBaseUrl, isDeapiSupportedSourceUrl } from './deapi'
-import type { DeapiQuoteError, DeapiQuoteMode, DeapiResolvedPrice } from '../../stt-types'
+import type { DeapiQuoteError, DeapiQuoteMode, DeapiResolvedPrice } from '~/types'
 
 const REQUEST_TIMEOUT_MS = 60_000
 

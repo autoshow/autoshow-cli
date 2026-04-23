@@ -2,9 +2,10 @@ import type Anthropic from '@anthropic-ai/sdk'
 import type OpenAI from 'openai'
 import type * as v from 'valibot'
 import type {
+  RateEstimateBase,
   ProcessingOptions,
   Step3Metadata
-} from '~/types/process-types'
+} from '~/types'
 
 export type LLMOptions = Pick<ProcessingOptions,
   | 'outputDir'
@@ -58,6 +59,11 @@ export type LlamaServerIdentity = {
 export type LlamaIdentityMatchResult = {
   matches: boolean
   reason: string
+}
+
+export type DownloadInfo = {
+  sourceUrl: string
+  destinationPath: string
 }
 
 export type JsonSchemaObject = Record<string, unknown>
@@ -178,4 +184,9 @@ export type RunOpenAICompatibleChatModelOptions = {
 export type RenderedTextArtifactResult = {
   internalArtifacts: Record<string, string>
   externalFiles: string[]
+}
+
+export type LlmRateEstimate = RateEstimateBase & {
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
 }

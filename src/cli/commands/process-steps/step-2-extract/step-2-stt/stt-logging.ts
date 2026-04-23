@@ -1,5 +1,5 @@
 import { createHumanTable, createSingleRowTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, LogLevel } from '~/utils/logger/types'
+import type { HumanLogTable, LogLevel, SttTableLogger } from '~/types'
 import type {
   EffectiveSttProviderConcurrency,
   ProviderFailure,
@@ -13,9 +13,8 @@ import type {
   SttCacheEvent,
   SttProviderConcurrencySummary,
   SttRunStatusSummary,
-  SttSegmentLifecycle,
-  TableLogger
-} from './stt-types'
+  SttSegmentLifecycle
+} from '~/types'
 
 export const buildSttCacheRows = (
   event: SttCacheEvent
@@ -32,7 +31,7 @@ export const buildSttCacheTable = (
   createHumanTable(buildSttCacheRows(event), ['artifact', 'status', 'key', 'detail'])
 
 export const logSttCacheEvent = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   event: SttCacheEvent,
   level: LogLevel = 'info'
 ): void => {
@@ -57,7 +56,7 @@ export const buildSttAcquireTable = (
   createHumanTable(buildSttAcquireRows(summary), ['item', 'sourceMedia', 'elapsedMs'])
 
 export const logSttAcquireSummary = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   summary: SttAcquireSummary
 ): void => {
   logger.write('info', 'STT Acquire', {
@@ -82,7 +81,7 @@ export const buildSttAsyncJobTable = (
   createHumanTable(buildSttAsyncJobRows(lifecycle), ['provider', 'action', 'remoteId', 'state'])
 
 export const logSttAsyncJobLifecycle = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   lifecycle: SttAsyncJobLifecycle
 ): void => {
   logger.write('info', 'Async STT Job', {
@@ -121,7 +120,7 @@ export const buildSttSegmentLifecycleTable = (
   )
 
 export const logSttSegmentLifecycle = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   lifecycle: SttSegmentLifecycle,
   level: LogLevel = lifecycle.action === 'completed' ? 'success' : 'info'
 ): void => {
@@ -159,7 +158,7 @@ export const buildSttRunStatusTable = (
   )
 
 export const logSttRunStatus = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   summary: SttRunStatusSummary,
   level: LogLevel = 'warn'
 ): void => {
@@ -183,7 +182,7 @@ export const buildSttProviderConcurrencyTable = (
   ])
 
 export const logSttProviderConcurrency = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   resolution: EffectiveSttProviderConcurrency,
   batchConcurrency: number,
   coordinatedAcrossBatch: boolean,
@@ -220,7 +219,7 @@ export const buildSttProviderFailureTable = (
   )
 
 export const logSttProviderFailures = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   failures: readonly ProviderFailure[],
   level: LogLevel = 'warn'
 ): void => {
@@ -258,7 +257,7 @@ export const buildSttProviderSkipTable = (
   )
 
 export const logSttProviderSkips = (
-  logger: TableLogger,
+  logger: SttTableLogger,
   skippedProviders: ReadonlyArray<Pick<SttProviderState, 'service' | 'model' | 'lastError'>>,
   level: LogLevel = 'warn'
 ): void => {

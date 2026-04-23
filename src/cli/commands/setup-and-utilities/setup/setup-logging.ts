@@ -1,7 +1,5 @@
 import { createHumanTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, LogLevel } from '~/utils/logger/types'
-import type { SetupToolStatus, TableLogger } from '../setup-and-utilities-types'
-export type { SetupToolStatus } from '../setup-and-utilities-types'
+import type { HumanLogTable, LogLevel, SetupTableLogger, SetupToolStatus } from '~/types'
 
 export const buildSetupToolStatusRows = (
   summary: SetupToolStatus
@@ -17,7 +15,7 @@ export const buildSetupToolStatusTable = (
   createHumanTable(buildSetupToolStatusRows(summary), ['tool', 'status', 'detail'])
 
 export const logSetupToolStatus = (
-  logger: TableLogger,
+  logger: SetupTableLogger,
   summary: SetupToolStatus,
   level: LogLevel = summary.status === 'installed' || summary.status === 'ready' || summary.status === 'ok' ? 'success' : 'info'
 ): void => {

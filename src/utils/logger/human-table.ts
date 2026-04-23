@@ -1,12 +1,14 @@
 import type {
+  BatchItemTableRow,
   HumanLogTable,
   HumanLogTableCell,
   HumanLogTableRow,
-  LogCategory,
-  LogLevel,
-  LogMetadata,
-  Logger
-} from '~/utils/logger/types'
+  HumanTableLogOptions,
+  KeyValueTableLogOptions,
+  LocationTableRow,
+  Logger,
+  SingleRowTableLogOptions
+} from '~/types'
 
 const tableIndent = '  '
 
@@ -69,18 +71,6 @@ export const createSingleRowTable = (
     ) as HumanLogTableRow
   ], columns)
 
-export type LocationTableRow = {
-  artifact: string
-  path: unknown
-  detail?: unknown
-}
-
-export type BatchItemTableRow = {
-  status: string
-  input: unknown
-  detail?: unknown
-}
-
 const appendDetailColumnIfNeeded = (
   rows: readonly HumanLogTableRow[],
   baseColumns: readonly string[]
@@ -123,21 +113,6 @@ export const createBatchItemTable = (
     normalizedRows,
     appendDetailColumnIfNeeded(normalizedRows, ['status', 'input'])
   )
-}
-
-type HumanTableLogOptions = {
-  level?: LogLevel
-  category?: LogCategory
-  metadata?: LogMetadata
-}
-
-type SingleRowTableLogOptions = HumanTableLogOptions & {
-  columns?: readonly string[]
-}
-
-type KeyValueTableLogOptions = HumanTableLogOptions & {
-  keyLabel?: string
-  valueLabel?: string
 }
 
 export const logSingleRowTable = (

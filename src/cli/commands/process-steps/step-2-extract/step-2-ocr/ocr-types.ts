@@ -1,14 +1,33 @@
 import type {
+  BatchPolicy,
+  BatchManifestEntry,
   ExtractionMetadata,
   ExtractionResult,
-  PageResult
-} from '~/types/process-types'
-import type {
-  BatchManifestEntry,
+  OutputFormat,
+  PageResult,
+  ProcessDocumentOutput,
+  ProviderSpec,
+  ResolvedStep2Execution,
+  ResumePolicy,
   Step1SourceRef
-} from '../../step-1-download/download-types'
+} from '~/types'
 
 export type EpubInspectEngine = 'bun' | 'calibre'
+
+export type OcrRenderPolicy = {
+  outputFormat?: OutputFormat | undefined
+  languages?: string | undefined
+  password?: string | undefined
+}
+
+export type OcrPolicy = {
+  providers: ProviderSpec[]
+  batch?: BatchPolicy | undefined
+  resume?: ResumePolicy | undefined
+  render?: OcrRenderPolicy | undefined
+  epubBackend?: 'bun' | 'calibre' | undefined
+  urlBackend?: 'defuddle' | 'firecrawl' | 'glm-reader' | undefined
+}
 
 export type EpubContentEntry = {
   path: string
@@ -125,6 +144,19 @@ export type ZipEntry = {
   localOffset: number
 }
 
+export type ZipXmlPage = {
+  page: number
+  text: string
+}
+
+export type ZipXmlResult = {
+  pages: ZipXmlPage[]
+  text: string
+  totalPages: number
+}
+
+export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'
+
 export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
 
 export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr'
@@ -161,6 +193,12 @@ export type OcrProviderCapability = {
 
 export type OcrLikeContext = {
   flags: Record<string, unknown> & { out?: unknown }
+}
+
+export type InternalPage = {
+  pageNumber: number
+  text: string
+  needsOcr: boolean
 }
 
 export type DomNode = {
@@ -242,6 +280,11 @@ export type OcrSourceKind =
   | 'cbz-images'
 
 export type OcrCompletionStatus = 'full' | 'incomplete' | 'failed'
+
+export type OcrResult = {
+  text: string
+  confidence?: number
+}
 
 export type OcrRequestedProvider = {
   service: OcrTarget['service']
@@ -380,4 +423,15 @@ export type ResumeOcrEntry = {
   missingTargets: OcrTarget[]
   completionStatus: 'full' | 'incomplete' | 'failed'
   rawEntry: BatchManifestEntry
+}
+
+export type OcrMetadataOptions = {
+  failures?: Array<{ service: string, model: string, message: string }>
+  web?: ProcessDocumentOutput['web']
+  source?: Step1SourceRef
+  completionStatus?: OcrCompletionStatus
+  resolvedStep2?: ResolvedStep2Execution
+  requestedProviders?: Array<{ service: string, model: string }>
+  providerStates?: Array<Record<string, unknown>>
+  missingProviders?: Array<{ service: string, model: string }>
 }

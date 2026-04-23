@@ -1,3 +1,5 @@
+import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/pricing-types'
+
 export const LOG_LEVELS = ['debug', 'info', 'success', 'warn', 'error'] as const
 
 export type LogLevel = typeof LOG_LEVELS[number]
@@ -85,4 +87,91 @@ export interface Logger {
   error: (message: string, errorObj?: unknown) => void
   withContext: (context: LogContext) => Logger
   config: MutableLoggerConfig
+}
+
+export type HumanSinkOptions = {
+  interactive?: boolean
+}
+
+export type LocationTableRow = {
+  artifact: string
+  path: unknown
+  detail?: unknown
+}
+
+export type BatchItemTableRow = {
+  status: string
+  input: unknown
+  detail?: unknown
+}
+
+export type HumanTableLogOptions = {
+  level?: LogLevel
+  category?: LogCategory
+  metadata?: LogMetadata
+}
+
+export type SingleRowTableLogOptions = HumanTableLogOptions & {
+  columns?: readonly string[]
+}
+
+export type KeyValueTableLogOptions = HumanTableLogOptions & {
+  keyLabel?: string
+  valueLabel?: string
+}
+
+export type StepTimingCost = {
+  label: string
+  providerModel?: string
+  processingTime: number
+  cost: number
+}
+
+export type ReporterMetricValue = string | number | boolean | null
+
+export type HumanCompletionTables = {
+  artifacts?: HumanLogTable
+  providers?: HumanLogTable
+  metrics?: HumanLogTable
+  timing?: HumanLogTable
+}
+
+export type HumanCompletionSection = keyof HumanCompletionTables
+
+export type CompleteOptions = {
+  metrics?: Record<string, ReporterMetricValue>
+  steps?: StepTimingCost[]
+  totalTimeMs?: number
+  totalCost?: number
+  summaryMessage?: string
+  hideHumanSections?: readonly HumanCompletionSection[]
+}
+
+export type Reporter = {
+  expectedOutput: (outputDir: string, files: string[]) => void
+  estimate: (estimate: AggregatedPriceEstimate) => void
+  complete: (outputDir: string, files: Record<string, string>, options?: CompleteOptions) => void
+}
+
+export type EstimateMode = 'human' | 'raw'
+
+export type StepSummaryEntry = {
+  step: string
+  providerModel?: string
+  time: string
+  cost: string
+}
+
+export type ReporterEstimateInput = StepEstimate
+
+export type GlobalLogger = Logger & {
+  report: Reporter
+}
+
+export type LogFormat = 'auto' | 'human' | 'json' | 'both'
+
+export type ReconfigureOptions = {
+  verbose?: boolean
+  quiet?: boolean
+  json?: boolean
 }

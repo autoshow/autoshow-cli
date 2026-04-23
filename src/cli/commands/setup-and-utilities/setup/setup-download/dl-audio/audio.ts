@@ -1,6 +1,6 @@
-import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
-import { downloadFile } from '~/utils/download'
+import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import { withRetry } from '~/utils/retries'
 
 const shouldPrintCompletion = (): boolean => {

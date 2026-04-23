@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import type { TestRunArtifacts } from '../../../src/types/tests-dir-types'
+import type { TestRunArtifacts } from '~/types'
 import type { HistoricalLookup } from './types'
 
 export const readHistoricalLookups = async (

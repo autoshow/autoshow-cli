@@ -1,13 +1,12 @@
 import type { InferOutput } from 'valibot'
-import type { AutoshowConfigSchema } from '~/types/config-types'
-import type { Logger } from '~/utils/logger/types'
-import type { ExtractLimitsSchema, ModelRegistrySchema, SttLimitsSchema } from './models/model-loader'
-import type {
+import type { AutoshowConfigSchema, Logger } from '~/types'
+import { ExtractLimitsSchema, ModelRegistrySchema, SttLimitsSchema } from './models/model-loader'
+import {
   SUPPORTED_ANTHROPIC_MODELS,
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_MINIMAX_MODELS
 } from './models/llm-models'
-import type {
+import {
   SUPPORTED_AWS_STT_MODELS,
   SUPPORTED_DEAPI_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
@@ -24,14 +23,14 @@ import type {
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_SUPADATA_STT_MODELS
 } from './models/stt-models'
-import type {
+import {
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_OPENAI_OCR_MODELS
 } from './models/ocr-models'
-import type {
+import {
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
@@ -39,16 +38,16 @@ import type {
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS
 } from './models/tts-models'
-import type {
+import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS
 } from './models/image-models'
-import type {
+import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS
 } from './models/music-models'
-import type {
+import {
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS
 } from './models/video-models'
@@ -253,7 +252,7 @@ export type CheckResult = {
   detail: string
 }
 
-export type TableLogger = Pick<Logger, 'write'>
+export type SetupTableLogger = Pick<Logger, 'write'>
 
 export type SetupToolStatus = {
   tool: string

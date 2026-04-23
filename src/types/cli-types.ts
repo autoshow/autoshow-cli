@@ -1,11 +1,11 @@
+import type { BatchOrder } from '../cli/commands/process-steps/step-1-download/download-types'
+
 export const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'music', 'video'] as const
 
 export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
 export type ProcessCommand = CanonicalProcessCommand | 'stt' | 'ocr'
 
 export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
-
-export type BatchOrder = 'newest' | 'oldest'
 
 export type Step2ProviderSelectionOrigin = 'default' | 'explicit' | 'all-shortcut'
 

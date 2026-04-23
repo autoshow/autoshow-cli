@@ -1,5 +1,5 @@
 import { appendFile, rm } from 'node:fs/promises'
-import type { PriceCommandResult, PriceCommandSpec, TestRunArtifacts } from '../../src/types/tests-dir-types'
+import type { PriceCommandResult, PriceCommandSpec, TestRunArtifacts } from '~/types'
 import { parseRunnerArgs, type RunnerArgs } from './args'
 import { createRunArtifacts, appendRunnerLog, appendCommandLog, writeJsonFile, writeReportJson } from './artifacts'
 import { readMetrics, parseJunit } from './parsers'

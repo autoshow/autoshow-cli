@@ -7,7 +7,7 @@ import { exec } from '~/utils/cli-utils'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { ensureMutoolSetup } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { createAnthropicClient } from '~/utils/anthropic-utils'
+import { createAnthropicClient } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import {
   ANTHROPIC_OCR_FILES_BETA,

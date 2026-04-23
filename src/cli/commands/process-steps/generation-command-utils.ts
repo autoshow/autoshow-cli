@@ -1,28 +1,17 @@
 import * as l from '~/utils/logger'
-import type { StepTimingCost } from '~/utils/logger'
 import { createSingleRowTable, logLocationsTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, LogLevel, Logger } from '~/utils/logger/types'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { writeRunManifest } from './manifest-utils'
-
-type CostStep = {
-  step: string
-  cost: number
-}
-
-type TableLogger = Pick<Logger, 'write'>
-
-export type MediaGenerationStatus = {
-  mediaType: 'tts' | 'image' | 'video' | 'music'
-  provider: string
-  model: string
-  status: string
-  processingTimeMs?: number
-  outputCount?: number
-  detail?: string
-}
+import type {
+  CostStep,
+  GenerationTableLogger,
+  HumanLogTable,
+  LogLevel,
+  MediaGenerationStatus,
+  StepTimingCost
+} from '~/types'
 
 export const buildMediaGenerationStatusRows = (
   summary: MediaGenerationStatus
@@ -58,7 +47,7 @@ export const buildMediaGenerationStatusTable = (
   ])
 
 export const logMediaGenerationStatus = (
-  logger: TableLogger,
+  logger: GenerationTableLogger,
   summary: MediaGenerationStatus,
   level: LogLevel = summary.status === 'completed' ? 'success' : 'info'
 ): void => {

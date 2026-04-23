@@ -43,7 +43,7 @@ import {
 import { collectSttTargets } from './stt-targets'
 import { createMistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
 import { assertNever } from '~/utils/validate/assert-never'
-import type { SplitPolicyTarget } from './stt-types'
+import type { SplitPolicyTarget } from '~/types'
 
 export { STT_ENGINE_CAPABILITIES, getSttEngineCapabilities, resolveDiarizationOptions } from './cli'
 export {

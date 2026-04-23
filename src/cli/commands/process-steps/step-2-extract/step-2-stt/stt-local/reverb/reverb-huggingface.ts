@@ -1,4 +1,4 @@
-import { commandExists, pathExists, runInherit, detectPlatform, reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { commandExists, pathExists, runInherit, detectPlatform, reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 
 export const getHuggingFaceToken = (): string | undefined => {
   const token = process.env['HUGGINGFACE_TOKEN']

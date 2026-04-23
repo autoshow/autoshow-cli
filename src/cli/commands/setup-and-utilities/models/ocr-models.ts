@@ -1,6 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AnthropicOcrModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '../setup-and-utilities-types'
-export type { AnthropicOcrModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '../setup-and-utilities-types'
+import type { AnthropicOcrModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
   'mistral-ocr-2512'

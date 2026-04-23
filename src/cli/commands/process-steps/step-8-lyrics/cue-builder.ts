@@ -1,5 +1,5 @@
 import type { TranscriptionEvidenceWord, TranscriptionResult, TranscriptionSegment } from '~/types'
-import type { CaptionCue, LyricsCueSource } from './lyrics-types'
+import type { CaptionCue, LyricsCueSource } from '~/types'
 
 const MAX_WORDS_PER_CUE = 7
 const MAX_CHARACTERS_PER_CUE = 42

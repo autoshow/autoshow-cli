@@ -11,7 +11,7 @@ import {
   resumeSttTarget
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/resume'
 import { readBatchManifest, readExtractBatchManifest, writeExtractBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
-import type { ResumeHandler, ResumeTarget, ResumeTargetKind } from './resume-types'
+import type { ResumeHandler, ResumeTarget, ResumeTargetKind } from '~/types'
 
 const EXPLICIT_STEP2_SELECTION_FILTER = {
   includeOrigins: ['explicit', 'all-shortcut']

@@ -1,4 +1,4 @@
-import type { VideoProvider } from '~/types/provider-types'
+import type { VideoProvider } from './provider-types'
 
 export type ApiCheapPriceCommand = {
   name: string

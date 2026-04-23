@@ -1,4 +1,4 @@
-import type { ParsedCommandMetric, ParsedJunitCase, TestRunArtifacts } from '../../../src/types/tests-dir-types'
+import type { ParsedCommandMetric, ParsedJunitCase, TestRunArtifacts } from '~/types'
 import {
   buildMetricContext,
   buildTestContext,

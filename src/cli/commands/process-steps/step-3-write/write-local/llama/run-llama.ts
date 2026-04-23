@@ -12,7 +12,7 @@ import {
   type Step3Metadata,
   type StructuredRequestOptions
 } from '~/types'
-import { llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { resolve as resolvePath } from 'node:path'

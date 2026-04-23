@@ -1,4 +1,20 @@
-import type { RuntimeOptions } from '~/types'
+import type { Logger, RuntimeOptions } from '~/types'
+
+export type ResumeTableLogger = Pick<Logger, 'write'>
+
+export type ResumeItemSummary = {
+  item: string
+  status: string
+  outputDir: string
+  providers: string | string[]
+  detail?: string
+}
+
+export type ResumeTotals = {
+  full: number
+  incomplete: number
+  failed: number
+}
 
 export type ResumeTargetKind = 'stt' | 'ocr' | 'extract'
 export type ResumeTargetScope = 'single' | 'batch'

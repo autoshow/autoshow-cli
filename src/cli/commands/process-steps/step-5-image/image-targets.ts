@@ -1,10 +1,7 @@
 import { extname } from 'node:path'
-import type { ImageGenOptions, ImageTarget, Step5Metadata } from '~/types'
+import type { GeminiImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
-  type GeminiImageModel,
-  type MinimaxImageModel,
-  type OpenAIImageModel,
   isNativeGeminiImageModel,
   supportsGeminiImageSize,
   validateGeminiImageModel,

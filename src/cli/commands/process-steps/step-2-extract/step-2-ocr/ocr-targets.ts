@@ -1,7 +1,6 @@
-import type { ExtractionOptions, OcrTarget, Step2ProviderSelectionOrigin } from '~/types'
+import type { ExtractionOptions, OcrTarget, Step2ProviderSelectionFilter, Step2ProviderSelectionOrigin } from '~/types'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { collectOcrProviderSpecs } from './cli'
-import type { Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
 
 export const collectExplicitOcrTargets = (
   opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'> & {

@@ -1,8 +1,8 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { pathExists, runCapture, runInherit, detectArchitecture, detectPlatform, llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { pathExists, runCapture, runInherit, detectArchitecture, detectPlatform, llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
-import { downloadFile } from '~/utils/download'
+import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import { withRetry } from '~/utils/retries'
 
 const depsJsonPath = resolve(import.meta.dir, '../../../config/deps.json')

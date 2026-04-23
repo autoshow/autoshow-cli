@@ -1,5 +1,5 @@
 import { parseHTML } from 'linkedom'
-import type { DomDocument, DomElement, DomNode } from '../ocr-types'
+import type { DomDocument, DomElement, DomNode } from '~/types'
 
 const ELEMENT_NODE = 1
 const TEXT_NODE = 3

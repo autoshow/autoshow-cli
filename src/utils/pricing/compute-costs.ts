@@ -1,18 +1,15 @@
 import { toArray } from '~/utils/text-utils'
 import type {
-  Step1Metadata,
+  AggregatedPriceEstimate,
   Step2Metadata,
   Step3Metadata,
-  Step4Metadata,
-  Step5Metadata,
-  Step6VideoMetadata,
-  Step7MusicMetadata,
   ExtractionMetadata,
   StepCostEntry,
   ActualCostBreakdown,
+  ComputeActualCostsInput,
+  ComputeEstimatedCostsInput,
   EstimatedStepEntry,
   EstimatedCostBreakdown,
-  AggregatedPriceEstimate
 } from '~/types'
 import {
   getExtractEstimation,
@@ -237,17 +234,6 @@ const computeActualSttCharge = (
     inputMetric: 'durationSeconds',
     inputValue: durationSeconds
   }
-}
-
-type ComputeActualCostsInput = {
-  step1?: Step1Metadata | undefined
-  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
-  step3?: Step3Metadata | Step3Metadata[] | undefined
-  step4?: Step4Metadata | Step4Metadata[] | undefined
-  step5?: Step5Metadata | Step5Metadata[] | undefined
-  step6?: Step6VideoMetadata | Step6VideoMetadata[] | undefined
-  step7?: Step7MusicMetadata | Step7MusicMetadata[] | undefined
-  ttsCharacterCount?: number | undefined
 }
 
 export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBreakdown => {
@@ -508,75 +494,6 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
 
   const totalCost = steps.reduce((sum, s) => sum + s.cost, 0)
   return { totalCost, steps }
-}
-
-type ComputeEstimatedCostsInput = {
-  sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
-  whisperModel?: string | undefined
-  gcloudSttModel?: string | undefined
-  awsSttModel?: string | undefined
-  deepinfraSttModel?: string | undefined
-  deapiSttModel?: string | undefined
-  groqSttModel?: string | undefined
-  elevenlabsSttModel?: string | undefined
-  deepgramSttModel?: string | undefined
-  sonioxSttModel?: string | undefined
-  speechmaticsSttModel?: string | undefined
-  revSttModel?: string | undefined
-  mistralSttModel?: string | undefined
-  assemblyaiSttModel?: string | undefined
-  gladiaSttModel?: string | undefined
-  happyscribeSttModel?: string | undefined
-  supadataSttModel?: string | undefined
-  mistralOcrModel?: string | undefined
-  glmOcrModel?: string | undefined
-  openaiOcrModel?: string | undefined
-  anthropicOcrModel?: string | undefined
-  geminiOcrModel?: string | undefined
-  extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
-    model: string
-    pageCount?: number
-    promptTokens?: number
-    completionTokens?: number
-    estimateType?: 'heuristic' | 'exact'
-    note?: string
-  }> | undefined
-  extractPageCount?: number | undefined
-  useReverb?: boolean | undefined
-  audioDurationSeconds?: number | undefined
-  llmTargets?: Array<{
-    service: Step3Metadata['llmService']
-    model: string
-    inputTokens?: number
-    outputTokens?: number
-  }> | undefined
-  llmService?: string | undefined
-  llmModel?: string | undefined
-  llmInputTokenCount?: number | undefined
-  llmOutputTokenCount?: number | undefined
-  skipLLM?: boolean | undefined
-  ttsTargets?: Array<{ service: string, model: string }> | undefined
-  ttsService?: string | undefined
-  ttsModel?: string | undefined
-  ttsCharacterCount?: number | undefined
-  imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number }> | undefined
-  geminiImageModel?: string | undefined
-  openaiImageModel?: string | undefined
-  minimaxImageModel?: string | undefined
-  imagenCount?: number | undefined
-  geminiVideoModel?: string | undefined
-  minimaxVideoModel?: string | undefined
-  videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
-  videoDuration?: number | undefined
-  videoSize?: string | undefined
-  videoResolution?: string | undefined
-  elevenlabsMusicModel?: string | undefined
-  minimaxMusicModel?: string | undefined
-  musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
-  musicDuration?: number | undefined
-  musicLyricsFile?: string | undefined
-  musicInstrumental?: boolean | undefined
 }
 
 export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): EstimatedCostBreakdown => {

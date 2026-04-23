@@ -1,13 +1,7 @@
-import type { ProcessCommand, RuntimeOptions } from '~/types'
+import type { PreflightResult, ProcessCommand, RuntimeOptions } from '~/types'
 import { buildAggregatedPriceEstimate } from './aggregate-pricing'
-import type { AggregatedPriceEstimate } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import * as l from '~/utils/logger'
-
-export type PreflightResult = {
-  estimate: AggregatedPriceEstimate
-  shouldExit: boolean
-}
 
 export const runPreflight = async (
   command: ProcessCommand,

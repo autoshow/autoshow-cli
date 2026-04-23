@@ -2,7 +2,7 @@
 
 import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { commandSupportsBatchSourceExpansion } from '~/cli/commands/process-steps/process-command-kinds'
-import type { BatchSource } from './batch-types'
+import type { BatchSource } from '~/types'
 import { selectBatchItems } from './batch-select'
 import { tryEnumerateYoutubeChannel } from '../youtube-channel-provider'
 import { tryEnumeratePodcastFeed } from '../podcast-rss-provider'

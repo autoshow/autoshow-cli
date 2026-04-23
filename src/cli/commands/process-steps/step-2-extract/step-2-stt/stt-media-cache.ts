@@ -16,6 +16,7 @@ import { basename, dirname, extname, join, resolve } from 'node:path'
 import * as l from '~/utils/logger'
 import type {
   AcquireArtifactOptions,
+  AudioNormalizationProfile,
   SttTarget,
   CacheArtifactRecord,
   CacheArtifactStatus,
@@ -26,9 +27,9 @@ import type {
   VideoMetadata
 } from '~/types'
 import { buildMediaStep1Slug, buildVideoMetadataFromInfo, extractLocalFileMetadata, getVideoInfo, isDirectMediaUrl, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact, type AudioNormalizationProfile } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
+import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
 import { downloadVideo } from '~/cli/commands/process-steps/step-1-download/audio/yt-utils'
-import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
+import { setupYtDependencies } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-audio/audio'
 import { commandExists, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
 import { logSttCacheEvent } from './stt-logging'

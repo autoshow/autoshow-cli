@@ -1,4 +1,12 @@
-import type { PollOptions, RetryClass, RetryContext, RetryDecision, RetryPolicy } from '~/types'
+import type {
+  ClassifyFetchRetryOptions,
+  PollOptions,
+  RetryClass,
+  RetryClassifier,
+  RetryContext,
+  RetryDecision,
+  RetryPolicy
+} from '~/types'
 import * as l from '~/utils/logger'
 
 const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 422])
@@ -108,10 +116,6 @@ const getHeadersFromError = (error: unknown): Headers | undefined => {
   return undefined
 }
 
-export type ClassifyFetchRetryOptions = {
-  retryAbortOnConservative?: boolean
-}
-
 export const classifyFetchRetry = (
   error: unknown,
   retryClass: RetryClass,
@@ -154,8 +158,6 @@ export const getRetryPolicy = (retryClass: RetryClass, overrides?: Partial<Retry
   if (!overrides) return base
   return { ...base, ...overrides }
 }
-
-export type RetryClassifier = (error: unknown) => RetryDecision
 
 const computeDelay = (attempt: number, baseDelayMs: number, maxDelayMs: number, exponential: boolean, jitter: boolean): number => {
   let delay = exponential

@@ -1,19 +1,17 @@
 import { GoogleGenAI } from '@google/genai'
-import type { GeminiInlineAudioInfo, Step4Metadata } from '~/types'
+import type { GeminiInlineAudioInfo, GeminiMultiSpeakerConfig, GeminiTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
 import { withRetry } from '~/utils/retries'
-import { GEMINI_DEFAULT_TTS_VOICE, type GeminiTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { GEMINI_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
-import { classifyGeminiRetry } from '~/utils/gemini-utils'
+import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import {
   formatGeminiSpeakerSummary,
   validateGeminiMultiSpeakerTranscript
 } from './gemini-tts-config'
-import type { GeminiMultiSpeakerConfig } from '../../tts-types'
-
 const MAX_CHARS_PER_CHUNK = 4000
 
 const parseGeminiInlineAudioInfo = (mimeType: string | undefined): GeminiInlineAudioInfo => {

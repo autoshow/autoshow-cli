@@ -1,4 +1,4 @@
-import type { BatchSource, BatchItem } from './batch/batch-types'
+import type { BatchSource, BatchItem } from '~/types'
 import { parsePodcastFeedXml } from './podcast-rss'
 
 const PODCAST_HOST_PATTERNS: RegExp[] = [

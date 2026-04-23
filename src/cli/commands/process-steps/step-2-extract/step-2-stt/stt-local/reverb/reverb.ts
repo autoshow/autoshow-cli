@@ -1,5 +1,5 @@
 import { mkdir, rm } from 'node:fs/promises'
-import { commandExists, pathExists, runCapture, runInherit, reverbConfigPath, reverbModelPath, reverbUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { commandExists, pathExists, runCapture, runInherit, reverbConfigPath, reverbModelPath, reverbUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
 import { downloadDiarizationModel, downloadReverbModel } from './reverb-download'

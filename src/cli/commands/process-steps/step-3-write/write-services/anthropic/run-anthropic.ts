@@ -2,7 +2,7 @@ import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runAnthropicCompatibleModel } from '../anthropic-compatible'
-import { createAnthropicClient } from '~/utils/anthropic-utils'
+import { createAnthropicClient } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
 
 export const runAnthropicModel = async (
   prompt: string,

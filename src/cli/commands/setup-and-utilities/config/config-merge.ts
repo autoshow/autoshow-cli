@@ -1,10 +1,10 @@
 import type { AutoshowConfig } from '~/types'
+import type { RepeatableModelFlag } from '~/types'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import {
   REPEATABLE_MODEL_FLAGS,
   normalizeModelFlagOccurrences,
-  parseRepeatableModelFlagOccurrences,
-  type RepeatableModelFlag
+  parseRepeatableModelFlagOccurrences
 } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import {
   getStep2ProviderEntry,

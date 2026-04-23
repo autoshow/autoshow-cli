@@ -1,5 +1,4 @@
-import type { FixtureDef } from '../setup-and-utilities-types'
-export type { FixtureKind, FixtureDef } from '../setup-and-utilities-types'
+import type { FixtureDef } from '~/types'
 
 // ─── Valid fixtures ────────────────────────────────────────────────────────
 

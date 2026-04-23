@@ -3,7 +3,7 @@ import * as l from '~/utils/logger'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import { getOpenAIClientConfig } from '~/utils/openai-utils'
+import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 
 export const runOpenAIModel = async (
   prompt: string,

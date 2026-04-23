@@ -1,104 +1,34 @@
-import { l, type Logger } from '~/utils/logger'
+import { l } from '~/utils/logger'
 import { formatCost, formatDuration } from '~/utils/logger/formatters'
 import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
-import type { HumanLogTable } from '~/utils/logger/types'
 import type {
   ActualCostBreakdown,
   EstimatedCostBreakdown,
   ExtractionMetadata,
+  Logger,
   Step2Metadata,
   Step3Metadata,
   Step4Metadata,
   Step5Metadata,
   Step6VideoMetadata,
   Step7MusicMetadata,
-  TimingStepEntry,
+  CostEntryLike,
+  IndexedRow,
+  PromptUsageSection,
+  SummaryBaseRow,
+  SummarySection,
+  TimingEntryLike,
+  WriteManifestConsoleSummary,
+  WriteManifestMetadata,
+  WriteManifestSourceRefs,
+  WritePromptUsageRow,
+  WriteRunSummaryRow,
+  WriteStepKind,
 } from '~/types'
 
 const SUMMARY_COLUMNS = ['step', 'providerModel', 'predCost', 'actCost', 'predTime', 'actTime', 'predSpeed', 'actSpeed'] as const
 const PROMPT_USAGE_COLUMNS = ['step', 'providerModel', 'promptSource', 'usage'] as const
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
-
-type WriteStepKind = TimingStepEntry['step']
-
-type WriteManifestMetadata = Record<string, unknown>
-
-export type WriteManifestSourceRefs = {
-  promptArtifact?: string
-  extractPromptSource?: string
-  step3RenderedOutput?: string
-}
-
-export type WriteRunSummaryRow = {
-  step: string
-  providerModel: string
-  predictedCostCents: number | null
-  actualCostCents: number | null
-  predictedTimeMs: number | null
-  actualTimeMs: number | null
-  predictedSpeed: string | null
-  actualSpeed: string | null
-  predictedInputMetric: string | null
-  predictedInputValue: number | null
-  actualInputMetric: string | null
-  actualInputValue: number | null
-}
-
-export type WritePromptUsageRow = {
-  step: string
-  providerModel: string
-  promptSource: string | null
-  usage: string | null
-}
-
-type SummaryBaseRow = {
-  stepKey: WriteStepKind
-  step: string
-  provider: string
-  model: string
-  providerModel: string
-}
-
-type CostEntryLike = {
-  step: WriteStepKind
-  provider: string
-  model: string
-  cost: number
-  inputMetric?: string
-  inputValue?: number
-}
-
-type TimingEntryLike = {
-  step: WriteStepKind
-  provider: string
-  model: string
-  processingTimeMs: number
-  inputMetric?: string
-  inputValue?: number
-}
-
-type IndexedRow<T> = {
-  key: string
-  occurrence: number
-  value: T
-}
-
-type SummarySection = {
-  columns: readonly string[]
-  humanTable: HumanLogTable
-  rows: WriteRunSummaryRow[]
-}
-
-type PromptUsageSection = {
-  columns: readonly string[]
-  humanTable: HumanLogTable
-  rows: WritePromptUsageRow[]
-}
-
-export type WriteManifestConsoleSummary = {
-  runSummary?: SummarySection
-  promptUsage?: PromptUsageSection
-}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

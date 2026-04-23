@@ -1,13 +1,5 @@
 import { createSingleRowTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, Logger } from '~/utils/logger/types'
-
-type TableLogger = Pick<Logger, 'write'>
-
-export type SuitePriceSummary = {
-  checkedLabel: string
-  checkedCount: number
-  totalEstimatedCost: number
-}
+import type { HumanLogTable, SuitePriceSummary, SuitePriceTableLogger } from '~/types'
 
 export const buildSuitePriceSummaryRows = (
   summary: SuitePriceSummary
@@ -22,7 +14,7 @@ export const buildSuitePriceSummaryTable = (
   createSingleRowTable(buildSuitePriceSummaryRows(summary)[0]!, ['checked', 'totalEstimatedCost'])
 
 export const logSuitePriceSummary = (
-  logger: TableLogger,
+  logger: SuitePriceTableLogger,
   summary: SuitePriceSummary
 ): void => {
   logger.write('info', 'Suite Cost Summary', {

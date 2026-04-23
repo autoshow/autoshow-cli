@@ -1,9 +1,4 @@
-import type { InputFamily, ProcessCommand } from '~/types'
-
-type ProcessCommandCapabilities = {
-  supportsBatchSourceExpansion: boolean
-  supportedInputFamilies?: readonly InputFamily[] | undefined
-}
+import type { InputFamily, ProcessCommand, ProcessCommandCapabilities } from '~/types'
 
 const PROCESS_COMMAND_CAPABILITIES: Record<ProcessCommand, ProcessCommandCapabilities> = {
   metadata: {

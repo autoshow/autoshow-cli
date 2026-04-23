@@ -34,9 +34,9 @@ import {
   findMatchingImage,
   renderLyricsVideo
 } from './render'
-import type { CaptionCue, LyricsCueSource } from './lyrics-types'
+import type { CaptionCue, LyricsCueSource } from '~/types'
 import type { BatchChildRunContext, RuntimeOptions } from '~/types'
-import type { LyricsGenerationContext } from './lyrics-types'
+import type { LyricsGenerationContext } from '~/types'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
 const DEFAULT_INPUT_ROOT = join(PROJECT_ROOT, 'input')

@@ -1,4 +1,4 @@
-import type { PriceSelectionEntry } from '../../../../src/types/tests-dir-types'
+import type { PriceSelectionEntry } from '~/types'
 import { exact, reportOnly } from '../helpers'
 
 export const downloadRegistry: PriceSelectionEntry[] = [

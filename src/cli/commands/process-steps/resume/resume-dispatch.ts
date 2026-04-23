@@ -15,7 +15,7 @@ import {
 import type { RuntimeOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeHandler } from './resume-registry'
-import type { ResumeTarget, ResumeTargetKind } from './resume-types'
+import type { ResumeTarget, ResumeTargetKind } from '~/types'
 
 const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['stt', 'ocr', 'extract'])
 

@@ -25,6 +25,7 @@ import {
   validateSttFlagCompatibility
 } from '~/cli/argv-normalize'
 import { maybeThrowDeprecatedProcessCommand } from '~/cli/commands/process-steps/step-2-extract/extract-migration'
+import type { HelpCommandGroupKey } from '~/types'
 import {
   colorText,
   colorizeHelpDescription,
@@ -91,7 +92,6 @@ const HELP_COMMAND_GROUPS = [
   ['processing', 'Processing & Generation']
 ] as const
 
-type HelpCommandGroupKey = typeof HELP_COMMAND_GROUPS[number][0]
 const HELP_COMMAND_GROUP_DEFINITIONS: [string, string][] = HELP_COMMAND_GROUPS.map(([key, label]) => [key, label])
 
 const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> = {

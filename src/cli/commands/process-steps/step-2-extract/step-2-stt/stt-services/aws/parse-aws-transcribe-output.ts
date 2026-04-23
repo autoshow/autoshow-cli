@@ -5,7 +5,7 @@ import {
   resolveTranscriptionOutput
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { validateData } from '~/utils/validate/validation'
-import type { AwsTranscribeOutput } from '../../stt-types'
+import type { AwsTranscribeOutput } from '~/types'
 
 const AwsTranscriptAlternativeSchema = v.object({
   content: v.string(),

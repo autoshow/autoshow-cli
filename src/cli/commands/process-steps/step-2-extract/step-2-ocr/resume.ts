@@ -24,8 +24,8 @@ import {
 } from './ocr-run-state'
 import { readOcrRunManifestEntry, writeOcrBatchManifest, writeOcrRunManifest } from './manifest'
 import { readBatchManifest } from '../../manifest-utils'
-import type { ResumeTarget } from '../../resume/resume-types'
-import type { ResumeOcrEntry } from './ocr-types'
+import type { ResumeTarget } from '~/types'
+import type { ResumeOcrEntry } from '~/types'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

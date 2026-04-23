@@ -3,72 +3,11 @@ import { collectStep2ProviderSelections } from './provider-registry'
 import type {
   DetectResult,
   HtmlArticleBackend,
+  OcrStep2ResolutionOptions,
   ResolvedStep2Execution,
   ResolvedStep2Provider,
-  RuntimeOptions
+  SttStep2ResolutionOptions
 } from '~/types'
-
-type SttStep2ResolutionOptions = Pick<
-  RuntimeOptions,
-  | 'useReverb'
-  | 'step2SelectionOrigins'
-  | 'whisperModel'
-  | 'whisperModels'
-  | 'gcloudSttModel'
-  | 'gcloudSttModels'
-  | 'awsSttModel'
-  | 'awsSttModels'
-  | 'deepinfraSttModel'
-  | 'deepinfraSttModels'
-  | 'deapiSttModel'
-  | 'deapiSttModels'
-  | 'elevenlabsSttModel'
-  | 'elevenlabsSttModels'
-  | 'deepgramSttModel'
-  | 'deepgramSttModels'
-  | 'sonioxSttModel'
-  | 'sonioxSttModels'
-  | 'speechmaticsSttModel'
-  | 'speechmaticsSttModels'
-  | 'revSttModel'
-  | 'revSttModels'
-  | 'groqSttModel'
-  | 'groqSttModels'
-  | 'mistralSttModel'
-  | 'mistralSttModels'
-  | 'assemblyaiSttModel'
-  | 'assemblyaiSttModels'
-  | 'gladiaSttModel'
-  | 'gladiaSttModels'
-  | 'happyscribeSttModel'
-  | 'happyscribeSttModels'
-  | 'supadataSttModel'
-  | 'supadataSttModels'
->
-
-type OcrStep2ResolutionOptions = Pick<
-  RuntimeOptions,
-  | 'useTesseract'
-  | 'useOcrmypdf'
-  | 'usePaddleOcr'
-  | 'step2SelectionOrigins'
-  | 'mistralOcrModel'
-  | 'mistralOcrModels'
-  | 'glmOcrModel'
-  | 'glmOcrModels'
-  | 'openaiOcrModel'
-  | 'openaiOcrModels'
-  | 'anthropicOcrModel'
-  | 'anthropicOcrModels'
-  | 'geminiOcrModel'
-  | 'geminiOcrModels'
-  | 'useEpubBun'
-  | 'useEpubCalibre'
-  | 'urlBackend'
-> & {
-  preparedMarkdown?: string | undefined
-  localHtmlDocument?: boolean | undefined
-}
 
 const DEFAULT_TESSERACT_PROVIDER: ResolvedStep2Provider = {
   service: 'tesseract',

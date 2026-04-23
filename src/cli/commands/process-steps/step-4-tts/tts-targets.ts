@@ -1,11 +1,13 @@
 import type { Step4Metadata, TtsOptions, TtsTarget } from '~/types'
+import type {
+  ElevenlabsTtsModel,
+  GeminiTtsModel,
+  GroqTtsModel,
+  KittenTtsModel,
+  MinimaxTtsModel,
+  OpenAITtsModel
+} from '~/types'
 import {
-  type KittenTtsModel,
-  type ElevenlabsTtsModel,
-  type MinimaxTtsModel,
-  type GroqTtsModel,
-  type OpenAITtsModel,
-  type GeminiTtsModel,
   validateKittenTtsModel,
   validateElevenlabsTtsModel,
   validateMinimaxTtsModel,
@@ -15,7 +17,7 @@ import {
   validateGroqTtsVoice,
   validateKittenTtsSpeaker,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { pathExists, kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { pathExists, kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { ensureElevenLabsTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { ensureGroqTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'

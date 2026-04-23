@@ -4,7 +4,7 @@ import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry } from '~/utils/retries'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
-import { classifyGeminiRetry } from '~/utils/gemini-utils'
+import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 
 export const runGeminiModel = async (
   prompt: string,

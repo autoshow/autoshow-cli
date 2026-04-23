@@ -6,7 +6,7 @@ import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
-import { classifyGeminiRetry } from '~/utils/gemini-utils'
+import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import {
   GEMINI_FILE_UPLOAD_BYTES,
   GEMINI_INLINE_NON_PDF_BYTES,

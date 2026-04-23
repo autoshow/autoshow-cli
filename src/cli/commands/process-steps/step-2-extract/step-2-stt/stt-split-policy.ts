@@ -1,6 +1,6 @@
 import { getSttLimits } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { SttTarget } from '~/types'
-import type { SttSplitDecision, SttSplitDecisionReason, SttSplitPolicy } from './stt-types'
+import type { SttSplitDecision, SttSplitDecisionReason, SttSplitPolicy } from '~/types'
 
 export const DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES = 30
 export const SPLIT_DURATION_SAFETY_SECONDS = 1

@@ -1,7 +1,7 @@
 import type {
   PriceCommandSpec,
   PriceCommandResult,
-} from '../../src/types/tests-dir-types'
+} from '~/types'
 import type { BudgetPreflightSummary } from './reports'
 
 export type PriceCommandObservation = {

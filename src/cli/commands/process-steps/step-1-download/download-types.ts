@@ -1,9 +1,51 @@
-import type { ResolvedBatch } from '~/types/cli-dir-types'
-import type { PreparedDocument, DocumentMetadata, ExtractionMetadata, Step3Metadata, WebArticleMetadata } from '~/types/process-types'
+import type {
+  BatchItem,
+  BatchSource,
+  DocumentMetadata,
+  ExtractionMetadata,
+  InputFamily,
+  Logger,
+  ProcessCommand,
+  PlannedBatchInput,
+  PreparedDocument,
+  ResolvedBatch,
+  ResolvedStep2Execution,
+  RoutedChildKind,
+  RuntimeOptions,
+  Step3Metadata,
+  WebArticleMetadata
+} from '~/types'
+
+export type DownloadAudioOptions = {
+  url?: string | undefined
+  filePath?: string | undefined
+  outputDir: string
+  directDownload?: boolean | undefined
+  keepOriginalMedia?: boolean | undefined
+}
 
 export type Step1SourceRef = {
   url?: string
   filePath?: string
+}
+
+export type AudioLoggingTableLogger = Pick<Logger, 'write'>
+
+export type AudioDownloadSource = 'yt-dlp' | 'direct-audio-url' | 'direct-media-url'
+export type AudioDownloadStatus = 'started' | 'downloaded'
+
+export type AudioDownloadSummary = {
+  source: AudioDownloadSource
+  status: AudioDownloadStatus
+  target: string
+  detail?: string
+}
+
+export type AudioNormalizeSummary = {
+  status: 'planned'
+  inputPath: string
+  outputPath: string
+  plan: NormalizedAudioPlan
 }
 
 export type YtDlpAuthMode = 'cookies-file' | 'cookies-from-browser' | 'none'
@@ -14,11 +56,209 @@ export type YtDlpListOptions = {
   order?: 'newest' | 'oldest'
 }
 
+export type BatchOrder = 'newest' | 'oldest'
+export type TopLevelTargetKind = 'directory' | 'input_list' | 'single'
+export type Step2Route = 'stt' | 'ocr' | 'article' | 'native-document' | 'unsupported'
+
+export type BatchOptions = {
+  limit: number
+  all: boolean
+  order: BatchOrder
+}
+
+export type FfprobeStream = {
+  index?: unknown
+  codec_type?: unknown
+  codec_name?: unknown
+  sample_rate?: unknown
+  channels?: unknown
+  bit_rate?: unknown
+  disposition?: unknown
+}
+
+export type FfprobeFormat = {
+  format_name?: unknown
+  duration?: unknown
+  bit_rate?: unknown
+}
+
+export type FfprobePayload = {
+  streams?: unknown
+  format?: unknown
+}
+
+export type NormalizedAudioExtension = '.mp3' | '.m4a' | '.ogg' | '.flac'
+export type NormalizedAudioFormat = 'mp3' | 'ipod' | 'ogg' | 'flac'
+export type AudioNormalizationMode = 'copy-file' | 'copy-stream' | 'transcode-aac' | 'transcode-mp3' | 'transcode-flac'
+export type AudioNormalizationProfile = 'default' | 'hosted-stt' | 'hosted-stt-mp3'
+
+export type AudioStreamProbe = {
+  index: number
+  codecName: string
+  sampleRate?: number | undefined
+  channels?: number | undefined
+  bitRate?: number | undefined
+}
+
+export type MediaProbe = {
+  formatNames: string[]
+  durationSeconds?: number | undefined
+  bitRate?: number | undefined
+  hasVideo: boolean
+  hasNonAudioStreams: boolean
+  audioStreamCount: number
+  audioStream: AudioStreamProbe
+}
+
+export type NormalizedAudioPlan = {
+  profile: AudioNormalizationProfile
+  mode: AudioNormalizationMode
+  outputExtension: NormalizedAudioExtension
+  outputFormat: NormalizedAudioFormat
+  outputCodecName: string
+  sourceCodecName: string
+  reason: string
+  stripMetadata: boolean
+  stripChapters: boolean
+  targetBitRate?: number | undefined
+  targetSampleRate?: number | undefined
+  targetChannels?: number | undefined
+}
+
 export type PreparedDocumentMetadata = Pick<PreparedDocument, 'step1Metadata' | 'effectiveFilePath' | 'tempCleanup'>
+
+export type DocFormat =
+  | 'pdf' | 'epub' | 'png' | 'jpg' | 'tif' | 'docx' | 'pptx' | 'xlsx' | 'odf'
+  | 'mobi' | 'azw3' | 'fb2' | 'lit' | 'cbz' | 'rtf' | 'csv' | 'webp' | 'bmp' | 'gif'
+  | 'html'
+
+export type MutoolDocInfo = {
+  pageCount: number
+  title?: string
+  author?: string
+}
+
+export type TopLevelTargetInfo = {
+  kind: TopLevelTargetKind
+  exists: boolean
+  isDirectory: boolean
+  isFile: boolean
+}
+
+export type BatchItemProcessResult = {
+  outputDir?: string
+  manifestEntry?: Record<string, unknown>
+}
+
+export type BatchItemProcessor = (
+  command: ProcessCommand,
+  item: string,
+  batchDir: string,
+  opts: RuntimeOptions,
+  batchItem?: BatchItem
+) => Promise<BatchItemProcessResult | void>
+
+export type InputKind =
+  | 'url_streaming'
+  | 'url_direct_media'
+  | 'url_direct_document'
+  | 'url_html_article'
+  | 'local_media'
+  | 'local_document'
+
+export type ParsedEpisode = {
+  id: string | undefined
+  enclosureUrl: string
+  title: string | undefined
+  pubDate: string | undefined
+  duration: string | undefined
+}
+
+export type ParsedFeed = {
+  title: string | undefined
+  link: string | undefined
+  author: string | undefined
+  image: string | undefined
+  episodes: ParsedEpisode[]
+}
+
+export type ResolvedInputRouting = {
+  family: InputFamily
+  step2Route: Step2Route
+  resolvedStep2: ResolvedStep2Execution
+  routedChildKind?: RoutedChildKind | undefined
+  supported: boolean
+  skipReason?: string | undefined
+}
+
+export type YtDlpFlatEntry = {
+  id?: string
+  url?: string
+  webpage_url?: string
+  title?: string
+  uploader?: string
+  channel?: string
+  upload_date?: string
+  duration?: number
+}
 
 export type BuildOptsDefaults = {
   defaultTtsEngine?: 'kitten'
 }
+
+export type RepeatableModelFlag =
+  | 'whisper-stt'
+  | 'gcloud-stt'
+  | 'aws-stt'
+  | 'deepinfra-stt'
+  | 'deapi-stt'
+  | 'groq-stt'
+  | 'elevenlabs-stt'
+  | 'deepgram-stt'
+  | 'soniox-stt'
+  | 'speechmatics-stt'
+  | 'rev-stt'
+  | 'mistral-stt'
+  | 'assemblyai-stt'
+  | 'gladia-stt'
+  | 'happyscribe-stt'
+  | 'supadata-stt'
+  | 'mistral-ocr'
+  | 'glm-ocr'
+  | 'openai-ocr'
+  | 'anthropic-ocr'
+  | 'gemini-ocr'
+  | 'llama'
+  | 'openai'
+  | 'groq'
+  | 'gemini'
+  | 'anthropic'
+  | 'minimax'
+  | 'grok'
+  | 'kitten-tts'
+  | 'elevenlabs-tts'
+  | 'minimax-tts'
+  | 'groq-tts'
+  | 'openai-tts'
+  | 'gemini-tts'
+  | 'gemini-image'
+  | 'openai-image'
+  | 'minimax-image'
+  | 'elevenlabs-music'
+  | 'minimax-music'
+  | 'gemini-video'
+  | 'minimax-video'
+
+export type FlagOccurrenceValue = string | boolean
+
+export type AllShortcutFlag =
+  | 'all-stt'
+  | 'all-ocr'
+  | 'all-llm'
+  | 'all-tts'
+  | 'all-image'
+  | 'all-video'
+  | 'all-music'
 
 export type ResolvedProcessTargetPlan =
   | { kind: 'directory', targets: string[] }
@@ -26,6 +266,40 @@ export type ResolvedProcessTargetPlan =
   | { kind: 'resolved_batch', resolvedBatch: ResolvedBatch }
   | { kind: 'youtube_collection', targets: string[] }
   | { kind: 'single', target: string }
+
+export type BatchExecutionPlan = {
+  label: string
+  items: string[]
+  selectedItems?: Array<BatchItem | undefined>
+  initialEntries: Record<string, unknown>[]
+  resultEntryIndexes: number[]
+  plannedInputs: PlannedBatchInput[]
+  source?: BatchSource
+  totalCount?: number
+}
+
+export type ExtractChildBatchPlan = {
+  kind: RoutedChildKind
+  items: string[]
+  selectedItems?: Array<BatchItem | undefined>
+  initialEntries: Record<string, unknown>[]
+  resultEntryIndexes: number[]
+  parentIndexes: number[]
+}
+
+export type ExtractHtmlToMarkdownInput = {
+  html: string
+  documentUrl: string
+  sourceUrl?: string
+  finalUrl?: string
+}
+
+export type ExtractHtmlToMarkdownResult = {
+  markdown: string
+  web: WebArticleMetadata
+  title?: string
+  author?: string
+}
 
 export type WriteDocumentOutputMetadataOptions = {
   step1: DocumentMetadata

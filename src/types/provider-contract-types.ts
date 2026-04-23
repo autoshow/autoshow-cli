@@ -1,5 +1,5 @@
-import type { OutputFormat } from './cli-types'
 import type { InputFamily, RoutedChildKind } from './cli-dir-types'
+import type { SttBatchSummaryItem } from '../cli/commands/process-steps/step-2-extract/step-2-stt/stt-types'
 
 export type ProviderSpec = {
   provider: string
@@ -17,41 +17,6 @@ export type BatchPolicy = {
 export type ResumePolicy = {
   path?: string | undefined
   retryableOnly?: boolean | undefined
-}
-
-export type ConcurrencyPolicy = {
-  provider?: number | undefined
-  local?: number | undefined
-  segment?: number | undefined
-}
-
-export type DiarizationPolicy = {
-  enabled?: boolean | undefined
-  speakerCount?: number | undefined
-}
-
-export type OcrRenderPolicy = {
-  outputFormat?: OutputFormat | undefined
-  languages?: string | undefined
-  password?: string | undefined
-}
-
-export type SttPolicy = {
-  providers: ProviderSpec[]
-  batch?: BatchPolicy | undefined
-  resume?: ResumePolicy | undefined
-  concurrency?: ConcurrencyPolicy | undefined
-  diarization?: DiarizationPolicy | undefined
-  split?: boolean | undefined
-}
-
-export type OcrPolicy = {
-  providers: ProviderSpec[]
-  batch?: BatchPolicy | undefined
-  resume?: ResumePolicy | undefined
-  render?: OcrRenderPolicy | undefined
-  epubBackend?: 'bun' | 'calibre' | undefined
-  urlBackend?: 'defuddle' | 'firecrawl' | 'glm-reader' | undefined
 }
 
 export type ProviderCheckpoint = {
@@ -90,19 +55,6 @@ export type BatchManifest = {
   kind: RunManifest['kind']
   items: Record<string, unknown>[]
   source?: Record<string, unknown> | undefined
-}
-
-export type SttBatchSummaryItem = {
-  url?: string | undefined
-  title?: string | undefined
-  publishedAt?: string | undefined
-  outputDir: string
-  completionStatus: 'full' | 'incomplete' | 'failed' | 'skipped'
-  transcriptionService?: string | undefined
-  transcriptionModel?: string | undefined
-  captionUsed: boolean
-  captionKind?: 'manual' | 'auto' | undefined
-  captionLanguage?: string | undefined
 }
 
 export type SttBatchSummary = {

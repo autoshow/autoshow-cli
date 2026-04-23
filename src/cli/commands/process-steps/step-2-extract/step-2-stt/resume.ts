@@ -28,7 +28,7 @@ import { collectSttTargets, formatSttTargetLabel, getSttTargetKey } from './stt-
 import { readSttRunManifestEntry, writeSttBatchManifest, writeSttRunManifest } from './manifest'
 import { readBatchManifest } from '../../manifest-utils'
 import { YOUTUBE_CAPTIONS_SERVICE } from './youtube-captions'
-import type { ResumeTarget } from '../../resume/resume-types'
+import type { ResumeTarget } from '~/types'
 import { logResumeItem, logResumeSummary } from '../../resume/resume-logging'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

@@ -1,13 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { sanitizeTitleSlug } from './step-1-download/audio/metadata-utils'
-import type { BatchChildRunContext } from '~/types'
-
-type BatchChildDirectoryIdentity = {
-  slug?: string | undefined
-  title?: string | undefined
-  publishedAt?: string | undefined
-  fallbackLabel?: string | undefined
-}
+import type { BatchChildDirectoryIdentity, BatchChildRunContext } from '~/types'
 
 export const normalizeBatchChildPublishedAt = (
   publishedAt?: string

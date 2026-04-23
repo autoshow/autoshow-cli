@@ -28,7 +28,7 @@ import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retrie
 import { readEnv } from '~/utils/validate/env-utils'
 import { getDeapiBaseUrl, isDeapiSupportedSourceUrl } from './deapi'
 import { logDeapiPricingFallbackWarning, resolveDeapiTranscriptionPrice } from './deapi-pricing'
-import type { DeapiStatusPayload } from '../../stt-types'
+import type { DeapiStatusPayload } from '~/types'
 
 const INITIAL_POLL_INTERVAL_MS = 1_000
 const MAX_POLL_INTERVAL_MS = 10_000

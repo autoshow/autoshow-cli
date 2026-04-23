@@ -1,6 +1,6 @@
 import { appendFile, mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import type { TestRunArtifacts } from '../../src/types/tests-dir-types'
+import type { TestRunArtifacts } from '~/types'
 import { formatTimestampForDir } from './utils'
 
 export const createRunArtifacts = async (): Promise<TestRunArtifacts> => {

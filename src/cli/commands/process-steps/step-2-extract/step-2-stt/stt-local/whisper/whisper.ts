@@ -1,9 +1,9 @@
 import { copyFile, mkdir, readdir, rename, rm } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { pathExists, runCapture, runInherit, detectPlatform, supportsCoreML, setupUv, whisperBinaryPath, whisperBuildDir, whisperCoremlEnvDir, whisperLibDir, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
+import { pathExists, runCapture, runInherit, detectPlatform, supportsCoreML, setupUv, whisperBinaryPath, whisperBuildDir, whisperCoremlEnvDir, whisperLibDir, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
-import { downloadFile } from '~/utils/download'
+import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import { withRetry } from '~/utils/retries'
 
 const whisperBaseUrl = 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main'

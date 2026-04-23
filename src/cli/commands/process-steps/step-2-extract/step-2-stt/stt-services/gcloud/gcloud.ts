@@ -10,7 +10,7 @@ import type {
   GcloudProjectLookup,
   GcloudSttReadiness,
   GcloudSttRuntimeConfig
-} from '../../stt-types'
+} from '~/types'
 
 const GCLOUD_COMMAND_ENV = {
   CLOUDSDK_CORE_DISABLE_PROMPTS: '1'

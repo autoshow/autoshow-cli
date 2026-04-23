@@ -1,4 +1,4 @@
-import type { ParsedCommandMetric, ParsedJunitCase } from '../../../src/types/tests-dir-types'
+import type { ParsedCommandMetric, ParsedJunitCase } from '~/types'
 
 export type MatchProvenance = 'name-file' | 'name-global' | 'line-unique' | 'group-order' | 'heuristic'
 

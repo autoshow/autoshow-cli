@@ -1,10 +1,9 @@
 import OpenAI from 'openai'
 import { mkdir } from 'node:fs/promises'
 import * as l from '~/utils/logger'
-import type { Step5Metadata } from '~/types'
-import type { OpenAIImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { OpenAIImageModel, Step5Metadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
-import { getOpenAIClientConfig } from '~/utils/openai-utils'
+import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 
 export const runOpenAIImageGen = async (
   prompt: string,

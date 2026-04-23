@@ -1,5 +1,5 @@
 import type { DocumentMetadata } from '~/types'
-import type { OcrSourceKind } from './ocr-types'
+import type { OcrSourceKind } from '~/types'
 
 const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
 const OFFICE_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'])

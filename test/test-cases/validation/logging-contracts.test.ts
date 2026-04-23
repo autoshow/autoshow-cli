@@ -5,7 +5,7 @@ import { createHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
-import type { LogSinkEvent } from '~/utils/logger/types'
+import type { LogSinkEvent } from '~/types'
 
 const makeEvent = (level: LogSinkEvent['level']): LogSinkEvent => ({
   timestamp: '2026-01-01T00:00:00.000Z',

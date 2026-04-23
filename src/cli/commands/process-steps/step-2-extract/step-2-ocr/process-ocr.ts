@@ -5,12 +5,16 @@ import { validateData } from '~/utils/validate/validation'
 import {
   ExtractionOptionsSchema,
   type ExtractionOptions,
-  type ResolvedStep2Execution,
-  type ProcessDocumentOutput,
   type ExtractionMetadata,
   type ExtractionResult,
+  type OcrCompletionStatus,
+  type OcrMetadataOptions,
+  type OcrProviderSuccess,
   type PreparedDocument,
+  type ProcessDocumentOutput,
+  type ResolvedStep2Execution,
   type Step1SourceRef,
+  type TextArtifactFile,
   type OcrResumeRun
 } from '~/types'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
@@ -36,11 +40,6 @@ import { writeOcrRunManifest } from './manifest'
 import { FIRECRAWL_PRICE_NOTE } from './ocr-utils/extract-pricing'
 import { serializeOneOrMany } from '../../target-runner'
 import { writeProviderResult } from '../../manifest-utils'
-import type {
-  OcrCompletionStatus,
-  OcrProviderSuccess,
-  TextArtifactFile
-} from './ocr-types'
 import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-step2'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
@@ -291,17 +290,6 @@ const buildSuccessfulResolvedProviderStates = (
     status: 'succeeded',
     attempts: 1
   }))
-
-type OcrMetadataOptions = {
-  failures?: Array<{ service: string, model: string, message: string }>
-  web?: ProcessDocumentOutput['web']
-  source?: Step1SourceRef
-  completionStatus?: OcrCompletionStatus
-  resolvedStep2?: ResolvedStep2Execution
-  requestedProviders?: Array<{ service: string, model: string }>
-  providerStates?: Array<Record<string, unknown>>
-  missingProviders?: Array<{ service: string, model: string }>
-}
 
 const buildDocumentMetadataPayload = (
   step1Metadata: ProcessDocumentOutput['step1Metadata'],

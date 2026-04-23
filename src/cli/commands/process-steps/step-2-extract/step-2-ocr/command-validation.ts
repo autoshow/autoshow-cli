@@ -1,7 +1,7 @@
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { CLIUsageError } from '~/utils/error-handler'
 import { EPUB_INSPECT_JSON_ONLY_ERROR } from '../step-2-shared/inactive-flag-warnings'
-import type { OcrLikeContext } from './ocr-types'
+import type { OcrLikeContext } from '~/types'
 
 export const validateEpubInspectCommandFlags = (
   ctx: OcrLikeContext,

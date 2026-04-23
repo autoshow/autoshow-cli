@@ -12,15 +12,16 @@ import type {
   AggregatedPriceEstimate,
   RuntimeOptions,
   Step2Metadata,
+  StepTimingCost,
   SttCompletionStatus,
   SttProviderSuccess,
   SttTarget,
   TranscriptionResult,
+  ProcessVideoRuntimeOptions,
   StructuredRunResult,
 } from '~/types'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
-import type { StepTimingCost } from '~/utils/logger'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
@@ -56,9 +57,6 @@ import { writeRunManifest } from './manifest-utils'
 import { logWriteManifestConsoleSummary } from './write-manifest-log'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-extract/step-2-stt/youtube-captions'
 import { createMistralSttPassController } from './step-2-extract/step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
-
-type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
-  & { outputDir?: string | undefined }
 
 const toRequestedProvider = (
   target: Pick<SttTarget, 'service' | 'model'>

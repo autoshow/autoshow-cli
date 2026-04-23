@@ -7,16 +7,18 @@ import {
   sanitizeLogText
 } from '~/utils/logger/redaction'
 import {
-  LOG_LEVEL_PRIORITY,
-  type CreateLoggerOptions,
-  type LogContext,
-  type Logger,
-  type LogLevel,
-  type LogSink,
-  type LogSinkEvent,
-  type LogWriteOptions,
-  type MutableLoggerConfig
-} from '~/utils/logger/types'
+  LOG_LEVEL_PRIORITY
+} from '~/utils/logger/logger-types'
+import type {
+  CreateLoggerOptions,
+  LogContext,
+  Logger,
+  LogLevel,
+  LogSink,
+  LogSinkEvent,
+  LogWriteOptions,
+  MutableLoggerConfig
+} from '~/types'
 
 const getTimestamp = (): string => {
   return new Date().toISOString()

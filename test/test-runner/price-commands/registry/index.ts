@@ -1,4 +1,4 @@
-import type { PriceSelectionEntry } from '../../../../src/types/tests-dir-types'
+import type { PriceSelectionEntry } from '~/types'
 import { downloadRegistry } from './download'
 import { imageRegistry } from './image'
 import { musicRegistry } from './music'

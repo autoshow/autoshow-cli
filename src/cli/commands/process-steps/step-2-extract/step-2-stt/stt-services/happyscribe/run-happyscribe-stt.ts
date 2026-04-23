@@ -43,7 +43,7 @@ import type {
   HappyScribeTranscription,
   NormalizedSegment,
   NormalizedWord
-} from '../../stt-types'
+} from '~/types'
 
 const INITIAL_POLL_INTERVAL_MS = 1_000
 const MAX_POLL_INTERVAL_MS = 10_000

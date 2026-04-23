@@ -1,12 +1,16 @@
 import type * as v from 'valibot'
-import type { Logger } from '~/utils/logger/types'
+import type { Logger } from '~/types'
 import type {
+  BatchPolicy,
   BatchChildRunContext,
   BatchProcessResult,
   DeepgramResponse,
   DiarizationOptions,
   GladiaStatusResponse,
+  ProviderSpec,
   ProcessingOptions,
+  RateEstimateBase,
+  ResumePolicy,
   YtDlpVideoInfo,
   RetryClass,
   Step1Metadata,
@@ -17,12 +21,120 @@ import type {
   VideoMetadata,
   BatchManifestEntry
 } from '~/types'
-import type { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
-import type { AwsCallerIdentitySchema } from './stt-services/aws/aws'
-import type { AwsTranscribeOutputSchema } from './stt-services/aws/parse-aws-transcribe-output'
-import type { AwsTranscriptionStatusSchema } from './stt-services/aws/run-aws-stt'
-import type { GCLOUD_STT_DEFAULT_LOCATION } from './stt-services/gcloud/gcloud'
-import type { MistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
+import type { ElevenlabsSttModel } from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'
+import { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
+import { AwsCallerIdentitySchema } from './stt-services/aws/aws'
+import { AwsTranscribeOutputSchema } from './stt-services/aws/parse-aws-transcribe-output'
+import { AwsTranscriptionStatusSchema } from './stt-services/aws/run-aws-stt'
+import { GCLOUD_STT_DEFAULT_LOCATION } from './stt-services/gcloud/gcloud'
+import { MistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
+import {
+  ElevenLabsSttResponseSchema,
+  RevJobSchema,
+  RevTranscriptResponseSchema,
+  SonioxTranscriptionStatusSchema,
+  SonioxTranscriptResponseSchema,
+  SpeechmaticsCreateJobResponseSchema,
+  SpeechmaticsJobSchema,
+  SpeechmaticsTranscriptResponseSchema,
+  WhisperJsonOutputSchema
+} from '~/types/process-types'
+
+export { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
+
+export type ConcurrencyPolicy = {
+  provider?: number | undefined
+  local?: number | undefined
+  segment?: number | undefined
+}
+
+export type DiarizationPolicy = {
+  enabled?: boolean | undefined
+  speakerCount?: number | undefined
+}
+
+export type SttPolicy = {
+  providers: ProviderSpec[]
+  batch?: BatchPolicy | undefined
+  resume?: ResumePolicy | undefined
+  concurrency?: ConcurrencyPolicy | undefined
+  diarization?: DiarizationPolicy | undefined
+  split?: boolean | undefined
+}
+
+export type TranscribeEngineCapabilities = {
+  diarizationByDefault: boolean
+  supportsSpeakerCountHint: boolean
+}
+
+export type SttBatchSummaryItem = {
+  url?: string | undefined
+  title?: string | undefined
+  publishedAt?: string | undefined
+  outputDir: string
+  completionStatus: 'full' | 'incomplete' | 'failed' | 'skipped'
+  transcriptionService?: string | undefined
+  transcriptionModel?: string | undefined
+  captionUsed: boolean
+  captionKind?: 'manual' | 'auto' | undefined
+  captionLanguage?: string | undefined
+}
+
+export type EmbeddedJson = {
+  text?: string
+  segments?: Array<{
+    start?: number
+    end?: number
+    text?: string
+    speaker?: string
+  }>
+}
+
+export type OpenAICompatibleTranscriptionSegment = {
+  start?: unknown
+  end?: unknown
+  text?: unknown
+}
+
+export type OpenAICompatibleTranscriptionResponse = {
+  text?: unknown
+  segments?: unknown
+}
+
+export type WhisperJsonOutput = v.InferOutput<typeof WhisperJsonOutputSchema>
+export type ElevenLabsSttResponse = v.InferOutput<typeof ElevenLabsSttResponseSchema>
+export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscriptionStatusSchema>
+export type SonioxTranscriptResponse = v.InferOutput<typeof SonioxTranscriptResponseSchema>
+export type RevJob = v.InferOutput<typeof RevJobSchema>
+export type RevTranscriptResponse = v.InferOutput<typeof RevTranscriptResponseSchema>
+export type SpeechmaticsCreateJobResponse = v.InferOutput<typeof SpeechmaticsCreateJobResponseSchema>
+export type SpeechmaticsJob = v.InferOutput<typeof SpeechmaticsJobSchema>
+export type SpeechmaticsTranscriptResponse = v.InferOutput<typeof SpeechmaticsTranscriptResponseSchema>
+
+export type Step2TimingMetadata = {
+  queueWaitMs?: number | undefined
+  transcribeMs?: number | undefined
+  uploadMs?: number | undefined
+  createMs?: number | undefined
+  createCount?: number | undefined
+  pollMs?: number | undefined
+  pollSleepMs?: number | undefined
+  pollCount?: number | undefined
+  transcriptMs?: number | undefined
+  remoteProcessingMs?: number | undefined
+  cleanupMs?: number | undefined
+  requestCount?: number | undefined
+  retryCount?: number | undefined
+  rateLimitCount?: number | undefined
+  blockedCount?: number | undefined
+  degradedCount?: number | undefined
+  backfillCount?: number | undefined
+}
+
+export type ElevenlabsSttRateEstimate = RateEstimateBase<'elevenlabs', ElevenlabsSttModel> & {
+  costPerHourCents: number
+  costPerMinuteCents: number
+}
 
 export type SttTarget = {
   service: TranscribeEngine
@@ -482,7 +594,7 @@ export type GladiaUtterance = NonNullable<GladiaTranscription['utterances']>[num
 
 export type SplitPolicyTarget = Pick<SttTarget, 'service' | 'model'>
 
-export type TableLogger = Pick<Logger, 'write'>
+export type SttTableLogger = Pick<Logger, 'write'>
 
 export type SttCacheEvent = {
   artifact: string

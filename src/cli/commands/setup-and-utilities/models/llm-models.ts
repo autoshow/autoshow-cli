@@ -1,8 +1,7 @@
 import { getLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { CLIUsageError } from '~/utils/error-handler'
-import type { GroqModel, AnthropicModel, MinimaxModel } from '../setup-and-utilities-types'
-export type { GroqModel, AnthropicModel, MinimaxModel } from '../setup-and-utilities-types'
+import type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
 
 export const SUPPORTED_OPENAI_MODELS = [
   'gpt-5.4',

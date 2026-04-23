@@ -13,7 +13,7 @@ import type {
   TranscriptionEvidenceWord,
   TranscriptionResult
 } from '~/types'
-import type { SttArtifactIdentity } from '../stt-types'
+import type { SttArtifactIdentity } from '~/types'
 
 const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'whisper',

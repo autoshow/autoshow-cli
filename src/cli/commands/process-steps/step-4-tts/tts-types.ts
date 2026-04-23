@@ -1,4 +1,11 @@
-import type { ProcessingOptions, Step4Metadata, TtsProvider } from '~/types'
+import type {
+  CostEstimateBase,
+  ElevenlabsTtsModel,
+  ProcessingOptions,
+  RateEstimateBase,
+  Step4Metadata,
+  TtsProvider
+} from '~/types'
 
 export type TtsOptions = Pick<
   ProcessingOptions,
@@ -68,4 +75,27 @@ export type GeminiMultiSpeakerConfig = {
   speaker1Voice: string
   speaker2Name: string
   speaker2Voice: string
+}
+
+export type TtsRateEstimate = RateEstimateBase<TtsProvider> & {
+  costPer1kCharactersCents?: number
+  inputCostPer1MCharactersCents?: number
+  outputCostPer1MCharactersCents?: number
+}
+
+export type TtsCostEstimate = CostEstimateBase<TtsProvider> & {
+  costPer1kCharactersCents?: number
+  inputCostPer1MCharactersCents?: number
+  outputCostPer1MCharactersCents?: number
+  characterCount: number
+}
+
+export type ElevenlabsTtsCostEstimate = CostEstimateBase<'elevenlabs', ElevenlabsTtsModel> & {
+  characterCount: number
+  costPer1kCharactersCents: number
+}
+
+export type ElevenlabsTtsRateEstimate = RateEstimateBase<'elevenlabs', ElevenlabsTtsModel> & {
+  costPer1kCharactersCents: number
+  sampleCostFor1kCharactersCents: number
 }

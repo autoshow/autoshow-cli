@@ -22,7 +22,7 @@ import type {
   YoutubeCaptionMetadataFile,
   YoutubeCaptionSelection,
   YoutubeCaptionTrack
-} from './stt-types'
+} from '~/types'
 
 export const YOUTUBE_CAPTIONS_SERVICE = 'youtube-captions' as const
 export const YOUTUBE_CAPTIONS_MODEL = 'subtitle-track' as const

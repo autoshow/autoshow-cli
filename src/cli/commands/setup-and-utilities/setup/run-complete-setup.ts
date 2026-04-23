@@ -2,15 +2,14 @@ import { stat, mkdir, rm } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import * as v from 'valibot'
 import type { RunResult, RunOptions, SetupPlatform } from '~/types'
-import type { SetupStepId } from '../../setup-and-utilities-types'
-import { downloadFile } from '~/utils/download'
-import { consumeDownloadFallbackEvents } from '~/utils/download'
+import type { SetupStepId } from '~/types'
+import { downloadFile, consumeDownloadFallbackEvents } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import * as l from '~/utils/logger'
 import { createHumanTable, logKeyValueTable, logSingleRowTable } from '~/utils/logger/human-table'
 import { SUPPORTED_LLAMA_MODELS, SUPPORTED_KITTEN_TTS_MODELS } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry } from '~/utils/retries'
 import { validateJson } from '~/utils/validate/validation'
-import { setupYtDependencies } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-audio/audio'
+import { setupYtDependencies } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-audio/audio'
 import { setupWhisper, downloadWhisperModel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/whisper/whisper'
 import { checkLlamaInstalled, runLlamaSetup } from '~/cli/commands/process-steps/step-3-write/write-local/llama/llama'
 import { setupReverb } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb'
@@ -24,7 +23,7 @@ import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-extract/
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
 import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
 import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
-import { setupCalibreDocumentTools } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
+import { setupCalibreDocumentTools } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
 import { setupTesseractOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/tesseract-setup'
 import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
@@ -44,10 +43,7 @@ import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
-export type { RunResult, RunOptions } from '~/types'
-export type { SetupStepId } from '../../setup-and-utilities-types'
-
-const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../../')
+const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
 const RUNTIME = join(PROJECT_ROOT, 'runtime')
 
 export const whisperBinaryPath = join(RUNTIME, 'bin/whisper-cli')

@@ -6,7 +6,7 @@ import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cl
 import { ProcessingOptionsSchema, type BatchChildRunContext, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
 import { processStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/process-stt'
-import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/batch'
+import type { SttBatchCoordinator } from '~/types'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
 import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import {

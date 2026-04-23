@@ -1,5 +1,4 @@
-import type { RuntimeOptions, SttTarget } from '~/types'
-import type { Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
+import type { RuntimeOptions, Step2ProviderSelectionFilter, SttTarget } from '~/types'
 import { collectSttProviderSpecs, resolveDiarizationOptions } from './cli'
 
 const sanitizeSegment = (value: string): string =>

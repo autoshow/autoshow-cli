@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { ensureDirectory, exec } from '~/utils/cli-utils'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
-import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
+import { calibreBin } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
 import { validateData } from '~/utils/validate/validation'
 import {
   buildDocumentStep1Slug,
@@ -40,7 +40,7 @@ const normalizeEbookToEpub = async (
   return { epubPath }
 }
 
-const mapFormat = (detected: NonNullable<import('~/types/process-types').DetectResult>): DocFormat => {
+const mapFormat = (detected: NonNullable<import('~/types').DetectResult>): DocFormat => {
   if (detected === 'pdf') return 'pdf'
   if (detected === 'epub') return 'epub'
   if (detected === 'docx') return 'docx'

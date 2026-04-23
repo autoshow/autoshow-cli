@@ -8,7 +8,7 @@ import type {
   LinksSelection,
   ModelLinksData,
   RunLinksOptions
-} from '../setup-and-utilities-types'
+} from '~/types'
 
 const data = modelLinks as ModelLinksData
 export const LINKS_OUTPUT_DIR = new URL('../../../../../project/links/', import.meta.url)

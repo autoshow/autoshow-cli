@@ -20,7 +20,7 @@ import type {
   TextArtifactFile,
   TocPageAnalysis,
   TocScanOptions
-} from '../ocr-types'
+} from '~/types'
 
 const CHAPTER_SLUG_MAX_LENGTH = 60
 const ROMAN_RE = /^[ivxlcdm]+$/i

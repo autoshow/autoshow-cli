@@ -2,7 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { ensureDirectory } from '~/utils/cli-utils'
 import type { Step3Metadata, StructuredRunResult } from '~/types'
-import type { RenderedTextArtifactResult } from './write-types'
+import type { RenderedTextArtifactResult } from '~/types'
 
 const TEXT_INPUT_EXTENSIONS = new Set(['.md', '.txt'])
 const TRACK_LINE_PATTERN = /^\s*(\d+)\.\s+(.+?)\s*$/

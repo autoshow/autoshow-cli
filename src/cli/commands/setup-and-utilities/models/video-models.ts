@@ -1,6 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { GeminiVideoModel, MinimaxVideoModel } from '../setup-and-utilities-types'
-export type { GeminiVideoModel, MinimaxVideoModel } from '../setup-and-utilities-types'
+import type { GeminiVideoModel, MinimaxVideoModel } from '~/types'
 
 export const SUPPORTED_GEMINI_VIDEO_MODELS = [
   'veo-3.1-fast-generate-preview',

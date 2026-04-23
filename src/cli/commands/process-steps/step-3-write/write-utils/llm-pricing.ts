@@ -1,5 +1,5 @@
 import { getLlmCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import type { ResolvedLLMConfig } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
+import type { ResolvedLLMConfig } from '~/types'
 import type { LlmRateEstimate } from '~/types'
 
 

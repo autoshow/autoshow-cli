@@ -1,4 +1,4 @@
-import type { OcrProviderCapability, OcrProviderKey, OcrSourceKind } from './ocr-types'
+import type { OcrProviderCapability, OcrProviderKey, OcrSourceKind } from '~/types'
 
 export const OCR_CAPABILITY_MATRIX: Record<OcrProviderKey, OcrProviderCapability> = {
   tesseract: {

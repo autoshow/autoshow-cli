@@ -1,7 +1,7 @@
 import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
-import type { HappyScribeOrganization, HappyScribeOrganizationSelection } from '../../stt-types'
+import type { HappyScribeOrganization, HappyScribeOrganizationSelection } from '~/types'
 
 const ORGANIZATION_REQUEST_TIMEOUT_MS = 60_000
 

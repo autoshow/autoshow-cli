@@ -1,5 +1,5 @@
 import { exec, commandExists } from '~/utils/cli-utils'
-import { setupDocumentTools } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/document'
+import { setupDocumentTools } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/document'
 import type { MutoolDocInfo } from '~/types'
 
 const parsePageCount = (stdout: string): number => {

@@ -8,7 +8,15 @@ import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/pro
 import { ensureDirectory } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
-import { DocumentMetadataSchema, type BatchChildRunContext, type HtmlArticleBackend, type PreparedDocument, type WebArticleMetadata } from '~/types'
+import {
+  DocumentMetadataSchema,
+  type BatchChildRunContext,
+  type ExtractHtmlToMarkdownInput,
+  type ExtractHtmlToMarkdownResult,
+  type HtmlArticleBackend,
+  type PreparedDocument,
+  type WebArticleMetadata
+} from '~/types'
 import { runGlmReader } from './glm-reader'
 
 const HTML_FETCH_TIMEOUT_MS = 15000
@@ -190,20 +198,6 @@ const normalizeMarkdown = (value: unknown): string => {
     return ''
   }
   return value.trim()
-}
-
-type ExtractHtmlToMarkdownInput = {
-  html: string
-  documentUrl: string
-  sourceUrl?: string
-  finalUrl?: string
-}
-
-type ExtractHtmlToMarkdownResult = {
-  markdown: string
-  web: WebArticleMetadata
-  title?: string
-  author?: string
 }
 
 const ensureMeaningfulMarkdown = (

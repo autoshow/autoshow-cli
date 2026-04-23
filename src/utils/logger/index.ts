@@ -1,11 +1,19 @@
 import { createLogger } from '~/utils/logger/core'
 import { runWithLogContext } from '~/utils/logger/context-store'
-import { createReporter, type Reporter, type StepTimingCost } from '~/utils/logger/reporter'
+import { createReporter } from '~/utils/logger/reporter'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
 import { enableJsonResult, emitResult, isJsonResultActive } from '~/utils/logger/result-emitter'
-import type { LogContext, Logger, LogLevel, LogSink } from '~/utils/logger/types'
-import { LOG_LEVELS } from '~/utils/logger/types'
+import type {
+  GlobalLogger,
+  LogContext,
+  LogFormat,
+  Logger,
+  LogLevel,
+  LogSink,
+  ReconfigureOptions
+} from '~/types'
+import { LOG_LEVELS } from '~/utils/logger/logger-types'
 
 export { createLogger, createNoopSink } from '~/utils/logger/core'
 export { createHumanSink } from '~/utils/logger/sinks/human-sink'
@@ -14,14 +22,6 @@ export { runWithLogContext }
 export { createReporter }
 export { emitResult, isJsonResultActive }
 export { CLIUsageError, isLoggerUsageError, usageError } from '~/utils/logger/usage-error'
-export type { Logger, LogEvent, LogLevel, LogCategory, LogContext, LogMetadata, LogSink, LogSinkEvent, LogWriteOptions } from '~/utils/logger/types'
-export type { Reporter, StepTimingCost }
-
-export type GlobalLogger = Logger & {
-  report: Reporter
-}
-
-type LogFormat = 'auto' | 'human' | 'json' | 'both'
 
 const parseLogFormat = (value: string | undefined): LogFormat => {
   const normalized = value?.trim().toLowerCase()
@@ -93,12 +93,6 @@ let activeLogger = attachReport(createLogger({
   minLevel: parseMinLogLevel(process.env['AUTOSHOW_LOG_LEVEL']),
   sinks: createConfiguredSinks()
 }))
-
-export type ReconfigureOptions = {
-  verbose?: boolean
-  quiet?: boolean
-  json?: boolean
-}
 
 export const reconfigureLogger = (opts: ReconfigureOptions): void => {
   let minLevel: LogLevel | undefined

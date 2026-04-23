@@ -12,7 +12,7 @@ import type {
   AwsSttConfigDefaults,
   AwsSttReadiness,
   AwsSttRuntimeConfig
-} from '../../stt-types'
+} from '~/types'
 
 const AWS_STT_COMMAND_ENV = {
   AWS_PAGER: '',

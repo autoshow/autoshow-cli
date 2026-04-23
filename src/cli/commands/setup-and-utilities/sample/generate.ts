@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
-import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
-import type { FixtureDef, GenerateResult, ToolName } from '../setup-and-utilities-types'
+import { calibreBin } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
+import type { FixtureDef, GenerateResult, ToolName } from '~/types'
 
 // ─── Media generation helpers ─────────────────────────────────────────────
 

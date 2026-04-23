@@ -1,16 +1,15 @@
 import { join } from 'node:path'
 import type {
+  BatchManifestKind,
   BatchManifest,
   BatchManifestEntry,
   ExtractBatchManifest,
   ExtractBatchManifestItem,
   ProviderResult,
+  RunManifestKind,
   RunManifest,
   RoutedChildKind
 } from '~/types'
-
-export type RunManifestKind = RunManifest['kind']
-export type BatchManifestKind = BatchManifest['kind']
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

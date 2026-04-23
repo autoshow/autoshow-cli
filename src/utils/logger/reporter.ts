@@ -1,42 +1,25 @@
 import { basename } from 'node:path'
-import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/aggregate-pricing'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration } from '~/utils/logger/formatters'
 import { createHumanTable, logLocationsTable, toHumanTableCell } from '~/utils/logger/human-table'
 import { emitResult } from '~/utils/logger/result-emitter'
-import type { HumanLogTable, HumanLogTableRow, Logger } from '~/utils/logger/types'
-
-export type StepTimingCost = {
-  label: string
-  providerModel?: string
-  processingTime: number
-  cost: number
-}
-
-export type ReporterMetricValue = string | number | boolean | null
-
-export type HumanCompletionSection = keyof HumanCompletionTables
-
-export type CompleteOptions = {
-  metrics?: Record<string, ReporterMetricValue>
-  steps?: StepTimingCost[]
-  totalTimeMs?: number
-  totalCost?: number
-  summaryMessage?: string
-  hideHumanSections?: readonly HumanCompletionSection[]
-}
-
-export type Reporter = {
-  expectedOutput: (outputDir: string, files: string[]) => void
-  estimate: (estimate: AggregatedPriceEstimate) => void
-  complete: (outputDir: string, files: Record<string, string>, options?: CompleteOptions) => void
-}
+import type {
+  AggregatedPriceEstimate,
+  CompleteOptions,
+  EstimateMode,
+  HumanCompletionTables,
+  HumanLogTableRow,
+  Logger,
+  Reporter,
+  ReporterMetricValue,
+  StepEstimate,
+  StepSummaryEntry,
+  StepTimingCost
+} from '~/types'
 
 const formatSttProvider = (provider: string): string => {
   return provider === 'whisper' ? 'whisper.cpp' : provider
 }
-
-type EstimateMode = 'human' | 'raw'
 
 const costField = (mode: EstimateMode, cents: number): string | number =>
   mode === 'human' ? formatCost(cents) : cents
@@ -119,20 +102,6 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
     default:
       assertNever(estimate)
   }
-}
-
-type StepSummaryEntry = {
-  step: string
-  providerModel?: string
-  time: string
-  cost: string
-}
-
-export type HumanCompletionTables = {
-  artifacts?: HumanLogTable
-  providers?: HumanLogTable
-  metrics?: HumanLogTable
-  timing?: HumanLogTable
 }
 
 const collectColumns = (rows: ReadonlyArray<Record<string, unknown>>): string[] => {

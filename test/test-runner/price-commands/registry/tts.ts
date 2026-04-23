@@ -1,4 +1,4 @@
-import type { PriceSelectionEntry } from '../../../../src/types/tests-dir-types'
+import type { PriceSelectionEntry } from '~/types'
 import { command, exact } from '../helpers'
 
 export const ttsRegistry: PriceSelectionEntry[] = [

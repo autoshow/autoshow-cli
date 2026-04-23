@@ -1,6 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { ElevenlabsMusicModel, MinimaxMusicModel } from '../setup-and-utilities-types'
-export type { ElevenlabsMusicModel, MinimaxMusicModel } from '../setup-and-utilities-types'
+import type { ElevenlabsMusicModel, MinimaxMusicModel } from '~/types'
 
 export const SUPPORTED_ELEVENLABS_MUSIC_MODELS = [
   'music_v1'

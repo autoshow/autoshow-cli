@@ -4,15 +4,12 @@ import {
   selectCheapestLlmModel,
   selectCheapestSttModel,
   selectCheapestTtsModel,
-  type CheapestVideoSelection,
   selectCheapestVideoSelection
 } from '../../src/cli/commands/setup-and-utilities/models/cheapest-models'
+import type { ApiCheapPriceCommand, CheapestVideoSelection, GeminiImageModel, VideoSelection } from '~/types'
 import {
-  supportsGeminiImageSize,
-  type GeminiImageModel
+  supportsGeminiImageSize
 } from '../../src/cli/commands/setup-and-utilities/models/model-options'
-import type { ApiCheapPriceCommand, VideoSelection } from '../../src/types/tests-dir-types'
-export type { ApiCheapPriceCommand } from '../../src/types/tests-dir-types'
 
 const toVideoSelection = (selection: CheapestVideoSelection): VideoSelection => ({
   provider: selection.provider,

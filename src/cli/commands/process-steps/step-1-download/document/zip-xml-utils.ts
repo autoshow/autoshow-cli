@@ -3,8 +3,6 @@
 import { inflateRawSync } from 'node:zlib'
 import { scanTagBlocks, innerXml, firstTagText } from '~/utils/xml-scan'
 import type { ZipXmlPage, ZipXmlResult, ZipEntry } from '~/types'
-export type { ZipXmlPage, ZipXmlResult } from '~/types'
-
 
 const EOCD_SIG = 0x06054b50
 const CD_SIG   = 0x02014b50

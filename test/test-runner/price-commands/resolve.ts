@@ -1,4 +1,4 @@
-import type { PriceCommandSpec } from '../../../src/types/tests-dir-types'
+import type { PriceCommandSpec } from '~/types'
 import { formatSelectedPathsLabel, resolveSelectedFiles } from '../path-selection'
 import { dedupeResolvedCommands, selectorMatchesFile } from './helpers'
 import { PRICE_SELECTION_REGISTRY } from './registry'

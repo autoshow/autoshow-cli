@@ -28,7 +28,7 @@ import {
   resolveAwsMaxSpeakerLabels
 } from './aws'
 import { parseAwsTranscribeOutput } from './parse-aws-transcribe-output'
-import type { AwsCliStage, AwsTranscriptionStatus } from '../../stt-types'
+import type { AwsCliStage, AwsTranscriptionStatus } from '~/types'
 
 const INITIAL_POLL_INTERVAL_MS = 2000
 const MAX_POLL_INTERVAL_MS = 10000

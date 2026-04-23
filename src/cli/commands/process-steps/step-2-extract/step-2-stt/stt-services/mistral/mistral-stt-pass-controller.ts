@@ -1,4 +1,4 @@
-import type { MistralAvailabilityWaiter } from '../../stt-types'
+import type { MistralAvailabilityWaiter } from '~/types'
 
 const wakeWaiters = (
   waiters: MistralAvailabilityWaiter[]

@@ -1,4 +1,4 @@
-import type { HumanLogTableRow } from '~/utils/logger/types'
+import type { HumanLogTableRow } from '~/types'
 import type { SttBatchProviderProfile, SttBatchSchedulerSnapshot, SttTarget } from '~/types'
 import { formatSttTargetLabel, getSttTargetKey } from '../stt-targets'
 

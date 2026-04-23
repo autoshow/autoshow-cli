@@ -1,4 +1,4 @@
-import type { LogSink } from '~/utils/logger/types'
+import type { LogSink } from '~/types'
 
 const serializeEvent = (event: Parameters<LogSink>[0]): string => {
   const payload: Record<string, unknown> = {

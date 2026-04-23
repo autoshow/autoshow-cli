@@ -1,11 +1,10 @@
 import * as v from 'valibot'
 import * as l from '~/utils/logger'
-import type { Step5Metadata } from '~/types'
-import type { MinimaxImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { MinimaxImageModel, Step5Metadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
-import { MinimaxBaseRespSchema } from '~/utils/minimax-utils'
+import { MinimaxBaseRespSchema } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 

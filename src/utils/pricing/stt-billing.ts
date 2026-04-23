@@ -1,15 +1,5 @@
 import { getSttBilling, getSttCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
-
-type SttBillingConfig = {
-  roundingIncrementSeconds?: number
-  minimumSeconds?: number
-}
-
-export type BilledSttCost = {
-  requestedDurationSeconds: number
-  billedDurationSeconds: number
-  cost: number
-}
+import type { BilledSttCost, SttBillingConfig } from '~/types'
 
 const normalizeDurationSeconds = (durationSeconds: number): number =>
   Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0

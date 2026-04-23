@@ -1,4 +1,4 @@
-import type { PriceCommandSpec, PriceSelectionEntry } from '../../../src/types/tests-dir-types'
+import type { PriceCommandSpec, PriceSelectionEntry } from '~/types'
 
 export const exact = (selector: string, entries: PriceCommandSpec[]): PriceSelectionEntry[] => {
   return entries.map(entry => ({

@@ -1,65 +1,18 @@
 import { copyFile, rm } from 'node:fs/promises'
 import { extname } from 'node:path'
 import { exec } from '~/utils/cli-utils'
-
-type FfprobeStream = {
-  index?: unknown
-  codec_type?: unknown
-  codec_name?: unknown
-  sample_rate?: unknown
-  channels?: unknown
-  bit_rate?: unknown
-  disposition?: unknown
-}
-
-type FfprobeFormat = {
-  format_name?: unknown
-  duration?: unknown
-  bit_rate?: unknown
-}
-
-type FfprobePayload = {
-  streams?: unknown
-  format?: unknown
-}
-
-export type NormalizedAudioExtension = '.mp3' | '.m4a' | '.ogg' | '.flac'
-export type NormalizedAudioFormat = 'mp3' | 'ipod' | 'ogg' | 'flac'
-export type AudioNormalizationMode = 'copy-file' | 'copy-stream' | 'transcode-aac' | 'transcode-mp3' | 'transcode-flac'
-export type AudioNormalizationProfile = 'default' | 'hosted-stt' | 'hosted-stt-mp3'
-
-export type AudioStreamProbe = {
-  index: number
-  codecName: string
-  sampleRate?: number | undefined
-  channels?: number | undefined
-  bitRate?: number | undefined
-}
-
-export type MediaProbe = {
-  formatNames: string[]
-  durationSeconds?: number | undefined
-  bitRate?: number | undefined
-  hasVideo: boolean
-  hasNonAudioStreams: boolean
-  audioStreamCount: number
-  audioStream: AudioStreamProbe
-}
-
-export type NormalizedAudioPlan = {
-  profile: AudioNormalizationProfile
-  mode: AudioNormalizationMode
-  outputExtension: NormalizedAudioExtension
-  outputFormat: NormalizedAudioFormat
-  outputCodecName: string
-  sourceCodecName: string
-  reason: string
-  stripMetadata: boolean
-  stripChapters: boolean
-  targetBitRate?: number | undefined
-  targetSampleRate?: number | undefined
-  targetChannels?: number | undefined
-}
+import type {
+  AudioNormalizationMode,
+  AudioNormalizationProfile,
+  AudioStreamProbe,
+  FfprobeFormat,
+  FfprobePayload,
+  FfprobeStream,
+  MediaProbe,
+  NormalizedAudioExtension,
+  NormalizedAudioFormat,
+  NormalizedAudioPlan
+} from '~/types'
 
 const HOSTED_STT_MAX_BIT_RATE = 96_000
 

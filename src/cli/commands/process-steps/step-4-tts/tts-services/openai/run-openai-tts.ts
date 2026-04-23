@@ -1,11 +1,11 @@
 import OpenAI from 'openai'
-import type { Step4Metadata } from '~/types'
+import type { OpenAITtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
-import { OPENAI_DEFAULT_TTS_VOICE, type OpenAITtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { OPENAI_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
-import { getOpenAIClientConfig } from '~/utils/openai-utils'
+import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 
 const MAX_CHARS_PER_CHUNK = 4000
 

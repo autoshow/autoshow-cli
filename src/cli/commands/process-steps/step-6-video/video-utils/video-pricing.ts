@@ -1,4 +1,5 @@
-import { type GeminiVideoModel, type MinimaxVideoModel, validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { GeminiVideoModel, MinimaxVideoModel, VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
+import { validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getVideoModelMeta } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
   normalizeGeminiDuration,
@@ -7,7 +8,6 @@ import {
   normalizeMinimaxResolution,
   isMinimaxHailuoModel
 } from './video-normalization'
-import type { VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
 

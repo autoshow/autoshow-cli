@@ -1,4 +1,4 @@
-import type { PriceCommandResult, TestRunArtifacts } from '../../../src/types/tests-dir-types'
+import type { PriceCommandResult, TestRunArtifacts } from '~/types'
 import { normalizeRepoPath } from '../utils'
 import { buildBudgetRunFields } from './run-metadata'
 import type { BudgetPreflightSummary } from './types'

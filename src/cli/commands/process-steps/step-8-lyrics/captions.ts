@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import type { CaptionCue } from './lyrics-types'
+import type { CaptionCue } from '~/types'
 
 const normalizeText = (text: string): string =>
   text.replace(/\r\n/g, '\n').replace(/[ \t]+\n/g, '\n').trim()

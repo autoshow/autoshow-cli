@@ -1,5 +1,5 @@
-import type { OcrPolicy, ProviderSpec, RuntimeOptions } from '~/types'
-import { collectStep2ProviderSpecs, type Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
+import type { OcrPolicy, ProviderSpec, RuntimeOptions, Step2ProviderSelectionFilter } from '~/types'
+import { collectStep2ProviderSpecs } from '../step-2-shared/provider-registry'
 
 export const collectOcrProviderSpecs = (
   options: Pick<RuntimeOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'step2SelectionOrigins' | 'mistralOcrModel' | 'mistralOcrModels' | 'glmOcrModel' | 'glmOcrModels' | 'openaiOcrModel' | 'openaiOcrModels' | 'anthropicOcrModel' | 'anthropicOcrModels' | 'geminiOcrModel' | 'geminiOcrModels'>,
