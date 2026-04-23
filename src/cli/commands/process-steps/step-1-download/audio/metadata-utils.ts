@@ -1,4 +1,4 @@
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { validateData, validateDataSafe } from '~/utils/validate/validation'
 import { exec } from '~/utils/cli-utils'
 import { YtDlpVideoInfoSchema, VideoMetadataSchema, type Step1SourceRef, type VideoMetadata, type YtDlpVideoInfo } from '~/types'

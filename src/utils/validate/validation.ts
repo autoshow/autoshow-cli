@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 const formatValidationIssues = (issues: { nested?: unknown }): string => {
   const nested = issues.nested

@@ -1,4 +1,4 @@
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 export const setupGeminiImageGen = async (): Promise<void> => {
   const apiKey = process.env['GEMINI_API_KEY']

@@ -33,7 +33,7 @@ import {
   validateGeminiMultiSpeakerTranscript
 } from './tts-services/gemini/gemini-tts-config'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 const KITTEN_PYTHON_VERSION = '3.12'
 

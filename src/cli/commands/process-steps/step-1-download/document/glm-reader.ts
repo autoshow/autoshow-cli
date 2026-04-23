@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import type { WebArticleMetadata } from '~/types'
 import { validateData } from '~/utils/validate/validation'
-import { ensureGlmApiKey, resolveGlmBaseUrl } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/glm-ocr/glm'
+import { ensureGlmApiKey, resolveGlmBaseUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
 
 const GlmReaderResponseSchema = v.looseObject({
   reader_result: v.looseObject({

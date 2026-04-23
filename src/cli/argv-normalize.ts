@@ -1,6 +1,6 @@
 import { PROCESS_COMMANDS } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
-import { redactCliArgv } from '~/logger/redaction'
+import { redactCliArgv } from '~/utils/logger/redaction'
 
 export const knownCommands = new Set<string>([
   ...PROCESS_COMMANDS,

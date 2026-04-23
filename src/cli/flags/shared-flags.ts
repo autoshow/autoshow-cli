@@ -8,7 +8,7 @@ import {
   SUPPORTED_GROK_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { getStep2ProviderFlags } from '~/cli/commands/process-steps/step-2-shared/provider-registry'
+import { getStep2ProviderFlags } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 export const priceFlag = {
   price: {

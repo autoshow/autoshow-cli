@@ -1,6 +1,6 @@
 import type { BatchSource, BatchItem } from './batch/batch-types'
 import { exec } from '~/utils/cli-utils'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import type { YtDlpFlatEntry, YtDlpListOptions } from '~/types'
 import { buildYtDlpFailureMessage, buildYtDlpListArgs } from '../audio/yt-dlp-options'
 

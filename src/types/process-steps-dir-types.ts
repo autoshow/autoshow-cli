@@ -72,6 +72,6 @@ export type ZipXmlResult = {
   totalPages: number
 }
 
-export type { ZipEntry } from '~/cli/commands/process-steps/step-2-ocr/ocr-types'
+export type { ZipEntry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-types'
 
 export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'

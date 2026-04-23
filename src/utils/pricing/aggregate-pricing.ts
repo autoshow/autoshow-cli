@@ -7,19 +7,19 @@ import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-t
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
-import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-duration'
-import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-stt/stt-utils/elevenlabs-stt-pricing'
-import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { isDeapiSupportedSourceUrl } from '~/cli/commands/process-steps/step-2-stt/stt-services/deapi/deapi'
+import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-duration'
+import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/elevenlabs-stt-pricing'
+import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
+import { isDeapiSupportedSourceUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi'
 import {
   logDeapiPricingFallbackWarning,
   resolveDeapiTranscriptionPrice
-} from '~/cli/commands/process-steps/step-2-stt/stt-services/deapi/deapi-pricing'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi-pricing'
 import {
   buildHappyScribeRegistryEstimate,
   resolveHappyScribePriceNotes
-} from '~/cli/commands/process-steps/step-2-stt/stt-services/happyscribe/happyscribe-pricing'
-import { resolveYoutubeCaptionEstimateTargets } from '~/cli/commands/process-steps/step-2-stt/youtube-captions'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/happyscribe/happyscribe-pricing'
+import { resolveYoutubeCaptionEstimateTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/youtube-captions'
 import {
   getExtractEstimation,
   getImageEstimation,
@@ -39,11 +39,11 @@ import {
   estimateGlmOcrCost,
   estimateMistralOcrCost,
   estimateOpenAIOcrCost
-} from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import { resolveInputRoutingForCommand } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { estimatePromptTokensFromText, readPromptFileText } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
-import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-shared/inactive-flag-warnings'
+import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/inactive-flag-warnings'
 export type { StepEstimate, AggregatedPriceEstimate } from '~/types'
 
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4

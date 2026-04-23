@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai'
 import { mkdir } from 'node:fs/promises'
 import { basename } from 'node:path'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import type { Step5Metadata } from '~/types'
 import type { GeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'

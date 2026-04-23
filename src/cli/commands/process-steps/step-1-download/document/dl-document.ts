@@ -13,7 +13,7 @@ import {
 import { DocumentMetadataSchema, type BatchChildRunContext, type DocFormat, type PreparedDocument, type PreparedDocumentMetadata, type Step1SourceRef } from '~/types'
 import { detectDocumentFormat } from './detect-format'
 import { getDocumentInfo } from './mutool-utils'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 const EBOOK_FORMATS = new Set(['mobi', 'azw3', 'fb2', 'lit'])
 

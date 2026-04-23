@@ -8,7 +8,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE
 } from '../../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
-import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
+import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
 
 test('rejects invalid gcloud model', async () => {
   const result = await runCommand([

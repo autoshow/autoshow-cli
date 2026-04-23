@@ -1,7 +1,7 @@
 import { rm } from 'node:fs/promises'
 import { commandExists, pathExists, runCapture, runInherit, kittenTtsUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
-import * as l from '~/logger'
-import { createHumanTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { createHumanTable } from '~/utils/logger/human-table'
 
 const PYTHON_VERSION = '3.12'
 

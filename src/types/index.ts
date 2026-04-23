@@ -31,6 +31,6 @@ export type {
   SttManifestProviderSummary,
   SttBatchItemSummary
 } from '../cli/commands/process-steps/step-1-download/download-types'
-export type * from '../cli/commands/process-steps/step-2-ocr/ocr-types'
-export type * from '../cli/commands/process-steps/step-2-stt/stt-types'
+export type * from '../cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-types'
+export type * from '../cli/commands/process-steps/step-2-extract/step-2-stt/stt-types'
 export type * from '../cli/commands/process-steps/step-4-tts/tts-types'

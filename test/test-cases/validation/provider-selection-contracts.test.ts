@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
-import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
-import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
+import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import {
   collectStep2ProviderSpecs,
   getStep2ProviderSelectionFlagNames,
   normalizeStep2ArgvAliases
-} from '~/cli/commands/process-steps/step-2-shared/provider-registry'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 describe('provider selection contracts', () => {
   test('STT provider canonical ordering is stable', () => {

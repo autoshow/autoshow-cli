@@ -1,7 +1,7 @@
-import { l, type Logger } from '~/logger'
-import { formatCost, formatDuration } from '~/logger/formatters'
-import { createHumanTable, logLocationsTable } from '~/logger/human-table'
-import type { HumanLogTable } from '~/logger/types'
+import { l, type Logger } from '~/utils/logger'
+import { formatCost, formatDuration } from '~/utils/logger/formatters'
+import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
+import type { HumanLogTable } from '~/utils/logger/types'
 import type {
   ActualCostBreakdown,
   EstimatedCostBreakdown,

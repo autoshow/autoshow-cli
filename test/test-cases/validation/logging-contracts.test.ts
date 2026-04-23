@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
-import { createHumanTable } from '~/logger/human-table'
-import { sanitizeLogText } from '~/logger/redaction'
-import { createHumanSink } from '~/logger/sinks/human-sink'
-import { createJsonSink } from '~/logger/sinks/json-sink'
-import type { LogSinkEvent } from '~/logger/types'
+import { createHumanTable } from '~/utils/logger/human-table'
+import { sanitizeLogText } from '~/utils/logger/redaction'
+import { createHumanSink } from '~/utils/logger/sinks/human-sink'
+import { createJsonSink } from '~/utils/logger/sinks/json-sink'
+import type { LogSinkEvent } from '~/utils/logger/types'
 
 const makeEvent = (level: LogSinkEvent['level']): LogSinkEvent => ({
   timestamp: '2026-01-01T00:00:00.000Z',

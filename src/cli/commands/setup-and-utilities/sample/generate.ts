@@ -1,7 +1,7 @@
 import { join, dirname } from 'node:path'
 import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { calibreBin } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
 import type { FixtureDef } from './registry'

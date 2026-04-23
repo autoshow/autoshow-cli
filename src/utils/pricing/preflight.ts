@@ -2,7 +2,7 @@ import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { buildAggregatedPriceEstimate } from './aggregate-pricing'
 import type { AggregatedPriceEstimate } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 export type PreflightResult = {
   estimate: AggregatedPriceEstimate

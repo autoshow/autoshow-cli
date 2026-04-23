@@ -1,5 +1,5 @@
 import { mkdir, rename, rm } from 'node:fs/promises'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 export const sanitizeModelName = (model: string): string =>
   model.replace(/[/\\:*?"<>|]/g, '-')

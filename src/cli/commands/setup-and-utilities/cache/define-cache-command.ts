@@ -1,6 +1,6 @@
 import { defineCommand } from 'clerc'
-import * as l from '~/logger'
-import { clearMediaCache, pruneMediaCache } from '~/cli/commands/process-steps/step-2-stt/media'
+import * as l from '~/utils/logger'
+import { clearMediaCache, pruneMediaCache } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/media'
 import { CLIUsageError } from '~/utils/error-handler'
 
 const actionParameter = [{ key: '<action>', description: 'Cache action: prune or clear' }] as const

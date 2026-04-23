@@ -1,5 +1,5 @@
 import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { downloadFile } from '~/utils/download'
 import { withRetry } from '~/utils/retries'
 

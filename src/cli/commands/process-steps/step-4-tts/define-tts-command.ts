@@ -8,8 +8,8 @@ import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compu
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
-import * as l from '~/logger'
-import { runWithLogContext } from '~/logger'
+import * as l from '~/utils/logger'
+import { runWithLogContext } from '~/utils/logger'
 
 export const ttsCommand = defineCommand({
   name: 'tts',

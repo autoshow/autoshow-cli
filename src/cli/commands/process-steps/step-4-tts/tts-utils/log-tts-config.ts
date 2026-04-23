@@ -1,6 +1,6 @@
 import type { TtsConfigField } from '~/types'
-import * as l from '~/logger'
-import { createHumanTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { createHumanTable } from '~/utils/logger/human-table'
 
 export const logTtsConfig = (provider: string, fields: readonly TtsConfigField[]): void => {
   const rows = fields

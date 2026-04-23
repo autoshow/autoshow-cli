@@ -1,6 +1,6 @@
 import { basename } from 'node:path'
-import { createHumanTable, createLocationsTable } from '~/logger/human-table'
-import type { HumanLogTable, LogLevel, Logger } from '~/logger/types'
+import { createHumanTable, createLocationsTable } from '~/utils/logger/human-table'
+import type { HumanLogTable, LogLevel, Logger } from '~/utils/logger/types'
 import type { NormalizedAudioPlan } from './audio-normalize'
 
 type TableLogger = Pick<Logger, 'write'>

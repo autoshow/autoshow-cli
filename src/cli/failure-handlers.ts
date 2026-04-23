@@ -1,4 +1,4 @@
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 let handlersInstalled = false
 let fatalHandled = false

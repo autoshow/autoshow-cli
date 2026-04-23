@@ -3,12 +3,12 @@ import { setupFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { runCompleteSetup, runSetupStep, type SetupStepId } from './setup-orchestrator/run-complete-setup'
 import { runDoctor } from './run-doctor'
-import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
-import { setupGcloudStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
+import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
+import { setupGcloudStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
 import { runSampleFixtures } from '~/cli/commands/setup-and-utilities/sample/run-sample-fixtures'
 import { runModelDownloads } from '~/cli/commands/setup-and-utilities/models/run-model-downloads'
-import * as l from '~/logger'
-import { runWithLogContext } from '~/logger'
+import * as l from '~/utils/logger'
+import { runWithLogContext } from '~/utils/logger'
 
 const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'lyrics', 'sample']
 const SAMPLE_ONLY_FLAGS = ['--out', '--refresh', '--verify-only', '--valid-only'] as const

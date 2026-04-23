@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import { mkdir } from 'node:fs/promises'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import type { Step5Metadata } from '~/types'
 import type { OpenAIImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'

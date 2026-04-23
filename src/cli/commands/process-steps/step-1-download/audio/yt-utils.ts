@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
 import { buildYtDlpDownloadArgs, buildYtDlpFailureMessage } from './yt-dlp-options'

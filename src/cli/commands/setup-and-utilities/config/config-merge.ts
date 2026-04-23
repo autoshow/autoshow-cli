@@ -11,7 +11,7 @@ import {
   getStep2ProviderConfigPathEntries,
   getStep2ProviderSelectionFlagNames,
   normalizeStep2ProviderFlagName
-} from '~/cli/commands/process-steps/step-2-shared/provider-registry'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')

@@ -1,5 +1,5 @@
 import type { PollOptions, RetryClass, RetryContext, RetryDecision, RetryPolicy } from '~/types'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 422])
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504])

@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import * as v from 'valibot'
 import type { Step4Metadata } from '~/types'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'

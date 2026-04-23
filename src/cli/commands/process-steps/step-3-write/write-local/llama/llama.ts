@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { pathExists, runCapture, runInherit, detectArchitecture, detectPlatform, llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { downloadFile } from '~/utils/download'
 import { withRetry } from '~/utils/retries'
 

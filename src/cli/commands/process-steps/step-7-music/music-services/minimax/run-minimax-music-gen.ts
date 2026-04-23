@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import type { Step7MusicMetadata } from '~/types'
-import * as l from '~/logger'
-import { logLocationsTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import type { MinimaxMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -11,6 +11,7 @@ import {
   ensureMinimaxBaseRespSuccess,
   parseMinimaxJsonResponse,
 } from '~/utils/minimax-utils'
+import type { MinimaxMusicResponse } from '../../music-types'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const REQUEST_TIMEOUT_MS = 10 * 60_000
@@ -33,13 +34,11 @@ const MinimaxMusicExtraInfoSchema = v.object({
   music_duration: v.optional(v.number(), undefined)
 })
 
-const MinimaxMusicResponseSchema = v.object({
+export const MinimaxMusicResponseSchema = v.object({
   data: v.optional(v.nullable(MinimaxMusicDataSchema), undefined),
   extra_info: v.optional(v.nullable(MinimaxMusicExtraInfoSchema), undefined),
   base_resp: v.optional(MinimaxBaseRespSchema, undefined)
 })
-
-type MinimaxMusicResponse = v.InferOutput<typeof MinimaxMusicResponseSchema>
 
 const clampMinimaxMusicPrompt = (
   prompt: string

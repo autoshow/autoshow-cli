@@ -1,10 +1,10 @@
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import type { ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
 import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import { planBatchInputsForCommand, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
-import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-extract/step-2-stt/batch'
 import { resolveListBatchItems } from './list-batch-resolver'
 
 export const resolveInputListBatch = async (

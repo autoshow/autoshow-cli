@@ -1,7 +1,7 @@
 import { defineCommand } from 'clerc'
 import { writeFlags } from '~/cli/flags'
 import { handleProcessTarget } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
-import { validateEpubInspectCommandFlags } from '~/cli/commands/process-steps/step-2-ocr/command-validation'
+import { validateEpubInspectCommandFlags } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/command-validation'
 
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, or URL list (.md/.txt)' }] as const
 

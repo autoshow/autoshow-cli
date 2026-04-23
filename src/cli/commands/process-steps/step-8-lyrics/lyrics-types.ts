@@ -11,3 +11,19 @@ export type LyricsRenderSummary = {
   encoder: string
   backgroundMode: 'image' | 'spectrogram'
 }
+
+export type LyricsGenerationContext = {
+  albumDir: string
+  textDir: string
+  lyricsDir: string
+  promptFilePath: string
+  trackListPath?: string | undefined
+}
+
+export type OverlaySegment = {
+  start: number
+  end: number
+  previousText?: string | undefined
+  currentText?: string | undefined
+  nextText?: string | undefined
+}

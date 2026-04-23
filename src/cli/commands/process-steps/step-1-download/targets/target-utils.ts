@@ -1,8 +1,8 @@
 import { readdir } from 'node:fs/promises'
 import { basename, dirname, extname, join, resolve } from 'node:path'
-import * as l from '~/logger'
-import { createHumanTable, logBatchItemTable, logLocationsTable } from '~/logger/human-table'
-import { runWithLogContext } from '~/logger'
+import * as l from '~/utils/logger'
+import { createHumanTable, logBatchItemTable, logLocationsTable } from '~/utils/logger/human-table'
+import { runWithLogContext } from '~/utils/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { MEDIA_EXTENSIONS } from '../media-extensions'
@@ -30,11 +30,11 @@ import type {
   SttManifestProviderSummary,
   TopLevelTargetInfo
 } from '~/types'
-import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
-import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/batch'
-import { writeSttBatchManifest } from '~/cli/commands/process-steps/step-2-stt/manifest'
+import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
+import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/batch'
+import { writeSttBatchManifest } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/manifest'
 import { readBatchManifest, readRunManifest, writeBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
-import { resolveOcrStep2ExecutionFromFormat, resolveSttStep2Execution } from '~/cli/commands/process-steps/step-2-shared/resolved-step2'
+import { resolveOcrStep2ExecutionFromFormat, resolveSttStep2Execution } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/resolved-step2'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 

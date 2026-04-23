@@ -2,10 +2,10 @@ import { inspectYtDlpAuthState } from '~/cli/commands/process-steps/step-1-downl
 import { commandExists } from '~/utils/cli-utils'
 import { loadEnvFile } from '~/utils/cli-utils'
 import { resolveConfigPath, loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
-import { readAwsSttConfigDefaults, readAwsSttReadiness } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
-import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-stt/stt-services/gcloud/gcloud'
-import * as l from '~/logger'
-import { createHumanTable } from '~/logger/human-table'
+import { readAwsSttConfigDefaults, readAwsSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
+import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
+import * as l from '~/utils/logger'
+import { createHumanTable } from '~/utils/logger/human-table'
 
 type CheckResult = { label: string; ok: boolean; detail: string }
 

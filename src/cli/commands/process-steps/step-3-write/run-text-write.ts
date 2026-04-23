@@ -11,10 +11,10 @@ import type {
   TranscriptionResult,
   VideoMetadata,
 } from '~/types'
-import * as l from '~/logger'
-import { runWithLogContext } from '~/logger'
-import type { StepTimingCost } from '~/logger'
-import { logLocationsTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { runWithLogContext } from '~/utils/logger'
+import type { StepTimingCost } from '~/utils/logger'
+import { logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'

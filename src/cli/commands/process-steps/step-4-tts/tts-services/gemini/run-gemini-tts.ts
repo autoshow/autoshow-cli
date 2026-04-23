@@ -10,9 +10,9 @@ import { readEnv } from '~/utils/validate/env-utils'
 import { classifyGeminiRetry } from '~/utils/gemini-utils'
 import {
   formatGeminiSpeakerSummary,
-  type GeminiMultiSpeakerConfig,
   validateGeminiMultiSpeakerTranscript
 } from './gemini-tts-config'
+import type { GeminiMultiSpeakerConfig } from '../../tts-types'
 
 const MAX_CHARS_PER_CHUNK = 4000
 

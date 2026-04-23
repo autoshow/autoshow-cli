@@ -3,7 +3,7 @@ import { configCommandFlags } from '~/cli/flags'
 import { resolveConfigPath, loadConfig } from './config-loader'
 import { extractExplicitFlags, buildConfigPatchFromFlags, deepMergeConfig } from './config-merge'
 import { writeConfig } from './config-writer'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 export const configCommand = defineCommand({
   name: 'config',

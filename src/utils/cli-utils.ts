@@ -1,5 +1,5 @@
 import { mkdir, stat } from 'node:fs/promises'
-import * as l from '../logger'
+import * as l from './logger'
 
 let envFileLoaded = false
 let lastEnvPath = ''

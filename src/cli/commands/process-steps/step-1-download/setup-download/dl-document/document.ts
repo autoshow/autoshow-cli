@@ -1,5 +1,5 @@
 import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 const shouldPrintCompletion = (): boolean => {
   return (process.env['AUTOSHOW_COMPACT_SETUP'] || '0') !== '1'

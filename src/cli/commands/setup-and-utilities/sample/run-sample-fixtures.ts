@@ -1,6 +1,6 @@
 import { join, resolve } from 'node:path'
 import { mkdir } from 'node:fs/promises'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { ALL_FIXTURES } from './registry'
 import { generateFixture } from './generate'
 import { validateFixture } from './validate'

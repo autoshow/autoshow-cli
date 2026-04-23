@@ -2,6 +2,7 @@ import { extname, join } from 'node:path'
 import { mkdir, readdir, writeFile } from 'node:fs/promises'
 import { commandExists, exec } from '~/utils/cli-utils'
 import type { CaptionCue, LyricsRenderSummary } from './lyrics-types'
+import type { OverlaySegment } from './lyrics-types'
 
 export const FIXED_RENDER_WIDTH = 1920
 export const FIXED_RENDER_HEIGHT = 1080
@@ -186,14 +187,6 @@ export const findMatchingImage = async (audioPath: string, directory: string): P
   }
 
   return undefined
-}
-
-type OverlaySegment = {
-  start: number
-  end: number
-  previousText?: string | undefined
-  currentText?: string | undefined
-  nextText?: string | undefined
 }
 
 const buildOverlaySegments = (cues: CaptionCue[]): OverlaySegment[] => {

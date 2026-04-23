@@ -1,7 +1,7 @@
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { pollUntil } from '~/utils/retries'
 import { resolveLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { countTokens } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
+import { countTokens } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { validateData } from '~/utils/validate/validation'
 import {
   LlamaResponseSchema,

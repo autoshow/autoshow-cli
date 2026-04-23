@@ -11,7 +11,7 @@ import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
 import {
   readAwsSttConfigDefaults,
   readAwsSttReadiness
-} from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 
 const readAwsTestReadiness = async () => {
   const defaults = await readAwsSttConfigDefaults()

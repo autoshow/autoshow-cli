@@ -70,7 +70,7 @@ import {
   getStep2AllShortcutModelExpansions,
   isStep2BooleanProviderSelected,
   normalizeStep2ProviderFlagName
-} from '~/cli/commands/process-steps/step-2-shared/provider-registry'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { BatchOrder, BuildOptsDefaults, OutputFormat, RuntimeOptions, Step2ProviderSelectionOrigin } from '~/types'
 

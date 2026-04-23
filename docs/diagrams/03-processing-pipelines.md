@@ -43,7 +43,7 @@ src/cli/commands/process-steps/process-video.ts
                                     v
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                      STEP 2: STT                                             │
-│       src/cli/commands/process-steps/step-2-stt/run-stt.ts           │
+│       src/cli/commands/process-steps/step-2-extract/step-2-stt/run-stt.ts   │
 │                                                                              │
 │  Hosted STT first stages one shared source_media.(m4a|mp3):                  │
 │  ├── keep only the primary audio stream                                     │
@@ -137,7 +137,7 @@ src/cli/commands/process-steps/process-video.ts
 ## Document Processing Pipeline
 
 ```
-src/cli/commands/process-steps/process-ocr.ts
+src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                      STEP 1: Download / Detect Document                      │
@@ -167,7 +167,7 @@ src/cli/commands/process-steps/process-ocr.ts
                                     v
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                      STEP 2: Extract Text                                    │
-│    src/cli/commands/process-steps/step-2-ocr/run-ocr.ts            │
+│    src/cli/commands/process-steps/step-2-extract/step-2-ocr/run-ocr.ts      │
 │                                                                              │
 │                       ┌──────────────────┐                                   │
 │                       │  Document Type?  │                                   │

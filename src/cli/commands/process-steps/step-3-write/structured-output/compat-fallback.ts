@@ -1,4 +1,4 @@
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import type {
   CompatStructuredResponse,
   LLMTarget,

@@ -10,7 +10,7 @@ import type {
   ResolvedEngine
 } from '~/types'
 import { commandExists } from '~/utils/cli-utils'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 const BUN_FETCH_TIMEOUT_MS = 60_000
 

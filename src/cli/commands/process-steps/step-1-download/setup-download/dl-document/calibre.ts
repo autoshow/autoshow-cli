@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { setupDocumentTools } from './document'
 
 const CALIBRE_CLI_TOOLS = ['calibre-debug', 'ebook-meta', 'ebook-convert'] as const

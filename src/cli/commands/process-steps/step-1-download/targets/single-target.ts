@@ -1,12 +1,12 @@
 import { basename, resolve as pathResolve } from 'node:path'
-import * as l from '~/logger'
-import { createHumanTable, logLocationsTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
 import { validateData } from '~/utils/validate/validation'
 import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { ProcessingOptionsSchema, type BatchChildRunContext, type ProcessingOptions, type Step1SourceRef, type Step3Metadata, type VideoMetadata, type TranscriptionResult, type DocumentMetadata, type ExtractionMetadata, type PreparedDocument, type WebArticleMetadata, type WriteDocumentOutputMetadataOptions } from '~/types'
 import { processVideo } from '~/cli/commands/process-steps/process-video'
-import { processStt } from '~/cli/commands/process-steps/process-stt'
-import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-stt/batch'
+import { processStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/process-stt'
+import type { SttBatchCoordinator } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/batch'
 import { runLLM } from '~/cli/commands/process-steps/step-3-write/run-llm'
 import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import {
@@ -18,9 +18,9 @@ import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audi
 import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
 import { prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { downloadDocumentUrlToTempFile } from '~/cli/commands/process-steps/step-1-download/document/resolve-document-source'
-import { processOcr } from '~/cli/commands/process-steps/process-ocr'
+import { processOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
-import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/doc-prompt-utils'
+import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/doc-prompt-utils'
 import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
 import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
@@ -37,7 +37,7 @@ import {
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
+import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
@@ -46,7 +46,7 @@ import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/wri
 import {
   formatHtmlArticleOcrFlagsIgnoredWarning,
   hasConfiguredOcrProviderSelection
-} from '~/cli/commands/process-steps/step-2-shared/inactive-flag-warnings'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-shared/inactive-flag-warnings'
 
 const buildDocumentMetadataView = (
   step1: DocumentMetadata,
@@ -1099,7 +1099,7 @@ export const processSingleTarget = async (
   preflightEstimate?: AggregatedPriceEstimate,
   runOptions?: {
     sttBatchCoordinator?: SttBatchCoordinator | undefined
-    mistralSttPassController?: import('~/cli/commands/process-steps/step-2-stt/stt-services/mistral/mistral-stt-pass-controller').MistralSttPassController | undefined
+    mistralSttPassController?: import('~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/mistral/mistral-stt-pass-controller').MistralSttPassController | undefined
     batchChildContext?: BatchChildRunContext | undefined
   },
   batchItem?: BatchItem

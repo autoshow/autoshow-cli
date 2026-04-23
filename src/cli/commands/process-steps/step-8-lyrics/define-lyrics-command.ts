@@ -3,11 +3,11 @@ import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises'
 import { defineCommand } from 'clerc'
 import { lyricsFlags } from '~/cli/flags'
 import { validateWhisperModel } from '~/cli/commands/setup-and-utilities/models/stt-models'
-import { ensureProviderReady } from '~/features/bootstrap-broker'
+import { ensureProviderReady } from '~/utils/bootstrap-broker'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { buildExpectedFilesList } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
-import { runWhisperTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/run-whisper'
+import { runWhisperTranscribe } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/whisper/run-whisper'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { readRunManifest, writeBatchManifest, writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { logSuitePriceSummary } from '~/cli/commands/process-steps/suite-price-logging'
@@ -21,8 +21,8 @@ import { resolveMaxCentsFromFlags } from '~/cli/commands/process-steps/generatio
 import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
-import * as l from '~/logger'
-import { createHumanTable, logLocationsTable, logSingleRowTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { createHumanTable, logLocationsTable, logSingleRowTable } from '~/utils/logger/human-table'
 import { buildLyricsCues } from './cue-builder'
 import { formatSrt, formatVtt, loadCaptionFile } from './captions'
 import {
@@ -36,6 +36,7 @@ import {
 } from './render'
 import type { CaptionCue, LyricsCueSource } from './lyrics-types'
 import type { BatchChildRunContext, RuntimeOptions } from '~/types'
+import type { LyricsGenerationContext } from './lyrics-types'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
 const DEFAULT_INPUT_ROOT = join(PROJECT_ROOT, 'input')
@@ -119,14 +120,6 @@ const findAudioFiles = async (inputDir: string): Promise<string[]> => {
     return byBase !== 0 ? byBase : left.localeCompare(right)
   })
   return discovered
-}
-
-type LyricsGenerationContext = {
-  albumDir: string
-  textDir: string
-  lyricsDir: string
-  promptFilePath: string
-  trackListPath?: string | undefined
 }
 
 const pathExistsAsDirectory = async (path: string): Promise<boolean> => {

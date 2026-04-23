@@ -1,5 +1,5 @@
 import type { BuildPromptOptions, TranscriptionResult, VideoMetadata } from '~/types'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 
 export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
 

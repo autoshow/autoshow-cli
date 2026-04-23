@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import type { Step4Metadata } from '~/types'
 import { TtsScriptOutputSchema } from '~/types'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'

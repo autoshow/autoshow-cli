@@ -8,8 +8,8 @@ import {
   isMinimaxHailuoModel
 } from './video-normalization'
 import type { VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
-import * as l from '~/logger'
-import { createHumanTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { createHumanTable } from '~/utils/logger/human-table'
 
 
 const estimateVeo31GeneratePreviewCost = (duration: number | undefined, resolution: string | undefined): VideoCostEstimate => {

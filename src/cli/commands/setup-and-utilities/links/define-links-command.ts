@@ -1,6 +1,6 @@
 import { defineCommand } from 'clerc'
 import modelLinks from './model-links.json'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { CLIUsageError } from '~/utils/error-handler'
 

@@ -1,7 +1,7 @@
 import { SUPPORTED_WHISPER_MODELS, validateWhisperModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
-import { downloadWhisperModel } from '~/cli/commands/process-steps/step-2-stt/bootstrap'
-import * as l from '~/logger'
+import { downloadWhisperModel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/bootstrap'
+import * as l from '~/utils/logger'
 
 const runModelDownload = async (model: string): Promise<void> => {
   const trimmedModel = model.trim()

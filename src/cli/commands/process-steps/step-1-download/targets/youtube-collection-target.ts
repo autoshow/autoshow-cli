@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
 import { isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
@@ -7,7 +7,7 @@ import { isLikelyUrl, processBatch } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { validateDataSafe } from '~/utils/validate/validation'
 import { buildYtDlpListArgs, buildYtDlpFailureMessage } from '../audio/yt-dlp-options'
-import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
+import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-extract/step-2-stt/batch'
 
 const YtDlpPlaylistItemSchema = v.object({
   webpage_url: v.optional(v.string(), undefined),

@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
-import * as l from '~/logger'
-import { logLocationsTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { logLocationsTable } from '~/utils/logger/human-table'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { readBatchManifest, readExtractBatchManifest, readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import {

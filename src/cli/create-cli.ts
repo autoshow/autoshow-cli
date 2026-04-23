@@ -14,11 +14,11 @@ import { lyricsCommand } from '~/cli/commands/process-steps/step-8-lyrics/define
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
-import { normalizeStep2ArgvAliases } from '~/cli/commands/process-steps/step-2-shared/provider-registry'
+import { normalizeStep2ArgvAliases } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { linksCommand } from '~/cli/commands/setup-and-utilities/links/define-links-command'
-import * as l from '~/logger'
-import { runWithLogContext, reconfigureLogger } from '~/logger'
+import * as l from '~/utils/logger'
+import { runWithLogContext, reconfigureLogger } from '~/utils/logger'
 import {
   knownCommands,
   formatInput,

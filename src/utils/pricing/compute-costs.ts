@@ -38,7 +38,7 @@ import {
   computeActualAnthropicOcrCost,
   computeActualGeminiOcrCost,
   OPENAI_OCR_PRICE_NOTE
-} from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import {
   computeSupadataActualCost,
   estimateSupadataCost,

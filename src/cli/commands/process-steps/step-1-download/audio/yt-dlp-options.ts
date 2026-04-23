@@ -1,7 +1,7 @@
 import { access } from 'node:fs/promises'
 import { constants as fsConstants } from 'node:fs'
 import { resolve } from 'node:path'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import type { YtDlpAuthMode, YtDlpListOptions } from '~/types'
 import { loadEnvFile } from '~/utils/cli-utils'
 

@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry } from '~/utils/retries'

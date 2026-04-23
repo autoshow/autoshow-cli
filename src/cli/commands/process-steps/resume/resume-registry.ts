@@ -1,15 +1,15 @@
 import { join, relative, resolve as resolvePath } from 'node:path'
 import type { BatchManifestEntry, ExtractBatchManifest, RuntimeOptions, OcrTarget, SttTarget } from '~/types'
-import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
-import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
+import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
+import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import {
   hasResumableOcrTargetWork,
   resumeOcrTarget
-} from '~/cli/commands/process-steps/step-2-ocr/resume'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/resume'
 import {
   hasResumableSttTargetWork,
   resumeSttTarget
-} from '~/cli/commands/process-steps/step-2-stt/resume'
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/resume'
 import { readBatchManifest, readExtractBatchManifest, writeExtractBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
 import type { ResumeHandler, ResumeTarget, ResumeTargetKind } from './resume-types'
 

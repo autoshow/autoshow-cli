@@ -5,7 +5,7 @@ import type { GeminiVideoModel } from '~/cli/commands/setup-and-utilities/models
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
-import * as l from '~/logger'
+import * as l from '~/utils/logger'
 import { normalizeGeminiDuration } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
 

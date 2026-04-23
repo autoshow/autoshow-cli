@@ -52,3 +52,20 @@ export type GeminiInlineAudioInfo = {
   isRawPcm: boolean
   sampleRate: number
 }
+
+export type GeminiTtsSelectionOptions = {
+  geminiTtsModels?: string[] | undefined
+  geminiTtsModel?: string | undefined
+  geminiVoiceId?: string | undefined
+  geminiSpeaker1Name?: string | undefined
+  geminiSpeaker1Voice?: string | undefined
+  geminiSpeaker2Name?: string | undefined
+  geminiSpeaker2Voice?: string | undefined
+}
+
+export type GeminiMultiSpeakerConfig = {
+  speaker1Name: string
+  speaker1Voice: string
+  speaker2Name: string
+  speaker2Voice: string
+}

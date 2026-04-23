@@ -174,3 +174,8 @@ export type RunOpenAICompatibleChatModelOptions = {
   operationName: string
   customizeRequestBody?: ((requestBody: Record<string, unknown>, model: string) => void) | undefined
 }
+
+export type RenderedTextArtifactResult = {
+  internalArtifacts: Record<string, string>
+  externalFiles: string[]
+}

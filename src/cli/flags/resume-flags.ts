@@ -7,7 +7,7 @@ import {
   transcriptionFlags
 } from './shared-flags'
 import { epubInspectFlags } from './ocr-flags'
-import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-shared/provider-registry'
+import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 const pickFlags = (
   flags: ClercFlagsDefinition,

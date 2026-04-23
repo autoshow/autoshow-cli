@@ -1,5 +1,5 @@
-import { createHumanTable } from '~/logger/human-table'
-import type { HumanLogTable, LogLevel, Logger } from '~/logger/types'
+import { createHumanTable } from '~/utils/logger/human-table'
+import type { HumanLogTable, LogLevel, Logger } from '~/utils/logger/types'
 
 type TableLogger = Pick<Logger, 'write'>
 

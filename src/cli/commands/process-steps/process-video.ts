@@ -18,17 +18,17 @@ import type {
   TranscriptionResult,
   StructuredRunResult,
 } from '~/types'
-import * as l from '~/logger'
-import { runWithLogContext } from '~/logger'
-import type { StepTimingCost } from '~/logger'
-import { logLocationsTable } from '~/logger/human-table'
+import * as l from '~/utils/logger'
+import { runWithLogContext } from '~/utils/logger'
+import type { StepTimingCost } from '~/utils/logger'
+import { logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
-import { sttTarget } from './step-2-stt/orchestrator'
-import { writeSttResultArtifact } from './step-2-stt/stt-utils/stt-result-artifacts'
-import { formatTranscriptText } from './step-2-stt/stt-utils/stt-utils'
-import { collectSttTargets, getSttTargetDirectoryName, getSttTargetKey } from './step-2-stt/stt-targets'
-import { prepareSttMedia } from './step-2-stt/media'
+import { sttTarget } from './step-2-extract/step-2-stt/orchestrator'
+import { writeSttResultArtifact } from './step-2-extract/step-2-stt/stt-utils/stt-result-artifacts'
+import { formatTranscriptText } from './step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { collectSttTargets, getSttTargetDirectoryName, getSttTargetKey } from './step-2-extract/step-2-stt/stt-targets'
+import { prepareSttMedia } from './step-2-extract/step-2-stt/media'
 import { runLLM } from './step-3-write/run-llm'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { writeRenderedTextArtifacts } from './step-3-write/text-input-utils'
@@ -51,11 +51,11 @@ import {
   logSpeakerCountHintSummary,
   prioritizeCloudSttTargetIndices,
   selectPrimaryPromptProvider
-} from './process-stt'
+} from './step-2-extract/step-2-stt/process-stt'
 import { writeRunManifest } from './manifest-utils'
 import { logWriteManifestConsoleSummary } from './write-manifest-log'
-import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-stt/youtube-captions'
-import { createMistralSttPassController } from './step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
+import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-extract/step-2-stt/youtube-captions'
+import { createMistralSttPassController } from './step-2-extract/step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
 
 type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
   & { outputDir?: string | undefined }
