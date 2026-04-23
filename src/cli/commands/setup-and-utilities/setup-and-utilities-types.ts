@@ -1,5 +1,5 @@
 import type { InferOutput } from 'valibot'
-import type { AutoshowConfigSchema, Logger } from '~/types'
+import type { AutoshowConfigSchema } from '~/types'
 import { ExtractLimitsSchema, ModelRegistrySchema, SttLimitsSchema } from './models/model-loader'
 import {
   SUPPORTED_ANTHROPIC_MODELS,
@@ -53,21 +53,23 @@ import {
 } from './models/video-models'
 
 export type AutoshowConfig = InferOutput<typeof AutoshowConfigSchema>
-export type ConfigDefaults = NonNullable<AutoshowConfig['defaults']>
-export type PricingConfig = NonNullable<AutoshowConfig['pricing']>
 
 export type ModelRegistry = InferOutput<typeof ModelRegistrySchema>
 
 export type SampleSupportLevel = 'current' | 'planned'
+export type FixtureKind = 'valid' | 'invalid'
 
-export type SampleFixtureEntry = {
+export type FixtureDescriptor = {
   path: string
   format: string
   supportLevel: SampleSupportLevel
-  validity: 'valid' | 'invalid'
-  requiredTools: string[]
+  validity: FixtureKind
+  requiredTools: ToolName[]
+  invalidReason?: string | undefined
+}
+
+export type SampleFixtureEntry = FixtureDescriptor & {
   verified: boolean
-  invalidReason?: string
 }
 
 export type SampleSkippedEntry = {
@@ -105,10 +107,6 @@ export type RunOptions = {
 }
 
 export type SetupPlatform = 'darwin' | 'linux' | 'unknown'
-
-export type ModelWeight = { url: string, filename: string }
-
-export type ModelWeights = { model: ModelWeight }
 
 export type ModelLinksData = Record<string, Record<string, string[]>>
 
@@ -218,16 +216,7 @@ export type ToolStatus = {
   remediation: string
 }
 
-export type FixtureKind = 'valid' | 'invalid'
-
-export type FixtureDef = {
-  path: string
-  format: string
-  supportLevel: SampleSupportLevel
-  validity: FixtureKind
-  requiredTools: ToolName[]
-  invalidReason?: string
-}
+export type FixtureDef = FixtureDescriptor
 
 export type GenerateResult = {
   generated: boolean
@@ -251,8 +240,6 @@ export type CheckResult = {
   ok: boolean
   detail: string
 }
-
-export type SetupTableLogger = Pick<Logger, 'write'>
 
 export type SetupToolStatus = {
   tool: string

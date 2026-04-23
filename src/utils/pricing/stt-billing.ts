@@ -1,5 +1,5 @@
 import { getSttBilling, getSttCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import type { BilledSttCost, SttBillingConfig } from '~/types'
+import type { BilledSttCost, SttBilling } from '~/types'
 
 const normalizeDurationSeconds = (durationSeconds: number): number =>
   Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0
@@ -9,7 +9,7 @@ const normalizePositiveValue = (value: number | undefined): number | undefined =
 
 export const resolveBilledSttDurationSeconds = (
   durationSeconds: number,
-  billing: SttBillingConfig = {}
+  billing: SttBilling = {}
 ): number => {
   const normalizedDurationSeconds = normalizeDurationSeconds(durationSeconds)
   if (normalizedDurationSeconds <= 0) {

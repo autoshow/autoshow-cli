@@ -2,11 +2,8 @@ import type {
   BatchManifest,
   HumanLogTable,
   InputFamily,
-  LogLevel,
-  Logger,
   RunManifest,
   RuntimeOptions,
-  StepTimingCost,
   TimingStepEntry,
 } from '~/types'
 
@@ -136,8 +133,6 @@ export type RunTargetsOptions<TTarget extends TargetBase, TResult> = {
   finalizeTarget: (target: TTarget, result: TResult, singleTarget: boolean) => Promise<TResult>
 }
 
-export type SuitePriceTableLogger = Pick<Logger, 'write'>
-
 export type SuitePriceSummary = {
   checkedLabel: string
   checkedCount: number
@@ -160,8 +155,6 @@ export type CostStep = {
   cost: number
 }
 
-export type GenerationTableLogger = Pick<Logger, 'write'>
-
 export type MediaGenerationStatus = {
   mediaType: 'tts' | 'image' | 'video' | 'music'
   provider: string
@@ -171,22 +164,6 @@ export type MediaGenerationStatus = {
   outputCount?: number
   detail?: string
 }
-
-export type BuildMediaGenerationStatusRow = {
-  mediaType: string
-  provider: string
-  model: string
-  status: string
-  processingTimeMs: number | ''
-  outputCount: number | ''
-  detail: string
-}
-
-export type BuildMediaGenerationStatusTable = HumanLogTable
-
-export type LogMediaGenerationStatusLevel = LogLevel
-
-export type BuildProviderStepSummariesResult = StepTimingCost[]
 
 export type BatchChildDirectoryIdentity = {
   slug?: string | undefined

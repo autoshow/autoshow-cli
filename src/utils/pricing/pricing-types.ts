@@ -86,8 +86,8 @@ export type AggregatedPriceEstimate = {
   notes?: string[]
 }
 
-export type ComputeActualCostsInput = {
-  step1?: Step1Metadata | undefined
+export type ActualPipelineInputsBase<TStep1> = {
+  step1?: TStep1 | undefined
   step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
   step4?: Step4Metadata | Step4Metadata[] | undefined
@@ -96,6 +96,8 @@ export type ComputeActualCostsInput = {
   step7?: Step7MusicMetadata | Step7MusicMetadata[] | undefined
   ttsCharacterCount?: number | undefined
 }
+
+export type ComputeActualCostsInput = ActualPipelineInputsBase<Step1Metadata>
 
 export type ComputeEstimatedCostsInput = {
   sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
@@ -207,26 +209,13 @@ export type ComputeEstimatedProcessingTimesInput = {
   musicDurationSeconds?: number | undefined
 }
 
-export type ComputeActualProcessingTimesInput = {
-  step1?: DocumentMetadata | undefined
+export type ComputeActualProcessingTimesInput = ActualPipelineInputsBase<Step1Metadata | DocumentMetadata> & {
   audioDurationSeconds?: number | undefined
-  step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
-  step3?: Step3Metadata | Step3Metadata[] | undefined
-  step4?: Step4Metadata | Step4Metadata[] | undefined
-  step5?: Step5Metadata | Step5Metadata[] | undefined
-  step6?: Step6VideoMetadata | Step6VideoMetadata[] | undefined
-  step7?: Step7MusicMetadata | Step7MusicMetadata[] | undefined
-  ttsCharacterCount?: number | undefined
 }
 
 export type PreflightResult = {
   estimate: AggregatedPriceEstimate
   shouldExit: boolean
-}
-
-export type SttBillingConfig = {
-  roundingIncrementSeconds?: number
-  minimumSeconds?: number
 }
 
 export type BilledSttCost = {
@@ -278,22 +267,7 @@ export type EstimatedCostBreakdown = {
   steps: EstimatedStepEntry[]
 }
 
-export type EstimatedTimingBreakdown = {
+export type StepTimingBreakdown = {
   totalProcessingTimeMs: number
   steps: TimingStepEntry[]
-}
-
-export type ActualTimingBreakdown = {
-  totalProcessingTimeMs: number
-  steps: TimingStepEntry[]
-}
-
-export type TimingBreakdown = {
-  estimated: EstimatedTimingBreakdown
-  actual: ActualTimingBreakdown
-}
-
-export type CostBreakdown = {
-  estimated: EstimatedCostBreakdown
-  actual: ActualCostBreakdown
 }

@@ -1,5 +1,4 @@
 import type * as v from 'valibot'
-import type { Logger } from '~/types'
 import type {
   BatchPolicy,
   BatchChildRunContext,
@@ -22,6 +21,7 @@ import type {
   BatchManifestEntry
 } from '~/types'
 import type { ElevenlabsSttModel } from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'
+import type { ProviderRunStateBase } from '../step-2-shared/step-2-shared-types'
 import { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
 import { AwsCallerIdentitySchema } from './stt-services/aws/aws'
 import { AwsTranscribeOutputSchema } from './stt-services/aws/parse-aws-transcribe-output'
@@ -48,17 +48,12 @@ export type ConcurrencyPolicy = {
   segment?: number | undefined
 }
 
-export type DiarizationPolicy = {
-  enabled?: boolean | undefined
-  speakerCount?: number | undefined
-}
-
 export type SttPolicy = {
   providers: ProviderSpec[]
   batch?: BatchPolicy | undefined
   resume?: ResumePolicy | undefined
   concurrency?: ConcurrencyPolicy | undefined
-  diarization?: DiarizationPolicy | undefined
+  diarization?: DiarizationOptions | undefined
   split?: boolean | undefined
 }
 
@@ -263,15 +258,8 @@ export type SttProviderFailureSummary = {
   rawResponseFile?: string | undefined
 }
 
-export type SttProviderState = {
-  service: SttTarget['service']
-  model: string
+export type SttProviderState = ProviderRunStateBase<SttTarget['service'], SttRecordedProviderError> & {
   local: boolean
-  artifactDir: string
-  status: 'succeeded' | 'missing' | 'failed' | 'skipped'
-  attempts: number
-  retryable?: boolean | undefined
-  lastError?: SttRecordedProviderError | undefined
 }
 
 export type SttProviderSuccess = {
@@ -594,8 +582,6 @@ export type GladiaUtterance = NonNullable<GladiaTranscription['utterances']>[num
 
 export type SplitPolicyTarget = Pick<SttTarget, 'service' | 'model'>
 
-export type SttTableLogger = Pick<Logger, 'write'>
-
 export type SttCacheEvent = {
   artifact: string
   status: 'hit' | 'miss' | 'rebuild' | 'bypass' | 'weak_fingerprint'
@@ -805,23 +791,6 @@ export type HappyScribeExport = {
   id: string
   state: string
   downloadLink?: string | undefined
-}
-
-export type NormalizedSegment = {
-  startSeconds: number
-  endSeconds: number
-  text: string
-  speaker?: string | undefined
-  confidence?: number | undefined
-}
-
-export type NormalizedWord = {
-  startSeconds: number
-  endSeconds: number
-  text: string
-  normalized: string
-  speaker?: string | undefined
-  confidence?: number | undefined
 }
 
 export type MistralAvailabilityWaiter = {

@@ -3,6 +3,7 @@ import type {
   MusicProvider,
   ProcessingOptions,
   ProviderModelBase,
+  ProviderTargetBase,
   Step7MusicMetadata
 } from '~/types'
 import { MinimaxMusicResponseSchema } from './music-services/minimax/run-minimax-music-gen'
@@ -12,9 +13,7 @@ export type MusicGenOptions = Pick<
   'elevenlabsMusicModels' | 'elevenlabsMusicModel' | 'minimaxMusicModels' | 'minimaxMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental'
 >
 
-export type MusicTarget = {
-  service: MusicProvider
-  model: string
+export type MusicTarget = ProviderTargetBase<MusicProvider> & {
   run: (prompt: string, outputDir: string) => Promise<{ musicPath: string, metadata: Step7MusicMetadata }>
 }
 

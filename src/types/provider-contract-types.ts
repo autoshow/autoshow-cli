@@ -42,14 +42,6 @@ export type RunManifest = {
   metadata: Record<string, unknown>
 }
 
-export type SttRunManifest = RunManifest & {
-  kind: 'stt'
-}
-
-export type OcrRunManifest = RunManifest & {
-  kind: 'ocr'
-}
-
 export type BatchManifest = {
   schemaVersion: 2
   kind: RunManifest['kind']

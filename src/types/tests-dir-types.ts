@@ -44,25 +44,6 @@ export type TestRunArtifacts = {
   startedAtIso: string
 }
 
-export type CommandMetricRecord = {
-  kind?: string
-  source?: string
-  command?: string
-  args?: string[]
-  exitCode?: number
-  durationMs?: number
-  outputDir?: string | null
-  callerFile?: string | null
-  callerLine?: number | null
-  callerColumn?: number | null
-  at?: string | null
-  testName?: string | null
-  estimatedCostCents?: number | null
-  actualCostCents?: number | null
-  estimatedProcessingTimeMs?: number | null
-  actualProcessingTimeMs?: number | null
-}
-
 export type ParsedCommandMetric = {
   source: string
   command: string
@@ -100,10 +81,4 @@ export type PriceCommandResult = {
   durationMs: number
   costCents: number | null
   failureMessage: string | null
-}
-
-export type DocsCommand = {
-  name: string
-  description: string
-  command: string
 }

@@ -57,7 +57,7 @@ export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Pro
         format: fixture.format,
         supportLevel: fixture.supportLevel,
         validity: fixture.validity,
-        requiredTools: fixture.requiredTools as ToolName[],
+        requiredTools: fixture.requiredTools,
         ...(fixture.invalidReason ? { invalidReason: fixture.invalidReason } : {})
       }
       const result = await validateFixture(outDir, fixtureDef)

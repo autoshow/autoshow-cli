@@ -2,10 +2,10 @@ import { basename } from 'node:path'
 import { createHumanTable, createLocationsTable } from '~/utils/logger/human-table'
 import type {
   AudioDownloadSummary,
-  AudioLoggingTableLogger,
   AudioNormalizeSummary,
   HumanLogTable,
-  LogLevel
+  LogLevel,
+  TableLogger
 } from '~/types'
 
 export const buildAudioDownloadRows = (
@@ -23,7 +23,7 @@ export const buildAudioDownloadTable = (
   createHumanTable(buildAudioDownloadRows(summary), ['status', 'source', 'target', 'detail'])
 
 export const logAudioDownload = (
-  logger: AudioLoggingTableLogger,
+  logger: TableLogger,
   summary: AudioDownloadSummary,
   level: LogLevel = summary.status === 'downloaded' ? 'success' : 'info'
 ): void => {
@@ -51,7 +51,7 @@ export const buildAudioNormalizeTable = (
   createHumanTable(buildAudioNormalizeRows(summary), ['status', 'mode', 'input', 'output', 'codec', 'detail'])
 
 export const logAudioNormalize = (
-  logger: AudioLoggingTableLogger,
+  logger: TableLogger,
   summary: AudioNormalizeSummary
 ): void => {
   logger.write('info', 'Audio Normalize', {
@@ -67,7 +67,7 @@ export const logAudioNormalize = (
 }
 
 export const logAudioOutput = (
-  logger: AudioLoggingTableLogger,
+  logger: TableLogger,
   audioPath: string
 ): void => {
   logger.write('success', 'Audio Output', {

@@ -2,6 +2,7 @@ import type {
   CostEstimateBase,
   ElevenlabsTtsModel,
   ProcessingOptions,
+  ProviderTargetBase,
   RateEstimateBase,
   Step4Metadata,
   TtsProvider
@@ -33,9 +34,7 @@ export type TtsOptions = Pick<
   | 'geminiSpeaker2Voice'
 >
 
-export type TtsTarget = {
-  service: TtsProvider
-  model: string
+export type TtsTarget = ProviderTargetBase<TtsProvider> & {
   voice?: string
   run: (text: string, outputDir: string, opts: TtsOptions) => Promise<{ audioPath: string, metadata: Step4Metadata }>
 }

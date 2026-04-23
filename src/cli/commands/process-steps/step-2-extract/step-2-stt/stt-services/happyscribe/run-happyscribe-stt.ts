@@ -40,9 +40,7 @@ import type {
   HappyScribeHttpError,
   HappyScribeOrder,
   HappyScribeStage,
-  HappyScribeTranscription,
-  NormalizedSegment,
-  NormalizedWord
+  HappyScribeTranscription
 } from '~/types'
 
 const INITIAL_POLL_INTERVAL_MS = 1_000
@@ -465,7 +463,7 @@ const extractText = (
 
 const parseWord = (
   value: unknown
-): NormalizedWord | undefined => {
+): TranscriptionEvidenceWord | undefined => {
   if (!isRecord(value)) {
     return undefined
   }
@@ -513,19 +511,20 @@ const parseWord = (
       : {}),
     ...(typeof parseNumber(value['confidence']) === 'number'
       ? { confidence: parseNumber(value['confidence']) }
-      : {})
+      : {}),
+    timingSource: 'native'
   }
 }
 
 const parseSegment = (
   value: unknown
-): NormalizedSegment | undefined => {
+): TranscriptionEvidenceSegment | undefined => {
   if (!isRecord(value)) {
     return undefined
   }
 
   const nestedWords = Array.isArray(value['words'])
-    ? value['words'].map(parseWord).filter((word): word is NormalizedWord => word !== undefined)
+    ? value['words'].map(parseWord).filter((word): word is TranscriptionEvidenceWord => word !== undefined)
     : []
 
   const text = extractText(value)
@@ -604,9 +603,9 @@ const collectStructuredCandidates = (
   return buckets
 }
 
-const toNormalizedSegmentsFromWords = (
-  words: NormalizedWord[]
-): NormalizedSegment[] =>
+const toEvidenceSegmentsFromWords = (
+  words: TranscriptionEvidenceWord[]
+): TranscriptionEvidenceSegment[] =>
   buildSegmentsFromWords(words.map((word) => ({
     start: word.startSeconds,
     end: word.endSeconds,
@@ -625,10 +624,10 @@ const normalizeHappyScribeStructuredPayload = (
 ): TranscriptionResult => {
   const candidates = collectStructuredCandidates(payload)
   const bestWords = candidates.arrays
-    .map((array) => array.map(parseWord).filter((word): word is NormalizedWord => word !== undefined))
+    .map((array) => array.map(parseWord).filter((word): word is TranscriptionEvidenceWord => word !== undefined))
     .sort((left, right) => right.length - left.length)[0] ?? []
   const bestSegments = candidates.arrays
-    .map((array) => array.map(parseSegment).filter((segment): segment is NormalizedSegment => segment !== undefined))
+    .map((array) => array.map(parseSegment).filter((segment): segment is TranscriptionEvidenceSegment => segment !== undefined))
     .sort((left, right) =>
       right.reduce((sum, segment) => sum + segment.text.length, 0)
       - left.reduce((sum, segment) => sum + segment.text.length, 0)
@@ -641,7 +640,7 @@ const normalizeHappyScribeStructuredPayload = (
   const normalizedSegments = bestSegments.length > 0
     ? bestSegments
     : bestWords.length > 0
-      ? toNormalizedSegmentsFromWords(bestWords)
+      ? toEvidenceSegmentsFromWords(bestWords)
       : []
 
   if (!text && normalizedSegments.length === 0 && bestWords.length === 0) {
@@ -655,21 +654,21 @@ const normalizeHappyScribeStructuredPayload = (
     ...(segment.speaker ? { speaker: segment.speaker } : {})
   }))
   const { finalSegments, finalText } = resolveTranscriptionOutput(mappedSegments, text ?? '', offsetSeconds)
-  const evidenceSegments: TranscriptionEvidenceSegment[] = normalizedSegments.map((segment) => ({
+  const evidenceSegments = normalizedSegments.map((segment) => ({
     startSeconds: segment.startSeconds + offsetSeconds,
     endSeconds: segment.endSeconds + offsetSeconds,
     text: segment.text,
     ...(segment.speaker ? { speaker: segment.speaker } : {}),
     ...(typeof segment.confidence === 'number' ? { confidence: segment.confidence } : {})
   }))
-  const evidenceWords: TranscriptionEvidenceWord[] = bestWords.map((word) => ({
+  const evidenceWords = bestWords.map((word) => ({
     startSeconds: word.startSeconds + offsetSeconds,
     endSeconds: word.endSeconds + offsetSeconds,
     text: word.text,
     normalized: word.normalized,
     ...(word.speaker ? { speaker: word.speaker } : {}),
     ...(typeof word.confidence === 'number' ? { confidence: word.confidence } : {}),
-    timingSource: 'native'
+    timingSource: word.timingSource
   }))
 
   return {

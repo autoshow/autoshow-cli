@@ -1,4 +1,4 @@
-import type { CostEstimateBase, ProcessingOptions, Step6VideoMetadata } from '~/types'
+import type { CostEstimateBase, ProcessingOptions, ProviderTargetBase, Step6VideoMetadata } from '~/types'
 import type { VideoProvider } from '~/types'
 
 export type VideoGenOptions = Pick<
@@ -12,9 +12,7 @@ export type MinimaxResolution = '720p' | '1080p'
 export type MinimaxApiResolution = '720P' | '768P' | '1080P'
 export type MinimaxDurationSeconds = 6 | 10
 
-export type VideoTarget = {
-  service: VideoProvider
-  model: string
+export type VideoTarget = ProviderTargetBase<VideoProvider> & {
   run: (prompt: string, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }>
 }
 

@@ -9,12 +9,11 @@ import {
   getVideoEstimation,
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type {
-  ActualTimingBreakdown,
   ComputeActualProcessingTimesInput,
   ComputeEstimatedProcessingTimesInput,
-  EstimatedTimingBreakdown,
   ExtractionMetadata,
   Step2Metadata,
+  StepTimingBreakdown,
   TimingStepEntry,
 } from '~/types'
 
@@ -144,7 +143,7 @@ const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
 
 export const computeEstimatedProcessingTimes = (
   input: ComputeEstimatedProcessingTimesInput
-): EstimatedTimingBreakdown => {
+): StepTimingBreakdown => {
   const steps: TimingStepEntry[] = []
 
   if (input.sttTargets && input.sttTargets.length > 0 && typeof input.audioDurationSeconds === 'number') {
@@ -325,7 +324,7 @@ export const computeEstimatedProcessingTimes = (
 
 export const computeActualProcessingTimes = (
   input: ComputeActualProcessingTimesInput
-): ActualTimingBreakdown => {
+): StepTimingBreakdown => {
   const steps: TimingStepEntry[] = []
 
   if (Array.isArray(input.step2)) {

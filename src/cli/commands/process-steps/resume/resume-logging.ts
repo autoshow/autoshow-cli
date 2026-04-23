@@ -1,5 +1,5 @@
 import { createSingleRowTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, LogLevel, ResumeItemSummary, ResumeTableLogger, ResumeTotals } from '~/types'
+import type { HumanLogTable, LogLevel, ResumeItemSummary, ResumeTotals, TableLogger } from '~/types'
 
 export const buildResumeItemTable = (
   summary: ResumeItemSummary
@@ -7,7 +7,7 @@ export const buildResumeItemTable = (
   createSingleRowTable(summary, ['item', 'status', 'outputDir', 'providers', 'detail'])
 
 export const logResumeItem = (
-  logger: ResumeTableLogger,
+  logger: TableLogger,
   summary: ResumeItemSummary,
   level: LogLevel
 ): void => {
@@ -24,7 +24,7 @@ export const buildResumeSummaryTable = (
   createSingleRowTable(totals, ['full', 'incomplete', 'failed'])
 
 export const logResumeSummary = (
-  logger: ResumeTableLogger,
+  logger: TableLogger,
   totals: ResumeTotals,
   level: LogLevel = totals.incomplete > 0 || totals.failed > 0 ? 'warn' : 'info'
 ): void => {

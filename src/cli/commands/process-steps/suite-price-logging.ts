@@ -1,5 +1,5 @@
 import { createSingleRowTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, SuitePriceSummary, SuitePriceTableLogger } from '~/types'
+import type { HumanLogTable, SuitePriceSummary, TableLogger } from '~/types'
 
 export const buildSuitePriceSummaryRows = (
   summary: SuitePriceSummary
@@ -14,7 +14,7 @@ export const buildSuitePriceSummaryTable = (
   createSingleRowTable(buildSuitePriceSummaryRows(summary)[0]!, ['checked', 'totalEstimatedCost'])
 
 export const logSuitePriceSummary = (
-  logger: SuitePriceTableLogger,
+  logger: TableLogger,
   summary: SuitePriceSummary
 ): void => {
   logger.write('info', 'Suite Cost Summary', {

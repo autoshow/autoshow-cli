@@ -263,10 +263,7 @@ export const ExtractionResultSchema = v.object({
   textPages: v.number()
 })
 
-export type ExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr'
-
 export type { EpubInspectEngine } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-types'
-export type EpubInspection = Record<string, unknown>
 const EpubInspectionSchema = v.record(v.string(), v.unknown())
 const ChapterExportSummarySchema = v.object({
   sourceFormat: v.picklist(['epub', 'pdf']),
@@ -866,13 +863,8 @@ export const SpeechmaticsTranscriptResponseSchema = v.object({
   results: v.array(SpeechmaticsTranscriptResultSchema)
 })
 
-export type AssemblyAiTranscriptResponse = v.InferOutput<typeof AssemblyAiTranscriptResponseSchema>
-export type GladiaUploadResponse = v.InferOutput<typeof GladiaUploadResponseSchema>
-export type GladiaCreateResponse = v.InferOutput<typeof GladiaCreateResponseSchema>
 export type GladiaStatusResponse = v.InferOutput<typeof GladiaStatusResponseSchema>
 export type DeepgramResponse = v.InferOutput<typeof DeepgramResponseSchema>
-export type SonioxFileResponse = v.InferOutput<typeof SonioxFileResponseSchema>
-export type SpeechmaticsJobResponse = v.InferOutput<typeof SpeechmaticsJobResponseSchema>
 
 export const LlamaResponseSchema = v.object({
   choices: v.array(v.object({

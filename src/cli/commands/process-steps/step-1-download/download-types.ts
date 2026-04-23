@@ -4,7 +4,6 @@ import type {
   DocumentMetadata,
   ExtractionMetadata,
   InputFamily,
-  Logger,
   ProcessCommand,
   PlannedBatchInput,
   PreparedDocument,
@@ -28,8 +27,6 @@ export type Step1SourceRef = {
   url?: string
   filePath?: string
 }
-
-export type AudioLoggingTableLogger = Pick<Logger, 'write'>
 
 export type AudioDownloadSource = 'yt-dlp' | 'direct-audio-url' | 'direct-media-url'
 export type AudioDownloadStatus = 'started' | 'downloaded'

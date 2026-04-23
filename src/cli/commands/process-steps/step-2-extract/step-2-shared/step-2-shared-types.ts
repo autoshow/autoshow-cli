@@ -1,5 +1,5 @@
 import type { ClercFlagDefinitionValue } from 'clerc'
-import type { ProviderSpec, RuntimeOptions, Step2Modality, Step2ProviderSelectionOrigin } from '~/types'
+import type { RuntimeOptions, Step2Modality, Step2ProviderSelectionOrigin } from '~/types'
 
 export type OcrSelectionState = {
   useTesseract?: boolean | undefined
@@ -86,14 +86,14 @@ export type Step2ProviderConfigPathEntry = {
   configPath: readonly string[]
 }
 
-export type Step2ProviderEntriesByStep = Record<Step2Command, Step2ProviderRegistryEntry[]>
-
-export type Step2AllShortcutModelExpansions = Partial<Record<string, { shortcut: Step2ShortcutFlag, supported: readonly string[] }>>
-
-export type Step2ProviderCapabilitySpec = {
-  provider: ProviderSpec['provider']
-  kind: Step2Modality
-  local: boolean
+export type ProviderRunStateBase<TService, TError> = {
+  service: TService
+  model: string
+  artifactDir: string
+  status: 'succeeded' | 'missing' | 'failed' | 'skipped'
+  attempts: number
+  retryable?: boolean | undefined
+  lastError?: TError | undefined
 }
 
 export type SttStep2ResolutionOptions = Pick<

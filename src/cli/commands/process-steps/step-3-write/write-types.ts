@@ -77,22 +77,10 @@ export type StructuredRequestOptions = {
   strategy: StructuredStrategy
 }
 
-export type StructuredResult = {
-  parsed: unknown
-  renderedText: string
-  structuredMode: StructuredStrategy
-  presetNames: string[]
-}
-
 export type StructuredRunResult = {
   metadata: Step3Metadata
   renderedText: string
   parsedJson: unknown
-}
-
-export type StructuredValidationFailureEnvelope = {
-  _raw: string
-  _validationError: string
 }
 
 export type ValibotSchema = v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>
@@ -157,27 +145,23 @@ export type CompatStructuredResponse = {
 
 export type AnthropicCompatibleService = Extract<Step3Metadata['llmService'], 'anthropic' | 'minimax'>
 
-export type RunAnthropicCompatibleModelOptions = {
+export type CompatibleModelRunOptionsBase<TClient, TService> = {
   prompt: string
   model: string
   structuredOpts?: StructuredRequestOptions | undefined
-  client: Anthropic
-  service: AnthropicCompatibleService
+  client: TClient
+  service: TService
   providerLabel: string
   operationName: string
+}
+
+export type RunAnthropicCompatibleModelOptions = CompatibleModelRunOptionsBase<Anthropic, AnthropicCompatibleService> & {
   supportsStructuredOutput?: boolean
 }
 
 export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok'>
 
-export type RunOpenAICompatibleChatModelOptions = {
-  prompt: string
-  model: string
-  structuredOpts?: StructuredRequestOptions | undefined
-  client: OpenAI
-  service: OpenAICompatibleChatService
-  providerLabel: string
-  operationName: string
+export type RunOpenAICompatibleChatModelOptions = CompatibleModelRunOptionsBase<OpenAI, OpenAICompatibleChatService> & {
   customizeRequestBody?: ((requestBody: Record<string, unknown>, model: string) => void) | undefined
 }
 

@@ -2,6 +2,7 @@ import type {
   CostEstimateBase,
   ImageProvider,
   ProcessingOptions,
+  ProviderTargetBase,
   Step5Metadata
 } from '~/types'
 
@@ -26,9 +27,7 @@ export type ImageResult = {
   metadata: Step5Metadata
 }
 
-export type ImageTarget = {
-  service: ImageProvider
-  model: string
+export type ImageTarget = ProviderTargetBase<ImageProvider> & {
   run: (prompt: string, outputDir: string, opts: ImageGenOptions) => Promise<ImageResult>
 }
 

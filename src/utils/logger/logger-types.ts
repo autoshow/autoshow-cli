@@ -1,4 +1,4 @@
-import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/pricing-types'
+import type { AggregatedPriceEstimate } from '~/utils/pricing/pricing-types'
 
 export const LOG_LEVELS = ['debug', 'info', 'success', 'warn', 'error'] as const
 
@@ -89,6 +89,8 @@ export interface Logger {
   config: MutableLoggerConfig
 }
 
+export type TableLogger = Pick<Logger, 'write'>
+
 export type HumanSinkOptions = {
   interactive?: boolean
 }
@@ -161,8 +163,6 @@ export type StepSummaryEntry = {
   time: string
   cost: string
 }
-
-export type ReporterEstimateInput = StepEstimate
 
 export type GlobalLogger = Logger & {
   report: Reporter

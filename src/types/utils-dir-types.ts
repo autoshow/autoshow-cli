@@ -57,9 +57,3 @@ export type CostEstimateBase<P extends string = string, M extends string = strin
     costMultiplier?: number
     note?: string
   }
-
-export type TtsPricingEstimateBase = {
-  costPer1kCharactersCents?: number
-  inputCostPer1MCharactersCents?: number
-  outputCostPer1MCharactersCents?: number
-}

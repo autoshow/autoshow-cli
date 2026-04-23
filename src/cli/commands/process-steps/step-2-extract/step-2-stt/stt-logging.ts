@@ -1,5 +1,5 @@
 import { createHumanTable, createSingleRowTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, LogLevel, SttTableLogger } from '~/types'
+import type { HumanLogTable, LogLevel, TableLogger } from '~/types'
 import type {
   EffectiveSttProviderConcurrency,
   ProviderFailure,
@@ -31,7 +31,7 @@ export const buildSttCacheTable = (
   createHumanTable(buildSttCacheRows(event), ['artifact', 'status', 'key', 'detail'])
 
 export const logSttCacheEvent = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   event: SttCacheEvent,
   level: LogLevel = 'info'
 ): void => {
@@ -56,7 +56,7 @@ export const buildSttAcquireTable = (
   createHumanTable(buildSttAcquireRows(summary), ['item', 'sourceMedia', 'elapsedMs'])
 
 export const logSttAcquireSummary = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   summary: SttAcquireSummary
 ): void => {
   logger.write('info', 'STT Acquire', {
@@ -81,7 +81,7 @@ export const buildSttAsyncJobTable = (
   createHumanTable(buildSttAsyncJobRows(lifecycle), ['provider', 'action', 'remoteId', 'state'])
 
 export const logSttAsyncJobLifecycle = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   lifecycle: SttAsyncJobLifecycle
 ): void => {
   logger.write('info', 'Async STT Job', {
@@ -120,7 +120,7 @@ export const buildSttSegmentLifecycleTable = (
   )
 
 export const logSttSegmentLifecycle = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   lifecycle: SttSegmentLifecycle,
   level: LogLevel = lifecycle.action === 'completed' ? 'success' : 'info'
 ): void => {
@@ -158,7 +158,7 @@ export const buildSttRunStatusTable = (
   )
 
 export const logSttRunStatus = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   summary: SttRunStatusSummary,
   level: LogLevel = 'warn'
 ): void => {
@@ -182,7 +182,7 @@ export const buildSttProviderConcurrencyTable = (
   ])
 
 export const logSttProviderConcurrency = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   resolution: EffectiveSttProviderConcurrency,
   batchConcurrency: number,
   coordinatedAcrossBatch: boolean,
@@ -219,7 +219,7 @@ export const buildSttProviderFailureTable = (
   )
 
 export const logSttProviderFailures = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   failures: readonly ProviderFailure[],
   level: LogLevel = 'warn'
 ): void => {
@@ -257,7 +257,7 @@ export const buildSttProviderSkipTable = (
   )
 
 export const logSttProviderSkips = (
-  logger: SttTableLogger,
+  logger: TableLogger,
   skippedProviders: ReadonlyArray<Pick<SttProviderState, 'service' | 'model' | 'lastError'>>,
   level: LogLevel = 'warn'
 ): void => {

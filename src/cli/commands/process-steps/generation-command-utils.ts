@@ -6,11 +6,11 @@ import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/s
 import { writeRunManifest } from './manifest-utils'
 import type {
   CostStep,
-  GenerationTableLogger,
   HumanLogTable,
   LogLevel,
   MediaGenerationStatus,
-  StepTimingCost
+  StepTimingCost,
+  TableLogger
 } from '~/types'
 
 export const buildMediaGenerationStatusRows = (
@@ -47,7 +47,7 @@ export const buildMediaGenerationStatusTable = (
   ])
 
 export const logMediaGenerationStatus = (
-  logger: GenerationTableLogger,
+  logger: TableLogger,
   summary: MediaGenerationStatus,
   level: LogLevel = summary.status === 'completed' ? 'success' : 'info'
 ): void => {

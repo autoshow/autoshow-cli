@@ -151,7 +151,5 @@ export const AutoshowConfigSchema = v.strictObject({
 })
 
 export type {
-  AutoshowConfig,
-  ConfigDefaults,
-  PricingConfig
+  AutoshowConfig
 } from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'

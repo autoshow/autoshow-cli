@@ -11,6 +11,7 @@ import type {
   ResumePolicy,
   Step1SourceRef
 } from '~/types'
+import type { ProviderRunStateBase } from '../step-2-shared/step-2-shared-types'
 
 export type EpubInspectEngine = 'bun' | 'calibre'
 
@@ -296,15 +297,7 @@ export type OcrRecordedProviderError = {
   retryable: boolean
 }
 
-export type OcrProviderState = {
-  service: OcrTarget['service']
-  model: string
-  artifactDir: string
-  status: 'succeeded' | 'missing' | 'failed' | 'skipped'
-  attempts: number
-  retryable?: boolean | undefined
-  lastError?: OcrRecordedProviderError | undefined
-}
+export type OcrProviderState = ProviderRunStateBase<OcrTarget['service'], OcrRecordedProviderError>
 
 export type OcrProviderSuccess = {
   target: OcrTarget

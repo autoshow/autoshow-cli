@@ -1,6 +1,4 @@
-import type { Logger, RuntimeOptions } from '~/types'
-
-export type ResumeTableLogger = Pick<Logger, 'write'>
+import type { RuntimeOptions } from '~/types'
 
 export type ResumeItemSummary = {
   item: string
