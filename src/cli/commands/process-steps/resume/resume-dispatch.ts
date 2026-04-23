@@ -3,7 +3,7 @@ import { join, resolve as resolvePath } from 'node:path'
 import * as l from '~/logger'
 import { logLocationsTable } from '~/logger/human-table'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
-import { readBatchManifest, readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { readBatchManifest, readExtractBatchManifest, readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import {
   extractExplicitFlags,
   mergeConfigIntoRawFlags
@@ -17,7 +17,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeHandler } from './resume-registry'
 import type { ResumeTarget, ResumeTargetKind } from './resume-types'
 
-const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['stt', 'ocr'])
+const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['stt', 'ocr', 'extract'])
 
 const toResumeTarget = (
   kind: string,
@@ -38,6 +38,16 @@ const resolveExplicitResumeTarget = async (
   outputDirInput: string
 ): Promise<ResumeTarget> => {
   const dir = resolvePath(outputDirInput)
+  const extractBatchManifest = await readExtractBatchManifest(dir)
+  if (extractBatchManifest) {
+    return {
+      kind: 'extract',
+      scope: 'batch',
+      dir,
+      manifestPath: extractBatchManifest.manifestPath
+    }
+  }
+
   const batchManifest = await readBatchManifest(dir)
   if (batchManifest) {
     const target = toResumeTarget(batchManifest.manifest.kind, 'batch', dir, batchManifest.manifestPath)
@@ -56,7 +66,7 @@ const resolveExplicitResumeTarget = async (
     throw CLIUsageError(`Resume supports only STT and OCR manifests. Found "${runManifest.kind}" at ${join(dir, 'run.json')}.`)
   }
 
-  throw CLIUsageError(`Could not find run.json or batch.json under ${dir}.`)
+  throw CLIUsageError(`Could not find extract-batch.json, batch.json, or run.json under ${dir}.`)
 }
 
 const discoverLatestResumeTarget = async (
@@ -79,6 +89,21 @@ const discoverLatestResumeTarget = async (
 
   for (const dirName of dirNames) {
     const candidateDir = join(outputRoot, dirName)
+    const extractBatchManifest = await readExtractBatchManifest(candidateDir)
+    if (extractBatchManifest) {
+      const target: ResumeTarget = {
+        kind: 'extract',
+        scope: 'batch',
+        dir: candidateDir,
+        manifestPath: extractBatchManifest.manifestPath
+      }
+      const handler = getResumeHandler(target.kind)
+      if (handler && await handler.hasResumableWork(target, opts, explicitFlags)) {
+        return target
+      }
+      continue
+    }
+
     const batchManifest = await readBatchManifest(candidateDir)
     if (batchManifest) {
       const target = toResumeTarget(batchManifest.manifest.kind, 'batch', candidateDir, batchManifest.manifestPath)
@@ -109,7 +134,7 @@ const discoverLatestResumeTarget = async (
     }
   }
 
-  throw CLIUsageError(`Could not find a resumable STT or OCR output under ${outputRootInput}.`)
+  throw CLIUsageError(`Could not find a resumable STT, OCR, or extract output under ${outputRootInput}.`)
 }
 
 export const dispatchResume = async (

@@ -1,5 +1,5 @@
 import { readdir } from 'node:fs/promises'
-import { basename, dirname, extname, resolve } from 'node:path'
+import { basename, dirname, extname, join, resolve } from 'node:path'
 import * as l from '~/logger'
 import { createHumanTable, logBatchItemTable, logLocationsTable } from '~/logger/human-table'
 import { runWithLogContext } from '~/logger'
@@ -10,6 +10,7 @@ import { detectDocumentFormat } from '../document/detect-format'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
 import {
   commandSupportsInputFamily,
+  isExtractCommand,
   isOcrCommand,
   isSttCommand
 } from '~/cli/commands/process-steps/process-command-kinds'
@@ -798,6 +799,13 @@ export const describeUnsupportedInputForCommand = (
   command: ProcessCommand,
   family: InputFamily
 ): string => {
+  if (isExtractCommand(command)) {
+    if (family === 'unsupported') {
+      return 'extract could not classify this input; verify the file type or route it explicitly as media or document content'
+    }
+    return 'extract only processes media, documents, images, and HTML articles'
+  }
+
   if (isSttCommand(command)) {
     if (family === 'document' || family === 'html_article') {
       return 'stt only processes media inputs; use ocr or write for documents and articles'
@@ -891,13 +899,19 @@ export const resolveInputRoutingForCommand = async (
         }
   const supported = family !== 'unsupported' && commandSupportsInputFamily(command, family)
   const step2Route = resolvedStep2.route
+  const routedChildKind = step2Route === 'stt'
+    ? 'stt'
+    : step2Route === 'ocr' || step2Route === 'article' || step2Route === 'native-document'
+      ? 'ocr'
+      : undefined
 
   return {
     family,
     step2Route,
     resolvedStep2,
+    ...(routedChildKind ? { routedChildKind } : {}),
     supported,
-    ...(!supported && (isSttCommand(command) || isOcrCommand(command))
+    ...(!supported && (isSttCommand(command) || isOcrCommand(command) || isExtractCommand(command))
       ? { skipReason: describeUnsupportedInputForCommand(command, family) }
       : {})
   }
@@ -916,7 +930,7 @@ export const planBatchInputsForCommand = async (
   resultEntryIndexes: number[]
   plannedInputs: PlannedBatchInput[]
 }> => {
-  const shouldResolveRouting = isSttCommand(command) || isOcrCommand(command) || command === 'write'
+  const shouldResolveRouting = isSttCommand(command) || isOcrCommand(command) || isExtractCommand(command) || command === 'write'
   if (!shouldResolveRouting) {
     return {
       items,
@@ -948,18 +962,20 @@ export const planBatchInputsForCommand = async (
       ...buildBatchManifestEntryForItem(item, batchItem),
       ...(routing.family !== 'unsupported' ? { inputFamily: routing.family } : {}),
       step2Route: routing.step2Route,
-      resolvedStep2: routing.resolvedStep2
+      resolvedStep2: routing.resolvedStep2,
+      ...(routing.routedChildKind ? { routedChildKind: routing.routedChildKind } : {})
     }
     plannedInputs.push({
       input: item,
       inputFamily: routing.family,
       resolvedStep2: routing.resolvedStep2,
+      ...(routing.routedChildKind ? { routedChildKind: routing.routedChildKind } : {}),
       ...(batchItem ? { batchItem } : {})
     })
 
     if (!routing.supported) {
       const reason = routing.skipReason ?? describeUnsupportedInputForCommand(command, routing.family)
-      if (logSkips && (isSttCommand(command) || isOcrCommand(command))) {
+      if (logSkips && (isSttCommand(command) || isOcrCommand(command) || isExtractCommand(command))) {
         l.warn(`Skipping ${routing.family} input in ${command} batch: ${item} (${reason})`)
       }
       initialEntries.push({
@@ -1170,7 +1186,9 @@ export const processBatch = async (
   }
 
   const batchDirName = createUniqueDirectoryName(batchLabel)
-  const batchDir = `./output/${batchDirName}`
+  const batchDir = runOpts.parentBatchDir
+    ? join(runOpts.parentBatchDir, toManifestKind(command))
+    : `./output/${batchDirName}`
   await ensureDirectory(batchDir)
   logLocationsTable(l, [{ artifact: 'outputDir', path: batchDir }])
 

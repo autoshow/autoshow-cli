@@ -39,14 +39,14 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 # Download only
 bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
-# Transcription only
-bun as stt "https://www.youtube.com/watch?v=u1-WHqATSQU"
+# Extraction only (media routes to STT, documents/articles route to OCR)
+bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Full write pipeline: download/extract/transcribe + summary output
 bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.2
 
 # Document OCR / extraction
-bun as ocr input/examples/document/1-document.pdf --out json
+bun as extract input/examples/document/1-document.pdf --out json
 
 # Standalone text-to-speech from local text
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
@@ -67,7 +67,7 @@ bun as links stt
 
 | Area | Commands |
 |------|----------|
-| Inspect and process | `metadata`, `download`, `ocr`, `stt`, `write` |
+| Inspect and process | `metadata`, `download`, `extract`, `write` |
 | Generate | `tts`, `image`, `video`, `music` |
 | Setup & Utilities | `config`, `cache`, `setup`, `links` |
 
@@ -89,7 +89,7 @@ bun as <command> --help
 bun as --version
 ```
 
-- Use `bun as stt <input> --whisper tiny`, not `bun as --whisper tiny stt <input>`.
+- Use `bun as extract <input> --whisper tiny`, not `bun as --whisper tiny extract <input>`.
 - Inputs can be URLs, local files, directories, `.md`/`.txt` URL lists, or prompt strings for `image`, `video`, and `music`.
 - If an input begins with `-`, end flag parsing first: `bun as write -- -myfile`.
 - If the literal input collides with a command name, use the explicit command form: `bun as metadata setup`.
@@ -103,10 +103,10 @@ Batch mode is selected from the input type rather than a separate subcommand:
 bun as write input/examples/batch/2-urls.md
 
 # Process files plus 2-urls.md inside the directory
-bun as stt input
+bun as extract input
 
 # Process only local files in a non-input directory
-bun as ocr /tmp/job/files
+bun as extract /tmp/job/files
 ```
 
 Common batch controls:
@@ -164,7 +164,7 @@ Typical artifacts include:
 - `run.json`
 - `metadata.md` for `metadata --markdown --save`
 
-Batch runs write `batch.json`, and some structured remote sources add `source.json`.
+`extract` batches write a parent `extract-batch.json` plus nested `stt/` and `ocr/` child batches when those routed items are present. Other batch runs write `batch.json`, and some structured remote sources add `source.json`.
 
 Notable exceptions:
 

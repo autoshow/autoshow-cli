@@ -48,7 +48,7 @@ export const defineOCRServiceTest = ({
 
       await cleanupTestOutput('1-document')
 
-      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'ocr', pdfInput, cliFlag, model])
+      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', pdfInput, cliFlag, model])
       if (!outputDir) return
 
       const metadata = await readRunMetadata(outputDir) as {
@@ -67,7 +67,7 @@ export const defineOCRServiceTest = ({
       }
       await cleanupTestOutput('1-document')
 
-      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'ocr', imageInput, cliFlag, model])
+      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', imageInput, cliFlag, model])
       if (!outputDir) return
 
       const metadata = await readRunMetadata(outputDir) as {

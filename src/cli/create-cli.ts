@@ -3,9 +3,8 @@ import { configCommand } from './commands/setup-and-utilities/config/define-conf
 import { cacheCommand } from './commands/setup-and-utilities/cache/define-cache-command'
 import { metadataCommand } from '~/cli/commands/process-steps/step-0-metadata/define-metadata-command'
 import { downloadCommand } from '~/cli/commands/process-steps/step-1-download/define-download-command'
-import { sttCommand } from '~/cli/commands/process-steps/step-2-stt/define-stt-command'
+import { extractCommand } from '~/cli/commands/process-steps/step-2-extract/define-extract-command'
 import { writeCommand } from '~/cli/commands/process-steps/step-3-write/define-write-command'
-import { ocrCommand } from '~/cli/commands/process-steps/step-2-ocr/define-ocr-command'
 import { resumeCommand } from '~/cli/commands/process-steps/resume/define-resume-command'
 import { ttsCommand } from '~/cli/commands/process-steps/step-4-tts/define-tts-command'
 import { imageCommand } from '~/cli/commands/process-steps/step-5-image/define-image-command'
@@ -25,6 +24,7 @@ import {
   formatInput,
   validateSttFlagCompatibility
 } from '~/cli/argv-normalize'
+import { maybeThrowDeprecatedProcessCommand } from '~/cli/commands/process-steps/step-2-extract/extract-migration'
 import {
   colorText,
   colorizeHelpDescription,
@@ -103,9 +103,8 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   links: 'setup',
   metadata: 'processing',
   download: 'processing',
+  extract: 'processing',
   resume: 'processing',
-  ocr: 'processing',
-  stt: 'processing',
   write: 'processing',
   tts: 'processing',
   image: 'processing',
@@ -121,9 +120,8 @@ const COMMAND_DEFINITIONS = [
   linksCommand,
   metadataCommand,
   downloadCommand,
+  extractCommand,
   resumeCommand,
-  ocrCommand,
-  sttCommand,
   writeCommand,
   ttsCommand,
   imageCommand,
@@ -293,6 +291,7 @@ const createCli = () => {
 
 const main = async (): Promise<void> => {
   const argv = normalizeStep2ArgvAliases(Bun.argv.slice(2))
+  maybeThrowDeprecatedProcessCommand(argv)
   validateSttFlagCompatibility(argv)
   const parseCli = async (parseArgv: string[]): Promise<void> => {
     if (shouldPatchHelpConsole(parseArgv)) {

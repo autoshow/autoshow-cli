@@ -92,10 +92,10 @@ test("bun as write processes audio successfully", async () => {
   }
 })
 
-test("bun as stt skips LLM processing but creates prompt", async () => {
+test("bun as extract skips LLM processing but creates prompt", async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   
-  const result = await runCommand(["src/cli/create-cli.ts", 'stt', STABLE_LOCAL_AUDIO_PATH, "--prompt", "shortSummary"])
+  const result = await runCommand(["src/cli/create-cli.ts", 'extract', STABLE_LOCAL_AUDIO_PATH, "--prompt", "shortSummary"])
   
   expect(result.exitCode).toBe(0)
   

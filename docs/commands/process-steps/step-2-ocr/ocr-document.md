@@ -1,6 +1,6 @@
-# ocr
+# OCR Path
 
-Extract text from documents, images, and article-style HTML with local or hosted OCR paths.
+Reference for the OCR side of `extract`: documents, images, and article-style HTML inputs route through these local or hosted OCR paths.
 
 ## Outline
 
@@ -29,7 +29,7 @@ bun as setup --step sample
 PaddleOCR can also be prepared lazily on first use:
 
 ```bash
-bun as ocr input/examples/document/1-document.pdf --paddle-ocr
+bun as extract input/examples/document/1-document.pdf --paddle-ocr
 ```
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms when the Calibre CLI tools are missing.
@@ -59,7 +59,7 @@ AUTOSHOW_URL_BACKEND=glm-reader
 ## Usage
 
 ```bash
-bun as ocr [input] [flags]
+bun as extract [input] [flags]
 ```
 
 Batch inputs use the same shared controls as other processing commands. The default batch limit is `5`; use `--batch-all` to process every discovered item.
@@ -127,52 +127,52 @@ The default EPUB path writes cleaned native text instead of synthetic `Page N` o
 
 ```bash
 # Default PDF extraction
-bun as ocr input/examples/document/1-document.pdf
+bun as extract input/examples/document/1-document.pdf
 
 # JSON output
-bun as ocr input/examples/document/1-document.pdf --out json
+bun as extract input/examples/document/1-document.pdf --out json
 
 # PDF chapter autodetection
-bun as ocr input/examples/document/3-document.pdf --chapters
+bun as extract input/examples/document/3-document.pdf --chapters
 
 # PDF chapter autodetection with model-assisted fallback
-bun as ocr input/examples/document/3-document.pdf --chapters --pdf-chapter-mode auto
+bun as extract input/examples/document/3-document.pdf --chapters --pdf-chapter-mode auto
 
 # Native EPUB extraction plus chapter side artifacts
-bun as ocr input/examples/document/1-epub.epub --chapters
+bun as extract input/examples/document/1-epub.epub --chapters
 
 # Native EPUB chunk side artifacts at 50k characters
-bun as ocr input/examples/document/1-epub.epub --length 50
+bun as extract input/examples/document/1-epub.epub --length 50
 
 # OCRmyPDF path
-bun as ocr input/examples/document/1-document.pdf --ocrmypdf
+bun as extract input/examples/document/1-document.pdf --ocrmypdf
 
 # Explicit Tesseract path
-bun as ocr input/examples/document/1-document.pdf --tesseract
+bun as extract input/examples/document/1-document.pdf --tesseract
 
 # Hosted OCR
-bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
-bun as ocr input/examples/document/1-document.pdf --glm-ocr glm-ocr
-bun as ocr input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
-bun as ocr input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
-bun as ocr input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-lite-preview
+bun as extract input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
+bun as extract input/examples/document/1-document.pdf --glm-ocr glm-ocr
+bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
+bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
+bun as extract input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-lite-preview
 
 # Fan out across every OCR provider in price mode
-bun as ocr input/examples/document/1-document.pdf --all-ocr --price
+bun as extract input/examples/document/1-document.pdf --all-ocr --price
 
 # Remote article extraction
-bun as ocr https://ajcwebdev.com
-bun as ocr https://ajcwebdev.com --url-backend firecrawl
+bun as extract https://ajcwebdev.com
+bun as extract https://ajcwebdev.com --url-backend firecrawl
 
 # Batch URL list extraction
-bun as ocr ./input/examples/batch/2-urls.md --batch-all
+bun as extract ./input/examples/batch/2-urls.md --batch-all
 
 # Local HTML always uses defuddle
-bun as ocr ./input/article.html --out json
+bun as extract ./input/article.html --out json
 
 # EPUB inspect modes
-bun as ocr input/examples/document/1-epub.epub --epub-bun --out json
-bun as ocr input/examples/document/1-epub.epub --epub-calibre --out json
+bun as extract input/examples/document/1-epub.epub --epub-bun --out json
+bun as extract input/examples/document/1-epub.epub --epub-calibre --out json
 
 ```
 
@@ -212,7 +212,7 @@ bun as ocr input/examples/document/1-epub.epub --epub-calibre --out json
 
 ## Notes
 
-- Standalone `ocr` writes the root extraction artifact (`extraction.txt` or `result.json`) plus `run.json`.
+- Standalone `extract` document runs write the root extraction artifact (`extraction.txt` or `result.json`) plus `run.json`.
 - EPUB export and PDF chapter autodetection write additive `chapters/` or `chunks/` side artifacts inside the same output directory.
 - Supported document formats include PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, and CBZ.
 - Supported image formats include PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, and GIF.

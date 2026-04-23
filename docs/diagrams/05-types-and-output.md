@@ -17,7 +17,7 @@ output/
     │  ── Metadata (metadata command, with --save) ──
     ├── run.json                    # { step1 } — metadata only, no downloaded files
     │
-    │  ── Media (stt command) ──
+    │  ── Media (extract command routed to STT) ──
     ├── audio.(mp3|m4a|ogg|flac)    # normalized compressed audio-only artifact
     ├── transcription.txt           # [HH:MM:SS] timestamped text
     ├── prompt.md                   # Formatted prompt for LLM
@@ -34,7 +34,7 @@ output/
     ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music set)
     ├── run.json                    # { step1, step2, step3[, step4, step5, step6, step7] }
     │
-    │  ── Document (ocr command) ──
+    │  ── Document (extract command routed to OCR) ──
     ├── extraction.txt              # if --out text (default)
     ├── result.json                 # if --out json
     ├── extraction.tsv              # if --out tsv
@@ -63,7 +63,9 @@ output/
     │
     │  ── Batch Processing ──
     └── output/YYYY-MM-DD_HH-MM-SS_<batch-label>/
-        ├── batch.json              # Consolidated per-item run metadata payloads
+        ├── extract-batch.json      # Parent routed batch manifest for `extract`
+        ├── stt/batch.json          # Child STT batch when media items are present
+        ├── ocr/batch.json          # Child OCR batch when document/article items are present
         └── YYYY-MM-DD_HH-MM-SS_<item-title>/
             └── (individual item output files)
 ```
@@ -96,7 +98,7 @@ src/types/
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  cli-types.ts                                                                │
 │                                                                              │
-│  ProcessCommand = 'metadata' | 'download' | 'stt' | 'write' | 'ocr'         │
+│  ProcessCommand = 'metadata' | 'download' | 'extract' | 'write'              │
 │                 | 'tts' | 'image' | 'music' | 'video'                        │
 │  Note: `lyrics` is a standalone top-level command with its own local runner  │
 │  and output manifests; it is not part of the shared process-target router.   │

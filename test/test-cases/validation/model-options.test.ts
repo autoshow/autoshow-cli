@@ -86,32 +86,32 @@ const expectTextToExclude = (text: string, excluded: string[]): void => {
 }
 
 const invalidCliCases: Array<{ label: string; args: string[] }> = [
-  { label: 'CLI invalid whisper model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'whisper-large-v4'] },
-  { label: 'CLI invalid ElevenLabs STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--elevenlabs-stt', 'scribe_v3'] },
-  { label: 'CLI invalid Deepgram STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', 'nova-4'] },
-  { label: 'CLI invalid Soniox STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v2'] },
-  { label: 'CLI removed Soniox STT compatibility model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v3'] },
-  { label: 'CLI invalid Speechmatics STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', 'premium'] },
-  { label: 'CLI invalid Rev STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'human'] },
-  { label: 'CLI unsupported Rev STT fusion model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'fusion'] },
-  { label: 'CLI invalid Happy Scribe STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--happyscribe-stt', 'premium'] },
-  { label: 'CLI invalid DeepInfra STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deepinfra-stt', 'openai/whisper-large-v4'] },
-  { label: 'CLI invalid deAPI STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--deapi-stt', 'whisper-large-v3'] },
-  { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
-  { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
-  { label: 'CLI invalid Gladia STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', 'premium'] },
-  { label: 'CLI invalid Supadata STT mode exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--supadata-stt', 'premium'] },
-  { label: 'CLI invalid AWS STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--aws-stt', 'premium'] },
-  { label: 'CLI invalid Google Cloud STT model exits with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', 'chirp_2'] },
-  { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
-  { label: 'CLI invalid GLM OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr-v2'] },
-  { label: 'CLI invalid OpenAI OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-4o'] },
-  { label: 'CLI invalid Anthropic OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--anthropic-ocr', 'claude-3-opus'] },
-  { label: 'CLI invalid Gemini OCR model exits with usage error code 2', args: ['ocr', 'input/examples/document/1-document.pdf', '--gemini-ocr', 'gemini-2.5-flash'] },
-  { label: 'stt rejects invalid speaker-count with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
-  { label: 'stt rejects LLM provider flags with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4'] },
-  { label: 'stt rejects MiniMax LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
-  { label: 'stt rejects Grok LLM flag with usage error code 2', args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-4.20-reasoning'] },
+  { label: 'CLI invalid whisper model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'whisper-large-v4'] },
+  { label: 'CLI invalid ElevenLabs STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--elevenlabs-stt', 'scribe_v3'] },
+  { label: 'CLI invalid Deepgram STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', 'nova-4'] },
+  { label: 'CLI invalid Soniox STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v2'] },
+  { label: 'CLI removed Soniox STT compatibility model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', 'stt-async-v3'] },
+  { label: 'CLI invalid Speechmatics STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', 'premium'] },
+  { label: 'CLI invalid Rev STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'human'] },
+  { label: 'CLI unsupported Rev STT fusion model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', 'fusion'] },
+  { label: 'CLI invalid Happy Scribe STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--happyscribe-stt', 'premium'] },
+  { label: 'CLI invalid DeepInfra STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--deepinfra-stt', 'openai/whisper-large-v4'] },
+  { label: 'CLI invalid deAPI STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--deapi-stt', 'whisper-large-v3'] },
+  { label: 'CLI invalid Groq STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', 'whisper-large-v4'] },
+  { label: 'CLI invalid Mistral STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--mistral-stt', 'voxtral-mini-2507'] },
+  { label: 'CLI invalid Gladia STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', 'premium'] },
+  { label: 'CLI invalid Supadata STT mode exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--supadata-stt', 'premium'] },
+  { label: 'CLI invalid AWS STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--aws-stt', 'premium'] },
+  { label: 'CLI invalid Google Cloud STT model exits with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', 'chirp_2'] },
+  { label: 'CLI invalid Mistral OCR model exits with usage error code 2', args: ['extract', 'input/examples/document/1-document.pdf', '--mistral-ocr', 'mistral-ocr-2505'] },
+  { label: 'CLI invalid GLM OCR model exits with usage error code 2', args: ['extract', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr-v2'] },
+  { label: 'CLI invalid OpenAI OCR model exits with usage error code 2', args: ['extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-4o'] },
+  { label: 'CLI invalid Anthropic OCR model exits with usage error code 2', args: ['extract', 'input/examples/document/1-document.pdf', '--anthropic-ocr', 'claude-3-opus'] },
+  { label: 'CLI invalid Gemini OCR model exits with usage error code 2', args: ['extract', 'input/examples/document/1-document.pdf', '--gemini-ocr', 'gemini-2.5-flash'] },
+  { label: 'extract rejects invalid speaker-count with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--speaker-count', '0'] },
+  { label: 'extract rejects LLM provider flags with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4'] },
+  { label: 'extract rejects MiniMax LLM flag with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'MiniMax-M2.5'] },
+  { label: 'extract rejects Grok LLM flag with usage error code 2', args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--grok', 'grok-4.20-reasoning'] },
   { label: 'CLI invalid OpenAI model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--openai', 'not-a-real-openai-model'] },
   { label: 'CLI malformed llama repo ID exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'not-a-real-llama-model'] },
   { label: 'CLI invalid anthropic model exits with usage error code 2', args: ['write', STABLE_LOCAL_AUDIO_PATH, '--anthropic', 'not-a-real-anthropic-model'] },
@@ -136,10 +136,10 @@ for (const { label, args } of invalidCliCases) {
   })
 }
 
-test('stt help excludes LLM provider flags and includes prompt flag', async () => {
+test('extract help exposes the combined STT and OCR surface while excluding top-level LLM flags', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     '--help'
   ])
 
@@ -174,6 +174,17 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--stt-local-concurrency')
   expect(result.stdout).toContain('--stt-segment-concurrency')
   expect(result.stdout).toContain('--stt-preflight-concurrency')
+  expect(result.stdout).toContain('--all-stt')
+  expect(result.stdout).toContain('--all-ocr')
+  expect(result.stdout).toContain('--tesseract-ocr')
+  expect(result.stdout).toContain('--mistral-ocr')
+  expect(result.stdout).toContain('--glm-ocr')
+  expect(result.stdout).toContain('--anthropic-ocr')
+  expect(result.stdout).toContain('--gemini-ocr')
+  expect(result.stdout).toContain('--dpi')
+  expect(result.stdout).toContain('--page-separator')
+  expect(result.stdout).toContain('--epub-bun')
+  expect(result.stdout).toContain('--epub-calibre')
   expect(result.stdout).toContain('--refresh-cache')
   expect(result.stdout).toContain('--no-cache')
   expect(result.stdout).not.toMatch(/--openai(\s|$)/)
@@ -186,16 +197,16 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
 
 const extractReadyAliasPriceCases = [
   {
-    label: 'stt accepts --whisper-stt in price mode',
-    args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper-stt', 'base', '--price']
+    label: 'extract accepts --whisper-stt in price mode',
+    args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--whisper-stt', 'base', '--price']
   },
   {
-    label: 'stt accepts --reverb-stt in price mode',
-    args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--reverb-stt', '--price']
+    label: 'extract accepts --reverb-stt in price mode',
+    args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--reverb-stt', '--price']
   },
   {
-    label: 'ocr accepts --tesseract-ocr in price mode',
-    args: ['ocr', 'input/examples/document/1-document.pdf', '--tesseract-ocr', '--price']
+    label: 'extract accepts --tesseract-ocr in price mode',
+    args: ['extract', 'input/examples/document/1-document.pdf', '--tesseract-ocr', '--price']
   }
 ] as const
 
@@ -218,13 +229,13 @@ test('resume accepts extract-ready STT and OCR aliases', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Could not find run.json or batch.json')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Could not find extract-batch.json, batch.json, or run.json')
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('Unexpected flag')
 })
 
 const commandAllShortcutHelpCases = [
-  { command: 'stt', flag: '--all-stt' },
-  { command: 'ocr', flag: '--all-ocr' },
+  { command: 'extract', flag: '--all-stt' },
+  { command: 'extract', flag: '--all-ocr' },
   { command: 'write', flag: '--all-llm' },
   { command: 'tts', flag: '--all-tts' },
   { command: 'image', flag: '--all-image' },
@@ -245,10 +256,10 @@ for (const helpCase of commandAllShortcutHelpCases) {
   })
 }
 
-test('ocr help includes hosted OCR flags', async () => {
+test('extract help includes hosted OCR flags', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'ocr',
+    'extract',
     '--help'
   ])
 
@@ -617,67 +628,67 @@ test('CLI ElevenLabs TTS without voice id is accepted in price mode', async () =
 const barePriceSelectionCases = [
   {
     name: 'CLI bare Google Cloud STT flag is accepted in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--gcloud-stt', '--price'],
     provider: 'gcloud',
     model: 'chirp_3',
   },
   {
     name: 'CLI bare Deepgram STT flag is accepted in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--deepgram-stt', '--price'],
     provider: 'deepgram',
     model: 'nova-3',
   },
   {
     name: 'CLI bare DeepInfra STT flag resolves to the cheapest model in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--deepinfra-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--deepinfra-stt', '--price'],
     provider: 'deepinfra',
     model: 'openai/whisper-large-v3-turbo',
   },
   {
     name: 'CLI bare deAPI STT flag resolves to the curated model in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--deapi-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--deapi-stt', '--price'],
     provider: 'deapi',
     model: 'WhisperLargeV3',
   },
   {
     name: 'CLI bare Soniox STT flag is accepted in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--soniox-stt', '--price'],
     provider: 'soniox',
     model: 'stt-async-v4',
   },
   {
     name: 'CLI bare Speechmatics STT flag is accepted in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--speechmatics-stt', '--price'],
     provider: 'speechmatics',
     model: 'standard',
   },
   {
     name: 'CLI bare Gladia STT flag is accepted in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--gladia-stt', '--price'],
     provider: 'gladia',
     model: 'default',
   },
   {
     name: 'CLI bare Rev STT flag is accepted in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--rev-stt', '--price'],
     provider: 'rev',
     model: 'low_cost',
   },
   {
     name: 'CLI bare Groq STT flag resolves to the cheapest model in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--groq-stt', '--price'],
     provider: 'groq',
     model: 'whisper-large-v3-turbo',
   },
   {
     name: 'CLI bare Supadata STT flag resolves to auto mode in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--supadata-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--supadata-stt', '--price'],
     provider: 'supadata',
     model: 'auto',
   },
   {
     name: 'CLI bare Happy Scribe STT flag resolves to auto mode in price mode',
-    args: ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--happyscribe-stt', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--happyscribe-stt', '--price'],
     provider: 'happyscribe',
     model: 'auto',
   },
@@ -713,19 +724,19 @@ const barePriceSelectionCases = [
   },
   {
     name: 'CLI bare Mistral OCR flag resolves to the cheapest model in price mode',
-    args: ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--mistral-ocr', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--mistral-ocr', '--price'],
     provider: 'mistral',
     model: 'mistral-ocr-2512',
   },
   {
     name: 'CLI bare Anthropic OCR flag resolves to the cheapest model in price mode',
-    args: ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--anthropic-ocr', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--anthropic-ocr', '--price'],
     provider: 'anthropic',
     model: 'claude-haiku-4-5',
   },
   {
     name: 'CLI bare Gemini OCR flag resolves to the cheapest model in price mode',
-    args: ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', '--gemini-ocr', '--price'],
+    args: ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--gemini-ocr', '--price'],
     provider: 'gemini',
     model: 'gemini-3.1-flash-lite-preview',
   },
@@ -747,7 +758,7 @@ for (const barePriceSelectionCase of barePriceSelectionCases) {
 test('CLI Supadata price output includes converted credit cost estimates', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--supadata-stt',
     'generate',
@@ -764,7 +775,7 @@ test('CLI Supadata price output includes converted credit cost estimates', async
 test('CLI explicit Rev Turbo STT flag is accepted in price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--rev-stt',
     'low_cost',
@@ -800,7 +811,7 @@ test('CLI explicit Anthropic Opus 4.7 flag is accepted in price mode', async () 
   expectPriceSelection(result, 'anthropic', 'claude-opus-4-7')
 })
 
-test('stt rejects removed --resume-missing flag through normal unknown-flag handling', async () => {
+test('stt rejects direct invocation with the extract migration error', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'stt',
@@ -808,10 +819,10 @@ test('stt rejects removed --resume-missing flag through normal unknown-flag hand
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: resumeMissing')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('The "stt" command has been replaced by "extract"')
 })
 
-test('ocr rejects removed --resume-missing flag through normal unknown-flag handling', async () => {
+test('ocr rejects direct invocation with the extract migration error', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'ocr',
@@ -819,7 +830,7 @@ test('ocr rejects removed --resume-missing flag through normal unknown-flag hand
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: resumeMissing')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('The "ocr" command has been replaced by "extract"')
 })
 
 test('write --resume-missing still fails through normal unknown-flag handling', async () => {
@@ -1947,10 +1958,10 @@ test('collectSttTargets enables diarization for ElevenLabs without a speaker-cou
   ])
 })
 
-test('stt accepts multiple STT providers in price mode', async () => {
+test('extract accepts multiple STT providers in price mode for media inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--elevenlabs-stt',
     'scribe_v2',
@@ -1962,10 +1973,10 @@ test('stt accepts multiple STT providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
-test('stt --all-stt price shows multi-provider estimates and shared provider artifacts', async () => {
+test('extract --all-stt price shows multi-provider estimates and shared provider artifacts for media inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--all-stt',
     '--price'
@@ -1982,10 +1993,10 @@ test('stt --all-stt price shows multi-provider estimates and shared provider art
   ])
 })
 
-test('stt rejects removed generic --provider aliases', async () => {
+test('extract rejects removed generic --provider aliases on media inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--provider',
     'whisper:tiny',
@@ -1999,10 +2010,10 @@ test('stt rejects removed generic --provider aliases', async () => {
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('Use provider-named flags')
 })
 
-test('stt accepts Deepgram plus another STT provider in price mode', async () => {
+test('extract accepts Deepgram plus another STT provider in price mode for media inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--deepgram-stt',
     'nova-3',
@@ -2014,10 +2025,10 @@ test('stt accepts Deepgram plus another STT provider in price mode', async () =>
   expect(result.exitCode).toBe(0)
 })
 
-test('stt accepts DeepInfra plus another STT provider in price mode', async () => {
+test('extract accepts DeepInfra plus another STT provider in price mode for media inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--deepinfra-stt',
     'openai/whisper-large-v3-turbo',
@@ -2224,10 +2235,10 @@ test('music --all-music price shows multiple provider/model estimates and artifa
   ])
 })
 
-test('ocr accepts multiple OCR providers in price mode', async () => {
+test('extract accepts multiple OCR providers in price mode for document inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'ocr',
+    'extract',
     'input/examples/document/1-document.pdf',
     '--paddle-ocr',
     '--mistral-ocr',
@@ -2244,10 +2255,10 @@ test('ocr accepts multiple OCR providers in price mode', async () => {
   expect(result.exitCode).toBe(0)
 })
 
-test('ocr --all-ocr price shows multi-provider estimates and provider result artifacts', async () => {
+test('extract --all-ocr price shows multi-provider estimates and provider result artifacts for document inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'ocr',
+    'extract',
     'input/examples/document/1-document.pdf',
     '--all-ocr',
     '--price'
@@ -2264,10 +2275,10 @@ test('ocr --all-ocr price shows multi-provider estimates and provider result art
   ])
 })
 
-test('ocr rejects removed generic --provider aliases', async () => {
+test('extract rejects removed generic --provider aliases on document inputs', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'ocr',
+    'extract',
     'input/examples/document/1-document.pdf',
     '--provider',
     'tesseract',

@@ -15,7 +15,7 @@ budgetedTest('transcribe-reverb', 'reverb processes local audio with speaker dia
 
   const testName = 'reverb processes local audio with speaker diarization'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--reverb'],
+    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--reverb'],
     { testName }
   )
 

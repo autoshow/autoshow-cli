@@ -74,6 +74,7 @@ export type BatchRunOptions = {
   totalCount?: number
   initialEntries?: Record<string, unknown>[]
   resultEntryIndexes?: number[]
+  parentBatchDir?: string | undefined
 }
 
 export type ResolvedLLMConfig = {
@@ -104,6 +105,7 @@ export type InputKind =
   | 'local_document'
 
 export type InputFamily = 'media' | 'document' | 'html_article' | 'unsupported'
+export type RoutedChildKind = 'stt' | 'ocr'
 
 export type Step2Modality = 'media' | 'document'
 export type Step2Route = 'stt' | 'ocr' | 'article' | 'native-document' | 'unsupported'
@@ -143,6 +145,7 @@ export type ResolvedInputRouting = {
   family: InputFamily
   step2Route: Step2Route
   resolvedStep2: ResolvedStep2Execution
+  routedChildKind?: RoutedChildKind | undefined
   supported: boolean
   skipReason?: string | undefined
 }
@@ -151,6 +154,7 @@ export type PlannedBatchInput = {
   input: string
   inputFamily: InputFamily
   resolvedStep2: ResolvedStep2Execution
+  routedChildKind?: RoutedChildKind | undefined
   batchItem?: BatchItem | undefined
 }
 

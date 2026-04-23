@@ -24,7 +24,7 @@ import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-ocr/ocr
 import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
 import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
-import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
+import { canonicalizeProcessCommand, isExtractCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   classifyInputFamily,
@@ -214,6 +214,12 @@ const throwUnsupportedProcessInput = (
   family: 'media' | 'document' | 'html_article' | 'unsupported'
 ): never => {
   throw CLIUsageError(`Unsupported ${command} input "${item}". ${describeUnsupportedInputForCommand(command, family)}`)
+}
+
+const throwUnrecognizedExtractInput = (
+  item: string
+): never => {
+  throw CLIUsageError(`Could not classify extract input "${item}". Verify the file type or route it explicitly as media or document content.`)
 }
 
 const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeOptions): Partial<ExtractionOptions> => {
@@ -1196,7 +1202,7 @@ export const processSingleTarget = async (
 
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
-          if (isOcrCommand(command)) {
+          if (isOcrCommand(command) || isExtractCommand(command)) {
             return await processOcrSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
           } else {
             return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
@@ -1212,7 +1218,7 @@ export const processSingleTarget = async (
       }
 
       const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
-      if (isOcrCommand(command)) {
+      if (isOcrCommand(command) || isExtractCommand(command)) {
         return await processOcrSingle(item, baseDir, opts, { url: item }, prepared, batchChildContext)
       }
       return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared, batchChildContext)
@@ -1222,7 +1228,7 @@ export const processSingleTarget = async (
       throwUnsupportedProcessInput(command, item, 'media')
     }
 
-    if (isSttCommand(command)) {
+    if (isSttCommand(command) || isExtractCommand(command)) {
       return {
         outputDir: await processStt({ url: item }, baseDir, opts, preflightEstimate, {
           ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
@@ -1244,7 +1250,7 @@ export const processSingleTarget = async (
   if (isHtmlDocumentPath(item)) {
     const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
 
-    if (isOcrCommand(command)) {
+    if (isOcrCommand(command) || isExtractCommand(command)) {
       return await processOcrSingle(item, baseDir, opts, undefined, prepared, batchChildContext)
     }
 
@@ -1259,7 +1265,7 @@ export const processSingleTarget = async (
 
   const family = await classifyInputFamily(item, opts)
 
-  if (isOcrCommand(command)) {
+  if (isOcrCommand(command) || (isExtractCommand(command) && family === 'document')) {
     if (family !== 'document') {
       throwUnsupportedProcessInput(command, item, family)
     }
@@ -1272,6 +1278,20 @@ export const processSingleTarget = async (
 
   if (isSttCommand(command) && family !== 'media') {
     throwUnsupportedProcessInput(command, item, family)
+  }
+
+  if (isExtractCommand(command)) {
+    if (family === 'media') {
+      return {
+        outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate, {
+          ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
+          ...(runOptions?.mistralSttPassController ? { mistralPassController: runOptions.mistralSttPassController } : {}),
+          ...(batchChildContext ? { batchChildContext } : {})
+        })
+      }
+    }
+
+    throwUnrecognizedExtractInput(item)
   }
 
   if (isSttCommand(command)) {

@@ -45,7 +45,7 @@ YTDLP_COOKIES_FROM_BROWSER=chrome
 3. Retry the exact command that failed:
 
 ```bash
-bun as stt "https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
+bun as extract "https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
 ```
 
 4. Verify:

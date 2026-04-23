@@ -9,32 +9,32 @@
 
 ## Quick Start
 
-AutoShow currently exposes 15 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 14 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
 bun as setup
 
-# stt only (no LLM summary)
-bun as stt input/examples/audio/1-audio.mp3
+# extract only (no LLM summary)
+bun as extract input/examples/audio/1-audio.mp3
 
-# stt with Groq STT
-bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
+# extract with Groq STT
+bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 
-# stt with DeepInfra Whisper STT
-bun as stt input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo
+# extract with DeepInfra Whisper STT
+bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo
 
-# stt with deAPI STT
-bun as stt input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
+# extract with deAPI STT
+bun as extract input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
 
-# stt with Happy Scribe STT
-bun as stt input/examples/audio/1-audio.mp3 --happyscribe-stt auto
+# extract with Happy Scribe STT
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto
 
-# stt with Deepgram STT
-bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
+# extract with Deepgram STT
+bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 
-# stt with AssemblyAI STT
-bun as stt input/examples/audio/1-audio.mp3 --assemblyai-stt universal-3-pro
+# extract with AssemblyAI STT
+bun as extract input/examples/audio/1-audio.mp3 --assemblyai-stt universal-3-pro
 
 # full pipeline (download/transcribe + LLM write)
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
@@ -46,7 +46,7 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --save
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 
 # document OCR/extraction only
-bun as ocr input/examples/document/1-document.pdf
+bun as extract input/examples/document/1-document.pdf
 
 # text-to-speech from local markdown/txt
 bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini
@@ -82,8 +82,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
 - `cache`: manage the persistent STT media cache (`bun as cache prune` / `bun as cache clear`)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
-- `ocr`: [command](./commands/process-steps/step-2-ocr/ocr-document.md) | [setup](./commands/process-steps/step-2-ocr/ocr-document.md#setup)
-- `stt`: [command](./commands/process-steps/step-2-stt/stt-audio.md) | [setup](./commands/process-steps/step-2-stt/stt-audio.md#setup)
+- `extract`: routes media to the STT pipeline and documents/articles/images to the OCR pipeline. OCR and STT provider details remain in [ocr](./commands/process-steps/step-2-ocr/ocr-document.md) and [stt](./commands/process-steps/step-2-stt/stt-audio.md).
 - `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
 - `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
 - `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
@@ -98,9 +97,8 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 
 - Use `metadata` for quick metadata inspection without downloading.
 - Use `download` for downloading media/documents and collecting metadata.
-- Use `ocr` for documents/images when you only need OCR/text extraction.
-- Use `stt` for audio/video when you only need transcript + prompt output.
-- Use `resume` to backfill missing STT or OCR providers in an existing output directory.
+- Use `extract` when you only need step-2 extraction or transcription without LLM writing.
+- Use `resume` to backfill missing STT or OCR providers in an existing output directory, including `extract` parent batches.
 - Use `write` for full summary pipeline with optional TTS/image/video generation.
 - Use `lyrics` either for lyric-video rendering from repo audio under `input/` or for album-style lyric draft generation from `prompt.md` + `text/` directories.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
@@ -110,12 +108,12 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `lyrics` supports `--price` only in text-generation mode:
 
 ```bash
-bun as stt input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
-bun as stt input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo --price
-bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
-bun as stt input/examples/audio/1-audio.mp3 --happyscribe-stt auto --price
-bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
-bun as stt input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
+bun as extract input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
+bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo --price
+bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto --price
+bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
+bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as lyrics album-title --price
 bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
@@ -128,4 +126,4 @@ bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --price
 ```
 
-For `stt --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `stt --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.
+For `extract --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.

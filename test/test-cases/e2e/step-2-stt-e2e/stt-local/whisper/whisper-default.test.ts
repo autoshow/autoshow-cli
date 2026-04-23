@@ -18,7 +18,7 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
 
   const testName = 'default transcribe processes local audio'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH],
+    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH],
     { testName }
   )
 
@@ -57,8 +57,8 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
       sourceKind: 'media',
       providers: [{ service: 'whisper', model: 'tiny', origin: 'default' }]
     })
-    expect(metadata.requestedProviders).toEqual([{ service: 'whisper', model: 'tiny' }])
-    expect(metadata.providerStates).toEqual([
+    expect(metadata.requestedProviders).toMatchObject([{ service: 'whisper', model: 'tiny', local: true }])
+    expect(metadata.providerStates).toMatchObject([
       {
         service: 'whisper',
         model: 'tiny',
@@ -81,7 +81,7 @@ for (const modelCase of [
 
     const testName = `whisper ${modelCase.model} model transcribes local audio`
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--whisper', modelCase.model],
+      ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--whisper', modelCase.model],
       { testName }
     )
 
@@ -121,7 +121,7 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
 
   const testName = 'split mode processes audio in segments'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'stt', STABLE_LOCAL_AUDIO_PATH, '--split', '--whisper', 'tiny'],
+    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--split', '--whisper', 'tiny'],
     { testName }
   )
 

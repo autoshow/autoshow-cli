@@ -110,20 +110,20 @@ bun as setup
 # metadata as Markdown frontmatter YAML
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 
-# stt only
-bun as stt input/examples/audio/1-audio.mp3
+# extract only
+bun as extract input/examples/audio/1-audio.mp3
 
 # full media pipeline with service LLM
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 
 # document OCR/extraction
-bun as ocr input/examples/document/1-document.pdf --out json
+bun as extract input/examples/document/1-document.pdf --out json
 
 # native EPUB extraction with chapter side artifacts
-bun as ocr input/examples/document/1-epub.epub --chapters --length 50
+bun as extract input/examples/document/1-epub.epub --chapters --length 50
 
 # article extraction with a hosted backend
-bun as ocr https://ajcwebdev.com --url-backend firecrawl
+bun as extract https://ajcwebdev.com --url-backend firecrawl
 
 # standalone text-to-speech
 bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8

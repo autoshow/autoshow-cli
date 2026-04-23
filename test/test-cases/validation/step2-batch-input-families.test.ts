@@ -143,6 +143,53 @@ test('mixed input-list planning keeps selectedItems aligned after skip filtering
   })
 })
 
+test('extract mixed-family planning preserves original order and routed child kinds', async () => {
+  const { dir, audioPath, pdfPath } = await createMixedInputDir()
+  const items = (await collectInputFiles(dir)).sort()
+  const extractOpts = buildOptsFromFlags(false, {
+    'assemblyai-stt': 'universal-3-pro',
+    'tesseract-ocr': true
+  })
+
+  const extractPlan = await planBatchInputsForCommand('extract', items, extractOpts)
+  expect(extractPlan.items).toEqual([audioPath, pdfPath])
+  expect(extractPlan.plannedInputs).toMatchObject([
+    {
+      input: audioPath,
+      inputFamily: 'media',
+      routedChildKind: 'stt',
+      resolvedStep2: {
+        route: 'stt',
+        sourceKind: 'media',
+        providers: [{ service: 'assemblyai', model: 'universal-3-pro' }]
+      }
+    },
+    {
+      input: pdfPath,
+      inputFamily: 'document',
+      routedChildKind: 'ocr',
+      resolvedStep2: {
+        route: 'ocr',
+        sourceKind: 'pdf',
+        providers: [{ service: 'tesseract', model: 'tesseract' }]
+      }
+    }
+  ])
+  expect(extractPlan.initialEntries).toMatchObject([
+    {
+      url: `file://${audioPath}`,
+      inputFamily: 'media',
+      step2Route: 'stt'
+    },
+    {
+      url: `file://${pdfPath}`,
+      inputFamily: 'document',
+      step2Route: 'ocr'
+    }
+  ])
+  expect(extractPlan.resultEntryIndexes).toEqual([0, 1])
+})
+
 test('processBatch preserves skipped STT manifest entries and summary totals', async () => {
   const { audioPath, pdfPath } = await createMixedInputDir()
   const opts = buildOptsFromFlags(false, { 'assemblyai-stt': 'universal-3-pro' })
@@ -215,14 +262,14 @@ test('processBatch preserves skipped STT manifest entries and summary totals', a
   })
 })
 
-test('single-item wrong-family calls stay hard usage errors for stt and ocr', async () => {
+test('deprecated stt and ocr commands fail with the extract migration error', async () => {
   const sttResult = await runCommand([
     'src/cli/create-cli.ts',
     'stt',
     'input/examples/document/1-document.pdf'
   ])
   expect(sttResult.exitCode).toBe(2)
-  expect(`${sttResult.stdout}\n${sttResult.stderr}`).toContain('Unsupported stt input')
+  expect(`${sttResult.stdout}\n${sttResult.stderr}`).toContain('The "stt" command has been replaced by "extract"')
 
   const ocrResult = await runCommand([
     'src/cli/create-cli.ts',
@@ -230,5 +277,21 @@ test('single-item wrong-family calls stay hard usage errors for stt and ocr', as
     STABLE_LOCAL_AUDIO_PATH
   ])
   expect(ocrResult.exitCode).toBe(2)
-  expect(`${ocrResult.stdout}\n${ocrResult.stderr}`).toContain('Unsupported ocr input')
+  expect(`${ocrResult.stdout}\n${ocrResult.stderr}`).toContain('The "ocr" command has been replaced by "extract"')
+})
+
+test('extract names unrecognized local inputs in the usage error', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-step2-family-unknown-'))
+  createdPaths.push(tempDir)
+  const unknownPath = join(tempDir, 'input.unknown')
+  await writeFile(unknownPath, 'not a supported file type')
+
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'extract',
+    unknownPath
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain(`Could not classify extract input "${unknownPath}"`)
 })

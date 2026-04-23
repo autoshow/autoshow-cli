@@ -1,6 +1,6 @@
-# stt
+# STT Path
 
-Download audio and transcribe it with local or hosted speech-to-text engines.
+Reference for the STT side of `extract`: media inputs are downloaded and transcribed with local or hosted speech-to-text engines.
 
 ## Outline
 
@@ -73,14 +73,14 @@ bun as setup --step reverb
 ## Usage
 
 ```bash
-bun as stt [input] [flags]
+bun as extract [input] [flags]
 ```
 
 For backfilling missing provider outputs from an existing STT run or batch, see [`resume`](../../setup-and-utilities/resume/resume.md).
 
 ## Supported Inputs
 
-`stt` uses the same input routing as `download` for audio and video sources:
+`extract` uses this STT path for audio and video sources:
 
 - YouTube, Twitch, or TikTok URLs
 - direct media URLs
@@ -90,7 +90,7 @@ For backfilling missing provider outputs from an existing STT run or batch, see 
 - RSS or podcast feed batches
 - YouTube channel batches
 
-Document inputs are not supported by `stt`.
+Document inputs do not use this STT path; `extract` routes them to the OCR/article pipeline instead.
 
 ## Engines
 
@@ -101,7 +101,7 @@ Document inputs are not supported by `stt`.
 | Whisper.cpp | default, or `--whisper <model>` | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
 | Reverb | `--reverb` | diarized local transcription |
 
-If no engine flag is provided, `stt` defaults to Whisper with the `tiny` model.
+If no engine flag is provided, `extract` defaults to Whisper with the `tiny` model for media inputs.
 
 ### Hosted
 
@@ -129,37 +129,37 @@ Hosted provider flags accept an omitted model value and then resolve to the chea
 
 ```bash
 # Default local Whisper
-bun as stt input/examples/audio/1-audio.mp3
+bun as extract input/examples/audio/1-audio.mp3
 
 # Local Reverb
-bun as stt input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
+bun as extract input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
 
 # Split a long file before transcription
-bun as stt input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
+bun as extract input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
 
 # Hosted providers
-bun as stt input/examples/audio/1-audio.mp3 --gcloud-stt
-bun as stt input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
-bun as stt input/examples/audio/1-audio.mp3 --aws-stt
-bun as stt input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
-bun as stt input/examples/audio/1-audio.mp3 --groq-stt
-bun as stt input/examples/audio/1-audio.mp3 --deepinfra-stt
-bun as stt input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
-bun as stt input/examples/audio/1-audio.mp3 --happyscribe-stt auto
-bun as stt input/examples/audio/1-audio.mp3 --happyscribe-stt --happyscribe-organization-id org_123
-bun as stt input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
+bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt
+bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
+bun as extract input/examples/audio/1-audio.mp3 --aws-stt
+bun as extract input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
+bun as extract input/examples/audio/1-audio.mp3 --groq-stt
+bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
+bun as extract input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt --happyscribe-organization-id org_123
+bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
 
 # Same provider, multiple models
-bun as stt input/examples/audio/1-audio.mp3 --speechmatics-stt standard --speechmatics-stt enhanced
+bun as extract input/examples/audio/1-audio.mp3 --speechmatics-stt standard --speechmatics-stt enhanced
 
 # deAPI exact preflight on a supported passthrough URL
-bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
+bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
 
 # Prefer YouTube captions, then fall back to STT
-bun as stt https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
+bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
 
 # Process a whole YouTube channel batch with caption-first routing
-bun as stt https://www.youtube.com/@channelname --youtube-captions --batch-all
+bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
 
 ```
 

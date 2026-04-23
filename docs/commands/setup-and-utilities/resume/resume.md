@@ -1,6 +1,6 @@
 # resume
 
-Backfill missing STT or OCR provider outputs in an existing run or batch directory.
+Backfill missing STT or OCR provider outputs in an existing run, child batch, or parent `extract` batch directory.
 
 ## Outline
 
@@ -23,14 +23,16 @@ bun as resume [output-dir] [flags]
 
 - a single run directory containing `run.json`
 - a batch directory containing `batch.json`
+- an `extract` parent batch directory containing `extract-batch.json`
 
-If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the first resumable STT or OCR run or batch it finds.
+If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the first resumable STT, OCR, or `extract` target it finds.
 
 ## Target Discovery
 
-- `resume` only supports STT and OCR manifests.
+- `resume` supports STT and OCR `run.json` / `batch.json` targets plus parent `extract-batch.json` targets.
 - A single-run target must contain `run.json`.
 - A batch target must contain `batch.json`.
+- An extract parent batch must contain `extract-batch.json`.
 - Auto-discovery only considers targets that still have missing provider work to backfill.
 
 ## Provider Selection
@@ -39,17 +41,21 @@ If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the
 - Explicit provider flags narrow the rerun set, but they must be a subset of the original requested providers for that run or batch.
 - STT runs accept STT provider/runtime flags.
 - OCR runs accept OCR provider/runtime flags.
+- `extract` parent batches forward explicit STT flags only to routed STT child batches and explicit OCR flags only to routed OCR child batches.
 
 ## Examples
 
 ```bash
-# Resume the newest incomplete STT or OCR output under ./output
+# Resume the newest incomplete STT, OCR, or extract output under ./output
 bun as resume
 
 # Resume a single run directory in place
 bun as resume ./output/2026-04-22_12-00-00-000_item
 
 # Resume a batch directory in place
+bun as resume ./output/2026-04-22_12-00-00-000_batch
+
+# Resume an extract parent batch in place
 bun as resume ./output/2026-04-22_12-00-00-000_batch
 
 # Resume only missing GLM OCR outputs in that target
@@ -138,6 +144,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --ha
 
 - `resume` updates the existing output directory in place.
 - STT and OCR batch resumes rewrite the existing `batch.json` with updated per-item status.
+- Extract batch resumes update `extract-batch.json` at the parent and the routed child `stt/batch.json` and `ocr/batch.json` manifests underneath it.
 - Async STT providers with checkpointed remote jobs, including deAPI and Happy Scribe, reuse saved provider state when possible instead of recreating the remote request.
 - `resume` does not define `--price`.
 - `resume` exits with code `2` when items are still incomplete or failed after the backfill attempt.

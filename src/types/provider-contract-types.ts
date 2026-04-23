@@ -1,4 +1,5 @@
 import type { OutputFormat } from './cli-types'
+import type { InputFamily, RoutedChildKind } from './cli-dir-types'
 
 export type ProviderSpec = {
   provider: string
@@ -123,4 +124,27 @@ export type SttBatchSummary = {
     failed: number
   }
   items: SttBatchSummaryItem[]
+}
+
+export type ExtractBatchManifestItem = {
+  input: string
+  inputFamily: InputFamily
+  routedChildKind?: RoutedChildKind | undefined
+  childBatchEntry?: {
+    kind: RoutedChildKind
+    index: number
+  } | undefined
+  completionStatus: 'full' | 'incomplete' | 'failed' | 'skipped'
+  skipReason?: string | undefined
+  outputDir?: string | undefined
+}
+
+export type ExtractBatchManifest = {
+  schemaVersion: 1
+  createdAt: string
+  items: ExtractBatchManifestItem[]
+  childBatches: {
+    stt?: string | undefined
+    ocr?: string | undefined
+  }
 }

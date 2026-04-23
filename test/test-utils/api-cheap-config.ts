@@ -150,7 +150,7 @@ export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
   for (const selection of sttSelections) {
     const args = [
       'src/cli/create-cli.ts',
-      'stt',
+      'extract',
       shortAudioPath,
       selection.flag,
       selection.model,
@@ -211,7 +211,7 @@ export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
   for (const selection of extractSelections) {
     commands.push({
       name: `extract-${selection.service}-${selection.model}`,
-      args: ['src/cli/create-cli.ts', 'ocr', 'input/examples/document/1-document.pdf', selection.flag, selection.model, '--price']
+      args: ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', selection.flag, selection.model, '--price']
     })
   }
 

@@ -1,7 +1,7 @@
-export const PROCESS_COMMANDS = ['metadata', 'download', 'stt', 'write', 'ocr', 'tts', 'image', 'music', 'video'] as const
+export const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'music', 'video'] as const
 
 export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
-export type ProcessCommand = CanonicalProcessCommand
+export type ProcessCommand = CanonicalProcessCommand | 'stt' | 'ocr'
 
 export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
 

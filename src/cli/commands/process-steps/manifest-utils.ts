@@ -1,5 +1,13 @@
 import { join } from 'node:path'
-import type { BatchManifest, BatchManifestEntry, ProviderResult, RunManifest } from '~/types'
+import type {
+  BatchManifest,
+  BatchManifestEntry,
+  ExtractBatchManifest,
+  ExtractBatchManifestItem,
+  ProviderResult,
+  RunManifest,
+  RoutedChildKind
+} from '~/types'
 
 export type RunManifestKind = RunManifest['kind']
 export type BatchManifestKind = BatchManifest['kind']
@@ -112,6 +120,78 @@ const parseProviderResult = (
   }
 }
 
+const isInputFamily = (value: unknown): value is ExtractBatchManifestItem['inputFamily'] =>
+  value === 'media' || value === 'document' || value === 'html_article' || value === 'unsupported'
+
+const isRoutedChildKind = (value: unknown): value is RoutedChildKind =>
+  value === 'stt' || value === 'ocr'
+
+const isExtractBatchCompletionStatus = (
+  value: unknown
+): value is ExtractBatchManifestItem['completionStatus'] =>
+  value === 'full' || value === 'incomplete' || value === 'failed' || value === 'skipped'
+
+const parseExtractBatchManifestItem = (
+  value: unknown
+): ExtractBatchManifestItem | undefined => {
+  if (
+    !isRecord(value)
+    || typeof value['input'] !== 'string'
+    || !isInputFamily(value['inputFamily'])
+    || !isExtractBatchCompletionStatus(value['completionStatus'])
+  ) {
+    return undefined
+  }
+
+  const childBatchEntry: ExtractBatchManifestItem['childBatchEntry'] = isRecord(value['childBatchEntry'])
+    && isRoutedChildKind(value['childBatchEntry']['kind'])
+    && typeof value['childBatchEntry']['index'] === 'number'
+    && Number.isFinite(value['childBatchEntry']['index'])
+    ? {
+        kind: value['childBatchEntry']['kind'],
+        index: value['childBatchEntry']['index']
+      }
+    : undefined
+
+  return {
+    input: value['input'],
+    inputFamily: value['inputFamily'],
+    ...(isRoutedChildKind(value['routedChildKind']) ? { routedChildKind: value['routedChildKind'] } : {}),
+    ...(childBatchEntry ? { childBatchEntry } : {}),
+    completionStatus: value['completionStatus'],
+    ...(typeof value['skipReason'] === 'string' ? { skipReason: value['skipReason'] } : {}),
+    ...(typeof value['outputDir'] === 'string' ? { outputDir: value['outputDir'] } : {})
+  }
+}
+
+const parseExtractBatchManifest = (
+  value: unknown
+): ExtractBatchManifest | undefined => {
+  if (
+    !isRecord(value)
+    || value['schemaVersion'] !== 1
+    || typeof value['createdAt'] !== 'string'
+    || !Array.isArray(value['items'])
+    || !isRecord(value['childBatches'])
+  ) {
+    return undefined
+  }
+
+  const items = value['items']
+    .map(parseExtractBatchManifestItem)
+    .filter((entry): entry is ExtractBatchManifestItem => entry !== undefined)
+
+  return {
+    schemaVersion: 1,
+    createdAt: value['createdAt'],
+    items,
+    childBatches: {
+      ...(typeof value['childBatches']['stt'] === 'string' ? { stt: value['childBatches']['stt'] } : {}),
+      ...(typeof value['childBatches']['ocr'] === 'string' ? { ocr: value['childBatches']['ocr'] } : {})
+    }
+  }
+}
+
 export const writeRunManifest = async (
   outputDir: string,
   kind: RunManifestKind,
@@ -192,6 +272,33 @@ export const readBatchManifest = async (
 
   return {
     manifestPath: batchPath,
+    manifest
+  }
+}
+
+export const writeExtractBatchManifest = async (
+  batchDir: string,
+  manifest: ExtractBatchManifest
+): Promise<void> => {
+  await Bun.write(join(batchDir, 'extract-batch.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+}
+
+export const readExtractBatchManifest = async (
+  batchDir: string
+): Promise<{ manifestPath: string, manifest: ExtractBatchManifest } | undefined> => {
+  const manifestPath = join(batchDir, 'extract-batch.json')
+  if (!await Bun.file(manifestPath).exists()) {
+    return undefined
+  }
+
+  const raw = await Bun.file(manifestPath).json() as unknown
+  const manifest = parseExtractBatchManifest(raw)
+  if (!manifest) {
+    return undefined
+  }
+
+  return {
+    manifestPath,
     manifest
   }
 }

@@ -5,7 +5,7 @@ import { once } from 'node:events'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { runCommand } from '../../test-utils/test-helpers'
-import { readBatchItems, readRunMetadata } from '../../test-utils/manifest-helpers'
+import { readBatchItems, readExtractBatchManifest, readRunMetadata } from '../../test-utils/manifest-helpers'
 
 const cleanupPaths = new Set<string>()
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
@@ -143,7 +143,7 @@ const stopServer = async (server: ReturnType<typeof createServer>): Promise<void
   })
 }
 
-test('ocr batch resume autodiscovers the newest incomplete local-file batch and reruns only missing providers', async () => {
+test('extract batch resume autodiscovers the newest incomplete local-file batch and reruns only missing providers', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-resume-local-'))
   cleanupPaths.add(tempDir)
 
@@ -162,7 +162,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
 
     const initial = await runCommand([
       'src/cli/create-cli.ts',
-      'ocr',
+      'extract',
       inputListPath,
       '--batch-all',
       '--mistral-ocr',
@@ -177,10 +177,11 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     expect(initial.exitCode).toBe(0)
     expect(`${initial.stdout}\n${initial.stderr}`).toContain('Run Status')
     expect(`${initial.stdout}\n${initial.stderr}`).toContain('Provider Failures')
-    const batchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
-    cleanupPaths.add(batchDir)
+    const childBatchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
+    const extractBatchDir = resolve(childBatchDir, '..')
+    cleanupPaths.add(extractBatchDir)
 
-    const initialInfo = await readBatchItems(batchDir)
+    const initialInfo = await readBatchItems(childBatchDir)
     const initialEntry = initialInfo[0] as Record<string, unknown>
     expect(initialEntry['completionStatus']).toBe('incomplete')
     expect(initialEntry['source']).toEqual({ filePath: pdfPath })
@@ -195,6 +196,17 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     const itemOutputDir = String(initialEntry['outputDir'])
     const initialExtraction = await Bun.file(join(itemOutputDir, 'extraction.txt')).text()
     expect(initialExtraction).toContain('Existing Mistral extract.')
+    const initialExtractManifest = await readExtractBatchManifest(extractBatchDir)
+    expect(initialExtractManifest.childBatches.ocr).toBe('ocr')
+    expect(initialExtractManifest.items).toMatchObject([
+      {
+        input: pdfPath,
+        inputFamily: 'document',
+        routedChildKind: 'ocr',
+        childBatchEntry: { kind: 'ocr', index: 0 },
+        completionStatus: 'incomplete'
+      }
+    ])
 
     const resumed = await runCommand([
       'src/cli/create-cli.ts',
@@ -207,16 +219,27 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
     })
 
     expect(resumed.exitCode).toBe(0)
-    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Auto-discovered resumable OCR batch')
+    expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Auto-discovered resumable EXTRACT batch')
     expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('resumeBatch')
     expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Resume Summary')
 
-    const updatedInfo = await readBatchItems(batchDir)
+    const updatedInfo = await readBatchItems(childBatchDir)
     const updatedEntry = updatedInfo[0] as Record<string, unknown>
     expect(updatedEntry['completionStatus']).toBe('full')
     expect(updatedEntry['missingProviders']).toEqual([])
     expect(Array.isArray(updatedEntry['step2'])).toBe(true)
     expect((updatedEntry['step2'] as unknown[])).toHaveLength(2)
+    const updatedExtractManifest = await readExtractBatchManifest(extractBatchDir)
+    expect(updatedExtractManifest.items).toMatchObject([
+      {
+        input: pdfPath,
+        inputFamily: 'document',
+        routedChildKind: 'ocr',
+        childBatchEntry: { kind: 'ocr', index: 0 },
+        completionStatus: 'full',
+        outputDir: 'ocr/1-document'
+      }
+    ])
 
     const updatedExtraction = await Bun.file(join(itemOutputDir, 'extraction.txt')).text()
     expect(updatedExtraction).toContain('Existing Mistral extract.')
@@ -226,7 +249,7 @@ test('ocr batch resume autodiscovers the newest incomplete local-file batch and 
   }
 })
 
-test('ocr batch resume re-downloads direct-document URLs when resuming from an explicit batch directory', async () => {
+test('extract batch resume re-downloads direct-document URLs when resuming from an explicit parent batch directory', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-resume-url-'))
   cleanupPaths.add(tempDir)
 
@@ -245,7 +268,7 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
 
     const initial = await runCommand([
       'src/cli/create-cli.ts',
-      'ocr',
+      'extract',
       inputListPath,
       '--batch-all',
       '--mistral-ocr',
@@ -260,10 +283,11 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     expect(initial.exitCode).toBe(0)
     expect(`${initial.stdout}\n${initial.stderr}`).toContain('Run Status')
     expect(`${initial.stdout}\n${initial.stderr}`).toContain('Provider Failures')
-    const batchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
-    cleanupPaths.add(batchDir)
+    const childBatchDir = parseBatchDir(`${initial.stdout}\n${initial.stderr}`)
+    const extractBatchDir = resolve(childBatchDir, '..')
+    cleanupPaths.add(extractBatchDir)
 
-    const info = await readBatchItems(batchDir)
+    const info = await readBatchItems(childBatchDir)
     const entry = info[0] as Record<string, unknown>
     expect(entry['completionStatus']).toBe('incomplete')
     expect(entry['source']).toEqual({ url: reportUrl })
@@ -273,7 +297,7 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     const resumed = await runCommand([
       'src/cli/create-cli.ts',
       'resume',
-      batchDir,
+      extractBatchDir,
       '--glm-ocr',
       'glm-ocr'
     ], {
@@ -285,10 +309,12 @@ test('ocr batch resume re-downloads direct-document URLs when resuming from an e
     expect(`${resumed.stdout}\n${resumed.stderr}`).toContain('Resume Summary')
     expect(state.reportRequests).toBeGreaterThan(reportRequestsAfterInitial)
 
-    const updatedInfo = await readBatchItems(batchDir)
+    const updatedInfo = await readBatchItems(childBatchDir)
     const updatedEntry = updatedInfo[0] as Record<string, unknown>
     expect(updatedEntry['completionStatus']).toBe('full')
     expect(updatedEntry['missingProviders']).toEqual([])
+    const updatedExtractManifest = await readExtractBatchManifest(extractBatchDir)
+    expect(updatedExtractManifest.items[0]?.completionStatus).toBe('full')
 
     const itemOutputDir = String(updatedEntry['outputDir'])
     const rootExtraction = await Bun.file(join(itemOutputDir, 'extraction.txt')).text()
@@ -317,7 +343,7 @@ test('resume accepts an explicit single OCR output directory and updates only th
 
     const initial = await runCommand([
       cliEntry,
-      'ocr',
+      'extract',
       pdfPath,
       '--mistral-ocr',
       'mistral-ocr-2512',

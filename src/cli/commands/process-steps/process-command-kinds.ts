@@ -12,6 +12,10 @@ const PROCESS_COMMAND_CAPABILITIES: Record<ProcessCommand, ProcessCommandCapabil
   download: {
     supportsBatchSourceExpansion: true
   },
+  extract: {
+    supportsBatchSourceExpansion: true,
+    supportedInputFamilies: ['media', 'document', 'html_article']
+  },
   stt: {
     supportsBatchSourceExpansion: true,
     supportedInputFamilies: ['media']
@@ -43,6 +47,9 @@ export const isSttCommand = (command: ProcessCommand): command is 'stt' =>
 
 export const isOcrCommand = (command: ProcessCommand): command is 'ocr' =>
   command === 'ocr'
+
+export const isExtractCommand = (command: ProcessCommand): command is 'extract' =>
+  command === 'extract'
 
 export const canonicalizeProcessCommand = (command: ProcessCommand): ProcessCommand =>
   command

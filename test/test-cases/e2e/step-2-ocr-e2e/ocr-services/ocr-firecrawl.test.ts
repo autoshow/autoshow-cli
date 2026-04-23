@@ -12,10 +12,10 @@ type ExtractMetadata = {
 
 const articleUrl = 'https://ajcwebdev.com'
 
-budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-backend firecrawl --price', async () => {
+budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --url-backend firecrawl --price', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'firecrawl', '--price'],
-    { testName: 'bun as ocr https://ajcwebdev.com --url-backend firecrawl --price' }
+    ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'firecrawl', '--price'],
+    { testName: 'bun as extract https://ajcwebdev.com --url-backend firecrawl --price' }
   )
 
   expect(result.exitCode).toBe(0)
@@ -23,7 +23,7 @@ budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-ba
   expect(`${result.stdout}\n${result.stderr}`).not.toContain('Firecrawl credits apply; exact cost is not estimated locally.')
 })
 
-budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-backend firecrawl', async () => {
+budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --url-backend firecrawl', async () => {
   if (await shouldSkipMissingEnv('FIRECRAWL_API_KEY', 'FIRECRAWL_API_KEY not configured')) {
     return
   }
@@ -32,8 +32,8 @@ budgetedTest('extract-firecrawl-url', 'bun as ocr https://ajcwebdev.com --url-ba
 
   try {
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'firecrawl'],
-      { testName: 'bun as ocr https://ajcwebdev.com --url-backend firecrawl' }
+      ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'firecrawl'],
+      { testName: 'bun as extract https://ajcwebdev.com --url-backend firecrawl' }
     )
     expect(result.exitCode).toBe(0)
 

@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import type { BatchManifest, ProviderCheckpoint, ProviderResult, RunManifest, SttBatchSummary } from '~/types'
+import type { BatchManifest, ExtractBatchManifest, ProviderCheckpoint, ProviderResult, RunManifest, SttBatchSummary } from '~/types'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -74,6 +74,21 @@ export const writeBatchManifestFixture = async (
     ...(source ? { source } : {})
   }
   await Bun.write(resolveArtifactPath(pathOrDir, 'batch.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+}
+
+export const readExtractBatchManifest = async (pathOrDir: string): Promise<ExtractBatchManifest> => {
+  const raw = await Bun.file(resolveArtifactPath(pathOrDir, 'extract-batch.json')).json() as unknown
+  if (
+    !isRecord(raw)
+    || raw['schemaVersion'] !== 1
+    || typeof raw['createdAt'] !== 'string'
+    || !Array.isArray(raw['items'])
+    || !isRecord(raw['childBatches'])
+  ) {
+    throw new Error(`Invalid extract batch manifest at ${resolveArtifactPath(pathOrDir, 'extract-batch.json')}`)
+  }
+
+  return raw as ExtractBatchManifest
 }
 
 export const readSttBatchSummary = async (pathOrDir: string): Promise<SttBatchSummary> => {

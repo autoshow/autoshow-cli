@@ -1,6 +1,6 @@
 import type { RuntimeOptions } from '~/types'
 
-export type ResumeTargetKind = 'stt' | 'ocr'
+export type ResumeTargetKind = 'stt' | 'ocr' | 'extract'
 export type ResumeTargetScope = 'single' | 'batch'
 
 export type ResumeTarget = {

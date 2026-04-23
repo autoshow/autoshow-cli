@@ -12,7 +12,7 @@ type ExtractMetadata = {
 
 const articleUrl = 'https://ajcwebdev.com'
 
-budgetedTest('extract-glm-reader-url', 'bun as ocr https://ajcwebdev.com --url-backend glm-reader', async () => {
+budgetedTest('extract-glm-reader-url', 'bun as extract https://ajcwebdev.com --url-backend glm-reader', async () => {
   if (await shouldSkipMissingEnv('GLM_API_KEY', 'GLM_API_KEY not configured')) {
     return
   }
@@ -21,8 +21,8 @@ budgetedTest('extract-glm-reader-url', 'bun as ocr https://ajcwebdev.com --url-b
 
   try {
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'glm-reader'],
-      { testName: 'bun as ocr https://ajcwebdev.com --url-backend glm-reader' }
+      ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'glm-reader'],
+      { testName: 'bun as extract https://ajcwebdev.com --url-backend glm-reader' }
     )
     expect(result.exitCode).toBe(0)
 

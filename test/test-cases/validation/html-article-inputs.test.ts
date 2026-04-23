@@ -142,7 +142,7 @@ describe('HTML article inputs', () => {
     }
   })
 
-  test('runs local html through the ocr document pipeline with defuddle markdown output', async () => {
+  test('runs local html through the extract document pipeline with defuddle markdown output', async () => {
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-html-local-'))
     cleanupPaths.add(tempDir)
 
@@ -150,7 +150,7 @@ describe('HTML article inputs', () => {
     await Bun.write(htmlPath, ARTICLE_HTML)
 
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'ocr', htmlPath, '--out', 'text'],
+      ['src/cli/create-cli.ts', 'extract', htmlPath, '--out', 'text'],
       { testName: 'local html uses defuddle extraction path' }
     )
 
@@ -175,7 +175,7 @@ describe('HTML article inputs', () => {
     expect(extractionText.startsWith('Page 1\n')).toBe(false)
   })
 
-  test('runs remote article URLs through the ocr document pipeline when cheap URL probes fail', async () => {
+  test('runs remote article URLs through the extract document pipeline when cheap URL probes fail', async () => {
     const server = await startClassificationServer()
     try {
       const address = server.address()
@@ -185,7 +185,7 @@ describe('HTML article inputs', () => {
 
       const articleUrl = `http://127.0.0.1:${address.port}/article-blocked-probe`
       const result = await runCommand(
-        ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'defuddle', '--out', 'text'],
+        ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'defuddle', '--out', 'text'],
         { testName: 'remote article uses defuddle extraction path after probe fallback' }
       )
 
@@ -224,7 +224,7 @@ describe('HTML article inputs', () => {
       const baseUrl = `http://127.0.0.1:${address.port}`
       const articleUrl = `${baseUrl}/article`
       const result = await runCommand(
-        ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'glm-reader', '--out', 'text'],
+        ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'glm-reader', '--out', 'text'],
         {
           testName: 'remote article uses glm-reader extraction path',
           env: {
@@ -276,7 +276,7 @@ describe('HTML article inputs', () => {
       await expect(classifyUrlInput(articleUrl, opts)).resolves.toBe('url_html_article')
 
       const result = await runCommand(
-        ['src/cli/create-cli.ts', 'ocr', articleUrl, '--url-backend', 'defuddle'],
+        ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'defuddle'],
         { testName: 'explicit article backend bypasses ocr usage validation for unresolved html urls' }
       )
 
@@ -442,7 +442,7 @@ describe('HTML article inputs', () => {
     await Bun.write(htmlPath, ARTICLE_HTML)
 
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'ocr', htmlPath, '--url-backend', 'glm-reader', '--out', 'text'],
+      ['src/cli/create-cli.ts', 'extract', htmlPath, '--url-backend', 'glm-reader', '--out', 'text'],
       { testName: 'local html ignores glm-reader backend' }
     )
 

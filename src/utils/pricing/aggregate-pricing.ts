@@ -1,5 +1,5 @@
 import type { AggregatedPriceEstimate, ExtractStepEstimate, ImageStepEstimate, LlmStepEstimate, MusicStepEstimate, ProcessCommand, ResolvedStep2Execution, RuntimeOptions, StepEstimate, SttStepEstimate, TtsStepEstimate, VideoStepEstimate } from '~/types'
-import { isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
+import { isExtractCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
@@ -501,11 +501,12 @@ export const buildAggregatedPriceEstimate = async (
   const routing = await resolveInputRoutingForCommand(command === 'download' || command === 'metadata' ? 'write' : command, resolvedTarget, opts)
   const documentTarget = routing.family === 'document' || routing.family === 'html_article'
   const resolvedStep2 = routing.resolvedStep2
+  const routedChildKind = routing.routedChildKind
   const textInputWrite = command === 'write' && opts.textInput
   const documentWrite = command === 'write' && documentTarget && !textInputWrite
   const isRemoteTarget = /^https?:\/\//i.test(resolvedTarget)
 
-  if (!textInputWrite && (isSttCommand(command) || (command === 'write' && !documentWrite))) {
+  if (!textInputWrite && (isSttCommand(command) || (isExtractCommand(command) && routedChildKind === 'stt') || (command === 'write' && !documentWrite))) {
     for (const stt of await buildSttEstimates(resolvedTarget, opts)) {
       steps.push(stt)
       totalEstimatedCost += stt.totalCost
@@ -515,7 +516,7 @@ export const buildAggregatedPriceEstimate = async (
     }
   }
 
-  if (!textInputWrite && (isOcrCommand(command) || documentWrite) && resolvedStep2.route === 'ocr') {
+  if (!textInputWrite && (isOcrCommand(command) || (isExtractCommand(command) && routedChildKind === 'ocr') || documentWrite) && resolvedStep2.route === 'ocr') {
     for (const extract of await buildExtractEstimates(resolvedTarget, resolvedStep2)) {
       steps.push(extract)
       totalEstimatedCost += extract.totalCost

@@ -37,7 +37,7 @@ src/cli/commands/process-steps/step-1-download/targets/handle-process-target.ts
 │  │  handleDirectoryTargetBatch()                                     │        │
 │  │  1. collectInputFiles() → find all media/doc/image files          │        │
 │  │  2. If dir named "input/" → also read 2-urls.md for URLs          │        │
-│  │  3. Filter docs-only when command='ocr'                           │        │
+│  │  3. Route mixed inputs when command='extract'                     │        │
 │  │  4. processBatch(allItems) → concurrency-limited batch run        │        │
 │  └───────────────────────────────────────────────────────────────────┘        │
 │                                                                              │
@@ -118,9 +118,11 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
                   │             │                  │                     │             │
   download        │  DL+META   │    DL+META       │    DL+META          │  DL+META   │  DL+META
                   │             │                  │                     │             │
-  stt             │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
+  extract         │  MEDIA (1)  │     MEDIA (1)    │    DOCUMENT (6)      │  MEDIA (1)  │ DOCUMENT (6)
                   │             │                  │                     │             │
   write           │  MEDIA (3)  │     MEDIA (3)    │   DOCUMENT (4)      │  MEDIA (3)  │ DOCUMENT (4)
+                  │             │                  │                     │             │
+  stt             │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
                   │             │                  │                     │             │
   ocr             │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
                   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
@@ -128,7 +130,7 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
   (0a) processMetadataMedia() — metadata only, no download
   (0b) processMetadataDocument() — metadata only, no download (temp file for remote docs)
   (1) processVideo() with skipLLM=true
-  (2) CLIUsageError: "Use: bun as ocr or bun as write"
+  (2) CLIUsageError: "Use: bun as extract or bun as write"
   (3) processVideo() with full LLM pipeline
   (4) processOcr() + buildDocumentPrompt() + LLM summary
   (5) CLIUsageError: "Use a direct document URL or local file"
@@ -152,7 +154,8 @@ src/cli/commands/process-steps/step-1-download/targets/target-utils.ts
                                              v
   ┌──────────────────────────────────────────────────────────────────────┐
   │  Create batch output directory: output/YYYY-MM-DD_HH-MM-SS_<label>/│
-  │  Write batch.json (consolidated per-item run manifest)              │
+  │  `extract` writes extract-batch.json plus nested stt/ and ocr/     │
+  │  child batches; other commands write batch.json directly            │
   └──────────────────────────────────────────┬───────────────────────────┘
                                              |
                                              v
