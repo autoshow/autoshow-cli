@@ -74,14 +74,14 @@ export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Pro
       throw new Error('Fixture validation failed. Run without --verify-only to regenerate.')
     }
 
-    l.success(`All ${manifest.fixtures.length} fixtures verified`)
+    l.write('success', `All ${manifest.fixtures.length} fixtures verified`)
     return
   }
 
   if (!refresh) {
     const manifest = await readManifest(outDir)
     if (manifest && isManifestValid(manifest, outDir)) {
-      l.info('Manifest is valid - use --refresh to regenerate')
+      l.write('info', 'Manifest is valid - use --refresh to regenerate')
       return
     }
   }
@@ -101,12 +101,16 @@ export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Pro
         reason: `missing tools: ${missingTools.join(', ')}`,
         requiredTools: missingTools
       })
-      const log = fixture.supportLevel === 'current' ? l.warn : l.info
-      log(`Skipping ${fixture.path} (missing: ${missingTools.join(', ')})`)
+      const message = `Skipping ${fixture.path} (missing: ${missingTools.join(', ')})`
+      if (fixture.supportLevel === 'current') {
+        l.warn(message)
+      } else {
+        l.write('info', message)
+      }
       continue
     }
 
-    l.info(`Generating ${fixture.path}`)
+    l.write('info', `Generating ${fixture.path}`)
     const result = await generateFixture(fixture, outDir, availableTools)
 
     if (!result.generated) {
@@ -115,8 +119,12 @@ export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Pro
         reason: result.reason ?? 'generation-failed',
         requiredTools: fixture.requiredTools
       })
-      const log = fixture.supportLevel === 'current' ? l.warn : l.info
-      log(`Skipping ${fixture.path} (${result.reason ?? 'generation-failed'})`)
+      const message = `Skipping ${fixture.path} (${result.reason ?? 'generation-failed'})`
+      if (fixture.supportLevel === 'current') {
+        l.warn(message)
+      } else {
+        l.write('info', message)
+      }
       continue
     }
 
@@ -140,5 +148,5 @@ export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Pro
   await writeManifest(outDir, fixtures, skipped)
 
   const verified = fixtures.filter((fixture) => fixture.verified).length
-  l.success(`Generated ${fixtures.length} fixtures (${verified} verified, ${skipped.length} skipped)`)
+  l.write('success', `Generated ${fixtures.length} fixtures (${verified} verified, ${skipped.length} skipped)`)
 }

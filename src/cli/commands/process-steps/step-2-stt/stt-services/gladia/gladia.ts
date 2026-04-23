@@ -7,10 +7,10 @@ export const getGladiaBaseUrl = (): string =>
 export const setupGladiaStt = async (): Promise<void> => {
   const apiKey = readEnv('GLADIA_API_KEY')
   if (apiKey) {
-    l.success(`GLADIA_API_KEY found — Gladia transcription ready (${getGladiaBaseUrl()})`)
+    l.write('success', `GLADIA_API_KEY found — Gladia transcription ready (${getGladiaBaseUrl()})`)
   } else {
     l.warn('GLADIA_API_KEY not set — Gladia transcription will not work until set')
-    l.info('Set GLADIA_API_KEY environment variable to use Gladia transcription')
+    l.write('info', 'Set GLADIA_API_KEY environment variable to use Gladia transcription')
   }
 }
 

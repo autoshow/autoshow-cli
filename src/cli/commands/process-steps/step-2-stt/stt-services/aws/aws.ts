@@ -414,7 +414,7 @@ export const setupAwsStt = async (
   const { state, configPath } = await resolveAwsSttReadinessState(options)
 
   if (options.focused) {
-    l.info('AWS STT setup')
+    l.write('info', 'AWS STT setup')
   }
 
   const checkRows = [
@@ -440,11 +440,13 @@ export const setupAwsStt = async (
       explicitBucket
     })
     if (commands.length > 0) {
-      l.info('')
-      l.info('Next steps')
-      for (const command of commands) {
-        l.info(command)
-      }
+      l.write('info', 'AWS STT Next Steps', {
+        category: 'command',
+        humanTable: createHumanTable(
+          commands.map((command, index) => ({ step: index + 1, command })),
+          ['step', 'command']
+        )
+      })
     }
   }
 }

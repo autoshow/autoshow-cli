@@ -18,7 +18,7 @@ import {
   SpeechmaticsTranscriptResponseSchema
 } from '~/types'
 import * as l from '~/logger'
-import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
+import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   appendToken,
   buildTranscriptionOutputBase,
@@ -685,7 +685,7 @@ export const runSpeechmaticsStt = async (
     }
 
     if (segmentNumber && totalSegments) {
-      l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+      logSttSegmentLifecycle(l, { provider: 'speechmatics', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
     }
 
     return {

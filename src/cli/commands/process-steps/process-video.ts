@@ -169,7 +169,7 @@ export const processVideo = async (
 
       if (captionTranscription) {
         if (sttTargets.length > 0) {
-          l.info(`YouTube captions selected; skipping requested STT providers: ${sttTargets.map((target) => `${target.service}/${target.model}`).join(', ')}`)
+          l.write('info', `YouTube captions selected; skipping requested STT providers: ${sttTargets.map((target) => `${target.service}/${target.model}`).join(', ')}`)
         }
 
         transcriptionResult = {

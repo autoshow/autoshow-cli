@@ -34,8 +34,8 @@ describe('logger core levels', () => {
     const logger = createLogger({ minLevel: 'warn', sinks: [sink] })
 
     logger.debug('debug')
-    logger.info('info')
-    logger.success('success')
+    logger.write('info', 'info')
+    logger.write('success', 'success')
     logger.warn('warn')
     logger.error('error')
 
@@ -47,8 +47,8 @@ describe('logger core levels', () => {
     const logger = createLogger({ minLevel: 'debug', sinks: [sink] })
 
     logger.debug('debug')
-    logger.info('info')
-    logger.success('success')
+    logger.write('info', 'info')
+    logger.write('success', 'success')
     logger.warn('warn')
     logger.error('error')
 
@@ -61,7 +61,7 @@ describe('logger context', () => {
     const { events, logger } = createCollector()
 
     await runWithLogContext({ command: 'write', step: 'step-2-stt', requestId: 'req-1' }, async () => {
-      logger.info('event')
+      logger.write('info', 'event')
     })
 
     const first = events[0]
@@ -75,7 +75,7 @@ describe('logger context', () => {
 
     await runWithLogContext({ command: 'write', batchId: 'batch-1' }, async () => {
       await runWithLogContext({ itemIndex: 2 }, async () => {
-        logger.info('event')
+        logger.write('info', 'event')
       })
     })
 
@@ -90,10 +90,10 @@ describe('logger context', () => {
     await Promise.all([
       runWithLogContext({ batchId: 'A' }, async () => {
         await Bun.sleep(20)
-        logger.info('a')
+        logger.write('info', 'a')
       }),
       runWithLogContext({ batchId: 'B' }, async () => {
-        logger.info('b')
+        logger.write('info', 'b')
       })
     ])
 
@@ -163,8 +163,8 @@ describe('logger sink failures', () => {
     }
 
     try {
-      logger.info('first event')
-      logger.info('second event')
+      logger.write('info', 'first event')
+      logger.write('info', 'second event')
     } finally {
       console.error = originalError
     }

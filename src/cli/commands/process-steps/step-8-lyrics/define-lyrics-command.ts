@@ -10,6 +10,7 @@ import { buildExpectedFilesList } from '~/cli/commands/process-steps/step-1-down
 import { runWhisperTranscribe } from '~/cli/commands/process-steps/step-2-stt/stt-local/whisper/run-whisper'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { readRunManifest, writeBatchManifest, writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { logSuitePriceSummary } from '~/cli/commands/process-steps/suite-price-logging'
 import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
 import {
   collectTextInputFiles,
@@ -21,7 +22,7 @@ import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import * as l from '~/logger'
-import { createHumanTable, logLocationsTable } from '~/logger/human-table'
+import { createHumanTable, logLocationsTable, logSingleRowTable } from '~/logger/human-table'
 import { buildLyricsCues } from './cue-builder'
 import { formatSrt, formatVtt, loadCaptionFile } from './captions'
 import {
@@ -336,20 +337,23 @@ const reportLyricsGenerationSuiteEstimate = async (
   files: string[],
   options: RuntimeOptions
 ): Promise<number> => {
-  l.info(`Calculating suite price estimate across ${files.length} lyric source file(s)`)
+  logSingleRowTable(l, 'Suite Price Estimate', {
+    itemType: files.length === 1 ? 'lyric source file' : 'lyric source files',
+    itemCount: files.length
+  }, { category: 'pricing', columns: ['itemType', 'itemCount'] })
 
   let suiteTotalEstimatedCost = 0
-  for (const [index, filePath] of files.entries()) {
-    l.info(`Price check ${index + 1}/${files.length}: ${toProjectDisplayPath(filePath)}`)
+  for (const filePath of files) {
     const estimate = await buildAggregatedPriceEstimate('write', filePath, options, undefined)
     l.report.estimate(estimate)
     suiteTotalEstimatedCost += estimate.totalEstimatedCost
   }
 
-  l.info('')
-  l.info('Suite Cost Summary')
-  l.info(`  Files checked: ${files.length}`)
-  l.info(`  Suite total estimated cost: ${suiteTotalEstimatedCost.toFixed(5)}¢`)
+  logSuitePriceSummary(l, {
+    checkedLabel: files.length === 1 ? 'lyric source file' : 'lyric source files',
+    checkedCount: files.length,
+    totalEstimatedCost: suiteTotalEstimatedCost
+  })
 
   return suiteTotalEstimatedCost
 }

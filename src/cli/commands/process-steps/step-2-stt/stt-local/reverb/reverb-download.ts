@@ -26,7 +26,7 @@ const checkGitLfsInstalled = (): boolean => {
 }
 
 const installGitLfs = async (): Promise<void> => {
-  l.info('Installing git-lfs')
+  l.write('info', 'Installing git-lfs')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
@@ -48,7 +48,7 @@ const installGitLfs = async (): Promise<void> => {
       await runInherit('git', ['lfs', 'install'])
     }
 
-    l.success('git-lfs installed')
+    l.write('success', 'git-lfs installed')
     return
   }
 
@@ -56,7 +56,7 @@ const installGitLfs = async (): Promise<void> => {
     await runInherit('sudo', ['apt-get', 'update'])
     await runInherit('sudo', ['apt-get', 'install', '-y', 'git-lfs'])
     await runInherit('git', ['lfs', 'install'])
-    l.success('git-lfs installed')
+    l.write('success', 'git-lfs installed')
     return
   }
 
@@ -65,10 +65,9 @@ const installGitLfs = async (): Promise<void> => {
 }
 
 export const downloadReverbModel = async (): Promise<void> => {
-  l.info('Downloading Reverb ASR model from HuggingFace')
+  l.write('info', 'Downloading Reverb ASR model from HuggingFace')
 
   if (await checkReverbModelExists()) {
-    l.success('Reverb model already exists')
     return
   }
 
@@ -77,7 +76,7 @@ export const downloadReverbModel = async (): Promise<void> => {
   const hfToken = getHuggingFaceToken()
   if (!hfToken) {
     l.error('HuggingFace token is required to download Reverb model')
-    l.info('Please set the HUGGINGFACE_TOKEN environment variable')
+    l.write('info', 'Please set the HUGGINGFACE_TOKEN environment variable')
     throw new Error('Missing HuggingFace token')
   }
 
@@ -148,12 +147,11 @@ export const downloadReverbModel = async (): Promise<void> => {
     }
   )
 
-  l.success('Reverb ASR model downloaded')
+  l.write('success', 'Reverb ASR model downloaded')
 }
 
 export const downloadDiarizationModel = async (): Promise<boolean> => {
   if (await checkDiarizationModelCached()) {
-    l.success('Diarization model v2 already cached')
     return true
   }
 
@@ -187,6 +185,6 @@ export const downloadDiarizationModel = async (): Promise<boolean> => {
     return false
   }
 
-  l.success('Diarization model v2 downloaded')
+  l.write('success', 'Diarization model v2 downloaded')
   return true
 }

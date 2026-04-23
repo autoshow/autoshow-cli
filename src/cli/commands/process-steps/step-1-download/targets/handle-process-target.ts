@@ -1,7 +1,8 @@
 import { join, relative } from 'node:path'
 import * as l from '~/logger'
-import { logLocationsTable } from '~/logger/human-table'
+import { logLocationsTable, logSingleRowTable } from '~/logger/human-table'
 import { CLIUsageError } from '~/utils/error-handler'
+import { logSuitePriceSummary } from '~/cli/commands/process-steps/suite-price-logging'
 import type {
   AggregatedPriceEstimate,
   BatchItem,
@@ -733,22 +734,25 @@ const reportSuitePriceEstimate = async (
   targets: string[],
   opts: RuntimeOptions
 ): Promise<number> => {
-  l.info(`Calculating suite price estimate across ${targets.length} target(s)`)
+  logSingleRowTable(l, 'Suite Price Estimate', {
+    itemType: targets.length === 1 ? 'target' : 'targets',
+    itemCount: targets.length
+  }, { category: 'pricing', columns: ['itemType', 'itemCount'] })
 
   let suiteTotalEstimatedCost = 0
   const concurrency = isSttCommand(command) || isExtractCommand(command) ? opts.sttPreflightConcurrency : 1
 
-  await runWithConcurrency(targets, concurrency, async (item, index) => {
-    l.info(`Price check ${index + 1}/${targets.length}: ${item}`)
+  await runWithConcurrency(targets, concurrency, async (item) => {
     const estimate = await buildAggregatedPriceEstimate(command, item, opts, undefined)
     l.report.estimate(estimate)
     suiteTotalEstimatedCost += estimate.totalEstimatedCost
   })
 
-  l.info('')
-  l.info(`Suite Cost Summary`)
-  l.info(`  Commands checked: ${targets.length}`)
-  l.info(`  Suite total estimated cost: ${suiteTotalEstimatedCost.toFixed(5)}¢`)
+  logSuitePriceSummary(l, {
+    checkedLabel: targets.length === 1 ? 'command' : 'commands',
+    checkedCount: targets.length,
+    totalEstimatedCost: suiteTotalEstimatedCost
+  })
 
   return suiteTotalEstimatedCost
 }
@@ -867,7 +871,7 @@ export const handleProcessTarget = async (
       return
     }
     if (plan.kind === 'youtube_collection') {
-      l.info(`Detected YouTube collection URL, processing ${batchPlan.initialEntries.length} videos`)
+      l.write('info', `Detected YouTube collection URL, processing ${batchPlan.initialEntries.length} videos`)
     }
     await executeBatchPlan(command, opts, batchPlan)
     return

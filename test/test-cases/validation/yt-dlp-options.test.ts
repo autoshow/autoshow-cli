@@ -137,10 +137,7 @@ describe('yt-dlp option builders', () => {
       '/tmp/out/%(title)s.%(ext)s',
       '--restrict-filenames',
       '--no-playlist',
-      '--progress',
-      '--newline',
-      '--progress-delta',
-      '1',
+      '--no-progress',
       '--cookies-from-browser',
       'firefox',
       'https://example.com/watch?v=abc'

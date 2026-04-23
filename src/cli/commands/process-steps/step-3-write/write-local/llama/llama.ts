@@ -31,7 +31,7 @@ export const checkLlamaRunning = async (): Promise<boolean> => {
 }
 
 export const installLlama = async (): Promise<void> => {
-  l.info('Installing llama.cpp')
+  l.write('info', 'Installing llama.cpp')
   const platform = detectPlatform()
   const arch = detectArchitecture()
   const tag = await readLlamaTag()
@@ -79,19 +79,18 @@ export const installLlama = async (): Promise<void> => {
   )
 
   await runInherit('chmod', ['+x', llamaBinaryPath])
-  l.success('llama.cpp installed')
+  l.write('success', 'llama.cpp installed')
 }
 
 export const startLlamaService = async (): Promise<void> => {
   if (await checkLlamaRunning()) {
-    l.success('llama-server is already running')
     return
   }
 
-  l.info('Starting llama-server')
+  l.write('info', 'Starting llama-server')
 
   if (process.env['DOCKER_CONTAINER']) {
-    l.info('Running in Docker, llama-server should be started by entrypoint')
+    l.write('info', 'Running in Docker, llama-server should be started by entrypoint')
     return
   }
 
@@ -112,7 +111,7 @@ export const startLlamaService = async (): Promise<void> => {
   await Bun.sleep(3000)
 
   if (await checkLlamaRunning()) {
-    l.success('llama-server started')
+    l.write('success', 'llama-server started')
   } else {
     l.warn('llama-server may not have started correctly')
   }
@@ -122,7 +121,6 @@ export const setupLlama = async (): Promise<void> => {
   if (!await checkLlamaInstalled()) {
     await installLlama()
   } else {
-    l.success('llama.cpp already installed')
   }
 }
 
@@ -130,6 +128,6 @@ export const runLlamaSetup = async (): Promise<void> => {
   await setupLlama()
 
   if (shouldPrintCompletion()) {
-    l.success('llama.cpp setup complete')
+    l.write('success', 'llama.cpp setup complete')
   }
 }

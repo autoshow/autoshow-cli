@@ -131,6 +131,46 @@ type HumanTableLogOptions = {
   metadata?: LogMetadata
 }
 
+type SingleRowTableLogOptions = HumanTableLogOptions & {
+  columns?: readonly string[]
+}
+
+type KeyValueTableLogOptions = HumanTableLogOptions & {
+  keyLabel?: string
+  valueLabel?: string
+}
+
+export const logSingleRowTable = (
+  logger: Pick<Logger, 'write'>,
+  message: string,
+  row: Readonly<Record<string, unknown>>,
+  options: SingleRowTableLogOptions = {}
+): void => {
+  logger.write(options.level ?? 'info', message, {
+    category: options.category ?? 'general',
+    humanTable: createSingleRowTable(row, options.columns),
+    metadata: options.metadata ?? row
+  })
+}
+
+export const logKeyValueTable = (
+  logger: Pick<Logger, 'write'>,
+  message: string,
+  entries: ReadonlyArray<readonly [string, unknown]>,
+  options: KeyValueTableLogOptions = {}
+): void => {
+  const keyLabel = options.keyLabel ?? 'key'
+  const valueLabel = options.valueLabel ?? 'value'
+
+  logger.write(options.level ?? 'info', message, {
+    category: options.category ?? 'general',
+    humanTable: createKeyValueTable(entries, keyLabel, valueLabel),
+    metadata: options.metadata ?? {
+      entries: entries.map(([key, value]) => ({ key, value }))
+    }
+  })
+}
+
 export const logLocationsTable = (
   logger: Pick<Logger, 'write'>,
   rows: readonly LocationTableRow[],

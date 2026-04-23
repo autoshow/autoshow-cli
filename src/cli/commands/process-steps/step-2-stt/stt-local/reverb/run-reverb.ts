@@ -1,6 +1,7 @@
 import { readdir, rm } from 'node:fs/promises'
 import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { parseReverbWithSpeakers, parseReverbTextOutput } from './parse-reverb-output'
 import { exec } from '~/utils/cli-utils'
@@ -26,7 +27,7 @@ const detectGpuSupport = async (): Promise<boolean> => {
       const exitCode = await proc.exited
       const hasGpu = exitCode === 0
       if (hasGpu) {
-        l.info(`GPU detected: ${stdout.trim()}`)
+        l.write('info', `GPU detected: ${stdout.trim()}`)
       }
       return hasGpu
     } catch {
@@ -125,21 +126,21 @@ const findAndReadOutputFile = async (resultDir: string): Promise<string | null> 
 
 const cleanupIntermediateFiles = async (resultDir: string): Promise<void> => {
   try {
-    l.info(`Cleaning up intermediate Reverb files`)
+    l.write('info', `Cleaning up intermediate Reverb files`)
     const files = await listFilesRecursive(resultDir)
     const ctmFileList = files.filter(path => path.endsWith('.ctm'))
     for (const ctmFile of ctmFileList) {
       await rm(ctmFile, { force: true })
-      l.info(`Deleted CTM file: ${ctmFile}`)
+      l.write('info', `Deleted CTM file: ${ctmFile}`)
     }
     const rttmPath = `${resultDir}/diarization.rttm`
     const rttmExists = await Bun.file(rttmPath).exists()
     if (rttmExists) {
       await rm(rttmPath, { force: true })
-      l.info(`Deleted RTTM file: ${rttmPath}`)
+      l.write('info', `Deleted RTTM file: ${rttmPath}`)
     }
     await rm(resultDir, { recursive: true, force: true })
-    l.success(`Cleaned up intermediate directory: ${resultDir}`)
+    l.write('success', `Cleaned up intermediate directory: ${resultDir}`)
   } catch (error) {
     l.warn(`Failed to clean up intermediate files`, error)
   }
@@ -161,17 +162,17 @@ export const runReverbTranscribe = async (
   const totalSegments = options.totalSegments
   let preparedInput: Awaited<ReturnType<typeof prepareLocalSttInput>> | undefined
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Reverb ASR (diarization model: ${version})`)
+    logSttSegmentLifecycle(l, { provider: 'reverb', action: 'started', segmentNumber, totalSegments, model: version, detail: 'diarization' })
   } else {
-    l.info(`Transcribing with Reverb ASR (diarization model: ${version})`)
+    l.write('info', `Transcribing with Reverb ASR (diarization model: ${version})`)
   }
   try {
     const startTime = Date.now()
     const verbatimicity = options.reverbVerbatimicity ?? 0.5
-    l.info(`Verbatimicity level: ${verbatimicity}`)
+    l.write('info', `Verbatimicity level: ${verbatimicity}`)
     const hasGpu = await detectGpuSupport()
     const device = hasGpu ? '0' : '-1'
-    l.info(`Using device: ${hasGpu ? 'GPU' : 'CPU'}`)
+    l.write('info', `Using device: ${hasGpu ? 'GPU' : 'CPU'}`)
     const uvEnvDir = reverbUvEnvDir
     const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
     const resultDir = `${outputDir}/reverb-output${segmentSuffix}`
@@ -230,7 +231,7 @@ export const runReverbTranscribe = async (
           const jsonOutputPath = `${outputDir}/transcription${segmentSuffix}.json`
           const diarizedData = await mergeASRWithDiarization(ctmPath, rttmPath, jsonOutputPath)
           if (diarizedData && typeof diarizedData === 'object' && diarizedData !== null) {
-            l.success(`Successfully performed speaker diarization with ${version}`)
+            l.write('success', `Successfully performed speaker diarization with ${version}`)
             const rawSegments = Array.isArray((diarizedData as Record<string, unknown>)['segments'])
               ? (diarizedData as Record<string, unknown>)['segments'] as Array<Record<string, unknown>>
               : []
@@ -265,7 +266,7 @@ export const runReverbTranscribe = async (
               })
             })
             await Bun.$`rm -f ${jsonOutputPath}`.quiet()
-            l.success(`Deleted intermediary JSON file: ${jsonOutputPath}`)
+            l.write('success', `Deleted intermediary JSON file: ${jsonOutputPath}`)
             transcription = parseReverbWithSpeakers(diarizedData, segmentOffset)
             evidence = {
               ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
@@ -303,19 +304,19 @@ export const runReverbTranscribe = async (
     await Bun.write(`${outputBase}.txt`, formatTranscriptText(transcription.segments))
     await cleanupIntermediateFiles(resultDir)
     if (segmentNumber && totalSegments) {
-      l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+      logSttSegmentLifecycle(l, { provider: 'reverb', action: 'completed', segmentNumber, totalSegments, model: version, processingTimeMs: processingTime })
     } else {
-      l.success(`Reverb transcription completed in ${processingTime}ms`)
+      logSttSegmentLifecycle(l, { provider: 'reverb', action: 'completed', model: version, processingTimeMs: processingTime })
     }
-    l.info(`Saved transcript to ${outputBase}.txt`)
-    l.info(`Total transcribed text length: ${transcription.text.length} characters`)
+    l.write('info', `Saved transcript to ${outputBase}.txt`)
+    l.write('info', `Total transcribed text length: ${transcription.text.length} characters`)
     const hasSpeakers = transcription.segments.some(seg => seg.speaker)
     if (hasSpeakers) {
       const speakerSet = new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
-      l.success(`Identified ${speakerSet.size} speakers in transcription`)
+      l.write('success', `Identified ${speakerSet.size} speakers in transcription`)
     }
     const transcriptionModelDescriptor = `${checkpointPath} | ${configPath} | diarization:${version}`
-    l.info(`Recording transcription model: ${transcriptionModelDescriptor}`)
+    l.write('info', `Recording transcription model: ${transcriptionModelDescriptor}`)
     const metadata: Step2Metadata = {
       transcriptionService: 'reverb',
       transcriptionModel: transcriptionModelDescriptor,

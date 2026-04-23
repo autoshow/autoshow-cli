@@ -485,7 +485,7 @@ const startDownloadProgressWatch = (downloadInfo: DownloadInfo): (() => void) =>
   void (async () => {
     totalBytes = await lookupContentLength(downloadInfo.sourceUrl)
     if (!stopped && totalBytes !== null) {
-      l.info(`  llama model size: ${formatBytes(totalBytes)}`)
+      l.write('info', `  llama model size: ${formatBytes(totalBytes)}`)
     }
   })()
 
@@ -501,7 +501,7 @@ const startDownloadProgressWatch = (downloadInfo: DownloadInfo): (() => void) =>
     } catch {
       if (fileSeen) {
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(1)
-        l.info(`  llama model download finished after ${elapsedSec}s`)
+        l.debug(`llama model download finished after ${elapsedSec}s`)
       }
       clearInterval(timer)
       return
@@ -522,11 +522,11 @@ const startDownloadProgressWatch = (downloadInfo: DownloadInfo): (() => void) =>
     if (totalBytes !== null && totalBytes > 0) {
       const percent = (currentBytes / totalBytes) * 100
       const bar = renderProgressBar(percent)
-      l.info(`  llama model download ${bar} ${percent.toFixed(1)}% (${formatBytes(currentBytes)}/${formatBytes(totalBytes)} @ ${formatBytes(bytesPerSec)}/s)`)
+      l.debug(`llama model download ${bar} ${percent.toFixed(1)}% (${formatBytes(currentBytes)}/${formatBytes(totalBytes)} @ ${formatBytes(bytesPerSec)}/s)`)
     } else {
       const spinner = spinnerFrames[spinnerIndex % spinnerFrames.length] || '-'
       spinnerIndex++
-      l.info(`  llama model download ${spinner} ${formatBytes(currentBytes)} @ ${formatBytes(bytesPerSec)}/s`)
+      l.debug(`llama model download ${spinner} ${formatBytes(currentBytes)} @ ${formatBytes(bytesPerSec)}/s`)
     }
 
     lastBytes = currentBytes
@@ -568,7 +568,7 @@ const waitForLlamaHealth = async (
         const now = Date.now()
         if ((now - lastHeartbeatAt) >= LLAMA_SERVER_HEALTH_HEARTBEAT_MS) {
           const elapsedSec = Math.floor((now - startedAt) / 1000)
-          l.info(`  waiting for llama-server to become healthy (${elapsedSec}s elapsed)`)
+          l.debug(`waiting for llama-server to become healthy (${elapsedSec}s elapsed)`)
           lastHeartbeatAt = now
         }
         return { healthy, exitCode }
@@ -594,9 +594,9 @@ const startLlamaServer = async (target: LlamaServerTarget): Promise<LlamaServerI
   const llamaServerPath = resolveLlamaServerBinary()
 
   if (target.mode === 'repo' && target.expectedRepo !== target.requestedModel) {
-    l.info(`Resolved llama model alias ${target.requestedModel} -> ${target.expectedRepo}`)
+    l.write('info', `Resolved llama model alias ${target.requestedModel} -> ${target.expectedRepo}`)
   }
-  l.info(`Starting llama-server (${describeLlamaServerTarget(target)})`)
+  l.write('info', `Starting llama-server (${describeLlamaServerTarget(target)})`)
   const proc = Bun.spawn([llamaServerPath, ...target.startupArgs, '--host', '127.0.0.1', '--port', '8080', '--jinja'], {
     stdin: 'ignore',
     stdout: 'ignore',
@@ -627,7 +627,7 @@ const startLlamaServer = async (target: LlamaServerTarget): Promise<LlamaServerI
         continue
       }
       stopActiveDownloadWatch()
-      l.info(`  llama model download started`)
+      l.write('info', `  llama model download started`)
       stopDownloadWatch = startDownloadProgressWatch(downloadInfo)
     }
   })
@@ -683,11 +683,11 @@ const ensureLlamaServerRunning = async (model: string): Promise<LlamaServerIdent
 
     const match = evaluateLlamaServerIdentityMatch(target, identity)
     if (match.matches) {
-      l.info(`Reusing llama-server (${describeLlamaServerIdentity(identity)})`)
+      l.write('info', `Reusing llama-server (${describeLlamaServerIdentity(identity)})`)
       return identity
     }
 
-    l.info(`Restarting llama-server on localhost:8080 (${describeLlamaServerIdentity(identity)}; expected ${describeLlamaServerTarget(target)})`)
+    l.write('info', `Restarting llama-server on localhost:8080 (${describeLlamaServerIdentity(identity)}; expected ${describeLlamaServerTarget(target)})`)
     await stopRunningLlamaServerForRestart()
   }
 
@@ -740,7 +740,7 @@ export const ensureLlamaModelDownloaded = async (model: string): Promise<void> =
   const llamaServerPath = resolveLlamaServerBinary()
 
   const modelRepo = readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model)
-  l.info(`Downloading llama model: ${modelRepo}`)
+  l.write('info', `Downloading llama model: ${modelRepo}`)
 
   const proc = Bun.spawn([llamaServerPath, '-hf', modelRepo, '--host', '127.0.0.1', '--port', '8080', '--jinja'], {
     stdin: 'ignore',
@@ -768,7 +768,7 @@ export const ensureLlamaModelDownloaded = async (model: string): Promise<void> =
       const downloadInfo = parseDownloadInfo(line)
       if (!downloadInfo) continue
       stopActiveDownloadWatch()
-      l.info(`  llama model download started`)
+      l.write('info', `  llama model download started`)
       stopDownloadWatch = startDownloadProgressWatch(downloadInfo)
     }
   })
@@ -799,7 +799,7 @@ export const ensureLlamaModelDownloaded = async (model: string): Promise<void> =
     )
   }
 
-  l.success(`Model downloaded and ready: ${modelRepo}`)
+  l.write('success', `Model downloaded and ready: ${modelRepo}`)
 }
 
 export const runLlamaModel = async (

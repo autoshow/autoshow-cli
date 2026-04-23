@@ -9,7 +9,7 @@ import type {
   TranscriptionSegment
 } from '~/types'
 import * as l from '~/logger'
-import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
+import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -438,7 +438,7 @@ export const runDeapiStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with deAPI model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'deapi', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
 
   const startTime = Date.now()
@@ -813,7 +813,7 @@ export const runDeapiStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'deapi', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return {

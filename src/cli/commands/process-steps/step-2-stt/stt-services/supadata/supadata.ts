@@ -61,10 +61,10 @@ export const describeSupadataUnsupportedSource = (
 export const setupSupadataStt = async (): Promise<void> => {
   const apiKey = readEnv('SUPADATA_API_KEY')
   if (apiKey) {
-    l.success(`SUPADATA_API_KEY found — Supadata transcription ready (${getSupadataBaseUrl()})`)
+    l.write('success', `SUPADATA_API_KEY found — Supadata transcription ready (${getSupadataBaseUrl()})`)
   } else {
     l.warn('SUPADATA_API_KEY not set — Supadata transcription will not work until set')
-    l.info('Set SUPADATA_API_KEY environment variable to use Supadata transcription')
+    l.write('info', 'Set SUPADATA_API_KEY environment variable to use Supadata transcription')
   }
 }
 

@@ -81,8 +81,6 @@ export type BaseLogFn = (message: string, ...args: unknown[]) => void
 export interface Logger {
   write: (level: LogLevel, message: string, options?: LogWriteOptions) => void
   debug: BaseLogFn
-  info: BaseLogFn
-  success: BaseLogFn
   warn: BaseLogFn
   error: (message: string, errorObj?: unknown) => void
   withContext: (context: LogContext) => Logger

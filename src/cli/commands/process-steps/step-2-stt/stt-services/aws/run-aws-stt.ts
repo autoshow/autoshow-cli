@@ -10,7 +10,7 @@ import type {
   TranscriptionResult
 } from '~/types'
 import * as l from '~/logger'
-import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
+import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -167,11 +167,11 @@ export const runAwsStt = async (
   })
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with AWS Transcribe model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'aws', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
 
   const maxSpeakerLabels = resolveAwsMaxSpeakerLabels(diarizationOptions?.speakerCount)
-  l.info(`AWS diarization enabled with max speakers: ${maxSpeakerLabels}`)
+  l.write('info', `AWS diarization enabled with max speakers: ${maxSpeakerLabels}`)
 
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
@@ -545,7 +545,7 @@ export const runAwsStt = async (
     }
 
     if (segmentNumber && totalSegments) {
-      l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+      logSttSegmentLifecycle(l, { provider: 'aws', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
     }
 
     return { result, metadata }

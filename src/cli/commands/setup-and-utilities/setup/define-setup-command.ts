@@ -274,5 +274,5 @@ export const setupCommand = defineCommand({
     }
   })
 
-  l.success('Setup complete')
+  l.write('success', 'Setup complete')
 })

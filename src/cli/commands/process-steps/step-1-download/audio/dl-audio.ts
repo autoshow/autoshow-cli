@@ -11,6 +11,7 @@ import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/m
 import type { DownloadAudioOptions } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact } from './audio-normalize'
+import { logAudioDownload, logAudioNormalize, logAudioOutput } from './audio-logging'
 
 
 let ytDlpVersionVerified = false
@@ -115,14 +116,18 @@ const normalizeDownloadedAudio = async (
   const preferredFileName = `${buildPreferredMediaBaseName(videoMetadata)}${plan.outputExtension}`
   const finalPath = await ensureUniqueOutputPath(outputDir, preferredFileName, inputPath)
 
-  l.info(`Normalizing audio to ${plan.outputExtension}: ${basename(inputPath) || 'audio'} (${plan.reason})`)
+  logAudioNormalize(l, {
+    status: 'planned',
+    inputPath,
+    outputPath: finalPath,
+    plan
+  })
   await materializeNormalizedAudioArtifact(inputPath, finalPath, plan)
 
   if (options.removeOriginal && inputPath !== finalPath) {
     await rm(inputPath, { force: true })
   }
 
-  l.success(`Audio ready: ${basename(finalPath)}`)
   return finalPath
 }
 
@@ -196,14 +201,32 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
       audioPath = await normalizeDownloadedAudio(options.filePath, options.outputDir, videoMetadata)
     }
   } else if (options.directDownload) {
-    l.info('Downloading direct audio URL')
+    logAudioDownload(l, {
+      source: 'direct-audio-url',
+      status: 'started',
+      target: options.outputDir
+    })
     const rawPath = await downloadDirectAudioUrl(options.url as string, options.outputDir)
+    logAudioDownload(l, {
+      source: 'direct-audio-url',
+      status: 'downloaded',
+      target: rawPath
+    })
     audioPath = options.keepOriginalMedia
       ? await finalizeDownloadedMedia(rawPath, options.outputDir, videoMetadata)
       : await normalizeDownloadedAudio(rawPath, options.outputDir, videoMetadata, { removeOriginal: true })
   } else if (isDirectMediaUrl(options.url as string)) {
-    l.info('Downloading direct media URL')
+    logAudioDownload(l, {
+      source: 'direct-media-url',
+      status: 'started',
+      target: options.outputDir
+    })
     const mediaPath = await downloadDirectMediaUrl(options.url as string, options.outputDir)
+    logAudioDownload(l, {
+      source: 'direct-media-url',
+      status: 'downloaded',
+      target: mediaPath
+    })
     const downloadedFile = Bun.file(mediaPath)
     if (downloadedFile.size < 1000) {
       throw new Error('Downloaded file is empty or corrupted')
@@ -230,6 +253,7 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
   const audioFile = Bun.file(audioPath)
   const audioFileSize = audioFile.size
   const audioFileName = basename(audioPath) || 'audio'
+  logAudioOutput(l, audioPath)
 
   const slug = buildMediaStep1Slug({
     ...(options.filePath ? { filePath: options.filePath } : {}),

@@ -18,7 +18,7 @@ import {
   GladiaUploadResponseSchema
 } from '~/types'
 import * as l from '~/logger'
-import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
+import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildSegmentsFromWords,
   buildTranscriptionOutputBase,
@@ -197,10 +197,10 @@ export const runGladiaStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Gladia model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'gladia', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
   if (diarizationOptions?.speakerCount !== undefined) {
-    l.info(`Gladia diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
+    l.write('info', `Gladia diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
   }
 
   const startTime = Date.now()
@@ -596,7 +596,7 @@ export const runGladiaStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'gladia', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return {

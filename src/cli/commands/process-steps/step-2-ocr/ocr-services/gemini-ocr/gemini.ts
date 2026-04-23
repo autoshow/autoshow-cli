@@ -10,10 +10,10 @@ export const GEMINI_OCR_LIMIT_SOURCE = 'project/links/gemini-all-links.md'
 export const setupGeminiOcr = async (): Promise<void> => {
   const apiKey = readEnv('GEMINI_API_KEY')
   if (apiKey) {
-    l.success('GEMINI_API_KEY found — Gemini OCR ready')
+    l.write('success', 'GEMINI_API_KEY found — Gemini OCR ready')
   } else {
     l.warn('GEMINI_API_KEY not set — Gemini OCR will not work until set')
-    l.info('Set GEMINI_API_KEY environment variable to use Gemini OCR')
+    l.write('info', 'Set GEMINI_API_KEY environment variable to use Gemini OCR')
   }
 }
 

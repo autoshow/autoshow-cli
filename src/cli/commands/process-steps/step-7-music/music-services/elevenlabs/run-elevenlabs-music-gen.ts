@@ -1,6 +1,7 @@
 import type { Step7MusicMetadata } from '~/types'
 import * as l from '~/logger'
 import { logLocationsTable } from '~/logger/human-table'
+import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import type { ElevenlabsMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
@@ -46,7 +47,12 @@ export const runElevenLabsMusicGen = async (
   const musicDurationMs = normalizeMusicDurationMs(options.durationSeconds)
   const forceInstrumental = options.forceInstrumental === true
 
-  l.info(`ElevenLabs music model: ${options.model}`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'music',
+    provider: 'elevenlabs',
+    model: options.model,
+    status: 'started'
+  })
 
   const startTime = Date.now()
 
@@ -92,6 +98,14 @@ export const runElevenLabsMusicGen = async (
   const processingTime = Date.now() - startTime
   const musicFile = Bun.file(musicPath)
 
+  logMediaGenerationStatus(l, {
+    mediaType: 'music',
+    provider: 'elevenlabs',
+    model: options.model,
+    status: 'completed',
+    processingTimeMs: processingTime,
+    outputCount: 1
+  })
   logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
 
   const metadata: Step7MusicMetadata = {

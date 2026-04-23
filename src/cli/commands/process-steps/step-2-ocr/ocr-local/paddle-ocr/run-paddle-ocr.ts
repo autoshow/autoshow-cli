@@ -32,7 +32,7 @@ const runScript = async (imagePath: string): Promise<{ text: string, confidence?
 
 export const runPaddleOcrOnImage = async (imagePath: string): Promise<{ text: string, confidence?: number }> => {
   await ensurePaddleOcrSetup()
-  l.info(`Running PaddleOCR on ${imagePath}`)
+  l.write('info', `Running PaddleOCR on ${imagePath}`)
   return await runScript(imagePath)
 }
 

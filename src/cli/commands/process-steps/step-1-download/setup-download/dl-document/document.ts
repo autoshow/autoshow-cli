@@ -7,22 +7,21 @@ const shouldPrintCompletion = (): boolean => {
 
 const installMutool = async (): Promise<void> => {
   if (commandExists('mutool')) {
-    l.success('MuPDF tools already installed')
     return
   }
 
-  l.info('Installing MuPDF tools')
+  l.write('info', 'Installing MuPDF tools')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
     await runInherit('brew', ['install', 'mupdf-tools'])
-    l.success('MuPDF tools installed')
+    l.write('success', 'MuPDF tools installed')
     return
   }
 
   if (platform === 'linux') {
     await runInherit('sudo', ['apt', 'install', '-y', 'mupdf-tools'])
-    l.success('MuPDF tools installed')
+    l.write('success', 'MuPDF tools installed')
     return
   }
 
@@ -34,6 +33,6 @@ export const setupDocumentTools = async (): Promise<void> => {
   await installMutool()
 
   if (shouldPrintCompletion()) {
-    l.success('Document tools setup complete')
+    l.write('success', 'Document tools setup complete')
   }
 }

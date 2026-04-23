@@ -1,6 +1,7 @@
 import { mkdir, rm } from 'node:fs/promises'
 import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { parseWhisperJson, extractWhisperWords } from './parse-whisper-output'
 import { fileExists } from '~/utils/cli-utils'
@@ -136,7 +137,7 @@ export const runWhisperTranscribe = async (
 
   try {
     if (segmentNumber && totalSegments) {
-      l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with model: ${modelName}`)
+      logSttSegmentLifecycle(l, { provider: 'whisper', action: 'started', segmentNumber, totalSegments, model: modelName })
     }
     const startTime = Date.now()
     const modelPath = `${whisperModelsDir}/ggml-${modelName}.bin`
@@ -162,7 +163,7 @@ export const runWhisperTranscribe = async (
     })
 
     let lastLoggedProgress: number | null = null
-    l.info(formatWhisperProgressMessage(0, {
+    l.debug(formatWhisperProgressMessage(0, {
       segmentNumber,
       totalSegments,
       segmentStartSeconds,
@@ -179,7 +180,7 @@ export const runWhisperTranscribe = async (
             return
           }
           lastLoggedProgress = progressPercent
-          l.info(formatWhisperProgressMessage(progressPercent, {
+          l.debug(formatWhisperProgressMessage(progressPercent, {
             segmentNumber,
             totalSegments,
             segmentStartSeconds,
@@ -242,7 +243,7 @@ export const runWhisperTranscribe = async (
     if (coreMLEncoderPath) descriptorParts.push(`coreml:${coreMLEncoderPath}`)
     const transcriptionModelDescriptor = descriptorParts.join(' | ')
     if (segmentNumber && totalSegments) {
-      l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+      logSttSegmentLifecycle(l, { provider: 'whisper', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
     }
     await Bun.write(`${outputBase}.txt`, formatTranscriptText(segments))
     const metadata: Step2Metadata = {

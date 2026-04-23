@@ -121,12 +121,6 @@ export const createLogger = (options: CreateLoggerOptions = {}): Logger => {
     debug: (message, ...args) => {
       write('debug', message, { args })
     },
-    info: (message, ...args) => {
-      write('info', message, { args })
-    },
-    success: (message, ...args) => {
-      write('success', message, { args })
-    },
     warn: (message, ...args) => {
       write('warn', message, { args })
     },

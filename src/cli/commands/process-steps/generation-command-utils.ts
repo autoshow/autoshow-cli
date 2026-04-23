@@ -1,6 +1,7 @@
 import * as l from '~/logger'
 import type { StepTimingCost } from '~/logger'
-import { logLocationsTable } from '~/logger/human-table'
+import { createSingleRowTable, logLocationsTable } from '~/logger/human-table'
+import type { HumanLogTable, LogLevel, Logger } from '~/logger/types'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
@@ -9,6 +10,63 @@ import { writeRunManifest } from './manifest-utils'
 type CostStep = {
   step: string
   cost: number
+}
+
+type TableLogger = Pick<Logger, 'write'>
+
+export type MediaGenerationStatus = {
+  mediaType: 'tts' | 'image' | 'video' | 'music'
+  provider: string
+  model: string
+  status: string
+  processingTimeMs?: number
+  outputCount?: number
+  detail?: string
+}
+
+export const buildMediaGenerationStatusRows = (
+  summary: MediaGenerationStatus
+): Array<{
+  mediaType: string
+  provider: string
+  model: string
+  status: string
+  processingTimeMs: number | ''
+  outputCount: number | ''
+  detail: string
+}> => [{
+  mediaType: summary.mediaType,
+  provider: summary.provider,
+  model: summary.model,
+  status: summary.status,
+  processingTimeMs: summary.processingTimeMs ?? '',
+  outputCount: summary.outputCount ?? '',
+  detail: summary.detail ?? ''
+}]
+
+export const buildMediaGenerationStatusTable = (
+  summary: MediaGenerationStatus
+): HumanLogTable =>
+  createSingleRowTable(buildMediaGenerationStatusRows(summary)[0]!, [
+    'mediaType',
+    'provider',
+    'model',
+    'status',
+    'processingTimeMs',
+    'outputCount',
+    'detail'
+  ])
+
+export const logMediaGenerationStatus = (
+  logger: TableLogger,
+  summary: MediaGenerationStatus,
+  level: LogLevel = summary.status === 'completed' ? 'success' : 'info'
+): void => {
+  logger.write(level, 'Media Generation', {
+    category: 'pipeline',
+    humanTable: buildMediaGenerationStatusTable(summary),
+    metadata: summary
+  })
 }
 
 export const resolveMaxCentsFromFlags = async (flags: Record<string, unknown>): Promise<number | undefined> => {

@@ -4,10 +4,10 @@ import { readEnv } from '~/utils/validate/env-utils'
 export const setupElevenLabsStt = async (): Promise<void> => {
   const apiKey = readEnv('ELEVENLABS_API_KEY')
   if (apiKey) {
-    l.success('ELEVENLABS_API_KEY found — ElevenLabs transcription ready')
+    l.write('success', 'ELEVENLABS_API_KEY found — ElevenLabs transcription ready')
   } else {
     l.warn('ELEVENLABS_API_KEY not set — ElevenLabs transcription will not work until set')
-    l.info('Set ELEVENLABS_API_KEY environment variable to use ElevenLabs transcription')
+    l.write('info', 'Set ELEVENLABS_API_KEY environment variable to use ElevenLabs transcription')
   }
 }
 

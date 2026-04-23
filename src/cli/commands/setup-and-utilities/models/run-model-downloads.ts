@@ -9,15 +9,15 @@ const runModelDownload = async (model: string): Promise<void> => {
 
   if (isWhisperModel) {
     const whisperModel = validateWhisperModel(trimmedModel)
-    l.info(`Downloading whisper model: ${whisperModel}`)
+    l.write('info', `Downloading whisper model: ${whisperModel}`)
     await downloadWhisperModel(whisperModel)
-    l.success(`Download complete: ${whisperModel}`)
+    l.write('success', `Download complete: ${whisperModel}`)
     return
   }
 
-  l.info(`Downloading llama model: ${trimmedModel}`)
+  l.write('info', `Downloading llama model: ${trimmedModel}`)
   await ensureLlamaModelDownloaded(trimmedModel)
-  l.success(`Download complete: ${trimmedModel}`)
+  l.write('success', `Download complete: ${trimmedModel}`)
 }
 
 export const runModelDownloads = async (models: readonly string[]): Promise<void> => {

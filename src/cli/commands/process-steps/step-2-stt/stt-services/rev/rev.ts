@@ -7,10 +7,10 @@ export const getRevBaseUrl = (): string =>
 export const setupRevStt = async (): Promise<void> => {
   const accessToken = readEnv('REVAI_ACCESS_TOKEN')
   if (accessToken) {
-    l.success(`REVAI_ACCESS_TOKEN found — Rev transcription ready (${getRevBaseUrl()})`)
+    l.write('success', `REVAI_ACCESS_TOKEN found — Rev transcription ready (${getRevBaseUrl()})`)
   } else {
     l.warn('REVAI_ACCESS_TOKEN not set — Rev transcription will not work until set')
-    l.info('Set REVAI_ACCESS_TOKEN environment variable to use Rev transcription')
+    l.write('info', 'Set REVAI_ACCESS_TOKEN environment variable to use Rev transcription')
   }
 }
 

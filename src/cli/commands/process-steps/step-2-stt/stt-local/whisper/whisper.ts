@@ -44,7 +44,7 @@ const ensureCoremlEnvironment = async (): Promise<void> => {
     await rm(whisperCoremlEnvDir, { recursive: true, force: true })
     await runInherit('uv', ['venv', '--python', '3.11', whisperCoremlEnvDir])
     await installCoremlPackages(uvPython)
-    l.success('CoreML environment created')
+    l.write('success', 'CoreML environment created')
     return
   }
 
@@ -55,11 +55,10 @@ const ensureCoremlEnvironment = async (): Promise<void> => {
     l.warn('CoreML environment incomplete, reinstalling packages')
     await installCoremlPackages(uvPython)
     await runInherit(uvPython, [validateScript])
-    l.success('CoreML environment repaired')
+    l.write('success', 'CoreML environment repaired')
     return
   }
 
-  l.success('CoreML environment already exists')
 }
 
 const cleanupPath = async (path: string): Promise<void> => {
@@ -124,24 +123,22 @@ export const setupWhisper = async (): Promise<void> => {
   if (await fileExists(whisperBinaryPath)) {
     if (process.env['DOCKER_CONTAINER']) {
       if (await isExecutable(whisperBinaryPath)) {
-        l.success('Whisper.cpp already installed')
         return
       }
     } else {
       const check = await runCapture(whisperBinaryPath, ['--help'], { allowFailure: true })
       if (check.exitCode === 0) {
-        l.success('Whisper.cpp already installed')
         return
       }
 
-      l.info('Whisper binary found but not working, rebuilding')
+      l.write('info', 'Whisper binary found but not working, rebuilding')
     }
   }
 
   const tag = await readWhisperTag()
   const repoDir = whisperBuildDir
 
-  l.info(`Building whisper.cpp ${tag}`)
+  l.write('info', `Building whisper.cpp ${tag}`)
 
   await mkdir(repoDir, { recursive: true })
   await cleanupPath(repoDir)
@@ -173,7 +170,7 @@ export const setupWhisper = async (): Promise<void> => {
 
   await verifyWhisperBinary()
 
-  l.success('Whisper.cpp installed')
+  l.write('success', 'Whisper.cpp installed')
 }
 
 const compileCoremlPackage = async (modelName: string): Promise<void> => {
@@ -204,7 +201,7 @@ const compileCoremlPackage = async (modelName: string): Promise<void> => {
       await cleanupPath(mlpackagePath)
 
       if (await fileExists(finalPath)) {
-        l.success(`CoreML encoder compiled to ${finalPath}`)
+        l.write('success', `CoreML encoder compiled to ${finalPath}`)
       } else {
         l.warn('CoreML encoder compilation artifact missing')
       }
@@ -220,7 +217,7 @@ const compileCoremlPackage = async (modelName: string): Promise<void> => {
   await rename(mlpackagePath, finalPackage)
 
   if (await fileExists(finalPackage)) {
-    l.success(`CoreML encoder saved as ${finalPackage}`)
+    l.write('success', `CoreML encoder saved as ${finalPackage}`)
   } else {
     l.warn('CoreML encoder artifact missing')
   }
@@ -236,12 +233,11 @@ export const coremlConvert = async (modelName: string): Promise<void> => {
   const mlpackagePath = `${whisperModelsDir}/ggml-${modelName}-encoder.mlpackage`
 
   if (await fileExists(mlmodelcPath) || await fileExists(mlpackagePath)) {
-    l.success(`CoreML encoder already exists for ${modelName}`)
     return
   }
 
   await setupUv()
-  l.info(`Converting ${modelName} to CoreML format`)
+  l.write('info', `Converting ${modelName} to CoreML format`)
 
   await ensureCoremlEnvironment()
 
@@ -263,9 +259,8 @@ export const downloadWhisperModel = async (modelName: string): Promise<void> => 
   const destination = `${whisperModelsDir}/${modelFile}`
 
   if (await fileExists(destination)) {
-    l.success(`Whisper model ${modelName} already exists`)
   } else {
-    l.info(`Downloading whisper model: ${modelName}`)
+    l.write('info', `Downloading whisper model: ${modelName}`)
 
     const url = `${whisperBaseUrl}/${modelFile}`
 
@@ -282,11 +277,11 @@ export const downloadWhisperModel = async (modelName: string): Promise<void> => 
       }
     )
 
-    l.success(`Whisper model ${modelName} downloaded`)
+    l.write('success', `Whisper model ${modelName} downloaded`)
   }
 
   if (!await detectCoremlSupport()) {
-    l.info('CoreML not supported on this host')
+    l.write('info', 'CoreML not supported on this host')
     return
   }
 
@@ -305,7 +300,7 @@ export const ensureWhisperReady = async (modelName: string): Promise<void> => {
       : (await runCapture(whisperBinaryPath, ['--help'], { allowFailure: true })).exitCode === 0
 
     if (!healthy) {
-      l.info('Rebuilding whisper')
+      l.write('info', 'Rebuilding whisper')
       await setupWhisper()
     }
   } else {

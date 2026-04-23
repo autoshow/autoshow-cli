@@ -102,7 +102,7 @@ export const prepareDocumentMetadata = async (
   let conversionChain: string[] | undefined
 
   if (EBOOK_FORMATS.has(detectedFormat)) {
-    l.info(`Normalizing ${detectedFormat.toUpperCase()} to EPUB via Calibre`)
+    l.write('info', `Normalizing ${detectedFormat.toUpperCase()} to EPUB via Calibre`)
     tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ebook-norm-'))
     tempCleanup = async () => {
       if (tempDir) {

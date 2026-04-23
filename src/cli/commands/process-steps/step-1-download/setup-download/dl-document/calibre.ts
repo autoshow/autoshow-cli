@@ -35,25 +35,24 @@ export const calibreBin = (tool: string): string => {
 
 const installCalibreTools = async (): Promise<void> => {
   if (hasCalibreCliTools()) {
-    l.success('Calibre CLI tools already installed')
     return
   }
 
-  l.info('Installing Calibre CLI tools')
+  l.write('info', 'Installing Calibre CLI tools')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
     await runInherit('brew', ['install', '--cask', 'calibre'])
     if (hasCalibreCliTools()) {
-      l.success('Calibre CLI tools installed')
+      l.write('success', 'Calibre CLI tools installed')
       return
     }
     // Homebrew may report "already installed" when the cask metadata exists
     // but the .app was removed — reinstall to restore it
-    l.info('Calibre cask present but app missing, reinstalling...')
+    l.write('info', 'Calibre cask present but app missing, reinstalling...')
     await runInherit('brew', ['reinstall', '--cask', 'calibre'])
     if (hasCalibreCliTools()) {
-      l.success('Calibre CLI tools installed')
+      l.write('success', 'Calibre CLI tools installed')
       return
     }
     throw new Error(
@@ -65,7 +64,7 @@ const installCalibreTools = async (): Promise<void> => {
   if (platform === 'linux') {
     await runInherit('sudo', ['apt', 'install', '-y', 'calibre'])
     if (hasCalibreCliTools()) {
-      l.success('Calibre CLI tools installed')
+      l.write('success', 'Calibre CLI tools installed')
       return
     }
     throw new Error('Calibre install completed but CLI tools were not found on PATH')
@@ -79,7 +78,7 @@ export const setupCalibreTools = async (): Promise<void> => {
   await installCalibreTools()
 
   if (shouldPrintCompletion()) {
-    l.success('Calibre tools setup complete')
+    l.write('success', 'Calibre tools setup complete')
   }
 }
 
@@ -88,7 +87,7 @@ export const setupCalibreDocumentTools = async (): Promise<void> => {
   await setupCalibreTools()
 
   if (shouldPrintCompletion()) {
-    l.success('Document foundation tools setup complete')
+    l.write('success', 'Document foundation tools setup complete')
   }
 }
 
@@ -96,6 +95,6 @@ export const ensureCalibreDocumentTools = async (): Promise<void> => {
   if (hasCalibreCliTools() && commandExists('mutool')) {
     return
   }
-  l.info('Calibre EPUB tools missing. Running setup step: calibre')
+  l.write('info', 'Calibre EPUB tools missing. Running setup step: calibre')
   await setupCalibreDocumentTools()
 }

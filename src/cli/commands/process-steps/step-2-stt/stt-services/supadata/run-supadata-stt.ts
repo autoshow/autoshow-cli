@@ -8,6 +8,7 @@ import type {
   TranscriptionSegment
 } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -379,7 +380,7 @@ export const runSupadataStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Supadata mode: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'supadata', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
 
   const startTime = Date.now()
@@ -758,7 +759,7 @@ export const runSupadataStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'supadata', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return { result, metadata }

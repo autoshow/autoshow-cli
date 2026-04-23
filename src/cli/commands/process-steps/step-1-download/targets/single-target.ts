@@ -182,9 +182,9 @@ const warnHtmlArticleFlagBehavior = (target: string, opts: RuntimeOptions, backe
     l.warn(formatHtmlArticleOcrFlagsIgnoredWarning(target))
   }
   if (backend === 'firecrawl') {
-    l.info('Article extraction backend: firecrawl')
+    l.write('info', 'Article extraction backend: firecrawl')
   } else if (backend === 'glm-reader') {
-    l.info('Article extraction backend: glm-reader')
+    l.write('info', 'Article extraction backend: glm-reader')
   }
 }
 
@@ -532,7 +532,7 @@ const processMediaSingle = async (
   const llmConfig = resolveLLMDefaults(llmDefaults)
 
   if (llmDefaults.split) {
-    l.info('Audio will be split into 30-minute segments for transcription')
+    l.write('info', 'Audio will be split into 30-minute segments for transcription')
   }
 
   const isUrl = isLikelyUrl(target)
@@ -1028,7 +1028,7 @@ const processDownloadMedia = async (
   const manifestEntry = buildDownloadManifestEntry(step1Metadata)
 
   if (useFlatBatchOutput) {
-    l.info(`Saved media file: ${step1Metadata.audioFileName}`)
+    l.write('info', `Saved media file: ${step1Metadata.audioFileName}`)
     return { manifestEntry }
   }
 

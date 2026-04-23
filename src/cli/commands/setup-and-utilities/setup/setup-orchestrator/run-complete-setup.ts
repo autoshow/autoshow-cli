@@ -5,6 +5,7 @@ import type { RunResult, RunOptions, SetupPlatform } from '~/types'
 import { downloadFile } from '~/utils/download'
 import { consumeDownloadFallbackEvents } from '~/utils/download'
 import * as l from '~/logger'
+import { createHumanTable, logKeyValueTable, logSingleRowTable } from '~/logger/human-table'
 import { SUPPORTED_LLAMA_MODELS, SUPPORTED_KITTEN_TTS_MODELS } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry } from '~/utils/retries'
 import { validateJson } from '~/utils/validate/validation'
@@ -40,6 +41,7 @@ import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-mus
 import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
+import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
 export type { RunResult, RunOptions } from '~/types'
 
@@ -128,10 +130,9 @@ export const supportsCoreML = async (): Promise<boolean> => {
 
 export const setupUv = async (): Promise<void> => {
   if (commandExists('uv')) {
-    l.success('uv already installed')
     return
   }
-  l.info('Installing uv')
+  logSetupToolStatus(l, { tool: 'uv', status: 'installing' })
   if (detectPlatform() === 'darwin' && commandExists('brew')) {
     await runInherit('brew', ['install', 'uv'])
   } else {
@@ -147,7 +148,7 @@ export const setupUv = async (): Promise<void> => {
       }
     )
   }
-  l.success('uv installed')
+  logSetupToolStatus(l, { tool: 'uv', status: 'installed' })
 }
 
 export type SetupStepId =
@@ -187,7 +188,10 @@ const logPinnedVersions = async (): Promise<void> => {
   try {
     const raw = await Bun.file(depsJsonPath).text()
     const deps = validateJson(DepsJsonSchema, raw, 'config/deps.json')
-    l.info(`Pinned versions: whisper.cpp=${deps['whisper.cpp']?.tag ?? 'unknown'}, llama.cpp=${deps['llama.cpp']?.tag ?? 'unknown'}`)
+    logKeyValueTable(l, 'Pinned Versions', [
+      ['whisper.cpp', deps['whisper.cpp']?.tag ?? 'unknown'],
+      ['llama.cpp', deps['llama.cpp']?.tag ?? 'unknown']
+    ], { category: 'command', keyLabel: 'dependency', valueLabel: 'version' })
   } catch { l.warn('Could not read config/deps.json') }
 }
 
@@ -195,8 +199,9 @@ const validateBinary = async (name: string, path: string, args: string[]): Promi
   if (!await pathExists(path)) { l.warn(`${name}: not found at ${path}`); return }
   try {
     const result = await runCapture(path, args, { allowFailure: true })
-    if (result.exitCode === 0 || result.exitCode === 1) l.success(`${name}: ok`)
-    else l.warn(`${name}: installed but exited ${result.exitCode} (may still work)`)
+    if (result.exitCode === 0 || result.exitCode === 1) {
+      logSetupToolStatus(l, { tool: name, status: 'ok', detail: path })
+    } else l.warn(`${name}: installed but exited ${result.exitCode} (may still work)`)
   } catch (err) {
     l.warn(`${name}: could not execute — ${err instanceof Error ? err.message : String(err)}`)
   }
@@ -205,13 +210,13 @@ const validateBinary = async (name: string, path: string, args: string[]): Promi
 const downloadKittenTtsModel = async (model: string): Promise<void> => {
   const kittenPython = `${kittenTtsUvEnvDir}/bin/python`
   if (!await pathExists(kittenPython)) { l.warn(`Kitten TTS venv not found, skipping model download: ${model}`); return }
-  l.info(`Downloading Kitten TTS model: ${model}`)
+  logSetupToolStatus(l, { tool: 'kitten-tts', status: 'downloading', detail: model })
   await runCapture(kittenPython, ['-c', `from kittentts import KittenTTS; KittenTTS("${model}")`], { allowFailure: true })
-  l.success(`Kitten TTS model ready: ${model}`)
+  logSetupToolStatus(l, { tool: 'kitten-tts', status: 'ready', detail: model })
 }
 
 const runFullSetup = async (): Promise<void> => {
-  l.info('Starting complete AutoShow setup')
+  l.write('info', 'Starting complete AutoShow setup')
   await logPinnedVersions()
   await ensureRuntimeDirs()
   const awsDefaults = await readAwsSttConfigDefaults()
@@ -289,7 +294,7 @@ const runFullSetup = async (): Promise<void> => {
   await validateBinary('whisper-cli', whisperBinaryPath, ['--help'])
   await validateBinary('llama-server', llamaBinaryPath, ['--version'])
 
-  l.info('You can now run: bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"')
+  l.write('info', 'You can now run: bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"')
 }
 
 export const runCompleteSetup = async (): Promise<void> => { await runFullSetup() }
@@ -302,23 +307,23 @@ const runSetupTranscription = async (): Promise<void> => {
     ...awsDefaults,
     verifyTranscribe: true
   })
-  l.success('Transcription setup complete')
+  l.write('success', 'Transcription setup complete')
 }
 
 const runSetupWrite = async (): Promise<void> => {
   if (!await checkLlamaInstalled()) await runLlamaSetup()
   for (const model of SUPPORTED_LLAMA_MODELS) await ensureLlamaModelDownloaded(model)
-  l.success('Write setup complete')
+  l.write('success', 'Write setup complete')
 }
 
 const runSetupTts = async (): Promise<void> => {
   await ensureKittenTtsSetup()
   for (const model of SUPPORTED_KITTEN_TTS_MODELS) await downloadKittenTtsModel(model)
-  l.success('TTS setup complete')
+  l.write('success', 'TTS setup complete')
 }
 
 const runSetupImage = async (): Promise<void> => {
-  l.success('Image setup complete (all image providers are API-based)')
+  l.write('success', 'Image setup complete (all image providers are API-based)')
 }
 
 const runSetupLyrics = async (): Promise<void> => {
@@ -342,11 +347,11 @@ const runSetupLyrics = async (): Promise<void> => {
 
   await setupWhisper()
   await downloadWhisperModel('large-v3-turbo')
-  l.success('Lyrics setup complete')
+  l.write('success', 'Lyrics setup complete')
 }
 
 const runSetupSample = async (): Promise<void> => {
-  l.info('Sample setup: verifying required tools for fixture generation (ffmpeg, soffice)')
+  l.write('info', 'Sample setup: verifying required tools for fixture generation (ffmpeg, soffice)')
   const { commandExists } = await import('~/utils/cli-utils')
   const requiredTools = ['ffmpeg', 'ffprobe', 'soffice']
   const missing: string[] = []
@@ -361,7 +366,7 @@ const runSetupSample = async (): Promise<void> => {
       'Install them via your system package manager or run: bun as setup'
     )
   }
-  l.success('Sample setup complete (all required tools found)')
+  l.write('success', 'Sample setup complete (all required tools found)')
 }
 
 const computeMedian = (values: number[]): number => {
@@ -380,17 +385,25 @@ const computeP90 = (values: number[]): number => {
 const logBenchmarkResults = (
   stepLabel: string, runs: number, results: Map<string, number[]>, fallbackRuns: Map<string, number>
 ): void => {
-  l.info('')
-  l.info(`Setup benchmark results (${stepLabel}, ${runs} run${runs > 1 ? 's' : ''}):`)
-  l.info('Engine  | Median    | P90       | Min       | Max       | Outliers | Fallback runs')
-  for (const [engine, durations] of results) {
+  const rows = [...results.entries()].map(([engine, durations]) => {
     const median = computeMedian(durations)
     const p90 = computeP90(durations)
-    const fallbackCount = fallbackRuns.get(engine) ?? 0
-    l.info(
-      `${engine.padEnd(7)} | ${String(median).padEnd(9)}ms | ${String(p90).padEnd(9)}ms | ${String(Math.min(...durations)).padEnd(9)}ms | ${String(Math.max(...durations)).padEnd(9)}ms | ${String(durations.filter(v => v > p90).length).padEnd(8)} | ${fallbackCount}`
-    )
-  }
+    return {
+      engine,
+      medianMs: median,
+      p90Ms: p90,
+      minMs: Math.min(...durations),
+      maxMs: Math.max(...durations),
+      outliers: durations.filter(v => v > p90).length,
+      fallbackRuns: fallbackRuns.get(engine) ?? 0
+    }
+  })
+
+  l.write('info', `Setup Benchmark (${stepLabel}, ${runs} run${runs > 1 ? 's' : ''})`, {
+    category: 'command',
+    humanTable: createHumanTable(rows, ['engine', 'medianMs', 'p90Ms', 'minMs', 'maxMs', 'outliers', 'fallbackRuns']),
+    metadata: { step: stepLabel, runs, results: rows }
+  })
 }
 
 const getForceRedownloadPaths = (step: SetupStepId): readonly string[] => {
@@ -413,7 +426,10 @@ const applyRunOptions = async (step: SetupStepId, options?: { forceRedownload?: 
   const paths = getForceRedownloadPaths(step)
   if (paths.length === 0) return
   await Promise.all(paths.map(p => rm(p, { recursive: true, force: true })))
-  l.info(`Force redownload: cleared ${paths.length} artifact${paths.length === 1 ? '' : 's'}`)
+  logSingleRowTable(l, 'Force Redownload', {
+    step,
+    clearedArtifacts: paths.length
+  }, { category: 'artifact', columns: ['step', 'clearedArtifacts'] })
 }
 
 const executeStepOnce = async (step: SetupStepId): Promise<void> => {
@@ -459,7 +475,7 @@ export const runSetupStep = async (step: SetupStepId, options?: { forceRedownloa
     if (fallbackEvents.length > 0) fallbackRuns.set(label, (fallbackRuns.get(label) ?? 0) + 1)
     timings.get(label)!.push(duration)
     const fallbackSuffix = fallbackEvents.length > 0 ? ` | fallback events: ${fallbackEvents.length}` : ''
-    l.info(`Run ${i + 1}/${repeat} (${label}): ${duration}ms${fallbackSuffix}`)
+    l.write('info', `Run ${i + 1}/${repeat} (${label}): ${duration}ms${fallbackSuffix}`)
   }
 
   logBenchmarkResults(step, repeat, timings, fallbackRuns)

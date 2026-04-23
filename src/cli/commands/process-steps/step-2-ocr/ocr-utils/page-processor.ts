@@ -112,7 +112,7 @@ export const processPages = async (
     const stageAByPage = new Map(stageA.map(page => [page.pageNumber, page]))
     const needingOcr = stageA.filter(p => p.needsOcr)
     if (needingOcr.length > 0) {
-      l.info(`Running OCR for ${needingOcr.length}/${totalPages} pages`)
+      l.write('info', `Running OCR for ${needingOcr.length}/${totalPages} pages`)
     }
 
     const ocrResults = await Promise.all(needingOcr.map(async page => {

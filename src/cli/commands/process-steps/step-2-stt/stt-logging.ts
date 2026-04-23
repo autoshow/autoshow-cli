@@ -30,6 +30,16 @@ type SttAsyncJobLifecycle = {
   state: string
 }
 
+type SttSegmentLifecycle = {
+  provider: string
+  action: 'started' | 'completed'
+  segmentNumber?: number
+  totalSegments?: number
+  model?: string
+  processingTimeMs?: number
+  detail?: string
+}
+
 type SttRunStatusSummary = {
   completionStatus: SttCompletionStatus
   requested: number
@@ -119,6 +129,46 @@ export const logSttAsyncJobLifecycle = (
   logger.write('info', 'Async STT Job', {
     category: 'pipeline',
     humanTable: buildSttAsyncJobTable(lifecycle),
+    metadata: lifecycle
+  })
+}
+
+export const buildSttSegmentLifecycleRows = (
+  lifecycle: SttSegmentLifecycle
+): Array<{
+  provider: string
+  action: string
+  segment: string
+  model: string
+  processingTimeMs: number | ''
+  detail: string
+}> => [{
+  provider: lifecycle.provider,
+  action: lifecycle.action,
+  segment: lifecycle.segmentNumber !== undefined && lifecycle.totalSegments !== undefined
+    ? `${lifecycle.segmentNumber}/${lifecycle.totalSegments}`
+    : '',
+  model: lifecycle.model ?? '',
+  processingTimeMs: lifecycle.processingTimeMs ?? '',
+  detail: lifecycle.detail ?? ''
+}]
+
+export const buildSttSegmentLifecycleTable = (
+  lifecycle: SttSegmentLifecycle
+): HumanLogTable =>
+  createHumanTable(
+    buildSttSegmentLifecycleRows(lifecycle),
+    ['provider', 'action', 'segment', 'model', 'processingTimeMs', 'detail']
+  )
+
+export const logSttSegmentLifecycle = (
+  logger: TableLogger,
+  lifecycle: SttSegmentLifecycle,
+  level: LogLevel = lifecycle.action === 'completed' ? 'success' : 'info'
+): void => {
+  logger.write(level, 'STT Segment', {
+    category: 'pipeline',
+    humanTable: buildSttSegmentLifecycleTable(lifecycle),
     metadata: lifecycle
   })
 }

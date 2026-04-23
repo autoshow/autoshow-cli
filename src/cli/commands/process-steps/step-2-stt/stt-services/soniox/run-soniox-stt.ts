@@ -17,7 +17,7 @@ import {
   SonioxTranscriptionStatusSchema
 } from '~/types'
 import * as l from '~/logger'
-import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
+import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -523,7 +523,7 @@ export const runSonioxStt = async (
     lifecycle
   } = options
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Soniox model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'soniox', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
 
   const startTime = Date.now()
@@ -762,7 +762,7 @@ export const runSonioxStt = async (
     }
 
     if (segmentNumber && totalSegments) {
-      l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+      logSttSegmentLifecycle(l, { provider: 'soniox', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
     }
 
     const result: TranscriptionResult = {

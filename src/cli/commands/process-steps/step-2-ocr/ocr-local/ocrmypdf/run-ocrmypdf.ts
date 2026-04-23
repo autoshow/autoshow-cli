@@ -46,7 +46,7 @@ export const runOcrmypdf = async (
 
     args.push(filePath, '-')
 
-    l.info(`Running OCRmyPDF on ${filePath}`)
+    l.write('info', `Running OCRmyPDF on ${filePath}`)
     const result = await exec('ocrmypdf', args)
     if (result.exitCode !== 0) {
       throw new Error(result.stderr || 'OCRmyPDF failed')

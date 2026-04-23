@@ -132,8 +132,6 @@ export const l: GlobalLogger = {
   get report() { return activeLogger.report },
   write: (...args) => activeLogger.write(...args),
   debug: (...args) => activeLogger.debug(...args),
-  info: (...args) => activeLogger.info(...args),
-  success: (...args) => activeLogger.success(...args),
   warn: (...args) => activeLogger.warn(...args),
   error: (...args) => activeLogger.error(...args),
   withContext: (context) => attachReport(activeLogger.withContext(context))
@@ -146,7 +144,5 @@ export const withContext = (context: LogContext): GlobalLogger => {
 export const report = l.report
 export const write = l.write
 export const debug = l.debug
-export const info = l.info
-export const success = l.success
 export const warn = l.warn
 export const error = l.error

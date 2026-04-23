@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import type { Step7MusicMetadata } from '~/types'
 import * as l from '~/logger'
 import { logLocationsTable } from '~/logger/human-table'
+import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import type { MinimaxMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -242,7 +243,12 @@ export const runMinimaxMusicGen = async (
     l.warn(`MiniMax music prompt exceeded ${MINIMAX_MUSIC_PROMPT_MAX_CHARS} characters; truncating to fit provider limit`)
   }
 
-  l.info(`MiniMax music model: ${options.model}`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'music',
+    provider: 'minimax',
+    model: options.model,
+    status: 'started'
+  })
 
   const payload = {
     model: options.model,
@@ -267,6 +273,14 @@ export const runMinimaxMusicGen = async (
   const musicFile = Bun.file(musicPath)
   const musicDurationMs = generated.extra_info?.music_duration
 
+  logMediaGenerationStatus(l, {
+    mediaType: 'music',
+    provider: 'minimax',
+    model: options.model,
+    status: 'completed',
+    processingTimeMs: processingTime,
+    outputCount: 1
+  })
   logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
 
   const metadata: Step7MusicMetadata = {

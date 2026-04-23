@@ -1087,7 +1087,7 @@ export const readInputList = async (filePath: string): Promise<string[]> => {
       l.warn(`Ignored ${invalidCount} invalid entries in ${filePath}`)
     }
 
-    l.info(`Loaded ${valid.length} inputs from ${filePath}`)
+    l.write('info', `Loaded ${valid.length} inputs from ${filePath}`)
     return valid
   } catch {
     l.error(`Failed to read input list at ${filePath}`)
@@ -1370,7 +1370,7 @@ export const processBatch = async (
       }
     }
   } else {
-    l.info(`Processing ${items.length} items with concurrency ${concurrency}`)
+    l.write('info', `Processing ${items.length} items with concurrency ${concurrency}`)
     const sem = { active: 0 }
     const results = await Promise.allSettled(
       items.map((item, index) =>

@@ -438,7 +438,7 @@ export async function prepareHtmlArticle(
       author = extracted.author
     }
   } else if (resolvedBackend === 'firecrawl') {
-    l.info('Using Firecrawl backend for article extraction')
+    l.write('info', 'Using Firecrawl backend for article extraction')
     const firecrawlResult = await runFirecrawlScrape(source)
     const htmlFallback = await tryFetchRemoteHtml(source)
 
@@ -450,7 +450,7 @@ export async function prepareHtmlArticle(
     title = firecrawlResult.web.title ?? fallbackTitleFromSource(source)
     author = firecrawlResult.web.author
   } else {
-    l.info('Using GLM Reader backend for article extraction')
+    l.write('info', 'Using GLM Reader backend for article extraction')
     const glmResult = await runGlmReader(source)
     const htmlFallback = await tryFetchRemoteHtml(source)
 

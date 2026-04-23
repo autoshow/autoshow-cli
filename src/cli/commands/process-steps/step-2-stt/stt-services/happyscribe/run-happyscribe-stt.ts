@@ -10,7 +10,7 @@ import type {
   TranscriptionEvidenceWord
 } from '~/types'
 import * as l from '~/logger'
-import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
+import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildSegmentsFromWords,
   buildTranscriptionOutputBase,
@@ -879,7 +879,7 @@ export const runHappyScribeStt = async (
   let billing: Step2Metadata['billing'] | undefined
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Happy Scribe model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'happyscribe', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
 
   const organizationSelection = await resolveHappyScribeOrganizationSelection({
@@ -1454,7 +1454,7 @@ export const runHappyScribeStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'happyscribe', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return {

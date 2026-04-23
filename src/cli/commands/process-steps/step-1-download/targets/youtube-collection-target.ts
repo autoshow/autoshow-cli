@@ -89,7 +89,7 @@ export const tryHandleYoutubeCollectionTarget = async (
     return false
   }
 
-  l.info(`Detected YouTube collection URL, processing ${items.length} videos`)
+  l.write('info', `Detected YouTube collection URL, processing ${items.length} videos`)
   if (isSttCommand(command)) {
     const result = await runSttBatch(items, 'youtube_collection', opts)
     throwIfSttBatchIncomplete(result)

@@ -61,7 +61,7 @@ Format the output like so:
       options?.promptSourceProvider ? `source: ${options.promptSourceProvider}` : undefined
     ].filter((entry): entry is string => typeof entry === 'string')
     if (options?.suppressDiarizationLog !== true) {
-      l.info(`Including speaker diarization in prompt (${details.join('; ')})`)
+      l.write('info', `Including speaker diarization in prompt (${details.join('; ')})`)
     }
   }
   

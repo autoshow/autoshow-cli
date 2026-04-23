@@ -132,19 +132,21 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
 }
 
 export const logVideoEstimate = (estimate: VideoCostEstimate): void => {
-  l.info(`Total estimated cost: ${estimate.totalCost.toFixed(5)}¢`)
+  const row = {
+    provider: estimate.provider,
+    model: estimate.model,
+    requestedDuration: `${estimate.durationSeconds}s`,
+    billedDuration: `${estimate.billedDurationSeconds}s`,
+    costPerSecond: `${estimate.costPerSecond.toFixed(4)}¢`,
+    totalCost: `${estimate.totalCost.toFixed(5)}¢`,
+    ...(estimate.note ? { note: estimate.note } : {})
+  }
   l.write('info', `Estimated video cost for ${estimate.provider}/${estimate.model}`, {
     category: 'pricing',
-    humanTable: createHumanTable([{
-      provider: estimate.provider,
-      model: estimate.model,
-      requestedDuration: `${estimate.durationSeconds}s`,
-      billedDuration: `${estimate.billedDurationSeconds}s`,
-      costPerSecond: `${estimate.costPerSecond.toFixed(4)}¢`,
-      totalCost: `${estimate.totalCost.toFixed(5)}¢`
-    }], ['provider', 'model', 'requestedDuration', 'billedDuration', 'costPerSecond', 'totalCost'])
+    humanTable: createHumanTable(
+      [row],
+      ['provider', 'model', 'requestedDuration', 'billedDuration', 'costPerSecond', 'totalCost', ...(estimate.note ? ['note'] : [])]
+    ),
+    metadata: estimate
   })
-  if (estimate.note) {
-    l.info(`Note: ${estimate.note}`)
-  }
 }

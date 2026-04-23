@@ -9,6 +9,7 @@ import type {
 } from '~/types'
 import { ElevenLabsSttResponseSchema } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -169,10 +170,10 @@ export const runElevenLabsTranscribe = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with ElevenLabs model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'elevenlabs', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
   if (diarizationOptions?.speakerCount !== undefined) {
-    l.info(`ElevenLabs diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
+    l.write('info', `ElevenLabs diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
   }
 
   const startTime = Date.now()
@@ -275,7 +276,7 @@ export const runElevenLabsTranscribe = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'elevenlabs', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return {

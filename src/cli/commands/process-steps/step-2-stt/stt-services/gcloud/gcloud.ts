@@ -568,7 +568,7 @@ export const setupGcloudStt = async (
   }
 
   if (options.focused) {
-    l.info('Google Cloud STT setup')
+    l.write('info', 'Google Cloud STT setup')
   }
 
   const checkRows = [
@@ -590,8 +590,13 @@ export const setupGcloudStt = async (
   })
 
   if (options.focused) {
-    l.info('INFO: gcloud STT location — us')
-    l.info('INFO: gcloud STT transport — direct REST Recognize requests via us-speech.googleapis.com, no AutoShow-managed bucket required')
+    l.write('info', 'Google Cloud STT Config', {
+      category: 'command',
+      humanTable: createHumanTable([
+        { setting: 'location', value: 'us' },
+        { setting: 'transport', value: 'direct REST Recognize requests via us-speech.googleapis.com; no AutoShow-managed bucket required' }
+      ], ['setting', 'value'])
+    })
 
     const commands = buildSetupCommands(state, {
       explicitProject,
@@ -600,11 +605,13 @@ export const setupGcloudStt = async (
       defaultModelConfigured
     })
     if (commands.length > 0) {
-      l.info('')
-      l.info('Next steps')
-      for (const command of commands) {
-        l.info(command)
-      }
+      l.write('info', 'Google Cloud STT Next Steps', {
+        category: 'command',
+        humanTable: createHumanTable(
+          commands.map((command, index) => ({ step: index + 1, command })),
+          ['step', 'command']
+        )
+      })
     }
   }
 }

@@ -4,10 +4,10 @@ import { readEnv } from '~/utils/validate/env-utils'
 export const setupMistralOcr = async (): Promise<void> => {
   const apiKey = readEnv('MISTRAL_API_KEY')
   if (apiKey) {
-    l.success('MISTRAL_API_KEY found — Mistral OCR ready')
+    l.write('success', 'MISTRAL_API_KEY found — Mistral OCR ready')
   } else {
     l.warn('MISTRAL_API_KEY not set — Mistral OCR will not work until set')
-    l.info('Set MISTRAL_API_KEY environment variable to use Mistral OCR')
+    l.write('info', 'Set MISTRAL_API_KEY environment variable to use Mistral OCR')
   }
 }
 

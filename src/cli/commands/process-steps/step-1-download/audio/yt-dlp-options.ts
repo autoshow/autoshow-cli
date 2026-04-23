@@ -121,10 +121,7 @@ export const buildYtDlpDownloadArgs = async (url: string, outputDir: string): Pr
     `${outputDir}/%(title)s.%(ext)s`,
     '--restrict-filenames',
     '--no-playlist',
-    '--progress',
-    '--newline',
-    '--progress-delta',
-    '1',
+    '--no-progress',
     ...sharedArgs,
     url
   ]

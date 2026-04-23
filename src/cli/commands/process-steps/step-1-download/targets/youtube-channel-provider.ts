@@ -83,7 +83,7 @@ export const tryEnumerateYoutubeChannel = async (
 ): Promise<BatchSource | null> => {
   if (!isYoutubeChannelUrl(url)) return null
 
-  l.info(`Enumerating YouTube channel/playlist: ${url}`)
+  l.write('info', `Enumerating YouTube channel/playlist: ${url}`)
 
   const args = await buildYoutubeChannelListArgs(url, batchOpts)
   const res = await exec('yt-dlp', args)
@@ -116,11 +116,11 @@ export const tryEnumerateYoutubeChannel = async (
   }
 
   if (items.length === 0) {
-    l.info(`No items found in YouTube channel/playlist: ${url}`)
+    l.write('info', `No items found in YouTube channel/playlist: ${url}`)
     return null
   }
 
-  l.success(`Found ${items.length} items in YouTube channel/playlist`)
+  l.write('success', `Found ${items.length} items in YouTube channel/playlist`)
 
   const channelTitle = items[0]?.author
 

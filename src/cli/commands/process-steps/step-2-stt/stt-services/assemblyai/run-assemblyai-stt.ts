@@ -10,7 +10,7 @@ import type {
 } from '~/types'
 import { AssemblyAiTranscriptResponseSchema } from '~/types'
 import * as l from '~/logger'
-import { logSttAsyncJobLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
+import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import {
   pollAsyncSttJobUntilComplete,
@@ -127,10 +127,10 @@ export const runAssemblyAiTranscribe = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with AssemblyAI model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'assemblyai', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
   if (diarizationOptions?.speakerCount !== undefined) {
-    l.info(`AssemblyAI diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
+    l.write('info', `AssemblyAI diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
   }
 
   const startTime = Date.now()
@@ -529,7 +529,7 @@ export const runAssemblyAiTranscribe = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'assemblyai', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return {

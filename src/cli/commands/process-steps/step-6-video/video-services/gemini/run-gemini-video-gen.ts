@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai'
 import { mkdir } from 'node:fs/promises'
 import type { Step6VideoMetadata } from '~/types'
 import type { GeminiVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
 import * as l from '~/logger'
@@ -21,7 +22,12 @@ export const runGeminiVideoGen = async (
     throw new Error('GEMINI_API_KEY environment variable is required')
   }
 
-  l.info(`Running Gemini video model: ${options.model}`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'video',
+    provider: 'gemini',
+    model: options.model,
+    status: 'started'
+  })
 
   const estimate = estimateVideoCost({
     geminiVideoModel: options.model,
@@ -51,7 +57,12 @@ export const runGeminiVideoGen = async (
     intervalMs: POLL_INTERVAL_MS,
     deadlineMs: POLL_TIMEOUT_MS,
     pollFn: async () => {
-      l.info('Gemini video status: in_progress')
+      logMediaGenerationStatus(l, {
+        mediaType: 'video',
+        provider: 'gemini',
+        model: options.model,
+        status: 'in_progress'
+      })
       operation = await ai.operations.getVideosOperation({ operation })
       return operation
     },
@@ -76,8 +87,15 @@ export const runGeminiVideoGen = async (
   const processingTime = Date.now() - startTime
   const videoFile = Bun.file(outputPath)
 
-  l.success(`Gemini video generation completed in ${(processingTime / 1000).toFixed(1)}s`)
-  l.info(`Actual billed cost was not returned by the API; using estimate ${estimate.totalCost.toFixed(4)}¢`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'video',
+    provider: 'gemini',
+    model: options.model,
+    status: 'completed',
+    processingTimeMs: processingTime,
+    outputCount: 1,
+    detail: `Actual billed cost was not returned by the API; estimate ${estimate.totalCost.toFixed(4)}¢`
+  })
 
   const metadata: Step6VideoMetadata = {
     videoGenService: 'gemini',

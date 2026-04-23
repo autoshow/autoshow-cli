@@ -200,7 +200,7 @@ export const runLinksWithArgv = async (
   const outputPath = options.outputPath ?? getDefaultOutputPath(serviceSelections, globalSections)
   const fetchImpl = options.fetchImpl ?? fetch
 
-  l.info(`Fetching ${links.length} documentation URLs`)
+  l.write('info', `Fetching ${links.length} documentation URLs`)
 
   const fetchedContents = await Promise.all(links.map(url => fetchUrl(url, fetchImpl)))
   const combinedContent = `${fetchedContents.join('\n\n')}\n`
@@ -211,7 +211,7 @@ export const runLinksWithArgv = async (
     : decodeURIComponent(outputPath.pathname)
   const lineCount = combinedContent.split('\n').length
 
-  l.success(`Wrote ${resolvedOutputPath} from ${links.length} URLs (${lineCount} lines)`)
+  l.write('success', `Wrote ${resolvedOutputPath} from ${links.length} URLs (${lineCount} lines)`)
 
   return {
     outputPath: resolvedOutputPath,

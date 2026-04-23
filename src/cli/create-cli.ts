@@ -75,7 +75,7 @@ const cliErrorHandler = (error: unknown): void => {
   if (error instanceof Error) {
     for (const [needle, hint] of Object.entries(ERROR_HINTS)) {
       if (error.message.includes(needle)) {
-        l.info(hint)
+        l.write('info', hint)
       }
     }
   }

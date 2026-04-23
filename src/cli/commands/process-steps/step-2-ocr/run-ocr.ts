@@ -377,7 +377,7 @@ const runOcrmypdfWithAutoPdf = async (
   const convertedPdfPath = join(tempDir, 'input.pdf')
 
   try {
-    l.info(`Converting ${step1Metadata.format.toUpperCase()} to PDF for OCRmyPDF`)
+    l.write('info', `Converting ${step1Metadata.format.toUpperCase()} to PDF for OCRmyPDF`)
     const convertResult = await convertDocumentToPdf(filePath, convertedPdfPath, opts.password)
     if (convertResult.exitCode !== 0) {
       throw new Error(convertResult.stderr || convertResult.stdout || 'mutool convert failed')
@@ -828,7 +828,7 @@ export const runOcr = async (
   }
 
   if (step1Metadata.format !== 'epub' && (useEpubBun || useEpubCalibre)) {
-    l.info(EPUB_INSPECT_NON_EPUB_INFO)
+    l.write('info', EPUB_INSPECT_NON_EPUB_INFO)
   }
 
   const format = step1Metadata.format
@@ -859,7 +859,7 @@ export const runOcr = async (
       l.warn(EPUB_EXPORT_FLAGS_IGNORED_INSPECT_WARNING)
     }
     if (useEpubCalibre) {
-      l.info('Inspecting EPUB with Calibre tools')
+      l.write('info', 'Inspecting EPUB with Calibre tools')
       const inspected = await runEpubCalibreInspect(filePath)
       pages = inspected.payload.chapters.map((chapter) => ({
         pageNumber: chapter.index,
@@ -869,7 +869,7 @@ export const runOcr = async (
       extractionMethod = 'epub-calibre'
       epubPayload = inspected.payload as Record<string, unknown>
     } else {
-      l.info('Inspecting EPUB with Bun ZIP/XML parser')
+      l.write('info', 'Inspecting EPUB with Bun ZIP/XML parser')
       const inspected = await runEpubBunInspect(filePath)
       pages = inspected.payload.chapters.map((chapter) => ({
         pageNumber: chapter.index,
@@ -882,7 +882,7 @@ export const runOcr = async (
   }
   // ─── EPUB default text extraction (no OCR flag) ──────────────────────────
   else if (format === 'epub' && !hasOcrFlag(opts)) {
-    l.info('Extracting EPUB chapter text with Bun ZIP/XML parser')
+    l.write('info', 'Extracting EPUB chapter text with Bun ZIP/XML parser')
     const inspected = await runEpubBunInspect(filePath)
     const epubTextOutput = buildEpubTextOutput(step1Metadata.slug, inspected.payload.chapters, {
       chapterFiles: opts.epubChapterFiles === true,
@@ -934,7 +934,7 @@ export const runOcr = async (
 
     if (!ocrFlag) {
       // Try native ZIP+XML extraction first
-      l.info(`Extracting ${format.toUpperCase()} with native ZIP+XML parser`)
+      l.write('info', `Extracting ${format.toUpperCase()} with native ZIP+XML parser`)
       const r = await runZipXmlExtract(filePath, format)
       const combinedText = r.pages.map(p => p.text).join(' ')
 
@@ -944,7 +944,7 @@ export const runOcr = async (
         extractionMethod = 'office-native'
       } else {
         // Quality check failed - fall back to LibreOffice + OCR
-        l.info(`${format.toUpperCase()} native extraction quality insufficient, falling back to LibreOffice + OCR`)
+        l.write('info', `${format.toUpperCase()} native extraction quality insufficient, falling back to LibreOffice + OCR`)
         const engine = resolveExtractEngine(opts)
         const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-office-ocr-'))
         try {
@@ -959,7 +959,7 @@ export const runOcr = async (
         }
       }
     } else {
-      l.info(`${format.toUpperCase()} with OCR flag: converting to PDF via LibreOffice`)
+      l.write('info', `${format.toUpperCase()} with OCR flag: converting to PDF via LibreOffice`)
       const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-office-ocr-'))
       try {
         const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
@@ -989,7 +989,7 @@ export const runOcr = async (
   // ─── RTF → always LibreOffice → PDF → standard pipeline ─────────────────
   else if (format === 'rtf') {
     inputFamily = 'rtf'
-    l.info('Converting RTF to PDF via LibreOffice')
+    l.write('info', 'Converting RTF to PDF via LibreOffice')
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-rtf-'))
     try {
       const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
@@ -1028,11 +1028,11 @@ export const runOcr = async (
   // ─── CBZ → extract images, per-image OCR ─────────────────────────────────
   else if (format === 'cbz') {
     inputFamily = 'cbz'
-    l.info('Extracting images from CBZ archive')
+    l.write('info', 'Extracting images from CBZ archive')
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-cbz-'))
     try {
       const images = await extractCbzImages(filePath, tempDir)
-      l.info(`Processing ${images.length} images from CBZ`)
+      l.write('info', `Processing ${images.length} images from CBZ`)
 
       if (hasHostedOcr(opts)) {
         const hostedEngine = getHostedOcrEngine(opts)
@@ -1176,7 +1176,7 @@ export const runOcr = async (
   }
 
   if (pdfChapterFilesRequested && format === 'pdf') {
-    l.info(`Detecting PDF chapters with ${opts.pdfChapterMode} mode`)
+    l.write('info', `Detecting PDF chapters with ${opts.pdfChapterMode} mode`)
     const pdfChapterOutput = await buildPdfChapterArtifacts({
       filePath,
       pages,

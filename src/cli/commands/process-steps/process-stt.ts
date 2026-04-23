@@ -699,7 +699,7 @@ export const processStt = async (
 
       if (captionTranscription) {
         if (requestedTargets.length > 0) {
-          l.info(`YouTube captions selected; skipping requested STT providers: ${requestedTargets.map(formatSttTargetLabel).join(', ')}`)
+          l.write('info', `YouTube captions selected; skipping requested STT providers: ${requestedTargets.map(formatSttTargetLabel).join(', ')}`)
         }
 
         await buildPromptFile(outputDir, preparedStepMedia.metadata, captionTranscription.result, preparedStepMedia.step1Metadata.slug, {

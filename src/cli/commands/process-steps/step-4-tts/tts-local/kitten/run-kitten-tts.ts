@@ -4,6 +4,7 @@ import { TtsScriptOutputSchema } from '~/types'
 import * as l from '~/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
+import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { exec } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
 import { kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
@@ -33,7 +34,13 @@ export const runKittenTts = async (
 
   const startTime = Date.now()
 
-  l.info(`Invoking Kitten TTS inference script`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'tts',
+    provider: 'kitten',
+    model: options.model,
+    status: 'started',
+    detail: `speaker: ${options.speaker}`
+  })
   const result = await exec(pythonPath, [
     SCRIPT_PATH,
     '--model', hfModelId,
@@ -53,7 +60,7 @@ export const runKittenTts = async (
       ) {
         l.error(`TTS stderr: ${line}`)
       } else if (line.startsWith('[kitten-tts]')) {
-        l.info(line)
+        l.debug(line)
       }
     }
   }
@@ -82,7 +89,7 @@ export const runKittenTts = async (
     try {
       const scriptOutput = validateData(TtsScriptOutputSchema, JSON.parse(lastLine), 'TTS script output')
       chunkCount = scriptOutput.chunkCount
-      l.info(`Generated ${scriptOutput.durationSeconds}s of audio in ${scriptOutput.chunkCount} chunk(s)`)
+      l.debug(`Generated ${scriptOutput.durationSeconds}s of audio in ${scriptOutput.chunkCount} chunk(s)`)
     } catch {
       l.warn('Could not parse Kitten TTS script metadata from stdout')
     }

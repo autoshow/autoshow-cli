@@ -1,6 +1,7 @@
 import { rm } from 'node:fs/promises'
 import { commandExists, pathExists, runCapture, runInherit, kittenTtsUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 
 const PYTHON_VERSION = '3.12'
 
@@ -33,7 +34,7 @@ const envExistsAndValid = async (): Promise<boolean> => {
 }
 
 export const setupKittenTtsEnvironment = async (): Promise<void> => {
-  l.info('Setting up Kitten TTS environment')
+  l.write('info', 'Setting up Kitten TTS environment')
 
   if (!commandExists('uv')) {
     await setupUv()
@@ -49,7 +50,7 @@ export const setupKittenTtsEnvironment = async (): Promise<void> => {
     throw new Error('Failed to create Kitten TTS virtual environment')
   }
 
-  l.info('Installing kittentts and dependencies')
+  l.write('info', 'Installing kittentts and dependencies')
   const wheelUrl = 'https://github.com/KittenML/KittenTTS/releases/download/0.8/kittentts-0.8.0-py3-none-any.whl'
   const deps = [
     wheelUrl,
@@ -67,36 +68,35 @@ export const setupKittenTtsEnvironment = async (): Promise<void> => {
     throw new Error('Failed to install Kitten TTS dependencies')
   }
 
-  l.success('Kitten TTS environment ready')
+  l.write('success', 'Kitten TTS environment ready')
 }
 
 export const setupKittenTts = async (): Promise<void> => {
   if (await envExistsAndValid()) {
-    l.success('Kitten TTS environment already set up and validated')
     return
   }
 
   await setupKittenTtsEnvironment()
 
   if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') === '1') {
-    l.success('Kitten TTS setup complete')
+    l.write('success', 'Kitten TTS setup complete')
   } else {
-    l.success('========================================')
-    l.success('Kitten TTS setup complete!')
-    l.success('')
-    l.success('You can now use Kitten TTS:')
-    l.success('bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini')
-    l.success('bun as write "URL" --kitten-tts kitten-tts-mini')
-    l.success('========================================')
+    l.write('success', 'Kitten TTS Setup', {
+      category: 'command',
+      humanTable: createHumanTable([
+        { status: 'complete', command: 'bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini' },
+        { status: 'complete', command: 'bun as write "URL" --kitten-tts kitten-tts-mini' }
+      ], ['status', 'command'])
+    })
   }
 }
 
 export const ensureKittenTtsSetup = async (): Promise<void> => {
   if (await envExistsAndValid()) {
-    l.success('Kitten TTS setup verified')
+    l.write('success', 'Kitten TTS setup verified')
     return
   }
 
-  l.info('Kitten TTS not set up; running setup')
+  l.write('info', 'Kitten TTS not set up; running setup')
   await setupKittenTtsEnvironment()
 }

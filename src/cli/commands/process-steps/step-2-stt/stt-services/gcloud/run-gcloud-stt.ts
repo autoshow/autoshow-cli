@@ -6,6 +6,7 @@ import type {
   TranscriptionResult
 } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -108,10 +109,10 @@ export const runGcloudStt = async (
   } = options
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Google Cloud model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'gcloud', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
   if (diarizationOptions?.speakerCount !== undefined) {
-    l.info(`Google Cloud diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
+    l.write('info', `Google Cloud diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
   }
 
   const startTime = Date.now()
@@ -209,7 +210,7 @@ export const runGcloudStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'gcloud', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return { result, metadata }

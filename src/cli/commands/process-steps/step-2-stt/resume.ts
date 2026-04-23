@@ -331,7 +331,7 @@ const runResumePass = async (
   const partialFailureLabels = new Map<string, number>()
 
   if (options.maxPasses > 1) {
-    l.info(`STT resume pass ${pass}/${totalPasses}`)
+    l.write('info', `STT resume pass ${pass}/${totalPasses}`)
   }
 
   for (let index = 0; index < parsedEntries.length; index++) {

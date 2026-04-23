@@ -12,10 +12,10 @@ export const ANTHROPIC_OCR_MAX_TOKENS = 64000
 export const setupAnthropicOcr = async (): Promise<void> => {
   const apiKey = readEnv('ANTHROPIC_API_KEY')
   if (apiKey) {
-    l.success('ANTHROPIC_API_KEY found — Anthropic OCR ready')
+    l.write('success', 'ANTHROPIC_API_KEY found — Anthropic OCR ready')
   } else {
     l.warn('ANTHROPIC_API_KEY not set — Anthropic OCR will not work until set')
-    l.info('Set ANTHROPIC_API_KEY environment variable to use Anthropic OCR')
+    l.write('info', 'Set ANTHROPIC_API_KEY environment variable to use Anthropic OCR')
   }
 }
 

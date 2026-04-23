@@ -4,6 +4,7 @@ import { basename } from 'node:path'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
 import type { GeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { isNativeGeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 
@@ -29,8 +30,13 @@ export const runGeminiImageGen = async (
   await mkdir(outputDir, { recursive: true })
 
   if (isNativeGeminiImageModel(options.model)) {
-
-    l.info(`Running Gemini native image model: ${options.model}`)
+    logMediaGenerationStatus(l, {
+      mediaType: 'image',
+      provider: 'gemini',
+      model: options.model,
+      status: 'started',
+      detail: 'native image'
+    })
 
     const response = await ai.models.generateContent({
       model: options.model,
@@ -65,8 +71,13 @@ export const runGeminiImageGen = async (
       }
     }
   } else {
-
-    l.info(`Running Gemini Imagen model: ${options.model}`)
+    logMediaGenerationStatus(l, {
+      mediaType: 'image',
+      provider: 'gemini',
+      model: options.model,
+      status: 'started',
+      detail: 'imagen'
+    })
     const numberOfImages = options.imagenCount ?? 1
 
     const response = await ai.models.generateImages({
@@ -101,7 +112,14 @@ export const runGeminiImageGen = async (
   const primaryFile = Bun.file(primaryPath)
   const imageFileSize = primaryFile.size
 
-  l.success(`Gemini image generation completed in ${(processingTime / 1000).toFixed(1)}s — ${imagePaths.length} image(s)`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'image',
+    provider: 'gemini',
+    model: options.model,
+    status: 'completed',
+    processingTimeMs: processingTime,
+    outputCount: imagePaths.length
+  })
 
   const metadata: Step5Metadata = {
     imageService: 'gemini',

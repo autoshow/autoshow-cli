@@ -9,16 +9,15 @@ const shouldPrintCompletion = (): boolean => {
 
 const installFfmpeg = async (): Promise<void> => {
   if (commandExists('ffmpeg')) {
-    l.success('FFmpeg already installed')
     return
   }
 
-  l.info('Installing FFmpeg')
+  l.write('info', 'Installing FFmpeg')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
     await runInherit('brew', ['install', 'ffmpeg'])
-    l.success('FFmpeg installed')
+    l.write('success', 'FFmpeg installed')
     return
   }
 
@@ -29,7 +28,7 @@ const installFfmpeg = async (): Promise<void> => {
     }
 
     await runInherit('sudo', ['apt', 'install', '-y', 'ffmpeg'])
-    l.success('FFmpeg installed')
+    l.write('success', 'FFmpeg installed')
     return
   }
 
@@ -39,16 +38,15 @@ const installFfmpeg = async (): Promise<void> => {
 
 const installYtDlp = async (): Promise<void> => {
   if (commandExists('yt-dlp')) {
-    l.success('yt-dlp already installed')
     return
   }
 
-  l.info('Installing yt-dlp')
+  l.write('info', 'Installing yt-dlp')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
     await runInherit('brew', ['install', 'yt-dlp'])
-    l.success('yt-dlp installed')
+    l.write('success', 'yt-dlp installed')
     return
   }
 
@@ -71,7 +69,7 @@ const installYtDlp = async (): Promise<void> => {
     )
     await runInherit('sudo', ['mv', tempPath, '/usr/local/bin/yt-dlp'])
     await runInherit('sudo', ['chmod', 'a+rx', '/usr/local/bin/yt-dlp'])
-    l.success('yt-dlp installed')
+    l.write('success', 'yt-dlp installed')
     return
   }
 
@@ -84,6 +82,6 @@ export const setupYtDependencies = async (): Promise<void> => {
   await installYtDlp()
 
   if (shouldPrintCompletion()) {
-    l.success('yt-dlp and FFmpeg setup complete')
+    l.write('success', 'yt-dlp and FFmpeg setup complete')
   }
 }

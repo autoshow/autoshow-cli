@@ -154,7 +154,7 @@ export const dispatchResume = async (
     : await discoverLatestResumeTarget('./output', opts, explicitFlags)
 
   if (typeof outputDirInput !== 'string' || outputDirInput.trim().length === 0) {
-    l.info(`Auto-discovered resumable ${target.kind.toUpperCase()} ${target.scope === 'batch' ? 'batch' : 'output'}`)
+    l.write('info', `Auto-discovered resumable ${target.kind.toUpperCase()} ${target.scope === 'batch' ? 'batch' : 'output'}`)
     logLocationsTable(l, [{
       artifact: target.scope === 'batch' ? 'resumeBatch' : 'resumeOutput',
       path: target.dir

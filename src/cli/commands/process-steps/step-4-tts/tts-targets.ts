@@ -60,13 +60,13 @@ const checkKittenTtsSetup = async (): Promise<boolean> => {
 }
 
 const ensureKittenSetup = async (): Promise<void> => {
-  l.info('Checking Kitten TTS setup')
+  l.write('info', 'Checking Kitten TTS setup')
   const isSetup = await checkKittenTtsSetup()
   if (!isSetup) {
-    l.info('Kitten TTS not set up; running setup')
+    l.write('info', 'Kitten TTS not set up; running setup')
     await ensureKittenTtsSetup()
   } else {
-    l.success('Kitten TTS setup verified')
+    l.write('success', 'Kitten TTS setup verified')
   }
 }
 

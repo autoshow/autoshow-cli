@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
 import type { MinimaxImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { MinimaxBaseRespSchema } from '~/utils/minimax-utils'
@@ -37,7 +38,12 @@ export const runMinimaxImageGen = async (
     ? prompt.slice(0, MINIMAX_MAX_PROMPT_LENGTH)
     : prompt
 
-  l.info(`Running MiniMax image model: ${options.model}`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'image',
+    provider: 'minimax',
+    model: options.model,
+    status: 'started'
+  })
 
   const response = await fetch(`${baseURL}/v1/image_generation`, {
     method: 'POST',
@@ -89,7 +95,14 @@ export const runMinimaxImageGen = async (
   const processingTime = Date.now() - startTime
   const imageFile = Bun.file(outputPath)
 
-  l.success(`MiniMax image generation completed in ${(processingTime / 1000).toFixed(1)}s`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'image',
+    provider: 'minimax',
+    model: options.model,
+    status: 'completed',
+    processingTimeMs: processingTime,
+    outputCount: 1
+  })
 
   const metadata: Step5Metadata = {
     imageService: 'minimax',

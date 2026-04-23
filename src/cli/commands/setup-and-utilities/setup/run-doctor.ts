@@ -163,9 +163,13 @@ export const runDoctor = async (): Promise<void> => {
   }
 
   if (hasFailure) {
-    l.info('')
-    l.info("Run 'bun as setup' to install missing tools")
-    l.info("Run 'bun as setup --gcloud' to verify Google Cloud STT CLI readiness")
-    l.info('See docs/cookies.md for YouTube cookie setup')
+    l.write('info', 'Setup Next Steps', {
+      category: 'command',
+      humanTable: createHumanTable([
+        { action: 'Install missing tools', command: 'bun as setup' },
+        { action: 'Verify Google Cloud STT', command: 'bun as setup --gcloud' },
+        { action: 'Configure YouTube cookies', command: 'docs/cookies.md' }
+      ], ['action', 'command'])
+    })
   }
 }

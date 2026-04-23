@@ -6,6 +6,7 @@ import type {
   TranscriptionSegment
 } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -73,7 +74,7 @@ export const runOpenAICompatibleSingleSpeakerStt = async (
   } = options
 
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with ${providerLabel} model: ${model}`)
+    logSttSegmentLifecycle(l, { provider: providerLabel, action: 'started', segmentNumber, totalSegments, model })
   }
 
   const startTime = Date.now()
@@ -117,7 +118,7 @@ export const runOpenAICompatibleSingleSpeakerStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: providerLabel, action: 'completed', segmentNumber, totalSegments, model, processingTimeMs: processingTime })
   }
 
   return {

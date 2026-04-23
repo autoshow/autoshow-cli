@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import * as l from '~/logger'
 import type { Step5Metadata } from '~/types'
 import type { OpenAIImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { getOpenAIClientConfig } from '~/utils/openai-utils'
 
 export const runOpenAIImageGen = async (
@@ -16,7 +17,12 @@ export const runOpenAIImageGen = async (
     background?: string | undefined
   }
 ): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
-  l.info(`Running OpenAI image model: ${options.model}`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'image',
+    provider: 'openai',
+    model: options.model,
+    status: 'started'
+  })
 
   const config = getOpenAIClientConfig()
   const client = new OpenAI({ apiKey: config.apiKey, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
@@ -52,7 +58,14 @@ export const runOpenAIImageGen = async (
   const imageFile = Bun.file(outputPath)
   const imageFileSize = imageFile.size
 
-  l.success(`OpenAI image generation completed in ${(processingTime / 1000).toFixed(1)}s`)
+  logMediaGenerationStatus(l, {
+    mediaType: 'image',
+    provider: 'openai',
+    model: options.model,
+    status: 'completed',
+    processingTimeMs: processingTime,
+    outputCount: 1
+  })
 
   const metadata: Step5Metadata = {
     imageService: 'openai',

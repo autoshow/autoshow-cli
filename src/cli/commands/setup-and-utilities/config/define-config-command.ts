@@ -23,14 +23,14 @@ export const configCommand = defineCommand({
 
   if (flags['show'] === true) {
     const config = await loadConfig(resolvedPath)
-    l.info(`Config path: ${resolvedPath}`)
-    l.info(JSON.stringify(config, null, 2))
+    l.write('info', `Config path: ${resolvedPath}`)
+    l.write('info', JSON.stringify(config, null, 2))
     return
   }
 
   if (flags['reset'] === true) {
     await writeConfig(resolvedPath, {})
-    l.success(`Config reset: ${resolvedPath}`)
+    l.write('success', `Config reset: ${resolvedPath}`)
     return
   }
 
@@ -39,13 +39,13 @@ export const configCommand = defineCommand({
   const patch = buildConfigPatchFromFlags(flags as Record<string, unknown>, explicitFlagNames, preprocessedArgv)
 
   if (Object.keys(patch).length === 0) {
-    l.info(`No changes to write. Config path: ${resolvedPath}`)
-    l.info('Use --show to print current config or --reset to clear it.')
+    l.write('info', `No changes to write. Config path: ${resolvedPath}`)
+    l.write('info', 'Use --show to print current config or --reset to clear it.')
     return
   }
 
   const current = await loadConfig(resolvedPath)
   const updated = deepMergeConfig(current as Record<string, unknown>, patch)
   await writeConfig(resolvedPath, updated)
-  l.success(`Config saved to ${resolvedPath}`)
+  l.write('success', `Config saved to ${resolvedPath}`)
 })

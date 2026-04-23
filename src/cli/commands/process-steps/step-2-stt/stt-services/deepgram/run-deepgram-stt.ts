@@ -1,6 +1,7 @@
 import type { DeepgramAlternative, DeepgramHttpError, DeepgramResponse, DeepgramWords, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { DeepgramResponseSchema } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import {
   appendToken,
   buildSegmentsFromWords,
@@ -174,7 +175,7 @@ export const runDeepgramTranscribe = async (
 
   const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Deepgram model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'deepgram', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
 
   const startTime = Date.now()
@@ -276,7 +277,7 @@ export const runDeepgramTranscribe = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'deepgram', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return {

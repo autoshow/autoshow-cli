@@ -7,22 +7,21 @@ const shouldPrintCompletion = (): boolean => {
 
 const installTesseract = async (): Promise<void> => {
   if (commandExists('tesseract')) {
-    l.success('Tesseract already installed')
     return
   }
 
-  l.info('Installing Tesseract')
+  l.write('info', 'Installing Tesseract')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
     await runInherit('brew', ['install', 'tesseract'])
-    l.success('Tesseract installed')
+    l.write('success', 'Tesseract installed')
     return
   }
 
   if (platform === 'linux') {
     await runInherit('sudo', ['apt', 'install', '-y', 'tesseract-ocr'])
-    l.success('Tesseract installed')
+    l.write('success', 'Tesseract installed')
     return
   }
 
@@ -38,32 +37,31 @@ const ensureEnglishLanguageData = async (): Promise<void> => {
     .filter(Boolean)
 
   if (langs.includes('eng')) {
-    l.success('Tesseract language data (eng) found')
+    l.write('success', 'Tesseract language data (eng) found')
     return
   }
 
   l.warn('Could not find eng.traineddata in tessdata path')
-  l.info('Set TESSDATA_PREFIX if your language files are in a custom directory')
+  l.write('info', 'Set TESSDATA_PREFIX if your language files are in a custom directory')
 }
 
 const installLibreOffice = async (): Promise<void> => {
   if (commandExists('soffice')) {
-    l.success('LibreOffice already installed')
     return
   }
 
-  l.info('Installing LibreOffice')
+  l.write('info', 'Installing LibreOffice')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
     await runInherit('brew', ['install', '--cask', 'libreoffice'])
-    l.success('LibreOffice installed')
+    l.write('success', 'LibreOffice installed')
     return
   }
 
   if (platform === 'linux') {
     await runInherit('sudo', ['apt', 'install', '-y', 'libreoffice'])
-    l.success('LibreOffice installed')
+    l.write('success', 'LibreOffice installed')
     return
   }
 
@@ -77,6 +75,6 @@ export const setupTesseractOcr = async (): Promise<void> => {
   await installLibreOffice()
 
   if (shouldPrintCompletion()) {
-    l.success('Extraction OCR setup complete')
+    l.write('success', 'Extraction OCR setup complete')
   }
 }

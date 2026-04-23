@@ -37,10 +37,10 @@ export const isDeapiSupportedSourceUrl = (
 export const setupDeapiStt = async (): Promise<void> => {
   const apiKey = readEnv('DEAPI_API_KEY')
   if (apiKey) {
-    l.success(`DEAPI_API_KEY found — deAPI transcription ready (${getDeapiBaseUrl()})`)
+    l.write('success', `DEAPI_API_KEY found — deAPI transcription ready (${getDeapiBaseUrl()})`)
   } else {
     l.warn('DEAPI_API_KEY not set — deAPI transcription will not work until set')
-    l.info('Set DEAPI_API_KEY environment variable to use deAPI transcription')
+    l.write('info', 'Set DEAPI_API_KEY environment variable to use deAPI transcription')
   }
 }
 

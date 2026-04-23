@@ -4,6 +4,7 @@ import { ConnectionError, MistralError, RequestAbortedError, RequestTimeoutError
 import type { DiarizationOptions, MistralHttpError, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/logger'
+import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -156,7 +157,7 @@ export const runMistralStt = async (
 
   const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
   if (segmentNumber && totalSegments) {
-    l.info(`Transcribing segment ${segmentNumber}/${totalSegments} with Mistral model: ${modelName}`)
+    logSttSegmentLifecycle(l, { provider: 'mistral', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
 
   const startTime = Date.now()
@@ -253,7 +254,7 @@ export const runMistralStt = async (
   }
 
   if (segmentNumber && totalSegments) {
-    l.success(`Segment ${segmentNumber}/${totalSegments} transcription completed in ${processingTime}ms`)
+    logSttSegmentLifecycle(l, { provider: 'mistral', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
   }
 
   return {

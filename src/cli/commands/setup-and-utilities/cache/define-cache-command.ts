@@ -20,13 +20,13 @@ export const cacheCommand = defineCommand({
 
   if (action === 'prune') {
     await pruneMediaCache()
-    l.success('Cache prune complete')
+    l.write('success', 'Cache prune complete')
     return
   }
 
   if (action === 'clear') {
     await clearMediaCache()
-    l.success('Cache clear complete')
+    l.write('success', 'Cache clear complete')
     return
   }
 

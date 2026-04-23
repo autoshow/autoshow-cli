@@ -3,18 +3,7 @@ import * as l from '~/logger'
 import { exec } from '~/utils/cli-utils'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
 import { buildYtDlpDownloadArgs, buildYtDlpFailureMessage } from './yt-dlp-options'
-
-const isProgressLine = (line: string): boolean => {
-  return line.startsWith('[download]') || line.startsWith('[ExtractAudio]')
-}
-
-const relayYtDlpLine = (line: string): void => {
-  const clean = line.trim()
-  if (!clean || !isProgressLine(clean)) {
-    return
-  }
-  l.info(clean)
-}
+import { logAudioDownload } from './audio-logging'
 
 const DOWNLOADED_MEDIA_EXTENSIONS: ReadonlySet<string> = new Set(MEDIA_EXTENSIONS)
 
@@ -36,11 +25,12 @@ const findDownloadedAudio = async (outputDir: string): Promise<string> => {
 export const downloadVideo = async (url: string, outputDir: string): Promise<string> => {
   try {
     const args = await buildYtDlpDownloadArgs(url, outputDir)
-    l.info('Downloading audio with yt-dlp')
-    const result = await exec('yt-dlp', args, {
-      onStdoutLine: relayYtDlpLine,
-      onStderrLine: relayYtDlpLine
+    logAudioDownload(l, {
+      source: 'yt-dlp',
+      status: 'started',
+      target: outputDir
     })
+    const result = await exec('yt-dlp', args)
 
     if (result.exitCode !== 0) {
       const details = result.stderr || result.stdout || 'unknown yt-dlp error'
@@ -49,8 +39,13 @@ export const downloadVideo = async (url: string, outputDir: string): Promise<str
       throw new Error(message)
     }
 
-    l.success('yt-dlp download complete')
-    return await findDownloadedAudio(outputDir)
+    const downloadedPath = await findDownloadedAudio(outputDir)
+    logAudioDownload(l, {
+      source: 'yt-dlp',
+      status: 'downloaded',
+      target: downloadedPath
+    })
+    return downloadedPath
   } catch (error) {
     const details = error instanceof Error ? error.message : String(error)
     if (details.startsWith('yt-dlp download failed.')) {

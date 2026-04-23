@@ -165,7 +165,7 @@ export const runMinimaxTts = async (
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i] as string
     const chunkIndex = i + 1
-    l.info(`Submitting MiniMax TTS chunk ${chunkIndex}/${chunks.length}`)
+    l.debug(`Submitting MiniMax TTS chunk ${chunkIndex}/${chunks.length}`)
 
     const createTaskResponse = await fetch(`${baseURL}/v1/t2a_async_v2`, {
       method: 'POST',

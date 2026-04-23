@@ -1,6 +1,7 @@
 import { mkdir, rm } from 'node:fs/promises'
 import { commandExists, pathExists, runCapture, runInherit, reverbConfigPath, reverbModelPath, reverbUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/setup-orchestrator/run-complete-setup'
 import * as l from '~/logger'
+import { createHumanTable } from '~/logger/human-table'
 import { downloadDiarizationModel, downloadReverbModel } from './reverb-download'
 import { getHuggingFaceToken } from './reverb-huggingface'
 
@@ -40,14 +41,14 @@ export const detectGpuSupport = async (): Promise<boolean> => {
 
   const gpuName = check.stdout.trim()
   if (gpuName) {
-    l.info(`GPU detected: ${gpuName}`)
+    l.write('info', `GPU detected: ${gpuName}`)
   }
 
   return true
 }
 
 export const setupReverbEnvironment = async (): Promise<void> => {
-  l.info('Setting up Reverb ASR environment')
+  l.write('info', 'Setting up Reverb ASR environment')
 
   if (!commandExists('uv')) {
     await setupUv()
@@ -63,7 +64,7 @@ export const setupReverbEnvironment = async (): Promise<void> => {
     throw new Error('Failed to create Reverb virtual environment')
   }
 
-  l.info('Installing Reverb ASR dependencies')
+  l.write('info', 'Installing Reverb ASR dependencies')
   const baseDeps = [
     'torch>=2.0.0',
     'torchaudio>=2.0.0',
@@ -79,7 +80,7 @@ export const setupReverbEnvironment = async (): Promise<void> => {
 
   await runInherit('uv', ['pip', 'install', '-p', `${reverbUvEnvDir}/bin/python`, ...baseDeps], { allowFailure: true })
 
-  l.info('Installing pyannote.audio for diarization')
+  l.write('info', 'Installing pyannote.audio for diarization')
   const pyannoteDeps = [
     'pyannote.audio>=3.1.0',
     'pyannote.core>=5.0.0',
@@ -100,7 +101,7 @@ export const setupReverbEnvironment = async (): Promise<void> => {
     await runInherit('uv', ['pip', 'install', '-p', `${reverbUvEnvDir}/bin/python`, 'pyannote.core>=5.0.0', 'pyannote.pipeline>=3.0.0'])
   }
 
-  l.info('Installing Reverb package')
+  l.write('info', 'Installing Reverb package')
   const tempDir = `/tmp/reverb-install-${Date.now()}`
 
   await mkdir(tempDir, { recursive: true })
@@ -120,35 +121,35 @@ export const setupReverbEnvironment = async (): Promise<void> => {
     throw new Error('Failed to install Reverb package')
   }
 
-  l.success('Reverb ASR environment ready')
+  l.write('success', 'Reverb ASR environment ready')
 }
 
 export const setupReverb = async (): Promise<void> => {
-  l.info('Setting up Reverb ASR with diarization')
+  l.write('info', 'Setting up Reverb ASR with diarization')
 
   const token = getHuggingFaceToken()
   if (!token) {
     if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') === '1') {
       l.warn('No HuggingFace token found; set HUGGINGFACE_TOKEN and rerun setup')
     } else {
-      l.warn('========================================')
       l.warn('No HuggingFace token found')
       l.warn('Reverb ASR requires a HuggingFace account')
-      l.warn('')
-      l.warn('To set up Reverb:')
-      l.warn('1. Get a token from: https://huggingface.co/settings/tokens')
-      l.warn('2. Run: hf auth login')
-      l.warn('3. Run setup again: bun setup')
-      l.warn('========================================')
+      l.write('warn', 'Reverb Setup Next Steps', {
+        category: 'command',
+        humanTable: createHumanTable([
+          { step: 1, command: 'Get a token from https://huggingface.co/settings/tokens' },
+          { step: 2, command: 'hf auth login' },
+          { step: 3, command: 'bun setup' }
+        ], ['step', 'command'])
+      })
     }
 
     throw new Error('Missing Hugging Face token for Reverb setup')
   }
 
-  l.success('Hugging Face token detected')
+  l.write('success', 'Hugging Face token detected')
 
   if (await envExistsAndValid()) {
-    l.success('Reverb environment already set up and validated')
   } else {
     await setupReverbEnvironment()
   }
@@ -161,7 +162,6 @@ export const setupReverb = async (): Promise<void> => {
       throw new Error('Failed to download Reverb model')
     }
   } else {
-    l.success('Reverb model already downloaded')
   }
 
   const diarizationOk = await downloadDiarizationModel()
@@ -170,17 +170,15 @@ export const setupReverb = async (): Promise<void> => {
   }
 
   if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') === '1') {
-    l.success('Reverb ASR setup complete with diarization')
+    l.write('success', 'Reverb ASR setup complete with diarization')
   } else {
-    l.success('========================================')
-    l.success('Reverb ASR setup complete with diarization!')
-    l.success('')
-    l.success('You can now use Reverb for transcription:')
-    l.success('bun as "URL" --reverb')
-    l.success('')
-    l.success('Adjust verbatimicity (0-1) for output style:')
-    l.success('bun as "URL" --reverb --reverb-verbatimicity 0.5')
-    l.success('========================================')
+    l.write('success', 'Reverb ASR Setup', {
+      category: 'command',
+      humanTable: createHumanTable([
+        { status: 'complete', command: 'bun as "URL" --reverb' },
+        { status: 'complete', command: 'bun as "URL" --reverb --reverb-verbatimicity 0.5' }
+      ], ['status', 'command'])
+    })
   }
 }
 
@@ -196,7 +194,7 @@ export const ensureReverbRuntimeSetup = async (): Promise<void> => {
       const token = getHuggingFaceToken()
       if (!token) {
         l.error('Reverb model requires HuggingFace access')
-        l.info('Please set the HUGGINGFACE_TOKEN environment variable')
+        l.write('info', 'Please set the HUGGINGFACE_TOKEN environment variable')
       }
       throw new Error('Failed to ensure Reverb model setup')
     }

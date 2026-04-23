@@ -235,10 +235,10 @@ export const buildHappyScribeOrganizationResolutionError = (
 export const setupHappyScribeStt = async (): Promise<void> => {
   const apiKey = getHappyScribeApiKey()
   if (apiKey) {
-    l.success(`HAPPYSCRIBE_API_KEY found — Happy Scribe transcription ready (${getHappyScribeBaseUrl()})`)
+    l.write('success', `HAPPYSCRIBE_API_KEY found — Happy Scribe transcription ready (${getHappyScribeBaseUrl()})`)
   } else {
     l.warn('HAPPYSCRIBE_API_KEY not set — Happy Scribe transcription will not work until set')
-    l.info('Set HAPPYSCRIBE_API_KEY environment variable to use Happy Scribe transcription')
+    l.write('info', 'Set HAPPYSCRIBE_API_KEY environment variable to use Happy Scribe transcription')
   }
 }
 
