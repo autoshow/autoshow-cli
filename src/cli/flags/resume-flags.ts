@@ -1,12 +1,13 @@
 import type { ClercFlagDefinitionValue, ClercFlagsDefinition } from 'clerc'
 import {
-  advancedExtractFlags,
+  ocrTuningFlags,
   batchFlags,
-  extractFlags,
+  ocrInputFlags,
   promptFlag,
   transcriptionFlags
 } from './shared-flags'
-import { epubInspectFlags } from './extract-flags'
+import { epubInspectFlags } from './ocr-flags'
+import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-shared/provider-registry'
 
 const pickFlags = (
   flags: ClercFlagsDefinition,
@@ -23,27 +24,11 @@ const pickFlags = (
 }
 
 const resumeSttFlags = pickFlags(transcriptionFlags, [
-  'whisper',
+  ...getStep2ProviderSelectionFlagNames('stt'),
   'youtube-captions',
-  'reverb',
-  'gcloud-stt',
-  'aws-stt',
-  'deepinfra-stt',
-  'deapi-stt',
   'aws-region',
   'aws-bucket',
-  'elevenlabs-stt',
-  'deepgram-stt',
-  'soniox-stt',
-  'speechmatics-stt',
-  'rev-stt',
-  'groq-stt',
-  'mistral-stt',
-  'assemblyai-stt',
-  'gladia-stt',
-  'happyscribe-stt',
   'happyscribe-organization-id',
-  'supadata-stt',
   'supadata-lang',
   'speaker-count',
   'split',
@@ -56,19 +41,13 @@ const resumeSttFlags = pickFlags(transcriptionFlags, [
 ])
 
 const resumeOcrFlags = {
-  ...pickFlags(extractFlags, [
+  ...pickFlags(ocrInputFlags, [
+    ...getStep2ProviderSelectionFlagNames('ocr'),
     'lang',
     'out',
     'password',
-    'ocrmypdf',
-    'paddle-ocr',
-    'mistral-ocr',
-    'glm-ocr',
-    'openai-ocr',
-    'anthropic-ocr',
-    'gemini-ocr'
   ]),
-  ...pickFlags(advancedExtractFlags, [
+  ...pickFlags(ocrTuningFlags, [
     'dpi',
     'psm',
     'oem',

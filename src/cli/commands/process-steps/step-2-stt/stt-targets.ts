@@ -1,4 +1,5 @@
 import type { RuntimeOptions, SttTarget } from '~/types'
+import type { Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
 import { collectSttProviderSpecs, resolveDiarizationOptions } from './cli'
 
 const sanitizeSegment = (value: string): string =>
@@ -13,8 +14,11 @@ export const formatSttTargetLabel = (target: Pick<SttTarget, 'service' | 'model'
 export const getSttTargetDirectoryName = (target: Pick<SttTarget, 'service' | 'model'>): string =>
   `${sanitizeSegment(target.service)}-${sanitizeSegment(target.model)}`
 
-export const collectSttTargets = (options: RuntimeOptions): SttTarget[] => {
-  return collectSttProviderSpecs(options).map((spec) => {
+export const collectSttTargets = (
+  options: RuntimeOptions,
+  filter?: Step2ProviderSelectionFilter
+): SttTarget[] => {
+  return collectSttProviderSpecs(options, filter).map((spec) => {
     const service = spec.provider as SttTarget['service']
     const model = spec.model ?? service
 

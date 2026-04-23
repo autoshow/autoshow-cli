@@ -892,7 +892,7 @@ export const runHappyScribeStt = async (
     throw new Error([
       `Happy Scribe organization ${organizationSelection.selected.id}${organizationSelection.selected.name ? ` (${organizationSelection.selected.name})` : ''} reports currency ${organizationSelection.selected.currency}, but v1 execution supports exact-cost capture only for usd organizations.`,
       `Organizations: ${organizationSelection.organizations.length > 0 ? organizationSelection.organizations.map((organization) => `${organization.id}${organization.name ? ` "${organization.name}"` : ''}${organization.currency ? ` currency=${organization.currency}` : ''}`).join(', ') : 'none'}.`,
-      'Pass --happyscribe-organization-id <id> or save defaults.stt.happyscribeOrganizationId with bun as config.'
+      'Pass --happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
     ].join(' '))
   }
 

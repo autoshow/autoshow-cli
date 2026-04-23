@@ -6,8 +6,10 @@ const PricingConfigSchema = v.strictObject({
   maxCents: v.optional(v.pipe(v.number(), v.minValue(0)), undefined)
 })
 
-const SttDefaultsSchema = v.strictObject({
+const ExtractSttDefaultsSchema = v.strictObject({
   whisper: ModelArraySchema,
+  reverb: v.optional(v.boolean(), undefined),
+  youtubeCaptions: v.optional(v.boolean(), undefined),
   gcloudStt: ModelArraySchema,
   awsStt: ModelArraySchema,
   deepinfraStt: ModelArraySchema,
@@ -94,13 +96,18 @@ const MusicDefaultsSchema = v.strictObject({
   musicDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
-const ExtractDefaultsSchema = v.strictObject({
+const ExtractOcrDefaultsSchema = v.strictObject({
   lang: v.optional(v.string(), undefined),
   out: v.optional(v.picklist(['text', 'json', 'tsv', 'hocr']), undefined),
+  tesseract: v.optional(v.boolean(), undefined),
+  ocrmypdf: v.optional(v.boolean(), undefined),
+  paddleOcr: v.optional(v.boolean(), undefined),
   dpi: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   psm: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), undefined),
   oem: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), undefined),
   rotate: v.optional(v.pipe(v.number(), v.integer()), undefined),
+  pageSeparator: v.optional(v.string(), undefined),
+  preserveSpaces: v.optional(v.boolean(), undefined),
   mistralOcr: ModelArraySchema,
   glmOcr: ModelArraySchema,
   openaiOcr: ModelArraySchema,
@@ -109,6 +116,11 @@ const ExtractDefaultsSchema = v.strictObject({
   chapters: v.optional(v.boolean(), undefined),
   length: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   pdfChapterMode: v.optional(v.picklist(['local', 'auto', 'llm']), undefined)
+})
+
+const ExtractDefaultsSchema = v.strictObject({
+  stt: v.optional(ExtractSttDefaultsSchema, undefined),
+  ocr: v.optional(ExtractOcrDefaultsSchema, undefined)
 })
 
 const BatchDefaultsSchema = v.strictObject({
@@ -125,7 +137,6 @@ const PostDefaultsSchema = v.strictObject({
 })
 
 const ConfigDefaultsSchema = v.strictObject({
-  stt: v.optional(SttDefaultsSchema, undefined),
   llm: v.optional(LlmDefaultsSchema, undefined),
   post: v.optional(PostDefaultsSchema, undefined),
   extract: v.optional(ExtractDefaultsSchema, undefined),

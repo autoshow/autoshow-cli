@@ -117,13 +117,14 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --ha
 | `--lang <codes>` | Tesseract language codes such as `eng` or `eng+fra` |
 | `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--password <value>` | Password for encrypted PDFs |
+| `--tesseract` | Use Tesseract explicitly |
 | `--ocrmypdf` | Use OCRmyPDF |
 | `--paddle-ocr` | Use PaddleOCR |
-| `--mistral-ocr <model>` | Use Mistral OCR |
-| `--glm-ocr <model>` | Use GLM OCR |
-| `--openai-ocr <model>` | Use OpenAI OCR |
-| `--anthropic-ocr <model>` | Use Anthropic OCR |
-| `--gemini-ocr <model>` | Use Gemini OCR |
+| `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
+| `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
+| `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
+| `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
+| `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--psm <n>` | Tesseract page segmentation mode |
 | `--oem <n>` | Tesseract OCR engine mode |

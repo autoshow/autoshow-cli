@@ -70,8 +70,8 @@ For backfilling missing provider outputs from an existing OCR run or batch, see 
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
-| EPUB | cleaned native extraction (`epub-text`) | `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
+| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, OCR fallback if needed | hosted OCR routes convert through PDF first |
 | RTF | LibreOffice to PDF, then OCR | same |
@@ -147,12 +147,18 @@ bun as ocr input/examples/document/1-epub.epub --length 50
 # OCRmyPDF path
 bun as ocr input/examples/document/1-document.pdf --ocrmypdf
 
+# Explicit Tesseract path
+bun as ocr input/examples/document/1-document.pdf --tesseract
+
 # Hosted OCR
 bun as ocr input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
 bun as ocr input/examples/document/1-document.pdf --glm-ocr glm-ocr
 bun as ocr input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
 bun as ocr input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
 bun as ocr input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-lite-preview
+
+# Fan out across every OCR provider in price mode
+bun as ocr input/examples/document/1-document.pdf --all-ocr --price
 
 # Remote article extraction
 bun as ocr https://ajcwebdev.com
@@ -177,6 +183,7 @@ bun as ocr input/examples/document/1-epub.epub --epub-calibre --out json
 | `--lang <codes>` | Tesseract language codes such as `eng` or `eng+fra` |
 | `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--password <value>` | Password for encrypted PDFs |
+| `--tesseract` | Use Tesseract explicitly |
 | `--ocrmypdf` | Use OCRmyPDF |
 | `--paddle-ocr` | Use PaddleOCR |
 | `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
@@ -184,6 +191,13 @@ bun as ocr input/examples/document/1-epub.epub --epub-calibre --out json
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
+| `--all-ocr` | Enable every supported OCR provider/model for this command |
+| `--dpi <n>` | Render DPI for OCR pages |
+| `--psm <n>` | Tesseract page segmentation mode |
+| `--oem <n>` | Tesseract OCR engine mode |
+| `--page-separator <text>` | Custom page separator string |
+| `--preserve-spaces` | Enable Tesseract `preserve_interword_spaces=1` |
+| `--rotate <degrees>` | Rotate pages before OCR |
 | `--chapters` | EPUB native text runs or PDF autodetection: write chapter files under `chapters/` |
 | `--length <n>` | Hard export limit in thousands of characters; for EPUB alone writes `chunks/`, and with `--chapters` splits oversized EPUB or PDF chapter files |
 | `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
@@ -215,4 +229,5 @@ bun as ocr input/examples/document/1-epub.epub --epub-calibre --out json
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
 - Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
 - Backfill existing OCR outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
-- Advanced Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` are exposed through [`write`](../step-3-write/write-text.md), not standalone `ocr`.
+- Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` work on standalone `ocr` and on [`write`](../step-3-write/write-text.md).
+- Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.

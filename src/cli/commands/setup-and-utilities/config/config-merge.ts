@@ -6,14 +6,49 @@ import {
   parseRepeatableModelFlagOccurrences,
   type RepeatableModelFlag
 } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import {
+  getStep2ProviderEntry,
+  getStep2ProviderConfigPathEntries,
+  getStep2ProviderSelectionFlagNames,
+  normalizeStep2ProviderFlagName
+} from '~/cli/commands/process-steps/step-2-shared/provider-registry'
 
-const STT_PROVIDER_FLAGS = ['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'groq-stt', 'elevenlabs-stt', 'deepgram-stt', 'soniox-stt', 'speechmatics-stt', 'rev-stt', 'mistral-stt', 'assemblyai-stt', 'gladia-stt', 'happyscribe-stt', 'supadata-stt'] as const
+const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
+const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
 const REPEATABLE_CONFIG_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
+const STEP2_PROVIDER_CONFIG_PATHS = Object.fromEntries(
+  getStep2ProviderConfigPathEntries({ includeAliases: true }).map(({ flagName, configPath }) => [flagName, [...configPath]])
+) as Record<string, string[]>
+
+const readNestedValue = (
+  source: Record<string, unknown>,
+  path: readonly string[]
+): unknown => {
+  let current: unknown = source
+  for (const segment of path) {
+    if (!current || typeof current !== 'object' || Array.isArray(current) || !(segment in current)) {
+      return undefined
+    }
+    current = (current as Record<string, unknown>)[segment]
+  }
+  return current
+}
+
+const resolveStep2ProviderDefaults = (
+  config: AutoshowConfig,
+  step: 'stt' | 'ocr'
+): [string, unknown][] =>
+  getStep2ProviderSelectionFlagNames(step).map((flagName) => [
+    flagName,
+    STEP2_PROVIDER_CONFIG_PATHS[flagName]
+      ? readNestedValue(config as unknown as Record<string, unknown>, STEP2_PROVIDER_CONFIG_PATHS[flagName] as string[])
+      : undefined
+  ])
 
 export const extractExplicitFlags = (argv: string[]): Set<string> => {
   const explicit = new Set<string>()
@@ -21,11 +56,11 @@ export const extractExplicitFlags = (argv: string[]): Set<string> => {
     if (!token.startsWith('--')) continue
     const withoutDashes = token.slice(2)
     const eqIdx = withoutDashes.indexOf('=')
-    const key = eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx)
+    const key = normalizeStep2ProviderFlagName(eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx))
     if (!key) continue
     explicit.add(key)
     if (key.startsWith('no-') && key.length > 3) {
-      explicit.add(key.slice(3))
+      explicit.add(normalizeStep2ProviderFlagName(key.slice(3)))
     }
   }
   return explicit
@@ -52,37 +87,22 @@ export const mergeConfigIntoRawFlags = (
     for (const [flag, val] of entries) inject(flag, val)
   }
 
-  if (d.stt) {
-    inject('whisper', d.stt.whisper)
-    injectProviderGroup(STT_PROVIDER_FLAGS, [
-      ['gcloud-stt', d.stt.gcloudStt],
-      ['aws-stt', d.stt.awsStt],
-      ['deepinfra-stt', d.stt.deepinfraStt],
-      ['deapi-stt', d.stt.deapiStt],
-      ['groq-stt', d.stt.groqStt], ['elevenlabs-stt', d.stt.elevenlabsStt],
-      ['deepgram-stt', d.stt.deepgramStt],
-      ['soniox-stt', d.stt.sonioxStt],
-      ['speechmatics-stt', d.stt.speechmaticsStt],
-      ['rev-stt', d.stt.revStt],
-      ['mistral-stt', d.stt.mistralStt],
-      ['assemblyai-stt', d.stt.assemblyaiStt],
-      ['gladia-stt', d.stt.gladiaStt],
-      ['happyscribe-stt', d.stt.happyscribeStt],
-      ['supadata-stt', d.stt.supadataStt],
-    ])
-    inject('happyscribe-organization-id', d.stt.happyscribeOrganizationId)
-    inject('supadata-lang', d.stt.supadataLang)
-    inject('aws-region', d.stt.awsRegion)
-    inject('aws-bucket', d.stt.awsBucket)
-    inject('speaker-count', d.stt.speakerCount)
-    inject('split', d.stt.split)
-    inject('reverb-verbatimicity', d.stt.reverbVerbatimicity)
-    inject('stt-provider-concurrency', d.stt.providerConcurrency)
-    inject('stt-local-concurrency', d.stt.localConcurrency)
-    inject('stt-segment-concurrency', d.stt.segmentConcurrency)
-    inject('stt-preflight-concurrency', d.stt.preflightConcurrency)
-    inject('refresh-cache', d.stt.refreshCache)
-    inject('no-cache', d.stt.noCache)
+  if (d.extract?.stt) {
+    inject('youtube-captions', d.extract.stt.youtubeCaptions)
+    injectProviderGroup(STT_PROVIDER_FLAGS, resolveStep2ProviderDefaults(config, 'stt'))
+    inject('happyscribe-organization-id', d.extract.stt.happyscribeOrganizationId)
+    inject('supadata-lang', d.extract.stt.supadataLang)
+    inject('aws-region', d.extract.stt.awsRegion)
+    inject('aws-bucket', d.extract.stt.awsBucket)
+    inject('speaker-count', d.extract.stt.speakerCount)
+    inject('split', d.extract.stt.split)
+    inject('reverb-verbatimicity', d.extract.stt.reverbVerbatimicity)
+    inject('stt-provider-concurrency', d.extract.stt.providerConcurrency)
+    inject('stt-local-concurrency', d.extract.stt.localConcurrency)
+    inject('stt-segment-concurrency', d.extract.stt.segmentConcurrency)
+    inject('stt-preflight-concurrency', d.extract.stt.preflightConcurrency)
+    inject('refresh-cache', d.extract.stt.refreshCache)
+    inject('no-cache', d.extract.stt.noCache)
   }
 
   if (d.llm) {
@@ -141,21 +161,19 @@ export const mergeConfigIntoRawFlags = (
     inject('music-duration', d.post.music.musicDuration)
   }
 
-  if (d.extract) {
-    inject('lang', d.extract.lang)
-    inject('out', d.extract.out)
-    inject('dpi', d.extract.dpi)
-    inject('psm', d.extract.psm)
-    inject('oem', d.extract.oem)
-    inject('rotate', d.extract.rotate)
-    inject('mistral-ocr', d.extract.mistralOcr)
-    inject('glm-ocr', d.extract.glmOcr)
-    inject('openai-ocr', d.extract.openaiOcr)
-    inject('anthropic-ocr', d.extract.anthropicOcr)
-    inject('gemini-ocr', d.extract.geminiOcr)
-    inject('chapters', d.extract.chapters)
-    inject('length', d.extract.length)
-    inject('pdf-chapter-mode', d.extract.pdfChapterMode)
+  if (d.extract?.ocr) {
+    inject('lang', d.extract.ocr.lang)
+    inject('out', d.extract.ocr.out)
+    injectProviderGroup(OCR_PROVIDER_FLAGS, resolveStep2ProviderDefaults(config, 'ocr'))
+    inject('dpi', d.extract.ocr.dpi)
+    inject('psm', d.extract.ocr.psm)
+    inject('oem', d.extract.ocr.oem)
+    inject('rotate', d.extract.ocr.rotate)
+    inject('page-separator', d.extract.ocr.pageSeparator)
+    inject('preserve-spaces', d.extract.ocr.preserveSpaces)
+    inject('chapters', d.extract.ocr.chapters)
+    inject('length', d.extract.ocr.length)
+    inject('pdf-chapter-mode', d.extract.ocr.pdfChapterMode)
   }
 
   if (d.batch) {
@@ -172,35 +190,21 @@ export const mergeConfigIntoRawFlags = (
 }
 
 const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
-  'whisper':           ['defaults', 'stt', 'whisper'],
-  'gcloud-stt':        ['defaults', 'stt', 'gcloudStt'],
-  'aws-stt':           ['defaults', 'stt', 'awsStt'],
-  'deepinfra-stt':     ['defaults', 'stt', 'deepinfraStt'],
-  'deapi-stt':         ['defaults', 'stt', 'deapiStt'],
-  'groq-stt':          ['defaults', 'stt', 'groqStt'],
-  'elevenlabs-stt':    ['defaults', 'stt', 'elevenlabsStt'],
-  'deepgram-stt':      ['defaults', 'stt', 'deepgramStt'],
-  'soniox-stt':        ['defaults', 'stt', 'sonioxStt'],
-  'speechmatics-stt':  ['defaults', 'stt', 'speechmaticsStt'],
-  'rev-stt':           ['defaults', 'stt', 'revStt'],
-  'mistral-stt':       ['defaults', 'stt', 'mistralStt'],
-  'assemblyai-stt':    ['defaults', 'stt', 'assemblyaiStt'],
-  'gladia-stt':        ['defaults', 'stt', 'gladiaStt'],
-  'happyscribe-stt':   ['defaults', 'stt', 'happyscribeStt'],
-  'happyscribe-organization-id': ['defaults', 'stt', 'happyscribeOrganizationId'],
-  'supadata-stt':      ['defaults', 'stt', 'supadataStt'],
-  'supadata-lang':     ['defaults', 'stt', 'supadataLang'],
-  'aws-region':        ['defaults', 'stt', 'awsRegion'],
-  'aws-bucket':        ['defaults', 'stt', 'awsBucket'],
-  'speaker-count':     ['defaults', 'stt', 'speakerCount'],
-  'split':             ['defaults', 'stt', 'split'],
-  'reverb-verbatimicity': ['defaults', 'stt', 'reverbVerbatimicity'],
-  'stt-provider-concurrency': ['defaults', 'stt', 'providerConcurrency'],
-  'stt-local-concurrency': ['defaults', 'stt', 'localConcurrency'],
-  'stt-segment-concurrency': ['defaults', 'stt', 'segmentConcurrency'],
-  'stt-preflight-concurrency': ['defaults', 'stt', 'preflightConcurrency'],
-  'refresh-cache':     ['defaults', 'stt', 'refreshCache'],
-  'no-cache':          ['defaults', 'stt', 'noCache'],
+  ...STEP2_PROVIDER_CONFIG_PATHS,
+  'youtube-captions':  ['defaults', 'extract', 'stt', 'youtubeCaptions'],
+  'happyscribe-organization-id': ['defaults', 'extract', 'stt', 'happyscribeOrganizationId'],
+  'supadata-lang':     ['defaults', 'extract', 'stt', 'supadataLang'],
+  'aws-region':        ['defaults', 'extract', 'stt', 'awsRegion'],
+  'aws-bucket':        ['defaults', 'extract', 'stt', 'awsBucket'],
+  'speaker-count':     ['defaults', 'extract', 'stt', 'speakerCount'],
+  'split':             ['defaults', 'extract', 'stt', 'split'],
+  'reverb-verbatimicity': ['defaults', 'extract', 'stt', 'reverbVerbatimicity'],
+  'stt-provider-concurrency': ['defaults', 'extract', 'stt', 'providerConcurrency'],
+  'stt-local-concurrency': ['defaults', 'extract', 'stt', 'localConcurrency'],
+  'stt-segment-concurrency': ['defaults', 'extract', 'stt', 'segmentConcurrency'],
+  'stt-preflight-concurrency': ['defaults', 'extract', 'stt', 'preflightConcurrency'],
+  'refresh-cache':     ['defaults', 'extract', 'stt', 'refreshCache'],
+  'no-cache':          ['defaults', 'extract', 'stt', 'noCache'],
   'llama':             ['defaults', 'llm', 'llama'],
   'openai':            ['defaults', 'llm', 'openai'],
   'groq':              ['defaults', 'llm', 'groq'],
@@ -242,27 +246,24 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'elevenlabs-music':  ['defaults', 'post', 'music', 'elevenlabsMusic'],
   'minimax-music':     ['defaults', 'post', 'music', 'minimaxMusic'],
   'music-duration':    ['defaults', 'post', 'music', 'musicDuration'],
-  'lang':              ['defaults', 'extract', 'lang'],
-  'out':               ['defaults', 'extract', 'out'],
-  'dpi':               ['defaults', 'extract', 'dpi'],
-  'psm':               ['defaults', 'extract', 'psm'],
-  'oem':               ['defaults', 'extract', 'oem'],
-  'rotate':            ['defaults', 'extract', 'rotate'],
-  'mistral-ocr':       ['defaults', 'extract', 'mistralOcr'],
-  'glm-ocr':           ['defaults', 'extract', 'glmOcr'],
-  'openai-ocr':        ['defaults', 'extract', 'openaiOcr'],
-  'anthropic-ocr':     ['defaults', 'extract', 'anthropicOcr'],
-  'gemini-ocr':        ['defaults', 'extract', 'geminiOcr'],
-  'chapters':          ['defaults', 'extract', 'chapters'],
-  'length':            ['defaults', 'extract', 'length'],
-  'pdf-chapter-mode':  ['defaults', 'extract', 'pdfChapterMode'],
+  'lang':              ['defaults', 'extract', 'ocr', 'lang'],
+  'out':               ['defaults', 'extract', 'ocr', 'out'],
+  'dpi':               ['defaults', 'extract', 'ocr', 'dpi'],
+  'psm':               ['defaults', 'extract', 'ocr', 'psm'],
+  'oem':               ['defaults', 'extract', 'ocr', 'oem'],
+  'rotate':            ['defaults', 'extract', 'ocr', 'rotate'],
+  'page-separator':    ['defaults', 'extract', 'ocr', 'pageSeparator'],
+  'preserve-spaces':   ['defaults', 'extract', 'ocr', 'preserveSpaces'],
+  'chapters':          ['defaults', 'extract', 'ocr', 'chapters'],
+  'length':            ['defaults', 'extract', 'ocr', 'length'],
+  'pdf-chapter-mode':  ['defaults', 'extract', 'ocr', 'pdfChapterMode'],
   'batch-limit':       ['defaults', 'batch', 'limit'],
   'batch-order':       ['defaults', 'batch', 'order'],
   'batch-concurrency': ['defaults', 'batch', 'concurrency'],
   'max-cents':         ['pricing', 'maxCents'],
 }
 
-const RUNTIME_ONLY_FLAGS = new Set(['price', 'allow-over-budget', 'show', 'reset', 'config-path'])
+const RUNTIME_ONLY_FLAGS = new Set(['price', 'allow-over-budget', 'show', 'reset', 'config-path', 'password'])
 
 const setNestedValue = (obj: Record<string, unknown>, path: string[], value: unknown): void => {
   let current = obj
@@ -275,6 +276,28 @@ const setNestedValue = (obj: Record<string, unknown>, path: string[], value: unk
   }
   const lastKey = path[path.length - 1] as string
   current[lastKey] = value
+}
+
+const readConfigFlagValue = (
+  flags: Record<string, unknown>,
+  flagName: string
+): unknown => {
+  if (flagName in flags) {
+    return flags[flagName]
+  }
+
+  const entry = getStep2ProviderEntry(flagName)
+  if (!entry) {
+    return undefined
+  }
+
+  for (const alias of entry.aliases) {
+    if (alias in flags) {
+      return flags[alias]
+    }
+  }
+
+  return undefined
 }
 
 const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
@@ -323,7 +346,7 @@ export const buildConfigPatchFromFlags = (
         continue
       }
     } else {
-      const rawValue = flags[flagName]
+      const rawValue = readConfigFlagValue(flags, flagName)
       if (rawValue === undefined) continue
       value = resolveConfigFlagValue(flagName, rawValue)
     }

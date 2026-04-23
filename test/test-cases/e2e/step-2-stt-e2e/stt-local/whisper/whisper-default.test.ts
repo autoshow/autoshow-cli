@@ -41,6 +41,32 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
 
     const summaryExists = await fileExists(`${outputDir}/text.json`)
     expect(summaryExists).toBe(false)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      resolvedStep2?: {
+        route?: string
+        sourceKind?: string
+        providers?: Array<{ service?: string; model?: string; origin?: string }>
+      }
+      requestedProviders?: Array<{ service?: string; model?: string }>
+      providerStates?: Array<{ service?: string; model?: string; status?: string; artifactDir?: string }>
+      missingProviders?: Array<unknown>
+    }
+    expect(metadata.resolvedStep2).toMatchObject({
+      route: 'stt',
+      sourceKind: 'media',
+      providers: [{ service: 'whisper', model: 'tiny', origin: 'default' }]
+    })
+    expect(metadata.requestedProviders).toEqual([{ service: 'whisper', model: 'tiny' }])
+    expect(metadata.providerStates).toEqual([
+      {
+        service: 'whisper',
+        model: 'tiny',
+        artifactDir: '.',
+        status: 'succeeded'
+      }
+    ])
+    expect(metadata.missingProviders).toEqual([])
   }
 })
 

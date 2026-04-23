@@ -1,5 +1,5 @@
 import { exec, commandExists } from '~/utils/cli-utils'
-import { setupExtractionOcr } from '../ocr-local/extract'
+import { setupTesseractOcr } from '../ocr-local/tesseract-setup'
 import type { OcrOutputFormat, OcrResult } from '~/types'
 
 const parseTsvConfidence = (tsv: string): number | undefined => {
@@ -23,7 +23,7 @@ const parseTsvConfidence = (tsv: string): number | undefined => {
 
 export const ensureTesseractSetup = async (): Promise<void> => {
   if (commandExists('tesseract')) return
-  await setupExtractionOcr()
+  await setupTesseractOcr()
 }
 
 export const ocrImage = async (

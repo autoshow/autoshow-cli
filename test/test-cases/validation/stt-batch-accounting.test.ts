@@ -161,6 +161,7 @@ test('processBatch counts incomplete STT items separately and preserves outputDi
     items: 1,
     captionBacked: 0,
     sttFallback: 1,
+    skipped: 0,
     incomplete: 1,
     failed: 0
   })
@@ -368,6 +369,7 @@ test('processBatch writes STT summary counts for caption-backed and fallback ite
     items: 2,
     captionBacked: 1,
     sttFallback: 1,
+    skipped: 0,
     incomplete: 0,
     failed: 0
   })

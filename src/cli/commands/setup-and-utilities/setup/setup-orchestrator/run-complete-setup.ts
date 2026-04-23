@@ -23,7 +23,7 @@ import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-stt/stt-serv
 import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/supadata/supadata'
 import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-stt/stt-services/aws/aws'
 import { setupCalibreDocumentTools } from '~/cli/commands/process-steps/step-1-download/setup-download/dl-document/calibre'
-import { setupExtractionOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/extract'
+import { setupTesseractOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-local/tesseract-setup'
 import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/glm-ocr/glm'
 import { setupGeminiOcr } from '~/cli/commands/process-steps/step-2-ocr/ocr-services/gemini-ocr/gemini'
@@ -264,7 +264,7 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupCalibreDocumentTools)
 
-  await withCompactSetup(setupExtractionOcr)
+  await withCompactSetup(setupTesseractOcr)
 
   await withCompactSetup(setupKittenTts)
 

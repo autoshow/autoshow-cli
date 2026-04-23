@@ -286,6 +286,9 @@ const collectPartialFailureLabels = (
     ? metadata['errors'].filter((value): value is Record<string, unknown> => isRecord(value))
     : []
   for (const failure of errors) {
+    if (failure['skipped'] === true) {
+      continue
+    }
     if (typeof failure['service'] !== 'string' || typeof failure['model'] !== 'string') {
       continue
     }

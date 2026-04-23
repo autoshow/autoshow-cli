@@ -13,6 +13,7 @@ import type {
   PromptSelectionCandidate,
   ProviderErrorLike,
   ProviderFailure,
+  ResolvedStep2Execution,
   RuntimeOptions,
   Step2Metadata,
   SttBatchBlockedProviderReason,
@@ -39,6 +40,7 @@ import {
   getSttProviderArtifactDir,
   readExistingSttRun,
   resolveCompletionStatus,
+  summarizeSttProviderStates,
   toRecordedProviderError,
   toRequestedProvider
 } from './step-2-stt/stt-batch/stt-run-state'
@@ -63,8 +65,11 @@ import {
   logSttAcquireSummary,
   logSttProviderConcurrency,
   logSttProviderFailures,
+  logSttProviderSkips,
   logSttRunStatus
 } from './step-2-stt/stt-logging'
+import { buildSpeakerCountHintWarning } from './step-2-shared/inactive-flag-warnings'
+import { resolveSttStep2Execution } from './step-2-shared/resolved-step2'
 
 export { SttPartialCompletionError, isSttPartialCompletionError } from './step-2-stt/batch'
 export type { SttCompletionStatus, SttProviderState, SttRequestedProvider } from '~/types'
@@ -100,12 +105,6 @@ const emitInfoOnce = (key: string, emit: () => void): void => {
   emit()
 }
 
-const logInfoOnce = (message: string): void => {
-  emitInfoOnce(message, () => {
-    l.info(message)
-  })
-}
-
 const logWarnOnce = (message: string): void => {
   if (emittedWarnMessages.has(message)) {
     return
@@ -113,6 +112,26 @@ const logWarnOnce = (message: string): void => {
 
   emittedWarnMessages.add(message)
   l.warn(message)
+}
+
+const resolveRecordedSttStep2 = (
+  requestedTargets: Array<Pick<SttTarget, 'service' | 'model'>>,
+  options: RuntimeOptions
+): ResolvedStep2Execution => {
+  const resolved = resolveSttStep2Execution(options)
+  const resolvedProviders = resolved.route === 'stt' ? resolved.providers : []
+
+  return {
+    route: 'stt',
+    sourceKind: 'media',
+    providers: requestedTargets.map((target) => ({
+      service: target.service,
+      model: target.model,
+      origin: resolvedProviders.find((provider) =>
+        provider.service === target.service && provider.model === target.model
+      )?.origin
+    }))
+  }
 }
 
 const collectErrorChain = (error: unknown): ProviderErrorLike[] => {
@@ -348,28 +367,15 @@ export const logSpeakerCountHintSummary = (
   targets: SttTarget[],
   requestedSpeakerCount: number | undefined
 ): void => {
-  if (requestedSpeakerCount === undefined || targets.length === 0) {
-    return
+  const warning = buildSpeakerCountHintWarning(
+    targets,
+    requestedSpeakerCount,
+    (target) => getSttEngineCapabilities(target.service).supportsSpeakerCountHint,
+    formatSttTargetLabel
+  )
+  if (warning) {
+    logWarnOnce(warning)
   }
-
-  const honored = targets
-    .filter((target) => getSttEngineCapabilities(target.service).supportsSpeakerCountHint)
-    .map(formatSttTargetLabel)
-  const ignored = targets
-    .filter((target) => !getSttEngineCapabilities(target.service).supportsSpeakerCountHint)
-    .map(formatSttTargetLabel)
-
-  if (ignored.length === 0) {
-    return
-  }
-
-  const message = [
-    `Using --speaker-count=${requestedSpeakerCount} for STT diarization`,
-    `honored=${honored.length > 0 ? honored.join(', ') : 'none'}`,
-    `ignored=${ignored.join(', ')}`
-  ].join('; ')
-
-  logWarnOnce(message)
 }
 
 const logEffectiveProviderConcurrency = (
@@ -415,6 +421,13 @@ const formatProviderFailure = (failure: ProviderFailure): string => {
     : `${failure.service}/${failure.model}: ${failure.message}`
 }
 
+const formatProviderStateIssue = (
+  state: Pick<SttProviderState, 'service' | 'model' | 'lastError'>
+): string => {
+  const label = formatSttTargetLabel(state)
+  return state.lastError?.message ? `${label}: ${state.lastError.message}` : label
+}
+
 const withMergedStep2Timings = (
   metadata: Step2Metadata,
   ...timings: Array<Step2Metadata['timings']>
@@ -441,12 +454,28 @@ export const filterSttPreflightEstimate = (
   }
 }
 
+const filterSttPreflightEstimateByTargets = (
+  estimate: AggregatedPriceEstimate,
+  targets: SttTarget[]
+): AggregatedPriceEstimate => {
+  const targetKeys = new Set(targets.map(getSttTargetKey))
+  const steps = estimate.steps.filter((step) =>
+    step.step === 'stt' && targetKeys.has(`${step.provider}:${step.model}`)
+  )
+
+  return {
+    steps,
+    totalEstimatedCost: steps.reduce((sum, step) => sum + step.totalCost, 0),
+    ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
+  }
+}
+
 const resolveSttEstimatedCosts = (
   preflightEstimate: AggregatedPriceEstimate | undefined,
   targets: SttTarget[],
   durationSeconds: number
 ) => preflightEstimate
-  ? preflightToEstimated(filterSttPreflightEstimate(preflightEstimate))
+  ? preflightToEstimated(filterSttPreflightEstimateByTargets(preflightEstimate, targets))
   : computeEstimatedCosts({
       sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
       audioDurationSeconds: durationSeconds
@@ -702,6 +731,7 @@ export const processStt = async (
         const metadataJson = JSON.stringify({
           step1: preparedStepMedia.step1Metadata,
           step2: captionTranscription.metadata,
+          resolvedStep2: resolveRecordedSttStep2([captionTranscription.target], options),
           completionStatus: 'full' as SttCompletionStatus,
           requestedProviders: [toRequestedProvider(captionTranscription.target)],
           providerStates: [{
@@ -784,6 +814,7 @@ export const processStt = async (
       const metadataJson = JSON.stringify({
         step1: prepared.step1Metadata,
         step2: transcription.metadata,
+        resolvedStep2: resolveRecordedSttStep2(requestedTargets, options),
         completionStatus: 'full' as SttCompletionStatus,
         requestedProviders: requestedTargets.map(toRequestedProvider),
         providerStates: [{
@@ -1106,16 +1137,15 @@ export const processStt = async (
 
     const successfulProviders = successes.filter((entry): entry is SttProviderSuccess => entry !== undefined)
     const failures = [...failuresByIndex.values()].sort((left, right) => left.index - right.index)
-    const completionStatus = resolveCompletionStatus(requestedTargets, successes)
     const providerStates = buildProviderStates(requestedTargets, successes, failuresByIndex, providerStateMap)
+    const completionStatus = resolveCompletionStatus(providerStates)
+    const providerStateSummary = summarizeSttProviderStates(providerStates)
+    const applicableTargets = requestedTargets.filter((_, index) => providerStates[index]?.status !== 'skipped')
+    const skippedProviderStates = providerStates.filter((state) => state.status === 'skipped')
+    const incompleteProviderStates = providerStates.filter((state) => state.status === 'failed' || state.status === 'missing')
     const missingProviders = buildMissingProviders(providerStates, requestedTargets)
     const metadataErrors = buildMetadataErrorEntries(providerStates)
-    const providerIssueMessages = providerStates
-      .filter((state) => state.status !== 'succeeded')
-      .map((state) => {
-        const label = formatSttTargetLabel(state)
-        return state.lastError?.message ? `${label}: ${state.lastError.message}` : label
-      })
+    const providerIssueMessages = incompleteProviderStates.map(formatProviderStateIssue)
 
     queuePromptRefresh()
     await promptRefreshChain
@@ -1125,7 +1155,7 @@ export const processStt = async (
 
     const promptSource = selectPrimaryPromptProvider(successes)
 
-    const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, prepared.durationSeconds))
+    const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, applicableTargets, prepared.durationSeconds))
     const actual = computeActualCosts({
       step1: prepared.step1Metadata,
       step2: successfulProviders.map((entry) => entry.metadata)
@@ -1139,7 +1169,7 @@ export const processStt = async (
       }
     }
     const estimatedTiming = computeEstimatedProcessingTimes({
-      sttTargets: requestedTargets.map((entry) => ({ service: entry.service, model: entry.model })),
+      sttTargets: applicableTargets.map((entry) => ({ service: entry.service, model: entry.model })),
       audioDurationSeconds: prepared.durationSeconds
     })
     const actualTiming = computeActualProcessingTimes({
@@ -1175,6 +1205,7 @@ export const processStt = async (
     const metadataJson = JSON.stringify({
       step1: prepared.step1Metadata,
       step2: successfulProviders.map((entry) => entry.metadata),
+      resolvedStep2: resolveRecordedSttStep2(requestedTargets, options),
       completionStatus,
       requestedProviders: requestedTargets.map(toRequestedProvider),
       providerStates,
@@ -1208,18 +1239,19 @@ export const processStt = async (
       }))
     ]
 
-      if (completionStatus === 'full') {
-        const artifactFiles: Record<string, string> = {
-          prompt: 'prompt.md',
-          run: 'run.json'
-        }
-        artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
-        if (successfulProviders.some((entry) => entry.metadata.transcriptionService === YOUTUBE_CAPTIONS_SERVICE)) {
-          artifactFiles['captions'] = 'youtube-captions.vtt'
-          artifactFiles['captionMetadata'] = 'youtube-captions.json'
-        }
-        for (const entry of successfulProviders) {
-          const dir = entry.relativeDir as string
+    if (completionStatus === 'full') {
+      logSttProviderSkips(l, skippedProviderStates)
+      const artifactFiles: Record<string, string> = {
+        prompt: 'prompt.md',
+        run: 'run.json'
+      }
+      artifactFiles['audio'] = basename(prepared.outputArtifacts.sourceMediaPath)
+      if (successfulProviders.some((entry) => entry.metadata.transcriptionService === YOUTUBE_CAPTIONS_SERVICE)) {
+        artifactFiles['captions'] = 'youtube-captions.vtt'
+        artifactFiles['captionMetadata'] = 'youtube-captions.json'
+      }
+      for (const entry of successfulProviders) {
+        const dir = entry.relativeDir as string
         const key = `${entry.metadata.transcriptionService}-${entry.metadata.transcriptionModel}`
         artifactFiles[`transcript-${key}`] = `${dir}/transcription.txt`
         artifactFiles[`result-${key}`] = `${dir}/result.json`
@@ -1228,8 +1260,9 @@ export const processStt = async (
       l.report.complete(outputDir, artifactFiles, {
         metrics: {
           providersRequested: requestedTargets.length,
-          providersSucceeded: successfulProviders.length,
+          providersSucceeded: providerStateSummary.succeeded,
           providersFailed: 0,
+          providersSkipped: providerStateSummary.skipped,
           partial: false,
           completionStatus,
           ...(promptSource
@@ -1247,11 +1280,13 @@ export const processStt = async (
     logSttRunStatus(l, {
       completionStatus,
       requested: requestedTargets.length,
-      succeeded: successfulProviders.length,
-      failed: failures.length,
-      missing: missingProviders.length
+      succeeded: providerStateSummary.succeeded,
+      failed: providerStateSummary.failed,
+      missing: missingProviders.length,
+      skipped: providerStateSummary.skipped
     })
     logSttProviderFailures(l, failures)
+    logSttProviderSkips(l, skippedProviderStates)
     l.warn('Output directory preserved for retry/backfill')
     logLocationsTable(l, [{ artifact: 'retryOutputDir', path: outputDir }], { level: 'warn' })
 
@@ -1261,11 +1296,15 @@ export const processStt = async (
       missingProviders,
       completionStatus === 'failed'
         ? failures.length > 0
-          ? `All requested STT providers failed: ${failures.map(formatProviderFailure).join('; ')}`
-          : `No requested STT provider produced a transcript: ${providerIssueMessages.join('; ')}`
+          ? `All applicable STT providers failed: ${failures.map(formatProviderFailure).join('; ')}`
+          : providerIssueMessages.length > 0
+            ? `No requested STT provider produced a transcript: ${providerIssueMessages.join('; ')}`
+            : 'No requested STT provider produced a transcript.'
         : providerIssueMessages.length > 0
           ? `Missing STT provider outputs: ${providerIssueMessages.join('; ')}`
-          : `Missing STT provider outputs: ${missingProviders.map(formatSttTargetLabel).join(', ')}`
+          : missingProviders.length > 0
+            ? `Missing STT provider outputs: ${missingProviders.map(formatSttTargetLabel).join(', ')}`
+            : 'Missing STT provider outputs.'
     )
   } finally {
     await prepared?.cleanup?.()

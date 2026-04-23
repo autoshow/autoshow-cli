@@ -479,8 +479,8 @@ test('runSttBatch blocks a permanently failing provider and marks later items as
   registerCleanupPath(result.batchDir)
 
   expect(fetchImpl.getMistralCalls()).toBe(1)
-  expect(result.ok).toBe(0)
-  expect(result.incomplete).toBe(2)
+  expect(result.ok).toBe(1)
+  expect(result.incomplete).toBe(1)
   expect(result.fail).toBe(0)
   expect(result.batchDir).toBeDefined()
   if (!result.batchDir) {
@@ -488,6 +488,7 @@ test('runSttBatch blocks a permanently failing provider and marks later items as
   }
 
   const info = await readBatchItems(result.batchDir)
+  expect(info.map((entry) => entry['completionStatus']).sort()).toEqual(['full', 'incomplete'])
   const mistralStates = info.flatMap((entry) =>
     Array.isArray(entry['providerStates'])
       ? entry['providerStates'].filter((state): state is Record<string, unknown> => typeof state === 'object' && state !== null)

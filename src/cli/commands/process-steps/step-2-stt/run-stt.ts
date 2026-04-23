@@ -645,7 +645,9 @@ export const stt = async (
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const targets = collectSttTargets({
     ...(options as unknown as RuntimeOptions),
-    whisperExplicit: true
+    step2SelectionOrigins: {
+      whisper: 'explicit'
+    }
   })
   if (targets.length !== 1) {
     throw new Error(`stt() expects exactly one STT target, received ${targets.length}`)

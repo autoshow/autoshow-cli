@@ -16,15 +16,15 @@ import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models
 import {
   transcriptionFlags,
   llmProviderFlags,
-  extractFlags,
-  advancedExtractFlags,
+  ocrInputFlags,
+  ocrTuningFlags,
   articleFlags,
   // Shared separately because write should still expose batch and EPUB inspect flags without resume-only surface area.
   batchFlags,
   promptFlag,
   priceFlag
 } from './shared-flags'
-import { epubInspectFlags } from './extract-flags'
+import { epubInspectFlags } from './ocr-flags'
 import { imageGenFlags } from './image-flags'
 import { musicGenFlags } from './music-flags'
 import { videoGenFlags } from './video-flags'
@@ -172,8 +172,8 @@ const writeLlmShortcutFlags = {
 export const writeFlags = {
   ...withHelpGroup(batchFlags, 'step-1-download'),
   ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
-  ...withHelpGroup(extractFlags, 'step-2-ocr'),
-  ...withHelpGroup(advancedExtractFlags, 'step-2-ocr'),
+  ...withHelpGroup(ocrInputFlags, 'step-2-ocr'),
+  ...withHelpGroup(ocrTuningFlags, 'step-2-ocr'),
   ...withHelpGroup(articleFlags, 'step-2-ocr'),
   ...withHelpGroup(epubInspectFlags, 'step-2-ocr'),
   ...withHelpGroup(writeLlmShortcutFlags, 'step-3-write'),

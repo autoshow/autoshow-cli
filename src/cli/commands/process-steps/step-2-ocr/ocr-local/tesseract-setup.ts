@@ -71,7 +71,7 @@ const installLibreOffice = async (): Promise<void> => {
   throw new Error('Unsupported platform for libreoffice setup')
 }
 
-export const setupExtractionOcr = async (): Promise<void> => {
+export const setupTesseractOcr = async (): Promise<void> => {
   await installTesseract()
   await ensureEnglishLanguageData()
   await installLibreOffice()

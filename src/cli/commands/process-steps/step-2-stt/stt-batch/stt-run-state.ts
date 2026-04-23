@@ -268,25 +268,98 @@ export const parseSuccessfulProviderKeys = (
   return keys
 }
 
+const isSkippedProviderState = (
+  state: Pick<SttProviderState, 'status' | 'lastError'> | undefined
+): boolean =>
+  state?.status === 'skipped' || state?.lastError?.skipped === true
+
+const resolveCompletionStatusFromState = (
+  requestedTargets: SttTarget[],
+  successKeys: Set<string>,
+  providerStates: Map<string, SttProviderState>
+): SttCompletionStatus => {
+  let succeeded = 0
+  let incomplete = 0
+
+  for (const target of requestedTargets) {
+    const key = getSttTargetKey(target)
+    const state = providerStates.get(key)
+    if (isSkippedProviderState(state)) {
+      continue
+    }
+
+    if (successKeys.has(key) || state?.status === 'succeeded') {
+      succeeded += 1
+      continue
+    }
+
+    incomplete += 1
+  }
+
+  if (succeeded === 0) {
+    return 'failed'
+  }
+
+  return incomplete === 0 ? 'full' : 'incomplete'
+}
+
+export const summarizeSttProviderStates = (
+  providerStates: SttProviderState[]
+): {
+  requested: number
+  applicable: number
+  succeeded: number
+  failed: number
+  missing: number
+  skipped: number
+} => {
+  const summary = {
+    requested: providerStates.length,
+    applicable: 0,
+    succeeded: 0,
+    failed: 0,
+    missing: 0,
+    skipped: 0
+  }
+
+  for (const state of providerStates) {
+    if (state.status === 'skipped') {
+      summary.skipped += 1
+      continue
+    }
+
+    summary.applicable += 1
+    if (state.status === 'succeeded') {
+      summary.succeeded += 1
+      continue
+    }
+
+    if (state.status === 'failed') {
+      summary.failed += 1
+      continue
+    }
+
+    summary.missing += 1
+  }
+
+  return summary
+}
+
 export const inferStoredCompletionStatus = (
   entry: Record<string, unknown>,
   requestedTargets: SttTarget[]
 ): SttCompletionStatus => {
+  const successKeys = parseSuccessfulProviderKeys(entry)
+  const providerStates = parseStoredProviderStateMap(entry)
+  if (providerStates.size > 0) {
+    return resolveCompletionStatusFromState(requestedTargets, successKeys, providerStates)
+  }
+
   if (entry['completionStatus'] === 'full' || entry['completionStatus'] === 'incomplete' || entry['completionStatus'] === 'failed') {
     return entry['completionStatus']
   }
 
-  const successKeys = parseSuccessfulProviderKeys(entry)
-  if (successKeys.size === 0) {
-    return 'failed'
-  }
-
-  const matchedCount = requestedTargets
-    .map(getSttTargetKey)
-    .filter((key) => successKeys.has(key))
-    .length
-
-  return matchedCount === requestedTargets.length ? 'full' : 'incomplete'
+  return resolveCompletionStatusFromState(requestedTargets, successKeys, providerStates)
 }
 
 export const buildMissingTargetsFromEntry = (
@@ -298,10 +371,14 @@ export const buildMissingTargetsFromEntry = (
     ? entry['missingProviders'].map(parseStoredRequestedTarget).filter((target): target is SttTarget => target !== undefined)
     : []
   const providerStates = parseStoredProviderStateMap(entry)
+  const successKeys = parseSuccessfulProviderKeys(entry)
 
   const missingTargets = explicitMissing.length > 0
-    ? explicitMissing
-    : requestedTargets.filter((target) => !parseSuccessfulProviderKeys(entry).has(getSttTargetKey(target)))
+    ? explicitMissing.filter((target) => !isSkippedProviderState(providerStates.get(getSttTargetKey(target))))
+    : requestedTargets.filter((target) => {
+        const key = getSttTargetKey(target)
+        return !successKeys.has(key) && !isSkippedProviderState(providerStates.get(key))
+      })
 
   if (!retryableOnly) {
     return missingTargets
@@ -386,7 +463,7 @@ export const buildProviderStates = <
         model: target.model,
         local: target.local,
         artifactDir: getSttProviderArtifactDir(target),
-        status: 'failed',
+        status: failure.skipped === true ? 'skipped' : 'failed',
         attempts: existing?.attempts ?? 0,
         retryable: failure.retryable,
         lastError: toRecordedProviderError({
@@ -414,17 +491,14 @@ export const buildProviderStates = <
     }
   })
 
-export const resolveCompletionStatus = <
-  SuccessLike extends SttProviderSuccess
->(
-  requestedTargets: SttTarget[],
-  successes: Array<SuccessLike | undefined>
+export const resolveCompletionStatus = (
+  providerStates: SttProviderState[]
 ): SttCompletionStatus => {
-  const successCount = successes.filter((entry) => entry !== undefined).length
-  if (successCount === 0) {
+  const summary = summarizeSttProviderStates(providerStates)
+  if (summary.succeeded === 0) {
     return 'failed'
   }
-  return successCount === requestedTargets.length ? 'full' : 'incomplete'
+  return summary.failed === 0 && summary.missing === 0 ? 'full' : 'incomplete'
 }
 
 export const buildMissingProviders = (
@@ -432,7 +506,7 @@ export const buildMissingProviders = (
   requestedTargets: SttTarget[]
 ): SttRequestedProvider[] => {
   const missingKeys = new Set(providerStates
-    .filter((state) => state.status !== 'succeeded')
+    .filter((state) => state.status === 'failed' || state.status === 'missing')
     .map((state) => getSttTargetKey(state)))
 
   return requestedTargets
@@ -449,7 +523,7 @@ export const buildMetadataErrorEntries = (
       service: state.service,
       model: state.model,
       message: state.lastError?.message,
-      ...(state.status === 'skipped' ? { skipped: true } : {}),
+      ...(state.status === 'skipped' || state.lastError?.skipped === true ? { skipped: true } : {}),
       ...(state.lastError?.stage ? { stage: state.lastError.stage } : {}),
       ...(typeof state.lastError?.status === 'number' ? { status: state.lastError.status } : {}),
       ...(typeof state.lastError?.retryAfterMs === 'number' ? { retryAfterMs: state.lastError.retryAfterMs } : {}),

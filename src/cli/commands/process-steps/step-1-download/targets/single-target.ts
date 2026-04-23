@@ -26,7 +26,14 @@ import type { ExtractionOptions } from '~/types'
 import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
 import { canonicalizeProcessCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
-import { classifyUrlInput, isDocumentByExtension, isHtmlDocumentPath, isLikelyUrl } from './target-utils'
+import {
+  classifyInputFamily,
+  classifyUrlInput,
+  describeUnsupportedInputForCommand,
+  isDocumentByExtension,
+  isHtmlDocumentPath,
+  isLikelyUrl
+} from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
@@ -36,6 +43,10 @@ import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
 import { isTextInputPath, writeRenderedTextArtifacts } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
+import {
+  formatHtmlArticleOcrFlagsIgnoredWarning,
+  hasConfiguredOcrProviderSelection
+} from '~/cli/commands/process-steps/step-2-shared/inactive-flag-warnings'
 
 const buildDocumentMetadataView = (
   step1: DocumentMetadata,
@@ -53,15 +64,6 @@ const buildDocumentMetadataView = (
   ...(step1.metadataSchemaVersion ? { metadataSchemaVersion: step1.metadataSchemaVersion } : {}),
   ...(web ? { web } : {})
 })
-
-const hasOcrExtractionFlags = (opts: RuntimeOptions): boolean =>
-  opts.useOcrmypdf
-  || opts.usePaddleOcr
-  || typeof opts.mistralOcrModel === 'string'
-  || typeof opts.glmOcrModel === 'string'
-  || typeof opts.openaiOcrModel === 'string'
-  || typeof opts.anthropicOcrModel === 'string'
-  || typeof opts.geminiOcrModel === 'string'
 
 const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
   [
@@ -176,8 +178,8 @@ const collectEstimatedExtractTargets = (
 }
 
 const warnHtmlArticleFlagBehavior = (target: string, opts: RuntimeOptions, backend: PreparedDocument['htmlArticleBackend']): void => {
-  if (hasOcrExtractionFlags(opts)) {
-    l.warn(`OCR flags are ignored for HTML/article inputs: ${target}`)
+  if (hasConfiguredOcrProviderSelection(opts)) {
+    l.warn(formatHtmlArticleOcrFlagsIgnoredWarning(target))
   }
   if (backend === 'firecrawl') {
     l.info('Article extraction backend: firecrawl')
@@ -206,7 +208,20 @@ const toDocumentSourceUrl = (target: string): string => {
   return `file://${pathResolve(target)}`
 }
 
+const throwUnsupportedProcessInput = (
+  command: ProcessCommand,
+  item: string,
+  family: 'media' | 'document' | 'html_article' | 'unsupported'
+): never => {
+  throw CLIUsageError(`Unsupported ${command} input "${item}". ${describeUnsupportedInputForCommand(command, family)}`)
+}
+
 const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeOptions): Partial<ExtractionOptions> => {
+  const step2SelectionOrigins = opts.step2SelectionOrigins
+    ? Object.fromEntries(
+        Object.entries(opts.step2SelectionOrigins).filter(([, value]) => value !== undefined)
+      ) as Record<string, 'default' | 'explicit' | 'all-shortcut'>
+    : undefined
   const extractionOpts: Partial<ExtractionOptions> = {
     filePath: target,
     outputDir: baseDir || './output',
@@ -233,6 +248,9 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   }
   if (opts.pageSeparator) {
     extractionOpts.pageSeparator = opts.pageSeparator
+  }
+  if (opts.useTesseract) {
+    extractionOpts.useTesseract = true
   }
   if (opts.useOcrmypdf) {
     extractionOpts.useOcrmypdf = true
@@ -266,6 +284,9 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   }
   if (opts.useEpubCalibre) {
     extractionOpts.useEpubCalibre = true
+  }
+  if (step2SelectionOrigins) {
+    extractionOpts.step2SelectionOrigins = step2SelectionOrigins
   }
 
   return extractionOpts
@@ -671,7 +692,7 @@ const processMediaSingle = async (
   return { outputDir: outDir, info: baseInfo }
 }
 
-const processExtractSingle = async (
+const processOcrSingle = async (
   target: string,
   baseDir: string,
   opts: RuntimeOptions,
@@ -1170,13 +1191,13 @@ export const processSingleTarget = async (
     const kind = await classifyUrlInput(item, opts)
     if (kind === 'url_direct_document') {
       if (isSttCommand(command)) {
-        throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
+        throwUnsupportedProcessInput(command, item, 'document')
       }
 
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
           if (isOcrCommand(command)) {
-            return await processExtractSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
+            return await processOcrSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
           } else {
             return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
           }
@@ -1187,18 +1208,18 @@ export const processSingleTarget = async (
 
     if (kind === 'url_html_article') {
       if (isSttCommand(command)) {
-        throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
+        throwUnsupportedProcessInput(command, item, 'html_article')
       }
 
       const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
       if (isOcrCommand(command)) {
-        return await processExtractSingle(item, baseDir, opts, { url: item }, prepared, batchChildContext)
+        return await processOcrSingle(item, baseDir, opts, { url: item }, prepared, batchChildContext)
       }
       return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared, batchChildContext)
     }
 
     if (isOcrCommand(command)) {
-      throw CLIUsageError(`Unsupported ocr input "${item}". Use a direct document URL or local file.`)
+      throwUnsupportedProcessInput(command, item, 'media')
     }
 
     if (isSttCommand(command)) {
@@ -1224,7 +1245,7 @@ export const processSingleTarget = async (
     const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
 
     if (isOcrCommand(command)) {
-      return await processExtractSingle(item, baseDir, opts, undefined, prepared, batchChildContext)
+      return await processOcrSingle(item, baseDir, opts, undefined, prepared, batchChildContext)
     }
 
     if (command === 'write') {
@@ -1232,28 +1253,25 @@ export const processSingleTarget = async (
     }
 
     if (isSttCommand(command)) {
-      throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
+      throwUnsupportedProcessInput(command, item, 'html_article')
     }
   }
 
-  const isDocExt = isDocumentByExtension(item)
-  const detected = isDocExt ? await detectDocumentFormat(item) : null
-  const kind = (isDocExt || detected !== null) ? 'local_document' : 'local_media'
+  const family = await classifyInputFamily(item, opts)
 
   if (isOcrCommand(command)) {
-    if (kind !== 'local_document') {
-      l.warn(`Skipping non-document file in ocr mode: ${item}`)
-      return
+    if (family !== 'document') {
+      throwUnsupportedProcessInput(command, item, family)
     }
-    return await processExtractSingle(item, baseDir, opts, undefined, undefined, batchChildContext)
+    return await processOcrSingle(item, baseDir, opts, undefined, undefined, batchChildContext)
   }
 
-  if (command === 'write' && kind === 'local_document') {
+  if (command === 'write' && family === 'document') {
     return await runDocumentWrite(item, baseDir, opts, undefined, undefined, batchChildContext)
   }
 
-  if (isSttCommand(command) && kind === 'local_document') {
-    throw CLIUsageError(`Unsupported stt input "${item}". Use: bun as ocr <input> or bun as write <input>`)
+  if (isSttCommand(command) && family !== 'media') {
+    throwUnsupportedProcessInput(command, item, family)
   }
 
   if (isSttCommand(command)) {

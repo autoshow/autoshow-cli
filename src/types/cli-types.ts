@@ -7,10 +7,13 @@ export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
 
 export type BatchOrder = 'newest' | 'oldest'
 
+export type Step2ProviderSelectionOrigin = 'default' | 'explicit' | 'all-shortcut'
+
 export type RuntimeOptions = {
   useReverb: boolean
   youtubeCaptions: boolean
   whisperExplicit: boolean
+  step2SelectionOrigins: Partial<Record<string, Step2ProviderSelectionOrigin>>
   llamaModels: string[] | undefined
   llamaModel: string | undefined
   openaiModels: string[] | undefined
@@ -82,6 +85,7 @@ export type RuntimeOptions = {
   pageSeparator: string | undefined
   preserveSpaces: boolean
   rotate: number
+  useTesseract: boolean
   useOcrmypdf: boolean
   usePaddleOcr: boolean
   mistralOcrModels: string[] | undefined

@@ -1,5 +1,6 @@
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { CLIUsageError } from '~/utils/error-handler'
+import { EPUB_INSPECT_JSON_ONLY_ERROR } from '../step-2-shared/inactive-flag-warnings'
 
 type OcrLikeContext = {
   flags: Record<string, unknown> & { out?: unknown }
@@ -18,6 +19,6 @@ export const validateEpubInspectCommandFlags = (
   const outWasExplicitlyProvided = explicitFlags.has('out')
 
   if (epubInspectCount > 0 && outWasExplicitlyProvided && ctx.flags.out !== 'json') {
-    throw CLIUsageError('EPUB inspect mode supports JSON output only. Use --out json with --epub-bun or --epub-calibre.')
+    throw CLIUsageError(EPUB_INSPECT_JSON_ONLY_ERROR)
   }
 }

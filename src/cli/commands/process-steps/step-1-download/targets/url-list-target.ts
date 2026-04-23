@@ -2,7 +2,7 @@ import * as l from '~/logger'
 import type { ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
 import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
-import { processBatch, readInputList } from './target-utils'
+import { planBatchInputsForCommand, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
 import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-stt/batch'
 import { resolveListBatchItems } from './list-batch-resolver'
@@ -26,10 +26,19 @@ export const processResolvedInputListBatch = async (
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<void> => {
+  const batchPlan = await planBatchInputsForCommand(
+    command,
+    resolvedBatch.selectedUrls,
+    opts,
+    resolvedBatch.selectedItems
+  )
+
   if (isSttCommand(command)) {
-    const result = await runSttBatch(resolvedBatch.selectedUrls, 'inputs', opts, {
+    const result = await runSttBatch(batchPlan.items, 'inputs', opts, {
       source: resolvedBatch.source,
-      selectedItems: resolvedBatch.selectedItems,
+      ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+      initialEntries: batchPlan.initialEntries,
+      resultEntryIndexes: batchPlan.resultEntryIndexes,
       concurrency: opts.batchConcurrency,
       totalCount: resolvedBatch.totalCount
     })
@@ -38,7 +47,7 @@ export const processResolvedInputListBatch = async (
   }
 
   const { ok, incomplete, fail, failureExitCode } = await processBatch(
-    resolvedBatch.selectedUrls,
+    batchPlan.items,
     'inputs',
     command,
     opts,
@@ -51,7 +60,9 @@ export const processResolvedInputListBatch = async (
       }, batchItem),
     {
       source: resolvedBatch.source,
-      selectedItems: resolvedBatch.selectedItems,
+      ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+      initialEntries: batchPlan.initialEntries,
+      resultEntryIndexes: batchPlan.resultEntryIndexes,
       concurrency: opts.batchConcurrency,
       totalCount: resolvedBatch.totalCount
     }

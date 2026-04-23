@@ -3,7 +3,8 @@ import type { HumanLogTable, LogLevel, Logger } from '~/logger/types'
 import type {
   EffectiveSttProviderConcurrency,
   ProviderFailure,
-  SttCompletionStatus
+  SttCompletionStatus,
+  SttProviderState
 } from '~/types'
 import { formatSttTargetLabel } from './stt-targets'
 
@@ -35,6 +36,7 @@ type SttRunStatusSummary = {
   succeeded: number
   failed: number
   missing: number
+  skipped: number
 }
 
 type SttProviderConcurrencySummary = {
@@ -129,12 +131,14 @@ export const buildSttRunStatusRows = (
   succeeded: number
   failed: number
   missing: number
+  skipped: number
 }> => [{
   completionStatus: summary.completionStatus,
   requested: summary.requested,
   succeeded: summary.succeeded,
   failed: summary.failed,
-  missing: summary.missing
+  missing: summary.missing,
+  skipped: summary.skipped
 }]
 
 export const buildSttRunStatusTable = (
@@ -142,7 +146,7 @@ export const buildSttRunStatusTable = (
 ): HumanLogTable =>
   createHumanTable(
     buildSttRunStatusRows(summary),
-    ['completionStatus', 'requested', 'succeeded', 'failed', 'missing']
+    ['completionStatus', 'requested', 'succeeded', 'failed', 'missing', 'skipped']
   )
 
 export const logSttRunStatus = (
@@ -225,6 +229,44 @@ export const logSttProviderFailures = (
         status: failure.status,
         retryable: failure.retryable,
         detail: failure.message
+      }))
+    }
+  })
+}
+
+export const buildSttProviderSkipTable = (
+  skippedProviders: ReadonlyArray<Pick<SttProviderState, 'service' | 'model' | 'lastError'>>
+): HumanLogTable =>
+  createHumanTable(
+    skippedProviders.map((state) => ({
+      provider: formatSttTargetLabel(state),
+      stage: state.lastError?.stage ?? '',
+      status: state.lastError?.status ?? '',
+      retryable: state.lastError?.retryable ?? false,
+      detail: state.lastError?.message ?? 'skipped'
+    })),
+    ['provider', 'stage', 'status', 'retryable', 'detail']
+  )
+
+export const logSttProviderSkips = (
+  logger: TableLogger,
+  skippedProviders: ReadonlyArray<Pick<SttProviderState, 'service' | 'model' | 'lastError'>>,
+  level: LogLevel = 'warn'
+): void => {
+  if (skippedProviders.length === 0) {
+    return
+  }
+
+  logger.write(level, 'Provider Skips', {
+    category: 'pipeline',
+    humanTable: buildSttProviderSkipTable(skippedProviders),
+    metadata: {
+      skipped: skippedProviders.map((state) => ({
+        provider: formatSttTargetLabel(state),
+        stage: state.lastError?.stage,
+        status: state.lastError?.status,
+        retryable: state.lastError?.retryable ?? false,
+        detail: state.lastError?.message ?? 'skipped'
       }))
     }
   })

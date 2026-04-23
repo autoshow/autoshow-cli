@@ -1,33 +1,14 @@
 import type { ClercFlagsDefinition } from 'clerc'
 import {
   SUPPORTED_LLAMA_MODELS,
-  SUPPORTED_AWS_STT_MODELS,
-  SUPPORTED_DEAPI_STT_MODELS,
-  SUPPORTED_DEEPINFRA_STT_MODELS,
-  SUPPORTED_ELEVENLABS_STT_MODELS,
-  SUPPORTED_GCLOUD_STT_MODELS,
-  SUPPORTED_DEEPGRAM_STT_MODELS,
-  SUPPORTED_SONIOX_STT_MODELS,
-  SUPPORTED_SPEECHMATICS_STT_MODELS,
-  SUPPORTED_REV_STT_MODELS,
-  SUPPORTED_GLADIA_STT_MODELS,
-  SUPPORTED_GROQ_STT_MODELS,
-  SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_ANTHROPIC_MODELS,
-  SUPPORTED_ANTHROPIC_OCR_MODELS,
-  SUPPORTED_GEMINI_OCR_MODELS,
-  SUPPORTED_MISTRAL_OCR_MODELS,
-  SUPPORTED_OPENAI_OCR_MODELS,
-  SUPPORTED_ASSEMBLYAI_STT_MODELS,
-  SUPPORTED_MISTRAL_STT_MODELS,
-  SUPPORTED_HAPPYSCRIBE_STT_MODELS,
-  SUPPORTED_SUPADATA_STT_MODELS,
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_GEMINI_MODELS,
   SUPPORTED_GROK_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
+import { getStep2ProviderFlags } from '~/cli/commands/process-steps/step-2-shared/provider-registry'
 
 export const priceFlag = {
   price: {
@@ -63,19 +44,9 @@ export const batchFlags = {
 } as const satisfies ClercFlagsDefinition
 
 export const transcriptionFlags = {
-  whisper: {
-    description: 'Local whisper.cpp model (free): tiny|base|small|medium|large-v3-turbo',
-    type: [String] as [StringConstructor],
-    default: ['tiny'] as string[]
-  },
+  ...getStep2ProviderFlags('stt'),
   'youtube-captions': {
     description: 'Prefer English YouTube captions before STT when available; falls back to the normal STT provider path',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  reverb: {
-    description: 'Use Reverb ASR for transcription',
     type: Boolean,
     default: false,
     negatable: false
@@ -85,22 +56,6 @@ export const transcriptionFlags = {
     type: String,
     default: '0.5'
   },
-  'gcloud-stt': {
-    description: buildModelDescription('Google Cloud STT model', SUPPORTED_GCLOUD_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'aws-stt': {
-    description: buildModelDescription('AWS Transcribe STT model', SUPPORTED_AWS_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'deepinfra-stt': {
-    description: buildModelDescription('DeepInfra Whisper STT model (API, billed)', SUPPORTED_DEEPINFRA_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'deapi-stt': {
-    description: buildModelDescription('deAPI STT model', SUPPORTED_DEAPI_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'aws-region': {
     description: 'AWS region for Amazon Transcribe and the configured S3 bucket (for example us-east-1)',
     type: String
@@ -109,53 +64,9 @@ export const transcriptionFlags = {
     description: 'S3 bucket used for Amazon Transcribe input/output staging',
     type: String
   },
-  'elevenlabs-stt': {
-    description: buildModelDescription('ElevenLabs STT model', SUPPORTED_ELEVENLABS_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'deepgram-stt': {
-    description: buildModelDescription('Deepgram STT model', SUPPORTED_DEEPGRAM_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'soniox-stt': {
-    description: buildModelDescription('Soniox STT model', SUPPORTED_SONIOX_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'speechmatics-stt': {
-    description: buildModelDescription('Speechmatics STT model', SUPPORTED_SPEECHMATICS_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'rev-stt': {
-    description: buildModelDescription('Rev STT model', SUPPORTED_REV_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'groq-stt': {
-    description: buildModelDescription('Groq Whisper STT model (API, billed)', SUPPORTED_GROQ_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'mistral-stt': {
-    description: buildModelDescription('Mistral STT model', SUPPORTED_MISTRAL_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'assemblyai-stt': {
-    description: buildModelDescription('AssemblyAI STT model', SUPPORTED_ASSEMBLYAI_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'gladia-stt': {
-    description: buildModelDescription('Gladia STT model', SUPPORTED_GLADIA_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'happyscribe-stt': {
-    description: buildModelDescription('Happy Scribe automatic STT model (fixed en-US only)', SUPPORTED_HAPPYSCRIBE_STT_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'happyscribe-organization-id': {
     description: 'Happy Scribe organization/workspace ID; required when the API key can access multiple organizations',
     type: String
-  },
-  'supadata-stt': {
-    description: buildModelDescription('Supadata STT mode', SUPPORTED_SUPADATA_STT_MODELS),
-    type: [String] as [StringConstructor]
   },
   'supadata-lang': {
     description: 'Supadata preferred transcript language (ISO 639-1); only used with auto/native modes',
@@ -249,7 +160,8 @@ export const promptFlag = {
   }
 } as const satisfies ClercFlagsDefinition
 
-export const extractFlags = {
+export const ocrInputFlags = {
+  ...getStep2ProviderFlags('ocr'),
   lang: {
     description: 'Tesseract language(s) like eng+fra (default: eng)',
     type: String,
@@ -263,38 +175,6 @@ export const extractFlags = {
   password: {
     description: 'Password for encrypted PDFs',
     type: String
-  },
-  ocrmypdf: {
-    description: 'Use OCRmyPDF engine for extraction (auto-converts EPUB/image inputs to PDF; installed lazily on first use)',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'paddle-ocr': {
-    description: 'Use PaddleOCR engine for extraction (PDF, EPUB, image; installed lazily on first use)',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'mistral-ocr': {
-    description: buildModelDescription('Mistral OCR model', SUPPORTED_MISTRAL_OCR_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'glm-ocr': {
-    description: buildModelDescription('GLM OCR model', SUPPORTED_GLM_OCR_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'openai-ocr': {
-    description: buildModelDescription('OpenAI OCR model', SUPPORTED_OPENAI_OCR_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'anthropic-ocr': {
-    description: buildModelDescription('Anthropic OCR model', SUPPORTED_ANTHROPIC_OCR_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'gemini-ocr': {
-    description: buildModelDescription('Gemini OCR model', SUPPORTED_GEMINI_OCR_MODELS),
-    type: [String] as [StringConstructor]
   },
   chapters: {
     description: 'EPUB native text runs and PDF autodetection: write chapter files under chapters/',
@@ -319,7 +199,7 @@ export const articleFlags = {
   }
 } as const satisfies ClercFlagsDefinition
 
-export const advancedExtractFlags = {
+export const ocrTuningFlags = {
   dpi: {
     description: 'Render DPI for OCR pages (default: 300)',
     type: String,

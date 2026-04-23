@@ -57,13 +57,15 @@ describe('table logging builders', () => {
       requested: 4,
       succeeded: 3,
       failed: 1,
-      missing: 1
+      missing: 1,
+      skipped: 0
     })).toEqual([{
       completionStatus: 'incomplete',
       requested: 4,
       succeeded: 3,
       failed: 1,
-      missing: 1
+      missing: 1,
+      skipped: 0
     }])
   })
 

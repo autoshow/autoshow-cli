@@ -1,39 +1,11 @@
 import type { OcrPolicy, ProviderSpec, RuntimeOptions } from '~/types'
-
-const appendProviderSpec = (
-  specs: ProviderSpec[],
-  spec: ProviderSpec
-): void => {
-  const key = `${spec.provider}:${spec.model ?? ''}`
-  if (specs.some((entry) => `${entry.provider}:${entry.model ?? ''}` === key)) {
-    return
-  }
-  specs.push(spec)
-}
+import { collectStep2ProviderSpecs, type Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
 
 export const collectOcrProviderSpecs = (
-  options: Pick<RuntimeOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'mistralOcrModels' | 'glmOcrModel' | 'glmOcrModels' | 'openaiOcrModel' | 'openaiOcrModels' | 'anthropicOcrModel' | 'anthropicOcrModels' | 'geminiOcrModel' | 'geminiOcrModels'>
+  options: Pick<RuntimeOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'step2SelectionOrigins' | 'mistralOcrModel' | 'mistralOcrModels' | 'glmOcrModel' | 'glmOcrModels' | 'openaiOcrModel' | 'openaiOcrModels' | 'anthropicOcrModel' | 'anthropicOcrModels' | 'geminiOcrModel' | 'geminiOcrModels'>,
+  filter?: Step2ProviderSelectionFilter
 ): ProviderSpec[] => {
-  const specs: ProviderSpec[] = []
-  const appendModels = (provider: ProviderSpec['provider'], models: string[] | undefined, fallback?: string): void => {
-    for (const model of models ?? (fallback ? [fallback] : [])) {
-      appendProviderSpec(specs, { provider, model })
-    }
-  }
-
-  if (options.useOcrmypdf) {
-    appendProviderSpec(specs, { provider: 'ocrmypdf', model: 'ocrmypdf' })
-  }
-  if (options.usePaddleOcr) {
-    appendProviderSpec(specs, { provider: 'paddle-ocr', model: 'paddle-ocr' })
-  }
-  appendModels('mistral-ocr', options.mistralOcrModels, options.mistralOcrModel)
-  appendModels('glm-ocr', options.glmOcrModels, options.glmOcrModel)
-  appendModels('openai-ocr', options.openaiOcrModels, options.openaiOcrModel)
-  appendModels('anthropic-ocr', options.anthropicOcrModels, options.anthropicOcrModel)
-  appendModels('gemini-ocr', options.geminiOcrModels, options.geminiOcrModel)
-
-  return specs
+  return collectStep2ProviderSpecs('ocr', options as Record<string, unknown>, filter)
 }
 
 export const buildOcrPolicy = (

@@ -1,5 +1,5 @@
 import { defineCommand } from 'clerc'
-import { extractCommandFlags } from '~/cli/flags'
+import { ocrCommandFlags } from '~/cli/flags'
 import { handleProcessTarget } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { validateEpubInspectCommandFlags } from './command-validation'
 
@@ -9,10 +9,11 @@ export const ocrCommand = defineCommand({
   name: 'ocr',
   description: 'Extract text from PDF, EPUB, and image files',
   parameters: inputParameter,
-  flags: extractCommandFlags,
+  flags: ocrCommandFlags,
   help: {
     examples: [
-      ['bun as ocr document.pdf', 'Extract text from PDF with Tesseract'],
+      ['bun as ocr document.pdf', 'Extract text from PDF with the default Tesseract OCR path'],
+      ['bun as ocr document.pdf --tesseract-ocr', 'Extract text from PDF with Tesseract explicitly'],
       ['bun as ocr document.pdf --mistral-ocr mistral-ocr-2512', 'Extract with Mistral OCR API'],
       ['bun as ocr document.pdf --glm-ocr glm-ocr', 'Extract with GLM OCR API'],
       ['bun as ocr document.pdf --openai-ocr gpt-5.4-nano', 'Extract with OpenAI OCR API'],

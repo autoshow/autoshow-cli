@@ -1,6 +1,7 @@
 import type { SttTarget } from '~/types'
 import { ensureProviderReady } from '~/features/bootstrap-broker'
 import { ensureAwsSttSetup } from './stt-services/aws/aws'
+import { getStep2BootstrapProviderId } from '../step-2-shared/provider-registry'
 
 export {
   downloadWhisperModel
@@ -13,37 +14,22 @@ const toBootstrapProviderId = (
     case 'whisper':
       return `whisper:${target.model}`
     case 'reverb':
-      return 'reverb'
     case 'gcloud':
-      return 'gcloud-stt'
     case 'aws':
-      return 'aws-stt'
     case 'deepinfra':
-      return 'deepinfra-stt'
     case 'deapi':
-      return 'deapi-stt'
     case 'elevenlabs':
-      return 'elevenlabs-stt'
     case 'deepgram':
-      return 'deepgram-stt'
     case 'soniox':
-      return 'soniox-stt'
     case 'speechmatics':
-      return 'speechmatics-stt'
     case 'rev':
-      return 'rev-stt'
     case 'groq':
-      return 'groq-stt'
     case 'mistral':
-      return 'mistral-stt'
     case 'assemblyai':
-      return 'assemblyai-stt'
     case 'gladia':
-      return 'gladia-stt'
     case 'happyscribe':
-      return 'happyscribe-stt'
     case 'supadata':
-      return 'supadata-stt'
+      return getStep2BootstrapProviderId('stt', target.service) ?? ''
     case 'youtube-captions':
       return ''
   }

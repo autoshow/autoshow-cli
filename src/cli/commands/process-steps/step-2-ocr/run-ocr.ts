@@ -49,6 +49,14 @@ import { buildPdfChapterArtifacts } from './pdf/chapters'
 import { isOfficeTextUsable } from './ocr-utils/page-triage'
 import { estimateTokens } from '~/utils/text-utils'
 import { getExtractLimits } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import {
+  CHAPTER_EXPORT_FLAGS_IGNORED_WARNING,
+  CSV_OCR_FLAGS_IGNORED_WARNING,
+  EPUB_EXPORT_FLAGS_IGNORED_INSPECT_WARNING,
+  EPUB_EXPORT_FLAGS_IGNORED_OCR_WARNING,
+  EPUB_INSPECT_NON_EPUB_INFO,
+  PDF_LENGTH_WITHOUT_CHAPTERS_WARNING
+} from '../step-2-shared/inactive-flag-warnings'
 
 const ZIP_XML_FORMATS = new Set(['docx', 'pptx', 'xlsx', 'odf'] as const)
 const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
@@ -117,7 +125,7 @@ const hasHostedOcr = (opts: ExtractionOptions): boolean =>
   hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts) || hasAnthropicOcr(opts) || hasGeminiOcr(opts)
 
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
-  opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
+  opts.useTesseract === true || opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
 
 const hasEpubExportFlags = (opts: ExtractionOptions): boolean =>
   opts.epubChapterFiles === true || typeof opts.epubChunkLimitChars === 'number'
@@ -820,7 +828,7 @@ export const runOcr = async (
   }
 
   if (step1Metadata.format !== 'epub' && (useEpubBun || useEpubCalibre)) {
-    l.info('EPUB inspect flag was provided for a non-EPUB input. Falling back to normal extract flow for this file.')
+    l.info(EPUB_INSPECT_NON_EPUB_INFO)
   }
 
   const format = step1Metadata.format
@@ -829,10 +837,10 @@ export const runOcr = async (
   const pdfChunkOnlyRequested = format === 'pdf' && opts.epubChapterFiles !== true && typeof opts.epubChunkLimitChars === 'number'
 
   if (format !== 'epub' && format !== 'pdf' && epubExportFlagsActive) {
-    l.warn('Chapter export flags (--chapters, --length) are ignored for inputs other than EPUB and PDF.')
+    l.warn(CHAPTER_EXPORT_FLAGS_IGNORED_WARNING)
   }
   if (pdfChunkOnlyRequested) {
-    l.warn('For PDF inputs, --length is only applied when --chapters is also set.')
+    l.warn(PDF_LENGTH_WITHOUT_CHAPTERS_WARNING)
   }
 
   if (typeof opts.preparedMarkdown === 'string' && opts.preparedMarkdown.trim().length > 0) {
@@ -848,7 +856,7 @@ export const runOcr = async (
   // ─── EPUB inspect mode (--epub-bun or --epub-calibre) ─────────────────────
   else if (useEpubInspect) {
     if (epubExportFlagsActive) {
-      l.warn('EPUB export flags (--chapters, --length) are ignored when using EPUB inspect mode.')
+      l.warn(EPUB_EXPORT_FLAGS_IGNORED_INSPECT_WARNING)
     }
     if (useEpubCalibre) {
       l.info('Inspecting EPUB with Calibre tools')
@@ -893,7 +901,7 @@ export const runOcr = async (
   // ─── EPUB with OCR flag → convert to PDF first ───────────────────────────
   else if (format === 'epub' && hasOcrFlag(opts)) {
     if (epubExportFlagsActive) {
-      l.warn('EPUB export flags (--chapters, --length) are ignored when an OCR engine is selected for EPUB input.')
+      l.warn(EPUB_EXPORT_FLAGS_IGNORED_OCR_WARNING)
     }
     inputFamily = 'epub'
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-epub-ocr-'))
@@ -1011,7 +1019,7 @@ export const runOcr = async (
   else if (format === 'csv') {
     inputFamily = 'csv'
     if (hasOcrFlag(opts)) {
-      l.warn('OCR flags are ignored for CSV inputs (CSV content is read as raw text)')
+      l.warn(CSV_OCR_FLAGS_IGNORED_WARNING)
     }
     const text = await Bun.file(filePath).text()
     pages = [{ pageNumber: 1, method: 'text', text }]

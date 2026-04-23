@@ -6,15 +6,15 @@ import {
   buildOptsFromFlags,
   classifyTopLevelTarget,
   collectInputFiles,
-  isDocumentByExtension,
   isInputDirectoryPath,
   isDocumentLikeTarget,
   isHtmlArticleTarget,
+  planBatchInputsForCommand,
   processBatch,
+  resolveInputRoutingForCommand,
   readInputList
 } from './target-utils'
-import { processResolvedInputListBatch, resolveInputListBatch } from './url-list-target'
-import { handleDirectoryTargetBatch } from './directory-target'
+import { resolveInputListBatch } from './url-list-target'
 import { resolveListBatchItems } from './list-batch-resolver'
 import { resolveYoutubeCollectionItems } from './youtube-collection-target'
 import { handleSingleTarget, processSingleTarget } from './single-target'
@@ -28,11 +28,12 @@ import { collectTtsTargets, getTtsArtifactFileName } from '~/cli/commands/proces
 import { collectImageTargets } from '~/cli/commands/process-steps/step-5-image/image-targets'
 import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
 import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
-import type { AggregatedPriceEstimate, ResolvedProcessTargetPlan } from '~/types'
+import type { AggregatedPriceEstimate, BatchItem, BatchSource, ResolvedBatch, ResolvedProcessTargetPlan } from '~/types'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-stt/stt-targets'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-ocr/ocr-targets'
 import { collectTextInputFiles, isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
+import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-shared/inactive-flag-warnings'
 
 const runWithConcurrency = async <T,>(
   items: T[],
@@ -73,15 +74,6 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
 
-const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
-  opts.useOcrmypdf
-  || opts.usePaddleOcr
-  || typeof opts.mistralOcrModel === 'string'
-  || typeof opts.glmOcrModel === 'string'
-  || typeof opts.openaiOcrModel === 'string'
-  || typeof opts.anthropicOcrModel === 'string'
-  || typeof opts.geminiOcrModel === 'string'
-
 const getExpectedOcrArtifact = (opts: RuntimeOptions): string => {
   if (opts.out === 'tsv') {
     return 'extraction.tsv'
@@ -107,6 +99,10 @@ const getExpectedOcrExportArtifacts = (opts: RuntimeOptions): string[] => {
 }
 
 export const buildExpectedFilesList = async (command: ProcessCommand, opts: RuntimeOptions, resolvedTarget?: string): Promise<string[]> => {
+  const routing = typeof resolvedTarget === 'string'
+    ? await resolveInputRoutingForCommand(command === 'download' || command === 'metadata' ? 'write' : command, resolvedTarget, opts)
+    : undefined
+
   if (command === 'metadata') {
     if (!opts.save) {
       return [opts.markdown ? 'metadata (logged to terminal as Markdown frontmatter YAML)' : 'metadata (logged to terminal)']
@@ -120,7 +116,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   if (isOcrCommand(command)) {
     const ocrArtifact = getExpectedOcrArtifact(opts)
     const ocrExportArtifacts = getExpectedOcrExportArtifacts(opts)
-    const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
+    const htmlArticleInput = routing?.family === 'html_article'
     if (opts.useEpubBun || opts.useEpubCalibre) {
       return ['run.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)', ...ocrExportArtifacts]
     }
@@ -172,14 +168,13 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   }
   const summaryFile = 'text.json'
   const documentWrite = command === 'write'
-    && typeof resolvedTarget === 'string'
-    && await isDocumentLikeTarget(resolvedTarget, opts)
+    && (routing?.family === 'document' || routing?.family === 'html_article')
   if (documentWrite) {
     const files = opts.useEpubBun || opts.useEpubCalibre
       ? [summaryFile, 'run.json (includes EPUB inspection payload)']
       : [getExpectedOcrArtifact(opts), summaryFile]
     files.push(...getExpectedOcrExportArtifacts(opts))
-    const htmlArticleInput = typeof resolvedTarget === 'string' && await isHtmlArticleTarget(resolvedTarget, opts)
+    const htmlArticleInput = routing?.family === 'html_article'
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
       files.push('providers/<service>-<model>/result.json')
     }
@@ -249,7 +244,7 @@ const validateWriteStep2ProviderSelection = (command: ProcessCommand, opts: Runt
 
   const sttTargets = collectSttTargets(opts)
   if (sttTargets.length > 1) {
-    throw CLIUsageError('write accepts at most one STT provider (--whisper, --reverb, --*-stt).')
+    throw CLIUsageError('write accepts at most one STT provider (--whisper-stt, --reverb-stt, --*-stt).')
   }
 
   const ocrTargets = collectExplicitOcrTargets(opts)
@@ -291,9 +286,6 @@ const resolveProcessTargetPlan = async (
 
   if (topLevel.kind === 'directory') {
     const allFiles = await collectInputFiles(resolvedTarget)
-    const files = isOcrCommand(command)
-      ? allFiles.filter(file => isDocumentByExtension(file))
-      : allFiles
 
     const includeUrlsFromInputDir = isInputDirectoryPath(resolvedTarget)
     const listedInputEntries = includeUrlsFromInputDir
@@ -303,7 +295,7 @@ const resolveProcessTargetPlan = async (
       ? (await resolveListBatchItems(listedInputEntries, `${resolvedTarget}/2-urls.md`, command, opts)).selectedUrls
       : []
 
-    const all = includeUrlsFromInputDir ? [...files, ...listedInputs] : files
+    const all = includeUrlsFromInputDir ? [...allFiles, ...listedInputs] : allFiles
     if (all.length === 0) {
       l.warn(`No inputs found in ${resolvedTarget}`)
     }
@@ -330,16 +322,170 @@ const resolveProcessTargetPlan = async (
   return { kind: 'single', target: resolvedTarget }
 }
 
-const getPlanTargets = (plan: ResolvedProcessTargetPlan): string[] => {
-  if (plan.kind === 'directory' || plan.kind === 'youtube_collection') {
-    return plan.targets
+type BatchExecutionPlan = {
+  label: string
+  items: string[]
+  selectedItems?: Array<BatchItem | undefined>
+  initialEntries: Record<string, unknown>[]
+  resultEntryIndexes: number[]
+  source?: BatchSource
+  totalCount?: number
+}
+
+const planResolvedBatchExecution = async (
+  resolvedBatch: ResolvedBatch,
+  command: ProcessCommand,
+  opts: RuntimeOptions,
+  label: string
+): Promise<BatchExecutionPlan> => {
+  const batchPlan = await planBatchInputsForCommand(
+    command,
+    resolvedBatch.selectedUrls,
+    opts,
+    resolvedBatch.selectedItems
+  )
+
+  return {
+    label,
+    items: batchPlan.items,
+    ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+    initialEntries: batchPlan.initialEntries,
+    resultEntryIndexes: batchPlan.resultEntryIndexes,
+    source: resolvedBatch.source,
+    totalCount: resolvedBatch.totalCount
+  }
+}
+
+const planDirectoryBatchExecution = async (
+  resolvedTarget: string,
+  command: ProcessCommand,
+  opts: RuntimeOptions
+): Promise<BatchExecutionPlan | undefined> => {
+  const allFiles = command === 'write' && opts.textInput
+    ? await collectTextInputFiles(resolvedTarget)
+    : await collectInputFiles(resolvedTarget)
+  const includeUrlsFromInputDir = !opts.textInput && isInputDirectoryPath(resolvedTarget)
+  const listedInputEntries = includeUrlsFromInputDir ? await readInputList(`${resolvedTarget}/2-urls.md`) : []
+  const resolvedListedInputs = listedInputEntries.length > 0
+    ? await resolveListBatchItems(listedInputEntries, `${resolvedTarget}/2-urls.md`, command, opts)
+    : undefined
+  const listedInputs = resolvedListedInputs?.selectedUrls ?? []
+  const all = includeUrlsFromInputDir ? [...allFiles, ...listedInputs] : allFiles
+
+  if (all.length === 0) {
+    return undefined
   }
 
-  if (plan.kind === 'input_list' || plan.kind === 'resolved_batch') {
-    return plan.resolvedBatch.selectedUrls
+  const selectedItems: Array<BatchItem | undefined> | undefined = includeUrlsFromInputDir
+    ? [
+        ...allFiles.map(() => undefined),
+        ...(resolvedListedInputs?.selectedItems ?? [])
+      ]
+    : undefined
+  const batchPlan = await planBatchInputsForCommand(command, all, opts, selectedItems)
+
+  return {
+    label: command === 'write' && opts.textInput
+      ? 'text'
+      : includeUrlsFromInputDir
+        ? 'input'
+        : 'files',
+    items: batchPlan.items,
+    ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+    initialEntries: batchPlan.initialEntries,
+    resultEntryIndexes: batchPlan.resultEntryIndexes
+  }
+}
+
+const planProcessTargetBatchExecution = async (
+  plan: ResolvedProcessTargetPlan,
+  command: ProcessCommand,
+  opts: RuntimeOptions,
+  resolvedTarget: string
+): Promise<BatchExecutionPlan | undefined> => {
+  if (plan.kind === 'directory') {
+    return await planDirectoryBatchExecution(resolvedTarget, command, opts)
   }
 
-  return [plan.target]
+  if (plan.kind === 'input_list') {
+    return await planResolvedBatchExecution(plan.resolvedBatch, command, opts, 'inputs')
+  }
+
+  if (plan.kind === 'resolved_batch') {
+    return await planResolvedBatchExecution(
+      plan.resolvedBatch,
+      command,
+      opts,
+      plan.resolvedBatch.source.title ?? plan.resolvedBatch.source.sourceKind
+    )
+  }
+
+  if (plan.kind === 'youtube_collection') {
+    const batchPlan = await planBatchInputsForCommand(command, plan.targets, opts)
+    return {
+      label: 'youtube_collection',
+      items: batchPlan.items,
+      ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+      initialEntries: batchPlan.initialEntries,
+      resultEntryIndexes: batchPlan.resultEntryIndexes
+    }
+  }
+
+  return undefined
+}
+
+const executeBatchPlan = async (
+  command: ProcessCommand,
+  opts: RuntimeOptions,
+  batchPlan: BatchExecutionPlan
+): Promise<void> => {
+  if (isSttCommand(command)) {
+    const result = await runSttBatch(
+      batchPlan.items,
+      batchPlan.label,
+      opts,
+      {
+        ...(batchPlan.source ? { source: batchPlan.source } : {}),
+        ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+        ...(typeof batchPlan.totalCount === 'number' ? { totalCount: batchPlan.totalCount } : {}),
+        initialEntries: batchPlan.initialEntries,
+        resultEntryIndexes: batchPlan.resultEntryIndexes,
+        concurrency: opts.batchConcurrency
+      }
+    )
+    throwIfSttBatchIncomplete(result)
+    return
+  }
+
+  const { ok, fail, failureExitCode } = await processBatch(
+    batchPlan.items,
+    batchPlan.label,
+    command,
+    opts,
+    async (commandName, item, batchDir, batchOpts, batchItem) =>
+      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
+        batchChildContext: {
+          batchDir,
+          ...(batchItem ? { batchItem } : {})
+        }
+      }, batchItem),
+    {
+      ...(batchPlan.source ? { source: batchPlan.source } : {}),
+      ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+      ...(typeof batchPlan.totalCount === 'number' ? { totalCount: batchPlan.totalCount } : {}),
+      initialEntries: batchPlan.initialEntries,
+      resultEntryIndexes: batchPlan.resultEntryIndexes,
+      concurrency: opts.batchConcurrency
+    }
+  )
+
+  if (ok === 0 && fail > 0) {
+    const error = new Error(`Batch processing failed for ${fail} item(s)`)
+    if (failureExitCode !== undefined) {
+      ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
+    }
+    throw error
+  }
 }
 
 const reportSuitePriceEstimate = async (
@@ -417,7 +563,12 @@ export const handleProcessTarget = async (
   }
 
   const plan = await resolveProcessTargetPlan(command, resolvedTarget, opts)
-  const preflightTargets = getPlanTargets(plan)
+  const batchPlan = await planProcessTargetBatchExecution(plan, command, opts, resolvedTarget)
+  const preflightTargets = batchPlan
+    ? batchPlan.items
+    : plan.kind === 'single'
+      ? [plan.target]
+      : []
   const shouldRunPreflight = shouldRunCommandPreflight(opts, maxCents)
 
   if (opts.price) {
@@ -428,8 +579,8 @@ export const handleProcessTarget = async (
     if (preflightTargets.length === 1) {
       const estimate = await buildAggregatedPriceEstimate(command, preflightTargets[0] as string, opts, undefined)
       l.report.estimate(estimate)
-      if (typeof preflightTargets[0] === 'string' && await isHtmlArticleTarget(preflightTargets[0] as string, opts) && hasIgnoredHtmlOcrFlags(opts)) {
-        l.warn('OCR flags are ignored for HTML/article inputs during extraction pricing and execution.')
+      if (typeof preflightTargets[0] === 'string' && await isHtmlArticleTarget(preflightTargets[0] as string, opts) && hasConfiguredOcrProviderSelection(opts)) {
+        l.warn(`${HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING.slice(0, -1)} during extraction pricing and execution.`)
       }
       l.report.expectedOutput('./output/<timestamp>_<label>/', await buildExpectedFilesList(command, opts, preflightTargets[0] as string))
       return
@@ -458,92 +609,19 @@ export const handleProcessTarget = async (
     }
   }
 
-  if (plan.kind === 'directory') {
-    await handleDirectoryTargetBatch(resolvedTarget, command, opts)
-    return
-  }
-  if (plan.kind === 'input_list') {
-    await processResolvedInputListBatch(plan.resolvedBatch, command, opts)
+  if (plan.kind !== 'single' && !batchPlan) {
     return
   }
 
-  if (plan.kind === 'resolved_batch') {
-    const resolved = plan.resolvedBatch
-    if (isSttCommand(command)) {
-      const result = await runSttBatch(
-        resolved.selectedUrls,
-        resolved.source.title ?? resolved.source.sourceKind,
-        opts,
-        {
-          source: resolved.source,
-          selectedItems: resolved.selectedItems,
-          concurrency: opts.batchConcurrency,
-          totalCount: resolved.totalCount
-        }
-      )
-      throwIfSttBatchIncomplete(result)
+  if (batchPlan) {
+    if (plan.kind === 'directory' && batchPlan.initialEntries.length === 0) {
+      l.warn(`No inputs found in ${resolvedTarget}`)
       return
     }
-
-    const { ok, incomplete, fail, failureExitCode } = await processBatch(
-      resolved.selectedUrls,
-      resolved.source.title ?? resolved.source.sourceKind,
-      command,
-      opts,
-      async (commandName, item, batchDir, batchOpts, batchItem) =>
-        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
-          batchChildContext: {
-            batchDir,
-            ...(batchItem ? { batchItem } : {})
-          }
-        }, batchItem),
-      {
-        source: resolved.source,
-        selectedItems: resolved.selectedItems,
-        concurrency: opts.batchConcurrency,
-        totalCount: resolved.totalCount
-      }
-    )
-    if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && ok === 0 && fail > 0)) {
-      const problemCount = isSttCommand(command) ? incomplete + fail : fail
-      const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
-      if (failureExitCode !== undefined) {
-        ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
-      }
-      throw error
+    if (plan.kind === 'youtube_collection') {
+      l.info(`Detected YouTube collection URL, processing ${batchPlan.initialEntries.length} videos`)
     }
-    return
-  }
-
-  if (plan.kind === 'youtube_collection') {
-    l.info(`Detected YouTube collection URL, processing ${plan.targets.length} videos`)
-    if (isSttCommand(command)) {
-      const result = await runSttBatch(plan.targets, 'youtube_collection', opts)
-      throwIfSttBatchIncomplete(result)
-      return
-    }
-
-    const { incomplete, fail, failureExitCode } = await processBatch(
-      plan.targets,
-      'youtube_collection',
-      command,
-      opts,
-      async (commandName, item, batchDir, batchOpts, batchItem) =>
-        await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
-          batchChildContext: {
-            batchDir,
-            ...(batchItem ? { batchItem } : {})
-          }
-        }, batchItem)
-    )
-    if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && plan.targets.length > 0 && fail === plan.targets.length)) {
-      const problemCount = isSttCommand(command) ? incomplete + fail : fail
-      const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
-      if (failureExitCode !== undefined) {
-        ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
-      }
-      throw error
-    }
+    await executeBatchPlan(command, opts, batchPlan)
     return
   }
 

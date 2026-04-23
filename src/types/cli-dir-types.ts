@@ -1,4 +1,5 @@
-import type { ProcessCommand, RuntimeOptions } from '~/types/cli-types'
+import type { ProcessCommand, RuntimeOptions, Step2ProviderSelectionOrigin } from '~/types/cli-types'
+import type { HtmlArticleBackend } from './process-types'
 
 export type BatchItem = {
   id: string
@@ -68,9 +69,11 @@ export type BatchProcessResult = {
 
 export type BatchRunOptions = {
   source?: BatchSource
-  selectedItems?: BatchItem[]
+  selectedItems?: Array<BatchItem | undefined>
   concurrency?: number
   totalCount?: number
+  initialEntries?: Record<string, unknown>[]
+  resultEntryIndexes?: number[]
 }
 
 export type ResolvedLLMConfig = {
@@ -99,6 +102,57 @@ export type InputKind =
   | 'url_html_article'
   | 'local_media'
   | 'local_document'
+
+export type InputFamily = 'media' | 'document' | 'html_article' | 'unsupported'
+
+export type Step2Modality = 'media' | 'document'
+export type Step2Route = 'stt' | 'ocr' | 'article' | 'native-document' | 'unsupported'
+
+export type ResolvedStep2Provider = {
+  service: string
+  model: string
+  origin?: Step2ProviderSelectionOrigin | undefined
+}
+
+export type ResolvedStep2Execution =
+  | {
+      route: 'stt'
+      sourceKind: 'media'
+      providers: ResolvedStep2Provider[]
+    }
+  | {
+      route: 'ocr'
+      sourceKind: 'pdf' | 'image' | 'epub-pdf' | 'office-pdf' | 'rtf-pdf' | 'cbz-images'
+      providers: ResolvedStep2Provider[]
+    }
+  | {
+      route: 'article'
+      sourceKind: 'article'
+      backend: HtmlArticleBackend
+    }
+  | {
+      route: 'native-document'
+      sourceKind: 'epub' | 'epub-inspect' | 'office' | 'csv'
+    }
+  | {
+      route: 'unsupported'
+      sourceKind: 'unsupported'
+    }
+
+export type ResolvedInputRouting = {
+  family: InputFamily
+  step2Route: Step2Route
+  resolvedStep2: ResolvedStep2Execution
+  supported: boolean
+  skipReason?: string | undefined
+}
+
+export type PlannedBatchInput = {
+  input: string
+  inputFamily: InputFamily
+  resolvedStep2: ResolvedStep2Execution
+  batchItem?: BatchItem | undefined
+}
 
 export type YtDlpFlatEntry = {
   id?: string

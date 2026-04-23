@@ -221,6 +221,7 @@ test('stt youtube channel with --youtube-captions processes every selected video
     items: 2,
     captionBacked: 2,
     sttFallback: 0,
+    skipped: 0,
     incomplete: 0,
     failed: 0
   })

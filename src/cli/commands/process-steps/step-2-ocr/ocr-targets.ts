@@ -1,13 +1,16 @@
-import type { ExtractionOptions, OcrTarget } from '~/types'
+import type { ExtractionOptions, OcrTarget, Step2ProviderSelectionOrigin } from '~/types'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { collectOcrProviderSpecs } from './cli'
+import type { Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
 
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'> & {
+  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'> & {
+    step2SelectionOrigins?: Partial<Record<string, Step2ProviderSelectionOrigin>> | undefined
     provider?: string[] | undefined
-  }
+  },
+  filter?: Step2ProviderSelectionFilter
 ): OcrTarget[] => {
-  return collectOcrProviderSpecs(opts as Parameters<typeof collectOcrProviderSpecs>[0]).map((spec) => ({
+  return collectOcrProviderSpecs(opts as Parameters<typeof collectOcrProviderSpecs>[0], filter).map((spec) => ({
     service: (spec.provider === 'mistral-ocr'
       ? 'mistral'
         : spec.provider === 'glm-ocr'
@@ -31,6 +34,7 @@ export const buildExtractionOptionsForTarget = (
   target: OcrTarget
 ): ExtractionOptions => ({
   ...opts,
+  useTesseract: target.service === 'tesseract' ? true : undefined,
   useOcrmypdf: target.service === 'ocrmypdf' ? true : undefined,
   usePaddleOcr: target.service === 'paddle-ocr' ? true : undefined,
   mistralOcrModel: target.service === 'mistral' ? target.model : undefined,

@@ -1,4 +1,4 @@
-import type { ProcessCommand, RuntimeOptions } from '~/types'
+import type { AggregatedPriceEstimate, ExtractStepEstimate, ImageStepEstimate, LlmStepEstimate, MusicStepEstimate, ProcessCommand, ResolvedStep2Execution, RuntimeOptions, StepEstimate, SttStepEstimate, TtsStepEstimate, VideoStepEstimate } from '~/types'
 import { isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
@@ -41,27 +41,13 @@ import {
   estimateOpenAIOcrCost
 } from '~/cli/commands/process-steps/step-2-ocr/ocr-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
-import type { SttStepEstimate, ExtractStepEstimate, LlmStepEstimate, TtsStepEstimate, ImageStepEstimate, MusicStepEstimate, VideoStepEstimate, StepEstimate, AggregatedPriceEstimate } from '~/types'
-import { isDocumentLikeTarget, isHtmlArticleTarget } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
+import { resolveInputRoutingForCommand } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { estimatePromptTokensFromText, readPromptFileText } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
+import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-shared/inactive-flag-warnings'
 export type { StepEstimate, AggregatedPriceEstimate } from '~/types'
 
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
-
-const hasIgnoredHtmlOcrFlags = (opts: RuntimeOptions): boolean =>
-  opts.useOcrmypdf
-  || opts.usePaddleOcr
-  || (opts.mistralOcrModels?.length ?? 0) > 0
-  || typeof opts.mistralOcrModel === 'string'
-  || (opts.glmOcrModels?.length ?? 0) > 0
-  || typeof opts.glmOcrModel === 'string'
-  || (opts.openaiOcrModels?.length ?? 0) > 0
-  || typeof opts.openaiOcrModel === 'string'
-  || (opts.anthropicOcrModels?.length ?? 0) > 0
-  || typeof opts.anthropicOcrModel === 'string'
-  || (opts.geminiOcrModels?.length ?? 0) > 0
-  || typeof opts.geminiOcrModel === 'string'
 
 const buildCloudSttEstimate = async (
   provider: string,
@@ -209,104 +195,144 @@ const buildSttEstimates = async (
 
 const buildExtractEstimates = async (
   resolvedTarget: string,
-  opts: RuntimeOptions
+  resolvedStep2: Extract<ResolvedStep2Execution, { route: 'ocr' }>
 ): Promise<ExtractStepEstimate[]> => {
   const estimates: ExtractStepEstimate[] = []
 
-  const mistralModels = opts.mistralOcrModels ?? (opts.mistralOcrModel ? [opts.mistralOcrModel] : [])
-  for (const model of mistralModels) {
-    const estimate = await estimateMistralOcrCost(model, resolvedTarget)
-    const estimation = getExtractEstimation(estimate.provider, estimate.model)
-    estimates.push({
-      step: 'extract',
-      provider: estimate.provider,
-      model: estimate.model,
-      costPer1kPagesCents: estimate.costPer1kPagesCents,
-      pageCount: estimate.pageCount,
-      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-      costMultiplier: estimation.costMultiplier,
-      estimateType: 'exact'
-    })
-  }
+  for (const provider of resolvedStep2.providers) {
+    if (provider.service === 'tesseract') {
+      estimates.push({
+        step: 'extract',
+        provider: 'tesseract',
+        model: provider.model,
+        totalCost: 0,
+        costMultiplier: 1,
+        estimateType: 'exact',
+        note: 'Local Tesseract OCR runs on local CPU and is not billed by AutoShow.'
+      })
+      continue
+    }
 
-  const glmModels = opts.glmOcrModels ?? (opts.glmOcrModel ? [opts.glmOcrModel] : [])
-  for (const model of glmModels) {
-    const estimate = await estimateGlmOcrCost(model, resolvedTarget)
-    const estimation = getExtractEstimation(estimate.provider, estimate.model)
-    estimates.push({
-      step: 'extract',
-      provider: estimate.provider,
-      model: estimate.model,
-      inputCostPer1MCents: estimate.inputCostPer1MCents,
-      outputCostPer1MCents: estimate.outputCostPer1MCents,
-      pageCount: estimate.pageCount,
-      promptTokens: estimate.promptTokens,
-      completionTokens: estimate.completionTokens,
-      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-      costMultiplier: estimation.costMultiplier,
-      estimateType: estimate.estimateType,
-      note: 'Heuristic token estimate based on 4,000 total tokens per page.'
-    })
-  }
+    if (provider.service === 'ocrmypdf') {
+      estimates.push({
+        step: 'extract',
+        provider: 'ocrmypdf',
+        model: provider.model,
+        totalCost: 0,
+        costMultiplier: 1,
+        estimateType: 'exact',
+        note: 'Local OCRmyPDF runs on local CPU and is not billed by AutoShow.'
+      })
+      continue
+    }
 
-  const openaiModels = opts.openaiOcrModels ?? (opts.openaiOcrModel ? [opts.openaiOcrModel] : [])
-  for (const model of openaiModels) {
-    const estimate = await estimateOpenAIOcrCost(model, resolvedTarget)
-    const estimation = getExtractEstimation(estimate.provider, estimate.model)
-    estimates.push({
-      step: 'extract',
-      provider: estimate.provider,
-      model: estimate.model,
-      inputCostPer1MCents: estimate.inputCostPer1MCents,
-      outputCostPer1MCents: estimate.outputCostPer1MCents,
-      pageCount: estimate.pageCount,
-      promptTokens: estimate.promptTokens,
-      completionTokens: estimate.completionTokens,
-      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-      costMultiplier: estimation.costMultiplier,
-      estimateType: estimate.estimateType,
-      note: estimate.note
-    })
-  }
+    if (provider.service === 'paddle-ocr') {
+      estimates.push({
+        step: 'extract',
+        provider: 'paddle-ocr',
+        model: provider.model,
+        totalCost: 0,
+        costMultiplier: 1,
+        estimateType: 'exact',
+        note: 'Local PaddleOCR runs on local CPU/GPU and is not billed by AutoShow.'
+      })
+      continue
+    }
 
-  const anthropicModels = opts.anthropicOcrModels ?? (opts.anthropicOcrModel ? [opts.anthropicOcrModel] : [])
-  for (const model of anthropicModels) {
-    const estimate = await estimateAnthropicOcrCost(model, resolvedTarget)
-    const estimation = getExtractEstimation(estimate.provider, estimate.model)
-    estimates.push({
-      step: 'extract',
-      provider: estimate.provider,
-      model: estimate.model,
-      inputCostPer1MCents: estimate.inputCostPer1MCents,
-      outputCostPer1MCents: estimate.outputCostPer1MCents,
-      pageCount: estimate.pageCount,
-      promptTokens: estimate.promptTokens,
-      completionTokens: estimate.completionTokens,
-      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-      costMultiplier: estimation.costMultiplier,
-      estimateType: estimate.estimateType,
-      note: estimate.note
-    })
-  }
+    if (provider.service === 'mistral') {
+      const estimate = await estimateMistralOcrCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        costPer1kPagesCents: estimate.costPer1kPagesCents,
+        pageCount: estimate.pageCount,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: 'exact'
+      })
+      continue
+    }
 
-  const geminiModels = opts.geminiOcrModels ?? (opts.geminiOcrModel ? [opts.geminiOcrModel] : [])
-  for (const model of geminiModels) {
-    const estimate = await estimateGeminiOcrCost(model, resolvedTarget)
-    const estimation = getExtractEstimation(estimate.provider, estimate.model)
-    estimates.push({
-      step: 'extract',
-      provider: estimate.provider,
-      model: estimate.model,
-      inputCostPer1MCents: estimate.inputCostPer1MCents,
-      outputCostPer1MCents: estimate.outputCostPer1MCents,
-      pageCount: estimate.pageCount,
-      promptTokens: estimate.promptTokens,
-      completionTokens: estimate.completionTokens,
-      totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-      costMultiplier: estimation.costMultiplier,
-      estimateType: estimate.estimateType,
-      note: 'Heuristic token estimate based on 4,000 total tokens per page.'
-    })
+    if (provider.service === 'glm') {
+      const estimate = await estimateGlmOcrCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
+        pageCount: estimate.pageCount,
+        promptTokens: estimate.promptTokens,
+        completionTokens: estimate.completionTokens,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: estimate.estimateType,
+        note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+      })
+      continue
+    }
+
+    if (provider.service === 'openai') {
+      const estimate = await estimateOpenAIOcrCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
+        pageCount: estimate.pageCount,
+        promptTokens: estimate.promptTokens,
+        completionTokens: estimate.completionTokens,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: estimate.estimateType,
+        note: estimate.note
+      })
+      continue
+    }
+
+    if (provider.service === 'anthropic') {
+      const estimate = await estimateAnthropicOcrCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
+        pageCount: estimate.pageCount,
+        promptTokens: estimate.promptTokens,
+        completionTokens: estimate.completionTokens,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: estimate.estimateType,
+        note: estimate.note
+      })
+      continue
+    }
+
+    if (provider.service === 'gemini') {
+      const estimate = await estimateGeminiOcrCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
+        pageCount: estimate.pageCount,
+        promptTokens: estimate.promptTokens,
+        completionTokens: estimate.completionTokens,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: estimate.estimateType,
+        note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+      })
+    }
   }
 
   return estimates
@@ -472,10 +498,12 @@ export const buildAggregatedPriceEstimate = async (
   let totalEstimatedCost = 0
   const notes: string[] = []
 
-  const documentTarget = await isDocumentLikeTarget(resolvedTarget, opts)
-  const htmlArticleTarget = await isHtmlArticleTarget(resolvedTarget, opts)
+  const routing = await resolveInputRoutingForCommand(command === 'download' || command === 'metadata' ? 'write' : command, resolvedTarget, opts)
+  const documentTarget = routing.family === 'document' || routing.family === 'html_article'
+  const resolvedStep2 = routing.resolvedStep2
   const textInputWrite = command === 'write' && opts.textInput
   const documentWrite = command === 'write' && documentTarget && !textInputWrite
+  const isRemoteTarget = /^https?:\/\//i.test(resolvedTarget)
 
   if (!textInputWrite && (isSttCommand(command) || (command === 'write' && !documentWrite))) {
     for (const stt of await buildSttEstimates(resolvedTarget, opts)) {
@@ -487,15 +515,15 @@ export const buildAggregatedPriceEstimate = async (
     }
   }
 
-  if (!textInputWrite && (isOcrCommand(command) || documentWrite) && !htmlArticleTarget) {
-    for (const extract of await buildExtractEstimates(resolvedTarget, opts)) {
+  if (!textInputWrite && (isOcrCommand(command) || documentWrite) && resolvedStep2.route === 'ocr') {
+    for (const extract of await buildExtractEstimates(resolvedTarget, resolvedStep2)) {
       steps.push(extract)
       totalEstimatedCost += extract.totalCost
     }
   }
 
-  if (htmlArticleTarget) {
-    if (opts.urlBackend === 'firecrawl' && resolvedTarget.startsWith('http')) {
+  if (resolvedStep2.route === 'article') {
+    if (resolvedStep2.backend === 'firecrawl' && isRemoteTarget) {
       const estimate = estimateFirecrawlScrapeCost()
       const estimation = getExtractEstimation(estimate.provider, estimate.model)
       const totalCost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
@@ -512,10 +540,10 @@ export const buildAggregatedPriceEstimate = async (
       })
       totalEstimatedCost += totalCost
     }
-    if (opts.urlBackend === 'glm-reader' && resolvedTarget.startsWith('http')) {
+    if (resolvedStep2.backend === 'glm-reader' && isRemoteTarget) {
       notes.push('GLM Reader cost is not estimated locally during preflight.')
     }
-    if (resolvedTarget.startsWith('file://') || !resolvedTarget.startsWith('http')) {
+    if (!isRemoteTarget) {
       if (opts.urlBackend === 'firecrawl') {
         notes.push('Local HTML inputs always use the defuddle backend; --url-backend firecrawl is ignored.')
       }
@@ -523,8 +551,8 @@ export const buildAggregatedPriceEstimate = async (
         notes.push('Local HTML inputs always use the defuddle backend; --url-backend glm-reader is ignored.')
       }
     }
-    if (hasIgnoredHtmlOcrFlags(opts)) {
-      notes.push('OCR flags are ignored for HTML/article inputs.')
+    if (hasConfiguredOcrProviderSelection(opts)) {
+      notes.push(HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING)
     }
   }
 

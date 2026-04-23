@@ -7,27 +7,6 @@ import {
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROK_MODELS,
   SUPPORTED_LLAMA_MODELS,
-  SUPPORTED_WHISPER_MODELS,
-  SUPPORTED_GCLOUD_STT_MODELS,
-  SUPPORTED_AWS_STT_MODELS,
-  SUPPORTED_DEEPINFRA_STT_MODELS,
-  SUPPORTED_DEAPI_STT_MODELS,
-  SUPPORTED_GROQ_STT_MODELS,
-  SUPPORTED_ELEVENLABS_STT_MODELS,
-  SUPPORTED_DEEPGRAM_STT_MODELS,
-  SUPPORTED_SONIOX_STT_MODELS,
-  SUPPORTED_SPEECHMATICS_STT_MODELS,
-  SUPPORTED_REV_STT_MODELS,
-  SUPPORTED_MISTRAL_STT_MODELS,
-  SUPPORTED_ASSEMBLYAI_STT_MODELS,
-  SUPPORTED_GLADIA_STT_MODELS,
-  SUPPORTED_HAPPYSCRIBE_STT_MODELS,
-  SUPPORTED_SUPADATA_STT_MODELS,
-  SUPPORTED_MISTRAL_OCR_MODELS,
-  SUPPORTED_GLM_OCR_MODELS,
-  SUPPORTED_OPENAI_OCR_MODELS,
-  SUPPORTED_ANTHROPIC_OCR_MODELS,
-  SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
@@ -86,11 +65,17 @@ import {
   validateMinimaxVideoModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
+import {
+  getStep2ProviderEntries,
+  getStep2AllShortcutModelExpansions,
+  isStep2BooleanProviderSelected,
+  normalizeStep2ProviderFlagName
+} from '~/cli/commands/process-steps/step-2-shared/provider-registry'
 import { readEnv } from '~/utils/validate/env-utils'
-import type { BatchOrder, BuildOptsDefaults, OutputFormat, RuntimeOptions } from '~/types'
+import type { BatchOrder, BuildOptsDefaults, OutputFormat, RuntimeOptions, Step2ProviderSelectionOrigin } from '~/types'
 
 export const REPEATABLE_MODEL_FLAGS = [
-  'whisper',
+  'whisper-stt',
   'gcloud-stt',
   'aws-stt',
   'deepinfra-stt',
@@ -145,28 +130,13 @@ type AllShortcutFlag =
   | 'all-music'
 
 const REPEATABLE_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
-const ALL_SHORTCUT_MODEL_EXPANSIONS = {
-  whisper: { shortcut: 'all-stt', supported: SUPPORTED_WHISPER_MODELS },
-  'gcloud-stt': { shortcut: 'all-stt', supported: SUPPORTED_GCLOUD_STT_MODELS },
-  'aws-stt': { shortcut: 'all-stt', supported: SUPPORTED_AWS_STT_MODELS },
-  'deepinfra-stt': { shortcut: 'all-stt', supported: SUPPORTED_DEEPINFRA_STT_MODELS },
-  'deapi-stt': { shortcut: 'all-stt', supported: SUPPORTED_DEAPI_STT_MODELS },
-  'groq-stt': { shortcut: 'all-stt', supported: SUPPORTED_GROQ_STT_MODELS },
-  'elevenlabs-stt': { shortcut: 'all-stt', supported: SUPPORTED_ELEVENLABS_STT_MODELS },
-  'deepgram-stt': { shortcut: 'all-stt', supported: SUPPORTED_DEEPGRAM_STT_MODELS },
-  'soniox-stt': { shortcut: 'all-stt', supported: SUPPORTED_SONIOX_STT_MODELS },
-  'speechmatics-stt': { shortcut: 'all-stt', supported: SUPPORTED_SPEECHMATICS_STT_MODELS },
-  'rev-stt': { shortcut: 'all-stt', supported: SUPPORTED_REV_STT_MODELS },
-  'mistral-stt': { shortcut: 'all-stt', supported: SUPPORTED_MISTRAL_STT_MODELS },
-  'assemblyai-stt': { shortcut: 'all-stt', supported: SUPPORTED_ASSEMBLYAI_STT_MODELS },
-  'gladia-stt': { shortcut: 'all-stt', supported: SUPPORTED_GLADIA_STT_MODELS },
-  'happyscribe-stt': { shortcut: 'all-stt', supported: SUPPORTED_HAPPYSCRIBE_STT_MODELS },
-  'supadata-stt': { shortcut: 'all-stt', supported: SUPPORTED_SUPADATA_STT_MODELS },
-  'mistral-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_MISTRAL_OCR_MODELS },
-  'glm-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_GLM_OCR_MODELS },
-  'openai-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_OPENAI_OCR_MODELS },
-  'anthropic-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_ANTHROPIC_OCR_MODELS },
-  'gemini-ocr': { shortcut: 'all-ocr', supported: SUPPORTED_GEMINI_OCR_MODELS },
+const STEP2_ALL_SHORTCUT_MODEL_EXPANSIONS = getStep2AllShortcutModelExpansions()
+const STEP2_PROVIDER_ENTRIES = [
+  ...getStep2ProviderEntries('stt'),
+  ...getStep2ProviderEntries('ocr')
+] as const
+const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { shortcut: AllShortcutFlag, supported: readonly string[] }>> = {
+  ...STEP2_ALL_SHORTCUT_MODEL_EXPANSIONS,
   llama: { shortcut: 'all-llm', supported: SUPPORTED_LLAMA_MODELS },
   openai: { shortcut: 'all-llm', supported: SUPPORTED_OPENAI_MODELS },
   groq: { shortcut: 'all-llm', supported: SUPPORTED_GROQ_MODELS },
@@ -187,7 +157,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS = {
   'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
   'gemini-video': { shortcut: 'all-video', supported: SUPPORTED_GEMINI_VIDEO_MODELS },
   'minimax-video': { shortcut: 'all-video', supported: SUPPORTED_MINIMAX_VIDEO_MODELS }
-} as const satisfies Partial<Record<RepeatableModelFlag, { shortcut: AllShortcutFlag, supported: readonly string[] }>>
+}
 
 const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
   if (!value) return fallback
@@ -227,13 +197,25 @@ const toCamelFlagKey = (key: string): string => {
   return key.replace(/-([a-z0-9])/g, (_match, char: string) => char.toUpperCase())
 }
 
-const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
-  if (key in flags) {
-    return flags[key]
+const getStep2FlagLookupKeys = (key: string): string[] => {
+  const normalizedKey = normalizeStep2ProviderFlagName(key)
+  if (normalizedKey === key) {
+    return [key, toCamelFlagKey(key)]
   }
-  const camelKey = toCamelFlagKey(key)
-  if (camelKey in flags) {
-    return flags[camelKey]
+
+  return [
+    normalizedKey,
+    toCamelFlagKey(normalizedKey),
+    key,
+    toCamelFlagKey(key)
+  ]
+}
+
+const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
+  for (const candidateKey of getStep2FlagLookupKeys(key)) {
+    if (candidateKey in flags) {
+      return flags[candidateKey]
+    }
   }
   return undefined
 }
@@ -267,7 +249,9 @@ export const parseRepeatableModelFlagOccurrences = (
 
     const withoutDashes = arg.slice(2)
     const eqIdx = withoutDashes.indexOf('=')
-    const key = (eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx)) as RepeatableModelFlag
+    const key = normalizeStep2ProviderFlagName(
+      eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx)
+    ) as RepeatableModelFlag
     if (!REPEATABLE_MODEL_FLAG_SET.has(key)) {
       continue
     }
@@ -372,6 +356,44 @@ const expandAllShortcutModels = (
   return mergedSelections.length > 0 ? mergedSelections : undefined
 }
 
+const resolveStep2SelectionOrigins = (
+  flags: Record<string, unknown>,
+  explicitFlags: Set<string>,
+  rawOccurrences: Partial<Record<RepeatableModelFlag, FlagOccurrenceValue[]>>,
+  allShortcutFlags: Record<AllShortcutFlag, boolean>
+): Partial<Record<string, Step2ProviderSelectionOrigin>> => {
+  const origins: Partial<Record<string, Step2ProviderSelectionOrigin>> = {}
+
+  for (const entry of STEP2_PROVIDER_ENTRIES) {
+    if (entry.selection.type === 'boolean') {
+      if (!isStep2BooleanProviderSelected(entry.flagName, flags, allShortcutFlags)) {
+        continue
+      }
+
+      origins[entry.flagName] = explicitFlags.has(entry.flagName)
+        ? 'explicit'
+        : entry.allShortcut !== undefined && allShortcutFlags[entry.allShortcut]
+          ? 'all-shortcut'
+          : 'default'
+      continue
+    }
+
+    if (entry.allShortcut !== undefined && allShortcutFlags[entry.allShortcut]) {
+      origins[entry.flagName] = 'all-shortcut'
+      continue
+    }
+
+    const models = normalizeModelFlagOccurrences(entry.flagName as RepeatableModelFlag, flags, rawOccurrences)
+    if (!models || models.length === 0) {
+      continue
+    }
+
+    origins[entry.flagName] = explicitFlags.has(entry.flagName) ? 'explicit' : 'default'
+  }
+
+  return origins
+}
+
 const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
   const v = readFlagValue(flags, 'batch-order')
   return v === 'oldest' ? 'oldest' : 'newest'
@@ -413,7 +435,7 @@ const parseDoubleDashArgs = (args: string[]): Record<string, string | boolean> =
   for (let i = 0; i < args.length; i++) {
     const arg = args[i] as string
     if (!arg.startsWith('--')) continue
-    const key = arg.slice(2)
+    const key = normalizeStep2ProviderFlagName(arg.slice(2))
     const next = args[i + 1]
     if (typeof next === 'string' && !next.startsWith('--')) {
       result[key] = next
@@ -489,8 +511,8 @@ export const buildOptsFromFlags = (
   const epubLengthThousands = parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'length'), 'length')
   const pdfChapterMode = parsePdfChapterMode(readOptionalStringFlag(mergedFlags, 'pdf-chapter-mode'))
 
-  const whisperModels = readValidatedMany('whisper', validateWhisperModel)
-  const whisperModel = first(whisperModels) ?? validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper', 'tiny'))
+  const whisperModels = readValidatedMany('whisper-stt', validateWhisperModel)
+  const whisperModel = first(whisperModels) ?? validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper-stt', 'tiny'))
   const gcloudSttModels = readValidatedMany('gcloud-stt', validateGcloudSttModel)
   const awsSttModels = readValidatedMany('aws-stt', validateAwsSttModel)
   const deepinfraSttModels = readValidatedMany('deepinfra-stt', validateDeepinfraSttModel)
@@ -573,15 +595,18 @@ export const buildOptsFromFlags = (
   const urlBackendFlag = readOptionalStringFlag(mergedFlags, 'url-backend')
   const urlBackendEnv = readEnv('AUTOSHOW_URL_BACKEND')
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
-  const useReverb = allShortcutFlags['all-stt'] || readBooleanFlag(mergedFlags, 'reverb')
-  const whisperExplicit = allShortcutFlags['all-stt'] || explicitFlags.has('whisper')
-  const useOcrmypdf = allShortcutFlags['all-ocr'] || readBooleanFlag(mergedFlags, 'ocrmypdf')
-  const usePaddleOcr = allShortcutFlags['all-ocr'] || readBooleanFlag(mergedFlags, 'paddle-ocr')
+  const useReverb = isStep2BooleanProviderSelected('reverb-stt', mergedFlags, allShortcutFlags)
+  const step2SelectionOrigins = resolveStep2SelectionOrigins(mergedFlags, explicitFlags, rawModelOccurrences, allShortcutFlags)
+  const whisperExplicit = step2SelectionOrigins['whisper-stt'] === 'explicit' || step2SelectionOrigins['whisper-stt'] === 'all-shortcut'
+  const useTesseract = isStep2BooleanProviderSelected('tesseract-ocr', mergedFlags, allShortcutFlags)
+  const useOcrmypdf = isStep2BooleanProviderSelected('ocrmypdf', mergedFlags, allShortcutFlags)
+  const usePaddleOcr = isStep2BooleanProviderSelected('paddle-ocr', mergedFlags, allShortcutFlags)
 
   return {
     useReverb,
     youtubeCaptions: readBooleanFlag(mergedFlags, 'youtube-captions'),
     whisperExplicit,
+    step2SelectionOrigins,
     llamaModels,
     llamaModel,
     openaiModels,
@@ -653,6 +678,7 @@ export const buildOptsFromFlags = (
     pageSeparator: readOptionalStringFlag(mergedFlags, 'page-separator'),
     preserveSpaces: readBooleanFlag(mergedFlags, 'preserve-spaces'),
     rotate: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'rotate'), 0),
+    useTesseract,
     useOcrmypdf,
     usePaddleOcr,
     mistralOcrModels,

@@ -265,21 +265,30 @@ export const resolveResumeOcrBatchDir = async (
 const buildResumeExtractionOpts = (
   opts: RuntimeOptions,
   outputDir: string
-) => ({
-  filePath: '',
-  outputDir,
-  dpi: opts.dpi,
-  languages: opts.lang,
-  oem: opts.oem,
-  psm: opts.psm,
-  outputFormat: opts.out,
-  password: opts.password,
-  pageSeparator: opts.pageSeparator ?? '\n\n',
-  preserveInterwordSpaces: opts.preserveSpaces,
-  rotate: opts.rotate,
-  ...(opts.useEpubBun ? { useEpubBun: true } : {}),
-  ...(opts.useEpubCalibre ? { useEpubCalibre: true } : {})
-})
+) => {
+  const step2SelectionOrigins = opts.step2SelectionOrigins
+    ? Object.fromEntries(
+        Object.entries(opts.step2SelectionOrigins).filter(([, value]) => value !== undefined)
+      ) as Record<string, 'default' | 'explicit' | 'all-shortcut'>
+    : undefined
+
+  return {
+    filePath: '',
+    outputDir,
+    dpi: opts.dpi,
+    languages: opts.lang,
+    oem: opts.oem,
+    psm: opts.psm,
+    outputFormat: opts.out,
+    password: opts.password,
+    pageSeparator: opts.pageSeparator ?? '\n\n',
+    preserveInterwordSpaces: opts.preserveSpaces,
+    rotate: opts.rotate,
+    ...(opts.useEpubBun ? { useEpubBun: true } : {}),
+    ...(opts.useEpubCalibre ? { useEpubCalibre: true } : {}),
+    ...(step2SelectionOrigins ? { step2SelectionOrigins } : {})
+  }
+}
 
 const runResumeOcrTarget = async (
   target: ResumeTarget,

@@ -96,7 +96,7 @@ export type SttBatchSummaryItem = {
   title?: string | undefined
   publishedAt?: string | undefined
   outputDir: string
-  completionStatus: 'full' | 'incomplete' | 'failed'
+  completionStatus: 'full' | 'incomplete' | 'failed' | 'skipped'
   transcriptionService?: string | undefined
   transcriptionModel?: string | undefined
   captionUsed: boolean
@@ -118,6 +118,7 @@ export type SttBatchSummary = {
     items: number
     captionBacked: number
     sttFallback: number
+    skipped: number
     incomplete: number
     failed: number
   }

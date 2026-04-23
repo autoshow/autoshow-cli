@@ -229,9 +229,10 @@ export const ExtractionOptionsSchema = v.object({
   renderConcurrency: v.optional(v.number(), undefined),
   ocrConcurrency: v.optional(v.number(), undefined),
   preserveInterwordSpaces: v.optional(v.boolean(), false),
-  rotate: v.optional(v.number(), 0),
-  useOcrmypdf: v.optional(v.boolean(), undefined),
-  usePaddleOcr: v.optional(v.boolean(), undefined),
+    rotate: v.optional(v.number(), 0),
+    useTesseract: v.optional(v.boolean(), undefined),
+    useOcrmypdf: v.optional(v.boolean(), undefined),
+    usePaddleOcr: v.optional(v.boolean(), undefined),
   mistralOcrModel: v.optional(v.string(), undefined),
   glmOcrModel: v.optional(v.string(), undefined),
   openaiOcrModel: v.optional(v.string(), undefined),
@@ -244,6 +245,10 @@ export const ExtractionOptionsSchema = v.object({
   pdfChapterLlmModel: v.optional(v.string(), undefined),
   useEpubBun: v.optional(v.boolean(), undefined),
   useEpubCalibre: v.optional(v.boolean(), undefined),
+  step2SelectionOrigins: v.optional(v.record(
+    v.string(),
+    v.picklist(['default', 'explicit', 'all-shortcut'])
+  ), undefined),
   preparedMarkdown: v.optional(v.string(), undefined),
   htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl', 'glm-reader']), undefined)
 })

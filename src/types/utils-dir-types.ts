@@ -239,7 +239,7 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type ExtractStepEstimate = ProviderModelBase<'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'> & {
+export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'> & {
   step: 'extract'
   costPer1kPagesCents?: number
   inputCostPer1MCents?: number

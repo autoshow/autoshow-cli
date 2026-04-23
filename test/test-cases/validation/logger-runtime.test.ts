@@ -115,15 +115,17 @@ describe('logger context', () => {
         requested: 2,
         succeeded: 1,
         failed: 1,
-        missing: 1
+        missing: 1,
+        skipped: 0
       },
       humanTable: createHumanTable([{
         completionStatus: 'incomplete',
         requested: 2,
         succeeded: 1,
         failed: 1,
-        missing: 1
-      }], ['completionStatus', 'requested', 'succeeded', 'failed', 'missing'])
+        missing: 1,
+        skipped: 0
+      }], ['completionStatus', 'requested', 'succeeded', 'failed', 'missing', 'skipped'])
     })
 
     expect(events[0]?.metadata).toEqual({
@@ -131,14 +133,16 @@ describe('logger context', () => {
       requested: 2,
       succeeded: 1,
       failed: 1,
-      missing: 1
+      missing: 1,
+      skipped: 0
     })
     expect(events[0]?.humanTable?.rows).toEqual([{
       completionStatus: 'incomplete',
       requested: 2,
       succeeded: 1,
       failed: 1,
-      missing: 1
+      missing: 1,
+      skipped: 0
     }])
   })
 })
@@ -196,9 +200,9 @@ describe('reporter completion output', () => {
     })
 
     expect(tables.artifacts?.rows).toEqual([
-      { artifact: 'audio', path: 'output/run/audio.mp3' },
-      { artifact: 'prompt', path: 'output/run/prompt.md' },
-      { artifact: 'run', path: 'output/run/run.json' }
+      { artifact: 'audio', path: 'audio.mp3' },
+      { artifact: 'prompt', path: 'prompt.md' },
+      { artifact: 'run', path: 'run.json' }
     ])
     expect(tables.providers?.rows).toEqual([
       { dir: 'output/run/providers', transcripts: 1, results: 1 }
@@ -247,10 +251,10 @@ describe('reporter completion output', () => {
     })
 
     expect(tables.artifacts?.rows).toEqual([
-      { artifact: 'run', path: 'output/run/run.json' },
-      { artifact: 'srt', path: 'output/run/song.srt' },
-      { artifact: 'video', path: 'output/run/song.mp4' },
-      { artifact: 'vtt', path: 'output/run/song.vtt' }
+      { artifact: 'run', path: 'run.json' },
+      { artifact: 'srt', path: 'song.srt' },
+      { artifact: 'video', path: 'song.mp4' },
+      { artifact: 'vtt', path: 'song.vtt' }
     ])
   })
 
@@ -282,7 +286,7 @@ describe('reporter completion output', () => {
       { artifact: 'outputDir', path: 'output/run' }
     ])
     expect(events[2]?.humanTable?.rows).toEqual([
-      { artifact: 'run', path: 'output/run/run.json' }
+      { artifact: 'run', path: 'run.json' }
     ])
     expect(events[3]?.humanTable?.rows).toEqual([
       { metric: 'providersRequested', value: 4 }
@@ -321,6 +325,61 @@ describe('reporter completion output', () => {
     ])
     expect(events[0]?.humanTable?.rows).toEqual([
       { artifact: 'outputDir', path: 'output/run' }
+    ])
+  })
+})
+
+describe('reporter dry-run output', () => {
+  test('logs only the expected files table for dry-run output previews', () => {
+    const events: LogSinkEvent[] = []
+    const logger = createLogger({
+      minLevel: 'debug',
+      sinks: [event => {
+        events.push(event)
+      }]
+    })
+    const reporter = createReporter(logger)
+
+    reporter.expectedOutput('./output/<timestamp>_test/', ['run.json', 'prompt.md'])
+
+    expect(events.map((event) => event.message)).toEqual(['Expected files'])
+    expect(events[0]?.humanTable?.rows).toEqual([
+      { file: 'run.json' },
+      { file: 'prompt.md' }
+    ])
+  })
+
+  test('omits note columns and trailing note log lines from human price estimates', () => {
+    const events: LogSinkEvent[] = []
+    const logger = createLogger({
+      minLevel: 'debug',
+      sinks: [event => {
+        events.push(event)
+      }]
+    })
+    const reporter = createReporter(logger)
+
+    reporter.estimate({
+      steps: [{
+        step: 'stt',
+        provider: 'supadata',
+        model: 'auto',
+        durationSeconds: 42,
+        totalCost: 12.34,
+        note: 'Estimated from credits.',
+        costMultiplier: 1
+      }],
+      totalEstimatedCost: 12.34,
+      notes: ['Aggregate estimate note.']
+    })
+
+    expect(events.map((event) => event.message)).toEqual([
+      'Total estimated cost: 12.34000¢',
+      'Cost Estimate'
+    ])
+    expect(events[1]?.humanTable?.columns).toEqual(['step', 'provider', 'model', 'cost'])
+    expect(events[1]?.humanTable?.rows).toEqual([
+      { step: 'stt', provider: 'supadata', model: 'auto', cost: '12.34000¢' }
     ])
   })
 })

@@ -127,10 +127,12 @@ const saveAwsSttDefaults = async (
   const updated = deepMergeConfig(current as Record<string, unknown>, {
     version: 2,
     defaults: {
-      stt: {
-        awsRegion: options.region,
-        awsBucket: options.bucket,
-        awsStt: [AWS_STT_DEFAULT_MODEL]
+      extract: {
+        stt: {
+          awsRegion: options.region,
+          awsBucket: options.bucket,
+          awsStt: [AWS_STT_DEFAULT_MODEL]
+        }
       }
     }
   })
@@ -222,8 +224,8 @@ export const readAwsSttConfigDefaults = async (): Promise<AwsSttConfigDefaults> 
 
     const config = await loadConfig(configPath)
     return {
-      ...(normalizeString(config.defaults?.stt?.awsRegion) ? { preferredRegion: normalizeString(config.defaults?.stt?.awsRegion) } : {}),
-      ...(normalizeString(config.defaults?.stt?.awsBucket) ? { preferredBucket: normalizeString(config.defaults?.stt?.awsBucket) } : {})
+      ...(normalizeString(config.defaults?.extract?.stt?.awsRegion) ? { preferredRegion: normalizeString(config.defaults?.extract?.stt?.awsRegion) } : {}),
+      ...(normalizeString(config.defaults?.extract?.stt?.awsBucket) ? { preferredBucket: normalizeString(config.defaults?.extract?.stt?.awsBucket) } : {})
     }
   } catch {
     return {}
@@ -357,17 +359,16 @@ const buildAwsSetupCommands = (
   return commands
 }
 
-export const setupAwsStt = async (
+const resolveAwsSttReadinessState = async (
   options: {
     preferredRegion?: string | undefined
     preferredBucket?: string | undefined
-    focused?: boolean | undefined
     verifyTranscribe?: boolean | undefined
     autoCreateBucket?: boolean | undefined
     autoCreateMissingBucket?: boolean | undefined
     configPathOverride?: string | undefined
   } = {}
-): Promise<void> => {
+): Promise<{ state: AwsSttReadiness, configPath?: string | undefined }> => {
   const explicitBucket = normalizeString(options.preferredBucket)
   let configPath: string | undefined
   let state = await readAwsSttReadiness({
@@ -377,7 +378,7 @@ export const setupAwsStt = async (
   })
 
   const shouldAutoCreateMissingBucket = options.autoCreateMissingBucket === true && !state.bucket
-  const shouldAutoCreateRequestedBucket = options.autoCreateBucket === true && state.bucketAccessible !== true
+  const shouldAutoCreateRequestedBucket = options.autoCreateBucket === true && !!state.bucket && state.bucketAccessible !== true
   if ((shouldAutoCreateMissingBucket || shouldAutoCreateRequestedBucket) && state.hasCli && state.authConfigured && state.region) {
     const bucketToCreate = explicitBucket
       ?? state.bucket
@@ -394,6 +395,23 @@ export const setupAwsStt = async (
       verifyTranscribe: options.verifyTranscribe
     })
   }
+
+  return { state, ...(configPath ? { configPath } : {}) }
+}
+
+export const setupAwsStt = async (
+  options: {
+    preferredRegion?: string | undefined
+    preferredBucket?: string | undefined
+    focused?: boolean | undefined
+    verifyTranscribe?: boolean | undefined
+    autoCreateBucket?: boolean | undefined
+    autoCreateMissingBucket?: boolean | undefined
+    configPathOverride?: string | undefined
+  } = {}
+): Promise<void> => {
+  const explicitBucket = normalizeString(options.preferredBucket)
+  const { state, configPath } = await resolveAwsSttReadinessState(options)
 
   if (options.focused) {
     l.info('AWS STT setup')
@@ -441,10 +459,11 @@ export const ensureAwsSttSetup = async (
     preferredRegion: options.preferredRegion,
     preferredBucket: options.preferredBucket
   })
-  const state = await readAwsSttReadiness({
+  const { state } = await resolveAwsSttReadinessState({
     preferredRegion: runtimePreferences.preferredRegion,
     preferredBucket: runtimePreferences.preferredBucket,
-    verifyTranscribe: false
+    verifyTranscribe: false,
+    autoCreateMissingBucket: true
   })
 
   if (!state.hasCli) {

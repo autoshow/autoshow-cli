@@ -269,6 +269,212 @@ test('discoverLatestResumableSttBatchDir skips newer incompatible batches when p
   ])).toBe(expectedBatchDir)
 })
 
+test('resumeSttMissingFromBatchDir ignores skipped providers that older manifests still listed as missing', async () => {
+  const batchDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-skip-compat-'))
+  tempDirs.push(batchDir)
+
+  const outputDir = join(batchDir, '2026-04-13_partial-skip-compat')
+  const mistralDir = join(outputDir, 'providers', 'mistral-voxtral-mini-2602')
+  await mkdir(mistralDir, { recursive: true })
+
+  await Bun.write(join(mistralDir, 'transcription.txt'), '[00:00:00] [speaker-1] Existing Mistral transcript')
+  await writeProviderResultFixture(mistralDir, 'mistral', 'voxtral-mini-2602', {
+    transcriptionService: 'mistral',
+    transcriptionModel: 'voxtral-mini-2602',
+    processingTime: 100,
+    tokenCount: 3
+  }, {
+    text: 'Existing Mistral transcript'
+  })
+
+  const rootMetadata = {
+    step1: {
+      title: 'resume-skip-compat',
+      duration: '00:00:10',
+      author: 'Local',
+      description: '',
+      url: `file://${resolve(STABLE_LOCAL_AUDIO_PATH)}`,
+      slug: 'resume-skip-compat',
+      audioFileName: 'resume-skip-compat.mp3',
+      audioFileSize: 1234
+    },
+    step2: [
+      {
+        transcriptionService: 'mistral',
+        transcriptionModel: 'voxtral-mini-2602',
+        processingTime: 100,
+        tokenCount: 3
+      }
+    ],
+    completionStatus: 'incomplete',
+    requestedProviders: [
+      { service: 'mistral', model: 'voxtral-mini-2602', local: false, diarizationOptions: { enabled: true } },
+      { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } },
+      { service: 'supadata', model: 'auto', local: false, diarizationOptions: { enabled: true } }
+    ],
+    providerStates: [
+      {
+        service: 'mistral',
+        model: 'voxtral-mini-2602',
+        local: false,
+        artifactDir: 'providers/mistral-voxtral-mini-2602',
+        status: 'succeeded',
+        attempts: 1
+      },
+      {
+        service: 'soniox',
+        model: 'stt-async-v4',
+        local: false,
+        artifactDir: 'providers/soniox-stt-async-v4',
+        status: 'failed',
+        attempts: 1,
+        retryable: true,
+        lastError: {
+          message: 'timed out waiting for completion',
+          retryable: true
+        }
+      },
+      {
+        service: 'supadata',
+        model: 'auto',
+        local: false,
+        artifactDir: 'providers/supadata-auto',
+        status: 'skipped',
+        attempts: 1,
+        retryable: false,
+        lastError: {
+          message: 'Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI',
+          retryable: false,
+          skipped: true
+        }
+      }
+    ],
+    missingProviders: [
+      { service: 'soniox', model: 'stt-async-v4', local: false, diarizationOptions: { enabled: true } },
+      { service: 'supadata', model: 'auto', local: false, diarizationOptions: { enabled: true } }
+    ],
+    errors: [
+      {
+        service: 'soniox',
+        model: 'stt-async-v4',
+        message: 'timed out waiting for completion',
+        retryable: true
+      },
+      {
+        service: 'supadata',
+        model: 'auto',
+        message: 'Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI',
+        retryable: false,
+        skipped: true
+      }
+    ]
+  }
+
+  await writeRunManifestFixture(outputDir, 'stt', rootMetadata)
+  await writeBatchManifestFixture(batchDir, 'stt', [
+    {
+      ...rootMetadata,
+      outputDir
+    }
+  ])
+
+  process.env['SONIOX_API_KEY'] = 'soniox-test-key'
+  process.env['SONIOX_BASE_URL'] = 'https://soniox.test'
+
+  let createCalls = 0
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input)
+    const method = init?.method ?? 'GET'
+
+    if (url === 'https://soniox.test/v1/files' && method === 'POST') {
+      return new Response(JSON.stringify({ id: 'file-1' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions' && method === 'POST') {
+      createCalls += 1
+      return new Response(JSON.stringify({ id: 'tx-1', status: 'queued' }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions/tx-1' && method === 'GET') {
+      return new Response(JSON.stringify({
+        id: 'tx-1',
+        status: 'completed'
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions/tx-1/transcript' && method === 'GET') {
+      return new Response(JSON.stringify({
+        id: 'tx-1',
+        text: 'Recovered Soniox transcript.',
+        tokens: [
+          { text: 'Recovered Soniox transcript.', start_ms: 0, end_ms: 1000, speaker: 0 }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
+
+    if (url === 'https://soniox.test/v1/transcriptions/tx-1' && method === 'DELETE') {
+      return new Response(null, { status: 204 })
+    }
+
+    if (url === 'https://soniox.test/v1/files/file-1' && method === 'DELETE') {
+      return new Response(null, { status: 204 })
+    }
+
+    throw new Error(`Unexpected request: ${method} ${url}`)
+  }) as unknown as typeof fetch
+
+  const opts = buildOptsFromFlags(false, {
+    'no-cache': true
+  })
+
+  await withCapturedLogs(async (events) => {
+    await resumeSttMissingFromBatchDir(batchDir, opts)
+
+    const resumeItemEvents = events.filter((event) => event.message === 'Resume Item')
+    expect(resumeItemEvents.map((event) => event.humanTable?.rows[0])).toEqual([
+      {
+        item: '1/1',
+        status: 'processing',
+        outputDir,
+        providers: 'soniox/stt-async-v4',
+        detail: 'resuming missing providers'
+      },
+      {
+        item: '1/1',
+        status: 'full',
+        outputDir,
+        providers: 'soniox/stt-async-v4',
+        detail: 'resume complete'
+      }
+    ])
+  })
+
+  expect(createCalls).toBe(1)
+
+  const updatedMetadata = await readRunMetadata(outputDir)
+  expect(updatedMetadata['completionStatus']).toBe('full')
+  expect(updatedMetadata['missingProviders']).toEqual([])
+  expect(updatedMetadata['providerStates']).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      service: 'supadata',
+      model: 'auto',
+      status: 'skipped'
+    })
+  ]))
+})
+
 test('discoverLatestResumableSttBatchDir treats caption-backed completion as complete when --youtube-captions is active', async () => {
   const outputRoot = await mkdtemp(join(tmpdir(), 'autoshow-stt-resume-youtube-captions-on-'))
   tempDirs.push(outputRoot)

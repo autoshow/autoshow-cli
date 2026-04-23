@@ -22,6 +22,15 @@ type PdfChapterDetectionMetadata = {
 
 type ExtractMetadata = {
   step1?: { format?: string }
+  resolvedStep2?: {
+    route?: string
+    sourceKind?: string
+    backend?: string
+    providers?: Array<{ service?: string; model?: string; origin?: string }>
+  }
+  requestedProviders?: Array<{ service?: string; model?: string }>
+  providerStates?: Array<{ service?: string; model?: string; status?: string; artifactDir?: string; attempts?: number }>
+  missingProviders?: Array<unknown>
   step2?: {
     extractionMethod?: string
     totalPages?: number
@@ -66,6 +75,24 @@ test('extract PDF with default options', async () => {
   expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
   expect(await fileExists(`${outputDir}/result.json`)).toBe(false)
   expect(await fileExists(`${outputDir}/run.json`)).toBe(true)
+
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.resolvedStep2).toMatchObject({
+    route: 'ocr',
+    sourceKind: 'pdf',
+    providers: [{ service: 'tesseract', model: 'tesseract', origin: 'default' }]
+  })
+  expect(metadata.requestedProviders).toEqual([{ service: 'tesseract', model: 'tesseract' }])
+  expect(metadata.providerStates).toEqual([
+    {
+      service: 'tesseract',
+      model: 'tesseract',
+      artifactDir: '.',
+      status: 'succeeded',
+      attempts: 1
+    }
+  ])
+  expect(metadata.missingProviders).toEqual([])
 })
 
 test('extract PDF with --out json', async () => {
@@ -155,6 +182,11 @@ test('extract EPUB with default options writes cleaned text without synthetic pa
   expect(metadata.step2?.extractionMethod).toBe('epub-text')
   expect(metadata.step2?.outputFidelity).toBe('cleaned-epub-text')
   expect(metadata.step2?.epubExport).toBeUndefined()
+  expect(metadata.resolvedStep2).toMatchObject({
+    route: 'native-document',
+    sourceKind: 'epub'
+  })
+  expect(metadata.requestedProviders).toBeUndefined()
 })
 
 test('extract image with --ocrmypdf', async () => {
@@ -178,6 +210,59 @@ test('extract image with --ocrmypdf', async () => {
   expect(metadata.step2?.totalPages).toBe(1)
 })
 
+test('extract image with explicit --tesseract matches the default local OCR path', async () => {
+  await ensurePageImageFixture(imageInput)
+  await cleanupTestOutput('1-document')
+
+  const defaultResult = await runCommand(['src/cli/create-cli.ts', 'ocr', imageInput], {
+    testName: 'extract image with default local OCR path'
+  })
+  expect(defaultResult.exitCode).toBe(0)
+
+  const defaultOutputDir = defaultResult.outputDir ?? await findLatestDirectory('1-document')
+  expect(defaultOutputDir).not.toBeNull()
+  if (!defaultOutputDir) return
+
+  const defaultMetadata = await readRunMetadata(defaultOutputDir) as ExtractMetadata
+
+  await cleanupTestOutput('1-document')
+
+  const explicitResult = await runCommand(['src/cli/create-cli.ts', 'ocr', imageInput, '--tesseract-ocr'], {
+    testName: 'extract image with explicit --tesseract-ocr'
+  })
+  expect(explicitResult.exitCode).toBe(0)
+
+  const explicitOutputDir = explicitResult.outputDir ?? await findLatestDirectory('1-document')
+  expect(explicitOutputDir).not.toBeNull()
+  if (!explicitOutputDir) return
+
+  const explicitMetadata = await readRunMetadata(explicitOutputDir) as ExtractMetadata
+  expect(defaultMetadata.step2?.extractionMethod).toBe('image+tesseract')
+  expect(defaultMetadata.resolvedStep2).toMatchObject({
+    route: 'ocr',
+    sourceKind: 'image',
+    providers: [{ service: 'tesseract', model: 'tesseract', origin: 'default' }]
+  })
+  expect(explicitMetadata.step2?.extractionMethod).toBe(defaultMetadata.step2?.extractionMethod)
+  expect(explicitMetadata.step2?.totalPages).toBe(defaultMetadata.step2?.totalPages)
+  expect(explicitMetadata.resolvedStep2).toMatchObject({
+    route: 'ocr',
+    sourceKind: 'image',
+    providers: [{ service: 'tesseract', model: 'tesseract', origin: 'explicit' }]
+  })
+  expect(explicitMetadata.requestedProviders).toEqual([{ service: 'tesseract', model: 'tesseract' }])
+  expect(explicitMetadata.providerStates).toEqual([
+    {
+      service: 'tesseract',
+      model: 'tesseract',
+      artifactDir: '.',
+      status: 'succeeded',
+      attempts: 1
+    }
+  ])
+  expect(explicitMetadata.missingProviders).toEqual([])
+})
+
 test('bun as ocr https://ajcwebdev.com --url-backend defuddle', async () => {
   let outputDir: string | null = null
 
@@ -197,6 +282,12 @@ test('bun as ocr https://ajcwebdev.com --url-backend defuddle', async () => {
     const metadata = await readRunMetadata(outputDir) as ExtractMetadata
     expect(metadata.step1?.format).toBe('html')
     expect(metadata.step2?.extractionMethod).toBe('html+defuddle')
+    expect(metadata.resolvedStep2).toMatchObject({
+      route: 'article',
+      sourceKind: 'article',
+      backend: 'defuddle'
+    })
+    expect(metadata.requestedProviders).toBeUndefined()
   } finally {
     if (outputDir && process.env['AUTOSHOW_TEST_PRESERVE_ARTIFACTS'] === '0') {
       await rm(outputDir, { recursive: true, force: true }).catch(() => {})

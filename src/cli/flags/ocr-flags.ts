@@ -1,5 +1,5 @@
 import type { ClercFlagsDefinition } from 'clerc'
-import { articleFlags, batchFlags, extractFlags, priceFlag } from './shared-flags'
+import { articleFlags, batchFlags, ocrInputFlags, ocrTuningFlags, priceFlag } from './shared-flags'
 
 export const epubInspectFlags = {
   'epub-bun': {
@@ -16,14 +16,15 @@ export const epubInspectFlags = {
   }
 } as const satisfies ClercFlagsDefinition
 
-export const extractCommandFlags = {
+export const ocrCommandFlags = {
   'all-ocr': {
     description: 'Enable every supported OCR engine/provider model for this command',
     type: Boolean,
     default: false,
     negatable: false
   },
-  ...extractFlags,
+  ...ocrInputFlags,
+  ...ocrTuningFlags,
   ...articleFlags,
   ...batchFlags,
   ...epubInspectFlags,

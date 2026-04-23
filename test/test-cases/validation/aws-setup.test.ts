@@ -111,12 +111,23 @@ const writeProjectConfig = async (
   await writeFile(join(projectDir, 'config', 'autoshow.json'), JSON.stringify({
     version: 2,
     defaults: {
-      stt: {
-        awsRegion: FAKE_AWS_REGION,
-        awsBucket: bucket,
-        awsStt: ['standard']
+      extract: {
+        stt: {
+          awsRegion: FAKE_AWS_REGION,
+          awsBucket: bucket,
+          awsStt: ['standard']
+        }
       }
     }
+  }, null, 2))
+}
+
+const writeProjectPackage = async (projectDir: string): Promise<void> => {
+  await mkdir(projectDir, { recursive: true })
+  await writeFile(join(projectDir, 'package.json'), JSON.stringify({
+    name: 'autoshow-aws-test',
+    version: '0.0.0',
+    type: 'module'
   }, null, 2))
 }
 
@@ -159,10 +170,10 @@ test('setupAwsStt creates and saves an AWS staging bucket when missing bucket fa
   })
 
   const config = await loadConfig(configPath)
-  const savedBucket = config.defaults?.stt?.awsBucket
+  const savedBucket = config.defaults?.extract?.stt?.awsBucket
 
-  expect(config.defaults?.stt?.awsRegion).toBe(FAKE_AWS_REGION)
-  expect(config.defaults?.stt?.awsStt).toEqual(['standard'])
+  expect(config.defaults?.extract?.stt?.awsRegion).toBe(FAKE_AWS_REGION)
+  expect(config.defaults?.extract?.stt?.awsStt).toEqual(['standard'])
   expect(savedBucket).toMatch(/^autoshow-transcribe-123456789012-us-east-2-[a-z0-9]+$/)
 
   const readiness = await readAwsSttReadiness({
@@ -189,6 +200,38 @@ test('ensureAwsSttSetup falls back to saved config defaults when explicit values
       region: FAKE_AWS_REGION,
       bucket: savedBucket
     })
+  } finally {
+    process.chdir(originalCwd)
+  }
+})
+
+test('ensureAwsSttSetup creates and saves a missing runtime bucket when AWS auth and region are already valid', async () => {
+  const projectDir = join(tempDir, 'project-runtime-bootstrap')
+  await writeProjectPackage(projectDir)
+
+  const originalCwd = process.cwd()
+  process.chdir(projectDir)
+
+  try {
+    const resolved = await ensureAwsSttSetup({
+      preferredRegion: FAKE_AWS_REGION
+    })
+
+    expect(resolved.region).toBe(FAKE_AWS_REGION)
+    expect(resolved.bucket).toMatch(/^autoshow-transcribe-123456789012-us-east-2-[a-z0-9]+$/)
+
+    const config = await loadConfig(join(projectDir, 'config', 'autoshow.json'))
+    expect(config.defaults?.extract?.stt?.awsRegion).toBe(FAKE_AWS_REGION)
+    expect(config.defaults?.extract?.stt?.awsBucket).toBe(resolved.bucket)
+    expect(config.defaults?.extract?.stt?.awsStt).toEqual(['standard'])
+
+    const readiness = await readAwsSttReadiness({
+      preferredRegion: FAKE_AWS_REGION,
+      preferredBucket: resolved.bucket,
+      verifyTranscribe: false
+    })
+
+    expect(readiness.bucketAccessible).toBe(true)
   } finally {
     process.chdir(originalCwd)
   }

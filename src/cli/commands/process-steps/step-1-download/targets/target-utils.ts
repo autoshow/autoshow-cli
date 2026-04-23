@@ -6,15 +6,25 @@ import { runWithLogContext } from '~/logger'
 import { fileExists, ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { MEDIA_EXTENSIONS } from '../media-extensions'
+import { detectDocumentFormat } from '../document/detect-format'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
+import {
+  commandSupportsInputFamily,
+  isOcrCommand,
+  isSttCommand
+} from '~/cli/commands/process-steps/process-command-kinds'
 import type {
+  BatchItem,
   BatchManifestEntry,
   BatchManifestErrorEntry,
   BatchItemProcessor,
   BatchProcessResult,
   BatchRunOptions,
+  DetectResult,
+  InputFamily,
   InputKind,
+  PlannedBatchInput,
+  ResolvedInputRouting,
   SttBatchItemSummary,
   SttManifestProviderSummary,
   TopLevelTargetInfo
@@ -23,6 +33,7 @@ import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-stt/st
 import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-stt/batch'
 import { writeSttBatchManifest } from '~/cli/commands/process-steps/step-2-stt/manifest'
 import { readBatchManifest, readRunManifest, writeBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { resolveOcrStep2ExecutionFromFormat, resolveSttStep2Execution } from '~/cli/commands/process-steps/step-2-shared/resolved-step2'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
@@ -109,13 +120,102 @@ const parseSttManifestProviderSummaries = (
   return summaries
 }
 
+const countStep2Entries = (entry: BatchManifestEntry): number => {
+  const step2 = entry['step2']
+  if (Array.isArray(step2)) {
+    return step2.filter((value) => isRecord(value)).length
+  }
+
+  return isRecord(step2) ? 1 : 0
+}
+
+const getSttManifestProviderCounts = (
+  entry: BatchManifestEntry | null
+): {
+  succeeded: number
+  failed: number
+  missing: number
+  skipped: number
+} => {
+  if (!entry) {
+    return {
+      succeeded: 0,
+      failed: 0,
+      missing: 0,
+      skipped: 0
+    }
+  }
+
+  const summaries = parseSttManifestProviderSummaries(entry)
+  if (summaries.length > 0) {
+    return summaries.reduce((counts, summary) => {
+      if (summary.status === 'succeeded') {
+        counts.succeeded += 1
+      } else if (summary.status === 'failed') {
+        counts.failed += 1
+      } else if (summary.status === 'missing') {
+        counts.missing += 1
+      } else {
+        counts.skipped += 1
+      }
+      return counts
+    }, {
+      succeeded: 0,
+      failed: 0,
+      missing: 0,
+      skipped: 0
+    })
+  }
+
+  const errors = getBatchManifestErrors(entry)
+  return {
+    succeeded: countStep2Entries(entry),
+    failed: errors.filter((value) => value.skipped !== true).length,
+    missing: 0,
+    skipped: errors.filter((value) => value.skipped === true).length
+  }
+}
+
+const formatBatchProviderCount = (
+  count: number,
+  label: string
+): string => `${count} ${label}${count === 1 ? '' : 's'}`
+
+const buildSttBatchItemDetail = (
+  entry: BatchManifestEntry | null
+): string | undefined => {
+  const counts = getSttManifestProviderCounts(entry)
+  const parts = [
+    counts.failed > 0 ? formatBatchProviderCount(counts.failed, 'provider failure') : undefined,
+    counts.missing > 0 ? formatBatchProviderCount(counts.missing, 'provider missing') : undefined,
+    counts.skipped > 0 ? formatBatchProviderCount(counts.skipped, 'provider skipped') : undefined
+  ].filter((value): value is string => typeof value === 'string')
+
+  return parts.length > 0 ? parts.join(', ') : undefined
+}
+
+const resolveSttBatchManifestCompletionStatus = (
+  entry: BatchManifestEntry
+): 'full' | 'incomplete' | 'failed' | 'skipped' => {
+  const completionStatus = getBatchManifestCompletionStatus(entry)
+  if (completionStatus) {
+    return completionStatus
+  }
+
+  const counts = getSttManifestProviderCounts(entry)
+  if (counts.succeeded === 0) {
+    return 'failed'
+  }
+
+  return counts.failed === 0 && counts.missing === 0 ? 'full' : 'incomplete'
+}
+
 const summarizeSttBatchManifestEntries = (
   entries: BatchManifestEntry[]
 ): SttBatchItemSummary[] =>
   entries.map((entry, index) => ({
     label: getBatchManifestTitle(entry, index),
-    completionStatus: getBatchManifestCompletionStatus(entry)
-      ?? (getBatchManifestErrorCount(entry) > 0 ? 'incomplete' : 'full'),
+    completionStatus: resolveSttBatchManifestCompletionStatus(entry),
     providers: parseSttManifestProviderSummaries(entry)
   }))
 
@@ -168,6 +268,7 @@ export const logSttBatchFinalSummary = async (batchDir: string): Promise<void> =
   )
   const hasWarnings = hasFailed || summaries.some((summary) =>
     summary.completionStatus === 'incomplete'
+    || summary.completionStatus === 'skipped'
     || summary.providers.some((provider) =>
       provider.status === 'skipped' || provider.status === 'missing'
     )
@@ -236,6 +337,9 @@ export const buildBatchPartialFailureTable = (
   const counts = new Map<string, number>()
 
   for (const entry of entries) {
+    if (entry.skipped === true) {
+      continue
+    }
     if (typeof entry.service !== 'string' || typeof entry.model !== 'string') {
       continue
     }
@@ -526,6 +630,364 @@ export const isHtmlArticleTarget = async (
   return isHtmlDocumentPath(target)
 }
 
+export const classifyInputFamily = async (
+  target: string,
+  opts?: Pick<RuntimeOptions, 'urlBackendExplicit'>
+): Promise<InputFamily> => {
+  if (isLikelyUrl(target)) {
+    const kind = await classifyUrlInput(target, opts)
+    if (kind === 'url_direct_document') {
+      return 'document'
+    }
+    if (kind === 'url_html_article') {
+      return 'html_article'
+    }
+    return 'media'
+  }
+
+  if (!await fileExists(target)) {
+    return 'unsupported'
+  }
+
+  if (isHtmlDocumentPath(target)) {
+    return 'html_article'
+  }
+
+  if (isDocumentByExtension(target)) {
+    return 'document'
+  }
+
+  const detected = await detectDocumentFormat(target)
+  if (detected === 'html') {
+    return 'html_article'
+  }
+  if (detected !== null) {
+    return 'document'
+  }
+  if (MEDIA_EXTENSIONS.some((ext) => target.toLowerCase().endsWith(ext))) {
+    return 'media'
+  }
+
+  return 'unsupported'
+}
+
+const resolveDetectResultFromExtension = (
+  target: string
+): DetectResult | undefined => {
+  const lower = target.toLowerCase()
+  const extension = extname(lower)
+
+  if (extension === '.pdf') return 'pdf'
+  if (extension === '.epub') return 'epub'
+  if (extension === '.docx') return 'docx'
+  if (extension === '.pptx') return 'pptx'
+  if (extension === '.xlsx') return 'xlsx'
+  if (extension === '.odt' || extension === '.ods' || extension === '.odp') return 'odf'
+  if (extension === '.mobi') return 'mobi'
+  if (extension === '.azw3' || extension === '.azw') return 'azw3'
+  if (extension === '.fb2') return 'fb2'
+  if (extension === '.lit') return 'lit'
+  if (extension === '.cbz') return 'cbz'
+  if (extension === '.rtf') return 'rtf'
+  if (extension === '.csv') return 'csv'
+  if (extension === '.png') return 'png'
+  if (extension === '.jpg' || extension === '.jpeg') return 'jpg'
+  if (extension === '.tif' || extension === '.tiff') return 'tif'
+  if (extension === '.webp') return 'webp'
+  if (extension === '.bmp') return 'bmp'
+  if (extension === '.gif') return 'gif'
+  if (extension === '.html' || extension === '.htm') return 'html'
+
+  return undefined
+}
+
+const resolveDetectResultFromContentType = (
+  contentType: string
+): DetectResult | undefined => {
+  const normalized = contentType.toLowerCase()
+
+  if (normalized.includes('application/pdf')) return 'pdf'
+  if (normalized.includes('application/epub+zip')) return 'epub'
+  if (normalized.includes('wordprocessingml.document')) return 'docx'
+  if (normalized.includes('presentationml.presentation')) return 'pptx'
+  if (normalized.includes('spreadsheetml.sheet')) return 'xlsx'
+  if (normalized.includes('application/vnd.oasis.opendocument')) return 'odf'
+  if (normalized.includes('text/csv')) return 'csv'
+  if (normalized.includes('image/png')) return 'png'
+  if (normalized.includes('image/jpeg')) return 'jpg'
+  if (normalized.includes('image/tiff')) return 'tif'
+  if (normalized.includes('image/webp')) return 'webp'
+  if (normalized.includes('image/bmp')) return 'bmp'
+  if (normalized.includes('image/gif')) return 'gif'
+  if (isHtmlMimeType(normalized)) return 'html'
+
+  return undefined
+}
+
+const resolveUrlDocumentFormatHint = async (
+  url: string
+): Promise<DetectResult | undefined> => {
+  try {
+    const extensionHint = resolveDetectResultFromExtension(new URL(url).pathname)
+    if (extensionHint !== undefined) {
+      return extensionHint
+    }
+  } catch {
+  }
+
+  const headers = await probeUrlHeaders(url)
+  const contentType = headers?.get('content-type')
+  if (typeof contentType === 'string' && contentType.length > 0) {
+    const contentTypeHint = resolveDetectResultFromContentType(contentType)
+    if (contentTypeHint !== undefined) {
+      return contentTypeHint
+    }
+  }
+
+  return undefined
+}
+
+const resolveDocumentFormatHint = async (
+  target: string,
+  family: InputFamily
+): Promise<DetectResult | undefined> => {
+  if (family === 'html_article') {
+    return 'html'
+  }
+
+  if (family !== 'document') {
+    return undefined
+  }
+
+  if (isLikelyUrl(target)) {
+    return await resolveUrlDocumentFormatHint(target)
+  }
+
+  const extensionHint = resolveDetectResultFromExtension(target)
+  if (extensionHint !== undefined) {
+    return extensionHint
+  }
+
+  return await detectDocumentFormat(target).catch(() => undefined)
+}
+
+const buildBatchManifestEntryForItem = (
+  item: string,
+  batchItem?: BatchItem
+): BatchManifestEntry => {
+  if (batchItem) {
+    return {
+      url: batchItem.url,
+      title: batchItem.title ?? 'Untitled',
+      channel: batchItem.author ?? 'Unknown',
+      duration: batchItem.duration ?? 'Unknown',
+      ...(batchItem.publishedAt ? { publishedAt: batchItem.publishedAt } : {})
+    }
+  }
+
+  const isUrl = isLikelyUrl(item)
+  const title = basename(item).replace(/\.[^.]+$/, '')
+  if (isUrl) {
+    return { url: item, title, channel: 'URL', duration: 'Unknown' }
+  }
+
+  return { url: `file://${item}`, title, channel: 'Local', duration: 'Unknown' }
+}
+
+export const describeUnsupportedInputForCommand = (
+  command: ProcessCommand,
+  family: InputFamily
+): string => {
+  if (isSttCommand(command)) {
+    if (family === 'document' || family === 'html_article') {
+      return 'stt only processes media inputs; use ocr or write for documents and articles'
+    }
+    return 'stt only processes media inputs'
+  }
+
+  if (isOcrCommand(command)) {
+    if (family === 'media') {
+      return 'ocr only processes documents, images, and HTML articles; use stt or write for media'
+    }
+    return 'ocr only processes documents, images, and HTML articles'
+  }
+
+  return 'unsupported input'
+}
+
+export const resolveInputRoutingForCommand = async (
+  command: ProcessCommand,
+  target: string,
+  opts?: Pick<
+    RuntimeOptions,
+    | 'urlBackendExplicit'
+    | 'urlBackend'
+    | 'step2SelectionOrigins'
+    | 'useReverb'
+    | 'whisperModel'
+    | 'whisperModels'
+    | 'gcloudSttModel'
+    | 'gcloudSttModels'
+    | 'awsSttModel'
+    | 'awsSttModels'
+    | 'deepinfraSttModel'
+    | 'deepinfraSttModels'
+    | 'deapiSttModel'
+    | 'deapiSttModels'
+    | 'elevenlabsSttModel'
+    | 'elevenlabsSttModels'
+    | 'deepgramSttModel'
+    | 'deepgramSttModels'
+    | 'sonioxSttModel'
+    | 'sonioxSttModels'
+    | 'speechmaticsSttModel'
+    | 'speechmaticsSttModels'
+    | 'revSttModel'
+    | 'revSttModels'
+    | 'groqSttModel'
+    | 'groqSttModels'
+    | 'mistralSttModel'
+    | 'mistralSttModels'
+    | 'assemblyaiSttModel'
+    | 'assemblyaiSttModels'
+    | 'gladiaSttModel'
+    | 'gladiaSttModels'
+    | 'happyscribeSttModel'
+    | 'happyscribeSttModels'
+    | 'supadataSttModel'
+    | 'supadataSttModels'
+    | 'useTesseract'
+    | 'useOcrmypdf'
+    | 'usePaddleOcr'
+    | 'mistralOcrModel'
+    | 'mistralOcrModels'
+    | 'glmOcrModel'
+    | 'glmOcrModels'
+    | 'openaiOcrModel'
+    | 'openaiOcrModels'
+    | 'anthropicOcrModel'
+    | 'anthropicOcrModels'
+    | 'geminiOcrModel'
+    | 'geminiOcrModels'
+    | 'useEpubBun'
+    | 'useEpubCalibre'
+  >
+): Promise<ResolvedInputRouting> => {
+  const family = await classifyInputFamily(target, opts)
+  const documentFormatHint = await resolveDocumentFormatHint(target, family)
+  const resolvedStep2: ResolvedInputRouting['resolvedStep2'] = family === 'media'
+    ? resolveSttStep2Execution((opts ?? {}) as Parameters<typeof resolveSttStep2Execution>[0])
+    : family === 'document' || family === 'html_article'
+      ? resolveOcrStep2ExecutionFromFormat(
+          documentFormatHint ?? (family === 'html_article' ? 'html' : 'pdf'),
+          {
+            ...(opts ?? {}),
+            localHtmlDocument: family === 'html_article' && !isLikelyUrl(target)
+          } as Parameters<typeof resolveOcrStep2ExecutionFromFormat>[1]
+        )
+      : {
+          route: 'unsupported',
+          sourceKind: 'unsupported'
+        }
+  const supported = family !== 'unsupported' && commandSupportsInputFamily(command, family)
+  const step2Route = resolvedStep2.route
+
+  return {
+    family,
+    step2Route,
+    resolvedStep2,
+    supported,
+    ...(!supported && (isSttCommand(command) || isOcrCommand(command))
+      ? { skipReason: describeUnsupportedInputForCommand(command, family) }
+      : {})
+  }
+}
+
+export const planBatchInputsForCommand = async (
+  command: ProcessCommand,
+  items: string[],
+  opts: RuntimeOptions,
+  selectedItems?: Array<BatchItem | undefined>,
+  logSkips = true
+): Promise<{
+  items: string[]
+  selectedItems?: Array<BatchItem | undefined>
+  initialEntries: BatchManifestEntry[]
+  resultEntryIndexes: number[]
+  plannedInputs: PlannedBatchInput[]
+}> => {
+  const shouldResolveRouting = isSttCommand(command) || isOcrCommand(command) || command === 'write'
+  if (!shouldResolveRouting) {
+    return {
+      items,
+      ...(selectedItems ? { selectedItems } : {}),
+      initialEntries: items.map((item, index) => buildBatchManifestEntryForItem(item, selectedItems?.[index])),
+      resultEntryIndexes: items.map((_, index) => index),
+      plannedInputs: items.map((item, index) => ({
+        input: item,
+        inputFamily: 'unsupported',
+        resolvedStep2: {
+          route: 'unsupported',
+          sourceKind: 'unsupported'
+        },
+        ...(selectedItems?.[index] ? { batchItem: selectedItems[index] } : {})
+      }))
+    }
+  }
+
+  const filteredItems: string[] = []
+  const filteredSelectedItems: Array<BatchItem | undefined> = []
+  const initialEntries: BatchManifestEntry[] = []
+  const resultEntryIndexes: number[] = []
+  const plannedInputs: PlannedBatchInput[] = []
+
+  for (const [index, item] of items.entries()) {
+    const batchItem = selectedItems?.[index]
+    const routing = await resolveInputRoutingForCommand(command, item, opts)
+    const entryBase = {
+      ...buildBatchManifestEntryForItem(item, batchItem),
+      ...(routing.family !== 'unsupported' ? { inputFamily: routing.family } : {}),
+      step2Route: routing.step2Route,
+      resolvedStep2: routing.resolvedStep2
+    }
+    plannedInputs.push({
+      input: item,
+      inputFamily: routing.family,
+      resolvedStep2: routing.resolvedStep2,
+      ...(batchItem ? { batchItem } : {})
+    })
+
+    if (!routing.supported) {
+      const reason = routing.skipReason ?? describeUnsupportedInputForCommand(command, routing.family)
+      if (logSkips && (isSttCommand(command) || isOcrCommand(command))) {
+        l.warn(`Skipping ${routing.family} input in ${command} batch: ${item} (${reason})`)
+      }
+      initialEntries.push({
+        ...entryBase,
+        completionStatus: 'skipped',
+        inputFamily: routing.family,
+        skipReason: reason
+      })
+      continue
+    }
+
+    initialEntries.push(entryBase)
+    resultEntryIndexes.push(initialEntries.length - 1)
+    filteredItems.push(item)
+    if (batchItem) {
+      filteredSelectedItems.push(batchItem)
+    }
+  }
+
+  return {
+    items: filteredItems,
+    ...(selectedItems ? { selectedItems: filteredSelectedItems } : {}),
+    initialEntries,
+    resultEntryIndexes,
+    plannedInputs
+  }
+}
+
 export const collectInputFiles = async (dir: string): Promise<string[]> => {
   const files: string[] = []
 
@@ -666,13 +1128,13 @@ const attachOutputDir = (
 
 const getBatchManifestCompletionStatus = (
   entry: BatchManifestEntry | null
-): 'full' | 'incomplete' | 'failed' | undefined => {
+): 'full' | 'incomplete' | 'failed' | 'skipped' | undefined => {
   if (!entry) {
     return undefined
   }
 
   const completionStatus = entry['completionStatus']
-  if (completionStatus === 'full' || completionStatus === 'incomplete' || completionStatus === 'failed') {
+  if (completionStatus === 'full' || completionStatus === 'incomplete' || completionStatus === 'failed' || completionStatus === 'skipped') {
     return completionStatus
   }
 
@@ -687,13 +1149,24 @@ export const processBatch = async (
   processSingleTarget: BatchItemProcessor,
   runOpts: BatchRunOptions = {}
 ): Promise<BatchProcessResult> => {
-  if (items.length === 0) {
+  const prefilledEntries = runOpts.initialEntries ? [...runOpts.initialEntries] : undefined
+
+  if (items.length === 0 && (!prefilledEntries || prefilledEntries.length === 0)) {
     l.warn('No inputs to process')
     return { ok: 0, partial: 0, incomplete: 0, fail: 0 }
   }
 
   if (typeof runOpts.totalCount === 'number' && runOpts.totalCount > items.length) {
-    l.warn(`Processing ${items.length} of ${runOpts.totalCount} items. Use --batch-all to process all.`)
+    const selectedCount = prefilledEntries?.length ?? items.length
+    if (selectedCount < runOpts.totalCount) {
+      if (items.length < selectedCount) {
+        l.warn(`Processing ${items.length} runnable items from ${selectedCount} selected of ${runOpts.totalCount} total. Some selected inputs were skipped as unsupported for this command; use --batch-all to select more items.`)
+      } else {
+        l.warn(`Processing ${items.length} of ${runOpts.totalCount} items. Use --batch-all to process all.`)
+      }
+    } else {
+      l.warn(`Processing ${items.length} of ${selectedCount} selected items. Some inputs were skipped as unsupported for this command.`)
+    }
   }
 
   const batchDirName = createUniqueDirectoryName(batchLabel)
@@ -707,7 +1180,7 @@ export const processBatch = async (
       sourceUrl: runOpts.source.sourceUrl,
       title: runOpts.source.title,
       author: runOpts.source.author,
-      selectedCount: items.length
+      selectedCount: prefilledEntries?.length ?? items.length
     }
     await writeFile(`${batchDir}/source.json`, JSON.stringify(sourceData, null, 2))
   }
@@ -718,29 +1191,26 @@ export const processBatch = async (
         sourceUrl: runOpts.source.sourceUrl,
         title: runOpts.source.title,
         author: runOpts.source.author,
-        selectedCount: items.length
+        selectedCount: prefilledEntries?.length ?? items.length
       }
     : undefined
 
   let infoEntries: BatchManifestEntry[]
-  if (runOpts.selectedItems && runOpts.selectedItems.length > 0) {
-    infoEntries = runOpts.selectedItems.map(i => ({
-      url: i.url,
-      title: i.title ?? 'Untitled',
-      channel: i.author ?? runOpts.source?.title ?? 'Unknown',
-      duration: i.duration ?? 'Unknown',
-      ...(i.publishedAt ? { publishedAt: i.publishedAt } : {})
-    }))
+  if (prefilledEntries && prefilledEntries.length > 0) {
+    infoEntries = prefilledEntries
+  } else if (runOpts.selectedItems && runOpts.selectedItems.length > 0) {
+    infoEntries = runOpts.selectedItems.map((item, index) =>
+      item
+        ? buildBatchManifestEntryForItem(item.url, item)
+        : buildBatchManifestEntryForItem(items[index] ?? `item-${index + 1}`)
+    )
   } else {
-    infoEntries = items.map(item => {
-      const isUrl = isLikelyUrl(item)
-      const title = basename(item).replace(/\.[^.]+$/, '')
-      if (isUrl) {
-        return { url: item, title, channel: 'URL', duration: 'Unknown' }
-      } else {
-        return { url: `file://${item}`, title, channel: 'Local', duration: 'Unknown' }
-      }
-    })
+    infoEntries = items.map((item) => buildBatchManifestEntryForItem(item))
+  }
+
+  if (infoEntries.length === 0) {
+    l.warn('No supported inputs to process')
+    return { ok: 0, partial: 0, incomplete: 0, fail: 0, batchDir }
   }
 
   await writeBatchManifest(batchDir, toManifestKind(command), infoEntries, batchSource)
@@ -755,6 +1225,7 @@ export const processBatch = async (
   let hasMixedFailureCodes = false
   const finalInfoEntries = [...infoEntries]
   const partialFailureEntries: BatchManifestErrorEntry[] = []
+  const resultEntryIndexes = runOpts.resultEntryIndexes ?? items.map((_, index) => index)
 
   const recordFailureExitCode = (error: unknown): void => {
     const exitCode = error instanceof Error && 'exitCode' in error
@@ -807,7 +1278,7 @@ export const processBatch = async (
             return { manifestEntry, errorCount, status: 'failed' }
           }
 
-          logBatchItemStatus('warn', item, 'incomplete', formatProviderFailureDetail(errorCount))
+          logBatchItemStatus('warn', item, 'incomplete', buildSttBatchItemDetail(manifestEntry))
           return { manifestEntry, errorCount, status: 'incomplete' }
         }
 
@@ -827,7 +1298,7 @@ export const processBatch = async (
             return { manifestEntry, errorCount, status: 'failed', failureError: error }
           }
 
-          logBatchItemStatus('warn', item, 'incomplete', formatProviderFailureDetail(errorCount))
+          logBatchItemStatus('warn', item, 'incomplete', buildSttBatchItemDetail(manifestEntry))
           return { manifestEntry, errorCount, status: 'incomplete', failureError: error }
         }
 
@@ -859,7 +1330,11 @@ export const processBatch = async (
       const item = items[index] as string
       const result = await executeBatchItem(item, index)
       if (result.manifestEntry) {
-        finalInfoEntries[index] = result.manifestEntry
+        const entryIndex = resultEntryIndexes[index] ?? index
+        finalInfoEntries[entryIndex] = {
+          ...(finalInfoEntries[entryIndex] ?? {}),
+          ...result.manifestEntry
+        }
       }
       partialFailureEntries.push(...getBatchManifestErrors(result.manifestEntry))
 
@@ -887,7 +1362,11 @@ export const processBatch = async (
     for (const [index, r] of results.entries()) {
       if (r.status === 'fulfilled') {
         if (r.value.manifestEntry) {
-          finalInfoEntries[index] = r.value.manifestEntry
+          const entryIndex = resultEntryIndexes[index] ?? index
+          finalInfoEntries[entryIndex] = {
+            ...(finalInfoEntries[entryIndex] ?? {}),
+            ...r.value.manifestEntry
+          }
         }
         partialFailureEntries.push(...getBatchManifestErrors(r.value.manifestEntry))
 
@@ -914,13 +1393,15 @@ export const processBatch = async (
 
   if (partialFailureEntries.length > 0) {
     const partialFailureTable = buildBatchPartialFailureTable(partialFailureEntries)
-    l.write('warn', 'Partial provider failures', {
-      category: 'pipeline',
-      humanTable: partialFailureTable,
-      metadata: {
-        failures: partialFailureTable.rows
-      }
-    })
+    if (partialFailureTable.rows.length > 0) {
+      l.write('warn', 'Partial provider failures', {
+        category: 'pipeline',
+        humanTable: partialFailureTable,
+        metadata: {
+          failures: partialFailureTable.rows
+        }
+      })
+    }
   }
 
   logBatchCompletionTable(command, ok, partial, incomplete, fail)

@@ -12,6 +12,7 @@ export const sttCommand = defineCommand({
   help: {
     examples: [
       ['bun as stt https://youtube.com/watch?v=abc', 'Transcribe with default whisper tiny model'],
+      ['bun as stt file.mp3 --whisper-stt base', 'Transcribe with a local whisper.cpp base model'],
       ['bun as stt file.mp3 --gcloud-stt', 'Transcribe with Google Cloud Speech-to-Text via gcloud CLI auth'],
       ['bun as stt file.mp3 --gcloud-stt --speaker-count 2', 'Transcribe with Google diarization and an exact speaker-count hint'],
       ['bun as stt file.mp3 --aws-stt', 'Transcribe with AWS CLI Amazon Transcribe batch STT'],
@@ -29,7 +30,8 @@ export const sttCommand = defineCommand({
       ['bun as stt https://www.youtube.com/watch?v=abc --supadata-stt', 'Transcribe from a public source URL with Supadata auto mode'],
       ['bun as stt https://www.youtube.com/watch?v=abc --supadata-stt native --supadata-lang en', 'Fetch only native transcripts from Supadata with a preferred language'],
       ['bun as stt file.mp3 --elevenlabs-stt', 'Transcribe with ElevenLabs speaker diarization'],
-      ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with ElevenLabs diarization and a speaker-count hint']
+      ['bun as stt file.mp3 --elevenlabs-stt --speaker-count 2', 'Transcribe with ElevenLabs diarization and a speaker-count hint'],
+      ['bun as stt file.mp3 --reverb-stt --reverb-verbatimicity 0.5', 'Transcribe locally with Reverb ASR']
     ]
   }
 }, async (ctx) => {

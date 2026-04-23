@@ -1,4 +1,5 @@
 import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, SttPolicy, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
+import { collectStep2ProviderSpecs, type Step2ProviderSelectionFilter } from '../step-2-shared/provider-registry'
 
 export const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false },
@@ -20,17 +21,6 @@ export const STT_ENGINE_CAPABILITIES = {
   whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'youtube-captions': { diarizationByDefault: false, supportsSpeakerCountHint: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
-
-const appendProviderSpec = (
-  specs: ProviderSpec[],
-  spec: ProviderSpec
-): void => {
-  const key = `${spec.provider}:${spec.model ?? ''}`
-  if (specs.some((entry) => `${entry.provider}:${entry.model ?? ''}` === key)) {
-    return
-  }
-  specs.push(spec)
-}
 
 export const getSttEngineCapabilities = (
   engine: TranscribeEngine
@@ -62,7 +52,7 @@ export const collectSttProviderSpecs = (
   options: Pick<
     RuntimeOptions,
     | 'useReverb'
-    | 'whisperExplicit'
+    | 'step2SelectionOrigins'
     | 'whisperModel'
     | 'whisperModels'
     | 'gcloudSttModel'
@@ -95,41 +85,13 @@ export const collectSttProviderSpecs = (
     | 'happyscribeSttModels'
     | 'supadataSttModel'
     | 'supadataSttModels'
-  >
+  >,
+  filter?: Step2ProviderSelectionFilter
 ): ProviderSpec[] => {
-  const specs: ProviderSpec[] = []
-  const appendModels = (provider: ProviderSpec['provider'], models: string[] | undefined, fallback?: string): void => {
-    for (const model of models ?? (fallback ? [fallback] : [])) {
-      appendProviderSpec(specs, { provider, model })
-    }
-  }
+  const specs = collectStep2ProviderSpecs('stt', options as Record<string, unknown>, filter)
 
-  if (options.useReverb) {
-    appendProviderSpec(specs, { provider: 'reverb', model: 'reverb' })
-  }
-  appendModels('gcloud', options.gcloudSttModels, options.gcloudSttModel)
-  appendModels('aws', options.awsSttModels, options.awsSttModel)
-  appendModels('deepinfra', options.deepinfraSttModels, options.deepinfraSttModel)
-  appendModels('deapi', options.deapiSttModels, options.deapiSttModel)
-  appendModels('elevenlabs', options.elevenlabsSttModels, options.elevenlabsSttModel)
-  appendModels('deepgram', options.deepgramSttModels, options.deepgramSttModel)
-  appendModels('soniox', options.sonioxSttModels, options.sonioxSttModel)
-  appendModels('speechmatics', options.speechmaticsSttModels, options.speechmaticsSttModel)
-  appendModels('rev', options.revSttModels, options.revSttModel)
-  appendModels('groq', options.groqSttModels, options.groqSttModel)
-  appendModels('mistral', options.mistralSttModels, options.mistralSttModel)
-  appendModels('assemblyai', options.assemblyaiSttModels, options.assemblyaiSttModel)
-  appendModels('gladia', options.gladiaSttModels, options.gladiaSttModel)
-  appendModels('happyscribe', options.happyscribeSttModels, options.happyscribeSttModel)
-  appendModels('supadata', options.supadataSttModels, options.supadataSttModel)
-
-  const whisperRequested = specs.some((entry) => entry.provider === 'whisper')
-  if (options.whisperExplicit && !whisperRequested) {
-    appendModels('whisper', options.whisperModels, options.whisperModel)
-  }
-
-  if (specs.length === 0) {
-    appendProviderSpec(specs, { provider: 'whisper', model: options.whisperModel })
+  if (specs.length === 0 && !filter?.includeOrigins) {
+    specs.push({ provider: 'whisper', model: options.whisperModel })
   }
 
   return specs

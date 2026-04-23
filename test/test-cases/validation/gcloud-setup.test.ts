@@ -320,7 +320,7 @@ test('setupGcloudStt creates the project, auto-links the single billing account,
   })
 
   const config = await loadConfig(configPath)
-  expect(config.defaults?.stt?.gcloudStt).toEqual(['chirp_3'])
+  expect(config.defaults?.extract?.stt?.gcloudStt).toEqual(['chirp_3'])
 
   const readiness = await readGcloudSttReadiness()
   expect(readiness.projectId).toBe('autoshow-gcloud-test')
@@ -362,8 +362,10 @@ test('setupGcloudStt does not overwrite an existing gcloud STT default', async (
   await writeFile(configPath, JSON.stringify({
     version: 2,
     defaults: {
-      stt: {
-        gcloudStt: ['custom-model']
+      extract: {
+        stt: {
+          gcloudStt: ['custom-model']
+        }
       }
     }
   }))
@@ -374,7 +376,7 @@ test('setupGcloudStt does not overwrite an existing gcloud STT default', async (
   })
 
   const config = await loadConfig(configPath)
-  expect(config.defaults?.stt?.gcloudStt).toEqual(['custom-model'])
+  expect(config.defaults?.extract?.stt?.gcloudStt).toEqual(['custom-model'])
 })
 
 test('setupGcloudStt can set the project and save defaults before auth is configured without creating the project', async () => {
@@ -397,7 +399,7 @@ test('setupGcloudStt can set the project and save defaults before auth is config
   })
 
   const config = await loadConfig(configPath)
-  expect(config.defaults?.stt?.gcloudStt).toEqual(['chirp_3'])
+  expect(config.defaults?.extract?.stt?.gcloudStt).toEqual(['chirp_3'])
 
   const readiness = await readGcloudSttReadiness()
   expect(readiness.authConfigured).toBe(false)
@@ -528,5 +530,5 @@ test('setup command passes the extended gcloud bootstrap flags through to gcloud
   })
 
   const config = await loadConfig(configPath)
-  expect(config.defaults?.stt?.gcloudStt).toEqual(['chirp_3'])
+  expect(config.defaults?.extract?.stt?.gcloudStt).toEqual(['chirp_3'])
 })

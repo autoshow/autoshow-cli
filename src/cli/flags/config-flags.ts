@@ -3,8 +3,8 @@ import { withHelpGroup } from './flag-utils'
 import {
   transcriptionFlags,
   llmProviderFlags,
-  extractFlags,
-  advancedExtractFlags,
+  ocrInputFlags,
+  ocrTuningFlags,
   batchFlags,
   promptFlag,
   priceFlag
@@ -62,14 +62,15 @@ const configTtsFlags = omitFlags(ttsFlags, ['all-tts'])
 const configImageFlags = omitFlags(imageGenFlags, ['all-image'])
 const configVideoFlags = omitFlags(videoGenFlags, ['all-video'])
 const configMusicFlags = omitFlags(musicGenFlags, ['all-music'])
+const configOcrInputFlags = omitFlags(ocrInputFlags, ['password'])
 
 export const configCommandFlags = {
   ...withHelpGroup(configFlags, 'config'),
   ...withHelpGroup(pricingFlags, 'pricing'),
   ...withHelpGroup(batchFlags, 'step-1-download'),
   ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
-  ...withHelpGroup(extractFlags, 'step-2-ocr'),
-  ...withHelpGroup(advancedExtractFlags, 'step-2-ocr'),
+  ...withHelpGroup(configOcrInputFlags, 'step-2-ocr'),
+  ...withHelpGroup(ocrTuningFlags, 'step-2-ocr'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
   ...withHelpGroup(configTtsFlags, 'step-4-tts'),

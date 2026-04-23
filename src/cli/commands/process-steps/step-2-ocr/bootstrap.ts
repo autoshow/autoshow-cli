@@ -1,27 +1,11 @@
 import type { OcrTarget } from '~/types'
 import { ensureProviderReady } from '~/features/bootstrap-broker'
+import { getStep2BootstrapProviderId } from '../step-2-shared/provider-registry'
 
 const toBootstrapProviderId = (
   target: Pick<OcrTarget, 'service' | 'model'>
 ): string => {
-  switch (target.service) {
-    case 'tesseract':
-      return 'tesseract'
-    case 'ocrmypdf':
-      return 'ocrmypdf'
-    case 'paddle-ocr':
-      return 'paddle-ocr'
-    case 'mistral':
-      return 'mistral-ocr'
-    case 'glm':
-      return 'glm-ocr'
-    case 'openai':
-      return 'openai-ocr'
-    case 'anthropic':
-      return 'anthropic-ocr'
-    case 'gemini':
-      return 'gemini-ocr'
-  }
+  return getStep2BootstrapProviderId('ocr', target.service) ?? ''
 }
 
 export const ensureOcrTargetSetup = async (

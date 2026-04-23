@@ -328,7 +328,7 @@ const enableSpeechApi = async (projectId: string): Promise<void> => {
 
 const hasSavedGcloudSttDefault = (
   config: Awaited<ReturnType<typeof loadConfig>>
-): boolean => Array.isArray(config.defaults?.stt?.gcloudStt) && config.defaults.stt.gcloudStt.length > 0
+): boolean => Array.isArray(config.defaults?.extract?.stt?.gcloudStt) && config.defaults.extract.stt.gcloudStt.length > 0
 
 const ensureGcloudSttDefaultSaved = async (
   configPathOverride?: string
@@ -345,8 +345,10 @@ const ensureGcloudSttDefaultSaved = async (
   const updated = deepMergeConfig(current as Record<string, unknown>, {
     version: 2,
     defaults: {
-      stt: {
-        gcloudStt: [GCLOUD_STT_DEFAULT_MODEL]
+      extract: {
+        stt: {
+          gcloudStt: [GCLOUD_STT_DEFAULT_MODEL]
+        }
       }
     }
   })

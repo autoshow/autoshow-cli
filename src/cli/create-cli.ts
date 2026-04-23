@@ -15,6 +15,7 @@ import { lyricsCommand } from '~/cli/commands/process-steps/step-8-lyrics/define
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
+import { normalizeStep2ArgvAliases } from '~/cli/commands/process-steps/step-2-shared/provider-registry'
 import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { linksCommand } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import * as l from '~/logger'
@@ -291,7 +292,7 @@ const createCli = () => {
 }
 
 const main = async (): Promise<void> => {
-  const argv = Bun.argv.slice(2)
+  const argv = normalizeStep2ArgvAliases(Bun.argv.slice(2))
   validateSttFlagCompatibility(argv)
   const parseCli = async (parseArgv: string[]): Promise<void> => {
     if (shouldPatchHelpConsole(parseArgv)) {

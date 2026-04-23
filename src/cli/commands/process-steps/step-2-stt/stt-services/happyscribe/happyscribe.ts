@@ -228,7 +228,7 @@ export const buildHappyScribeOrganizationResolutionError = (
   return new Error([
     baseMessage,
     `Organizations: ${formatHappyScribeOrganizationChoices(selection.organizations)}.`,
-    'Pass --happyscribe-organization-id <id> or save defaults.stt.happyscribeOrganizationId with bun as config.'
+    'Pass --happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
   ].join(' '))
 }
 

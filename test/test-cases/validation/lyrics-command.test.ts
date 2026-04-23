@@ -127,7 +127,8 @@ test('lyrics generation mode resolves ./albums fallback with --price', async () 
 
   expect(result.exitCode).toBe(0)
   const combined = `${result.stdout}\n${result.stderr}`
-  expect(combined).toContain('Expected output directory:')
+  expect(combined).toContain('Expected files')
+  expect(combined).not.toContain('Expected output directory:')
   expect(combined).toContain('/lyrics/*.md')
 })
 

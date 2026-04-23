@@ -12,7 +12,7 @@ export const configCommand = defineCommand({
   help: {
     examples: [
       ['bun as config --show', 'Print current config'],
-      ['bun as config --openai gpt-5.4 --whisper base', 'Set default LLM and STT model'],
+      ['bun as config --openai gpt-5.4 --whisper-stt base', 'Set default LLM and STT model'],
       ['bun as config --reset', 'Clear all saved config']
     ]
   }

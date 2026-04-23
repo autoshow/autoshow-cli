@@ -1,7 +1,7 @@
 
 
 import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isOcrCommand } from '~/cli/commands/process-steps/process-command-kinds'
+import { commandSupportsBatchSourceExpansion } from '~/cli/commands/process-steps/process-command-kinds'
 import type { BatchSource } from './batch-types'
 import { selectBatchItems } from './batch-select'
 import { tryEnumerateYoutubeChannel } from '../youtube-channel-provider'
@@ -14,7 +14,7 @@ export const tryResolveBatchSource = async (
   command: ProcessCommand,
   opts: RuntimeOptions
 ): Promise<ResolvedBatch | null> => {
-  if (isOcrCommand(command)) return null
+  if (!commandSupportsBatchSourceExpansion(command)) return null
   if (!input.startsWith('http')) return null
 
   const batchOpts = {

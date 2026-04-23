@@ -6,7 +6,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const isCompletionStatus = (value: unknown): value is SttBatchSummaryItem['completionStatus'] =>
-  value === 'full' || value === 'incomplete' || value === 'failed'
+  value === 'full' || value === 'incomplete' || value === 'failed' || value === 'skipped'
 
 const getStep2Entries = (entry: BatchManifestEntry): Record<string, unknown>[] => {
   const step2 = entry['step2']
@@ -101,6 +101,7 @@ export const buildSttBatchSummary = (
       items: summaryItems.length,
       captionBacked: summaryItems.filter((item) => item.captionUsed).length,
       sttFallback: summaryItems.filter((item) => !item.captionUsed && typeof item.transcriptionService === 'string').length,
+      skipped: summaryItems.filter((item) => item.completionStatus === 'skipped').length,
       incomplete: summaryItems.filter((item) => item.completionStatus === 'incomplete').length,
       failed: summaryItems.filter((item) => item.completionStatus === 'failed').length
     },

@@ -1,3 +1,4 @@
+import { basename } from 'node:path'
 import type { AggregatedPriceEstimate, StepEstimate } from '~/utils/pricing/aggregate-pricing'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration } from '~/logger/formatters'
@@ -53,7 +54,7 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
         provider: formatSttProvider(estimate.provider),
         [costKey(mode)]: costField(mode, estimate.totalCost)
       }
-      if (estimate.note) entry['note'] = estimate.note
+      if (mode === 'raw' && estimate.note) entry['note'] = estimate.note
       return entry
     }
     case 'llm': {
@@ -88,7 +89,6 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       if (typeof estimate.promptTokens === 'number') entry['promptTokens'] = estimate.promptTokens
       if (typeof estimate.completionTokens === 'number') entry['completionTokens'] = estimate.completionTokens
       if (typeof estimate.estimateType === 'string') entry['estimateType'] = estimate.estimateType
-      if (mode === 'human' && estimate.note) entry['note'] = estimate.note
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
       return entry
     }
@@ -114,7 +114,6 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       const entry: Record<string, string | number> = { ...base }
       if (mode === 'human') entry['lyrics'] = estimate.lyricsSource
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
-      if (mode === 'human' && estimate.note) entry['note'] = estimate.note
       return entry
     }
     default:
@@ -167,7 +166,6 @@ const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCo
 }
 
 const buildHumanArtifactRows = (
-  outputDir: string,
   files: Record<string, string>
 ): HumanLogTableRow[] =>
   Object.entries(files)
@@ -175,7 +173,7 @@ const buildHumanArtifactRows = (
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([artifact, file]) => ({
       artifact,
-      path: `${outputDir}/${file}`
+      path: basename(file)
     }))
 
 const buildHumanProviderRows = (
@@ -221,7 +219,7 @@ export const buildHumanCompletionTables = (
   files: Record<string, string>,
   options?: CompleteOptions
 ): HumanCompletionTables => {
-  const artifactRows = buildHumanArtifactRows(outputDir, files)
+  const artifactRows = buildHumanArtifactRows(files)
   const providerRows = buildHumanProviderRows(outputDir, files)
   const metricRows = options?.metrics ? buildMetricRows(options.metrics) : []
   const timingRows = options?.steps !== undefined && options.totalTimeMs !== undefined && options.totalCost !== undefined
@@ -275,8 +273,7 @@ export const buildCompleteResultData = (
 
 export const createReporter = (logger: Logger): Reporter => {
   return {
-    expectedOutput: (outputDir, files) => {
-      logger.write('info', `Expected output directory: ${outputDir}`, { category: 'command' })
+    expectedOutput: (_outputDir, files) => {
       logger.write('info', 'Expected files', {
         category: 'command',
         humanTable: createHumanTable(files.map(file => ({ file })), ['file'])
@@ -289,11 +286,6 @@ export const createReporter = (logger: Logger): Reporter => {
         category: 'pricing',
         humanTable: createHumanTable(estimateRows, collectColumns(estimateRows))
       })
-      if (estimate.notes && estimate.notes.length > 0) {
-        for (const note of estimate.notes) {
-          logger.write('info', `Note: ${note}`, { category: 'pricing' })
-        }
-      }
 
       emitResult({
         dryRun: true,

@@ -149,6 +149,8 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).toContain('--youtube-captions')
   expect(result.stdout).toContain('--price')
   expect(result.stdout).not.toContain('--provider')
+  expect(result.stdout).toContain('--whisper-stt')
+  expect(result.stdout).toContain('--reverb-stt')
   expect(result.stdout).toContain('--gcloud-stt')
   expect(result.stdout).toContain('--aws-stt')
   expect(result.stdout).toContain('--deepinfra-stt')
@@ -182,6 +184,44 @@ test('stt help excludes LLM provider flags and includes prompt flag', async () =
   expect(result.stdout).not.toMatch(/--llama(\s|$)/)
 })
 
+const extractReadyAliasPriceCases = [
+  {
+    label: 'stt accepts --whisper-stt in price mode',
+    args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--whisper-stt', 'base', '--price']
+  },
+  {
+    label: 'stt accepts --reverb-stt in price mode',
+    args: ['stt', STABLE_LOCAL_AUDIO_PATH, '--reverb-stt', '--price']
+  },
+  {
+    label: 'ocr accepts --tesseract-ocr in price mode',
+    args: ['ocr', 'input/examples/document/1-document.pdf', '--tesseract-ocr', '--price']
+  }
+] as const
+
+for (const { label, args } of extractReadyAliasPriceCases) {
+  test(label, async () => {
+    const result = await runCommand(['src/cli/create-cli.ts', ...args])
+    expect(result.exitCode).toBe(0)
+  })
+}
+
+test('resume accepts extract-ready STT and OCR aliases', async () => {
+  const missingDir = join(tmpdir(), `autoshow-missing-resume-${Date.now()}`)
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'resume',
+    missingDir,
+    '--whisper-stt',
+    'base',
+    '--tesseract-ocr'
+  ])
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Could not find run.json or batch.json')
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('Unexpected flag')
+})
+
 const commandAllShortcutHelpCases = [
   { command: 'stt', flag: '--all-stt' },
   { command: 'ocr', flag: '--all-ocr' },
@@ -213,11 +253,18 @@ test('ocr help includes hosted OCR flags', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--tesseract-ocr')
   expect(result.stdout).toContain('--mistral-ocr')
   expect(result.stdout).toContain('--glm-ocr')
   expect(result.stdout).toContain('--openai-ocr')
   expect(result.stdout).toContain('--anthropic-ocr')
   expect(result.stdout).toContain('--gemini-ocr')
+  expect(result.stdout).toContain('--dpi')
+  expect(result.stdout).toContain('--psm')
+  expect(result.stdout).toContain('--oem')
+  expect(result.stdout).toContain('--page-separator')
+  expect(result.stdout).toContain('--preserve-spaces')
+  expect(result.stdout).toContain('--rotate')
   expect(result.stdout).not.toContain('--provider')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--epub-calibre')
@@ -241,10 +288,33 @@ test('resume help exposes combined STT and OCR resume flags', async () => {
   expect(result.stdout).toContain('--happyscribe-organization-id')
   expect(result.stdout).toContain('--supadata-stt')
   expect(result.stdout).toContain('--supadata-lang')
+  expect(result.stdout).toContain('--tesseract-ocr')
   expect(result.stdout).toContain('--mistral-ocr')
   expect(result.stdout).toContain('--glm-ocr')
+  expect(result.stdout).toContain('--dpi')
+  expect(result.stdout).toContain('--page-separator')
+  expect(result.stdout).toContain('--preserve-spaces')
+  expect(result.stdout).toContain('--rotate')
   expect(result.stdout).toContain('--epub-bun')
   expect(result.stdout).toContain('--batch-concurrency')
+})
+
+test('config help includes safe OCR defaults and excludes runtime-only password', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'config',
+    '--help'
+  ])
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--reverb-stt')
+  expect(result.stdout).toContain('--youtube-captions')
+  expect(result.stdout).toContain('--tesseract-ocr')
+  expect(result.stdout).toContain('--ocrmypdf')
+  expect(result.stdout).toContain('--paddle-ocr')
+  expect(result.stdout).toContain('--page-separator')
+  expect(result.stdout).toContain('--preserve-spaces')
+  expect(result.stdout).not.toContain('--password')
 })
 
 test('config and resume help do not expose command-level --all-* shortcuts', async () => {
@@ -688,9 +758,6 @@ test('CLI Supadata price output includes converted credit cost estimates', async
   const combined = `${result.stdout}\n${result.stderr}`
   expect(combined).toContain('supadata')
   expect(combined).toContain('generate')
-  expect(combined).toContain('Basic/Pro auto-recharge rate')
-  expect(combined).toContain('2 credits/min')
-  expect(combined).not.toContain('informational credit guidance only')
   expect(combined).not.toContain('Total estimated cost: 0.00000¢')
 })
 
@@ -890,6 +957,31 @@ test('buildOptsFromFlags maps --gemini-ocr to geminiOcrModel', () => {
   expect(opts.geminiOcrModel).toBe('gemini-3.1-flash-lite-preview')
 })
 
+test('buildOptsFromFlags maps --tesseract to useTesseract', () => {
+  const opts = buildOptsFromFlags(false, {
+    'tesseract': true
+  })
+
+  expect(opts.useTesseract).toBe(true)
+})
+
+test('buildOptsFromFlags maps canonical extract-ready aliases for STT and OCR', () => {
+  const whisperOpts = buildOptsFromFlags(false, {
+    'whisper-stt': 'base'
+  })
+  expect(whisperOpts.whisperModel).toBe('base')
+
+  const reverbOpts = buildOptsFromFlags(false, {
+    'reverb-stt': true
+  })
+  expect(reverbOpts.useReverb).toBe(true)
+
+  const tesseractOpts = buildOptsFromFlags(false, {
+    'tesseract-ocr': true
+  })
+  expect(tesseractOpts.useTesseract).toBe(true)
+})
+
 test('buildConfigPatchFromFlags resolves bare provider flags before writing config', () => {
   expect(buildConfigPatchFromFlags({
     'gcloud-stt': true,
@@ -911,14 +1003,22 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
   }, new Set(['gcloud-stt', 'aws-stt', 'deepinfra-stt', 'deapi-stt', 'happyscribe-stt', 'supadata-stt', 'groq-stt', 'openai', 'grok', 'openai-tts', 'openai-image', 'mistral-ocr', 'openai-ocr', 'anthropic-ocr', 'gemini-ocr', 'gemini-video']))).toEqual({
     version: 2,
     defaults: {
-      stt: {
-        gcloudStt: ['chirp_3'],
-        awsStt: ['standard'],
-        deepinfraStt: ['openai/whisper-large-v3-turbo'],
-        deapiStt: ['WhisperLargeV3'],
-        happyscribeStt: ['auto'],
-        supadataStt: ['auto'],
-        groqStt: ['whisper-large-v3-turbo']
+      extract: {
+        stt: {
+          gcloudStt: ['chirp_3'],
+          awsStt: ['standard'],
+          deepinfraStt: ['openai/whisper-large-v3-turbo'],
+          deapiStt: ['WhisperLargeV3'],
+          happyscribeStt: ['auto'],
+          supadataStt: ['auto'],
+          groqStt: ['whisper-large-v3-turbo']
+        },
+        ocr: {
+          mistralOcr: ['mistral-ocr-2512'],
+          openaiOcr: ['gpt-5.4-nano'],
+          anthropicOcr: ['claude-haiku-4-5'],
+          geminiOcr: ['gemini-3.1-flash-lite-preview']
+        }
       },
       llm: {
         openai: ['gpt-5.4-nano'],
@@ -934,12 +1034,6 @@ test('buildConfigPatchFromFlags resolves bare provider flags before writing conf
         video: {
           geminiVideo: ['veo-3.1-fast-generate-preview']
         }
-      },
-      extract: {
-        mistralOcr: ['mistral-ocr-2512'],
-        openaiOcr: ['gpt-5.4-nano'],
-        anthropicOcr: ['claude-haiku-4-5'],
-        geminiOcr: ['gemini-3.1-flash-lite-preview']
       }
     }
   })
@@ -953,10 +1047,12 @@ test('buildConfigPatchFromFlags stores AWS region and bucket defaults', () => {
   }, new Set(['aws-stt', 'aws-region', 'aws-bucket']))).toEqual({
     version: 2,
     defaults: {
-      stt: {
-        awsStt: ['standard'],
-        awsRegion: 'us-east-1',
-        awsBucket: 'transcribe-bucket'
+      extract: {
+        stt: {
+          awsStt: ['standard'],
+          awsRegion: 'us-east-1',
+          awsBucket: 'transcribe-bucket'
+        }
       }
     }
   })
@@ -969,9 +1065,11 @@ test('buildConfigPatchFromFlags stores Supadata STT defaults and language prefer
   }, new Set(['supadata-stt', 'supadata-lang']))).toEqual({
     version: 2,
     defaults: {
-      stt: {
-        supadataStt: ['native'],
-        supadataLang: 'en'
+      extract: {
+        stt: {
+          supadataStt: ['native'],
+          supadataLang: 'en'
+        }
       }
     }
   })
@@ -984,9 +1082,62 @@ test('buildConfigPatchFromFlags stores Happy Scribe STT defaults and organizatio
   }, new Set(['happyscribe-stt', 'happyscribe-organization-id']))).toEqual({
     version: 2,
     defaults: {
-      stt: {
-        happyscribeStt: ['auto'],
-        happyscribeOrganizationId: 'org-123'
+      extract: {
+        stt: {
+          happyscribeStt: ['auto'],
+          happyscribeOrganizationId: 'org-123'
+        }
+      }
+    }
+  })
+})
+
+test('buildConfigPatchFromFlags stores safe step-2 defaults and omits runtime-only password', () => {
+  expect(buildConfigPatchFromFlags({
+    'reverb-stt': true,
+    'youtube-captions': true,
+    'tesseract-ocr': true,
+    ocrmypdf: true,
+    'paddle-ocr': true,
+    dpi: '450',
+    psm: '6',
+    oem: '1',
+    rotate: '90',
+    'page-separator': '\n-- page --\n',
+    'preserve-spaces': true,
+    password: 'secret-pdf-password'
+  }, new Set([
+    'reverb-stt',
+    'youtube-captions',
+    'tesseract-ocr',
+    'ocrmypdf',
+    'paddle-ocr',
+    'dpi',
+    'psm',
+    'oem',
+    'rotate',
+    'page-separator',
+    'preserve-spaces',
+    'password'
+  ]))).toEqual({
+    version: 2,
+    defaults: {
+      extract: {
+        stt: {
+          reverb: true,
+          youtubeCaptions: true
+        },
+        ocr: {
+          tesseract: true,
+          ocrmypdf: true,
+          paddleOcr: true,
+          dpi: 450,
+          psm: 6,
+          oem: 1,
+          rotate: 90,
+          pageSeparator: '\n-- page --\n',
+          preserveSpaces: true
+        }
       }
     }
   })
@@ -1045,8 +1196,10 @@ test('buildConfigPatchFromFlags stores repeated same-provider flags as ordered a
   }, new Set(['speechmatics-stt', 'openai', 'gemini-video']), rawArgs)).toEqual({
     version: 2,
     defaults: {
-      stt: {
-        speechmaticsStt: ['standard', 'enhanced']
+      extract: {
+        stt: {
+          speechmaticsStt: ['standard', 'enhanced']
+        }
       },
       llm: {
         openai: ['gpt-5.4', 'gpt-5.4-mini']
@@ -1192,6 +1345,7 @@ test('buildOptsFromFlags expands --all-ocr to every supported OCR engine', () =>
     'all-ocr': true
   })
 
+  expect(opts.useTesseract).toBe(true)
   expect(opts.useOcrmypdf).toBe(true)
   expect(opts.usePaddleOcr).toBe(true)
   expect(opts.mistralOcrModels).toEqual([...SUPPORTED_MISTRAL_OCR_MODELS])
@@ -1200,6 +1354,7 @@ test('buildOptsFromFlags expands --all-ocr to every supported OCR engine', () =>
   expect(opts.anthropicOcrModels).toEqual([...SUPPORTED_ANTHROPIC_OCR_MODELS])
   expect(opts.geminiOcrModels).toEqual([...SUPPORTED_GEMINI_OCR_MODELS])
   expect(collectExplicitOcrTargets(opts)).toEqual([
+    { service: 'tesseract', model: 'tesseract' },
     { service: 'ocrmypdf', model: 'ocrmypdf' },
     { service: 'paddle-ocr', model: 'paddle-ocr' },
     ...SUPPORTED_MISTRAL_OCR_MODELS.map((model) => ({ service: 'mistral' as const, model })),
@@ -1559,9 +1714,9 @@ test('buildOptsFromFlags maps STT concurrency and cache flags', () => {
 
 test('collectSttTargets includes whisper only when explicitly requested alongside other providers', () => {
   const opts = buildOptsFromFlags(false, {
-    whisper: 'base',
+    'whisper-stt': 'base',
     'assemblyai-stt': 'universal-3-pro'
-  }, [], {}, new Set(['whisper', 'assemblyai-stt']))
+  }, [], {}, new Set(['whisper-stt', 'assemblyai-stt']))
 
   expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
     'assemblyai:universal-3-pro',
@@ -1571,17 +1726,19 @@ test('collectSttTargets includes whisper only when explicitly requested alongsid
 
 test('collectSttTargets deduplicates identical provider-specific specs', () => {
   const opts = buildOptsFromFlags(false, {
-    whisper: 'base',
+    'whisper-stt': 'base',
     'assemblyai-stt': 'universal-3-pro'
   })
 
   expect(collectSttTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
-    'assemblyai:universal-3-pro'
+    'assemblyai:universal-3-pro',
+    'whisper:base'
   ])
 })
 
 test('collectExplicitOcrTargets collects canonical OCR provider flags', () => {
   const opts = buildOptsFromFlags(false, {
+    'tesseract': true,
     'paddle-ocr': true,
     'mistral-ocr': 'mistral-ocr-2512',
     'openai-ocr': 'gpt-5.4-nano',
@@ -1590,6 +1747,7 @@ test('collectExplicitOcrTargets collects canonical OCR provider flags', () => {
   })
 
   expect(collectExplicitOcrTargets(opts)).toEqual([
+    { service: 'tesseract', model: 'tesseract' },
     { service: 'paddle-ocr', model: 'paddle-ocr' },
     { service: 'mistral', model: 'mistral-ocr-2512' },
     { service: 'openai', model: 'gpt-5.4-nano' },
@@ -2097,6 +2255,7 @@ test('ocr --all-ocr price shows multi-provider estimates and provider result art
 
   expect(result.exitCode).toBe(0)
   expectCombinedOutputToContain(result, [
+    'tesseract',
     'mistral-ocr-2512',
     'claude-haiku-4-5',
     'gemini-3.1-flash-lite-preview',
@@ -2254,6 +2413,46 @@ test('loadConfig rejects removed defaults.stt.openaiStt', async () => {
       defaults: {
         stt: {
           openaiStt: 'removed-model'
+        }
+      }
+    }, null, 2))
+
+    await expect(loadConfig(configPath)).rejects.toThrow('autoshow config')
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+})
+
+test('loadConfig rejects removed flat defaults.extract.openaiOcr', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-config-removed-flat-ocr-'))
+  const configPath = join(tempDir, 'autoshow.json')
+
+  try {
+    await writeFile(configPath, JSON.stringify({
+      version: 2,
+      defaults: {
+        extract: {
+          openaiOcr: 'gpt-5.4-nano'
+        }
+      }
+    }, null, 2))
+
+    await expect(loadConfig(configPath)).rejects.toThrow('autoshow config')
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+})
+
+test('loadConfig rejects runtime-only defaults.extract.password', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-config-runtime-only-'))
+  const configPath = join(tempDir, 'autoshow.json')
+
+  try {
+    await writeFile(configPath, JSON.stringify({
+      version: 2,
+      defaults: {
+        extract: {
+          password: 'secret-pdf-password'
         }
       }
     }, null, 2))

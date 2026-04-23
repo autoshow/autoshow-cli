@@ -55,6 +55,7 @@ export type BatchManifestErrorEntry = {
   service?: string
   model?: string
   message?: string
+  skipped?: boolean
 }
 
 export type SttManifestProviderStatus = 'succeeded' | 'missing' | 'failed' | 'skipped'
@@ -67,6 +68,6 @@ export type SttManifestProviderSummary = {
 
 export type SttBatchItemSummary = {
   label: string
-  completionStatus: 'full' | 'incomplete' | 'failed'
+  completionStatus: 'full' | 'incomplete' | 'failed' | 'skipped'
   providers: SttManifestProviderSummary[]
 }

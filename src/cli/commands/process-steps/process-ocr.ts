@@ -5,6 +5,7 @@ import { validateData } from '~/utils/validate/validation'
 import {
   ExtractionOptionsSchema,
   type ExtractionOptions,
+  type ResolvedStep2Execution,
   type ProcessDocumentOutput,
   type ExtractionMetadata,
   type ExtractionResult,
@@ -38,6 +39,7 @@ import { FIRECRAWL_PRICE_NOTE } from './step-2-ocr/ocr-utils/extract-pricing'
 import { serializeOneOrMany } from './target-runner'
 import { writeProviderResult } from './manifest-utils'
 import type { TextArtifactFile } from './step-2-ocr/epub/export'
+import { resolveOcrStep2ExecutionFromFormat } from './step-2-shared/resolved-step2'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
@@ -234,11 +236,66 @@ const buildDocumentSource = (
   return { filePath }
 }
 
+const isRemoteDocumentSource = (
+  source: Step1SourceRef
+): boolean => typeof source.url === 'string' && /^https?:\/\//i.test(source.url)
+
+const resolveRecordedOcrStep2 = (
+  format: ProcessDocumentOutput['step1Metadata']['format'],
+  opts: ExtractionOptions,
+  source: Step1SourceRef,
+  requestedTargets?: Array<{ service: string, model: string }>,
+  preparedMarkdown?: string
+): ResolvedStep2Execution => {
+  const resolved = resolveOcrStep2ExecutionFromFormat(format as Parameters<typeof resolveOcrStep2ExecutionFromFormat>[0], {
+    ...opts,
+    preparedMarkdown,
+    localHtmlDocument: format === 'html' && !isRemoteDocumentSource(source)
+  } as unknown as Parameters<typeof resolveOcrStep2ExecutionFromFormat>[1])
+
+  if (resolved.route !== 'ocr' || !requestedTargets || requestedTargets.length === 0) {
+    return resolved
+  }
+
+  return {
+    ...resolved,
+    providers: requestedTargets.map((target) => ({
+      service: target.service,
+      model: target.model,
+      origin: resolved.providers.find((provider) =>
+        provider.service === target.service && provider.model === target.model
+      )?.origin
+    }))
+  }
+}
+
+const toResolvedRequestedProviders = (
+  resolvedStep2: ResolvedStep2Execution
+): Array<{ service: string, model: string }> | undefined =>
+  resolvedStep2.route === 'ocr'
+    ? resolvedStep2.providers.map((provider) => ({
+        service: provider.service,
+        model: provider.model
+      }))
+    : undefined
+
+const buildSuccessfulResolvedProviderStates = (
+  resolvedProviders: Array<{ service: string, model: string }>
+): Array<Record<string, unknown>> =>
+  resolvedProviders.map((provider) => ({
+    service: provider.service,
+    model: provider.model,
+    artifactDir: '.',
+    status: 'succeeded',
+    attempts: 1
+  }))
+
 type OcrMetadataOptions = {
   failures?: Array<{ service: string, model: string, message: string }>
   web?: ProcessDocumentOutput['web']
   source?: Step1SourceRef
   completionStatus?: OcrCompletionStatus
+  resolvedStep2?: ResolvedStep2Execution
   requestedProviders?: Array<{ service: string, model: string }>
   providerStates?: Array<Record<string, unknown>>
   missingProviders?: Array<{ service: string, model: string }>
@@ -283,6 +340,7 @@ const buildDocumentMetadataPayload = (
     step2: serializeOneOrMany(normalizedStep2),
     ...(options.web ? { web: options.web } : {}),
     ...(options.source ? { source: options.source } : {}),
+    ...(options.resolvedStep2 ? { resolvedStep2: options.resolvedStep2 } : {}),
     cost,
     ...(timing ? { timing } : {}),
     ...(options.completionStatus ? { completionStatus: options.completionStatus } : {}),
@@ -332,6 +390,7 @@ export const processOcr = async (
     ocrConcurrency: rawOpts.ocrConcurrency,
     preserveInterwordSpaces: rawOpts.preserveInterwordSpaces ?? false,
     rotate: rawOpts.rotate ?? 0,
+    ...(rawOpts.useTesseract ? { useTesseract: true } : {}),
     ...(rawOpts.useOcrmypdf ? { useOcrmypdf: true } : {}),
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
@@ -346,6 +405,7 @@ export const processOcr = async (
     ...(rawOpts.pdfChapterLlmModel ? { pdfChapterLlmModel: rawOpts.pdfChapterLlmModel } : {}),
     ...(rawOpts.useEpubBun ? { useEpubBun: true } : {}),
     ...(rawOpts.useEpubCalibre ? { useEpubCalibre: true } : {}),
+    ...(rawOpts.step2SelectionOrigins ? { step2SelectionOrigins: rawOpts.step2SelectionOrigins } : {}),
     ...(preparedDocument?.preparedMarkdown ? { preparedMarkdown: preparedDocument.preparedMarkdown } : {}),
     ...(preparedDocument?.htmlArticleBackend ? { htmlArticleBackend: preparedDocument.htmlArticleBackend } : {})
   }, 'document extraction options')
@@ -366,6 +426,13 @@ export const processOcr = async (
     if (resumeRun || explicitTargets.length > 1) {
       const requestedTargets = resumeRun?.requestedTargets ?? explicitTargets
       const targetsToRun = resumeRun?.targetsToRun ?? requestedTargets
+      const resolvedStep2 = resolveRecordedOcrStep2(
+        step1Metadata.format,
+        opts,
+        documentSource,
+        requestedTargets,
+        prepared.preparedMarkdown
+      )
       const providersDir = `${outputDir}/providers`
       await mkdir(providersDir, { recursive: true })
 
@@ -446,6 +513,7 @@ export const processOcr = async (
           web,
           source: documentSource,
           completionStatus,
+          resolvedStep2,
           requestedProviders: requestedTargets.map(toRequestedProvider),
           providerStates,
           missingProviders
@@ -488,14 +556,24 @@ export const processOcr = async (
     const extracted = await runWithLogContext({ step: 'step-2-ocr' }, async () =>
       await runOcr(extractFilePath, step1Metadata, singleTargetOpts)
     )
+    const resolvedStep2 = resolveRecordedOcrStep2(
+      step1Metadata.format,
+      opts,
+      documentSource,
+      explicitTargets.length === 1 ? explicitTargets : undefined,
+      prepared.preparedMarkdown
+    )
+    const resolvedRequestedProviders = toResolvedRequestedProviders(resolvedStep2)
 
     const rootMetadata = buildDocumentMetadataPayload(step1Metadata, extracted.step2Metadata, opts, {
       web,
       source: documentSource,
+      resolvedStep2,
       completionStatus: 'full',
-      ...(explicitTargets.length === 1
+      ...(resolvedRequestedProviders
         ? {
-            requestedProviders: explicitTargets.map(toRequestedProvider),
+            requestedProviders: resolvedRequestedProviders,
+            providerStates: buildSuccessfulResolvedProviderStates(resolvedRequestedProviders),
             missingProviders: []
           }
         : {})
@@ -517,9 +595,10 @@ export const processOcr = async (
       step1Metadata,
       step2Metadata: extracted.step2Metadata,
       completionStatus: 'full',
-      ...(explicitTargets.length === 1
+      ...(resolvedRequestedProviders
         ? {
-            requestedProviders: explicitTargets.map(toRequestedProvider),
+            requestedProviders: resolvedRequestedProviders,
+            providerStates: buildSuccessfulResolvedProviderStates(resolvedRequestedProviders),
             missingProviders: []
           }
         : {}),
