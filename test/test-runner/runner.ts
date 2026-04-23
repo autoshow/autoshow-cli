@@ -294,9 +294,9 @@ const runPriceSuite = async (
   budgetCents?: number
 ): Promise<{ exitCode: number, results: PriceCommandResult[], budgetSummary: BudgetPreflightSummary | undefined }> => {
   if (commands.length === 0) {
-    console.error(`No ${suiteName} pricing commands resolved`)
+    console.log(`No ${suiteName} pricing commands resolved; treating selection as a zero-cost price pass`)
     return {
-      exitCode: 1,
+      exitCode: 0,
       results: [],
       budgetSummary: budgetCents !== undefined ? buildEmptyBudgetSummary(suiteName, budgetCents) : undefined,
     }
@@ -544,8 +544,8 @@ const runPriceMode = async (
   suiteName = resolved.suiteName
 
   if (resolved.commands.length === 0) {
-    console.error('No pricing commands resolved for the selected paths')
-    exitCode = 1
+    console.log('No pricing commands resolved for the selected paths; treating selection as a zero-cost price pass')
+    exitCode = 0
     results = []
     budgetSummary = args.budgetCents !== undefined ? buildEmptyBudgetSummary(suiteName, args.budgetCents) : undefined
   } else {

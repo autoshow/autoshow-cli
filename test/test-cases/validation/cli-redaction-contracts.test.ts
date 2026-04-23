@@ -1,5 +1,7 @@
-import { test, expect } from 'bun:test'
+import { expect, test } from 'bun:test'
 import { runCommand } from '../../test-utils/test-helpers'
+
+const failureFixturePath = new URL('./fixtures/failure-fixture.ts', import.meta.url).pathname
 
 test('usage-error output redacts password flag values', async () => {
   const secret = 'supersecret-password-123'
@@ -13,8 +15,7 @@ test('usage-error output redacts password flag values', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  const combined = `${result.stdout}\n${result.stderr}`
-  expect(combined.includes(secret)).toBe(false)
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain(secret)
 })
 
 test('usage-error output redacts sensitive URL query values', async () => {
@@ -28,16 +29,14 @@ test('usage-error output redacts sensitive URL query values', async () => {
   ])
 
   expect(result.exitCode).toBe(2)
-  const combined = `${result.stdout}\n${result.stderr}`
-  expect(combined.includes(token)).toBe(false)
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain(token)
 })
 
 test('fatal process handlers redact unhandled rejection payloads', async () => {
   const result = await runCommand([
-    'test/test-cases/validation/fixtures/failure-fixture.ts'
+    failureFixturePath
   ])
 
   expect(result.exitCode).toBe(1)
-  const combined = `${result.stdout}\n${result.stderr}`
-  expect(combined.includes('fatal-secret-value-987')).toBe(false)
+  expect(`${result.stdout}\n${result.stderr}`).not.toContain('fatal-secret-value-987')
 })
