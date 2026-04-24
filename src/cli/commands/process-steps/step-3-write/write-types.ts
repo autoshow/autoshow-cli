@@ -122,7 +122,6 @@ export type LLMService = Step3Metadata['llmService']
 export type StructuredPresetName =
   | 'shortSummary'
   | 'longSummary'
-  | 'chapters'
   | 'bulletPoints'
   | 'takeaways'
   | 'quotes'

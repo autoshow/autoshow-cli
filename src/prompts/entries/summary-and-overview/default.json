@@ -3,6 +3,6 @@
   "includes": [
     "shortSummary",
     "longSummary",
-    "chapters"
+    "mediumChapters"
   ]
 }

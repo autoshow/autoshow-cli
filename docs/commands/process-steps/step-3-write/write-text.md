@@ -79,12 +79,62 @@ Hosted provider flags also accept an omitted value and then resolve to the cheap
 
 ## Prompts
 
-Prompt names are assembled at runtime from JSON files discovered recursively under `src/prompts/entries/`. Common names include:
+Prompt names are assembled at runtime from JSON files discovered recursively under `src/prompts/entries/`. Available prompts organized by category:
+
+### Summary and Overview
 
 - `default`
 - `shortSummary`
+- `summary`
 - `longSummary`
-- `chapters`
+- `bulletPoints`
+- `takeaways`
+- `quotes`
+- `keyMoments`
+- `faq`
+- `questions`
+- `metadata`
+
+### Chapters
+
+- `chapterTitles`
+- `chapterTitlesAndQuotes`
+- `shortChapters`
+- `mediumChapters`
+- `longChapters`
+- `pdfChapterBoundaries`
+
+### Marketing Content
+
+- `blog`
+- `seoArticle`
+- `contentStrategy`
+- `emailNewsletter`
+- `titles`
+
+### Social Media
+
+- `x`
+- `tiktok`
+- `facebook`
+- `instagram`
+- `linkedin`
+- `youtubeDescription`
+
+### Song Lyrics
+
+- `countrySong`
+- `folkSong`
+- `jazzSong`
+- `popSong`
+- `rockSong`
+- `rapSong`
+
+### Creative Writing
+
+- `poetryCollection`
+- `screenplay`
+- `shortStory`
 
 ## Output
 

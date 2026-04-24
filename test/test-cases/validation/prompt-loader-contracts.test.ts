@@ -57,7 +57,7 @@ describe('prompt loader contracts', () => {
     const names = await getAvailablePromptNames()
     const expectedNames = [
       'shortSummary',
-      'chapters',
+      'shortChapters',
       'rockSong',
       'facebook',
       'youtubeDescription',
@@ -83,7 +83,7 @@ describe('prompt loader contracts', () => {
 
     expect(prompt).toContain('Write a one-sentence description of the transcript')
     expect(prompt).toContain('Write a one-paragraph summary')
-    expect(prompt).toContain('Create chapter titles and descriptions')
+    expect(prompt).toContain('Create chapter titles and one-paragraph descriptions')
   })
 
   test('resolves all song lyric prompts to the shared songLyrics structured preset', async () => {
@@ -170,7 +170,7 @@ describe('prompt loader contracts', () => {
     const schema = await resolveStructuredSchema(['rockSong', 'shortSummary'])
     const validation = parseAndValidateStructured(
       schema.schema,
-      '{ "rockSong": { "lyrics": "Verse 1" }, "shortSummary": { "episodeDescription": "A short summary." } }',
+      '{ "rockSong": { "lyrics": "Verse 1" }, "shortSummary": { "episodeDescription": "A short episode description for testing purposes that validates the schema constraints properly.", "episodeSummary": "This is a test summary that needs to be at least fifty characters long to pass validation." } }',
       {
         leafPromptNames: schema.leafPromptNames,
         presetNames: schema.presetNames,
@@ -185,7 +185,8 @@ describe('prompt loader contracts', () => {
         lyrics: 'Verse 1'
       },
       shortSummary: {
-        episodeDescription: 'A short summary.'
+        episodeDescription: 'A short episode description for testing purposes that validates the schema constraints properly.',
+        episodeSummary: 'This is a test summary that needs to be at least fifty characters long to pass validation.'
       }
     })
   })
