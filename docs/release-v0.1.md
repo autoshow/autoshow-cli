@@ -303,8 +303,8 @@ Notable behavior:
 
 ### Prompts
 
-The prompt library lives in `src/prompts/entries/*.json`.
-As of this release, it exposes 37 top-level prompt definitions and presets.
+The prompt library lives in JSON files discovered recursively under `src/prompts/entries/`.
+As of this release, it exposes 38 top-level prompt definitions and presets.
 
 Common built-in prompt names include:
 

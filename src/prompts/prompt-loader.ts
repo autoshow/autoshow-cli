@@ -1,5 +1,6 @@
+import type { Dirent } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
 import type {
@@ -37,6 +38,56 @@ const PROMPTS_DIR = resolve(import.meta.dir, 'entries')
 const PROMPT_FILE_EXTENSION = '.json'
 
 let cachedRegistry: PromptsRegistry | undefined
+
+const collectPromptFilePaths = async (directory: string): Promise<string[]> => {
+  let dirEntries: Dirent[]
+  try {
+    dirEntries = await readdir(directory, { withFileTypes: true })
+  } catch (error) {
+    if (directory === PROMPTS_DIR && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error(`Prompts registry directory not found at ${PROMPTS_DIR}`)
+    }
+
+    throw new Error(`Failed to read prompts registry directory at ${directory}`)
+  }
+
+  const nestedPaths = await Promise.all(dirEntries.map(async (dirEntry) => {
+    const entryPath = resolve(directory, dirEntry.name)
+
+    if (dirEntry.isDirectory()) {
+      return collectPromptFilePaths(entryPath)
+    }
+
+    if (dirEntry.isFile() && dirEntry.name.endsWith(PROMPT_FILE_EXTENSION)) {
+      return [entryPath]
+    }
+
+    return []
+  }))
+
+  return nestedPaths.flat().sort((a, b) => a.localeCompare(b))
+}
+
+const getPromptNameFromPath = (filePath: string): string =>
+  basename(filePath, PROMPT_FILE_EXTENSION)
+
+const assertUniquePromptBasenames = (promptFiles: string[]): void => {
+  const promptNameToPath = new Map<string, string>()
+
+  for (const filePath of promptFiles) {
+    const promptName = getPromptNameFromPath(filePath)
+    const existingPath = promptNameToPath.get(promptName)
+
+    if (existingPath !== undefined) {
+      throw new Error(
+        `Duplicate prompt entry basename "${promptName}" found at ${existingPath} and ${filePath}. ` +
+        `Prompt names are derived from JSON file basenames, so each prompt filename must be unique across ${PROMPTS_DIR}.`
+      )
+    }
+
+    promptNameToPath.set(promptName, filePath)
+  }
+}
 
 const isLeaf = (entry: PromptEntry): entry is LeafPrompt => 'instruction' in entry
 
@@ -158,28 +209,15 @@ const collectLeafPromptsFromRegistry = (
 const loadPrompts = async (): Promise<PromptsRegistry> => {
   if (cachedRegistry !== undefined) return cachedRegistry
 
-  let dirEntries: string[]
-  try {
-    dirEntries = await readdir(PROMPTS_DIR, 'utf8')
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error(`Prompts registry directory not found at ${PROMPTS_DIR}`)
-    }
-
-    throw new Error(`Failed to read prompts registry directory at ${PROMPTS_DIR}`)
-  }
-
-  const promptFiles = dirEntries
-    .filter((fileName) => fileName.endsWith(PROMPT_FILE_EXTENSION))
-    .sort((a, b) => a.localeCompare(b))
+  const promptFiles = await collectPromptFilePaths(PROMPTS_DIR)
 
   if (promptFiles.length === 0) {
     throw new Error(`Prompts registry directory at ${PROMPTS_DIR} contains no .json files`)
   }
 
-  const rawEntries = await Promise.all(promptFiles.map(async (fileName) => {
-    const filePath = resolve(PROMPTS_DIR, fileName)
+  assertUniquePromptBasenames(promptFiles)
 
+  const rawEntries = await Promise.all(promptFiles.map(async (filePath) => {
     let fileContents: string
     try {
       fileContents = await readFile(filePath, 'utf8')
@@ -195,7 +233,7 @@ const loadPrompts = async (): Promise<PromptsRegistry> => {
     }
 
     const entry = validateData(PromptEntrySchema, rawEntry, `prompt entry at ${filePath}`)
-    const promptName = fileName.slice(0, -PROMPT_FILE_EXTENSION.length)
+    const promptName = getPromptNameFromPath(filePath)
 
     return [promptName, entry] as const
   }))

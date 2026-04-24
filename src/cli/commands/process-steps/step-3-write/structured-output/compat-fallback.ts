@@ -3,7 +3,8 @@ import type {
   CompatStructuredResponse,
   LLMTarget,
   ResolvedStructuredSchema,
-  StructuredRequestOptions
+  StructuredRequestOptions,
+  StructuredValidationContext
 } from '~/types'
 import { parseAndValidateStructured } from './validator'
 import { buildStructuredInstructionSuffix } from './schema-resolver'
@@ -32,7 +33,8 @@ export const runCompatFallback = async (
   prompt: string,
   model: string,
   schema: ResolvedStructuredSchema,
-  retryBudget: number
+  retryBudget: number,
+  validationContext?: StructuredValidationContext
 ): Promise<CompatStructuredResponse> => {
   const compatPrompt = buildCompatPrompt(prompt, schema)
   const requestOptions: StructuredRequestOptions = {
@@ -49,7 +51,7 @@ export const runCompatFallback = async (
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const response = await target.run(compatPrompt, model, requestOptions)
     lastResponse = response
-    const validated = parseAndValidateStructured(schema.schema, response.result)
+    const validated = parseAndValidateStructured(schema.schema, response.result, validationContext)
 
     if (validated.success) {
       return {

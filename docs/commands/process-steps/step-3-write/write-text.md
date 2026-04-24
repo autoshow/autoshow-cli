@@ -79,7 +79,7 @@ Hosted provider flags also accept an omitted value and then resolve to the cheap
 
 ## Prompts
 
-Prompt names are assembled at runtime from `src/prompts/entries/*.json`. Common names include:
+Prompt names are assembled at runtime from JSON files discovered recursively under `src/prompts/entries/`. Common names include:
 
 - `default`
 - `shortSummary`

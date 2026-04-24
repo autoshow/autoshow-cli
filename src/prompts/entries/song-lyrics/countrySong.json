@@ -1,0 +1,11 @@
+{
+  "description": "Heartfelt country song based on transcript themes",
+  "expectedInputTokens": 500,
+  "expectedOutputTokens": 1100,
+  "instruction": "- Write a heartfelt, storytelling country song with simple yet emotionally charged lyrics.\n    - Include themes of life, love, and the struggles of everyday people.\n    - Structure the song with verses, choruses, and a bridge.\n    - Put only the actual song lyrics in the lyrics field; do not include title options, explanations, or prefaces.",
+  "structuredPreset": "songLyrics",
+  "examples": {
+    "json": "{\n  \"title\": \"Track One\",\n  \"lyrics\": \"Verse 1\\n\\n[Storytelling country verse]\\n\\nChorus\\n\\n[Emotionally charged chorus]\\n\\nVerse 2\\n\\n[Second verse about work, love, and everyday struggle]\\n\\nBridge\\n\\n[Bridge that raises the emotional stakes]\\n\\nChorus\\n\\n[Final chorus]\"\n}",
+    "markdown": "Format the output like so:\n\n# Track One\n\nVerse 1\n\nLyrics to the song."
+  }
+}

@@ -190,7 +190,7 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--speaker-count <n>` | Diarization speaker-count hint for supported services |
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
 | `--split` | Split audio into 30-minute segments before transcription |
-| `--prompt <name...>` | Named prompt presets from `src/prompts/entries/*.json` |
+| `--prompt <name...>` | Named prompt presets discovered recursively under `src/prompts/entries/` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
 | `--batch-order <newest|oldest>` | Choose batch ordering |

@@ -29,6 +29,7 @@ export type LLMOptions = Pick<ProcessingOptions,
   | 'llmLocalConcurrency'
 > & {
   promptBuilder?: ((instruction: string) => string) | undefined
+  structuredContext?: StructuredOutputContext | undefined
 }
 
 export type BuildPromptOptions = {
@@ -77,6 +78,16 @@ export type StructuredRequestOptions = {
   schema: JsonSchemaObject
   strict: boolean
   strategy: StructuredStrategy
+}
+
+export type StructuredOutputContext = {
+  songLyricsTitle?: string | undefined
+}
+
+export type StructuredValidationContext = {
+  leafPromptNames: string[]
+  presetNames: string[]
+  songLyricsTitle?: string | undefined
 }
 
 export type StructuredRunResult = {
@@ -137,6 +148,7 @@ export type StructuredPresetName =
   | 'facebook'
   | 'instagram'
   | 'linkedin'
+  | 'songLyrics'
   | 'freeformEnvelope'
 
 export type CompatStructuredResponse = {

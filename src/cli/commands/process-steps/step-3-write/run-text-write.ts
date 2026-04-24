@@ -23,6 +23,7 @@ import { runLLM } from './run-llm'
 import {
   buildTextInputPrompt,
   getTextInputTitle,
+  resolveTextInputSongTitle,
   writeRenderedTextArtifacts,
 } from './text-input-utils'
 import { runTts } from '~/cli/commands/process-steps/step-4-tts/run-tts'
@@ -139,6 +140,7 @@ export const runTextWrite = async (
   }
 
   const title = getTextInputTitle(inputPath)
+  const songLyricsTitle = await resolveTextInputSongTitle(inputPath, opts.trackList)
   const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
   const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
     title,
@@ -171,6 +173,9 @@ export const runTextWrite = async (
       llamaModel: llmConfig.llamaModel,
       llmProviderConcurrency: opts.llmProviderConcurrency,
       llmLocalConcurrency: opts.llmLocalConcurrency,
+      structuredContext: {
+        songLyricsTitle
+      },
       promptBuilder: (instruction: string) =>
         buildTextInputPrompt(sourceText, {
           title,

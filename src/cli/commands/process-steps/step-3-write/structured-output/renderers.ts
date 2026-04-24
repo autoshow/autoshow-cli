@@ -51,6 +51,29 @@ const renderObject = (input: Record<string, unknown>, headingLevel: 2 | 3): stri
   return chunks.join('\n\n').trim()
 }
 
+const stripDuplicateSongTitleHeading = (lyrics: string, title: string): string => {
+  const normalized = lyrics.trimStart()
+  const [firstLine, ...rest] = normalized.split(/\r?\n/)
+  const headingMatch = firstLine?.match(/^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/u)
+  if (headingMatch?.[1]?.trim() !== title.trim()) {
+    return lyrics.trim()
+  }
+
+  return rest.join('\n').replace(/^\s*\n/u, '').trim()
+}
+
+const renderSongLyrics = (record: Record<string, unknown>): string | undefined => {
+  if (typeof record['title'] !== 'string' || typeof record['lyrics'] !== 'string') {
+    return undefined
+  }
+
+  const title = record['title'].trim()
+  const lyrics = stripDuplicateSongTitleHeading(record['lyrics'], title)
+  return title.length > 0
+    ? `# ${title}\n\n${lyrics}`.trim()
+    : lyrics
+}
+
 const renderSingle = (json: unknown): string => {
   if (typeof json === 'string') {
     return json
@@ -58,6 +81,11 @@ const renderSingle = (json: unknown): string => {
 
   if (json && typeof json === 'object' && !Array.isArray(json)) {
     const record = json as Record<string, unknown>
+    const renderedSongLyrics = renderSongLyrics(record)
+    if (renderedSongLyrics) {
+      return renderedSongLyrics
+    }
+
     if (typeof record['content'] === 'string') {
       return record['content']
     }

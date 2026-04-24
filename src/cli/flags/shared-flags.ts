@@ -164,7 +164,7 @@ export const mediaFlags = {
 
 export const promptFlag = {
   prompt: {
-    description: 'Named prompt(s) from src/prompts/entries/*.json (default: "default")',
+    description: 'Named prompt(s) discovered under src/prompts/entries/ (default: "default")',
     type: [String] as [StringConstructor],
     default: [] as string[]
   }

@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import type { StructuredValidationResult, ValibotSchema } from '~/types'
+import type { StructuredValidationContext, StructuredValidationResult, ValibotSchema } from '~/types'
 
 const stripMarkdownCodeFence = (raw: string): string => {
   const trimmed = raw.trim()
@@ -35,16 +35,66 @@ const parseJsonFromText = (raw: string): StructuredValidationResult => {
   }
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const normalizeSongLyricsValue = (
+  value: unknown,
+  title: string
+): unknown => {
+  if (!isRecord(value)) {
+    return value
+  }
+
+  return {
+    ...value,
+    title
+  }
+}
+
+const normalizeStructuredValue = (
+  value: unknown,
+  context: StructuredValidationContext | undefined
+): unknown => {
+  const title = context?.songLyricsTitle?.trim()
+  if (!context || !title) {
+    return value
+  }
+
+  if (context.leafPromptNames.length <= 1) {
+    return context.presetNames[0] === 'songLyrics'
+      ? normalizeSongLyricsValue(value, title)
+      : value
+  }
+
+  if (!isRecord(value)) {
+    return value
+  }
+
+  const normalized: Record<string, unknown> = { ...value }
+  for (const [index, promptName] of context.leafPromptNames.entries()) {
+    if (context.presetNames[index] !== 'songLyrics') {
+      continue
+    }
+
+    normalized[promptName] = normalizeSongLyricsValue(normalized[promptName], title)
+  }
+
+  return normalized
+}
+
 export const parseAndValidateStructured = (
   schema: ValibotSchema,
-  rawText: string
+  rawText: string,
+  context?: StructuredValidationContext
 ): StructuredValidationResult => {
   const parsed = parseJsonFromText(rawText)
   if (!parsed.success) {
     return parsed
   }
 
-  const validation = v.safeParse(schema, parsed.value)
+  const normalizedValue = normalizeStructuredValue(parsed.value, context)
+  const validation = v.safeParse(schema, normalizedValue)
   if (!validation.success) {
     const flattened = v.flatten(validation.issues)
     return {

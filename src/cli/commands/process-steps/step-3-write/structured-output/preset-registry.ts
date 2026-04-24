@@ -155,6 +155,10 @@ const PRESET_REGISTRY = {
   linkedin: v.object({
     content: TextSchema
   }),
+  songLyrics: v.object({
+    title: TextSchema,
+    lyrics: TextSchema
+  }),
   freeformEnvelope: FreeformEnvelopeSchema
 } as const satisfies Record<StructuredPresetName, ValibotSchema>
 

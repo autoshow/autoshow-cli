@@ -126,6 +126,17 @@ const buildInternalArtifactKey = (
     ? 'rendered'
     : `rendered-${SERVICE_FILE_SUFFIX[metadata.llmService]}`
 
+const stripLeadingTitleHeading = (content: string, title: string): string => {
+  const normalized = content.trimStart()
+  const [firstLine, ...rest] = normalized.split(/\r?\n/)
+  const headingMatch = firstLine?.match(/^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/u)
+  if (headingMatch?.[1]?.trim() !== title.trim()) {
+    return content
+  }
+
+  return rest.join('\n').replace(/^\s*\n/u, '')
+}
+
 const withTrackHeader = (
   content: string,
   sourcePath: string | undefined,
@@ -146,7 +157,8 @@ const withTrackHeader = (
     return content
   }
 
-  return `${trackNumber}. ${title} (${formatRenderedLlmLabel(metadata)})\n\n${content}`
+  const contentWithoutDuplicateTitle = stripLeadingTitleHeading(content, title)
+  return `${trackNumber}. ${title} (${formatRenderedLlmLabel(metadata)})\n\n${contentWithoutDuplicateTitle}`
 }
 
 export const isTextInputPath = (value: string): boolean =>
@@ -322,6 +334,19 @@ export const loadTrackTitles = async (filePath: string | undefined): Promise<Map
 
   trackListCache.set(filePath, tracks)
   return tracks
+}
+
+export const resolveTextInputSongTitle = async (
+  inputPath: string,
+  trackListPath: string | undefined
+): Promise<string> => {
+  const tracks = await loadTrackTitles(trackListPath)
+  const trackNumber = extractTrackNumber(inputPath)
+  const trackTitle = trackNumber ? tracks?.get(trackNumber) : undefined
+
+  return trackTitle && trackTitle.length > 0
+    ? trackTitle
+    : getTextInputTitle(inputPath)
 }
 
 export const buildTextInputPrompt = (

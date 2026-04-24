@@ -4,6 +4,7 @@ import type {
   LLMTarget,
   StructuredRequestOptions,
   StructuredRunResult,
+  StructuredValidationContext,
   TranscriptionResult,
   VideoMetadata
 } from '~/types'
@@ -80,6 +81,15 @@ export const runLLM = async (
   const structuredSchema = await resolveStructuredSchema(promptNames, {
     fallbackToFreeformEnvelope: promptFileOnly
   })
+  const songLyricsTitle = options.structuredContext?.songLyricsTitle ?? meta.title
+  const normalizedSongLyricsTitle = songLyricsTitle.trim()
+  const structuredValidationContext: StructuredValidationContext = {
+    leafPromptNames: structuredSchema.leafPromptNames,
+    presetNames: structuredSchema.presetNames,
+    ...(structuredSchema.presetNames.includes('songLyrics') && normalizedSongLyricsTitle.length > 0
+      ? { songLyricsTitle: normalizedSongLyricsTitle }
+      : {})
+  }
 
   const instructionSections = [
     promptFileText,
@@ -115,7 +125,8 @@ export const runLLM = async (
           prompt,
           target.model,
           structuredSchema,
-          2
+          2,
+          structuredValidationContext
         )
         parsedJson = compatResponse.parsedJson
         metadata = compatResponse.metadata
@@ -128,13 +139,13 @@ export const runLLM = async (
         }
 
         let response = await target.run(prompt, target.model, structuredOpts)
-        let validation = parseAndValidateStructured(structuredSchema.schema, response.result)
+        let validation = parseAndValidateStructured(structuredSchema.schema, response.result, structuredValidationContext)
 
         const shouldRetryValidation = target.service === 'anthropic' || target.service === 'gemini'
         if (!validation.success && shouldRetryValidation) {
           l.warn(`Structured validation retry for ${target.label}/${target.model}: ${validation.issue ?? 'validation failed'}`)
           response = await target.run(prompt, target.model, structuredOpts)
-          validation = parseAndValidateStructured(structuredSchema.schema, response.result)
+          validation = parseAndValidateStructured(structuredSchema.schema, response.result, structuredValidationContext)
         }
 
         if (validation.success) {

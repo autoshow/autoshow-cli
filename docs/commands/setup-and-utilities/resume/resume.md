@@ -80,7 +80,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --ha
 
 | Flag | Description |
 |------|-------------|
-| `--prompt <name...>` | Named prompt presets from `src/prompts/entries/*.json` |
+| `--prompt <name...>` | Named prompt presets discovered recursively under `src/prompts/entries/` |
 | `--batch-concurrency <n>` | Number of batch items to process concurrently |
 
 ### STT
