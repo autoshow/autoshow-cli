@@ -20,7 +20,6 @@ Install local runtimes and prerequisite tools. Focused setup utilities also cove
 - Step 5 Image: [`text-to-image.md#setup`](../step-5-image/text-to-image.md#setup)
 - Step 6 Video: [`text-to-video-services.md`](../step-6-video/text-to-video-services.md) for env/setup notes
 - Step 7 Music: [`text-to-music-services.md`](../step-7-music/text-to-music-services.md) for env/setup notes
-- Step 8 Lyrics: [`lyrics.md`](../step-8-lyrics/lyrics.md)
 
 ## Global Setup Command
 
@@ -91,7 +90,7 @@ The same precedence rules apply everywhere in the CLI:
 The `setup` command currently supports:
 
 ```text
-uv | yt-dlp | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | lyrics | sample
+uv | yt-dlp | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | music | sample
 ```
 
 Isolated steps assume their prerequisites are already present. On a clean machine, prefer `bun as setup`.
@@ -134,9 +133,9 @@ bun as setup --step tts
 # Image providers are API-based, so this is effectively a no-op confirmation step
 bun as setup --step image
 
-# Verify ffmpeg/ffprobe, ensure whisper-cli, and download large-v3-turbo.
-# Also confirms either ffmpeg ass-filter support or the pango-view + ImageMagick fallback renderer.
-bun as setup --step lyrics
+# Check hosted music API readiness, verify ffmpeg/ffprobe, ensure whisper-cli,
+# and download large-v3-turbo for lyric-video rendering.
+bun as setup --step music
 
 # Verify fixture-generation prerequisites (ffmpeg, ffprobe, soffice)
 bun as setup --step sample

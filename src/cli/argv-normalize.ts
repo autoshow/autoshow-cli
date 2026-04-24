@@ -7,7 +7,6 @@ export const knownCommands = new Set<string>([
   'stt',
   'ocr',
   'resume',
-  'lyrics',
   'config',
   'cache',
   'setup',

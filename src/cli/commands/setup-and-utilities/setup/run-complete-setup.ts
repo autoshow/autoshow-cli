@@ -319,12 +319,15 @@ const runSetupImage = async (): Promise<void> => {
   l.write('success', 'Image setup complete (all image providers are API-based)')
 }
 
-const runSetupLyrics = async (): Promise<void> => {
+const runSetupMusic = async (): Promise<void> => {
+  await setupElevenLabsMusicGen()
+  await setupMinimaxMusicGen()
+
   const requiredTools = ['ffmpeg', 'ffprobe']
   const missing = requiredTools.filter((tool) => !commandExists(tool))
   if (missing.length > 0) {
     throw new Error(
-      `Lyrics setup: missing required tools: ${missing.join(', ')}. Install them via your system package manager or run: bun as setup`
+      `Music lyric-video setup: missing required tools: ${missing.join(', ')}. Install them via your system package manager or run: bun as setup`
     )
   }
 
@@ -334,13 +337,13 @@ const runSetupLyrics = async (): Promise<void> => {
   const hasFallbackRenderer = commandExists('pango-view') && (commandExists('magick') || commandExists('convert'))
   if (!hasAssFilter && !hasFallbackRenderer) {
     throw new Error(
-      'Lyrics setup: ffmpeg does not expose the ass filter, and the fallback renderer is unavailable. Install pango-view plus ImageMagick, or use an ffmpeg build with ass support.'
+      'Music lyric-video setup: ffmpeg does not expose the ass filter, and the fallback renderer is unavailable. Install pango-view plus ImageMagick, or use an ffmpeg build with ass support.'
     )
   }
 
   await setupWhisper()
   await downloadWhisperModel('large-v3-turbo')
-  l.write('success', 'Lyrics setup complete')
+  l.write('success', 'Music setup complete')
 }
 
 const runSetupSample = async (): Promise<void> => {
@@ -407,7 +410,7 @@ const getForceRedownloadPaths = (step: SetupStepId): readonly string[] => {
     case 'whisper-model': return [whisperModelPath]
     case 'llama-binary': return [llamaBinaryPath]
     case 'reverb': return [reverbModelDir, reverbDiarizationDir]
-    case 'lyrics': return [whisperBinaryPath, whisperBuildDir, lyricsWhisperModelPath]
+    case 'music': return [whisperBinaryPath, whisperBuildDir, lyricsWhisperModelPath]
     case 'all': return [whisperModelPath, llamaBinaryPath]
     case 'uv': case 'yt-dlp': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'sample': return []
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
@@ -439,7 +442,7 @@ const executeStepOnce = async (step: SetupStepId): Promise<void> => {
     case 'write': await runSetupWrite(); return
     case 'tts': await runSetupTts(); return
     case 'image': await runSetupImage(); return
-    case 'lyrics': await runSetupLyrics(); return
+    case 'music': await runSetupMusic(); return
     case 'sample': await runSetupSample(); return
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
   }

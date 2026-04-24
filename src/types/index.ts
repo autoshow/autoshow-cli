@@ -26,7 +26,7 @@ export type * from '../cli/commands/process-steps/step-4-tts/tts-types'
 export type * from '../cli/commands/process-steps/step-5-image/image-types'
 export type * from '../cli/commands/process-steps/step-6-video/video-types'
 export type * from '../cli/commands/process-steps/step-7-music/music-types'
-export type * from '../cli/commands/process-steps/step-8-lyrics/lyrics-types'
+export type * from '../cli/commands/process-steps/step-7-music/lyrics-video/lyrics-types'
 
 export type * from './bootstrap-broker-types'
 export type * from '../utils/logger/logger-types'

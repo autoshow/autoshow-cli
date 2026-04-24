@@ -46,7 +46,7 @@ This release brings together:
 - automatic cost preflight and budget enforcement for hosted and mixed-provider runs
 - a persistent STT media cache plus cache-management utilities
 - a `links` command for fetching provider documentation into one local markdown file
-- a `lyrics` command for local lyric-video rendering with Whisper captions
+- a `music` lyric-video mode for local rendering with Whisper captions
 
 ## What AutoShow Is
 
@@ -76,8 +76,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 | TTS | Generate speech from local markdown or text |
 | Image | Generate images from text prompts |
 | Video | Generate videos from text prompts |
-| Music | Generate music from text prompts |
-| Lyrics | Render local lyric videos from repo audio plus Whisper or edited captions |
+| Music | Generate music from text prompts or render local lyric videos from repo audio |
 | Config | Inspect, reset, or persist selected defaults for batch, STT, OCR, write, and post-generation |
 | Cache | Prune or clear the persistent STT media cache |
 | Setup | Install local runtimes and verify prerequisites with `--doctor` |
@@ -88,7 +87,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 ### High-value behaviors
 
 - Hosted and mixed-provider runnable commands run an automatic cost preflight before execution.
-- `--price` prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting. Local-only commands such as `lyrics` are excluded.
+- `--price` prints the aggregated estimate and, for single-target runs, previews the expected output files before exiting. Local lyric-video mode is excluded.
 - Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, with concurrency defaulting to `1`.
 - `write` can run multiple LLM providers in one invocation and writes provider-specific JSON artifacts for each result.
 - Multi-provider STT runs write provider-specific transcripts and result envelopes under `providers/<service>-<model>/`.
@@ -134,7 +133,7 @@ bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 # local lyric-video render from repo audio
 # bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
-bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
+bun as music --audio input/examples/lyrics/01-example-song.mp3
 
 # fetch curated OpenAI provider docs
 bun as links --openai
@@ -185,9 +184,8 @@ AutoShow exposes 16 workflow/support commands, plus `help` and `version`.
 | `write` | full pipeline orchestration | URL, file, directory, list |
 | `tts` | text-to-speech | local `.md` or `.txt` |
 | `image` | text-to-image | prompt |
-| `music` | text-to-music | prompt |
+| `music` | text-to-music or lyric-video rendering | prompt, repo-local audio, or edited captions |
 | `video` | text-to-video | prompt |
-| `lyrics` | local lyric-video rendering | repo-local audio or edited captions |
 | `config` | inspect, reset, or persist defaults | none |
 | `cache` | prune or clear STT media cache | `prune` or `clear` |
 | `setup` | install runtimes and verify tools | none |
@@ -379,7 +377,7 @@ The same global `--config-path` override works on every command, not just `confi
 
 ### Pricing and budget enforcement
 
-Hosted or mixed-provider runnable commands perform preflight cost estimation. `lyrics` is local-only and skips pricing preflight.
+Hosted or mixed-provider runnable commands perform preflight cost estimation. `music --audio` and `music --batch` are local lyric-video modes and skip pricing preflight.
 
 Supported behaviors:
 
@@ -407,7 +405,7 @@ Important setup coverage includes:
 - local document OCR dependencies
 - Kitten TTS environment and default local model download
 - provider-specific setup hooks for supported STT, OCR, TTS, image, and music services
-- a `lyrics` setup step that verifies `ffmpeg`/`ffprobe`, ensures `whisper-cli`, and downloads `large-v3-turbo`
+- a `music` setup step that checks hosted music API readiness, verifies `ffmpeg`/`ffprobe`, ensures `whisper-cli`, and downloads `large-v3-turbo`
 - `bun as setup --doctor` checks for core tools, API keys, config presence, config validity, and the active Bun version
 
 There are also targeted setup substeps such as:
@@ -423,7 +421,7 @@ There are also targeted setup substeps such as:
 - `bun as setup --step write`
 - `bun as setup --step tts`
 - `bun as setup --step image`
-- `bun as setup --step lyrics`
+- `bun as setup --step music`
 - `bun as setup --step sample`
 
 `setup` also supports `--force-redownload` for reinstalling artifacts and `--repeat <n>` for benchmark-oriented repeated setup runs.
@@ -453,7 +451,7 @@ Common output artifacts include:
 - generated image files
 - generated video files
 - generated music files
-- lyric-video outputs (`.mp4`, `.vtt`, `.srt`) for `lyrics`
+- lyric-video outputs (`.mp4`, `.vtt`, `.srt`) for `music --audio` and `music --batch`
 - `run.json`
 - `metadata.md` for `metadata --markdown --save`
 
@@ -466,7 +464,7 @@ Provider directories can additionally include:
 Batch runs additionally write:
 
 - `batch.json`
-- one child lyric run directory per discovered audio file for `lyrics --batch`
+- one child lyric-video run directory per discovered audio file for `music --batch`
 
 ### Report snapshot as of April 17, 2026
 

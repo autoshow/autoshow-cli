@@ -149,6 +149,9 @@ export type StructuredPresetName =
   | 'instagram'
   | 'linkedin'
   | 'songLyrics'
+  | 'poetryCollection'
+  | 'screenplay'
+  | 'shortStory'
   | 'freeformEnvelope'
 
 export type CompatStructuredResponse = {

@@ -14,6 +14,10 @@ test('unknown command exits 2', async () => {
   await expectUsageExit(['definitely-not-a-command'], 'Unknown command "definitely-not-a-command"')
 })
 
+test('removed lyrics command exits 2', async () => {
+  await expectUsageExit(['lyrics', '--audio', STABLE_LOCAL_AUDIO_PATH], 'Unknown command "lyrics"')
+})
+
 test('unknown flag exits 2', async () => {
   await expectUsageExit(['write', STABLE_LOCAL_AUDIO_PATH, '--structured'], 'Unexpected flag: structured')
 })
@@ -26,4 +30,26 @@ test('deprecated step-2 command names exit 2 with migration guidance', async () 
 
 test('legacy argument order exits 2', async () => {
   await expectUsageExit(['--help', 'metadata'], 'Unsupported argument order')
+})
+
+test('music lyric-video mode rejects missing audio or batch', async () => {
+  await expectUsageExit(['music', '--model', 'tiny'], 'Missing --audio (or use --batch)')
+})
+
+test('music rejects mixed hosted generation and lyric-video modes', async () => {
+  await expectUsageExit(
+    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--minimax-music', 'music-2.5'],
+    'Do not combine hosted music flags'
+  )
+  await expectUsageExit(
+    ['music', 'ambient piano', '--model', 'tiny'],
+    'Do not combine lyric-video flags'
+  )
+})
+
+test('music lyric-video mode rejects price mode', async () => {
+  await expectUsageExit(
+    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--price'],
+    'Do not combine hosted music flags'
+  )
 })

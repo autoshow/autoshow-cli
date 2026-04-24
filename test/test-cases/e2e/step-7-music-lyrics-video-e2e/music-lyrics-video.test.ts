@@ -13,15 +13,15 @@ import { readBatchManifest, readRunManifest } from '../../../test-utils/manifest
 import { exec } from '~/utils/cli-utils'
 
 const SHORT_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
-const SHORT_AUDIO_SUFFIX = 'lyrics-0-audio-short'
-const RERENDER_SUFFIX = 'lyrics-0-audio-short-fixed'
+const SHORT_AUDIO_SUFFIX = 'music-lyrics-0-audio-short'
+const RERENDER_SUFFIX = 'music-lyrics-0-audio-short-fixed'
 const EXAMPLE_SONG_AUDIO_PATH = 'input/examples/lyrics/01-example-song.mp3'
-const EXAMPLE_SONG_SUFFIX = 'lyrics-01-example-song'
-const BATCH_SUFFIX = 'lyrics-batch'
-const CAPTION_FIXTURE_DIR = 'output/lyrics-fixtures'
+const EXAMPLE_SONG_SUFFIX = 'music-lyrics-01-example-song'
+const BATCH_SUFFIX = 'music-lyrics-batch'
+const CAPTION_FIXTURE_DIR = 'output/music-lyrics-fixtures'
 const CAPTION_FIXTURE_PATH = `${CAPTION_FIXTURE_DIR}/0-audio-short-fixed.vtt`
 const MATCHING_IMAGE_PATH = 'input/examples/audio/0-audio-short.png'
-const BATCH_INPUT_DIR = 'input/test-fixtures/lyrics-batch'
+const BATCH_INPUT_DIR = 'input/test-fixtures/music-lyrics-batch'
 
 const probeVideoStream = async (videoPath: string): Promise<{ codecName: string, width: number, height: number }> => {
   const result = await exec('ffprobe', [
@@ -76,12 +76,12 @@ afterAll(async () => {
   await rm(MATCHING_IMAGE_PATH, { force: true })
 })
 
-budgetedTest('lyrics-rerender', 'lyrics rerender uses edited captions, preserves tmp when requested, and writes fixed render outputs', async () => {
+budgetedTest('music-lyrics-rerender', 'music lyric-video rerender uses edited captions, preserves tmp when requested, and writes fixed render outputs', async () => {
   await cleanupTestOutput(RERENDER_SUFFIX)
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'lyrics',
+    'music',
     '--audio',
     SHORT_AUDIO_PATH,
     '--captions',
@@ -101,7 +101,8 @@ budgetedTest('lyrics-rerender', 'lyrics rerender uses edited captions, preserves
     expect(await fileExists(`${outputDir}/.lyrics-tmp`)).toBe(true)
 
     const manifest = await readRunManifest(outputDir)
-    expect(manifest.kind).toBe('lyrics')
+    expect(manifest.kind).toBe('music')
+    expect(manifest.metadata['mode']).toBe('lyric-video')
     expect((manifest.metadata['transcription'] as Record<string, unknown>)['mode']).toBe('captions')
     expect((manifest.metadata['render'] as Record<string, unknown>)['backgroundMode']).toBe('image')
     expect((manifest.metadata['artifacts'] as Record<string, unknown>)['tempDirKept']).toBe(true)
@@ -113,12 +114,12 @@ budgetedTest('lyrics-rerender', 'lyrics rerender uses edited captions, preserves
   }
 }, 30000)
 
-budgetedTest('lyrics-whisper-tiny', 'lyrics transcribes local audio with whisper and cleans tmp by default', async () => {
+budgetedTest('music-lyrics-whisper-tiny', 'music lyric-video transcribes local audio with whisper and cleans tmp by default', async () => {
   await cleanupTestOutput(SHORT_AUDIO_SUFFIX)
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'lyrics',
+    'music',
     '--audio',
     SHORT_AUDIO_PATH,
     '--model',
@@ -138,7 +139,8 @@ budgetedTest('lyrics-whisper-tiny', 'lyrics transcribes local audio with whisper
     expect(await fileExists(`${outputDir}/.lyrics-tmp`)).toBe(false)
 
     const manifest = await readRunManifest(outputDir)
-    expect(manifest.kind).toBe('lyrics')
+    expect(manifest.kind).toBe('music')
+    expect(manifest.metadata['mode']).toBe('lyric-video')
     const transcription = manifest.metadata['transcription'] as Record<string, unknown>
     expect(transcription['mode']).toBe('whisper')
     expect(transcription['model']).toBe('tiny')
@@ -151,12 +153,12 @@ budgetedTest('lyrics-whisper-tiny', 'lyrics transcribes local audio with whisper
   }
 }, 30000)
 
-budgetedTest('lyrics-default-example-song', 'bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 renders the bundled example with the default whisper model', async () => {
+budgetedTest('music-lyrics-default-example-song', 'bun as music --audio input/examples/lyrics/01-example-song.mp3 renders the bundled example with the default whisper model', async () => {
   await cleanupTestOutput(EXAMPLE_SONG_SUFFIX)
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'lyrics',
+    'music',
     '--audio',
     EXAMPLE_SONG_AUDIO_PATH
   ])
@@ -174,7 +176,8 @@ budgetedTest('lyrics-default-example-song', 'bun as lyrics --audio input/example
     expect(await fileExists(`${outputDir}/.lyrics-tmp`)).toBe(false)
 
     const manifest = await readRunManifest(outputDir)
-    expect(manifest.kind).toBe('lyrics')
+    expect(manifest.kind).toBe('music')
+    expect(manifest.metadata['mode']).toBe('lyric-video')
 
     const transcription = manifest.metadata['transcription'] as Record<string, unknown>
     expect(transcription['mode']).toBe('whisper')
@@ -193,18 +196,18 @@ budgetedTest('lyrics-default-example-song', 'bun as lyrics --audio input/example
   }
 }, 120000)
 
-budgetedTest('lyrics-batch-tiny', 'lyrics batch writes a batch manifest and child lyric runs for the configured input tree', async () => {
+budgetedTest('music-lyrics-batch-tiny', 'music lyric-video batch writes a batch manifest and child lyric runs for the configured input tree', async () => {
   await cleanupTestOutput(BATCH_SUFFIX)
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'lyrics',
+    'music',
     '--batch',
     '--model',
     'tiny'
   ], {
     env: {
-      AUTOSHOW_LYRICS_INPUT_DIR: BATCH_INPUT_DIR
+      AUTOSHOW_MUSIC_LYRIC_VIDEO_INPUT_DIR: BATCH_INPUT_DIR
     }
   })
 
@@ -216,7 +219,8 @@ budgetedTest('lyrics-batch-tiny', 'lyrics batch writes a batch manifest and chil
     expect(await fileExists(`${batchDir}/batch.json`)).toBe(true)
 
     const manifest = await readBatchManifest(batchDir)
-    expect(manifest.kind).toBe('lyrics')
+    expect(manifest.kind).toBe('music')
+    expect(manifest.source?.['mode']).toBe('lyric-video')
     expect(manifest.items).toHaveLength(2)
     const childDirNames = (manifest.items as Array<Record<string, unknown>>)
       .map((item) => basename(String(item['outputDir'])))
@@ -228,7 +232,8 @@ budgetedTest('lyrics-batch-tiny', 'lyrics batch writes a batch manifest and chil
       const childDir = resolve(process.cwd(), String(item['outputDir']))
       expect(await fileExists(`${childDir}/run.json`)).toBe(true)
       const childManifest = await readRunManifest(childDir)
-      expect(childManifest.kind).toBe('lyrics')
+      expect(childManifest.kind).toBe('music')
+      expect(childManifest.metadata['mode']).toBe('lyric-video')
     }
   }
 }, 30000)

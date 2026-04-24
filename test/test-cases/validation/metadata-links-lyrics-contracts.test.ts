@@ -31,15 +31,15 @@ test('links selector errors distinguish dashed global sections from valid provid
   ])).toThrow('Unknown links selector "--stt". Known providers:')
 })
 
-test('lyrics render mode rejects generation-only price mode', async () => {
+test('music lyric-video render mode rejects generation-only price mode', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'lyrics',
+    'music',
     '--audio',
     'input/examples/audio/0-audio-short.mp3',
     '--price'
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('does not support --price')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Do not combine hosted music flags')
 })

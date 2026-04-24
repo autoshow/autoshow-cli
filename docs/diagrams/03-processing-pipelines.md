@@ -8,7 +8,7 @@ The `metadata` command (default) runs only the metadata extraction portion of St
 
 - [Media Processing Pipeline](#media-processing-pipeline)
 - [Document Processing Pipeline](#document-processing-pipeline)
-- [Lyrics Pipeline](#lyrics-pipeline)
+- [Music Lyric-Video Pipeline](#music-lyric-video-pipeline)
 
 ## Media Processing Pipeline
 
@@ -243,13 +243,13 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
                 └───────────────┘  └────────────────────────────────────┘
 ```
 
-## Lyrics Pipeline
+## Music Lyric-Video Pipeline
 
 ```
-src/cli/commands/process-steps/step-8-lyrics/
+src/cli/commands/process-steps/step-7-music/lyrics-video/
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                      LYRICS COMMAND                                          │
+│                      MUSIC LYRIC-VIDEO MODE                                  │
 │                                                                              │
 │  Input validation                                                            │
 │  ├── single run: --audio must be inside ./input                              │
@@ -274,9 +274,9 @@ src/cli/commands/process-steps/step-8-lyrics/
 │  └── fallback image-overlay cards when ass is unavailable                    │
 │                                                                              │
 │  Output                                                                      │
-│  ├── output/<timestamp>_lyrics-<stem>/<stem>.mp4                             │
-│  ├── output/<timestamp>_lyrics-<stem>/<stem>.vtt                             │
-│  ├── output/<timestamp>_lyrics-<stem>/<stem>.srt                             │
-│  └── run.json / batch.json                                                   │
+│  ├── output/<timestamp>_music-lyrics-<stem>/<stem>.mp4                       │
+│  ├── output/<timestamp>_music-lyrics-<stem>/<stem>.vtt                       │
+│  ├── output/<timestamp>_music-lyrics-<stem>/<stem>.srt                       │
+│  └── run.json / batch.json with kind "music" and mode "lyric-video"         │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```

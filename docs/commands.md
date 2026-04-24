@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 14 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 13 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -60,7 +60,7 @@ bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-0
 # local lyric-video render from repo audio
 # bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
-bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
+bun as music --audio input/examples/lyrics/01-example-song.mp3
 
 # lyric draft generation from project text
 bun as write ./output/demo/text --prompt rockSong
@@ -89,7 +89,6 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - `image`: [command](./commands/process-steps/step-5-image/text-to-image.md) | [setup](./commands/process-steps/step-5-image/text-to-image.md#setup)
 - `video`: [video](./commands/process-steps/step-6-video/text-to-video-services.md)
 - `music`: [music](./commands/process-steps/step-7-music/text-to-music-services.md)
-- `lyrics`: [lyrics](./commands/process-steps/step-8-lyrics/lyrics.md)
 - `config`: [config](./commands/setup-and-utilities/config/config.md)
 - `links`: [links](./commands/setup-and-utilities/links/links.md)
 
@@ -100,12 +99,12 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - Use `extract` when you only need step-2 extraction or transcription without LLM writing.
 - Use `resume` to backfill missing STT or OCR providers in an existing output directory, including `extract` parent batches.
 - Use `write` for full summary pipeline with optional TTS/image/video generation, and for lyric draft generation from `./output/<name>/text`.
-- Use `lyrics` for lyric-video rendering from repo audio under `input/`.
+- Use `music --audio` or `music --batch` for lyric-video rendering from repo audio under `input/`.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
 
 ## Pricing Preflight
 
-Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `lyrics` is local-only and does not define `--price`:
+Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `music --audio` and `music --batch` are local lyric-video modes and reject `--price`:
 
 ```bash
 bun as extract input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price

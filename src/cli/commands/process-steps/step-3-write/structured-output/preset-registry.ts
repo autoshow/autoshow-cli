@@ -57,6 +57,29 @@ const FreeformEnvelopeSchema = v.object({
   content: TextSchema
 })
 
+const PoemSchema = v.object({
+  title: TextSchema,
+  form: TextSchema,
+  text: TextSchema
+})
+
+const ScreenplayDialogueSchema = v.object({
+  character: TextSchema,
+  line: TextSchema
+})
+
+const ScreenplaySceneSchema = v.object({
+  heading: TextSchema,
+  action: TextSchema,
+  dialogue: v.array(ScreenplayDialogueSchema)
+})
+
+const ShortStoryActSchema = v.object({
+  title: TextSchema,
+  summary: TextSchema,
+  prose: TextSchema
+})
+
 const PRESET_REGISTRY = {
   shortSummary: v.object({
     episodeDescription: TextSchema
@@ -158,6 +181,24 @@ const PRESET_REGISTRY = {
   songLyrics: v.object({
     title: TextSchema,
     lyrics: TextSchema
+  }),
+  poetryCollection: v.object({
+    title: TextSchema,
+    theme: TextSchema,
+    poems: v.array(PoemSchema),
+    collectionNotes: TextSchema
+  }),
+  screenplay: v.object({
+    title: TextSchema,
+    logline: TextSchema,
+    scenes: v.array(ScreenplaySceneSchema),
+    productionNotes: StringListSchema
+  }),
+  shortStory: v.object({
+    title: TextSchema,
+    genre: TextSchema,
+    acts: v.array(ShortStoryActSchema),
+    themes: StringListSchema
   }),
   freeformEnvelope: FreeformEnvelopeSchema
 } as const satisfies Record<StructuredPresetName, ValibotSchema>

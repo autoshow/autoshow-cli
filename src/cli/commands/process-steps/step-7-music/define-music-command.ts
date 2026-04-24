@@ -1,8 +1,9 @@
 import { defineCommand } from 'clerc'
-import { musicGenFlags } from '~/cli/flags'
+import { musicCommandFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { runMusicGen } from './run-music-gen'
+import { runMusicLyricVideo } from './lyrics-video/run-lyrics-video'
 import { buildMusicArtifactMap, collectMusicTargets, getMusicArtifactFileName } from './music-targets'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
@@ -13,21 +14,42 @@ import { runWithLogContext } from '~/utils/logger'
 import { fileExists } from '~/utils/cli-utils'
 import { isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 
-export const musicCommand = defineCommand({
-  name: 'music',
-  description: 'Generate music from a text prompt or local .md/.txt file',
-  parameters: [{ key: '<input>', description: 'Text prompt or path to a local .md/.txt file' }],
-  flags: musicGenFlags,
-  help: {
-    examples: [
-      ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
-      ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax'],
-      ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body']
-    ]
-  }
-}, async (ctx) => {
-  const input = ctx.parameters.input
-  const flags = ctx.flags
+const HOSTED_MUSIC_FLAGS = [
+  'all-music',
+  'elevenlabs-music',
+  'minimax-music',
+  'music-duration',
+  'music-lyrics-file',
+  'music-instrumental',
+  'price'
+] as const
+
+const LYRIC_VIDEO_FLAGS = [
+  'audio',
+  'captions',
+  'batch',
+  'model',
+  'font',
+  'keep-tmp'
+] as const
+
+const hasExplicitFlag = (argv: string[], flag: string): boolean =>
+  argv.some((token) => token === `--${flag}` || token.startsWith(`--${flag}=`))
+
+const getMusicArgv = (): string[] => {
+  const argv = Bun.argv.slice(2)
+  return argv[0] === 'music' ? argv.slice(1) : argv
+}
+
+const collectExplicitFlags = (
+  argv: string[],
+  flagNames: readonly string[]
+): string[] => flagNames.filter((flag) => hasExplicitFlag(argv, flag)).map((flag) => `--${flag}`)
+
+const runHostedMusicGeneration = async (
+  input: string,
+  flags: Record<string, unknown>
+): Promise<void> => {
   const prompt = isTextInputPath(input) && await fileExists(input)
     ? await Bun.file(input).text()
     : input
@@ -37,8 +59,8 @@ export const musicCommand = defineCommand({
   const musicLyricsFile = typeof flags['music-lyrics-file'] === 'string' ? flags['music-lyrics-file'] : undefined
   const musicInstrumental = flags['music-instrumental'] === true
 
-  const musicMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const musicOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
+  const musicMaxCents = await resolveMaxCentsFromFlags(flags)
+  const musicOpts = buildOptsFromFlags(true, flags, [], {}, new Set(), Bun.argv.slice(2))
 
   const musicTargets = collectMusicTargets(musicOpts)
   if (musicTargets.length === 0) {
@@ -103,4 +125,50 @@ export const musicCommand = defineCommand({
       totalCost: actual.totalCost
     }
   )
+}
+
+export const musicCommand = defineCommand({
+  name: 'music',
+  description: 'Generate hosted music or render lyric videos from local audio',
+  parameters: [{ key: '[input]', description: 'Hosted music prompt or path to a local .md/.txt file' }],
+  flags: musicCommandFlags,
+  help: {
+    examples: [
+      ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
+      ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax'],
+      ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body'],
+      ['bun as music --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
+      ['bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
+      ['bun as music --batch --model small', 'Render lyric videos for every supported audio file under ./input']
+    ]
+  }
+}, async (ctx) => {
+  const input = typeof ctx.parameters.input === 'string' ? ctx.parameters.input : undefined
+  const flags = ctx.flags as Record<string, unknown>
+  const musicArgv = getMusicArgv()
+  const hostedFlags = collectExplicitFlags(musicArgv, HOSTED_MUSIC_FLAGS)
+  const lyricVideoFlags = collectExplicitFlags(musicArgv, LYRIC_VIDEO_FLAGS)
+
+  if (input && lyricVideoFlags.length > 0) {
+    throw CLIUsageError(`Do not combine lyric-video flags (${lyricVideoFlags.join(', ')}) with a hosted music prompt`)
+  }
+
+  if (lyricVideoFlags.length > 0 && hostedFlags.length > 0) {
+    throw CLIUsageError(`Do not combine hosted music flags (${hostedFlags.join(', ')}) with lyric-video flags (${lyricVideoFlags.join(', ')})`)
+  }
+
+  if (lyricVideoFlags.length > 0) {
+    await runMusicLyricVideo(flags)
+    return
+  }
+
+  if (!input) {
+    throw CLIUsageError(
+      hostedFlags.length > 0
+        ? 'Missing hosted music prompt input'
+        : 'Missing music mode: provide a prompt with --elevenlabs-music/--minimax-music, or use --audio/--batch for lyric-video rendering'
+    )
+  }
+
+  await runHostedMusicGeneration(input, flags)
 })

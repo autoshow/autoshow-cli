@@ -26,6 +26,7 @@ test('root help groups setup utilities separately from processing commands', asy
   expect(setupSection).toContain('    setup')
   expect(processingSection).toContain('    resume')
   expect(processingSection).toContain('    write')
+  expect(processingSection).not.toContain('    lyrics')
   expect(processingSection).not.toContain('    links')
 })
 
@@ -61,16 +62,23 @@ test('help for a removed command exits 2 with an unknown-command message', async
   expect(`${result.stdout}\n${result.stderr}`).toContain('Usage error: Unknown command "report". Run: bun as help')
 })
 
-test('lyrics help is render-only', async () => {
-  const result = await runCommand(['src/cli/create-cli.ts', 'lyrics', '--help'], { env: helpEnv })
+test('music help includes hosted generation and lyric-video flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'music', '--help'], { env: helpEnv })
 
   expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--elevenlabs-music')
+  expect(result.stdout).toContain('--minimax-music')
+  expect(result.stdout).toContain('--music-duration')
+  expect(result.stdout).toContain('--music-lyrics-file')
+  expect(result.stdout).toContain('--price')
   expect(result.stdout).toContain('--audio')
   expect(result.stdout).toContain('--captions')
   expect(result.stdout).toContain('--batch')
+  expect(result.stdout).toContain('--model')
+  expect(result.stdout).toContain('--font')
+  expect(result.stdout).toContain('--keep-tmp')
   expect(result.stdout).not.toContain('--openai')
   expect(result.stdout).not.toContain('--prompt')
   expect(result.stdout).not.toContain('--prompt-file')
   expect(result.stdout).not.toContain('--track-list')
-  expect(result.stdout).not.toContain('--price')
 })

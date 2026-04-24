@@ -11,7 +11,7 @@ import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
 import type { SetupStepId } from '~/types'
 
-const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'lyrics', 'sample']
+const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'music', 'sample']
 const SAMPLE_ONLY_FLAGS = ['--out', '--refresh', '--verify-only', '--valid-only'] as const
 const FOCUSED_SETUP_CONFLICT_FLAGS = [
   '--sample',

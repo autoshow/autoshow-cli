@@ -51,8 +51,7 @@ describe('price mode contracts', () => {
 
   test('commands without price support reject --price', async () => {
     for (const args of [
-      ['metadata', 'https://example.com/audio.mp3', '--price'],
-      ['lyrics', '--price']
+      ['metadata', 'https://example.com/audio.mp3', '--price']
     ]) {
       const result = await runCommand(['src/cli/create-cli.ts', ...args])
 
@@ -60,6 +59,20 @@ describe('price mode contracts', () => {
       expect(result.outputDir).toBeNull()
       expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: price')
     }
+  })
+
+  test('music lyric-video mode rejects --price', async () => {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'music',
+      '--audio',
+      STABLE_LOCAL_AUDIO_PATH,
+      '--price'
+    ])
+
+    expect(result.exitCode).toBe(2)
+    expect(result.outputDir).toBeNull()
+    expect(`${result.stdout}\n${result.stderr}`).toContain('Do not combine hosted music flags')
   })
 
   test('cheapest-model helpers return stable model selections', () => {

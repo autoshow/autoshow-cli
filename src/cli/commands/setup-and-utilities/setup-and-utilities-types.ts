@@ -250,4 +250,4 @@ export type SetupToolStatus = {
 export type SetupStepId =
   | 'uv' | 'yt-dlp' | 'whisper-binary' | 'whisper-model' | 'llama-binary'
   | 'reverb' | 'calibre' | 'all'
-  | 'transcription' | 'write' | 'tts' | 'image' | 'lyrics' | 'sample'
+  | 'transcription' | 'write' | 'tts' | 'image' | 'music' | 'sample'

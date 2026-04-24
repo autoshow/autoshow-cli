@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 14 named commands: `metadata`, `download`, `ocr`, `stt`, `write`, `tts`, `image`, `video`, `music`, `lyrics`, `config`, `cache`, `setup`, `links`
+   - Defines 13 named commands: `metadata`, `download`, `ocr`, `stt`, `write`, `tts`, `image`, `video`, `music`, `config`, `cache`, `setup`, `links`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -104,16 +104,8 @@ src/cli/create-cli.ts
 │  │     music        │  │     video        │  │     setup        │            │
 │  │                  │  │                  │  │                  │            │
 │  │ Generate music   │  │ Generate video   │  │ Install all      │            │
-│  │ from .md/.txt    │  │ from .md/.txt    │  │ dependencies     │            │
+│  │ or lyric videos  │  │ from .md/.txt    │  │ dependencies     │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
-│                                                                              │
-│  ┌──────────────────┐                                                        │
-│  │     lyrics       │                                                        │
-│  │                  │                                                        │
-│  │ Local audio ->   │                                                        │
-│  │ Whisper/edited   │                                                        │
-│  │ captions -> MP4  │                                                        │
-│  └──────────────────┘                                                        │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
 │  │     config       │  │      cache       │  │      links       │            │
@@ -123,7 +115,7 @@ src/cli/create-cli.ts
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
 │  Most process commands → handleProcessTarget(command, target, flags)         │
-│  Standalone local commands such as `lyrics` route to their own runner        │
+│  `music --audio` / `music --batch` route to the local lyric-video runner     │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 

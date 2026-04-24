@@ -24,8 +24,7 @@ export const CONFIG_COMMAND_HELP_FLAG_GROUPS = [
   ['step-4-tts', 'Step 4 - Text to Speech'],
   ['step-5-image', 'Step 5 - Image'],
   ['step-6-video', 'Step 6 - Video'],
-  ['step-7-music', 'Step 7 - Music'],
-  ['step-8-lyrics', 'Step 8 - Lyrics']
+  ['step-7-music', 'Step 7 - Music']
 ] as const
 
 

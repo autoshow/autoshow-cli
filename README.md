@@ -55,6 +55,7 @@ bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-fast-generate-preview
 bun as music "an ambient piano instrumental" --minimax-music music-2.5
+bun as music --audio input/examples/lyrics/01-example-song.mp3
 
 # Fetch curated OpenAI docs into project/links/openai-all-links.md
 bun as links --openai

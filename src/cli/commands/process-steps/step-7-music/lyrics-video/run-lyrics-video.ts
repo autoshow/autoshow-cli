@@ -1,7 +1,5 @@
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { copyFile, mkdir, readdir, rm } from 'node:fs/promises'
-import { defineCommand } from 'clerc'
-import { lyricsFlags } from '~/cli/flags'
 import { validateWhisperModel } from '~/cli/commands/setup-and-utilities/models/stt-models'
 import { ensureProviderReady } from '~/utils/bootstrap-broker'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
@@ -25,7 +23,7 @@ import {
 } from './render'
 import type { CaptionCue, LyricsCueSource } from '~/types'
 
-const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
+const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../../')
 const DEFAULT_INPUT_ROOT = join(PROJECT_ROOT, 'input')
 const OUTPUT_ROOT = join(PROJECT_ROOT, 'output')
 
@@ -42,7 +40,7 @@ const logLyricsBatchSummary = (total: number, succeeded: number, failed: number)
 const AUDIO_EXTENSIONS = new Set(['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac'])
 
 const resolveInputRoot = (): string => {
-  const override = process.env['AUTOSHOW_LYRICS_INPUT_DIR']
+  const override = process.env['AUTOSHOW_MUSIC_LYRIC_VIDEO_INPUT_DIR']
   return override ? resolve(PROJECT_ROOT, override) : DEFAULT_INPUT_ROOT
 }
 
@@ -222,7 +220,8 @@ const processLyricsRun = async (options: {
     await copyFile(renderedVideoPath, videoPath)
 
     const totalMs = Date.now() - startedAt
-    await writeRunManifest(outputDirAbsolute, 'lyrics', {
+    await writeRunManifest(outputDirAbsolute, 'music', {
+      mode: 'lyric-video',
       source: {
         audioPath: toProjectDisplayPath(audioPath),
         ...(captionsPath ? { captionsPath: toProjectDisplayPath(captionsPath) } : {})
@@ -275,7 +274,7 @@ const processLyricsRun = async (options: {
       })
     } else {
       logLocationsTable(l, [{
-        artifact: 'lyricsVideo',
+        artifact: 'musicLyricsVideo',
         path: `${outputDirRelative}/${videoFileName}`
       }])
     }
@@ -299,7 +298,7 @@ const failWithExitCode = (message: string, exitCode: number): never => {
   throw error
 }
 
-const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void> => {
+export const runMusicLyricVideo = async (flags: Record<string, unknown>): Promise<void> => {
   const inputRoot = resolveInputRoot()
   const outputRoot = OUTPUT_ROOT
   const batch = flags['batch'] === true
@@ -330,7 +329,7 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
 
     await ensureDirectory(outputRoot)
     await ensureProviderReady(`whisper:${model}`)
-    const batchDirRelative = `./output/${createUniqueDirectoryName('lyrics-batch')}`
+    const batchDirRelative = `./output/${createUniqueDirectoryName('music-lyrics-batch')}`
     const batchDirAbsolute = resolve(PROJECT_ROOT, batchDirRelative)
     await ensureDirectory(batchDirAbsolute)
 
@@ -373,11 +372,12 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
           status: 'failed',
           error: message
         })
-        l.error(`Lyrics batch item failed: ${toProjectDisplayPath(audioPath)}`, error)
+        l.error(`Music lyric-video batch item failed: ${toProjectDisplayPath(audioPath)}`, error)
       }
     }
 
-    await writeBatchManifest(batchDirAbsolute, 'lyrics', items, {
+    await writeBatchManifest(batchDirAbsolute, 'music', items, {
+      mode: 'lyric-video',
       inputDir: toProjectDisplayPath(inputRoot),
       model,
       font
@@ -388,7 +388,7 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
     logLyricsBatchSummary(items.length, succeeded, failed)
 
     if (failed > 0) {
-      failWithExitCode(`Lyrics batch completed with ${failed} failed item(s)`, 1)
+      failWithExitCode(`Music lyric-video batch completed with ${failed} failed item(s)`, 1)
     }
 
     return
@@ -409,7 +409,7 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
   }
 
   const outputLabel = captionsPath ? baseStem(captionsPath) : baseStem(audioPath)
-  const outputDirRelative = `./output/${createUniqueDirectoryName(`lyrics-${outputLabel}`)}`
+  const outputDirRelative = `./output/${createUniqueDirectoryName(`music-lyrics-${outputLabel}`)}`
   const outputDirAbsolute = resolve(PROJECT_ROOT, outputDirRelative)
   await ensureDirectory(outputDirAbsolute)
 
@@ -424,25 +424,3 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
     emitCompletion: true
   })
 }
-
-export const lyricsCommand = defineCommand({
-  name: 'lyrics',
-  description: 'Render lyric videos from local audio',
-  parameters: [
-    { key: '[input]', description: 'No positional input; use --audio or --batch' }
-  ],
-  flags: lyricsFlags,
-  help: {
-    examples: [
-      ['bun as lyrics --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
-      ['bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
-      ['bun as lyrics --batch --model small', 'Render lyric videos for every supported audio file under ./input']
-    ]
-  }
-}, async (ctx) => {
-  if (typeof ctx.parameters.input === 'string' && ctx.parameters.input.length > 0) {
-    throw CLIUsageError('lyrics is render-only; use --audio or --batch. For lyric draft generation, use "bun as write ./output/<name>/text".')
-  }
-
-  await runLyricsRenderMode(ctx.flags as Record<string, unknown>)
-})

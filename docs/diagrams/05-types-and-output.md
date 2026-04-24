@@ -52,14 +52,14 @@ output/
     ├── speech.wav                  # (tts command output)
     ├── generated-image.*           # (image command output)
     ├── generated-video.mp4         # (video command output)
-    ├── generated-music.mp3         # (music command output)
+    ├── generated-music.mp3         # (hosted music command output)
     ├── run.json                    # generation metadata, timing, and cost
     │
-    │  ── Standalone local lyrics command ──
+    │  ── Music lyric-video mode ──
     ├── <stem>.mp4                  # rendered lyric video
     ├── <stem>.vtt                  # editable captions
     ├── <stem>.srt                  # editable captions
-    ├── run.json                    # lyrics metadata, render settings, timing
+    ├── run.json                    # kind "music", mode "lyric-video"
     │
     │  ── Batch Processing ──
     └── output/YYYY-MM-DD_HH-MM-SS_<batch-label>/
@@ -100,8 +100,7 @@ src/types/
 │                                                                              │
 │  ProcessCommand = 'metadata' | 'download' | 'extract' | 'write'              │
 │                 | 'tts' | 'image' | 'music' | 'video'                        │
-│  Note: `lyrics` is a standalone top-level command with its own local runner  │
-│  and output manifests; it is not part of the shared process-target router.   │
+│  Note: `music --audio` / `music --batch` use the local lyric-video runner.   │
 │  OutputFormat   = 'text' | 'json' | 'tsv' | 'hocr'                          │
 │  BatchOrder     = 'newest' | 'oldest'                                        │
 │                                                                              │
