@@ -237,6 +237,8 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
     psm: opts.psm,
     outputFormat: opts.out,
     pdfChapterMode: opts.pdfChapterMode,
+    ocrProviderConcurrency: opts.ocrProviderConcurrency,
+    ocrLocalConcurrency: opts.ocrLocalConcurrency,
     preserveInterwordSpaces: opts.preserveSpaces,
     rotate: opts.rotate
   }
@@ -452,6 +454,8 @@ const runDocumentWrite = async (
     grokModel: llmConfig.grokModel,
     llamaModels: llmConfig.llamaModels,
     llamaModel: llmConfig.llamaModel,
+    llmProviderConcurrency: opts.llmProviderConcurrency,
+    llmLocalConcurrency: opts.llmLocalConcurrency,
     promptBuilder: (instruction: string) =>
       buildDocumentPrompt(extraction.result.text, extraction.step1Metadata, instruction)
   })
@@ -602,6 +606,8 @@ const processMediaSingle = async (
     minimaxModel: llmConfig.minimaxModel,
     grokModels: llmConfig.grokModels,
     grokModel: llmConfig.grokModel,
+    llmProviderConcurrency: llmDefaults.llmProviderConcurrency,
+    llmLocalConcurrency: llmDefaults.llmLocalConcurrency,
     outputDir: baseDir,
     useReverb: llmDefaults.useReverb,
     reverbVerbatimicity: llmDefaults.reverbVerbatimicity,

@@ -25,6 +25,8 @@ export type LLMOptions = Pick<ProcessingOptions,
   | 'grokModel'
   | 'llamaModels'
   | 'llamaModel'
+  | 'llmProviderConcurrency'
+  | 'llmLocalConcurrency'
 > & {
   promptBuilder?: ((instruction: string) => string) | undefined
 }

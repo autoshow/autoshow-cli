@@ -50,16 +50,16 @@ describe('price mode contracts', () => {
   }
 
   test('commands without price support reject --price', async () => {
-    const result = await runCommand([
-      'src/cli/create-cli.ts',
-      'metadata',
-      'https://example.com/audio.mp3',
-      '--price'
-    ])
+    for (const args of [
+      ['metadata', 'https://example.com/audio.mp3', '--price'],
+      ['lyrics', '--price']
+    ]) {
+      const result = await runCommand(['src/cli/create-cli.ts', ...args])
 
-    expect(result.exitCode).toBe(2)
-    expect(result.outputDir).toBeNull()
-    expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: price')
+      expect(result.exitCode).toBe(2)
+      expect(result.outputDir).toBeNull()
+      expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: price')
+    }
   })
 
   test('cheapest-model helpers return stable model selections', () => {

@@ -38,6 +38,20 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--batch-concurrency')
   expect(result.stdout).toContain('--all-stt')
   expect(result.stdout).toContain('--all-ocr')
+  expect(result.stdout).toContain('--ocr-provider-concurrency')
+  expect(result.stdout).toContain('--ocr-local-concurrency')
+})
+
+test('write and config help expose LLM concurrency flags', async () => {
+  const writeResult = await runCommand(['src/cli/create-cli.ts', 'write', '--help'], { env: helpEnv })
+  const configResult = await runCommand(['src/cli/create-cli.ts', 'config', '--help'], { env: helpEnv })
+
+  expect(writeResult.exitCode).toBe(0)
+  expect(configResult.exitCode).toBe(0)
+  expect(writeResult.stdout).toContain('--llm-provider-concurrency')
+  expect(writeResult.stdout).toContain('--llm-local-concurrency')
+  expect(configResult.stdout).toContain('--llm-provider-concurrency')
+  expect(configResult.stdout).toContain('--llm-local-concurrency')
 })
 
 test('help for a removed command exits 2 with an unknown-command message', async () => {
@@ -45,4 +59,18 @@ test('help for a removed command exits 2 with an unknown-command message', async
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Usage error: Unknown command "report". Run: bun as help')
+})
+
+test('lyrics help is render-only', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'lyrics', '--help'], { env: helpEnv })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--audio')
+  expect(result.stdout).toContain('--captions')
+  expect(result.stdout).toContain('--batch')
+  expect(result.stdout).not.toContain('--openai')
+  expect(result.stdout).not.toContain('--prompt')
+  expect(result.stdout).not.toContain('--prompt-file')
+  expect(result.stdout).not.toContain('--track-list')
+  expect(result.stdout).not.toContain('--price')
 })

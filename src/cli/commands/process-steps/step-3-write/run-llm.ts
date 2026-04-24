@@ -22,9 +22,14 @@ import { parseAndValidateStructured } from './structured-output/validator'
 import { runCompatFallback } from './structured-output/compat-fallback'
 import { renderToPlainText } from './structured-output/renderers'
 import { readPromptFileText } from './text-input-utils'
+import { runLlmProviderTargetPools } from './llm-provider-pool'
 
 const sanitizeModelName = (model: string): string =>
   model.replace(/[/\\:*?"<>|]/g, '-')
+
+type PendingStructuredRunResult = StructuredRunResult & {
+  fileName: string
+}
 
 const collectTargets = (options: LLMOptions): LLMTarget[] => {
   const targets: LLMTarget[] = []
@@ -91,10 +96,13 @@ export const runLLM = async (
 
   const single = targets.length === 1
 
-  const results: StructuredRunResult[] = []
-  const failedTargets: string[] = []
+  const resultsByTargetIndex: Array<PendingStructuredRunResult | undefined> = []
+  const failedTargetsByIndex: Array<string | undefined> = []
 
-  for (const target of targets) {
+  await runLlmProviderTargetPools(targets, {
+    provider: options.llmProviderConcurrency ?? 2,
+    local: options.llmLocalConcurrency ?? 1
+  }, async (index, target) => {
     try {
       const structuredMode = resolveStructuredStrategy(target.service)
 
@@ -145,10 +153,9 @@ export const runLLM = async (
 
       const renderedText = renderToPlainText(parsedJson, structuredSchema.leafPromptNames)
       const fileName = single ? 'text.json' : `text-${sanitizeModelName(target.model)}.json`
-      const filePath = `${options.outputDir}/${fileName}`
-      await Bun.write(filePath, JSON.stringify(parsedJson, null, 2))
 
-      results.push({
+      resultsByTargetIndex[index] = {
+        fileName,
         metadata: {
           ...metadata,
           outputFileName: fileName,
@@ -158,22 +165,34 @@ export const runLLM = async (
         },
         renderedText,
         parsedJson
-      })
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       l.error(`Failed to run ${target.label} model ${target.model}: ${message}`)
-      failedTargets.push(`${target.service}/${target.model}: ${message}`)
+      failedTargetsByIndex[index] = `${target.service}/${target.model}: ${message}`
     }
-  }
+  })
+
+  const results = resultsByTargetIndex.filter((result): result is PendingStructuredRunResult => result !== undefined)
+  const failedTargets = failedTargetsByIndex.filter((failure): failure is string => failure !== undefined)
 
   if (results.length === 0) {
     const details = failedTargets.length > 0 ? failedTargets.join('; ') : 'No provider produced output'
     throw new Error(`No LLM outputs were generated. ${details}`)
   }
 
+  for (const result of results) {
+    const filePath = `${options.outputDir}/${result.fileName}`
+    await Bun.write(filePath, JSON.stringify(result.parsedJson, null, 2))
+  }
+
   if (failedTargets.length > 0) {
     l.warn(`LLM run completed with partial failures: ${failedTargets.join('; ')}`)
   }
 
-  return results
+  return results.map((result) => ({
+    metadata: result.metadata,
+    renderedText: result.renderedText,
+    parsedJson: result.parsedJson
+  }))
 }

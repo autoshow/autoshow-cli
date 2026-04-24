@@ -62,8 +62,8 @@ bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-0
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
 bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
 
-# lyric draft generation from album text
-bun as lyrics album-title --prompt rockSong
+# lyric draft generation from project text
+bun as write ./output/demo/text --prompt rockSong
 
 # music generation
 bun as music "an ambient piano instrumental with soft strings" --minimax-music music-2.5
@@ -99,13 +99,13 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - Use `download` for downloading media/documents and collecting metadata.
 - Use `extract` when you only need step-2 extraction or transcription without LLM writing.
 - Use `resume` to backfill missing STT or OCR providers in an existing output directory, including `extract` parent batches.
-- Use `write` for full summary pipeline with optional TTS/image/video generation.
-- Use `lyrics` either for lyric-video rendering from repo audio under `input/` or for album-style lyric draft generation from `prompt.md` + `text/` directories.
+- Use `write` for full summary pipeline with optional TTS/image/video generation, and for lyric draft generation from `./output/<name>/text`.
+- Use `lyrics` for lyric-video rendering from repo audio under `input/`.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
 
 ## Pricing Preflight
 
-Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `lyrics` supports `--price` only in text-generation mode:
+Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `lyrics` is local-only and does not define `--price`:
 
 ```bash
 bun as extract input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
@@ -115,7 +115,7 @@ bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto --price
 bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
-bun as lyrics album-title --price
+bun as write ./output/demo/text --price
 bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price

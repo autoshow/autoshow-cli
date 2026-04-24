@@ -169,6 +169,8 @@ export const runTextWrite = async (
       grokModel: llmConfig.grokModel,
       llamaModels: llmConfig.llamaModels,
       llamaModel: llmConfig.llamaModel,
+      llmProviderConcurrency: opts.llmProviderConcurrency,
+      llmLocalConcurrency: opts.llmLocalConcurrency,
       promptBuilder: (instruction: string) =>
         buildTextInputPrompt(sourceText, {
           title,

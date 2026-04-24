@@ -26,6 +26,10 @@ export type OcrPolicy = {
   batch?: BatchPolicy | undefined
   resume?: ResumePolicy | undefined
   render?: OcrRenderPolicy | undefined
+  concurrency: {
+    provider: number
+    local: number
+  }
   epubBackend?: 'bun' | 'calibre' | undefined
   urlBackend?: 'defuddle' | 'firecrawl' | 'glm-reader' | undefined
 }

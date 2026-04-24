@@ -36,6 +36,7 @@ import {
   resolveCompletionStatus,
   toRequestedProvider
 } from './ocr-run-state'
+import { runOcrProviderTargetPools } from './ocr-provider-pool'
 import { writeOcrRunManifest } from './manifest'
 import { FIRECRAWL_PRICE_NOTE } from './ocr-utils/extract-pricing'
 import { serializeOneOrMany } from '../../target-runner'
@@ -378,6 +379,8 @@ export const processOcr = async (
     pageSeparator: rawOpts.pageSeparator ?? '\n\n',
     renderConcurrency: rawOpts.renderConcurrency,
     ocrConcurrency: rawOpts.ocrConcurrency,
+    ocrProviderConcurrency: rawOpts.ocrProviderConcurrency ?? 2,
+    ocrLocalConcurrency: rawOpts.ocrLocalConcurrency ?? 1,
     preserveInterwordSpaces: rawOpts.preserveInterwordSpaces ?? false,
     rotate: rawOpts.rotate ?? 0,
     ...(rawOpts.useTesseract ? { useTesseract: true } : {}),
@@ -431,52 +434,53 @@ export const processOcr = async (
       const failuresByIndex = new Map<number, { message: string, retryable?: boolean | undefined }>()
       const failures: Array<{ service: string, model: string, message: string }> = []
 
-      for (const target of targetsToRun) {
-        const requestedIndex = requestedTargets.findIndex((requestedTarget) =>
-          requestedTarget.service === target.service && requestedTarget.model === target.model
-        )
-        if (requestedIndex === -1) {
-          continue
-        }
+      await runOcrProviderTargetPools(
+        requestedTargets,
+        targetsToRun,
+        {
+          provider: opts.ocrProviderConcurrency,
+          local: opts.ocrLocalConcurrency
+        },
+        async (requestedIndex, target) => {
+          const providerDirName = getOcrTargetDirectoryName(target)
+          const providerDir = `${providersDir}/${providerDirName}`
+          await mkdir(providerDir, { recursive: true })
 
-        const providerDirName = getOcrTargetDirectoryName(target)
-        const providerDir = `${providersDir}/${providerDirName}`
-        await mkdir(providerDir, { recursive: true })
+          try {
+            const providerOpts = buildExtractionOptionsForTarget({
+              ...opts,
+              outputDir: providerDir
+            }, target)
+            const extracted = await runWithLogContext({ step: 'step-2-ocr', provider: providerDirName }, async () =>
+              await runOcr(extractFilePath, step1Metadata, providerOpts)
+            )
 
-        try {
-          const providerOpts = buildExtractionOptionsForTarget({
-            ...opts,
-            outputDir: providerDir
-          }, target)
-          const extracted = await runWithLogContext({ step: 'step-2-ocr', provider: providerDirName }, async () =>
-            await runOcr(extractFilePath, step1Metadata, providerOpts)
-          )
+            await writeProviderArtifacts(
+              providerDir,
+              target,
+              extracted.result,
+              extracted.step2Metadata,
+              opts.outputFormat ?? 'text'
+            )
 
-          await writeProviderArtifacts(
-            providerDir,
-            target,
-            extracted.result,
-            extracted.step2Metadata,
-            opts.outputFormat ?? 'text'
-          )
-
-          successes[requestedIndex] = {
-            target,
-            result: extracted.result,
-            metadata: extracted.step2Metadata,
-            relativeDir: `providers/${providerDirName}`
+            successes[requestedIndex] = {
+              target,
+              result: extracted.result,
+              metadata: extracted.step2Metadata,
+              relativeDir: `providers/${providerDirName}`
+            }
+            failuresByIndex.delete(requestedIndex)
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error)
+            failuresByIndex.set(requestedIndex, { message })
+            failures.push({
+              service: target.service,
+              model: target.model,
+              message
+            })
           }
-          failuresByIndex.delete(requestedIndex)
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error)
-          failuresByIndex.set(requestedIndex, { message })
-          failures.push({
-            service: target.service,
-            model: target.model,
-            message
-          })
         }
-      }
+      )
 
       const providerStates = buildProviderStates(
         requestedTargets,

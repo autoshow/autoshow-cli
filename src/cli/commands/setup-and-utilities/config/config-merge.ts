@@ -111,6 +111,8 @@ export const mergeConfigIntoRawFlags = (
       ['gemini', d.llm.gemini], ['anthropic', d.llm.anthropic], ['minimax', d.llm.minimax],
       ['grok', d.llm.grok],
     ])
+    inject('llm-provider-concurrency', d.llm.providerConcurrency)
+    inject('llm-local-concurrency', d.llm.localConcurrency)
   }
 
   if (d.post?.tts) {
@@ -171,6 +173,8 @@ export const mergeConfigIntoRawFlags = (
     inject('rotate', d.extract.ocr.rotate)
     inject('page-separator', d.extract.ocr.pageSeparator)
     inject('preserve-spaces', d.extract.ocr.preserveSpaces)
+    inject('ocr-provider-concurrency', d.extract.ocr.providerConcurrency)
+    inject('ocr-local-concurrency', d.extract.ocr.localConcurrency)
     inject('chapters', d.extract.ocr.chapters)
     inject('length', d.extract.ocr.length)
     inject('pdf-chapter-mode', d.extract.ocr.pdfChapterMode)
@@ -212,6 +216,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'anthropic':         ['defaults', 'llm', 'anthropic'],
   'minimax':           ['defaults', 'llm', 'minimax'],
   'grok':              ['defaults', 'llm', 'grok'],
+  'llm-provider-concurrency': ['defaults', 'llm', 'providerConcurrency'],
+  'llm-local-concurrency': ['defaults', 'llm', 'localConcurrency'],
   'kitten-tts':        ['defaults', 'post', 'tts', 'kittenTts'],
   'elevenlabs-tts':    ['defaults', 'post', 'tts', 'elevenlabsTts'],
   'minimax-tts':       ['defaults', 'post', 'tts', 'minimaxTts'],
@@ -254,6 +260,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'rotate':            ['defaults', 'extract', 'ocr', 'rotate'],
   'page-separator':    ['defaults', 'extract', 'ocr', 'pageSeparator'],
   'preserve-spaces':   ['defaults', 'extract', 'ocr', 'preserveSpaces'],
+  'ocr-provider-concurrency': ['defaults', 'extract', 'ocr', 'providerConcurrency'],
+  'ocr-local-concurrency': ['defaults', 'extract', 'ocr', 'localConcurrency'],
   'chapters':          ['defaults', 'extract', 'ocr', 'chapters'],
   'length':            ['defaults', 'extract', 'ocr', 'length'],
   'pdf-chapter-mode':  ['defaults', 'extract', 'ocr', 'pdfChapterMode'],
@@ -306,7 +314,9 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
     'speaker-count', 'reverb-verbatimicity', 'imagen-count', 'video-duration',
     'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'length', 'batch-limit', 'batch-concurrency',
     'max-cents',
-    'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency'
+    'llm-provider-concurrency', 'llm-local-concurrency',
+    'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency',
+    'ocr-provider-concurrency', 'ocr-local-concurrency'
   ])
   if (numericFlags.has(flagName)) {
     const n = Number(rawValue)

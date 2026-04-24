@@ -46,6 +46,8 @@ const resumeOcrFlags = {
     'lang',
     'out',
     'password',
+    'ocr-provider-concurrency',
+    'ocr-local-concurrency'
   ]),
   ...pickFlags(ocrTuningFlags, [
     'dpi',

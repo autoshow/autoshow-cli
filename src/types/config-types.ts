@@ -47,7 +47,9 @@ const LlmDefaultsSchema = v.strictObject({
   gemini: ModelArraySchema,
   anthropic: ModelArraySchema,
   minimax: ModelArraySchema,
-  grok: ModelArraySchema
+  grok: ModelArraySchema,
+  providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
 const TtsDefaultsSchema = v.strictObject({
@@ -108,6 +110,8 @@ const ExtractOcrDefaultsSchema = v.strictObject({
   rotate: v.optional(v.pipe(v.number(), v.integer()), undefined),
   pageSeparator: v.optional(v.string(), undefined),
   preserveSpaces: v.optional(v.boolean(), undefined),
+  providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   mistralOcr: ModelArraySchema,
   glmOcr: ModelArraySchema,
   openaiOcr: ModelArraySchema,

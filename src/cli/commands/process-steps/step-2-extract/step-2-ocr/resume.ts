@@ -274,6 +274,8 @@ const buildResumeExtractionOpts = (
     outputFormat: opts.out,
     password: opts.password,
     pageSeparator: opts.pageSeparator ?? '\n\n',
+    ocrProviderConcurrency: opts.ocrProviderConcurrency,
+    ocrLocalConcurrency: opts.ocrLocalConcurrency,
     preserveInterwordSpaces: opts.preserveSpaces,
     rotate: opts.rotate,
     ...(opts.useEpubBun ? { useEpubBun: true } : {}),

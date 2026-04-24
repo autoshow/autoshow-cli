@@ -1,9 +1,14 @@
 # lyrics
 
-Use `lyrics` in one of two modes:
+Use `lyrics` to create a lyric video from repo-local audio using the project's Whisper runtime and fixed 1920x1080 / 30fps defaults.
 
-- render mode: create a lyric video from repo-local audio using the project's Whisper runtime and fixed 1920x1080 / 30fps defaults
-- generation mode: turn album text files into provider-rendered lyric drafts using the existing step-3 write / LLM integrations
+Lyric draft generation now belongs to `write` project mode:
+
+```bash
+bun as write ./output/demo/text --prompt rockSong
+bun as write ./output/demo/text/01-track-one.md --openai gpt-5.4 --prompt folkSong
+bun as write ./output/demo/text --price
+```
 
 ## Outline
 
@@ -17,12 +22,6 @@ Use `lyrics` in one of two modes:
 ## Usage
 
 ```bash
-# generation mode from ./albums/<name>
-bun as lyrics album-title
-
-# generation mode from an explicit directory with prompt.md + text/
-bun as lyrics ./albums/demo 01-track --openai gpt-5.4 --prompt rockSong
-
 # single file (audio must be inside ./input)
 # bundled example fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, input/examples/lyrics/01-example-song.txt
@@ -45,11 +44,6 @@ bun as lyrics --batch
 | `--model <name>` | Render mode only: local Whisper model: `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
 | `--font <name>` | Render mode only: font family for lyric overlays; defaults to `DejaVu Sans` |
 | `--keep-tmp` | Render mode only: keep the per-run `.lyrics-tmp` workspace inside the output directory |
-| `--llama`, `--openai`, `--groq`, `--gemini`, `--anthropic`, `--minimax`, `--grok` | Generation mode only: select one or more LLM providers/models using the same integrations as `write` |
-| `--prompt <name>` | Generation mode only: named prompt preset(s) from `src/prompts/entries/*.json` |
-| `--prompt-file <file>` | Generation mode only: override the album `prompt.md` with a different local prompt file |
-| `--track-list <file>` | Generation mode only: override the album `tracks.md` used for prepended track headers |
-| `--price` | Generation mode only: print the estimated LLM cost and expected files, then exit |
 
 Removed legacy flags:
 
@@ -63,15 +57,6 @@ Those are fixed by this command: outputs always go to autoshow run directories u
 ## Examples
 
 ```bash
-# generate all lyric drafts for an album under ./albums
-bun as lyrics album-title --prompt rockSong
-
-# generate one lyric draft from an explicit album directory using OpenAI
-bun as lyrics ./albums/demo 01-track --openai gpt-5.4 --prompt folkSong
-
-# estimate the cost of generation mode without writing files
-bun as lyrics album-title --price
-
 # default local Whisper render with the bundled lyrics fixture set
 bun as lyrics --audio input/examples/lyrics/01-example-song.mp3
 
@@ -101,42 +86,7 @@ bun as setup --step lyrics
 
 ## Output
 
-Generation mode writes provider-rendered markdown into the album directory and keeps normal run metadata under `./output`.
-
-Single-file generation:
-
-```text
-<album>/lyrics/
-  <stem>-chatgpt.md
-  <stem>-claude.md
-  <stem>-gemini.md
-  <stem>-grok.md
-  <stem>-groq.md
-  <stem>-minimax.md
-  <stem>-llama.md
-
-output/YYYY-MM-DD_HH-MM-SS-sss_<stem>/
-  prompt.md
-  text.json
-  run.json
-```
-
-Multi-file generation:
-
-```text
-<album>/lyrics/
-  <stem>-<provider>.md
-  ...
-
-output/YYYY-MM-DD_HH-MM-SS-sss_lyrics-gen-batch/
-  batch.json
-  <child>/
-    prompt.md
-    text.json
-    run.json
-```
-
-Render mode single runs write one timestamped output directory:
+Single runs write one timestamped output directory:
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS-sss_lyrics-<stem>/
@@ -159,7 +109,7 @@ output/YYYY-MM-DD_HH-MM-SS-sss_lyrics-batch/
     run.json
 ```
 
-Render-mode `run.json` records:
+`run.json` records:
 
 - source audio path
 - optional captions source path
@@ -170,10 +120,8 @@ Render-mode `run.json` records:
 
 ## Notes
 
-- Generation mode resolves the first positional argument as an existing directory path first; if it does not exist, AutoShow tries `./albums/<name>`.
-- Generation mode auto-uses `<album>/prompt.md`, `<album>/text/`, and `<album>/tracks.md` when present, unless `--prompt-file` or `--track-list` overrides them.
-- If no generation-mode LLM flag is provided, AutoShow falls back to the repo's default llama.cpp model.
-- `--price` is only available in generation mode.
+- `lyrics` is local-only and does not define `--price`.
+- Use `write ./output/<name>/text` for lyric draft generation from prompt and text files.
 - In rerender mode, the output stem comes from the caption filename, not the audio filename.
 - The title displayed in the video comes from the audio filename.
 - The bundled example run uses `input/examples/lyrics/01-example-song.mp3`; `input/examples/lyrics/01-cover.jpeg` is auto-detected as background art, and `input/examples/lyrics/01-example-song.txt` mirrors the reference lyrics text for caption review.

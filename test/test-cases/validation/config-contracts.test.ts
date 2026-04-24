@@ -23,20 +23,28 @@ describe('config contracts', () => {
   test('buildConfigPatchFromFlags maps explicit provider, OCR, batch, and pricing defaults', () => {
     expect(buildConfigPatchFromFlags({
       openai: 'gpt-5.4-mini',
+      'llm-provider-concurrency': '3',
+      'llm-local-concurrency': '1',
       'tesseract-ocr': true,
       dpi: '450',
+      'ocr-provider-concurrency': '4',
+      'ocr-local-concurrency': '2',
       'batch-limit': '7',
       'max-cents': '25'
-    }, new Set(['openai', 'tesseract-ocr', 'dpi', 'batch-limit', 'max-cents']))).toEqual({
+    }, new Set(['openai', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
       version: 2,
       defaults: {
         llm: {
-          openai: ['gpt-5.4-mini']
+          openai: ['gpt-5.4-mini'],
+          providerConcurrency: 3,
+          localConcurrency: 1
         },
         extract: {
           ocr: {
             tesseract: true,
-            dpi: 450
+            dpi: 450,
+            providerConcurrency: 4,
+            localConcurrency: 2
           }
         },
         batch: {
@@ -72,11 +80,17 @@ describe('config contracts', () => {
       version: 2,
       defaults: {
         llm: {
-          openai: ['gpt-5.4-mini']
+          openai: ['gpt-5.4-mini'],
+          providerConcurrency: 3,
+          localConcurrency: 1
         },
         extract: {
           stt: {
             deepgramStt: ['nova-3']
+          },
+          ocr: {
+            providerConcurrency: 3,
+            localConcurrency: 1
           }
         }
       }
@@ -86,11 +100,17 @@ describe('config contracts', () => {
       version: 2,
       defaults: {
         llm: {
-          openai: ['gpt-5.4-mini']
+          openai: ['gpt-5.4-mini'],
+          providerConcurrency: 3,
+          localConcurrency: 1
         },
         extract: {
           stt: {
             deepgramStt: ['nova-3']
+          },
+          ocr: {
+            providerConcurrency: 3,
+            localConcurrency: 1
           }
         }
       }

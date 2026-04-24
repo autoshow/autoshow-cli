@@ -48,7 +48,12 @@ import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/m
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import { runSttBatch, throwIfSttBatchIncomplete } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/batch'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
-import { collectTextInputFiles, isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
+import {
+  collectTextInputFiles,
+  isTextInputPath,
+  readPromptFileText,
+  resolveWriteTextProjectDefaults
+} from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/inactive-flag-warnings'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -738,6 +743,19 @@ const reportSuitePriceEstimate = async (
   return suiteTotalEstimatedCost
 }
 
+const buildBatchExpectedFilesList = async (
+  command: ProcessCommand,
+  opts: RuntimeOptions,
+  sampleTarget: string
+): Promise<string[]> => {
+  const expectedFiles = await buildExpectedFilesList(command, opts, sampleTarget)
+  const childFiles = expectedFiles
+    .filter((file) => !file.includes('/*.md'))
+    .map((file) => `<child-run>/${file}`)
+  const externalFiles = expectedFiles.filter((file) => file.includes('/*.md'))
+  return ['batch.json', ...childFiles, ...externalFiles]
+}
+
 const formatCents = (amount: number): string => `${amount.toFixed(4)}¢`
 
 export const shouldRunCommandPreflight = (
@@ -772,8 +790,6 @@ export const handleProcessTarget = async (
     Bun.argv.slice(2)
   )
 
-  validateWriteStep2ProviderSelection(command, opts)
-
   const maxCents = resolveMaxCents(config.pricing)
 
   let resolvedTarget: string
@@ -787,52 +803,79 @@ export const handleProcessTarget = async (
     throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
   }
 
-  const plan = await resolveProcessTargetPlan(command, resolvedTarget, opts)
+  const writeProjectDefaults = command === 'write'
+    ? await resolveWriteTextProjectDefaults(resolvedTarget, opts, explicitFlags)
+    : undefined
+  const effectiveOpts: RuntimeOptions = writeProjectDefaults
+    ? {
+        ...opts,
+        textInput: true,
+        promptFile: writeProjectDefaults.promptFile,
+        renderedOutDir: writeProjectDefaults.renderedOutDir,
+        trackList: writeProjectDefaults.trackList
+      }
+    : opts
+
+  if (writeProjectDefaults && !explicitFlags.has('prompt-file')) {
+    await readPromptFileText(writeProjectDefaults.promptFile).catch(() => {
+      throw CLIUsageError(`write project mode requires ${writeProjectDefaults.projectDir}/prompt.md or an explicit --prompt-file`)
+    })
+  }
+
+  validateWriteStep2ProviderSelection(command, effectiveOpts)
+
+  const plan = await resolveProcessTargetPlan(command, resolvedTarget, effectiveOpts)
   const singleRouting = plan.kind === 'single' && isExtractCommand(command)
-    ? await resolveInputRoutingForCommand(command, plan.target, opts)
+    ? await resolveInputRoutingForCommand(command, plan.target, effectiveOpts)
     : undefined
 
   if (singleRouting?.family === 'unsupported') {
     throw CLIUsageError(buildUnsupportedExtractInputMessage(resolvedTarget))
   }
 
-  const batchPlan = await planProcessTargetBatchExecution(plan, command, opts, resolvedTarget)
+  const batchPlan = await planProcessTargetBatchExecution(plan, command, effectiveOpts, resolvedTarget)
   const preflightTargets = batchPlan
     ? batchPlan.items
     : plan.kind === 'single'
       ? [plan.target]
       : []
-  const shouldRunPreflight = shouldRunCommandPreflight(opts, maxCents)
+  const shouldRunPreflight = shouldRunCommandPreflight(effectiveOpts, maxCents)
 
-  if (opts.price) {
+  if (effectiveOpts.price) {
     if (preflightTargets.length === 0) {
       return
     }
 
     if (preflightTargets.length === 1) {
-      const estimate = await buildAggregatedPriceEstimate(command, preflightTargets[0] as string, opts, undefined)
+      const estimate = await buildAggregatedPriceEstimate(command, preflightTargets[0] as string, effectiveOpts, undefined)
       l.report.estimate(estimate)
-      if (typeof preflightTargets[0] === 'string' && await isHtmlArticleTarget(preflightTargets[0] as string, opts) && hasConfiguredOcrProviderSelection(opts)) {
+      if (typeof preflightTargets[0] === 'string' && await isHtmlArticleTarget(preflightTargets[0] as string, effectiveOpts) && hasConfiguredOcrProviderSelection(effectiveOpts)) {
         l.warn(`${HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING.slice(0, -1)} during extraction pricing and execution.`)
       }
-      l.report.expectedOutput('./output/<timestamp>_<label>/', await buildExpectedFilesList(command, opts, preflightTargets[0] as string))
+      l.report.expectedOutput('./output/<timestamp>_<label>/', await buildExpectedFilesList(command, effectiveOpts, preflightTargets[0] as string))
       return
     }
 
-    await reportSuitePriceEstimate(command, preflightTargets, opts)
+    await reportSuitePriceEstimate(command, preflightTargets, effectiveOpts)
+    if (writeProjectDefaults) {
+      l.report.expectedOutput(
+        './output/<timestamp>_text/',
+        await buildBatchExpectedFilesList(command, effectiveOpts, preflightTargets[0] as string)
+      )
+    }
     return
   }
 
   let singleEstimate: AggregatedPriceEstimate | undefined
   if (shouldRunPreflight) {
     if (preflightTargets.length === 1) {
-      const { estimate, shouldExit } = await runPreflight(command, preflightTargets[0] as string, opts, maxCents, undefined)
+      const { estimate, shouldExit } = await runPreflight(command, preflightTargets[0] as string, effectiveOpts, maxCents, undefined)
       singleEstimate = estimate
       if (shouldExit) return
     } else if (preflightTargets.length > 1) {
-      const suiteTotalEstimatedCost = await reportSuitePriceEstimate(command, preflightTargets, opts)
+      const suiteTotalEstimatedCost = await reportSuitePriceEstimate(command, preflightTargets, effectiveOpts)
       if (maxCents !== undefined && suiteTotalEstimatedCost > maxCents) {
-        if (!opts.allowOverBudget) {
+        if (!effectiveOpts.allowOverBudget) {
           throw CLIUsageError(
             `Estimated suite cost ${formatCents(suiteTotalEstimatedCost)} exceeds configured budget ${formatCents(maxCents)}. Use --allow-over-budget to proceed.`
           )
@@ -854,9 +897,9 @@ export const handleProcessTarget = async (
     if (plan.kind === 'youtube_collection') {
       l.write('info', `Detected YouTube collection URL, processing ${batchPlan.initialEntries.length} videos`)
     }
-    await executeBatchPlan(command, opts, batchPlan)
+    await executeBatchPlan(command, effectiveOpts, batchPlan)
     return
   }
 
-  await handleSingleTarget(resolvedTarget, command, opts, singleEstimate)
+  await handleSingleTarget(resolvedTarget, command, effectiveOpts, singleEstimate)
 }

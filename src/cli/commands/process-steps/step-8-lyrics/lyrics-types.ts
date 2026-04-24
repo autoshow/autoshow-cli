@@ -12,14 +12,6 @@ export type LyricsRenderSummary = {
   backgroundMode: 'image' | 'spectrogram'
 }
 
-export type LyricsGenerationContext = {
-  albumDir: string
-  textDir: string
-  lyricsDir: string
-  promptFilePath: string
-  trackListPath?: string | undefined
-}
-
 export type OverlaySegment = {
   start: number
   end: number

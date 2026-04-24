@@ -1,14 +1,27 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { basename, extname, join } from 'node:path'
+import { basename, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { ensureDirectory } from '~/utils/cli-utils'
 import type { Step3Metadata, StructuredRunResult } from '~/types'
 import type { RenderedTextArtifactResult } from '~/types'
+import { getModelRegistry } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 const TEXT_INPUT_EXTENSIONS = new Set(['.md', '.txt'])
 const TRACK_LINE_PATTERN = /^\s*(\d+)\.\s+(.+?)\s*$/
+const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
+const OUTPUT_ROOT = join(PROJECT_ROOT, 'output')
 
 const promptFileCache = new Map<string, string>()
 const trackListCache = new Map<string, Map<string, string>>()
+
+export type WriteTextProjectDefaults = {
+  projectDir: string
+  projectName: string
+  textDir: string
+  lyricsDir: string
+  promptFile: string
+  trackList?: string | undefined
+  renderedOutDir: string
+}
 
 const compareByBasename = (left: string, right: string): number => {
   const byBase = basename(left).localeCompare(basename(right), undefined, {
@@ -19,6 +32,26 @@ const compareByBasename = (left: string, right: string): number => {
 }
 
 const appendTrailingNewline = (value: string): string => `${value.trimEnd()}\n`
+
+const toPosixPath = (value: string): string =>
+  value.replace(/\\/g, '/')
+
+const toProjectDisplayPath = (absolutePath: string): string => {
+  const rel = relative(PROJECT_ROOT, absolutePath)
+  if (rel.length === 0 || rel.startsWith('..') || isAbsolute(rel)) {
+    return absolutePath
+  }
+
+  return `./${toPosixPath(rel)}`
+}
+
+const pathExistsAsFile = async (filePath: string): Promise<boolean> => {
+  try {
+    return (await stat(filePath)).isFile()
+  } catch {
+    return false
+  }
+}
 
 const SERVICE_FILE_SUFFIX: Record<Step3Metadata['llmService'], string> = {
   openai: 'chatgpt',
@@ -38,6 +71,38 @@ const SERVICE_DISPLAY_LABEL: Record<Step3Metadata['llmService'], string> = {
   minimax: 'MiniMax',
   grok: 'Grok',
   'llama.cpp': 'llama.cpp'
+}
+
+const toRegistryLlmService = (service: Step3Metadata['llmService']): string =>
+  service === 'llama.cpp' ? 'llama' : service
+
+const toTitleCase = (value: string): string =>
+  value.replace(/\b[a-z]/g, char => char.toUpperCase())
+
+const descriptionToDisplayName = (description: string): string => {
+  const parts = description.split(/\s+[\u2013\u2014-]\s+/u, 2)
+  const displayName = parts[0]?.trim() ?? description.trim()
+  const detail = parts[1]?.trim()
+
+  const variantMatch = detail?.match(/^((?:non-)?reasoning) model$/i)
+  if (variantMatch?.[1]) {
+    return `${displayName} ${toTitleCase(variantMatch[1])}`
+  }
+
+  return displayName
+}
+
+export const formatRenderedLlmLabel = (metadata: Pick<Step3Metadata, 'llmService' | 'llmModel'>): string => {
+  const registryService = toRegistryLlmService(metadata.llmService)
+  const description = getModelRegistry().llm[registryService]?.models[metadata.llmModel]?.description
+  if (description) {
+    const displayName = descriptionToDisplayName(description)
+    if (displayName.length > 0) {
+      return displayName
+    }
+  }
+
+  return metadata.llmModel || SERVICE_DISPLAY_LABEL[metadata.llmService]
 }
 
 const buildInternalRenderedFileName = (
@@ -64,7 +129,7 @@ const buildInternalArtifactKey = (
 const withTrackHeader = (
   content: string,
   sourcePath: string | undefined,
-  service: Step3Metadata['llmService'],
+  metadata: Pick<Step3Metadata, 'llmService' | 'llmModel'>,
   tracks: Map<string, string> | undefined
 ): string => {
   if (!sourcePath || !tracks || tracks.size === 0) {
@@ -81,11 +146,78 @@ const withTrackHeader = (
     return content
   }
 
-  return `${trackNumber}. ${title} (${SERVICE_DISPLAY_LABEL[service]})\n\n${content}`
+  return `${trackNumber}. ${title} (${formatRenderedLlmLabel(metadata)})\n\n${content}`
 }
 
 export const isTextInputPath = (value: string): boolean =>
   TEXT_INPUT_EXTENSIONS.has(extname(value).toLowerCase())
+
+export const resolveWriteTextProjectDefaults = async (
+  target: string,
+  options: {
+    promptFile?: string | undefined
+    trackList?: string | undefined
+    renderedOutDir?: string | undefined
+  },
+  explicitFlags: Set<string>
+): Promise<WriteTextProjectDefaults | undefined> => {
+  if (/^https?:\/\//i.test(target)) {
+    return undefined
+  }
+
+  const absoluteTarget = resolve(PROJECT_ROOT, target)
+  const relativeToOutput = relative(OUTPUT_ROOT, absoluteTarget)
+  if (relativeToOutput.length === 0 || relativeToOutput.startsWith('..') || isAbsolute(relativeToOutput)) {
+    return undefined
+  }
+
+  const parts = toPosixPath(relativeToOutput).split('/').filter(Boolean)
+  if (parts.length < 2 || parts[1] !== 'text') {
+    return undefined
+  }
+
+  const projectName = parts[0]
+  if (!projectName) {
+    return undefined
+  }
+
+  const isTextDirTarget = parts.length === 2
+  const isTextFileTarget = parts.length > 2 && isTextInputPath(absoluteTarget)
+  if (!isTextDirTarget && !isTextFileTarget) {
+    return undefined
+  }
+
+  const projectDir = join(OUTPUT_ROOT, projectName)
+  const textDir = join(projectDir, 'text')
+  const lyricsDir = join(projectDir, 'lyrics')
+  const promptFile = explicitFlags.has('prompt-file') && options.promptFile
+    ? options.promptFile
+    : toProjectDisplayPath(join(projectDir, 'prompt.md'))
+
+  let trackList: string | undefined
+  if (explicitFlags.has('track-list')) {
+    trackList = options.trackList
+  } else {
+    const autoTrackList = join(projectDir, 'tracks.md')
+    trackList = await pathExistsAsFile(autoTrackList)
+      ? toProjectDisplayPath(autoTrackList)
+      : undefined
+  }
+
+  const renderedOutDir = explicitFlags.has('rendered-out-dir') && options.renderedOutDir
+    ? options.renderedOutDir
+    : toProjectDisplayPath(lyricsDir)
+
+  return {
+    projectDir: toProjectDisplayPath(projectDir),
+    projectName,
+    textDir: toProjectDisplayPath(textDir),
+    lyricsDir: toProjectDisplayPath(lyricsDir),
+    promptFile,
+    ...(trackList ? { trackList } : {}),
+    renderedOutDir
+  }
+}
 
 export const extractTrackNumber = (filePath: string): string | undefined => {
   const stem = basename(filePath, extname(filePath))
@@ -237,7 +369,7 @@ export const writeRenderedTextArtifacts = async (options: {
 
   for (const result of results) {
     const rendered = appendTrailingNewline(
-      withTrackHeader(result.renderedText, sourcePath, result.metadata.llmService, tracks)
+      withTrackHeader(result.renderedText, sourcePath, result.metadata, tracks)
     )
 
     if (writeInternal) {

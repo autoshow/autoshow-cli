@@ -23,6 +23,10 @@ export const buildOcrPolicy = (
     languages: options.lang,
     ...(options.password ? { password: options.password } : {})
   },
+  concurrency: {
+    provider: options.ocrProviderConcurrency,
+    local: options.ocrLocalConcurrency
+  },
   epubBackend: options.useEpubCalibre ? 'calibre' : options.useEpubBun ? 'bun' : undefined,
   urlBackend: options.urlBackend
 })

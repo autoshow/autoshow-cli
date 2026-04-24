@@ -144,6 +144,16 @@ export const llmProviderFlags = {
   grok: {
     description: `Grok model (omit value for cheapest supported model): ${SUPPORTED_GROK_MODELS.join('|')}`,
     type: [String] as [StringConstructor]
+  },
+  'llm-provider-concurrency': {
+    description: 'LLM: max hosted providers/models running in parallel for one write item (default 2)',
+    type: String,
+    default: '2'
+  },
+  'llm-local-concurrency': {
+    description: 'LLM: max local llama.cpp models running in parallel for one write item (default 1)',
+    type: String,
+    default: '1'
   }
 } as const satisfies ClercFlagsDefinition
 
@@ -189,6 +199,16 @@ export const ocrInputFlags = {
   'pdf-chapter-mode': {
     description: 'PDF chapter detection mode: local|auto|llm (default: local)',
     type: String
+  },
+  'ocr-provider-concurrency': {
+    description: 'OCR: max hosted providers/models running in parallel for one item (default 2)',
+    type: String,
+    default: '2'
+  },
+  'ocr-local-concurrency': {
+    description: 'OCR: max local providers running in parallel for one item (default 1)',
+    type: String,
+    default: '1'
   }
 } as const satisfies ClercFlagsDefinition
 

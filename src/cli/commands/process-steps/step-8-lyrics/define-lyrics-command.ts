@@ -1,28 +1,17 @@
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
-import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises'
+import { copyFile, mkdir, readdir, rm } from 'node:fs/promises'
 import { defineCommand } from 'clerc'
 import { lyricsFlags } from '~/cli/flags'
 import { validateWhisperModel } from '~/cli/commands/setup-and-utilities/models/stt-models'
 import { ensureProviderReady } from '~/utils/bootstrap-broker'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
-import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
-import { buildExpectedFilesList } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { runWhisperTranscribe } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/whisper/run-whisper'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { readRunManifest, writeBatchManifest, writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
-import { logSuitePriceSummary } from '~/cli/commands/process-steps/suite-price-logging'
-import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
-import {
-  collectTextInputFiles,
-  loadTrackTitles,
-  readPromptFileText
-} from '~/cli/commands/process-steps/step-3-write/text-input-utils'
-import { resolveMaxCentsFromFlags } from '~/cli/commands/process-steps/generation-command-utils'
+import { writeBatchManifest, writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
-import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import * as l from '~/utils/logger'
-import { createHumanTable, logLocationsTable, logSingleRowTable } from '~/utils/logger/human-table'
+import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
 import { buildLyricsCues } from './cue-builder'
 import { formatSrt, formatVtt, loadCaptionFile } from './captions'
 import {
@@ -35,8 +24,6 @@ import {
   renderLyricsVideo
 } from './render'
 import type { CaptionCue, LyricsCueSource } from '~/types'
-import type { BatchChildRunContext, RuntimeOptions } from '~/types'
-import type { LyricsGenerationContext } from '~/types'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
 const DEFAULT_INPUT_ROOT = join(PROJECT_ROOT, 'input')
@@ -120,255 +107,6 @@ const findAudioFiles = async (inputDir: string): Promise<string[]> => {
     return byBase !== 0 ? byBase : left.localeCompare(right)
   })
   return discovered
-}
-
-const pathExistsAsDirectory = async (path: string): Promise<boolean> => {
-  try {
-    return (await stat(path)).isDirectory()
-  } catch {
-    return false
-  }
-}
-
-const pathExistsAsFile = async (path: string): Promise<boolean> => {
-  try {
-    return (await stat(path)).isFile()
-  } catch {
-    return false
-  }
-}
-
-const resolveLyricsGenerationContext = async (
-  albumOrDir: string,
-  promptFileFlag: string | undefined,
-  trackListFlag: string | undefined
-): Promise<LyricsGenerationContext> => {
-  const directCandidate = resolveUserPath(albumOrDir)
-  const fallbackAlbumDir = join(PROJECT_ROOT, 'albums', albumOrDir)
-
-  let albumDir: string | undefined
-
-  if (await fileExists(directCandidate)) {
-    if (!await pathExistsAsDirectory(directCandidate)) {
-      throw CLIUsageError(`Generation input must be a directory: ${toProjectDisplayPath(directCandidate)}`)
-    }
-    albumDir = directCandidate
-  } else if (await pathExistsAsDirectory(fallbackAlbumDir)) {
-    albumDir = fallbackAlbumDir
-  }
-
-  if (!albumDir) {
-    throw CLIUsageError(
-      `Lyrics generation directory not found: ${albumOrDir}. Tried ${toProjectDisplayPath(directCandidate)} and ${toProjectDisplayPath(fallbackAlbumDir)}`
-    )
-  }
-
-  const textDir = join(albumDir, 'text')
-  if (!await pathExistsAsDirectory(textDir)) {
-    throw CLIUsageError(`Lyrics generation requires a text/ directory at ${toProjectDisplayPath(textDir)}`)
-  }
-
-  const promptFilePath = promptFileFlag ? resolveUserPath(promptFileFlag) : join(albumDir, 'prompt.md')
-  if (!await pathExistsAsFile(promptFilePath)) {
-    throw CLIUsageError(`Lyrics generation requires prompt.md at ${toProjectDisplayPath(promptFilePath)}`)
-  }
-
-  const autoTrackListPath = join(albumDir, 'tracks.md')
-  const trackListPath = trackListFlag
-    ? resolveUserPath(trackListFlag)
-    : await pathExistsAsFile(autoTrackListPath)
-      ? autoTrackListPath
-      : undefined
-
-  const lyricsDir = join(albumDir, 'lyrics')
-  await ensureDirectory(lyricsDir)
-
-  await readPromptFileText(promptFilePath)
-  if (trackListPath) {
-    await loadTrackTitles(trackListPath)
-  }
-
-  return {
-    albumDir,
-    textDir,
-    lyricsDir,
-    promptFilePath,
-    ...(trackListPath ? { trackListPath } : {})
-  }
-}
-
-const resolveLyricsGenerationFiles = async (
-  textDir: string,
-  fileArg: string | undefined
-): Promise<string[]> => {
-  const files = await collectTextInputFiles(textDir)
-  if (files.length === 0) {
-    throw CLIUsageError(`No .md or .txt files found in ${toProjectDisplayPath(textDir)}`)
-  }
-
-  if (!fileArg) {
-    return files
-  }
-
-  const normalizedArg = toPosixPath(fileArg.replace(/^\.\/+/, ''))
-  const exactMatches = files.filter((filePath) => {
-    const relativePath = toPosixPath(relative(textDir, filePath))
-    return relativePath === normalizedArg || basename(filePath) === normalizedArg
-  })
-  if (exactMatches.length === 1) {
-    return exactMatches
-  }
-  if (exactMatches.length > 1) {
-    throw CLIUsageError(
-      `Lyrics generation file "${fileArg}" is ambiguous inside ${toProjectDisplayPath(textDir)}`
-    )
-  }
-
-  const extension = extname(normalizedArg).toLowerCase()
-  if (extension === '.md' || extension === '.txt') {
-    throw CLIUsageError(`Lyrics generation file not found: ${fileArg}`)
-  }
-
-  const stemMatches = files.filter((filePath) => {
-    const relativePath = toPosixPath(relative(textDir, filePath))
-    const relativeStem = relativePath.slice(0, -extname(relativePath).length)
-    return relativeStem === normalizedArg || baseStem(filePath) === normalizedArg
-  })
-  if (stemMatches.length === 1) {
-    return stemMatches
-  }
-  if (stemMatches.length > 1) {
-    throw CLIUsageError(
-      `Lyrics generation file "${fileArg}" is ambiguous inside ${toProjectDisplayPath(textDir)}`
-    )
-  }
-
-  throw CLIUsageError(`Lyrics generation file not found: ${fileArg}`)
-}
-
-const getExplicitFlagNames = (): Set<string> => {
-  const explicit = new Set<string>()
-
-  for (const token of Bun.argv.slice(2)) {
-    if (!token.startsWith('--')) {
-      continue
-    }
-
-    const normalized = token.slice(2).split('=')[0]
-    if (normalized) {
-      explicit.add(normalized)
-    }
-  }
-
-  return explicit
-}
-
-const getLyricsStep3ResultCount = async (outputDir: string): Promise<number> => {
-  const manifest = await readRunManifest(outputDir, 'write')
-  if (!manifest) {
-    return 0
-  }
-
-  const step3 = manifest.metadata['step3']
-  if (Array.isArray(step3)) {
-    return step3.length
-  }
-
-  const asRecord = step3 as Record<string, unknown> | undefined
-  return asRecord ? 1 : 0
-}
-
-const countRequestedTargets = (options: RuntimeOptions): number => {
-  const llmTargets = [
-    ...(options.openaiModels ?? []),
-    ...(options.groqModels ?? []),
-    ...(options.geminiModels ?? []),
-    ...(options.anthropicModels ?? []),
-    ...(options.minimaxModels ?? []),
-    ...(options.grokModels ?? []),
-    ...(options.llamaModels ?? [])
-  ]
-
-  return llmTargets.length > 0 ? llmTargets.length : 1
-}
-
-const buildLyricsGenerationOptions = (
-  flags: Record<string, unknown>,
-  promptFilePath: string,
-  lyricsDir: string,
-  trackListPath?: string
-): RuntimeOptions => {
-  const options = buildOptsFromFlags(
-    false,
-    flags,
-    [],
-    {},
-    new Set(),
-    Bun.argv.slice(2)
-  )
-
-  return {
-    ...options,
-    textInput: true,
-    promptFile: promptFilePath,
-    renderedOutDir: lyricsDir,
-    ...(trackListPath ? { trackList: trackListPath } : { trackList: undefined })
-  }
-}
-
-const reportLyricsGenerationExpectedOutput = async (
-  outputDir: string,
-  options: RuntimeOptions,
-  sampleInputPath: string,
-  extraFiles: string[] = []
-): Promise<void> => {
-  const expectedFiles = await buildExpectedFilesList('write', options, sampleInputPath)
-  l.report.expectedOutput(outputDir, [...extraFiles, ...expectedFiles])
-}
-
-const reportLyricsGenerationSuiteEstimate = async (
-  files: string[],
-  options: RuntimeOptions
-): Promise<number> => {
-  logSingleRowTable(l, 'Suite Price Estimate', {
-    itemType: files.length === 1 ? 'lyric source file' : 'lyric source files',
-    itemCount: files.length
-  }, { category: 'pricing', columns: ['itemType', 'itemCount'] })
-
-  let suiteTotalEstimatedCost = 0
-  for (const filePath of files) {
-    const estimate = await buildAggregatedPriceEstimate('write', filePath, options, undefined)
-    l.report.estimate(estimate)
-    suiteTotalEstimatedCost += estimate.totalEstimatedCost
-  }
-
-  logSuitePriceSummary(l, {
-    checkedLabel: files.length === 1 ? 'lyric source file' : 'lyric source files',
-    checkedCount: files.length,
-    totalEstimatedCost: suiteTotalEstimatedCost
-  })
-
-  return suiteTotalEstimatedCost
-}
-
-const isRetryableLlamaWarmupFailure = (error: unknown): boolean =>
-  error instanceof Error && error.message.includes('No response from llama.cpp model')
-
-const runLyricsGenerationWrite = async (
-  inputPath: string,
-  options: RuntimeOptions,
-  batchChildContext?: BatchChildRunContext
-): Promise<Awaited<ReturnType<typeof runTextWrite>>> => {
-  try {
-    return await runTextWrite(inputPath, './output', options, batchChildContext)
-  } catch (error) {
-    if (!isRetryableLlamaWarmupFailure(error)) {
-      throw error
-    }
-
-    l.warn(`Retrying lyric generation after llama.cpp warmup failure: ${toProjectDisplayPath(inputPath)}`)
-    return await runTextWrite(inputPath, './output', options, batchChildContext)
-  }
 }
 
 const writeCaptionArtifacts = async (outputDir: string, stem: string, cues: CaptionCue[]): Promise<void> => {
@@ -561,43 +299,6 @@ const failWithExitCode = (message: string, exitCode: number): never => {
   throw error
 }
 
-const GENERATION_ONLY_FLAGS = [
-  'llama',
-  'openai',
-  'groq',
-  'gemini',
-  'anthropic',
-  'minimax',
-  'grok',
-  'prompt',
-  'prompt-file',
-  'track-list',
-  'price'
-] as const
-
-const RENDER_ONLY_FLAGS = [
-  'audio',
-  'captions',
-  'batch',
-  'model',
-  'font',
-  'keep-tmp'
-] as const
-
-const formatFlagList = (flags: string[]): string =>
-  flags.map((flag) => `--${flag}`).join(', ')
-
-const assertNoExplicitFlags = (
-  explicitFlags: Set<string>,
-  disallowed: readonly string[],
-  errorBuilder: (flags: string[]) => string
-): void => {
-  const used = disallowed.filter((flag) => explicitFlags.has(flag))
-  if (used.length > 0) {
-    throw CLIUsageError(errorBuilder(used))
-  }
-}
-
 const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void> => {
   const inputRoot = resolveInputRoot()
   const outputRoot = OUTPUT_ROOT
@@ -724,171 +425,24 @@ const runLyricsRenderMode = async (flags: Record<string, unknown>): Promise<void
   })
 }
 
-const runLyricsGenerationMode = async (options: {
-  albumOrDir: string
-  fileArg: string | undefined
-  flags: Record<string, unknown>
-}): Promise<void> => {
-  const { albumOrDir, fileArg, flags } = options
-  const promptFileFlag = typeof flags['prompt-file'] === 'string' ? flags['prompt-file'] : undefined
-  const trackListFlag = typeof flags['track-list'] === 'string' ? flags['track-list'] : undefined
-  const context = await resolveLyricsGenerationContext(albumOrDir, promptFileFlag, trackListFlag)
-  const files = await resolveLyricsGenerationFiles(context.textDir, fileArg)
-  const generationOptions = buildLyricsGenerationOptions(
-    flags,
-    context.promptFilePath,
-    context.lyricsDir,
-    context.trackListPath
-  )
-  const maxCents = await resolveMaxCentsFromFlags(flags)
-
-  if (files.length === 1) {
-    const inputPath = files[0] as string
-    const estimate = generationOptions.price || maxCents !== undefined
-      ? await buildAggregatedPriceEstimate('write', inputPath, generationOptions, undefined)
-      : undefined
-
-    if (estimate) {
-      l.report.estimate(estimate)
-      if (generationOptions.price) {
-        await reportLyricsGenerationExpectedOutput('./output/<timestamp>_<label>/', generationOptions, inputPath)
-        return
-      }
-
-      if (maxCents !== undefined && estimate.totalEstimatedCost > maxCents) {
-        if (!generationOptions.allowOverBudget) {
-          throw CLIUsageError(
-            `Estimated cost ${estimate.totalEstimatedCost.toFixed(4)}¢ exceeds configured budget ${maxCents.toFixed(4)}¢. Use --allow-over-budget to proceed.`
-          )
-        }
-        l.warn(`Estimated cost ${estimate.totalEstimatedCost.toFixed(4)}¢ exceeds budget ${maxCents.toFixed(4)}¢ — continuing because --allow-over-budget is set.`)
-      }
-    }
-
-    await runLyricsGenerationWrite(inputPath, generationOptions)
-    return
-  }
-
-  if (generationOptions.price || maxCents !== undefined) {
-    const suiteTotalEstimatedCost = await reportLyricsGenerationSuiteEstimate(files, generationOptions)
-    if (generationOptions.price) {
-      await reportLyricsGenerationExpectedOutput('./output/<timestamp>_lyrics-gen-batch/', generationOptions, files[0] as string, [
-        'batch.json',
-        '<child-run>/prompt.md',
-        '<child-run>/text.json',
-        '<child-run>/run.json'
-      ])
-      return
-    }
-
-    if (maxCents !== undefined && suiteTotalEstimatedCost > maxCents) {
-      if (!generationOptions.allowOverBudget) {
-        throw CLIUsageError(
-          `Estimated suite cost ${suiteTotalEstimatedCost.toFixed(4)}¢ exceeds configured budget ${maxCents.toFixed(4)}¢. Use --allow-over-budget to proceed.`
-        )
-      }
-      l.warn(`Estimated suite cost ${suiteTotalEstimatedCost.toFixed(4)}¢ exceeds budget ${maxCents.toFixed(4)}¢ — continuing because --allow-over-budget is set.`)
-    }
-  }
-
-  await ensureDirectory(OUTPUT_ROOT)
-  const batchDirRelative = `./output/${createUniqueDirectoryName('lyrics-gen-batch')}`
-  const batchDirAbsolute = resolve(PROJECT_ROOT, batchDirRelative)
-  await ensureDirectory(batchDirAbsolute)
-
-  const items: Array<Record<string, unknown>> = []
-  let succeeded = 0
-  let failed = 0
-
-  for (const inputPath of files) {
-    const batchChildContext: BatchChildRunContext = { batchDir: batchDirAbsolute }
-
-    try {
-      const result = await runLyricsGenerationWrite(inputPath, generationOptions, batchChildContext)
-      const generatedLyricFiles = await getLyricsStep3ResultCount(result.outputDir)
-      succeeded += 1
-      items.push({
-        inputTextPath: toProjectDisplayPath(inputPath),
-        outputDir: toProjectDisplayPath(result.outputDir),
-        status: 'completed',
-        generatedLyricFiles
-      })
-    } catch (error) {
-      failed += 1
-      const childDir = batchChildContext.outputDir
-      const message = error instanceof Error ? error.message : String(error)
-      items.push({
-        inputTextPath: toProjectDisplayPath(inputPath),
-        ...(childDir ? { outputDir: toProjectDisplayPath(childDir) } : {}),
-        status: 'failed',
-        error: message
-      })
-      l.error(`Lyrics generation batch item failed: ${toProjectDisplayPath(inputPath)}`, error)
-    }
-  }
-
-  await writeBatchManifest(batchDirAbsolute, 'lyrics', items, {
-    mode: 'generation',
-    albumDir: toProjectDisplayPath(context.albumDir),
-    textDir: toProjectDisplayPath(context.textDir),
-    lyricsDir: toProjectDisplayPath(context.lyricsDir),
-    promptFile: toProjectDisplayPath(context.promptFilePath),
-    ...(context.trackListPath ? { trackList: toProjectDisplayPath(context.trackListPath) } : {}),
-    requestedProviderCount: countRequestedTargets(generationOptions)
-  })
-
-  logLocationsTable(l, [{ artifact: 'outputDir', path: batchDirRelative }])
-  logLocationsTable(l, [{ artifact: 'batchManifest', path: `${batchDirRelative}/batch.json` }])
-  logLyricsBatchSummary(items.length, succeeded, failed)
-
-  if (failed > 0) {
-    failWithExitCode(`Lyrics generation batch completed with ${failed} failed item(s)`, 1)
-  }
-}
-
 export const lyricsCommand = defineCommand({
   name: 'lyrics',
-  description: 'Render lyric videos from local audio or generate lyric drafts from album text',
+  description: 'Render lyric videos from local audio',
   parameters: [
-    { key: '[albumOrDir]', description: 'Album name under ./albums or a directory containing prompt.md and text/' },
-    { key: '[file]', description: 'Optional source file inside text/ (with or without .md/.txt)' }
+    { key: '[input]', description: 'No positional input; use --audio or --batch' }
   ],
   flags: lyricsFlags,
   help: {
     examples: [
-      ['bun as lyrics album-title', 'Generate lyric drafts from ./albums/album-title/text into ./albums/album-title/lyrics'],
-      ['bun as lyrics ./albums/demo 01-track --openai gpt-5.4 --prompt rockSong', 'Generate one lyric draft with the existing LLM write pipeline'],
       ['bun as lyrics --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
       ['bun as lyrics --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
       ['bun as lyrics --batch --model small', 'Render lyric videos for every supported audio file under ./input']
     ]
   }
 }, async (ctx) => {
-  const flags = ctx.flags as Record<string, unknown>
-  const albumOrDir = typeof ctx.parameters.albumOrDir === 'string' ? ctx.parameters.albumOrDir : undefined
-  const fileArg = typeof ctx.parameters.file === 'string' ? ctx.parameters.file : undefined
-  const explicitFlags = getExplicitFlagNames()
-
-  if (albumOrDir) {
-    assertNoExplicitFlags(
-      explicitFlags,
-      RENDER_ONLY_FLAGS,
-      (used) => `lyrics generation mode does not support ${formatFlagList(used)}`
-    )
-    await runLyricsGenerationMode({ albumOrDir, fileArg, flags })
-    return
+  if (typeof ctx.parameters.input === 'string' && ctx.parameters.input.length > 0) {
+    throw CLIUsageError('lyrics is render-only; use --audio or --batch. For lyric draft generation, use "bun as write ./output/<name>/text".')
   }
 
-  if (fileArg) {
-    throw CLIUsageError('lyrics generation requires an album or directory before the optional file name')
-  }
-
-  assertNoExplicitFlags(explicitFlags, GENERATION_ONLY_FLAGS, (used) => {
-    if (used.length === 1 && used[0] === 'price') {
-      return 'lyrics render mode does not support --price'
-    }
-    return `lyrics render mode does not support ${formatFlagList(used)}; use "bun as lyrics <album-or-dir> [file]" for lyric generation`
-  })
-
-  await runLyricsRenderMode(flags)
+  await runLyricsRenderMode(ctx.flags as Record<string, unknown>)
 })

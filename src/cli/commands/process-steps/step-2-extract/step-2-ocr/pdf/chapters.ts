@@ -1413,6 +1413,8 @@ const buildLlmOptions = (
 ): Parameters<typeof runLLM>[2] => ({
   outputDir,
   prompts: ['pdfChapterBoundaries'],
+  llmProviderConcurrency: 2,
+  llmLocalConcurrency: 1,
   promptBuilder,
   ...(service === 'openai' ? { openaiModel: model } : {}),
   ...(service === 'groq' ? { groqModel: model } : {}),
