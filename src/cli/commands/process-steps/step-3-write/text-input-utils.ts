@@ -1,9 +1,11 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { basename, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { ensureDirectory } from '~/utils/cli-utils'
-import type { Step3Metadata, StructuredRunResult } from '~/types'
+import type { LeafPrompt, Step3Metadata, StructuredRunResult } from '~/types'
 import type { RenderedTextArtifactResult } from '~/types'
 import { getModelRegistry } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { LeafPromptSchema } from '~/prompts/prompt-loader'
+import { validateData } from '~/utils/validate/validation'
 
 const TEXT_INPUT_EXTENSIONS = new Set(['.md', '.txt'])
 const TRACK_LINE_PATTERN = /^\s*(\d+)\.\s+(.+?)\s*$/
@@ -11,7 +13,12 @@ const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
 const OUTPUT_ROOT = join(PROJECT_ROOT, 'output')
 
 const promptFileCache = new Map<string, string>()
+const promptFileResultCache = new Map<string, PromptFileResult>()
 const trackListCache = new Map<string, Map<string, string>>()
+
+export type PromptFileResult =
+  | { kind: 'text'; text: string }
+  | { kind: 'leaf'; name: string; leaf: LeafPrompt }
 
 export type WriteTextProjectDefaults = {
   projectDir: string
@@ -63,6 +70,14 @@ const SERVICE_FILE_SUFFIX: Record<Step3Metadata['llmService'], string> = {
   'llama.cpp': 'llama'
 }
 
+const sanitizeModelName = (model: string): string =>
+  model.replace(/[/\\:*?"<>|]/g, '-')
+
+const modelFileSuffix = (metadata: Step3Metadata): string =>
+  metadata.llmModel
+    ? sanitizeModelName(metadata.llmModel)
+    : SERVICE_FILE_SUFFIX[metadata.llmService]
+
 const SERVICE_DISPLAY_LABEL: Record<Step3Metadata['llmService'], string> = {
   openai: 'ChatGPT',
   anthropic: 'Claude',
@@ -111,12 +126,12 @@ const buildInternalRenderedFileName = (
 ): string =>
   singleTarget
     ? 'text.md'
-    : `text-${SERVICE_FILE_SUFFIX[metadata.llmService]}.md`
+    : `text-${modelFileSuffix(metadata)}.md`
 
 const buildExternalRenderedFileName = (
   baseName: string,
   metadata: Step3Metadata
-): string => `${baseName}-${SERVICE_FILE_SUFFIX[metadata.llmService]}.md`
+): string => `${baseName}-${modelFileSuffix(metadata)}.md`
 
 const buildInternalArtifactKey = (
   metadata: Step3Metadata,
@@ -124,7 +139,7 @@ const buildInternalArtifactKey = (
 ): string =>
   singleTarget
     ? 'rendered'
-    : `rendered-${SERVICE_FILE_SUFFIX[metadata.llmService]}`
+    : `rendered-${modelFileSuffix(metadata)}`
 
 const stripLeadingTitleHeading = (content: string, title: string): string => {
   const normalized = content.trimStart()
@@ -292,6 +307,53 @@ export const readPromptFileText = async (filePath: string | undefined): Promise<
   const normalized = text.trim()
   promptFileCache.set(filePath, normalized)
   return normalized.length > 0 ? normalized : undefined
+}
+
+export const readPromptFile = async (filePath: string | undefined): Promise<PromptFileResult | undefined> => {
+  if (!filePath) {
+    return undefined
+  }
+
+  if (promptFileResultCache.has(filePath)) {
+    return promptFileResultCache.get(filePath)
+  }
+
+  let fileStat
+  try {
+    fileStat = await stat(filePath)
+  } catch {
+    throw new Error(`Prompt file not found: ${filePath}`)
+  }
+
+  if (!fileStat.isFile()) {
+    throw new Error(`Prompt file is not a regular file: ${filePath}`)
+  }
+
+  const text = await readFile(filePath, 'utf8')
+  const normalized = text.trim()
+
+  if (normalized.length === 0) {
+    return undefined
+  }
+
+  if (extname(filePath).toLowerCase() === '.json') {
+    let rawEntry: unknown
+    try {
+      rawEntry = JSON.parse(normalized) as unknown
+    } catch {
+      throw new Error(`Prompt file is not valid JSON: ${filePath}`)
+    }
+
+    const leaf = validateData(LeafPromptSchema, rawEntry, `prompt file at ${filePath}`)
+    const name = basename(filePath, '.json')
+    const result: PromptFileResult = { kind: 'leaf', name, leaf: leaf as LeafPrompt }
+    promptFileResultCache.set(filePath, result)
+    return result
+  }
+
+  const result: PromptFileResult = { kind: 'text', text: normalized }
+  promptFileResultCache.set(filePath, result)
+  return result
 }
 
 export const loadTrackTitles = async (filePath: string | undefined): Promise<Map<string, string> | undefined> => {

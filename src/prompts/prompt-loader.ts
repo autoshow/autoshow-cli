@@ -14,7 +14,7 @@ import type {
 } from '~/types'
 
 
-const LeafPromptSchema = v.object({
+export const LeafPromptSchema = v.object({
   description: v.string(),
   expectedInputTokens: v.pipe(v.number(), v.integer(), v.minValue(0)),
   expectedOutputTokens: v.pipe(v.number(), v.integer(), v.minValue(0)),

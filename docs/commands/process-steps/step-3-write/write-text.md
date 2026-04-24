@@ -129,6 +129,7 @@ Prompt names are assembled at runtime from JSON files discovered recursively und
 - `popSong`
 - `rockSong`
 - `rapSong`
+- `rapSongLong`
 
 ### Creative Writing
 

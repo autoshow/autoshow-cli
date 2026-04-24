@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import type { StructuredValidationContext, StructuredValidationResult, ValibotSchema } from '~/types'
+import { isSongLyricsPreset } from './preset-registry'
 
 const stripMarkdownCodeFence = (raw: string): string => {
   const trimmed = raw.trim()
@@ -62,7 +63,8 @@ const normalizeStructuredValue = (
   }
 
   if (context.leafPromptNames.length <= 1) {
-    return context.presetNames[0] === 'songLyrics'
+    const preset = context.presetNames[0]
+    return preset && isSongLyricsPreset(preset)
       ? normalizeSongLyricsValue(value, title)
       : value
   }
@@ -73,7 +75,8 @@ const normalizeStructuredValue = (
 
   const normalized: Record<string, unknown> = { ...value }
   for (const [index, promptName] of context.leafPromptNames.entries()) {
-    if (context.presetNames[index] !== 'songLyrics') {
+    const preset = context.presetNames[index]
+    if (!preset || !isSongLyricsPreset(preset)) {
       continue
     }
 

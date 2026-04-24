@@ -3,9 +3,9 @@
   "expectedInputTokens": 500,
   "expectedOutputTokens": 1100,
   "instruction": "- Write an authentic folk song that tells a story or conveys a message about social issues or human experiences.\n    - Use simple, direct language that feels conversational and honest.\n    - Include repetitive elements and a strong narrative structure.\n    - Focus on themes of community, tradition, or social commentary.\n    - Structure the song with verses, choruses, and a bridge.\n    - Put only the actual song lyrics in the lyrics field; do not include title options, explanations, or prefaces.",
-  "structuredPreset": "songLyrics",
+  "structuredPreset": "standardSongLyrics",
   "examples": {
-    "json": "{\n  \"title\": \"Track One\",\n  \"lyrics\": \"Verse 1\\n\\n[Narrative folk verse]\\n\\nChorus\\n\\n[Simple, repeatable chorus]\\n\\nVerse 2\\n\\n[Verse that deepens the social theme]\\n\\nBridge\\n\\n[Bridge with community or tradition imagery]\\n\\nChorus\\n\\n[Final chorus]\"\n}",
+    "json": "{\n  \"title\": \"Track One\",\n  \"verse1\": \"[Narrative folk verse]\",\n  \"chorus\": \"[Simple, repeatable chorus]\",\n  \"verse2\": \"[Verse that deepens the social theme]\",\n  \"bridge\": \"[Bridge with community or tradition imagery]\",\n  \"finalChorus\": \"[Final chorus]\"\n}",
     "markdown": "Format the output like so:\n\n# Track One\n\nVerse 1\n\nLyrics to the song."
   }
 }

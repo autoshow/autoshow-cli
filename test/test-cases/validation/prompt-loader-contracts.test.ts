@@ -86,10 +86,17 @@ describe('prompt loader contracts', () => {
     expect(prompt).toContain('Create chapter titles and one-paragraph descriptions')
   })
 
-  test('resolves all song lyric prompts to the shared songLyrics structured preset', async () => {
+  test('resolves song lyric prompts to standardSongLyrics or rapSongLyrics preset', async () => {
     const presetNames = await resolvePresetNames(SONG_LYRIC_PROMPTS)
 
-    expect(presetNames).toEqual(SONG_LYRIC_PROMPTS.map(() => 'songLyrics'))
+    expect(presetNames).toEqual([
+      'standardSongLyrics',
+      'standardSongLyrics',
+      'standardSongLyrics',
+      'standardSongLyrics',
+      'rapSongLyrics',
+      'standardSongLyrics'
+    ])
   })
 
   test('resolves creative writing prompts to dedicated structured presets', async () => {
@@ -128,30 +135,49 @@ describe('prompt loader contracts', () => {
     expect(new Set(requiredShapes).size).toBe(CREATIVE_WRITING_PROMPTS.length)
   })
 
-  test('song lyric structured schema requires title and lyrics fields', async () => {
+  test('standard song lyric schema requires title and section fields', async () => {
     const schema = await resolveStructuredSchema(['rockSong'])
-    const required = schema.jsonSchema['required']
-    const properties = schema.jsonSchema['properties']
+    const required = getRequiredStringKeys(schema.jsonSchema, 'rockSong')
+    const properties = getObjectProperties(schema.jsonSchema, 'rockSong')
 
-    expect(schema.presetNames).toEqual(['songLyrics'])
-    expect(Array.isArray(required)).toBe(true)
-    if (Array.isArray(required)) {
-      expect(required).toContain('title')
-      expect(required).toContain('lyrics')
-    }
+    expect(schema.presetNames).toEqual(['standardSongLyrics'])
+    expect(required).toContain('title')
+    expect(required).toContain('verse1')
+    expect(required).toContain('chorus')
+    expect(required).toContain('verse2')
+    expect(required).toContain('bridge')
+    expect(required).toContain('finalChorus')
+    expect(required).not.toContain('lyrics')
 
-    expect(properties && typeof properties === 'object' && !Array.isArray(properties)).toBe(true)
-    if (properties && typeof properties === 'object' && !Array.isArray(properties)) {
-      expect(Object.keys(properties)).toContain('title')
-      expect(Object.keys(properties)).toContain('lyrics')
-    }
+    const propKeys = Object.keys(properties)
+    expect(propKeys).toContain('title')
+    expect(propKeys).toContain('verse1')
+    expect(propKeys).toContain('chorus')
+    expect(propKeys).toContain('verse2')
+    expect(propKeys).toContain('bridge')
+    expect(propKeys).toContain('finalChorus')
+  })
+
+  test('rap song lyric schema requires title and three verse/chorus pairs', async () => {
+    const schema = await resolveStructuredSchema(['rapSong'])
+    const required = getRequiredStringKeys(schema.jsonSchema, 'rapSong')
+
+    expect(schema.presetNames).toEqual(['rapSongLyrics'])
+    expect(required).toContain('title')
+    expect(required).toContain('verse1')
+    expect(required).toContain('chorus1')
+    expect(required).toContain('verse2')
+    expect(required).toContain('chorus2')
+    expect(required).toContain('verse3')
+    expect(required).toContain('chorus3')
+    expect(required).not.toContain('lyrics')
   })
 
   test('song lyric validation overrides the title before storage', async () => {
     const schema = await resolveStructuredSchema(['rockSong'])
     const validation = parseAndValidateStructured(
       schema.schema,
-      '{ "title": "Model Title", "lyrics": "Verse 1\\n\\nLine one" }',
+      '{ "title": "Model Title", "verse1": "Line one", "chorus": "Hook line", "verse2": "Line two", "bridge": "Bridge line", "finalChorus": "Final hook" }',
       {
         leafPromptNames: schema.leafPromptNames,
         presetNames: schema.presetNames,
@@ -162,7 +188,11 @@ describe('prompt loader contracts', () => {
     expect(validation.success).toBe(true)
     expect(validation.value).toEqual({
       title: 'Track One',
-      lyrics: 'Verse 1\n\nLine one'
+      verse1: 'Line one',
+      chorus: 'Hook line',
+      verse2: 'Line two',
+      bridge: 'Bridge line',
+      finalChorus: 'Final hook'
     })
   })
 
@@ -170,7 +200,7 @@ describe('prompt loader contracts', () => {
     const schema = await resolveStructuredSchema(['rockSong', 'shortSummary'])
     const validation = parseAndValidateStructured(
       schema.schema,
-      '{ "rockSong": { "lyrics": "Verse 1" }, "shortSummary": { "episodeDescription": "A short episode description for testing purposes that validates the schema constraints properly.", "episodeSummary": "This is a test summary that needs to be at least fifty characters long to pass validation." } }',
+      '{ "rockSong": { "verse1": "Line one", "chorus": "Hook", "verse2": "Line two", "bridge": "Bridge", "finalChorus": "Final" }, "shortSummary": { "episodeDescription": "A short episode description for testing purposes that validates the schema constraints properly.", "episodeSummary": "This is a test summary that needs to be at least fifty characters long to pass validation." } }',
       {
         leafPromptNames: schema.leafPromptNames,
         presetNames: schema.presetNames,
@@ -182,7 +212,11 @@ describe('prompt loader contracts', () => {
     expect(validation.value).toEqual({
       rockSong: {
         title: 'Track One',
-        lyrics: 'Verse 1'
+        verse1: 'Line one',
+        chorus: 'Hook',
+        verse2: 'Line two',
+        bridge: 'Bridge',
+        finalChorus: 'Final'
       },
       shortSummary: {
         episodeDescription: 'A short episode description for testing purposes that validates the schema constraints properly.',

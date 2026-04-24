@@ -19,7 +19,7 @@ const buildStep3Metadata = (): Step3Metadata => ({
   outputFileName: 'text.json',
   outputFormat: 'json',
   structuredMode: 'native',
-  structuredPresetNames: ['songLyrics']
+  structuredPresetNames: ['standardSongLyrics']
 })
 
 test('rendered text track headers use model display names', () => {
@@ -53,13 +53,24 @@ test('text input song titles use tracks.md before falling back to the filename s
   }
 })
 
-test('song lyric renderer includes deterministic title without duplicating lyric headings', () => {
+test('song lyric renderer assembles sections with headers', () => {
   const rendered = renderToPlainText({
     title: 'Track One',
-    lyrics: '# Track One\n\nVerse 1\n\nLine one'
+    verse1: 'Line one',
+    chorus: 'Hook line',
+    verse2: 'Line two',
+    bridge: 'Bridge line',
+    finalChorus: 'Final hook'
   }, ['rockSong'])
 
-  expect(rendered).toBe('# Track One\n\nVerse 1\n\nLine one')
+  expect(rendered).toBe(
+    '# Track One\n\n' +
+    'Verse 1\n\nLine one\n\n' +
+    'Chorus\n\nHook line\n\n' +
+    'Verse 2\n\nLine two\n\n' +
+    'Bridge\n\nBridge line\n\n' +
+    'Chorus\n\nFinal hook'
+  )
 })
 
 test('rendered text track headers replace duplicate song title headings', async () => {
@@ -72,19 +83,21 @@ test('rendered text track headers replace duplicate song title headings', async 
     await writeFile(tracksPath, '1. Track One\n')
     await writeFile(sourcePath, 'source text\n')
 
-    const renderedText = renderToPlainText({
+    const songData = {
       title: 'Track One',
-      lyrics: 'Verse 1\n\nLine one'
-    }, ['rockSong'])
+      verse1: 'Line one',
+      chorus: 'Hook line',
+      verse2: 'Line two',
+      bridge: 'Bridge line',
+      finalChorus: 'Final hook'
+    }
+    const renderedText = renderToPlainText(songData, ['rockSong'])
     const artifacts = await writeRenderedTextArtifacts({
       outputDir,
       results: [{
         metadata: buildStep3Metadata(),
         renderedText,
-        parsedJson: {
-          title: 'Track One',
-          lyrics: 'Verse 1\n\nLine one'
-        }
+        parsedJson: songData
       }],
       writeInternal: true,
       sourcePath,
@@ -95,7 +108,9 @@ test('rendered text track headers replace duplicate song title headings', async 
     expect(renderedFileName).toBe('text.md')
     if (renderedFileName) {
       const rendered = await Bun.file(join(outputDir, renderedFileName)).text()
-      expect(rendered).toBe('01. Track One (Gemini 3.1 Pro)\n\nVerse 1\n\nLine one\n')
+      expect(rendered).toContain('01. Track One (Gemini 3.1 Pro)')
+      expect(rendered).toContain('Verse 1\n\nLine one')
+      expect(rendered).toContain('Chorus\n\nHook line')
       expect(rendered).not.toContain('# Track One')
     }
   } finally {

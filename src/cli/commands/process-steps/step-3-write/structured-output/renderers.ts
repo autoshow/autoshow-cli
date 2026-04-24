@@ -51,27 +51,55 @@ const renderObject = (input: Record<string, unknown>, headingLevel: 2 | 3): stri
   return chunks.join('\n\n').trim()
 }
 
-const stripDuplicateSongTitleHeading = (lyrics: string, title: string): string => {
-  const normalized = lyrics.trimStart()
-  const [firstLine, ...rest] = normalized.split(/\r?\n/)
-  const headingMatch = firstLine?.match(/^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/u)
-  if (headingMatch?.[1]?.trim() !== title.trim()) {
-    return lyrics.trim()
-  }
+const STANDARD_SONG_SECTIONS = ['verse1', 'chorus', 'verse2', 'bridge', 'finalChorus'] as const
+const RAP_SONG_SECTIONS = ['verse1', 'chorus1', 'verse2', 'chorus2', 'verse3', 'chorus3'] as const
+const RAP_SONG_LONG_SECTIONS = ['verse1', 'chorus1', 'verse2', 'chorus2', 'verse3', 'bridge', 'chorus3'] as const
 
-  return rest.join('\n').replace(/^\s*\n/u, '').trim()
+const SECTION_LABELS: Record<string, string> = {
+  verse1: 'Verse 1',
+  verse2: 'Verse 2',
+  verse3: 'Verse 3',
+  chorus: 'Chorus',
+  chorus1: 'Chorus',
+  chorus2: 'Chorus',
+  chorus3: 'Chorus',
+  bridge: 'Bridge',
+  finalChorus: 'Chorus'
 }
 
+const sectionToText = (content: unknown): string | undefined => {
+  if (typeof content === 'string') return content.trim()
+  if (Array.isArray(content)) {
+    const lines = content.filter((l): l is string => typeof l === 'string').map(l => l.trim())
+    return lines.length > 0 ? lines.join('\n') : undefined
+  }
+  return undefined
+}
+
+const hasSectionContent = (value: unknown): boolean =>
+  typeof value === 'string' || (Array.isArray(value) && value.length > 0)
+
 const renderSongLyrics = (record: Record<string, unknown>): string | undefined => {
-  if (typeof record['title'] !== 'string' || typeof record['lyrics'] !== 'string') {
+  if (typeof record['title'] !== 'string' || !hasSectionContent(record['verse1'])) {
     return undefined
   }
 
   const title = record['title'].trim()
-  const lyrics = stripDuplicateSongTitleHeading(record['lyrics'], title)
-  return title.length > 0
-    ? `# ${title}\n\n${lyrics}`.trim()
-    : lyrics
+  const hasVerse3 = hasSectionContent(record['verse3'])
+  const hasBridge = hasSectionContent(record['bridge'])
+  const sections = hasVerse3 && hasBridge ? RAP_SONG_LONG_SECTIONS : hasVerse3 ? RAP_SONG_SECTIONS : STANDARD_SONG_SECTIONS
+  const parts: string[] = []
+
+  for (const key of sections) {
+    const text = sectionToText(record[key])
+    if (text) {
+      const label = SECTION_LABELS[key] ?? humanizeKey(key)
+      parts.push(`${label}\n\n${text}`)
+    }
+  }
+
+  const body = parts.join('\n\n')
+  return title.length > 0 ? `# ${title}\n\n${body}` : body
 }
 
 const renderSingle = (json: unknown): string => {

@@ -81,10 +81,6 @@ const MetadataSchema = v.object({
   topic: TextSchema
 })
 
-const FreeformEnvelopeSchema = v.object({
-  content: TextSchema
-})
-
 const PoemSchema = v.object({
   title: TextSchema,
   form: TextSchema,
@@ -208,9 +204,32 @@ const PRESET_REGISTRY = {
   linkedin: v.object({
     content: TextSchema
   }),
-  songLyrics: v.object({
+  standardSongLyrics: v.object({
     title: TextSchema,
-    lyrics: TextSchema
+    verse1: TextSchema,
+    chorus: TextSchema,
+    verse2: TextSchema,
+    bridge: TextSchema,
+    finalChorus: TextSchema
+  }),
+  rapSongLyrics: v.object({
+    title: TextSchema,
+    verse1: v.pipe(v.array(TextSchema), v.length(16)),
+    chorus1: v.pipe(v.array(TextSchema), v.length(4)),
+    verse2: v.pipe(v.array(TextSchema), v.length(16)),
+    chorus2: v.pipe(v.array(TextSchema), v.length(4)),
+    verse3: v.pipe(v.array(TextSchema), v.length(16)),
+    chorus3: v.pipe(v.array(TextSchema), v.length(4))
+  }),
+  rapSongLongLyrics: v.object({
+    title: TextSchema,
+    verse1: v.pipe(v.array(TextSchema), v.length(8)),
+    chorus1: v.pipe(v.array(TextSchema), v.length(4)),
+    verse2: v.pipe(v.array(TextSchema), v.length(8)),
+    chorus2: v.pipe(v.array(TextSchema), v.length(4)),
+    verse3: v.pipe(v.array(TextSchema), v.length(12)),
+    bridge: v.pipe(v.array(TextSchema), v.length(12)),
+    chorus3: v.pipe(v.array(TextSchema), v.length(4))
   }),
   poetryCollection: v.object({
     title: TextSchema,
@@ -229,8 +248,7 @@ const PRESET_REGISTRY = {
     genre: TextSchema,
     acts: v.array(ShortStoryActSchema),
     themes: StringListSchema
-  }),
-  freeformEnvelope: FreeformEnvelopeSchema
+  })
 } as const satisfies Record<StructuredPresetName, ValibotSchema>
 
 export const getStructuredPresetSchema = (presetName: string): ValibotSchema => {
@@ -246,6 +264,10 @@ export const getStructuredPresetSchema = (presetName: string): ValibotSchema => 
 export const hasStructuredPreset = (presetName: string): boolean => {
   return presetName in PRESET_REGISTRY
 }
+
+const SONG_LYRICS_PRESETS = new Set<string>(['standardSongLyrics', 'rapSongLyrics', 'rapSongLongLyrics'])
+
+export const isSongLyricsPreset = (name: string): boolean => SONG_LYRICS_PRESETS.has(name)
 
 export const composePromptObjectSchema = (entries: Array<{ key: string, schema: ValibotSchema }>): ValibotSchema => {
   const objectEntries: Record<string, v.GenericSchema> = {}

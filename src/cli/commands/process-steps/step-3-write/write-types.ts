@@ -147,11 +147,12 @@ export type StructuredPresetName =
   | 'facebook'
   | 'instagram'
   | 'linkedin'
-  | 'songLyrics'
+  | 'standardSongLyrics'
+  | 'rapSongLyrics'
+  | 'rapSongLongLyrics'
   | 'poetryCollection'
   | 'screenplay'
   | 'shortStory'
-  | 'freeformEnvelope'
 
 export type CompatStructuredResponse = {
   parsedJson: unknown

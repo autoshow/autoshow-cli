@@ -19,10 +19,11 @@ import { runMinimaxModel } from './write-services/minimax/run-minimax'
 import { runGrokModel } from './write-services/grok/run-grok'
 import { resolveStructuredStrategy, shouldApplyStrictMode } from './structured-output/capabilities'
 import { buildStructuredInstructionSuffix, resolveStructuredSchema } from './structured-output/schema-resolver'
+import { isSongLyricsPreset } from './structured-output/preset-registry'
 import { parseAndValidateStructured } from './structured-output/validator'
 import { runCompatFallback } from './structured-output/compat-fallback'
 import { renderToPlainText } from './structured-output/renderers'
-import { readPromptFileText } from './text-input-utils'
+import { readPromptFile } from './text-input-utils'
 import { runLlmProviderTargetPools } from './llm-provider-pool'
 
 const sanitizeModelName = (model: string): string =>
@@ -71,22 +72,41 @@ export const runLLM = async (
 
   const promptNames = options.prompts ?? []
   const hasPromptFile = typeof options.promptFile === 'string' && options.promptFile.length > 0
+  const promptFileResult = await readPromptFile(options.promptFile)
+  const isJsonPromptFile = promptFileResult?.kind === 'leaf'
   const promptFileOnly = hasPromptFile && promptNames.length === 0
-  const promptFileText = await readPromptFileText(options.promptFile)
+
+  let promptFileText: string | undefined
+  const extraLeaves: import('~/types').ResolvedLeafPrompt[] = []
+
+  if (isJsonPromptFile) {
+    const { leaf, name } = promptFileResult
+    const leafInstruction = leaf.instruction.trim()
+    const leafExample = leaf.examples.json.trim()
+    const sections = [leafInstruction]
+    if (leafExample.length > 0) {
+      sections.push(`Example JSON output:\n\n${leafExample}`)
+    }
+    promptFileText = sections.join('\n\n')
+    extraLeaves.push({ name, entry: leaf })
+  } else if (promptFileResult?.kind === 'text') {
+    promptFileText = promptFileResult.text
+  }
 
   const instructionBase = await resolvePromptNames(promptNames, {
     exampleFormat: 'json',
     fallbackToDefault: !promptFileOnly
   })
   const structuredSchema = await resolveStructuredSchema(promptNames, {
-    fallbackToFreeformEnvelope: promptFileOnly
+    fallbackToFreeformEnvelope: promptFileOnly && !isJsonPromptFile,
+    extraLeaves: extraLeaves.length > 0 ? extraLeaves : undefined
   })
   const songLyricsTitle = options.structuredContext?.songLyricsTitle ?? meta.title
   const normalizedSongLyricsTitle = songLyricsTitle.trim()
   const structuredValidationContext: StructuredValidationContext = {
     leafPromptNames: structuredSchema.leafPromptNames,
     presetNames: structuredSchema.presetNames,
-    ...(structuredSchema.presetNames.includes('songLyrics') && normalizedSongLyricsTitle.length > 0
+    ...(structuredSchema.presetNames.some(isSongLyricsPreset) && normalizedSongLyricsTitle.length > 0
       ? { songLyricsTitle: normalizedSongLyricsTitle }
       : {})
   }

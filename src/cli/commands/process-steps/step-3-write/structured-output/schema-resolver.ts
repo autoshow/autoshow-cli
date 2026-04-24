@@ -1,5 +1,6 @@
+import * as v from 'valibot'
 import { toJsonSchema } from '@valibot/to-json-schema'
-import type { ResolvedStructuredSchema, ValibotSchema } from '~/types'
+import type { ResolvedLeafPrompt, ResolvedStructuredSchema, ValibotSchema } from '~/types'
 import { collectLeafPrompts } from '~/prompts/prompt-loader'
 import { composePromptObjectSchema, getStructuredPresetSchema, hasStructuredPreset } from './preset-registry'
 
@@ -38,6 +39,13 @@ const normalizeJsonSchemaNode = (node: unknown): unknown => {
     normalized['additionalProperties'] = false
   }
 
+  if (typeof normalized['minItems'] === 'number' && normalized['minItems'] > 1) {
+    normalized['minItems'] = 1
+  }
+  if ('maxItems' in normalized) {
+    delete normalized['maxItems']
+  }
+
   return normalized
 }
 
@@ -45,19 +53,20 @@ const normalizeJsonSchema = (schema: Record<string, unknown>): Record<string, un
   return normalizeJsonSchemaNode(schema) as Record<string, unknown>
 }
 
-const resolveLeafPresetName = (leafPromptName: string, structuredPreset: string | undefined): string => {
+const FREEFORM_CONTENT_SCHEMA = v.object({ content: v.pipe(v.string(), v.minLength(1)) })
+
+const resolveLeafPresetName = (leafPromptName: string, structuredPreset: string | undefined): string | null => {
   if (structuredPreset && hasStructuredPreset(structuredPreset)) {
     return structuredPreset
   }
   if (hasStructuredPreset(leafPromptName)) {
     return leafPromptName
   }
-  return 'freeformEnvelope'
+  return null
 }
 
 const buildFreeformEnvelopeSchema = (): ResolvedStructuredSchema => {
-  const schema = getStructuredPresetSchema('freeformEnvelope')
-  const jsonSchemaRaw = toJsonSchema(schema, {
+  const jsonSchemaRaw = toJsonSchema(FREEFORM_CONTENT_SCHEMA, {
     target: 'draft-07',
     errorMode: 'throw'
   }) as Record<string, unknown>
@@ -65,21 +74,22 @@ const buildFreeformEnvelopeSchema = (): ResolvedStructuredSchema => {
   return {
     schemaName: 'prompt_content',
     leafPromptNames: ['content'],
-    presetNames: ['freeformEnvelope'],
-    schema,
+    presetNames: [],
+    schema: FREEFORM_CONTENT_SCHEMA,
     jsonSchema: normalizeJsonSchema(jsonSchemaRaw)
   }
 }
 
 export const resolveStructuredSchema = async (
   promptNames: string[],
-  options: { fallbackToFreeformEnvelope?: boolean } = {}
+  options: { fallbackToFreeformEnvelope?: boolean | undefined; extraLeaves?: ResolvedLeafPrompt[] | undefined } = {}
 ): Promise<ResolvedStructuredSchema> => {
-  if (options.fallbackToFreeformEnvelope && promptNames.length === 0) {
+  if (options.fallbackToFreeformEnvelope && promptNames.length === 0 && (!options.extraLeaves || options.extraLeaves.length === 0)) {
     return buildFreeformEnvelopeSchema()
   }
 
-  const leaves = await collectLeafPrompts(promptNames)
+  const registryLeaves = await collectLeafPrompts(promptNames)
+  const leaves = [...registryLeaves, ...(options.extraLeaves ?? [])]
   if (leaves.length === 0) {
     throw new Error('No prompt leaves resolved for structured output')
   }
@@ -88,18 +98,20 @@ export const resolveStructuredSchema = async (
     resolveLeafPresetName(leaf.name, leaf.entry.structuredPreset)
   )
 
+  const getSchemaForPreset = (presetName: string | null): ValibotSchema =>
+    presetName ? getStructuredPresetSchema(presetName) : FREEFORM_CONTENT_SCHEMA
+
   let schema: ValibotSchema
   let schemaName: string
 
   if (leaves.length === 1) {
-    const singlePreset = presetNames[0]
-    schema = getStructuredPresetSchema(singlePreset as string)
+    schema = getSchemaForPreset(presetNames[0] as string | null)
     schemaName = sanitizeSchemaName(`prompt_${leaves[0]?.name ?? 'default'}`)
   } else {
     schema = composePromptObjectSchema(
       leaves.map((leaf, index) => ({
         key: leaf.name,
-        schema: getStructuredPresetSchema(presetNames[index] as string)
+        schema: getSchemaForPreset(presetNames[index] as string | null)
       }))
     )
     schemaName = sanitizeSchemaName(`prompts_${leaves.map((leaf) => leaf.name).join('_')}`)
@@ -113,7 +125,7 @@ export const resolveStructuredSchema = async (
   return {
     schemaName,
     leafPromptNames: leaves.map((leaf) => leaf.name),
-    presetNames,
+    presetNames: presetNames.filter((name): name is string => name !== null),
     schema,
     jsonSchema: normalizeJsonSchema(jsonSchemaRaw)
   }
