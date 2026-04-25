@@ -85,9 +85,11 @@ The report script:
 1. Parses `consensus-transcription.txt` as the gold reference.
 2. Uses only `result.json.result.segments` for provider scoring.
 3. Maps provider speaker IDs onto canonical speakers by segment overlap.
-4. Computes text-only WER and speaker-aware WER from each provider's ordered word stream rather than by forcing provider text onto gold segment boundaries.
-5. Pulls actual cost and processing time from `run.json` when available.
-6. Ignores `transcription.txt` files and any pre-existing comparison reports.
+4. Normalizes text before WER computation: expands contractions (it's -> it is), abbreviations (mr. -> mister), currency symbols ($50 -> 50 dollars), removes filler words (um, uh), and strips remaining punctuation.
+5. Computes text-only WER and speaker-aware WER from each provider's ordered word stream rather than by forcing provider text onto gold segment boundaries.
+6. Reports WER breakdown with substitutions, deletions, and insertions: `WER = (S + D + I) / N`.
+7. Pulls actual cost and processing time from `run.json` when available.
+8. Ignores `transcription.txt` files and any pre-existing comparison reports.
 
 ## Validation Checklist
 

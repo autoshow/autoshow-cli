@@ -28,6 +28,7 @@ import {
   getOcrTargetDirectoryName
 } from './ocr-targets'
 import {
+  classifyOcrProviderFailure,
   buildMetadataErrorEntries,
   buildMissingProviders,
   buildProviderStates,
@@ -471,12 +472,12 @@ export const processOcr = async (
             }
             failuresByIndex.delete(requestedIndex)
           } catch (error) {
-            const message = error instanceof Error ? error.message : String(error)
-            failuresByIndex.set(requestedIndex, { message })
+            const failure = classifyOcrProviderFailure(error)
+            failuresByIndex.set(requestedIndex, failure)
             failures.push({
               service: target.service,
               model: target.model,
-              message
+              message: failure.message
             })
           }
         }

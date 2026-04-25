@@ -305,6 +305,8 @@ const runResumeOcrTarget = async (
   let full = 0
   let incomplete = 0
   let failed = 0
+  let resumableIncomplete = 0
+  let resumableFailed = 0
   const updatedEntries: BatchManifestEntry[] = []
 
   for (let index = 0; index < parsedEntries.length; index++) {
@@ -398,14 +400,22 @@ const runResumeOcrTarget = async (
 
     const metadata = await readOutputMetadata(entry.outputDir)
     updatedEntries.push(withOutputDir(metadata, entry.outputDir))
+    const remainingResumableEntry = await parseResumeEntry(
+      withOutputDir(metadata, entry.outputDir),
+      selectedTargets
+    )
+    const hasRemainingResumableWork = (remainingResumableEntry?.missingTargets.length ?? 0) > 0
     if (metadata['completionStatus'] === 'failed') {
       failed += 1
+      if (hasRemainingResumableWork) {
+        resumableFailed += 1
+      }
       logResumeItem(l, {
         item: entryLabel,
         status: 'failed',
         outputDir: entry.outputDir,
         providers: providerLabels,
-        detail: 'resume failed'
+        detail: hasRemainingResumableWork ? 'resume failed' : 'no resumable providers remain'
       }, 'error')
     } else if (metadata['completionStatus'] === 'full') {
       full += 1
@@ -418,12 +428,15 @@ const runResumeOcrTarget = async (
       }, 'success')
     } else {
       incomplete += 1
+      if (hasRemainingResumableWork) {
+        resumableIncomplete += 1
+      }
       logResumeItem(l, {
         item: entryLabel,
         status: 'incomplete',
         outputDir: entry.outputDir,
         providers: providerLabels,
-        detail: 'resume incomplete'
+        detail: hasRemainingResumableWork ? 'resume incomplete' : 'no resumable providers remain'
       }, 'warn')
     }
   }
@@ -435,8 +448,8 @@ const runResumeOcrTarget = async (
   }
   logResumeSummary(l, { full, incomplete, failed })
 
-  if (incomplete > 0 || failed > 0) {
-    const error = new Error(`OCR resume still has ${incomplete} incomplete and ${failed} failed item(s)`)
+  if (resumableIncomplete > 0 || resumableFailed > 0) {
+    const error = new Error(`OCR resume still has ${resumableIncomplete} incomplete and ${resumableFailed} failed item(s) with resumable providers`)
     ;(error as Error & { exitCode?: number }).exitCode = 2
     throw error
   }

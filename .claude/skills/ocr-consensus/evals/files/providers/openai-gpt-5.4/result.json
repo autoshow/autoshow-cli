@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "kind": "provider-result",
+  "provider": "openai",
+  "model": "gpt-5.4",
+  "metadata": {
+    "extractionMethod": "image+openai-ocr",
+    "totalPages": 1,
+    "ocrPages": 1,
+    "textPages": 0,
+    "processingTime": 12000,
+    "tokenEstimate": 95,
+    "ocrModel": "gpt-5.4",
+    "ocrService": "openai",
+    "inputFamily": "image"
+  },
+  "result": {
+    "text": "Page 0\nThe unanimous Declaration of the thirteen united States of America,\n\nWhen in the Course of human events, it becomes necessary for one people to dissolve the political bands which have connected them with another, and to assume among the powers of the earth, the separate and equal station to which the Laws of Nature and of Nature's God entitle them, a decent respect to the opinions of mankind requires that they should declare the causes which impel them to the separation.",
+    "pages": [
+      {
+        "pageNumber": 0,
+        "method": "ocr",
+        "text": "The unanimous Declaration of the thirteen united States of America,\n\nWhen in the Course of human events, it becomes necessary for one people to dissolve the political bands which have connected them with another, and to assume among the powers of the earth, the separate and equal station to which the Laws of Nature and of Nature's God entitle them, a decent respect to the opinions of mankind requires that they should declare the causes which impel them to the separation."
+      }
+    ],
+    "totalPages": 1,
+    "ocrPages": 1,
+    "textPages": 0
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "kind": "provider-result",
+  "provider": "tesseract",
+  "model": "tesseract",
+  "metadata": {
+    "extractionMethod": "image+tesseract",
+    "totalPages": 1,
+    "ocrPages": 1,
+    "textPages": 0,
+    "processingTime": 7500,
+    "tokenEstimate": 85,
+    "inputFamily": "image"
+  },
+  "result": {
+    "text": "Page 1\nShe wnanimots Declatalion of fhe thirtern uniled States of Ameriea,\n\nWhen in the Comse of human events, it hecomes neccfsary for one feaple to diffolve the political bands whlch have connecled them wilh another, and lo affame among the powess of the eath, Ihe feparate and equal flation to which the Laws of Nature and of Natnre's God enlttle them, a decent refpect to the opinions of mankind requires that they fhonld declare the canfes which impel them to the feparation.",
+    "pages": [
+      {
+        "pageNumber": 1,
+        "method": "ocr",
+        "text": "She wnanimots Declatalion of fhe thirtern uniled States of Ameriea,\n\nWhen in the Comse of human events, it hecomes neccfsary for one feaple to diffolve the political bands whlch have connecled them wilh another, and lo affame among the powess of the eath, Ihe feparate and equal flation to which the Laws of Nature and of Natnre's God enlttle them, a decent refpect to the opinions of mankind requires that they fhonld declare the canfes which impel them to the feparation."
+      }
+    ],
+    "totalPages": 1,
+    "ocrPages": 1,
+    "textPages": 0
+  }
+}

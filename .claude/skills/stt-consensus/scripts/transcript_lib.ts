@@ -80,16 +80,84 @@ interface ProviderResultPayload {
 }
 
 const TRANSCRIPT_LINE_RE = /^\[(?<start>[^\]]+)\]\s+\[(?<speaker>[^\]]+)\]\s+(?<text>.+)$/;
-const TOKEN_RE = /[a-z0-9]+(?:['’][a-z0-9]+)?/gi;
+const TOKEN_RE = /[a-z0-9]+(?:[‘’][a-z0-9]+)?/gi;
 const PUNCT_REPLACEMENTS: Array<[RegExp, string]> = [
-  [/\u2018/g, "'"],
-  [/\u2019/g, "'"],
+  [/\u2018/g, "’"],
+  [/\u2019/g, "’"],
   [/\u201c/g, '"'],
   [/\u201d/g, '"'],
   [/\u2013/g, "-"],
   [/\u2014/g, "-"],
   [/\u2026/g, "..."],
 ];
+
+const CONTRACTIONS = new Map<string, string>([
+  ["i’m", "i am"],
+  ["i’ve", "i have"],
+  ["i’ll", "i will"],
+  ["i’d", "i would"],
+  ["you’re", "you are"],
+  ["you’ve", "you have"],
+  ["you’ll", "you will"],
+  ["you’d", "you would"],
+  ["he’s", "he is"],
+  ["she’s", "she is"],
+  ["it’s", "it is"],
+  ["we’re", "we are"],
+  ["we’ve", "we have"],
+  ["we’ll", "we will"],
+  ["we’d", "we would"],
+  ["they’re", "they are"],
+  ["they’ve", "they have"],
+  ["they’ll", "they will"],
+  ["they’d", "they would"],
+  ["that’s", "that is"],
+  ["who’s", "who is"],
+  ["what’s", "what is"],
+  ["there’s", "there is"],
+  ["here’s", "here is"],
+  ["where’s", "where is"],
+  ["how’s", "how is"],
+  ["can’t", "cannot"],
+  ["won’t", "will not"],
+  ["don’t", "do not"],
+  ["doesn’t", "does not"],
+  ["didn’t", "did not"],
+  ["isn’t", "is not"],
+  ["aren’t", "are not"],
+  ["wasn’t", "was not"],
+  ["weren’t", "were not"],
+  ["haven’t", "have not"],
+  ["hasn’t", "has not"],
+  ["hadn’t", "had not"],
+  ["couldn’t", "could not"],
+  ["wouldn’t", "would not"],
+  ["shouldn’t", "should not"],
+  ["let’s", "let us"],
+]);
+
+const ABBREVIATIONS = new Map<string, string>([
+  ["mr.", "mister"],
+  ["mrs.", "missus"],
+  ["ms.", "miss"],
+  ["dr.", "doctor"],
+  ["prof.", "professor"],
+  ["vs.", "versus"],
+  ["etc.", "etcetera"],
+  ["st.", "saint"],
+  ["jr.", "junior"],
+  ["sr.", "senior"],
+]);
+
+const CURRENCY_PATTERNS: Array<[RegExp, string]> = [
+  [/\$(\d[\d,.]*)/g, "$1 dollars"],
+  [/(\d[\d,.]*)%/g, "$1 percent"],
+  [/[£](\d[\d,.]*)/g, "$1 pounds"],
+  [/[€](\d[\d,.]*)/g, "$1 euros"],
+  [/#(\d+)/g, "number $1"],
+];
+
+const FILLER_WORDS = new Set(["um", "uh", "hmm", "mhm", "ah", "er"]);
 
 export function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
@@ -122,11 +190,32 @@ export function normalizeText(text: string): string {
   for (const [pattern, replacement] of PUNCT_REPLACEMENTS) {
     normalized = normalized.replace(pattern, replacement);
   }
+  for (const [abbr, expansion] of ABBREVIATIONS) {
+    normalized = normalized.replaceAll(abbr, expansion);
+  }
+  for (const [pattern, replacement] of CURRENCY_PATTERNS) {
+    normalized = normalized.replace(pattern, replacement);
+  }
+  for (const [contraction, expansion] of CONTRACTIONS) {
+    normalized = normalized.replaceAll(contraction, expansion);
+  }
+  normalized = normalized.replace(/[^\p{L}\p{N}\s]/gu, " ");
   return normalized.trim().replace(/\s+/g, " ");
+}
+
+export function stripFillerTokens(tokens: string[]): string[] {
+  return tokens.filter((token) => !FILLER_WORDS.has(token));
 }
 
 export function tokenize(text: string): string[] {
   return normalizeText(text).match(TOKEN_RE) ?? [];
+}
+
+export interface WerBreakdown {
+  distance: number;
+  substitutions: number;
+  deletions: number;
+  insertions: number;
 }
 
 export function levenshteinDistance(left: string[], right: string[]): number {
@@ -151,6 +240,80 @@ export function levenshteinDistance(left: string[], right: string[]): number {
     previous = current;
   }
   return previous.at(-1) ?? 0;
+}
+
+export function levenshteinBreakdown(reference: string[], candidate: string[]): WerBreakdown {
+  const n = reference.length;
+  const m = candidate.length;
+
+  if (n === 0) {
+    return { distance: m, substitutions: 0, deletions: 0, insertions: m };
+  }
+  if (m === 0) {
+    return { distance: n, substitutions: 0, deletions: n, insertions: 0 };
+  }
+  if (n > 10_000 || m > 10_000) {
+    const distance = levenshteinDistance(reference, candidate);
+    return { distance, substitutions: -1, deletions: -1, insertions: -1 };
+  }
+
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+  const ops: Array<Array<"none" | "sub" | "del" | "ins" | "match">> = Array.from(
+    { length: n + 1 },
+    () => new Array<"none" | "sub" | "del" | "ins" | "match">(m + 1).fill("none"),
+  );
+
+  for (let i = 0; i <= n; i++) {
+    dp[i][0] = i;
+    if (i > 0) ops[i][0] = "del";
+  }
+  for (let j = 0; j <= m; j++) {
+    dp[0][j] = j;
+    if (j > 0) ops[0][j] = "ins";
+  }
+
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (reference[i - 1] === candidate[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+        ops[i][j] = "match";
+      } else {
+        const sub = dp[i - 1][j - 1];
+        const del = dp[i - 1][j];
+        const ins = dp[i][j - 1];
+        const min = Math.min(sub, del, ins);
+        dp[i][j] = min + 1;
+        if (min === sub) ops[i][j] = "sub";
+        else if (min === del) ops[i][j] = "del";
+        else ops[i][j] = "ins";
+      }
+    }
+  }
+
+  let substitutions = 0;
+  let deletions = 0;
+  let insertions = 0;
+  let i = n;
+  let j = m;
+  while (i > 0 || j > 0) {
+    const op = ops[i][j];
+    if (op === "match") {
+      i--;
+      j--;
+    } else if (op === "sub") {
+      substitutions++;
+      i--;
+      j--;
+    } else if (op === "del") {
+      deletions++;
+      i--;
+    } else {
+      insertions++;
+      j--;
+    }
+  }
+
+  return { distance: dp[n][m], substitutions, deletions, insertions };
 }
 
 export function overlapSeconds(left: Segment, right: Segment): number {
@@ -483,6 +646,41 @@ export function wordWer(
     return 0;
   }
   return levenshteinDistance(referenceTokens, candidateTokens) / referenceTokens.length;
+}
+
+export interface WerDetailedResult {
+  wer: number;
+  substitutions: number;
+  deletions: number;
+  insertions: number;
+  referenceWordCount: number;
+}
+
+export function wordWerDetailed(
+  referenceSegments: Segment[],
+  candidateSegments: Segment[],
+  includeSpeakers: boolean,
+  speakerMap?: Record<string, string>,
+  options?: { stripFillers?: boolean },
+): WerDetailedResult {
+  let referenceTokens = tokensFromSegments(referenceSegments, includeSpeakers);
+  let candidateTokens = tokensFromSegments(candidateSegments, includeSpeakers, speakerMap);
+  if (options?.stripFillers) {
+    referenceTokens = stripFillerTokens(referenceTokens);
+    candidateTokens = stripFillerTokens(candidateTokens);
+  }
+  const referenceWordCount = referenceTokens.length;
+  if (referenceWordCount === 0) {
+    return { wer: 0, substitutions: 0, deletions: 0, insertions: 0, referenceWordCount: 0 };
+  }
+  const breakdown = levenshteinBreakdown(referenceTokens, candidateTokens);
+  return {
+    wer: breakdown.distance / referenceWordCount,
+    substitutions: breakdown.substitutions,
+    deletions: breakdown.deletions,
+    insertions: breakdown.insertions,
+    referenceWordCount,
+  };
 }
 
 export function segmentAlignedSimilarity(

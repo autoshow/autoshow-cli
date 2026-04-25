@@ -2,9 +2,11 @@ import { join } from 'node:path'
 import {
   ExtractionMetadataSchema,
   ExtractionResultSchema,
+  type RetryClass,
   type OcrTarget
 } from '~/types'
 import { validateData } from '~/utils/validate/validation'
+import { classifyFetchRetry } from '~/utils/retries'
 import { getOcrTargetDirectoryName } from './ocr-targets'
 import { readOcrRunManifestEntry } from './manifest'
 import { readProviderResultEntry } from '../../manifest-utils'
@@ -20,6 +22,93 @@ import type {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
+type ProviderErrorLike = Error & {
+  cause?: unknown
+  status?: unknown
+  headers?: unknown
+  retryable?: unknown
+  retryClass?: unknown
+}
+
+const CONTENT_POLICY_PATTERN = /content (?:filter|filtering|policy)|blocked by content|safety|policy violation|invalid_request_error/i
+const TRANSIENT_MESSAGE_PATTERN = /timed out|timeout|temporar(?:y|ily)|network|connection|socket|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|rate limit|too many requests/i
+const LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN = /Checking connectivity to the model hosters|Creating model:|Model files already exist|Resized image size/i
+const LOCAL_ERROR_PATTERN = /Traceback|Exception|Error:|No such file|not found|failed/i
+const RETRY_CLASSES = new Set<RetryClass>([
+  'setup_download',
+  'runtime_subprocess_transient',
+  'runtime_http_read',
+  'runtime_http_create_conservative',
+  'runtime_poll_loop'
+])
+
+const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
+  value instanceof Error
+
+const collectErrorChain = (error: unknown): ProviderErrorLike[] => {
+  const chain: ProviderErrorLike[] = []
+  const seen = new Set<unknown>()
+  let current: unknown = error
+
+  while (isProviderErrorLike(current) && !seen.has(current)) {
+    chain.push(current)
+    seen.add(current)
+    current = current.cause
+  }
+
+  return chain
+}
+
+const resolveFailureMessage = (
+  chain: ProviderErrorLike[],
+  error: unknown
+): string => {
+  if (chain.length === 0) {
+    return error instanceof Error ? error.message : String(error)
+  }
+
+  const outer = chain[0] as ProviderErrorLike
+  const deepest = chain[chain.length - 1] as ProviderErrorLike
+  return deepest.message || outer.message
+}
+
+export const classifyOcrProviderFailure = (
+  error: unknown
+): OcrProviderFailureSummary => {
+  const chain = collectErrorChain(error)
+  const message = resolveFailureMessage(chain, error)
+  const explicitRetryableValue = chain.find((entry) => typeof entry.retryable === 'boolean')?.retryable
+  const explicitRetryable = typeof explicitRetryableValue === 'boolean'
+    ? explicitRetryableValue
+    : undefined
+  const retryClass = chain.find((entry) => typeof entry.retryClass === 'string')?.retryClass
+  const status = chain.find((entry) => typeof entry.status === 'number')?.status
+  const headers = chain.find((entry) => entry.headers instanceof Headers)?.headers
+
+  let retryable = false
+  if (explicitRetryable !== undefined) {
+    retryable = explicitRetryable
+  } else if (CONTENT_POLICY_PATTERN.test(message)) {
+    retryable = false
+  } else if (typeof status === 'number' || retryClass) {
+    const normalizedRetryClass = typeof retryClass === 'string' && RETRY_CLASSES.has(retryClass as RetryClass)
+      ? retryClass as RetryClass
+      : 'runtime_http_read'
+    retryable = classifyFetchRetry(
+      Object.assign(new Error(message), {
+        ...(typeof status === 'number' ? { status } : {}),
+        ...(headers instanceof Headers ? { headers } : {})
+      }),
+      normalizedRetryClass,
+      { retryAbortOnConservative: true }
+    ).shouldRetry
+  } else if (TRANSIENT_MESSAGE_PATTERN.test(message)) {
+    retryable = true
+  }
+
+  return { message, retryable }
+}
 
 export const getOcrTargetKey = (target: Pick<OcrTarget, 'service' | 'model'>): string =>
   `${target.service}:${target.model}`
@@ -163,12 +252,44 @@ export const buildMissingTargetsFromEntry = (
     : []
 
   if (explicitMissing.length > 0) {
-    return explicitMissing
+    const providerStates = parseStoredProviderStateMap(entry)
+    return explicitMissing.filter((target) => {
+      const state = providerStates.get(getOcrTargetKey(target))
+      return isResumableProviderState(state)
+    })
   }
 
   const successfulKeys = parseSuccessfulProviderKeys(entry)
-  return requestedTargets.filter((target) => !successfulKeys.has(getOcrTargetKey(target)))
+  const providerStates = parseStoredProviderStateMap(entry)
+  return requestedTargets.filter((target) => {
+    const key = getOcrTargetKey(target)
+    if (successfulKeys.has(key)) {
+      return false
+    }
+
+    const state = providerStates.get(key)
+    return isResumableProviderState(state)
+  })
 }
+
+const isLegacyPaddleLogOnlyFailure = (
+  state: OcrProviderState
+): boolean => {
+  const message = state.lastError?.message ?? ''
+  return state.service === 'paddle-ocr'
+    && state.status === 'failed'
+    && state.retryable !== true
+    && LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN.test(message)
+    && !LOCAL_ERROR_PATTERN.test(message)
+}
+
+const isResumableProviderState = (
+  state: OcrProviderState | undefined
+): boolean =>
+  state === undefined
+  || state.status === 'missing'
+  || state.retryable === true
+  || (state !== undefined && isLegacyPaddleLogOnlyFailure(state))
 
 export const readExistingOcrRun = async (
   outputDir: string,
@@ -276,7 +397,7 @@ export const buildMissingProviders = (
 ): OcrRequestedProvider[] => {
   const missingKeys = new Set(
     providerStates
-      .filter((state) => state.status !== 'succeeded')
+      .filter(isResumableProviderState)
       .map((state) => getOcrTargetKey(state))
   )
 

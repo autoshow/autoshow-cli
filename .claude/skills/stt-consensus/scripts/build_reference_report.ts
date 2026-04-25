@@ -12,6 +12,7 @@ import {
   mapProviderSpeakers,
   parseReferenceTranscript,
   wordWer,
+  wordWerDetailed,
 } from "./transcript_lib.ts";
 
 interface ParsedArgs {
@@ -132,12 +133,26 @@ export function buildReport(runDir: string, referencePath: string) {
       const speakerMap = mapProviderSpeakers(referenceSegments, provider.segments);
       const textOnlyWer = wordWer(referenceSegments, provider.segments, false);
       const speakerAwareWer = wordWer(referenceSegments, provider.segments, true, speakerMap);
+      const textOnlyDetailed = wordWerDetailed(referenceSegments, provider.segments, false, undefined, { stripFillers: true });
+      const speakerAwareDetailed = wordWerDetailed(referenceSegments, provider.segments, true, speakerMap, { stripFillers: true });
       return {
         provider: provider.directoryName,
         providerKey: provider.providerKey,
         score: Math.max(0, 100 * (1 - speakerAwareWer)),
         speakerAwareWER: speakerAwareWer,
         textOnlyWER: textOnlyWer,
+        textOnlyBreakdown: {
+          substitutions: textOnlyDetailed.substitutions,
+          deletions: textOnlyDetailed.deletions,
+          insertions: textOnlyDetailed.insertions,
+          referenceWordCount: textOnlyDetailed.referenceWordCount,
+        },
+        speakerAwareBreakdown: {
+          substitutions: speakerAwareDetailed.substitutions,
+          deletions: speakerAwareDetailed.deletions,
+          insertions: speakerAwareDetailed.insertions,
+          referenceWordCount: speakerAwareDetailed.referenceWordCount,
+        },
         actualProcessingTimeMs: provider.processingTimeMs,
         actualCostCents: provider.actualCostCents,
         speakerPenalty: speakerAwareWer - textOnlyWer,
@@ -212,6 +227,14 @@ export function buildReport(runDir: string, referencePath: string) {
     referenceTranscriptPath: referencePath,
     metric: "speaker-aware-wer",
     scoreFormula: "max(0, 100 * (1 - speakerAwareWER))",
+    normalization: {
+      lowercase: true,
+      contractionsExpanded: true,
+      abbreviationsExpanded: true,
+      currencySymbolsExpanded: true,
+      punctuationStripped: true,
+      fillerWordsRemoved: true,
+    },
     providers: rankedProviders,
     notes,
   };
@@ -221,6 +244,12 @@ export function buildReport(runDir: string, referencePath: string) {
     .map(
       (provider) =>
         `| ${provider.rank} | \`${provider.provider}\` | ${provider.score.toFixed(2)} | ${percentage(provider.speakerAwareWER)} | ${percentage(provider.textOnlyWER)} | ${formatProcessingSeconds(provider.actualProcessingTimeMs)} | ${formatCents(provider.actualCostCents)} |`,
+    )
+    .join("\n");
+  const breakdownRows = rankedProviders
+    .map(
+      (provider) =>
+        `| \`${provider.provider}\` | ${provider.textOnlyBreakdown.substitutions} | ${provider.textOnlyBreakdown.deletions} | ${provider.textOnlyBreakdown.insertions} | ${provider.textOnlyBreakdown.referenceWordCount} |`,
     )
     .join("\n");
   const notesBlock = notes.map((note) => `- ${note}`).join("\n");
@@ -235,6 +264,7 @@ export function buildReport(runDir: string, referencePath: string) {
 ${providerList}
 - Ranking metric: strict speaker-aware word error rate (WER)
 - Score formula: \`max(0, 100 * (1 - speakerAwareWER))\`
+- WER formula: \`(Substitutions + Deletions + Insertions) / Reference Word Count\`
 - Cost and processing time source: actual per-provider billing and timing data from \`run.json\` when available
 
 ## Method
@@ -243,7 +273,7 @@ ${providerList}
 - Timestamps were used to map provider speaker labels onto canonical gold speakers by segment overlap.
 - Gold segment end times were derived from the next gold segment start, with the final segment ending at the run duration from \`run.json\`.
 - Provider scoring used \`result.json.result.segments\` for all discovered providers under \`providers/\`; \`transcription.txt\` and any pre-existing comparison reports were ignored.
-- Text was normalized before tokenization by lowercasing, normalizing curly quotes/apostrophes, and collapsing whitespace.
+- Text normalization applied before tokenization: lowercasing, curly quote/dash normalization, contraction expansion (it's -> it is), abbreviation expansion (mr. -> mister), currency symbol conversion ($50 -> 50 dollars), filler word removal (um, uh, etc.), and remaining punctuation stripping.
 - Tokenization used a word/number regex, so punctuation-only tokens were ignored.
 - Text-only WER compares the provider's full ordered word stream against the gold transcript word stream.
 - Speaker-aware WER compares those same ordered word streams after inserting synthetic speaker-change tokens and mapping provider speaker IDs onto canonical gold speakers by overlap.
@@ -254,6 +284,12 @@ ${providerList}
 | Rank | Provider | Score / 100 | Speaker-aware WER | Text-only WER | Processing Time | Actual Cost |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 ${rankingRows}
+
+## Error Breakdown (Text-only)
+
+| Provider | Substitutions | Deletions | Insertions | Ref. Words |
+| --- | ---: | ---: | ---: | ---: |
+${breakdownRows}
 
 ## Notes
 

@@ -1,0 +1,55 @@
+{
+  "skill_name": "ocr-consensus",
+  "evals": [
+    {
+      "id": "build-consensus-and-reports",
+      "prompt": "Generate the consensus extraction and provider comparison reports for the AutoShow OCR run at runs/demo/.",
+      "expected_output": "The skill builds a consensus evidence packet, writes consensus-extraction.txt in plain text, then generates provider-comparison-report.md and provider-comparison-report.json.",
+      "assertions": [
+        "consensus-extraction.txt exists and is plain text without markdown formatting",
+        "provider-comparison-report.md exists and contains ranking tables for local and cloud groups",
+        "provider-comparison-report.json exists and is valid JSON with local and cloud keys",
+        "The report provider count matches the number of providers/*/result.json directories",
+        "consensus-extraction.txt does not contain commentary, notes, or section headings"
+      ],
+      "files": [
+        "evals/files/run.json",
+        "evals/files/providers/tesseract-tesseract/result.json",
+        "evals/files/providers/mistral-mistral-ocr-2512/result.json",
+        "evals/files/providers/openai-gpt-5.4/result.json"
+      ]
+    },
+    {
+      "id": "missing-provider-graceful",
+      "prompt": "Run the OCR consensus skill against a run where one provider directory exists but has no result.json.",
+      "expected_output": "The skill handles the missing result.json gracefully, warns about it, and evaluates remaining providers.",
+      "assertions": [
+        "A warning is emitted about the missing result.json",
+        "The remaining providers are still scored and ranked",
+        "Reports are generated successfully despite the missing provider"
+      ],
+      "files": [
+        "evals/files/run.json",
+        "evals/files/providers/tesseract-tesseract/result.json",
+        "evals/files/providers/mistral-mistral-ocr-2512/result.json"
+      ]
+    },
+    {
+      "id": "local-vs-cloud-grouping",
+      "prompt": "Generate comparison reports for an OCR run with both local (tesseract) and cloud (mistral, openai) providers.",
+      "expected_output": "The reports separate local and cloud providers into independent ranking groups.",
+      "assertions": [
+        "provider-comparison-report.md has separate Local Models and Cloud Services sections",
+        "provider-comparison-report.json has local and cloud top-level keys",
+        "Local providers are not ranked against cloud providers",
+        "Local provider table does not include a Cost column"
+      ],
+      "files": [
+        "evals/files/run.json",
+        "evals/files/providers/tesseract-tesseract/result.json",
+        "evals/files/providers/mistral-mistral-ocr-2512/result.json",
+        "evals/files/providers/openai-gpt-5.4/result.json"
+      ]
+    }
+  ]
+}

@@ -42,6 +42,8 @@ Scoring rules:
 1. Text-only WER must compare the provider's full ordered word stream against the gold transcript word stream.
 2. Speaker-aware WER must use that same ordered word stream after mapping provider speaker IDs onto canonical speakers and inserting synthetic speaker-change tokens.
 3. Do not penalize providers for failing to match the gold segment boundaries exactly.
+4. WER breakdown reports substitutions, deletions, and insertions separately: `WER = (S + D + I) / N`.
+5. Text normalization expands contractions, abbreviations, and currency symbols, removes filler words, and strips punctuation before tokenization to avoid penalizing formatting differences as recognition errors.
 
 The report script intentionally uses only:
 
