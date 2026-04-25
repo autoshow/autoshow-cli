@@ -144,6 +144,9 @@ export type RuntimeOptions = {
   elevenlabsTtsModels: string[] | undefined
   elevenlabsTtsModel: string | undefined
   elevenlabsVoiceId: string | undefined
+  deepgramTtsModels: string[] | undefined
+  deepgramTtsModel: string | undefined
+  deepgramVoiceId: string | undefined
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined

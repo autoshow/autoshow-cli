@@ -1,6 +1,22 @@
 import { expect, test } from 'bun:test'
-import { parseLinksArgv } from '~/cli/commands/setup-and-utilities/links/define-links-command'
+import {
+  collectLinks,
+  parseLinksArgv
+} from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import { runCommand } from '../../test-utils/test-helpers'
+
+const RUNWAY_GENERAL_LINKS = [
+  'https://docs.dev.runwayml.com/guides/using-the-api/',
+  'https://raw.githubusercontent.com/runwayml/skills/refs/heads/main/skills/use-runway-api/SKILL.md',
+  'https://docs.dev.runwayml.com/guides/models/',
+  'https://docs.dev.runwayml.com/guides/pricing/',
+  'https://docs.dev.runwayml.com/api/',
+  'https://raw.githubusercontent.com/runwayml/sdk-node/refs/heads/main/README.md',
+  'https://raw.githubusercontent.com/runwayml/sdk-node/ba7f2813c2393198e2f8a637593ae86d3acaa379/api.md',
+  'https://docs.dev.runwayml.com/assets/inputs/',
+  'https://docs.dev.runwayml.com/assets/outputs/',
+  'https://docs.dev.runwayml.com/errors/errors/'
+]
 
 test('metadata --markdown prints stable frontmatter instead of JSON', async () => {
   const result = await runCommand([
@@ -29,6 +45,34 @@ test('links selector errors distinguish dashed global sections from valid provid
     '--stt',
     'tts'
   ])).toThrow('Unknown links selector "--stt". Known providers:')
+})
+
+test('links selector accepts runway provider and general section', () => {
+  const runwaySelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--runway'
+  ])
+
+  expect(runwaySelection.serviceSelections.get('runway')).toEqual([])
+  expect(collectLinks(
+    runwaySelection.serviceSelections,
+    runwaySelection.globalSections
+  )).toEqual(RUNWAY_GENERAL_LINKS)
+
+  const runwayGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--runway',
+    'general'
+  ])
+
+  expect(collectLinks(
+    runwayGeneralSelection.serviceSelections,
+    runwayGeneralSelection.globalSections
+  )).toEqual(RUNWAY_GENERAL_LINKS)
 })
 
 test('music lyric-video render mode rejects generation-only price mode', async () => {

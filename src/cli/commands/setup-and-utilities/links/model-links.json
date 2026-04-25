@@ -80,6 +80,10 @@
     "OCR": [
       "https://developers.openai.com/api/docs/guides/images-vision.md"
     ],
+    "STT": [
+      "https://developers.openai.com/api/docs/guides/audio.md",
+      "https://developers.openai.com/api/docs/guides/speech-to-text.md"
+    ],
     "TTS": [
       "https://developers.openai.com/api/docs/guides/audio.md",
       "https://developers.openai.com/api/docs/guides/text-to-speech.md",
@@ -119,6 +123,9 @@
     ],
     "OCR": [
       "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt"
+    ],
+    "STT": [
+      "https://ai.google.dev/gemini-api/docs/audio.md.txt"
     ],
     "TTS": [
       "https://ai.google.dev/gemini-api/docs/speech-generation.md.txt",
@@ -290,6 +297,20 @@
     "STT": [
       "https://developers.deepgram.com/reference/speech-to-text/listen-pre-recorded.md",
       "https://developers.deepgram.com/docs/stt-pre-recorded-feature-overview.md"
+    ],
+    "TTS": [
+      "https://developers.deepgram.com/docs/text-to-speech.md",
+      "https://developers.deepgram.com/docs/tts-feature-overview.md",
+      "https://developers.deepgram.com/docs/tts-models.md",
+      "https://developers.deepgram.com/docs/tts-encoding.md",
+      "https://developers.deepgram.com/docs/tts-bit-rate.md",
+      "https://developers.deepgram.com/docs/tts-container.md",
+      "https://developers.deepgram.com/docs/tts-sample-rate.md",
+      "https://developers.deepgram.com/docs/improving-aura-2-formatting.md",
+      "https://developers.deepgram.com/docs/handling-audio-issues-in-text-to-speech.md",
+      "https://developers.deepgram.com/docs/text-chunking-for-tts-optimization.md",
+      "https://developers.deepgram.com/docs/text-to-speech-prompting.md",
+      "https://developers.deepgram.com/docs/tts-voice-controls.md"
     ]
   },
   "DeepInfra": {
@@ -352,6 +373,20 @@
       "https://docs.rev.ai/sdk/node/code-samples.md",
       "https://docs.rev.ai/resources/code-samples/node.md",
       "https://docs.rev.ai/faq.md"
+    ]
+  },
+  "Runway": {
+    "General": [
+      "https://docs.dev.runwayml.com/guides/using-the-api/",
+      "https://raw.githubusercontent.com/runwayml/skills/refs/heads/main/skills/use-runway-api/SKILL.md",
+      "https://docs.dev.runwayml.com/guides/models/",
+      "https://docs.dev.runwayml.com/guides/pricing/",
+      "https://docs.dev.runwayml.com/api/",
+      "https://raw.githubusercontent.com/runwayml/sdk-node/refs/heads/main/README.md",
+      "https://raw.githubusercontent.com/runwayml/sdk-node/ba7f2813c2393198e2f8a637593ae86d3acaa379/api.md",
+      "https://docs.dev.runwayml.com/assets/inputs/",
+      "https://docs.dev.runwayml.com/assets/outputs/",
+      "https://docs.dev.runwayml.com/errors/errors/"
     ]
   },
   "Resend": {

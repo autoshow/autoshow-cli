@@ -200,6 +200,9 @@ const normalizeMarkdown = (value: unknown): string => {
   return value.trim()
 }
 
+const formatErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
 const ensureMeaningfulMarkdown = (
   markdown: string,
   backend: HtmlArticleBackend
@@ -380,6 +383,34 @@ const runFirecrawlScrape = async (
   return parseFirecrawlResponse(payload)
 }
 
+export const extractRemoteArticleWithFirecrawl = async (
+  source: string,
+  sourceUrl: string | undefined
+): Promise<{
+  markdown: string
+  web: WebArticleMetadata
+  fileSize: number
+  title: string
+  author: string | undefined
+}> => {
+  l.write('info', 'Using Firecrawl backend for article extraction')
+  const firecrawlResult = await runFirecrawlScrape(source)
+  const htmlFallback = await tryFetchRemoteHtml(source)
+
+  const markdown = ensureMeaningfulMarkdown(firecrawlResult.markdown, 'firecrawl')
+  const web = { ...firecrawlResult.web }
+  if (sourceUrl) web.sourceUrl = sourceUrl
+  if (!web.finalUrl && htmlFallback?.finalUrl) web.finalUrl = htmlFallback.finalUrl
+
+  return {
+    markdown,
+    web,
+    fileSize: htmlFallback?.fileSize ?? byteLength(markdown),
+    title: firecrawlResult.web.title ?? fallbackTitleFromSource(source),
+    author: firecrawlResult.web.author
+  }
+}
+
 export async function prepareHtmlArticle(
   source: string,
   outputDir: string,
@@ -407,18 +438,36 @@ export async function prepareHtmlArticle(
 
   if (resolvedBackend === 'defuddle') {
     if (remote) {
-      const htmlInput = await fetchRemoteHtml(source)
-      const extracted = await extractHtmlToMarkdown({
-        html: htmlInput.html,
-        documentUrl: htmlInput.finalUrl,
-        ...(sourceUrl ? { sourceUrl } : {}),
-        finalUrl: htmlInput.finalUrl
-      })
-      markdown = extracted.markdown
-      web = extracted.web
-      fileSize = htmlInput.fileSize
-      title = extracted.title ?? fallbackTitleFromSource(source)
-      author = extracted.author
+      try {
+        const htmlInput = await fetchRemoteHtml(source)
+        const extracted = await extractHtmlToMarkdown({
+          html: htmlInput.html,
+          documentUrl: htmlInput.finalUrl,
+          ...(sourceUrl ? { sourceUrl } : {}),
+          finalUrl: htmlInput.finalUrl
+        })
+        markdown = extracted.markdown
+        web = extracted.web
+        fileSize = htmlInput.fileSize
+        title = extracted.title ?? fallbackTitleFromSource(source)
+        author = extracted.author
+      } catch (defuddleError) {
+        l.warn(`Defuddle article extraction failed; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
+        try {
+          const firecrawlArticle = await extractRemoteArticleWithFirecrawl(source, sourceUrl)
+          markdown = firecrawlArticle.markdown
+          web = firecrawlArticle.web
+          fileSize = firecrawlArticle.fileSize
+          title = firecrawlArticle.title
+          author = firecrawlArticle.author
+          resolvedBackend = 'firecrawl'
+        } catch (firecrawlError) {
+          throw new Error(
+            `Defuddle article extraction failed and Firecrawl fallback failed. ` +
+            `Defuddle: ${formatErrorMessage(defuddleError)} Firecrawl: ${formatErrorMessage(firecrawlError)}`
+          )
+        }
+      }
     } else {
       const htmlInput = await readLocalHtml(source)
       const extracted = await extractHtmlToMarkdown({
@@ -432,17 +481,12 @@ export async function prepareHtmlArticle(
       author = extracted.author
     }
   } else if (resolvedBackend === 'firecrawl') {
-    l.write('info', 'Using Firecrawl backend for article extraction')
-    const firecrawlResult = await runFirecrawlScrape(source)
-    const htmlFallback = await tryFetchRemoteHtml(source)
-
-    markdown = ensureMeaningfulMarkdown(firecrawlResult.markdown, 'firecrawl')
-    web = { ...firecrawlResult.web }
-    if (sourceUrl) web.sourceUrl = sourceUrl
-    if (!web.finalUrl && htmlFallback?.finalUrl) web.finalUrl = htmlFallback.finalUrl
-    fileSize = htmlFallback?.fileSize ?? byteLength(markdown)
-    title = firecrawlResult.web.title ?? fallbackTitleFromSource(source)
-    author = firecrawlResult.web.author
+    const firecrawlArticle = await extractRemoteArticleWithFirecrawl(source, sourceUrl)
+    markdown = firecrawlArticle.markdown
+    web = firecrawlArticle.web
+    fileSize = firecrawlArticle.fileSize
+    title = firecrawlArticle.title
+    author = firecrawlArticle.author
   } else {
     l.write('info', 'Using GLM Reader backend for article extraction')
     const glmResult = await runGlmReader(source)

@@ -5,7 +5,8 @@ import {
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
-  SUPPORTED_GEMINI_TTS_MODELS
+  SUPPORTED_GEMINI_TTS_MODELS,
+  SUPPORTED_DEEPGRAM_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
@@ -46,6 +47,10 @@ export const ttsFlags = {
     description: buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
+  'deepgram-tts': {
+    description: buildModelDescription('Deepgram TTS model', SUPPORTED_DEEPGRAM_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
   'minimax-tts-voice': {
     description: 'MiniMax TTS voice ID override (default: English_expressive_narrator)',
     type: String
@@ -56,6 +61,10 @@ export const ttsFlags = {
   },
   'gemini-voice': {
     description: 'Gemini TTS voice name override (default: Kore)',
+    type: String
+  },
+  'deepgram-voice': {
+    description: 'Deepgram TTS voice/model override (default: aura-2-thalia-en)',
     type: String
   },
   'gemini-speaker-1-name': {

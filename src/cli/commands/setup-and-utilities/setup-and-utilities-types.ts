@@ -36,7 +36,8 @@ import {
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
-  SUPPORTED_OPENAI_TTS_MODELS
+  SUPPORTED_OPENAI_TTS_MODELS,
+  SUPPORTED_DEEPGRAM_TTS_MODELS
 } from './models/tts-models'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
@@ -151,6 +152,7 @@ export type MinimaxTtsModel = typeof SUPPORTED_MINIMAX_TTS_MODELS[number]
 export type GroqTtsModel = typeof SUPPORTED_GROQ_TTS_MODELS[number]
 export type OpenAITtsModel = typeof SUPPORTED_OPENAI_TTS_MODELS[number]
 export type GeminiTtsModel = typeof SUPPORTED_GEMINI_TTS_MODELS[number]
+export type DeepgramTtsModel = typeof SUPPORTED_DEEPGRAM_TTS_MODELS[number]
 export type ElevenlabsMusicModel = typeof SUPPORTED_ELEVENLABS_MUSIC_MODELS[number]
 export type MinimaxMusicModel = typeof SUPPORTED_MINIMAX_MUSIC_MODELS[number]
 export type GeminiImageModel = typeof SUPPORTED_GEMINI_IMAGE_MODELS[number]

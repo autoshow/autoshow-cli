@@ -41,7 +41,7 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 - A provider selector with no sections fetches every curated section for that provider.
 - Provider selectors and section names are case-insensitive.
 - Unknown providers or unknown sections exit with a usage error.
-- A valid selection can still match zero URLs if the curated list for that provider/section is currently empty. Right now `--claude stt` is accepted by the parser but resolves to no links.
+- If a valid selection resolves to no URLs, the command exits with `No documentation links matched the provided selections`.
 
 ## Supported providers
 
@@ -50,9 +50,9 @@ Accepted provider selectors are the lowercase names below.
 | Provider selector | Sections |
 |-------------------|----------|
 | `--assembly` | `stt` |
-| `--claude` | `general`, `text`, `ocr`, `stt` |
+| `--claude` | `general`, `text`, `ocr` |
 | `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
-| `--deepgram` | `stt` |
+| `--deepgram` | `stt`, `tts` |
 | `--deepinfra` | `general`, `stt` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
@@ -65,6 +65,7 @@ Accepted provider selectors are the lowercase names below.
 | `--openai` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--resend` | `general` |
 | `--rev` | `general`, `stt` |
+| `--runway` | `general` |
 | `--soniox` | `stt` |
 | `--speechmatics` | `general`, `stt` |
 | `--supadata` | `stt` |
@@ -82,7 +83,7 @@ Accepted section tokens outside provider selectors:
 - `tts`
 - `video`
 
-Section availability depends on the provider. For example, `ocr` currently only matches GLM links.
+Section availability depends on the provider. For example, `music` currently matches DeAPI, ElevenLabs, and MiniMax.
 
 ## Examples
 
@@ -136,6 +137,6 @@ Global flags like `--config-path` and `--allow-over-budget` may still appear in 
 
 - Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links.json`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
-- Curated `.md` / `.txt` endpoints and normal HTML docs pages can be mixed in the same provider/section selection.
+- Curated `.md` / `.txt` endpoints and normal HTML docs pages can be mixed in the same provider/section selection. HTML pages are converted locally first; if that extraction fails, the command falls back to Firecrawl article extraction before marking the URL failed.
 - The filename is derived from the normalized provider and section selections, lowercased, deduped, and sorted into a stable order.
 - Provider selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.

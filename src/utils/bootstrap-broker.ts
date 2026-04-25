@@ -23,6 +23,7 @@ import { ensureAnthropicOcrSetup } from '~/cli/commands/process-steps/step-2-ext
 import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/tesseract-utils'
+import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import type { BootstrapHandler } from '~/types'
 
 const DEFAULT_WHISPER_MODEL = 'tiny'
@@ -125,6 +126,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'gemini-ocr': {
     ensure: async () => await ensureGeminiOcrSetup()
+  },
+  'deepgram-tts': {
+    ensure: async () => await ensureDeepgramTtsSetup()
   }
 }
 

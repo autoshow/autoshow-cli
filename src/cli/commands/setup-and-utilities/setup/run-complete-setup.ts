@@ -35,6 +35,7 @@ import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-
 import { setupGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
 import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
+import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
 import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
@@ -276,6 +277,8 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupGeminiTts)
 
+  await withCompactSetup(setupDeepgramTts)
+
   await withCompactSetup(setupGeminiImageGen)
 
   await withCompactSetup(setupOpenAIImageGen)
@@ -312,6 +315,11 @@ const runSetupWrite = async (): Promise<void> => {
 const runSetupTts = async (): Promise<void> => {
   await ensureKittenTtsSetup()
   for (const model of SUPPORTED_KITTEN_TTS_MODELS) await downloadKittenTtsModel(model)
+  await setupElevenLabsTts()
+  await setupGroqTts()
+  await setupOpenAITts()
+  await setupGeminiTts()
+  await setupDeepgramTts()
   l.write('success', 'TTS setup complete')
 }
 

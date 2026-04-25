@@ -11,7 +11,8 @@ import type {
   MinimaxTtsModel,
   GroqTtsModel,
   OpenAITtsModel,
-  GeminiTtsModel
+  GeminiTtsModel,
+  DeepgramTtsModel
 } from '~/types'
 
 export const SUPPORTED_KITTEN_TTS_MODELS = [
@@ -92,3 +93,27 @@ export const SUPPORTED_GEMINI_TTS_MODELS = [
 export const GEMINI_DEFAULT_TTS_VOICE = 'Kore'
 
 export const validateGeminiTtsModel = createModelValidator<GeminiTtsModel>(SUPPORTED_GEMINI_TTS_MODELS, 'gemini-tts')
+
+export const SUPPORTED_DEEPGRAM_TTS_MODELS = [
+  'aura-2-thalia-en',
+  'aura-2-andromeda-en',
+  'aura-2-apollo-en',
+  'aura-2-arcas-en',
+  'aura-2-asteria-en',
+  'aura-2-athena-en',
+  'aura-2-helena-en',
+  'aura-2-aries-en'
+] as const satisfies readonly string[]
+
+export const DEEPGRAM_DEFAULT_VOICE = 'aura-2-thalia-en'
+
+export const validateDeepgramTtsModel = createModelValidator<DeepgramTtsModel>(SUPPORTED_DEEPGRAM_TTS_MODELS, 'deepgram-tts')
+
+export const validateDeepgramTtsVoice = (voice: string): DeepgramTtsModel => {
+  if (!SUPPORTED_DEEPGRAM_TTS_MODELS.includes(voice as DeepgramTtsModel)) {
+    throw CLIUsageError(
+      `Invalid --deepgram-voice "${voice}". Allowed values: ${formatAllowedValues(SUPPORTED_DEEPGRAM_TTS_MODELS)}`
+    )
+  }
+  return voice as DeepgramTtsModel
+}

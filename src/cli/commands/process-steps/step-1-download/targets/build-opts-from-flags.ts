@@ -13,6 +13,7 @@ import {
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
+  DEEPGRAM_DEFAULT_VOICE,
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
@@ -54,6 +55,8 @@ import {
   validateGroqTtsModel,
   validateOpenAITtsModel,
   validateGeminiTtsModel,
+  validateDeepgramTtsModel,
+  validateDeepgramTtsVoice,
   validateGroqTtsVoice,
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel,
@@ -118,6 +121,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'groq-tts',
   'openai-tts',
   'gemini-tts',
+  'deepgram-tts',
   'gemini-image',
   'openai-image',
   'minimax-image',
@@ -148,6 +152,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'groq-tts': { shortcut: 'all-tts', supported: SUPPORTED_GROQ_TTS_MODELS },
   'openai-tts': { shortcut: 'all-tts', supported: SUPPORTED_OPENAI_TTS_MODELS },
   'gemini-tts': { shortcut: 'all-tts', supported: SUPPORTED_GEMINI_TTS_MODELS },
+  'deepgram-tts': { shortcut: 'all-tts', supported: [DEEPGRAM_DEFAULT_VOICE] },
   'gemini-image': { shortcut: 'all-image', supported: SUPPORTED_GEMINI_IMAGE_MODELS },
   'openai-image': { shortcut: 'all-image', supported: SUPPORTED_OPENAI_IMAGE_MODELS },
   'minimax-image': { shortcut: 'all-image', supported: SUPPORTED_MINIMAX_IMAGE_MODELS },
@@ -571,13 +576,15 @@ export const buildOptsFromFlags = (
   const groqTtsModels = readValidatedMany('groq-tts', validateGroqTtsModel)
   const openaiTtsModels = readValidatedMany('openai-tts', validateOpenAITtsModel)
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
+  const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
   const hasExplicitTtsEngine = [
     kittenTtsModels,
     elevenlabsTtsModels,
     minimaxTtsModels,
     groqTtsModels,
     openaiTtsModels,
-    geminiTtsModels
+    geminiTtsModels,
+    deepgramTtsModels
   ].some((value) => value !== undefined && value.length > 0)
   const kittenTtsModelValues = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
     ? [DEFAULT_KITTEN_TTS_MODEL]
@@ -731,6 +738,8 @@ export const buildOptsFromFlags = (
     openaiTtsModel: first(openaiTtsModels),
     geminiTtsModels,
     geminiTtsModel: first(geminiTtsModels),
+    deepgramTtsModels,
+    deepgramTtsModel: first(deepgramTtsModels),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
@@ -739,6 +748,12 @@ export const buildOptsFromFlags = (
     })(),
     openaiVoiceId: readOptionalStringFlag(mergedFlags, 'openai-voice'),
     geminiVoiceId: readOptionalStringFlag(mergedFlags, 'gemini-voice'),
+    deepgramVoiceId: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'deepgram-voice')
+      if (v === undefined) return undefined
+      if (deepgramTtsModels === undefined) return v
+      return validateCliValue(validateDeepgramTtsVoice, v)
+    })(),
     geminiSpeaker1Name: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-1-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-name'),
     geminiSpeaker1Voice: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-1-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-voice'),
     geminiSpeaker2Name: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-2-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-name'),

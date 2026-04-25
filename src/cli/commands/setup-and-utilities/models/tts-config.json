@@ -184,5 +184,83 @@
         }
       }
     }
+  },
+  "deepgram": {
+    "description": "Deepgram Aura cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "aura-2-thalia-en": {
+        "description": "Aura-2 Thalia English — feminine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-andromeda-en": {
+        "description": "Aura-2 Andromeda English — feminine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-apollo-en": {
+        "description": "Aura-2 Apollo English — masculine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-arcas-en": {
+        "description": "Aura-2 Arcas English — masculine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-asteria-en": {
+        "description": "Aura-2 Asteria English — feminine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-athena-en": {
+        "description": "Aura-2 Athena English — feminine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-helena-en": {
+        "description": "Aura-2 Helena English — feminine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-aries-en": {
+        "description": "Aura-2 Aries English — masculine conversational voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      }
+    }
   }
 }

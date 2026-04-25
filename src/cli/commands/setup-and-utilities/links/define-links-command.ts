@@ -1,7 +1,10 @@
 import { defineCommand } from 'clerc'
 import modelLinks from './model-links.json'
 import * as l from '~/utils/logger'
-import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
+import {
+  extractHtmlToMarkdown,
+  extractRemoteArticleWithFirecrawl
+} from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { CLIUsageError } from '~/utils/error-handler'
 import type {
   FetchFn,
@@ -19,6 +22,8 @@ const isHtmlContentType = (contentType: string): boolean =>
   HTML_MIME_HINTS.some((hint) => contentType.includes(hint))
 const looksLikeHtmlDocument = (content: string): boolean =>
   /^(?:<!doctype html\b|<html\b|<head\b|<body\b)/i.test(content.trimStart())
+const formatErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
 
 export const getDefaultLinksOutputFileName = (
   serviceSelections: Map<string, string[]>,
@@ -164,14 +169,29 @@ const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<string> => {
       return `<!-- Empty response from ${url} -->`
     }
 
-    const content = (isHtmlContentType(contentType) || looksLikeHtmlDocument(fetchedText))
-      ? (await extractHtmlToMarkdown({
+    let content: string
+    if (isHtmlContentType(contentType) || looksLikeHtmlDocument(fetchedText)) {
+      try {
+        content = (await extractHtmlToMarkdown({
           html: fetchedText,
           documentUrl: response.url || url,
           sourceUrl: url,
           finalUrl: response.url || url
         })).markdown
-      : fetchedText
+      } catch (defuddleError) {
+        l.warn(`Defuddle failed for ${url}; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
+        try {
+          content = (await extractRemoteArticleWithFirecrawl(url, url)).markdown
+        } catch (firecrawlError) {
+          throw new Error(
+            `Defuddle failed and Firecrawl fallback failed. ` +
+            `Defuddle: ${formatErrorMessage(defuddleError)} Firecrawl: ${formatErrorMessage(firecrawlError)}`
+          )
+        }
+      }
+    } else {
+      content = fetchedText
+    }
 
     return `<!-- Source: ${url} -->\n\n${content}`
   } catch (error) {

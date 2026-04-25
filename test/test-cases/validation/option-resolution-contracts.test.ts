@@ -4,8 +4,10 @@ import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-e
 import { runOcrProviderTargetPools, isLocalOcrTarget } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-provider-pool'
 import { runLlmProviderTargetPools, isLocalLlmTarget } from '~/cli/commands/process-steps/step-3-write/llm-provider-pool'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
+import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import { getStep2AllShortcutModelExpansions } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
+import { DEEPGRAM_DEFAULT_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
 
 describe('option resolution contracts', () => {
@@ -100,6 +102,24 @@ describe('option resolution contracts', () => {
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('tesseract')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('openai')
+  })
+
+  test('--all-tts expands deepgram to one default voice', () => {
+    const opts = buildOptsFromFlags(false, { 'all-tts': true })
+    const deepgramTargets = collectTtsTargets(opts).filter((target) => target.service === 'deepgram')
+
+    expect(opts.deepgramTtsModels).toEqual([DEEPGRAM_DEFAULT_VOICE])
+    expect(deepgramTargets.map((target) => target.model)).toEqual([DEEPGRAM_DEFAULT_VOICE])
+  })
+
+  test('explicit deepgram tts flags can still select multiple voices', () => {
+    const opts = buildOptsFromFlags(false, {
+      'deepgram-tts': ['aura-2-thalia-en', 'aura-2-andromeda-en']
+    })
+    const deepgramTargets = collectTtsTargets(opts).filter((target) => target.service === 'deepgram')
+
+    expect(opts.deepgramTtsModels).toEqual(['aura-2-thalia-en', 'aura-2-andromeda-en'])
+    expect(deepgramTargets.map((target) => target.model)).toEqual(['aura-2-thalia-en', 'aura-2-andromeda-en'])
   })
 
   test('OCR provider pools enforce hosted and local limits independently', async () => {

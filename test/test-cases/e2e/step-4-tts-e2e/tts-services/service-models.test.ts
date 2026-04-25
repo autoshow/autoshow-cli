@@ -18,6 +18,7 @@ import {
   ELEVENLABS_DEFAULT_VOICE_ID,
   GEMINI_DEFAULT_TTS_VOICE,
   OPENAI_DEFAULT_TTS_VOICE,
+  DEEPGRAM_DEFAULT_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
 defineTTSServiceTest({
@@ -132,6 +133,69 @@ defineTTSServiceTest({
   envVarDescription: 'Groq TTS',
   extraArgs: ['--groq-voice', 'troy'],
   resolveExpectedSpeaker: async () => 'troy',
+})
+
+defineTTSServiceTest({
+  models: ['aura-2-thalia-en'],
+  cliFlag: '--deepgram-tts',
+  ttsService: 'deepgram',
+  envVarKey: 'DEEPGRAM_API_KEY',
+  envVarDescription: 'Deepgram TTS',
+  resolveExpectedSpeaker: async () => {
+    const voice = await readConfiguredEnvVar('DEEPGRAM_TTS_VOICE')
+    return voice ?? DEEPGRAM_DEFAULT_VOICE
+  },
+})
+
+test('rejects invalid deepgram voice override before API request', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--deepgram-tts',
+    'aura-2-thalia-en',
+    '--deepgram-voice',
+    'invalid-model',
+    '--price'
+  ])
+
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --deepgram-voice "invalid-model"')
+})
+
+test('deepgram with --deepgram-voice aura-2-andromeda-en records speaker override', async () => {
+  if (!await hasConfiguredEnvVar('DEEPGRAM_API_KEY')) {
+    console.log('Skipping: DEEPGRAM_API_KEY is required for Deepgram TTS test')
+    return
+  }
+
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--deepgram-tts',
+    'aura-2-thalia-en',
+    '--deepgram-voice',
+    'aura-2-andromeda-en'
+  ])
+
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
+    }
+    expect(metadata.tts?.[0]?.ttsService).toBe('deepgram')
+    expect(metadata.tts?.[0]?.ttsModel).toBe('aura-2-thalia-en')
+    expect(metadata.tts?.[0]?.speaker).toBe('aura-2-andromeda-en')
+  }
 })
 
 test('orpheus english with --groq-voice hannah generates speech.wav', async () => {

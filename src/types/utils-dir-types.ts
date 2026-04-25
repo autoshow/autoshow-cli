@@ -28,6 +28,7 @@ export type {
   GroqTtsModel,
   OpenAITtsModel,
   GeminiTtsModel,
+  DeepgramTtsModel,
   ElevenlabsMusicModel,
   MinimaxMusicModel,
   GeminiImageModel,

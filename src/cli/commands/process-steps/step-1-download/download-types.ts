@@ -234,6 +234,7 @@ export type RepeatableModelFlag =
   | 'grok'
   | 'kitten-tts'
   | 'elevenlabs-tts'
+  | 'deepgram-tts'
   | 'minimax-tts'
   | 'groq-tts'
   | 'openai-tts'
