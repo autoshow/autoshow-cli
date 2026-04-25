@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { GeminiVideoModel, MinimaxVideoModel } from '~/types'
+import type { GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel } from '~/types'
 
 export const SUPPORTED_GEMINI_VIDEO_MODELS = [
   'veo-3.1-fast-generate-preview',
@@ -16,3 +16,22 @@ export const SUPPORTED_MINIMAX_VIDEO_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateMinimaxVideoModel = createModelValidator<MinimaxVideoModel>(SUPPORTED_MINIMAX_VIDEO_MODELS, 'minimax-video')
+
+export const SUPPORTED_GLM_VIDEO_MODELS = [
+  'cogvideox-3',
+  'viduq1-text'
+] as const satisfies readonly string[]
+
+export const validateGlmVideoModel = createModelValidator<GlmVideoModel>(SUPPORTED_GLM_VIDEO_MODELS, 'glm-video')
+
+export const SUPPORTED_GROK_VIDEO_MODELS = [
+  'grok-imagine-video'
+] as const satisfies readonly string[]
+
+export const validateGrokVideoModel = createModelValidator<GrokVideoModel>(SUPPORTED_GROK_VIDEO_MODELS, 'grok-video')
+
+export const SUPPORTED_RUNWAY_VIDEO_MODELS = [
+  'gen4.5'
+] as const satisfies readonly string[]
+
+export const validateRunwayVideoModel = createModelValidator<RunwayVideoModel>(SUPPORTED_RUNWAY_VIDEO_MODELS, 'runway-video')

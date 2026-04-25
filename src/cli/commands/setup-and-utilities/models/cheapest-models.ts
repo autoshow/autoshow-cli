@@ -173,7 +173,7 @@ export const selectCheapestMusicModel = (service: string): string => {
 }
 
 export const selectCheapestVideoSelection = (
-  provider: 'gemini' | 'minimax'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): CheapestVideoSelection => {
   const serviceConfig = getModelRegistry().video[provider]
   if (!serviceConfig) {
@@ -195,17 +195,15 @@ export const selectCheapestVideoSelection = (
     for (const duration of durations) {
       for (const size of sizes) {
         for (const resolution of resolutions) {
-          const estimate = provider === 'gemini'
-            ? estimateVideoCost({
-                geminiVideoModel: model,
-                videoDuration: duration,
-                videoResolution: resolution
-              })
-            : estimateVideoCost({
-                minimaxVideoModel: model,
-                videoDuration: duration,
-                videoResolution: resolution
-              })
+          const estimate = estimateVideoCost({
+            ...(provider === 'gemini' ? { geminiVideoModel: model } : {}),
+            ...(provider === 'minimax' ? { minimaxVideoModel: model } : {}),
+            ...(provider === 'glm' ? { glmVideoModel: model } : {}),
+            ...(provider === 'grok' ? { grokVideoModel: model } : {}),
+            ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
+            videoDuration: duration,
+            videoResolution: resolution
+          })
 
           const candidate: CheapestVideoSelection = {
             provider,
@@ -252,7 +250,7 @@ export const selectCheapestVideoSelection = (
 }
 
 export const selectCheapestVideoModel = (
-  provider: 'gemini' | 'minimax'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): string => selectCheapestVideoSelection(provider).model
 
 export const resolveCheapestModelForFlag = (flagName: string): string | undefined => {
@@ -356,6 +354,12 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestVideoModel('gemini')
     case 'minimax-video':
       return selectCheapestVideoModel('minimax')
+    case 'glm-video':
+      return selectCheapestVideoModel('glm')
+    case 'grok-video':
+      return selectCheapestVideoModel('grok')
+    case 'runway-video':
+      return selectCheapestVideoModel('runway')
     default:
       return undefined
   }

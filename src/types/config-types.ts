@@ -89,6 +89,9 @@ const ImageDefaultsSchema = v.strictObject({
 const VideoDefaultsSchema = v.strictObject({
   geminiVideo: ModelArraySchema,
   minimaxVideo: ModelArraySchema,
+  glmVideo: ModelArraySchema,
+  grokVideo: ModelArraySchema,
+  runwayVideo: ModelArraySchema,
   videoDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   videoSize: v.optional(v.string(), undefined),
   videoAspectRatio: v.optional(v.string(), undefined),

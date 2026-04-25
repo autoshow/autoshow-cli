@@ -447,6 +447,12 @@ const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
     || !!opts.geminiVideoModel
     || (opts.minimaxVideoModels?.length ?? 0) > 0
     || !!opts.minimaxVideoModel
+    || (opts.glmVideoModels?.length ?? 0) > 0
+    || !!opts.glmVideoModel
+    || (opts.grokVideoModels?.length ?? 0) > 0
+    || !!opts.grokVideoModel
+    || (opts.runwayVideoModels?.length ?? 0) > 0
+    || !!opts.runwayVideoModel
   if (!hasVideo) return []
 
   return estimateVideoCosts({
@@ -454,8 +460,15 @@ const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
     geminiVideoModel: opts.geminiVideoModel,
     minimaxVideoModels: opts.minimaxVideoModels,
     minimaxVideoModel: opts.minimaxVideoModel,
+    glmVideoModels: opts.glmVideoModels,
+    glmVideoModel: opts.glmVideoModel,
+    grokVideoModels: opts.grokVideoModels,
+    grokVideoModel: opts.grokVideoModel,
+    runwayVideoModels: opts.runwayVideoModels,
+    runwayVideoModel: opts.runwayVideoModel,
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
+    videoAspectRatio: opts.videoAspectRatio,
     videoResolution: opts.videoResolution
   }).map((estimate) => {
     const estimation = getVideoEstimation(estimate.provider, estimate.model)

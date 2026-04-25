@@ -24,6 +24,9 @@ bun as video <prompt> [flags]
 |----------|------|--------|
 | Gemini Veo | `--gemini-video <model>` | `veo-3.1-generate-preview`, `veo-3.1-fast-generate-preview` |
 | MiniMax | `--minimax-video <model>` | `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-02`, `T2V-01-Director`, `T2V-01` |
+| Z.AI GLM | `--glm-video <model>` | `cogvideox-3`, `viduq1-text` |
+| Grok | `--grok-video <model>` | `grok-imagine-video` |
+| Runway | `--runway-video <model>` | `gen4.5` |
 
 One or more provider flags can be specified. Repeating the same provider flag runs each selected model independently and produces its own output file.
 
@@ -38,9 +41,19 @@ bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-
 bun as video "a rainy neon city street, slow camera pan" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --video-resolution 720p
 bun as video "a rainy neon city street, slow camera pan" --minimax-video T2V-01
 
-# Both providers at once
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --price
+# Z.AI GLM
+bun as video "a cat playing with yarn" --glm-video cogvideox-3 --video-duration 10 --video-size 1920x1080
+bun as video "an anime character dancing" --glm-video viduq1-text --video-aspect-ratio 16:9
+
+# Grok
+bun as video "a cat playing piano" --grok-video grok-imagine-video --video-duration 8 --video-resolution 720p
+
+# Runway
+bun as video "a cinematic mountain sunrise" --runway-video gen4.5 --video-duration 5 --video-aspect-ratio 16:9
+
+# Multiple providers at once
+bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --runway-video gen4.5
+bun as video "a rainy neon city street, slow camera pan" --all-video --price
 
 # Same provider, multiple models
 bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --gemini-video veo-3.1-generate-preview
@@ -48,10 +61,13 @@ bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-
 # Price preflight
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --video-duration 8 --price
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --price
+bun as video "a sunset timelapse" --glm-video cogvideox-3 --price
+bun as video "a sunset timelapse" --grok-video grok-imagine-video --price
+bun as video "a sunset timelapse" --runway-video gen4.5 --video-duration 5 --price
 
 # Write pipeline
 bun as write "https://youtube.com/..." --gemini gemini-3.1-flash-lite-preview --gemini-video veo-3.1-fast-generate-preview
-bun as write "https://youtube.com/..." --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --price
+bun as write "https://youtube.com/..." --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --glm-video cogvideox-3 --price
 ```
 
 ## Flags
@@ -60,9 +76,14 @@ bun as write "https://youtube.com/..." --gemini-video veo-3.1-fast-generate-prev
 |------|-------------|
 | `--gemini-video <model>` | Select one or more Gemini Veo models |
 | `--minimax-video <model>` | Select one or more MiniMax models |
+| `--glm-video <model>` | Select one or more Z.AI GLM video models; omit the value to use the cheapest supported GLM video model |
+| `--grok-video <model>` | Select one or more Grok video models; omit the value to use the cheapest supported Grok video model |
+| `--runway-video <model>` | Select one or more Runway video models; omit the value to use the cheapest supported Runway video model |
+| `--all-video` | Run every supported video provider/model |
 | `--video-duration <seconds>` | Requested video duration |
-| `--video-aspect-ratio <ratio>` | Gemini aspect ratio: `16:9` or `9:16` |
-| `--video-resolution <res>` | Gemini and MiniMax resolution control |
+| `--video-size <size>` | Provider-dependent size control. GLM CogVideoX accepts sizes such as `1920x1080`, `1280x720`, and `720x1280` |
+| `--video-aspect-ratio <ratio>` | Provider-dependent aspect ratio. Runway maps `16:9` to `1280:720` and `9:16` to `720:1280` |
+| `--video-resolution <res>` | Provider-dependent resolution control. Gemini and MiniMax use `720p`/`1080p`; Grok uses `480p`/`720p` |
 | `--price` | Show the estimate and exit |
 
 ## Environment
@@ -72,6 +93,16 @@ There are no local video-generation models in this project.
 ```bash
 GEMINI_API_KEY=...
 MINIMAX_API_KEY=...
+GLM_API_KEY=...
+XAI_API_KEY=...
+RUNWAYML_API_SECRET=...
+```
+
+Optional provider base URL overrides:
+
+```bash
+ZAI_BASE_URL=...
+XAI_BASE_URL=...
 ```
 
 ## Output
@@ -90,6 +121,9 @@ Multi-provider runs write one file per provider:
 output/YYYY-MM-DD_HH-mm-ss_video-gen/
   generated-video-gemini-veo-3.1-fast-generate-preview.mp4
   generated-video-minimax-MiniMax-Hailuo-2.3.mp4
+  generated-video-glm-cogvideox-3.mp4
+  generated-video-grok-grok-imagine-video.mp4
+  generated-video-runway-gen4.5.mp4
   run.json
 ```
 
@@ -99,5 +133,9 @@ output/YYYY-MM-DD_HH-mm-ss_video-gen/
 
 - Gemini durations are normalized to `4`, `6`, or `8` seconds.
 - MiniMax durations are normalized to the provider-supported values for the selected model and resolution.
-- When both providers are specified, each generates independently. A failure from one provider does not cancel the other; a warning is logged and the run succeeds if at least one provider succeeds.
-- Video generation tests currently cover validation and `--price`, not full provider generation. See [Step 6 Service Tests: Video](../../../tests/step-6-service-tests-video.md).
+- GLM `cogvideox-3` durations are normalized to `5` or `10` seconds. `viduq1-text` is fixed at `5` seconds.
+- GLM prompts are capped at 512 characters.
+- Grok durations are clamped to `1` through `15` seconds and default to `8`.
+- Runway `gen4.5` durations are clamped to `2` through `10` seconds and default to `5`; prompts are capped at 1000 UTF-16 code units.
+- When multiple providers are specified, each generates independently. A failure from one provider does not cancel the others; a warning is logged and the run succeeds if at least one provider succeeds.
+- Video generation tests cover validation and `--price`; live provider-generation tests require the relevant API keys. See [Step 6 Service Tests: Video](../../../tests/step-6-service-tests-video.md).

@@ -256,6 +256,9 @@ export type RepeatableModelFlag =
   | 'minimax-music'
   | 'gemini-video'
   | 'minimax-video'
+  | 'glm-video'
+  | 'grok-video'
+  | 'runway-video'
 
 export type FlagOccurrenceValue = string | boolean
 

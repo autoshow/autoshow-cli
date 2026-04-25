@@ -35,8 +35,8 @@ bun as <command> <input> [flags]
    - Step 2: Transcribe (Whisper/Groq/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/hosted article backends)
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, OpenAI, Gemini)
-   - Step 5: Image generation - optional (Gemini, OpenAI DALL-E, MiniMax)
-   - Step 6: Video generation - optional (Gemini Veo, MiniMax)
+   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway)
+   - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway)
    - Step 7: Music generation - optional (ElevenLabs, MiniMax)
 
 4. **Output** (`output/`)

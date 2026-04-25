@@ -4,7 +4,7 @@ export type TtsProvider = typeof TTS_PROVIDERS[number]
 export const IMAGE_PROVIDERS = ['gemini', 'openai', 'minimax', 'glm', 'grok', 'runway'] as const
 export type ImageProvider = typeof IMAGE_PROVIDERS[number]
 
-export const VIDEO_PROVIDERS = ['gemini', 'minimax'] as const
+export const VIDEO_PROVIDERS = ['gemini', 'minimax', 'glm', 'grok', 'runway'] as const
 export type VideoProvider = typeof VIDEO_PROVIDERS[number]
 
 export const MUSIC_PROVIDERS = ['elevenlabs', 'minimax'] as const

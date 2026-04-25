@@ -83,7 +83,12 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --minimax-music models                  │
 │  ├── ELEVENLABS_API_KEY              Required for --elevenlabs-stt,          │
 │  │                                   --elevenlabs-tts, --elevenlabs-music    │
-│  ├── XAI_API_KEY                     Required for --grok models              │
+│  ├── GLM_API_KEY                     Required for --glm-ocr, --glm-stt,      │
+│  │                                   --glm-image, --glm-video models         │
+│  ├── XAI_API_KEY                     Required for --grok, --grok-image,      │
+│  │                                   --grok-video models                     │
+│  ├── RUNWAYML_API_SECRET             Required for --runway-image,            │
+│  │                                   --runway-video models                   │
 │  └── HF_TOKEN                        HuggingFace private model access         │
 │                                                                              │
 │  llama.cpp Overrides                                                         │

@@ -172,6 +172,7 @@ const VideoModelSchema = v.object({
   baseJobFeeCents: v.optional(v.number(), undefined),
   largeSizeMultiplier: v.optional(v.number(), undefined),
   standardSizeMultiplier: v.optional(v.number(), undefined),
+  resolutionMultiplier720p: v.optional(v.number(), undefined),
   resolutionMultiplier1080p: v.optional(v.number(), undefined),
   blockSizeSec: v.optional(v.number(), undefined),
   blockCost720pUSD: v.optional(v.number(), undefined),

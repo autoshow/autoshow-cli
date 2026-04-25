@@ -179,6 +179,9 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `image --minimax-image` | `MINIMAX_API_KEY` |
 | `video --gemini-video` | `GEMINI_API_KEY` |
 | `video --minimax-video` | `MINIMAX_API_KEY` |
+| `video --glm-video` | `GLM_API_KEY` |
+| `video --grok-video` | `XAI_API_KEY` |
+| `video --runway-video` | `RUNWAYML_API_SECRET` |
 | `music --elevenlabs-music` | `ELEVENLABS_API_KEY` |
 | `music --minimax-music` | `MINIMAX_API_KEY` |
 | `music --audio` / `music --batch` | `ffmpeg`, `ffprobe`, `whisper-cli`, and a local Whisper model (`large-v3-turbo` via `setup --step music`) |

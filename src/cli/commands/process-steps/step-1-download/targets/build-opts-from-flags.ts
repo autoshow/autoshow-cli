@@ -23,7 +23,10 @@ import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
+  SUPPORTED_GLM_VIDEO_MODELS,
+  SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
+  SUPPORTED_RUNWAY_VIDEO_MODELS,
   validateLlamaModel,
   validateOpenAIModel,
   validateGroqModel,
@@ -77,7 +80,10 @@ import {
   validateOpenAIImageModel,
   validateRunwayImageModel,
   validateGeminiVideoModel,
-  validateMinimaxVideoModel
+  validateMinimaxVideoModel,
+  validateGlmVideoModel,
+  validateGrokVideoModel,
+  validateRunwayVideoModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import {
@@ -149,7 +155,10 @@ export const REPEATABLE_MODEL_FLAGS = [
   'elevenlabs-music',
   'minimax-music',
   'gemini-video',
-  'minimax-video'
+  'minimax-video',
+  'glm-video',
+  'grok-video',
+  'runway-video'
 ] as const
 
 const REPEATABLE_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
@@ -183,7 +192,10 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'elevenlabs-music': { shortcut: 'all-music', supported: SUPPORTED_ELEVENLABS_MUSIC_MODELS },
   'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
   'gemini-video': { shortcut: 'all-video', supported: SUPPORTED_GEMINI_VIDEO_MODELS },
-  'minimax-video': { shortcut: 'all-video', supported: SUPPORTED_MINIMAX_VIDEO_MODELS }
+  'minimax-video': { shortcut: 'all-video', supported: SUPPORTED_MINIMAX_VIDEO_MODELS },
+  'glm-video': { shortcut: 'all-video', supported: SUPPORTED_GLM_VIDEO_MODELS },
+  'grok-video': { shortcut: 'all-video', supported: SUPPORTED_GROK_VIDEO_MODELS },
+  'runway-video': { shortcut: 'all-video', supported: SUPPORTED_RUNWAY_VIDEO_MODELS }
 }
 
 const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
@@ -636,6 +648,9 @@ export const buildOptsFromFlags = (
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
   const geminiVideoModels = readValidatedMany('gemini-video', validateGeminiVideoModel)
   const minimaxVideoModels = readValidatedMany('minimax-video', validateMinimaxVideoModel)
+  const glmVideoModels = readValidatedMany('glm-video', validateGlmVideoModel)
+  const grokVideoModels = readValidatedMany('grok-video', validateGrokVideoModel)
+  const runwayVideoModels = readValidatedMany('runway-video', validateRunwayVideoModel)
   const urlBackendFlag = readOptionalStringFlag(mergedFlags, 'url-backend')
   const urlBackendEnv = readEnv('AUTOSHOW_URL_BACKEND')
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
@@ -854,6 +869,12 @@ export const buildOptsFromFlags = (
     geminiVideoModel: first(geminiVideoModels),
     minimaxVideoModels,
     minimaxVideoModel: first(minimaxVideoModels),
+    glmVideoModels,
+    glmVideoModel: first(glmVideoModels),
+    grokVideoModels,
+    grokVideoModel: first(grokVideoModels),
+    runwayVideoModels,
+    runwayVideoModel: first(runwayVideoModels),
     videoDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'video-duration')
       if (v === undefined) return undefined

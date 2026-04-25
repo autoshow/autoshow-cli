@@ -787,14 +787,24 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   const hasVideo = input.videoTargets?.length
     || input.geminiVideoModel
     || input.minimaxVideoModel
+    || input.glmVideoModel
+    || input.grokVideoModel
+    || input.runwayVideoModel
   if (hasVideo) {
     const videoEstimates = estimateVideoCosts({
       geminiVideoModels: input.videoTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
       geminiVideoModel: input.geminiVideoModel,
       minimaxVideoModels: input.videoTargets?.filter((target) => target.service === 'minimax').map((target) => target.model),
       minimaxVideoModel: input.minimaxVideoModel,
+      glmVideoModels: input.videoTargets?.filter((target) => target.service === 'glm').map((target) => target.model),
+      glmVideoModel: input.glmVideoModel,
+      grokVideoModels: input.videoTargets?.filter((target) => target.service === 'grok').map((target) => target.model),
+      grokVideoModel: input.grokVideoModel,
+      runwayVideoModels: input.videoTargets?.filter((target) => target.service === 'runway').map((target) => target.model),
+      runwayVideoModel: input.runwayVideoModel,
       videoDuration: input.videoTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.videoDuration,
       videoSize: input.videoSize,
+      videoAspectRatio: input.videoAspectRatio,
       videoResolution: input.videoResolution
     })
     for (const estimate of videoEstimates) {

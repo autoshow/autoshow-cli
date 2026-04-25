@@ -41,7 +41,7 @@ export const runVideoGen = async (
 ): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
   const targets = collectVideoTargets(options)
   if (targets.length === 0) {
-    throw new Error('Specify a video generation provider: --gemini-video <model>, or --minimax-video <model>')
+    throw new Error('Specify a video generation provider: --gemini-video <model>, --minimax-video <model>, --glm-video <model>, --grok-video <model>, or --runway-video <model>')
   }
   return await runVideoTargets(targets, prompt, outputDir)
 }

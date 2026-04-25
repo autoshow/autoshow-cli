@@ -3,7 +3,12 @@ import type { VideoProvider } from '~/types'
 
 export type VideoGenOptions = Pick<
   ProcessingOptions,
-  'geminiVideoModels' | 'geminiVideoModel' | 'minimaxVideoModels' | 'minimaxVideoModel' | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'
+  | 'geminiVideoModels' | 'geminiVideoModel'
+  | 'minimaxVideoModels' | 'minimaxVideoModel'
+  | 'glmVideoModels' | 'glmVideoModel'
+  | 'grokVideoModels' | 'grokVideoModel'
+  | 'runwayVideoModels' | 'runwayVideoModel'
+  | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'
 >
 
 export type GeminiDurationSeconds = 4 | 6 | 8
@@ -11,6 +16,14 @@ export type GeminiResolution = '720p' | '1080p'
 export type MinimaxResolution = '720p' | '1080p'
 export type MinimaxApiResolution = '720P' | '768P' | '1080P'
 export type MinimaxDurationSeconds = 6 | 10
+export type GlmVideoDurationSeconds = 5 | 10
+export type GlmVideoQuality = 'speed' | 'quality'
+export type GlmVideoFps = 30 | 60
+export type GlmViduStyle = 'general' | 'anime'
+export type GrokVideoDurationSeconds = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
+export type GrokVideoResolution = '480p' | '720p'
+export type RunwayDurationSeconds = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+export type RunwayRatio = '1280:720' | '720:1280'
 
 export type VideoTarget = ProviderTargetBase<VideoProvider> & {
   run: (prompt: string, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }>
@@ -27,7 +40,14 @@ export type EstimateVideoCostOptions = {
   geminiVideoModel?: string | undefined
   minimaxVideoModels?: string[] | undefined
   minimaxVideoModel?: string | undefined
+  glmVideoModels?: string[] | undefined
+  glmVideoModel?: string | undefined
+  grokVideoModels?: string[] | undefined
+  grokVideoModel?: string | undefined
+  runwayVideoModels?: string[] | undefined
+  runwayVideoModel?: string | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined
+  videoAspectRatio?: string | undefined
   videoResolution?: string | undefined
 }

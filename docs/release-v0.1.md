@@ -248,8 +248,8 @@ Notable behavior:
 | Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing, Defuddle article extraction | Mistral OCR, GLM OCR, OpenAI OCR, Anthropic OCR, Gemini OCR, Firecrawl article extraction |
 | LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok |
 | TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini |
-| Image | none | Gemini, OpenAI, MiniMax |
-| Video | none | Gemini Veo, MiniMax |
+| Image | none | Gemini, OpenAI, MiniMax, GLM, Grok, Runway |
+| Video | none | Gemini Veo, MiniMax, GLM, Grok, Runway |
 | Music | none | ElevenLabs, MiniMax |
 
 ### Supported model families in the live flag registry

@@ -1,4 +1,19 @@
-import type { GeminiDurationSeconds, GeminiResolution, MinimaxApiResolution, MinimaxDurationSeconds, MinimaxResolution, MinimaxVideoModel } from '~/types'
+import type {
+  GeminiDurationSeconds,
+  GeminiResolution,
+  GlmVideoDurationSeconds,
+  GlmVideoFps,
+  GlmVideoModel,
+  GlmVideoQuality,
+  GrokVideoDurationSeconds,
+  GrokVideoResolution,
+  MinimaxApiResolution,
+  MinimaxDurationSeconds,
+  MinimaxResolution,
+  MinimaxVideoModel,
+  RunwayDurationSeconds,
+  RunwayRatio
+} from '~/types'
 
 
 export const clampVideoDuration = (duration: number | undefined): number => {
@@ -75,4 +90,65 @@ export const normalizeMinimaxDurationForApi = (
     return 6
   }
   return Math.floor(duration) <= 6 ? 6 : 10
+}
+
+const GLM_COGVIDEOX_SIZES = new Set([
+  '1280x720',
+  '720x1280',
+  '1024x1024',
+  '1920x1080',
+  '1080x1920',
+  '2048x1080',
+  '3840x2160'
+])
+
+export const normalizeGlmDuration = (
+  model: GlmVideoModel,
+  duration: number | undefined
+): GlmVideoDurationSeconds => {
+  if (model === 'viduq1-text') return 5
+  if (typeof duration !== 'number' || !Number.isFinite(duration)) return 5
+  return Math.floor(duration) <= 5 ? 5 : 10
+}
+
+export const normalizeGlmSize = (model: GlmVideoModel, size: string | undefined): string => {
+  if (model === 'viduq1-text') return '1920x1080'
+  return size && GLM_COGVIDEOX_SIZES.has(size) ? size : '1920x1080'
+}
+
+export const normalizeGlmQuality = (quality: string | undefined): GlmVideoQuality => {
+  return quality === 'quality' ? 'quality' : 'speed'
+}
+
+export const normalizeGlmFps = (fps: number | undefined): GlmVideoFps => {
+  return fps === 60 ? 60 : 30
+}
+
+export const normalizeGlmAspectRatio = (aspectRatio: string | undefined): string => {
+  const allowed = new Set(['16:9', '9:16', '1:1', '4:3', '3:4'])
+  return aspectRatio && allowed.has(aspectRatio) ? aspectRatio : '16:9'
+}
+
+export const normalizeGrokVideoDuration = (duration: number | undefined): GrokVideoDurationSeconds => {
+  if (typeof duration !== 'number' || !Number.isFinite(duration)) return 8
+  return Math.min(15, Math.max(1, Math.floor(duration))) as GrokVideoDurationSeconds
+}
+
+export const normalizeGrokVideoResolution = (resolution: string | undefined): GrokVideoResolution => {
+  return resolution === '720p' ? '720p' : '480p'
+}
+
+export const normalizeGrokVideoAspectRatio = (aspectRatio: string | undefined): string => {
+  const allowed = new Set(['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3'])
+  return aspectRatio && allowed.has(aspectRatio) ? aspectRatio : '16:9'
+}
+
+export const normalizeRunwayDuration = (duration: number | undefined): RunwayDurationSeconds => {
+  if (typeof duration !== 'number' || !Number.isFinite(duration)) return 5
+  return Math.min(10, Math.max(2, Math.floor(duration))) as RunwayDurationSeconds
+}
+
+export const normalizeRunwayRatio = (aspectRatio: string | undefined): RunwayRatio => {
+  if (aspectRatio === '9:16' || aspectRatio === '720:1280') return '720:1280'
+  return '1280:720'
 }

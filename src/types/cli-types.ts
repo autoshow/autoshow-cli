@@ -193,6 +193,12 @@ export type RuntimeOptions = {
   geminiVideoModel: string | undefined
   minimaxVideoModels: string[] | undefined
   minimaxVideoModel: string | undefined
+  glmVideoModels: string[] | undefined
+  glmVideoModel: string | undefined
+  grokVideoModels: string[] | undefined
+  grokVideoModel: string | undefined
+  runwayVideoModels: string[] | undefined
+  runwayVideoModel: string | undefined
   videoDuration: number | undefined
   videoSize: string | undefined
   videoAspectRatio: string | undefined

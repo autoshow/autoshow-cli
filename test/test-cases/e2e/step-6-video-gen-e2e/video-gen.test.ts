@@ -47,14 +47,46 @@ test('requires a provider flag', async () => {
 
 test('allows multiple providers with --price', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3', '--price'],
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3', '--glm-video', 'cogvideox-3', '--grok-video', 'grok-imagine-video', '--runway-video', 'gen4.5', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
-  expect(output).toContain('"provider": "gemini"')
-  expect(output).toContain('"provider": "minimax"')
+  expect(output).toContain('gemini')
+  expect(output).toContain('minimax')
+  expect(output).toContain('glm')
+  expect(output).toContain('grok')
+  expect(output).toContain('runway')
   expect(output).toContain('generated-video-gemini-veo-3.1-generate-preview.mp4')
   expect(output).toContain('generated-video-minimax-MiniMax-Hailuo-2.3.mp4')
+  expect(output).toContain('generated-video-glm-cogvideox-3.mp4')
+  expect(output).toContain('generated-video-grok-grok-imagine-video.mp4')
+  expect(output).toContain('generated-video-runway-gen4.5.mp4')
+})
+
+test('new video providers print price estimates', async () => {
+  const providers = [
+    ['--glm-video', 'cogvideox-3', '20.00000¢'],
+    ['--glm-video', 'viduq1-text', '40.00000¢'],
+    ['--grok-video', 'grok-imagine-video', '25.00000¢'],
+    ['--runway-video', 'gen4.5', '60.00000¢']
+  ] as const
+
+  for (const [flag, model, expectedCost] of providers) {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'video',
+      'a cinematic mountain sunrise',
+      flag,
+      model,
+      '--video-duration',
+      '5',
+      '--price'
+    ])
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain(model)
+    expect(output).toContain(expectedCost)
+  }
 })
 
 budgetedTest('video-multi-provider-gemini-minimax', 'live multi-provider run writes provider-specific video artifacts', async () => {

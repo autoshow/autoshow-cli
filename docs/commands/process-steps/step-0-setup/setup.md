@@ -67,7 +67,7 @@ Check prerequisites, API keys, and configuration without installing anything:
 bun as setup --doctor
 ```
 
-Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`, plus hosted STT keys such as `DEEPINFRA_API_KEY` and `DEAPI_API_KEY`), Google Cloud STT gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`, hosted STT keys such as `DEEPINFRA_API_KEY` and `DEAPI_API_KEY`, and generation keys such as `XAI_API_KEY`, `RUNWAYML_API_SECRET`, and `MINIMAX_API_KEY`), Google Cloud STT gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
 
 Doctor also reports YouTube cookie state separately:
 

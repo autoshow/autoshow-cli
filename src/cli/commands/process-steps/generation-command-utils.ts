@@ -15,36 +15,28 @@ import type {
 
 export const buildMediaGenerationStatusRows = (
   summary: MediaGenerationStatus
-): Array<{
-  mediaType: string
-  provider: string
-  model: string
-  status: string
-  processingTimeMs: number | ''
-  outputCount: number | ''
-  detail: string
-}> => [{
-  mediaType: summary.mediaType,
-  provider: summary.provider,
-  model: summary.model,
-  status: summary.status,
-  processingTimeMs: summary.processingTimeMs ?? '',
-  outputCount: summary.outputCount ?? '',
-  detail: summary.detail ?? ''
-}]
+): Array<Record<string, string | number>> => {
+  const row: Record<string, string | number> = {
+    mediaType: summary.mediaType,
+    provider: summary.provider,
+    model: summary.model,
+    status: summary.status
+  }
+  if (summary.processingTimeMs != null) row['processingTimeMs'] = summary.processingTimeMs
+  if (summary.outputCount != null) row['outputCount'] = summary.outputCount
+  if (summary.detail) row['detail'] = summary.detail
+  return [row]
+}
 
 export const buildMediaGenerationStatusTable = (
   summary: MediaGenerationStatus
-): HumanLogTable =>
-  createSingleRowTable(buildMediaGenerationStatusRows(summary)[0]!, [
-    'mediaType',
-    'provider',
-    'model',
-    'status',
-    'processingTimeMs',
-    'outputCount',
-    'detail'
-  ])
+): HumanLogTable => {
+  const columns = ['mediaType', 'provider', 'model', 'status']
+  if (summary.processingTimeMs != null) columns.push('processingTimeMs')
+  if (summary.outputCount != null) columns.push('outputCount')
+  if (summary.detail) columns.push('detail')
+  return createSingleRowTable(buildMediaGenerationStatusRows(summary)[0]!, columns)
+}
 
 export const logMediaGenerationStatus = (
   logger: TableLogger,

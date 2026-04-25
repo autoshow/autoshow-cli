@@ -1,15 +1,19 @@
-import type { GeminiVideoModel, MinimaxVideoModel, VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
-import { validateGeminiVideoModel, validateMinimaxVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel, VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
+import { validateGeminiVideoModel, validateGlmVideoModel, validateGrokVideoModel, validateMinimaxVideoModel, validateRunwayVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getVideoModelMeta } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
   normalizeGeminiDuration,
   normalizeGeminiResolution,
+  normalizeGlmDuration,
+  normalizeGrokVideoDuration,
+  normalizeGrokVideoResolution,
   normalizeMinimaxDuration,
   normalizeMinimaxResolution,
+  normalizeRunwayDuration,
   isMinimaxHailuoModel
 } from './video-normalization'
 import * as l from '~/utils/logger'
-import { createHumanTable } from '~/utils/logger/human-table'
+import { createKeyValueTable } from '~/utils/logger/human-table'
 
 
 const estimateVeo31GeneratePreviewCost = (duration: number | undefined, resolution: string | undefined): VideoCostEstimate => {
@@ -91,9 +95,60 @@ const estimateGeminiCost = (model: GeminiVideoModel, options: EstimateVideoCostO
   return estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution)
 }
 
+const estimateGlmCost = (model: GlmVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
+  const meta = getVideoModelMeta('glm', model)
+  const durationSeconds = normalizeGlmDuration(model, options.videoDuration)
+  const totalCost = meta?.baseJobFeeCents ?? 0
+  return {
+    provider: 'glm',
+    model,
+    durationSeconds,
+    billedDurationSeconds: durationSeconds,
+    costPerSecond: durationSeconds > 0 ? totalCost / durationSeconds : 0,
+    totalCost,
+    note: 'Flat per-video estimate'
+  }
+}
+
+const estimateGrokCost = (model: GrokVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
+  const meta = getVideoModelMeta('grok', model)
+  const durationSeconds = normalizeGrokVideoDuration(options.videoDuration)
+  const normalizedResolution = normalizeGrokVideoResolution(options.videoResolution)
+  const resolutionMultiplier = normalizedResolution === '720p'
+    ? (meta?.resolutionMultiplier720p ?? 1.4) : 1
+  const costPerSecond = (meta?.baseCostPerSecondCents ?? 5) * resolutionMultiplier
+  return {
+    provider: 'grok',
+    model,
+    durationSeconds,
+    billedDurationSeconds: durationSeconds,
+    costPerSecond,
+    totalCost: durationSeconds * costPerSecond,
+    note: `Approximate estimate using ${normalizedResolution} per-second pricing`
+  }
+}
+
+const estimateRunwayCost = (model: RunwayVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
+  const meta = getVideoModelMeta('runway', model)
+  const durationSeconds = normalizeRunwayDuration(options.videoDuration)
+  const costPerSecond = meta?.baseCostPerSecondCents ?? 12
+  return {
+    provider: 'runway',
+    model,
+    durationSeconds,
+    billedDurationSeconds: durationSeconds,
+    costPerSecond,
+    totalCost: durationSeconds * costPerSecond,
+    note: 'Estimate uses Runway credits at $0.01 per credit'
+  }
+}
+
 export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCostEstimate[] => {
   const geminiModels = options.geminiVideoModels ?? (options.geminiVideoModel ? [options.geminiVideoModel] : [])
   const minimaxModels = options.minimaxVideoModels ?? (options.minimaxVideoModel ? [options.minimaxVideoModel] : [])
+  const glmModels = options.glmVideoModels ?? (options.glmVideoModel ? [options.glmVideoModel] : [])
+  const grokModels = options.grokVideoModels ?? (options.grokVideoModel ? [options.grokVideoModel] : [])
+  const runwayModels = options.runwayVideoModels ?? (options.runwayVideoModel ? [options.runwayVideoModel] : [])
 
   const estimates: VideoCostEstimate[] = []
 
@@ -107,6 +162,21 @@ export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCost
     estimates.push(estimateMinimaxCost(model, options))
   }
 
+  for (const rawModel of glmModels) {
+    const model = validateGlmVideoModel(rawModel)
+    estimates.push(estimateGlmCost(model, options))
+  }
+
+  for (const rawModel of grokModels) {
+    const model = validateGrokVideoModel(rawModel)
+    estimates.push(estimateGrokCost(model, options))
+  }
+
+  for (const rawModel of runwayModels) {
+    const model = validateRunwayVideoModel(rawModel)
+    estimates.push(estimateRunwayCost(model, options))
+  }
+
   if (estimates.length === 0) {
     estimates.push(estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution))
   }
@@ -117,6 +187,9 @@ export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCost
 export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostEstimate => {
   const geminiModelRaw = options.geminiVideoModels?.[0] ?? options.geminiVideoModel
   const minimaxModelRaw = options.minimaxVideoModels?.[0] ?? options.minimaxVideoModel
+  const glmModelRaw = options.glmVideoModels?.[0] ?? options.glmVideoModel
+  const grokModelRaw = options.grokVideoModels?.[0] ?? options.grokVideoModel
+  const runwayModelRaw = options.runwayVideoModels?.[0] ?? options.runwayVideoModel
 
   if (typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0) {
     const model = validateGeminiVideoModel(geminiModelRaw)
@@ -128,25 +201,37 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
     return estimateMinimaxCost(model, options)
   }
 
+  if (typeof glmModelRaw === 'string' && glmModelRaw.length > 0) {
+    const model = validateGlmVideoModel(glmModelRaw)
+    return estimateGlmCost(model, options)
+  }
+
+  if (typeof grokModelRaw === 'string' && grokModelRaw.length > 0) {
+    const model = validateGrokVideoModel(grokModelRaw)
+    return estimateGrokCost(model, options)
+  }
+
+  if (typeof runwayModelRaw === 'string' && runwayModelRaw.length > 0) {
+    const model = validateRunwayVideoModel(runwayModelRaw)
+    return estimateRunwayCost(model, options)
+  }
+
   return estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution)
 }
 
 export const logVideoEstimate = (estimate: VideoCostEstimate): void => {
-  const row = {
-    provider: estimate.provider,
-    model: estimate.model,
-    requestedDuration: `${estimate.durationSeconds}s`,
-    billedDuration: `${estimate.billedDurationSeconds}s`,
-    costPerSecond: `${estimate.costPerSecond.toFixed(4)}¢`,
-    totalCost: `${estimate.totalCost.toFixed(5)}¢`,
-    ...(estimate.note ? { note: estimate.note } : {})
-  }
+  const entries: Array<readonly [string, string]> = [
+    ['Provider', estimate.provider],
+    ['Model', estimate.model],
+    ['Requested Duration', `${estimate.durationSeconds}s`],
+    ['Billed Duration', `${estimate.billedDurationSeconds}s`],
+    ['Cost Per Second', `${estimate.costPerSecond.toFixed(4)}¢`],
+    ['Total Cost', `${estimate.totalCost.toFixed(5)}¢`],
+    ...(estimate.note ? [['Note', estimate.note] as const] : [])
+  ]
   l.write('info', `Estimated video cost for ${estimate.provider}/${estimate.model}`, {
     category: 'pricing',
-    humanTable: createHumanTable(
-      [row],
-      ['provider', 'model', 'requestedDuration', 'billedDuration', 'costPerSecond', 'totalCost', ...(estimate.note ? ['note'] : [])]
-    ),
+    humanTable: createKeyValueTable(entries),
     metadata: estimate
   })
 }

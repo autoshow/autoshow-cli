@@ -58,8 +58,11 @@ import {
   SUPPORTED_MINIMAX_MUSIC_MODELS
 } from './models/music-models'
 import {
+  SUPPORTED_GLM_VIDEO_MODELS,
+  SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
-  SUPPORTED_MINIMAX_VIDEO_MODELS
+  SUPPORTED_MINIMAX_VIDEO_MODELS,
+  SUPPORTED_RUNWAY_VIDEO_MODELS
 } from './models/video-models'
 
 export type AutoshowConfig = InferOutput<typeof AutoshowConfigSchema>
@@ -178,6 +181,9 @@ export type GrokImageModel = typeof SUPPORTED_GROK_IMAGE_MODELS[number]
 export type RunwayImageModel = typeof SUPPORTED_RUNWAY_IMAGE_MODELS[number]
 export type GeminiVideoModel = typeof SUPPORTED_GEMINI_VIDEO_MODELS[number]
 export type MinimaxVideoModel = typeof SUPPORTED_MINIMAX_VIDEO_MODELS[number]
+export type GlmVideoModel = typeof SUPPORTED_GLM_VIDEO_MODELS[number]
+export type GrokVideoModel = typeof SUPPORTED_GROK_VIDEO_MODELS[number]
+export type RunwayVideoModel = typeof SUPPORTED_RUNWAY_VIDEO_MODELS[number]
 
 export type CostEstimation = {
   costMultiplier: number
@@ -220,7 +226,7 @@ export type VideoEstimation = CostEstimation & {
 }
 
 export type CheapestVideoSelection = {
-  provider: 'gemini' | 'minimax'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
   model: string
   duration: number
   size?: string | undefined

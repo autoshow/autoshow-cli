@@ -77,8 +77,8 @@ bun as music "an ambient piano instrumental with soft strings" --minimax-music m
 # video generation
 bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview
 
-# video generation with both providers
-bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3
+# video generation with multiple providers
+bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --runway-video gen4.5
 ```
 
 ## Command Map
@@ -128,7 +128,10 @@ bun as image "a sunset" --openai-image gpt-image-1 --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --price
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --price
-bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --price
+bun as video "a sunset timelapse" --glm-video cogvideox-3 --price
+bun as video "a sunset timelapse" --grok-video grok-imagine-video --price
+bun as video "a sunset timelapse" --runway-video gen4.5 --video-duration 5 --price
+bun as video "a sunset timelapse" --all-video --price
 ```
 
 For `extract --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.

@@ -69,5 +69,89 @@
         "blockCost720pCents": 19
       }
     }
+  },
+  "glm": {
+    "description": "GLM/Z.AI video generation",
+    "type": "api",
+    "sizes": [
+      "1280x720",
+      "720x1280",
+      "1024x1024",
+      "1920x1080",
+      "1080x1920",
+      "2048x1080",
+      "3840x2160"
+    ],
+    "billedDurations": [
+      5,
+      10
+    ],
+    "models": {
+      "cogvideox-3": {
+        "description": "CogVideoX-3 text-to-video model",
+        "baseJobFeeUSD": 0.2,
+        "baseJobFeeCents": 20
+      },
+      "viduq1-text": {
+        "description": "Vidu Q1 text-to-video model",
+        "baseJobFeeUSD": 0.4,
+        "baseJobFeeCents": 40
+      }
+    }
+  },
+  "grok": {
+    "description": "xAI Grok video generation",
+    "type": "api",
+    "resolutions": [
+      "480p",
+      "720p"
+    ],
+    "billedDurations": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "models": {
+      "grok-imagine-video": {
+        "description": "Grok Imagine text-to-video model",
+        "baseCostPerSecondUSD": 0.05,
+        "baseCostPerSecondCents": 5,
+        "resolutionMultiplier720p": 1.4
+      }
+    }
+  },
+  "runway": {
+    "description": "Runway video generation",
+    "type": "api",
+    "billedDurations": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "models": {
+      "gen4.5": {
+        "description": "Runway Gen-4.5 text-to-video model",
+        "baseCostPerSecondUSD": 0.12,
+        "baseCostPerSecondCents": 12
+      }
+    }
   }
 }

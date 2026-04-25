@@ -8,7 +8,10 @@ import {
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
+  SUPPORTED_GLM_VIDEO_MODELS,
+  SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
+  SUPPORTED_RUNWAY_VIDEO_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -104,6 +107,18 @@ const writeVideoModelFlags = {
   },
   'minimax-video': {
     description: `Enable video generation on LLM output. ${buildModelDescription('MiniMax video model', SUPPORTED_MINIMAX_VIDEO_MODELS)}`,
+    type: [String] as [StringConstructor]
+  },
+  'glm-video': {
+    description: `Enable video generation on LLM output. ${buildModelDescription('GLM video model', SUPPORTED_GLM_VIDEO_MODELS)}`,
+    type: [String] as [StringConstructor]
+  },
+  'grok-video': {
+    description: `Enable video generation on LLM output. ${buildModelDescription('Grok video model', SUPPORTED_GROK_VIDEO_MODELS)}`,
+    type: [String] as [StringConstructor]
+  },
+  'runway-video': {
+    description: `Enable video generation on LLM output. ${buildModelDescription('Runway video model', SUPPORTED_RUNWAY_VIDEO_MODELS)}`,
     type: [String] as [StringConstructor]
   }
 } as const satisfies ClercFlagsDefinition

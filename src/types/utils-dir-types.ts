@@ -38,7 +38,10 @@ export type {
   GrokImageModel,
   RunwayImageModel,
   GeminiVideoModel,
-  MinimaxVideoModel
+  MinimaxVideoModel,
+  GlmVideoModel,
+  GrokVideoModel,
+  RunwayVideoModel
 } from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'
 
 export type ScanBlocksOptions = {

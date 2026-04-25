@@ -436,6 +436,11 @@
       "https://docs.dev.runwayml.com/guides/models/",
       "https://docs.dev.runwayml.com/guides/pricing/",
       "https://help.runwayml.com/hc/en-us/articles/37053594806419-Creating-with-Gen-4-Image"
+    ],
+    "Video": [
+      "https://docs.dev.runwayml.com/api/",
+      "https://docs.dev.runwayml.com/guides/models/",
+      "https://docs.dev.runwayml.com/guides/pricing/"
     ]
   },
   "Resend": {

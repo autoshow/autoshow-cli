@@ -167,9 +167,13 @@ export type ComputeEstimatedCostsInput = {
   imagenCount?: number | undefined
   geminiVideoModel?: string | undefined
   minimaxVideoModel?: string | undefined
+  glmVideoModel?: string | undefined
+  grokVideoModel?: string | undefined
+  runwayVideoModel?: string | undefined
   videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined
+  videoAspectRatio?: string | undefined
   videoResolution?: string | undefined
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined

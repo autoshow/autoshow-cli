@@ -447,6 +447,7 @@ export const processVideo = async (
 	        })),
 	        videoDuration: processingOptions.videoDuration,
 	        videoSize: processingOptions.videoSize,
+	        videoAspectRatio: processingOptions.videoAspectRatio,
 	        videoResolution: processingOptions.videoResolution,
 	        musicTargets: attemptedMusicTargets.map((t) => ({
 	          service: t.service,
