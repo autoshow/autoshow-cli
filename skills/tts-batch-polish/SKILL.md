@@ -1,6 +1,8 @@
 ---
 name: tts-batch-polish
-description: Clean and normalize long-form plaintext for natural, service-agnostic text-to-speech narration one file at a time. Use when working on OCR-derived EPUB exports or chapter text files that need readability, structure, punctuation, and pronunciation-friendly edits while preserving original meaning.
+description: Clean and normalize long-form plaintext for natural, service-agnostic text-to-speech narration one file at a time. Use when working on OCR-derived EPUB exports, book chapters, articles, or chapter text files that need artifact removal, paragraph repair, punctuation cleanup, footnote removal, boundary continuity checks, and pronunciation-friendly edits while preserving original meaning.
+metadata:
+  short-description: Polish long text for TTS narration
 ---
 
 # TTS Batch Polish
@@ -10,6 +12,8 @@ description: Clean and normalize long-form plaintext for natural, service-agnost
 Process book or chapter text files in repeatable single-file passes. Improve TTS readiness without binding output to any single provider, voice model, or SSML dialect.
 
 Use this workflow whenever the input is plaintext (typically `.txt`) and quality issues include OCR artifacts, noisy metadata, broken structure, or awkward read-aloud flow.
+
+Read `references/tts-editing-rules.md` before editing. It is the source of truth for safe TTS cleanup, footnote removal, ambiguity handling, and QA.
 
 ## Workflow
 
@@ -23,10 +27,10 @@ Use this workflow whenever the input is plaintext (typically `.txt`) and quality
 
 ## Commands
 
-Use these commands from the skill directory.
+Use these commands from the skill directory. Replace `BOOK_DIR` with the target directory from the user or current task.
 
 ```bash
-BOOK_DIR="/Users/ajc/c/as/autoalbum/autobook/content/history-fiction-or-science-vol-1"
+BOOK_DIR="/absolute/path/to/book-or-chapter-directory"
 ls -1 "$BOOK_DIR"/*.txt | sort
 ```
 
@@ -46,7 +50,7 @@ bun scripts/tts_batch_queue.ts done --root "$BOOK_DIR" "chapter-01.txt"
 
 ## Editing Rules
 
-Read and apply `references/tts-editing-rules.md` for every file pass. Use the file as the single source of truth for TTS-safe edits.
+Read and apply the editing rules reference for every file pass. Use the file as the single source of truth for TTS-safe edits.
 
 Core constraints:
 
@@ -58,6 +62,7 @@ Core constraints:
 6. Exception to single-file editing: if sentence continuity is broken at file boundaries, you may edit the immediately adjacent file solely to complete the split opening/closing sentence.
 7. Remove line breaks that occur mid-sentence so each sentence flows continuously.
 8. Group sentences into coherent paragraphs; use line breaks only between paragraphs, not between lines within a paragraph.
+9. Remove footnotes and inline footnote markers according to the reference rules unless the user explicitly asks to preserve scholarly apparatus.
 
 ## File Completion Checklist
 
@@ -67,6 +72,7 @@ Core constraints:
 4. Confirm first and last lines are not sentence fragments and flow correctly with neighboring files.
 5. Confirm no provider-specific markup was introduced.
 6. Confirm mid-sentence line breaks were removed and paragraph structure is coherent.
+7. Confirm footnotes and footnote reference markers were handled according to the reference rules.
 
 ## Reporting
 

@@ -1,6 +1,8 @@
 ---
 name: stt-consensus
-description: Generate a gold-reference transcript and provider comparison reports from an AutoShow STT episode directory that contains `run.json` plus `providers/*/result.json`. Use when turning multi-provider transcription runs into `consensus-transcription.txt`, `reference-comparison-report.md`, and `reference-comparison-report.json` for podcasts, interviews, meetings, or other speaker-labeled audio.
+description: Generate a gold-reference transcript and provider comparison reports from an AutoShow STT episode directory that contains `run.json` plus `providers/*/result.json`. Use when evaluating multi-provider speech-to-text or transcription runs, reconciling provider segments into `consensus-transcription.txt`, or producing `reference-comparison-report.md` and `.json` for podcasts, interviews, meetings, videos, or other speaker-labeled audio.
+metadata:
+  short-description: Build STT consensus and provider reports
 ---
 
 # Build STT Consensus Report
@@ -28,15 +30,14 @@ Read `references/output-contract.md` before writing outputs.
 
 ## Commands
 
-Run commands from this skill directory.
+Run commands from this skill directory. If working from a repository checkout, set `SKILL_DIR` to the checkout's `skills/stt-consensus` directory; if the skill is installed elsewhere, use that installed skill directory.
 
 ```bash
 RUN_DIR="/absolute/path/to/episode-run"
-SKILL_DIR="/Users/ajc/.agents/skills/build-stt-consensus-report"
+SKILL_DIR="/absolute/path/to/stt-consensus"
 TMP_PACKET="$(mktemp -t consensus-packet.XXXXXX.json)"
 
 bun "$SKILL_DIR/scripts/build_consensus_packet.ts" "$RUN_DIR" --out "$TMP_PACKET"
-bun "$SKILL_DIR/scripts/build_reference_report.ts" "$RUN_DIR"
 ```
 
 The first command prepares evidence for the consensus pass. The second command should be run only after `consensus-transcription.txt` exists.
@@ -88,6 +89,7 @@ The report script:
 4. Confirm speaker labels are stable across the transcript and the report speaker maps are non-empty for diarized providers.
 5. Confirm the final segment in the consensus transcript does not extend past the run duration in `run.json`.
 6. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
+7. If a script fails, report the exact command, the run directory, and the first actionable error line.
 
 ## Reporting
 
