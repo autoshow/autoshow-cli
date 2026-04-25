@@ -9,6 +9,9 @@ import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-extrac
 import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/groq/groq'
 import { ensureHappyScribeSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/happyscribe/happyscribe'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/mistral/mistral'
+import { ensureOpenaiSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/openai-stt/openai-stt'
+import { ensureGeminiSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/gemini-stt'
+import { ensureGlmSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/glm-stt/glm-stt'
 import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/rev/rev'
 import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/soniox/soniox'
 import { ensureSupadataSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
@@ -102,6 +105,15 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'supadata-stt': {
     ensure: async () => await ensureSupadataSttSetup()
+  },
+  'openai-stt': {
+    ensure: async () => await ensureOpenaiSttSetup()
+  },
+  'gemini-stt': {
+    ensure: async () => await ensureGeminiSttSetup()
+  },
+  'glm-stt': {
+    ensure: async () => await ensureGlmSttSetup()
   },
   tesseract: {
     ensure: async () => await ensureTesseractSetup()

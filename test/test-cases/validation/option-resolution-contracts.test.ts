@@ -14,6 +14,7 @@ describe('option resolution contracts', () => {
   test('buildOptsFromFlags maps representative CLI flags to runtime options', () => {
     const opts = buildOptsFromFlags(false, {
       openai: 'gpt-5.4-mini',
+      'openai-stt': 'gpt-4o-mini-transcribe',
       'deepgram-stt': 'nova-3',
       'tesseract-ocr': true,
       'youtube-captions': true,
@@ -27,6 +28,7 @@ describe('option resolution contracts', () => {
     })
 
     expect(opts.openaiModel).toBe('gpt-5.4-mini')
+    expect(opts.openaiSttModel).toBe('gpt-4o-mini-transcribe')
     expect(opts.deepgramSttModel).toBe('nova-3')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
@@ -97,8 +99,10 @@ describe('option resolution contracts', () => {
     const ocrOpts = buildOptsFromFlags(false, { 'all-ocr': true })
 
     expect(expansions['deepgram-stt']?.shortcut).toBe('all-stt')
+    expect(expansions['openai-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
+    expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('openai-stt')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('tesseract')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('openai')

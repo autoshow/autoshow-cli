@@ -292,6 +292,12 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('happyscribe')
     case 'supadata-stt':
       return 'auto'
+    case 'openai-stt':
+      return selectCheapestSttModel('openai-stt')
+    case 'gemini-stt':
+      return selectCheapestSttModel('gemini-stt')
+    case 'glm-stt':
+      return selectCheapestSttModel('glm-stt')
     case 'mistral-ocr':
       return selectCheapestExtractModel('mistral')
     case 'glm-ocr':

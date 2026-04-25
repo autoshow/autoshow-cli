@@ -19,6 +19,9 @@ import { setupSonioxStt } from '~/cli/commands/process-steps/step-2-extract/step
 import { setupSpeechmaticsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/speechmatics/speechmatics'
 import { setupRevStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/rev/rev'
 import { setupMistralStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/mistral/mistral'
+import { setupOpenaiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/openai-stt/openai-stt'
+import { setupGeminiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/gemini-stt'
+import { setupGlmStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/glm-stt/glm-stt'
 import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/assemblyai/assemblyai'
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
 import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
@@ -241,6 +244,9 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(async () => {
     await setupMistralStt()
+    await setupOpenaiStt()
+    await setupGeminiStt()
+    await setupGlmStt()
     await setupMistralOcr()
     await setupGlmOcr()
     await setupOpenAIOcr()
@@ -299,6 +305,9 @@ const runSetupTranscription = async (): Promise<void> => {
   const awsDefaults = await readAwsSttConfigDefaults()
   await downloadWhisperModel('large-v3-turbo')
   await setupReverb()
+  await setupOpenaiStt()
+  await setupGeminiStt()
+  await setupGlmStt()
   await setupAwsStt({
     ...awsDefaults,
     verifyTranscribe: true

@@ -44,6 +44,9 @@ import {
   validateGladiaSttModel,
   validateHappyscribeSttModel,
   validateSupadataSttModel,
+  validateOpenaiSttModel,
+  validateGeminiSttModel,
+  validateGlmSttModel,
   validateGlmOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
@@ -103,6 +106,9 @@ export const REPEATABLE_MODEL_FLAGS = [
   'gladia-stt',
   'happyscribe-stt',
   'supadata-stt',
+  'openai-stt',
+  'gemini-stt',
+  'glm-stt',
   'mistral-ocr',
   'glm-ocr',
   'openai-ocr',
@@ -531,6 +537,9 @@ export const buildOptsFromFlags = (
   const gladiaSttModels = readValidatedMany('gladia-stt', validateGladiaSttModel)
   const happyscribeSttModels = readValidatedMany('happyscribe-stt', validateHappyscribeSttModel)
   const supadataSttModels = readValidatedMany('supadata-stt', validateSupadataSttModel)
+  const openaiSttModels = readValidatedMany('openai-stt', validateOpenaiSttModel)
+  const geminiSttModels = readValidatedMany('gemini-stt', validateGeminiSttModel)
+  const glmSttModels = readValidatedMany('glm-stt', validateGlmSttModel)
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
   const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
@@ -558,6 +567,9 @@ export const buildOptsFromFlags = (
   const gladiaSttModel = first(gladiaSttModels)
   const happyscribeSttModel = first(happyscribeSttModels)
   const supadataSttModel = first(supadataSttModels)
+  const openaiSttModel = first(openaiSttModels)
+  const geminiSttModel = first(geminiSttModels)
+  const glmSttModel = first(glmSttModels)
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
   const openaiOcrModel = first(openaiOcrModels)
@@ -661,6 +673,12 @@ export const buildOptsFromFlags = (
     happyscribeOrganizationId: readOptionalStringFlag(mergedFlags, 'happyscribe-organization-id'),
     supadataSttModels,
     supadataSttModel,
+    openaiSttModels,
+    openaiSttModel,
+    geminiSttModels,
+    geminiSttModel,
+    glmSttModels,
+    glmSttModel,
     supadataLang: readOptionalStringFlag(mergedFlags, 'supadata-lang'),
     diarizationSpeakerCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'speaker-count'), 'speaker-count'),
     sttProviderConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-provider-concurrency'), 2)),

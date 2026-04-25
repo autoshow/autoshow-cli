@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { buildAudioNormalizeTable } from '~/cli/commands/process-steps/step-1-download/audio/audio-logging'
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
 import { createHumanTable } from '~/utils/logger/human-table'
@@ -106,5 +107,34 @@ describe('logging contracts', () => {
       checked: '3 commands',
       totalEstimatedCost: '12.34568\u00a2'
     }])
+  })
+
+  test('audio normalize table uses vertical key/value display rows', () => {
+    expect(buildAudioNormalizeTable({
+      status: 'planned',
+      inputPath: '/tmp/autoshow/source episode.m4a',
+      outputPath: '/tmp/autoshow/source episode.normalized.mp3',
+      plan: {
+        profile: 'default',
+        mode: 'transcode-mp3',
+        outputExtension: '.mp3',
+        outputFormat: 'mp3',
+        outputCodecName: 'mp3',
+        sourceCodecName: 'aac',
+        reason: 'container or codec requires normalization',
+        stripMetadata: true,
+        stripChapters: true
+      }
+    })).toEqual({
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'status', value: 'planned' },
+        { key: 'mode', value: 'transcode-mp3' },
+        { key: 'codec', value: 'aac->mp3' },
+        { key: 'input', value: 'source episode.m4a' },
+        { key: 'output', value: 'source episode.normalized.mp3' },
+        { key: 'detail', value: 'container or codec requires normalization' }
+      ]
+    })
   })
 })

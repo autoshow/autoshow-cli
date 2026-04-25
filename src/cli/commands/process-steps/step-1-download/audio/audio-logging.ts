@@ -1,5 +1,5 @@
 import { basename } from 'node:path'
-import { createHumanTable, createLocationsTable } from '~/utils/logger/human-table'
+import { createHumanTable, createKeyValueTable, createLocationsTable } from '~/utils/logger/human-table'
 import type {
   AudioDownloadSummary,
   AudioNormalizeSummary,
@@ -48,7 +48,14 @@ export const buildAudioNormalizeRows = (
 export const buildAudioNormalizeTable = (
   summary: AudioNormalizeSummary
 ): HumanLogTable =>
-  createHumanTable(buildAudioNormalizeRows(summary), ['status', 'mode', 'input', 'output', 'codec', 'detail'])
+  createKeyValueTable([
+    ['status', summary.status],
+    ['mode', summary.plan.mode],
+    ['codec', `${summary.plan.sourceCodecName}->${summary.plan.outputCodecName}`],
+    ['input', basename(summary.inputPath) || 'audio'],
+    ['output', basename(summary.outputPath) || 'audio'],
+    ['detail', summary.plan.reason]
+  ])
 
 export const logAudioNormalize = (
   logger: TableLogger,

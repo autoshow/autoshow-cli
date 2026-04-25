@@ -39,6 +39,12 @@ export const ProcessingOptionsSchema = v.pipe(
     happyscribeOrganizationId: v.optional(v.string(), undefined),
     supadataSttModels: v.optional(v.array(v.string()), undefined),
     supadataSttModel: v.optional(v.string(), undefined),
+    openaiSttModels: v.optional(v.array(v.string()), undefined),
+    openaiSttModel: v.optional(v.string(), undefined),
+    geminiSttModels: v.optional(v.array(v.string()), undefined),
+    geminiSttModel: v.optional(v.string(), undefined),
+    glmSttModels: v.optional(v.array(v.string()), undefined),
+    glmSttModel: v.optional(v.string(), undefined),
     supadataLang: v.optional(v.string(), undefined),
     speechmaticsSttModels: v.optional(v.array(v.string()), undefined),
     speechmaticsSttModel: v.optional(v.string(), undefined),
@@ -470,7 +476,7 @@ export type Step2BillingMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number

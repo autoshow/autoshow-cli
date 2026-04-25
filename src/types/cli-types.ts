@@ -59,6 +59,12 @@ export type RuntimeOptions = {
   happyscribeOrganizationId: string | undefined
   supadataSttModels: string[] | undefined
   supadataSttModel: string | undefined
+  openaiSttModels: string[] | undefined
+  openaiSttModel: string | undefined
+  geminiSttModels: string[] | undefined
+  geminiSttModel: string | undefined
+  glmSttModels: string[] | undefined
+  glmSttModel: string | undefined
   supadataLang: string | undefined
   speechmaticsSttModels: string[] | undefined
   speechmaticsSttModel: string | undefined

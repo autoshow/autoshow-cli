@@ -63,9 +63,11 @@ bun as setup --step reverb
 | Soniox | `SONIOX_API_KEY` | `SONIOX_BASE_URL` |
 | Speechmatics | `SPEECHMATICS_API_KEY` | `SPEECHMATICS_BASE_URL` |
 | Rev | `REVAI_ACCESS_TOKEN` | `REVAI_BASE_URL` |
+| OpenAI STT | `OPENAI_API_KEY` | `OPENAI_BASE_URL` |
+| Gemini STT | `GEMINI_API_KEY` | `GEMINI_BASE_URL` |
+| GLM STT | `GLM_API_KEY` | `GLM_BASE_URL` |
 | Google Cloud STT | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | none; project is read from `gcloud config`, location is fixed to `us`, and requests go to `us-speech.googleapis.com`; use `bun as setup --gcloud --gcloud-project ...` to set or create the active project from AutoShow |
 | AWS Transcribe | AWS CLI auth (`aws configure` or `AWS_PROFILE`) | `AWS_REGION` / `AWS_DEFAULT_REGION`; save `--aws-region` and `--aws-bucket` with `bun as config`, or run `bun as setup --aws` to provision/save a staging bucket automatically when none is configured |
-| OpenAI | `OPENAI_API_KEY` | - |
 | Mistral | `MISTRAL_API_KEY` | - |
 | AssemblyAI | `ASSEMBLYAI_API_KEY` | `ASSEMBLYAI_BASE_URL` |
 | Gladia | `GLADIA_API_KEY` | `GLADIA_BASE_URL` |
@@ -109,6 +111,9 @@ If no engine flag is provided, `extract` defaults to Whisper with the `tiny` mod
 |--------|-----------|-------------------|
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3-turbo`, `whisper-large-v3` |
 | DeepInfra Whisper | `--deepinfra-stt <model>` | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
+| OpenAI STT | `--openai-stt <model>` | `gpt-4o-mini-transcribe`, `gpt-4o-transcribe`; single-speaker transcription |
+| Gemini STT | `--gemini-stt <model>` | `gemini-3-flash-preview`; prompted JSON transcription via Gemini multimodal input |
+| GLM STT | `--glm-stt <model>` | `glm-asr-2512`; single-speaker transcription with 30-second auto-split policy |
 | deAPI | `--deapi-stt <model>` | `WhisperLargeV3`; hosted async STT with exact provider quote support, no diarization by default, and no speaker-count hint support |
 | Happy Scribe | `--happyscribe-stt <model>` | `auto`; hosted async STT with fixed `en-US`, diarization enabled by default, ignored speaker-count hints, and exact billing capture only for USD organizations |
 | ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
@@ -144,6 +149,9 @@ bun as extract input/examples/audio/1-audio.mp3 --aws-stt
 bun as extract input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt
 bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
+bun as extract input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-mini-transcribe
+bun as extract input/examples/audio/1-audio.mp3 --gemini-stt
+bun as extract input/examples/audio/1-audio.mp3 --glm-stt
 bun as extract input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
 bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto
 bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt --happyscribe-organization-id org_123
@@ -181,6 +189,9 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--rev-stt <model>` | Select one or more Rev STT models; omit the value to use `low_cost` |
 | `--groq-stt <model>` | Select one or more Groq STT models; omit the value to use the cheapest supported model |
 | `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models; omit the value to use `openai/whisper-large-v3-turbo` |
+| `--openai-stt <model>` | Select one or more OpenAI STT models; omit the value to use `gpt-4o-mini-transcribe` |
+| `--gemini-stt <model>` | Select one or more Gemini STT models; omit the value to use `gemini-3-flash-preview` |
+| `--glm-stt <model>` | Select one or more GLM STT models; omit the value to use `glm-asr-2512` |
 | `--deapi-stt <model>` | Select one or more deAPI STT models; omit the value to keep `WhisperLargeV3` |
 | `--happyscribe-stt <model>` | Select one or more Happy Scribe STT models; omit the value to keep `auto` |
 | `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID; required when the API key can access multiple organizations |

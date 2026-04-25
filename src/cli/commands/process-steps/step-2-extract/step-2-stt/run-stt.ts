@@ -27,6 +27,9 @@ import { runHappyScribeStt } from './stt-services/happyscribe/run-happyscribe-st
 import { isDeapiSupportedSourceUrl } from './stt-services/deapi/deapi'
 import { isSupadataSupportedSourceUrl } from './stt-services/supadata/supadata'
 import { runSupadataStt } from './stt-services/supadata/run-supadata-stt'
+import { runOpenaiStt } from './stt-services/openai-stt/run-openai-stt'
+import { runGeminiStt } from './stt-services/gemini-stt/run-gemini-stt'
+import { runGlmStt } from './stt-services/glm-stt/run-glm-stt'
 import { runGcloudStt } from './stt-services/gcloud/run-gcloud-stt'
 import { runAwsStt } from './stt-services/aws/run-aws-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
@@ -70,7 +73,9 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'mistral',
   'assemblyai',
   'gladia',
-  'happyscribe'
+  'happyscribe',
+  'openai-stt',
+  'glm-stt'
 ])
 
 const formatBytes = (bytes: number): string => {
@@ -414,6 +419,33 @@ const dispatchStt = async (
       audioDurationSeconds: options.audioDurationSeconds,
       runMode: options.runMode,
       lifecycle: options.asyncLifecycle
+    })
+  }
+
+  if (target.service === 'openai-stt') {
+    return await runOpenaiStt(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments
+    })
+  }
+
+  if (target.service === 'gemini-stt') {
+    return await runGeminiStt(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments
+    })
+  }
+
+  if (target.service === 'glm-stt') {
+    return await runGlmStt(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments
     })
   }
 

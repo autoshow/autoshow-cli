@@ -18,6 +18,9 @@ export const STT_ENGINE_CAPABILITIES = {
   gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   happyscribe: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   supadata: { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  'openai-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  'gemini-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  'glm-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
   whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'youtube-captions': { diarizationByDefault: false, supportsSpeakerCountHint: false }
 } as const satisfies Record<TranscribeEngine, TranscribeEngineCapabilities>
@@ -85,6 +88,12 @@ export const collectSttProviderSpecs = (
     | 'happyscribeSttModels'
     | 'supadataSttModel'
     | 'supadataSttModels'
+    | 'openaiSttModel'
+    | 'openaiSttModels'
+    | 'geminiSttModel'
+    | 'geminiSttModels'
+    | 'glmSttModel'
+    | 'glmSttModels'
   >,
   filter?: Step2ProviderSelectionFilter
 ): ProviderSpec[] => {

@@ -29,6 +29,9 @@ const toBootstrapProviderId = (
     case 'gladia':
     case 'happyscribe':
     case 'supadata':
+    case 'openai-stt':
+    case 'gemini-stt':
+    case 'glm-stt':
       return getStep2BootstrapProviderId('stt', target.service) ?? ''
     case 'youtube-captions':
       return ''

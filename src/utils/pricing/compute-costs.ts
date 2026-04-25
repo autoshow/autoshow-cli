@@ -551,6 +551,9 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'gladiaSttModel' as const, provider: 'gladia' },
       { field: 'happyscribeSttModel' as const, provider: 'happyscribe' },
       { field: 'supadataSttModel' as const, provider: 'supadata' },
+      { field: 'openaiSttModel' as const, provider: 'openai-stt' },
+      { field: 'geminiSttModel' as const, provider: 'gemini-stt' },
+      { field: 'glmSttModel' as const, provider: 'glm-stt' },
       { field: 'whisperModel' as const, provider: 'whisper' },
     ]
     for (const { field, provider } of STT_FIELD_MAP) {

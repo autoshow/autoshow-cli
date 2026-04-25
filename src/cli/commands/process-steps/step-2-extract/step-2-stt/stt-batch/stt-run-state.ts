@@ -36,6 +36,9 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'gladia',
   'happyscribe',
   'supadata',
+  'openai-stt',
+  'gemini-stt',
+  'glm-stt',
   'youtube-captions'
 ])
 

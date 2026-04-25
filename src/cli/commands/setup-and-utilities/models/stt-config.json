@@ -432,6 +432,80 @@
       }
     }
   },
+  "openai-stt": {
+    "description": "OpenAI cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "gpt-4o-mini-transcribe": {
+        "description": "OpenAI GPT-4o mini transcribe",
+        "costPerHourUSD": 0.18,
+        "costPerHourCents": 18,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 150
+        }
+      },
+      "gpt-4o-transcribe": {
+        "description": "OpenAI GPT-4o transcribe",
+        "costPerHourUSD": 0.36,
+        "costPerHourCents": 36,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 200
+        }
+      }
+    }
+  },
+  "gemini-stt": {
+    "description": "Gemini multimodal transcription via generateContent",
+    "type": "api",
+    "models": {
+      "gemini-3-flash-preview": {
+        "description": "Gemini 3 Flash Preview prompted audio transcription",
+        "costPerHourUSD": 0.1152,
+        "costPerHourCents": 11.52,
+        "limits": {
+          "directUploadBytes": 20971520,
+          "notes": "Gemini inline audio requests are kept safely under the 20 MB inline request limit; larger inputs use the Files API. Audio input is tokenized at 32 tokens/second, and final billed cost also includes prompt and output tokens."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 300
+        }
+      }
+    }
+  },
+  "glm-stt": {
+    "description": "GLM/Z.AI cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "glm-asr-2512": {
+        "description": "GLM ASR 2512 speech-to-text",
+        "costPerHourUSD": 0.144,
+        "costPerHourCents": 14.4,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "durationSeconds": 30,
+          "notes": "GLM ASR supports wav and mp3 uploads, with a 25 MB file cap and 30-second audio-duration cap. AutoShow pre-splits longer audio and retries with split transcription if the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 200
+        }
+      }
+    }
+  },
   "youtube-captions": {
     "description": "YouTube English subtitle track reuse",
     "type": "api",

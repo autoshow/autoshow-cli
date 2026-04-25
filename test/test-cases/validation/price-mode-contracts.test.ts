@@ -78,6 +78,9 @@ describe('price mode contracts', () => {
   test('cheapest-model helpers return stable model selections', () => {
     expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')
+    expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
+    expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
+    expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
       provider: 'gemini',
       model: 'veo-3.1-fast-generate-preview'
