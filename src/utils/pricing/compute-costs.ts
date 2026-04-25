@@ -764,6 +764,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         geminiImageModel: input.geminiImageModel,
         openaiImageModel: input.openaiImageModel,
         minimaxImageModel: input.minimaxImageModel,
+        glmImageModel: input.glmImageModel,
+        grokImageModel: input.grokImageModel,
+        runwayImageModel: input.runwayImageModel,
+        imageSize: input.imageSize,
         imagenCount: input.imagenCount
       })
 

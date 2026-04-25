@@ -34,6 +34,9 @@ export type {
   GeminiImageModel,
   OpenAIImageModel,
   MinimaxImageModel,
+  GlmImageModel,
+  GrokImageModel,
+  RunwayImageModel,
   GeminiVideoModel,
   MinimaxVideoModel
 } from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'

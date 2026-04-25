@@ -129,6 +129,8 @@ const ImageModelSchema = v.object({
   description: v.string(),
   costPerImageUSD: v.number(),
   costPerImageCents: v.number(),
+  costPerImage720pCents: v.optional(v.number(), undefined),
+  costPerImage1080pCents: v.optional(v.number(), undefined),
   nativeGeminiImage: v.optional(v.boolean(), undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),

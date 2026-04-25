@@ -160,6 +160,7 @@ export type InputKind =
   | 'url_direct_media'
   | 'url_direct_document'
   | 'url_html_article'
+  | 'url_x_space'
   | 'local_media'
   | 'local_document'
 
@@ -248,6 +249,9 @@ export type RepeatableModelFlag =
   | 'gemini-image'
   | 'openai-image'
   | 'minimax-image'
+  | 'glm-image'
+  | 'grok-image'
+  | 'runway-image'
   | 'elevenlabs-music'
   | 'minimax-music'
   | 'gemini-video'

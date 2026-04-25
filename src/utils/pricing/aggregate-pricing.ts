@@ -407,6 +407,12 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
     || !!opts.openaiImageModel
     || (opts.minimaxImageModels?.length ?? 0) > 0
     || !!opts.minimaxImageModel
+    || (opts.glmImageModels?.length ?? 0) > 0
+    || !!opts.glmImageModel
+    || (opts.grokImageModels?.length ?? 0) > 0
+    || !!opts.grokImageModel
+    || (opts.runwayImageModels?.length ?? 0) > 0
+    || !!opts.runwayImageModel
   if (!hasImage) return []
 
   return estimateImageCosts({
@@ -416,6 +422,13 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
     openaiImageModel: opts.openaiImageModel,
     minimaxImageModels: opts.minimaxImageModels,
     minimaxImageModel: opts.minimaxImageModel,
+    glmImageModels: opts.glmImageModels,
+    glmImageModel: opts.glmImageModel,
+    grokImageModels: opts.grokImageModels,
+    grokImageModel: opts.grokImageModel,
+    runwayImageModels: opts.runwayImageModels,
+    runwayImageModel: opts.runwayImageModel,
+    imageSize: opts.imageSize,
     imagenCount: opts.imagenCount
   }).map((estimate) => {
     const estimation = getImageEstimation(estimate.provider, estimate.model)

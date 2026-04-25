@@ -168,6 +168,12 @@ export type RuntimeOptions = {
   openaiImageModel: string | undefined
   minimaxImageModels: string[] | undefined
   minimaxImageModel: string | undefined
+  glmImageModels: string[] | undefined
+  glmImageModel: string | undefined
+  grokImageModels: string[] | undefined
+  grokImageModel: string | undefined
+  runwayImageModels: string[] | undefined
+  runwayImageModel: string | undefined
   imageAspectRatio: string | undefined
   imageSize: string | undefined
   imageQuality: string | undefined

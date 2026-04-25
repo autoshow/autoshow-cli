@@ -2,6 +2,7 @@ import type {
   CostEstimateBase,
   DocumentMetadata,
   ExtractionMetadata,
+  ImageProvider,
   MusicProvider,
   ProviderModelBase,
   Step1Metadata,
@@ -41,7 +42,7 @@ export type TtsStepEstimate = ProviderModelBase & {
   costMultiplier?: number
 }
 
-export type ImageStepEstimate = CostEstimateBase<'gemini' | 'openai' | 'minimax'> & {
+export type ImageStepEstimate = CostEstimateBase<ImageProvider> & {
   step: 'image'
 }
 
@@ -159,6 +160,10 @@ export type ComputeEstimatedCostsInput = {
   geminiImageModel?: string | undefined
   openaiImageModel?: string | undefined
   minimaxImageModel?: string | undefined
+  glmImageModel?: string | undefined
+  grokImageModel?: string | undefined
+  runwayImageModel?: string | undefined
+  imageSize?: string | undefined
   imagenCount?: number | undefined
   geminiVideoModel?: string | undefined
   minimaxVideoModel?: string | undefined

@@ -14,6 +14,12 @@ export type ImageGenOptions = Pick<
   | 'openaiImageModel'
   | 'minimaxImageModels'
   | 'minimaxImageModel'
+  | 'glmImageModels'
+  | 'glmImageModel'
+  | 'grokImageModels'
+  | 'grokImageModel'
+  | 'runwayImageModels'
+  | 'runwayImageModel'
   | 'imageAspectRatio'
   | 'imageSize'
   | 'imageQuality'
@@ -31,7 +37,7 @@ export type ImageTarget = ProviderTargetBase<ImageProvider> & {
   run: (prompt: string, outputDir: string, opts: ImageGenOptions) => Promise<ImageResult>
 }
 
-export type ImageCostEstimate = CostEstimateBase<'gemini' | 'openai' | 'minimax'> & {
+export type ImageCostEstimate = CostEstimateBase<ImageProvider> & {
   imageCount: number
   costPerImageCents: number
 }
@@ -43,5 +49,12 @@ export type EstimateImageCostOptions = {
   openaiImageModel?: string | undefined
   minimaxImageModels?: string[] | undefined
   minimaxImageModel?: string | undefined
+  glmImageModels?: string[] | undefined
+  glmImageModel?: string | undefined
+  grokImageModels?: string[] | undefined
+  grokImageModel?: string | undefined
+  runwayImageModels?: string[] | undefined
+  runwayImageModel?: string | undefined
+  imageSize?: string | undefined
   imagenCount?: number | undefined
 }

@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { isNativeGeminiImage } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import type { GeminiImageModel, OpenAIImageModel, MinimaxImageModel } from '~/types'
+import type { GeminiImageModel, GlmImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, RunwayImageModel } from '~/types'
 
 export const SUPPORTED_GEMINI_IMAGE_MODELS = [
   'imagen-4.0-fast-generate-001',
@@ -35,3 +35,22 @@ export const SUPPORTED_MINIMAX_IMAGE_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateMinimaxImageModel = createModelValidator<MinimaxImageModel>(SUPPORTED_MINIMAX_IMAGE_MODELS, 'minimax-image')
+
+export const SUPPORTED_GLM_IMAGE_MODELS = [
+  'glm-image',
+  'cogView-4-250304'
+] as const satisfies readonly string[]
+
+export const validateGlmImageModel = createModelValidator<GlmImageModel>(SUPPORTED_GLM_IMAGE_MODELS, 'glm-image')
+
+export const SUPPORTED_GROK_IMAGE_MODELS = [
+  'grok-imagine-image'
+] as const satisfies readonly string[]
+
+export const validateGrokImageModel = createModelValidator<GrokImageModel>(SUPPORTED_GROK_IMAGE_MODELS, 'grok-image')
+
+export const SUPPORTED_RUNWAY_IMAGE_MODELS = [
+  'gen4_image'
+] as const satisfies readonly string[]
+
+export const validateRunwayImageModel = createModelValidator<RunwayImageModel>(SUPPORTED_RUNWAY_IMAGE_MODELS, 'runway-image')

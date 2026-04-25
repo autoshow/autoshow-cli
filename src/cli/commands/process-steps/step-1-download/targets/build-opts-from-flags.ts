@@ -15,8 +15,11 @@ import {
   SUPPORTED_GEMINI_TTS_MODELS,
   DEEPGRAM_DEFAULT_VOICE,
   SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_GLM_IMAGE_MODELS,
+  SUPPORTED_GROK_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
+  SUPPORTED_RUNWAY_IMAGE_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
@@ -68,8 +71,11 @@ import {
   validateMinimaxMusicModel,
   validateKittenTtsSpeaker,
   validateGeminiImageModel,
+  validateGlmImageModel,
+  validateGrokImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
+  validateRunwayImageModel,
   validateGeminiVideoModel,
   validateMinimaxVideoModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -137,6 +143,9 @@ export const REPEATABLE_MODEL_FLAGS = [
   'gemini-image',
   'openai-image',
   'minimax-image',
+  'glm-image',
+  'grok-image',
+  'runway-image',
   'elevenlabs-music',
   'minimax-music',
   'gemini-video',
@@ -168,6 +177,9 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'gemini-image': { shortcut: 'all-image', supported: SUPPORTED_GEMINI_IMAGE_MODELS },
   'openai-image': { shortcut: 'all-image', supported: SUPPORTED_OPENAI_IMAGE_MODELS },
   'minimax-image': { shortcut: 'all-image', supported: SUPPORTED_MINIMAX_IMAGE_MODELS },
+  'glm-image': { shortcut: 'all-image', supported: SUPPORTED_GLM_IMAGE_MODELS },
+  'grok-image': { shortcut: 'all-image', supported: SUPPORTED_GROK_IMAGE_MODELS },
+  'runway-image': { shortcut: 'all-image', supported: SUPPORTED_RUNWAY_IMAGE_MODELS },
   'elevenlabs-music': { shortcut: 'all-music', supported: SUPPORTED_ELEVENLABS_MUSIC_MODELS },
   'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
   'gemini-video': { shortcut: 'all-video', supported: SUPPORTED_GEMINI_VIDEO_MODELS },
@@ -617,6 +629,9 @@ export const buildOptsFromFlags = (
   const geminiImageModels = readValidatedMany('gemini-image', validateGeminiImageModel)
   const openaiImageModels = readValidatedMany('openai-image', validateOpenAIImageModel)
   const minimaxImageModels = readValidatedMany('minimax-image', validateMinimaxImageModel)
+  const glmImageModels = readValidatedMany('glm-image', validateGlmImageModel)
+  const grokImageModels = readValidatedMany('grok-image', validateGrokImageModel)
+  const runwayImageModels = readValidatedMany('runway-image', validateRunwayImageModel)
   const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
   const geminiVideoModels = readValidatedMany('gemini-video', validateGeminiVideoModel)
@@ -806,6 +821,12 @@ export const buildOptsFromFlags = (
     openaiImageModel: first(openaiImageModels),
     minimaxImageModels,
     minimaxImageModel: first(minimaxImageModels),
+    glmImageModels,
+    glmImageModel: first(glmImageModels),
+    grokImageModels,
+    grokImageModel: first(grokImageModels),
+    runwayImageModels,
+    runwayImageModel: first(runwayImageModels),
     imageAspectRatio: readOptionalStringFlag(mergedFlags, 'image-aspect-ratio'),
     imageSize: readOptionalStringFlag(mergedFlags, 'image-size'),
     imageQuality: readOptionalStringFlag(mergedFlags, 'image-quality'),

@@ -27,6 +27,9 @@ bun as setup --step image
 OPENAI_API_KEY=...
 GEMINI_API_KEY=...
 MINIMAX_API_KEY=...
+GLM_API_KEY=...
+XAI_API_KEY=...
+RUNWAYML_API_SECRET=...
 ```
 
 ## Usage
@@ -42,6 +45,9 @@ bun as image <prompt> [flags]
 | Gemini | `--gemini-image <model>` | `gemini-3-pro-image-preview`, `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001`, `imagen-4.0-fast-generate-001` |
 | OpenAI | `--openai-image <model>` | `gpt-image-1.5`, `gpt-image-1`, `gpt-image-1-mini` |
 | MiniMax | `--minimax-image <model>` | `image-01` |
+| Z.AI GLM | `--glm-image <model>` | `glm-image`, `cogView-4-250304` |
+| Grok | `--grok-image <model>` | `grok-imagine-image` |
+| Runway | `--runway-image <model>` | `gen4_image` |
 
 Provider flags accept an omitted model value and then resolve to the cheapest supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
@@ -60,6 +66,15 @@ bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --imag
 # MiniMax
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01 --image-aspect-ratio 16:9
 
+# Z.AI GLM
+bun as image "a clean product photo of a red enamel camping mug" --glm-image glm-image --image-size 1280x1280
+
+# Grok
+bun as image "a futuristic observatory at sunset" --grok-image grok-imagine-image --image-aspect-ratio 16:9 --image-size 1K
+
+# Runway
+bun as image "a cinematic product photo of a red enamel camping mug" --runway-image gen4_image --image-aspect-ratio 1:1 --image-size 720p
+
 # Multi-provider
 bun as image "a sunset over the lake" --gemini-image imagen-4.0-generate-001 --openai-image gpt-image-1-mini --imagen-count 2
 
@@ -74,8 +89,11 @@ bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-i
 | `--gemini-image <model>` | Select one or more Gemini image models; omit the value to use the cheapest supported model |
 | `--openai-image <model>` | Select one or more OpenAI image models; omit the value to use the cheapest supported model |
 | `--minimax-image <model>` | Select one or more MiniMax image models; omit the value to use the cheapest supported model |
-| `--image-aspect-ratio <ratio>` | Aspect ratio control for Gemini and MiniMax |
-| `--image-size <size>` | Size control: `1K`, `2K`, `4K` for Gemini, or `1024x1024`, `1536x1024`, `1024x1536` for OpenAI |
+| `--glm-image <model>` | Select one or more Z.AI GLM image models; omit the value to use the cheapest supported model |
+| `--grok-image <model>` | Select one or more Grok image models; omit the value to use the cheapest supported model |
+| `--runway-image <model>` | Select one or more Runway image models; omit the value to use the cheapest supported model |
+| `--image-aspect-ratio <ratio>` | Aspect ratio control for Gemini, MiniMax, Grok, and Runway. Runway supports `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, and `21:9` |
+| `--image-size <size>` | Size control: `1K`, `2K`, `4K` for Gemini; `1024x1024`, `1536x1024`, `1024x1536` for OpenAI; `512x512` through `2048x2048` multiples of 32 for GLM; `1K` or `2K` for Grok; `720p` or `1080p` for Runway |
 | `--imagen-count <n>` | Number of images to generate for Imagen 4 models |
 | `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto` |
 | `--image-format <fmt>` | OpenAI output format: `png`, `jpeg`, or `webp` |
@@ -88,9 +106,14 @@ bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-i
 - Gemini writes `generated-image.png`, plus numbered variants when multiple images are returned.
 - OpenAI writes `generated-image.<format>`.
 - MiniMax writes `generated-image.jpeg`.
+- GLM writes `generated-image.png`.
+- Grok writes `generated-image.<format>`, based on the response MIME type when available.
+- Runway writes `generated-image.<format>`, based on the downloaded asset content type when available.
 - Multi-provider runs rename outputs to include the provider and model, such as `generated-image-openai-gpt-image-1-mini.png`.
 - `run.json` includes `image`, `cost`, and `timing` sections. The `image` field is always an array, and each entry includes `imageFileNames`.
 
 ## Notes
 
 - `--image-size` is currently rejected for `imagen-4.0-fast-generate-001`.
+- Runway ignores no OpenAI-only flags: `--image-format`, `--image-background`, and `--image-quality` are rejected when Runway is selected.
+- Grok pricing is represented as an approximate flat per-image estimate; xAI account pricing should be checked in the console for exact billing.

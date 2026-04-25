@@ -1,8 +1,11 @@
 import type { ClercFlagsDefinition } from 'clerc'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_GLM_IMAGE_MODELS,
+  SUPPORTED_GROK_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
-  SUPPORTED_OPENAI_IMAGE_MODELS
+  SUPPORTED_OPENAI_IMAGE_MODELS,
+  SUPPORTED_RUNWAY_IMAGE_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
@@ -26,12 +29,24 @@ export const imageGenFlags = {
     description: buildModelDescription('MiniMax image model', SUPPORTED_MINIMAX_IMAGE_MODELS),
     type: [String] as [StringConstructor]
   },
+  'glm-image': {
+    description: buildModelDescription('Z.AI GLM image model', SUPPORTED_GLM_IMAGE_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'grok-image': {
+    description: buildModelDescription('xAI Grok image model', SUPPORTED_GROK_IMAGE_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'runway-image': {
+    description: buildModelDescription('Runway image model', SUPPORTED_RUNWAY_IMAGE_MODELS),
+    type: [String] as [StringConstructor]
+  },
   'image-aspect-ratio': {
-    description: 'Image aspect ratio: 1:1|16:9|9:16|4:3|3:4 (Gemini)',
+    description: 'Image aspect ratio: 1:1|16:9|9:16|4:3|3:4|3:2|2:3|2:1|1:2|19.5:9|9:19.5|20:9|9:20|auto (provider-specific support)',
     type: String
   },
   'image-size': {
-    description: 'Image size: 1K|2K|4K (Gemini) or 1024x1024|1536x1024|1024x1536 (OpenAI)',
+    description: 'Image size/resolution: 1K|2K|4K (Gemini), 1024x1024|1536x1024|1024x1536 (OpenAI), 512x512 through 2048x2048 multiples of 32 (GLM), 1K|2K (Grok), or 720p|1080p (Runway)',
     type: String
   },
   'image-quality': {

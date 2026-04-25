@@ -13,8 +13,7 @@ Install local runtimes and prerequisite tools. Focused setup utilities also cove
 
 ## Step Setup Docs
 
-- Step 2 OCR: [`ocr-document.md#setup`](../step-2-ocr/ocr-document.md#setup)
-- Step 2 STT: [`stt-audio.md#setup`](../step-2-stt/stt-audio.md#setup)
+- Step 2 extract: [`extract.md`](../step-2-extract/extract.md) — [STT setup](../step-2-extract/extract.md#stt-setup) | [OCR setup](../step-2-extract/extract.md#ocr-setup) | [X Space setup](../step-2-extract/extract.md#x-space-setup)
 - Step 3 Write: [`write-text.md#setup`](../step-3-write/write-text.md#setup)
 - Step 4 TTS: [`text-to-speech.md#setup`](../step-4-tts/text-to-speech.md#setup)
 - Step 5 Image: [`text-to-image.md#setup`](../step-5-image/text-to-image.md#setup)

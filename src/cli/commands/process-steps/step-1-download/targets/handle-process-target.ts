@@ -491,7 +491,8 @@ const partitionExtractBatchPlan = (
 } => {
   const childPlans: Record<RoutedChildKind, ExtractChildBatchPlan> = {
     stt: createExtractChildBatchPlan('stt'),
-    ocr: createExtractChildBatchPlan('ocr')
+    ocr: createExtractChildBatchPlan('ocr'),
+    x_space: createExtractChildBatchPlan('x_space')
   }
   const manifestItems: ExtractBatchManifest['items'] = []
   let runnableIndex = 0
@@ -561,6 +562,34 @@ const runExtractOcrChildBatch = async (
     }
   )
 
+const runExtractXSpaceChildBatch = async (
+  batchDir: string,
+  opts: RuntimeOptions,
+  batchPlan: ExtractChildBatchPlan,
+  source?: BatchSource
+): Promise<BatchProcessResult> =>
+  await processBatch(
+    batchPlan.items,
+    batchPlan.kind,
+    'extract',
+    opts,
+    async (_commandName, item, childBatchDir, batchOpts, batchItem) =>
+      await processSingleTarget('extract', item, childBatchDir, batchOpts, undefined, {
+        batchChildContext: {
+          batchDir: childBatchDir,
+          ...(batchItem ? { batchItem } : {})
+        }
+      }, batchItem),
+    {
+      ...(source ? { source } : {}),
+      ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
+      initialEntries: batchPlan.initialEntries,
+      resultEntryIndexes: batchPlan.resultEntryIndexes,
+      concurrency: opts.batchConcurrency,
+      parentBatchDir: batchDir
+    }
+  )
+
 const executeExtractBatchPlan = async (
   opts: RuntimeOptions,
   batchPlan: BatchExecutionPlan
@@ -573,7 +602,8 @@ const executeExtractBatchPlan = async (
   const { childPlans, manifestItems } = partitionExtractBatchPlan(batchPlan)
   const childBatches = {
     ...(childPlans.stt.items.length > 0 ? { stt: 'stt' } : {}),
-    ...(childPlans.ocr.items.length > 0 ? { ocr: 'ocr' } : {})
+    ...(childPlans.ocr.items.length > 0 ? { ocr: 'ocr' } : {}),
+    ...(childPlans.x_space.items.length > 0 ? { x_space: 'x_space' } : {})
   }
 
   const initialManifest: ExtractBatchManifest = {
@@ -586,12 +616,12 @@ const executeExtractBatchPlan = async (
   await writeExtractBatchManifest(batchDir, initialManifest)
   logLocationsTable(l, [{ artifact: 'extractBatchManifest', path: `${batchDir}/extract-batch.json` }])
 
-  if (childPlans.stt.items.length === 0 && childPlans.ocr.items.length === 0) {
+  if (childPlans.stt.items.length === 0 && childPlans.ocr.items.length === 0 && childPlans.x_space.items.length === 0) {
     l.warn('No supported inputs to process')
     return
   }
 
-  const [sttResult, ocrResult] = await Promise.all([
+  const [sttResult, ocrResult, xSpaceResult] = await Promise.all([
     childPlans.stt.items.length > 0
       ? runSttBatch(childPlans.stt.items, childPlans.stt.kind, opts, {
           ...(batchPlan.source ? { source: batchPlan.source } : {}),
@@ -604,17 +634,22 @@ const executeExtractBatchPlan = async (
       : Promise.resolve(undefined),
     childPlans.ocr.items.length > 0
       ? runExtractOcrChildBatch(batchDir, opts, childPlans.ocr, batchPlan.source)
+      : Promise.resolve(undefined),
+    childPlans.x_space.items.length > 0
+      ? runExtractXSpaceChildBatch(batchDir, opts, childPlans.x_space, batchPlan.source)
       : Promise.resolve(undefined)
   ])
 
   const finalItems = initialManifest.items.map((item) => ({ ...item }))
-  for (const childKind of ['stt', 'ocr'] as const) {
+  for (const childKind of ['stt', 'ocr', 'x_space'] as const) {
     const childPlan = childPlans[childKind]
     if (childPlan.items.length === 0) {
       continue
     }
 
-    const childManifest = await readBatchManifest(join(batchDir, childKind), childKind)
+    const childBatchDirName = childKind === 'x_space' ? 'extract' : childKind
+    const manifestKind: 'stt' | 'ocr' | 'extract' = childKind === 'x_space' ? 'extract' : childKind
+    const childManifest = await readBatchManifest(join(batchDir, childBatchDirName), manifestKind)
     const childEntries = childManifest?.manifest.items ?? []
 
     childPlan.parentIndexes.forEach((parentIndex, childIndex) => {
@@ -651,6 +686,14 @@ const executeExtractBatchPlan = async (
     const error = new Error(`Batch processing failed for ${ocrResult.fail} item(s)`)
     if (ocrResult.failureExitCode !== undefined) {
       ;(error as Error & { exitCode?: number }).exitCode = ocrResult.failureExitCode
+    }
+    throw error
+  }
+
+  if (xSpaceResult && xSpaceResult.ok === 0 && xSpaceResult.fail > 0) {
+    const error = new Error(`X Space batch processing failed for ${xSpaceResult.fail} item(s)`)
+    if (xSpaceResult.failureExitCode !== undefined) {
+      ;(error as Error & { exitCode?: number }).exitCode = xSpaceResult.failureExitCode
     }
     throw error
   }

@@ -9,7 +9,7 @@ const PROCESS_COMMAND_CAPABILITIES: Record<ProcessCommand, ProcessCommandCapabil
   },
   extract: {
     supportsBatchSourceExpansion: true,
-    supportedInputFamilies: ['media', 'document', 'html_article']
+    supportedInputFamilies: ['media', 'document', 'html_article', 'x_space']
   },
   stt: {
     supportsBatchSourceExpansion: true,

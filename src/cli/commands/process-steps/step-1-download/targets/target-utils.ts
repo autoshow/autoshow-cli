@@ -38,8 +38,8 @@ import { resolveOcrStep2ExecutionFromFormat, resolveSttStep2Execution } from '~/
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
-const toManifestKind = (command: ProcessCommand): 'metadata' | 'download' | 'ocr' | 'stt' | 'write' => {
-  if (command === 'metadata' || command === 'download' || command === 'ocr' || command === 'stt' || command === 'write') {
+const toManifestKind = (command: ProcessCommand): 'metadata' | 'download' | 'extract' | 'ocr' | 'stt' | 'write' => {
+  if (command === 'metadata' || command === 'download' || command === 'extract' || command === 'ocr' || command === 'stt' || command === 'write') {
     return command
   }
 
@@ -471,6 +471,31 @@ const isDocumentUrl = (url: string): boolean => {
   }
 }
 
+const isXHost = (host: string): boolean =>
+  host === 'x.com' || host === 'twitter.com'
+  || host === 'mobile.x.com' || host === 'mobile.twitter.com'
+  || host === 'www.x.com' || host === 'www.twitter.com'
+
+const isXSpaceUrl = (url: string): boolean => {
+  try {
+    const { hostname, pathname } = new URL(url)
+    return isXHost(hostname.toLowerCase())
+      && /^\/i\/spaces\/[A-Za-z0-9]{1,13}\/?$/.test(pathname)
+  } catch {
+    return false
+  }
+}
+
+const isXPostUrl = (url: string): boolean => {
+  try {
+    const { hostname, pathname } = new URL(url)
+    return isXHost(hostname.toLowerCase())
+      && /^\/(?:[A-Za-z0-9_]{1,15}\/status(?:es)?|i\/web\/status)\/\d+\/?$/.test(pathname)
+  } catch {
+    return false
+  }
+}
+
 const isStreamingUrl = (url: string): boolean => {
   try {
     const host = new URL(url).hostname.toLowerCase()
@@ -573,6 +598,9 @@ export const classifyUrlInput = async (
   if (isDirectMediaUrl(url)) {
     return 'url_direct_media'
   }
+  if (isXSpaceUrl(url) || isXPostUrl(url)) {
+    return 'url_x_space'
+  }
   if (isStreamingUrl(url)) {
     return 'url_streaming'
   }
@@ -642,6 +670,9 @@ export const classifyInputFamily = async (
     }
     if (kind === 'url_html_article') {
       return 'html_article'
+    }
+    if (kind === 'url_x_space') {
+      return 'x_space'
     }
     return 'media'
   }
@@ -803,10 +834,13 @@ export const describeUnsupportedInputForCommand = (
     if (family === 'unsupported') {
       return 'extract could not classify this input; verify the file type or route it explicitly as media or document content'
     }
-    return 'extract only processes media, documents, images, and HTML articles'
+    return 'extract only processes media, documents, images, HTML articles, and X Space links'
   }
 
   if (isSttCommand(command)) {
+    if (family === 'x_space') {
+      return 'stt does not support X Space links; use extract instead'
+    }
     if (family === 'document' || family === 'html_article') {
       return 'stt only processes media inputs; use ocr or write for documents and articles'
     }
@@ -814,6 +848,9 @@ export const describeUnsupportedInputForCommand = (
   }
 
   if (isOcrCommand(command)) {
+    if (family === 'x_space') {
+      return 'ocr does not support X Space links; use extract instead'
+    }
     if (family === 'media') {
       return 'ocr only processes documents, images, and HTML articles; use stt or write for media'
     }
@@ -883,7 +920,9 @@ export const resolveInputRoutingForCommand = async (
 ): Promise<ResolvedInputRouting> => {
   const family = await classifyInputFamily(target, opts)
   const documentFormatHint = await resolveDocumentFormatHint(target, family)
-  const resolvedStep2: ResolvedInputRouting['resolvedStep2'] = family === 'media'
+  const resolvedStep2: ResolvedInputRouting['resolvedStep2'] = family === 'x_space'
+    ? { route: 'unsupported' as const, sourceKind: 'unsupported' as const }
+    : family === 'media'
     ? resolveSttStep2Execution((opts ?? {}) as Parameters<typeof resolveSttStep2Execution>[0])
     : family === 'document' || family === 'html_article'
       ? resolveOcrStep2ExecutionFromFormat(
@@ -899,7 +938,9 @@ export const resolveInputRoutingForCommand = async (
         }
   const supported = family !== 'unsupported' && commandSupportsInputFamily(command, family)
   const step2Route = resolvedStep2.route
-  const routedChildKind = step2Route === 'stt'
+  const routedChildKind = family === 'x_space' && supported
+    ? 'x_space'
+    : step2Route === 'stt'
     ? 'stt'
     : step2Route === 'ocr' || step2Route === 'article' || step2Route === 'native-document'
       ? 'ocr'

@@ -68,8 +68,8 @@ export type ResolvedLLMConfig = {
   llmModel: string | undefined
 }
 
-export type InputFamily = 'media' | 'document' | 'html_article' | 'unsupported'
-export type RoutedChildKind = 'stt' | 'ocr'
+export type InputFamily = 'media' | 'document' | 'html_article' | 'x_space' | 'unsupported'
+export type RoutedChildKind = 'stt' | 'ocr' | 'x_space'
 
 export type Step2Modality = 'media' | 'document'
 

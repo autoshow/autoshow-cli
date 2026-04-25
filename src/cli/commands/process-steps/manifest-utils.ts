@@ -118,10 +118,10 @@ const parseProviderResult = (
 }
 
 const isInputFamily = (value: unknown): value is ExtractBatchManifestItem['inputFamily'] =>
-  value === 'media' || value === 'document' || value === 'html_article' || value === 'unsupported'
+  value === 'media' || value === 'document' || value === 'html_article' || value === 'x_space' || value === 'unsupported'
 
 const isRoutedChildKind = (value: unknown): value is RoutedChildKind =>
-  value === 'stt' || value === 'ocr'
+  value === 'stt' || value === 'ocr' || value === 'x_space'
 
 const isExtractBatchCompletionStatus = (
   value: unknown

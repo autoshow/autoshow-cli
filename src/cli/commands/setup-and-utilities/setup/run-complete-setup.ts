@@ -43,7 +43,9 @@ import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-serv
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
+import { setupGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
+import { setupRunwayImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
 import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
@@ -295,6 +297,10 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupOpenAIImageGen)
 
+  await withCompactSetup(setupGrokImageGen)
+
+  await withCompactSetup(setupRunwayImageGen)
+
   await withCompactSetup(setupElevenLabsMusicGen)
 
   await withCompactSetup(setupMinimaxMusicGen)
@@ -342,6 +348,11 @@ const runSetupTts = async (): Promise<void> => {
 }
 
 const runSetupImage = async (): Promise<void> => {
+  await setupGeminiImageGen()
+  await setupOpenAIImageGen()
+  await setupGrokImageGen()
+  await setupRunwayImageGen()
+  await setupGlmOcr()
   l.write('success', 'Image setup complete (all image providers are API-based)')
 }
 

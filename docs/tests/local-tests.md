@@ -78,7 +78,6 @@ Notes:
 - [Service Tests](service-tests.md)
 - [Sample Tests](../commands/setup-and-utilities/sample/sample-tests.md)
 - [Step 0 Setup Service Tests](step-0-service-tests-setup.md)
-- [OCR Path](../commands/process-steps/step-2-ocr/ocr-document.md)
-- [STT Path](../commands/process-steps/step-2-stt/stt-audio.md)
+- [extract](../commands/process-steps/step-2-extract/extract.md)
 - [Write Command](../commands/process-steps/step-3-write/write-text.md)
 - [TTS Command](../commands/process-steps/step-4-tts/text-to-speech.md)

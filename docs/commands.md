@@ -48,6 +48,12 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 # document OCR/extraction only
 bun as extract input/examples/document/1-document.pdf
 
+# X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
+bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
+
+# X post referencing a Space (looks up the post, extracts Space metadata)
+bun as extract "https://x.com/user/status/1234567890"
+
 # text-to-speech from local markdown/txt
 bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini
 
@@ -82,7 +88,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
 - `cache`: manage the persistent STT media cache (`bun as cache prune` / `bun as cache clear`)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
-- `extract`: routes media to the STT pipeline and documents/articles/images to the OCR pipeline. OCR and STT provider details remain in [ocr](./commands/process-steps/step-2-ocr/ocr-document.md) and [stt](./commands/process-steps/step-2-stt/stt-audio.md).
+- `extract`: [extract](./commands/process-steps/step-2-extract/extract.md) — routes media to STT, documents/articles/images to OCR, and X/Twitter Space or post links to the X API for metadata extraction.
 - `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
 - `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
 - `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
@@ -96,7 +102,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 
 - Use `metadata` for quick metadata inspection without downloading.
 - Use `download` for downloading media/documents and collecting metadata.
-- Use `extract` when you only need step-2 extraction or transcription without LLM writing.
+- Use `extract` when you only need step-2 extraction or transcription without LLM writing, or to collect X Space metadata.
 - Use `resume` to backfill missing STT or OCR providers in an existing output directory, including `extract` parent batches.
 - Use `write` for full summary pipeline with optional TTS/image/video generation, and for lyric draft generation from `./output/<name>/text`.
 - Use `music --audio` or `music --batch` for lyric-video rendering from repo audio under `input/`.

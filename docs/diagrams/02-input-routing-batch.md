@@ -87,45 +87,45 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
           │ classifyUrl() │  │ Local file path  │
           └───────┬───────┘  └────────┬─────────┘
                   |                    |
-       ┌─────────┼────────┐    ┌──────┴───────┐
-       |         |        |    |              |
-       v         v        v    v              v
- ┌──────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
- │url_direct│ │url_    │ │url_      │ │local_    │ │local_    │
- │_document │ │direct_ │ │streaming │ │document  │ │media     │
- │          │ │media   │ │          │ │          │ │          │
- │.pdf,.epub│ │.mp3,   │ │YouTube,  │ │.pdf,.epub│ │.wav,.mp3,│
- │.png,.jpg │ │.mp4,   │ │Twitch,   │ │.png,.jpg │ │.mp4,.mkv │
- │.tif URLs │ │.wav,   │ │TikTok    │ │.tif local│ │.mov,...  │
- │          │ │.webm   │ │(default  │ │          │ │          │
- │          │ │URLs    │ │fallback) │ │          │ │          │
- └─────┬────┘ └───┬────┘ └────┬─────┘ └─────┬───┘ └────┬─────┘
-       |          |           |              |           |
-       v          v           v              v           v
-  ┌──────────────────────┐  ┌──────────────────────────────┐
-  │  DOCUMENT PIPELINE   │  │     MEDIA PIPELINE           │
-  │  metadata/download/  │  │     metadata/download/       │
-  │  ocr / write         │  │     stt / write              │
-  └──────────────────────┘  └──────────────────────────────┘
+       ┌────┬────┼────────┐    ┌──────┴───────┐
+       |    |    |        |    |              |
+       v    v    v        v    v              v
+ ┌────────┐┌──────────┐┌────────┐┌──────────┐┌──────────┐┌──────────┐
+ │url_x_  ││url_direct││url_    ││url_      ││local_    ││local_    │
+ │space   ││_document ││direct_ ││streaming ││document  ││media     │
+ │        ││          ││media   ││          ││          ││          │
+ │x.com/  ││.pdf,.epub││.mp3,   ││YouTube,  ││.pdf,.epub││.wav,.mp3,│
+ │twitter ││.png,.jpg ││.mp4,   ││Twitch,   ││.png,.jpg ││.mp4,.mkv │
+ │Space & ││.tif URLs ││.wav,   ││TikTok    ││.tif local││.mov,...  │
+ │post    ││          ││.webm   ││(default  ││          ││          │
+ │URLs    ││          ││URLs    ││fallback) ││          ││          │
+ └───┬────┘└─────┬────┘└───┬────┘└────┬─────┘└─────┬───┘└────┬─────┘
+     |           |          |           |              |           |
+     v           v          v           v              v           v
+┌──────────┐ ┌──────────────────────┐  ┌──────────────────────────────┐
+│ X SPACE  │ │  DOCUMENT PIPELINE   │  │     MEDIA PIPELINE           │
+│ PIPELINE │ │  metadata/download/  │  │     metadata/download/       │
+│ extract  │ │  ocr / write         │  │     stt / write              │
+└──────────┘ └──────────────────────┘  └──────────────────────────────┘
 ```
 
 ## Command + Input Kind Matrix
 
 ```
-                    url_streaming   url_direct_media   url_direct_document   local_media   local_document
-                   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
-  metadata        │  META (0a) │    META (0a)     │    META (0b)        │  META (0a) │  META (0b)
-                  │             │                  │                     │             │
-  download        │  DL+META   │    DL+META       │    DL+META          │  DL+META   │  DL+META
-                  │             │                  │                     │             │
-  extract         │  MEDIA (1)  │     MEDIA (1)    │    DOCUMENT (6)      │  MEDIA (1)  │ DOCUMENT (6)
-                  │             │                  │                     │             │
-  write           │  MEDIA (3)  │     MEDIA (3)    │   DOCUMENT (4)      │  MEDIA (3)  │ DOCUMENT (4)
-                  │             │                  │                     │             │
-  stt             │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
-                  │             │                  │                     │             │
-  ocr             │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
-                  ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
+                    url_x_space   url_streaming   url_direct_media   url_direct_document   local_media   local_document
+                   ───────────   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
+  metadata        │ ERROR (8) │  META (0a) │    META (0a)     │    META (0b)        │  META (0a) │  META (0b)
+                  │            │             │                  │                     │             │
+  download        │ ERROR (8) │  DL+META   │    DL+META       │    DL+META          │  DL+META   │  DL+META
+                  │            │             │                  │                     │             │
+  extract         │ XSPACE (9)│  MEDIA (1)  │     MEDIA (1)    │    DOCUMENT (6)      │  MEDIA (1)  │ DOCUMENT (6)
+                  │            │             │                  │                     │             │
+  write           │ ERROR (8) │  MEDIA (3)  │     MEDIA (3)    │   DOCUMENT (4)      │  MEDIA (3)  │ DOCUMENT (4)
+                  │            │             │                  │                     │             │
+  stt             │ ERROR (8) │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
+                  │            │             │                  │                     │             │
+  ocr             │ ERROR (8) │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
+                  ───────────   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
 
   (0a) processMetadataMedia() — metadata only, no download
   (0b) processMetadataDocument() — metadata only, no download (temp file for remote docs)
@@ -136,6 +136,8 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
   (5) CLIUsageError: "Use a direct document URL or local file"
   (6) processOcr() extraction only
   (7) Skipped with warning: "non-document file in ocr mode"
+  (8) CLIUsageError: "X Space links are only supported by extract"
+  (9) processXSpace() — X API metadata extraction via X_BEARER_TOKEN
 ```
 
 ## Batch Processing Flow

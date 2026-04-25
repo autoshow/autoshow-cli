@@ -92,5 +92,61 @@
         }
       }
     }
+  },
+  "glm": {
+    "description": "Z.AI GLM image generation",
+    "type": "api",
+    "models": {
+      "glm-image": {
+        "description": "GLM Image text-to-image generation",
+        "costPerImageUSD": 0.015,
+        "costPerImageCents": 1.5,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 15000
+        }
+      },
+      "cogView-4-250304": {
+        "description": "CogView 4 text-to-image generation",
+        "costPerImageUSD": 0.01,
+        "costPerImageCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 15000
+        }
+      }
+    }
+  },
+  "grok": {
+    "description": "xAI Grok image generation",
+    "type": "api",
+    "models": {
+      "grok-imagine-image": {
+        "description": "Grok Imagine text-to-image generation",
+        "costPerImageUSD": 0.07,
+        "costPerImageCents": 7,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 15000
+        }
+      }
+    }
+  },
+  "runway": {
+    "description": "Runway image generation",
+    "type": "api",
+    "models": {
+      "gen4_image": {
+        "description": "Runway Gen-4 Image text-to-image generation",
+        "costPerImageUSD": 0.05,
+        "costPerImageCents": 5,
+        "costPerImage720pCents": 5,
+        "costPerImage1080pCents": 8,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      }
+    }
   }
 }

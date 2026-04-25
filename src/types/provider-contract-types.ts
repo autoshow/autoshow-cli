@@ -38,7 +38,7 @@ export type ProviderResult = {
 
 export type RunManifest = {
   schemaVersion: 2
-  kind: 'metadata' | 'download' | 'ocr' | 'stt' | 'write' | 'tts' | 'image' | 'video' | 'music'
+  kind: 'metadata' | 'download' | 'extract' | 'ocr' | 'stt' | 'write' | 'tts' | 'image' | 'video' | 'music'
   metadata: Record<string, unknown>
 }
 
@@ -90,5 +90,6 @@ export type ExtractBatchManifest = {
   childBatches: {
     stt?: string | undefined
     ocr?: string | undefined
+    x_space?: string | undefined
   }
 }

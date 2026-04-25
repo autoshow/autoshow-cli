@@ -1,19 +1,53 @@
-# STT Path
+# extract
 
-Reference for the STT side of `extract`: media inputs are downloaded and transcribed with local or hosted speech-to-text engines.
+Routes media to STT, documents/articles/images to OCR, and X/Twitter links to the X API for metadata extraction.
 
 ## Outline
 
-- [Setup](#setup)
 - [Usage](#usage)
 - [Supported Inputs](#supported-inputs)
-- [Engines](#engines)
-- [Examples](#examples)
-- [Flags](#flags)
-- [Pricing And Manifests](#pricing-and-manifests)
+- [STT Path](#stt-path)
+- [OCR Path](#ocr-path)
+- [X Space Path](#x-space-path)
+- [STT Pricing And Manifests](#stt-pricing-and-manifests)
 - [Notes](#notes)
 
-## Setup
+## Usage
+
+```bash
+bun as extract [input] [flags]
+```
+
+Batch inputs use the same shared controls as other processing commands. The default batch limit is `5`; use `--batch-all` to process every discovered item.
+
+For backfilling missing provider outputs from an existing run or batch, see [`resume`](../../setup-and-utilities/resume/resume.md).
+
+## Supported Inputs
+
+| Input | Route |
+|-------|-------|
+| YouTube, Twitch, or TikTok URLs | STT |
+| Direct media URLs (`.mp3`, `.mp4`, `.wav`, `.webm`) | STT |
+| Local media files | STT |
+| PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODF, RTF, CSV, CBZ | OCR |
+| PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF | OCR |
+| Remote article URLs (`text/html`) | OCR (article backend) |
+| Local `.html` / `.htm` files | OCR (defuddle) |
+| X/Twitter Space URLs (`x.com/i/spaces/<id>`) | X Space |
+| X/Twitter post URLs (`x.com/<handle>/status/<id>`) | X Space |
+| Raw Space IDs (1-13 alphanumeric characters) | X Space |
+| Directory batches | mixed routing |
+| URL-list batches (`.md` / `.txt`) | mixed routing |
+| RSS or podcast feed batches | STT |
+| YouTube channel batches | STT |
+
+---
+
+## STT Path
+
+Media inputs are downloaded and transcribed with local or hosted speech-to-text engines.
+
+### STT Setup
 
 ```bash
 # full setup
@@ -50,7 +84,7 @@ bun as setup --step transcription
 bun as setup --step reverb
 ```
 
-### Environment
+### STT Environment
 
 | Provider | Required env | Optional override |
 |----------|--------------|-------------------|
@@ -75,31 +109,9 @@ bun as setup --step reverb
 | AssemblyAI | `ASSEMBLYAI_API_KEY` | `ASSEMBLYAI_BASE_URL` |
 | Gladia | `GLADIA_API_KEY` | `GLADIA_BASE_URL` |
 
-## Usage
+### STT Engines
 
-```bash
-bun as extract [input] [flags]
-```
-
-For backfilling missing provider outputs from an existing STT run or batch, see [`resume`](../../setup-and-utilities/resume/resume.md).
-
-## Supported Inputs
-
-`extract` uses this STT path for audio and video sources:
-
-- YouTube, Twitch, or TikTok URLs
-- direct media URLs
-- local media files
-- directory batches
-- URL-list batches (`.md` / `.txt`)
-- RSS or podcast feed batches
-- YouTube channel batches
-
-Document inputs do not use this STT path; `extract` routes them to the OCR/article pipeline instead.
-
-## Engines
-
-### Local
+#### Local
 
 | Engine | Selection | Models / behavior |
 |--------|-----------|-------------------|
@@ -108,7 +120,7 @@ Document inputs do not use this STT path; `extract` routes them to the OCR/artic
 
 If no engine flag is provided, `extract` defaults to Whisper with the `tiny` model for media inputs.
 
-### Hosted
+#### Hosted
 
 | Engine | Selection | Models / behavior |
 |--------|-----------|-------------------|
@@ -136,7 +148,7 @@ If no engine flag is provided, `extract` defaults to Whisper with the `tiny` mod
 
 Hosted provider flags accept an omitted model value and then resolve to the cheapest or default supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
-## Examples
+### STT Examples
 
 ```bash
 # Default local Whisper
@@ -177,10 +189,9 @@ bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --
 
 # Process a whole YouTube channel batch with caption-first routing
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
-
 ```
 
-## Flags
+### STT Flags
 
 | Flag | Description |
 |------|-------------|
@@ -216,7 +227,7 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--prompt <name...>` | Named prompt presets discovered recursively under `src/prompts/entries/` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
-| `--batch-order <newest|oldest>` | Choose batch ordering |
+| `--batch-order <newest\|oldest>` | Choose batch ordering |
 | `--batch-concurrency <n>` | Process batch items concurrently |
 | `--stt-provider-concurrency <n>` | Max cloud providers running in parallel for one item |
 | `--stt-local-concurrency <n>` | Max local providers running in parallel for one item |
@@ -226,7 +237,251 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--no-cache` | Bypass the media cache for this run |
 | `--price` | Show the aggregated estimate and exit |
 
-## Pricing And Manifests
+---
+
+## OCR Path
+
+Documents, images, and article-style HTML inputs route through local or hosted OCR paths.
+
+### OCR Setup
+
+```bash
+# full setup
+bun as setup
+
+# document foundations: mutool + Calibre CLI tools
+bun as setup --step calibre
+
+# verify fixture-generation prerequisites
+bun as setup --step sample
+```
+
+PaddleOCR can also be prepared lazily on first use:
+
+```bash
+bun as extract input/examples/document/1-document.pdf --paddle-ocr
+```
+
+`--epub-calibre` can also trigger lazy Calibre setup on supported platforms when the Calibre CLI tools are missing.
+
+### OCR Environment
+
+Use these only when you select the matching hosted engine or backend:
+
+```bash
+MISTRAL_API_KEY=...
+OPENAI_API_KEY=...
+OPENAI_BASE_URL=https://api.openai.com/v1
+ANTHROPIC_API_KEY=...
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+GEMINI_API_KEY=...
+GLM_API_KEY=...
+ZAI_BASE_URL=https://api.z.ai/api/paas/v4
+FIRECRAWL_API_KEY=...
+FIRECRAWL_API_URL=http://localhost:3002
+AUTOSHOW_URL_BACKEND=firecrawl
+# or
+AUTOSHOW_URL_BACKEND=glm-reader
+```
+
+`FIRECRAWL_API_KEY` is optional when `FIRECRAWL_API_URL` points at a self-hosted Firecrawl instance.
+
+### OCR Routing
+
+| Input family | Default path | Other available paths |
+|--------------|--------------|-----------------------|
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
+| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
+| MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
+| DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, OCR fallback if needed | hosted OCR routes convert through PDF first |
+| RTF | LibreOffice to PDF, then OCR | same |
+| CBZ | per-image OCR | local or hosted engines |
+| CSV | raw text | OCR flags are ignored with a warning |
+| Remote article URL | `html+defuddle` | `--url-backend firecrawl` or `--url-backend glm-reader` |
+| Local `.html` / `.htm` | `html+defuddle` | hosted article backends are ignored with a warning |
+| PNG / JPG / JPEG / TIF / TIFF | local OCR by default | hosted OCR also supported; `--gemini-ocr` supports PNG/JPG directly, and `--anthropic-ocr` / `--openai-ocr` / `--gemini-ocr` can normalize TIF/TIFF to PNG when ImageMagick is available |
+| WebP / BMP | normalize locally when possible, then OCR | `--openai-ocr`, `--anthropic-ocr`, and `--gemini-ocr` support WebP directly; `--gemini-ocr` supports BMP directly and `--openai-ocr` / `--anthropic-ocr` can normalize BMP to PNG when ImageMagick is available |
+| GIF | local OCR by default | `--openai-ocr` and `--anthropic-ocr` support GIF directly; `--gemini-ocr` can normalize GIF to PNG when ImageMagick is available |
+
+### Article Backends
+
+- `defuddle` is the default backend for article-like HTML inputs.
+- Remote article URLs use `defuddle` unless you pass `--url-backend firecrawl`, `--url-backend glm-reader`, or set `AUTOSHOW_URL_BACKEND`.
+- Local `.html` and `.htm` files always use `defuddle`, even if a hosted backend is requested.
+- OCR engine flags do not apply to article extraction.
+- If `defuddle` cannot extract meaningful content, the command suggests retrying with `--url-backend firecrawl`.
+
+### EPUB Options
+
+#### Inspect Modes
+
+| Flag | Result |
+|------|--------|
+| `--epub-bun` | Inspect EPUB structure with the Bun ZIP/XML parser and write structured EPUB data into `run.json` |
+| `--epub-calibre` | Inspect EPUB structure with Calibre and write the same structured EPUB shape into `run.json` |
+
+- Inspect mode is metadata-only for EPUB inputs.
+- If `--out` is set in inspect mode, it must be `json`.
+- `--chapters` and `--length` are ignored in inspect mode.
+
+#### Native EPUB Export
+
+The default EPUB path writes cleaned native text instead of synthetic `Page N` output.
+
+- `--chapters` writes one cleaned file per kept section under `chapters/`.
+- `--length <n>` uses a hard limit of `n * 1000` characters and writes `chunks/` side artifacts.
+- `--chapters --length <n>` splits oversized section files with `-part-NNN` suffixes.
+- `--chapters` and `--length` are ignored for non-EPUB/non-PDF inputs and for EPUB runs that use a hosted OCR engine or image/PDF OCR path.
+
+### PDF Chapter Detection
+
+- `--chapters` on a PDF runs chapter autodetection and writes best-effort chapter files under `chapters/`.
+- Detection is local-first by default and uses PDF bookmarks, TOC-like pages, printed-page-to-PDF-page mapping, and heading fallback.
+- `--pdf-chapter-mode local` keeps detection fully heuristic and local.
+- `--pdf-chapter-mode auto` starts local and only tries model assistance when the local result is weak and a default LLM is configured.
+- `--pdf-chapter-mode llm` always attempts the model-assisted resolver after building the local evidence dossier.
+- `--length <n>` only affects PDFs when `--chapters` is also set; it hard-splits oversized chapter files with `-part-NNN` suffixes.
+- Detection diagnostics are written into `run.json` under `step2.pdfChapterDetection`, and the export summary is written under `step2.chapterExport`.
+
+### OCR Examples
+
+```bash
+# Default PDF extraction
+bun as extract input/examples/document/1-document.pdf
+
+# JSON output
+bun as extract input/examples/document/1-document.pdf --out json
+
+# PDF chapter autodetection
+bun as extract input/examples/document/3-document.pdf --chapters
+
+# PDF chapter autodetection with model-assisted fallback
+bun as extract input/examples/document/3-document.pdf --chapters --pdf-chapter-mode auto
+
+# Native EPUB extraction plus chapter side artifacts
+bun as extract input/examples/document/1-epub.epub --chapters
+
+# Native EPUB chunk side artifacts at 50k characters
+bun as extract input/examples/document/1-epub.epub --length 50
+
+# OCRmyPDF path
+bun as extract input/examples/document/1-document.pdf --ocrmypdf
+
+# Explicit Tesseract path
+bun as extract input/examples/document/1-document.pdf --tesseract
+
+# Hosted OCR
+bun as extract input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
+bun as extract input/examples/document/1-document.pdf --glm-ocr glm-ocr
+bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
+bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
+bun as extract input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-lite-preview
+
+# Fan out across every OCR provider in price mode
+bun as extract input/examples/document/1-document.pdf --all-ocr --price
+
+# Remote article extraction
+bun as extract https://ajcwebdev.com
+bun as extract https://ajcwebdev.com --url-backend firecrawl
+
+# Batch URL list extraction
+bun as extract ./input/examples/batch/2-urls.md --batch-all
+
+# Local HTML always uses defuddle
+bun as extract ./input/article.html --out json
+
+# EPUB inspect modes
+bun as extract input/examples/document/1-epub.epub --epub-bun --out json
+bun as extract input/examples/document/1-epub.epub --epub-calibre --out json
+```
+
+### OCR Flags
+
+| Flag | Description |
+|------|-------------|
+| `--lang <codes>` | Tesseract language codes such as `eng` or `eng+fra` |
+| `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
+| `--password <value>` | Password for encrypted PDFs |
+| `--tesseract` | Use Tesseract explicitly |
+| `--ocrmypdf` | Use OCRmyPDF |
+| `--paddle-ocr` | Use PaddleOCR |
+| `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
+| `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
+| `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
+| `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
+| `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
+| `--all-ocr` | Enable every supported OCR provider/model for this command |
+| `--dpi <n>` | Render DPI for OCR pages |
+| `--psm <n>` | Tesseract page segmentation mode |
+| `--oem <n>` | Tesseract OCR engine mode |
+| `--page-separator <text>` | Custom page separator string |
+| `--preserve-spaces` | Enable Tesseract `preserve_interword_spaces=1` |
+| `--rotate <degrees>` | Rotate pages before OCR |
+| `--chapters` | EPUB native text runs or PDF autodetection: write chapter files under `chapters/` |
+| `--length <n>` | Hard export limit in thousands of characters; for EPUB alone writes `chunks/`, and with `--chapters` splits oversized EPUB or PDF chapter files |
+| `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
+| `--url-backend <backend>` | Article backend: `defuddle`, `firecrawl`, or `glm-reader` |
+| `--epub-bun` | Inspect EPUB structure with the Bun parser |
+| `--epub-calibre` | Inspect EPUB structure with Calibre |
+| `--price` | Show the aggregated OCR estimate and exit |
+
+---
+
+## X Space Path
+
+X/Twitter Space URLs, post URLs, and raw Space IDs are auto-detected and processed via the X v2 API. No special flags are needed.
+
+### X Space Setup
+
+Set the `X_BEARER_TOKEN` environment variable. Create a Bearer Token at [developer.x.com](https://developer.x.com/en/portal/dashboard).
+
+### Supported URL Patterns
+
+| Pattern | Example |
+|---------|---------|
+| Space URL | `https://x.com/i/spaces/<id>` |
+| Twitter Space URL | `https://twitter.com/i/spaces/<id>` |
+| Post URL (handle) | `https://x.com/<handle>/status/<id>` |
+| Post URL (web) | `https://x.com/i/web/status/<id>` |
+| Raw Space ID | `1DXxyRYNejbKM` (1-13 alphanumeric characters) |
+
+Mobile (`mobile.x.com`, `mobile.twitter.com`) and www variants are also supported.
+
+### X Space Examples
+
+```bash
+# Space URL
+bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
+
+# Twitter-era Space URL
+bun as extract "https://twitter.com/i/spaces/1DXxyRYNejbKM"
+
+# Post URL referencing a Space
+bun as extract "https://x.com/user/status/1234567890"
+
+# Raw Space ID (when no local file with that name exists)
+bun as extract 1DXxyRYNejbKM
+```
+
+### X Space Output
+
+X Space extraction writes three files to the output directory:
+
+- `result.json` — full JSON artifact with Space metadata, user profiles, post references, sources, and error details
+- `extraction.md` — Markdown report with summary table, Spaces table, posts table, and errors
+- `run.json` — run manifest
+
+### X Space Batch Support
+
+X Space URLs work in batch input lists (`.md` / `.txt` files) alongside other URL types. Each URL is classified individually — YouTube URLs route to STT, document URLs route to OCR, and X URLs route to the X API:
+
+```bash
+bun as extract input/spaces.txt --batch-all
+```
+
+---
+
+## STT Pricing And Manifests
 
 deAPI uses live provider pricing when its quote endpoint succeeds.
 
@@ -246,6 +501,8 @@ Happy Scribe price preflight is intentionally side-effect free.
 
 ## Notes
 
+### STT Notes
+
 - Before any hosted STT provider upload, Autoshow now stages one shared stripped audio-only artifact. The default hosted artifact is mono AAC-LC in `.m4a` capped at 96 kbps, preserves the original sample rate, and drops cover art/chapters/metadata/extra streams. Low-bitrate mono `.m4a`/AAC and `.mp3` inputs stay on a stream-copy cleanup path instead of taking a second lossy encode.
 - Single-provider STT runs write root `transcription.txt` plus root `result.json`.
 - Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
@@ -258,3 +515,31 @@ Happy Scribe price preflight is intentionally side-effect free.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.
 - STT batch roots now include `stt-summary.json`, which records per-item caption-vs-STT routing alongside completion status.
 - Backfill existing STT outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
+
+### OCR Notes
+
+- Standalone `extract` document runs write the root extraction artifact (`extraction.txt` or `result.json`) plus `run.json`.
+- EPUB export and PDF chapter autodetection write additive `chapters/` or `chunks/` side artifacts inside the same output directory.
+- Supported document formats include PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, and CBZ.
+- Supported image formats include PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, and GIF.
+- Mistral OCR accepts PDF and standard images (`PNG`, `JPG`, `TIF`); GLM OCR accepts PDF plus `PNG` and `JPG`; OpenAI OCR accepts PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` directly; Anthropic OCR accepts standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` directly; Gemini OCR accepts PDF plus `PNG`, `JPG`, `WEBP`, and `BMP` directly.
+- OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
+- Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
+- Anthropic OCR currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs.
+- Anthropic OCR splits PDFs into internal 10-page Files API uploads, sums token usage across chunks, and best-effort deletes uploaded files after each chunk run.
+- Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
+- GLM OCR currently enforces the bundled docs caps from `project/links/glm-all-links.md`: images up to 10 MB, PDFs up to 50 MB, and PDFs up to 100 pages.
+- OpenAI OCR currently enforces the bundled PDF size cap from `project/links/openai-all-links.md`: PDFs up to 50 MB.
+- Gemini OCR currently enforces the bundled docs caps from `project/links/gemini-all-links.md`: inline PDFs up to 50 MB, inline non-PDF inputs up to 100 MB, Files API uploads up to 2 GB per file, and PDFs up to 1000 pages.
+- No numeric Mistral OCR or Firecrawl file-size/page-count caps were found in `project/links/all-all-links.md`, so this CLI does not enforce any new numeric limits for those providers from that source.
+- Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
+- Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
+- Backfill existing OCR outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
+- Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md).
+- Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.
+
+### X Space Notes
+
+- X Space extraction is only supported by the `extract` command. Other commands (`metadata`, `download`, `stt`, `ocr`, `write`) reject X links with a clear error.
+- Post URLs that don't reference a Space still produce a report with the post metadata and an empty Spaces section.
+- The X API has rate limits. Batch processing of many X URLs may encounter 429 responses.

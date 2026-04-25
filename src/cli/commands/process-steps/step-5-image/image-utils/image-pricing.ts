@@ -1,8 +1,11 @@
 import {
   isNativeGeminiImageModel,
   validateGeminiImageModel,
+  validateGlmImageModel,
+  validateGrokImageModel,
   validateMinimaxImageModel,
-  validateOpenAIImageModel
+  validateOpenAIImageModel,
+  validateRunwayImageModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getImageCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { ImageCostEstimate, EstimateImageCostOptions } from '~/types'
@@ -13,6 +16,9 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
   const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
   const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
+  const glmModels = options.glmImageModels ?? (options.glmImageModel ? [options.glmImageModel] : [])
+  const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
+  const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
 
   for (const rawModel of geminiModels) {
     const model = validateGeminiImageModel(rawModel)
@@ -54,13 +60,55 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
     })
   }
 
+  for (const rawModel of glmModels) {
+    const model = validateGlmImageModel(rawModel)
+    const costPerImageCents = getImageCost('glm', model)
+    estimates.push({
+      provider: 'glm',
+      model,
+      imageCount: 1,
+      costPerImageCents,
+      totalCost: costPerImageCents,
+      note: 'Approximate cost; see Z.AI pricing for exact rates'
+    })
+  }
+
+  for (const rawModel of grokModels) {
+    const model = validateGrokImageModel(rawModel)
+    const costPerImageCents = getImageCost('grok', model)
+    estimates.push({
+      provider: 'grok',
+      model,
+      imageCount: 1,
+      costPerImageCents,
+      totalCost: costPerImageCents,
+      note: 'Approximate cost; xAI publishes flat per-image billing and exact account pricing may vary'
+    })
+  }
+
+  for (const rawModel of runwayModels) {
+    const model = validateRunwayImageModel(rawModel)
+    const normalizedSize = options.imageSize?.toLowerCase()
+    const costPerImageCents = normalizedSize === '1080p' ? 8 : getImageCost('runway', model)
+    estimates.push({
+      provider: 'runway',
+      model,
+      imageCount: 1,
+      costPerImageCents,
+      totalCost: costPerImageCents,
+      note: normalizedSize === '1080p'
+        ? 'Approximate cost; Runway Gen-4 Image is estimated at 8 credits for 1080p'
+        : 'Approximate cost; Runway Gen-4 Image defaults to 5 credits for 720p'
+    })
+  }
+
   return estimates
 }
 
 export const estimateImageCost = (options: EstimateImageCostOptions): ImageCostEstimate => {
   const estimates = estimateImageCosts(options)
   if (estimates.length === 0) {
-    throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, or --minimax-image.')
+    throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, --minimax-image, --glm-image, --grok-image, or --runway-image.')
   }
 
   return estimates[0] as ImageCostEstimate

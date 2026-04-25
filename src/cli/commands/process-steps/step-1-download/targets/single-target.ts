@@ -23,7 +23,7 @@ import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-downlo
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/doc-prompt-utils'
 import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
 import type { ExtractionOptions } from '~/types'
-import type { ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
+import type { InputFamily, ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
 import { canonicalizeProcessCommand, isExtractCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
@@ -211,7 +211,7 @@ const toDocumentSourceUrl = (target: string): string => {
 const throwUnsupportedProcessInput = (
   command: ProcessCommand,
   item: string,
-  family: 'media' | 'document' | 'html_article' | 'unsupported'
+  family: InputFamily
 ): never => {
   throw CLIUsageError(`Unsupported ${command} input "${item}". ${describeUnsupportedInputForCommand(command, family)}`)
 }
@@ -646,6 +646,12 @@ const processMediaSingle = async (
     openaiImageModel: llmDefaults.openaiImageModel,
     minimaxImageModels: llmDefaults.minimaxImageModels,
     minimaxImageModel: llmDefaults.minimaxImageModel,
+    glmImageModels: llmDefaults.glmImageModels,
+    glmImageModel: llmDefaults.glmImageModel,
+    grokImageModels: llmDefaults.grokImageModels,
+    grokImageModel: llmDefaults.grokImageModel,
+    runwayImageModels: llmDefaults.runwayImageModels,
+    runwayImageModel: llmDefaults.runwayImageModel,
     imageAspectRatio: llmDefaults.imageAspectRatio,
     imageSize: llmDefaults.imageSize,
     imageQuality: llmDefaults.imageQuality,
@@ -1097,6 +1103,63 @@ const processDownloadPreparedDocument = async (
   }
 }
 
+const processXSpace = async (
+  target: string,
+  baseDir: string,
+  _opts: RuntimeOptions,
+  batchChildContext?: BatchChildRunContext
+): Promise<BatchItemProcessResult> => {
+  const bearerToken = process.env['X_BEARER_TOKEN']
+  if (!bearerToken) {
+    throw CLIUsageError(
+      'X_BEARER_TOKEN environment variable is required for X/Twitter Space extraction. '
+      + 'Create a Bearer Token at https://developer.x.com/en/portal/dashboard'
+    )
+  }
+
+  const { parseSpaceInput, XApiClient, collectSpaces, renderSpacesJson, renderSpacesMarkdown } = await import('~/cli/commands/process-steps/step-2-extract/spaces')
+
+  const parsedInput = parseSpaceInput(target)
+  const client = new XApiClient({ bearerToken })
+  const artifact = await collectSpaces({
+    client,
+    input: parsedInput
+  })
+
+  const firstSpace = artifact.spaces[0]
+  const label = firstSpace?.title?.trim() || `x-space-${parsedInput.ids[0] ?? 'unknown'}`
+
+  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+  const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
+    title: label,
+    fallbackLabel: label
+  }) ?? `${effectiveBaseDir}/${createUniqueDirectoryName(label)}`
+  await ensureDirectory(outputDir)
+
+  const jsonReport = renderSpacesJson(artifact)
+  await Bun.write(`${outputDir}/result.json`, jsonReport)
+
+  const mdReport = renderSpacesMarkdown(artifact)
+  await Bun.write(`${outputDir}/extraction.md`, mdReport)
+
+  await writeRunManifest(outputDir, 'extract', {
+    step1: {
+      title: label,
+      source: 'x-space',
+      spaceCount: artifact.totals.spaces,
+      errorCount: artifact.totals.errors
+    }
+  })
+
+  l.report.complete(outputDir, {
+    result: 'result.json',
+    extraction: 'extraction.md',
+    run: 'run.json'
+  })
+
+  return { outputDir }
+}
+
 export const processSingleTarget = async (
   command: ProcessCommand,
   item: string,
@@ -1116,6 +1179,9 @@ export const processSingleTarget = async (
   if (command === 'metadata') {
     if (isLikelyUrl(item)) {
       const kind = await classifyUrlInput(item, opts)
+      if (kind === 'url_x_space') {
+        throwUnsupportedProcessInput(command, item, 'x_space')
+      }
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
@@ -1153,6 +1219,9 @@ export const processSingleTarget = async (
   if (command === 'download') {
     if (isLikelyUrl(item)) {
       const kind = await classifyUrlInput(item, opts)
+      if (kind === 'url_x_space') {
+        throwUnsupportedProcessInput(command, item, 'x_space')
+      }
       if (kind === 'url_direct_document') {
         const downloaded = await downloadDocumentUrlToTempFile(item)
         try {
@@ -1201,6 +1270,14 @@ export const processSingleTarget = async (
 
   if (isLikelyUrl(item)) {
     const kind = await classifyUrlInput(item, opts)
+
+    if (kind === 'url_x_space') {
+      if (!isExtractCommand(command)) {
+        throwUnsupportedProcessInput(command, item, 'x_space')
+      }
+      return await processXSpace(item, baseDir, opts, batchChildContext)
+    }
+
     if (kind === 'url_direct_document') {
       if (isSttCommand(command)) {
         throwUnsupportedProcessInput(command, item, 'document')
@@ -1249,7 +1326,12 @@ export const processSingleTarget = async (
   }
 
   const exists = await fileExists(item)
+
   if (!exists) {
+    const { isSpaceId } = await import('~/cli/commands/process-steps/step-2-extract/spaces/input')
+    if (isSpaceId(item) && isExtractCommand(command)) {
+      return await processXSpace(item, baseDir, opts, batchChildContext)
+    }
     throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help ${displayCommand}`)
   }
 

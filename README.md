@@ -42,6 +42,9 @@ bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 # Extraction only (media routes to STT, documents/articles route to OCR)
 bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
+# X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
+bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
+
 # Full write pipeline: download/extract/transcribe + summary output
 bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.2
 

@@ -342,6 +342,12 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestImageModel('openai')
     case 'minimax-image':
       return selectCheapestImageModel('minimax')
+    case 'glm-image':
+      return selectCheapestImageModel('glm')
+    case 'grok-image':
+      return selectCheapestImageModel('grok')
+    case 'runway-image':
+      return selectCheapestImageModel('runway')
     case 'elevenlabs-music':
       return selectCheapestMusicModel('elevenlabs')
     case 'minimax-music':

@@ -49,4 +49,4 @@ Coverage (requires ffmpeg, libreoffice):
 - Valid CSV fixture extracts as raw text
 - Binary `.csv` invalid fixture is rejected as non-text content
 
-Local setup prerequisites are in [`ocr-document.md#setup`](../../process-steps/step-2-ocr/ocr-document.md#setup) and [`sample.md`](./sample.md).
+Local setup prerequisites are in [`extract.md#ocr-setup`](../../process-steps/step-2-extract/extract.md#ocr-setup) and [`sample.md`](./sample.md).

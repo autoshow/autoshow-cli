@@ -1,19 +1,27 @@
 import { extname } from 'node:path'
-import type { GeminiImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, Step5Metadata } from '~/types'
+import type { GeminiImageModel, GlmImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, RunwayImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   isNativeGeminiImageModel,
   supportsGeminiImageSize,
   validateGeminiImageModel,
+  validateGlmImageModel,
+  validateGrokImageModel,
   validateMinimaxImageModel,
-  validateOpenAIImageModel
+  validateOpenAIImageModel,
+  validateRunwayImageModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureGeminiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
+import { ensureGrokImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { ensureOpenAIImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
+import { ensureRunwayImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
+import { normalizeGlmImageSize, runGlmImageGen } from './image-services/glm/run-glm-image-gen'
+import { normalizeGrokImageResolution, runGrokImageGen } from './image-services/grok/run-grok-image-gen'
 import { runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
 import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
+import { normalizeRunwayImageRatio, normalizeRunwayImageResolution, runRunwayImageGen } from './image-services/runway/run-runway-image-gen'
 
 export const sanitizeImageModelName = sanitizeModelName
 
@@ -122,6 +130,9 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
   const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
   const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
   const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
+  const glmModels = options.glmImageModels ?? (options.glmImageModel ? [options.glmImageModel] : [])
+  const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
+  const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
 
   for (const rawModel of geminiModels) {
     const model: GeminiImageModel = validateGeminiImageModel(rawModel)
@@ -173,6 +184,67 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
         return await runMinimaxImageGen(prompt, outputDir, {
           model,
           aspectRatio: options.imageAspectRatio
+        })
+      }
+    })
+  }
+
+  for (const rawModel of glmModels) {
+    const model: GlmImageModel = validateGlmImageModel(rawModel)
+    normalizeGlmImageSize(options.imageSize)
+
+    targets.push({
+      service: 'glm',
+      model,
+      run: async (prompt, outputDir) => {
+        return await runGlmImageGen(prompt, outputDir, {
+          model,
+          size: options.imageSize
+        })
+      }
+    })
+  }
+
+  for (const rawModel of grokModels) {
+    const model: GrokImageModel = validateGrokImageModel(rawModel)
+    normalizeGrokImageResolution(options.imageSize)
+
+    targets.push({
+      service: 'grok',
+      model,
+      run: async (prompt, outputDir) => {
+        await ensureGrokImageGenSetup()
+        return await runGrokImageGen(prompt, outputDir, {
+          model,
+          aspectRatio: options.imageAspectRatio,
+          imageSize: options.imageSize,
+          quality: options.imageQuality
+        })
+      }
+    })
+  }
+
+  for (const rawModel of runwayModels) {
+    const model: RunwayImageModel = validateRunwayImageModel(rawModel)
+    const resolution = normalizeRunwayImageResolution(options.imageSize)
+    normalizeRunwayImageRatio(options.imageAspectRatio, resolution)
+    const unsupported: string[] = []
+    if (options.imageFormat) unsupported.push('--image-format')
+    if (options.imageBackground) unsupported.push('--image-background')
+    if (options.imageQuality) unsupported.push('--image-quality')
+    if (unsupported.length > 0) {
+      throw CLIUsageError(`${unsupported.join(', ')} ${unsupported.length === 1 ? 'is' : 'are'} not supported by Runway image generation.`)
+    }
+
+    targets.push({
+      service: 'runway',
+      model,
+      run: async (prompt, outputDir) => {
+        await ensureRunwayImageGenSetup()
+        return await runRunwayImageGen(prompt, outputDir, {
+          model,
+          aspectRatio: options.imageAspectRatio,
+          imageSize: options.imageSize
         })
       }
     })

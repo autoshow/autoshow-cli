@@ -35,4 +35,4 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --t
 
 - [Service Tests](service-tests.md)
 - [Local Tests](local-tests.md)
-- [OCR Path](../commands/process-steps/step-2-ocr/ocr-document.md)
+- [extract](../commands/process-steps/step-2-extract/extract.md)
