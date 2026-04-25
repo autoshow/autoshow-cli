@@ -120,6 +120,9 @@ export type ComputeEstimatedCostsInput = {
   openaiSttModel?: string | undefined
   geminiSttModel?: string | undefined
   glmSttModel?: string | undefined
+  togetherSttModel?: string | undefined
+  fireworksSttModel?: string | undefined
+  cloudflareSttModel?: string | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
   openaiOcrModel?: string | undefined

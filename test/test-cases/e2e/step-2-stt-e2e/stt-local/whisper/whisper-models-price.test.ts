@@ -16,7 +16,7 @@ for (const model of WHISPER_MODELS) {
   budgetedTest(budgetKey, `whisper model ${model} --price prints estimate`, async () => {
     const result = await runCommand([
       'src/cli/create-cli.ts',
-      'stt',
+      'extract',
       STABLE_LOCAL_AUDIO_PATH,
       '--whisper',
       model,

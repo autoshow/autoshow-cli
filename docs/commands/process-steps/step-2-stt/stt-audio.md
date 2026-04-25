@@ -56,6 +56,9 @@ bun as setup --step reverb
 |----------|--------------|-------------------|
 | Groq | `GROQ_API_KEY` | - |
 | DeepInfra | `DEEPINFRA_API_KEY` | `DEEPINFRA_BASE_URL` |
+| Together | `TOGETHER_API_KEY` | `TOGETHER_BASE_URL` |
+| Fireworks | `FIREWORKS_API_KEY` | `FIREWORKS_BASE_URL` |
+| Cloudflare | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | - |
 | deAPI | `DEAPI_API_KEY` | `DEAPI_BASE_URL` |
 | Happy Scribe | `HAPPYSCRIBE_API_KEY` | `HAPPYSCRIBE_BASE_URL`, `HAPPYSCRIBE_ORGANIZATION_ID` |
 | ElevenLabs | `ELEVENLABS_API_KEY` | - |
@@ -111,6 +114,9 @@ If no engine flag is provided, `extract` defaults to Whisper with the `tiny` mod
 |--------|-----------|-------------------|
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3-turbo`, `whisper-large-v3` |
 | DeepInfra Whisper | `--deepinfra-stt <model>` | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
+| Together Whisper | `--together-stt <model>` | `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
+| Fireworks Whisper | `--fireworks-stt <model>` | `whisper-v3-turbo`, `whisper-v3`; single-speaker OpenAI-compatible Whisper |
+| Cloudflare Workers AI | `--cloudflare-stt <model>` | `whisper-large-v3-turbo`, `whisper`; Cloudflare REST API |
 | OpenAI STT | `--openai-stt <model>` | `gpt-4o-mini-transcribe`, `gpt-4o-transcribe`; single-speaker transcription |
 | Gemini STT | `--gemini-stt <model>` | `gemini-3-flash-preview`; prompted JSON transcription via Gemini multimodal input |
 | GLM STT | `--glm-stt <model>` | `glm-asr-2512`; single-speaker transcription with 30-second auto-split policy |
@@ -149,6 +155,9 @@ bun as extract input/examples/audio/1-audio.mp3 --aws-stt
 bun as extract input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt
 bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
+bun as extract input/examples/audio/1-audio.mp3 --together-stt
+bun as extract input/examples/audio/1-audio.mp3 --fireworks-stt whisper-v3-turbo
+bun as extract input/examples/audio/1-audio.mp3 --cloudflare-stt whisper-large-v3-turbo
 bun as extract input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-mini-transcribe
 bun as extract input/examples/audio/1-audio.mp3 --gemini-stt
 bun as extract input/examples/audio/1-audio.mp3 --glm-stt
@@ -189,6 +198,9 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--rev-stt <model>` | Select one or more Rev STT models; omit the value to use `low_cost` |
 | `--groq-stt <model>` | Select one or more Groq STT models; omit the value to use the cheapest supported model |
 | `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models; omit the value to use `openai/whisper-large-v3-turbo` |
+| `--together-stt <model>` | Select one or more Together Whisper models; omit the value to use `openai/whisper-large-v3` |
+| `--fireworks-stt <model>` | Select one or more Fireworks Whisper models; omit the value to use `whisper-v3-turbo` |
+| `--cloudflare-stt <model>` | Select one or more Cloudflare Workers AI Whisper models; omit the value to use `whisper` |
 | `--openai-stt <model>` | Select one or more OpenAI STT models; omit the value to use `gpt-4o-mini-transcribe` |
 | `--gemini-stt <model>` | Select one or more Gemini STT models; omit the value to use `gemini-3-flash-preview` |
 | `--glm-stt <model>` | Select one or more GLM STT models; omit the value to use `glm-asr-2512` |

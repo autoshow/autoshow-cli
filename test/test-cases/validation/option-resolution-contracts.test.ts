@@ -15,6 +15,7 @@ describe('option resolution contracts', () => {
     const opts = buildOptsFromFlags(false, {
       openai: 'gpt-5.4-mini',
       'openai-stt': 'gpt-4o-mini-transcribe',
+      'together-stt': 'openai/whisper-large-v3',
       'deepgram-stt': 'nova-3',
       'tesseract-ocr': true,
       'youtube-captions': true,
@@ -29,6 +30,7 @@ describe('option resolution contracts', () => {
 
     expect(opts.openaiModel).toBe('gpt-5.4-mini')
     expect(opts.openaiSttModel).toBe('gpt-4o-mini-transcribe')
+    expect(opts.togetherSttModel).toBe('openai/whisper-large-v3')
     expect(opts.deepgramSttModel).toBe('nova-3')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
@@ -100,9 +102,11 @@ describe('option resolution contracts', () => {
 
     expect(expansions['deepgram-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-stt']?.shortcut).toBe('all-stt')
+    expect(expansions['cloudflare-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('openai-stt')
+    expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('cloudflare')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('tesseract')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('openai')

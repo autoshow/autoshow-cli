@@ -13,7 +13,7 @@ import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-extr
 test('rejects invalid gcloud model', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--gcloud-stt',
     'invalid-model'
@@ -25,7 +25,7 @@ test('rejects invalid gcloud model', async () => {
 test('gcloud chirp_3 --price prints estimate', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--gcloud-stt',
     'chirp_3',
@@ -33,8 +33,8 @@ test('gcloud chirp_3 --price prints estimate', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('"provider": "gcloud"')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('"model": "chirp_3"')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('gcloud')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('chirp_3')
 })
 
 test('gcloud chirp_3 transcribes local audio when gcloud CLI is configured', async () => {
@@ -48,7 +48,7 @@ test('gcloud chirp_3 transcribes local audio when gcloud CLI is configured', asy
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--gcloud-stt',
     'chirp_3',

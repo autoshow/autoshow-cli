@@ -130,6 +130,14 @@ defineSTTServiceTest({
 })
 
 defineSTTServiceTest({
+  models: ['openai/whisper-large-v3'],
+  cliFlag: '--together-stt',
+  sttService: 'together',
+  envVarKey: 'TOGETHER_API_KEY',
+  envVarDescription: 'Together transcription',
+})
+
+defineSTTServiceTest({
   models: ['WhisperLargeV3'],
   cliFlag: '--deapi-stt',
   sttService: 'deapi',
@@ -159,6 +167,23 @@ defineSTTServiceTest({
   sttService: 'groq',
   envVarKey: 'GROQ_API_KEY',
   envVarDescription: 'Groq whisper transcription',
+})
+
+defineSTTServiceTest({
+  models: ['whisper-v3-turbo', 'whisper-v3'],
+  cliFlag: '--fireworks-stt',
+  sttService: 'fireworks',
+  envVarKey: 'FIREWORKS_API_KEY',
+  envVarDescription: 'Fireworks transcription',
+})
+
+defineSTTServiceTest({
+  models: ['whisper-large-v3-turbo', 'whisper'],
+  cliFlag: '--cloudflare-stt',
+  sttService: 'cloudflare',
+  envVarKey: 'CLOUDFLARE_API_TOKEN',
+  extraEnvVarKeys: ['CLOUDFLARE_ACCOUNT_ID'],
+  envVarDescription: 'Cloudflare transcription',
 })
 
 defineSTTServiceTest({
@@ -201,7 +226,7 @@ test('deapi --price uses the exact pricing endpoint for local audio', async () =
   try {
     const result = await runCommand([
       'src/cli/create-cli.ts',
-      'stt',
+      'extract',
       STABLE_LOCAL_AUDIO_PATH,
       '--deapi-stt',
       'WhisperLargeV3',
@@ -239,7 +264,7 @@ test('deapi run manifest records exact estimated and actual STT cost fields', as
   try {
     const result = await runCommand([
       'src/cli/create-cli.ts',
-      'stt',
+      'extract',
       STABLE_LOCAL_AUDIO_PATH,
       '--deapi-stt',
       'WhisperLargeV3',
@@ -311,7 +336,7 @@ test('elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--elevenlabs-stt',
     'scribe_v2',

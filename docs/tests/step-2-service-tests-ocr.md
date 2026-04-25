@@ -1,6 +1,6 @@
 # Step 2 Service Tests: OCR
 
-Hosted OCR and article-extraction coverage for the `ocr` command.
+Hosted OCR and article-extraction coverage for the `extract` document/OCR route.
 
 ## Quick Start
 
@@ -35,4 +35,4 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --t
 
 - [Service Tests](service-tests.md)
 - [Local Tests](local-tests.md)
-- [OCR Command](../commands/process-steps/step-2-ocr/ocr-document.md)
+- [OCR Path](../commands/process-steps/step-2-ocr/ocr-document.md)

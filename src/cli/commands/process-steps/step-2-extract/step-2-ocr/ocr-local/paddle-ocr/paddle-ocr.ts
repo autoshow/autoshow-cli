@@ -78,8 +78,8 @@ export const setupPaddleOcr = async (): Promise<void> => {
     l.write('success', 'PaddleOCR Setup', {
       category: 'command',
       humanTable: createHumanTable([
-        { status: 'complete', command: 'bun as ocr input/examples/document/1-document.pdf --paddle-ocr' },
-        { status: 'complete', command: 'bun as ocr input/examples/document/1-document.jpg --paddle-ocr' }
+        { status: 'complete', command: 'bun as extract input/examples/document/1-document.pdf --paddle-ocr' },
+        { status: 'complete', command: 'bun as extract input/examples/document/1-document.jpg --paddle-ocr' }
       ], ['status', 'command'])
     })
   }

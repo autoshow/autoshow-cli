@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines 13 named commands: `metadata`, `download`, `ocr`, `stt`, `write`, `tts`, `image`, `video`, `music`, `config`, `cache`, `setup`, `links`
+   - Defines named commands: `metadata`, `download`, `extract`, `resume`, `write`, `tts`, `image`, `video`, `music`, `config`, `cache`, `setup`, `links`, `benchmark`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -78,11 +78,11 @@ src/cli/create-cli.ts
 │  COMMANDS  (src/cli/create-cli.ts + per-step define-*-command.ts files)      │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
-│  │    metadata      │  │      write       │  │   stt            │            │
+│  │    metadata      │  │      write       │  │   extract        │            │
 │  │                  │  │                  │  │                  │            │
-│  │ Metadata only    │  │ Download +       │  │ Download +       │            │
-│  │ (no download)    │  │ Transcribe +     │  │ Transcribe only  │            │
-│  │                  │  │ LLM Summary      │  │ (skipLLM=true)   │            │
+│  │ Metadata only    │  │ Download +       │  │ Media STT or     │            │
+│  │ (no download)    │  │ Transcribe +     │  │ document OCR     │            │
+│  │                  │  │ LLM Summary      │  │ route            │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
 │  ┌──────────────────┐                                                        │

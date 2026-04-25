@@ -161,14 +161,14 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 
 | Command | Required Dependencies |
 |---------|----------------------|
-| `stt` | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
-| `stt --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `ocr` | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr` API key) |
-| `ocr --anthropic-ocr` | `ANTHROPIC_API_KEY` |
-| `ocr --gemini-ocr` | `GEMINI_API_KEY` |
-| `write` (media) | All of `stt` + llama.cpp (or LLM API key) |
+| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
+| `extract --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
+| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr` API key) |
+| `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
+| `extract --gemini-ocr` | `GEMINI_API_KEY` |
+| `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
-| `write` (document) | All of `ocr` + llama.cpp (or LLM API key) |
+| `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |
 | `tts --groq-tts` | `GROQ_API_KEY` |

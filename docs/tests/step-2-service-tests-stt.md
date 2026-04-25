@@ -30,4 +30,4 @@ All current step 2 STT service suites resolve mapped price commands, including d
 
 - [Service Tests](service-tests.md)
 - [Local Tests](local-tests.md)
-- [STT Command](../commands/process-steps/step-2-stt/stt-audio.md)
+- [STT Path](../commands/process-steps/step-2-stt/stt-audio.md)

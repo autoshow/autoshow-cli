@@ -36,6 +36,9 @@ const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'openai-stt',
   'gemini-stt',
   'glm-stt',
+  'together',
+  'fireworks',
+  'cloudflare',
   'youtube-captions'
 ])
 

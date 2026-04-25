@@ -25,6 +25,7 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'gcloud',
   'aws',
   'deepgram',
+  'deepinfra',
   'deapi',
   'elevenlabs',
   'soniox',
@@ -39,6 +40,9 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'openai-stt',
   'gemini-stt',
   'glm-stt',
+  'together',
+  'fireworks',
+  'cloudflare',
   'youtube-captions'
 ])
 

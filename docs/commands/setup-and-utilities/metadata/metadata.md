@@ -2,7 +2,7 @@
 
 Collect and display metadata for media or documents without downloading files, running transcription, extraction, or LLM steps.
 
-This is the most fundamental command in the pipeline hierarchy: `metadata` → `download` → `stt`/`ocr` → `write`.
+This is the most fundamental command in the pipeline hierarchy: `metadata` → `download` → `extract` → `write`.
 
 ## Outline
 

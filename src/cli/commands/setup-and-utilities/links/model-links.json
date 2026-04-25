@@ -63,6 +63,34 @@
       "https://console.groq.com/docs/text-to-speech.md"
     ]
   },
+  "Together": {
+    "General": [
+      "https://docs.together.ai/docs/introduction"
+    ],
+    "STT": [
+      "https://docs.together.ai/reference/audio-transcriptions",
+      "https://www.together.ai/models/openai-whisper-large-v3"
+    ]
+  },
+  "Fireworks": {
+    "General": [
+      "https://docs.fireworks.ai/getting-started/introduction"
+    ],
+    "STT": [
+      "https://docs.fireworks.ai/api-reference/audio-transcriptions",
+      "https://fireworks.ai/pricing"
+    ]
+  },
+  "Cloudflare": {
+    "General": [
+      "https://developers.cloudflare.com/workers-ai/"
+    ],
+    "STT": [
+      "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/",
+      "https://developers.cloudflare.com/workers-ai/models/whisper/"
+    ]
+  },
   "OpenAI": {
     "General": [
       "https://developers.openai.com/api/docs/pricing.md",

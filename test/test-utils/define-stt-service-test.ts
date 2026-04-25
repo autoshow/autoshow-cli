@@ -21,6 +21,7 @@ export const defineSTTServiceTest = ({
   sttService,
   envVarKey,
   envVarDescription,
+  extraEnvVarKeys,
   extraArgs,
   timeoutMs,
 }: {
@@ -29,6 +30,7 @@ export const defineSTTServiceTest = ({
   sttService: string
   envVarKey: string
   envVarDescription: string
+  extraEnvVarKeys?: string[]
   extraArgs?: string[]
   timeoutMs?: number
 }): void => {
@@ -36,7 +38,7 @@ export const defineSTTServiceTest = ({
 
   defineInvalidModelTest(`rejects invalid ${sttService} model`, [
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     cliFlag,
     'invalid-model'
@@ -47,7 +49,7 @@ export const defineSTTServiceTest = ({
 
     definePriceEstimateTest(budgetKey, `${sttService} ${model} --price prints estimate`, [
       'src/cli/create-cli.ts',
-      'stt',
+      'extract',
       STABLE_LOCAL_AUDIO_PATH,
       cliFlag,
       model,
@@ -58,12 +60,17 @@ export const defineSTTServiceTest = ({
       if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} is required for ${envVarDescription}`)) {
         return
       }
+      for (const extraEnvVarKey of extraEnvVarKeys ?? []) {
+        if (await shouldSkipMissingEnv(extraEnvVarKey, `${extraEnvVarKey} is required for ${envVarDescription}`)) {
+          return
+        }
+      }
 
       await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 
       const outputDir = await runCommandAndExpectOutputDir(STABLE_LOCAL_AUDIO_TITLE, [
         'src/cli/create-cli.ts',
-        'stt',
+        'extract',
         STABLE_LOCAL_AUDIO_PATH,
         cliFlag,
         model,

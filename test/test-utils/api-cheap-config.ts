@@ -55,7 +55,10 @@ export const buildApiCheapSelections = () => {
     { service: 'speechmatics', flag: '--speechmatics-stt', envVar: 'SPEECHMATICS_API_KEY', model: selectCheapestSttModel('speechmatics') },
     { service: 'gladia', flag: '--gladia-stt', envVar: 'GLADIA_API_KEY', model: selectCheapestSttModel('gladia') },
     { service: 'happyscribe', flag: '--happyscribe-stt', envVar: 'HAPPYSCRIBE_API_KEY', model: selectCheapestSttModel('happyscribe') },
-    { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') }
+    { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') },
+    { service: 'together', flag: '--together-stt', envVar: 'TOGETHER_API_KEY', model: selectCheapestSttModel('together') },
+    { service: 'fireworks', flag: '--fireworks-stt', envVar: 'FIREWORKS_API_KEY', model: selectCheapestSttModel('fireworks') },
+    { service: 'cloudflare', flag: '--cloudflare-stt', envVar: 'CLOUDFLARE_API_TOKEN', model: selectCheapestSttModel('cloudflare') }
   ]
 
   const ttsSelections = [

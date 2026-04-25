@@ -70,7 +70,7 @@ podcast feeds, local text files for TTS, and prompt-driven image, video, and mus
 |------|--------------|
 | Metadata | Collect and display metadata without downloading, as terminal JSON by default or frontmatter YAML with `--markdown` |
 | Download | Fetch or normalize media/documents, then stop after download + metadata |
-| OCR | Document OCR and text extraction (`ocr`) |
+| OCR | Document OCR and text extraction (`extract` document/OCR route) |
 | STT | Audio/video transcription plus prompt artifact (`stt`) |
 | Write | Full download/ocr/stt + prompt + summary pipeline |
 | TTS | Generate speech from local markdown or text |
@@ -179,7 +179,7 @@ AutoShow exposes 16 workflow/support commands, plus `help` and `version`.
 |---------|-----------------|---------------|
 | `metadata` | metadata-only inspection | URL, file, directory, list |
 | `download` | download/normalization without OCR, STT, or write | URL, file, directory, list |
-| `ocr` | document/image/article extraction | URL, file, directory, list |
+| `extract` | document/image/article extraction, plus media STT routing | URL, file, directory, list |
 | `stt` | media transcription only | URL, file, directory, list |
 | `write` | full pipeline orchestration | URL, file, directory, list |
 | `tts` | text-to-speech | local `.md` or `.txt` |
@@ -201,13 +201,13 @@ AutoShow exposes 16 workflow/support commands, plus `help` and `version`.
 |------------|---------------------|
 | Streaming URLs | `metadata`, `download`, `stt`, `write` |
 | Direct media URLs | `metadata`, `download`, `stt`, `write` |
-| Direct document URLs | `metadata`, `download`, `ocr`, `write` |
-| Direct HTML/article URLs | `metadata`, `ocr`, `write` |
+| Direct document URLs | `metadata`, `download`, `extract`, `write` |
+| Direct HTML/article URLs | `metadata`, `extract`, `write` |
 | Local media files | `metadata`, `download`, `stt`, `write` |
-| Local document and image files | `metadata`, `download`, `ocr`, `write` |
-| Local `.html` / `.htm` files | `metadata`, `ocr`, `write` |
-| Directories | batch `metadata`, `download`, `ocr`, `stt`, `write` |
-| `.md` / `.txt` input lists | batch `metadata`, `download`, `ocr`, `stt`, `write` |
+| Local document and image files | `metadata`, `download`, `extract`, `write` |
+| Local `.html` / `.htm` files | `metadata`, `extract`, `write` |
+| Directories | batch `metadata`, `download`, `extract`, `write` |
+| `.md` / `.txt` input lists | batch `metadata`, `download`, `extract`, `write` |
 | YouTube channels / playlists | batch media workflows |
 | RSS / Atom podcast feeds | batch media workflows |
 | Local `.md` / `.txt` content files | `tts` |

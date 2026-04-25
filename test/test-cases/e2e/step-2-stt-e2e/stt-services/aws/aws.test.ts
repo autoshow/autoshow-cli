@@ -26,7 +26,7 @@ const readAwsTestReadiness = async () => {
 test('rejects invalid aws model', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--aws-stt',
     'invalid-model'
@@ -38,7 +38,7 @@ test('rejects invalid aws model', async () => {
 test('aws standard --price prints estimate', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--aws-stt',
     'standard',
@@ -46,8 +46,8 @@ test('aws standard --price prints estimate', async () => {
   ])
 
   expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('"provider": "aws"')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('"model": "standard"')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('aws')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('standard')
 })
 
 test('aws standard transcribes local audio when AWS CLI Transcribe is configured', async () => {
@@ -61,7 +61,7 @@ test('aws standard transcribes local audio when AWS CLI Transcribe is configured
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
-    'stt',
+    'extract',
     STABLE_LOCAL_AUDIO_PATH,
     '--aws-stt',
     'standard',

@@ -150,6 +150,88 @@
       }
     }
   },
+  "together": {
+    "description": "Together AI OpenAI-compatible Whisper speech-to-text",
+    "type": "api",
+    "models": {
+      "openai/whisper-large-v3": {
+        "description": "OpenAI Whisper large v3 via Together's OpenAI-compatible transcription API",
+        "costPerHourUSD": 0.09,
+        "costPerHourCents": 9,
+        "limits": {
+          "notes": "Together documents local file uploads and public URLs for wav, mp3, m4a, webm, and flac. Public docs do not publish a precise hard upload cap in the transcription API reference, so AutoShow keeps split policy notes-only and relies on retry-with-split when the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 40
+        }
+      }
+    }
+  },
+  "fireworks": {
+    "description": "Fireworks AI OpenAI-compatible Whisper speech-to-text",
+    "type": "api",
+    "models": {
+      "whisper-v3-turbo": {
+        "description": "Fireworks Whisper v3 turbo via the audio turbo transcription API",
+        "costPerHourUSD": 0.054,
+        "costPerHourCents": 5.4,
+        "limits": {
+          "effectiveBytes": 1073741824,
+          "directUploadBytes": 1073741824,
+          "notes": "Fireworks transcription docs publish a 1 GB max audio file size, supported mp3/flac/wav formats, and no audio-duration limit."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 35
+        }
+      },
+      "whisper-v3": {
+        "description": "Fireworks Whisper v3 via the audio production transcription API",
+        "costPerHourUSD": 0.09,
+        "costPerHourCents": 9,
+        "limits": {
+          "effectiveBytes": 1073741824,
+          "directUploadBytes": 1073741824,
+          "notes": "Fireworks transcription docs publish a 1 GB max audio file size, supported mp3/flac/wav formats, and no audio-duration limit."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 50
+        }
+      }
+    }
+  },
+  "cloudflare": {
+    "description": "Cloudflare Workers AI Whisper speech-to-text",
+    "type": "api",
+    "models": {
+      "whisper-large-v3-turbo": {
+        "description": "Cloudflare Workers AI OpenAI Whisper large v3 turbo",
+        "costPerHourUSD": 0.0306,
+        "costPerHourCents": 3.06,
+        "limits": {
+          "notes": "Cloudflare model docs do not publish a clear file-size or duration cap for the Workers AI STT endpoint. AutoShow keeps split policy notes-only and relies on retry-with-split for provider size errors."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 80
+        }
+      },
+      "whisper": {
+        "description": "Cloudflare Workers AI OpenAI Whisper",
+        "costPerHourUSD": 0.027,
+        "costPerHourCents": 2.7,
+        "limits": {
+          "notes": "Cloudflare model docs do not publish a clear file-size or duration cap for the Workers AI STT endpoint. AutoShow keeps split policy notes-only and relies on retry-with-split for provider size errors."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 60
+        }
+      }
+    }
+  },
   "deapi": {
     "description": "deAPI hosted Whisper transcription with exact provider quote support",
     "type": "api",

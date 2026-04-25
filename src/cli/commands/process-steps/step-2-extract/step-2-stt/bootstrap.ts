@@ -32,6 +32,9 @@ const toBootstrapProviderId = (
     case 'openai-stt':
     case 'gemini-stt':
     case 'glm-stt':
+    case 'together':
+    case 'fireworks':
+    case 'cloudflare':
       return getStep2BootstrapProviderId('stt', target.service) ?? ''
     case 'youtube-captions':
       return ''

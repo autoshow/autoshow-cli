@@ -27,6 +27,12 @@ describe('provider selection contracts', () => {
       'gladia-stt',
       'happyscribe-stt',
       'supadata-stt',
+      'openai-stt',
+      'gemini-stt',
+      'glm-stt',
+      'together-stt',
+      'fireworks-stt',
+      'cloudflare-stt',
       'whisper-stt'
     ])
   })
