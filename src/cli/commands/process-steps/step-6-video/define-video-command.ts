@@ -73,7 +73,10 @@ export const videoCommand = defineCommand({
     actual: computeActualProcessingTimes({ step6: metadata }),
   }
 
-  await writeGenerationMetadata(outputDir, 'video', metadata, cost, timing)
+  await writeGenerationMetadata(outputDir, 'video', metadata, cost, timing, {
+    input: prompt,
+    requestedProviders: videoTargets.map((t) => ({ service: t.service, model: t.model }))
+  })
 
   l.report.complete(
     outputDir,

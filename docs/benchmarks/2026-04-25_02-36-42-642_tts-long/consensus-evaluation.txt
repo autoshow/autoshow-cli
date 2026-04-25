@@ -1,0 +1,139 @@
+TTS Consensus Evaluation
+Run: 2026-04-25_02-36-42-642_tts-long
+Date: 2026-04-25
+
+INPUT SUMMARY
+
+Source: input/examples/tts/tts-long.md
+Content: Opening passage from A Tale of Two Cities by Charles Dickens
+Character count: 612
+Word count: 119
+Total providers: 15 (4 local, 11 cloud)
+
+
+LOCAL MODELS (4)
+
+1. kitten / kitten-tts-nano
+   Duration: 38.36s | Speaking rate: 15.95 c/s | File size: 1.84 MB
+   Processing time: 4,090 ms
+   Sample rate: 24 kHz
+
+2. kitten / kitten-tts-micro
+   Duration: 35.51s | Speaking rate: 17.24 c/s | File size: 1.70 MB
+   Processing time: 6,271 ms
+   Sample rate: 24 kHz
+
+3. kitten / kitten-tts-nano-0.8-int8
+   Duration: 38.16s | Speaking rate: 16.04 c/s | File size: 1.83 MB
+   Processing time: 6,518 ms
+   Sample rate: 24 kHz
+
+4. kitten / kitten-tts-mini
+   Duration: 32.41s | Speaking rate: 18.88 c/s | File size: 1.56 MB
+   Processing time: 10,640 ms
+   Sample rate: 24 kHz
+
+All kitten models run locally at zero cost with 24 kHz output. Speaking rates range from 15.95 to 18.88 c/s, all within the natural English range. Processing times span 4.1s to 10.6s, with the nano variant being fastest. The nano and nano-0.8-int8 variants produce the longest audio (38s), while mini produces the shortest (32s) at the highest speaking rate.
+
+
+CLOUD SERVICES (11)
+
+1. elevenlabs / eleven_flash_v2_5
+   Duration: 37.34s | Speaking rate: 16.39 c/s | File size: 1.19 MB
+   Processing time: 1,874 ms | Cost: 3.672 cents
+   Sample rate: 16 kHz
+
+2. elevenlabs / eleven_turbo_v2_5
+   Duration: 38.27s | Speaking rate: 15.99 c/s | File size: 1.22 MB
+   Processing time: 1,323 ms | Cost: 3.672 cents
+   Sample rate: 16 kHz
+
+3. elevenlabs / eleven_v3
+   Duration: 40.32s | Speaking rate: 15.18 c/s | File size: 1.29 MB
+   Processing time: 15,994 ms | Cost: 7.344 cents
+   Sample rate: 16 kHz
+
+4. minimax / speech-2.8-turbo
+   Duration: 39.02s | Speaking rate: 15.68 c/s | File size: 1.25 MB
+   Processing time: 13,025 ms | Cost: 3.672 cents
+   Sample rate: 16 kHz
+
+5. minimax / speech-2.8-hd
+   Duration: 40.36s | Speaking rate: 15.17 c/s | File size: 1.29 MB
+   Processing time: 17,731 ms | Cost: 6.120 cents
+   Sample rate: 16 kHz
+
+6. groq / canopylabs/orpheus-v1-english
+   Duration: 52.40s | Speaking rate: 11.68 c/s | File size: 1.68 MB
+   Processing time: 8,252 ms | Cost: 1.958 cents
+   Sample rate: 16 kHz | 4 chunks
+
+7. openai / gpt-4o-mini-tts
+   Duration: 43.40s | Speaking rate: 14.10 c/s | File size: 1.39 MB
+   Processing time: 7,490 ms | Cost: 0.771 cents
+   Sample rate: 16 kHz
+
+8. gemini / gemini-3.1-flash-tts-preview
+   Duration: 45.76s | Speaking rate: 13.37 c/s | File size: 1.46 MB
+   Processing time: 20,760 ms | Cost: 1.285 cents
+   Sample rate: 16 kHz
+
+9. gemini / gemini-2.5-flash-preview-tts
+   Duration: 29.77s | Speaking rate: 20.56 c/s | File size: 0.95 MB
+   Processing time: 14,917 ms | Cost: 0.031 cents
+   Sample rate: 16 kHz
+
+10. gemini / gemini-2.5-pro-preview-tts
+    Duration: 55.21s | Speaking rate: 11.08 c/s | File size: 1.77 MB
+    Processing time: 33,835 ms | Cost: 0.061 cents
+    Sample rate: 16 kHz
+
+11. deepgram / aura-2-thalia-en
+    Duration: 39.17s | Speaking rate: 15.63 c/s | File size: 1.25 MB
+    Processing time: 18,059 ms | Cost: 1.836 cents
+    Sample rate: 16 kHz
+
+Cloud services vary dramatically in cost (0.031 to 7.344 cents) and processing time (1.3s to 33.8s). Speaking rates range from 11.08 to 20.56 c/s. ElevenLabs models are the fastest to respond but among the most expensive. Gemini 2.5 models are the cheapest but slower to process.
+
+
+ANALYSIS
+
+Speaking Rate Distribution:
+The majority of providers produced output between 14-19 c/s, corresponding to roughly 140-190 words per minute, a natural English speaking range. Two cloud providers spoke notably slower: groq/orpheus at 11.68 c/s and gemini-2.5-pro at 11.08 c/s, producing the longest audio (52s and 55s). The fastest speaker was gemini-2.5-flash at 20.56 c/s (30s duration), brisk but within natural bounds.
+
+Cost Tiers (cloud only):
+- Ultra-low: gemini-2.5-flash (0.031 cents), gemini-2.5-pro (0.061 cents)
+- Low: openai gpt-4o-mini-tts (0.771 cents)
+- Mid: gemini-3.1-flash (1.285), deepgram (1.836), groq (1.958)
+- Higher: elevenlabs flash/turbo (3.672 each), minimax turbo (3.672)
+- Premium: minimax hd (6.120), elevenlabs v3 (7.344)
+
+Processing Speed:
+- Local: kitten-tts-nano was fastest at 4,090 ms
+- Cloud: elevenlabs turbo_v2_5 was fastest at 1,323 ms, followed by elevenlabs flash at 1,874 ms. The slowest was gemini-2.5-pro at 33,835 ms.
+
+Audio Properties:
+Kitten models output at 24 kHz sample rate while all cloud providers output at 16 kHz. Higher sample rate does not guarantee better perceived quality but indicates more audio bandwidth.
+
+
+RECOMMENDATION
+
+Best Local Model: kitten / kitten-tts-nano
+Fastest processing time among local models (4,090 ms) with a natural speaking rate (15.95 c/s). Zero cost and no API dependency. The 24 kHz sample rate provides more audio bandwidth than any cloud provider in this run. The nano-0.8-int8 quantized variant is a close alternative with nearly identical output duration.
+
+Best Cloud Service: openai / gpt-4o-mini-tts
+At 0.771 cents with 7.5s processing time and a moderate speaking rate (14.10 c/s), OpenAI offers the best composite balance of cost, speed, and speaking rate among cloud providers. It is 25x cheaper than ElevenLabs flash/turbo while still responsive.
+
+Best Value Cloud: gemini / gemini-2.5-flash-preview-tts
+At 0.031 cents, this is by far the cheapest cloud option. Its speaking rate (20.56 c/s) is the fastest in the run, which may be too brisk for some use cases. Processing time (14.9s) is moderate. Best suited for high-volume or cost-sensitive workloads where slightly fast delivery is acceptable.
+
+
+CAVEATS
+
+1. No roundtrip STT scoring was performed. All rankings are based on composite metrics (speaking rate naturalness, cost, processing speed) rather than intelligibility verification.
+2. Audio quality cannot be directly assessed. Subjective qualities such as naturalness, prosody, emotion, and clarity require human listening or roundtrip STT analysis.
+3. Speaking rate is used as a proxy for naturalness. Rates far outside the 14-19 c/s range may indicate rushed or overly slow delivery, but the optimal rate depends on content and use case.
+4. Cost data is from actual billing metadata in run.json. Local models report zero cost.
+5. Processing time reflects end-to-end latency including network overhead for cloud APIs and compute time for local models. These are single-run measurements and may vary.
+6. The groq/orpheus model used 4 chunks for processing while all others used 1, which may affect audio continuity.
+7. Local and cloud providers are ranked independently since they serve different use cases and have fundamentally different cost structures.

@@ -104,7 +104,10 @@ const runHostedMusicGeneration = async (
     actual: computeActualProcessingTimes({ step7: metadata }),
   }
 
-  await writeGenerationMetadata(outputDir, 'music', metadata, cost, timing)
+  await writeGenerationMetadata(outputDir, 'music', metadata, cost, timing, {
+    input: prompt,
+    requestedProviders: musicTargets.map((t) => ({ service: t.service, model: t.model }))
+  })
 
   l.report.complete(
     outputDir,

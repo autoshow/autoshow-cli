@@ -71,7 +71,10 @@ export const imageCommand = defineCommand({
     actual: computeActualProcessingTimes({ step5: metadata }),
   }
 
-  await writeGenerationMetadata(outputDir, 'image', metadata, cost, timing)
+  await writeGenerationMetadata(outputDir, 'image', metadata, cost, timing, {
+    input: prompt,
+    requestedProviders: imageTargets.map((t) => ({ service: t.service, model: t.model }))
+  })
 
   l.report.complete(
     outputDir,

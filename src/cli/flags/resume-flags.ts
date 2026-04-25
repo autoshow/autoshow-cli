@@ -7,6 +7,10 @@ import {
   transcriptionFlags
 } from './shared-flags'
 import { epubInspectFlags } from './ocr-flags'
+import { ttsFlags } from './tts-flags'
+import { imageGenFlags } from './image-flags'
+import { videoGenFlags } from './video-flags'
+import { musicGenFlags } from './music-flags'
 import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 const pickFlags = (
@@ -60,9 +64,69 @@ const resumeOcrFlags = {
   ...epubInspectFlags
 } as const satisfies ClercFlagsDefinition
 
+const resumeTtsFlags = pickFlags(ttsFlags, [
+  'kitten-tts',
+  'elevenlabs-tts',
+  'minimax-tts',
+  'groq-tts',
+  'openai-tts',
+  'gemini-tts',
+  'deepgram-tts',
+  'kitten-voice',
+  'elevenlabs-voice',
+  'minimax-tts-voice',
+  'openai-voice',
+  'gemini-voice',
+  'deepgram-voice',
+  'groq-voice',
+  'gemini-speaker-1-name',
+  'gemini-speaker-1-voice',
+  'gemini-speaker-2-name',
+  'gemini-speaker-2-voice'
+])
+
+const resumeImageFlags = pickFlags(imageGenFlags, [
+  'gemini-image',
+  'openai-image',
+  'minimax-image',
+  'glm-image',
+  'grok-image',
+  'runway-image',
+  'image-aspect-ratio',
+  'image-size',
+  'image-quality',
+  'image-format',
+  'image-background',
+  'imagen-count'
+])
+
+const resumeVideoFlags = pickFlags(videoGenFlags, [
+  'gemini-video',
+  'minimax-video',
+  'glm-video',
+  'grok-video',
+  'runway-video',
+  'video-duration',
+  'video-size',
+  'video-aspect-ratio',
+  'video-resolution'
+])
+
+const resumeMusicFlags = pickFlags(musicGenFlags, [
+  'elevenlabs-music',
+  'minimax-music',
+  'music-duration',
+  'music-lyrics-file',
+  'music-instrumental'
+])
+
 export const resumeFlags = {
   ...resumeSttFlags,
   ...promptFlag,
   ...pickFlags(batchFlags, ['batch-concurrency']),
-  ...resumeOcrFlags
+  ...resumeOcrFlags,
+  ...resumeTtsFlags,
+  ...resumeImageFlags,
+  ...resumeVideoFlags,
+  ...resumeMusicFlags
 } as const satisfies ClercFlagsDefinition

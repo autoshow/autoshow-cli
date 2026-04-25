@@ -1,5 +1,5 @@
 import * as l from '~/utils/logger'
-import { createSingleRowTable, logLocationsTable } from '~/utils/logger/human-table'
+import { createKeyValueTable, logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
@@ -31,11 +31,16 @@ export const buildMediaGenerationStatusRows = (
 export const buildMediaGenerationStatusTable = (
   summary: MediaGenerationStatus
 ): HumanLogTable => {
-  const columns = ['mediaType', 'provider', 'model', 'status']
-  if (summary.processingTimeMs != null) columns.push('processingTimeMs')
-  if (summary.outputCount != null) columns.push('outputCount')
-  if (summary.detail) columns.push('detail')
-  return createSingleRowTable(buildMediaGenerationStatusRows(summary)[0]!, columns)
+  const entries: Array<readonly [string, unknown]> = [
+    ['mediaType', summary.mediaType],
+    ['provider', summary.provider],
+    ['model', summary.model],
+    ['status', summary.status]
+  ]
+  if (summary.processingTimeMs != null) entries.push(['processingTimeMs', summary.processingTimeMs])
+  if (summary.outputCount != null) entries.push(['outputCount', summary.outputCount])
+  if (summary.detail) entries.push(['detail', summary.detail])
+  return createKeyValueTable(entries)
 }
 
 export const logMediaGenerationStatus = (
@@ -65,17 +70,28 @@ export const createGenerationOutputDir = async (label: string): Promise<string> 
   return outputDir
 }
 
+export const getGenerationTargetKey = (service: string, model: string): string =>
+  `${service}:${model}`
+
 export const writeGenerationMetadata = async <T,>(
   outputDir: string,
   metadataKey: string,
   metadata: T[],
   cost: unknown,
-  timing: unknown
+  timing: unknown,
+  resumeContext?: {
+    input: string
+    requestedProviders: Array<{ service: string, model: string }>
+  }
 ): Promise<void> => {
   await writeRunManifest(outputDir, metadataKey as 'tts' | 'image' | 'video' | 'music', {
     [metadataKey]: metadata,
     cost: cost as Record<string, unknown>,
-    timing: timing as Record<string, unknown>
+    timing: timing as Record<string, unknown>,
+    ...(resumeContext ? {
+      input: resumeContext.input,
+      requestedProviders: resumeContext.requestedProviders
+    } : {})
   })
 }
 

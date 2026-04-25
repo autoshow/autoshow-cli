@@ -1,6 +1,6 @@
 # resume
 
-Backfill missing STT or OCR provider outputs in an existing run, child batch, or parent `extract` batch directory.
+Backfill missing provider outputs in an existing run, child batch, or parent `extract` batch directory.
 
 ## Outline
 
@@ -25,15 +25,16 @@ bun as resume [output-dir] [flags]
 - a batch directory containing `batch.json`
 - an `extract` parent batch directory containing `extract-batch.json`
 
-If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the first resumable STT, OCR, or `extract` target it finds.
+If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the first resumable target it finds.
 
 ## Target Discovery
 
-- `resume` supports STT and OCR `run.json` / `batch.json` targets plus parent `extract-batch.json` targets.
+- `resume` supports STT, OCR, TTS, image, video, and music `run.json` / `batch.json` targets plus parent `extract-batch.json` targets.
 - A single-run target must contain `run.json`.
 - A batch target must contain `batch.json`.
 - An extract parent batch must contain `extract-batch.json`.
 - Auto-discovery only considers targets that still have missing provider work to backfill.
+- Generation steps (TTS, image, video, music) require `run.json` to contain `requestedProviders` and `input` fields (written automatically by recent versions of the generation commands).
 
 ## Provider Selection
 
@@ -41,12 +42,16 @@ If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the
 - Explicit provider flags narrow the rerun set, but they must be a subset of the original requested providers for that run or batch.
 - STT runs accept STT provider/runtime flags.
 - OCR runs accept OCR provider/runtime flags.
+- TTS runs accept TTS provider/voice flags.
+- Image runs accept image provider/option flags.
+- Video runs accept video provider/option flags.
+- Music runs accept music provider/option flags.
 - `extract` parent batches forward explicit STT flags only to routed STT child batches and explicit OCR flags only to routed OCR child batches.
 
 ## Examples
 
 ```bash
-# Resume the newest incomplete STT, OCR, or extract output under ./output
+# Resume the newest incomplete output under ./output
 bun as resume
 
 # Resume a single run directory in place
@@ -72,6 +77,18 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --deapi-stt WhisperLargeV3
 
 # Resume only Happy Scribe outputs from an STT batch
 bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --happyscribe-organization-id org_123
+
+# Resume missing ElevenLabs TTS outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3
+
+# Resume missing Gemini image outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001
+
+# Resume missing Runway video outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --runway-video gen4.5
+
+# Resume missing MiniMax music outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 ```
 
 ## Flags
@@ -143,11 +160,73 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --ha
 | `--epub-bun` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | Inspect EPUB structure with Calibre |
 
+### TTS
+
+| Flag | Description |
+|------|-------------|
+| `--kitten-tts <model>` | Select one or more Kitten TTS models |
+| `--elevenlabs-tts <model>` | Select one or more ElevenLabs TTS models |
+| `--minimax-tts <model>` | Select one or more MiniMax TTS models |
+| `--groq-tts <model>` | Select one or more Groq TTS models |
+| `--openai-tts <model>` | Select one or more OpenAI TTS models |
+| `--gemini-tts <model>` | Select one or more Gemini TTS models |
+| `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
+| `--kitten-voice <speaker>` | Kitten TTS speaker override |
+| `--elevenlabs-voice <id>` | ElevenLabs voice ID override |
+| `--minimax-tts-voice <id>` | MiniMax TTS voice ID override |
+| `--openai-voice <id>` | OpenAI TTS voice ID override |
+| `--gemini-voice <name>` | Gemini TTS voice name override |
+| `--deepgram-voice <id>` | Deepgram TTS voice override |
+| `--groq-voice <id>` | Groq TTS voice ID override |
+
+### Image
+
+| Flag | Description |
+|------|-------------|
+| `--gemini-image <model>` | Select one or more Gemini image models |
+| `--openai-image <model>` | Select one or more OpenAI image models |
+| `--minimax-image <model>` | Select one or more MiniMax image models |
+| `--glm-image <model>` | Select one or more GLM image models |
+| `--grok-image <model>` | Select one or more Grok image models |
+| `--runway-image <model>` | Select one or more Runway image models |
+| `--image-aspect-ratio <ratio>` | Image aspect ratio |
+| `--image-size <size>` | Image size/resolution |
+| `--image-quality <quality>` | Image quality (OpenAI) |
+| `--image-format <format>` | Image output format (OpenAI) |
+| `--image-background <bg>` | Image background (OpenAI) |
+| `--imagen-count <n>` | Number of images to generate (Imagen 4) |
+
+### Video
+
+| Flag | Description |
+|------|-------------|
+| `--gemini-video <model>` | Select one or more Gemini video models |
+| `--minimax-video <model>` | Select one or more MiniMax video models |
+| `--glm-video <model>` | Select one or more GLM video models |
+| `--grok-video <model>` | Select one or more Grok video models |
+| `--runway-video <model>` | Select one or more Runway video models |
+| `--video-duration <seconds>` | Video duration in seconds |
+| `--video-size <size>` | Video size |
+| `--video-aspect-ratio <ratio>` | Video aspect ratio |
+| `--video-resolution <res>` | Video resolution (Gemini) |
+
+### Music
+
+| Flag | Description |
+|------|-------------|
+| `--elevenlabs-music <model>` | Select one or more ElevenLabs music models |
+| `--minimax-music <model>` | Select one or more MiniMax music models |
+| `--music-duration <seconds>` | Music duration in seconds |
+| `--music-lyrics-file <path>` | Lyrics file path for MiniMax |
+| `--music-instrumental` | Force instrumental generation (ElevenLabs) |
+
 ## Notes
 
 - `resume` updates the existing output directory in place.
 - STT and OCR batch resumes rewrite the existing `batch.json` with updated per-item status.
 - Extract batch resumes update `extract-batch.json` at the parent and the routed child `stt/batch.json` and `ocr/batch.json` manifests underneath it.
+- Generation step resumes (TTS, image, video, music) rewrite `run.json` with merged metadata from existing and newly produced provider outputs.
+- Generation step resumes require `run.json` to contain `requestedProviders` and `input` fields. Manifests created before resume support was added cannot be resumed.
 - Async STT providers with checkpointed remote jobs, including deAPI and Happy Scribe, reuse saved provider state when possible instead of recreating the remote request.
 - `resume` does not define `--price`.
 - `resume` exits with code `2` when items are still incomplete or failed after the backfill attempt.

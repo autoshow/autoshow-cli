@@ -81,7 +81,10 @@ export const ttsCommand = defineCommand({
     }),
   }
 
-  await writeGenerationMetadata(outputDir, 'tts', metadata, cost, timing)
+  await writeGenerationMetadata(outputDir, 'tts', metadata, cost, timing, {
+    input: text,
+    requestedProviders: targets.map((t) => ({ service: t.service, model: t.model }))
+  })
 
   l.report.complete(
     outputDir,

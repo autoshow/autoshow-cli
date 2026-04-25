@@ -14,7 +14,7 @@ export type ResumeTotals = {
   failed: number
 }
 
-export type ResumeTargetKind = 'stt' | 'ocr' | 'extract'
+export type ResumeTargetKind = 'stt' | 'ocr' | 'extract' | 'tts' | 'image' | 'video' | 'music'
 export type ResumeTargetScope = 'single' | 'batch'
 
 export type ResumeTarget = {

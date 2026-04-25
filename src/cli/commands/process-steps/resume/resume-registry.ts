@@ -10,6 +10,10 @@ import {
   hasResumableSttTargetWork,
   resumeSttTarget
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/resume'
+import { hasResumableTtsWork, resumeTtsTarget } from '~/cli/commands/process-steps/step-4-tts/resume'
+import { hasResumableImageWork, resumeImageTarget } from '~/cli/commands/process-steps/step-5-image/resume'
+import { hasResumableVideoWork, resumeVideoTarget } from '~/cli/commands/process-steps/step-6-video/resume'
+import { hasResumableMusicWork, resumeMusicTarget } from '~/cli/commands/process-steps/step-7-music/resume'
 import { readBatchManifest, readExtractBatchManifest, writeExtractBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
 import type { ResumeHandler, ResumeTarget, ResumeTargetKind } from '~/types'
 
@@ -215,10 +219,46 @@ const extractResumeHandler: ResumeHandler = {
   }
 }
 
+const ttsResumeHandler: ResumeHandler = {
+  kind: 'tts',
+  hasResumableWork: async (target, opts, _explicitFlags) =>
+    await hasResumableTtsWork(target, opts),
+  resume: async (target, opts, _explicitFlags) =>
+    await resumeTtsTarget(target, opts)
+}
+
+const imageResumeHandler: ResumeHandler = {
+  kind: 'image',
+  hasResumableWork: async (target, opts, _explicitFlags) =>
+    await hasResumableImageWork(target, opts),
+  resume: async (target, opts, _explicitFlags) =>
+    await resumeImageTarget(target, opts)
+}
+
+const videoResumeHandler: ResumeHandler = {
+  kind: 'video',
+  hasResumableWork: async (target, opts, _explicitFlags) =>
+    await hasResumableVideoWork(target, opts),
+  resume: async (target, opts, _explicitFlags) =>
+    await resumeVideoTarget(target, opts)
+}
+
+const musicResumeHandler: ResumeHandler = {
+  kind: 'music',
+  hasResumableWork: async (target, opts, _explicitFlags) =>
+    await hasResumableMusicWork(target, opts),
+  resume: async (target, opts, _explicitFlags) =>
+    await resumeMusicTarget(target, opts)
+}
+
 const RESUME_HANDLERS: Readonly<Record<ResumeTargetKind, ResumeHandler>> = {
   stt: sttResumeHandler,
   ocr: ocrResumeHandler,
-  extract: extractResumeHandler
+  extract: extractResumeHandler,
+  tts: ttsResumeHandler,
+  image: imageResumeHandler,
+  video: videoResumeHandler,
+  music: musicResumeHandler
 }
 
 export const getResumeHandler = (

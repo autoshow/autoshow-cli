@@ -1,0 +1,41 @@
+{
+  "skill_name": "image-consensus",
+  "evals": [
+    {
+      "id": "multi-provider-image-run",
+      "prompt": "Run the image-consensus skill against the image run directory at ./evals/files/sample-run",
+      "expected_output": "Three deliverables: consensus-evaluation.txt, provider-comparison-report.md, provider-comparison-report.json with correct provider count and composite scoring",
+      "assertions": [
+        "consensus-evaluation.txt exists and contains no markdown formatting",
+        "consensus-evaluation.txt does not claim to have viewed images",
+        "provider-comparison-report.md contains a ranking table with all providers",
+        "provider-comparison-report.json contains a providers array with scores",
+        "scoring method is composite (no quality rankings provided)"
+      ],
+      "files": []
+    },
+    {
+      "id": "missing-image-file",
+      "prompt": "Run the image-consensus skill against the image run directory where one provider's image file is missing from disk",
+      "expected_output": "Skill handles missing file gracefully with a warning, still evaluates remaining providers",
+      "assertions": [
+        "warning about missing image file is reported",
+        "remaining providers are still scored and ranked",
+        "reports are generated successfully despite the missing file"
+      ],
+      "files": []
+    },
+    {
+      "id": "with-quality-rankings",
+      "prompt": "Run the image-consensus skill with user-provided quality rankings: gemini/imagen-4.0-generate-001=1,openai/gpt-image-1=2,minimax/image-01=3",
+      "expected_output": "Reports use quality-ranked scoring method with quality rank as primary signal",
+      "assertions": [
+        "scoring method is quality-ranked",
+        "provider-comparison-report.json scoreFormula includes quality-rank",
+        "provider-comparison-report.md mentions user quality rankings",
+        "highest quality-ranked provider has the best score"
+      ],
+      "files": []
+    }
+  ]
+}

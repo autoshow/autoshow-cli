@@ -74,12 +74,18 @@ export const runGlmImageGen = async (
   )
 
   const imageUrl = parsed.data[0]!.url
-  const download = await fetch(imageUrl)
-  if (!download.ok) {
+  let download!: Response
+  for (let attempt = 0; attempt < 5; attempt++) {
+    download = await fetch(imageUrl)
+    if (download.ok) break
+    if (download.status === 404 && attempt < 4) {
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      continue
+    }
     throw new Error(`GLM image download failed (${download.status})`)
   }
 
-  await Bun.write(outputPath, new Uint8Array(await download.arrayBuffer()))
+  await Bun.write(outputPath, new Uint8Array(await download!.arrayBuffer()))
 
   const processingTime = Date.now() - startTime
   const imageFile = Bun.file(outputPath)

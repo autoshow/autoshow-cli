@@ -17,7 +17,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeHandler } from './resume-registry'
 import type { ResumeTarget, ResumeTargetKind } from '~/types'
 
-const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['stt', 'ocr', 'extract'])
+const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['stt', 'ocr', 'extract', 'tts', 'image', 'video', 'music'])
 
 const toResumeTarget = (
   kind: string,
@@ -54,7 +54,7 @@ const resolveExplicitResumeTarget = async (
     if (target) {
       return target
     }
-    throw CLIUsageError(`Resume supports only STT and OCR manifests. Found "${batchManifest.manifest.kind}" at ${batchManifest.manifestPath}.`)
+    throw CLIUsageError(`Resume supports only STT, OCR, TTS, image, video, and music manifests. Found "${batchManifest.manifest.kind}" at ${batchManifest.manifestPath}.`)
   }
 
   const runManifest = await readRunManifest(dir)
@@ -63,7 +63,7 @@ const resolveExplicitResumeTarget = async (
     if (target) {
       return target
     }
-    throw CLIUsageError(`Resume supports only STT and OCR manifests. Found "${runManifest.kind}" at ${join(dir, 'run.json')}.`)
+    throw CLIUsageError(`Resume supports only STT, OCR, TTS, image, video, and music manifests. Found "${runManifest.kind}" at ${join(dir, 'run.json')}.`)
   }
 
   throw CLIUsageError(`Could not find extract-batch.json, batch.json, or run.json under ${dir}.`)
@@ -134,7 +134,7 @@ const discoverLatestResumeTarget = async (
     }
   }
 
-  throw CLIUsageError(`Could not find a resumable STT, OCR, or extract output under ${outputRootInput}.`)
+  throw CLIUsageError(`Could not find a resumable output under ${outputRootInput}.`)
 }
 
 export const dispatchResume = async (
