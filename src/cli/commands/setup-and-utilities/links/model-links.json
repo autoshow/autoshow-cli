@@ -286,6 +286,15 @@
       "https://platform.claude.com/docs/en/build-with-claude/vision.md"
     ]
   },
+  "Cloudflare": {
+    "STT": [
+      "https://developers.cloudflare.com/workers-ai/models/whisper/index.md",
+      "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/index.md",
+      "https://developers.cloudflare.com/workers-ai/guides/tutorials/build-a-workers-ai-whisper-with-chunking/index.md",
+      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper/index.md",
+      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper-tiny-en/index.md"
+    ]
+  },
   "Assembly": {
     "STT": [
       "https://www.assemblyai.com/docs/pre-recorded-audio/universal-3-pro.md",
@@ -325,6 +334,12 @@
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api",
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-http",
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-js"
+    ]
+  },
+  "Fireworks": {
+    "STT": [
+      "https://docs.fireworks.ai/api-reference/audio-transcriptions.md",
+      "https://docs.fireworks.ai/guides/querying-asr-models.md"
     ]
   },
   "Soniox": {
@@ -448,6 +463,15 @@
     "Music": [
       "https://docs.deapi.ai/api/generation/text-to-music.md",
       "https://docs.deapi.ai/api/generation/text-to-music-price.md"
+    ]
+  },
+  "Together": {
+    "STT": [
+      "https://docs.together.ai/docs/speech-to-text.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/SKILL.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/references/stt-models.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/scripts/stt_transcribe.ts",
+      "https://docs.together.ai/reference/audio-transcriptions.md"
     ]
   },
   "Supadata": {

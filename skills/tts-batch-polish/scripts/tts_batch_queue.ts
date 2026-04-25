@@ -201,6 +201,30 @@ function parseShared(command: ParsedArgs["command"], argv: string[]): SharedArgs
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(
+      [
+        usage(),
+        "",
+        "Track single-file batch processing state for TTS polish passes.",
+        "",
+        "Commands:",
+        "  next    Print the next file(s) to process",
+        "  done    Mark file(s) as completed",
+        "  status  Show progress summary and next file(s)",
+        "  reset   Remove the state file to start over",
+        "",
+        "Options:",
+        "  --root <dir>     Root directory containing .txt files (required)",
+        "  --state <path>   Custom state file path (default: <root>/.tts-batch-state.json)",
+        "  --recursive      Include .txt files in subdirectories",
+        "  --size <n>       Number of files to show/return (default: 1)",
+        "  --help, -h       Show this help message",
+      ].join("\n"),
+    );
+    process.exit(0);
+  }
+
   const command = argv[0];
   if (command !== "next" && command !== "done" && command !== "status" && command !== "reset") {
     throw new Error(usage());

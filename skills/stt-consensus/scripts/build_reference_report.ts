@@ -21,7 +21,30 @@ interface ParsedArgs {
   jsonOut: string | null;
 }
 
+function helpText(): string {
+  return [
+    "Usage: bun build_reference_report.ts <run_dir> [--reference <path>] [--markdown-out <path>] [--json-out <path>]",
+    "",
+    "Generate comparison reports scoring each provider against a consensus transcript.",
+    "",
+    "Options:",
+    "  --reference <path>      Path to consensus transcript (default: <run_dir>/consensus-transcription.txt)",
+    "  --markdown-out <path>   Write markdown report to <path> (default: <run_dir>/reference-comparison-report.md)",
+    "  --json-out <path>       Write JSON report to <path> (default: <run_dir>/reference-comparison-report.json)",
+    "  --help, -h              Show this help message",
+    "",
+    "Examples:",
+    "  bun build_reference_report.ts ./runs/my-episode",
+    "  bun build_reference_report.ts ./runs/my-episode --reference /tmp/consensus.txt",
+  ].join("\n");
+}
+
 function parseArgs(argv: string[]): ParsedArgs {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(helpText());
+    process.exit(0);
+  }
+
   const positional: string[] = [];
   let referencePath: string | null = null;
   let markdownOut: string | null = null;

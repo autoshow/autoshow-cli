@@ -1,8 +1,12 @@
 ---
 name: stt-consensus
-description: Generate a gold-reference transcript and provider comparison reports from an AutoShow STT episode directory that contains `run.json` plus `providers/*/result.json`. Use when evaluating multi-provider speech-to-text or transcription runs, reconciling provider segments into `consensus-transcription.txt`, or producing `reference-comparison-report.md` and `.json` for podcasts, interviews, meetings, videos, or other speaker-labeled audio.
+description: Use this skill when the user needs a gold-reference transcript or provider comparison reports from a multi-provider AutoShow STT run. Apply it to reconcile provider segments into a consensus transcript, generate accuracy comparison reports, or evaluate speech-to-text quality across providers for podcasts, interviews, meetings, videos, or other speaker-labeled audio.
+compatibility: Requires Bun
+allowed-tools: Bash Read Edit Write Glob Grep
 metadata:
   short-description: Build STT consensus and provider reports
+  author: autoshow
+  version: "1.0"
 ---
 
 # Build STT Consensus Report
@@ -21,26 +25,29 @@ Read `references/output-contract.md` before writing outputs.
 
 ## Workflow
 
-1. Set the run directory.
-2. Verify the actual provider set from `providers/*/result.json`.
-3. Build a temporary consensus-evidence packet.
-4. Write `consensus-transcription.txt`.
-5. Generate both comparison reports from the consensus transcript.
-6. Run a final sanity pass on timestamps, speakers, provider count, and output paths.
+Progress:
+
+- [ ] Set the run directory.
+- [ ] Verify the actual provider set from `providers/*/result.json`.
+- [ ] Build a temporary consensus-evidence packet.
+- [ ] Write `consensus-transcription.txt`.
+- [ ] Generate both comparison reports from the consensus transcript.
+- [ ] Run a final sanity pass on timestamps, speakers, provider count, and output paths.
 
 ## Commands
 
-Run commands from this skill directory. If working from a repository checkout, set `SKILL_DIR` to the checkout's `skills/stt-consensus` directory; if the skill is installed elsewhere, use that installed skill directory.
+Run commands from the skill directory so script paths stay relative to the skill root. The skill directory is the directory containing this SKILL.md file.
 
 ```bash
 RUN_DIR="/absolute/path/to/episode-run"
 SKILL_DIR="/absolute/path/to/stt-consensus"
 TMP_PACKET="$(mktemp -t consensus-packet.XXXXXX.json)"
 
-bun "$SKILL_DIR/scripts/build_consensus_packet.ts" "$RUN_DIR" --out "$TMP_PACKET"
+cd "$SKILL_DIR"
+bun scripts/build_consensus_packet.ts "$RUN_DIR" --out "$TMP_PACKET"
 ```
 
-The first command prepares evidence for the consensus pass. The second command should be run only after `consensus-transcription.txt` exists.
+This prepares evidence for the consensus pass. Generate reports only after `consensus-transcription.txt` exists.
 
 ## Consensus Pass
 
@@ -64,7 +71,8 @@ Rules for `consensus-transcription.txt`:
 After the consensus transcript is complete, run:
 
 ```bash
-bun "$SKILL_DIR/scripts/build_reference_report.ts" "$RUN_DIR"
+cd "$SKILL_DIR"
+bun scripts/build_reference_report.ts "$RUN_DIR"
 ```
 
 This writes:
@@ -90,6 +98,12 @@ The report script:
 5. Confirm the final segment in the consensus transcript does not extend past the run duration in `run.json`.
 6. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
 7. If a script fails, report the exact command, the run directory, and the first actionable error line.
+
+## Gotchas
+
+1. Trust the provider directories currently present on disk; ignore stale provider names in older reports.
+2. Treat `providers/*/result.json` and the consensus evidence packet as source material, not `transcription.txt` or old comparison reports.
+3. Use agent judgment only for writing the consensus transcript. Provider discovery, packet creation, and report generation belong to the bundled scripts.
 
 ## Reporting
 

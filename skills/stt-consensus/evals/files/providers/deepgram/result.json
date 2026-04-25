@@ -1,0 +1,18 @@
+{
+  "provider": "deepgram",
+  "model": "nova-2",
+  "result": {
+    "segments": [
+      { "start": 2.0, "end": 8.5, "speaker": "A", "text": "Welcome to the show. Today we're talking about building APIs with Hono." },
+      { "start": 10.0, "end": 18.0, "speaker": "B", "text": "Thanks for having me. I've been working on Hona for about two years now." },
+      { "start": 20.0, "end": 32.0, "speaker": "A", "text": "So for people who haven't heard of it, what is Hono and why should they care?" },
+      { "start": 34.0, "end": 52.0, "speaker": "B", "text": "Hono is a small fast web framework that runs on any JavaScript runtime. It works on Cloudflare Workers, Deno, Bun, Node, you name it." },
+      { "start": 55.0, "end": 68.0, "speaker": "A", "text": "That's interesting. How does it compare to Express performance wise?" },
+      { "start": 70.0, "end": 88.0, "speaker": "B", "text": "We're significantly faster than Express in benchmarks. The router uses a radix tree so route matching is O of log n instead of O of n." },
+      { "start": 90.0, "end": 105.0, "speaker": "A", "text": "And you recently added RPC support right? Tell us about that." },
+      { "start": 108.0, "end": 130.0, "speaker": "B", "text": "Yes the RPC feature lets you get end to end type safety between your API and client. Similar to tRPC but built into the framework." },
+      { "start": 132.0, "end": 150.0, "speaker": "A", "text": "Where can people learn more about Hono?" },
+      { "start": 152.0, "end": 170.0, "speaker": "B", "text": "Check out hono.dev for docs and the GitHub repo at github.com slash honojs slash hono." }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "provider": "assembly",
+  "model": "universal",
+  "result": {
+    "segments": [
+      { "start": 2.1, "end": 8.3, "speaker": "speaker_1", "text": "Welcome to the show. Today we're talking about building APIs with Hono." },
+      { "start": 10.2, "end": 17.8, "speaker": "speaker_2", "text": "Thanks for having me. I've been working on Hono for about two years now." },
+      { "start": 20.1, "end": 31.5, "speaker": "speaker_1", "text": "So for people who haven't heard of it, what is Hono and why should they care?" },
+      { "start": 34.2, "end": 51.8, "speaker": "speaker_2", "text": "Hono is a small, fast web framework that runs on any JavaScript runtime. It works on Cloudflare Workers, Deno, Bun, Node, you name it." },
+      { "start": 55.1, "end": 67.5, "speaker": "speaker_1", "text": "That's interesting. How does it compare to Express performance-wise?" },
+      { "start": 70.3, "end": 87.5, "speaker": "speaker_2", "text": "We're significantly faster than Express in benchmarks. The router uses a radix tree, so route matching is O of log n instead of O of n." },
+      { "start": 90.2, "end": 104.8, "speaker": "speaker_1", "text": "And you recently added RPC support, right? Tell us about that." },
+      { "start": 108.1, "end": 129.5, "speaker": "speaker_2", "text": "Yes, the RPC feature lets you get end-to-end type safety between your API and client. Similar to tRPC but built into the framework." },
+      { "start": 132.2, "end": 149.8, "speaker": "speaker_1", "text": "Where can people learn more about Hono?" },
+      { "start": 152.1, "end": 169.5, "speaker": "speaker_2", "text": "Check out hono.dev for docs and the GitHub repo at github.com/honojs/hono." }
+    ]
+  }
+}

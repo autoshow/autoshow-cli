@@ -20,7 +20,28 @@ interface ParsedArgs {
   outPath: string | null;
 }
 
+function helpText(): string {
+  return [
+    "Usage: bun build_consensus_packet.ts <run_dir> [--out <path>]",
+    "",
+    "Build a consensus evidence packet from a multi-provider AutoShow STT run.",
+    "",
+    "Options:",
+    "  --out <path>  Write JSON packet to <path> instead of stdout",
+    "  --help, -h    Show this help message",
+    "",
+    "Examples:",
+    "  bun build_consensus_packet.ts ./runs/my-episode",
+    '  bun build_consensus_packet.ts ./runs/my-episode --out /tmp/packet.json',
+  ].join("\n");
+}
+
 function parseArgs(argv: string[]): ParsedArgs {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(helpText());
+    process.exit(0);
+  }
+
   const positional: string[] = [];
   let outPath: string | null = null;
 

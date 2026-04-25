@@ -1,0 +1,27 @@
+[00:00:02] Speaker 1: Welcome to the show. Today we're going to be talking about the new release of React Server Components.
+
+[00:00:15] Speaker 2: Yeah, thanks for having me. I've been working on this for about six months now at Vercel.
+
+[00:00:28] Speaker 1: So tell us about the main changes in this release. What should developers expect?
+
+[00:00:38] Speaker 2: Sure. So the biggest thing is we've completely reworked the bundler integration. Previously you had to use webpack, but now we support Turbopack natively and it's significantly faster.
+
+[00:00:55] Speaker 1: And what about the data fetching story? I know that was a big pain point for a lot of people.
+
+[00:01:05] Speaker 2: Right. So we've introduced what we call server data loaders, which basically lets you co-locate your data requirements with your components. Think of it like GraphQL fragments but without the GraphQL part.
+
+[00:01:22] Speaker 1: That sounds really interesting. Can you walk us through a quick example?
+
+[00:01:30] Speaker 2: Absolutely. So imagine you have a user profile component. Previously you'd have to set up a whole API route, fetch the data, pass it down through props. Now with server data loaders you just declare what data you need right in the component file.
+
+[00:01:50] Speaker 1: And this works with any database, right? Like Postgres, MySQL?
+
+[00:01:58] Speaker 2: Yeah, exactly. Any data source. We've got adapters for Postgres, MySQL, MongoDB, and you can write your own adapter too.
+
+[00:02:12] Speaker 1: What about the performance implications? I mean, running database queries directly from components sounds like it could be slow.
+
+[00:02:22] Speaker 2: That's a great question. So we have automatic request deduplication and caching built in. If two components on the same page need the same data, we only fetch it once.
+
+[00:02:38] Speaker 1: Alright, well, thanks so much for joining us today. Where can people find more information?
+
+[00:02:45] Speaker 2: You can check out the docs at nextjs.org/docs or follow us on Twitter at Vercel.

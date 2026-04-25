@@ -1,0 +1,51 @@
+{
+  "skill_name": "tts-batch-polish",
+  "evals": [
+    {
+      "id": "single-chapter-ocr-cleanup",
+      "prompt": "Polish chapter-03.txt from this OCR-derived book export for TTS. Fix line breaks and remove footnotes, but preserve the author's meaning.",
+      "expected_output": "Only chapter-03.txt is edited unless an adjacent boundary repair is required; OCR artifacts, mid-sentence line breaks, footnotes, punctuation, and paragraphing are cleaned without changing meaning.",
+      "assertions": [
+        "Only one file was edited unless a boundary repair was required",
+        "No OCR artifacts remain in headings or section starts",
+        "Mid-sentence line breaks were removed and paragraphs are coherent",
+        "Footnote reference markers were removed from body text",
+        "Footnote definition blocks were removed",
+        "Output is plain text with no SSML or vendor markup"
+      ],
+      "files": [
+        "evals/files/chapter-02.txt",
+        "evals/files/chapter-03.txt",
+        "evals/files/chapter-04.txt"
+      ]
+    },
+    {
+      "id": "boundary-continuity",
+      "prompt": "The selected chapter starts in the middle of a sentence. Repair the boundary using the neighboring chapter file and then polish the selected chapter for narration.",
+      "expected_output": "The adjacent file is touched only as needed for sentence continuity, the selected file reads as complete text, and the report identifies the boundary repair.",
+      "assertions": [
+        "The selected file does not start or end with a sentence fragment",
+        "The adjacent file was modified only at the boundary, not throughout",
+        "The report explicitly mentions the boundary repair"
+      ],
+      "files": [
+        "evals/files/chapter-boundary-prev.txt",
+        "evals/files/chapter-boundary-target.txt"
+      ]
+    },
+    {
+      "id": "provider-agnostic-output",
+      "prompt": "Prepare this article text for read-aloud narration. Do not use ElevenLabs or SSML markup.",
+      "expected_output": "The output remains plain provider-agnostic text with natural punctuation, paragraphs, and pronunciation-friendly cleanup but no SSML, XML, or vendor-specific tags.",
+      "assertions": [
+        "Output contains no SSML tags",
+        "Output contains no XML tags",
+        "Output contains no vendor-specific markup like ElevenLabs directives",
+        "Sentence boundaries are clear for spoken delivery"
+      ],
+      "files": [
+        "evals/files/article-raw.txt"
+      ]
+    }
+  ]
+}

@@ -16,6 +16,7 @@ import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
 import { normalizeStep2ArgvAliases } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { linksCommand } from '~/cli/commands/setup-and-utilities/links/define-links-command'
+import { benchmarkCommand } from '~/cli/commands/setup-and-utilities/benchmark/define-benchmark-command'
 import * as l from '~/utils/logger'
 import { runWithLogContext, reconfigureLogger } from '~/utils/logger'
 import {
@@ -108,7 +109,8 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   tts: 'processing',
   image: 'processing',
   music: 'processing',
-  video: 'processing'
+  video: 'processing',
+  benchmark: 'setup'
 }
 
 const COMMAND_DEFINITIONS = [
@@ -124,7 +126,8 @@ const COMMAND_DEFINITIONS = [
   ttsCommand,
   imageCommand,
   musicCommand,
-  videoCommand
+  videoCommand,
+  benchmarkCommand
 ] as const
 
 const setCommandHelpGroup = (command: unknown, group: HelpCommandGroupKey): void => {

@@ -36,6 +36,7 @@ runtime/auth/
 test-output
 new-llm-*.md
 TODO.md
+project/benchmark
 project/links
 project/plans
 project/reports

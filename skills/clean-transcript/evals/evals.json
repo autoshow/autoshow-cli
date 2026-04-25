@@ -1,0 +1,53 @@
+{
+  "skill_name": "clean-transcript",
+  "evals": [
+    {
+      "id": "clean-main-with-alternates",
+      "prompt": "Clean the main transcript at runs/demo/providers/deepgram/transcription.txt using every other providers/*/transcription.txt file as evidence. Preserve timestamps and speaker labels.",
+      "expected_output": "A cleaned version of the main transcript with timestamps and speaker-label formatting preserved, all alternate provider transcripts read, and a report listing unresolved unclear passages.",
+      "assertions": [
+        "Every timestamp from the original transcript is present in the output",
+        "Speaker labels are preserved without added markdown emphasis",
+        "The report lists which alternate transcript files were read",
+        "The report states how many [unclear] markers existed and how many were resolved",
+        "No substantive claims were added or removed"
+      ],
+      "files": [
+        "evals/files/deepgram-transcription.txt",
+        "evals/files/assembly-transcription.txt",
+        "evals/files/whisper-transcription.txt"
+      ]
+    },
+    {
+      "id": "resolve-unclear-marker",
+      "prompt": "This transcript has several [unclear] markers and I have alternate provider transcripts in the same run directory. Resolve whatever you can without changing the speaker's meaning.",
+      "expected_output": "Each [unclear] marker is checked against all alternates, plausible readings are inserted, and any remaining [unclear] markers are justified as unresolved across every provider.",
+      "assertions": [
+        "Every [unclear] marker in the original was evaluated against all available alternates",
+        "Resolved markers were replaced with plausible text, not left as gaps",
+        "Any remaining [unclear] markers include justification that all providers failed at that point",
+        "The report includes a count of resolved vs. unresolved markers"
+      ],
+      "files": [
+        "evals/files/transcript-with-unclear.txt",
+        "evals/files/alternate-provider-a.txt",
+        "evals/files/alternate-provider-b.txt"
+      ]
+    },
+    {
+      "id": "plain-single-speaker",
+      "prompt": "Polish this pasted voice-note transcript for readability. It has no timestamps and one speaker. Do not summarize it.",
+      "expected_output": "Readable paragraph-form transcript text with duplicate words, obvious filler, punctuation, capitalization, and grammar cleaned while preserving the original meaning and uncertainty.",
+      "assertions": [
+        "Output is paragraph-form prose, not bulleted or listed",
+        "Duplicate words like 'the the' are removed",
+        "Filler words like 'um' and 'uh' are removed",
+        "Hedges like 'I think' and 'maybe' are preserved when they affect meaning",
+        "No summarization occurred -- all original ideas are present in order"
+      ],
+      "files": [
+        "evals/files/voice-note-raw.txt"
+      ]
+    }
+  ]
+}

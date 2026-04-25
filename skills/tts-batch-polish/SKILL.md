@@ -1,8 +1,12 @@
 ---
 name: tts-batch-polish
-description: Clean and normalize long-form plaintext for natural, service-agnostic text-to-speech narration one file at a time. Use when working on OCR-derived EPUB exports, book chapters, articles, or chapter text files that need artifact removal, paragraph repair, punctuation cleanup, footnote removal, boundary continuity checks, and pronunciation-friendly edits while preserving original meaning.
+description: Use this skill when the user wants long-form plaintext prepared for natural, service-agnostic text-to-speech narration. Apply it to OCR-derived EPUB exports, book chapters, articles, or chapter text files that need artifact removal, paragraph repair, punctuation cleanup, footnote removal, boundary continuity checks, and pronunciation-friendly edits while preserving meaning.
+compatibility: Requires Bun (optional, for batch queue tracking)
+allowed-tools: Bash Read Edit Write Glob Grep
 metadata:
   short-description: Polish long text for TTS narration
+  author: autoshow
+  version: "1.0"
 ---
 
 # TTS Batch Polish
@@ -17,17 +21,19 @@ Read `references/tts-editing-rules.md` before editing. It is the source of truth
 
 ## Workflow
 
-1. Set the target directory that contains chapter files.
-2. Select exactly one target file explicitly (for example: user-specified file or a manually chosen chapter file).
-3. Edit only that file in place.
-4. Check boundary continuity: verify the opening and closing lines are not in the middle of a sentence.
-5. If a boundary line is mid-sentence, repair the split with the previous or next file so sentence flow is complete across files.
-6. Run a quick quality check on the edited file(s).
-7. Report what changed and any unresolved uncertainties.
+Progress:
+
+- [ ] Set the target directory that contains chapter files.
+- [ ] Select exactly one target file explicitly, such as a user-specified file or one manually chosen chapter file.
+- [ ] Edit only that file in place.
+- [ ] Check boundary continuity: verify the opening and closing lines are not in the middle of a sentence.
+- [ ] If a boundary line is mid-sentence, repair the split with the previous or next file so sentence flow is complete across files.
+- [ ] Run a quick quality check on the edited file or files.
+- [ ] Report what changed and any unresolved uncertainties.
 
 ## Commands
 
-Use these commands from the skill directory. Replace `BOOK_DIR` with the target directory from the user or current task.
+Run commands from the skill directory. Replace `BOOK_DIR` with the target directory from the user or current task.
 
 ```bash
 BOOK_DIR="/absolute/path/to/book-or-chapter-directory"
@@ -63,6 +69,12 @@ Core constraints:
 7. Remove line breaks that occur mid-sentence so each sentence flows continuously.
 8. Group sentences into coherent paragraphs; use line breaks only between paragraphs, not between lines within a paragraph.
 9. Remove footnotes and inline footnote markers according to the reference rules unless the user explicitly asks to preserve scholarly apparatus.
+
+## Gotchas
+
+1. Limit each normal pass to one selected file. Edit an adjacent file only to repair a broken boundary sentence.
+2. Do not add SSML, XML, vendor tags, pronunciation dictionaries, or voice-specific markup unless the user explicitly asks for provider-specific output.
+3. Footnote markers can look like ordinary numbers. Remove only markers and footnote apparatus, not body-text dates, statistics, list numbers, or section numbers.
 
 ## File Completion Checklist
 

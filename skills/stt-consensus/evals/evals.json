@@ -1,0 +1,56 @@
+{
+  "skill_name": "stt-consensus",
+  "evals": [
+    {
+      "id": "build-consensus-and-reports",
+      "prompt": "Generate the consensus transcript and provider comparison reports for the AutoShow STT run at runs/demo/.",
+      "expected_output": "The skill builds a consensus evidence packet, writes consensus-transcription.txt in [HH:MM:SS] [speaker-n] format, then regenerates reference-comparison-report.md and reference-comparison-report.json.",
+      "assertions": [
+        "consensus-transcription.txt exists and every nonblank line matches [HH:MM:SS] [speaker-n] text format",
+        "reference-comparison-report.md exists and contains a ranking table",
+        "reference-comparison-report.json exists and is valid JSON",
+        "Speaker labels are stable canonical labels like speaker-1, speaker-2 throughout",
+        "Timestamps are monotonically increasing",
+        "The report provider count matches the number of providers/*/result.json directories"
+      ],
+      "files": [
+        "evals/files/run.json",
+        "evals/files/providers/deepgram/result.json",
+        "evals/files/providers/assembly/result.json",
+        "evals/files/providers/whisper/result.json"
+      ]
+    },
+    {
+      "id": "ignore-stale-provider-report",
+      "prompt": "This run has an old comparison report that mentions providers that are no longer under providers/. Regenerate the reports from the current provider result.json files.",
+      "expected_output": "The provider set is derived from current providers/*/result.json files, stale report data is ignored, and the regenerated reports count only providers present on disk.",
+      "assertions": [
+        "The regenerated report does not mention the removed provider by name in the ranking",
+        "The provider count in the report matches the number of result.json files on disk",
+        "The stale comparison report was not used as input"
+      ],
+      "files": [
+        "evals/files/run.json",
+        "evals/files/stale-reference-comparison-report.md",
+        "evals/files/providers/deepgram/result.json",
+        "evals/files/providers/assembly/result.json"
+      ]
+    },
+    {
+      "id": "repair-provider-segments",
+      "prompt": "Create a gold transcript from the STT run at runs/demo/. One provider has better technical terms but another has better speaker turns, so reconcile them carefully.",
+      "expected_output": "The consensus transcript preserves chronological segment lines and stable canonical speakers while repairing questionable text from cross-provider evidence without summarizing.",
+      "assertions": [
+        "consensus-transcription.txt uses cross-provider evidence to select the best reading per segment",
+        "No segment text is summarized or paraphrased",
+        "Speaker labels are canonical and stable across the file",
+        "Chronological order is maintained"
+      ],
+      "files": [
+        "evals/files/run.json",
+        "evals/files/providers/deepgram/result.json",
+        "evals/files/providers/assembly/result.json"
+      ]
+    }
+  ]
+}

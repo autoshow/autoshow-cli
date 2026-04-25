@@ -1,0 +1,15 @@
+[00:00:05] Speaker 1: So we shipped the new [unclear] feature last week and the response has been incredible.
+
+[00:00:14] Speaker 2: Yeah the metrics are looking great. We saw a 40% increase in [unclear] engagement across the board.
+
+[00:00:25] Speaker 1: The thing I'm most excited about is the [unclear] integration. That was something our enterprise customers have been asking for since Q2.
+
+[00:00:38] Speaker 2: Right and the way we built it using [unclear] means we can extend it pretty easily for the next release.
+
+[00:00:50] Speaker 1: What about the bug that [unclear] reported last Thursday? Is that fixed?
+
+[00:01:02] Speaker 2: Yes we patched that in version [unclear]. It was a race condition in the event loop that only showed up under heavy load.
+
+[00:01:15] Speaker 1: Good. And the [unclear] team signed off on the security review?
+
+[00:01:22] Speaker 2: They did. No issues found.

@@ -1,0 +1,28 @@
+strong consistency would be unacceptably high latency for end users.
+
+Chapter 6: CRDTs and Local-First Software
+
+Conflict-free Replicated Data Types, or CRDTs, represent a further
+evolution of the eventua1 consistency model. Rather than resolving
+conflicts after the fact, CRDTs are data structures specifically
+designed so that concurrent updates can a1ways be merged automatically
+without conflicts.
+
+The idea was first formalized by Shapiro, Preguiça, Baquero, and
+Zawirski in 2011.6 They identified two approaches:
+
+State-based CRDTs (CvRDTs): nodes periodically exchange their fu11
+state, and states are merged using a mathematical join operation.
+
+Operation-based CRDTs (CmRDTs): nodes broadcast individual operations,
+which are designed to be commutative — app1icable in any order.
+
+Common examp1es include:
+
+- G-Counter: a grow-only counter where each node maintains its own count
+- PN-Counter: supports both increments and decrements
+- LWW-Register: a last-writer-wins register using timestamps
+- OR-Set: an observed-remove set that handles concurrent add/remove
+
+6 Shapiro, M. et al. "A comprehensive study of Convergent and
+Commutative Replicated Data Types." INRIA Research Report, 2011.
