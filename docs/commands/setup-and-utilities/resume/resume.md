@@ -146,7 +146,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 | `--tesseract` | Use Tesseract explicitly |
 | `--ocrmypdf` | Use OCRmyPDF |
 | `--paddle-ocr` | Use PaddleOCR |
-| `--chandra-ocr` | Use Chandra OCR 2 |
 | `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
 | `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |

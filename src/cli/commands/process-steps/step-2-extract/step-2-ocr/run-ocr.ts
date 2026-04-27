@@ -21,7 +21,6 @@ import { ensureTesseractSetup, ocrImage } from './ocr-utils/tesseract-utils'
 import { processPages } from './ocr-utils/page-processor'
 import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
 import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
-import { runChandraOcrOnImage } from './ocr-local/chandra-ocr/run-chandra-ocr'
 import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
 import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
@@ -109,7 +108,6 @@ const runZipXmlExtract = async (filePath: string, format: ZipXmlFormat): Promise
 const resolveExtractEngine = (opts: ExtractionOptions): LocalExtractOcrEngine => {
   if (opts.useOcrmypdf === true) return 'ocrmypdf'
   if (opts.usePaddleOcr === true) return 'paddle-ocr'
-  if (opts.useChandra === true) return 'chandra-ocr'
   return 'tesseract'
 }
 
@@ -138,7 +136,7 @@ const hasHostedOcr = (opts: ExtractionOptions): boolean =>
   hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts) || hasAnthropicOcr(opts) || hasGeminiOcr(opts) || hasAwsTextract(opts) || hasGcloudDocai(opts)
 
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
-  opts.useTesseract === true || opts.useOcrmypdf === true || opts.usePaddleOcr === true || opts.useChandra === true || hasHostedOcr(opts)
+  opts.useTesseract === true || opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
 
 const hasEpubExportFlags = (opts: ExtractionOptions): boolean =>
   opts.epubChapterFiles === true || typeof opts.epubChunkLimitChars === 'number'
@@ -491,14 +489,6 @@ const ocrSingleImage = async (
         ...(ocr.confidence !== undefined ? { confidence: ocr.confidence } : {})
       }
     }
-    case 'chandra-ocr': {
-      const ocr = await runChandraOcrOnImage(normalizedPath)
-      return {
-        pageNumber,
-        method: 'ocr',
-        text: ocr.text
-      }
-    }
     default:
       assertNever(engine)
   }
@@ -510,7 +500,6 @@ const engineSuffix = (engine: LocalExtractOcrEngine): string => {
     case 'tesseract': return 'tesseract'
     case 'ocrmypdf': return 'ocrmypdf'
     case 'paddle-ocr': return 'paddle-ocr'
-    case 'chandra-ocr': return 'chandra-ocr'
   }
 }
 
@@ -1273,13 +1262,6 @@ export const runOcr = async (
           extractionMethod = 'mutool+paddle-ocr'
           break
         }
-        case 'chandra-ocr': {
-          const { buildChandraOcrPageFn } = await import('./ocr-local/chandra-ocr/run-chandra-ocr')
-          const chandraOcrFn = await buildChandraOcrPageFn(opts)
-          pages = await processPages(filePath, step1Metadata.pageCount, opts, chandraOcrFn)
-          extractionMethod = 'mutool+chandra-ocr'
-          break
-        }
         default:
           assertNever(engine)
       }
@@ -1402,12 +1384,6 @@ const runPdfOcr = async (
       const paddleOcrFn = await buildPaddleOcrPageFn(opts)
       const pages = await processPages(pdfPath, tempMeta.pageCount, opts, paddleOcrFn)
       return { pages, extractionMethod: `pdf+paddle-ocr` }
-    }
-    case 'chandra-ocr': {
-      const { buildChandraOcrPageFn } = await import('./ocr-local/chandra-ocr/run-chandra-ocr')
-      const chandraOcrFn = await buildChandraOcrPageFn(opts)
-      const pages = await processPages(pdfPath, tempMeta.pageCount, opts, chandraOcrFn)
-      return { pages, extractionMethod: `pdf+chandra-ocr` }
     }
     default:
       assertNever(engine)

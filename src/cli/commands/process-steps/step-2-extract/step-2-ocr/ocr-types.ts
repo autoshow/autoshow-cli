@@ -90,6 +90,8 @@ export type EpubChapter = {
   href: string
   path: string
   title?: string
+  tocTitle?: string
+  isTocStart?: boolean
   text: string
   wordCount: number
   characterCount: number
@@ -165,7 +167,7 @@ export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'
 export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
 
 export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai'
-export type LocalExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'chandra-ocr'
+export type LocalExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr'
 
 export type HostedOcrRun = {
   pages: PageResult[]
@@ -179,7 +181,7 @@ export type HostedOcrRun = {
 }
 
 export type OcrTarget = {
-  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'chandra-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'aws-textract' | 'gcloud-docai'
+  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'aws-textract' | 'gcloud-docai'
   model: string
 }
 
@@ -189,7 +191,7 @@ export type OcrResumeRun = {
   targetsToRun: OcrTarget[]
 }
 
-export type OcrProviderKey = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'chandra-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai'
+export type OcrProviderKey = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai'
 
 export type OcrProviderCapability = {
   supports: OcrSourceKind[]
@@ -236,6 +238,10 @@ export type ChapterExportSummary = {
   sectionsKept: number
   sectionsDropped: number
   dividerSectionsMerged: number
+  logicalChapterCount?: number
+  logicalChapterSource?: 'toc' | 'spine'
+  tocStartSections?: number
+  prefaceSectionsDropped?: number
   filesWritten: number
   chapterFilesWritten?: number
   chunkFilesWritten?: number
@@ -253,6 +259,10 @@ export type EpubExportPlan = {
     sectionsKept: number
     sectionsDropped: number
     dividerSectionsMerged: number
+    logicalChapterCount?: number
+    logicalChapterSource?: 'toc' | 'spine'
+    tocStartSections?: number
+    prefaceSectionsDropped?: number
     filesWritten: number
     chapterFilesWritten?: number
     chunkFilesWritten?: number
@@ -266,6 +276,8 @@ export type EpubTextSection = {
   title: string
   href: string
   text: string
+  isTocStart?: boolean
+  sourceIndexes?: number[]
 }
 
 export type EpubTextOutput = {
@@ -431,4 +443,5 @@ export type OcrMetadataOptions = {
   requestedProviders?: Array<{ service: string, model: string }>
   providerStates?: Array<Record<string, unknown>>
   missingProviders?: Array<{ service: string, model: string }>
+  primaryProvider?: { service: string, model: string } | undefined
 }

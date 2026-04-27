@@ -98,6 +98,8 @@ export const runDoctor = async (): Promise<void> => {
   checks.push({ label: 'gcloud project', ok: gcloudState.projectId !== undefined, detail: gcloudState.projectId ?? gcloudState.details.project })
   checks.push({ label: 'gcloud billing', ok: gcloudState.billingEnabled === true, detail: gcloudState.details.billing })
   checks.push({ label: 'speech.googleapis.com', ok: gcloudState.speechApiEnabled === true, detail: gcloudState.details.speechApi })
+  checks.push({ label: 'documentai.googleapis.com', ok: gcloudState.documentAiApiEnabled === true, detail: gcloudState.details.documentAiApi })
+  checks.push({ label: 'storage.googleapis.com', ok: gcloudState.storageApiEnabled === true, detail: gcloudState.details.storageApi })
 
   let hasFailure = false
   for (const check of checks) {
@@ -169,7 +171,7 @@ export const runDoctor = async (): Promise<void> => {
       category: 'command',
       humanTable: createHumanTable([
         { action: 'Install missing tools', command: 'bun as setup' },
-        { action: 'Verify Google Cloud STT', command: 'bun as setup --gcloud' },
+        { action: 'Verify Google Cloud STT + Document AI OCR', command: 'bun as setup --gcloud' },
         { action: 'Configure YouTube cookies', command: 'docs/cookies.md' }
       ], ['action', 'command'])
     })

@@ -666,7 +666,6 @@ export const buildOptsFromFlags = (
   const useTesseract = isStep2BooleanProviderSelected('tesseract-ocr', mergedFlags, allShortcutFlags)
   const useOcrmypdf = isStep2BooleanProviderSelected('ocrmypdf', mergedFlags, allShortcutFlags)
   const usePaddleOcr = isStep2BooleanProviderSelected('paddle-ocr', mergedFlags, allShortcutFlags)
-  const useChandra = isStep2BooleanProviderSelected('chandra-ocr', mergedFlags, allShortcutFlags)
 
   return {
     useReverb,
@@ -763,7 +762,6 @@ export const buildOptsFromFlags = (
     useTesseract,
     useOcrmypdf,
     usePaddleOcr,
-    useChandra,
     mistralOcrModels,
     mistralOcrModel,
     glmOcrModels,
@@ -778,6 +776,7 @@ export const buildOptsFromFlags = (
     awsTextractModel,
     gcloudDocaiModels,
     gcloudDocaiModel,
+    primaryOcr: readOptionalStringFlag(mergedFlags, 'primary-ocr'),
     epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
     epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
     pdfChapterMode,

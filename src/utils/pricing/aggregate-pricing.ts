@@ -35,6 +35,8 @@ import { estimateSupadataCost, SUPADATA_STT_AGGREGATE_NOTE } from '~/utils/prici
 import {
   estimateFirecrawlScrapeCost,
   estimateAnthropicOcrCost,
+  estimateAwsTextractCost,
+  estimateGcloudDocaiCost,
   estimateGeminiOcrCost,
   estimateGlmOcrCost,
   estimateMistralOcrCost,
@@ -330,6 +332,38 @@ const buildExtractEstimates = async (
         costMultiplier: estimation.costMultiplier,
         estimateType: estimate.estimateType,
         note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+      })
+      continue
+    }
+
+    if (provider.service === 'gcloud-docai') {
+      const estimate = await estimateGcloudDocaiCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        costPer1kPagesCents: estimate.costPer1kPagesCents,
+        pageCount: estimate.pageCount,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: 'exact'
+      })
+      continue
+    }
+
+    if (provider.service === 'aws-textract') {
+      const estimate = await estimateAwsTextractCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        costPer1kPagesCents: estimate.costPer1kPagesCents,
+        pageCount: estimate.pageCount,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: 'exact'
       })
     }
   }

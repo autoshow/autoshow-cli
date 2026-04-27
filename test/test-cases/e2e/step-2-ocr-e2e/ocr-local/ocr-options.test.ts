@@ -10,6 +10,10 @@ type EpubExportMetadata = {
   directories?: string[]
   chapterFilesWritten?: number
   chunkFilesWritten?: number
+  logicalChapterCount?: number
+  logicalChapterSource?: 'toc' | 'spine'
+  tocStartSections?: number
+  prefaceSectionsDropped?: number
 }
 
 type PdfChapterDetectionMetadata = {
@@ -22,6 +26,7 @@ type PdfChapterDetectionMetadata = {
 
 type ExtractMetadata = {
   step1?: { format?: string }
+  primaryProvider?: { service?: string; model?: string }
   resolvedStep2?: {
     route?: string
     sourceKind?: string
@@ -48,8 +53,6 @@ const epubInput = 'input/examples/document/1-epub.epub'
 const imageInput = 'input/examples/document/1-document.png'
 const articleUrl = 'https://ajcwebdev.com'
 const paddleOcrPython = 'runtime/bin/paddle-ocr/bin/python'
-const chandraOcrPython = 'runtime/bin/chandra-ocr/bin/python'
-
 beforeAll(async () => {
   await ensurePageImageFixture(imageInput)
   await cleanupTestOutput('1-document')
@@ -128,6 +131,60 @@ test('extract PDF with --ocrmypdf', async () => {
   expect(metadata.step2?.extractionMethod).toBe('ocrmypdf')
 })
 
+test('multi-provider OCR without --primary-ocr writes provider artifacts only', async () => {
+  if (!Bun.which('ocrmypdf')) {
+    return
+  }
+
+  await cleanupTestOutput('1-document')
+
+  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--tesseract-ocr', '--ocrmypdf'], {
+    testName: 'multi-provider OCR without primary'
+  })
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
+  expect(outputDir).not.toBeNull()
+  if (!outputDir) return
+
+  expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(false)
+  expect(await fileExists(`${outputDir}/result.json`)).toBe(false)
+  expect(await fileExists(`${outputDir}/providers/tesseract-tesseract/extraction.txt`)).toBe(true)
+  expect(await fileExists(`${outputDir}/providers/ocrmypdf-ocrmypdf/extraction.txt`)).toBe(true)
+
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.primaryProvider).toBeUndefined()
+  expect(metadata.requestedProviders).toEqual([
+    { service: 'tesseract', model: 'tesseract' },
+    { service: 'ocrmypdf', model: 'ocrmypdf' }
+  ])
+})
+
+test('multi-provider OCR with --primary-ocr writes selected root artifact', async () => {
+  if (!Bun.which('ocrmypdf')) {
+    return
+  }
+
+  await cleanupTestOutput('1-document')
+
+  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--tesseract-ocr', '--ocrmypdf', '--primary-ocr', 'tesseract'], {
+    testName: 'multi-provider OCR with primary'
+  })
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
+  expect(outputDir).not.toBeNull()
+  if (!outputDir) return
+
+  expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
+  const rootText = await Bun.file(`${outputDir}/extraction.txt`).text()
+  const providerText = await Bun.file(`${outputDir}/providers/tesseract-tesseract/extraction.txt`).text()
+  expect(rootText).toBe(providerText)
+
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.primaryProvider).toEqual({ service: 'tesseract', model: 'tesseract' })
+})
+
 test('extract PDF with --paddle-ocr', async () => {
   if (!await fileExists(paddleOcrPython)) {
     return
@@ -144,24 +201,6 @@ test('extract PDF with --paddle-ocr', async () => {
 
   const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step2?.extractionMethod).toBe('mutool+paddle-ocr')
-})
-
-test('extract PDF with --chandra-ocr', async () => {
-  if (!await fileExists(chandraOcrPython)) {
-    return
-  }
-
-  await cleanupTestOutput('1-document')
-
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--chandra-ocr'], { testName: 'extract PDF with --chandra-ocr' })
-  expect(result.exitCode).toBe(0)
-
-  const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
-  expect(outputDir).not.toBeNull()
-  if (!outputDir) return
-
-  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
-  expect(metadata.step2?.extractionMethod).toBe('mutool+chandra-ocr')
 })
 
 test('extract EPUB with --ocrmypdf', async () => {
@@ -383,6 +422,8 @@ test('extract EPUB with --chapters writes chapter files and metadata summary', a
   expect(metadata.step2?.epubExport?.mode).toBe('chapters')
   expect(metadata.step2?.epubExport?.chunkLimitChars).toBe(5000)
   expect(metadata.step2?.epubExport?.directories).toEqual(['chapters'])
+  expect(metadata.step2?.epubExport?.logicalChapterCount).toBeGreaterThan(0)
+  expect(metadata.step2?.epubExport?.logicalChapterSource).toMatch(/^(toc|spine)$/)
 
   const firstChapter = await Bun.file(`${outputDir}/chapters/${chapterFiles[0]}`).text()
   expect(firstChapter.startsWith('Chapter 1:')).toBe(true)

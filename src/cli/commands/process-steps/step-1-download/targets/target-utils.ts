@@ -904,7 +904,6 @@ export const resolveInputRoutingForCommand = async (
     | 'useTesseract'
     | 'useOcrmypdf'
     | 'usePaddleOcr'
-    | 'useChandra'
     | 'mistralOcrModel'
     | 'mistralOcrModels'
     | 'glmOcrModel'

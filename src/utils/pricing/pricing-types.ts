@@ -58,7 +58,7 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'> & {
+export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'> & {
   step: 'extract'
   costPer1kPagesCents?: number
   inputCostPer1MCents?: number
@@ -130,7 +130,7 @@ export type ComputeEstimatedCostsInput = {
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -193,7 +193,7 @@ export type ComputeEstimatedProcessingTimesInput = {
   openaiOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl', model: string, pageCount?: number }> | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']

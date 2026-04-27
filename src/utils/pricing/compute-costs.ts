@@ -171,6 +171,18 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
     }
   }
+  if (metadata.ocrService === 'gcloud-docai' || metadata.extractionMethod.includes('gcloud-docai')) {
+    return {
+      provider: 'gcloud-docai',
+      model: metadata.ocrModel ?? 'ocr'
+    }
+  }
+  if (metadata.ocrService === 'aws-textract' || metadata.extractionMethod.includes('aws-textract')) {
+    return {
+      provider: 'aws-textract',
+      model: metadata.ocrModel ?? 'detect-text'
+    }
+  }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
     return {
       provider: 'paddle-ocr',
@@ -325,6 +337,32 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
+    } else if (provider === 'gcloud-docai') {
+      const model = input.step2.ocrModel ?? 'ocr'
+      const extractPricing = getExtractPricing('gcloud-docai', model)
+      const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
+      const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
+      steps.push({
+        step: 'extract',
+        provider: 'gcloud-docai',
+        model,
+        cost,
+        inputMetric: 'pages',
+        inputValue: input.step2.totalPages,
+      })
+    } else if (provider === 'aws-textract') {
+      const model = input.step2.ocrModel ?? 'detect-text'
+      const extractPricing = getExtractPricing('aws-textract', model)
+      const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
+      const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
+      steps.push({
+        step: 'extract',
+        provider: 'aws-textract',
+        model,
+        cost,
+        inputMetric: 'pages',
+        inputValue: input.step2.totalPages,
+      })
     } else if (provider !== 'extract') {
       steps.push({
         step: 'extract',
@@ -362,6 +400,10 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         ? (step2Entry.totalPages / 1000) * (getExtractPricing('mistral', model).costPer1kPagesCents ?? 0)
         : provider === 'firecrawl'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('firecrawl', model).costPer1kPagesCents ?? 0)
+        : provider === 'gcloud-docai'
+          ? (step2Entry.totalPages / 1000) * (getExtractPricing('gcloud-docai', model).costPer1kPagesCents ?? 0)
+        : provider === 'aws-textract'
+          ? (step2Entry.totalPages / 1000) * (getExtractPricing('aws-textract', model).costPer1kPagesCents ?? 0)
         : provider === 'glm' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
@@ -633,7 +675,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
 
   for (const target of extractTargets) {
     const estimation = getExtractEstimation(target.provider, target.model)
-    if (target.provider === 'mistral' || target.provider === 'firecrawl') {
+    if (target.provider === 'mistral' || target.provider === 'firecrawl' || target.provider === 'gcloud-docai' || target.provider === 'aws-textract') {
       const extractPricing = getExtractPricing(target.provider, target.model)
       const cost = applyCostMultiplier(
         ((target.pageCount ?? input.extractPageCount ?? 0) / 1000) * (extractPricing.costPer1kPagesCents ?? 0),

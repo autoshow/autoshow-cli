@@ -30,6 +30,44 @@ export const resolveExtractInputPageCount = async (input: string): Promise<numbe
   }
 }
 
+export const estimateGcloudDocaiCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{ provider: 'gcloud-docai', model: string, pageCount: number, costPer1kPagesCents: number, totalCost: number }> => {
+  const model = modelRaw
+  const pricing = getExtractPricing('gcloud-docai', model)
+  const costPer1kPagesCents = pricing.costPer1kPagesCents ?? 150
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+
+  return {
+    provider: 'gcloud-docai',
+    model,
+    pageCount,
+    costPer1kPagesCents,
+    totalCost: (pageCount / 1000) * costPer1kPagesCents
+  }
+}
+
+export const estimateAwsTextractCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{ provider: 'aws-textract', model: string, pageCount: number, costPer1kPagesCents: number, totalCost: number }> => {
+  const model = modelRaw
+  const pricing = getExtractPricing('aws-textract', model)
+  const costPer1kPagesCents = pricing.costPer1kPagesCents ?? 150
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+
+  return {
+    provider: 'aws-textract',
+    model,
+    pageCount,
+    costPer1kPagesCents,
+    totalCost: (pageCount / 1000) * costPer1kPagesCents
+  }
+}
+
 export const estimateMistralOcrCost = async (
   modelRaw: string,
   input: string

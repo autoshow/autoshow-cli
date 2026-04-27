@@ -1,4 +1,6 @@
-import { basename } from 'node:path'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { basename, join } from 'node:path'
 import * as v from 'valibot'
 import * as l from '~/utils/logger'
 import type { DocumentMetadata, PageResult } from '~/types'
@@ -80,42 +82,56 @@ const buildPageResults = (blocks: TextractBlock[], totalPages: number): PageResu
   return pages
 }
 
+export const writeAwsTextractSyncDocumentFile = async (
+  filePath: string,
+  tempDir: string
+): Promise<string> => {
+  const bytes = await Bun.file(filePath).arrayBuffer()
+  const base64 = Buffer.from(bytes).toString('base64')
+  const documentJsonPath = join(tempDir, 'document.json')
+  await Bun.write(documentJsonPath, JSON.stringify({ Bytes: base64 }))
+  return `file://${documentJsonPath}`
+}
+
 const runSyncTextract = async (
   filePath: string,
   region: string,
   model: string
 ): Promise<{ pages: PageResult[], totalPages: number }> => {
-  const bytes = await Bun.file(filePath).arrayBuffer()
-  const base64 = Buffer.from(bytes).toString('base64')
-  const documentJson = JSON.stringify({ Bytes: base64 })
-
   const command = isAnalyzeMode(model)
     ? 'analyze-document'
     : 'detect-document-text'
 
-  const args = [
-    'textract',
-    command,
-    '--document', documentJson,
-    '--region', region,
-    '--output', 'json'
-  ]
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-textract-sync-'))
 
-  if (isAnalyzeMode(model)) {
-    args.push('--feature-types', 'TABLES', 'FORMS', 'LAYOUT')
+  try {
+    const documentArg = await writeAwsTextractSyncDocumentFile(filePath, tempDir)
+    const args = [
+      'textract',
+      command,
+      '--document', documentArg,
+      '--region', region,
+      '--output', 'json'
+    ]
+
+    if (isAnalyzeMode(model)) {
+      args.push('--feature-types', 'TABLES', 'FORMS', 'LAYOUT')
+    }
+
+    l.write('info', `AWS Textract sync ${command} for ${basename(filePath)}`)
+    const result = await runAws(args)
+    if (result.exitCode !== 0) {
+      const detail = result.stderr.trim() || result.stdout.trim() || 'command failed'
+      throw new Error(`AWS Textract ${command} failed: ${detail}`)
+    }
+
+    const response = validateData(TextractSyncResponseSchema, JSON.parse(result.stdout), `AWS Textract ${command} response`)
+    const totalPages = response.DocumentMetadata.Pages
+    const pages = buildPageResults(response.Blocks, totalPages)
+    return { pages, totalPages }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true }).catch(() => {})
   }
-
-  l.write('info', `AWS Textract sync ${command} for ${basename(filePath)}`)
-  const result = await runAws(args)
-  if (result.exitCode !== 0) {
-    const detail = result.stderr.trim() || result.stdout.trim() || 'command failed'
-    throw new Error(`AWS Textract ${command} failed: ${detail}`)
-  }
-
-  const response = validateData(TextractSyncResponseSchema, JSON.parse(result.stdout), `AWS Textract ${command} response`)
-  const totalPages = response.DocumentMetadata.Pages
-  const pages = buildPageResults(response.Blocks, totalPages)
-  return { pages, totalPages }
 }
 
 const runAsyncTextract = async (

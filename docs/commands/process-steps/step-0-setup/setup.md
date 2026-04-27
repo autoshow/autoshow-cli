@@ -28,7 +28,7 @@ bun as setup
 
 Use full setup on a clean machine when you want local download, OCR, STT, write, or TTS workflows to work without manually installing their prerequisites first.
 
-Check gcloud CLI readiness for Google Cloud Speech-to-Text separately:
+Check gcloud CLI readiness for Google Cloud Speech-to-Text and Document AI OCR separately:
 
 ```bash
 bun as setup --gcloud
@@ -36,7 +36,7 @@ bun as setup --gcloud --gcloud-project PROJECT_ID
 bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
 ```
 
-`bun as setup --gcloud` verifies the `gcloud` binary, Google Cloud CLI auth, the active project, project billing state, and whether `speech.googleapis.com` is enabled. `bun as setup --gcloud --gcloud-project PROJECT_ID` sets the active project or creates it when missing, auto-links billing when exactly one open billing account is visible, enables `speech.googleapis.com` when billing is ready, and saves `chirp_3` as the default Google STT model when no Google STT default has been saved yet. Use `--gcloud-billing-account ACCOUNT_ID` when multiple open billing accounts are available or when you want to force a specific billing account. When anything is still missing, setup prints the exact next-step commands to run.
+`bun as setup --gcloud` verifies the `gcloud` binary, Google Cloud CLI auth, the active project, project billing state, and whether `speech.googleapis.com`, `documentai.googleapis.com`, and `storage.googleapis.com` are enabled. `bun as setup --gcloud --gcloud-project PROJECT_ID` sets the active project or creates it when missing, auto-links billing when exactly one open billing account is visible, enables the required APIs when billing is ready, creates or reuses an `autoshow-ocr` Document AI OCR processor in `us`, creates or verifies a GCS staging bucket for batch OCR, and saves `chirp_3` as the default Google STT model plus `ocr` as the default Document AI OCR model. Use `--gcloud-billing-account ACCOUNT_ID` when multiple open billing accounts are available or when you want to force a specific billing account. When anything is still missing, setup prints the exact next-step commands to run.
 
 Check AWS CLI readiness for Amazon Transcribe separately:
 
@@ -67,7 +67,7 @@ Check prerequisites, API keys, and configuration without installing anything:
 bun as setup --doctor
 ```
 
-Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`, hosted STT keys such as `DEEPINFRA_API_KEY` and `DEAPI_API_KEY`, and generation keys such as `XAI_API_KEY`, `RUNWAYML_API_SECRET`, and `MINIMAX_API_KEY`), Google Cloud STT gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`, hosted STT keys such as `DEEPINFRA_API_KEY` and `DEAPI_API_KEY`, and generation keys such as `XAI_API_KEY`, `RUNWAYML_API_SECRET`, and `MINIMAX_API_KEY`), Google Cloud STT + Document AI OCR gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
 
 Doctor also reports YouTube cookie state separately:
 
@@ -98,11 +98,11 @@ Isolated steps assume their prerequisites are already present. On a clean machin
 # Document foundations: mutool + Calibre CLI tools
 bun as setup --step calibre
 
-# Focus only on Google Cloud STT readiness
+# Focus only on Google Cloud STT + Document AI OCR readiness
 bun as setup --gcloud
 
 # Set or create the Google Cloud project, link billing when possible,
-# enable Speech-to-Text, and save the default Google STT model
+# enable Speech-to-Text, Document AI, and Storage, then save Google defaults
 bun as setup --gcloud --gcloud-project PROJECT_ID
 
 # Force a specific Google Cloud billing account during bootstrap

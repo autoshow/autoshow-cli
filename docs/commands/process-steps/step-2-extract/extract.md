@@ -53,12 +53,13 @@ Media inputs are downloaded and transcribed with local or hosted speech-to-text 
 # full setup
 bun as setup
 
-# verify gcloud CLI auth, active project, and Speech-to-Text API access
+# verify gcloud CLI auth, active project, Speech-to-Text, Document AI, and Storage access
 bun as setup --gcloud
 
 # set or create the active gcloud project, link billing when possible,
-# enable Speech-to-Text when billing is ready, and save chirp_3 when no
-# Google STT default is saved yet
+# enable Speech-to-Text, Document AI, and Storage when billing is ready,
+# create/reuse the autoshow-ocr processor and GCS staging bucket,
+# and save chirp_3 plus ocr defaults when no Google defaults are saved yet
 bun as setup --gcloud --gcloud-project PROJECT_ID
 
 # pin a specific billing account when multiple open billing accounts exist
@@ -103,7 +104,7 @@ bun as setup --step reverb
 | OpenAI STT | `OPENAI_API_KEY` | `OPENAI_BASE_URL` |
 | Gemini STT | `GEMINI_API_KEY` | `GEMINI_BASE_URL` |
 | GLM STT | `GLM_API_KEY` | `GLM_BASE_URL` |
-| Google Cloud STT | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | none; project is read from `gcloud config`, location is fixed to `us`, and requests go to `us-speech.googleapis.com`; use `bun as setup --gcloud --gcloud-project ...` to set or create the active project from AutoShow |
+| Google Cloud STT + Document AI OCR | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | STT project is read from `gcloud config`, STT location is fixed to `us`, and requests go to `us-speech.googleapis.com`; Document AI OCR defaults are saved by `bun as setup --gcloud --gcloud-project ...` under `defaults.extract.ocr.gcloudDocaiLocation`, `gcloudDocaiOcrProcessorId`, and `gcloudDocaiBucket`; env vars such as `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, and `AUTOSHOW_GCLOUD_BUCKET` still override saved config |
 | AWS Transcribe | AWS CLI auth (`aws configure` or `AWS_PROFILE`) | `AWS_REGION` / `AWS_DEFAULT_REGION`; save `--aws-region` and `--aws-bucket` with `bun as config`, or run `bun as setup --aws` to provision/save a staging bucket automatically when none is configured |
 | Mistral | `MISTRAL_API_KEY` | - |
 | AssemblyAI | `ASSEMBLYAI_API_KEY` | `ASSEMBLYAI_BASE_URL` |
@@ -256,11 +257,10 @@ bun as setup --step calibre
 bun as setup --step sample
 ```
 
-PaddleOCR and Chandra OCR can also be prepared lazily on first use:
+PaddleOCR can also be prepared lazily on first use:
 
 ```bash
 bun as extract input/examples/document/1-document.pdf --paddle-ocr
-bun as extract input/examples/document/1-document.pdf --chandra-ocr
 ```
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms when the Calibre CLI tools are missing.
@@ -291,8 +291,8 @@ AUTOSHOW_URL_BACKEND=glm-reader
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--chandra-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
-| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--chandra-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
+| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, OCR fallback if needed | hosted OCR routes convert through PDF first |
 | RTF | LibreOffice to PDF, then OCR | same |
@@ -368,11 +368,11 @@ bun as extract input/examples/document/1-epub.epub --length 50
 # OCRmyPDF path
 bun as extract input/examples/document/1-document.pdf --ocrmypdf
 
+# Paddle OCR path
+bun as extract input/examples/document/1-document.pdf --paddle-ocr
+
 # Explicit Tesseract path
 bun as extract input/examples/document/1-document.pdf --tesseract
-
-# Chandra OCR 2 (local, HuggingFace backend)
-bun as extract input/examples/document/1-document.pdf --chandra-ocr
 
 # Hosted OCR
 bun as extract input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
@@ -411,7 +411,6 @@ bun as extract input/examples/document/1-epub.epub --epub-calibre --out json
 | `--tesseract` | Use Tesseract explicitly |
 | `--ocrmypdf` | Use OCRmyPDF |
 | `--paddle-ocr` | Use PaddleOCR |
-| `--chandra-ocr` | Use Chandra OCR 2 |
 | `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
 | `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
@@ -549,6 +548,7 @@ Happy Scribe price preflight is intentionally side-effect free.
 - AWS Textract offers two models: `detect-text` for text-only extraction at $1.50 per 1,000 pages, and `analyze-document` for tables, forms, and layout extraction at $15 per 1,000 pages.
 - Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging, which requires an S3 bucket (reuses the bucket from AWS STT setup, or run `bun as setup --aws` to create one).
 - AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
+- Google Cloud Document AI uses the OCR processor and GCS staging bucket saved by `bun as setup --gcloud --gcloud-project PROJECT_ID`; `layout-parser` remains an explicit processor setup step unless you save `gcloudDocaiLayoutProcessorId` or set `AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID`.
 - Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md).
 - Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.
 

@@ -104,7 +104,6 @@ export type RuntimeOptions = {
   useTesseract: boolean
   useOcrmypdf: boolean
   usePaddleOcr: boolean
-  useChandra: boolean
   mistralOcrModels: string[] | undefined
   mistralOcrModel: string | undefined
   glmOcrModels: string[] | undefined
@@ -119,6 +118,7 @@ export type RuntimeOptions = {
   awsTextractModel: string | undefined
   gcloudDocaiModels: string[] | undefined
   gcloudDocaiModel: string | undefined
+  primaryOcr: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined
   pdfChapterMode: 'local' | 'auto' | 'llm'

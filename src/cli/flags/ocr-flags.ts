@@ -23,6 +23,10 @@ export const ocrCommandFlags = {
     default: false,
     negatable: false
   },
+  'primary-ocr': {
+    description: 'In multi-provider OCR, write top-level extraction artifacts from one requested provider (service or service/model)',
+    type: String
+  },
   ...ocrInputFlags,
   ...ocrTuningFlags,
   ...articleFlags,

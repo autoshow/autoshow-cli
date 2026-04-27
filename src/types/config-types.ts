@@ -125,6 +125,10 @@ const ExtractOcrDefaultsSchema = v.strictObject({
   geminiOcr: ModelArraySchema,
   awsTextract: ModelArraySchema,
   gcloudDocai: ModelArraySchema,
+  gcloudDocaiLocation: v.optional(v.string(), undefined),
+  gcloudDocaiOcrProcessorId: v.optional(v.string(), undefined),
+  gcloudDocaiLayoutProcessorId: v.optional(v.string(), undefined),
+  gcloudDocaiBucket: v.optional(v.string(), undefined),
   chapters: v.optional(v.boolean(), undefined),
   length: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   pdfChapterMode: v.optional(v.picklist(['local', 'auto', 'llm']), undefined)

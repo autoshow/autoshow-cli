@@ -90,7 +90,11 @@ describe('config contracts', () => {
           },
           ocr: {
             providerConcurrency: 3,
-            localConcurrency: 1
+            localConcurrency: 1,
+            gcloudDocai: ['ocr'],
+            gcloudDocaiLocation: 'us',
+            gcloudDocaiOcrProcessorId: 'processor-123',
+            gcloudDocaiBucket: 'autoshow-docai-project-abc123'
           }
         }
       }
@@ -110,7 +114,11 @@ describe('config contracts', () => {
           },
           ocr: {
             providerConcurrency: 3,
-            localConcurrency: 1
+            localConcurrency: 1,
+            gcloudDocai: ['ocr'],
+            gcloudDocaiLocation: 'us',
+            gcloudDocaiOcrProcessorId: 'processor-123',
+            gcloudDocaiBucket: 'autoshow-docai-project-abc123'
           }
         }
       }

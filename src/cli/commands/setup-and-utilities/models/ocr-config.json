@@ -174,5 +174,77 @@
         }
       }
     }
+  },
+  "gcloud-docai": {
+    "description": "Google Cloud Document AI OCR",
+    "type": "api",
+    "models": {
+      "ocr": {
+        "description": "Google Cloud Document AI OCR processor",
+        "costPer1kPagesUSD": 1.5,
+        "costPer1kPagesCents": 150,
+        "limits": {
+          "pdfBytes": 20971520,
+          "imageBytes": 20971520,
+          "pageCount": 2000,
+          "notes": "Sync API: 20 MB per request. Batch API: 1 GB per file, 50 GB per batch, 2000 pages per batch."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 1500
+        }
+      },
+      "layout-parser": {
+        "description": "Google Cloud Document AI Layout Parser processor",
+        "costPer1kPagesUSD": 10,
+        "costPer1kPagesCents": 1000,
+        "limits": {
+          "pdfBytes": 20971520,
+          "imageBytes": 20971520,
+          "pageCount": 2000,
+          "notes": "Sync API: 20 MB per request. Batch API: 1 GB per file, 50 GB per batch, 2000 pages per batch."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 2000
+        }
+      }
+    }
+  },
+  "aws-textract": {
+    "description": "AWS Textract OCR",
+    "type": "api",
+    "models": {
+      "detect-text": {
+        "description": "AWS Textract DetectDocumentText API",
+        "costPer1kPagesUSD": 1.5,
+        "costPer1kPagesCents": 150,
+        "limits": {
+          "pdfBytes": 524288000,
+          "imageBytes": 10485760,
+          "pageCount": 3000,
+          "notes": "Sync: single-page, 10 MB image. Async: up to 3000 pages per PDF, 500 MB max file size."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 1200
+        }
+      },
+      "analyze-document": {
+        "description": "AWS Textract AnalyzeDocument API (tables, forms, layout)",
+        "costPer1kPagesUSD": 65,
+        "costPer1kPagesCents": 6500,
+        "limits": {
+          "pdfBytes": 524288000,
+          "imageBytes": 10485760,
+          "pageCount": 3000,
+          "notes": "Sync: single-page, 10 MB image. Async: up to 3000 pages per PDF, 500 MB max file size."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 2000
+        }
+      }
+    }
   }
 }

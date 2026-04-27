@@ -245,7 +245,7 @@ Notable behavior:
 | Step | Local engines | Service engines |
 |------|---------------|-----------------|
 | STT | Whisper.cpp, Reverb | Deepgram, ElevenLabs, Soniox, Speechmatics, Rev, Groq, OpenAI, Mistral, AssemblyAI, Gladia |
-| Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, Chandra OCR, EPUB parser, native ZIP/XML office parsing, Defuddle article extraction | Mistral OCR, GLM OCR, OpenAI OCR, Anthropic OCR, Gemini OCR, Firecrawl article extraction |
+| Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing, Defuddle article extraction | Mistral OCR, GLM OCR, OpenAI OCR, Anthropic OCR, Gemini OCR, Firecrawl article extraction |
 | LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok |
 | TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini |
 | Image | none | Gemini, OpenAI, MiniMax, GLM, Grok, Runway |

@@ -20,7 +20,6 @@ export const hasConfiguredOcrProviderSelection = (
   opts.useTesseract === true
   || opts.useOcrmypdf === true
   || opts.usePaddleOcr === true
-  || opts.useChandra === true
   || hasSelectedModel(opts.mistralOcrModels, opts.mistralOcrModel)
   || hasSelectedModel(opts.glmOcrModels, opts.glmOcrModel)
   || hasSelectedModel(opts.openaiOcrModels, opts.openaiOcrModel)

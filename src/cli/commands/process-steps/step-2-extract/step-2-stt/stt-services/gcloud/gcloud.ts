@@ -18,6 +18,15 @@ const GCLOUD_COMMAND_ENV = {
 
 export const GCLOUD_STT_DEFAULT_MODEL = 'chirp_3'
 export const GCLOUD_STT_DEFAULT_LOCATION = 'us'
+const GCLOUD_DOCAI_DEFAULT_MODEL = 'ocr'
+const GCLOUD_DOCAI_DEFAULT_LOCATION = 'us'
+const GCLOUD_DOCAI_DEFAULT_PROCESSOR_DISPLAY_NAME = 'autoshow-ocr'
+const GCLOUD_DOCAI_OCR_PROCESSOR_TYPE = 'OCR_PROCESSOR'
+const GCLOUD_REQUIRED_APIS = [
+  'speech.googleapis.com',
+  'documentai.googleapis.com',
+  'storage.googleapis.com'
+] as const
 
 const normalizeString = (value: string | undefined): string | undefined => {
   const trimmed = value?.trim()
@@ -255,8 +264,9 @@ const linkBillingAccount = async (
   }
 }
 
-const verifySpeechApiEnabled = async (
-  projectId: string
+const verifyServiceApiEnabled = async (
+  projectId: string,
+  serviceName: typeof GCLOUD_REQUIRED_APIS[number]
 ): Promise<{ ok: boolean, detail: string }> => {
   const result = await runGcloud([
     'services',
@@ -264,7 +274,7 @@ const verifySpeechApiEnabled = async (
     '--enabled',
     '--project',
     projectId,
-    '--filter=config.name:speech.googleapis.com',
+    `--filter=config.name=${serviceName}`,
     '--format=value(config.name)',
     '--quiet'
   ])
@@ -275,25 +285,201 @@ const verifySpeechApiEnabled = async (
     }
   }
 
-  const enabled = normalizeString(result.stdout) === 'speech.googleapis.com'
+  const enabled = normalizeString(result.stdout) === serviceName
   return {
     ok: enabled,
     detail: enabled ? 'enabled' : 'not enabled'
   }
 }
 
-const enableSpeechApi = async (projectId: string): Promise<void> => {
+const enableServiceApi = async (
+  projectId: string,
+  serviceName: typeof GCLOUD_REQUIRED_APIS[number]
+): Promise<void> => {
   const result = await runGcloud([
     'services',
     'enable',
-    'speech.googleapis.com',
+    serviceName,
     '--project',
     projectId,
     '--quiet'
   ])
   if (result.exitCode !== 0) {
-    throw new Error(`Failed to enable speech.googleapis.com for project "${projectId}": ${readCommandText(result.stdout, result.stderr)}`)
+    throw new Error(`Failed to enable ${serviceName} for project "${projectId}": ${readCommandText(result.stdout, result.stderr)}`)
   }
+}
+
+const verifySpeechApiEnabled = async (
+  projectId: string
+): Promise<{ ok: boolean, detail: string }> =>
+  await verifyServiceApiEnabled(projectId, 'speech.googleapis.com')
+
+const hasSavedGcloudDocaiDefault = (
+  config: Awaited<ReturnType<typeof loadConfig>>
+): boolean => Array.isArray(config.defaults?.extract?.ocr?.gcloudDocai) && config.defaults.extract.ocr.gcloudDocai.length > 0
+
+const readSavedGcloudDocaiDefaults = async (
+  configPathOverride?: string
+): Promise<{
+  configPath: string
+  hasModelDefault: boolean
+  location?: string | undefined
+  ocrProcessorId?: string | undefined
+  layoutProcessorId?: string | undefined
+  bucket?: string | undefined
+}> => {
+  const configPath = await resolveConfigPath(configPathOverride)
+  const current = await loadConfig(configPath)
+  const ocr = current.defaults?.extract?.ocr
+  return {
+    configPath,
+    hasModelDefault: hasSavedGcloudDocaiDefault(current),
+    location: normalizeString(ocr?.gcloudDocaiLocation),
+    ocrProcessorId: normalizeString(ocr?.gcloudDocaiOcrProcessorId),
+    layoutProcessorId: normalizeString(ocr?.gcloudDocaiLayoutProcessorId),
+    bucket: normalizeString(ocr?.gcloudDocaiBucket)
+  }
+}
+
+const readGcloudDocaiProcessorId = (processorName: string): string | undefined =>
+  processorName.split('/').pop()
+
+const documentAiBaseUrl = (projectId: string, location: string): string =>
+  `https://${location}-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors`
+
+const listDocumentAiProcessors = async (
+  projectId: string,
+  location: string,
+  accessToken: string
+): Promise<Array<{ name?: string, displayName?: string, type?: string }>> => {
+  const response = await fetch(documentAiBaseUrl(projectId, location), {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to list Document AI processors (${response.status}): ${await response.text()}`)
+  }
+  const payload = await response.json() as { processors?: Array<{ name?: string, displayName?: string, type?: string }> }
+  return Array.isArray(payload.processors) ? payload.processors : []
+}
+
+const createDocumentAiOcrProcessor = async (
+  projectId: string,
+  location: string,
+  accessToken: string
+): Promise<string> => {
+  const response = await fetch(documentAiBaseUrl(projectId, location), {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      displayName: GCLOUD_DOCAI_DEFAULT_PROCESSOR_DISPLAY_NAME,
+      type: GCLOUD_DOCAI_OCR_PROCESSOR_TYPE
+    })
+  })
+  if (!response.ok) {
+    throw new Error(
+      `Failed to create Document AI OCR processor (${response.status}): ${await response.text()}. ` +
+      `Create one manually in project ${projectId}, location ${location}, type ${GCLOUD_DOCAI_OCR_PROCESSOR_TYPE}.`
+    )
+  }
+  const payload = await response.json() as { name?: string }
+  const processorId = payload.name ? readGcloudDocaiProcessorId(payload.name) : undefined
+  if (!processorId) {
+    throw new Error('Document AI OCR processor creation response did not include a processor ID.')
+  }
+  return processorId
+}
+
+const ensureDocumentAiOcrProcessor = async (
+  projectId: string,
+  location: string,
+  accessToken: string,
+  savedProcessorId?: string | undefined
+): Promise<{ processorId?: string | undefined, created: boolean, detail: string }> => {
+  if (savedProcessorId) {
+    return { processorId: savedProcessorId, created: false, detail: `saved ${savedProcessorId}` }
+  }
+
+  const processors = await listDocumentAiProcessors(projectId, location, accessToken)
+  const reusable = processors.find((processor) =>
+    processor.type === GCLOUD_DOCAI_OCR_PROCESSOR_TYPE
+    && processor.displayName === GCLOUD_DOCAI_DEFAULT_PROCESSOR_DISPLAY_NAME
+    && processor.name
+  )
+  const reusableId = reusable?.name ? readGcloudDocaiProcessorId(reusable.name) : undefined
+  if (reusableId) {
+    return { processorId: reusableId, created: false, detail: `found ${reusableId}` }
+  }
+
+  const processorId = await createDocumentAiOcrProcessor(projectId, location, accessToken)
+  return { processorId, created: true, detail: `created ${processorId}` }
+}
+
+const sanitizeBucketPart = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'project'
+
+const generateGcloudDocaiBucketName = (projectId: string): string =>
+  `autoshow-docai-${sanitizeBucketPart(projectId)}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`
+
+const verifyGcsBucketAccess = async (bucket: string): Promise<{ ok: boolean, detail: string }> => {
+  const result = await runGcloud(['storage', 'ls', `gs://${bucket}`, '--quiet'])
+  if (result.exitCode !== 0) {
+    return {
+      ok: false,
+      detail: readCommandText(result.stdout, result.stderr)
+    }
+  }
+  return { ok: true, detail: 'accessible' }
+}
+
+const createGcsBucket = async (
+  projectId: string,
+  bucket: string,
+  location: string
+): Promise<void> => {
+  const result = await runGcloud([
+    'storage',
+    'buckets',
+    'create',
+    `gs://${bucket}`,
+    '--project',
+    projectId,
+    '--location',
+    location,
+    '--uniform-bucket-level-access',
+    '--public-access-prevention',
+    '--quiet'
+  ])
+  if (result.exitCode !== 0) {
+    throw new Error(
+      `Failed to create GCS bucket "${bucket}": ${readCommandText(result.stdout, result.stderr)}. ` +
+      `Run: gcloud storage buckets create gs://${bucket} --project ${projectId} --location ${location} --uniform-bucket-level-access --public-access-prevention`
+    )
+  }
+}
+
+const ensureGcloudDocaiBucket = async (
+  projectId: string,
+  location: string,
+  savedBucket?: string | undefined
+): Promise<{ bucket?: string | undefined, created: boolean, ok: boolean, detail: string }> => {
+  if (savedBucket) {
+    const access = await verifyGcsBucketAccess(savedBucket)
+    if (!access.ok) {
+      return { bucket: savedBucket, created: false, ok: false, detail: access.detail }
+    }
+    return { bucket: savedBucket, created: false, ok: true, detail: 'saved and accessible' }
+  }
+
+  const bucket = generateGcloudDocaiBucketName(projectId)
+  await createGcsBucket(projectId, bucket, location)
+  const access = await verifyGcsBucketAccess(bucket)
+  if (!access.ok) {
+    throw new Error(`Created GCS bucket "${bucket}" but could not verify access: ${access.detail}`)
+  }
+  return { bucket, created: true, ok: true, detail: 'created and accessible' }
 }
 
 const hasSavedGcloudSttDefault = (
@@ -327,6 +513,55 @@ const ensureGcloudSttDefaultSaved = async (
     configPath,
     saved: true
   }
+}
+
+const ensureGcloudRuntimeDefaultsSaved = async (
+  options: {
+    configPathOverride?: string | undefined
+    ocrProcessorId?: string | undefined
+    bucket?: string | undefined
+    location?: string | undefined
+  } = {}
+): Promise<{ configPath: string, saved: boolean }> => {
+  const configPath = await resolveConfigPath(options.configPathOverride)
+  const current = await loadConfig(configPath)
+  const ocr = current.defaults?.extract?.ocr
+  const patchOcr: Record<string, unknown> = {}
+
+  if (!hasSavedGcloudDocaiDefault(current)) {
+    patchOcr['gcloudDocai'] = [GCLOUD_DOCAI_DEFAULT_MODEL]
+  }
+  if (!normalizeString(ocr?.gcloudDocaiLocation)) {
+    patchOcr['gcloudDocaiLocation'] = options.location ?? GCLOUD_DOCAI_DEFAULT_LOCATION
+  }
+  if (!normalizeString(ocr?.gcloudDocaiOcrProcessorId) && options.ocrProcessorId) {
+    patchOcr['gcloudDocaiOcrProcessorId'] = options.ocrProcessorId
+  }
+  if (!normalizeString(ocr?.gcloudDocaiBucket) && options.bucket) {
+    patchOcr['gcloudDocaiBucket'] = options.bucket
+  }
+
+  const patch = {
+    version: 2,
+    defaults: {
+      extract: {
+        stt: {
+          ...(hasSavedGcloudSttDefault(current) ? {} : { gcloudStt: [GCLOUD_STT_DEFAULT_MODEL] })
+        },
+        ocr: patchOcr
+      }
+    }
+  }
+
+  const hasSttPatch = !hasSavedGcloudSttDefault(current)
+  const hasOcrPatch = Object.keys(patchOcr).length > 0
+  if (!hasSttPatch && !hasOcrPatch) {
+    return { configPath, saved: false }
+  }
+
+  const updated = deepMergeConfig(current as Record<string, unknown>, patch)
+  await writeConfig(configPath, updated)
+  return { configPath, saved: true }
 }
 
 const buildSaveGcloudDefaultCommand = (configPathOverride?: string): string => {
@@ -367,7 +602,9 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
         auth: 'skipped',
         project: 'skipped',
         billing: 'skipped',
-        speechApi: 'skipped'
+        speechApi: 'skipped',
+        documentAiApi: 'skipped',
+        storageApi: 'skipped'
       }
     }
   }
@@ -381,6 +618,12 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
   const apiState = authState.ok && projectState.ok && projectState.projectId
     ? await verifySpeechApiEnabled(projectState.projectId)
     : { ok: false, detail: 'skipped' }
+  const documentAiApiState = authState.ok && projectState.ok && projectState.projectId
+    ? await verifyServiceApiEnabled(projectState.projectId, 'documentai.googleapis.com')
+    : { ok: false, detail: 'skipped' }
+  const storageApiState = authState.ok && projectState.ok && projectState.projectId
+    ? await verifyServiceApiEnabled(projectState.projectId, 'storage.googleapis.com')
+    : { ok: false, detail: 'skipped' }
 
   return {
     hasCli: true,
@@ -389,12 +632,16 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
     ...(billingState.billingAccountId ? { billingAccountId: billingState.billingAccountId } : {}),
     ...(authState.ok && projectState.ok ? { billingEnabled: billingState.billingEnabled === true } : {}),
     ...(authState.ok && projectState.ok ? { speechApiEnabled: apiState.ok } : {}),
+    ...(authState.ok && projectState.ok ? { documentAiApiEnabled: documentAiApiState.ok } : {}),
+    ...(authState.ok && projectState.ok ? { storageApiEnabled: storageApiState.ok } : {}),
     details: {
       cli: cliPath,
       auth: authState.detail,
       project: projectState.projectId ?? projectState.detail,
       billing: authState.ok && projectState.ok ? billingState.detail : 'skipped',
-      speechApi: authState.ok && projectState.ok ? apiState.detail : 'skipped'
+      speechApi: authState.ok && projectState.ok ? apiState.detail : 'skipped',
+      documentAiApi: authState.ok && projectState.ok ? documentAiApiState.detail : 'skipped',
+      storageApi: authState.ok && projectState.ok ? storageApiState.detail : 'skipped'
     }
   }
 }
@@ -450,6 +697,12 @@ const buildSetupCommands = (
   if (state.authConfigured && state.projectId && state.billingEnabled === true && state.speechApiEnabled !== true) {
     commands.push(`gcloud services enable speech.googleapis.com --project ${state.projectId}`)
   }
+  if (state.authConfigured && state.projectId && state.billingEnabled === true && state.documentAiApiEnabled !== true) {
+    commands.push(`gcloud services enable documentai.googleapis.com --project ${state.projectId}`)
+  }
+  if (state.authConfigured && state.projectId && state.billingEnabled === true && state.storageApiEnabled !== true) {
+    commands.push(`gcloud services enable storage.googleapis.com --project ${state.projectId}`)
+  }
   if (options.defaultModelConfigured !== true && !suggestedBootstrapCommand) {
     commands.push(buildSaveGcloudDefaultCommand(options.configPathOverride))
   }
@@ -493,6 +746,10 @@ export const setupGcloudStt = async (
   const folderId = normalizeString(options.folderId)
   let savedConfigPath: string | undefined
   let defaultModelConfigured = false
+  let docaiProcessorDetail: string | undefined
+  let gcsBucketDetail: string | undefined
+  let gcsBucketOk = false
+  let docaiLocation = GCLOUD_DOCAI_DEFAULT_LOCATION
   let state = await readGcloudSttReadiness()
 
   if (explicitProject && state.hasCli) {
@@ -526,19 +783,74 @@ export const setupGcloudStt = async (
         state = await readGcloudSttReadiness()
       }
       const readyProjectId = state.projectId
-      if (readyProjectId && state.billingEnabled === true && state.speechApiEnabled !== true) {
-        await enableSpeechApi(readyProjectId)
-        state = await readGcloudSttReadiness()
+      if (readyProjectId && state.billingEnabled === true) {
+        for (const serviceName of GCLOUD_REQUIRED_APIS) {
+          const enabled = serviceName === 'speech.googleapis.com'
+            ? state.speechApiEnabled
+            : serviceName === 'documentai.googleapis.com'
+              ? state.documentAiApiEnabled
+              : state.storageApiEnabled
+          if (enabled !== true) {
+            await enableServiceApi(readyProjectId, serviceName)
+            // GCP has eventual consistency — poll until the API appears in the enabled list
+            for (let attempt = 0; attempt < 5; attempt++) {
+              await Bun.sleep(3000)
+              const check = await verifyServiceApiEnabled(readyProjectId, serviceName)
+              if (check.ok) break
+              if (attempt < 4) {
+                l.write('info', `Waiting for ${serviceName} to propagate...`)
+              }
+            }
+            state = await readGcloudSttReadiness()
+          }
+        }
       }
     }
 
-    const defaultSave = await ensureGcloudSttDefaultSaved(options.configPathOverride)
-    savedConfigPath = defaultSave.saved ? defaultSave.configPath : undefined
+    if (
+      state.authConfigured
+      && state.projectId
+      && state.billingEnabled === true
+      && state.documentAiApiEnabled === true
+      && state.storageApiEnabled === true
+    ) {
+      const savedDocai = await readSavedGcloudDocaiDefaults(options.configPathOverride)
+      docaiLocation = savedDocai.location ?? GCLOUD_DOCAI_DEFAULT_LOCATION
+      const tokenState = await readAccessToken()
+      if (!tokenState.ok || !tokenState.accessToken) {
+        throw new Error(`gcloud auth failed while configuring Document AI: ${tokenState.detail}`)
+      }
+      const processor = await ensureDocumentAiOcrProcessor(
+        state.projectId,
+        docaiLocation,
+        tokenState.accessToken,
+        savedDocai.ocrProcessorId
+      )
+      docaiProcessorDetail = processor.detail
+      const bucket = await ensureGcloudDocaiBucket(
+        state.projectId,
+        docaiLocation,
+        savedDocai.bucket
+      )
+      gcsBucketDetail = bucket.bucket ? `${bucket.bucket} (${bucket.detail})` : bucket.detail
+      gcsBucketOk = bucket.ok
+
+      const defaultSave = await ensureGcloudRuntimeDefaultsSaved({
+        configPathOverride: options.configPathOverride,
+        ocrProcessorId: processor.processorId,
+        bucket: bucket.bucket,
+        location: docaiLocation
+      })
+      savedConfigPath = defaultSave.saved ? defaultSave.configPath : undefined
+    } else {
+      const defaultSave = await ensureGcloudSttDefaultSaved(options.configPathOverride)
+      savedConfigPath = defaultSave.saved ? defaultSave.configPath : undefined
+    }
     defaultModelConfigured = true
   }
 
   if (options.focused) {
-    l.write('info', 'Google Cloud STT setup')
+    l.write('info', 'Google Cloud STT + Document AI OCR setup')
   }
 
   const checkRows = [
@@ -548,23 +860,32 @@ export const setupGcloudStt = async (
     ...(state.authConfigured && state.projectId
       ? [
           { status: state.billingEnabled === true ? 'OK' : 'MISSING', check: 'gcloud billing', detail: state.details.billing },
-          { status: state.speechApiEnabled === true ? 'OK' : 'MISSING', check: 'speech.googleapis.com', detail: state.details.speechApi }
+          { status: state.speechApiEnabled === true ? 'OK' : 'MISSING', check: 'speech.googleapis.com', detail: state.details.speechApi },
+          { status: state.documentAiApiEnabled === true ? 'OK' : 'MISSING', check: 'documentai.googleapis.com', detail: state.details.documentAiApi },
+          { status: state.storageApiEnabled === true ? 'OK' : 'MISSING', check: 'storage.googleapis.com', detail: state.details.storageApi },
+          ...(docaiProcessorDetail ? [{ status: 'OK', check: 'Document AI OCR processor', detail: docaiProcessorDetail }] : []),
+          ...(gcsBucketDetail ? [{ status: gcsBucketOk ? 'OK' : 'MISSING', check: 'GCS Document AI bucket', detail: gcsBucketDetail }] : [])
         ]
       : []),
     ...(savedConfigPath ? [{ status: 'OK', check: 'gcloud config', detail: `saved ${savedConfigPath}` }] : [])
   ]
 
-  l.write(checkRows.some((row) => row.status === 'MISSING') ? 'warn' : 'success', 'Google Cloud STT checks', {
+  l.write(checkRows.some((row) => row.status === 'MISSING') ? 'warn' : 'success', 'Google Cloud STT + Document AI OCR checks', {
     category: 'command',
     humanTable: createHumanTable(checkRows, ['status', 'check', 'detail'])
   })
 
   if (options.focused) {
-    l.write('info', 'Google Cloud STT Config', {
+    l.write('info', 'Google Cloud STT + Document AI OCR Config', {
       category: 'command',
       humanTable: createHumanTable([
-        { setting: 'location', value: 'us' },
-        { setting: 'transport', value: 'direct REST Recognize requests via us-speech.googleapis.com; no AutoShow-managed bucket required' }
+        { setting: 'stt model', value: GCLOUD_STT_DEFAULT_MODEL },
+        { setting: 'stt location', value: 'us' },
+        { setting: 'ocr model', value: GCLOUD_DOCAI_DEFAULT_MODEL },
+        { setting: 'ocr location', value: docaiLocation },
+        { setting: 'layout parser', value: 'configure a LAYOUT_PARSER_PROCESSOR manually when using --gcloud-docai layout-parser' },
+        { setting: 'stt transport', value: 'direct REST Recognize requests via us-speech.googleapis.com' },
+        { setting: 'ocr transport', value: 'Document AI sync and batch APIs with GCS staging for multi-page or large files' }
       ], ['setting', 'value'])
     })
 
@@ -575,7 +896,7 @@ export const setupGcloudStt = async (
       defaultModelConfigured
     })
     if (commands.length > 0) {
-      l.write('info', 'Google Cloud STT Next Steps', {
+      l.write('info', 'Google Cloud STT + Document AI OCR Next Steps', {
         category: 'command',
         humanTable: createHumanTable(
           commands.map((command, index) => ({ step: index + 1, command })),

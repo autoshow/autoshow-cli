@@ -25,14 +25,14 @@ import { runWithLogContext } from '~/utils/logger'
 import {
   buildExtractionOptionsForTarget,
   collectExplicitOcrTargets,
-  getOcrTargetDirectoryName
+  getOcrTargetDirectoryName,
+  resolvePrimaryOcrTarget
 } from './ocr-targets'
 import {
   classifyOcrProviderFailure,
   buildMetadataErrorEntries,
   buildMissingProviders,
   buildProviderStates,
-  pickPrimarySuccess,
   readExistingOcrRun,
   resolveCompletionStatus,
   toRequestedProvider
@@ -51,7 +51,7 @@ const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
   opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
+  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -60,7 +60,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -141,6 +141,26 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if (entry.ocrService === 'gcloud-docai' || entry.extractionMethod.includes('gcloud-docai')) {
+      targets.push({
+        provider: 'gcloud-docai' as const,
+        model: entry.ocrModel ?? 'ocr',
+        pageCount: entry.totalPages,
+        estimateType: 'exact' as const
+      })
+      continue
+    }
+
+    if (entry.ocrService === 'aws-textract' || entry.extractionMethod.includes('aws-textract')) {
+      targets.push({
+        provider: 'aws-textract' as const,
+        model: entry.ocrModel ?? 'detect-text',
+        pageCount: entry.totalPages,
+        estimateType: 'exact' as const
       })
     }
   }
@@ -339,6 +359,7 @@ const buildDocumentMetadataPayload = (
     ...(options.requestedProviders ? { requestedProviders: options.requestedProviders } : {}),
     ...(options.providerStates ? { providerStates: options.providerStates } : {}),
     ...(options.missingProviders ? { missingProviders: options.missingProviders } : {}),
+    ...(options.primaryProvider ? { primaryProvider: options.primaryProvider } : {}),
     ...(failures.length > 0 ? { errors: failures } : {}),
   }
 }
@@ -387,12 +408,14 @@ export const processOcr = async (
     ...(rawOpts.useTesseract ? { useTesseract: true } : {}),
     ...(rawOpts.useOcrmypdf ? { useOcrmypdf: true } : {}),
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
-    ...(rawOpts.useChandra ? { useChandra: true } : {}),
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
     ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
     ...(rawOpts.openaiOcrModel ? { openaiOcrModel: rawOpts.openaiOcrModel } : {}),
     ...(rawOpts.anthropicOcrModel ? { anthropicOcrModel: rawOpts.anthropicOcrModel } : {}),
     ...(rawOpts.geminiOcrModel ? { geminiOcrModel: rawOpts.geminiOcrModel } : {}),
+    ...(rawOpts.awsTextractModel ? { awsTextractModel: rawOpts.awsTextractModel } : {}),
+    ...(rawOpts.gcloudDocaiModel ? { gcloudDocaiModel: rawOpts.gcloudDocaiModel } : {}),
+    ...(rawOpts.primaryOcr ? { primaryOcr: rawOpts.primaryOcr } : {}),
     ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
     ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),
     pdfChapterMode: rawOpts.pdfChapterMode ?? 'local',
@@ -421,6 +444,7 @@ export const processOcr = async (
     if (resumeRun || explicitTargets.length > 1) {
       const requestedTargets = resumeRun?.requestedTargets ?? explicitTargets
       const targetsToRun = resumeRun?.targetsToRun ?? requestedTargets
+      const primaryTarget = resolvePrimaryOcrTarget(requestedTargets, opts.primaryOcr)
       const resolvedStep2 = resolveRecordedOcrStep2(
         step1Metadata.format,
         opts,
@@ -500,7 +524,10 @@ export const processOcr = async (
       const step2Metadata = successes
         .filter((entry): entry is OcrProviderSuccess => entry !== undefined)
         .map((entry) => entry.metadata)
-      const primary = pickPrimarySuccess(requestedTargets, successes)
+      const primary = primaryTarget
+        ? successes.find((entry) => entry?.target.service === primaryTarget.service && entry.target.model === primaryTarget.model)
+        : undefined
+      const firstSuccess = successes.find((entry): entry is OcrProviderSuccess => entry !== undefined)
 
       await writeOcrRunManifest(
         outputDir,
@@ -512,11 +539,12 @@ export const processOcr = async (
           resolvedStep2,
           requestedProviders: requestedTargets.map(toRequestedProvider),
           providerStates,
-          missingProviders
+          missingProviders,
+          ...(primaryTarget ? { primaryProvider: toRequestedProvider(primaryTarget) } : {})
         })
       )
 
-      if (!primary) {
+      if (!firstSuccess) {
         throw new OcrBatchCompletionError(
           outputDir,
           completionStatus,
@@ -524,16 +552,18 @@ export const processOcr = async (
         )
       }
 
-      await writeExtractionArtifact(
-        outputDir,
-        primary.result,
-        opts.outputFormat ?? 'text',
-        isEpubInspectMode(primary.metadata),
-        'result.json'
-      )
+      if (primary) {
+        await writeExtractionArtifact(
+          outputDir,
+          primary.result,
+          opts.outputFormat ?? 'text',
+          isEpubInspectMode(primary.metadata),
+          'result.json'
+        )
+      }
 
       return {
-        result: primary.result,
+        result: (primary ?? firstSuccess).result,
         step1Metadata,
         step2Metadata,
         completionStatus,

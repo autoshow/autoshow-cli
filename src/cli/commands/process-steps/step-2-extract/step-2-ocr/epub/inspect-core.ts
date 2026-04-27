@@ -36,10 +36,22 @@ const normalizeRelPath = (value: string): string => {
 export const normalizeEntryPath = (value: string): string =>
   value.replace(/\\/g, '/').replace(/^\.?\//, '')
 
+const decodeHrefPath = (href: string): string =>
+  href
+    .split('/')
+    .map(segment => {
+      try {
+        return decodeURIComponent(segment)
+      } catch {
+        return segment
+      }
+    })
+    .join('/')
+
 const resolvePackageHref = (packagePath: string, href: string): string => {
-  const cleanHref = href.split('#')[0]?.trim() ?? ''
+  const cleanHref = href.split(/[?#]/, 1)[0]?.trim() ?? ''
   if (!cleanHref) return ''
-  const resolved = posix.normalize(posix.join(posix.dirname(packagePath), cleanHref))
+  const resolved = posix.normalize(posix.join(posix.dirname(packagePath), decodeHrefPath(cleanHref)))
   return normalizeRelPath(resolved)
 }
 
@@ -179,13 +191,23 @@ const flattenToc = (items: EpubTocItem[]): EpubTocItem[] => {
   return out
 }
 
+const buildTocByPath = (tocItems: EpubTocItem[]): Map<string, EpubTocItem> => {
+  const tocByPath = new Map<string, EpubTocItem>()
+  for (const item of flattenToc(tocItems)) {
+    if (item.path && !tocByPath.has(item.path)) {
+      tocByPath.set(item.path, item)
+    }
+  }
+  return tocByPath
+}
+
 const buildChapters = async (
   reader: EpubContentReader,
   spine: EpubInspectionPayload['spine'],
   tocItems: EpubTocItem[],
   warnings: string[]
 ): Promise<EpubChapter[]> => {
-  const tocByPath = new Map(flattenToc(tocItems).flatMap(item => item.path ? [[item.path, item]] as const : []))
+  const tocByPath = buildTocByPath(tocItems)
   const chapters: EpubChapter[] = []
 
   for (const spineItem of spine) {
@@ -197,9 +219,10 @@ const buildChapters = async (
 
     const xhtml = await reader.readText(spineItem.path)
     const stripped = stripNsPrefixes(xhtml)
-    const title = firstTagText(stripped, 'title')
+    const tocItem = tocByPath.get(spineItem.path)
+    const title = tocItem?.title
       ?? firstTagText(stripped, 'h1')
-      ?? tocByPath.get(spineItem.path)?.title
+      ?? firstTagText(stripped, 'title')
 
     const text = cleanEpubHtmlToText(stripped)
     const words = text.length === 0 ? 0 : text.split(/\s+/).filter(Boolean).length
@@ -210,6 +233,7 @@ const buildChapters = async (
       href: spineItem.href,
       path: spineItem.path,
       ...(title ? { title } : {}),
+      ...(tocItem ? { tocTitle: tocItem.title, isTocStart: true } : {}),
       text,
       wordCount: words,
       characterCount: text.length

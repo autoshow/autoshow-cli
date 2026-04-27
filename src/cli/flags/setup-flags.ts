@@ -23,13 +23,13 @@ const setupSampleFlags = {
 
 export const setupFlags = {
   gcloud: {
-    description: 'Check gcloud CLI authentication/configuration for Google Cloud Speech-to-Text and print next steps',
+    description: 'Check gcloud CLI authentication/configuration for Google Cloud Speech-to-Text and Document AI OCR and print next steps',
     type: Boolean,
     default: false,
     negatable: false
   },
   'gcloud-project': {
-    description: 'With --gcloud, set the active Google Cloud project or create it when missing before rechecking Speech-to-Text readiness',
+    description: 'With --gcloud, set the active Google Cloud project or create it when missing before rechecking Speech-to-Text and Document AI OCR readiness',
     type: String
   },
   'gcloud-billing-account': {

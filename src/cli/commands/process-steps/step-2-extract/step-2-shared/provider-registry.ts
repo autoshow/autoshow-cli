@@ -558,20 +558,6 @@ const STEP2_PROVIDER_REGISTRY = [
     model: 'paddle-ocr',
     description: 'Use PaddleOCR engine for extraction (PDF, EPUB, image; installed lazily on first use)'
   }),
-  booleanProvider({
-    step: 'ocr',
-    modality: 'document',
-    flagName: 'chandra-ocr',
-    aliases: ['chandra'],
-    targetService: 'chandra-ocr',
-    providerSpecProvider: 'chandra-ocr',
-    bootstrapProviderId: 'chandra-ocr',
-    configKey: 'chandraOcr',
-    allShortcut: 'all-ocr',
-    runtimeKey: 'useChandra',
-    model: 'chandra-ocr',
-    description: 'Use Chandra OCR 2 engine for extraction (PDF, image; installed lazily on first use; alias: --chandra)'
-  }),
   modelProvider({
     step: 'ocr',
     modality: 'document',

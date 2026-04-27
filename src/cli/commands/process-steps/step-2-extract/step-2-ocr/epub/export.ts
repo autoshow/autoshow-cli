@@ -102,7 +102,9 @@ const buildSections = (chapters: EpubChapter[]): EpubTextSection[] =>
     id: chapter.idref,
     title: chapter.title ?? '',
     href: chapter.href,
-    text: finalizeEpubText(chapter.text)
+    text: finalizeEpubText(chapter.text),
+    ...(chapter.isTocStart === true ? { isTocStart: true } : {}),
+    sourceIndexes: [chapter.index]
   }))
 
 const normalizeSectionKey = (value: string): string =>
@@ -144,9 +146,14 @@ const mergeDividerSections = (
 
     dividerSectionsMerged += pendingDividers.length
     const prefix = pendingDividers.map((entry) => entry.text).join('\n\n')
+    const pendingSourceIndexes = pendingDividers.flatMap((entry) => entry.sourceIndexes ?? [entry.index])
     pendingDividers.length = 0
     merged.push({
       ...section,
+      sourceIndexes: [
+        ...pendingSourceIndexes,
+        ...(section.sourceIndexes ?? [section.index])
+      ],
       text: finalizeEpubText(`${prefix}\n\n${section.text}`)
     })
   }
@@ -160,6 +167,10 @@ const mergeDividerSections = (
       const lastSection = merged[merged.length - 1] as EpubTextSection
       merged[merged.length - 1] = {
         ...lastSection,
+        sourceIndexes: [
+          ...(lastSection.sourceIndexes ?? [lastSection.index]),
+          ...pendingDividers.flatMap((entry) => entry.sourceIndexes ?? [entry.index])
+        ],
         text: finalizeEpubText(`${lastSection.text}\n\n${suffix}`)
       }
     }
@@ -193,6 +204,66 @@ const buildPages = (sections: EpubTextSection[]): PageResult[] =>
     method: 'text',
     text: section.text
   }))
+
+const appendSectionText = (target: EpubTextSection, section: EpubTextSection): EpubTextSection => ({
+  ...target,
+  text: finalizeEpubText(`${target.text}\n\n${section.text}`),
+  sourceIndexes: [
+    ...(target.sourceIndexes ?? [target.index]),
+    ...(section.sourceIndexes ?? [section.index])
+  ]
+})
+
+const groupSectionsByTocStarts = (
+  sections: EpubTextSection[]
+): {
+  sections: EpubTextSection[]
+  logicalChapterSource: 'toc' | 'spine'
+  tocStartSections: number
+  prefaceSectionsDropped: number
+} => {
+  const tocStartSections = sections.filter((section) => section.isTocStart === true).length
+  if (tocStartSections === 0) {
+    return {
+      sections,
+      logicalChapterSource: 'spine',
+      tocStartSections,
+      prefaceSectionsDropped: 0
+    }
+  }
+
+  const grouped: EpubTextSection[] = []
+  let current: EpubTextSection | undefined
+  let prefaceSectionsDropped = 0
+
+  for (const section of sections) {
+    if (section.isTocStart === true) {
+      if (current) {
+        grouped.push({ ...current, index: grouped.length + 1 })
+      }
+      current = { ...section }
+      continue
+    }
+
+    if (!current) {
+      prefaceSectionsDropped += 1
+      continue
+    }
+
+    current = appendSectionText(current, section)
+  }
+
+  if (current) {
+    grouped.push({ ...current, index: grouped.length + 1 })
+  }
+
+  return {
+    sections: grouped,
+    logicalChapterSource: 'toc',
+    tocStartSections,
+    prefaceSectionsDropped
+  }
+}
 
 const buildChapterFiles = (
   sections: EpubTextSection[],
@@ -258,7 +329,8 @@ export const buildEpubTextOutput = (
   const pages = buildPages(sections)
 
   if (options.chapterFiles) {
-    const files = buildChapterFiles(sections, options.chunkLimitChars)
+    const logicalChapters = groupSectionsByTocStarts(sections)
+    const files = buildChapterFiles(logicalChapters.sections, options.chunkLimitChars)
     return {
       pages,
       text,
@@ -271,6 +343,10 @@ export const buildEpubTextOutput = (
           sectionsKept: sections.length,
           sectionsDropped,
           dividerSectionsMerged,
+          logicalChapterCount: logicalChapters.sections.length,
+          logicalChapterSource: logicalChapters.logicalChapterSource,
+          tocStartSections: logicalChapters.tocStartSections,
+          prefaceSectionsDropped: logicalChapters.prefaceSectionsDropped,
           filesWritten: files.length,
           chapterFilesWritten: files.length,
           directories: ['chapters']

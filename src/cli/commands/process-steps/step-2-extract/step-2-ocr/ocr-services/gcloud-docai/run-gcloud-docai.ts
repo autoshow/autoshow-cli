@@ -300,8 +300,8 @@ export const runGcloudDocai = async (
   if (isMultipage || fileSize > GCLOUD_DOCAI_SYNC_BYTES) {
     if (!config.bucket) {
       throw new Error(
-        'AUTOSHOW_GCLOUD_BUCKET environment variable is required for multi-page or large-file Google Cloud Document AI OCR. ' +
-        'Set the environment variable to a GCS bucket name.'
+        'A GCS bucket is required for multi-page or large-file Google Cloud Document AI OCR. ' +
+        'Set AUTOSHOW_GCLOUD_BUCKET or run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create and save one.'
       )
     }
 

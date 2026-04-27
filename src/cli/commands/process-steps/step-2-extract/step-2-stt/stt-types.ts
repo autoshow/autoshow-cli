@@ -703,12 +703,16 @@ export type GcloudSttReadiness = {
   billingAccountId?: string | undefined
   billingEnabled?: boolean | undefined
   speechApiEnabled?: boolean | undefined
+  documentAiApiEnabled?: boolean | undefined
+  storageApiEnabled?: boolean | undefined
   details: {
     cli: string
     auth: string
     project: string
     billing: string
     speechApi: string
+    documentAiApi: string
+    storageApi: string
   }
 }
 

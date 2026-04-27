@@ -34,7 +34,9 @@ type ProviderErrorLike = Error & {
 const CONTENT_POLICY_PATTERN = /content (?:filter|filtering|policy)|blocked by content|safety|policy violation|invalid_request_error/i
 const TRANSIENT_MESSAGE_PATTERN = /timed out|timeout|temporar(?:y|ily)|network|connection|socket|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|rate limit|too many requests/i
 const LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN = /Checking connectivity to the model hosters|Creating model:|Model files already exist|Resized image size/i
+const PADDLE_NATIVE_CRASH_PATTERN = /PaddleOCR .*exited with code \d+ \((?:SIGBUS|SIGKILL|SIGSEGV)\)|PaddleOCR failed .*after attempts: .*?(?:SIGBUS|SIGKILL|SIGSEGV)/i
 const LOCAL_ERROR_PATTERN = /Traceback|Exception|Error:|No such file|not found|failed/i
+const ANSI_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g
 const RETRY_CLASSES = new Set<RetryClass>([
   'setup_download',
   'runtime_subprocess_transient',
@@ -65,13 +67,15 @@ const resolveFailureMessage = (
   error: unknown
 ): string => {
   if (chain.length === 0) {
-    return error instanceof Error ? error.message : String(error)
+    return stripAnsi(error instanceof Error ? error.message : String(error))
   }
 
   const outer = chain[0] as ProviderErrorLike
   const deepest = chain[chain.length - 1] as ProviderErrorLike
-  return deepest.message || outer.message
+  return stripAnsi(deepest.message || outer.message)
 }
+
+export const stripAnsi = (value: string): string => value.replace(ANSI_PATTERN, '')
 
 export const classifyOcrProviderFailure = (
   error: unknown
@@ -91,6 +95,10 @@ export const classifyOcrProviderFailure = (
     retryable = explicitRetryable
   } else if (CONTENT_POLICY_PATTERN.test(message)) {
     retryable = false
+  } else if (PADDLE_NATIVE_CRASH_PATTERN.test(message)) {
+    retryable = true
+  } else if (LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN.test(message) && !LOCAL_ERROR_PATTERN.test(message)) {
+    retryable = true
   } else if (typeof status === 'number' || retryClass) {
     const normalizedRetryClass = typeof retryClass === 'string' && RETRY_CLASSES.has(retryClass as RetryClass)
       ? retryClass as RetryClass
@@ -136,6 +144,8 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
     && value['service'] !== 'openai'
     && value['service'] !== 'anthropic'
     && value['service'] !== 'gemini'
+    && value['service'] !== 'aws-textract'
+    && value['service'] !== 'gcloud-docai'
   ) {
     return undefined
   }

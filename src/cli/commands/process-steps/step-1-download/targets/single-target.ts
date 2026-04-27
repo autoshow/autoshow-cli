@@ -239,6 +239,7 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
     pdfChapterMode: opts.pdfChapterMode,
     ocrProviderConcurrency: opts.ocrProviderConcurrency,
     ocrLocalConcurrency: opts.ocrLocalConcurrency,
+    primaryOcr: opts.primaryOcr,
     preserveInterwordSpaces: opts.preserveSpaces,
     rotate: opts.rotate
   }
@@ -266,9 +267,6 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.usePaddleOcr) {
     extractionOpts.usePaddleOcr = true
   }
-  if (opts.useChandra) {
-    extractionOpts.useChandra = true
-  }
   if (opts.mistralOcrModel) {
     extractionOpts.mistralOcrModel = opts.mistralOcrModel
   }
@@ -283,6 +281,12 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   }
   if (opts.geminiOcrModel) {
     extractionOpts.geminiOcrModel = opts.geminiOcrModel
+  }
+  if (opts.awsTextractModel) {
+    extractionOpts.awsTextractModel = opts.awsTextractModel
+  }
+  if (opts.gcloudDocaiModel) {
+    extractionOpts.gcloudDocaiModel = opts.gcloudDocaiModel
   }
   if (opts.epubChapterFiles) {
     extractionOpts.epubChapterFiles = true
@@ -761,6 +765,11 @@ const processOcrSingle = async (
   const failedCount = extraction.step2Errors?.length ?? 0
   const missingCount = extraction.missingProviders?.length ?? 0
   const requestedMultipleProviders = requestedCount > 1
+
+  if (requestedMultipleProviders && !opts.primaryOcr) {
+    delete artifactFiles['result']
+    delete artifactFiles['extraction']
+  }
 
   if (requestedMultipleProviders && Array.isArray(extraction.providerStates)) {
     for (const state of extraction.providerStates) {
