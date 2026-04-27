@@ -266,6 +266,9 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.usePaddleOcr) {
     extractionOpts.usePaddleOcr = true
   }
+  if (opts.useChandra) {
+    extractionOpts.useChandra = true
+  }
   if (opts.mistralOcrModel) {
     extractionOpts.mistralOcrModel = opts.mistralOcrModel
   }

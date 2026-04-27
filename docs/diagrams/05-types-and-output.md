@@ -114,7 +114,7 @@ src/types/
 │    price, allowOverBudget,                                                   │
 │    reverbVerbatimicity, split, skipLLM,                                      │
 │    dpi, lang, psm, oem, out, password, pageSeparator,                        │
-│    preserveSpaces, rotate, useOcrmypdf, usePaddleOcr,                        │
+│    preserveSpaces, rotate, useOcrmypdf, usePaddleOcr, useChandra,             │
 │    batchLimit, batchAll, batchOrder, batchConcurrency,                       │
 │    ttsSpeaker, kittenTtsModel, groqTtsModel, groqVoiceId,                    │
 │    openaiTtsModel, openaiVoiceId, geminiTtsModel, geminiVoiceId,             │

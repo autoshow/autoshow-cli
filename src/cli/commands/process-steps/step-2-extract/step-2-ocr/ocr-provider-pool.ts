@@ -17,6 +17,7 @@ export const isLocalOcrTarget = (
   target.service === 'tesseract'
   || target.service === 'ocrmypdf'
   || target.service === 'paddle-ocr'
+  || target.service === 'chandra-ocr'
 
 const runIndexedTargetPool = async (
   targets: IndexedOcrTarget[],

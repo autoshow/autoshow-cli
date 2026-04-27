@@ -13,6 +13,10 @@ export const OCR_CAPABILITY_MATRIX: Record<OcrProviderKey, OcrProviderCapability
     supports: ['pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
     fallbackOrder: ['tesseract', 'mistral-ocr']
   },
+  'chandra-ocr': {
+    supports: ['pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
+    fallbackOrder: ['paddle-ocr', 'tesseract', 'mistral-ocr']
+  },
   'mistral-ocr': {
     supports: ['pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
     fallbackOrder: ['glm-ocr', 'paddle-ocr', 'tesseract']

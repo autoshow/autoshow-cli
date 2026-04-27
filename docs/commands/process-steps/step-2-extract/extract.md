@@ -256,10 +256,11 @@ bun as setup --step calibre
 bun as setup --step sample
 ```
 
-PaddleOCR can also be prepared lazily on first use:
+PaddleOCR and Chandra OCR can also be prepared lazily on first use:
 
 ```bash
 bun as extract input/examples/document/1-document.pdf --paddle-ocr
+bun as extract input/examples/document/1-document.pdf --chandra-ocr
 ```
 
 `--epub-calibre` can also trigger lazy Calibre setup on supported platforms when the Calibre CLI tools are missing.
@@ -290,8 +291,8 @@ AUTOSHOW_URL_BACKEND=glm-reader
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
-| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--chandra-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
+| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--chandra-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, OCR fallback if needed | hosted OCR routes convert through PDF first |
 | RTF | LibreOffice to PDF, then OCR | same |
@@ -370,6 +371,9 @@ bun as extract input/examples/document/1-document.pdf --ocrmypdf
 # Explicit Tesseract path
 bun as extract input/examples/document/1-document.pdf --tesseract
 
+# Chandra OCR 2 (local, HuggingFace backend)
+bun as extract input/examples/document/1-document.pdf --chandra-ocr
+
 # Hosted OCR
 bun as extract input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
 bun as extract input/examples/document/1-document.pdf --glm-ocr glm-ocr
@@ -407,6 +411,7 @@ bun as extract input/examples/document/1-epub.epub --epub-calibre --out json
 | `--tesseract` | Use Tesseract explicitly |
 | `--ocrmypdf` | Use OCRmyPDF |
 | `--paddle-ocr` | Use PaddleOCR |
+| `--chandra-ocr` | Use Chandra OCR 2 |
 | `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
 | `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |

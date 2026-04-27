@@ -259,6 +259,7 @@ export const ExtractionOptionsSchema = v.object({
     useTesseract: v.optional(v.boolean(), undefined),
     useOcrmypdf: v.optional(v.boolean(), undefined),
     usePaddleOcr: v.optional(v.boolean(), undefined),
+    useChandra: v.optional(v.boolean(), undefined),
   mistralOcrModel: v.optional(v.string(), undefined),
   glmOcrModel: v.optional(v.string(), undefined),
   openaiOcrModel: v.optional(v.string(), undefined),
@@ -313,14 +314,14 @@ const ChapterExportSummarySchema = v.object({
 
 export const ExtractionMetadataSchema = v.object({
   extractionMethod: v.picklist([
-    'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'ocrmypdf', 'mistral-ocr', 'openai-ocr', 'epub-bun', 'epub-calibre',
+    'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'chandra-ocr', 'mutool+chandra-ocr', 'ocrmypdf', 'mistral-ocr', 'openai-ocr', 'epub-bun', 'epub-calibre',
     'epub-text',
-    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+openai-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+aws-textract', 'pdf+gcloud-docai',
-    'office-native', 'office+tesseract', 'office+ocrmypdf', 'office+paddle-ocr', 'office+mistral-ocr', 'office+glm-ocr', 'office+openai-ocr', 'office+anthropic-ocr', 'office+gemini-ocr', 'office+aws-textract', 'office+gcloud-docai',
-    'rtf+tesseract', 'rtf+ocrmypdf', 'rtf+paddle-ocr', 'rtf+mistral-ocr', 'rtf+glm-ocr', 'rtf+openai-ocr', 'rtf+anthropic-ocr', 'rtf+gemini-ocr', 'rtf+aws-textract', 'rtf+gcloud-docai',
-    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+openai-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+aws-textract', 'cbz+gcloud-docai',
+    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+chandra-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+openai-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+aws-textract', 'pdf+gcloud-docai',
+    'office-native', 'office+tesseract', 'office+ocrmypdf', 'office+paddle-ocr', 'office+chandra-ocr', 'office+mistral-ocr', 'office+glm-ocr', 'office+openai-ocr', 'office+anthropic-ocr', 'office+gemini-ocr', 'office+aws-textract', 'office+gcloud-docai',
+    'rtf+tesseract', 'rtf+ocrmypdf', 'rtf+paddle-ocr', 'rtf+chandra-ocr', 'rtf+mistral-ocr', 'rtf+glm-ocr', 'rtf+openai-ocr', 'rtf+anthropic-ocr', 'rtf+gemini-ocr', 'rtf+aws-textract', 'rtf+gcloud-docai',
+    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+chandra-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+openai-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+aws-textract', 'cbz+gcloud-docai',
     'csv-raw',
-    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+openai-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+aws-textract', 'image+gcloud-docai',
+    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+chandra-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+openai-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+aws-textract', 'image+gcloud-docai',
     'glm-ocr',
     'openai-ocr',
     'anthropic-ocr',

@@ -104,6 +104,7 @@ export type RuntimeOptions = {
   useTesseract: boolean
   useOcrmypdf: boolean
   usePaddleOcr: boolean
+  useChandra: boolean
   mistralOcrModels: string[] | undefined
   mistralOcrModel: string | undefined
   glmOcrModels: string[] | undefined

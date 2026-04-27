@@ -666,6 +666,7 @@ export const buildOptsFromFlags = (
   const useTesseract = isStep2BooleanProviderSelected('tesseract-ocr', mergedFlags, allShortcutFlags)
   const useOcrmypdf = isStep2BooleanProviderSelected('ocrmypdf', mergedFlags, allShortcutFlags)
   const usePaddleOcr = isStep2BooleanProviderSelected('paddle-ocr', mergedFlags, allShortcutFlags)
+  const useChandra = isStep2BooleanProviderSelected('chandra-ocr', mergedFlags, allShortcutFlags)
 
   return {
     useReverb,
@@ -762,6 +763,7 @@ export const buildOptsFromFlags = (
     useTesseract,
     useOcrmypdf,
     usePaddleOcr,
+    useChandra,
     mistralOcrModels,
     mistralOcrModel,
     glmOcrModels,

@@ -185,7 +185,9 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  │    OCRmyPDF (PDF)    │  │          │  │  docx → word/document   │        │
 │  │  --paddle-ocr →      │  │ --dpi    │  │  pptx → ppt/slides/*    │        │
 │  │    PaddleOCR         │  │ --lang   │  │  xlsx → sharedStrings   │        │
-│  │  default →           │  │ --psm    │  │  odf  → content.xml     │        │
+│  │  --chandra-ocr →     │  │         │  │                         │        │
+│  │    Chandra OCR 2     │  │ --psm   │  │                         │        │
+│  │  default →           │  │ --oem    │  │                         │        │
 │  │    MuPDF + Tesseract │  │ --oem    │  └────────────┬────────────┘        │
 │  │                      │  │ --rotate │               |                     │
 │  │  Stage A: MuPDF      │  └────┬─────┘               |                     │
@@ -215,7 +217,8 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  │  │             text, confidence? }                           │            │
 │  │  ├── totalPages, ocrPages, textPages                         │            │
 │  │  └── extractionMethod: 'mutool+tesseract' | 'ocrmypdf' |     │            │
-│  │       'paddle-ocr' | 'mutool+paddle-ocr' | 'docx' | ...      │            │
+│  │       'paddle-ocr' | 'mutool+paddle-ocr' | 'chandra-ocr' |   │            │
+│  │       'mutool+chandra-ocr' | 'docx' | ...                     │            │
 │  └──────────────────────────────────────────────────────────────┘            │
 │                                                                              │
 │  Output (based on --out):                                                    │

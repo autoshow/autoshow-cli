@@ -50,6 +50,7 @@ AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0 bun t test/test-cases/e2e/step-4-tts-e2e/tts-
 | Download local file | `test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts` | Local input path coverage |
 | OCR options | `test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-options.test.ts` | Core local OCR validation and routing coverage |
 | PaddleOCR image extraction | `test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts` | Heavier local OCR coverage |
+| Chandra OCR image extraction | `test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-chandra-ocr-image.test.ts` | Chandra OCR 2 local OCR coverage |
 | Whisper | `test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/` | Includes default, split, model-price, and `large-v3-turbo` coverage |
 | Reverb | `test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts` | Heavier local STT coverage |
 | Llama write | `test/test-cases/e2e/step-3-write-e2e/write-local/llama/`, `test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts` | Local llama.cpp audio and document flows |
@@ -66,6 +67,7 @@ bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --budget 5
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --test-price --budget 5
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --budget 5
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-chandra-ocr-image.test.ts --budget 5
 ```
 
 Notes:

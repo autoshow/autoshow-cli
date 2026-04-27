@@ -48,6 +48,7 @@ const epubInput = 'input/examples/document/1-epub.epub'
 const imageInput = 'input/examples/document/1-document.png'
 const articleUrl = 'https://ajcwebdev.com'
 const paddleOcrPython = 'runtime/bin/paddle-ocr/bin/python'
+const chandraOcrPython = 'runtime/bin/chandra-ocr/bin/python'
 
 beforeAll(async () => {
   await ensurePageImageFixture(imageInput)
@@ -143,6 +144,24 @@ test('extract PDF with --paddle-ocr', async () => {
 
   const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step2?.extractionMethod).toBe('mutool+paddle-ocr')
+})
+
+test('extract PDF with --chandra-ocr', async () => {
+  if (!await fileExists(chandraOcrPython)) {
+    return
+  }
+
+  await cleanupTestOutput('1-document')
+
+  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--chandra-ocr'], { testName: 'extract PDF with --chandra-ocr' })
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
+  expect(outputDir).not.toBeNull()
+  if (!outputDir) return
+
+  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  expect(metadata.step2?.extractionMethod).toBe('mutool+chandra-ocr')
 })
 
 test('extract EPUB with --ocrmypdf', async () => {

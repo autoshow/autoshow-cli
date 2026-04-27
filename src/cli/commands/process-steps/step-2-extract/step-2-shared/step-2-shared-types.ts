@@ -5,6 +5,7 @@ export type OcrSelectionState = {
   useTesseract?: boolean | undefined
   useOcrmypdf?: boolean | undefined
   usePaddleOcr?: boolean | undefined
+  useChandra?: boolean | undefined
   mistralOcrModels?: string[] | undefined
   mistralOcrModel?: string | undefined
   glmOcrModels?: string[] | undefined
@@ -25,7 +26,7 @@ export type ResolvedStep2Provider = {
 
 export type Step2ShortcutFlag = 'all-stt' | 'all-ocr'
 export type Step2Command = 'stt' | 'ocr'
-export type Step2BooleanSelectionKey = 'useReverb' | 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr'
+export type Step2BooleanSelectionKey = 'useReverb' | 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'useChandra'
 
 export type Step2ProviderSelectionFilter = {
   includeOrigins?: readonly Step2ProviderSelectionOrigin[] | undefined
@@ -139,6 +140,7 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'useTesseract'
   | 'useOcrmypdf'
   | 'usePaddleOcr'
+  | 'useChandra'
   | 'step2SelectionOrigins'
   | 'mistralOcrModel'
   | 'mistralOcrModels'

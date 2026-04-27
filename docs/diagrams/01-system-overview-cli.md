@@ -32,7 +32,7 @@ bun as <command> <input> [flags]
 
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
-   - Step 2: Transcribe (Whisper/Groq/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/hosted article backends)
+   - Step 2: Transcribe (Whisper/Groq/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Chandra OCR/Mistral OCR/GLM OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/hosted article backends)
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, OpenAI, Gemini)
    - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway)
@@ -157,6 +157,7 @@ src/cli/flags/
 │  ├── --password VALUE    Encrypted PDF password            │
 │  ├── --ocrmypdf          Use OCRmyPDF engine (PDF only)    │
 │  ├── --paddle-ocr        Use PaddleOCR engine              │
+│  ├── --chandra-ocr       Use Chandra OCR 2 engine          │
 │  ├── --mistral-ocr MODEL Mistral OCR (API)                 │
 │  ├── --glm-ocr MODEL     GLM OCR (API)                     │
 │  ├── --openai-ocr MODEL  OpenAI OCR (API)                  │

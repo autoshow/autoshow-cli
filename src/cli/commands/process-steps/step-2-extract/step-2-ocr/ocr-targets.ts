@@ -3,7 +3,7 @@ import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { collectOcrProviderSpecs } from './cli'
 
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'> & {
+  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'useChandra' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'> & {
     step2SelectionOrigins?: Partial<Record<string, Step2ProviderSelectionOrigin>> | undefined
     provider?: string[] | undefined
   },
@@ -36,6 +36,7 @@ export const buildExtractionOptionsForTarget = (
   useTesseract: target.service === 'tesseract' ? true : undefined,
   useOcrmypdf: target.service === 'ocrmypdf' ? true : undefined,
   usePaddleOcr: target.service === 'paddle-ocr' ? true : undefined,
+  useChandra: target.service === 'chandra-ocr' ? true : undefined,
   mistralOcrModel: target.service === 'mistral' ? target.model : undefined,
   glmOcrModel: target.service === 'glm' ? target.model : undefined,
   openaiOcrModel: target.service === 'openai' ? target.model : undefined,

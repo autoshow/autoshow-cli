@@ -387,6 +387,7 @@ export const processOcr = async (
     ...(rawOpts.useTesseract ? { useTesseract: true } : {}),
     ...(rawOpts.useOcrmypdf ? { useOcrmypdf: true } : {}),
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
+    ...(rawOpts.useChandra ? { useChandra: true } : {}),
     ...(rawOpts.mistralOcrModel ? { mistralOcrModel: rawOpts.mistralOcrModel } : {}),
     ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
     ...(rawOpts.openaiOcrModel ? { openaiOcrModel: rawOpts.openaiOcrModel } : {}),
