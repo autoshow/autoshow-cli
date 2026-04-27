@@ -50,12 +50,14 @@ Accepted provider selectors are the lowercase names below.
 | Provider selector | Sections |
 |-------------------|----------|
 | `--assembly` | `stt` |
+| `--aws` | `stt`, `ocr` |
 | `--claude` | `general`, `text`, `ocr` |
 | `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
 | `--deepgram` | `stt`, `tts` |
 | `--deepinfra` | `general`, `stt` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
+| `--gcloud` | `stt`, `ocr` |
 | `--gladia` | `general`, `stt` |
 | `--glm` | `general`, `text`, `ocr`, `image`, `video`, `stt` |
 | `--grok` | `general`, `text`, `image`, `video`, `tts` |

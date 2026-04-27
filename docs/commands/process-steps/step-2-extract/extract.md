@@ -376,6 +376,8 @@ bun as extract input/examples/document/1-document.pdf --glm-ocr glm-ocr
 bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
 bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
 bun as extract input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-lite-preview
+bun as extract input/examples/document/1-document.pdf --aws-textract detect-text
+bun as extract input/examples/document/1-document.pdf --gcloud-docai ocr
 
 # Fan out across every OCR provider in price mode
 bun as extract input/examples/document/1-document.pdf --all-ocr --price
@@ -410,6 +412,8 @@ bun as extract input/examples/document/1-epub.epub --epub-calibre --out json
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
+| `--aws-textract <model>` | Use AWS Textract; `detect-text` for text-only ($1.50/1K pages) or `analyze-document` for tables/forms/layout ($15/1K pages) |
+| `--gcloud-docai <model>` | Use Google Cloud Document AI; `ocr` for Enterprise Document OCR or `layout-parser` for Gemini-powered Layout Parser |
 | `--all-ocr` | Enable every supported OCR provider/model for this command |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--psm <n>` | Tesseract page segmentation mode |
@@ -535,6 +539,11 @@ Happy Scribe price preflight is intentionally side-effect free.
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
 - Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
 - Backfill existing OCR outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
+- AWS Textract supports PDF, PNG, JPG, and TIFF natively. BMP, WebP, and GIF inputs are normalized to PNG via ImageMagick when available.
+- AWS Textract uses the AWS CLI for authentication (`aws configure` or `AWS_PROFILE`/`AWS_REGION`). No separate API key is needed — it reuses the same AWS credentials as AWS STT.
+- AWS Textract offers two models: `detect-text` for text-only extraction at $1.50 per 1,000 pages, and `analyze-document` for tables, forms, and layout extraction at $15 per 1,000 pages.
+- Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging, which requires an S3 bucket (reuses the bucket from AWS STT setup, or run `bun as setup --aws` to create one).
+- AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
 - Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md).
 - Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.
 

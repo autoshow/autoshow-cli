@@ -114,6 +114,10 @@ export type RuntimeOptions = {
   anthropicOcrModel: string | undefined
   geminiOcrModels: string[] | undefined
   geminiOcrModel: string | undefined
+  awsTextractModels: string[] | undefined
+  awsTextractModel: string | undefined
+  gcloudDocaiModels: string[] | undefined
+  gcloudDocaiModel: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined
   pdfChapterMode: 'local' | 'auto' | 'llm'

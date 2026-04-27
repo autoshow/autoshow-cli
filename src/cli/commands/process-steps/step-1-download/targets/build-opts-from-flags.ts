@@ -59,6 +59,8 @@ import {
   validateGlmOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
+  validateAwsTextractModel,
+  validateGcloudDocaiModel,
   validateMistralOcrModel,
   validateOpenAIOcrModel,
   validateKittenTtsModel,
@@ -578,6 +580,8 @@ export const buildOptsFromFlags = (
   const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
   const anthropicOcrModels = readValidatedMany('anthropic-ocr', validateAnthropicOcrModel)
   const geminiOcrModels = readValidatedMany('gemini-ocr', validateGeminiOcrModel)
+  const awsTextractModels = readValidatedMany('aws-textract', validateAwsTextractModel)
+  const gcloudDocaiModels = readValidatedMany('gcloud-docai', validateGcloudDocaiModel)
   const llamaModels = readValidatedMany('llama', validateLlamaModel)
   const openaiModels = readValidatedMany('openai', validateOpenAIModel)
   const groqModels = readValidatedMany('groq', validateGroqModel)
@@ -611,6 +615,8 @@ export const buildOptsFromFlags = (
   const openaiOcrModel = first(openaiOcrModels)
   const anthropicOcrModel = first(anthropicOcrModels)
   const geminiOcrModel = first(geminiOcrModels)
+  const awsTextractModel = first(awsTextractModels)
+  const gcloudDocaiModel = first(gcloudDocaiModels)
   const llamaModel = first(llamaModels)
   const openaiModel = first(openaiModels)
   const groqModel = first(groqModels)
@@ -766,6 +772,10 @@ export const buildOptsFromFlags = (
     anthropicOcrModel,
     geminiOcrModels,
     geminiOcrModel,
+    awsTextractModels,
+    awsTextractModel,
+    gcloudDocaiModels,
+    gcloudDocaiModel,
     epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
     epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
     pdfChapterMode,

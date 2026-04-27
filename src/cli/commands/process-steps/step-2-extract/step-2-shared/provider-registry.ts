@@ -27,6 +27,8 @@ import {
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
+  SUPPORTED_AWS_TEXTRACT_MODELS,
+  SUPPORTED_GCLOUD_DOCAI_MODELS,
   validateWhisperModel,
   validateGcloudSttModel,
   validateAwsSttModel,
@@ -53,7 +55,9 @@ import {
   validateGlmOcrModel,
   validateOpenAIOcrModel,
   validateAnthropicOcrModel,
-  validateGeminiOcrModel
+  validateGeminiOcrModel,
+  validateAwsTextractModel,
+  validateGcloudDocaiModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import type {
@@ -628,6 +632,36 @@ const STEP2_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_GEMINI_OCR_MODELS,
     validateModel: validateGeminiOcrModel,
     description: buildModelDescription('Gemini OCR model', SUPPORTED_GEMINI_OCR_MODELS)
+  }),
+  modelProvider({
+    step: 'ocr',
+    modality: 'document',
+    flagName: 'aws-textract',
+    targetService: 'aws-textract',
+    providerSpecProvider: 'aws-textract',
+    bootstrapProviderId: 'aws-textract',
+    configKey: 'awsTextract',
+    allShortcut: 'all-ocr',
+    runtimeModelsKey: 'awsTextractModels',
+    runtimeModelKey: 'awsTextractModel',
+    supportedModels: SUPPORTED_AWS_TEXTRACT_MODELS,
+    validateModel: validateAwsTextractModel,
+    description: buildModelDescription('AWS Textract model', SUPPORTED_AWS_TEXTRACT_MODELS)
+  }),
+  modelProvider({
+    step: 'ocr',
+    modality: 'document',
+    flagName: 'gcloud-docai',
+    targetService: 'gcloud-docai',
+    providerSpecProvider: 'gcloud-docai',
+    bootstrapProviderId: 'gcloud-docai',
+    configKey: 'gcloudDocai',
+    allShortcut: 'all-ocr',
+    runtimeModelsKey: 'gcloudDocaiModels',
+    runtimeModelKey: 'gcloudDocaiModel',
+    supportedModels: SUPPORTED_GCLOUD_DOCAI_MODELS,
+    validateModel: validateGcloudDocaiModel,
+    description: buildModelDescription('Google Cloud Document AI model', SUPPORTED_GCLOUD_DOCAI_MODELS)
   })
 ] as const satisfies readonly Step2ProviderRegistryEntry[]
 

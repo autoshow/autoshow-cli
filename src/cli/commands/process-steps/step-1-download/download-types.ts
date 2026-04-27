@@ -232,6 +232,8 @@ export type RepeatableModelFlag =
   | 'openai-ocr'
   | 'anthropic-ocr'
   | 'gemini-ocr'
+  | 'aws-textract'
+  | 'gcloud-docai'
   | 'llama'
   | 'openai'
   | 'groq'

@@ -32,6 +32,14 @@ export const OCR_CAPABILITY_MATRIX: Record<OcrProviderKey, OcrProviderCapability
   'gemini-ocr': {
     supports: ['pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
     fallbackOrder: ['anthropic-ocr', 'openai-ocr', 'glm-ocr', 'mistral-ocr', 'paddle-ocr', 'tesseract']
+  },
+  'aws-textract': {
+    supports: ['pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
+    fallbackOrder: ['gemini-ocr', 'anthropic-ocr', 'openai-ocr', 'glm-ocr', 'mistral-ocr', 'paddle-ocr', 'tesseract']
+  },
+  'gcloud-docai': {
+    supports: ['pdf', 'image', 'office-pdf', 'rtf-pdf', 'cbz-images'],
+    fallbackOrder: ['aws-textract', 'gemini-ocr', 'anthropic-ocr', 'openai-ocr', 'glm-ocr', 'mistral-ocr', 'paddle-ocr', 'tesseract']
   }
 }
 

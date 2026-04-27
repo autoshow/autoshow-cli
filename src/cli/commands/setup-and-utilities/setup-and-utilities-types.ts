@@ -31,6 +31,8 @@ import {
 } from './models/stt-models'
 import {
   SUPPORTED_ANTHROPIC_OCR_MODELS,
+  SUPPORTED_AWS_TEXTRACT_MODELS,
+  SUPPORTED_GCLOUD_DOCAI_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
@@ -164,6 +166,8 @@ export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
 export type OpenAIOcrModel = typeof SUPPORTED_OPENAI_OCR_MODELS[number]
 export type AnthropicOcrModel = typeof SUPPORTED_ANTHROPIC_OCR_MODELS[number]
 export type GeminiOcrModel = typeof SUPPORTED_GEMINI_OCR_MODELS[number]
+export type AwsTextractModel = typeof SUPPORTED_AWS_TEXTRACT_MODELS[number]
+export type GcloudDocaiModel = typeof SUPPORTED_GCLOUD_DOCAI_MODELS[number]
 export type KittenTtsModel = typeof SUPPORTED_KITTEN_TTS_MODELS[number]
 export type ElevenlabsTtsModel = typeof SUPPORTED_ELEVENLABS_TTS_MODELS[number]
 export type MinimaxTtsModel = typeof SUPPORTED_MINIMAX_TTS_MODELS[number]

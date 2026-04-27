@@ -330,6 +330,49 @@
       "https://www.assemblyai.com/docs/api-reference/transcripts/get.md"
     ]
   },
+  "AWS": {
+    "STT": [
+      "https://docs.aws.amazon.com/transcribe/latest/dg/what-is.md",
+      "https://docs.aws.amazon.com/transcribe/latest/dg/getting-started-cli.md",
+      "https://docs.aws.amazon.com/transcribe/latest/dg/diarization.md",
+      "https://docs.aws.amazon.com/transcribe/latest/dg/diarization-output-batch.md"
+    ],
+    "OCR": [
+      "https://docs.aws.amazon.com/textract/latest/dg/what-is.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/setting-up.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/setup-awscli-sdk.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/program-access.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/get-started-exercise.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/how-it-works-detecting.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/how-it-works-analyzing.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/how-it-works-custom-queries.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/document-response.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/how-it-works-document-layout.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/how-it-works-pages.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/how-it-works-lines-words.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/async.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/textract-using-adapters.md",
+      "https://docs.aws.amazon.com/textract/latest/dg/textract-best-practices.md"
+    ]
+  },
+  "GCloud": {
+    "STT": [
+      "https://docs.cloud.google.com/speech-to-text/docs/quickstarts/transcribe-api.md.txt",
+      "https://docs.cloud.google.com/speech-to-text/docs/sync-recognize.md.txt",
+      "https://docs.cloud.google.com/speech-to-text/docs/batch-recognize.md.txt",
+      "https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3.md.txt"
+    ],
+    "OCR": [
+      "https://docs.cloud.google.com/document-ai/docs/overview.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/setup.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/enrichment.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/normalization.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/enterprise-document-ocr.md.txt#ocr-processing",
+      "https://docs.cloud.google.com/document-ai/docs/layout-parse-chunk.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/layout-parse-quickstart.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/reference/rest.md.txt"
+    ]
+  },
   "Deepgram": {
     "STT": [
       "https://developers.deepgram.com/reference/speech-to-text/listen-pre-recorded.md",

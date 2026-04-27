@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AnthropicOcrModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
+import type { AnthropicOcrModel, AwsTextractModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
   'mistral-ocr-2512'
@@ -36,3 +36,17 @@ export const SUPPORTED_GEMINI_OCR_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateGeminiOcrModel = createModelValidator<GeminiOcrModel>(SUPPORTED_GEMINI_OCR_MODELS, 'gemini-ocr')
+
+export const SUPPORTED_AWS_TEXTRACT_MODELS = [
+  'detect-text',
+  'analyze-document'
+] as const satisfies readonly string[]
+
+export const validateAwsTextractModel = createModelValidator<AwsTextractModel>(SUPPORTED_AWS_TEXTRACT_MODELS, 'aws-textract')
+
+export const SUPPORTED_GCLOUD_DOCAI_MODELS = [
+  'ocr',
+  'layout-parser'
+] as const satisfies readonly string[]
+
+export const validateGcloudDocaiModel = createModelValidator<GcloudDocaiModel>(SUPPORTED_GCLOUD_DOCAI_MODELS, 'gcloud-docai')
