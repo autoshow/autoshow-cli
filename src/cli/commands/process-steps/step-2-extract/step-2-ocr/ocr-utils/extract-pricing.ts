@@ -1,4 +1,8 @@
 import { extname } from 'node:path'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { writeFile, unlink } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { validateAnthropicOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
@@ -18,15 +22,47 @@ const hasImageExtension = (input: string): boolean => {
 
 const hasPdfExtension = (input: string): boolean => extname(input).toLowerCase() === '.pdf'
 
-export const resolveExtractInputPageCount = async (input: string): Promise<number | undefined> => {
+const isRemoteUrl = (input: string): boolean => /^https?:\/\//i.test(input)
+
+const downloadToTemp = async (url: string): Promise<string> => {
+  const tempPath = join(tmpdir(), `autoshow-price-${randomUUID()}.pdf`)
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
+  const buffer = Buffer.from(await response.arrayBuffer())
+  await writeFile(tempPath, buffer)
+  return tempPath
+}
+
+const pageCountCache = new Map<string, Promise<number | undefined>>()
+
+export const resolveExtractInputPageCount = (input: string): Promise<number | undefined> => {
+  const cached = pageCountCache.get(input)
+  if (cached) return cached
+
+  const promise = resolveExtractInputPageCountUncached(input)
+  pageCountCache.set(input, promise)
+  return promise
+}
+
+const resolveExtractInputPageCountUncached = async (input: string): Promise<number | undefined> => {
   if (hasImageExtension(input)) return 1
   if (!hasPdfExtension(input)) return undefined
 
+  let localPath = input
+  let tempFile: string | undefined
   try {
-    const info = await getDocumentInfo(input)
+    if (isRemoteUrl(input)) {
+      tempFile = await downloadToTemp(input)
+      localPath = tempFile
+    }
+    const info = await getDocumentInfo(localPath)
     return Math.max(1, info.pageCount)
   } catch {
     return undefined
+  } finally {
+    if (tempFile) {
+      await unlink(tempFile).catch(() => {})
+    }
   }
 }
 

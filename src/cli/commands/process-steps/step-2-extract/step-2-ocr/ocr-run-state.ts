@@ -282,24 +282,12 @@ export const buildMissingTargetsFromEntry = (
   })
 }
 
-const isLegacyPaddleLogOnlyFailure = (
-  state: OcrProviderState
-): boolean => {
-  const message = state.lastError?.message ?? ''
-  return state.service === 'paddle-ocr'
-    && state.status === 'failed'
-    && state.retryable !== true
-    && LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN.test(message)
-    && !LOCAL_ERROR_PATTERN.test(message)
-}
-
 const isResumableProviderState = (
   state: OcrProviderState | undefined
 ): boolean =>
   state === undefined
   || state.status === 'missing'
-  || state.retryable === true
-  || (state !== undefined && isLegacyPaddleLogOnlyFailure(state))
+  || state.status === 'failed'
 
 export const readExistingOcrRun = async (
   outputDir: string,

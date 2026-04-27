@@ -1337,6 +1337,12 @@ export const runOcr = async (
   if (typeof opts.geminiOcrModel === 'string' && extractionMethod.includes('gemini-ocr')) {
     step2MetadataPayload['ocrModel'] = opts.geminiOcrModel
   }
+  if (typeof opts.awsTextractModel === 'string' && extractionMethod.includes('aws-textract')) {
+    step2MetadataPayload['ocrModel'] = opts.awsTextractModel
+  }
+  if (typeof opts.gcloudDocaiModel === 'string' && extractionMethod.includes('gcloud-docai')) {
+    step2MetadataPayload['ocrModel'] = opts.gcloudDocaiModel
+  }
   if (typeof promptTokens === 'number') {
     step2MetadataPayload['promptTokens'] = promptTokens
   }

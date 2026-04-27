@@ -412,15 +412,17 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
             + (completionTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
         : provider === 'anthropic' && step2Entry.ocrModel
           ? computeActualAnthropicOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
+        : provider === 'gemini' && step2Entry.ocrModel
+          ? computeActualGeminiOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
           : 0
       steps.push({
         step: 'extract',
         provider,
         model,
         cost,
-        inputMetric: provider === 'glm' || provider === 'openai' || provider === 'anthropic' ? 'tokens' : 'pages',
-        inputValue: provider === 'glm' || provider === 'openai' || provider === 'anthropic' ? promptTokens + completionTokens : step2Entry.totalPages,
-        ...(provider === 'glm' || provider === 'openai' || provider === 'anthropic' ? { promptTokens, completionTokens } : {})
+        inputMetric: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' ? 'tokens' : 'pages',
+        inputValue: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' ? { promptTokens, completionTokens } : {})
       })
     }
   }

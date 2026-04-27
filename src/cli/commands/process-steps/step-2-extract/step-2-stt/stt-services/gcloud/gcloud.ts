@@ -21,7 +21,9 @@ export const GCLOUD_STT_DEFAULT_LOCATION = 'us'
 const GCLOUD_DOCAI_DEFAULT_MODEL = 'ocr'
 const GCLOUD_DOCAI_DEFAULT_LOCATION = 'us'
 const GCLOUD_DOCAI_DEFAULT_PROCESSOR_DISPLAY_NAME = 'autoshow-ocr'
+const GCLOUD_DOCAI_LAYOUT_PROCESSOR_DISPLAY_NAME = 'autoshow-layout-parser'
 const GCLOUD_DOCAI_OCR_PROCESSOR_TYPE = 'OCR_PROCESSOR'
+const GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE = 'LAYOUT_PARSER_PROCESSOR'
 const GCLOUD_REQUIRED_APIS = [
   'speech.googleapis.com',
   'documentai.googleapis.com',
@@ -417,6 +419,61 @@ const ensureDocumentAiOcrProcessor = async (
   return { processorId, created: true, detail: `created ${processorId}` }
 }
 
+const createDocumentAiLayoutProcessor = async (
+  projectId: string,
+  location: string,
+  accessToken: string
+): Promise<string> => {
+  const response = await fetch(documentAiBaseUrl(projectId, location), {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      displayName: GCLOUD_DOCAI_LAYOUT_PROCESSOR_DISPLAY_NAME,
+      type: GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE
+    })
+  })
+  if (!response.ok) {
+    throw new Error(
+      `Failed to create Document AI Layout Parser processor (${response.status}): ${await response.text()}. ` +
+      `Create one manually in project ${projectId}, location ${location}, type ${GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE}.`
+    )
+  }
+  const payload = await response.json() as { name?: string }
+  const processorId = payload.name ? readGcloudDocaiProcessorId(payload.name) : undefined
+  if (!processorId) {
+    throw new Error('Document AI Layout Parser processor creation response did not include a processor ID.')
+  }
+  return processorId
+}
+
+const ensureDocumentAiLayoutProcessor = async (
+  projectId: string,
+  location: string,
+  accessToken: string,
+  savedProcessorId?: string | undefined
+): Promise<{ processorId?: string | undefined, created: boolean, detail: string }> => {
+  if (savedProcessorId) {
+    return { processorId: savedProcessorId, created: false, detail: `saved ${savedProcessorId}` }
+  }
+
+  const processors = await listDocumentAiProcessors(projectId, location, accessToken)
+  const reusable = processors.find((processor) =>
+    processor.type === GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE
+    && processor.displayName === GCLOUD_DOCAI_LAYOUT_PROCESSOR_DISPLAY_NAME
+    && processor.name
+  )
+  const reusableId = reusable?.name ? readGcloudDocaiProcessorId(reusable.name) : undefined
+  if (reusableId) {
+    return { processorId: reusableId, created: false, detail: `found ${reusableId}` }
+  }
+
+  const processorId = await createDocumentAiLayoutProcessor(projectId, location, accessToken)
+  return { processorId, created: true, detail: `created ${processorId}` }
+}
+
 const sanitizeBucketPart = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'project'
 
@@ -519,6 +576,7 @@ const ensureGcloudRuntimeDefaultsSaved = async (
   options: {
     configPathOverride?: string | undefined
     ocrProcessorId?: string | undefined
+    layoutProcessorId?: string | undefined
     bucket?: string | undefined
     location?: string | undefined
   } = {}
@@ -536,6 +594,9 @@ const ensureGcloudRuntimeDefaultsSaved = async (
   }
   if (!normalizeString(ocr?.gcloudDocaiOcrProcessorId) && options.ocrProcessorId) {
     patchOcr['gcloudDocaiOcrProcessorId'] = options.ocrProcessorId
+  }
+  if (!normalizeString(ocr?.gcloudDocaiLayoutProcessorId) && options.layoutProcessorId) {
+    patchOcr['gcloudDocaiLayoutProcessorId'] = options.layoutProcessorId
   }
   if (!normalizeString(ocr?.gcloudDocaiBucket) && options.bucket) {
     patchOcr['gcloudDocaiBucket'] = options.bucket
@@ -747,6 +808,7 @@ export const setupGcloudStt = async (
   let savedConfigPath: string | undefined
   let defaultModelConfigured = false
   let docaiProcessorDetail: string | undefined
+  let docaiLayoutProcessorDetail: string | undefined
   let gcsBucketDetail: string | undefined
   let gcsBucketOk = false
   let docaiLocation = GCLOUD_DOCAI_DEFAULT_LOCATION
@@ -806,47 +868,55 @@ export const setupGcloudStt = async (
         }
       }
     }
-
-    if (
-      state.authConfigured
-      && state.projectId
-      && state.billingEnabled === true
-      && state.documentAiApiEnabled === true
-      && state.storageApiEnabled === true
-    ) {
-      const savedDocai = await readSavedGcloudDocaiDefaults(options.configPathOverride)
-      docaiLocation = savedDocai.location ?? GCLOUD_DOCAI_DEFAULT_LOCATION
-      const tokenState = await readAccessToken()
-      if (!tokenState.ok || !tokenState.accessToken) {
-        throw new Error(`gcloud auth failed while configuring Document AI: ${tokenState.detail}`)
-      }
-      const processor = await ensureDocumentAiOcrProcessor(
-        state.projectId,
-        docaiLocation,
-        tokenState.accessToken,
-        savedDocai.ocrProcessorId
-      )
-      docaiProcessorDetail = processor.detail
-      const bucket = await ensureGcloudDocaiBucket(
-        state.projectId,
-        docaiLocation,
-        savedDocai.bucket
-      )
-      gcsBucketDetail = bucket.bucket ? `${bucket.bucket} (${bucket.detail})` : bucket.detail
-      gcsBucketOk = bucket.ok
-
-      const defaultSave = await ensureGcloudRuntimeDefaultsSaved({
-        configPathOverride: options.configPathOverride,
-        ocrProcessorId: processor.processorId,
-        bucket: bucket.bucket,
-        location: docaiLocation
-      })
-      savedConfigPath = defaultSave.saved ? defaultSave.configPath : undefined
-    } else {
-      const defaultSave = await ensureGcloudSttDefaultSaved(options.configPathOverride)
-      savedConfigPath = defaultSave.saved ? defaultSave.configPath : undefined
-    }
     defaultModelConfigured = true
+  }
+
+  if (
+    state.authConfigured
+    && state.projectId
+    && state.billingEnabled === true
+    && state.documentAiApiEnabled === true
+    && state.storageApiEnabled === true
+  ) {
+    const savedDocai = await readSavedGcloudDocaiDefaults(options.configPathOverride)
+    docaiLocation = savedDocai.location ?? GCLOUD_DOCAI_DEFAULT_LOCATION
+    const tokenState = await readAccessToken()
+    if (!tokenState.ok || !tokenState.accessToken) {
+      throw new Error(`gcloud auth failed while configuring Document AI: ${tokenState.detail}`)
+    }
+    const processor = await ensureDocumentAiOcrProcessor(
+      state.projectId,
+      docaiLocation,
+      tokenState.accessToken,
+      savedDocai.ocrProcessorId
+    )
+    docaiProcessorDetail = processor.detail
+    const layoutProcessor = await ensureDocumentAiLayoutProcessor(
+      state.projectId,
+      docaiLocation,
+      tokenState.accessToken,
+      savedDocai.layoutProcessorId
+    )
+    docaiLayoutProcessorDetail = layoutProcessor.detail
+    const bucket = await ensureGcloudDocaiBucket(
+      state.projectId,
+      docaiLocation,
+      savedDocai.bucket
+    )
+    gcsBucketDetail = bucket.bucket ? `${bucket.bucket} (${bucket.detail})` : bucket.detail
+    gcsBucketOk = bucket.ok
+
+    const defaultSave = await ensureGcloudRuntimeDefaultsSaved({
+      configPathOverride: options.configPathOverride,
+      ocrProcessorId: processor.processorId,
+      layoutProcessorId: layoutProcessor.processorId,
+      bucket: bucket.bucket,
+      location: docaiLocation
+    })
+    savedConfigPath = defaultSave.saved ? defaultSave.configPath : undefined
+  } else if (!defaultModelConfigured) {
+    const defaultSave = await ensureGcloudSttDefaultSaved(options.configPathOverride)
+    savedConfigPath = defaultSave.saved ? defaultSave.configPath : undefined
   }
 
   if (options.focused) {
@@ -864,6 +934,7 @@ export const setupGcloudStt = async (
           { status: state.documentAiApiEnabled === true ? 'OK' : 'MISSING', check: 'documentai.googleapis.com', detail: state.details.documentAiApi },
           { status: state.storageApiEnabled === true ? 'OK' : 'MISSING', check: 'storage.googleapis.com', detail: state.details.storageApi },
           ...(docaiProcessorDetail ? [{ status: 'OK', check: 'Document AI OCR processor', detail: docaiProcessorDetail }] : []),
+          ...(docaiLayoutProcessorDetail ? [{ status: 'OK', check: 'Document AI Layout Parser processor', detail: docaiLayoutProcessorDetail }] : []),
           ...(gcsBucketDetail ? [{ status: gcsBucketOk ? 'OK' : 'MISSING', check: 'GCS Document AI bucket', detail: gcsBucketDetail }] : [])
         ]
       : []),
@@ -883,7 +954,7 @@ export const setupGcloudStt = async (
         { setting: 'stt location', value: 'us' },
         { setting: 'ocr model', value: GCLOUD_DOCAI_DEFAULT_MODEL },
         { setting: 'ocr location', value: docaiLocation },
-        { setting: 'layout parser', value: 'configure a LAYOUT_PARSER_PROCESSOR manually when using --gcloud-docai layout-parser' },
+        { setting: 'layout parser', value: docaiLayoutProcessorDetail ?? 'not configured' },
         { setting: 'stt transport', value: 'direct REST Recognize requests via us-speech.googleapis.com' },
         { setting: 'ocr transport', value: 'Document AI sync and batch APIs with GCS staging for multi-page or large files' }
       ], ['setting', 'value'])

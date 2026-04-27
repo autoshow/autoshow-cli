@@ -27,9 +27,16 @@ const LayoutSchema = v.object({
   textAnchor: v.optional(TextAnchorSchema, undefined)
 })
 
+const DocaiBlockSchema = v.object({
+  layout: v.optional(LayoutSchema, undefined)
+})
+
 const DocaiPageSchema = v.object({
   pageNumber: v.optional(v.number(), undefined),
-  layout: v.optional(LayoutSchema, undefined)
+  layout: v.optional(LayoutSchema, undefined),
+  paragraphs: v.optional(v.array(DocaiBlockSchema), []),
+  blocks: v.optional(v.array(DocaiBlockSchema), []),
+  lines: v.optional(v.array(DocaiBlockSchema), [])
 })
 
 const DocaiDocumentSchema = v.object({
@@ -81,6 +88,33 @@ const buildOperationUrl = (
 ): string =>
   `https://${config.location}-documentai.googleapis.com/v1/${operationName}`
 
+const extractTextFromSegments = (
+  segments: v.InferOutput<typeof TextSegmentSchema>[],
+  fullText: string
+): string => {
+  let text = ''
+  for (const seg of segments) {
+    const start = typeof seg.startIndex === 'string' ? parseInt(seg.startIndex, 10) : (seg.startIndex ?? 0)
+    const end = typeof seg.endIndex === 'string' ? parseInt(seg.endIndex, 10) : seg.endIndex
+    text += fullText.slice(start, end)
+  }
+  return text
+}
+
+const extractTextFromBlocks = (
+  blocks: v.InferOutput<typeof DocaiBlockSchema>[],
+  fullText: string
+): string => {
+  let text = ''
+  for (const block of blocks) {
+    const segments = block.layout?.textAnchor?.textSegments
+    if (segments && segments.length > 0) {
+      text += extractTextFromSegments(segments, fullText)
+    }
+  }
+  return text
+}
+
 const buildPageResults = (document: v.InferOutput<typeof DocaiDocumentSchema>): PageResult[] => {
   const fullText = document.text ?? ''
   const pages: PageResult[] = []
@@ -93,14 +127,21 @@ const buildPageResults = (document: v.InferOutput<typeof DocaiDocumentSchema>): 
     const page = document.pages[i]!
     const pageNumber = page.pageNumber ?? (i + 1)
 
-    let pageText = ''
+    // Try page-level layout first (used by OCR processor)
     const segments = page.layout?.textAnchor?.textSegments
-    if (segments && segments.length > 0) {
-      for (const seg of segments) {
-        const start = typeof seg.startIndex === 'string' ? parseInt(seg.startIndex, 10) : (seg.startIndex ?? 0)
-        const end = typeof seg.endIndex === 'string' ? parseInt(seg.endIndex, 10) : seg.endIndex
-        pageText += fullText.slice(start, end)
-      }
+    let pageText = segments && segments.length > 0
+      ? extractTextFromSegments(segments, fullText)
+      : ''
+
+    // Fall back to paragraph/block/line-level anchors (used by Layout Parser)
+    if (!pageText && page.paragraphs && page.paragraphs.length > 0) {
+      pageText = extractTextFromBlocks(page.paragraphs, fullText)
+    }
+    if (!pageText && page.blocks && page.blocks.length > 0) {
+      pageText = extractTextFromBlocks(page.blocks, fullText)
+    }
+    if (!pageText && page.lines && page.lines.length > 0) {
+      pageText = extractTextFromBlocks(page.lines, fullText)
     }
 
     pages.push({
@@ -115,22 +156,25 @@ const buildPageResults = (document: v.InferOutput<typeof DocaiDocumentSchema>): 
 
 const runSyncDocai = async (
   filePath: string,
-  config: GcloudDocaiRuntimeConfig
+  config: GcloudDocaiRuntimeConfig,
+  model: string
 ): Promise<{ pages: PageResult[], totalPages: number }> => {
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
   const mimeType = resolveMimeType(filePath)
 
-  const body = {
+  const body: Record<string, unknown> = {
     rawDocument: {
       mimeType,
       content: base64
     },
-    processOptions: {
-      ocrConfig: {
-        enableNativePdfParsing: true
+    ...(model === 'ocr' ? {
+      processOptions: {
+        ocrConfig: {
+          enableNativePdfParsing: true
+        }
       }
-    }
+    } : {})
   }
 
   const endpoint = buildEndpointUrl(config, 'process')
@@ -140,7 +184,8 @@ const runSyncDocai = async (
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${config.accessToken}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-Goog-User-Project': config.projectId
     },
     body: JSON.stringify(body)
   })
@@ -158,7 +203,8 @@ const runSyncDocai = async (
 
 const runBatchDocai = async (
   filePath: string,
-  config: GcloudDocaiRuntimeConfig
+  config: GcloudDocaiRuntimeConfig,
+  model: string
 ): Promise<{ pages: PageResult[], totalPages: number }> => {
   const s3Key = `autoshow-docai/${crypto.randomUUID()}/${basename(filePath)}`
   const gcsUri = `gs://${config.bucket}/${s3Key}`
@@ -173,7 +219,7 @@ const runBatchDocai = async (
 
   try {
     const mimeType = resolveMimeType(filePath)
-    const body = {
+    const body: Record<string, unknown> = {
       inputDocuments: {
         gcsDocuments: {
           documents: [{ gcsUri, mimeType }]
@@ -184,11 +230,13 @@ const runBatchDocai = async (
           gcsUri: outputPrefix
         }
       },
-      processOptions: {
-        ocrConfig: {
-          enableNativePdfParsing: true
+      ...(model === 'ocr' ? {
+        processOptions: {
+          ocrConfig: {
+            enableNativePdfParsing: true
+          }
         }
-      }
+      } : {})
     }
 
     const endpoint = buildEndpointUrl(config, 'batchProcess')
@@ -198,7 +246,8 @@ const runBatchDocai = async (
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${config.accessToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Goog-User-Project': config.projectId
       },
       body: JSON.stringify(body)
     })
@@ -219,7 +268,10 @@ const runBatchDocai = async (
 
       const pollUrl = buildOperationUrl(config, operationName)
       const pollResponse = await fetch(pollUrl, {
-        headers: { 'Authorization': `Bearer ${config.accessToken}` }
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`,
+          'X-Goog-User-Project': config.projectId
+        }
       })
 
       if (!pollResponse.ok) {
@@ -247,7 +299,7 @@ const runBatchDocai = async (
 
     l.write('info', 'Document AI batch job completed, reading output from GCS...')
 
-    const listResult = await runGcloud(['storage', 'ls', outputPrefix])
+    const listResult = await runGcloud(['storage', 'ls', '-r', outputPrefix])
     if (listResult.exitCode !== 0) {
       throw new Error(`Failed to list Document AI output from GCS: ${listResult.stderr.trim() || listResult.stdout.trim() || 'command failed'}`)
     }
@@ -312,10 +364,10 @@ export const runGcloudDocai = async (
       )
     }
 
-    const result = await runBatchDocai(filePath, config)
+    const result = await runBatchDocai(filePath, config, model)
     return { ...result, extractionMethod: 'gcloud-docai' }
   }
 
-  const result = await runSyncDocai(filePath, config)
+  const result = await runSyncDocai(filePath, config, model)
   return { ...result, extractionMethod: 'gcloud-docai' }
 }

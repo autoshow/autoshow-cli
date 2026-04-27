@@ -270,23 +270,44 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.mistralOcrModel) {
     extractionOpts.mistralOcrModel = opts.mistralOcrModel
   }
+  if (opts.mistralOcrModels) {
+    extractionOpts.mistralOcrModels = opts.mistralOcrModels
+  }
   if (opts.glmOcrModel) {
     extractionOpts.glmOcrModel = opts.glmOcrModel
+  }
+  if (opts.glmOcrModels) {
+    extractionOpts.glmOcrModels = opts.glmOcrModels
   }
   if (opts.openaiOcrModel) {
     extractionOpts.openaiOcrModel = opts.openaiOcrModel
   }
+  if (opts.openaiOcrModels) {
+    extractionOpts.openaiOcrModels = opts.openaiOcrModels
+  }
   if (opts.anthropicOcrModel) {
     extractionOpts.anthropicOcrModel = opts.anthropicOcrModel
+  }
+  if (opts.anthropicOcrModels) {
+    extractionOpts.anthropicOcrModels = opts.anthropicOcrModels
   }
   if (opts.geminiOcrModel) {
     extractionOpts.geminiOcrModel = opts.geminiOcrModel
   }
+  if (opts.geminiOcrModels) {
+    extractionOpts.geminiOcrModels = opts.geminiOcrModels
+  }
   if (opts.awsTextractModel) {
     extractionOpts.awsTextractModel = opts.awsTextractModel
   }
+  if (opts.awsTextractModels) {
+    extractionOpts.awsTextractModels = opts.awsTextractModels
+  }
   if (opts.gcloudDocaiModel) {
     extractionOpts.gcloudDocaiModel = opts.gcloudDocaiModel
+  }
+  if (opts.gcloudDocaiModels) {
+    extractionOpts.gcloudDocaiModels = opts.gcloudDocaiModels
   }
   if (opts.epubChapterFiles) {
     extractionOpts.epubChapterFiles = true
