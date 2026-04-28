@@ -503,7 +503,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
 
   for (const step5 of toArray(input.step5)) {
     const imageCount = Math.max(1, step5.imageCount)
-    const cost = getImageCost(step5.imageService, step5.imageModel) * imageCount
+    const cost = typeof step5.providerCostCents === 'number'
+      ? step5.providerCostCents
+      : getImageCost(step5.imageService, step5.imageModel) * imageCount
     steps.push({
       step: 'image',
       provider: step5.imageService,
@@ -868,6 +870,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         glmImageModel: input.glmImageModel,
         grokImageModel: input.grokImageModel,
         runwayImageModel: input.runwayImageModel,
+        bflImageModel: input.bflImageModel,
         deapiImageModel: input.deapiImageModel,
         imageSize: input.imageSize,
         imagenCount: input.imagenCount

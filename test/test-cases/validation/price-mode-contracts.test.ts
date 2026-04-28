@@ -32,6 +32,11 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
     expected: 'generated-image'
   },
   {
+    label: 'BFL image',
+    args: ['image', 'a sunset over a lake', '--bfl-image', 'flux-2-pro-preview', '--price'],
+    expected: 'generated-image'
+  },
+  {
     label: 'video',
     args: ['video', 'a sunset over a lake', '--gemini-video', 'veo-3.1-fast-generate-preview', '--price'],
     expected: 'video'
@@ -87,6 +92,7 @@ describe('price mode contracts', () => {
 
   test('cheapest-model helpers return stable model selections', () => {
     expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
+    expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-klein-4b')
     expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
     expect(resolveCheapestModelForFlag('deapi-video')).toBe('Ltxv_13B_0_9_8_Distilled_FP8')
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')

@@ -89,6 +89,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --grok-video models                     │
 │  ├── RUNWAYML_API_SECRET             Required for --runway-image,            │
 │  │                                   --runway-video models                   │
+│  ├── BFL_API_KEY                     Required for --bfl-image models         │
 │  └── HF_TOKEN                        HuggingFace private model access         │
 │                                                                              │
 │  llama.cpp Overrides                                                         │

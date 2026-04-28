@@ -75,6 +75,25 @@ describe('config contracts', () => {
     })
   })
 
+  test('buildConfigPatchFromFlags saves BFL image defaults', () => {
+    expect(buildConfigPatchFromFlags({
+      'bfl-image': ['flux-2-pro-preview'],
+      'image-size': '1024x1024',
+      'image-format': 'webp'
+    }, new Set(['bfl-image', 'image-size', 'image-format']))).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          image: {
+            bflImage: ['flux-2-pro-preview'],
+            imageSize: '1024x1024',
+            imageFormat: 'webp'
+          }
+        }
+      }
+    })
+  })
+
   test('loadConfig accepts current v2 array-shaped defaults', async () => {
     const configPath = await writeTempConfig({
       version: 2,
@@ -95,6 +114,12 @@ describe('config contracts', () => {
             gcloudDocaiLocation: 'us',
             gcloudDocaiOcrProcessorId: 'processor-123',
             gcloudDocaiBucket: 'autoshow-docai-project-abc123'
+          }
+        },
+        post: {
+          image: {
+            bflImage: ['flux-2-pro-preview'],
+            imageFormat: 'jpeg'
           }
         }
       }
@@ -119,6 +144,12 @@ describe('config contracts', () => {
             gcloudDocaiLocation: 'us',
             gcloudDocaiOcrProcessorId: 'processor-123',
             gcloudDocaiBucket: 'autoshow-docai-project-abc123'
+          }
+        },
+        post: {
+          image: {
+            bflImage: ['flux-2-pro-preview'],
+            imageFormat: 'jpeg'
           }
         }
       }

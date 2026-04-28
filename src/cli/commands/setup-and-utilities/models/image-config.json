@@ -149,6 +149,75 @@
       }
     }
   },
+  "bfl": {
+    "description": "BFL FLUX image generation",
+    "type": "api",
+    "models": {
+      "flux-2-klein-4b": {
+        "description": "FLUX.2 Klein 4B text-to-image generation",
+        "costPerImageUSD": 0.014,
+        "costPerImageCents": 1.4,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      },
+      "flux-2-klein-9b-preview": {
+        "description": "FLUX.2 Klein 9B Preview text-to-image generation",
+        "costPerImageUSD": 0.015,
+        "costPerImageCents": 1.5,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      },
+      "flux-2-klein-9b": {
+        "description": "FLUX.2 Klein 9B fixed snapshot text-to-image generation",
+        "costPerImageUSD": 0.015,
+        "costPerImageCents": 1.5,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      },
+      "flux-2-pro-preview": {
+        "description": "FLUX.2 Pro Preview text-to-image generation",
+        "costPerImageUSD": 0.03,
+        "costPerImageCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      },
+      "flux-2-pro": {
+        "description": "FLUX.2 Pro fixed snapshot text-to-image generation",
+        "costPerImageUSD": 0.03,
+        "costPerImageCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      },
+      "flux-2-max": {
+        "description": "FLUX.2 Max highest-quality text-to-image generation",
+        "costPerImageUSD": 0.07,
+        "costPerImageCents": 7,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      },
+      "flux-2-flex": {
+        "description": "FLUX.2 Flex text-to-image generation",
+        "costPerImageUSD": 0.06,
+        "costPerImageCents": 6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      }
+    }
+  },
   "deapi": {
     "description": "deAPI image generation",
     "type": "api",

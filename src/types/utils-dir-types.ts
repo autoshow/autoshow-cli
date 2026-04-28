@@ -40,6 +40,7 @@ export type {
   GlmImageModel,
   GrokImageModel,
   RunwayImageModel,
+  BflImageModel,
   DeapiImageModel,
   GeminiVideoModel,
   MinimaxVideoModel,

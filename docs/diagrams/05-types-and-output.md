@@ -135,7 +135,8 @@ src/types/
 │                                                                              │
 │  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|                    │
 │                  'openai'|'gemini'                                           │
-│  ImageProvider = 'gemini'|'openai'|'minimax'                                 │
+│  ImageProvider = 'gemini'|'openai'|'minimax'|'glm'|'grok'|'runway'|'bfl'     │
+│                  |'deapi'                                                    │
 │  VideoProvider = 'gemini'|'minimax'                                          │
 │  MusicProvider = 'elevenlabs'|'minimax'                                      │
 └──────────────────────────────────────────────────────────────────────────────┘

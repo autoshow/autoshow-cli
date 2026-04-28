@@ -83,12 +83,13 @@ test('music help includes hosted generation and lyric-video flags', async () => 
   expect(result.stdout).not.toContain('--track-list')
 })
 
-test('image and video help expose deAPI provider flags', async () => {
+test('image and video help expose BFL/deAPI provider flags', async () => {
   const imageResult = await runCommand(['src/cli/create-cli.ts', 'image', '--help'], { env: helpEnv })
   const videoResult = await runCommand(['src/cli/create-cli.ts', 'video', '--help'], { env: helpEnv })
 
   expect(imageResult.exitCode).toBe(0)
   expect(videoResult.exitCode).toBe(0)
+  expect(imageResult.stdout).toContain('--bfl-image')
   expect(imageResult.stdout).toContain('--deapi-image')
   expect(videoResult.stdout).toContain('--deapi-video')
 })

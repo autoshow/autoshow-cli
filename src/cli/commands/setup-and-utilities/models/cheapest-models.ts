@@ -351,6 +351,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestImageModel('grok')
     case 'runway-image':
       return selectCheapestImageModel('runway')
+    case 'bfl-image':
+      return selectCheapestImageModel('bfl')
     case 'deapi-image':
       return selectCheapestImageModel('deapi')
     case 'elevenlabs-music':

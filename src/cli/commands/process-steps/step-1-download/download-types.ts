@@ -256,6 +256,7 @@ export type RepeatableModelFlag =
   | 'glm-image'
   | 'grok-image'
   | 'runway-image'
+  | 'bfl-image'
   | 'deapi-image'
   | 'elevenlabs-music'
   | 'minimax-music'

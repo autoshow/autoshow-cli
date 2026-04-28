@@ -20,6 +20,8 @@ export type ImageGenOptions = Pick<
   | 'grokImageModel'
   | 'runwayImageModels'
   | 'runwayImageModel'
+  | 'bflImageModels'
+  | 'bflImageModel'
   | 'deapiImageModels'
   | 'deapiImageModel'
   | 'imageAspectRatio'
@@ -57,6 +59,8 @@ export type EstimateImageCostOptions = {
   grokImageModel?: string | undefined
   runwayImageModels?: string[] | undefined
   runwayImageModel?: string | undefined
+  bflImageModels?: string[] | undefined
+  bflImageModel?: string | undefined
   deapiImageModels?: string[] | undefined
   deapiImageModel?: string | undefined
   imageSize?: string | undefined

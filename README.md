@@ -56,6 +56,7 @@ bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
 
 # Prompt-driven generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl-image flux-2-pro-preview --image-size 1024x1024
 bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-fast-generate-preview --runway-video gen4.5
 bun as music "an ambient piano instrumental" --minimax-music music-2.5
 bun as music --audio input/examples/lyrics/01-example-song.mp3

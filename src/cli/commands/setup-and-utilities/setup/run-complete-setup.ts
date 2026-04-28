@@ -49,6 +49,7 @@ import { setupDeapiImageGen } from '~/cli/commands/process-steps/step-5-image/im
 import { setupGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
 import { setupRunwayImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
+import { setupBflImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/bfl-image-gen'
 import { setupDeapiVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/deapi/deapi-video-gen'
 import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
@@ -328,6 +329,8 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupRunwayImageGen)
 
+  await withCompactSetup(setupBflImageGen)
+
   await withCompactSetup(setupDeapiImageGen)
 
   await withCompactSetup(setupDeapiVideoGen)
@@ -388,6 +391,7 @@ const runSetupImage = async (): Promise<void> => {
   await setupOpenAIImageGen()
   await setupGrokImageGen()
   await setupRunwayImageGen()
+  await setupBflImageGen()
   await setupDeapiImageGen()
   await setupGlmOcr()
   l.write('success', 'Image setup complete (all image providers are API-based)')

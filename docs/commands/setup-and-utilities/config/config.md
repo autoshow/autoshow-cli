@@ -165,6 +165,9 @@ Representative JSON shape of `config/autoshow.json`:
       },
       "image": {
         "geminiImage": ["imagen-4.0-generate-001"],
+        "bflImage": ["flux-2-pro-preview"],
+        "imageSize": "1024x1024",
+        "imageFormat": "jpeg",
         "imagenCount": 1
       },
       "video": {
@@ -266,6 +269,11 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `geminiImage` | `--gemini-image` | Gemini image model |
 | `openaiImage` | `--openai-image` | OpenAI image model |
 | `minimaxImage` | `--minimax-image` | MiniMax image model |
+| `glmImage` | `--glm-image` | GLM image model |
+| `grokImage` | `--grok-image` | Grok image model |
+| `runwayImage` | `--runway-image` | Runway image model |
+| `bflImage` | `--bfl-image` | BFL image model |
+| `deapiImage` | `--deapi-image` | deAPI image model |
 | `imageAspectRatio` | `--image-aspect-ratio` | Aspect ratio |
 | `imageSize` | `--image-size` | Image size |
 | `imageQuality` | `--image-quality` | Quality level |

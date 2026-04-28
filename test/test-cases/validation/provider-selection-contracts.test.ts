@@ -95,15 +95,18 @@ describe('provider selection contracts', () => {
     ])
   })
 
-  test('deAPI image and video flags select targets and participate in all-provider shortcuts', () => {
+  test('BFL/deAPI image and deAPI video flags select targets and participate in all-provider shortcuts', () => {
     const explicitOpts = buildOptsFromFlags(false, {
+      'bfl-image': ['flux-2-pro-preview'],
       'deapi-image': ['Flux1schnell'],
       'deapi-video': ['Ltxv_13B_0_9_8_Distilled_FP8']
     })
 
+    expect(explicitOpts.bflImageModels).toEqual(['flux-2-pro-preview'])
     expect(explicitOpts.deapiImageModels).toEqual(['Flux1schnell'])
     expect(explicitOpts.deapiVideoModels).toEqual(['Ltxv_13B_0_9_8_Distilled_FP8'])
     expect(collectImageTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'bfl:flux-2-pro-preview',
       'deapi:Flux1schnell'
     ])
     expect(collectVideoTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
@@ -115,6 +118,15 @@ describe('provider selection contracts', () => {
       'all-video': true
     })
 
+    expect(allOpts.bflImageModels).toEqual([
+      'flux-2-klein-4b',
+      'flux-2-klein-9b-preview',
+      'flux-2-klein-9b',
+      'flux-2-pro-preview',
+      'flux-2-pro',
+      'flux-2-max',
+      'flux-2-flex'
+    ])
     expect(allOpts.deapiImageModels).toEqual([
       'Flux1schnell',
       'ZImageTurbo_INT8',

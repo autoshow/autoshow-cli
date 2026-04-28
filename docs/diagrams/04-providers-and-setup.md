@@ -177,6 +177,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `image --gemini-image` | `GEMINI_API_KEY` |
 | `image --openai-image` | `OPENAI_API_KEY` |
 | `image --minimax-image` | `MINIMAX_API_KEY` |
+| `image --bfl-image` | `BFL_API_KEY` |
 | `video --gemini-video` | `GEMINI_API_KEY` |
 | `video --minimax-video` | `MINIMAX_API_KEY` |
 | `video --glm-video` | `GLM_API_KEY` |

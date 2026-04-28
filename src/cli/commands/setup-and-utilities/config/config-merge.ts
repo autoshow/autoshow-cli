@@ -17,7 +17,7 @@ const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'openai-tts', 'gemini-tts'] as const
-const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image'] as const
+const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'glm-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
 const REPEATABLE_CONFIG_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
@@ -136,7 +136,9 @@ export const mergeConfigIntoRawFlags = (
   if (d.post?.image) {
     injectProviderGroup(IMAGE_PROVIDER_FLAGS, [
       ['gemini-image', d.post.image.geminiImage], ['openai-image', d.post.image.openaiImage],
-      ['minimax-image', d.post.image.minimaxImage],
+      ['minimax-image', d.post.image.minimaxImage], ['glm-image', d.post.image.glmImage],
+      ['grok-image', d.post.image.grokImage], ['runway-image', d.post.image.runwayImage],
+      ['bfl-image', d.post.image.bflImage], ['deapi-image', d.post.image.deapiImage],
     ])
     inject('image-aspect-ratio', d.post.image.imageAspectRatio)
     inject('image-size', d.post.image.imageSize)
@@ -237,6 +239,11 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],
   'openai-image':      ['defaults', 'post', 'image', 'openaiImage'],
   'minimax-image':     ['defaults', 'post', 'image', 'minimaxImage'],
+  'glm-image':         ['defaults', 'post', 'image', 'glmImage'],
+  'grok-image':        ['defaults', 'post', 'image', 'grokImage'],
+  'runway-image':      ['defaults', 'post', 'image', 'runwayImage'],
+  'bfl-image':         ['defaults', 'post', 'image', 'bflImage'],
+  'deapi-image':       ['defaults', 'post', 'image', 'deapiImage'],
   'image-aspect-ratio': ['defaults', 'post', 'image', 'imageAspectRatio'],
   'image-size':        ['defaults', 'post', 'image', 'imageSize'],
   'image-quality':     ['defaults', 'post', 'image', 'imageQuality'],

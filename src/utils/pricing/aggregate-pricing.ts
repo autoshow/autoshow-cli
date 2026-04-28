@@ -499,6 +499,8 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
     || !!opts.grokImageModel
     || (opts.runwayImageModels?.length ?? 0) > 0
     || !!opts.runwayImageModel
+    || (opts.bflImageModels?.length ?? 0) > 0
+    || !!opts.bflImageModel
     || (opts.deapiImageModels?.length ?? 0) > 0
     || !!opts.deapiImageModel
   if (!hasImage) return []
@@ -516,6 +518,8 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
     grokImageModel: opts.grokImageModel,
     runwayImageModels: opts.runwayImageModels,
     runwayImageModel: opts.runwayImageModel,
+    bflImageModels: opts.bflImageModels,
+    bflImageModel: opts.bflImageModel,
     deapiImageModels: opts.deapiImageModels,
     deapiImageModel: opts.deapiImageModel,
     imageSize: opts.imageSize,

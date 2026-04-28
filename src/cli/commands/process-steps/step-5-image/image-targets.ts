@@ -1,9 +1,10 @@
 import { extname } from 'node:path'
-import type { DeapiImageModel, GeminiImageModel, GlmImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, RunwayImageModel, Step5Metadata } from '~/types'
+import type { BflImageModel, DeapiImageModel, GeminiImageModel, GlmImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, RunwayImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   isNativeGeminiImageModel,
   supportsGeminiImageSize,
+  validateBflImageModel,
   validateGeminiImageModel,
   validateDeapiImageModel,
   validateGlmImageModel,
@@ -12,12 +13,14 @@ import {
   validateOpenAIImageModel,
   validateRunwayImageModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { ensureBflImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/bfl-image-gen'
 import { ensureDeapiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/deapi/deapi-image-gen'
 import { ensureGeminiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { ensureGrokImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { ensureOpenAIImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
 import { ensureRunwayImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
+import { getBflImageExtension, normalizeBflImageOutputFormat, normalizeBflImageSize, runBflImageGen } from './image-services/bfl/run-bfl-image-gen'
 import { normalizeDeapiImageSize, runDeapiImageGen } from './image-services/deapi/run-deapi-image-gen'
 import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
 import { normalizeGlmImageSize, runGlmImageGen } from './image-services/glm/run-glm-image-gen'
@@ -61,6 +64,10 @@ const getExpectedImageExtension = (
 
   if (target.service === 'minimax') {
     return 'jpeg'
+  }
+
+  if (target.service === 'bfl') {
+    return getBflImageExtension(options.imageFormat)
   }
 
   return 'png'
@@ -136,6 +143,7 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
   const glmModels = options.glmImageModels ?? (options.glmImageModel ? [options.glmImageModel] : [])
   const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
   const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
+  const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
   const deapiModels = options.deapiImageModels ?? (options.deapiImageModel ? [options.deapiImageModel] : [])
 
   for (const rawModel of geminiModels) {
@@ -249,6 +257,33 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
           model,
           aspectRatio: options.imageAspectRatio,
           imageSize: options.imageSize
+        })
+      }
+    })
+  }
+
+  for (const rawModel of bflModels) {
+    const model: BflImageModel = validateBflImageModel(rawModel)
+    const unsupported: string[] = []
+    if (options.imageAspectRatio) unsupported.push('--image-aspect-ratio')
+    if (options.imageQuality) unsupported.push('--image-quality')
+    if (options.imageBackground) unsupported.push('--image-background')
+    if (options.imagenCount !== undefined) unsupported.push('--imagen-count')
+    if (unsupported.length > 0) {
+      throw CLIUsageError(`${unsupported.join(', ')} ${unsupported.length === 1 ? 'is' : 'are'} not supported by BFL image generation. Use --image-size WIDTHxHEIGHT for BFL dimensions and --image-format jpeg|png|webp for output format.`)
+    }
+    normalizeBflImageSize(options.imageSize)
+    normalizeBflImageOutputFormat(options.imageFormat)
+
+    targets.push({
+      service: 'bfl',
+      model,
+      run: async (prompt, outputDir) => {
+        await ensureBflImageGenSetup()
+        return await runBflImageGen(prompt, outputDir, {
+          model,
+          imageSize: options.imageSize,
+          outputFormat: options.imageFormat
         })
       }
     })

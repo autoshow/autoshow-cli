@@ -22,6 +22,7 @@ import {
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
   SUPPORTED_RUNWAY_IMAGE_MODELS,
+  SUPPORTED_BFL_IMAGE_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
   SUPPORTED_DEAPI_MUSIC_MODELS,
@@ -89,6 +90,7 @@ import {
   validateMinimaxImageModel,
   validateOpenAIImageModel,
   validateRunwayImageModel,
+  validateBflImageModel,
   validateGeminiVideoModel,
   validateDeapiVideoModel,
   validateMinimaxVideoModel,
@@ -167,6 +169,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'glm-image',
   'grok-image',
   'runway-image',
+  'bfl-image',
   'deapi-image',
   'elevenlabs-music',
   'minimax-music',
@@ -208,6 +211,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'glm-image': { shortcut: 'all-image', supported: SUPPORTED_GLM_IMAGE_MODELS },
   'grok-image': { shortcut: 'all-image', supported: SUPPORTED_GROK_IMAGE_MODELS },
   'runway-image': { shortcut: 'all-image', supported: SUPPORTED_RUNWAY_IMAGE_MODELS },
+  'bfl-image': { shortcut: 'all-image', supported: SUPPORTED_BFL_IMAGE_MODELS },
   'deapi-image': { shortcut: 'all-image', supported: SUPPORTED_DEAPI_IMAGE_MODELS },
   'elevenlabs-music': { shortcut: 'all-music', supported: SUPPORTED_ELEVENLABS_MUSIC_MODELS },
   'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
@@ -674,6 +678,7 @@ export const buildOptsFromFlags = (
   const glmImageModels = readValidatedMany('glm-image', validateGlmImageModel)
   const grokImageModels = readValidatedMany('grok-image', validateGrokImageModel)
   const runwayImageModels = readValidatedMany('runway-image', validateRunwayImageModel)
+  const bflImageModels = readValidatedMany('bfl-image', validateBflImageModel)
   const deapiImageModels = readValidatedMany('deapi-image', validateDeapiImageModel)
   const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
@@ -886,6 +891,8 @@ export const buildOptsFromFlags = (
     grokImageModel: first(grokImageModels),
     runwayImageModels,
     runwayImageModel: first(runwayImageModels),
+    bflImageModels,
+    bflImageModel: first(bflImageModels),
     deapiImageModels,
     deapiImageModel: first(deapiImageModels),
     imageAspectRatio: readOptionalStringFlag(mergedFlags, 'image-aspect-ratio'),

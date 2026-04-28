@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { isNativeGeminiImage } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import type { DeapiImageModel, GeminiImageModel, GlmImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, RunwayImageModel } from '~/types'
+import type { BflImageModel, DeapiImageModel, GeminiImageModel, GlmImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, RunwayImageModel } from '~/types'
 
 export const SUPPORTED_GEMINI_IMAGE_MODELS = [
   'imagen-4.0-fast-generate-001',
@@ -54,6 +54,18 @@ export const SUPPORTED_RUNWAY_IMAGE_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateRunwayImageModel = createModelValidator<RunwayImageModel>(SUPPORTED_RUNWAY_IMAGE_MODELS, 'runway-image')
+
+export const SUPPORTED_BFL_IMAGE_MODELS = [
+  'flux-2-klein-4b',
+  'flux-2-klein-9b-preview',
+  'flux-2-klein-9b',
+  'flux-2-pro-preview',
+  'flux-2-pro',
+  'flux-2-max',
+  'flux-2-flex'
+] as const satisfies readonly string[]
+
+export const validateBflImageModel = createModelValidator<BflImageModel>(SUPPORTED_BFL_IMAGE_MODELS, 'bfl-image')
 
 export const SUPPORTED_DEAPI_IMAGE_MODELS = [
   'Flux1schnell',

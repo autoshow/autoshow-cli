@@ -131,6 +131,8 @@ export const ProcessingOptionsSchema = v.pipe(
     grokImageModel: v.optional(v.string(), undefined),
     runwayImageModels: v.optional(v.array(v.string()), undefined),
     runwayImageModel: v.optional(v.string(), undefined),
+    bflImageModels: v.optional(v.array(v.string()), undefined),
+    bflImageModel: v.optional(v.string(), undefined),
     deapiImageModels: v.optional(v.array(v.string()), undefined),
     deapiImageModel: v.optional(v.string(), undefined),
     imageAspectRatio: v.optional(v.string(), undefined),
@@ -978,6 +980,8 @@ export type Step5Metadata = {
   imageFileSize: number
   imageWidth: number | undefined
   imageHeight: number | undefined
+  providerCostCents?: number | undefined
+  providerCostSource?: 'provider_quote' | 'registry_fallback' | undefined
 }
 
 export type Step6VideoMetadata = {

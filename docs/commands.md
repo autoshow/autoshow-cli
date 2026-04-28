@@ -66,6 +66,9 @@ bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-0
 # image generation with deAPI
 bun as image "a sunset over mountains" --deapi-image Flux1schnell --image-size 768x768
 
+# image generation with BFL
+bun as image "a sunset over mountains" --bfl-image flux-2-pro-preview --image-size 1024x1024
+
 # local lyric-video render from repo audio
 # bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
@@ -128,6 +131,7 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as image "a sunset" --openai-image gpt-image-1 --price
+bun as image "a sunset" --bfl-image flux-2-klein-4b --price
 bun as image "a sunset" --deapi-image Flux1schnell --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --price

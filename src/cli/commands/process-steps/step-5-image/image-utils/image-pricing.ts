@@ -1,5 +1,6 @@
 import {
   isNativeGeminiImageModel,
+  validateBflImageModel,
   validateGeminiImageModel,
   validateDeapiImageModel,
   validateGlmImageModel,
@@ -21,6 +22,7 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   const glmModels = options.glmImageModels ?? (options.glmImageModel ? [options.glmImageModel] : [])
   const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
   const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
+  const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
   const deapiModels = options.deapiImageModels ?? (options.deapiImageModel ? [options.deapiImageModel] : [])
 
   for (const rawModel of geminiModels) {
@@ -102,6 +104,19 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
       note: normalizedSize === '1080p'
         ? 'Approximate cost; Runway Gen-4 Image is estimated at 8 credits for 1080p'
         : 'Approximate cost; Runway Gen-4 Image defaults to 5 credits for 720p'
+    })
+  }
+
+  for (const rawModel of bflModels) {
+    const model = validateBflImageModel(rawModel)
+    const costPerImageCents = getImageCost('bfl', model)
+    estimates.push({
+      provider: 'bfl',
+      model,
+      imageCount: 1,
+      costPerImageCents,
+      totalCost: costPerImageCents,
+      note: 'Approximate from BFL published FLUX.2 starting prices; exact cost varies by output resolution and provider quote is used when returned'
     })
   }
 

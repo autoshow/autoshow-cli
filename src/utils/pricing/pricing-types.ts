@@ -167,6 +167,7 @@ export type ComputeEstimatedCostsInput = {
   glmImageModel?: string | undefined
   grokImageModel?: string | undefined
   runwayImageModel?: string | undefined
+  bflImageModel?: string | undefined
   deapiImageModel?: string | undefined
   imageSize?: string | undefined
   imagenCount?: number | undefined

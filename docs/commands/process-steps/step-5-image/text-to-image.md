@@ -30,6 +30,8 @@ MINIMAX_API_KEY=...
 GLM_API_KEY=...
 XAI_API_KEY=...
 RUNWAYML_API_SECRET=...
+BFL_API_KEY=...
+BFL_BASE_URL=... # optional
 DEAPI_API_KEY=...
 DEAPI_BASE_URL=... # optional
 ```
@@ -50,6 +52,7 @@ bun as image <prompt> [flags]
 | Z.AI GLM | `--glm-image <model>` | `glm-image`, `cogView-4-250304` |
 | Grok | `--grok-image <model>` | `grok-imagine-image` |
 | Runway | `--runway-image <model>` | `gen4_image` |
+| BFL | `--bfl-image <model>` | `flux-2-klein-4b`, `flux-2-klein-9b-preview`, `flux-2-klein-9b`, `flux-2-pro-preview`, `flux-2-pro`, `flux-2-max`, `flux-2-flex` |
 | deAPI | `--deapi-image <model>` | `Flux1schnell`, `ZImageTurbo_INT8`, `Flux_2_Klein_4B_BF16` |
 
 Provider flags accept an omitted model value and then resolve to the cheapest supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
@@ -78,6 +81,9 @@ bun as image "a futuristic observatory at sunset" --grok-image grok-imagine-imag
 # Runway
 bun as image "a cinematic product photo of a red enamel camping mug" --runway-image gen4_image --image-aspect-ratio 1:1 --image-size 720p
 
+# BFL
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl-image flux-2-pro-preview --image-size 1024x1024 --image-format jpeg
+
 # deAPI
 bun as image "a cozy cabin at dusk" --deapi-image Flux1schnell --image-size 768x768
 
@@ -98,12 +104,13 @@ bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-i
 | `--glm-image <model>` | Select one or more Z.AI GLM image models; omit the value to use the cheapest supported model |
 | `--grok-image <model>` | Select one or more Grok image models; omit the value to use the cheapest supported model |
 | `--runway-image <model>` | Select one or more Runway image models; omit the value to use the cheapest supported model |
+| `--bfl-image <model>` | Select one or more BFL image models; omit the value to use the cheapest supported model |
 | `--deapi-image <model>` | Select one or more deAPI image models; omit the value to use the cheapest supported model |
 | `--image-aspect-ratio <ratio>` | Aspect ratio control for Gemini, MiniMax, Grok, and Runway. Runway supports `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, and `21:9` |
-| `--image-size <size>` | Size control: `1K`, `2K`, `4K` for Gemini; `1024x1024`, `1536x1024`, `1024x1536` for OpenAI; `512x512` through `2048x2048` multiples of 32 for GLM; `1K` or `2K` for Grok; `720p` or `1080p` for Runway; `WIDTHxHEIGHT` for deAPI |
+| `--image-size <size>` | Size control: `1K`, `2K`, `4K` for Gemini; `1024x1024`, `1536x1024`, `1024x1536` for OpenAI; `512x512` through `2048x2048` multiples of 32 for GLM; `1K` or `2K` for Grok; `720p` or `1080p` for Runway; `WIDTHxHEIGHT` for BFL; `WIDTHxHEIGHT` for deAPI |
 | `--imagen-count <n>` | Number of images to generate for Imagen 4 models |
 | `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto` |
-| `--image-format <fmt>` | OpenAI output format: `png`, `jpeg`, or `webp` |
+| `--image-format <fmt>` | OpenAI/BFL output format: `png`, `jpeg`, or `webp` |
 | `--image-background <bg>` | OpenAI background mode: `transparent`, `opaque`, or `auto` |
 | `--price` | Show the aggregated estimate and exit |
 
@@ -116,6 +123,7 @@ bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-i
 - GLM writes `generated-image.png`.
 - Grok writes `generated-image.<format>`, based on the response MIME type when available.
 - Runway writes `generated-image.<format>`, based on the downloaded asset content type when available.
+- BFL writes `generated-image.jpg`, `generated-image.png`, or `generated-image.webp`.
 - deAPI writes `generated-image.png`.
 - Multi-provider runs rename outputs to include the provider and model, such as `generated-image-openai-gpt-image-1-mini.png`.
 - `run.json` includes `image`, `cost`, and `timing` sections. The `image` field is always an array, and each entry includes `imageFileNames`.
@@ -124,5 +132,6 @@ bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-i
 
 - `--image-size` is currently rejected for `imagen-4.0-fast-generate-001`.
 - Runway ignores no OpenAI-only flags: `--image-format`, `--image-background`, and `--image-quality` are rejected when Runway is selected.
+- BFL uses `--image-size WIDTHxHEIGHT` and `--image-format jpeg|png|webp`; `--image-aspect-ratio`, `--image-quality`, `--image-background`, and `--imagen-count` are rejected for BFL.
 - deAPI uses `--image-size WIDTHxHEIGHT`; `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--image-background`, and `--imagen-count` are rejected for deAPI.
 - Grok pricing is represented as an approximate flat per-image estimate; xAI account pricing should be checked in the console for exact billing.

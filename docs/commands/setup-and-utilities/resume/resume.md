@@ -195,11 +195,12 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 | `--glm-image <model>` | Select one or more GLM image models |
 | `--grok-image <model>` | Select one or more Grok image models |
 | `--runway-image <model>` | Select one or more Runway image models |
+| `--bfl-image <model>` | Select one or more BFL image models |
 | `--deapi-image <model>` | Select one or more deAPI image models |
 | `--image-aspect-ratio <ratio>` | Image aspect ratio |
 | `--image-size <size>` | Image size/resolution |
 | `--image-quality <quality>` | Image quality (OpenAI) |
-| `--image-format <format>` | Image output format (OpenAI) |
+| `--image-format <format>` | Image output format (OpenAI/BFL) |
 | `--image-background <bg>` | Image background (OpenAI) |
 | `--imagen-count <n>` | Number of images to generate (Imagen 4) |
 
