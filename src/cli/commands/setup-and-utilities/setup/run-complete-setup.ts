@@ -45,9 +45,11 @@ import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-serv
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { setupDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
+import { setupDeapiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/deapi/deapi-image-gen'
 import { setupGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
 import { setupRunwayImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
+import { setupDeapiVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/deapi/deapi-video-gen'
 import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
 import { setupDeapiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
@@ -212,6 +214,25 @@ const validateBinary = async (name: string, path: string, args: string[]): Promi
   }
 }
 
+const setupHostedVideoApiKey = async (
+  envKey: string,
+  providerName: string
+): Promise<void> => {
+  const apiKey = process.env[envKey]
+  if (apiKey && apiKey.length > 0) {
+    l.write('success', `${envKey} found — ${providerName} video generation ready`)
+  } else {
+    l.warn(`${envKey} not set — ${providerName} video generation will not work until set`)
+    l.write('info', `Set ${envKey} environment variable to use ${providerName} video models`)
+  }
+}
+
+const setupGeminiVideoGen = async (): Promise<void> => setupHostedVideoApiKey('GEMINI_API_KEY', 'Gemini')
+const setupMinimaxVideoGen = async (): Promise<void> => setupHostedVideoApiKey('MINIMAX_API_KEY', 'MiniMax')
+const setupGlmVideoGen = async (): Promise<void> => setupHostedVideoApiKey('GLM_API_KEY', 'GLM')
+const setupGrokVideoGen = async (): Promise<void> => setupHostedVideoApiKey('XAI_API_KEY', 'Grok')
+const setupRunwayVideoGen = async (): Promise<void> => setupHostedVideoApiKey('RUNWAYML_API_SECRET', 'Runway')
+
 const downloadKittenTtsModel = async (model: string): Promise<void> => {
   const kittenPython = `${kittenTtsUvEnvDir}/bin/python`
   if (!await pathExists(kittenPython)) { l.warn(`Kitten TTS venv not found, skipping model download: ${model}`); return }
@@ -307,6 +328,12 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupRunwayImageGen)
 
+  await withCompactSetup(setupDeapiImageGen)
+
+  await withCompactSetup(setupDeapiVideoGen)
+
+  await withCompactSetup(setupMinimaxVideoGen)
+
   await withCompactSetup(setupElevenLabsMusicGen)
 
   await withCompactSetup(setupMinimaxMusicGen)
@@ -361,8 +388,19 @@ const runSetupImage = async (): Promise<void> => {
   await setupOpenAIImageGen()
   await setupGrokImageGen()
   await setupRunwayImageGen()
+  await setupDeapiImageGen()
   await setupGlmOcr()
   l.write('success', 'Image setup complete (all image providers are API-based)')
+}
+
+const runSetupVideo = async (): Promise<void> => {
+  await setupGeminiVideoGen()
+  await setupMinimaxVideoGen()
+  await setupGlmVideoGen()
+  await setupGrokVideoGen()
+  await setupRunwayVideoGen()
+  await setupDeapiVideoGen()
+  l.write('success', 'Video setup complete (all video providers are API-based)')
 }
 
 const runSetupMusic = async (): Promise<void> => {
@@ -459,7 +497,7 @@ const getForceRedownloadPaths = (step: SetupStepId): readonly string[] => {
     case 'reverb': return [reverbModelDir, reverbDiarizationDir]
     case 'music': return [whisperBinaryPath, whisperBuildDir, lyricsWhisperModelPath]
     case 'all': return [whisperModelPath, llamaBinaryPath]
-    case 'uv': case 'yt-dlp': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'sample': return []
+    case 'uv': case 'yt-dlp': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'video': case 'sample': return []
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
   }
 }
@@ -489,6 +527,7 @@ const executeStepOnce = async (step: SetupStepId): Promise<void> => {
     case 'write': await runSetupWrite(); return
     case 'tts': await runSetupTts(); return
     case 'image': await runSetupImage(); return
+    case 'video': await runSetupVideo(); return
     case 'music': await runSetupMusic(); return
     case 'sample': await runSetupSample(); return
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }

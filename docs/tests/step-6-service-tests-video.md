@@ -10,8 +10,8 @@ bun t test/test-cases/e2e/step-6-video-gen-e2e/
 
 ## Current Coverage
 
-- `test/test-cases/e2e/step-6-video-gen-e2e/video-gen.test.ts` covers Gemini Veo and MiniMax invalid model rejection, `--price` output, `video` requiring at least one provider flag, multi-provider `--price` acceptance, and price estimates for GLM, Grok, and Runway.
-- Live generation coverage is defined for Gemini and MiniMax and is skipped unless `GEMINI_API_KEY` or `MINIMAX_API_KEY` is configured.
+- `test/test-cases/e2e/step-6-video-gen-e2e/video-gen.test.ts` covers Gemini Veo, MiniMax, and deAPI invalid model rejection, `--price` output, `video` requiring at least one provider flag, multi-provider `--price` acceptance, and price estimates for GLM, Grok, Runway, and deAPI.
+- Live generation coverage is defined for Gemini, MiniMax, and deAPI and is skipped unless the relevant API key is configured.
 - GLM, Grok, and Runway currently have price/flag coverage; add live-service cases when those providers are stable enough for the budgeted test suite.
 
 ## Price Preflight
@@ -27,6 +27,7 @@ The price checks cover:
 - GLM: `cogvideox-3`, `viduq1-text`
 - Grok: `grok-imagine-video`
 - Runway: `gen4.5`
+- deAPI: `Ltxv_13B_0_9_8_Distilled_FP8`, `Ltx2_19B_Dist_FP8`, `Ltx2_3_22B_Dist_INT8`
 
 ## Related Docs
 

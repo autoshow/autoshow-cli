@@ -89,7 +89,7 @@ The same precedence rules apply everywhere in the CLI:
 The `setup` command currently supports:
 
 ```text
-uv | yt-dlp | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | music | sample
+uv | yt-dlp | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | video | music | sample
 ```
 
 Isolated steps assume their prerequisites are already present. On a clean machine, prefer `bun as setup`.
@@ -131,6 +131,9 @@ bun as setup --step tts
 
 # Image providers are API-based, so this is effectively a no-op confirmation step
 bun as setup --step image
+
+# Video providers are API-based, so this checks hosted provider API-key readiness
+bun as setup --step video
 
 # Check hosted music API readiness, verify ffmpeg/ffprobe, ensure whisper-cli,
 # and download large-v3-turbo for lyric-video rendering.

@@ -63,6 +63,9 @@ bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
 
+# image generation with deAPI
+bun as image "a sunset over mountains" --deapi-image Flux1schnell --image-size 768x768
+
 # local lyric-video render from repo audio
 # bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
 # input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
@@ -78,7 +81,7 @@ bun as music "an ambient piano instrumental with soft strings" --minimax-music m
 bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview
 
 # video generation with multiple providers
-bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --runway-video gen4.5
+bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --runway-video gen4.5 --deapi-video Ltxv_13B_0_9_8_Distilled_FP8
 ```
 
 ## Command Map
@@ -125,12 +128,14 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as image "a sunset" --openai-image gpt-image-1 --price
+bun as image "a sunset" --deapi-image Flux1schnell --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --price
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --price
 bun as video "a sunset timelapse" --glm-video cogvideox-3 --price
 bun as video "a sunset timelapse" --grok-video grok-imagine-video --price
 bun as video "a sunset timelapse" --runway-video gen4.5 --video-duration 5 --price
+bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
 bun as video "a sunset timelapse" --all-video --price
 ```
 

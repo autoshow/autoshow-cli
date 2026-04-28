@@ -167,6 +167,7 @@ export type ComputeEstimatedCostsInput = {
   glmImageModel?: string | undefined
   grokImageModel?: string | undefined
   runwayImageModel?: string | undefined
+  deapiImageModel?: string | undefined
   imageSize?: string | undefined
   imagenCount?: number | undefined
   geminiVideoModel?: string | undefined
@@ -174,6 +175,7 @@ export type ComputeEstimatedCostsInput = {
   glmVideoModel?: string | undefined
   grokVideoModel?: string | undefined
   runwayVideoModel?: string | undefined
+  deapiVideoModel?: string | undefined
   videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined

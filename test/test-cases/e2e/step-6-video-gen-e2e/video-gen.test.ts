@@ -37,6 +37,16 @@ defineVideoServiceTest({
   envVarDescription: 'MiniMax video generation',
 })
 
+defineVideoServiceTest({
+  models: [
+    { model: 'Ltxv_13B_0_9_8_Distilled_FP8', extraArgs: ['--video-duration', '2', '--video-size', '256x256'], expectedDuration: 2 },
+  ],
+  cliFlag: '--deapi-video',
+  videoService: 'deapi',
+  envVarKey: 'DEAPI_API_KEY',
+  envVarDescription: 'deAPI video generation',
+})
+
 test('requires a provider flag', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise'],
@@ -47,7 +57,7 @@ test('requires a provider flag', async () => {
 
 test('allows multiple providers with --price', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3', '--glm-video', 'cogvideox-3', '--grok-video', 'grok-imagine-video', '--runway-video', 'gen4.5', '--price'],
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-generate-preview', '--minimax-video', 'MiniMax-Hailuo-2.3', '--glm-video', 'cogvideox-3', '--grok-video', 'grok-imagine-video', '--runway-video', 'gen4.5', '--deapi-video', 'Ltxv_13B_0_9_8_Distilled_FP8', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
@@ -56,11 +66,13 @@ test('allows multiple providers with --price', async () => {
   expect(output).toContain('glm')
   expect(output).toContain('grok')
   expect(output).toContain('runway')
+  expect(output).toContain('deapi')
   expect(output).toContain('generated-video-gemini-veo-3.1-generate-preview.mp4')
   expect(output).toContain('generated-video-minimax-MiniMax-Hailuo-2.3.mp4')
   expect(output).toContain('generated-video-glm-cogvideox-3.mp4')
   expect(output).toContain('generated-video-grok-grok-imagine-video.mp4')
   expect(output).toContain('generated-video-runway-gen4.5.mp4')
+  expect(output).toContain('generated-video-deapi-Ltxv_13B_0_9_8_Distilled_FP8.mp4')
 })
 
 test('new video providers print price estimates', async () => {
@@ -68,7 +80,8 @@ test('new video providers print price estimates', async () => {
     ['--glm-video', 'cogvideox-3', '20.00000¢'],
     ['--glm-video', 'viduq1-text', '40.00000¢'],
     ['--grok-video', 'grok-imagine-video', '25.00000¢'],
-    ['--runway-video', 'gen4.5', '60.00000¢']
+    ['--runway-video', 'gen4.5', '60.00000¢'],
+    ['--deapi-video', 'Ltxv_13B_0_9_8_Distilled_FP8', '0.34740¢']
   ] as const
 
   for (const [flag, model, expectedCost] of providers) {

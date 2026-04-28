@@ -499,6 +499,8 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
     || !!opts.grokImageModel
     || (opts.runwayImageModels?.length ?? 0) > 0
     || !!opts.runwayImageModel
+    || (opts.deapiImageModels?.length ?? 0) > 0
+    || !!opts.deapiImageModel
   if (!hasImage) return []
 
   return estimateImageCosts({
@@ -514,6 +516,8 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
     grokImageModel: opts.grokImageModel,
     runwayImageModels: opts.runwayImageModels,
     runwayImageModel: opts.runwayImageModel,
+    deapiImageModels: opts.deapiImageModels,
+    deapiImageModel: opts.deapiImageModel,
     imageSize: opts.imageSize,
     imagenCount: opts.imagenCount
   }).map((estimate) => {
@@ -539,6 +543,8 @@ const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
     || !!opts.grokVideoModel
     || (opts.runwayVideoModels?.length ?? 0) > 0
     || !!opts.runwayVideoModel
+    || (opts.deapiVideoModels?.length ?? 0) > 0
+    || !!opts.deapiVideoModel
   if (!hasVideo) return []
 
   return estimateVideoCosts({
@@ -552,6 +558,8 @@ const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
     grokVideoModel: opts.grokVideoModel,
     runwayVideoModels: opts.runwayVideoModels,
     runwayVideoModel: opts.runwayVideoModel,
+    deapiVideoModels: opts.deapiVideoModels,
+    deapiVideoModel: opts.deapiVideoModel,
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
     videoAspectRatio: opts.videoAspectRatio,

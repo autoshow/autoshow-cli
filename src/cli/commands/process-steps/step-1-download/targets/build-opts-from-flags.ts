@@ -16,6 +16,7 @@ import {
   SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
   DEEPGRAM_DEFAULT_VOICE,
   SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_DEAPI_IMAGE_MODELS,
   SUPPORTED_GLM_IMAGE_MODELS,
   SUPPORTED_GROK_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
@@ -25,6 +26,7 @@ import {
   SUPPORTED_MINIMAX_MUSIC_MODELS,
   SUPPORTED_DEAPI_MUSIC_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
+  SUPPORTED_DEAPI_VIDEO_MODELS,
   SUPPORTED_GLM_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
@@ -81,12 +83,14 @@ import {
   validateDeapiMusicModel,
   validateKittenTtsSpeaker,
   validateGeminiImageModel,
+  validateDeapiImageModel,
   validateGlmImageModel,
   validateGrokImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
   validateRunwayImageModel,
   validateGeminiVideoModel,
+  validateDeapiVideoModel,
   validateMinimaxVideoModel,
   validateGlmVideoModel,
   validateGrokVideoModel,
@@ -163,6 +167,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'glm-image',
   'grok-image',
   'runway-image',
+  'deapi-image',
   'elevenlabs-music',
   'minimax-music',
   'deapi-music',
@@ -170,7 +175,8 @@ export const REPEATABLE_MODEL_FLAGS = [
   'minimax-video',
   'glm-video',
   'grok-video',
-  'runway-video'
+  'runway-video',
+  'deapi-video'
 ] as const
 
 const REPEATABLE_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
@@ -202,6 +208,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'glm-image': { shortcut: 'all-image', supported: SUPPORTED_GLM_IMAGE_MODELS },
   'grok-image': { shortcut: 'all-image', supported: SUPPORTED_GROK_IMAGE_MODELS },
   'runway-image': { shortcut: 'all-image', supported: SUPPORTED_RUNWAY_IMAGE_MODELS },
+  'deapi-image': { shortcut: 'all-image', supported: SUPPORTED_DEAPI_IMAGE_MODELS },
   'elevenlabs-music': { shortcut: 'all-music', supported: SUPPORTED_ELEVENLABS_MUSIC_MODELS },
   'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
   'deapi-music': { shortcut: 'all-music', supported: SUPPORTED_DEAPI_MUSIC_MODELS },
@@ -209,7 +216,8 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'minimax-video': { shortcut: 'all-video', supported: SUPPORTED_MINIMAX_VIDEO_MODELS },
   'glm-video': { shortcut: 'all-video', supported: SUPPORTED_GLM_VIDEO_MODELS },
   'grok-video': { shortcut: 'all-video', supported: SUPPORTED_GROK_VIDEO_MODELS },
-  'runway-video': { shortcut: 'all-video', supported: SUPPORTED_RUNWAY_VIDEO_MODELS }
+  'runway-video': { shortcut: 'all-video', supported: SUPPORTED_RUNWAY_VIDEO_MODELS },
+  'deapi-video': { shortcut: 'all-video', supported: SUPPORTED_DEAPI_VIDEO_MODELS }
 }
 
 const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
@@ -666,6 +674,7 @@ export const buildOptsFromFlags = (
   const glmImageModels = readValidatedMany('glm-image', validateGlmImageModel)
   const grokImageModels = readValidatedMany('grok-image', validateGrokImageModel)
   const runwayImageModels = readValidatedMany('runway-image', validateRunwayImageModel)
+  const deapiImageModels = readValidatedMany('deapi-image', validateDeapiImageModel)
   const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
   const deapiMusicModels = readValidatedMany('deapi-music', validateDeapiMusicModel)
@@ -674,6 +683,7 @@ export const buildOptsFromFlags = (
   const glmVideoModels = readValidatedMany('glm-video', validateGlmVideoModel)
   const grokVideoModels = readValidatedMany('grok-video', validateGrokVideoModel)
   const runwayVideoModels = readValidatedMany('runway-video', validateRunwayVideoModel)
+  const deapiVideoModels = readValidatedMany('deapi-video', validateDeapiVideoModel)
   const urlBackendFlag = readOptionalStringFlag(mergedFlags, 'url-backend')
   const urlBackendEnv = readEnv('AUTOSHOW_URL_BACKEND')
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
@@ -876,6 +886,8 @@ export const buildOptsFromFlags = (
     grokImageModel: first(grokImageModels),
     runwayImageModels,
     runwayImageModel: first(runwayImageModels),
+    deapiImageModels,
+    deapiImageModel: first(deapiImageModels),
     imageAspectRatio: readOptionalStringFlag(mergedFlags, 'image-aspect-ratio'),
     imageSize: readOptionalStringFlag(mergedFlags, 'image-size'),
     imageQuality: readOptionalStringFlag(mergedFlags, 'image-quality'),
@@ -911,6 +923,8 @@ export const buildOptsFromFlags = (
     grokVideoModel: first(grokVideoModels),
     runwayVideoModels,
     runwayVideoModel: first(runwayVideoModels),
+    deapiVideoModels,
+    deapiVideoModel: first(deapiVideoModels),
     videoDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'video-duration')
       if (v === undefined) return undefined

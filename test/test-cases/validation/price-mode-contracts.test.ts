@@ -27,8 +27,18 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
     expected: 'generated-image'
   },
   {
+    label: 'deAPI image',
+    args: ['image', 'a sunset over a lake', '--deapi-image', 'Flux1schnell', '--price'],
+    expected: 'generated-image'
+  },
+  {
     label: 'video',
     args: ['video', 'a sunset over a lake', '--gemini-video', 'veo-3.1-fast-generate-preview', '--price'],
+    expected: 'video'
+  },
+  {
+    label: 'deAPI video',
+    args: ['video', 'a sunset over a lake', '--deapi-video', 'Ltxv_13B_0_9_8_Distilled_FP8', '--price'],
     expected: 'video'
   },
   {
@@ -77,6 +87,8 @@ describe('price mode contracts', () => {
 
   test('cheapest-model helpers return stable model selections', () => {
     expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
+    expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
+    expect(resolveCheapestModelForFlag('deapi-video')).toBe('Ltxv_13B_0_9_8_Distilled_FP8')
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
@@ -84,6 +96,10 @@ describe('price mode contracts', () => {
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
       provider: 'gemini',
       model: 'veo-3.1-fast-generate-preview'
+    })
+    expect(selectCheapestVideoSelection('deapi')).toMatchObject({
+      provider: 'deapi',
+      model: 'Ltxv_13B_0_9_8_Distilled_FP8'
     })
   })
 })

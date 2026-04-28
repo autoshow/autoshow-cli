@@ -51,6 +51,7 @@ import {
 } from './models/tts-models'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
+  SUPPORTED_DEAPI_IMAGE_MODELS,
   SUPPORTED_GLM_IMAGE_MODELS,
   SUPPORTED_GROK_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
@@ -64,6 +65,7 @@ import {
 } from './models/music-models'
 import {
   SUPPORTED_GLM_VIDEO_MODELS,
+  SUPPORTED_DEAPI_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
@@ -189,11 +191,13 @@ export type MinimaxImageModel = typeof SUPPORTED_MINIMAX_IMAGE_MODELS[number]
 export type GlmImageModel = typeof SUPPORTED_GLM_IMAGE_MODELS[number]
 export type GrokImageModel = typeof SUPPORTED_GROK_IMAGE_MODELS[number]
 export type RunwayImageModel = typeof SUPPORTED_RUNWAY_IMAGE_MODELS[number]
+export type DeapiImageModel = typeof SUPPORTED_DEAPI_IMAGE_MODELS[number]
 export type GeminiVideoModel = typeof SUPPORTED_GEMINI_VIDEO_MODELS[number]
 export type MinimaxVideoModel = typeof SUPPORTED_MINIMAX_VIDEO_MODELS[number]
 export type GlmVideoModel = typeof SUPPORTED_GLM_VIDEO_MODELS[number]
 export type GrokVideoModel = typeof SUPPORTED_GROK_VIDEO_MODELS[number]
 export type RunwayVideoModel = typeof SUPPORTED_RUNWAY_VIDEO_MODELS[number]
+export type DeapiVideoModel = typeof SUPPORTED_DEAPI_VIDEO_MODELS[number]
 
 export type CostEstimation = {
   costMultiplier: number
@@ -236,7 +240,7 @@ export type VideoEstimation = CostEstimation & {
 }
 
 export type CheapestVideoSelection = {
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
   model: string
   duration: number
   size?: string | undefined
@@ -286,4 +290,4 @@ export type SetupToolStatus = {
 export type SetupStepId =
   | 'uv' | 'yt-dlp' | 'whisper-binary' | 'whisper-model' | 'llama-binary'
   | 'reverb' | 'calibre' | 'all'
-  | 'transcription' | 'write' | 'tts' | 'image' | 'music' | 'sample'
+  | 'transcription' | 'write' | 'tts' | 'image' | 'video' | 'music' | 'sample'

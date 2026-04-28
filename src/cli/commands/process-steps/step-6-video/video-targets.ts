@@ -1,11 +1,15 @@
-import type { GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel, Step6VideoMetadata, VideoGenOptions, VideoTarget } from '~/types'
-import { validateGeminiVideoModel, validateGlmVideoModel, validateGrokVideoModel, validateMinimaxVideoModel, validateRunwayVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { DeapiVideoModel, GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel, Step6VideoMetadata, VideoGenOptions, VideoTarget } from '~/types'
+import { validateDeapiVideoModel, validateGeminiVideoModel, validateGlmVideoModel, validateGrokVideoModel, validateMinimaxVideoModel, validateRunwayVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
+import { CLIUsageError } from '~/utils/error-handler'
+import { ensureDeapiVideoGenSetup } from './video-services/deapi/deapi-video-gen'
+import { runDeapiVideoGen } from './video-services/deapi/run-deapi-video-gen'
 import { runGeminiVideoGen } from './video-services/gemini/run-gemini-video-gen'
 import { runMinimaxVideoGen } from './video-services/minimax/run-minimax-video-gen'
 import { runGlmVideoGen } from './video-services/glm/run-glm-video-gen'
 import { runGrokVideoGen } from './video-services/grok/run-grok-video-gen'
 import { runRunwayVideoGen } from './video-services/runway/run-runway-video-gen'
+import { normalizeDeapiVideoSize } from './video-utils/video-normalization'
 
 export const getVideoArtifactFileName = (
   target: Pick<VideoTarget, 'service' | 'model'>,
@@ -33,6 +37,7 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
   const glmModels = options.glmVideoModels ?? (options.glmVideoModel ? [options.glmVideoModel] : [])
   const grokModels = options.grokVideoModels ?? (options.grokVideoModel ? [options.grokVideoModel] : [])
   const runwayModels = options.runwayVideoModels ?? (options.runwayVideoModel ? [options.runwayVideoModel] : [])
+  const deapiModels = options.deapiVideoModels ?? (options.deapiVideoModel ? [options.deapiVideoModel] : [])
 
   for (const rawModel of geminiModels) {
     const model: GeminiVideoModel = validateGeminiVideoModel(rawModel)
@@ -112,6 +117,30 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
           model,
           durationSeconds: options.videoDuration,
           aspectRatio: options.videoAspectRatio
+        })
+      }
+    })
+  }
+
+  for (const rawModel of deapiModels) {
+    const model: DeapiVideoModel = validateDeapiVideoModel(rawModel)
+    const unsupported: string[] = []
+    if (options.videoAspectRatio) unsupported.push('--video-aspect-ratio')
+    if (options.videoResolution) unsupported.push('--video-resolution')
+    if (unsupported.length > 0) {
+      throw CLIUsageError(`${unsupported.join(', ')} ${unsupported.length === 1 ? 'is' : 'are'} not supported by deAPI video generation. Use --video-size WIDTHxHEIGHT for deAPI dimensions.`)
+    }
+    normalizeDeapiVideoSize(model, options.videoSize)
+
+    targets.push({
+      service: 'deapi',
+      model,
+      run: async (prompt, outputDir) => {
+        await ensureDeapiVideoGenSetup()
+        return await runDeapiVideoGen(prompt, outputDir, {
+          model,
+          durationSeconds: options.videoDuration,
+          videoSize: options.videoSize
         })
       }
     })

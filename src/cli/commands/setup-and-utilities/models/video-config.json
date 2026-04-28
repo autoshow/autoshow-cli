@@ -153,5 +153,52 @@
         "baseCostPerSecondCents": 12
       }
     }
+  },
+  "deapi": {
+    "description": "deAPI video generation",
+    "type": "api",
+    "sizes": [
+      "256x256",
+      "512x512",
+      "768x768",
+      "1024x1024"
+    ],
+    "billedDurations": [
+      1,
+      2.0416666666666665,
+      4,
+      5,
+      8.033333333333333,
+      10.041666666666666
+    ],
+    "models": {
+      "Ltxv_13B_0_9_8_Distilled_FP8": {
+        "description": "LTX-Video 0.9.8 13B text-to-video generation",
+        "baseCostPerSecondUSD": 0.0008685,
+        "baseCostPerSecondCents": 0.08685,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 20000
+        }
+      },
+      "Ltx2_19B_Dist_FP8": {
+        "description": "LTX-2 19B Distilled text-to-video generation",
+        "baseCostPerSecondUSD": 0.0008685,
+        "baseCostPerSecondCents": 0.08685,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 20000
+        }
+      },
+      "Ltx2_3_22B_Dist_INT8": {
+        "description": "LTX-2.3 22B Distilled text-to-video generation",
+        "baseCostPerSecondUSD": 0.0008685,
+        "baseCostPerSecondCents": 0.08685,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 20000
+        }
+      }
+    }
   }
 }

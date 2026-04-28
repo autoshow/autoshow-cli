@@ -84,8 +84,14 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3
 # Resume missing Gemini image outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001
 
+# Resume missing deAPI image outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-image Flux1schnell
+
 # Resume missing Runway video outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --runway-video gen4.5
+
+# Resume missing deAPI video outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-video Ltxv_13B_0_9_8_Distilled_FP8
 
 # Resume missing MiniMax music outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
@@ -189,6 +195,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 | `--glm-image <model>` | Select one or more GLM image models |
 | `--grok-image <model>` | Select one or more Grok image models |
 | `--runway-image <model>` | Select one or more Runway image models |
+| `--deapi-image <model>` | Select one or more deAPI image models |
 | `--image-aspect-ratio <ratio>` | Image aspect ratio |
 | `--image-size <size>` | Image size/resolution |
 | `--image-quality <quality>` | Image quality (OpenAI) |
@@ -205,6 +212,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 | `--glm-video <model>` | Select one or more GLM video models |
 | `--grok-video <model>` | Select one or more Grok video models |
 | `--runway-video <model>` | Select one or more Runway video models |
+| `--deapi-video <model>` | Select one or more deAPI video models |
 | `--video-duration <seconds>` | Video duration in seconds |
 | `--video-size <size>` | Video size |
 | `--video-aspect-ratio <ratio>` | Video aspect ratio |

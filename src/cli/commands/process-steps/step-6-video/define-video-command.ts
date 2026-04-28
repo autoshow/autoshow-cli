@@ -22,7 +22,8 @@ export const videoCommand = defineCommand({
       ['bun as video "a cinematic mountain sunrise" --minimax-video MiniMax-Hailuo-2.3', 'Generate video with MiniMax Hailuo'],
       ['bun as video "a cat playing with yarn" --glm-video cogvideox-3', 'Generate video with GLM CogVideoX'],
       ['bun as video "a cat playing piano" --grok-video grok-imagine-video', 'Generate video with Grok'],
-      ['bun as video "a cinematic mountain sunrise" --runway-video gen4.5', 'Generate video with Runway Gen-4.5']
+      ['bun as video "a cinematic mountain sunrise" --runway-video gen4.5', 'Generate video with Runway Gen-4.5'],
+      ['bun as video "a cat playing" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --video-size 512x512', 'Generate video with deAPI']
     ]
   }
 }, async (ctx) => {
@@ -33,7 +34,7 @@ export const videoCommand = defineCommand({
   const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
   const videoTargets = collectVideoTargets(videoOpts)
   if (videoTargets.length === 0) {
-    throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, --minimax-video <model>, --glm-video <model>, --grok-video <model>, or --runway-video <model>')
+    throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, --minimax-video <model>, --glm-video <model>, --grok-video <model>, --runway-video <model>, or --deapi-video <model>')
   }
 
   const { shouldExit: videoShouldExit } = await runPreflight('video', prompt, videoOpts, videoMaxCents)

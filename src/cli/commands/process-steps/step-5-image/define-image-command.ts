@@ -22,7 +22,8 @@ export const imageCommand = defineCommand({
       ['bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --image-size 1024x1024', 'Generate with OpenAI'],
       ['bun as image "a clean product photo of a red enamel camping mug" --glm-image glm-image', 'Generate with Z.AI GLM'],
       ['bun as image "a futuristic observatory at sunset" --grok-image grok-imagine-image --image-size 1K', 'Generate with Grok'],
-      ['bun as image "a cinematic product photo of a red enamel camping mug" --runway-image gen4_image --image-size 720p', 'Generate with Runway']
+      ['bun as image "a cinematic product photo of a red enamel camping mug" --runway-image gen4_image --image-size 720p', 'Generate with Runway'],
+      ['bun as image "a cozy cabin at dusk" --deapi-image Flux1schnell --image-size 768x768', 'Generate with deAPI']
     ]
   }
 }, async (ctx) => {
@@ -33,7 +34,7 @@ export const imageCommand = defineCommand({
   const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
   const imageTargets = collectImageTargets(imageOpts)
   if (imageTargets.length === 0) {
-    throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, --minimax-image, --glm-image, --grok-image, or --runway-image.')
+    throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, --minimax-image, --glm-image, --grok-image, --runway-image, or --deapi-image.')
   }
 
   const { shouldExit: imageShouldExit } = await runPreflight('image', prompt, imageOpts, imageMaxCents)

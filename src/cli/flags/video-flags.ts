@@ -1,6 +1,7 @@
 import type { ClercFlagsDefinition } from 'clerc'
 import {
   SUPPORTED_GEMINI_VIDEO_MODELS,
+  SUPPORTED_DEAPI_VIDEO_MODELS,
   SUPPORTED_GLM_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
@@ -36,12 +37,16 @@ export const videoGenFlags = {
     description: buildModelDescription('Runway video model', SUPPORTED_RUNWAY_VIDEO_MODELS),
     type: [String] as [StringConstructor]
   },
+  'deapi-video': {
+    description: buildModelDescription('deAPI video model', SUPPORTED_DEAPI_VIDEO_MODELS),
+    type: [String] as [StringConstructor]
+  },
   'video-duration': {
     description: 'Video duration in seconds',
     type: String
   },
   'video-size': {
-    description: 'Video size',
+    description: 'Video size, provider dependent; deAPI expects WIDTHxHEIGHT within model limits',
     type: String
   },
   'video-aspect-ratio': {

@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
+import { collectImageTargets } from '~/cli/commands/process-steps/step-5-image/image-targets'
+import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
 import {
   collectStep2ProviderSpecs,
   getStep2ProviderSelectionFlagNames,
@@ -48,7 +50,8 @@ describe('provider selection contracts', () => {
       'anthropic-ocr',
       'gemini-ocr',
       'aws-textract',
-      'gcloud-docai'
+      'gcloud-docai',
+      'deapi-ocr'
     ])
   })
 
@@ -89,6 +92,38 @@ describe('provider selection contracts', () => {
       { service: 'tesseract', model: 'tesseract' },
       { service: 'openai', model: 'gpt-5.4-nano' },
       { service: 'openai', model: 'gpt-5.4-mini' }
+    ])
+  })
+
+  test('deAPI image and video flags select targets and participate in all-provider shortcuts', () => {
+    const explicitOpts = buildOptsFromFlags(false, {
+      'deapi-image': ['Flux1schnell'],
+      'deapi-video': ['Ltxv_13B_0_9_8_Distilled_FP8']
+    })
+
+    expect(explicitOpts.deapiImageModels).toEqual(['Flux1schnell'])
+    expect(explicitOpts.deapiVideoModels).toEqual(['Ltxv_13B_0_9_8_Distilled_FP8'])
+    expect(collectImageTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'deapi:Flux1schnell'
+    ])
+    expect(collectVideoTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'deapi:Ltxv_13B_0_9_8_Distilled_FP8'
+    ])
+
+    const allOpts = buildOptsFromFlags(false, {
+      'all-image': true,
+      'all-video': true
+    })
+
+    expect(allOpts.deapiImageModels).toEqual([
+      'Flux1schnell',
+      'ZImageTurbo_INT8',
+      'Flux_2_Klein_4B_BF16'
+    ])
+    expect(allOpts.deapiVideoModels).toEqual([
+      'Ltxv_13B_0_9_8_Distilled_FP8',
+      'Ltx2_19B_Dist_FP8',
+      'Ltx2_3_22B_Dist_INT8'
     ])
   })
 })

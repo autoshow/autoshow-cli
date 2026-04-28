@@ -256,6 +256,7 @@ export type RepeatableModelFlag =
   | 'glm-image'
   | 'grok-image'
   | 'runway-image'
+  | 'deapi-image'
   | 'elevenlabs-music'
   | 'minimax-music'
   | 'deapi-music'
@@ -264,6 +265,7 @@ export type RepeatableModelFlag =
   | 'glm-video'
   | 'grok-video'
   | 'runway-video'
+  | 'deapi-video'
 
 export type FlagOccurrenceValue = string | boolean
 

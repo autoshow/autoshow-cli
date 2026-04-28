@@ -185,6 +185,8 @@ export type RuntimeOptions = {
   grokImageModel: string | undefined
   runwayImageModels: string[] | undefined
   runwayImageModel: string | undefined
+  deapiImageModels: string[] | undefined
+  deapiImageModel: string | undefined
   imageAspectRatio: string | undefined
   imageSize: string | undefined
   imageQuality: string | undefined
@@ -212,6 +214,8 @@ export type RuntimeOptions = {
   grokVideoModel: string | undefined
   runwayVideoModels: string[] | undefined
   runwayVideoModel: string | undefined
+  deapiVideoModels: string[] | undefined
+  deapiVideoModel: string | undefined
   videoDuration: number | undefined
   videoSize: string | undefined
   videoAspectRatio: string | undefined

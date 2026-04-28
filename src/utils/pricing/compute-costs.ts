@@ -868,6 +868,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         glmImageModel: input.glmImageModel,
         grokImageModel: input.grokImageModel,
         runwayImageModel: input.runwayImageModel,
+        deapiImageModel: input.deapiImageModel,
         imageSize: input.imageSize,
         imagenCount: input.imagenCount
       })
@@ -891,6 +892,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     || input.glmVideoModel
     || input.grokVideoModel
     || input.runwayVideoModel
+    || input.deapiVideoModel
   if (hasVideo) {
     const videoEstimates = estimateVideoCosts({
       geminiVideoModels: input.videoTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
@@ -903,6 +905,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       grokVideoModel: input.grokVideoModel,
       runwayVideoModels: input.videoTargets?.filter((target) => target.service === 'runway').map((target) => target.model),
       runwayVideoModel: input.runwayVideoModel,
+      deapiVideoModels: input.videoTargets?.filter((target) => target.service === 'deapi').map((target) => target.model),
+      deapiVideoModel: input.deapiVideoModel,
       videoDuration: input.videoTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.videoDuration,
       videoSize: input.videoSize,
       videoAspectRatio: input.videoAspectRatio,

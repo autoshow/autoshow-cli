@@ -61,8 +61,10 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--glm-image': { service: 'glm', kind: 'image' },
   '--grok-image': { service: 'grok', kind: 'image' },
   '--runway-image': { service: 'runway', kind: 'image' },
+  '--deapi-image': { service: 'deapi', kind: 'image' },
   '--gemini-video': { service: 'gemini', kind: 'video' },
   '--minimax-video': { service: 'minimax', kind: 'video' },
+  '--deapi-video': { service: 'deapi', kind: 'video' },
   '--elevenlabs-music': { service: 'elevenlabs', kind: 'music' },
   '--minimax-music': { service: 'minimax', kind: 'music' },
 }

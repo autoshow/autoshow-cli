@@ -173,7 +173,7 @@ export const selectCheapestMusicModel = (service: string): string => {
 }
 
 export const selectCheapestVideoSelection = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
 ): CheapestVideoSelection => {
   const serviceConfig = getModelRegistry().video[provider]
   if (!serviceConfig) {
@@ -201,6 +201,7 @@ export const selectCheapestVideoSelection = (
             ...(provider === 'glm' ? { glmVideoModel: model } : {}),
             ...(provider === 'grok' ? { grokVideoModel: model } : {}),
             ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
+            ...(provider === 'deapi' ? { deapiVideoModel: model } : {}),
             videoDuration: duration,
             videoResolution: resolution
           })
@@ -250,7 +251,7 @@ export const selectCheapestVideoSelection = (
 }
 
 export const selectCheapestVideoModel = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
 ): string => selectCheapestVideoSelection(provider).model
 
 export const resolveCheapestModelForFlag = (flagName: string): string | undefined => {
@@ -350,6 +351,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestImageModel('grok')
     case 'runway-image':
       return selectCheapestImageModel('runway')
+    case 'deapi-image':
+      return selectCheapestImageModel('deapi')
     case 'elevenlabs-music':
       return selectCheapestMusicModel('elevenlabs')
     case 'minimax-music':
@@ -366,6 +369,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestVideoModel('grok')
     case 'runway-video':
       return selectCheapestVideoModel('runway')
+    case 'deapi-video':
+      return selectCheapestVideoModel('deapi')
     default:
       return undefined
   }

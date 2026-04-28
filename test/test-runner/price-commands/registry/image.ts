@@ -26,4 +26,9 @@ export const imageRegistry: PriceSelectionEntry[] = [
   ...exact('test/test-cases/e2e/step-5-image-gen-e2e/runway-image-gen.test.ts', [
     command('image-runway-gen4_image', 'image-runway-gen4_image', ['src/cli/create-cli.ts', 'image', 'a sunset', '--runway-image', 'gen4_image', '--price']),
   ]),
+  ...exact('test/test-cases/e2e/step-5-image-gen-e2e/deapi-image-gen.test.ts', [
+    command('image-deapi-Flux1schnell', 'image-deapi-Flux1schnell', ['src/cli/create-cli.ts', 'image', 'a sunset', '--deapi-image', 'Flux1schnell', '--price']),
+    command('image-deapi-ZImageTurbo_INT8', 'image-deapi-ZImageTurbo_INT8', ['src/cli/create-cli.ts', 'image', 'a sunset', '--deapi-image', 'ZImageTurbo_INT8', '--price']),
+    command('image-deapi-Flux_2_Klein_4B_BF16', 'image-deapi-Flux_2_Klein_4B_BF16', ['src/cli/create-cli.ts', 'image', 'a sunset', '--deapi-image', 'Flux_2_Klein_4B_BF16', '--price']),
+  ]),
 ]

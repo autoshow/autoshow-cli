@@ -148,5 +148,38 @@
         }
       }
     }
+  },
+  "deapi": {
+    "description": "deAPI image generation",
+    "type": "api",
+    "models": {
+      "Flux1schnell": {
+        "description": "FLUX.1 Schnell 12B NF4 text-to-image generation",
+        "costPerImageUSD": 0.00136,
+        "costPerImageCents": 0.136,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 10000
+        }
+      },
+      "ZImageTurbo_INT8": {
+        "description": "Z-Image-Turbo INT8 text-to-image generation",
+        "costPerImageUSD": 0.00405,
+        "costPerImageCents": 0.405,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 10000
+        }
+      },
+      "Flux_2_Klein_4B_BF16": {
+        "description": "FLUX.2 Klein 4B BF16 text-to-image generation",
+        "costPerImageUSD": 0.00186,
+        "costPerImageCents": 0.186,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 10000
+        }
+      }
+    }
   }
 }

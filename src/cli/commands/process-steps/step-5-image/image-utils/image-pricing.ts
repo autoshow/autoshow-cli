@@ -1,6 +1,7 @@
 import {
   isNativeGeminiImageModel,
   validateGeminiImageModel,
+  validateDeapiImageModel,
   validateGlmImageModel,
   validateGrokImageModel,
   validateMinimaxImageModel,
@@ -9,6 +10,8 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getImageCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { ImageCostEstimate, EstimateImageCostOptions } from '~/types'
+import * as l from '~/utils/logger'
+import { createKeyValueTable } from '~/utils/logger/human-table'
 
 export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCostEstimate[] => {
   const estimates: ImageCostEstimate[] = []
@@ -18,6 +21,7 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   const glmModels = options.glmImageModels ?? (options.glmImageModel ? [options.glmImageModel] : [])
   const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
   const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
+  const deapiModels = options.deapiImageModels ?? (options.deapiImageModel ? [options.deapiImageModel] : [])
 
   for (const rawModel of geminiModels) {
     const model = validateGeminiImageModel(rawModel)
@@ -101,5 +105,34 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
     })
   }
 
+  for (const rawModel of deapiModels) {
+    const model = validateDeapiImageModel(rawModel)
+    const costPerImageCents = getImageCost('deapi', model)
+    estimates.push({
+      provider: 'deapi',
+      model,
+      imageCount: 1,
+      costPerImageCents,
+      totalCost: costPerImageCents,
+      note: 'Approximate cost; deAPI image pricing varies by model, resolution, and steps'
+    })
+  }
+
   return estimates
+}
+
+export const logImageEstimate = (estimate: ImageCostEstimate): void => {
+  const entries: Array<readonly [string, string]> = [
+    ['Provider', estimate.provider],
+    ['Model', estimate.model],
+    ['Image Count', String(estimate.imageCount)],
+    ['Cost Per Image', `${estimate.costPerImageCents.toFixed(4)}¢`],
+    ['Total Cost', `${estimate.totalCost.toFixed(5)}¢`],
+    ...(estimate.note ? [['Note', estimate.note] as const] : [])
+  ]
+  l.write('info', `Estimated image cost for ${estimate.provider}/${estimate.model}`, {
+    category: 'pricing',
+    humanTable: createKeyValueTable(entries),
+    metadata: estimate
+  })
 }

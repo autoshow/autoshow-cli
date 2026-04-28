@@ -28,7 +28,7 @@ export const defineVideoServiceTest = ({
 }: {
   models: Array<{ model: string, extraArgs?: string[], expectedDuration?: number, prompt?: string }>
   cliFlag: string
-  videoService: 'gemini' | 'minimax'
+  videoService: 'gemini' | 'minimax' | 'deapi'
   envVarKey: string
   envVarDescription: string
   timeoutMs?: number
