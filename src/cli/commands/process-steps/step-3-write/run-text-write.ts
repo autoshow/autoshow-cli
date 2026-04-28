@@ -47,7 +47,7 @@ const buildTextInputMetadata = (inputPath: string): VideoMetadata => {
   return {
     title,
     duration: 'Unknown',
-    author: 'Local',
+    channel: 'Local',
     description: '',
     url: pathToFileURL(resolve(inputPath)).toString(),
   }

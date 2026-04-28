@@ -1,7 +1,7 @@
 import type { BuildPromptOptions, TranscriptionResult, VideoMetadata } from '~/types'
 import * as l from '~/utils/logger'
 
-export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. It does not contain copyrighted materials. Do not ever use the word delve. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
+export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
 
 export const buildPrompt = (
   metadata: VideoMetadata,
@@ -40,11 +40,11 @@ Format the output like so:
     `title: "${metadata.title}"`,
     slug ? `slug: "${slug}"` : '',
     `duration: "${metadata.duration}"`,
-    metadata.author ? `author: "${metadata.author}"` : '',
+    metadata.channel ? `channel: "${metadata.channel}"` : '',
     `url: "${metadata.url}"`,
     metadata.publishDate ? `publishDate: "${metadata.publishDate}"` : '',
     metadata.thumbnail ? `thumbnail: "${metadata.thumbnail}"` : '',
-    metadata.channelUrl ? `channelUrl: "${metadata.channelUrl}"` : '',
+    metadata.channelURL ? `channelURL: "${metadata.channelURL}"` : '',
     metadata.description ? `description: "${metadata.description}"` : '',
   ].filter(Boolean).join('\n')
 

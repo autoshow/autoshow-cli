@@ -288,12 +288,12 @@ const resolveCacheLookup = async (
     const metadata: VideoMetadata = {
       title: basename(new URL(url).pathname).replace(/\.[^/.]+$/, '') || 'audio',
       duration: 'Unknown',
-      author: 'Unknown',
+      channel: 'Unknown',
       description: '',
       url,
       publishDate: undefined,
       thumbnail: undefined,
-      channelUrl: undefined
+      channelURL: undefined
     }
 
     try {
@@ -327,12 +327,12 @@ const resolveCacheLookup = async (
   const metadata = videoInfo ? buildVideoMetadataFromInfo(url, videoInfo) : {
     title: 'unknown',
     duration: 'Unknown',
-    author: 'Unknown',
+    channel: 'Unknown',
     description: '',
     url,
     publishDate: undefined,
     thumbnail: undefined,
-    channelUrl: undefined
+    channelURL: undefined
   } satisfies VideoMetadata
   const sourceId = videoInfo?.id
   const canonicalUrl = canonicalizeUrl(url)

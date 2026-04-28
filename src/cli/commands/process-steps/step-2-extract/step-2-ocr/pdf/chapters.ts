@@ -1441,7 +1441,7 @@ const resolveLlmCandidates = async (input: {
     const metadata: VideoMetadata = {
       title: input.title ?? 'Document',
       duration: `${input.pages.length} pages`,
-      author: input.author ?? 'Unknown',
+      channel: input.author ?? 'Unknown',
       description: 'PDF chapter boundary resolution',
       url: 'file://pdf-chapter-detection.local'
     }

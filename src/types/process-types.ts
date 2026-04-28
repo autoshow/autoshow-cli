@@ -173,12 +173,12 @@ export const VideoChapterSchema = v.object({
 export const VideoMetadataSchema = v.object({
   title: v.string(),
   duration: v.string(),
-  author: v.string(),
+  channel: v.string(),
   description: v.string(),
   url: v.pipe(v.string(), v.url()),
   publishDate: v.optional(v.string(), undefined),
   thumbnail: v.optional(v.string(), undefined),
-  channelUrl: v.optional(v.string(), undefined),
+  channelURL: v.optional(v.string(), undefined),
   chapters: v.optional(v.array(VideoChapterSchema), undefined)
 })
 

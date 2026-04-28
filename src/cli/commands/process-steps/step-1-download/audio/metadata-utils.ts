@@ -75,12 +75,12 @@ const getFallbackMetadata = (url: string): VideoMetadata => {
   const fallback = {
     title: `video_${videoId}`,
     duration: 'Unknown',
-    author: 'Unknown',
+    channel: 'Unknown',
     description: '',
     url,
     publishDate: undefined,
     thumbnail: undefined,
-    channelUrl: undefined
+    channelURL: undefined
   }
   
   return validateData(VideoMetadataSchema, fallback, 'fallback video metadata')
@@ -100,12 +100,12 @@ export const buildVideoMetadataFromInfo = (
   return validateData(VideoMetadataSchema, {
     title: videoInfo.title || 'Unknown Title',
     duration: videoInfo.duration ? formatDuration(videoInfo.duration) : 'Unknown',
-    author: videoInfo.uploader || videoInfo.channel || 'Unknown',
+    channel: videoInfo.uploader || videoInfo.channel || 'Unknown',
     description: videoInfo.description || '',
     url,
     publishDate: uploadDate,
     thumbnail: videoInfo.thumbnail,
-    channelUrl: videoInfo.channel_url,
+    channelURL: videoInfo.channel_url,
     ...(chapters !== undefined && chapters.length > 0 ? { chapters } : {})
   }, 'video metadata')
 }
@@ -201,12 +201,12 @@ export const extractLocalFileMetadata = async (filePath: string): Promise<VideoM
     const metadata: VideoMetadata = {
       title,
       duration,
-      author: 'Local',
+      channel: 'Local',
       description: '',
       url: `file://${filePath}`,
       publishDate: undefined,
       thumbnail: undefined,
-      channelUrl: undefined
+      channelURL: undefined
     }
     const validated = validateData(VideoMetadataSchema, metadata, 'local file metadata')
     return validated
@@ -215,12 +215,12 @@ export const extractLocalFileMetadata = async (filePath: string): Promise<VideoM
     return validateData(VideoMetadataSchema, {
       title: base.replace(/\.[^/.]+$/, ''),
       duration: 'Unknown',
-      author: 'Local',
+      channel: 'Local',
       description: '',
       url: `file://${filePath}`,
       publishDate: undefined,
       thumbnail: undefined,
-      channelUrl: undefined
+      channelURL: undefined
     }, 'local file metadata fallback')
   }
 }
@@ -241,12 +241,12 @@ const extractDirectMediaUrlMetadata = (url: string): VideoMetadata => {
   return validateData(VideoMetadataSchema, {
     title,
     duration: 'Unknown',
-    author: 'Unknown',
+    channel: 'Unknown',
     description: '',
     url,
     publishDate: undefined,
     thumbnail: undefined,
-    channelUrl: undefined
+    channelURL: undefined
   }, 'direct media url metadata')
 }
 

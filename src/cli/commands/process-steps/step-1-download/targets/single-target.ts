@@ -451,7 +451,7 @@ const runDocumentWrite = async (
   const documentMeta: VideoMetadata = {
     title: extraction.step1Metadata.title ?? 'Document',
     duration: 'Unknown',
-    author: extraction.step1Metadata.author ?? 'Unknown',
+    channel: extraction.step1Metadata.author ?? 'Unknown',
     description: '',
     url: sourceRef?.url ?? toDocumentSourceUrl(target)
   }
@@ -560,7 +560,7 @@ const processMediaSingle = async (
   llmDefaults: RuntimeOptions,
   preflightEstimate?: AggregatedPriceEstimate,
   batchChildContext?: BatchChildRunContext
-): Promise<{ outputDir: string, info: { url: string, title: string, channel: string, channelUrl?: string, publishDate?: string, duration: string } }> => {
+): Promise<{ outputDir: string, info: { url: string, title: string, channel: string, channelURL?: string, publishDate?: string, duration: string } }> => {
   const llmConfig = resolveLLMDefaults(llmDefaults)
 
   if (llmDefaults.split) {
@@ -727,15 +727,15 @@ const processMediaSingle = async (
     sttLocalConcurrency: llmDefaults.sttLocalConcurrency,
     sttSegmentConcurrency: llmDefaults.sttSegmentConcurrency,
   })
-  const baseInfo: { url: string, title: string, channel: string, duration: string, channelUrl?: string, publishDate?: string } = {
+  const baseInfo: { url: string, title: string, channel: string, duration: string, channelURL?: string, publishDate?: string } = {
     url: srcUrl,
     title: meta.title,
-    channel: meta.author,
+    channel: meta.channel,
     duration: meta.duration
   }
 
-  if (meta.channelUrl) {
-    baseInfo.channelUrl = meta.channelUrl
+  if (meta.channelURL) {
+    baseInfo.channelURL = meta.channelURL
   }
   if (meta.publishDate) {
     baseInfo.publishDate = meta.publishDate
@@ -919,7 +919,7 @@ const mergeBatchItemMetadata = (
   return {
     ...meta,
     ...(batchItem.title ? { title: batchItem.title } : {}),
-    ...(batchItem.author ? { author: batchItem.author } : {}),
+    ...(batchItem.author ? { channel: batchItem.author } : {}),
     ...(duration ? { duration } : {}),
     ...(publishDate ? { publishDate } : {})
   }
@@ -958,11 +958,11 @@ const processMetadataMedia = async (
     title: meta.title,
     slug,
     duration: meta.duration,
-    author: meta.author,
+    channel: meta.channel,
     url: meta.url,
     ...(meta.publishDate ? { publishDate: meta.publishDate } : {}),
     ...(meta.thumbnail ? { thumbnail: meta.thumbnail } : {}),
-    ...(meta.channelUrl ? { channelUrl: meta.channelUrl } : {}),
+    ...(meta.channelURL ? { channelURL: meta.channelURL } : {}),
     ...(meta.chapters?.length ? { chapters: meta.chapters } : {}),
     ...(meta.description?.length ? { description: meta.description } : {})
   }

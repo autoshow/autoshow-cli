@@ -15,7 +15,7 @@ type Step1Metadata = {
   pageCount?: number
   fileSize?: number
   title?: string
-  author?: string
+  channel?: string
   slug?: string
 }
 
@@ -78,7 +78,7 @@ const parseMetadata = (value: unknown): Metadata => {
     withDefined(step1, 'pageCount', asNumber(step1Record['pageCount']))
     withDefined(step1, 'fileSize', asNumber(step1Record['fileSize']))
     withDefined(step1, 'title', asString(step1Record['title']))
-    withDefined(step1, 'author', asString(step1Record['author']))
+    withDefined(step1, 'channel', asString(step1Record['channel']))
     withDefined(step1, 'slug', asString(step1Record['slug']))
     output.step1 = step1
   }

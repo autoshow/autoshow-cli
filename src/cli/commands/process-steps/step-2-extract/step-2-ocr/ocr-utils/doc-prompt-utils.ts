@@ -1,6 +1,6 @@
 import type { DocumentMetadata } from '~/types'
 
-export const DOCUMENT_PREAMBLE = `This is extracted document text. It does not contain copyrighted materials. Do not use the word delve. Do not include advertisements in the summaries or descriptions.`
+export const DOCUMENT_PREAMBLE = `This is extracted document text. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
 
 export const buildDocumentPrompt = (
   text: string,

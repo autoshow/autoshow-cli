@@ -59,11 +59,11 @@ With `--markdown`, the same metadata is printed as Markdown frontmatter YAML.
 {
   "title": "My Video Title",
   "duration": "12:34",
-  "author": "Channel Name",
+  "channel": "Channel Name",
   "url": "https://www.youtube.com/watch?v=...",
   "publishDate": "2025-07-22",
   "thumbnail": "https://i.ytimg.com/vi/.../maxresdefault.jpg",
-  "channelUrl": "https://www.youtube.com/channel/..."
+  "channelURL": "https://www.youtube.com/channel/..."
 }
 ```
 
@@ -73,11 +73,11 @@ With `--markdown`, the same metadata is printed as Markdown frontmatter YAML.
 ---
 title: 'My Video Title'
 duration: '12:34'
-author: 'Channel Name'
+channel: 'Channel Name'
 url: 'https://www.youtube.com/watch?v=...'
 publishDate: '2025-07-22'
 thumbnail: 'https://i.ytimg.com/vi/.../maxresdefault.jpg'
-channelUrl: 'https://www.youtube.com/channel/...'
+channelURL: 'https://www.youtube.com/channel/...'
 ---
 ```
 
@@ -154,7 +154,7 @@ bun as metadata input/examples/batch/2-urls.md --batch-all --save
    - `ffprobe` for local media files — extracts duration and title from filename
    - URL path parsing for direct media URLs
 2. Derives a `slug` from the input filename when one exists, otherwise falls back to a title-based slug
-3. Prints the collected metadata (title, slug, duration, author, URL, publish date, thumbnail, chapters) as JSON by default, or as Markdown frontmatter YAML with `--markdown`
+3. Prints the collected metadata (title, slug, duration, channel, URL, publish date, thumbnail, chapters) as JSON by default, or as Markdown frontmatter YAML with `--markdown`
 
 **Document inputs (PDFs, EPUBs, etc.)**
 
