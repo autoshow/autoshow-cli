@@ -6,6 +6,6 @@
   "structuredPreset": "metadata",
   "examples": {
     "json": "{\n  \"date\": \"January 15, 2024\",\n  \"location\": \"Studio 5B, New York City\",\n  \"participants\": [\n    \"Host: Sarah Johnson\",\n    \"Guest: Dr. Michael Chen, Professor of Economics at MIT\",\n    \"Co-host: Alex Martinez\"\n  ],\n  \"topic\": \"The impact of artificial intelligence on global labor markets and economic policy over the next decade.\"\n}",
-    "markdown": "Format the output like so:\n\n## Metadata\n\n    **Date:** January 15, 2024\n    **Location:** Studio 5B, New York City\n    **Participants:** \n    - Host: Sarah Johnson\n    - Guest: Dr. Michael Chen, Professor of Economics at MIT\n    - Co-host: Alex Martinez\n    \n    **Topic:** The impact of artificial intelligence on global labor markets and economic policy implications for the next decade."
+    "markdown": "Format the output like so:\n\n    ## Metadata\n\n    **Date:** January 15, 2024\n    **Location:** Studio 5B, New York City\n    **Participants:** \n    - Host: Sarah Johnson\n    - Guest: Dr. Michael Chen, Professor of Economics at MIT\n    - Co-host: Alex Martinez\n    \n    **Topic:** The impact of artificial intelligence on global labor markets and economic policy implications for the next decade."
   }
 }

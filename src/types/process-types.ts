@@ -87,6 +87,7 @@ export const ProcessingOptionsSchema = v.pipe(
     renderedText: v.optional(v.boolean(), undefined),
     renderedOutDir: v.optional(v.string(), undefined),
     trackList: v.optional(v.string(), undefined),
+    promptMd: v.optional(v.boolean(), undefined),
 
     ttsSpeaker: v.optional(v.string(), undefined),
     groqTtsModels: v.optional(v.array(v.string()), undefined),

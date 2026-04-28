@@ -11,6 +11,7 @@ export type LLMOptions = Pick<ProcessingOptions,
   | 'outputDir'
   | 'prompts'
   | 'promptFile'
+  | 'promptMd'
   | 'openaiModels'
   | 'openaiModel'
   | 'groqModels'

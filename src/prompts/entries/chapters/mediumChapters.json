@@ -6,6 +6,6 @@
   "structuredPreset": "mediumChapters",
   "examples": {
     "json": "{\n  \"chapters\": [\n    {\n      \"timestamp\": \"00:00:00\",\n      \"title\": \"Introduction and Overview\",\n      \"description\": \"Introduces the key themes and concepts explored in the episode, briefly outlining the most important points and why they matter to the rest of the discussion.\"\n    },\n    {\n      \"timestamp\": \"00:04:30\",\n      \"title\": \"Core Ideas and Implications\",\n      \"description\": \"Summarizes the main argument, the supporting examples, and the broader relevance of the ideas being explored in this section.\"\n    }\n  ]\n}",
-    "markdown": "Format the output like so:\n\n## Chapters\n\n    ### 00:00:00 - Introduction and Overview\n\n    Introduces the key themes and concepts explored in the episode, briefly outlining the significant points and their relevance to broader discussions. This foundation helps listeners grasp the scope and importance of the subsequent content and prepares them for deeper exploration of each topic."
+    "markdown": "Format the output like so:\n\n    ## Chapters\n\n    ### 00:00:00 - Introduction and Overview\n\n    Introduces the key themes and concepts explored in the episode, briefly outlining the significant points and their relevance to broader discussions. This foundation helps listeners grasp the scope and importance of the subsequent content and prepares them for deeper exploration of each topic."
   }
 }

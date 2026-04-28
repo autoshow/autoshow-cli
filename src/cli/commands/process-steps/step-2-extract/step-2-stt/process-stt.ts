@@ -564,7 +564,7 @@ const buildPromptFile = async (
   metadata: PreparedSttMedia['metadata'],
   transcription: TranscriptionResult,
   slug: string,
-  options: Pick<RuntimeOptions, 'prompts'> & {
+  options: Pick<RuntimeOptions, 'prompts' | 'promptMd'> & {
     promptSourceProvider?: string | undefined
     requestedSpeakerCount?: number | undefined
     suppressDiarizationLog?: boolean | undefined
@@ -579,6 +579,18 @@ const buildPromptFile = async (
     suppressDiarizationLog: options.suppressDiarizationLog
   })
   await Bun.write(`${outputDir}/prompt.md`, promptContent)
+
+  if (options.promptMd) {
+    const mdInstruction = await resolvePromptNames(options.prompts ?? [], {
+      exampleFormat: 'markdown'
+    })
+    const mdPromptContent = buildPrompt(metadata, transcription, mdInstruction, slug, {
+      promptSourceProvider: options.promptSourceProvider,
+      requestedSpeakerCount: options.requestedSpeakerCount,
+      suppressDiarizationLog: true
+    })
+    await Bun.write(`${outputDir}/prompt-md.md`, mdPromptContent)
+  }
 }
 
 export const scorePromptSelectionCandidate = (
@@ -703,6 +715,7 @@ export const processStt = async (
 
         await buildPromptFile(outputDir, preparedStepMedia.metadata, captionTranscription.result, preparedStepMedia.step1Metadata.slug, {
           prompts: options.prompts,
+          promptMd: options.promptMd,
           promptSourceProvider: buildProviderModelLabel(captionTranscription.metadata)
         })
 
@@ -788,6 +801,7 @@ export const processStt = async (
 
       await buildPromptFile(outputDir, preparedStepMedia.metadata, transcription.result, preparedStepMedia.step1Metadata.slug, {
         prompts: options.prompts,
+        promptMd: options.promptMd,
         promptSourceProvider: buildProviderModelLabel(transcription.metadata),
         requestedSpeakerCount: target.diarizationOptions?.speakerCount
       })
@@ -890,6 +904,7 @@ export const processStt = async (
 
           await buildPromptFile(outputDir, preparedMedia.metadata, promptSource.result, preparedMedia.step1Metadata.slug, {
             prompts: options.prompts,
+            promptMd: options.promptMd,
             promptSourceProvider: buildProviderModelLabel(promptSource.metadata),
             requestedSpeakerCount: promptSource.target.diarizationOptions?.speakerCount,
             suppressDiarizationLog: coordinatedAcrossBatch

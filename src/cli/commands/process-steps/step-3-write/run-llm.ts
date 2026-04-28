@@ -124,6 +124,38 @@ export const runLLM = async (
   const promptPath = `${options.outputDir}/prompt.md`
   await Bun.write(promptPath, prompt)
 
+  if (options.promptMd) {
+    let mdPromptFileText: string | undefined
+    if (isJsonPromptFile) {
+      const { leaf } = promptFileResult
+      const leafInstruction = leaf.instruction.trim()
+      const leafExample = leaf.examples.markdown.trim()
+      const mdSections = [leafInstruction]
+      if (leafExample.length > 0) {
+        mdSections.push(`Format the output like so:\n\n${leafExample}`)
+      }
+      mdPromptFileText = mdSections.join('\n\n')
+    } else if (promptFileResult?.kind === 'text') {
+      mdPromptFileText = promptFileResult.text
+    }
+
+    const mdInstructionBase = await resolvePromptNames(promptNames, {
+      exampleFormat: 'markdown',
+      fallbackToDefault: !promptFileOnly
+    })
+
+    const mdInstructionSections = [
+      mdPromptFileText,
+      mdInstructionBase
+    ].filter((section): section is string => typeof section === 'string' && section.trim().length > 0)
+    const mdInstruction = mdInstructionSections.join('\n\n')
+
+    const mdPrompt = options.promptBuilder
+      ? options.promptBuilder(mdInstruction)
+      : buildPromptFromUtils(meta, transcription, mdInstruction, slug)
+    await Bun.write(`${options.outputDir}/prompt-md.md`, mdPrompt)
+  }
+
   const single = targets.length === 1
 
   const resultsByTargetIndex: Array<PendingStructuredRunResult | undefined> = []

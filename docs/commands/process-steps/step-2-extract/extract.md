@@ -226,6 +226,7 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
 | `--split` | Split audio into 30-minute segments before transcription |
 | `--prompt <name...>` | Named prompt presets discovered recursively under `src/prompts/entries/` |
+| `--prompt-md` | Save a second prompt file (`prompt-md.md`) with markdown examples alongside the JSON prompt |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
 | `--batch-order <newest\|oldest>` | Choose batch ordering |

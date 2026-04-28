@@ -6,6 +6,6 @@
   "structuredPreset": "shortChapters",
   "examples": {
     "json": "{\n  \"chapters\": [\n    {\n      \"timestamp\": \"00:00:00\",\n      \"title\": \"Introduction and Episode Overview\",\n      \"description\": \"Briefly introduces the episode's main themes, setting the stage for the discussion ahead.\"\n    },\n    {\n      \"timestamp\": \"00:04:30\",\n      \"title\": \"Core Ideas and Implications\",\n      \"description\": \"Summarizes the section's main argument and why it matters.\"\n    }\n  ]\n}",
-    "markdown": "Format the output like so:\n\n## Chapters\n\n    ### 00:00:00 - Introduction and Episode Overview\n\n    Briefly introduces the episode's main themes, setting the stage for detailed discussions ahead."
+    "markdown": "Format the output like so:\n\n    ## Chapters\n\n    ### 00:00:00 - Introduction and Episode Overview\n\n    Briefly introduces the episode's main themes, setting the stage for detailed discussions ahead."
   }
 }

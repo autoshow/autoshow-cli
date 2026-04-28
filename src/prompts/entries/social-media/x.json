@@ -6,6 +6,6 @@
   "structuredPreset": "x",
   "examples": {
     "json": "{\n  \"content\": \"Web development is not just coding; it is about choosing tools, tradeoffs, and architecture that can survive change.\",\n  \"hashtags\": [\n    \"#WebDev\",\n    \"#JavaScript\"\n  ]\n}",
-    "markdown": "Format the output like so:\n\n## X Social Post\n    \n    Web development isn't just coding; it's shaping the future. Dive into the latest trends and stay ahead of the curve. #WebDev #JavaScript"
+    "markdown": "Format the output like so:\n\n    ## X Social Post\n    \n    Web development isn't just coding; it's shaping the future. Dive into the latest trends and stay ahead of the curve. #WebDev #JavaScript"
   }
 }

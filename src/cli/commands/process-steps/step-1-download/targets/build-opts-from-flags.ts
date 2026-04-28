@@ -801,6 +801,7 @@ export const buildOptsFromFlags = (
     renderedText: readBooleanFlag(mergedFlags, 'rendered-text'),
     renderedOutDir: readOptionalStringFlag(mergedFlags, 'rendered-out-dir'),
     trackList: readOptionalStringFlag(mergedFlags, 'track-list'),
+    promptMd: readBooleanFlag(mergedFlags, 'prompt-md'),
     ttsSpeaker: (() => {
       const raw = readStringFlag(mergedFlags, 'kitten-voice', DEFAULT_KITTEN_TTS_SPEAKER)
       return kittenTtsModelValue !== undefined

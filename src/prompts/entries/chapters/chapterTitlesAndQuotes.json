@@ -6,6 +6,6 @@
   "structuredPreset": "chapterTitlesAndQuotes",
   "examples": {
     "json": "{\n  \"chapters\": [\n    {\n      \"timestamp\": \"00:00:00\",\n      \"title\": \"Introduction to Web Development\",\n      \"quote\": \"Web development is constantly evolving, driven by new technologies and user expectations.\"\n    },\n    {\n      \"timestamp\": \"00:04:12\",\n      \"title\": \"The Rise of JavaScript Frameworks\",\n      \"quote\": \"The tools changed quickly, but the need to solve real problems stayed the same.\"\n    }\n  ]\n}",
-    "markdown": "Format the output like so:\n\n## Chapters with Quotes\n    \n    ### 00:00:00 - Introduction to Web Development\n    \n    > \"Web development is constantly evolving, driven by new technologies and user expectations.\""
+    "markdown": "Format the output like so:\n\n    ## Chapters with Quotes\n    \n    ### 00:00:00 - Introduction to Web Development\n    \n    > \"Web development is constantly evolving, driven by new technologies and user expectations.\""
   }
 }

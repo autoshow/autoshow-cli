@@ -142,6 +142,7 @@ export type RuntimeOptions = {
   renderedText: boolean
   renderedOutDir: string | undefined
   trackList: string | undefined
+  promptMd: boolean
 
   kittenTtsModels: string[] | undefined
   kittenTtsModel: string | undefined

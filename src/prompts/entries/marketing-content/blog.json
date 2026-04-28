@@ -6,6 +6,6 @@
   "structuredPreset": "blog",
   "examples": {
     "json": "{\n  \"title\": \"The Complete Guide to [Main Topic]\",\n  \"outline\": [\n    \"Introduction and context\",\n    \"Core ideas and supporting evidence\",\n    \"Implications, takeaways, and next steps\"\n  ],\n  \"draft\": \"First draft of a blog post that expands on the outline above and runs at least 750 words.\"\n}",
-    "markdown": "Format the output like so:\n\n## Blog Outline\n\n    1. Part 1\n    2. Part 2\n    3. Part 3\n    \n    ### Blog First Draft\n    \n    First draft of a blog."
+    "markdown": "Format the output like so:\n\n    ## Blog Outline\n\n    1. Part 1\n    2. Part 2\n    3. Part 3\n    \n    ### Blog First Draft\n    \n    First draft of a blog."
   }
 }

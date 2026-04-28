@@ -144,6 +144,7 @@ Prompt names are assembled at runtime from JSON files discovered recursively und
 - Multi-target runs write `text-<model>.json` for each selected LLM target.
 - `--rendered-text` writes rendered markdown inside the run directory.
 - `--rendered-out-dir <dir>` also writes rendered markdown to another directory.
+- `--prompt-md` writes a second prompt file (`prompt-md.md`) with markdown-formatted examples alongside the JSON prompt.
 - Project lyric draft mode defaults `--rendered-out-dir` to `./output/<name>/lyrics`.
 - Providers with native structured output use it directly; other providers use the internal schema-guided fallback path.
 - EPUB inspect mode keeps the extraction payload in `run.json` and still writes the normal step-3 JSON output.
@@ -209,6 +210,7 @@ bun as write ./output/demo/text --price
 | `--rendered-text` | Save rendered step-3 markdown output inside the run directory |
 | `--rendered-out-dir <dir>` | Also write rendered step-3 markdown files to this directory |
 | `--track-list <file>` | Optional `tracks.md` file used to prepend track-number headers on saved rendered text |
+| `--prompt-md` | Save a second prompt file (`prompt-md.md`) with markdown examples alongside the JSON prompt |
 | `--price` | Show the aggregated estimate and exit |
 
 ## Notes

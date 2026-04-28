@@ -167,6 +167,12 @@ export const promptFlag = {
     description: 'Named prompt(s) discovered under src/prompts/entries/ (default: "default")',
     type: [String] as [StringConstructor],
     default: [] as string[]
+  },
+  'prompt-md': {
+    description: 'Save a second prompt file (prompt-md.md) with markdown examples alongside the JSON prompt',
+    type: Boolean,
+    default: false,
+    negatable: false
   }
 } as const satisfies ClercFlagsDefinition
 
