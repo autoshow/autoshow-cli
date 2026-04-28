@@ -62,6 +62,8 @@ const ExtractModelSchema = v.object({
   description: v.string(),
   costPer1kPagesUSD: v.optional(v.number(), undefined),
   costPer1kPagesCents: v.optional(v.number(), undefined),
+  costPer1kOutputCharsUSD: v.optional(v.number(), undefined),
+  costPer1kOutputCharsCents: v.optional(v.number(), undefined),
   costPerMInputTokensUSD: v.optional(v.number(), undefined),
   costPerMInputTokensCents: v.optional(v.number(), undefined),
   costPerMOutputTokensUSD: v.optional(v.number(), undefined),
@@ -148,6 +150,7 @@ const MusicModelSchema = v.object({
   description: v.string(),
   costPerTrackUSD: v.optional(v.number(), undefined),
   costPerTrackCents: v.optional(v.number(), undefined),
+  providerPricing: v.optional(v.picklist(['quote']), undefined),
   costPerMinuteUSD: v.optional(v.number(), undefined),
   costPerMinuteCents: v.optional(v.number(), undefined),
   lyricsCostPerTrackUSD: v.optional(v.number(), undefined),
@@ -340,6 +343,7 @@ export const getExtractPricing = (
   model: string
 ): {
   costPer1kPagesCents?: number
+  costPer1kOutputCharsCents?: number
   inputCostPer1MCents?: number
   outputCostPer1MCents?: number
 } => {
@@ -350,6 +354,11 @@ export const getExtractPricing = (
       ? { costPer1kPagesCents: extractModel.costPer1kPagesCents }
       : extractModel.costPer1kPagesUSD !== undefined
         ? { costPer1kPagesCents: extractModel.costPer1kPagesUSD * 100 }
+        : {}),
+    ...(extractModel.costPer1kOutputCharsCents !== undefined
+      ? { costPer1kOutputCharsCents: extractModel.costPer1kOutputCharsCents }
+      : extractModel.costPer1kOutputCharsUSD !== undefined
+        ? { costPer1kOutputCharsCents: extractModel.costPer1kOutputCharsUSD * 100 }
         : {}),
     ...(extractModel.costPerMInputTokensCents !== undefined
       ? { inputCostPer1MCents: extractModel.costPerMInputTokensCents }

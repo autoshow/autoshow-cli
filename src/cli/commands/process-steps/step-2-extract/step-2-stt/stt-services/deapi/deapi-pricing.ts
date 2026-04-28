@@ -3,93 +3,10 @@ import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { getDeapiBaseUrl, isDeapiSupportedSourceUrl } from './deapi'
+import { buildDeapiUrl, extractDeapiErrorMessage, extractPriceUsd, readJsonOrText } from '~/utils/deapi'
 import type { DeapiQuoteError, DeapiQuoteMode, DeapiResolvedPrice } from '~/types'
 
 const REQUEST_TIMEOUT_MS = 60_000
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const buildDeapiUrl = (baseURL: string, path: string): string =>
-  new URL(path.replace(/^\/+/, ''), baseURL.endsWith('/') ? baseURL : `${baseURL}/`).toString()
-
-const readJsonOrText = async (response: Response): Promise<unknown> => {
-  const rawText = await response.text()
-  if (rawText.length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch {
-    return rawText
-  }
-}
-
-const extractDeapiErrorMessage = (payload: unknown): string | undefined => {
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim()
-    return trimmed.length > 0 ? trimmed : undefined
-  }
-
-  if (!isRecord(payload)) {
-    return undefined
-  }
-
-  for (const key of ['message', 'error', 'detail'] as const) {
-    const value = payload[key]
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim()
-    }
-  }
-
-  const data = isRecord(payload['data']) ? payload['data'] : undefined
-  if (data) {
-    for (const key of ['message', 'error', 'detail'] as const) {
-      const value = data[key]
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value.trim()
-      }
-    }
-  }
-
-  return undefined
-}
-
-const parsePriceUsd = (value: unknown): number | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
-    return value
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.replace(/[$,\s]/g, '')
-    const parsed = Number.parseFloat(normalized)
-    if (Number.isFinite(parsed) && parsed >= 0) {
-      return parsed
-    }
-  }
-
-  return undefined
-}
-
-const extractPriceUsd = (payload: unknown): number | undefined => {
-  if (isRecord(payload)) {
-    const directPrice = parsePriceUsd(payload['price'])
-    if (directPrice !== undefined) {
-      return directPrice
-    }
-
-    const data = payload['data']
-    if (isRecord(data)) {
-      const nestedPrice = parsePriceUsd(data['price'])
-      if (nestedPrice !== undefined) {
-        return nestedPrice
-      }
-    }
-  }
-
-  return undefined
-}
 
 const buildFallbackWarning = (
   mode: DeapiQuoteMode,

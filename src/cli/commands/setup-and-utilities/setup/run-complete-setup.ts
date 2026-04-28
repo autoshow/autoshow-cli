@@ -36,18 +36,21 @@ import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-
 import { setupGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/gemini'
 import { setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { setupAnthropicOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
+import { setupDeapiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deapi-ocr/deapi-ocr'
 import { setupKittenTts } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { setupGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
 import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
+import { setupDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { setupGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
 import { setupRunwayImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
 import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
+import { setupDeapiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
@@ -260,6 +263,7 @@ const runFullSetup = async (): Promise<void> => {
     await setupOpenAIOcr()
     await setupAnthropicOcr()
     await setupGeminiOcr()
+    await setupDeapiOcr()
   })
 
   await withCompactSetup(setupAssemblyAiStt)
@@ -293,6 +297,8 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupDeepgramTts)
 
+  await withCompactSetup(setupDeapiTts)
+
   await withCompactSetup(setupGeminiImageGen)
 
   await withCompactSetup(setupOpenAIImageGen)
@@ -304,6 +310,8 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupElevenLabsMusicGen)
 
   await withCompactSetup(setupMinimaxMusicGen)
+
+  await withCompactSetup(setupDeapiMusicGen)
 
   await validateBinary('whisper-cli', whisperBinaryPath, ['--help'])
   await validateBinary('llama-server', llamaBinaryPath, ['--version'])
@@ -344,6 +352,7 @@ const runSetupTts = async (): Promise<void> => {
   await setupOpenAITts()
   await setupGeminiTts()
   await setupDeepgramTts()
+  await setupDeapiTts()
   l.write('success', 'TTS setup complete')
 }
 
@@ -359,6 +368,7 @@ const runSetupImage = async (): Promise<void> => {
 const runSetupMusic = async (): Promise<void> => {
   await setupElevenLabsMusicGen()
   await setupMinimaxMusicGen()
+  await setupDeapiMusicGen()
 
   const requiredTools = ['ffmpeg', 'ffprobe']
   const missing = requiredTools.filter((tool) => !commandExists(tool))

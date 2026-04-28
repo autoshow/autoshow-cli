@@ -58,12 +58,14 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'> & {
+export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'> & {
   step: 'extract'
   costPer1kPagesCents?: number
+  costPer1kOutputCharsCents?: number
   inputCostPer1MCents?: number
   outputCostPer1MCents?: number
   pageCount?: number
+  estimatedOutputChars?: number
   promptTokens?: number
   completionTokens?: number
   totalCost: number
@@ -129,12 +131,14 @@ export type ComputeEstimatedCostsInput = {
   openaiOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
+  deapiOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
     completionTokens?: number
+    quotedCostCents?: number
     estimateType?: 'heuristic' | 'exact'
     note?: string
   }> | undefined
@@ -177,6 +181,7 @@ export type ComputeEstimatedCostsInput = {
   videoResolution?: string | undefined
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined
+  deapiMusicModel?: string | undefined
   musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicDuration?: number | undefined
   musicLyricsFile?: string | undefined
@@ -193,7 +198,8 @@ export type ComputeEstimatedProcessingTimesInput = {
   openaiOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract', model: string, pageCount?: number }> | undefined
+  deapiOcrModel?: string | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']
@@ -263,7 +269,9 @@ export type EstimatedStepEntry = {
   costMultiplier?: number
   durationSeconds?: number
   costPer1kPagesCents?: number
+  costPer1kOutputCharsCents?: number
   pageCount?: number
+  estimatedOutputChars?: number
   inputCostPer1MCents?: number
   outputCostPer1MCents?: number
   estimatedInputTokens?: number

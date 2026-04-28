@@ -51,6 +51,7 @@ Accepted provider selectors are the lowercase names below.
 |-------------------|----------|
 | `--assembly` | `stt` |
 | `--aws` | `stt`, `ocr` |
+| `--bfl` | `image` |
 | `--claude` | `general`, `text`, `ocr` |
 | `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
 | `--deepgram` | `stt`, `tts` |

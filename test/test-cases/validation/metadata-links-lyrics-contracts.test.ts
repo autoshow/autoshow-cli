@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 import {
   collectLinks,
-  parseLinksArgv
+  parseLinksArgv,
+  runLinksWithArgv
 } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import { runCommand } from '../../test-utils/test-helpers'
 
@@ -64,6 +65,25 @@ const GCLOUD_OCR_LINKS = [
   'https://docs.cloud.google.com/document-ai/docs/layout-parse-chunk.md.txt',
   'https://docs.cloud.google.com/document-ai/docs/layout-parse-quickstart.md.txt',
   'https://docs.cloud.google.com/document-ai/docs/reference/rest.md.txt'
+]
+
+const BFL_IMAGE_LINKS = [
+  'https://docs.bfl.ml/quick_start/introduction.md',
+  'https://docs.bfl.ml/quick_start/get_started.md',
+  'https://docs.bfl.ml/quick_start/generating_images.md',
+  'https://docs.bfl.ml/quick_start/pricing.md',
+  'https://docs.bfl.ml/account_management/credits_billing.md',
+  'https://docs.bfl.ml/flux_2/flux2_overview.md',
+  'https://docs.bfl.ml/flux_2/flux2_image_editing.md',
+  'https://docs.bfl.ml/flux_2/flux2_text_to_image.md',
+  'https://docs.bfl.ml/api_integration/integration_guidelines.md',
+  'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[max]-highest-quality.md',
+  'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-9b]-fast-editing.md',
+  'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-4b]-fastest-editing.md',
+  'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-9b-kv]-fast-editing-with-caching.md',
+  'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]-preview-recommended-for-editing.md',
+  'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]-recommended-for-editing.md',
+  'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[flex]-recommended-for-editing.md'
 ]
 
 test('metadata --markdown prints stable frontmatter instead of JSON', async () => {
@@ -149,6 +169,42 @@ test('links selector accepts aws provider with stt and ocr sections', () => {
     awsOcrSelection.serviceSelections,
     awsOcrSelection.globalSections
   )).toEqual(AWS_OCR_LINKS)
+})
+
+test('links selector accepts bfl provider with image section', async () => {
+  const bflSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--bfl'
+  ])
+
+  expect(bflSelection.serviceSelections.get('bfl')).toEqual([])
+  expect(collectLinks(
+    bflSelection.serviceSelections,
+    bflSelection.globalSections
+  )).toEqual(BFL_IMAGE_LINKS)
+
+  const bflImageSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--bfl',
+    'image'
+  ])
+
+  expect(collectLinks(
+    bflImageSelection.serviceSelections,
+    bflImageSelection.globalSections
+  )).toEqual(BFL_IMAGE_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--bfl',
+    'general'
+  ])).rejects.toThrow('Unknown links section(s) for --bfl: general')
 })
 
 test('links selector accepts gcloud provider with stt and ocr sections', () => {

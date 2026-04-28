@@ -59,16 +59,20 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       if (mode === 'human') {
         if (typeof estimate.costPer1kPagesCents === 'number') {
           entry['rate'] = `${estimate.costPer1kPagesCents.toFixed(4)}¢/1K pages`
+        } else if (typeof estimate.costPer1kOutputCharsCents === 'number') {
+          entry['rate'] = `${estimate.costPer1kOutputCharsCents.toFixed(4)}¢/1K output chars`
         } else if (typeof estimate.inputCostPer1MCents === 'number' && typeof estimate.outputCostPer1MCents === 'number') {
           entry['inputRate'] = `${estimate.inputCostPer1MCents.toFixed(2)}¢/1M`
           entry['outputRate'] = `${estimate.outputCostPer1MCents.toFixed(2)}¢/1M`
         }
       } else {
         if (typeof estimate.costPer1kPagesCents === 'number') entry['costPer1kPagesCents'] = estimate.costPer1kPagesCents
+        if (typeof estimate.costPer1kOutputCharsCents === 'number') entry['costPer1kOutputCharsCents'] = estimate.costPer1kOutputCharsCents
         if (typeof estimate.inputCostPer1MCents === 'number') entry['inputCostPer1MCents'] = estimate.inputCostPer1MCents
         if (typeof estimate.outputCostPer1MCents === 'number') entry['outputCostPer1MCents'] = estimate.outputCostPer1MCents
       }
       if (typeof estimate.pageCount === 'number') entry['pages'] = estimate.pageCount
+      if (typeof estimate.estimatedOutputChars === 'number') entry['estOutputChars'] = estimate.estimatedOutputChars
       if (typeof estimate.promptTokens === 'number') entry['promptTokens'] = estimate.promptTokens
       if (typeof estimate.completionTokens === 'number') entry['completionTokens'] = estimate.completionTokens
       if (typeof estimate.estimateType === 'string') entry['estimateType'] = estimate.estimateType

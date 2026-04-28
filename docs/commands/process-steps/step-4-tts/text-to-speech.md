@@ -37,6 +37,8 @@ GROQ_API_KEY=...
 ELEVENLABS_API_KEY=...
 MINIMAX_API_KEY=...
 DEEPGRAM_API_KEY=...
+DEAPI_API_KEY=...
+DEAPI_BASE_URL=https://api.deapi.ai
 ```
 
 ## Usage
@@ -58,11 +60,14 @@ bun as tts <input> [flags]
 | OpenAI | `--openai-tts <model>` | `gpt-4o-mini-tts` | `--openai-voice`, default `alloy` |
 | Gemini | `--gemini-tts <model>` | `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` | `--gemini-voice`, default `Kore` |
 | Deepgram | `--deepgram-tts <model>` | `aura-2-thalia-en`, `aura-2-andromeda-en`, `aura-2-apollo-en`, `aura-2-arcas-en`, `aura-2-asteria-en`, `aura-2-athena-en`, `aura-2-helena-en`, `aura-2-aries-en` | `--deepgram-voice`, default selected model |
+| deAPI | `--deapi-tts <model>` | `Kokoro`, `Chatterbox`, `Qwen3_TTS_12Hz_1_7B_CustomVoice`, `Qwen3_TTS_12Hz_1_7B_Base`, `Qwen3_TTS_12Hz_1_7B_VoiceDesign` | `--deapi-tts-voice`, default `af_heart` for Kokoro |
 
 If no engine flag is provided, `tts` defaults to Kitten TTS with `kitten-tts-nano-0.8-int8`.
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file.
-Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Deepgram.
+Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Deepgram and runnable deAPI models.
+
+deAPI `Qwen3_TTS_12Hz_1_7B_Base` and `Qwen3_TTS_12Hz_1_7B_VoiceDesign` are listed in the catalog, but execution rejects them until the CLI has first-class flags for their required reference audio or voice-design instructions. `--all-tts` selects only runnable deAPI models.
 
 ## Examples
 
@@ -77,6 +82,8 @@ bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini --kitten-voi
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
 bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview --gemini-voice Kore
 bun as tts input/examples/tts/1-tts.md --deepgram-tts aura-2-thalia-en --deepgram-voice aura-2-andromeda-en
+bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro
+bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro --deapi-tts-voice af_heart --price
 
 # Gemini multispeaker dialogue
 bun as tts input/examples/tts/tts-dialogue.txt \
@@ -108,12 +115,14 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--openai-tts <model>` | Select one or more OpenAI models; omit the value to use the cheapest supported model |
 | `--gemini-tts <model>` | Select one or more Gemini models; omit the value to use the cheapest supported model |
 | `--deepgram-tts <model>` | Select one or more Deepgram Aura models; omit the value to use the cheapest supported model |
+| `--deapi-tts <model>` | Select one or more deAPI speech models; omit the value to use the cheapest supported model |
 | `--elevenlabs-voice <id>` | Override the ElevenLabs voice ID |
 | `--minimax-tts-voice <id>` | Override the MiniMax voice ID |
 | `--groq-voice <id>` | Override the Groq voice ID |
 | `--openai-voice <id>` | Override the OpenAI voice ID |
 | `--gemini-voice <name>` | Override the Gemini voice name |
 | `--deepgram-voice <model>` | Override the Deepgram API voice/model |
+| `--deapi-tts-voice <id>` | Override the deAPI voice ID |
 | `--gemini-speaker-1-name <name>` | Gemini multispeaker speaker 1 label; requires all four Gemini speaker flags |
 | `--gemini-speaker-1-voice <name>` | Gemini multispeaker speaker 1 voice; requires all four Gemini speaker flags |
 | `--gemini-speaker-2-name <name>` | Gemini multispeaker speaker 2 label; requires all four Gemini speaker flags |

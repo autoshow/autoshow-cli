@@ -79,7 +79,7 @@ export const selectCheapestSttModel = (service: string): string => {
   return selectCheapestRegistryModel(serviceConfig.models, sttHourlyCost)
 }
 
-export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini'): string => {
+export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deapi'): string => {
   const serviceConfig = getModelRegistry().extract[service]
   if (!serviceConfig) {
     throw new Error(`Missing extract service config: ${service}`)
@@ -312,6 +312,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestExtractModel('anthropic')
     case 'gemini-ocr':
       return selectCheapestExtractModel('gemini')
+    case 'deapi-ocr':
+      return selectCheapestExtractModel('deapi')
     case 'openai':
       return selectCheapestLlmModel('openai')
     case 'groq':
@@ -334,6 +336,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('openai')
     case 'gemini-tts':
       return selectCheapestTtsModel('gemini')
+    case 'deapi-tts':
+      return selectCheapestTtsModel('deapi')
     case 'gemini-image':
       return selectCheapestImageModel('gemini')
     case 'openai-image':
@@ -350,6 +354,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestMusicModel('elevenlabs')
     case 'minimax-music':
       return selectCheapestMusicModel('minimax')
+    case 'deapi-music':
+      return selectCheapestMusicModel('deapi')
     case 'gemini-video':
       return selectCheapestVideoModel('gemini')
     case 'minimax-video':

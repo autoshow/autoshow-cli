@@ -118,6 +118,8 @@ export type RuntimeOptions = {
   awsTextractModel: string | undefined
   gcloudDocaiModels: string[] | undefined
   gcloudDocaiModel: string | undefined
+  deapiOcrModels: string[] | undefined
+  deapiOcrModel: string | undefined
   primaryOcr: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined
@@ -168,6 +170,9 @@ export type RuntimeOptions = {
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined
+  deapiTtsModels: string[] | undefined
+  deapiTtsModel: string | undefined
+  deapiTtsVoice: string | undefined
   geminiImageModels: string[] | undefined
   geminiImageModel: string | undefined
   openaiImageModels: string[] | undefined
@@ -191,6 +196,8 @@ export type RuntimeOptions = {
   elevenlabsMusicModel: string | undefined
   minimaxMusicModels: string[] | undefined
   minimaxMusicModel: string | undefined
+  deapiMusicModels: string[] | undefined
+  deapiMusicModel: string | undefined
   musicDuration: number | undefined
   musicLyricsFile: string | undefined
   musicInstrumental: boolean | undefined

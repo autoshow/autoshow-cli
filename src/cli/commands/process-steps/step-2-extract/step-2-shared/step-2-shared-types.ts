@@ -19,6 +19,8 @@ export type OcrSelectionState = {
   awsTextractModel?: string | undefined
   gcloudDocaiModels?: string[] | undefined
   gcloudDocaiModel?: string | undefined
+  deapiOcrModels?: string[] | undefined
+  deapiOcrModel?: string | undefined
 }
 
 export type ResolvedStep2Provider = {
@@ -158,6 +160,8 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'awsTextractModels'
   | 'gcloudDocaiModel'
   | 'gcloudDocaiModels'
+  | 'deapiOcrModel'
+  | 'deapiOcrModels'
   | 'useEpubBun'
   | 'useEpubCalibre'
   | 'urlBackend'

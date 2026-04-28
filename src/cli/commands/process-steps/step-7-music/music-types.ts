@@ -10,7 +10,7 @@ import { MinimaxMusicResponseSchema } from './music-services/minimax/run-minimax
 
 export type MusicGenOptions = Pick<
   ProcessingOptions,
-  'elevenlabsMusicModels' | 'elevenlabsMusicModel' | 'minimaxMusicModels' | 'minimaxMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental'
+  'elevenlabsMusicModels' | 'elevenlabsMusicModel' | 'minimaxMusicModels' | 'minimaxMusicModel' | 'deapiMusicModels' | 'deapiMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental'
 >
 
 export type MusicTarget = ProviderTargetBase<MusicProvider> & {
@@ -30,6 +30,8 @@ export type EstimateMusicCostOptions = {
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModels?: string[] | undefined
   minimaxMusicModel?: string | undefined
+  deapiMusicModels?: string[] | undefined
+  deapiMusicModel?: string | undefined
   musicDuration?: number | undefined
   musicLyricsFile?: string | undefined
   musicInstrumental?: boolean | undefined

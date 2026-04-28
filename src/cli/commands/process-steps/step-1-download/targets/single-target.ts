@@ -78,22 +78,24 @@ const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'>
+  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deapiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
+  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'deapi'
   model: string
   pageCount?: number
   promptTokens?: number
   completionTokens?: number
+  quotedCostCents?: number
   estimateType?: 'heuristic' | 'exact'
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
     completionTokens?: number
+    quotedCostCents?: number
     estimateType?: 'heuristic' | 'exact'
     note?: string
   }> = []
@@ -170,6 +172,20 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'deapi' || entry.extractionMethod.includes('deapi-ocr')) && typeof entry.ocrModel === 'string') {
+      targets.push({
+        provider: 'deapi' as const,
+        model: entry.ocrModel ?? opts.deapiOcrModel ?? 'Nanonets_Ocr_S_F16',
+        pageCount: entry.totalPages,
+        ...(typeof entry.providerCostCents === 'number' ? { quotedCostCents: entry.providerCostCents } : {}),
+        estimateType: typeof entry.providerCostCents === 'number' ? 'exact' as const : 'heuristic' as const,
+        note: typeof entry.providerCostCents === 'number'
+          ? `Provider quote recorded during OCR execution: ${entry.providerCostCents.toFixed(4)}¢`
+          : 'deAPI OCR pricing is available from the provider quote endpoint during execution.'
       })
     }
   }
@@ -309,6 +325,12 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.gcloudDocaiModels) {
     extractionOpts.gcloudDocaiModels = opts.gcloudDocaiModels
   }
+  if (opts.deapiOcrModel) {
+    extractionOpts.deapiOcrModel = opts.deapiOcrModel
+  }
+  if (opts.deapiOcrModels) {
+    extractionOpts.deapiOcrModels = opts.deapiOcrModels
+  }
   if (opts.epubChapterFiles) {
     extractionOpts.epubChapterFiles = true
   }
@@ -340,6 +362,7 @@ const writeDocumentOutputMetadata = async (
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
+    deapiOcrModel,
     artifactFiles,
     completionStatus,
     requestedProviders,
@@ -353,7 +376,8 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     openaiOcrModel,
     anthropicOcrModel,
-    geminiOcrModel
+    geminiOcrModel,
+    deapiOcrModel
   })
 
   const estimated = computeEstimatedCosts({
@@ -539,6 +563,7 @@ const runDocumentWrite = async (
     openaiOcrModel: opts.openaiOcrModel,
     anthropicOcrModel: opts.anthropicOcrModel,
     geminiOcrModel: opts.geminiOcrModel,
+    deapiOcrModel: opts.deapiOcrModel,
     llmService,
     llmModel,
     llmInputTokenCount,
@@ -668,6 +693,9 @@ const processMediaSingle = async (
     minimaxTtsModels: llmDefaults.minimaxTtsModels,
     minimaxTtsModel: llmDefaults.minimaxTtsModel,
     minimaxTtsVoice: llmDefaults.minimaxTtsVoice,
+    deapiTtsModels: llmDefaults.deapiTtsModels,
+    deapiTtsModel: llmDefaults.deapiTtsModel,
+    deapiTtsVoice: llmDefaults.deapiTtsVoice,
     geminiImageModels: llmDefaults.geminiImageModels,
     geminiImageModel: llmDefaults.geminiImageModel,
     openaiImageModels: llmDefaults.openaiImageModels,
@@ -690,6 +718,8 @@ const processMediaSingle = async (
     elevenlabsMusicModel: llmDefaults.elevenlabsMusicModel,
     minimaxMusicModels: llmDefaults.minimaxMusicModels,
     minimaxMusicModel: llmDefaults.minimaxMusicModel,
+    deapiMusicModels: llmDefaults.deapiMusicModels,
+    deapiMusicModel: llmDefaults.deapiMusicModel,
     musicDuration: llmDefaults.musicDuration,
     musicLyricsFile: llmDefaults.musicLyricsFile,
     musicInstrumental: llmDefaults.musicInstrumental,
@@ -716,7 +746,9 @@ const processMediaSingle = async (
     anthropicOcrModels: llmDefaults.anthropicOcrModels,
     anthropicOcrModel: llmDefaults.anthropicOcrModel,
     geminiOcrModels: llmDefaults.geminiOcrModels,
-    geminiOcrModel: llmDefaults.geminiOcrModel
+    geminiOcrModel: llmDefaults.geminiOcrModel,
+    deapiOcrModels: llmDefaults.deapiOcrModels,
+    deapiOcrModel: llmDefaults.deapiOcrModel
   }
 
   const options: ProcessingOptions = validateData(ProcessingOptionsSchema, baseOptions, 'processing options')

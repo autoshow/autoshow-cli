@@ -166,22 +166,24 @@ export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'
 
 export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
 
-export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai'
+export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai' | 'deapi-ocr'
 export type LocalExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr'
 
 export type HostedOcrRun = {
   pages: PageResult[]
   extractionMethod: HostedExtractOcrEngine
-  ocrService: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'aws-textract' | 'gcloud-docai'
+  ocrService: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'aws-textract' | 'gcloud-docai' | 'deapi'
   ocrModel: string
   canonicalText?: string
   totalPages?: number
   promptTokens?: number
   completionTokens?: number
+  providerCostCents?: number
+  providerCostSource?: 'provider_quote' | 'registry_fallback'
 }
 
 export type OcrTarget = {
-  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'aws-textract' | 'gcloud-docai'
+  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'aws-textract' | 'gcloud-docai' | 'deapi'
   model: string
 }
 
@@ -191,7 +193,7 @@ export type OcrResumeRun = {
   targetsToRun: OcrTarget[]
 }
 
-export type OcrProviderKey = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai'
+export type OcrProviderKey = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai' | 'deapi-ocr'
 
 export type OcrProviderCapability = {
   supports: OcrSourceKind[]

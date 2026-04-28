@@ -246,5 +246,23 @@
         }
       }
     }
+  },
+  "deapi": {
+    "description": "deAPI OCR (image-to-text)",
+    "type": "api",
+    "models": {
+      "Nanonets_Ocr_S_F16": {
+        "description": "Nanonets OCR S F16 via deAPI",
+        "costPer1kOutputCharsUSD": 0.00928,
+        "costPer1kOutputCharsCents": 0.928,
+        "limits": {
+          "imageBytes": 10485760,
+          "notes": "Max 10 MB image. Supported: JPG, JPEG, PNG, GIF, BMP, WebP."
+        },
+        "estimation": {
+          "msPerPage": 3000
+        }
+      }
+    }
   }
 }

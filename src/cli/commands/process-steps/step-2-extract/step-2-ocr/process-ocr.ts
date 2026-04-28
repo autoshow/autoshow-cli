@@ -49,22 +49,24 @@ const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel'>
+  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deapiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'
+  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
   model: string
   pageCount?: number
   promptTokens?: number
   completionTokens?: number
+  quotedCostCents?: number
   estimateType?: 'heuristic' | 'exact'
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
     completionTokens?: number
+    quotedCostCents?: number
     estimateType?: 'heuristic' | 'exact'
     note?: string
   }> = []
@@ -161,6 +163,20 @@ const collectEstimatedExtractTargets = (
         model: entry.ocrModel ?? 'detect-text',
         pageCount: entry.totalPages,
         estimateType: 'exact' as const
+      })
+      continue
+    }
+
+    if (entry.ocrService === 'deapi' || entry.extractionMethod.includes('deapi-ocr')) {
+      targets.push({
+        provider: 'deapi' as const,
+        model: entry.ocrModel ?? opts.deapiOcrModel ?? 'Nanonets_Ocr_S_F16',
+        pageCount: entry.totalPages,
+        ...(typeof entry.providerCostCents === 'number' ? { quotedCostCents: entry.providerCostCents } : {}),
+        estimateType: typeof entry.providerCostCents === 'number' ? 'exact' as const : 'heuristic' as const,
+        note: typeof entry.providerCostCents === 'number'
+          ? `Provider quote recorded during OCR execution: ${entry.providerCostCents.toFixed(4)}¢`
+          : 'deAPI OCR pricing is available from the provider quote endpoint during execution.'
       })
     }
   }
@@ -422,6 +438,8 @@ export const processOcr = async (
     ...(rawOpts.awsTextractModels ? { awsTextractModels: rawOpts.awsTextractModels } : {}),
     ...(rawOpts.gcloudDocaiModel ? { gcloudDocaiModel: rawOpts.gcloudDocaiModel } : {}),
     ...(rawOpts.gcloudDocaiModels ? { gcloudDocaiModels: rawOpts.gcloudDocaiModels } : {}),
+    ...(rawOpts.deapiOcrModel ? { deapiOcrModel: rawOpts.deapiOcrModel } : {}),
+    ...(rawOpts.deapiOcrModels ? { deapiOcrModels: rawOpts.deapiOcrModels } : {}),
     ...(rawOpts.primaryOcr ? { primaryOcr: rawOpts.primaryOcr } : {}),
     ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
     ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),

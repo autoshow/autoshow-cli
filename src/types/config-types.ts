@@ -62,6 +62,8 @@ const TtsDefaultsSchema = v.strictObject({
   groqTts: ModelArraySchema,
   openaiTts: ModelArraySchema,
   geminiTts: ModelArraySchema,
+  deapiTts: ModelArraySchema,
+  deapiTtsVoice: v.optional(v.string(), undefined),
   ttsSpeaker: v.optional(v.string(), undefined),
   groqVoice: v.optional(v.string(), undefined),
   openaiVoice: v.optional(v.string(), undefined),
@@ -101,6 +103,7 @@ const VideoDefaultsSchema = v.strictObject({
 const MusicDefaultsSchema = v.strictObject({
   elevenlabsMusic: ModelArraySchema,
   minimaxMusic: ModelArraySchema,
+  deapiMusic: ModelArraySchema,
   musicDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
@@ -125,6 +128,7 @@ const ExtractOcrDefaultsSchema = v.strictObject({
   geminiOcr: ModelArraySchema,
   awsTextract: ModelArraySchema,
   gcloudDocai: ModelArraySchema,
+  deapiOcr: ModelArraySchema,
   gcloudDocaiLocation: v.optional(v.string(), undefined),
   gcloudDocaiOcrProcessorId: v.optional(v.string(), undefined),
   gcloudDocaiLayoutProcessorId: v.optional(v.string(), undefined),

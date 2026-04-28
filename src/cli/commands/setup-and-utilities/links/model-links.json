@@ -69,7 +69,12 @@
     ],
     "STT": [
       "https://docs.together.ai/reference/audio-transcriptions",
-      "https://www.together.ai/models/openai-whisper-large-v3"
+      "https://www.together.ai/models/openai-whisper-large-v3",
+      "https://docs.together.ai/docs/speech-to-text.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/SKILL.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/references/stt-models.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/scripts/stt_transcribe.ts",
+      "https://docs.together.ai/reference/audio-transcriptions.md"
     ]
   },
   "Fireworks": {
@@ -78,7 +83,9 @@
     ],
     "STT": [
       "https://docs.fireworks.ai/api-reference/audio-transcriptions",
-      "https://fireworks.ai/pricing"
+      "https://fireworks.ai/pricing",
+      "https://docs.fireworks.ai/api-reference/audio-transcriptions.md",
+      "https://docs.fireworks.ai/guides/querying-asr-models.md"
     ]
   },
   "Cloudflare": {
@@ -88,7 +95,12 @@
     "STT": [
       "https://developers.cloudflare.com/workers-ai/platform/pricing/",
       "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/",
-      "https://developers.cloudflare.com/workers-ai/models/whisper/"
+      "https://developers.cloudflare.com/workers-ai/models/whisper/",
+      "https://developers.cloudflare.com/workers-ai/models/whisper/index.md",
+      "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/index.md",
+      "https://developers.cloudflare.com/workers-ai/guides/tutorials/build-a-workers-ai-whisper-with-chunking/index.md",
+      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper/index.md",
+      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper-tiny-en/index.md"
     ]
   },
   "OpenAI": {
@@ -243,6 +255,10 @@
     "TTS": [
       "https://docs.x.ai/developers/model-capabilities/audio/text-to-speech.md",
       "https://docs.x.ai/developers/rest-api-reference/inference/voice.md"
+    ],
+    "STT": [
+      "https://docs.x.ai/developers/model-capabilities/audio/speech-to-text.md",
+      "https://docs.x.ai/developers/rest-api-reference/inference/voice.md"
     ]
   },
   "MiniMax": {
@@ -314,15 +330,6 @@
       "https://platform.claude.com/docs/en/build-with-claude/vision.md"
     ]
   },
-  "Cloudflare": {
-    "STT": [
-      "https://developers.cloudflare.com/workers-ai/models/whisper/index.md",
-      "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/index.md",
-      "https://developers.cloudflare.com/workers-ai/guides/tutorials/build-a-workers-ai-whisper-with-chunking/index.md",
-      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper/index.md",
-      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper-tiny-en/index.md"
-    ]
-  },
   "Assembly": {
     "STT": [
       "https://www.assemblyai.com/docs/pre-recorded-audio/universal-3-pro.md",
@@ -353,6 +360,26 @@
       "https://docs.aws.amazon.com/textract/latest/dg/async.md",
       "https://docs.aws.amazon.com/textract/latest/dg/textract-using-adapters.md",
       "https://docs.aws.amazon.com/textract/latest/dg/textract-best-practices.md"
+    ]
+  },
+  "BFL": {
+    "Image": [
+      "https://docs.bfl.ml/quick_start/introduction.md",
+      "https://docs.bfl.ml/quick_start/get_started.md",
+      "https://docs.bfl.ml/quick_start/generating_images.md",
+      "https://docs.bfl.ml/quick_start/pricing.md",
+      "https://docs.bfl.ml/account_management/credits_billing.md",
+      "https://docs.bfl.ml/flux_2/flux2_overview.md",
+      "https://docs.bfl.ml/flux_2/flux2_image_editing.md",
+      "https://docs.bfl.ml/flux_2/flux2_text_to_image.md",
+      "https://docs.bfl.ml/api_integration/integration_guidelines.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[max]-highest-quality.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-9b]-fast-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-4b]-fastest-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-9b-kv]-fast-editing-with-caching.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]-preview-recommended-for-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]-recommended-for-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[flex]-recommended-for-editing.md"
     ]
   },
   "GCloud": {
@@ -405,12 +432,6 @@
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api",
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-http",
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-js"
-    ]
-  },
-  "Fireworks": {
-    "STT": [
-      "https://docs.fireworks.ai/api-reference/audio-transcriptions.md",
-      "https://docs.fireworks.ai/guides/querying-asr-models.md"
     ]
   },
   "Soniox": {
@@ -520,40 +541,32 @@
     "General": [
       "https://docs.deapi.ai/models.md",
       "https://docs.deapi.ai/pricing.md",
-      "https://docs.deapi.ai/api/overview.md",
-      "https://docs.deapi.ai/api/errors.md"
-    ],
-    "STT": [
-      "https://docs.deapi.ai/api/analysis/video-to-text.md",
-      "https://docs.deapi.ai/api/analysis/video-to-text-price.md",
-      "https://docs.deapi.ai/api/analysis/upload-video-file.md",
-      "https://docs.deapi.ai/api/analysis/upload-video-file-price.md",
-      "https://docs.deapi.ai/pricing.md"
+      "https://docs.deapi.ai/api/v2/overview.md",
+      "https://docs.deapi.ai/api/v2/errors.md"
     ],
     "Image": [
-      "https://docs.deapi.ai/api/generation/text-to-image.md",
-      "https://docs.deapi.ai/api/generation/text-to-image-price.md"
+      "https://docs.deapi.ai/api/v2/images/generations.md",
+      "https://docs.deapi.ai/api/v2/images/generations-price.md"
+    ],
+    "OCR": [
+      "https://docs.deapi.ai/api/v2/images/ocr.md",
+      "https://docs.deapi.ai/api/v2/images/ocr-price.md"
     ],
     "Video": [
-      "https://docs.deapi.ai/api/generation/text-to-video.md",
-      "https://docs.deapi.ai/api/generation/text-to-video-price.md"
+      "https://docs.deapi.ai/api/v2/videos/generations.md",
+      "https://docs.deapi.ai/api/v2/videos/generations-price.md"
     ],
     "TTS": [
-      "https://docs.deapi.ai/api/generation/text-to-speech.md",
-      "https://docs.deapi.ai/api/generation/text-to-speech-price.md"
+      "https://docs.deapi.ai/api/v2/audio/speech.md",
+      "https://docs.deapi.ai/api/v2/audio/speech-price.md"
     ],
     "Music": [
-      "https://docs.deapi.ai/api/generation/text-to-music.md",
-      "https://docs.deapi.ai/api/generation/text-to-music-price.md"
-    ]
-  },
-  "Together": {
+      "https://docs.deapi.ai/api/v2/audio/music.md",
+      "https://docs.deapi.ai/api/v2/audio/music-price.md"
+    ],
     "STT": [
-      "https://docs.together.ai/docs/speech-to-text.md",
-      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/SKILL.md",
-      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/references/stt-models.md",
-      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/scripts/stt_transcribe.ts",
-      "https://docs.together.ai/reference/audio-transcriptions.md"
+      "https://docs.deapi.ai/api/v2/audio/transcriptions.md",
+      "https://docs.deapi.ai/api/v2/audio/transcriptions-price.md"
     ]
   },
   "Supadata": {

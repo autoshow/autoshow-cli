@@ -4,7 +4,7 @@ import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { collectOcrProviderSpecs } from './cli'
 
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel'> & {
+  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel' | 'deapiOcrModel'> & {
     step2SelectionOrigins?: Partial<Record<string, Step2ProviderSelectionOrigin>> | undefined
     provider?: string[] | undefined
   },
@@ -20,7 +20,9 @@ export const collectExplicitOcrTargets = (
           : spec.provider === 'anthropic-ocr'
             ? 'anthropic'
           : spec.provider === 'gemini-ocr'
-            ? 'gemini'
+          ? 'gemini'
+          : spec.provider === 'deapi-ocr'
+            ? 'deapi'
         : spec.provider) as OcrTarget['service'],
     model: spec.model ?? spec.provider
   }))
@@ -71,5 +73,6 @@ export const buildExtractionOptionsForTarget = (
   anthropicOcrModel: target.service === 'anthropic' ? target.model : undefined,
   geminiOcrModel: target.service === 'gemini' ? target.model : undefined,
   awsTextractModel: target.service === 'aws-textract' ? target.model : undefined,
-  gcloudDocaiModel: target.service === 'gcloud-docai' ? target.model : undefined
+  gcloudDocaiModel: target.service === 'gcloud-docai' ? target.model : undefined,
+  deapiOcrModel: target.service === 'deapi' ? target.model : undefined
 })

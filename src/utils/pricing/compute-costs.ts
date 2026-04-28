@@ -34,6 +34,9 @@ import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/mu
 import {
   computeActualAnthropicOcrCost,
   computeActualGeminiOcrCost,
+  computeDeapiOcrHeuristicCost,
+  DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
+  estimateDeapiOcrOutputCharsForPages,
   OPENAI_OCR_PRICE_NOTE
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import {
@@ -141,6 +144,12 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
     }
   }
+  if (metadata.ocrService === 'deapi') {
+    return {
+      provider: 'deapi',
+      model: metadata.ocrModel ?? 'Nanonets_Ocr_S_F16'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
@@ -181,6 +190,12 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'aws-textract',
       model: metadata.ocrModel ?? 'detect-text'
+    }
+  }
+  if (metadata.extractionMethod.includes('deapi-ocr')) {
+    return {
+      provider: 'deapi',
+      model: metadata.ocrModel ?? 'Nanonets_Ocr_S_F16'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -363,6 +378,15 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
+    } else if (provider === 'deapi') {
+      steps.push({
+        step: 'extract',
+        provider: 'deapi',
+        model,
+        cost: typeof input.step2.providerCostCents === 'number' ? input.step2.providerCostCents : 0,
+        inputMetric: 'pages',
+        inputValue: input.step2.totalPages,
+      })
     } else if (provider !== 'extract') {
       steps.push({
         step: 'extract',
@@ -404,6 +428,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('gcloud-docai', model).costPer1kPagesCents ?? 0)
         : provider === 'aws-textract'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('aws-textract', model).costPer1kPagesCents ?? 0)
+        : provider === 'deapi'
+          ? (step2Entry.providerCostCents ?? 0)
         : provider === 'glm' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
@@ -514,7 +540,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     for (const step7Entry of toArray(input.step7)) {
       const meta = getMusicModelMeta(step7Entry.musicService, step7Entry.musicModel)
       let cost = 0
-      if (meta) {
+      if (typeof step7Entry.providerCostCents === 'number') {
+        cost = step7Entry.providerCostCents
+      } else if (meta) {
         if (typeof meta.costPerTrackCents === 'number') {
           cost = meta.costPerTrackCents
           if (step7Entry.lyricsSource === 'generated' && typeof meta.lyricsCostPerTrackCents === 'number') {
@@ -672,11 +700,40 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               pageCount: input.extractPageCount,
               estimateType: 'heuristic' as const
             }]
+          : []),
+        ...(input.deapiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'deapi' as const,
+              model: input.deapiOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const,
+              note: 'deAPI OCR pricing is resolved from provider quotes during execution when available.'
+            }]
           : [])
       ]
 
   for (const target of extractTargets) {
     const estimation = getExtractEstimation(target.provider, target.model)
+    if (target.provider === 'deapi') {
+      const estimatedOutputChars = estimateDeapiOcrOutputCharsForPages(target.pageCount ?? input.extractPageCount ?? 1)
+      const cost = typeof target.quotedCostCents === 'number'
+        ? target.quotedCostCents
+        : applyCostMultiplier(computeDeapiOcrHeuristicCost(estimatedOutputChars), estimation.costMultiplier)
+      totalCost += cost
+      steps.push({
+        step: 'extract',
+        provider: target.provider,
+        model: target.model,
+        cost,
+        costMultiplier: typeof target.quotedCostCents === 'number' ? 1 : estimation.costMultiplier,
+        costPer1kOutputCharsCents: DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
+        ...(typeof target.quotedCostCents === 'number' ? {} : { estimatedOutputChars }),
+        ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
+        ...(typeof target.note === 'string' ? { note: target.note } : {}),
+        estimateType: target.estimateType ?? (typeof target.quotedCostCents === 'number' ? 'exact' : 'heuristic')
+      })
+      continue
+    }
     if (target.provider === 'mistral' || target.provider === 'firecrawl' || target.provider === 'gcloud-docai' || target.provider === 'aws-textract') {
       const extractPricing = getExtractPricing(target.provider, target.model)
       const cost = applyCostMultiplier(
@@ -862,12 +919,15 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   const hasMusic = input.musicTargets?.length
     || input.elevenlabsMusicModel
     || input.minimaxMusicModel
+    || input.deapiMusicModel
   if (hasMusic) {
     const estimates = estimateMusicCosts({
       elevenlabsMusicModels: input.musicTargets?.filter((target) => target.service === 'elevenlabs').map((target) => target.model),
       elevenlabsMusicModel: input.elevenlabsMusicModel,
       minimaxMusicModels: input.musicTargets?.filter((target) => target.service === 'minimax').map((target) => target.model),
       minimaxMusicModel: input.minimaxMusicModel,
+      deapiMusicModels: input.musicTargets?.filter((target) => target.service === 'deapi').map((target) => target.model),
+      deapiMusicModel: input.deapiMusicModel,
       musicDuration: input.musicTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.musicDuration,
       musicLyricsFile: input.musicLyricsFile,
       musicInstrumental: input.musicInstrumental

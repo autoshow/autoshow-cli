@@ -1,5 +1,8 @@
 import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
+import { getDeapiBaseUrl } from '~/utils/deapi'
+
+export { getDeapiBaseUrl } from '~/utils/deapi'
 
 const DEAPI_SUPPORTED_HOST_PATTERNS = [
   /(^|\.)youtube\.com$/i,
@@ -10,9 +13,6 @@ const DEAPI_SUPPORTED_HOST_PATTERNS = [
   /(^|\.)kick\.com$/i,
   /(^|\.)tiktok\.com$/i
 ]
-
-export const getDeapiBaseUrl = (): string =>
-  readEnv('DEAPI_BASE_URL') ?? 'https://api.deapi.ai'
 
 export const isDeapiSupportedSourceUrl = (
   sourceUrl: string | undefined

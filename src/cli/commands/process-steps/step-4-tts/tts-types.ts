@@ -35,6 +35,9 @@ export type TtsOptions = Pick<
   | 'geminiSpeaker1Voice'
   | 'geminiSpeaker2Name'
   | 'geminiSpeaker2Voice'
+  | 'deapiTtsModels'
+  | 'deapiTtsModel'
+  | 'deapiTtsVoice'
 >
 
 export type TtsTarget = ProviderTargetBase<TtsProvider> & {

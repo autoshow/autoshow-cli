@@ -12,7 +12,8 @@ import type {
   GroqTtsModel,
   OpenAITtsModel,
   GeminiTtsModel,
-  DeepgramTtsModel
+  DeepgramTtsModel,
+  DeapiTtsModel
 } from '~/types'
 
 export const SUPPORTED_KITTEN_TTS_MODELS = [
@@ -117,3 +118,22 @@ export const validateDeepgramTtsVoice = (voice: string): DeepgramTtsModel => {
   }
   return voice as DeepgramTtsModel
 }
+
+export const SUPPORTED_DEAPI_TTS_MODELS = [
+  'Kokoro',
+  'Chatterbox',
+  'Qwen3_TTS_12Hz_1_7B_CustomVoice',
+  'Qwen3_TTS_12Hz_1_7B_Base',
+  'Qwen3_TTS_12Hz_1_7B_VoiceDesign'
+] as const satisfies readonly string[]
+
+export const SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS = [
+  'Kokoro',
+  'Chatterbox',
+  'Qwen3_TTS_12Hz_1_7B_CustomVoice'
+] as const satisfies readonly string[]
+
+export const DEAPI_DEFAULT_TTS_MODEL = 'Kokoro'
+export const DEAPI_DEFAULT_TTS_VOICE = 'af_heart'
+
+export const validateDeapiTtsModel = createModelValidator<DeapiTtsModel>(SUPPORTED_DEAPI_TTS_MODELS, 'deapi-tts')

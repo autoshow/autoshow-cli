@@ -4,8 +4,10 @@ import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
+import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
+import { normalizeDeapiMusicParams, resolveDeapiMusicPrice } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-duration'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/elevenlabs-stt-pricing'
@@ -40,7 +42,8 @@ import {
   estimateGeminiOcrCost,
   estimateGlmOcrCost,
   estimateMistralOcrCost,
-  estimateOpenAIOcrCost
+  estimateOpenAIOcrCost,
+  estimateDeapiOcrCost
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import { resolveInputRoutingForCommand } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
@@ -196,7 +199,8 @@ const buildSttEstimates = async (
 
 const buildExtractEstimates = async (
   resolvedTarget: string,
-  resolvedStep2: Extract<ResolvedStep2Execution, { route: 'ocr' }>
+  resolvedStep2: Extract<ResolvedStep2Execution, { route: 'ocr' }>,
+  opts: RuntimeOptions
 ): Promise<ExtractStepEstimate[]> => {
   const estimates: ExtractStepEstimate[] = []
 
@@ -365,6 +369,32 @@ const buildExtractEstimates = async (
         costMultiplier: estimation.costMultiplier,
         estimateType: 'exact'
       })
+      continue
+    }
+
+    if (provider.service === 'deapi') {
+      const estimate = await estimateDeapiOcrCost(provider.model, resolvedTarget, {
+        dpi: opts.dpi,
+        password: opts.password,
+        rotate: opts.rotate,
+        languages: opts.lang
+      })
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      const totalCost = estimate.estimateType === 'exact'
+        ? estimate.totalCost
+        : applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        pageCount: estimate.pageCount,
+        costPer1kOutputCharsCents: estimate.costPer1kOutputCharsCents,
+        ...(estimate.estimatedOutputChars !== undefined ? { estimatedOutputChars: estimate.estimatedOutputChars } : {}),
+        totalCost,
+        costMultiplier: estimate.estimateType === 'exact' ? 1 : estimation.costMultiplier,
+        estimateType: estimate.estimateType,
+        ...(estimate.note ? { note: estimate.note } : {})
+      })
     }
   }
 
@@ -416,11 +446,32 @@ const estimateTtsCharacterCountFromPrompts = async (opts: RuntimeOptions): Promi
   return Math.max(0, Math.round(estimatedOutputTokens * ESTIMATED_TTS_CHARACTERS_PER_TOKEN))
 }
 
-const buildTtsEstimates = (opts: RuntimeOptions, characterCount: number): TtsStepEstimate[] => {
+const buildTtsEstimates = async (opts: RuntimeOptions, characterCount: number): Promise<TtsStepEstimate[]> => {
   const normalizedCharacterCount = Math.max(0, Math.floor(characterCount))
-  return estimateTtsCosts(opts, normalizedCharacterCount).map((cost) => {
+  const estimates: TtsStepEstimate[] = []
+  for (const cost of estimateTtsCosts(opts, normalizedCharacterCount)) {
     const estimation = getTtsEstimation(cost.provider, cost.model)
-    return {
+    if (cost.provider === 'deapi') {
+      const price = await resolveDeapiTtsPrice({
+        model: cost.model as Parameters<typeof resolveDeapiTtsPrice>[0]['model'],
+        characterCount: normalizedCharacterCount,
+        voice: opts.deapiTtsVoice
+      })
+      estimates.push({
+        step: 'tts',
+        provider: cost.provider,
+        model: cost.model,
+        characterCount: cost.characterCount,
+        totalCost: price.source === 'provider_quote'
+          ? price.totalCost
+          : applyCostMultiplier(price.totalCost, estimation.costMultiplier),
+        costMultiplier: price.source === 'provider_quote' ? 1 : estimation.costMultiplier,
+        ...(price.warning ? { note: price.warning } : {})
+      })
+      continue
+    }
+
+    estimates.push({
       step: 'tts' as const,
       provider: cost.provider,
       model: cost.model,
@@ -430,8 +481,9 @@ const buildTtsEstimates = (opts: RuntimeOptions, characterCount: number): TtsSte
       characterCount: cost.characterCount,
       totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,
-    }
-  })
+    })
+  }
+  return estimates
 }
 
 const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
@@ -516,11 +568,13 @@ const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
   })
 }
 
-const buildMusicEstimates = (opts: RuntimeOptions): MusicStepEstimate[] => {
+const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicStepEstimate[]> => {
   const hasMusic = (opts.elevenlabsMusicModels?.length ?? 0) > 0
     || !!opts.elevenlabsMusicModel
     || (opts.minimaxMusicModels?.length ?? 0) > 0
     || !!opts.minimaxMusicModel
+    || (opts.deapiMusicModels?.length ?? 0) > 0
+    || !!opts.deapiMusicModel
   if (!hasMusic) return []
 
   const estimates = estimateMusicCosts({
@@ -528,14 +582,40 @@ const buildMusicEstimates = (opts: RuntimeOptions): MusicStepEstimate[] => {
     elevenlabsMusicModel: opts.elevenlabsMusicModel,
     minimaxMusicModels: opts.minimaxMusicModels,
     minimaxMusicModel: opts.minimaxMusicModel,
+    deapiMusicModels: opts.deapiMusicModels,
+    deapiMusicModel: opts.deapiMusicModel,
     musicDuration: opts.musicDuration,
     musicLyricsFile: opts.musicLyricsFile,
     musicInstrumental: opts.musicInstrumental
   })
 
-  return estimates.map((estimate) => {
+  const results: MusicStepEstimate[] = []
+  for (const estimate of estimates) {
     const estimation = getMusicEstimation(estimate.provider, estimate.model)
-    return {
+    if (estimate.provider === 'deapi') {
+      const params = normalizeDeapiMusicParams(
+        estimate.model as Parameters<typeof normalizeDeapiMusicParams>[0],
+        opts.musicDuration
+      )
+      const price = await resolveDeapiMusicPrice({
+        model: estimate.model as Parameters<typeof resolveDeapiMusicPrice>[0]['model'],
+        params
+      })
+      results.push({
+        step: 'music',
+        provider: estimate.provider,
+        model: estimate.model,
+        lyricsSource: estimate.lyricsSource,
+        totalCost: price.source === 'provider_quote'
+          ? price.totalCost
+          : applyCostMultiplier(price.totalCost, estimation.costMultiplier),
+        costMultiplier: price.source === 'provider_quote' ? 1 : estimation.costMultiplier,
+        ...(price.warning ? { note: price.warning } : estimate.note !== undefined ? { note: estimate.note } : {})
+      })
+      continue
+    }
+
+    results.push({
       step: 'music',
       provider: estimate.provider,
       model: estimate.model,
@@ -543,8 +623,9 @@ const buildMusicEstimates = (opts: RuntimeOptions): MusicStepEstimate[] => {
       totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,
       ...(estimate.note !== undefined ? { note: estimate.note } : {})
-    }
-  })
+    })
+  }
+  return results
 }
 
 export const buildAggregatedPriceEstimate = async (
@@ -576,7 +657,7 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (!textInputWrite && (isOcrCommand(command) || (isExtractCommand(command) && routedChildKind === 'ocr') || documentWrite) && resolvedStep2.route === 'ocr') {
-    for (const extract of await buildExtractEstimates(resolvedTarget, resolvedStep2)) {
+    for (const extract of await buildExtractEstimates(resolvedTarget, resolvedStep2, opts)) {
       steps.push(extract)
       totalEstimatedCost += extract.totalCost
     }
@@ -629,7 +710,7 @@ export const buildAggregatedPriceEstimate = async (
     if (selectedTtsTargets.length > 0) {
       if (llmEstimates.length === 1) {
         const estimatedTtsCharacterCount = await estimateTtsCharacterCountFromPrompts(opts)
-        const ttsEstimates = buildTtsEstimates(opts, estimatedTtsCharacterCount)
+        const ttsEstimates = await buildTtsEstimates(opts, estimatedTtsCharacterCount)
         for (const tts of ttsEstimates) {
           steps.push(tts)
           totalEstimatedCost += tts.totalCost
@@ -654,14 +735,14 @@ export const buildAggregatedPriceEstimate = async (
       totalEstimatedCost += video.totalCost
     }
 
-    for (const music of buildMusicEstimates(opts)) {
+    for (const music of await buildMusicEstimates(opts)) {
       steps.push(music)
       totalEstimatedCost += music.totalCost
     }
   }
 
   if (command === 'tts') {
-    const ttsEstimates = buildTtsEstimates(opts, typeof characterCount === 'number' ? characterCount : 0)
+    const ttsEstimates = await buildTtsEstimates(opts, typeof characterCount === 'number' ? characterCount : 0)
     for (const tts of ttsEstimates) {
       steps.push(tts)
       totalEstimatedCost += tts.totalCost
@@ -684,7 +765,7 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'music') {
-    for (const music of buildMusicEstimates(opts)) {
+    for (const music of await buildMusicEstimates(opts)) {
       steps.push(music)
       totalEstimatedCost += music.totalCost
     }

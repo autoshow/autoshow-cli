@@ -279,6 +279,8 @@ ANTHROPIC_BASE_URL=https://api.anthropic.com
 GEMINI_API_KEY=...
 GLM_API_KEY=...
 ZAI_BASE_URL=https://api.z.ai/api/paas/v4
+DEAPI_API_KEY=...
+DEAPI_BASE_URL=https://api.deapi.ai
 FIRECRAWL_API_KEY=...
 FIRECRAWL_API_URL=http://localhost:3002
 AUTOSHOW_URL_BACKEND=firecrawl
@@ -292,8 +294,8 @@ AUTOSHOW_URL_BACKEND=glm-reader
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr` |
-| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--epub-bun`, `--epub-calibre` |
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deapi-ocr` |
+| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deapi-ocr`, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, OCR fallback if needed | hosted OCR routes convert through PDF first |
 | RTF | LibreOffice to PDF, then OCR | same |
@@ -301,9 +303,9 @@ AUTOSHOW_URL_BACKEND=glm-reader
 | CSV | raw text | OCR flags are ignored with a warning |
 | Remote article URL | `html+defuddle` | `--url-backend firecrawl` or `--url-backend glm-reader` |
 | Local `.html` / `.htm` | `html+defuddle` | hosted article backends are ignored with a warning |
-| PNG / JPG / JPEG / TIF / TIFF | local OCR by default | hosted OCR also supported; `--gemini-ocr` supports PNG/JPG directly, and `--anthropic-ocr` / `--openai-ocr` / `--gemini-ocr` can normalize TIF/TIFF to PNG when ImageMagick is available |
-| WebP / BMP | normalize locally when possible, then OCR | `--openai-ocr`, `--anthropic-ocr`, and `--gemini-ocr` support WebP directly; `--gemini-ocr` supports BMP directly and `--openai-ocr` / `--anthropic-ocr` can normalize BMP to PNG when ImageMagick is available |
-| GIF | local OCR by default | `--openai-ocr` and `--anthropic-ocr` support GIF directly; `--gemini-ocr` can normalize GIF to PNG when ImageMagick is available |
+| PNG / JPG / JPEG / TIF / TIFF | local OCR by default | hosted OCR also supported; `--gemini-ocr` and `--deapi-ocr` support PNG/JPG directly, and `--anthropic-ocr` / `--openai-ocr` / `--gemini-ocr` / `--deapi-ocr` can normalize TIF/TIFF to PNG when ImageMagick is available |
+| WebP / BMP | normalize locally when possible, then OCR | `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, and `--deapi-ocr` support WebP directly; `--gemini-ocr` and `--deapi-ocr` support BMP directly and `--openai-ocr` / `--anthropic-ocr` can normalize BMP to PNG when ImageMagick is available |
+| GIF | local OCR by default | `--openai-ocr`, `--anthropic-ocr`, and `--deapi-ocr` support GIF directly; `--gemini-ocr` can normalize GIF to PNG when ImageMagick is available |
 
 ### Article Backends
 
@@ -383,6 +385,9 @@ bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-hai
 bun as extract input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-lite-preview
 bun as extract input/examples/document/1-document.pdf --aws-textract detect-text
 bun as extract input/examples/document/1-document.pdf --gcloud-docai ocr
+bun as extract input/examples/document/1-document.pdf --deapi-ocr Nanonets_Ocr_S_F16
+bun as extract input/examples/document/1-document.png --deapi-ocr Nanonets_Ocr_S_F16
+bun as extract input/examples/document/1-document.pdf --deapi-ocr Nanonets_Ocr_S_F16 --price
 
 # Fan out across every OCR provider in price mode
 bun as extract input/examples/document/1-document.pdf --all-ocr --price
@@ -419,6 +424,7 @@ bun as extract input/examples/document/1-epub.epub --epub-calibre --out json
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
 | `--aws-textract <model>` | Use AWS Textract; `detect-text` for text-only ($1.50/1K pages) or `analyze-document` for tables/forms/layout ($15/1K pages) |
 | `--gcloud-docai <model>` | Use Google Cloud Document AI; `ocr` for Enterprise Document OCR or `layout-parser` for Gemini-powered Layout Parser |
+| `--deapi-ocr <model>` | Use deAPI OCR; omit the value to use `Nanonets_Ocr_S_F16` |
 | `--all-ocr` | Enable every supported OCR provider/model for this command |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--psm <n>` | Tesseract page segmentation mode |
@@ -508,6 +514,15 @@ Happy Scribe price preflight is intentionally side-effect free.
 - During execution, AutoShow records Happy Scribe billing in `step2.billing` using `totalCost`, `creditsUsed`, `creditRateCents`, `source: "provider_quote"`, and `mode: "order"` when the selected organization reports `currency: "usd"`. Non-USD execution is rejected in v1. If exact provider billing is unavailable, AutoShow falls back to registry math with `source: "registry_fallback"`.
 - Happy Scribe split runs submit one order per segment and merge segment billing into `step2.billing.mode: "segment_sum"`.
 
+## OCR Pricing And Manifests
+
+deAPI OCR uses provider quotes when possible.
+
+- For local image preflight, `--price` calls the deAPI OCR price endpoint and records an exact estimate when `DEAPI_API_KEY` is available. For local PDFs, price mode renders pages to temporary PNGs and sums deAPI page quotes when possible.
+- If exact deAPI OCR pricing is unavailable, AutoShow reports a non-zero heuristic from deAPI's published OCR output-character rate.
+- During execution, deAPI OCR quotes each direct image or rendered PDF page before submission when the provider price endpoint is available. The summed quote is written to `run.json` as `providerCostCents` with `providerCostSource: "provider_quote"`.
+- If quote lookup fails, deAPI OCR still runs and records a registry fallback cost.
+
 ## Notes
 
 ### STT Notes
@@ -531,12 +546,13 @@ Happy Scribe price preflight is intentionally side-effect free.
 - EPUB export and PDF chapter autodetection write additive `chapters/` or `chunks/` side artifacts inside the same output directory.
 - Supported document formats include PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, and CBZ.
 - Supported image formats include PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, and GIF.
-- Mistral OCR accepts PDF and standard images (`PNG`, `JPG`, `TIF`); GLM OCR accepts PDF plus `PNG` and `JPG`; OpenAI OCR accepts PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` directly; Anthropic OCR accepts standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` directly; Gemini OCR accepts PDF plus `PNG`, `JPG`, `WEBP`, and `BMP` directly.
+- Mistral OCR accepts PDF and standard images (`PNG`, `JPG`, `TIF`); GLM OCR accepts PDF plus `PNG` and `JPG`; OpenAI OCR accepts PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` directly; Anthropic OCR accepts standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` directly; Gemini OCR accepts PDF plus `PNG`, `JPG`, `WEBP`, and `BMP` directly; deAPI OCR accepts rendered PDF pages plus `PNG`, `JPG`, `JPEG`, `GIF`, `BMP`, and `WEBP` images directly.
 - OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
 - Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
 - Anthropic OCR currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs.
 - Anthropic OCR splits PDFs into internal 10-page Files API uploads, sums token usage across chunks, and best-effort deletes uploaded files after each chunk run.
 - Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
+- deAPI OCR normalizes `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
 - GLM OCR currently enforces the bundled docs caps from `project/links/glm-all-links.md`: images up to 10 MB, PDFs up to 50 MB, and PDFs up to 100 pages.
 - OpenAI OCR currently enforces the bundled PDF size cap from `project/links/openai-all-links.md`: PDFs up to 50 MB.
 - Gemini OCR currently enforces the bundled docs caps from `project/links/gemini-all-links.md`: inline PDFs up to 50 MB, inline non-PDF inputs up to 100 MB, Files API uploads up to 2 GB per file, and PDFs up to 1000 pages.

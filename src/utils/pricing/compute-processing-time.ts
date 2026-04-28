@@ -74,6 +74,12 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
     }
   }
+  if (metadata.ocrService === 'deapi') {
+    return {
+      provider: 'deapi',
+      model: metadata.ocrModel ?? 'Nanonets_Ocr_S_F16'
+    }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return {
       provider: 'mistral',
@@ -102,6 +108,12 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'gemini',
       model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
+    }
+  }
+  if (metadata.extractionMethod.includes('deapi-ocr')) {
+    return {
+      provider: 'deapi',
+      model: metadata.ocrModel ?? 'Nanonets_Ocr_S_F16'
     }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
@@ -195,6 +207,9 @@ export const computeEstimatedProcessingTimes = (
           : []),
         ...(input.geminiOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'gemini' as const, model: input.geminiOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.deapiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'deapi' as const, model: input.deapiOcrModel, pageCount: input.extractPageCount }]
           : [])
       ]
 

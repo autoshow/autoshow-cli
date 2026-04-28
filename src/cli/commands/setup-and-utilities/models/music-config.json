@@ -30,5 +30,35 @@
         }
       }
     }
+  },
+  "deapi": {
+    "description": "deAPI music generation (ACE-Step)",
+    "type": "api",
+    "models": {
+      "AceStep_1_5_Turbo": {
+        "description": "ACE-Step 1.5 Turbo — fast music, fixed 8 steps, 10-300s",
+        "costPerTrackCents": 0,
+        "providerPricing": "quote",
+        "estimation": {
+          "msPerSecond": 1000
+        }
+      },
+      "AceStep_1_5_Base": {
+        "description": "ACE-Step 1.5 Base — high quality, 5-100 steps, 30-300s",
+        "costPerTrackCents": 0,
+        "providerPricing": "quote",
+        "estimation": {
+          "msPerSecond": 3000
+        }
+      },
+      "AceStep_1_5_XL_Turbo_INT8": {
+        "description": "ACE-Step 1.5 XL Turbo INT8 — fast XL model, fixed 8 steps, 10-300s",
+        "costPerTrackCents": 0,
+        "providerPricing": "quote",
+        "estimation": {
+          "msPerSecond": 1500
+        }
+      }
+    }
   }
 }

@@ -234,6 +234,7 @@ export type RepeatableModelFlag =
   | 'gemini-ocr'
   | 'aws-textract'
   | 'gcloud-docai'
+  | 'deapi-ocr'
   | 'llama'
   | 'openai'
   | 'groq'
@@ -248,6 +249,7 @@ export type RepeatableModelFlag =
   | 'groq-tts'
   | 'openai-tts'
   | 'gemini-tts'
+  | 'deapi-tts'
   | 'gemini-image'
   | 'openai-image'
   | 'minimax-image'
@@ -256,6 +258,7 @@ export type RepeatableModelFlag =
   | 'runway-image'
   | 'elevenlabs-music'
   | 'minimax-music'
+  | 'deapi-music'
   | 'gemini-video'
   | 'minimax-video'
   | 'glm-video'
@@ -323,6 +326,7 @@ export type WriteDocumentOutputMetadataOptions = {
   openaiOcrModel: string | undefined
   anthropicOcrModel: string | undefined
   geminiOcrModel: string | undefined
+  deapiOcrModel: string | undefined
   llmService: string
   llmModel: string
   llmInputTokenCount: number

@@ -29,75 +29,22 @@ import { readEnv } from '~/utils/validate/env-utils'
 import { getDeapiBaseUrl, isDeapiSupportedSourceUrl } from './deapi'
 import { logDeapiPricingFallbackWarning, resolveDeapiTranscriptionPrice } from './deapi-pricing'
 import type { DeapiStatusPayload } from '~/types'
+import {
+  attachDeapiErrorContext,
+  buildDeapiUrl,
+  extractDeapiErrorMessage,
+  fetchResultPayload,
+  isRecord,
+  normalizeParsedResult,
+  parseRequestId,
+  parseStatusPayload,
+  readJsonOrText
+} from '~/utils/deapi'
 
 const INITIAL_POLL_INTERVAL_MS = 1_000
 const MAX_POLL_INTERVAL_MS = 10_000
 const REQUEST_TIMEOUT_MS = 70_000
 const POLL_REQUEST_TIMEOUT_MS = 60_000
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const buildDeapiUrl = (baseURL: string, path: string): string =>
-  new URL(path.replace(/^\/+/, ''), baseURL.endsWith('/') ? baseURL : `${baseURL}/`).toString()
-
-const readJsonOrText = async (response: Response): Promise<unknown> => {
-  const rawText = await response.text()
-  if (rawText.length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch {
-    return rawText
-  }
-}
-
-const extractDeapiErrorMessage = (payload: unknown): string | undefined => {
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim()
-    return trimmed.length > 0 ? trimmed : undefined
-  }
-
-  if (!isRecord(payload)) {
-    return undefined
-  }
-
-  for (const key of ['message', 'error', 'detail'] as const) {
-    const value = payload[key]
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim()
-    }
-  }
-
-  const data = isRecord(payload['data']) ? payload['data'] : undefined
-  if (data) {
-    for (const key of ['message', 'error', 'detail'] as const) {
-      const value = data[key]
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value.trim()
-      }
-    }
-  }
-
-  return undefined
-}
-
-const attachDeapiErrorContext = (
-  error: unknown,
-  stage: 'create' | 'poll' | 'result',
-  retryClass: RetryClass,
-  rawResponse?: unknown
-): never => {
-  const source = error instanceof Error ? error : new Error(String(error))
-  ;(source as DeapiHttpError).stage = stage
-  ;(source as DeapiHttpError).retryClass = retryClass
-  if (rawResponse !== undefined) {
-    ;(source as DeapiHttpError).rawResponse = rawResponse
-  }
-  throw source
-}
 
 const getErrorStatus = (error: unknown): number | undefined =>
   error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
@@ -161,91 +108,6 @@ const parsePersistedDeapiBilling = (value: unknown): Step2Metadata['billing'] | 
 
 const timestampToSeconds = (timestamp: string): number =>
   timestamp.split(':').reduce<number>((total, part) => (total * 60) + Number.parseInt(part, 10), 0)
-
-const parseRequestId = (payload: unknown): string | undefined => {
-  if (!isRecord(payload)) {
-    return undefined
-  }
-
-  for (const key of ['request_id', 'requestId'] as const) {
-    const direct = payload[key]
-    if (typeof direct === 'string' && direct.length > 0) {
-      return direct
-    }
-  }
-
-  const data = payload['data']
-  if (isRecord(data)) {
-    for (const key of ['request_id', 'requestId'] as const) {
-      const nested = data[key]
-      if (typeof nested === 'string' && nested.length > 0) {
-        return nested
-      }
-    }
-  }
-
-  return undefined
-}
-
-const parseStatusPayload = (payload: unknown): DeapiStatusPayload | undefined => {
-  const container = isRecord(payload) && isRecord(payload['data'])
-    ? payload['data']
-    : payload
-  if (!isRecord(container)) {
-    return undefined
-  }
-
-  const status = typeof container['status'] === 'string' && container['status'].length > 0
-    ? container['status']
-    : (container['result_url'] !== undefined || container['result'] !== undefined ? 'done' : undefined)
-  if (!status) {
-    return undefined
-  }
-
-  return {
-    status,
-    ...('result' in container ? { result: container['result'] } : {}),
-    ...(
-      typeof container['result_url'] === 'string'
-        ? { resultUrl: container['result_url'] }
-        : typeof container['resultUrl'] === 'string'
-          ? { resultUrl: container['resultUrl'] }
-          : {}
-    ),
-    raw: payload
-  }
-}
-
-const normalizeParsedResult = (
-  value: unknown
-): unknown => {
-  if (typeof value !== 'string') {
-    return value
-  }
-
-  const trimmed = value.trim()
-  if (!((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']')))) {
-    return value
-  }
-
-  try {
-    return JSON.parse(trimmed) as unknown
-  } catch {
-    return value
-  }
-}
-
-const fetchResultPayload = async (resultUrl: string): Promise<unknown> => {
-  const response = await fetch(resultUrl, {
-    method: 'GET',
-    headers: { accept: 'application/json,text/plain;q=0.9,*/*;q=0.8' }
-  })
-  if (!response.ok) {
-    throw new Error(`deAPI result_url fetch failed (${response.status})`)
-  }
-
-  return normalizeParsedResult(await readJsonOrText(response))
-}
 
 const toSegmentText = (value: unknown): string | undefined => {
   if (!isRecord(value)) {

@@ -1,4 +1,5 @@
 import {
+  validateDeapiMusicModel,
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -12,6 +13,7 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
   const results: MusicCostEstimate[] = []
   const elevenlabsModels = options.elevenlabsMusicModels ?? (options.elevenlabsMusicModel ? [options.elevenlabsMusicModel] : [])
   const minimaxModels = options.minimaxMusicModels ?? (options.minimaxMusicModel ? [options.minimaxMusicModel] : [])
+  const deapiModels = options.deapiMusicModels ?? (options.deapiMusicModel ? [options.deapiMusicModel] : [])
 
   for (const rawModel of elevenlabsModels) {
     const model = validateElevenlabsMusicModel(rawModel)
@@ -59,6 +61,18 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
       note: lyricsSource === 'generated'
         ? `Includes ${formatRate(lyricsAddonCost)} lyrics generation add-on`
         : 'Assumes provided lyrics; no lyrics-generation add-on'
+    })
+  }
+
+  for (const rawModel of deapiModels) {
+    const model = validateDeapiMusicModel(rawModel)
+    const lyricsSource: MusicCostEstimate['lyricsSource'] = options.musicLyricsFile && !options.musicInstrumental ? 'provided' : 'none'
+    results.push({
+      provider: 'deapi',
+      model,
+      totalCost: 0,
+      lyricsSource,
+      note: 'Exact deAPI music pricing is resolved through the provider quote endpoint when DEAPI_API_KEY is available.'
     })
   }
 

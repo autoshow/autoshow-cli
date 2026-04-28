@@ -32,6 +32,7 @@ import {
 import {
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_AWS_TEXTRACT_MODELS,
+  SUPPORTED_DEAPI_OCR_MODELS,
   SUPPORTED_GCLOUD_DOCAI_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
@@ -39,13 +40,14 @@ import {
   SUPPORTED_OPENAI_OCR_MODELS
 } from './models/ocr-models'
 import {
+  SUPPORTED_DEAPI_TTS_MODELS,
+  SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
-  SUPPORTED_OPENAI_TTS_MODELS,
-  SUPPORTED_DEEPGRAM_TTS_MODELS
+  SUPPORTED_OPENAI_TTS_MODELS
 } from './models/tts-models'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
@@ -57,7 +59,8 @@ import {
 } from './models/image-models'
 import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
-  SUPPORTED_MINIMAX_MUSIC_MODELS
+  SUPPORTED_MINIMAX_MUSIC_MODELS,
+  SUPPORTED_DEAPI_MUSIC_MODELS
 } from './models/music-models'
 import {
   SUPPORTED_GLM_VIDEO_MODELS,
@@ -142,6 +145,9 @@ export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
 export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
 export type DeapiSttModel = typeof SUPPORTED_DEAPI_STT_MODELS[number]
+export type DeapiTtsModel = typeof SUPPORTED_DEAPI_TTS_MODELS[number]
+export type DeapiOcrModel = typeof SUPPORTED_DEAPI_OCR_MODELS[number]
+export type DeapiMusicModel = typeof SUPPORTED_DEAPI_MUSIC_MODELS[number]
 export type GcloudSttModel = typeof SUPPORTED_GCLOUD_STT_MODELS[number]
 export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
 export type DeepinfraSttModel = typeof SUPPORTED_DEEPINFRA_STT_MODELS[number]

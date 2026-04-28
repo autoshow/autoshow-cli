@@ -914,6 +914,8 @@ export const resolveInputRoutingForCommand = async (
     | 'anthropicOcrModels'
     | 'geminiOcrModel'
     | 'geminiOcrModels'
+    | 'deapiOcrModel'
+    | 'deapiOcrModels'
     | 'useEpubBun'
     | 'useEpubCalibre'
   >

@@ -13,6 +13,7 @@ import {
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
+  SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
   DEEPGRAM_DEFAULT_VOICE,
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_GLM_IMAGE_MODELS,
@@ -22,6 +23,7 @@ import {
   SUPPORTED_RUNWAY_IMAGE_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
+  SUPPORTED_DEAPI_MUSIC_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_GLM_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
@@ -61,6 +63,7 @@ import {
   validateGeminiOcrModel,
   validateAwsTextractModel,
   validateGcloudDocaiModel,
+  validateDeapiOcrModel,
   validateMistralOcrModel,
   validateOpenAIOcrModel,
   validateKittenTtsModel,
@@ -69,11 +72,13 @@ import {
   validateGroqTtsModel,
   validateOpenAITtsModel,
   validateGeminiTtsModel,
+  validateDeapiTtsModel,
   validateDeepgramTtsModel,
   validateDeepgramTtsVoice,
   validateGroqTtsVoice,
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel,
+  validateDeapiMusicModel,
   validateKittenTtsSpeaker,
   validateGeminiImageModel,
   validateGlmImageModel,
@@ -134,6 +139,9 @@ export const REPEATABLE_MODEL_FLAGS = [
   'openai-ocr',
   'anthropic-ocr',
   'gemini-ocr',
+  'aws-textract',
+  'gcloud-docai',
+  'deapi-ocr',
   'llama',
   'openai',
   'groq',
@@ -147,6 +155,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'groq-tts',
   'openai-tts',
   'gemini-tts',
+  'deapi-tts',
   'deepgram-tts',
   'gemini-image',
   'openai-image',
@@ -156,6 +165,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'runway-image',
   'elevenlabs-music',
   'minimax-music',
+  'deapi-music',
   'gemini-video',
   'minimax-video',
   'glm-video',
@@ -185,6 +195,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'openai-tts': { shortcut: 'all-tts', supported: SUPPORTED_OPENAI_TTS_MODELS },
   'gemini-tts': { shortcut: 'all-tts', supported: SUPPORTED_GEMINI_TTS_MODELS },
   'deepgram-tts': { shortcut: 'all-tts', supported: [DEEPGRAM_DEFAULT_VOICE] },
+  'deapi-tts': { shortcut: 'all-tts', supported: SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS },
   'gemini-image': { shortcut: 'all-image', supported: SUPPORTED_GEMINI_IMAGE_MODELS },
   'openai-image': { shortcut: 'all-image', supported: SUPPORTED_OPENAI_IMAGE_MODELS },
   'minimax-image': { shortcut: 'all-image', supported: SUPPORTED_MINIMAX_IMAGE_MODELS },
@@ -193,6 +204,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'runway-image': { shortcut: 'all-image', supported: SUPPORTED_RUNWAY_IMAGE_MODELS },
   'elevenlabs-music': { shortcut: 'all-music', supported: SUPPORTED_ELEVENLABS_MUSIC_MODELS },
   'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
+  'deapi-music': { shortcut: 'all-music', supported: SUPPORTED_DEAPI_MUSIC_MODELS },
   'gemini-video': { shortcut: 'all-video', supported: SUPPORTED_GEMINI_VIDEO_MODELS },
   'minimax-video': { shortcut: 'all-video', supported: SUPPORTED_MINIMAX_VIDEO_MODELS },
   'glm-video': { shortcut: 'all-video', supported: SUPPORTED_GLM_VIDEO_MODELS },
@@ -582,6 +594,7 @@ export const buildOptsFromFlags = (
   const geminiOcrModels = readValidatedMany('gemini-ocr', validateGeminiOcrModel)
   const awsTextractModels = readValidatedMany('aws-textract', validateAwsTextractModel)
   const gcloudDocaiModels = readValidatedMany('gcloud-docai', validateGcloudDocaiModel)
+  const deapiOcrModels = readValidatedMany('deapi-ocr', validateDeapiOcrModel)
   const llamaModels = readValidatedMany('llama', validateLlamaModel)
   const openaiModels = readValidatedMany('openai', validateOpenAIModel)
   const groqModels = readValidatedMany('groq', validateGroqModel)
@@ -617,6 +630,7 @@ export const buildOptsFromFlags = (
   const geminiOcrModel = first(geminiOcrModels)
   const awsTextractModel = first(awsTextractModels)
   const gcloudDocaiModel = first(gcloudDocaiModels)
+  const deapiOcrModel = first(deapiOcrModels)
   const llamaModel = first(llamaModels)
   const openaiModel = first(openaiModels)
   const groqModel = first(groqModels)
@@ -631,6 +645,7 @@ export const buildOptsFromFlags = (
   const openaiTtsModels = readValidatedMany('openai-tts', validateOpenAITtsModel)
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
+  const deapiTtsModels = readValidatedMany('deapi-tts', validateDeapiTtsModel)
   const hasExplicitTtsEngine = [
     kittenTtsModels,
     elevenlabsTtsModels,
@@ -638,7 +653,8 @@ export const buildOptsFromFlags = (
     groqTtsModels,
     openaiTtsModels,
     geminiTtsModels,
-    deepgramTtsModels
+    deepgramTtsModels,
+    deapiTtsModels
   ].some((value) => value !== undefined && value.length > 0)
   const kittenTtsModelValues = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
     ? [DEFAULT_KITTEN_TTS_MODEL]
@@ -652,6 +668,7 @@ export const buildOptsFromFlags = (
   const runwayImageModels = readValidatedMany('runway-image', validateRunwayImageModel)
   const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
+  const deapiMusicModels = readValidatedMany('deapi-music', validateDeapiMusicModel)
   const geminiVideoModels = readValidatedMany('gemini-video', validateGeminiVideoModel)
   const minimaxVideoModels = readValidatedMany('minimax-video', validateMinimaxVideoModel)
   const glmVideoModels = readValidatedMany('glm-video', validateGlmVideoModel)
@@ -776,6 +793,8 @@ export const buildOptsFromFlags = (
     awsTextractModel,
     gcloudDocaiModels,
     gcloudDocaiModel,
+    deapiOcrModels,
+    deapiOcrModel,
     primaryOcr: readOptionalStringFlag(mergedFlags, 'primary-ocr'),
     epubChapterFiles: readBooleanFlag(mergedFlags, 'chapters'),
     epubChunkLimitChars: epubLengthThousands === undefined ? undefined : epubLengthThousands * 1000,
@@ -818,6 +837,9 @@ export const buildOptsFromFlags = (
     geminiTtsModel: first(geminiTtsModels),
     deepgramTtsModels,
     deepgramTtsModel: first(deepgramTtsModels),
+    deapiTtsModels,
+    deapiTtsModel: first(deapiTtsModels),
+    deapiTtsVoice: readOptionalStringFlag(mergedFlags, 'deapi-tts-voice'),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
@@ -869,6 +891,8 @@ export const buildOptsFromFlags = (
     elevenlabsMusicModel: first(elevenlabsMusicModels),
     minimaxMusicModels,
     minimaxMusicModel: first(minimaxMusicModels),
+    deapiMusicModels,
+    deapiMusicModel: first(deapiMusicModels),
     musicDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'music-duration')
       if (v === undefined) return undefined
