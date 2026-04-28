@@ -5,6 +5,7 @@ const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46] // %PDF
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 const JPG_MAGIC = [0xff, 0xd8, 0xff]
 const ZIP_MAGIC = [0x50, 0x4b]
+const RTF_MAGIC = [0x7b, 0x5c, 0x72, 0x74, 0x66] // {\rtf
 
 const hasMagic = (bytes: Uint8Array, magic: number[]): boolean => {
   if (bytes.length < magic.length) return false
@@ -53,6 +54,11 @@ const validateByFormat = async (filePath: string, format: string): Promise<Valid
       return hasMagic(bytes, JPG_MAGIC)
         ? { valid: true }
         : { valid: false, reason: 'missing-jpg-magic' }
+
+    case 'rtf':
+      return hasMagic(bytes, RTF_MAGIC)
+        ? { valid: true }
+        : { valid: false, reason: 'missing-rtf-magic' }
 
     case 'wav':
     case 'mp3':

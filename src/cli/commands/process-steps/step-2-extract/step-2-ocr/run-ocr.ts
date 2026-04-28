@@ -54,7 +54,6 @@ import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
 import { buildEpubTextOutput } from './epub/export'
 import type { EpubArtifactFile } from '~/types'
 import { buildPdfChapterArtifacts } from './pdf/chapters'
-import { isOfficeTextUsable } from './ocr-utils/page-triage'
 import { estimateTokens } from '~/utils/text-utils'
 import { getExtractLimits } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
@@ -106,6 +105,213 @@ const runZipXmlExtract = async (filePath: string, format: ZipXmlFormat): Promise
       return { pages: odfResult.pages.map(zipXmlPageToPageResult), extractionMethod: 'odf' }
     }
   }
+}
+
+const RTF_IGNORED_DESTINATIONS = new Set([
+  'annotation',
+  'author',
+  'colortbl',
+  'datastore',
+  'fonttbl',
+  'footer',
+  'footerf',
+  'footerl',
+  'footerr',
+  'footnote',
+  'generator',
+  'header',
+  'headerf',
+  'headerl',
+  'headerr',
+  'info',
+  'listoverridetable',
+  'listtable',
+  'object',
+  'pict',
+  'revtbl',
+  'rsidtbl',
+  'stylesheet',
+  'themedata',
+  'xmlnstbl'
+])
+
+type RtfState = {
+  ignored: boolean
+  uc: number
+}
+
+const isAsciiLetter = (value: string | undefined): boolean =>
+  value !== undefined && /[a-zA-Z]/.test(value)
+
+const isAsciiDigit = (value: string | undefined): boolean =>
+  value !== undefined && /[0-9]/.test(value)
+
+const skipRtfFallbackChars = (rtf: string, start: number, count: number): number => {
+  let index = start
+  let skipped = 0
+  while (index < rtf.length && skipped < count) {
+    if (rtf[index] === '\\' && rtf[index + 1] === "'") {
+      index += 4
+    } else {
+      index++
+    }
+    skipped++
+  }
+  return index
+}
+
+const extractRtfText = (rtf: string): string => {
+  const stack: RtfState[] = [{ ignored: false, uc: 1 }]
+  let output = ''
+  let index = 0
+
+  const state = (): RtfState => stack[stack.length - 1]!
+  const append = (text: string): void => {
+    if (!state().ignored) output += text
+  }
+
+  while (index < rtf.length) {
+    const char = rtf[index]
+
+    if (char === '{') {
+      const current = state()
+      stack.push({ ignored: current.ignored, uc: current.uc })
+      index++
+      continue
+    }
+
+    if (char === '}') {
+      if (stack.length > 1) stack.pop()
+      index++
+      continue
+    }
+
+    if (char !== '\\') {
+      append(char ?? '')
+      index++
+      continue
+    }
+
+    const next = rtf[index + 1]
+    if (next === undefined) {
+      index++
+      continue
+    }
+
+    if (next === '\\' || next === '{' || next === '}') {
+      append(next)
+      index += 2
+      continue
+    }
+
+    if (next === '*') {
+      state().ignored = true
+      index += 2
+      continue
+    }
+
+    if (next === "'") {
+      const hex = rtf.slice(index + 2, index + 4)
+      const code = Number.parseInt(hex, 16)
+      if (Number.isFinite(code)) append(String.fromCharCode(code))
+      index += 4
+      continue
+    }
+
+    if (!isAsciiLetter(next)) {
+      switch (next) {
+        case '~': append(' '); break
+        case '-': append(''); break
+        case '_': append('-'); break
+        case '\n':
+        case '\r':
+          break
+        default:
+          append(next)
+      }
+      index += 2
+      continue
+    }
+
+    let wordEnd = index + 1
+    while (isAsciiLetter(rtf[wordEnd])) wordEnd++
+    const word = rtf.slice(index + 1, wordEnd)
+
+    let numberEnd = wordEnd
+    if (rtf[numberEnd] === '-' || isAsciiDigit(rtf[numberEnd])) {
+      numberEnd++
+      while (isAsciiDigit(rtf[numberEnd])) numberEnd++
+    }
+    const numberRaw = rtf.slice(wordEnd, numberEnd)
+    const number = numberRaw.length > 0 ? Number.parseInt(numberRaw, 10) : undefined
+
+    index = numberEnd
+    if (rtf[index] === ' ') index++
+
+    if (RTF_IGNORED_DESTINATIONS.has(word)) {
+      state().ignored = true
+      continue
+    }
+
+    if (state().ignored) {
+      continue
+    }
+
+    switch (word) {
+      case 'par':
+      case 'line':
+        append('\n')
+        break
+      case 'tab':
+        append('\t')
+        break
+      case 'emdash':
+        append('--')
+        break
+      case 'endash':
+        append('-')
+        break
+      case 'lquote':
+      case 'rquote':
+        append("'")
+        break
+      case 'ldblquote':
+      case 'rdblquote':
+        append('"')
+        break
+      case 'bullet':
+        append('*')
+        break
+      case 'uc':
+        if (number !== undefined && Number.isFinite(number) && number >= 0) {
+          state().uc = number
+        }
+        break
+      case 'u': {
+        if (number === undefined || !Number.isFinite(number)) break
+        const codePoint = number < 0 ? number + 65536 : number
+        try {
+          append(String.fromCodePoint(codePoint))
+        } catch {
+          // Ignore malformed code points and keep parsing the rest of the file.
+        }
+        index = skipRtfFallbackChars(rtf, index, state().uc)
+        break
+      }
+    }
+  }
+
+  return output
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
+}
+
+const extractRtfFile = async (filePath: string): Promise<PageResult[]> => {
+  const rtf = await Bun.file(filePath).text()
+  return [{ pageNumber: 1, method: 'text', text: extractRtfText(rtf) }]
 }
 
 const resolveExtractEngine = (opts: ExtractionOptions): LocalExtractOcrEngine => {
@@ -247,58 +453,11 @@ const buildHostedUploadMetadata = async (
   }
 }
 
-// Convert document to PDF via LibreOffice (for office/RTF)
-const convertToLibreOfficePdf = async (
-  filePath: string,
-  tempDir: string
-): Promise<string> => {
-  if (!commandExists('soffice')) {
-    throw new Error(
-      'LibreOffice is required to convert this document type. ' +
-      'Install it with: bun as setup'
-    )
-  }
-
-  const result = await exec('soffice', [
-    '--headless', '--convert-to', 'pdf', '--outdir', tempDir, filePath
-  ])
-
-  if (result.exitCode !== 0) {
-    throw new Error(
-      `LibreOffice conversion failed for ${filePath}: ${result.stderr || result.stdout || `exit code ${result.exitCode}`}`
-    )
-  }
-
-  // LibreOffice names the output based on the input filename
-  const inputBasename = basename(filePath, extname(filePath))
-  const pdfPath = join(tempDir, `${inputBasename}.pdf`)
-
-  const pdfFile = Bun.file(pdfPath)
-  if (!(await pdfFile.exists())) {
-    // Try any PDF file in tempDir
-    const entries = await readdir(tempDir)
-    const pdf = entries.find(e => e.endsWith('.pdf'))
-    if (!pdf) {
-      throw new Error(`LibreOffice did not produce a PDF output for ${filePath}`)
-    }
-    return join(tempDir, pdf)
-  }
-
-  return pdfPath
-}
-
 const convertEpubToPdfForOcr = async (
   filePath: string,
   tempDir: string,
   password?: string
 ): Promise<{ pdfPath: string, conversionChain: string[] }> => {
-  try {
-    const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
-    return { pdfPath, conversionChain: ['libreoffice'] }
-  } catch (error) {
-    l.warn(`LibreOffice EPUB conversion failed; retrying with mutool (${error instanceof Error ? error.message : String(error)})`)
-  }
-
   const fallbackPdfPath = join(tempDir, 'epub-ocr.pdf')
   const converted = await convertDocumentToPdf(filePath, fallbackPdfPath, password)
   if (converted.exitCode !== 0) {
@@ -1088,92 +1247,24 @@ export const runOcr = async (
   // ─── Office documents (DOCX/PPTX/XLSX/ODF) ───────────────────────────────
   else if (isZipXmlFormat(format)) {
     inputFamily = 'office'
-    const ocrFlag = hasOcrFlag(opts)
-
-    if (!ocrFlag) {
-      // Try native ZIP+XML extraction first
-      l.write('info', `Extracting ${format.toUpperCase()} with native ZIP+XML parser`)
-      const r = await runZipXmlExtract(filePath, format)
-      const combinedText = r.pages.map(p => p.text).join(' ')
-
-      const spreadsheetFormat = (format === 'xlsx' || format === 'odf') ? 'xlsx' : undefined
-      if (isOfficeTextUsable(combinedText, spreadsheetFormat)) {
-        pages = r.pages
-        extractionMethod = 'office-native'
-      } else {
-        // Quality check failed - fall back to LibreOffice + OCR
-        l.write('info', `${format.toUpperCase()} native extraction quality insufficient, falling back to LibreOffice + OCR`)
-        const engine = resolveExtractEngine(opts)
-        const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-office-ocr-'))
-        try {
-          const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
-          const tempMeta: DocumentMetadata = { ...step1Metadata, format: 'pdf' }
-          const r2 = await runPdfOcr(pdfPath, tempMeta, opts)
-          pages = r2.pages
-          extractionMethod = `office+${engineSuffix(engine)}`
-          conversionChain = ['libreoffice']
-        } finally {
-          await rm(tempDir, { recursive: true, force: true })
-        }
-      }
-    } else {
-      l.write('info', `${format.toUpperCase()} with OCR flag: converting to PDF via LibreOffice`)
-      const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-office-ocr-'))
-      try {
-        const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
-        const tempMeta = await buildHostedUploadMetadata(pdfPath, step1Metadata, 'pdf')
-
-        if (hasHostedOcr(opts)) {
-          const r = await runHostedOcr(pdfPath, tempMeta, opts)
-          pages = r.pages
-          extractionMethod = `office+${r.extractionMethod}`
-          ocrService = r.ocrService
-          canonicalText = r.canonicalText
-          reportedTotalPages = r.totalPages
-          promptTokens = r.promptTokens
-          completionTokens = r.completionTokens
-          mergeHostedProviderCost(r)
-        } else {
-          const engine = resolveExtractEngine(opts)
-          const r = await runPdfOcr(pdfPath, tempMeta, opts)
-          pages = r.pages
-          extractionMethod = `office+${engineSuffix(engine)}`
-        }
-        conversionChain = ['libreoffice']
-      } finally {
-        await rm(tempDir, { recursive: true, force: true })
-      }
+    if (hasOcrFlag(opts)) {
+      l.warn(`${format.toUpperCase()} OCR flags are ignored; extracting native ZIP/XML text with Bun`)
     }
+
+    l.write('info', `Extracting ${format.toUpperCase()} with native ZIP/XML parser`)
+    const r = await runZipXmlExtract(filePath, format)
+    pages = r.pages
+    extractionMethod = 'office-native'
   }
-  // ─── RTF → always LibreOffice → PDF → standard pipeline ─────────────────
+  // ─── RTF → native text extraction ────────────────────────────────────────
   else if (format === 'rtf') {
     inputFamily = 'rtf'
-    l.write('info', 'Converting RTF to PDF via LibreOffice')
-    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-rtf-'))
-    try {
-      const pdfPath = await convertToLibreOfficePdf(filePath, tempDir)
-      const tempMeta = await buildHostedUploadMetadata(pdfPath, step1Metadata, 'pdf')
-
-      if (hasHostedOcr(opts)) {
-        const r = await runHostedOcr(pdfPath, tempMeta, opts)
-        pages = r.pages
-        extractionMethod = `rtf+${r.extractionMethod}`
-        ocrService = r.ocrService
-        canonicalText = r.canonicalText
-        reportedTotalPages = r.totalPages
-        promptTokens = r.promptTokens
-        completionTokens = r.completionTokens
-        mergeHostedProviderCost(r)
-      } else {
-        const r = await runPdfOcr(pdfPath, tempMeta, opts)
-        pages = r.pages
-        const engine = resolveExtractEngine(opts)
-        extractionMethod = `rtf+${engineSuffix(engine)}`
-      }
-      conversionChain = ['libreoffice']
-    } finally {
-      await rm(tempDir, { recursive: true, force: true })
+    if (hasOcrFlag(opts)) {
+      l.warn('RTF OCR flags are ignored; extracting native RTF text with Bun')
     }
+    l.write('info', 'Extracting RTF with native text parser')
+    pages = await extractRtfFile(filePath)
+    extractionMethod = 'rtf-native'
   }
   // ─── CSV → raw text, warn if OCR flag ────────────────────────────────────
   else if (format === 'csv') {

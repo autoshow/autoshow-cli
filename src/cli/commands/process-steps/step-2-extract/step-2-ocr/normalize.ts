@@ -21,7 +21,7 @@ export const classifyOcrSourceKind = (
   }
 
   if (metadata.format === 'epub') {
-    return options?.forceOcr ? 'office-pdf' : 'office-native'
+    return options?.forceOcr ? 'epub-pdf' : 'office-native'
   }
 
   if (metadata.format === 'pdf') {
@@ -33,11 +33,11 @@ export const classifyOcrSourceKind = (
   }
 
   if (OFFICE_FORMATS.has(metadata.format)) {
-    return options?.forceOcr ? 'office-pdf' : 'office-native'
+    return 'office-native'
   }
 
   if (metadata.format === 'rtf') {
-    return 'rtf-pdf'
+    return 'rtf-native'
   }
 
   if (metadata.format === 'cbz') {

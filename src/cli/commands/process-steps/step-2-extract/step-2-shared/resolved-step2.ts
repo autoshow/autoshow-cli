@@ -113,6 +113,11 @@ export const resolveOcrStep2ExecutionFromFormat = (
         route: 'native-document',
         sourceKind: format === 'epub' ? 'epub' : 'office'
       }
+    case 'rtf-native':
+      return {
+        route: 'native-document',
+        sourceKind: 'rtf'
+      }
     case 'pdf':
       return {
         route: 'ocr',
@@ -125,16 +130,10 @@ export const resolveOcrStep2ExecutionFromFormat = (
         sourceKind: 'image',
         providers: providers.length > 0 ? providers : [DEFAULT_TESSERACT_PROVIDER]
       }
-    case 'office-pdf':
+    case 'epub-pdf':
       return {
         route: 'ocr',
-        sourceKind: format === 'epub' ? 'epub-pdf' : 'office-pdf',
-        providers: providers.length > 0 ? providers : [DEFAULT_TESSERACT_PROVIDER]
-      }
-    case 'rtf-pdf':
-      return {
-        route: 'ocr',
-        sourceKind: 'rtf-pdf',
+        sourceKind: 'epub-pdf',
         providers: providers.length > 0 ? providers : [DEFAULT_TESSERACT_PROVIDER]
       }
     case 'cbz-images':

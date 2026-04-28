@@ -1,38 +1,15 @@
 import type {
-  BatchPolicy,
   BatchManifestEntry,
   ExtractionMetadata,
   ExtractionResult,
-  OutputFormat,
   PageResult,
   ProcessDocumentOutput,
-  ProviderSpec,
   ResolvedStep2Execution,
-  ResumePolicy,
   Step1SourceRef
 } from '~/types'
 import type { ProviderRunStateBase } from '../step-2-shared/step-2-shared-types'
 
 export type EpubInspectEngine = 'bun' | 'calibre'
-
-export type OcrRenderPolicy = {
-  outputFormat?: OutputFormat | undefined
-  languages?: string | undefined
-  password?: string | undefined
-}
-
-export type OcrPolicy = {
-  providers: ProviderSpec[]
-  batch?: BatchPolicy | undefined
-  resume?: ResumePolicy | undefined
-  render?: OcrRenderPolicy | undefined
-  concurrency: {
-    provider: number
-    local: number
-  }
-  epubBackend?: 'bun' | 'calibre' | undefined
-  urlBackend?: 'defuddle' | 'firecrawl' | 'glm-reader' | undefined
-}
 
 export type EpubContentEntry = {
   path: string
@@ -193,13 +170,6 @@ export type OcrResumeRun = {
   targetsToRun: OcrTarget[]
 }
 
-export type OcrProviderKey = 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral-ocr' | 'glm-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'aws-textract' | 'gcloud-docai' | 'deapi-ocr'
-
-export type OcrProviderCapability = {
-  supports: OcrSourceKind[]
-  fallbackOrder: OcrProviderKey[]
-}
-
 export type OcrLikeContext = {
   flags: Record<string, unknown> & { out?: unknown }
 }
@@ -294,8 +264,8 @@ export type OcrSourceKind =
   | 'pdf'
   | 'image'
   | 'office-native'
-  | 'office-pdf'
-  | 'rtf-pdf'
+  | 'epub-pdf'
+  | 'rtf-native'
   | 'cbz-images'
 
 export type OcrCompletionStatus = 'full' | 'incomplete' | 'failed'

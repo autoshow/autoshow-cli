@@ -81,7 +81,7 @@ export type ResolvedStep2Execution =
     }
   | {
       route: 'ocr'
-      sourceKind: 'pdf' | 'image' | 'epub-pdf' | 'office-pdf' | 'rtf-pdf' | 'cbz-images'
+      sourceKind: 'pdf' | 'image' | 'epub-pdf' | 'cbz-images'
       providers: ResolvedStep2Provider[]
     }
   | {
@@ -91,7 +91,7 @@ export type ResolvedStep2Execution =
     }
   | {
       route: 'native-document'
-      sourceKind: 'epub' | 'epub-inspect' | 'office' | 'csv'
+      sourceKind: 'epub' | 'epub-inspect' | 'office' | 'rtf' | 'csv'
     }
   | {
       route: 'unsupported'

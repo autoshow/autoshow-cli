@@ -1,4 +1,3 @@
-import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import type { HappyScribeOrganization, HappyScribeOrganizationSelection } from '~/types'
@@ -6,7 +5,6 @@ import type { HappyScribeOrganization, HappyScribeOrganizationSelection } from '
 const ORGANIZATION_REQUEST_TIMEOUT_MS = 60_000
 
 export const HAPPYSCRIBE_STT_LANGUAGE = 'en-US'
-export const HAPPYSCRIBE_STT_MODEL = 'auto'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -217,16 +215,6 @@ export const buildHappyScribeOrganizationResolutionError = (
     `Organizations: ${formatHappyScribeOrganizationChoices(selection.organizations)}.`,
     'Pass --happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
   ].join(' '))
-}
-
-export const setupHappyScribeStt = async (): Promise<void> => {
-  const apiKey = getHappyScribeApiKey()
-  if (apiKey) {
-    l.write('success', `HAPPYSCRIBE_API_KEY found — Happy Scribe transcription ready (${getHappyScribeBaseUrl()})`)
-  } else {
-    l.warn('HAPPYSCRIBE_API_KEY not set — Happy Scribe transcription will not work until set')
-    l.write('info', 'Set HAPPYSCRIBE_API_KEY environment variable to use Happy Scribe transcription')
-  }
 }
 
 export const ensureHappyScribeSttSetup = async (): Promise<void> => {

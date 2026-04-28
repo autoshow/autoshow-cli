@@ -19,8 +19,10 @@ budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --ur
   )
 
   expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('"provider": "firecrawl"')
-  expect(`${result.stdout}\n${result.stderr}`).not.toContain('Firecrawl credits apply; exact cost is not estimated locally.')
+  const output = `${result.stdout}\n${result.stderr}`
+  expect(output).toContain('Cost Estimate')
+  expect(output).toContain('firecrawl')
+  expect(output).not.toContain('Firecrawl credits apply; exact cost is not estimated locally.')
 })
 
 budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --url-backend firecrawl', async () => {

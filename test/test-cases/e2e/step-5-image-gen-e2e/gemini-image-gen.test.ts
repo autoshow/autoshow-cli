@@ -20,8 +20,9 @@ test('--price allows Gemini with another image provider', async () => {
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
-  expect(output).toContain('"provider": "gemini"')
-  expect(output).toContain('"provider": "openai"')
+  expect(output).toContain('Cost Estimate')
+  expect(output).toContain('gemini')
+  expect(output).toContain('openai')
   expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001.png')
   expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001-2.png')
   expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')

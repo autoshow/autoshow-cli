@@ -86,12 +86,6 @@ export interface XSpacesResponse {
   meta?: XListMeta | undefined;
 }
 
-export interface XSpaceResponse {
-  data?: XSpace | undefined;
-  errors?: XApiProblem[] | undefined;
-  includes?: XIncludes | undefined;
-}
-
 export interface XPostSearchResponse {
   data?: XPost[] | undefined;
   errors?: XApiProblem[] | undefined;

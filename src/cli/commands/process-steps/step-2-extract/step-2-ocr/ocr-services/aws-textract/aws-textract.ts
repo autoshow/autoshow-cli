@@ -1,11 +1,8 @@
-import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { resolveAwsCliRegion, readAwsSttConfigDefaults } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 
-export const AWS_TEXTRACT_LIMIT_SOURCE = 'project/links/aws-ocr-links.md'
 export const AWS_TEXTRACT_SYNC_BYTES = 10 * 1024 * 1024
-export const AWS_TEXTRACT_ASYNC_PAGE_LIMIT = 3000
 export const AWS_TEXTRACT_ASYNC_FILE_SIZE_BYTES = 500 * 1024 * 1024
 
 export type AwsTextractRuntimeConfig = {
@@ -30,23 +27,6 @@ export const runAws = async (
 ): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
   const awsCliBinary = resolveAwsCliBinary() ?? 'aws'
   return await exec(awsCliBinary, args, { env: AWS_TEXTRACT_COMMAND_ENV })
-}
-
-export const setupAwsTextract = async (): Promise<void> => {
-  if (!hasAwsCli()) {
-    l.warn('AWS CLI not found — AWS Textract OCR will not work until installed')
-    l.write('info', 'Install the AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html')
-    return
-  }
-
-  const region = await resolveAwsCliRegion()
-  if (!region) {
-    l.warn('AWS region not configured — AWS Textract OCR will not work until set')
-    l.write('info', 'Run `aws configure` or set AWS_REGION environment variable')
-    return
-  }
-
-  l.write('success', `AWS CLI found, region ${region} — AWS Textract OCR ready`)
 }
 
 export const ensureAwsTextractSetup = async (): Promise<AwsTextractRuntimeConfig> => {

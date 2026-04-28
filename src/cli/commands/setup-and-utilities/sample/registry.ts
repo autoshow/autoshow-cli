@@ -17,14 +17,14 @@ const VALID_MEDIA: FixtureDef[] = [
 ]
 
 const VALID_DOCS_CURRENT: FixtureDef[] = [
-  { path: 'valid/1-document.pdf', format: 'pdf', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
-  { path: 'valid/1-document.epub', format: 'epub', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
-  { path: 'valid/1-document.docx', format: 'docx', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
-  { path: 'valid/1-document.pptx', format: 'pptx', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
-  { path: 'valid/1-document.xlsx', format: 'xlsx', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
-  { path: 'valid/1-document.odt', format: 'odt', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
-  { path: 'valid/1-document.ods', format: 'ods', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
-  { path: 'valid/1-document.odp', format: 'odp', supportLevel: 'current', validity: 'valid', requiredTools: ['libreoffice'] },
+  { path: 'valid/1-document.pdf', format: 'pdf', supportLevel: 'current', validity: 'valid', requiredTools: [] },
+  { path: 'valid/1-document.epub', format: 'epub', supportLevel: 'current', validity: 'valid', requiredTools: [] },
+  { path: 'valid/1-document.docx', format: 'docx', supportLevel: 'current', validity: 'valid', requiredTools: [] },
+  { path: 'valid/1-document.pptx', format: 'pptx', supportLevel: 'current', validity: 'valid', requiredTools: [] },
+  { path: 'valid/1-document.xlsx', format: 'xlsx', supportLevel: 'current', validity: 'valid', requiredTools: [] },
+  { path: 'valid/1-document.odt', format: 'odt', supportLevel: 'current', validity: 'valid', requiredTools: [] },
+  { path: 'valid/1-document.ods', format: 'ods', supportLevel: 'current', validity: 'valid', requiredTools: [] },
+  { path: 'valid/1-document.odp', format: 'odp', supportLevel: 'current', validity: 'valid', requiredTools: [] },
 ]
 
 const VALID_IMAGES_CURRENT: FixtureDef[] = [
@@ -46,7 +46,7 @@ const VALID_DOCS_PLANNED: FixtureDef[] = [
   { path: 'valid/1-document.fb2', format: 'fb2', supportLevel: 'planned', validity: 'valid', requiredTools: ['calibre'] },
   { path: 'valid/1-document.lit', format: 'lit', supportLevel: 'planned', validity: 'valid', requiredTools: ['calibre'] },
   { path: 'valid/1-document.cbz', format: 'cbz', supportLevel: 'planned', validity: 'valid', requiredTools: ['imagemagick'] },
-  { path: 'valid/1-document.rtf', format: 'rtf', supportLevel: 'planned', validity: 'valid', requiredTools: ['libreoffice'] },
+  { path: 'valid/1-document.rtf', format: 'rtf', supportLevel: 'planned', validity: 'valid', requiredTools: [] },
   { path: 'valid/1-document.csv', format: 'csv', supportLevel: 'planned', validity: 'valid', requiredTools: [] },
 ]
 

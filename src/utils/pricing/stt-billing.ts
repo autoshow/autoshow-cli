@@ -7,7 +7,7 @@ const normalizeDurationSeconds = (durationSeconds: number): number =>
 const normalizePositiveValue = (value: number | undefined): number | undefined =>
   Number.isFinite(value) && (value as number) > 0 ? value : undefined
 
-export const resolveBilledSttDurationSeconds = (
+const resolveBilledSttDurationSeconds = (
   durationSeconds: number,
   billing: SttBilling = {}
 ): number => {

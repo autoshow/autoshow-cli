@@ -188,7 +188,7 @@ const sanitizeUnknown = (value: unknown, depth: number, seen: WeakSet<object>): 
   return sanitizeLogText(String(value))
 }
 
-export const sanitizeLogValue = (value: unknown): unknown => {
+const sanitizeLogValue = (value: unknown): unknown => {
   return sanitizeUnknown(value, 0, new WeakSet<object>())
 }
 

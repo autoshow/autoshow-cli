@@ -442,17 +442,6 @@ const withMergedStep2Timings = (
   }
 }
 
-export const filterSttPreflightEstimate = (
-  estimate: AggregatedPriceEstimate
-): AggregatedPriceEstimate => {
-  const steps = estimate.steps.filter((step) => step.step === 'stt')
-  return {
-    steps,
-    totalEstimatedCost: steps.reduce((sum, step) => sum + step.totalCost, 0),
-    ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
-  }
-}
-
 const filterSttPreflightEstimateByTargets = (
   estimate: AggregatedPriceEstimate,
   targets: SttTarget[]

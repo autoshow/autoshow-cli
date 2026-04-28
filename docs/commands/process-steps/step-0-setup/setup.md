@@ -136,7 +136,7 @@ bun as setup --step image
 # and download large-v3-turbo for lyric-video rendering.
 bun as setup --step music
 
-# Verify fixture-generation prerequisites (ffmpeg, ffprobe, soffice)
+# Verify fixture-generation prerequisites (ffmpeg, ffprobe)
 bun as setup --step sample
 
 # Remove existing artifacts before re-downloading

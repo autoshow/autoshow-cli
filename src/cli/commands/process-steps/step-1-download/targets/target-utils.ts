@@ -576,18 +576,6 @@ export const isDocumentByExtension = (path: string): boolean => {
 export const isHtmlDocumentPath = (path: string): boolean =>
   hasHtmlExtension(path)
 
-export const isLikelyDocumentTarget = (target: string): boolean => {
-  if (isLikelyUrl(target)) {
-    try {
-      return isDocumentByExtension(new URL(target).pathname)
-    } catch {
-      return false
-    }
-  }
-
-  return isDocumentByExtension(target)
-}
-
 export const classifyUrlInput = async (
   url: string,
   opts?: Pick<RuntimeOptions, 'urlBackendExplicit'>

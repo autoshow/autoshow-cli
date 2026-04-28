@@ -31,10 +31,6 @@ const CAPABILITIES: Record<LLMService, ProviderStructuredCapability> = {
   }
 }
 
-export const getStructuredCapability = (service: LLMService): ProviderStructuredCapability => {
-  return CAPABILITIES[service]
-}
-
 export const resolveStructuredStrategy = (service: LLMService): StructuredStrategy => {
   return CAPABILITIES[service].nativeStructuredOutput ? 'native' : 'schema-guided'
 }

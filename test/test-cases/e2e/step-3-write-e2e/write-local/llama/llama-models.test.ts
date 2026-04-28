@@ -75,8 +75,9 @@ describe("llama models", () => {
     const output = `${result.stdout}\n${result.stderr}`
 
     expect(result.exitCode).toBe(0)
-    expect(output).toContain('"step": "llm"')
-    expect(output).toContain('"provider": "llama"')
+    expect(output).toContain('Cost Estimate')
+    expect(output).toContain('llm')
+    expect(output).toContain('llama')
     expect(output).toContain(model)
   }, LLAMA_TEST_TIMEOUT_MS)
 

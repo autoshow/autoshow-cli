@@ -13,7 +13,3 @@ export class CLIUsageError extends Error {
 export const usageError = (message: string, hint?: string): never => {
   throw new CLIUsageError(message, hint)
 }
-
-export const isLoggerUsageError = (error: unknown): error is CLIUsageError => {
-  return error instanceof CLIUsageError
-}

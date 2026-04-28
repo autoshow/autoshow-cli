@@ -6,7 +6,6 @@ import { createJsonSink } from '~/utils/logger/sinks/json-sink'
 import { enableJsonResult, emitResult, isJsonResultActive } from '~/utils/logger/result-emitter'
 import type {
   GlobalLogger,
-  LogContext,
   LogFormat,
   Logger,
   LogLevel,
@@ -15,13 +14,13 @@ import type {
 } from '~/types'
 import { LOG_LEVELS } from '~/utils/logger/logger-types'
 
-export { createLogger, createNoopSink } from '~/utils/logger/core'
+export { createLogger } from '~/utils/logger/core'
 export { createHumanSink } from '~/utils/logger/sinks/human-sink'
 export { createJsonSink } from '~/utils/logger/sinks/json-sink'
 export { runWithLogContext }
 export { createReporter }
 export { emitResult, isJsonResultActive }
-export { CLIUsageError, isLoggerUsageError, usageError } from '~/utils/logger/usage-error'
+export { CLIUsageError, usageError } from '~/utils/logger/usage-error'
 
 const parseLogFormat = (value: string | undefined): LogFormat => {
   const normalized = value?.trim().toLowerCase()
@@ -129,10 +128,6 @@ export const l: GlobalLogger = {
   warn: (...args) => activeLogger.warn(...args),
   error: (...args) => activeLogger.error(...args),
   withContext: (context) => attachReport(activeLogger.withContext(context))
-}
-
-export const withContext = (context: LogContext): GlobalLogger => {
-  return attachReport(activeLogger.withContext(context))
 }
 
 export const report = l.report

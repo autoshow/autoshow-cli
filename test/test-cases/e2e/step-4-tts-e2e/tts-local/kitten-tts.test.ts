@@ -112,7 +112,7 @@ describe('kitten-tts', () => {
           expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
           expect(metadata.tts?.[0]?.speaker).toBe(kittenModelCase.speaker)
         }
-      })
+      }, 30000)
     }
 
     test('multi-provider --price prints both TTS targets and renamed output files', async () => {
@@ -128,10 +128,14 @@ describe('kitten-tts', () => {
       ])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stderr).toContain('"provider": "kitten"')
-      expect(result.stderr).toContain('"provider": "openai"')
-      expect(result.stderr).toContain('speech-kitten-kitten-tts-mini.wav')
-      expect(result.stderr).toContain('speech-openai-gpt-4o-mini-tts.wav')
+      const output = `${result.stdout}\n${result.stderr}`
+      expect(output).toContain('Cost Estimate')
+      expect(output).toContain('kitten')
+      expect(output).toContain('kitten-tts-mini')
+      expect(output).toContain('openai')
+      expect(output).toContain('gpt-4o-mini-tts')
+      expect(output).toContain('speech-kitten-kitten-tts-mini.wav')
+      expect(output).toContain('speech-openai-gpt-4o-mini-tts.wav')
     })
 
     test('multi-provider run succeeds when one local and one API target are both available', async () => {

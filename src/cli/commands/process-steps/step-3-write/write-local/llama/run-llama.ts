@@ -27,6 +27,8 @@ const LLAMA_DOWNLOAD_PROGRESS_POLL_MS = 3000
 const LLAMA_DOWNLOAD_STALLED_LOG_MS = 15000
 const LLAMA_SERVER_STOP_TIMEOUT_MS = 5000
 const LLAMA_CHAT_TEMPLATE_KWARGS = { enable_thinking: false } as const
+const LLAMA_EMPTY_RESPONSE_MAX_ATTEMPTS = 3
+const LLAMA_EMPTY_RESPONSE_RETRY_DELAY_MS = 500
 
 const resolveLlamaServerBinary = (): string => {
 
@@ -716,24 +718,31 @@ const requestLlamaCompletion = async (prompt: string, model: string, signal?: Ab
     ...(signal ? { signal } : {})
   }
 
-  const response = await fetch(`${LLAMA_BASE_URL}/v1/chat/completions`, init)
+  for (let attempt = 1; attempt <= LLAMA_EMPTY_RESPONSE_MAX_ATTEMPTS; attempt += 1) {
+    const response = await fetch(`${LLAMA_BASE_URL}/v1/chat/completions`, init)
 
-  if (!response.ok) {
-    throw new Error(`llama.cpp API error: ${response.status} ${response.statusText}`)
+    if (!response.ok) {
+      throw new Error(`llama.cpp API error: ${response.status} ${response.statusText}`)
+    }
+
+    const rawData = await response.json()
+    const data = validateData(LlamaResponseSchema, rawData, 'llama.cpp API response')
+    const responseText = data.choices?.[0]?.message?.content ?? ''
+
+    if (responseText.trim().length > 0) {
+      return {
+        responseText,
+        outputTokenCount: data.usage?.completion_tokens || countTokens(responseText)
+      }
+    }
+
+    if (attempt < LLAMA_EMPTY_RESPONSE_MAX_ATTEMPTS) {
+      l.debug(`llama.cpp returned an empty response; retrying (${attempt}/${LLAMA_EMPTY_RESPONSE_MAX_ATTEMPTS})`)
+      await Bun.sleep(LLAMA_EMPTY_RESPONSE_RETRY_DELAY_MS)
+    }
   }
 
-  const rawData = await response.json()
-  const data = validateData(LlamaResponseSchema, rawData, 'llama.cpp API response')
-  const responseText = data.choices?.[0]?.message?.content || ''
-
-  if (!responseText) {
-    throw new Error('No response from llama.cpp model')
-  }
-
-  return {
-    responseText,
-    outputTokenCount: data.usage?.completion_tokens || countTokens(responseText)
-  }
+  throw new Error('No response from llama.cpp model')
 }
 
 export const ensureLlamaModelDownloaded = async (model: string): Promise<void> => {
@@ -844,110 +853,6 @@ export const runLlamaModel = async (
       throw new Error('llama.cpp processing timed out after 30 minutes')
     }
     l.error(`Failed to run llama.cpp model`, error)
-    throw error
-  }
-}
-
-export const checkLlamaHealth = async (): Promise<boolean> => {
-  try {
-    const response = await fetch(`${LLAMA_BASE_URL}/health`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000)
-    })
-    
-    if (!response.ok) {
-      return false
-    }
-    
-    const body = await response.json() as { status?: string }
-    return body?.status === 'ok'
-  } catch (error) {
-    l.error(`llama.cpp health check failed`, error)
-    return false
-  }
-}
-
-export const getAvailableModels = async (): Promise<string[]> => {
-  try {
-    const response = await fetch(`${LLAMA_BASE_URL}/v1/models`)
-    
-    if (response.ok) {
-      const identity = parseLlamaServerIdentityFromModels(await response.json())
-      const models = identity?.aliases ?? []
-      return models
-    }
-    
-    return []
-  } catch (error) {
-    l.error(`Error fetching available models`, error)
-    return []
-  }
-}
-
-export const streamLlamaResponse = async function* (prompt: string, model: string): AsyncGenerator<string> {
-  try {
-
-    const identity = await ensureLlamaServerRunning(model)
-    const requestModel = resolveLlamaRequestModel(identity)
-    
-    const response = await fetch(`${LLAMA_BASE_URL}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: requestModel,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        stream: true,
-        temperature: 0.7,
-        max_tokens: 4096,
-        chat_template_kwargs: LLAMA_CHAT_TEMPLATE_KWARGS
-      })
-    })
-    
-    if (!response.ok) {
-      throw new Error(`llama.cpp API error: ${response.statusText}`)
-    }
-    
-    const reader = response.body?.getReader()
-    if (!reader) {
-      throw new Error('Failed to get response reader')
-    }
-    
-    const decoder = new TextDecoder()
-    let buffer = ''
-    
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6)
-          if (data === '[DONE]') continue
-          
-          try {
-            const json = JSON.parse(data)
-            if (json.choices?.[0]?.delta?.content) {
-              yield json.choices[0].delta.content
-            }
-          } catch {
-          }
-        }
-      }
-    }
-    
-  } catch (error) {
-    l.error(`Streaming failed`, error)
     throw error
   }
 }

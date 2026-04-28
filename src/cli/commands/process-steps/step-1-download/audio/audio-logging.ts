@@ -34,17 +34,6 @@ export const logAudioDownload = (
   })
 }
 
-export const buildAudioNormalizeRows = (
-  summary: AudioNormalizeSummary
-): Array<{ status: string, mode: string, input: string, output: string, codec: string, detail: string }> => [{
-  status: summary.status,
-  mode: summary.plan.mode,
-  input: basename(summary.inputPath) || 'audio',
-  output: basename(summary.outputPath) || 'audio',
-  codec: `${summary.plan.sourceCodecName}->${summary.plan.outputCodecName}`,
-  detail: summary.plan.reason
-}]
-
 export const buildAudioNormalizeTable = (
   summary: AudioNormalizeSummary
 ): HumanLogTable =>

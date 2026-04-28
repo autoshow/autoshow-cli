@@ -264,5 +264,3 @@ const RESUME_HANDLERS: Readonly<Record<ResumeTargetKind, ResumeHandler>> = {
 export const getResumeHandler = (
   kind: ResumeTarget['kind']
 ): ResumeHandler | undefined => RESUME_HANDLERS[kind]
-
-export const getResumeHandlers = (): ResumeHandler[] => Object.values(RESUME_HANDLERS)

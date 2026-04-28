@@ -1,7 +1,7 @@
 import type { DeapiHttpError, RetryClass } from '~/types'
 import { readEnv } from '~/utils/validate/env-utils'
 
-export type DeapiStage = 'create' | 'poll' | 'result' | 'price'
+type DeapiStage = 'create' | 'poll' | 'result' | 'price'
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

@@ -30,7 +30,7 @@ export const runSampleFixtures = async (options: SampleFixtureOptions = {}): Pro
       .map(([name]) => name)
   )
 
-  const REQUIRED_TOOLS: ToolName[] = ['ffmpeg', 'ffprobe', 'libreoffice']
+  const REQUIRED_TOOLS: ToolName[] = ['ffmpeg', 'ffprobe']
   for (const tool of REQUIRED_TOOLS) {
     if (!availableTools.has(tool)) {
       throw new Error(`Required tool '${tool}' is not installed. Run: bun as setup --step sample`)

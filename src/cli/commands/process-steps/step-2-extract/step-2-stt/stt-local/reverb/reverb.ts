@@ -33,20 +33,6 @@ const checkReverbModelExists = async (): Promise<boolean> => {
   return await pathExists(reverbModelPath) && await pathExists(reverbConfigPath)
 }
 
-export const detectGpuSupport = async (): Promise<boolean> => {
-  const check = await runCapture('nvidia-smi', ['--query-gpu=name', '--format=csv,noheader'], { allowFailure: true })
-  if (check.exitCode !== 0) {
-    return false
-  }
-
-  const gpuName = check.stdout.trim()
-  if (gpuName) {
-    l.write('info', `GPU detected: ${gpuName}`)
-  }
-
-  return true
-}
-
 export const setupReverbEnvironment = async (): Promise<void> => {
   l.write('info', 'Setting up Reverb ASR environment')
 

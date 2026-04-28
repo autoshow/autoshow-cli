@@ -116,12 +116,48 @@ const copyRunManifestToArtifacts = async (outputDir: string | null): Promise<voi
 }
 
 const SUBPROCESS_TIMEOUT = 900000
+const TEST_CONFIG_PATH = resolve(import.meta.dir, 'fixtures/empty-autoshow-config.json')
+const TEST_CACHE_DIR = resolve(process.cwd(), 'output/.test-cache')
+const PROCESSING_COMMANDS = new Set([
+  'metadata',
+  'download',
+  'extract',
+  'resume',
+  'write',
+  'tts',
+  'image',
+  'music',
+  'video'
+])
+const HELP_FLAGS = new Set(['--help', '-h'])
 const BASE_CHILD_ENV = Object.entries(process.env).reduce<Record<string, string>>((env, [key, value]) => {
   if (typeof value === 'string') {
     env[key] = value
   }
   return env
 }, {})
+
+const shouldUseEmptyTestConfig = (args: string[]): boolean => {
+  if (args[0] !== 'src/cli/create-cli.ts') {
+    return false
+  }
+
+  if (args.some((arg) => arg === '--config-path' || arg.startsWith('--config-path='))) {
+    return false
+  }
+
+  if (args.some((arg) => HELP_FLAGS.has(arg))) {
+    return false
+  }
+
+  const command = args[1]
+  return typeof command === 'string' && PROCESSING_COMMANDS.has(command)
+}
+
+const withEmptyTestConfig = (args: string[]): string[] =>
+  shouldUseEmptyTestConfig(args)
+    ? [...args, '--config-path', TEST_CONFIG_PATH]
+    : args
 
 export type RunCommandOptions = {
   testName?: string
@@ -158,17 +194,19 @@ const readStreamText = async (stream: ReadableStream): Promise<string> => {
 
 export const runCommand = async (args: string[], opts?: RunCommandOptions): Promise<RunCommandResult> => {
   const testName = opts?.testName ?? null
-  const cmdStr = `bun ${args.join(' ')}`
+  const childArgs = withEmptyTestConfig(args)
+  const cmdStr = `bun ${childArgs.join(' ')}`
   const startTime = Date.now()
   const commandLogPath = process.env['AUTOSHOW_TEST_COMMAND_LOG'] || 'test_debug.log'
   const metricsLogPath = process.env['AUTOSHOW_TEST_METRICS_LOG']
 
   const env = {
     ...BASE_CHILD_ENV,
+    AUTOSHOW_CACHE_DIR: TEST_CACHE_DIR,
     ...(opts?.env ?? {})
   }
 
-  const proc = Bun.spawn(['bun', ...args], {
+  const proc = Bun.spawn(['bun', ...childArgs], {
     stdout: 'pipe',
     stderr: 'pipe',
     env,
@@ -209,7 +247,7 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
       at: new Date().toISOString(),
       source: 'runCommand',
       command: cmdStr,
-      args,
+      args: childArgs,
       exitCode,
       durationMs: duration,
       outputDir,

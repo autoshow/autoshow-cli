@@ -415,17 +415,3 @@ export const buildMetadataErrorEntries = (
       message: state.lastError?.message,
       retryable: state.lastError?.retryable === true
     }))
-
-export const pickPrimarySuccess = (
-  requestedTargets: OcrTarget[],
-  successes: Array<OcrProviderSuccess | undefined>
-): OcrProviderSuccess | undefined => {
-  for (const target of requestedTargets) {
-    const match = successes.find((entry) => entry?.target.service === target.service && entry?.target.model === target.model)
-    if (match) {
-      return match
-    }
-  }
-
-  return undefined
-}

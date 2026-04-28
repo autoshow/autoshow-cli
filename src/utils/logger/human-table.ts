@@ -97,7 +97,7 @@ export const createLocationsTable = (
   )
 }
 
-export const createBatchItemTable = (
+const createBatchItemTable = (
   rows: readonly BatchItemTableRow[]
 ): HumanLogTable => {
   const normalizedRows = rows.map((row) => {

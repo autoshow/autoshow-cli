@@ -35,7 +35,7 @@ No assertions on human log strings; all assertions use exit codes, `fileExists`,
 bun t test/test-cases/local/sample/sample-generate.test.ts
 ```
 
-Coverage (requires ffmpeg, libreoffice):
+Coverage (requires ffmpeg and ffprobe):
 - `setup --sample --out <dir>` creates `manifest.json`, `valid/`, and `invalid/` directories
 - Manifest `schemaVersion` is 1 and `summary.generated > 0`
 - Manifest summary counts are internally consistent (`generated == fixtures.length`, `total == generated + skipped`)

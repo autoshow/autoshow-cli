@@ -270,16 +270,6 @@ export const getModelRegistry = (): ModelRegistry => {
 }
 
 
-export const getServiceModels = (
-  step: keyof ModelRegistry,
-  service: string
-): string[] => {
-  const registry = getModelRegistry()
-  const svc = registry[step][service]
-  if (!svc) return []
-  return Object.keys(svc.models)
-}
-
 const getRegistryServiceType = (
   step: keyof ModelRegistry,
   service: string
@@ -403,11 +393,6 @@ export const getExtractEstimation = (service: string, model: string): ExtractEst
     msPerPage: modelMeta?.estimation?.msPerPage ?? DEFAULT_EXTRACT_MS_PER_PAGE,
   }
 }
-
-export const isGroqSttModel = (model: string): boolean => {
-  return getModelRegistry().stt['groq']?.models[model] !== undefined
-}
-
 
 export const getLlmCost = (
   service: string,

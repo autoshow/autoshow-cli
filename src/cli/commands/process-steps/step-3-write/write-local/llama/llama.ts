@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { pathExists, runCapture, runInherit, detectArchitecture, detectPlatform, llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { pathExists, runInherit, detectArchitecture, detectPlatform, llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import { withRetry } from '~/utils/retries'
@@ -23,11 +23,6 @@ const readLlamaTag = async (): Promise<string> => {
 
 export const checkLlamaInstalled = async (): Promise<boolean> => {
   return await pathExists(llamaBinaryPath)
-}
-
-export const checkLlamaRunning = async (): Promise<boolean> => {
-  const result = await runCapture('curl', ['-s', 'http://localhost:8080/health'], { allowFailure: true })
-  return result.exitCode === 0
 }
 
 export const installLlama = async (): Promise<void> => {
@@ -80,41 +75,6 @@ export const installLlama = async (): Promise<void> => {
 
   await runInherit('chmod', ['+x', llamaBinaryPath])
   l.write('success', 'llama.cpp installed')
-}
-
-export const startLlamaService = async (): Promise<void> => {
-  if (await checkLlamaRunning()) {
-    return
-  }
-
-  l.write('info', 'Starting llama-server')
-
-  if (process.env['DOCKER_CONTAINER']) {
-    l.write('info', 'Running in Docker, llama-server should be started by entrypoint')
-    return
-  }
-
-  const modelPath = process.env['LLAMA_MODEL_PATH'] || ''
-
-  if (!modelPath) {
-    l.warn('No model path set, llama-server will need to be started manually with a model')
-    return
-  }
-
-  const proc = Bun.spawn([llamaBinaryPath, '-m', modelPath, '--port', '8080', '--host', '127.0.0.1'], {
-    stdin: 'ignore',
-    stdout: 'ignore',
-    stderr: 'ignore'
-  })
-  proc.unref()
-
-  await Bun.sleep(3000)
-
-  if (await checkLlamaRunning()) {
-    l.write('success', 'llama-server started')
-  } else {
-    l.warn('llama-server may not have started correctly')
-  }
 }
 
 export const setupLlama = async (): Promise<void> => {

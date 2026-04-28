@@ -20,7 +20,7 @@ export const readElevenLabsError = async (response: Response): Promise<string> =
 
   try {
     const parsed: unknown = JSON.parse(raw)
-    const validated = validateDataSafe(ElevenLabsErrorSchema, parsed, 'ElevenLabs error response')
+    const validated = validateDataSafe(ElevenLabsErrorSchema, parsed)
     if (!validated) {
       return raw
     }

@@ -491,58 +491,6 @@ export const estimateFirecrawlScrapeCost = (): {
   }
 }
 
-export const computeActualGlmOcrCost = (
-  modelRaw: string,
-  promptTokens: number,
-  completionTokens: number
-): {
-  provider: 'glm'
-  model: string
-  inputCostPer1MCents: number
-  outputCostPer1MCents: number
-  totalCost: number
-} => {
-  const model = validateGlmOcrModel(modelRaw)
-  const pricing = getExtractPricing('glm', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 3
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 3
-
-  return {
-    provider: 'glm',
-    model,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents
-  }
-}
-
-export const computeActualOpenAIOcrCost = (
-  modelRaw: string,
-  promptTokens: number,
-  completionTokens: number
-): {
-  provider: 'openai'
-  model: string
-  inputCostPer1MCents: number
-  outputCostPer1MCents: number
-  totalCost: number
-} => {
-  const model = validateOpenAIOcrModel(modelRaw)
-  const pricing = getExtractPricing('openai', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 20
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 125
-
-  return {
-    provider: 'openai',
-    model,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents
-  }
-}
-
 export const computeActualAnthropicOcrCost = (
   modelRaw: string,
   promptTokens: number,

@@ -31,8 +31,7 @@ export const validateData = <T extends v.BaseSchema<unknown, unknown, v.BaseIssu
 
 export const validateDataSafe = <T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
   schema: T,
-  data: unknown,
-  _context: string
+  data: unknown
 ): v.InferOutput<T> | null => {
   const result = v.safeParse(schema, data)
 

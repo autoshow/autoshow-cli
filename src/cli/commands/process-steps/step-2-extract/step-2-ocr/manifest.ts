@@ -1,5 +1,5 @@
 import type { BatchManifestEntry } from '~/types'
-import { readBatchManifestEntries, readRunManifestEntry, writeBatchManifest, writeRunManifest } from '../../manifest-utils'
+import { readRunManifestEntry, writeBatchManifest, writeRunManifest } from '../../manifest-utils'
 
 export const writeOcrRunManifest = async (
   outputDir: string,
@@ -20,10 +20,4 @@ export const writeOcrBatchManifest = async (
   source?: Record<string, unknown>
 ): Promise<void> => {
   await writeBatchManifest(batchDir, 'ocr', items, source)
-}
-
-export const readOcrBatchManifestEntries = async (
-  batchDir: string
-): Promise<{ manifestPath: string, entries: BatchManifestEntry[] } | undefined> => {
-  return await readBatchManifestEntries(batchDir, 'ocr')
 }

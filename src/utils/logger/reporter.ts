@@ -187,7 +187,7 @@ const buildTimingRows = (
   }))
 }
 
-export const buildHumanCompletionTables = (
+const buildHumanCompletionTables = (
   outputDir: string,
   files: Record<string, string>,
   options?: CompleteOptions
@@ -214,7 +214,7 @@ const buildEstimateRows = (estimate: AggregatedPriceEstimate): HumanLogTableRow[
     ) as HumanLogTableRow
   )
 
-export const buildCompleteResultData = (
+const buildCompleteResultData = (
   outputDir: string,
   files: Record<string, string>,
   options?: CompleteOptions

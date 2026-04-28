@@ -67,9 +67,10 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write --price includes MiniMax
   const output = `${result.stdout}\n${result.stderr}`
 
   expect(result.exitCode).toBe(0)
-  expect(output).toContain('"step": "music"')
-  expect(output).toContain('"provider": "minimax"')
-  expect(output).toContain('"model": "music-2.5"')
+  expect(output).toContain('Cost Estimate')
+  expect(output).toContain('music')
+  expect(output).toContain('minimax')
+  expect(output).toContain('music-2.5')
   expect(output).toContain('Music file')
 })
 

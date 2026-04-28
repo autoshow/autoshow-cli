@@ -25,7 +25,7 @@ const readGroqError = async (response: Response): Promise<string> => {
 
   try {
     const parsed: unknown = JSON.parse(raw)
-    const validated = validateDataSafe(GroqErrorSchema, parsed, 'Groq TTS error response')
+    const validated = validateDataSafe(GroqErrorSchema, parsed)
     if (!validated) {
       return raw
     }

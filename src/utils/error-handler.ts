@@ -12,7 +12,7 @@ export const CLIUsageError = (message: string): Error => {
   return error
 }
 
-export const isCLIUsageError = (error: unknown): boolean =>
+const isCLIUsageError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'CLIUsageError'
 
 export const isUsageError = (error: unknown): boolean => {

@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import type { BatchManifestEntry, ProviderCheckpoint, SttBatchSummary, SttBatchSummaryItem } from '~/types'
-import { readBatchManifestEntries, readRunManifestEntry, writeBatchManifest, writeRunManifest } from '../../manifest-utils'
+import { readRunManifestEntry, writeBatchManifest, writeRunManifest } from '../../manifest-utils'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -160,12 +160,6 @@ export const writeSttBatchManifest = async (
 ): Promise<void> => {
   await writeBatchManifest(batchDir, 'stt', items, source)
   await writeSttBatchSummary(batchDir, items, source)
-}
-
-export const readSttBatchManifestEntries = async (
-  batchDir: string
-): Promise<{ manifestPath: string, entries: BatchManifestEntry[] } | undefined> => {
-  return await readBatchManifestEntries(batchDir, 'stt')
 }
 
 export const writeSttProviderCheckpoint = async (

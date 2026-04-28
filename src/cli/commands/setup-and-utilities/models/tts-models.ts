@@ -133,7 +133,6 @@ export const SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS = [
   'Qwen3_TTS_12Hz_1_7B_CustomVoice'
 ] as const satisfies readonly string[]
 
-export const DEAPI_DEFAULT_TTS_MODEL = 'Kokoro'
 export const DEAPI_DEFAULT_TTS_VOICE = 'af_heart'
 
 export const validateDeapiTtsModel = createModelValidator<DeapiTtsModel>(SUPPORTED_DEAPI_TTS_MODELS, 'deapi-tts')

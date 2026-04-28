@@ -76,12 +76,3 @@ export const processResolvedInputListBatch = async (
     throw error
   }
 }
-
-export const handleInputListTargetBatch = async (
-  resolvedTarget: string,
-  command: ProcessCommand,
-  opts: RuntimeOptions
-): Promise<void> => {
-  const resolvedBatch = await resolveInputListBatch(resolvedTarget, command, opts)
-  await processResolvedInputListBatch(resolvedBatch, command, opts)
-}

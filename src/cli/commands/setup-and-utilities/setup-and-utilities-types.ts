@@ -244,7 +244,7 @@ export type CheapestVideoSelection = {
   totalCost: number
 }
 
-export type ToolName = 'ffmpeg' | 'ffprobe' | 'libreoffice' | 'calibre' | 'imagemagick'
+export type ToolName = 'ffmpeg' | 'ffprobe' | 'calibre' | 'imagemagick'
 
 export type ToolStatus = {
   available: boolean

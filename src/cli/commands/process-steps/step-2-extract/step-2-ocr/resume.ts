@@ -1,4 +1,3 @@
-import { readdir } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as l from '~/utils/logger'
@@ -193,65 +192,6 @@ export const hasResumableOcrTargetWork = async (
   }
 
   return false
-}
-
-const batchHasResumableWork = async (
-  batchDir: string,
-  selectedTargets: OcrTarget[] | undefined
-): Promise<boolean> =>
-  await hasResumableOcrTargetWork({
-    kind: 'ocr',
-    scope: 'batch',
-    dir: resolvePath(batchDir),
-    manifestPath: join(resolvePath(batchDir), 'batch.json')
-  }, selectedTargets)
-
-export const discoverLatestResumableOcrBatchDir = async (
-  outputRootInput: string,
-  selectedTargets?: OcrTarget[]
-): Promise<string | undefined> => {
-  const outputRoot = resolvePath(outputRootInput)
-
-  let batchNames: string[]
-  try {
-    const entries = await readdir(outputRoot, { withFileTypes: true })
-    batchNames = entries
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name)
-      .sort((left, right) => right.localeCompare(left))
-  } catch {
-    return undefined
-  }
-
-  for (const batchName of batchNames) {
-    const batchDir = join(outputRoot, batchName)
-    if (await batchHasResumableWork(batchDir, selectedTargets)) {
-      return batchDir
-    }
-  }
-
-  return undefined
-}
-
-export const resolveResumeOcrBatchDir = async (
-  batchDirInput: string | undefined,
-  selectedTargets?: OcrTarget[],
-  outputRootInput = './output'
-): Promise<string> => {
-  if (typeof batchDirInput === 'string' && batchDirInput.trim().length > 0) {
-    return batchDirInput
-  }
-
-  const discoveredBatchDir = await discoverLatestResumableOcrBatchDir(outputRootInput, selectedTargets)
-  if (discoveredBatchDir) {
-    return discoveredBatchDir
-  }
-
-  if (selectedTargets && selectedTargets.length > 0) {
-    throw CLIUsageError(`Could not find a resumable OCR batch under ${outputRootInput} that matches the selected provider flags. Pass a batch directory explicitly.`)
-  }
-
-  throw CLIUsageError(`Could not find a resumable OCR batch under ${outputRootInput}. Pass a batch directory explicitly.`)
 }
 
 const buildResumeExtractionOpts = (
@@ -461,17 +401,4 @@ export const resumeOcrTarget = async (
   selectedTargets?: OcrTarget[]
 ): Promise<void> => {
   await runResumeOcrTarget(target, opts, selectedTargets)
-}
-
-export const resumeOcrMissingFromBatchDir = async (
-  batchDirInput: string,
-  opts: RuntimeOptions,
-  selectedTargets?: OcrTarget[]
-): Promise<void> => {
-  await resumeOcrTarget({
-    kind: 'ocr',
-    scope: 'batch',
-    dir: resolvePath(batchDirInput),
-    manifestPath: join(resolvePath(batchDirInput), 'batch.json')
-  }, opts, selectedTargets)
 }

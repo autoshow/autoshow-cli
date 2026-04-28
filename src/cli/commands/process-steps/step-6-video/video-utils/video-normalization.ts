@@ -15,12 +15,6 @@ import type {
   RunwayRatio
 } from '~/types'
 
-
-export const clampVideoDuration = (duration: number | undefined): number => {
-  if (typeof duration !== 'number' || !Number.isFinite(duration)) return 4
-  return Math.min(120, Math.max(1, Math.floor(duration)))
-}
-
 export const normalizeGeminiDuration = (duration: number | undefined): GeminiDurationSeconds => {
   if (typeof duration !== 'number' || !Number.isFinite(duration)) return 4
   const n = Math.floor(duration)

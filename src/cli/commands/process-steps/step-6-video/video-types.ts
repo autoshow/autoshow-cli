@@ -19,7 +19,6 @@ export type MinimaxDurationSeconds = 6 | 10
 export type GlmVideoDurationSeconds = 5 | 10
 export type GlmVideoQuality = 'speed' | 'quality'
 export type GlmVideoFps = 30 | 60
-export type GlmViduStyle = 'general' | 'anime'
 export type GrokVideoDurationSeconds = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
 export type GrokVideoResolution = '480p' | '720p'
 export type RunwayDurationSeconds = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10

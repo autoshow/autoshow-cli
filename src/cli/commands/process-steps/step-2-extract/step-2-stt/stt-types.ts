@@ -1,15 +1,12 @@
 import type * as v from 'valibot'
 import type {
-  BatchPolicy,
   BatchChildRunContext,
   BatchProcessResult,
   DeepgramResponse,
   DiarizationOptions,
   GladiaStatusResponse,
-  ProviderSpec,
   ProcessingOptions,
   RateEstimateBase,
-  ResumePolicy,
   YtDlpVideoInfo,
   RetryClass,
   Step1Metadata,
@@ -41,21 +38,6 @@ import {
 } from '~/types/process-types'
 
 export { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
-
-export type ConcurrencyPolicy = {
-  provider?: number | undefined
-  local?: number | undefined
-  segment?: number | undefined
-}
-
-export type SttPolicy = {
-  providers: ProviderSpec[]
-  batch?: BatchPolicy | undefined
-  resume?: ResumePolicy | undefined
-  concurrency?: ConcurrencyPolicy | undefined
-  diarization?: DiarizationOptions | undefined
-  split?: boolean | undefined
-}
 
 export type TranscribeEngineCapabilities = {
   diarizationByDefault: boolean

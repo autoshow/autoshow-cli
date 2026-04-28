@@ -1,6 +1,5 @@
 import type {
   CostEstimateBase,
-  ElevenlabsTtsModel,
   ProcessingOptions,
   ProviderTargetBase,
   RateEstimateBase,
@@ -93,14 +92,4 @@ export type TtsCostEstimate = CostEstimateBase<TtsProvider> & {
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number
   characterCount: number
-}
-
-export type ElevenlabsTtsCostEstimate = CostEstimateBase<'elevenlabs', ElevenlabsTtsModel> & {
-  characterCount: number
-  costPer1kCharactersCents: number
-}
-
-export type ElevenlabsTtsRateEstimate = RateEstimateBase<'elevenlabs', ElevenlabsTtsModel> & {
-  costPer1kCharactersCents: number
-  sampleCostFor1kCharactersCents: number
 }

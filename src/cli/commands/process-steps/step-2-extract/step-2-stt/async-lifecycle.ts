@@ -133,11 +133,6 @@ export const resolveAsyncSttPollDeadlineMs = (
   )
 }
 
-export const withOptionalGate = async <T>(
-  gate: ((fn: () => Promise<T>) => Promise<T>) | undefined,
-  fn: () => Promise<T>
-): Promise<T> => gate ? await gate(fn) : await fn()
-
 export const pollAsyncSttJobUntilComplete = async <TStatus>(
   options: AsyncSttPollLoopOptions<TStatus>
 ): Promise<{ status: TStatus, pollCount: number, pollSleepMs: number }> => {

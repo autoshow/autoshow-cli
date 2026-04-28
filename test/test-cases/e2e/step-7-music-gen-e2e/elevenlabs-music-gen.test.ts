@@ -35,8 +35,9 @@ test('--price with both providers shows two cost rows and per-provider filenames
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
-  expect(output).toContain('"provider": "elevenlabs"')
-  expect(output).toContain('"provider": "minimax"')
+  expect(output).toContain('Cost Estimate')
+  expect(output).toContain('elevenlabs')
+  expect(output).toContain('minimax')
   expect(output).toContain('generated-music-elevenlabs-music_v1.mp3')
   expect(output).toContain('generated-music-minimax-music-2.5.mp3')
 })

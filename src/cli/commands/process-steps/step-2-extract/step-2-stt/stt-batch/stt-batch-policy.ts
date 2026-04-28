@@ -143,35 +143,6 @@ export const describeSttBatchProviderSlotLimits = (
     .join(', ')
 }
 
-export const formatSttBatchSchedulerSummary = (
-  snapshot: SttBatchSchedulerSnapshot
-): string | undefined => {
-  if (snapshot.providers.length === 0) {
-    return undefined
-  }
-
-  return snapshot.providers
-    .map((provider) => {
-      const parts = [
-        `${formatSttTargetLabel(provider)}`,
-        provider.kind === 'async'
-          ? `create=${provider.launchSlotLimit},poll=${provider.pollSlotLimit}`
-          : `launch=${provider.launchSlotLimit}`,
-        `launched=${provider.launchedCount}`,
-        `completed=${provider.completedCount}`,
-        `queueWait=${provider.queueWaitMs}ms`,
-        provider.kind === 'async' ? `polls=${provider.pollCount}` : undefined,
-        provider.blockedCount > 0 ? `blocked=${provider.blockedCount}` : undefined,
-        provider.degradedCount > 0 ? `degraded=${provider.degradedCount}` : undefined,
-        provider.backfillCount > 0 ? `backfill=${provider.backfillCount}` : undefined,
-        provider.warmupComplete ? 'warm=true' : 'warm=false'
-      ].filter((entry): entry is string => typeof entry === 'string')
-
-      return parts.join(' ')
-    })
-    .join(' | ')
-}
-
 export const buildSttBatchSchedulerRows = (
   snapshot: SttBatchSchedulerSnapshot
 ): HumanLogTableRow[] =>

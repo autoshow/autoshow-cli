@@ -811,16 +811,6 @@ export const getStep2ProviderConfigPathEntries = (
     }))
   })
 
-export const getStep2RepeatableModelFlagNames = (
-  options: { includeAliases?: boolean } = {}
-): string[] => {
-  const flags = STEP2_PROVIDER_REGISTRY
-    .filter((entry) => entry.selection.type === 'models')
-    .flatMap((entry) => options.includeAliases ? [entry.flagName, ...entry.aliases] : [entry.flagName])
-
-  return [...new Set(flags)]
-}
-
 export const getStep2AllShortcutModelExpansions = (
   options: { includeAliases?: boolean } = {}
 ): Record<string, { shortcut: Step2ShortcutFlag, supported: readonly string[] }> =>

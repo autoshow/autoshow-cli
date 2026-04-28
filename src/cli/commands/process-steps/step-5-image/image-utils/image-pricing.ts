@@ -9,7 +9,6 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getImageCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { ImageCostEstimate, EstimateImageCostOptions } from '~/types'
-import { CLIUsageError } from '~/utils/error-handler'
 
 export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCostEstimate[] => {
   const estimates: ImageCostEstimate[] = []
@@ -103,13 +102,4 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   }
 
   return estimates
-}
-
-export const estimateImageCost = (options: EstimateImageCostOptions): ImageCostEstimate => {
-  const estimates = estimateImageCosts(options)
-  if (estimates.length === 0) {
-    throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, --minimax-image, --glm-image, --grok-image, or --runway-image.')
-  }
-
-  return estimates[0] as ImageCostEstimate
 }

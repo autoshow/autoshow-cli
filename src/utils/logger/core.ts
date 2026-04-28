@@ -14,7 +14,6 @@ import type {
   LogContext,
   Logger,
   LogLevel,
-  LogSink,
   LogSinkEvent,
   LogWriteOptions,
   MutableLoggerConfig
@@ -153,8 +152,4 @@ export const createLogger = (options: CreateLoggerOptions = {}): Logger => {
   }
 
   return logger
-}
-
-export const createNoopSink = (): LogSink => {
-  return () => undefined
 }

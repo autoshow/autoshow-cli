@@ -123,7 +123,7 @@ export const fetchResultPayload = async (resultUrl: string): Promise<unknown> =>
   return normalizeParsedResult(await readJsonOrText(response))
 }
 
-export type PollDeapiJobResult = {
+type PollDeapiJobResult = {
   status: DeapiStatusPayload
   pollCount: number
   pollSleepMs: number

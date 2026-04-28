@@ -59,16 +59,3 @@ export const runOpenAIModel = async (
     throw error
   }
 }
-
-export const checkOpenAIHealth = async (): Promise<boolean> => {
-  try {
-    const config = getOpenAIClientConfig()
-    const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
-
-    await client.models.list()
-    return true
-  } catch (error) {
-    l.error(`OpenAI health check failed`, error)
-    return false
-  }
-}

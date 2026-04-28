@@ -17,7 +17,7 @@ export const getVideoInfo = async (url: string): Promise<YtDlpVideoInfo | null> 
     }
 
     const parsed = JSON.parse(result.stdout)
-    const validated = validateDataSafe(YtDlpVideoInfoSchema, parsed, 'yt-dlp video info')
+    const validated = validateDataSafe(YtDlpVideoInfoSchema, parsed)
 
     if (!validated) {
       l.debug(`Video info validation failed, using raw data`)

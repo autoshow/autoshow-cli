@@ -394,9 +394,9 @@ const runSetupMusic = async (): Promise<void> => {
 }
 
 const runSetupSample = async (): Promise<void> => {
-  l.write('info', 'Sample setup: verifying required tools for fixture generation (ffmpeg, soffice)')
+  l.write('info', 'Sample setup: verifying required tools for fixture generation (ffmpeg, ffprobe)')
   const { commandExists } = await import('~/utils/cli-utils')
-  const requiredTools = ['ffmpeg', 'ffprobe', 'soffice']
+  const requiredTools = ['ffmpeg', 'ffprobe']
   const missing: string[] = []
   for (const tool of requiredTools) {
     if (!commandExists(tool)) {

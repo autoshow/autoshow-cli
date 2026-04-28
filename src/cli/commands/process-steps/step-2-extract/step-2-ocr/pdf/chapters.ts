@@ -808,10 +808,6 @@ const analyzeTocPage = (page: PageResult): TocPageAnalysis => {
   }
 }
 
-export const isTocPage = (page: PageResult): boolean => {
-  return analyzeTocPage(page).isToc
-}
-
 export const parseTocEntriesFromPage = (page: PageResult): PdfTocEntry[] => {
   const analysis = analyzeTocPage(page)
   return analysis.isToc ? analysis.entries : []

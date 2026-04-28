@@ -1,4 +1,4 @@
-import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, Step2ProviderSelectionFilter, SttPolicy, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
+import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, Step2ProviderSelectionFilter, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { collectStep2ProviderSpecs } from '../step-2-shared/provider-registry'
 
 export const STT_ENGINE_CAPABILITIES = {
@@ -113,28 +113,4 @@ export const collectSttProviderSpecs = (
   }
 
   return specs
-}
-
-export const buildSttPolicy = (
-  options: RuntimeOptions
-): SttPolicy => {
-  const providers = collectSttProviderSpecs(options)
-  return {
-    providers,
-    batch: {
-      limit: options.batchLimit,
-      all: options.batchAll,
-      order: options.batchOrder,
-      concurrency: options.batchConcurrency
-    },
-    concurrency: {
-      provider: options.sttProviderConcurrency,
-      local: options.sttLocalConcurrency,
-      segment: options.sttSegmentConcurrency
-    },
-    diarization: {
-      ...(options.diarizationSpeakerCount !== undefined ? { speakerCount: options.diarizationSpeakerCount } : {})
-    },
-    split: options.split
-  }
 }

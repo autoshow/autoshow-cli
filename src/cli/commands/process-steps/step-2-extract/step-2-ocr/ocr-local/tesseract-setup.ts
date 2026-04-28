@@ -45,34 +45,9 @@ const ensureEnglishLanguageData = async (): Promise<void> => {
   l.write('info', 'Set TESSDATA_PREFIX if your language files are in a custom directory')
 }
 
-const installLibreOffice = async (): Promise<void> => {
-  if (commandExists('soffice')) {
-    return
-  }
-
-  l.write('info', 'Installing LibreOffice')
-  const platform = detectPlatform()
-
-  if (platform === 'darwin') {
-    await runInherit('brew', ['install', '--cask', 'libreoffice'])
-    l.write('success', 'LibreOffice installed')
-    return
-  }
-
-  if (platform === 'linux') {
-    await runInherit('sudo', ['apt', 'install', '-y', 'libreoffice'])
-    l.write('success', 'LibreOffice installed')
-    return
-  }
-
-  l.error('Unsupported platform for libreoffice auto-install')
-  throw new Error('Unsupported platform for libreoffice setup')
-}
-
 export const setupTesseractOcr = async (): Promise<void> => {
   await installTesseract()
   await ensureEnglishLanguageData()
-  await installLibreOffice()
 
   if (shouldPrintCompletion()) {
     l.write('success', 'Extraction OCR setup complete')

@@ -1,13 +1,5 @@
-const SEPARATOR_WIDTH = 60
-
-export const separator = '\u2500'.repeat(SEPARATOR_WIDTH)
-
 export const formatCost = (amount: number): string => {
   return `${amount.toFixed(5)}\u00A2`
-}
-
-export const formatRate = (inputCost: number, outputCost: number): string => {
-  return `${inputCost.toFixed(2)}\u00A2/1M input, ${outputCost.toFixed(2)}\u00A2/1M output`
 }
 
 export const formatDuration = (ms: number): string => {

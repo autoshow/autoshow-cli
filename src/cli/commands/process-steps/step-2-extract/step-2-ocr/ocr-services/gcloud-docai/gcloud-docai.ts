@@ -1,13 +1,9 @@
-import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { loadConfig, resolveConfigPath } from '~/cli/commands/setup-and-utilities/config/config-loader'
 
-export const GCLOUD_DOCAI_LIMIT_SOURCE = 'project/links/gcloud-ocr-links.md'
 export const GCLOUD_DOCAI_SYNC_BYTES = 20 * 1024 * 1024
-export const GCLOUD_DOCAI_SYNC_PAGE_LIMIT = 15
 export const GCLOUD_DOCAI_BATCH_BYTES = 1 * 1024 * 1024 * 1024
-export const GCLOUD_DOCAI_BATCH_PAGE_LIMIT = 500
 
 export type GcloudDocaiRuntimeConfig = {
   projectId: string
@@ -78,29 +74,6 @@ const readSavedDocaiDefaults = async (): Promise<{
     layoutProcessorId: normalizeString(ocr?.gcloudDocaiLayoutProcessorId),
     bucket: normalizeString(ocr?.gcloudDocaiBucket)
   }
-}
-
-export const setupGcloudDocai = async (): Promise<void> => {
-  if (!hasGcloudCli()) {
-    l.warn('gcloud CLI not found — Google Cloud Document AI OCR will not work until installed')
-    l.write('info', 'Install the gcloud CLI: https://cloud.google.com/sdk/docs/install')
-    return
-  }
-
-  const result = await runGcloud(['auth', 'print-access-token'])
-  if (result.exitCode !== 0) {
-    l.warn('gcloud auth not configured — Google Cloud Document AI OCR will not work until authenticated')
-    l.write('info', 'Run `gcloud auth application-default login` to authenticate')
-    return
-  }
-
-  const projectId = normalizeString(readEnv('AUTOSHOW_GCLOUD_PROJECT')) ?? await readActiveProjectId()
-  if (!projectId) {
-    l.warn('Google Cloud project not configured — Google Cloud Document AI OCR requires AUTOSHOW_GCLOUD_PROJECT or an active gcloud project')
-    return
-  }
-
-  l.write('success', `gcloud CLI found, project ${projectId} — Google Cloud Document AI OCR ready`)
 }
 
 export const ensureGcloudDocaiSetup = async (model: string): Promise<GcloudDocaiRuntimeConfig> => {

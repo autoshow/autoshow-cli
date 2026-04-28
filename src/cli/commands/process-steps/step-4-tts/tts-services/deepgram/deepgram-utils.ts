@@ -21,7 +21,7 @@ export const readDeepgramError = async (response: Response): Promise<string> => 
 
   try {
     const parsed: unknown = JSON.parse(raw)
-    const validated = validateDataSafe(DeepgramErrorSchema, parsed, 'Deepgram TTS error response')
+    const validated = validateDataSafe(DeepgramErrorSchema, parsed)
     if (!validated) {
       return raw
     }

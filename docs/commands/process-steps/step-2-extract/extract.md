@@ -297,8 +297,8 @@ AUTOSHOW_URL_BACKEND=glm-reader
 | PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deapi-ocr` |
 | EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deapi-ocr`, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
-| DOCX / PPTX / XLSX / ODF | native ZIP/XML parse first, OCR fallback if needed | hosted OCR routes convert through PDF first |
-| RTF | LibreOffice to PDF, then OCR | same |
+| DOCX / PPTX / XLSX / ODF | native ZIP/XML text extraction | OCR flags are ignored with a warning |
+| RTF | native RTF text extraction | OCR flags are ignored with a warning |
 | CBZ | per-image OCR | local or hosted engines |
 | CSV | raw text | OCR flags are ignored with a warning |
 | Remote article URL | `html+defuddle` | `--url-backend firecrawl` or `--url-backend glm-reader` |

@@ -13,21 +13,6 @@ import type {
   TableLogger
 } from '~/types'
 
-export const buildMediaGenerationStatusRows = (
-  summary: MediaGenerationStatus
-): Array<Record<string, string | number>> => {
-  const row: Record<string, string | number> = {
-    mediaType: summary.mediaType,
-    provider: summary.provider,
-    model: summary.model,
-    status: summary.status
-  }
-  if (summary.processingTimeMs != null) row['processingTimeMs'] = summary.processingTimeMs
-  if (summary.outputCount != null) row['outputCount'] = summary.outputCount
-  if (summary.detail) row['detail'] = summary.detail
-  return [row]
-}
-
 export const buildMediaGenerationStatusTable = (
   summary: MediaGenerationStatus
 ): HumanLogTable => {

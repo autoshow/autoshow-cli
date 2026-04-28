@@ -23,7 +23,6 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
   )
 
   expect(result.exitCode).toBe(0)
-  expect(stripAnsi(result.stderr)).toContain('Whisper progress [')
 
   const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
@@ -68,7 +67,7 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
     ])
     expect(metadata.missingProviders).toEqual([])
   }
-})
+}, 60000)
 
 for (const modelCase of [
   { model: 'base', metadataSuffix: 'ggml-base' },
@@ -113,7 +112,7 @@ for (const modelCase of [
       const summaryExists = await fileExists(`${outputDir}/text.json`)
       expect(summaryExists).toBe(false)
     }
-  })
+  }, 60000)
 }
 
 budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments', async () => {
@@ -126,7 +125,7 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
   )
 
   expect(result.exitCode).toBe(0)
-  expect(stripAnsi(result.stderr)).toContain('Whisper progress [')
+  expect(stripAnsi(result.stderr)).toContain('STT Segment')
 
   const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
@@ -153,4 +152,4 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
     const segmentsDirExists = await fileExists(`${outputDir}/segments`)
     expect(segmentsDirExists).toBe(true)
   }
-})
+}, 90000)

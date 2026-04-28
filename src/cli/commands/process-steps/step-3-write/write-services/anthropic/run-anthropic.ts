@@ -28,17 +28,3 @@ export const runAnthropicModel = async (
     supportsStructuredOutput: true
   })
 }
-
-export const checkAnthropicHealth = async (): Promise<boolean> => {
-  try {
-    const apiKey = readEnv('ANTHROPIC_API_KEY')
-    if (!apiKey) return false
-
-    const client = createAnthropicClient()
-    await client.models.list()
-    return true
-  } catch (error) {
-    l.error(`Anthropic health check failed`, error)
-    return false
-  }
-}

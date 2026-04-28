@@ -130,8 +130,14 @@ const buildInternalRenderedFileName = (
 
 const buildExternalRenderedFileName = (
   baseName: string,
-  metadata: Step3Metadata
-): string => `${baseName}-${modelFileSuffix(metadata)}.md`
+  metadata: Step3Metadata,
+  singleTarget: boolean
+): string => {
+  const suffix = singleTarget
+    ? SERVICE_FILE_SUFFIX[metadata.llmService]
+    : modelFileSuffix(metadata)
+  return `${baseName}-${suffix}.md`
+}
 
 const buildInternalArtifactKey = (
   metadata: Step3Metadata,
@@ -466,7 +472,7 @@ export const writeRenderedTextArtifacts = async (options: {
     }
 
     if (externalDir && externalBaseName) {
-      const fileName = buildExternalRenderedFileName(externalBaseName, result.metadata)
+      const fileName = buildExternalRenderedFileName(externalBaseName, result.metadata, singleTarget)
       const absolutePath = join(externalDir, fileName)
       await Bun.write(absolutePath, rendered)
       externalFiles.push(absolutePath)

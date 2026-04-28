@@ -1,10 +1,5 @@
-import { parseStep2RuntimeMetadata } from '../async-lifecycle'
 import { writeProviderResult } from '../../../manifest-utils'
-import { parseStoredStep2TimingMetadata } from '../stt-timing-metadata'
-import { buildPersistedTranscriptionEvidence } from './stt-evidence'
 import type {
-  PersistedTranscriptionEvidence,
-  ProviderResult,
   Step2Metadata,
   TranscriptionEvidence,
   TranscriptionEvidenceCapabilities,
@@ -13,7 +8,6 @@ import type {
   TranscriptionEvidenceWord,
   TranscriptionResult
 } from '~/types'
-import type { SttArtifactIdentity } from '~/types'
 
 const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'whisper',
@@ -49,30 +43,6 @@ export const isSttService = (
   value: unknown
 ): value is Step2Metadata['transcriptionService'] =>
   typeof value === 'string' && STT_SERVICES.has(value as Step2Metadata['transcriptionService'])
-
-export const parseProviderResultEnvelope = (
-  value: unknown
-): ProviderResult | undefined => {
-  if (
-    !isRecord(value)
-    || value['schemaVersion'] !== 2
-    || value['kind'] !== 'provider-result'
-    || typeof value['provider'] !== 'string'
-    || !isRecord(value['metadata'])
-    || !isRecord(value['result'])
-  ) {
-    return undefined
-  }
-
-  return {
-    schemaVersion: 2,
-    kind: 'provider-result',
-    provider: value['provider'],
-    ...(typeof value['model'] === 'string' ? { model: value['model'] } : {}),
-    metadata: value['metadata'],
-    result: value['result']
-  }
-}
 
 const parseEvidenceSegment = (
   value: unknown
@@ -155,38 +125,6 @@ const parseEvidenceTimingQuality = (
   return undefined
 }
 
-const parseStoredStep2BillingMetadata = (
-  value: unknown
-): Step2Metadata['billing'] | undefined => {
-  if (!isRecord(value)) {
-    return undefined
-  }
-
-  const billing: NonNullable<Step2Metadata['billing']> = {}
-  if (typeof value['creditsUsed'] === 'number' && Number.isFinite(value['creditsUsed']) && value['creditsUsed'] >= 0) {
-    billing.creditsUsed = value['creditsUsed']
-  }
-  if (typeof value['creditRateCents'] === 'number' && Number.isFinite(value['creditRateCents']) && value['creditRateCents'] >= 0) {
-    billing.creditRateCents = value['creditRateCents']
-  }
-  if (typeof value['totalCost'] === 'number' && Number.isFinite(value['totalCost']) && value['totalCost'] >= 0) {
-    billing.totalCost = value['totalCost']
-  }
-  if (
-    value['source'] === 'response-header'
-    || value['source'] === 'fallback-estimate'
-    || value['source'] === 'provider_quote'
-    || value['source'] === 'registry_fallback'
-  ) {
-    billing.source = value['source']
-  }
-  if (value['mode'] === 'url' || value['mode'] === 'duration' || value['mode'] === 'order' || value['mode'] === 'segment_sum') {
-    billing.mode = value['mode']
-  }
-
-  return Object.keys(billing).length > 0 ? billing : undefined
-}
-
 const parseTranscriptionEvidence = (
   value: unknown
 ): TranscriptionEvidence | undefined => {
@@ -244,39 +182,6 @@ const parseTranscriptionSegment = (
   }
 }
 
-export const parseStoredStep2Metadata = (
-  value: unknown
-): Step2Metadata | undefined => {
-  if (
-    !isRecord(value)
-    || !isSttService(value['transcriptionService'])
-    || typeof value['transcriptionModel'] !== 'string'
-    || typeof value['processingTime'] !== 'number'
-    || typeof value['tokenCount'] !== 'number'
-  ) {
-    return undefined
-  }
-
-  const timings = parseStoredStep2TimingMetadata(value['timings'])
-  const runtime = parseStep2RuntimeMetadata(value['runtime'])
-  const billing = parseStoredStep2BillingMetadata(value['billing'])
-
-  return {
-    transcriptionService: value['transcriptionService'],
-    transcriptionModel: value['transcriptionModel'],
-    processingTime: value['processingTime'],
-    tokenCount: value['tokenCount'],
-    ...(value['captionKind'] === 'manual' || value['captionKind'] === 'auto'
-      ? { captionKind: value['captionKind'] }
-      : {}),
-    ...(typeof value['captionLanguage'] === 'string' ? { captionLanguage: value['captionLanguage'] } : {}),
-    ...(value['captionFormat'] === 'vtt' ? { captionFormat: value['captionFormat'] } : {}),
-    ...(timings ? { timings } : {}),
-    ...(runtime ? { runtime } : {}),
-    ...(billing ? { billing } : {})
-  }
-}
-
 export const parseStoredTranscriptionResult = (
   value: unknown
 ): TranscriptionResult | undefined => {
@@ -302,60 +207,6 @@ export const parseStoredTranscriptionResult = (
     segments,
     ...(evidence ? { evidence } : {})
   }
-}
-
-const resolveSttArtifactIdentity = (
-  envelope: ProviderResult
-): SttArtifactIdentity | undefined => {
-  const metadata = envelope.metadata
-  if (
-    isRecord(metadata)
-    && isSttService(metadata['transcriptionService'])
-    && typeof metadata['transcriptionModel'] === 'string'
-  ) {
-    return {
-      transcriptionService: metadata['transcriptionService'],
-      transcriptionModel: metadata['transcriptionModel']
-    }
-  }
-
-  if (isSttService(envelope.provider) && typeof envelope.model === 'string' && envelope.model.length > 0) {
-    return {
-      transcriptionService: envelope.provider,
-      transcriptionModel: envelope.model
-    }
-  }
-
-  return undefined
-}
-
-export const hasSttProviderResultMetadata = (value: unknown): boolean => {
-  const envelope = parseProviderResultEnvelope(value)
-  if (!envelope) {
-    return false
-  }
-
-  const metadata = envelope.metadata
-  return isRecord(metadata)
-    && isSttService(metadata['transcriptionService'])
-    && typeof metadata['transcriptionModel'] === 'string'
-}
-
-export const derivePersistedTranscriptionEvidenceFromProviderResult = (
-  value: unknown
-): PersistedTranscriptionEvidence | undefined => {
-  const envelope = parseProviderResultEnvelope(value)
-  if (!envelope) {
-    return undefined
-  }
-
-  const identity = resolveSttArtifactIdentity(envelope)
-  const result = parseStoredTranscriptionResult(envelope.result)
-  if (!identity || !result) {
-    return undefined
-  }
-
-  return buildPersistedTranscriptionEvidence(result, identity)
 }
 
 export const writeSttResultArtifact = async (

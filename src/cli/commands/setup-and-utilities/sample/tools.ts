@@ -11,10 +11,6 @@ const TOOL_DEFS: Record<ToolName, { command: string, remediation: string }> = {
     command: 'ffprobe',
     remediation: 'Install ffprobe (included with ffmpeg): bun as setup'
   },
-  libreoffice: {
-    command: 'soffice',
-    remediation: 'Install LibreOffice: bun as setup'
-  },
   calibre: {
     command: 'ebook-convert',
     remediation: 'Install Calibre: bun as setup'
@@ -42,13 +38,4 @@ export const checkAllTools = (): Record<ToolName, ToolStatus> => {
     result[name] = checkTool(name)
   }
   return result
-}
-
-export const requireTool = (name: ToolName): void => {
-  const status = checkTool(name)
-  if (!status.available) {
-    throw new Error(
-      `Required tool '${status.command}' is not installed. ${status.remediation}`
-    )
-  }
 }

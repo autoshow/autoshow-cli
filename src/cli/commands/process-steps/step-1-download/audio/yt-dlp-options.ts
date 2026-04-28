@@ -25,10 +25,6 @@ const isReadableFile = async (filePath: string): Promise<boolean> => {
   }
 }
 
-export const resetYtDlpOptionWarningStateForTests = (): void => {
-  warnedUnreadableCookiePaths.clear()
-}
-
 export const inspectYtDlpAuthState = async (
   options?: { cwd?: string }
 ): Promise<{

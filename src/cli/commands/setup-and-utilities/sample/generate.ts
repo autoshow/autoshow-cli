@@ -1,6 +1,5 @@
 import { join, dirname } from 'node:path'
-import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm } from 'node:fs/promises'
 import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { calibreBin } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
@@ -41,59 +40,186 @@ const generateSilentVideo = async (outPath: string, format: string): Promise<voi
 
 // ─── Document generation helpers ──────────────────────────────────────────
 
-const SAMPLE_HTML = '<html><body><p>Sample document for testing.</p></body></html>'
+const SAMPLE_TEXT = 'Sample document for testing.'
 
-const generateViaLibreOffice = async (
-  outPath: string,
-  targetExt: string,
-  sourceExt: string,
-  sourceContent: string,
-  intermediateExt?: string
-): Promise<void> => {
-  const tmpDir = await mkdtemp(join(tmpdir(), 'autoshow-sample-'))
-  try {
-    const srcFile = join(tmpDir, `source.${sourceExt}`)
-    await Bun.write(srcFile, sourceContent)
-
-    let convertFrom = srcFile
-    if (intermediateExt) {
-      const intResult = await exec('soffice', ['--headless', '--convert-to', intermediateExt, '--outdir', tmpDir, srcFile])
-      if (intResult.exitCode !== 0) {
-        throw new Error(`LibreOffice ${sourceExt}→${intermediateExt} failed: ${intResult.stderr}`)
-      }
-      convertFrom = join(tmpDir, `source.${intermediateExt}`)
-    }
-
-    const result = await exec('soffice', ['--headless', '--convert-to', targetExt, '--outdir', tmpDir, convertFrom])
-    if (result.exitCode !== 0) {
-      throw new Error(`LibreOffice ${intermediateExt ?? sourceExt}→${targetExt} failed: ${result.stderr}`)
-    }
-    await rename(join(tmpDir, `source.${targetExt}`), outPath)
-  } finally {
-    await rm(tmpDir, { recursive: true, force: true })
-  }
+type ZipFixtureEntry = {
+  path: string
+  content: string | Uint8Array
 }
 
-// FODS (flat-XML spreadsheet) → ODS/XLSX (LibreOffice Calc handles FODS natively)
-const MINIMAL_FODS = `<?xml version="1.0" encoding="UTF-8"?>
-<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:mimetype="application/vnd.oasis.opendocument.spreadsheet">
-<office:body><office:spreadsheet>
-<table:table table:name="Sheet1">
-<table:table-row><table:table-cell><text:p>ID</text:p></table:table-cell><table:table-cell><text:p>Name</text:p></table:table-cell></table:table-row>
-<table:table-row><table:table-cell><text:p>1</text:p></table:table-cell><table:table-cell><text:p>Sample</text:p></table:table-cell></table:table-row>
-</table:table>
-</office:spreadsheet></office:body></office:document>`
+const CRC32_TABLE = new Uint32Array(256)
+for (let i = 0; i < CRC32_TABLE.length; i++) {
+  let crc = i
+  for (let bit = 0; bit < 8; bit++) {
+    crc = (crc & 1) !== 0 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1
+  }
+  CRC32_TABLE[i] = crc >>> 0
+}
 
-// FODP (flat-XML presentation) → ODP/PPTX (LibreOffice Impress handles FODP natively)
-const MINIMAL_FODP = `<?xml version="1.0" encoding="UTF-8"?>
-<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.presentation">
-<office:body><office:presentation>
-<draw:page draw:name="Slide1" draw:master-page-name="">
-<draw:frame draw:layer="layout" svg:width="25cm" svg:height="2cm" svg:x="1cm" svg:y="1cm">
-<draw:text-box><text:p>Sample document for testing.</text:p></draw:text-box>
-</draw:frame>
-</draw:page>
-</office:presentation></office:body></office:document>`
+const crc32 = (data: Buffer): number => {
+  let crc = 0xffffffff
+  for (const byte of data) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xff]! ^ (crc >>> 8)
+  }
+  return (crc ^ 0xffffffff) >>> 0
+}
+
+const zipContentBuffer = (content: string | Uint8Array): Buffer =>
+  typeof content === 'string' ? Buffer.from(content, 'utf8') : Buffer.from(content)
+
+const writeZipFixture = async (outPath: string, entries: ZipFixtureEntry[]): Promise<void> => {
+  const fileParts: Buffer[] = []
+  const centralParts: Buffer[] = []
+  let offset = 0
+
+  for (const entry of entries) {
+    const name = Buffer.from(entry.path, 'utf8')
+    const data = zipContentBuffer(entry.content)
+    const crc = crc32(data)
+
+    const localHeader = Buffer.alloc(30)
+    localHeader.writeUInt32LE(0x04034b50, 0)
+    localHeader.writeUInt16LE(20, 4)
+    localHeader.writeUInt16LE(0x0800, 6)
+    localHeader.writeUInt16LE(0, 8)
+    localHeader.writeUInt16LE(0, 10)
+    localHeader.writeUInt16LE(0, 12)
+    localHeader.writeUInt32LE(crc, 14)
+    localHeader.writeUInt32LE(data.length, 18)
+    localHeader.writeUInt32LE(data.length, 22)
+    localHeader.writeUInt16LE(name.length, 26)
+
+    fileParts.push(localHeader, name, data)
+
+    const centralHeader = Buffer.alloc(46)
+    centralHeader.writeUInt32LE(0x02014b50, 0)
+    centralHeader.writeUInt16LE(20, 4)
+    centralHeader.writeUInt16LE(20, 6)
+    centralHeader.writeUInt16LE(0x0800, 8)
+    centralHeader.writeUInt16LE(0, 10)
+    centralHeader.writeUInt16LE(0, 12)
+    centralHeader.writeUInt16LE(0, 14)
+    centralHeader.writeUInt32LE(crc, 16)
+    centralHeader.writeUInt32LE(data.length, 20)
+    centralHeader.writeUInt32LE(data.length, 24)
+    centralHeader.writeUInt16LE(name.length, 28)
+    centralHeader.writeUInt32LE(offset, 42)
+    centralParts.push(centralHeader, name)
+
+    offset += localHeader.length + name.length + data.length
+  }
+
+  const centralOffset = offset
+  const centralDirectory = Buffer.concat(centralParts)
+  const end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50, 0)
+  end.writeUInt16LE(entries.length, 8)
+  end.writeUInt16LE(entries.length, 10)
+  end.writeUInt32LE(centralDirectory.length, 12)
+  end.writeUInt32LE(centralOffset, 16)
+
+  await Bun.write(outPath, Buffer.concat([...fileParts, centralDirectory, end]))
+}
+
+const generateDocxFromScratch = async (outPath: string): Promise<void> => {
+  await writeZipFixture(outPath, [
+    {
+      path: '[Content_Types].xml',
+      content: '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'
+    },
+    {
+      path: 'word/document.xml',
+      content: `<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>${SAMPLE_TEXT}</w:t></w:r></w:p></w:body></w:document>`
+    }
+  ])
+}
+
+const generatePptxFromScratch = async (outPath: string): Promise<void> => {
+  await writeZipFixture(outPath, [
+    {
+      path: '[Content_Types].xml',
+      content: '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/></Types>'
+    },
+    {
+      path: 'ppt/slides/slide1.xml',
+      content: `<?xml version="1.0" encoding="UTF-8"?><p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>${SAMPLE_TEXT}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`
+    }
+  ])
+}
+
+const generateXlsxFromScratch = async (outPath: string): Promise<void> => {
+  await writeZipFixture(outPath, [
+    {
+      path: '[Content_Types].xml',
+      content: '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>'
+    },
+    {
+      path: 'xl/sharedStrings.xml',
+      content: '<?xml version="1.0" encoding="UTF-8"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="4" uniqueCount="4"><si><t>ID</t></si><si><t>Name</t></si><si><t>1</t></si><si><t>Sample</t></si></sst>'
+    },
+    {
+      path: 'xl/worksheets/sheet1.xml',
+      content: '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row><row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2" t="s"><v>3</v></c></row></sheetData></worksheet>'
+    }
+  ])
+}
+
+const generateOdfFromScratch = async (outPath: string, mimetype: string): Promise<void> => {
+  await writeZipFixture(outPath, [
+    { path: 'mimetype', content: mimetype },
+    {
+      path: 'content.xml',
+      content: `<?xml version="1.0" encoding="UTF-8"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"><office:body><office:text><text:p>${SAMPLE_TEXT}</text:p></office:text></office:body></office:document-content>`
+    }
+  ])
+}
+
+const generateEpubFromScratch = async (outPath: string): Promise<void> => {
+  await writeZipFixture(outPath, [
+    { path: 'mimetype', content: 'application/epub+zip' },
+    {
+      path: 'META-INF/container.xml',
+      content: '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>'
+    },
+    {
+      path: 'OEBPS/content.opf',
+      content: '<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Sample EPUB</dc:title><dc:language>en</dc:language><dc:identifier id="bookid">sample-epub</dc:identifier></metadata><manifest><item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="chapter1"/></spine></package>'
+    },
+    {
+      path: 'OEBPS/chapter1.xhtml',
+      content: `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Chapter 1</title></head><body><h1>Chapter 1</h1><p>${SAMPLE_TEXT}</p></body></html>`
+    }
+  ])
+}
+
+const generatePdfFromScratch = async (outPath: string): Promise<void> => {
+  const text = SAMPLE_TEXT.replace(/[\\()]/g, '\\$&')
+  const stream = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(stream, 'ascii')} >>\nstream\n${stream}\nendstream`
+  ]
+
+  let pdf = '%PDF-1.4\n'
+  const offsets: number[] = []
+  for (let index = 0; index < objects.length; index++) {
+    offsets.push(Buffer.byteLength(pdf, 'ascii'))
+    pdf += `${index + 1} 0 obj\n${objects[index]}\nendobj\n`
+  }
+
+  const xrefOffset = Buffer.byteLength(pdf, 'ascii')
+  pdf += `xref\n0 ${objects.length + 1}\n`
+  pdf += '0000000000 65535 f \n'
+  for (const offset of offsets) {
+    pdf += `${String(offset).padStart(10, '0')} 00000 n \n`
+  }
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
+
+  await Bun.write(outPath, pdf)
+}
 
 const generateCsvFromScratch = async (outPath: string): Promise<void> => {
   const content = 'id,name,value\n1,alpha,100\n2,beta,200\n3,gamma,300\n'
@@ -296,20 +422,28 @@ export const generateFixture = async (
         await generateSilentVideo(filePath, 'mkv')
         break
       case 'pdf':
-      case 'odt':
-        await generateViaLibreOffice(filePath, format, 'html', SAMPLE_HTML)
+        await generatePdfFromScratch(filePath)
         break
       case 'epub':
+        await generateEpubFromScratch(filePath)
+        break
       case 'docx':
-        await generateViaLibreOffice(filePath, format, 'html', SAMPLE_HTML, 'odt')
+        await generateDocxFromScratch(filePath)
+        break
+      case 'pptx':
+        await generatePptxFromScratch(filePath)
+        break
+      case 'xlsx':
+        await generateXlsxFromScratch(filePath)
+        break
+      case 'odt':
+        await generateOdfFromScratch(filePath, 'application/vnd.oasis.opendocument.text')
         break
       case 'ods':
-      case 'xlsx':
-        await generateViaLibreOffice(filePath, format, 'fods', MINIMAL_FODS)
+        await generateOdfFromScratch(filePath, 'application/vnd.oasis.opendocument.spreadsheet')
         break
       case 'odp':
-      case 'pptx':
-        await generateViaLibreOffice(filePath, format, 'fodp', MINIMAL_FODP)
+        await generateOdfFromScratch(filePath, 'application/vnd.oasis.opendocument.presentation')
         break
       case 'rtf':
         await generateRtfFromScratch(filePath)

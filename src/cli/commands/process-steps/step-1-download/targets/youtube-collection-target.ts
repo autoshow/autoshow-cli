@@ -1,13 +1,11 @@
 import * as v from 'valibot'
 import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
-import type { ProcessCommand, RuntimeOptions } from '~/types'
-import { isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
-import { isLikelyUrl, processBatch } from './target-utils'
-import { processSingleTarget } from './single-target'
+import type { ProcessCommand } from '~/types'
+import { isOcrCommand } from '~/cli/commands/process-steps/process-command-kinds'
+import { isLikelyUrl } from './target-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
 import { buildYtDlpListArgs, buildYtDlpFailureMessage } from '../audio/yt-dlp-options'
-import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-extract/step-2-stt/batch'
 
 const YtDlpPlaylistItemSchema = v.object({
   webpage_url: v.optional(v.string(), undefined),
@@ -45,7 +43,7 @@ const getYoutubeCollectionItems = async (url: string): Promise<string[]> => {
     const items: string[] = lines.map((line: string) => {
       try {
         const raw: unknown = JSON.parse(line)
-        const parsed = validateDataSafe(YtDlpPlaylistItemSchema, raw, 'yt-dlp playlist item')
+        const parsed = validateDataSafe(YtDlpPlaylistItemSchema, raw)
         if (!parsed) return ''
         const direct = parsed.webpage_url ?? ''
         const id = parsed.url ?? ''
@@ -77,46 +75,4 @@ export const resolveYoutubeCollectionItems = async (
   }
 
   return items
-}
-
-export const tryHandleYoutubeCollectionTarget = async (
-  resolvedTarget: string,
-  command: ProcessCommand,
-  opts: RuntimeOptions
-): Promise<boolean> => {
-  const items = await resolveYoutubeCollectionItems(resolvedTarget, command)
-  if (!items) {
-    return false
-  }
-
-  l.write('info', `Detected YouTube collection URL, processing ${items.length} videos`)
-  if (isSttCommand(command)) {
-    const result = await runSttBatch(items, 'youtube_collection', opts)
-    throwIfSttBatchIncomplete(result)
-    return true
-  }
-
-  const { incomplete, fail, failureExitCode } = await processBatch(
-    items,
-    'youtube_collection',
-    command,
-    opts,
-    async (commandName, item, batchDir, batchOpts, batchItem) =>
-      await processSingleTarget(commandName, item, batchDir, batchOpts, undefined, {
-        batchChildContext: {
-          batchDir,
-          ...(batchItem ? { batchItem } : {})
-        }
-      }, batchItem)
-  )
-  if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && items.length > 0 && fail === items.length)) {
-    const problemCount = isSttCommand(command) ? incomplete + fail : fail
-    const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
-    if (failureExitCode !== undefined) {
-      ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
-    }
-    throw error
-  }
-
-  return true
 }

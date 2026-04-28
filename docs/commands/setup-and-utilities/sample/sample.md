@@ -70,14 +70,14 @@ bun as setup --sample --valid-only
 | `1-audio.aac`    | aac    | current       | ffmpeg         |
 | `2-video.mov`    | mov    | current       | ffmpeg         |
 | `1-audio.flac`   | flac   | current       | ffmpeg         |
-| `1-document.pdf` | pdf    | current       | libreoffice    |
-| `1-document.epub`| epub   | current       | libreoffice    |
-| `1-document.docx`| docx   | current       | libreoffice    |
-| `1-document.pptx`| pptx   | current       | libreoffice    |
-| `1-document.xlsx`| xlsx   | current       | libreoffice    |
-| `1-document.odt` | odt    | current       | libreoffice    |
-| `1-document.ods` | ods    | current       | libreoffice    |
-| `1-document.odp` | odp    | current       | libreoffice    |
+| `1-document.pdf` | pdf    | current       | —              |
+| `1-document.epub`| epub   | current       | —              |
+| `1-document.docx`| docx   | current       | —              |
+| `1-document.pptx`| pptx   | current       | —              |
+| `1-document.xlsx`| xlsx   | current       | —              |
+| `1-document.odt` | odt    | current       | —              |
+| `1-document.ods` | ods    | current       | —              |
+| `1-document.odp` | odp    | current       | —              |
 | `1-image.png`    | png    | current       | —              |
 | `1-image.jpg`    | jpg    | current       | —              |
 | `1-image.jpeg`   | jpeg   | current       | —              |
@@ -90,7 +90,7 @@ bun as setup --sample --valid-only
 | `1-document.fb2` | fb2    | planned       | calibre        |
 | `1-document.lit` | lit    | planned       | calibre        |
 | `1-document.cbz` | cbz    | planned       | imagemagick    |
-| `1-document.rtf` | rtf    | planned       | libreoffice    |
+| `1-document.rtf` | rtf    | planned       | —              |
 | `1-document.csv` | csv    | planned       | —              |
 | `1-image.webp`   | webp   | planned       | imagemagick    |
 | `1-image.bmp`    | bmp    | planned       | imagemagick    |
@@ -114,7 +114,6 @@ Not all tools are required. The command adapts based on available tools:
 | Tool                        | Required for                       | Policy                                              |
 |-----------------------------|------------------------------------|-----------------------------------------------------|
 | ffmpeg / ffprobe            | Media fixtures                     | **Required** — preflight fails if missing           |
-| libreoffice                 | Office/PDF fixtures                | **Required** — preflight fails if missing           |
 | calibre (`ebook-convert`)   | MOBI/AZW3/FB2/LIT fixtures         | **Optional** — skipped with warning if missing      |
 | imagemagick (`convert`)     | WebP/BMP/GIF/CBZ fixtures          | **Optional** — skipped with warning if missing      |
 

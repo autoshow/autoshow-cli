@@ -1,6 +1,4 @@
-import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
-import { getDeapiBaseUrl } from '~/utils/deapi'
 
 export { getDeapiBaseUrl } from '~/utils/deapi'
 
@@ -31,16 +29,6 @@ export const isDeapiSupportedSourceUrl = (
     return DEAPI_SUPPORTED_HOST_PATTERNS.some((pattern) => pattern.test(hostname))
   } catch {
     return false
-  }
-}
-
-export const setupDeapiStt = async (): Promise<void> => {
-  const apiKey = readEnv('DEAPI_API_KEY')
-  if (apiKey) {
-    l.write('success', `DEAPI_API_KEY found — deAPI transcription ready (${getDeapiBaseUrl()})`)
-  } else {
-    l.warn('DEAPI_API_KEY not set — deAPI transcription will not work until set')
-    l.write('info', 'Set DEAPI_API_KEY environment variable to use deAPI transcription')
   }
 }
 

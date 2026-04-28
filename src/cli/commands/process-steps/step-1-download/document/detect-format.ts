@@ -6,10 +6,6 @@ const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 const JPG_MAGIC = [0xff, 0xd8, 0xff]
 const RTF_MAGIC = [0x7b, 0x5c, 0x72, 0x74, 0x66, 0x31] // {\rtf1
 
-const MAX_ZIP_ENTRIES = 2000
-const MAX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024 // 50 MB safety cap
-const MAX_COMPRESSION_RATIO = 500
-
 const hasMagic = (bytes: Uint8Array, magic: number[]): boolean => {
   if (bytes.length < magic.length) return false
   return magic.every((value, idx) => bytes[idx] === value)
@@ -180,4 +176,3 @@ export const detectDocumentFormat = async (filePath: string): Promise<DetectResu
   return null
 }
 
-export { MAX_ZIP_ENTRIES, MAX_UNCOMPRESSED_BYTES, MAX_COMPRESSION_RATIO }

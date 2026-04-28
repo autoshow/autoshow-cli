@@ -18,7 +18,7 @@ export const adjustTimestampByOffset = (timestamp: string, offsetMinutes: number
 }
 
 export const parseReverbWithSpeakers = (data: unknown, offsetMinutes: number = 0): TranscriptionResult => {
-  const validated = validateDataSafe(ReverbOutputSchema, data, 'Reverb output with speakers')
+  const validated = validateDataSafe(ReverbOutputSchema, data)
   if (!validated) {
 
     const raw = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {}

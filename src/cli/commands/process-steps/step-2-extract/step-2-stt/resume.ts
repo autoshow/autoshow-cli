@@ -1,4 +1,3 @@
-import { readdir } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as l from '~/utils/logger'
@@ -211,71 +210,6 @@ export const hasResumableSttTargetWork = async (
   }
 
   return false
-}
-
-const batchHasResumableWork = async (
-  batchDir: string,
-  selectedTargets: SttTarget[] | undefined,
-  options: { youtubeCaptions: boolean, currentTargets: SttTarget[] }
-): Promise<boolean> =>
-  await hasResumableSttTargetWork({
-    kind: 'stt',
-    scope: 'batch',
-    dir: resolvePath(batchDir),
-    manifestPath: join(resolvePath(batchDir), 'batch.json')
-  }, selectedTargets, options)
-
-export const discoverLatestResumableSttBatchDir = async (
-  outputRootInput: string,
-  selectedTargets?: SttTarget[],
-  options: { youtubeCaptions?: boolean, currentTargets?: SttTarget[] } = {}
-): Promise<string | undefined> => {
-  const outputRoot = resolvePath(outputRootInput)
-
-  let batchNames: string[]
-  try {
-    const entries = await readdir(outputRoot, { withFileTypes: true })
-    batchNames = entries
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name)
-      .sort((left, right) => right.localeCompare(left))
-  } catch {
-    return undefined
-  }
-
-  for (const batchName of batchNames) {
-    const batchDir = join(outputRoot, batchName)
-    if (await batchHasResumableWork(batchDir, selectedTargets, {
-      youtubeCaptions: options.youtubeCaptions === true,
-      currentTargets: options.currentTargets ?? []
-    })) {
-      return batchDir
-    }
-  }
-
-  return undefined
-}
-
-export const resolveResumeSttBatchDir = async (
-  batchDirInput: string | undefined,
-  selectedTargets?: SttTarget[],
-  options: { youtubeCaptions?: boolean, currentTargets?: SttTarget[] } = {},
-  outputRootInput = './output'
-): Promise<string> => {
-  if (typeof batchDirInput === 'string' && batchDirInput.trim().length > 0) {
-    return batchDirInput
-  }
-
-  const discoveredBatchDir = await discoverLatestResumableSttBatchDir(outputRootInput, selectedTargets, options)
-  if (discoveredBatchDir) {
-    return discoveredBatchDir
-  }
-
-  if (selectedTargets && selectedTargets.length > 0) {
-    throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput} that matches the selected provider flags. Pass a batch directory explicitly.`)
-  }
-
-  throw CLIUsageError(`Could not find a resumable STT batch under ${outputRootInput}. Pass a batch directory explicitly.`)
 }
 
 const collectPartialFailureLabels = (
@@ -538,17 +472,4 @@ export const resumeSttTarget = async (
     ;(error as Error & { exitCode?: number }).exitCode = 2
     throw error
   }
-}
-
-export const resumeSttMissingFromBatchDir = async (
-  batchDirInput: string,
-  opts: RuntimeOptions,
-  selectedTargets?: SttTarget[]
-): Promise<void> => {
-  await resumeSttTarget({
-    kind: 'stt',
-    scope: 'batch',
-    dir: resolvePath(batchDirInput),
-    manifestPath: join(resolvePath(batchDirInput), 'batch.json')
-  }, opts, selectedTargets)
 }

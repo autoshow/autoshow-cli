@@ -30,8 +30,9 @@ test('--price allows multiple image providers and reports each image step', asyn
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
-  expect(output).toContain('"provider": "openai"')
-  expect(output).toContain('"provider": "minimax"')
+  expect(output).toContain('Cost Estimate')
+  expect(output).toContain('openai')
+  expect(output).toContain('minimax')
   expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')
   expect(output).toContain('generated-image-minimax-image-01.jpeg')
 })

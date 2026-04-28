@@ -48,7 +48,6 @@ import * as l from '~/utils/logger'
 
 const KITTEN_PYTHON_VERSION = '3.12'
 
-export const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
 export const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
 const checkKittenTtsSetup = async (): Promise<boolean> => {

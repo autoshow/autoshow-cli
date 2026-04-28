@@ -1,7 +1,6 @@
 import { rm } from 'node:fs/promises'
 import { commandExists, pathExists, runCapture, runInherit, paddleOcrUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
-import { createHumanTable } from '~/utils/logger/human-table'
 
 const PYTHON_VERSION = '3.10'
 
@@ -62,27 +61,6 @@ export const setupPaddleOcrEnvironment = async (): Promise<void> => {
 
   l.warn('Note: First PaddleOCR inference will download model weights (~150MB+)')
   l.write('success', 'PaddleOCR environment ready')
-}
-
-export const setupPaddleOcr = async (): Promise<void> => {
-  if (await envExistsAndValid()) {
-    return
-  }
-
-  l.write('info', 'Creating new PaddleOCR environment')
-  await setupPaddleOcrEnvironment()
-
-  if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') === '1') {
-    l.write('success', 'PaddleOCR setup complete')
-  } else {
-    l.write('success', 'PaddleOCR Setup', {
-      category: 'command',
-      humanTable: createHumanTable([
-        { status: 'complete', command: 'bun as extract input/examples/document/1-document.pdf --paddle-ocr' },
-        { status: 'complete', command: 'bun as extract input/examples/document/1-document.jpg --paddle-ocr' }
-      ], ['status', 'command'])
-    })
-  }
 }
 
 export const ensurePaddleOcrSetup = async (): Promise<void> => {

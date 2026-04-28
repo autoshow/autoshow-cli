@@ -106,7 +106,6 @@ describe("kitten-tts pipeline", () => {
 
       expect(result.exitCode).toBe(0)
       expect(output).toContain('TTS estimate omitted')
-      expect(output).not.toContain('"step": "tts"')
       expect(output).not.toContain('speech-kitten-kitten-tts-mini.wav')
       expect(output).not.toContain('speech-openai-gpt-4o-mini-tts.wav')
     })
