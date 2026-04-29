@@ -156,6 +156,9 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
   if (metadata.ocrService === 'glm') {
     return { provider: 'glm', model: metadata.ocrModel ?? 'glm-ocr' }
   }
+  if (metadata.ocrService === 'kimi') {
+    return { provider: 'kimi', model: metadata.ocrModel ?? 'kimi-k2.6' }
+  }
   if (metadata.ocrService === 'mistral') {
     return { provider: 'mistral', model: metadata.ocrModel ?? 'mistral-ocr' }
   }
@@ -176,6 +179,9 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
   }
   if (metadata.extractionMethod.includes('glm-ocr')) {
     return { provider: 'glm', model: metadata.ocrModel ?? 'glm-ocr' }
+  }
+  if (metadata.extractionMethod.includes('kimi-ocr')) {
+    return { provider: 'kimi', model: metadata.ocrModel ?? 'kimi-k2.6' }
   }
   if (metadata.extractionMethod.includes('openai-ocr')) {
     return { provider: 'openai', model: metadata.ocrModel ?? 'gpt-5.4-nano' }

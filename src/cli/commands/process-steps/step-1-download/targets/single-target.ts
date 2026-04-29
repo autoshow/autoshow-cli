@@ -37,7 +37,7 @@ import {
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
+import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE, KIMI_OCR_COMPLETION_TOKENS_PER_PAGE, KIMI_OCR_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
@@ -74,14 +74,15 @@ const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
     ...(opts.anthropicModels ?? (opts.anthropicModel ? [opts.anthropicModel] : [])),
     ...(opts.minimaxModels ?? (opts.minimaxModel ? [opts.minimaxModel] : [])),
     ...(opts.grokModels ?? (opts.grokModel ? [opts.grokModel] : [])),
-    ...(opts.glmModels ?? (opts.glmModel ? [opts.glmModel] : []))
+    ...(opts.glmModels ?? (opts.glmModel ? [opts.glmModel] : [])),
+    ...(opts.kimiModels ?? (opts.kimiModel ? [opts.kimiModel] : []))
   ].some((value) => typeof value === 'string' && value.length > 0)
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'deapiOcrModel'>
+  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'deapiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
+  provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -91,7 +92,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
+    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -125,6 +126,21 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'kimi' || entry.extractionMethod.includes('kimi-ocr')) && typeof entry.ocrModel === 'string') {
+      const pageCount = entry.totalPages ?? 1
+      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
+      targets.push({
+        provider: 'kimi' as const,
+        model: entry.ocrModel ?? opts.kimiOcrModel ?? 'kimi-k2.6',
+        pageCount,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE }),
+        estimateType: hasUsage ? 'exact' : 'heuristic',
+        ...(hasUsage ? {} : { note: KIMI_OCR_PRICE_NOTE })
       })
       continue
     }
@@ -311,6 +327,12 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.glmOcrModels) {
     extractionOpts.glmOcrModels = opts.glmOcrModels
   }
+  if (opts.kimiOcrModel) {
+    extractionOpts.kimiOcrModel = opts.kimiOcrModel
+  }
+  if (opts.kimiOcrModels) {
+    extractionOpts.kimiOcrModels = opts.kimiOcrModels
+  }
   if (opts.openaiOcrModel) {
     extractionOpts.openaiOcrModel = opts.openaiOcrModel
   }
@@ -381,6 +403,7 @@ const writeDocumentOutputMetadata = async (
     step3,
     mistralOcrModel,
     glmOcrModel,
+    kimiOcrModel,
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
@@ -397,6 +420,7 @@ const writeDocumentOutputMetadata = async (
   const extractTargets = collectEstimatedExtractTargets(step2, {
     mistralOcrModel,
     glmOcrModel,
+    kimiOcrModel,
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
@@ -530,6 +554,8 @@ const runDocumentWrite = async (
     grokModel: llmConfig.grokModel,
     glmModels: llmConfig.glmModels,
     glmModel: llmConfig.glmModel,
+    kimiModels: llmConfig.kimiModels,
+    kimiModel: llmConfig.kimiModel,
     llamaModels: llmConfig.llamaModels,
     llamaModel: llmConfig.llamaModel,
     llmProviderConcurrency: opts.llmProviderConcurrency,
@@ -586,6 +612,7 @@ const runDocumentWrite = async (
     step3: step3Serialized,
     mistralOcrModel: opts.mistralOcrModel,
     glmOcrModel: opts.glmOcrModel,
+    kimiOcrModel: opts.kimiOcrModel,
     openaiOcrModel: opts.openaiOcrModel,
     anthropicOcrModel: opts.anthropicOcrModel,
     geminiOcrModel: opts.geminiOcrModel,
@@ -690,6 +717,8 @@ const processMediaSingle = async (
     grokModel: llmConfig.grokModel,
     glmModels: llmConfig.glmModels,
     glmModel: llmConfig.glmModel,
+    kimiModels: llmConfig.kimiModels,
+    kimiModel: llmConfig.kimiModel,
     llmProviderConcurrency: llmDefaults.llmProviderConcurrency,
     llmLocalConcurrency: llmDefaults.llmLocalConcurrency,
     outputDir: baseDir,
@@ -783,6 +812,8 @@ const processMediaSingle = async (
     mistralOcrModel: llmDefaults.mistralOcrModel,
     glmOcrModels: llmDefaults.glmOcrModels,
     glmOcrModel: llmDefaults.glmOcrModel,
+    kimiOcrModels: llmDefaults.kimiOcrModels,
+    kimiOcrModel: llmDefaults.kimiOcrModel,
     openaiOcrModels: llmDefaults.openaiOcrModels,
     openaiOcrModel: llmDefaults.openaiOcrModel,
     anthropicOcrModels: llmDefaults.anthropicOcrModels,

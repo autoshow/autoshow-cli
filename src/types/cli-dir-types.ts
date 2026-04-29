@@ -66,6 +66,8 @@ export type ResolvedLLMConfig = {
   grokModel: string | undefined
   glmModels: string[] | undefined
   glmModel: string | undefined
+  kimiModels: string[] | undefined
+  kimiModel: string | undefined
   llmService: string | undefined
   llmModel: string | undefined
 }

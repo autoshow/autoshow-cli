@@ -42,6 +42,7 @@ import {
   estimateGcloudDocaiCost,
   estimateGeminiOcrCost,
   estimateGlmOcrCost,
+  estimateKimiOcrCost,
   estimateMistralOcrCost,
   estimateOpenAIOcrCost,
   estimateDeapiOcrCost
@@ -58,6 +59,7 @@ type TimedExtractProvider = NonNullable<ComputeEstimatedProcessingTimesInput['ex
 const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
   'mistral',
   'glm',
+  'kimi',
   'openai',
   'anthropic',
   'gemini',
@@ -294,6 +296,26 @@ const buildExtractEstimates = async (
         costMultiplier: estimation.costMultiplier,
         estimateType: estimate.estimateType,
         note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+      })
+      continue
+    }
+
+    if (provider.service === 'kimi') {
+      const estimate = await estimateKimiOcrCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
+        pageCount: estimate.pageCount,
+        promptTokens: estimate.promptTokens,
+        completionTokens: estimate.completionTokens,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: estimate.estimateType,
+        note: estimate.note
       })
       continue
     }

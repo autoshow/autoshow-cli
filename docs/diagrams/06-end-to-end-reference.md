@@ -88,6 +88,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  ├── GLM_API_KEY                     Required for --glm, --glm-ocr,          │
 │  │                                   --glm-stt, --glm-image, --glm-video     │
 │  │                                   models                                  │
+│  ├── KIMI_API_KEY                    Required for --kimi and --kimi-ocr      │
+│  │                                   models                                  │
 │  ├── XAI_API_KEY                     Required for --grok, --grok-image,      │
 │  │                                   --grok-video models                     │
 │  ├── RUNWAYML_API_SECRET             Required for --runway-tts,              │

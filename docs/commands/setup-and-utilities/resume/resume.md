@@ -66,6 +66,9 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch
 # Resume only missing GLM OCR outputs in that target
 bun as resume ./output/2026-04-22_12-00-00-000_batch --glm-ocr glm-ocr
 
+# Resume only missing Kimi OCR outputs in that target
+bun as resume ./output/2026-04-22_12-00-00-000_batch --kimi-ocr kimi-k2.6
+
 # Resume only Deepgram outputs from an STT batch
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deepgram-stt nova-3
 
@@ -161,6 +164,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--paddle-ocr` | Use PaddleOCR |
 | `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |
 | `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
+| `--kimi-ocr <model>` | Use Kimi OCR; omit the value to use `kimi-k2.6` |
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |

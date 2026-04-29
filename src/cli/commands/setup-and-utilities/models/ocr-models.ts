@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AnthropicOcrModel, AwsTextractModel, DeapiOcrModel, DeepinfraOcrModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
+import type { AnthropicOcrModel, AwsTextractModel, DeapiOcrModel, DeepinfraOcrModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, KimiOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
   'mistral-ocr-2512'
@@ -12,6 +12,12 @@ export const SUPPORTED_GLM_OCR_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateGlmOcrModel = createModelValidator<GlmOcrModel>(SUPPORTED_GLM_OCR_MODELS, 'glm-ocr')
+
+export const SUPPORTED_KIMI_OCR_MODELS = [
+  'kimi-k2.6'
+] as const satisfies readonly string[]
+
+export const validateKimiOcrModel = createModelValidator<KimiOcrModel>(SUPPORTED_KIMI_OCR_MODELS, 'kimi-ocr')
 
 export const SUPPORTED_OPENAI_OCR_MODELS = [
   'gpt-5.4',

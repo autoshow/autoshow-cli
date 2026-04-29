@@ -67,6 +67,12 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'glm-ocr'
     }
   }
+  if (metadata.ocrService === 'kimi') {
+    return {
+      provider: 'kimi',
+      model: metadata.ocrModel ?? 'kimi-k2.6'
+    }
+  }
   if (metadata.ocrService === 'mistral') {
     return {
       provider: 'mistral',
@@ -113,6 +119,12 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'glm',
       model: metadata.ocrModel ?? 'glm-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('kimi-ocr')) {
+    return {
+      provider: 'kimi',
+      model: metadata.ocrModel ?? 'kimi-k2.6'
     }
   }
   if (metadata.extractionMethod.includes('openai-ocr')) {
@@ -227,6 +239,9 @@ export const computeEstimatedProcessingTimes = (
           : []),
         ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.kimiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'kimi' as const, model: input.kimiOcrModel, pageCount: input.extractPageCount }]
           : []),
         ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'openai' as const, model: input.openaiOcrModel, pageCount: input.extractPageCount }]

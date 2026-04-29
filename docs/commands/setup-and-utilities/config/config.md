@@ -77,6 +77,7 @@ Pass any provider, model, or generation flag to persist it as a default:
 ```bash
 bun as config --openai gpt-5.4
 bun as config --glm glm-5.1
+bun as config --kimi kimi-k2.6
 bun as config --whisper large-v3-turbo
 bun as config --gcloud-stt chirp_3
 bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
@@ -159,7 +160,8 @@ Representative JSON shape of `config/autoshow.json`:
       "anthropic": ["claude-sonnet-4-6"],
       "minimax": ["MiniMax-M2.5"],
       "grok": ["grok-4.20-non-reasoning"],
-      "glm": ["glm-5.1"]
+      "glm": ["glm-5.1"],
+      "kimi": ["kimi-k2.6"]
     },
     "post": {
       "tts": {
@@ -192,6 +194,7 @@ Representative JSON shape of `config/autoshow.json`:
       "oem": 1,
       "rotate": 0,
       "mistralOcr": ["mistral-ocr-2512"],
+      "kimiOcr": ["kimi-k2.6"],
       "deepinfraOcr": ["allenai/olmOCR-2-7B-1025"]
     },
     "batch": {
@@ -247,6 +250,7 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `minimax` | `--minimax` | Default MiniMax model list |
 | `grok` | `--grok` | Default Grok model list |
 | `glm` | `--glm` | Default GLM model list |
+| `kimi` | `--kimi` | Default Kimi model list |
 
 ### defaults.post.tts
 
@@ -332,6 +336,7 @@ Model-selecting OCR fields in this section are arrays of models, not single stri
 | `rotate` | `--rotate` | Page rotation in degrees |
 | `mistralOcr` | `--mistral-ocr` | Default Mistral OCR model list |
 | `glmOcr` | `--glm-ocr` | Default GLM OCR model list |
+| `kimiOcr` | `--kimi-ocr` | Default Kimi OCR model list |
 | `deepinfraOcr` | `--deepinfra-ocr` | Default DeepInfra OCR model list |
 
 ### defaults.batch

@@ -36,10 +36,14 @@ import {
   computeActualAnthropicOcrCost,
   computeActualDeepinfraOcrCost,
   computeActualGeminiOcrCost,
+  computeActualKimiOcrCost,
   computeDeapiOcrHeuristicCost,
   DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
   DEEPINFRA_OCR_PRICE_NOTE,
   DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
+  KIMI_OCR_COMPLETION_TOKENS_PER_PAGE,
+  KIMI_OCR_PRICE_NOTE,
+  KIMI_OCR_PROMPT_TOKENS_PER_PAGE,
   DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
   estimateDeapiOcrOutputCharsForPages,
   OPENAI_OCR_PRICE_NOTE
@@ -177,6 +181,12 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'glm-ocr'
     }
   }
+  if (metadata.ocrService === 'kimi') {
+    return {
+      provider: 'kimi',
+      model: metadata.ocrModel ?? 'kimi-k2.6'
+    }
+  }
   if (metadata.ocrService === 'mistral') {
     return {
       provider: 'mistral',
@@ -223,6 +233,12 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'glm',
       model: metadata.ocrModel ?? 'glm-ocr'
+    }
+  }
+  if (metadata.extractionMethod.includes('kimi-ocr')) {
+    return {
+      provider: 'kimi',
+      model: metadata.ocrModel ?? 'kimi-k2.6'
     }
   }
   if (metadata.extractionMethod.includes('openai-ocr')) {
@@ -377,6 +393,20 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
+    } else if (provider === 'kimi' && input.step2.ocrModel) {
+      const promptTokens = input.step2.promptTokens ?? 0
+      const completionTokens = input.step2.completionTokens ?? 0
+      const cost = computeActualKimiOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      steps.push({
+        step: 'extract',
+        provider: 'kimi',
+        model: input.step2.ocrModel,
+        cost,
+        inputMetric: 'tokens',
+        inputValue: promptTokens + completionTokens,
+        promptTokens,
+        completionTokens
+      })
     } else if (provider === 'openai' && input.step2.ocrModel) {
       const extractPricing = getExtractPricing('openai', input.step2.ocrModel)
       const promptTokens = input.step2.promptTokens ?? 0
@@ -516,6 +546,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         : provider === 'glm' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
+        : provider === 'kimi' && step2Entry.ocrModel
+          ? computeActualKimiOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
         : provider === 'openai' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
@@ -531,9 +563,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider,
         model,
         cost,
-        inputMetric: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? 'tokens' : 'pages',
-        inputValue: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? promptTokens + completionTokens : step2Entry.totalPages,
-        ...(provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? { promptTokens, completionTokens } : {})
+        inputMetric: provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? 'tokens' : 'pages',
+        inputValue: provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? { promptTokens, completionTokens } : {})
       })
     }
   }
@@ -762,6 +794,17 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
           : []),
         ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount, estimateType: 'heuristic' as const }]
+          : []),
+        ...(input.kimiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'kimi' as const,
+              model: input.kimiOcrModel,
+              pageCount: input.extractPageCount,
+              promptTokens: input.extractPageCount * KIMI_OCR_PROMPT_TOKENS_PER_PAGE,
+              completionTokens: input.extractPageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE,
+              estimateType: 'heuristic' as const,
+              note: KIMI_OCR_PRICE_NOTE
+            }]
           : []),
         ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
           ? [{

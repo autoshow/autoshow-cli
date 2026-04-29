@@ -54,8 +54,14 @@ bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.4
 # Full write pipeline with Z.AI GLM 5.1
 bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
 
+# Full write pipeline with Kimi K2.6
+bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+
 # Document OCR / extraction
 bun as extract input/examples/document/1-document.pdf --out json
+
+# Hosted Kimi OCR for a document
+bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6
 
 # Standalone text-to-speech from local text
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
@@ -76,6 +82,9 @@ bun as music --audio input/examples/lyrics/01-example-song.mp3
 
 # Fetch curated OpenAI docs into project/links/openai-all-links.md
 bun as links --openai
+
+# Fetch curated Kimi docs into project/links/kimi-all-links.md
+bun as links --kimi
 
 # Fetch STT docs across providers into project/links/all-stt-links.md
 bun as links stt

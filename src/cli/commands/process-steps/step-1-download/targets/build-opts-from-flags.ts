@@ -7,6 +7,7 @@ import {
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROK_MODELS,
   SUPPORTED_GLM_MODELS,
+  SUPPORTED_KIMI_MODELS,
   SUPPORTED_LLAMA_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
@@ -44,6 +45,7 @@ import {
   validateMinimaxModel,
   validateGrokModel,
   validateGlmModel,
+  validateKimiModel,
   validateWhisperModel,
   validateGcloudSttModel,
   validateAwsSttModel,
@@ -68,6 +70,7 @@ import {
   validateFireworksSttModel,
   validateCloudflareSttModel,
   validateGlmOcrModel,
+  validateKimiOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
   validateDeepinfraOcrModel,
@@ -155,6 +158,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'cloudflare-stt',
   'mistral-ocr',
   'glm-ocr',
+  'kimi-ocr',
   'openai-ocr',
   'anthropic-ocr',
   'gemini-ocr',
@@ -170,6 +174,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'minimax',
   'grok',
   'glm',
+  'kimi',
   'kitten-tts',
   'elevenlabs-tts',
   'minimax-tts',
@@ -216,6 +221,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   minimax: { shortcut: 'all-llm', supported: SUPPORTED_MINIMAX_MODELS },
   grok: { shortcut: 'all-llm', supported: SUPPORTED_GROK_MODELS },
   glm: { shortcut: 'all-llm', supported: SUPPORTED_GLM_MODELS },
+  kimi: { shortcut: 'all-llm', supported: SUPPORTED_KIMI_MODELS },
   'kitten-tts': { shortcut: 'all-tts', supported: SUPPORTED_KITTEN_TTS_MODELS },
   'elevenlabs-tts': { shortcut: 'all-tts', supported: SUPPORTED_ELEVENLABS_TTS_MODELS },
   'minimax-tts': { shortcut: 'all-tts', supported: SUPPORTED_MINIMAX_TTS_MODELS },
@@ -624,6 +630,7 @@ export const buildOptsFromFlags = (
   const cloudflareSttModels = readValidatedMany('cloudflare-stt', validateCloudflareSttModel)
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
+  const kimiOcrModels = readValidatedMany('kimi-ocr', validateKimiOcrModel)
   const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
   const anthropicOcrModels = readValidatedMany('anthropic-ocr', validateAnthropicOcrModel)
   const geminiOcrModels = readValidatedMany('gemini-ocr', validateGeminiOcrModel)
@@ -639,6 +646,7 @@ export const buildOptsFromFlags = (
   const minimaxModels = readValidatedMany('minimax', validateMinimaxModel)
   const grokModels = readValidatedMany('grok', validateGrokModel)
   const glmModels = readValidatedMany('glm', validateGlmModel)
+  const kimiModels = readValidatedMany('kimi', validateKimiModel)
   const gcloudSttModel = first(gcloudSttModels)
   const awsSttModel = first(awsSttModels)
   const deepinfraSttModel = first(deepinfraSttModels)
@@ -663,6 +671,7 @@ export const buildOptsFromFlags = (
   const cloudflareSttModel = first(cloudflareSttModels)
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
+  const kimiOcrModel = first(kimiOcrModels)
   const openaiOcrModel = first(openaiOcrModels)
   const anthropicOcrModel = first(anthropicOcrModels)
   const geminiOcrModel = first(geminiOcrModels)
@@ -678,6 +687,7 @@ export const buildOptsFromFlags = (
   const minimaxModel = first(minimaxModels)
   const grokModel = first(grokModels)
   const glmModel = first(glmModels)
+  const kimiModel = first(kimiModels)
   const kittenTtsModels = readValidatedMany('kitten-tts', validateKittenTtsModel)
   const elevenlabsTtsModels = readValidatedMany('elevenlabs-tts', validateElevenlabsTtsModel)
   const minimaxTtsModels = readValidatedMany('minimax-tts', validateMinimaxTtsModel)
@@ -753,6 +763,8 @@ export const buildOptsFromFlags = (
     grokModel,
     glmModels,
     glmModel,
+    kimiModels,
+    kimiModel,
     whisperModels,
     whisperModel,
     gcloudSttModels,
@@ -835,6 +847,8 @@ export const buildOptsFromFlags = (
     mistralOcrModel,
     glmOcrModels,
     glmOcrModel,
+    kimiOcrModels,
+    kimiOcrModel,
     openaiOcrModels,
     openaiOcrModel,
     anthropicOcrModels,

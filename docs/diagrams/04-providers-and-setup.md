@@ -13,7 +13,7 @@ Provider selection and setup reference covering model routing, installation flow
 ```
 src/cli/commands/process-steps/step-3-write/run-llm.ts
 
-collectTargets() checks all flags - multiple providers can run sequentially:
+collectTargets() checks all flags - multiple providers can run sequentially. Hosted Kimi (`--kimi`) participates in the same provider fan-out as GLM, Grok, MiniMax, Groq, OpenAI, Anthropic, and Gemini.
 
   ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────┐
   │ --gemini │  │--anthropic│  │ --openai │  │  --groq  │  │--minimax │  │  --grok  │  │ --glm  │  │  --llama │
@@ -71,6 +71,11 @@ collectTargets() checks all flags - multiple providers can run sequentially:
   │  └── glm-5.1                                                  │
   │  Requires: GLM_API_KEY                                        │
   │  Pricing: $1.40/M input, $4.40/M output; 18000 ms/1K tokens   │
+  │                                                              │
+  │  Kimi (--kimi flag, Moonshot Kimi LLM):                       │
+  │  └── kimi-k2.6                                                │
+  │  Requires: KIMI_API_KEY                                       │
+  │  Pricing: $0.95/M input, $4.00/M output; 18000 ms/1K tokens  │
   │                                                              │
   │  llama.cpp (local inference):                                │
   │  ├── ggml-org/gemma-3-270m-it-GGUF                           │
@@ -130,6 +135,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
   Step 12 ─── setupMistralStt() ───────── Check Mistral STT (API key only)
               setupMistralOcr() ───────── Check Mistral OCR (API key only)
               setupGlmOcr() ───────────── Check GLM OCR (API key only)
+              setupKimiOcr() ───────────── Check Kimi write/OCR (API key only)
               setupOpenAIOcr() ────────── Check OpenAI OCR (API key only)
               setupAnthropicOcr() ─────── Check Anthropic OCR (API key only)
               setupGeminiOcr() ────────── Check Gemini OCR (API key only)
@@ -174,13 +180,15 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 |---------|----------------------|
 | `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--grok-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
 | `extract --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr`/`--deepinfra-ocr` API key) |
+| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--kimi-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr`/`--deepinfra-ocr` API key) |
 | `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
 | `extract --gemini-ocr` | `GEMINI_API_KEY` |
+| `extract --kimi-ocr` | `KIMI_API_KEY` |
 | `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
 | `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
 | `write --glm` | `GLM_API_KEY` |
+| `write --kimi` | `KIMI_API_KEY` |
 | `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |

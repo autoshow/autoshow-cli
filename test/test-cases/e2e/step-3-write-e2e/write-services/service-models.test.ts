@@ -71,3 +71,12 @@ defineLLMWriteTest({
   llmService: 'glm',
   requiresEnvVar: { key: 'GLM_API_KEY', description: 'Z.AI GLM models' },
 })
+
+defineLLMWriteTest({
+  models: [
+    'kimi-k2.6',
+  ],
+  cliFlag: '--kimi',
+  llmService: 'kimi',
+  requiresEnvVar: { key: 'KIMI_API_KEY', description: 'Kimi models' },
+})

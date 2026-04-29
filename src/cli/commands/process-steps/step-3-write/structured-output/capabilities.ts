@@ -29,6 +29,10 @@ const CAPABILITIES: Record<LLMService, ProviderStructuredCapability> = {
     nativeStructuredOutput: true,
     strictMode: false
   },
+  'kimi': {
+    nativeStructuredOutput: true,
+    strictMode: false
+  },
   'llama.cpp': {
     nativeStructuredOutput: false,
     strictMode: false

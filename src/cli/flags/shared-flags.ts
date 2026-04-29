@@ -6,7 +6,8 @@ import {
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_GEMINI_MODELS,
   SUPPORTED_GROK_MODELS,
-  SUPPORTED_GLM_MODELS
+  SUPPORTED_GLM_MODELS,
+  SUPPORTED_KIMI_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { getStep2ProviderFlags } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
@@ -148,6 +149,10 @@ export const llmProviderFlags = {
   },
   glm: {
     description: `GLM model (omit value for cheapest supported model): ${SUPPORTED_GLM_MODELS.join('|')}`,
+    type: [String] as [StringConstructor]
+  },
+  kimi: {
+    description: buildModelDescription('Kimi model', SUPPORTED_KIMI_MODELS),
     type: [String] as [StringConstructor]
   },
   'llm-provider-concurrency': {

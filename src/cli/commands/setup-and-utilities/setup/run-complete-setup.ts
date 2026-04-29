@@ -34,6 +34,7 @@ import { setupCalibreDocumentTools } from '~/cli/commands/setup-and-utilities/se
 import { setupTesseractOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/tesseract-setup'
 import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
+import { setupKimiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/kimi-ocr/kimi'
 import { setupGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/gemini'
 import { setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { setupAnthropicOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
@@ -289,6 +290,7 @@ const runFullSetup = async (): Promise<void> => {
     await setupCloudflareStt()
     await setupMistralOcr()
     await setupGlmOcr()
+    await setupKimiOcr()
     await setupOpenAIOcr()
     await setupAnthropicOcr()
     await setupGeminiOcr()
@@ -386,6 +388,7 @@ const runSetupTranscription = async (): Promise<void> => {
 const runSetupWrite = async (): Promise<void> => {
   if (!await checkLlamaInstalled()) await runLlamaSetup()
   for (const model of SUPPORTED_LLAMA_MODELS) await ensureLlamaModelDownloaded(model)
+  await setupKimiOcr()
   l.write('success', 'Write setup complete')
 }
 

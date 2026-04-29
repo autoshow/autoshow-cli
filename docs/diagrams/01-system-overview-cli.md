@@ -32,8 +32,8 @@ bun as <command> <input> [flags]
 
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
-   - Step 2: Transcribe (Whisper/Groq/Grok/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/hosted article backends)
-   - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM)
+   - Step 2: Transcribe (Whisper/Groq/Grok/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/hosted article backends)
+   - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM, Kimi)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, OpenAI, Gemini, Runway)
    - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway)
    - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway)
@@ -149,7 +149,8 @@ src/cli/flags/
 │  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
 │  ├── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
 │  ├── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│
-│  └── --glm MODEL         glm-5.1                         │
+│  ├── --glm MODEL         glm-5.1                         │
+│  └── --kimi MODEL        kimi-k2.6                       │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -161,6 +162,7 @@ src/cli/flags/
 │  ├── --paddle-ocr        Use PaddleOCR engine              │
 │  ├── --mistral-ocr MODEL Mistral OCR (API)                 │
 │  ├── --glm-ocr MODEL     GLM OCR (API)                     │
+│  ├── --kimi-ocr MODEL    Kimi OCR (API)                    │
 │  ├── --openai-ocr MODEL  OpenAI OCR (API)                  │
 │  ├── --anthropic-ocr MODEL Anthropic OCR (API)             │
 │  ├── --gemini-ocr MODEL  Gemini OCR (API)                  │

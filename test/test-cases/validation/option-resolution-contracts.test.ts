@@ -15,6 +15,7 @@ describe('option resolution contracts', () => {
     const opts = buildOptsFromFlags(false, {
       openai: 'gpt-5.4-mini',
       glm: 'glm-5.1',
+      kimi: 'kimi-k2.6',
       'openai-stt': 'gpt-4o-mini-transcribe',
       'grok-stt': 'speech-to-text',
       'together-stt': 'openai/whisper-large-v3',
@@ -24,6 +25,7 @@ describe('option resolution contracts', () => {
       'runway-tts': 'eleven_multilingual_v2',
       'runway-tts-voice': 'Leslie',
       'deepinfra-ocr': 'allenai/olmOCR-2-7B-1025',
+      'kimi-ocr': 'kimi-k2.6',
       'tesseract-ocr': true,
       'youtube-captions': true,
       'batch-limit': '9',
@@ -37,6 +39,7 @@ describe('option resolution contracts', () => {
 
     expect(opts.openaiModel).toBe('gpt-5.4-mini')
     expect(opts.glmModel).toBe('glm-5.1')
+    expect(opts.kimiModel).toBe('kimi-k2.6')
     expect(opts.openaiSttModel).toBe('gpt-4o-mini-transcribe')
     expect(opts.grokSttModel).toBe('speech-to-text')
     expect(opts.togetherSttModel).toBe('openai/whisper-large-v3')
@@ -46,6 +49,7 @@ describe('option resolution contracts', () => {
     expect(opts.runwayTtsModel).toBe('eleven_multilingual_v2')
     expect(opts.runwayTtsVoice).toBe('Leslie')
     expect(opts.deepinfraOcrModel).toBe('allenai/olmOCR-2-7B-1025')
+    expect(opts.kimiOcrModel).toBe('kimi-k2.6')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
     expect(opts.batchLimit).toBe(9)
@@ -98,29 +102,38 @@ describe('option resolution contracts', () => {
   test('bare provider flags resolve to cheapest defaults', () => {
     const openaiDefault = resolveCheapestModelForFlag('openai')
     const glmDefault = resolveCheapestModelForFlag('glm')
+    const kimiDefault = resolveCheapestModelForFlag('kimi')
     const deepgramDefault = resolveCheapestModelForFlag('deepgram-stt')
     const deepinfraOcrDefault = resolveCheapestModelForFlag('deepinfra-ocr')
+    const kimiOcrDefault = resolveCheapestModelForFlag('kimi-ocr')
     const opts = buildOptsFromFlags(false, {
       openai: true,
       glm: true,
+      kimi: true,
       'deepgram-stt': true,
-      'deepinfra-ocr': true
+      'deepinfra-ocr': true,
+      'kimi-ocr': true
     })
 
     expect(openaiDefault).toBeDefined()
     expect(glmDefault).toBeDefined()
+    expect(kimiDefault).toBe('kimi-k2.6')
     expect(deepgramDefault).toBeDefined()
     expect(deepinfraOcrDefault).toBe('allenai/olmOCR-2-7B-1025')
+    expect(kimiOcrDefault).toBe('kimi-k2.6')
     expect(opts.openaiModel).toBe(openaiDefault)
     expect(opts.glmModel).toBe(glmDefault)
+    expect(opts.kimiModel).toBe(kimiDefault)
     expect(opts.deepgramSttModel).toBe(deepgramDefault)
     expect(opts.deepinfraOcrModel).toBe(deepinfraOcrDefault)
+    expect(opts.kimiOcrModel).toBe(kimiOcrDefault)
   })
 
-  test('--all-llm expands GLM to its supported model', () => {
+  test('--all-llm expands GLM and Kimi to their supported models', () => {
     const opts = buildOptsFromFlags(false, { 'all-llm': true })
 
     expect(opts.glmModels).toEqual(['glm-5.1'])
+    expect(opts.kimiModels).toEqual(['kimi-k2.6'])
   })
 
   test('--all-stt and --all-ocr expand to non-empty expected provider lists', () => {
@@ -133,6 +146,7 @@ describe('option resolution contracts', () => {
     expect(expansions['openai-stt']?.shortcut).toBe('all-stt')
     expect(expansions['cloudflare-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
+    expect(expansions['kimi-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['deepinfra-ocr']?.shortcut).toBe('all-ocr')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('grok')
@@ -141,6 +155,7 @@ describe('option resolution contracts', () => {
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('tesseract')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('openai')
+    expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('kimi')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('deepinfra')
   })
 

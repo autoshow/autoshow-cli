@@ -39,7 +39,7 @@ import {
 } from './ocr-run-state'
 import { runOcrProviderTargetPools } from './ocr-provider-pool'
 import { writeOcrRunManifest } from './manifest'
-import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE } from './ocr-utils/extract-pricing'
+import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE, KIMI_OCR_COMPLETION_TOKENS_PER_PAGE, KIMI_OCR_PRICE_NOTE } from './ocr-utils/extract-pricing'
 import { serializeOneOrMany } from '../../target-runner'
 import { writeProviderResult } from '../../manifest-utils'
 import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-step2'
@@ -49,9 +49,9 @@ const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'deapiOcrModel'>
+  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'deapiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
+  provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -61,7 +61,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
+    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -95,6 +95,21 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'kimi' || entry.extractionMethod.includes('kimi-ocr')) && typeof entry.ocrModel === 'string') {
+      const pageCount = entry.totalPages ?? 1
+      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
+      targets.push({
+        provider: 'kimi' as const,
+        model: entry.ocrModel ?? opts.kimiOcrModel ?? 'kimi-k2.6',
+        pageCount,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE }),
+        estimateType: hasUsage ? 'exact' : 'heuristic',
+        ...(hasUsage ? {} : { note: KIMI_OCR_PRICE_NOTE })
       })
       continue
     }
@@ -443,6 +458,8 @@ export const processOcr = async (
     ...(rawOpts.mistralOcrModels ? { mistralOcrModels: rawOpts.mistralOcrModels } : {}),
     ...(rawOpts.glmOcrModel ? { glmOcrModel: rawOpts.glmOcrModel } : {}),
     ...(rawOpts.glmOcrModels ? { glmOcrModels: rawOpts.glmOcrModels } : {}),
+    ...(rawOpts.kimiOcrModel ? { kimiOcrModel: rawOpts.kimiOcrModel } : {}),
+    ...(rawOpts.kimiOcrModels ? { kimiOcrModels: rawOpts.kimiOcrModels } : {}),
     ...(rawOpts.openaiOcrModel ? { openaiOcrModel: rawOpts.openaiOcrModel } : {}),
     ...(rawOpts.openaiOcrModels ? { openaiOcrModels: rawOpts.openaiOcrModels } : {}),
     ...(rawOpts.anthropicOcrModel ? { anthropicOcrModel: rawOpts.anthropicOcrModel } : {}),

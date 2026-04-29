@@ -48,6 +48,7 @@ describe('provider selection contracts', () => {
       'paddle-ocr',
       'mistral-ocr',
       'glm-ocr',
+      'kimi-ocr',
       'openai-ocr',
       'anthropic-ocr',
       'gemini-ocr',

@@ -10,6 +10,16 @@ defineOCRServiceTest({
 })
 
 defineOCRServiceTest({
+  models: ['kimi-k2.6'],
+  cliFlag: '--kimi-ocr',
+  extractionMethod: 'kimi-ocr',
+  imageExtractionMethod: 'image+kimi-ocr',
+  envVarKey: 'KIMI_API_KEY',
+  imageInput: 'input/examples/document/1-document.jpg',
+  assertUsageMetadata: true,
+})
+
+defineOCRServiceTest({
   models: ['mistral-ocr-2512'],
   cliFlag: '--mistral-ocr',
   extractionMethod: 'mistral-ocr',

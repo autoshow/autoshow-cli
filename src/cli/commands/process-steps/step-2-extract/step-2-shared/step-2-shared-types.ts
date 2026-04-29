@@ -9,6 +9,8 @@ export type OcrSelectionState = {
   mistralOcrModel?: string | undefined
   glmOcrModels?: string[] | undefined
   glmOcrModel?: string | undefined
+  kimiOcrModels?: string[] | undefined
+  kimiOcrModel?: string | undefined
   openaiOcrModels?: string[] | undefined
   openaiOcrModel?: string | undefined
   anthropicOcrModels?: string[] | undefined
@@ -154,6 +156,8 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'mistralOcrModels'
   | 'glmOcrModel'
   | 'glmOcrModels'
+  | 'kimiOcrModel'
+  | 'kimiOcrModels'
   | 'openaiOcrModel'
   | 'openaiOcrModels'
   | 'anthropicOcrModel'

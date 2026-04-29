@@ -40,6 +40,27 @@
       }
     }
   },
+  "kimi": {
+    "description": "Moonshot AI Kimi OCR via vision chat",
+    "type": "api",
+    "models": {
+      "kimi-k2.6": {
+        "description": "Kimi K2.6 OCR via multimodal Chat Completions",
+        "costPerMInputTokensUSD": 0.95,
+        "costPerMOutputTokensUSD": 4,
+        "costPerMInputTokensCents": 95,
+        "costPerMOutputTokensCents": 400,
+        "limits": {
+          "imageBytes": 104857600,
+          "notes": "project/links/kimi-general-ocr-text-links.md documents Kimi image support for PNG/JPEG/WebP/GIF, a 100 MB request-body/file limit, and recommended image resolution no higher than 4K. AutoShow renders PDFs to page images before calling Kimi OCR."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 6000
+        }
+      }
+    }
+  },
   "openai": {
     "description": "OpenAI GPT-5.4 OCR via Responses API",
     "type": "api",

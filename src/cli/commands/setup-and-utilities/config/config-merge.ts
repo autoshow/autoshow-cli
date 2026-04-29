@@ -15,7 +15,7 @@ import {
 
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
-const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm'] as const
+const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'runway-tts', 'deapi-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'glm-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
@@ -109,7 +109,7 @@ export const mergeConfigIntoRawFlags = (
     injectProviderGroup(LLM_PROVIDER_FLAGS, [
       ['llama', d.llm.llama], ['openai', d.llm.openai], ['groq', d.llm.groq],
       ['gemini', d.llm.gemini], ['anthropic', d.llm.anthropic], ['minimax', d.llm.minimax],
-      ['grok', d.llm.grok], ['glm', d.llm.glm],
+      ['grok', d.llm.grok], ['glm', d.llm.glm], ['kimi', d.llm.kimi],
     ])
     inject('llm-provider-concurrency', d.llm.providerConcurrency)
     inject('llm-local-concurrency', d.llm.localConcurrency)
@@ -226,6 +226,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'minimax':           ['defaults', 'llm', 'minimax'],
   'grok':              ['defaults', 'llm', 'grok'],
   'glm':               ['defaults', 'llm', 'glm'],
+  'kimi':              ['defaults', 'llm', 'kimi'],
   'llm-provider-concurrency': ['defaults', 'llm', 'providerConcurrency'],
   'llm-local-concurrency': ['defaults', 'llm', 'localConcurrency'],
   'kitten-tts':        ['defaults', 'post', 'tts', 'kittenTts'],

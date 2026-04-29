@@ -45,6 +45,9 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 # full pipeline with Z.AI GLM 5.1
 bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
 
+# full pipeline with Kimi K2.6
+bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+
 # metadata with save
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --save
 
@@ -56,6 +59,9 @@ bun as extract input/examples/document/1-document.pdf
 
 # document OCR with DeepInfra
 bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025
+
+# document OCR with Kimi
+bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6
 
 # X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
@@ -146,8 +152,10 @@ bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text --price
 bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025 --price
+bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price
+bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6 --price
 bun as write ./output/demo/text --price
 bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
@@ -168,4 +176,4 @@ bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --v
 bun as video "a sunset timelapse" --all-video --price
 ```
 
-For `extract --deepinfra-ocr`, price preflight uses the registry rates with a 4,000 input-token plus 1,000 output-token per-page heuristic and adds page processing-time estimates. For `extract --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.
+For `extract --deepinfra-ocr` and `extract --kimi-ocr`, price preflight uses registry token rates with a 4,000 input-token plus 1,000 output-token per-page heuristic and adds page processing-time estimates. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0078/page` and `6000 ms/page`. For `extract --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.

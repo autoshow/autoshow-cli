@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { mkdtemp, rm, writeFile, unlink } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { extractPageText, getDocumentInfo, renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { validateAnthropicOcrModel, validateDeepinfraOcrModel, validateDeapiOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { validateAnthropicOcrModel, validateDeepinfraOcrModel, validateDeapiOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateKimiOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { deapiFetch, extractDeapiErrorMessage, extractPriceUsd, getDeapiApiKey, readJsonOrText } from '~/utils/deapi'
 
@@ -18,6 +18,9 @@ export const ANTHROPIC_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000
 export const DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE = 4000
 export const DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE = 1000
 export const DEEPINFRA_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual DeepInfra OCR cost is computed from response usage after execution.'
+export const KIMI_OCR_PROMPT_TOKENS_PER_PAGE = 4000
+export const KIMI_OCR_COMPLETION_TOKENS_PER_PAGE = 1000
+export const KIMI_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual Kimi OCR cost is computed from response usage after execution. AutoShow uses Kimi cache-miss input pricing for conservative estimates.'
 export const DEAPI_OCR_PRICE_NOTE = 'Heuristic estimate based on deAPI published OCR output-character pricing. Exact pricing uses the provider quote endpoint when DEAPI_API_KEY is available.'
 
 export const FIRECRAWL_PRICE_NOTE = 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
@@ -509,6 +512,45 @@ export const estimateDeepinfraOcrCost = async (
   }
 }
 
+export const estimateKimiOcrCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{
+  provider: 'kimi'
+  model: string
+  pageCount: number
+  promptTokens: number
+  completionTokens: number
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+  estimateType: 'heuristic'
+  note: string
+}> => {
+  const model = validateKimiOcrModel(modelRaw)
+  const pricing = getExtractPricing('kimi', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 95
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 400
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+  const promptTokens = pageCount * KIMI_OCR_PROMPT_TOKENS_PER_PAGE
+  const completionTokens = pageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE
+
+  return {
+    provider: 'kimi',
+    model,
+    pageCount,
+    promptTokens,
+    completionTokens,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    estimateType: 'heuristic',
+    note: KIMI_OCR_PRICE_NOTE
+  }
+}
+
 export const estimateFirecrawlScrapeCost = (): {
   provider: 'firecrawl'
   model: string
@@ -603,6 +645,32 @@ export const computeActualDeepinfraOcrCost = (
 
   return {
     provider: 'deepinfra',
+    model,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents
+  }
+}
+
+export const computeActualKimiOcrCost = (
+  modelRaw: string,
+  promptTokens: number,
+  completionTokens: number
+): {
+  provider: 'kimi'
+  model: string
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+} => {
+  const model = validateKimiOcrModel(modelRaw)
+  const pricing = getExtractPricing('kimi', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 95
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 400
+
+  return {
+    provider: 'kimi',
     model,
     inputCostPer1MCents,
     outputCostPer1MCents,

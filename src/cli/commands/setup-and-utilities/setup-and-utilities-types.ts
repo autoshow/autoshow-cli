@@ -4,6 +4,7 @@ import { ExtractLimitsSchema, ModelRegistrySchema, SttLimitsSchema } from './mod
 import {
   SUPPORTED_ANTHROPIC_MODELS,
   SUPPORTED_GLM_MODELS,
+  SUPPORTED_KIMI_MODELS,
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_MINIMAX_MODELS
 } from './models/llm-models'
@@ -39,6 +40,7 @@ import {
   SUPPORTED_GCLOUD_DOCAI_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
+  SUPPORTED_KIMI_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_OPENAI_OCR_MODELS
 } from './models/ocr-models'
@@ -153,6 +155,7 @@ export type GroqModel = typeof SUPPORTED_GROQ_MODELS[number]
 export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
 export type GlmModel = typeof SUPPORTED_GLM_MODELS[number]
+export type KimiModel = typeof SUPPORTED_KIMI_MODELS[number]
 export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
 export type DeapiSttModel = typeof SUPPORTED_DEAPI_STT_MODELS[number]
 export type DeapiTtsModel = typeof SUPPORTED_DEAPI_TTS_MODELS[number]
@@ -180,6 +183,7 @@ export type FireworksSttModel = typeof SUPPORTED_FIREWORKS_STT_MODELS[number]
 export type CloudflareSttModel = typeof SUPPORTED_CLOUDFLARE_STT_MODELS[number]
 export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
 export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
+export type KimiOcrModel = typeof SUPPORTED_KIMI_OCR_MODELS[number]
 export type OpenAIOcrModel = typeof SUPPORTED_OPENAI_OCR_MODELS[number]
 export type AnthropicOcrModel = typeof SUPPORTED_ANTHROPIC_OCR_MODELS[number]
 export type GeminiOcrModel = typeof SUPPORTED_GEMINI_OCR_MODELS[number]

@@ -17,8 +17,18 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
     expected: 'Expected files'
   },
   {
+    label: 'Kimi write',
+    args: ['write', STABLE_LOCAL_AUDIO_PATH, '--kimi', 'kimi-k2.6', '--price'],
+    expected: 'Expected files'
+  },
+  {
     label: 'extract',
     args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--whisper-stt', 'tiny', '--price'],
+    expected: 'Total estimated cost'
+  },
+  {
+    label: 'Kimi OCR',
+    args: ['extract', 'input/examples/document/1-document.pdf', '--kimi-ocr', 'kimi-k2.6', '--price'],
     expected: 'Total estimated cost'
   },
   {
@@ -108,6 +118,7 @@ describe('price mode contracts', () => {
   test('cheapest-model helpers return stable model selections', () => {
     expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
     expect(resolveCheapestModelForFlag('glm')).toBe('glm-5.1')
+    expect(resolveCheapestModelForFlag('kimi')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1-mini')
     expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-klein-4b')
     expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
@@ -121,6 +132,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
     expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('allenai/olmOCR-2-7B-1025')
+    expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
       provider: 'gemini',
@@ -226,6 +238,36 @@ describe('price mode contracts', () => {
     expect(timing.steps[0]).toMatchObject({
       provider: 'deepinfra',
       model: 'allenai/olmOCR-2-7B-1025',
+      processingTimeMs: 12_000
+    })
+  })
+
+  test('Kimi OCR estimates include token cost and page timing', () => {
+    const extractTargets = [{
+      provider: 'kimi' as const,
+      model: 'kimi-k2.6',
+      pageCount: 2,
+      promptTokens: 8000,
+      completionTokens: 2000,
+      estimateType: 'heuristic' as const
+    }]
+    const cost = computeEstimatedCosts({ extractTargets })
+    const timing = computeEstimatedProcessingTimes({
+      extractTargets: extractTargets.map(({ provider, model, pageCount }) => ({ provider, model, pageCount }))
+    })
+
+    expect(cost.steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'kimi',
+      model: 'kimi-k2.6',
+      promptTokens: 8000,
+      completionTokens: 2000,
+      pageCount: 2
+    })
+    expect(cost.totalCost).toBeGreaterThan(0)
+    expect(timing.steps[0]).toMatchObject({
+      provider: 'kimi',
+      model: 'kimi-k2.6',
       processingTimeMs: 12_000
     })
   })

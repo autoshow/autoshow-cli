@@ -18,6 +18,7 @@ import { runAnthropicModel } from './write-services/anthropic/run-anthropic'
 import { runMinimaxModel } from './write-services/minimax/run-minimax'
 import { runGrokModel } from './write-services/grok/run-grok'
 import { runGlmModel } from './write-services/glm/run-glm'
+import { runKimiModel } from './write-services/kimi/run-kimi'
 import { resolveStructuredStrategy, shouldApplyStrictMode } from './structured-output/capabilities'
 import { buildStructuredInstructionSuffix, resolveStructuredSchema } from './structured-output/schema-resolver'
 import { isSongLyricsPreset } from './structured-output/preset-registry'
@@ -55,6 +56,7 @@ const collectTargets = (options: LLMOptions): LLMTarget[] => {
   appendTargets('minimax', 'MiniMax', options.minimaxModels, options.minimaxModel, runMinimaxModel)
   appendTargets('grok', 'Grok', options.grokModels, options.grokModel, runGrokModel)
   appendTargets('glm', 'GLM', options.glmModels, options.glmModel, runGlmModel)
+  appendTargets('kimi', 'Kimi', options.kimiModels, options.kimiModel, runKimiModel)
   appendTargets('llama.cpp', 'llama.cpp', options.llamaModels, options.llamaModel, runLlamaModel)
 
   return targets
@@ -195,7 +197,7 @@ export const runLLM = async (
         let response = await target.run(prompt, target.model, structuredOpts)
         let validation = parseAndValidateStructured(structuredSchema.schema, response.result, structuredValidationContext)
 
-        const shouldRetryValidation = target.service === 'anthropic' || target.service === 'gemini' || target.service === 'glm'
+        const shouldRetryValidation = target.service === 'anthropic' || target.service === 'gemini' || target.service === 'glm' || target.service === 'kimi'
         if (!validation.success && shouldRetryValidation) {
           l.warn(`Structured validation retry for ${target.label}/${target.model}: ${validation.issue ?? 'validation failed'}`)
           response = await target.run(prompt, target.model, structuredOpts)

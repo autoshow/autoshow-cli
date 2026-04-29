@@ -18,6 +18,7 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--groq': { service: 'groq', kind: 'write' },
   '--minimax': { service: 'minimax', kind: 'write' },
   '--glm': { service: 'glm', kind: 'write' },
+  '--kimi': { service: 'kimi', kind: 'write' },
   '--llama': { service: 'llama.cpp', kind: 'write' },
   '--whisper-stt': { service: 'whisper', kind: 'transcribe' },
   '--whisper': { service: 'whisper', kind: 'transcribe' },
@@ -47,6 +48,7 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--glm-stt': { service: 'glm-stt', kind: 'transcribe' },
   '--mistral-ocr': { service: 'mistral', kind: 'extract' },
   '--glm-ocr': { service: 'glm', kind: 'extract' },
+  '--kimi-ocr': { service: 'kimi', kind: 'extract' },
   '--openai-ocr': { service: 'openai', kind: 'extract' },
   '--anthropic-ocr': { service: 'anthropic', kind: 'extract' },
   '--gemini-ocr': { service: 'gemini', kind: 'extract' },
@@ -100,6 +102,7 @@ const KNOWN_SERVICE_HINTS: Array<{ pattern: RegExp, service: string }> = [
   { pattern: /\bsupadata\b/i, service: 'supadata' },
   { pattern: /\bfirecrawl\b/i, service: 'firecrawl' },
   { pattern: /\bglm(?:-reader)?\b/i, service: 'glm' },
+  { pattern: /\bkimi\b/i, service: 'kimi' },
   { pattern: /\brunway\b/i, service: 'runway' },
   { pattern: /\bwhisper\b/i, service: 'whisper' },
   { pattern: /\bllama\b/i, service: 'llama.cpp' },
@@ -239,17 +242,19 @@ const extractPairsFromMetadata = (metadata: Record<string, unknown>): ServiceMod
         ? 'mistral'
         : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-ocr')
           ? 'glm'
-          : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('openai-ocr')
-            ? 'openai'
-            : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('anthropic-ocr')
-              ? 'anthropic'
-              : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('gemini-ocr')
-                ? 'gemini'
-                : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
-                  ? 'glm'
-                  : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('firecrawl')
-                    ? 'firecrawl'
-                    : null,
+          : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('kimi-ocr')
+            ? 'kimi'
+            : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('openai-ocr')
+              ? 'openai'
+              : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('anthropic-ocr')
+                ? 'anthropic'
+                : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('gemini-ocr')
+                  ? 'gemini'
+                  : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
+                    ? 'glm'
+                    : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('firecrawl')
+                      ? 'firecrawl'
+                      : null,
     typeof step2?.['ocrModel'] === 'string'
       ? step2['ocrModel']
       : typeof step2?.['extractionMethod'] === 'string' && step2['extractionMethod'].includes('glm-reader')
@@ -408,6 +413,7 @@ const inferModelHints = (testCase: ParsedJunitCase): Set<string> => {
   addModelHint(models, name.match(/uses cheapest model (.+?)(?: at minimal cost settings)?$/i)?.[1])
   addModelHint(models, name.match(/with --mistral-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/with --glm-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
+  addModelHint(models, name.match(/with --kimi-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/with --openai-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/with --anthropic-ocr ([A-Za-z0-9./_-]+)/i)?.[1])
   addModelHint(models, name.match(/with --gemini-ocr ([A-Za-z0-9./_-]+)/i)?.[1])

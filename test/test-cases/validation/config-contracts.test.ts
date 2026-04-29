@@ -24,21 +24,24 @@ describe('config contracts', () => {
     expect(buildConfigPatchFromFlags({
       openai: 'gpt-5.4-mini',
       glm: 'glm-5.1',
+      kimi: 'kimi-k2.6',
       'llm-provider-concurrency': '3',
       'llm-local-concurrency': '1',
       'tesseract-ocr': true,
       'deepinfra-ocr': ['allenai/olmOCR-2-7B-1025'],
+      'kimi-ocr': ['kimi-k2.6'],
       dpi: '450',
       'ocr-provider-concurrency': '4',
       'ocr-local-concurrency': '2',
       'batch-limit': '7',
       'max-cents': '25'
-    }, new Set(['openai', 'glm', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'deepinfra-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
+    }, new Set(['openai', 'glm', 'kimi', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'deepinfra-ocr', 'kimi-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
       version: 2,
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
           glm: ['glm-5.1'],
+          kimi: ['kimi-k2.6'],
           providerConcurrency: 3,
           localConcurrency: 1
         },
@@ -46,6 +49,7 @@ describe('config contracts', () => {
           ocr: {
             tesseract: true,
             deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
+            kimiOcr: ['kimi-k2.6'],
             dpi: 450,
             providerConcurrency: 4,
             localConcurrency: 2
@@ -122,6 +126,7 @@ describe('config contracts', () => {
         llm: {
           openai: ['gpt-5.4-mini'],
           glm: ['glm-5.1'],
+          kimi: ['kimi-k2.6'],
           providerConcurrency: 3,
           localConcurrency: 1
         },
@@ -133,6 +138,7 @@ describe('config contracts', () => {
             providerConcurrency: 3,
             localConcurrency: 1,
             deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
+            kimiOcr: ['kimi-k2.6'],
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',
             gcloudDocaiOcrProcessorId: 'processor-123',
@@ -158,6 +164,7 @@ describe('config contracts', () => {
         llm: {
           openai: ['gpt-5.4-mini'],
           glm: ['glm-5.1'],
+          kimi: ['kimi-k2.6'],
           providerConcurrency: 3,
           localConcurrency: 1
         },
@@ -169,6 +176,7 @@ describe('config contracts', () => {
             providerConcurrency: 3,
             localConcurrency: 1,
             deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
+            kimiOcr: ['kimi-k2.6'],
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',
             gcloudDocaiOcrProcessorId: 'processor-123',

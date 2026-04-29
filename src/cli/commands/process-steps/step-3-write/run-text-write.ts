@@ -171,6 +171,8 @@ export const runTextWrite = async (
       grokModel: llmConfig.grokModel,
       glmModels: llmConfig.glmModels,
       glmModel: llmConfig.glmModel,
+      kimiModels: llmConfig.kimiModels,
+      kimiModel: llmConfig.kimiModel,
       llamaModels: llmConfig.llamaModels,
       llamaModel: llmConfig.llamaModel,
       llmProviderConcurrency: opts.llmProviderConcurrency,

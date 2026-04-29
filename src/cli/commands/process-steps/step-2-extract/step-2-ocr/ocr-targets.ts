@@ -4,7 +4,7 @@ import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { collectOcrProviderSpecs } from './cli'
 
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel' | 'deapiOcrModel'> & {
+  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel' | 'deapiOcrModel'> & {
     step2SelectionOrigins?: Partial<Record<string, Step2ProviderSelectionOrigin>> | undefined
     provider?: string[] | undefined
   },
@@ -15,6 +15,8 @@ export const collectExplicitOcrTargets = (
       ? 'mistral'
         : spec.provider === 'glm-ocr'
           ? 'glm'
+        : spec.provider === 'kimi-ocr'
+          ? 'kimi'
         : spec.provider === 'openai-ocr'
           ? 'openai'
           : spec.provider === 'anthropic-ocr'
@@ -71,6 +73,7 @@ export const buildExtractionOptionsForTarget = (
   usePaddleOcr: target.service === 'paddle-ocr' ? true : undefined,
   mistralOcrModel: target.service === 'mistral' ? target.model : undefined,
   glmOcrModel: target.service === 'glm' ? target.model : undefined,
+  kimiOcrModel: target.service === 'kimi' ? target.model : undefined,
   openaiOcrModel: target.service === 'openai' ? target.model : undefined,
   anthropicOcrModel: target.service === 'anthropic' ? target.model : undefined,
   geminiOcrModel: target.service === 'gemini' ? target.model : undefined,

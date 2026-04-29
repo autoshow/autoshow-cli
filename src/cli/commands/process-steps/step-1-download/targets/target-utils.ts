@@ -898,6 +898,8 @@ export const resolveInputRoutingForCommand = async (
     | 'mistralOcrModels'
     | 'glmOcrModel'
     | 'glmOcrModels'
+    | 'kimiOcrModel'
+    | 'kimiOcrModels'
     | 'openaiOcrModel'
     | 'openaiOcrModels'
     | 'anthropicOcrModel'

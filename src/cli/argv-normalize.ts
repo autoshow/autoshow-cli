@@ -23,6 +23,7 @@ const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = new Set<string>([
   '--minimax',
   '--grok',
   '--glm',
+  '--kimi',
   '--llama',
   '--mistral'
 ])
@@ -39,6 +40,6 @@ export const validateSttFlagCompatibility = (argv: string[]): void => {
 
   const usedUnsupportedFlags = argv.filter((token) => TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.has(token))
   if (usedUnsupportedFlags.length > 0) {
-    throw CLIUsageError('LLM provider flags are not supported with "extract" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --glm, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.')
+    throw CLIUsageError('LLM provider flags are not supported with "extract" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --glm, --kimi, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.')
   }
 }

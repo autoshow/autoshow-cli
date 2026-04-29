@@ -230,6 +230,7 @@ export type RepeatableModelFlag =
   | 'cloudflare-stt'
   | 'mistral-ocr'
   | 'glm-ocr'
+  | 'kimi-ocr'
   | 'openai-ocr'
   | 'anthropic-ocr'
   | 'gemini-ocr'
@@ -245,6 +246,7 @@ export type RepeatableModelFlag =
   | 'minimax'
   | 'grok'
   | 'glm'
+  | 'kimi'
   | 'kitten-tts'
   | 'elevenlabs-tts'
   | 'deepgram-tts'
@@ -332,6 +334,7 @@ export type WriteDocumentOutputMetadataOptions = {
   step3: Step3Metadata | Step3Metadata[]
   mistralOcrModel: string | undefined
   glmOcrModel: string | undefined
+  kimiOcrModel: string | undefined
   openaiOcrModel: string | undefined
   anthropicOcrModel: string | undefined
   geminiOcrModel: string | undefined

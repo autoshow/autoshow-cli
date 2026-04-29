@@ -23,6 +23,7 @@ import { ensureSpeechmaticsSttSetup } from '~/cli/commands/process-steps/step-2-
 import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/whisper/whisper'
 import { ensureGlmOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
+import { ensureKimiOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/kimi-ocr/kimi'
 import { ensureGeminiOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/gemini'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { ensureOpenAIOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
@@ -150,6 +151,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'glm-ocr': {
     ensure: async () => await ensureGlmOcrSetup()
+  },
+  'kimi-ocr': {
+    ensure: async () => await ensureKimiOcrSetup()
   },
   'openai-ocr': {
     ensure: async () => await ensureOpenAIOcrSetup()

@@ -25,6 +25,7 @@ import {
   SUPPORTED_CLOUDFLARE_STT_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
+  SUPPORTED_KIMI_OCR_MODELS,
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
@@ -57,6 +58,7 @@ import {
   validateCloudflareSttModel,
   validateMistralOcrModel,
   validateGlmOcrModel,
+  validateKimiOcrModel,
   validateOpenAIOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
@@ -608,6 +610,21 @@ const STEP2_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_GLM_OCR_MODELS,
     validateModel: validateGlmOcrModel,
     description: buildModelDescription('GLM OCR model', SUPPORTED_GLM_OCR_MODELS)
+  }),
+  modelProvider({
+    step: 'ocr',
+    modality: 'document',
+    flagName: 'kimi-ocr',
+    targetService: 'kimi',
+    providerSpecProvider: 'kimi-ocr',
+    bootstrapProviderId: 'kimi-ocr',
+    configKey: 'kimiOcr',
+    allShortcut: 'all-ocr',
+    runtimeModelsKey: 'kimiOcrModels',
+    runtimeModelKey: 'kimiOcrModel',
+    supportedModels: SUPPORTED_KIMI_OCR_MODELS,
+    validateModel: validateKimiOcrModel,
+    description: buildModelDescription('Kimi OCR model', SUPPORTED_KIMI_OCR_MODELS)
   }),
   modelProvider({
     step: 'ocr',

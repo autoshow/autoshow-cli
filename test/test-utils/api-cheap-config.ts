@@ -45,7 +45,8 @@ export const buildApiCheapSelections = () => {
     { service: 'gemini', flag: '--gemini', envVar: 'GEMINI_API_KEY', model: selectCheapestLlmModel('gemini') },
     { service: 'anthropic', flag: '--anthropic', envVar: 'ANTHROPIC_API_KEY', model: selectCheapestLlmModel('anthropic') },
     { service: 'minimax', flag: '--minimax', envVar: 'MINIMAX_API_KEY', model: selectCheapestLlmModel('minimax') },
-    { service: 'glm', flag: '--glm', envVar: 'GLM_API_KEY', model: selectCheapestLlmModel('glm') }
+    { service: 'glm', flag: '--glm', envVar: 'GLM_API_KEY', model: selectCheapestLlmModel('glm') },
+    { service: 'kimi', flag: '--kimi', envVar: 'KIMI_API_KEY', model: selectCheapestLlmModel('kimi') }
   ]
 
   const sttSelections = [
@@ -87,6 +88,7 @@ export const buildApiCheapSelections = () => {
   const extractSelections = [
     { service: 'mistral', flag: '--mistral-ocr', envVar: 'MISTRAL_API_KEY', model: selectCheapestExtractModel('mistral') },
     { service: 'glm', flag: '--glm-ocr', envVar: 'GLM_API_KEY', model: selectCheapestExtractModel('glm') },
+    { service: 'kimi', flag: '--kimi-ocr', envVar: 'KIMI_API_KEY', model: selectCheapestExtractModel('kimi') },
     { service: 'openai', flag: '--openai-ocr', envVar: 'OPENAI_API_KEY', model: selectCheapestExtractModel('openai') },
     { service: 'anthropic', flag: '--anthropic-ocr', envVar: 'ANTHROPIC_API_KEY', model: selectCheapestExtractModel('anthropic') },
     { service: 'gemini', flag: '--gemini-ocr', envVar: 'GEMINI_API_KEY', model: selectCheapestExtractModel('gemini') },

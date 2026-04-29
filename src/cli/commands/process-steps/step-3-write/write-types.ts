@@ -26,6 +26,8 @@ export type LLMOptions = Pick<ProcessingOptions,
   | 'grokModel'
   | 'glmModels'
   | 'glmModel'
+  | 'kimiModels'
+  | 'kimiModel'
   | 'llamaModels'
   | 'llamaModel'
   | 'llmProviderConcurrency'
@@ -178,7 +180,7 @@ export type RunAnthropicCompatibleModelOptions = CompatibleModelRunOptionsBase<A
   supportsStructuredOutput?: boolean
 }
 
-export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok' | 'glm'>
+export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok' | 'glm' | 'kimi'>
 
 export type RunOpenAICompatibleChatModelOptions = CompatibleModelRunOptionsBase<OpenAI, OpenAICompatibleChatService> & {
   customizeRequestBody?: ((requestBody: Record<string, unknown>, model: string) => void) | undefined

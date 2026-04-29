@@ -77,6 +77,8 @@ export const ProcessingOptionsSchema = v.pipe(
     grokModel: v.optional(v.string(), undefined),
     glmModels: v.optional(v.array(v.string()), undefined),
     glmModel: v.optional(v.string(), undefined),
+    kimiModels: v.optional(v.array(v.string()), undefined),
+    kimiModel: v.optional(v.string(), undefined),
     llmProviderConcurrency: v.optional(v.number(), 2),
     llmLocalConcurrency: v.optional(v.number(), 1),
     outputDir: v.string(),
@@ -287,6 +289,8 @@ export const ExtractionOptionsSchema = v.object({
   mistralOcrModels: v.optional(v.array(v.string()), undefined),
   glmOcrModel: v.optional(v.string(), undefined),
   glmOcrModels: v.optional(v.array(v.string()), undefined),
+  kimiOcrModel: v.optional(v.string(), undefined),
+  kimiOcrModels: v.optional(v.array(v.string()), undefined),
   openaiOcrModel: v.optional(v.string(), undefined),
   openaiOcrModels: v.optional(v.array(v.string()), undefined),
   anthropicOcrModel: v.optional(v.string(), undefined),
@@ -355,12 +359,13 @@ export const ExtractionMetadataSchema = v.object({
   extractionMethod: v.picklist([
     'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'ocrmypdf', 'mistral-ocr', 'openai-ocr', 'epub-bun', 'epub-calibre',
     'epub-text',
-    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+openai-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+deepinfra-ocr', 'pdf+aws-textract', 'pdf+gcloud-docai', 'pdf+deapi-ocr',
+    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+kimi-ocr', 'pdf+openai-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+deepinfra-ocr', 'pdf+aws-textract', 'pdf+gcloud-docai', 'pdf+deapi-ocr',
     'office-native', 'rtf-native',
-    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+openai-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+deepinfra-ocr', 'cbz+aws-textract', 'cbz+gcloud-docai', 'cbz+deapi-ocr',
+    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+kimi-ocr', 'cbz+openai-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+deepinfra-ocr', 'cbz+aws-textract', 'cbz+gcloud-docai', 'cbz+deapi-ocr',
     'csv-raw',
-    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+openai-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+deepinfra-ocr', 'image+aws-textract', 'image+gcloud-docai', 'image+deapi-ocr',
+    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+kimi-ocr', 'image+openai-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+deepinfra-ocr', 'image+aws-textract', 'image+gcloud-docai', 'image+deapi-ocr',
     'glm-ocr',
+    'kimi-ocr',
     'openai-ocr',
     'anthropic-ocr',
     'gemini-ocr',
@@ -958,7 +963,7 @@ export const LlamaResponseSchema = v.object({
 })
 
 export type Step3Metadata = {
-  llmService: 'llama.cpp' | 'openai' | 'groq' | 'gemini' | 'anthropic' | 'minimax' | 'grok' | 'glm'
+  llmService: 'llama.cpp' | 'openai' | 'groq' | 'gemini' | 'anthropic' | 'minimax' | 'grok' | 'glm' | 'kimi'
   llmModel: string
   processingTime: number
   inputTokenCount: number

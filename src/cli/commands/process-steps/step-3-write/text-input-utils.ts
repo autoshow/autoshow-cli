@@ -68,6 +68,7 @@ const SERVICE_FILE_SUFFIX: Record<Step3Metadata['llmService'], string> = {
   minimax: 'minimax',
   grok: 'grok',
   glm: 'glm',
+  kimi: 'kimi',
   'llama.cpp': 'llama'
 }
 
@@ -87,6 +88,7 @@ const SERVICE_DISPLAY_LABEL: Record<Step3Metadata['llmService'], string> = {
   minimax: 'MiniMax',
   grok: 'Grok',
   glm: 'GLM',
+  kimi: 'Kimi',
   'llama.cpp': 'llama.cpp'
 }
 

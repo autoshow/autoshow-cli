@@ -24,6 +24,7 @@ import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
 import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
 import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
+import { runKimiOcr } from './ocr-services/kimi-ocr/run-kimi-ocr'
 import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
 import { runAnthropicOcr } from './ocr-services/anthropic-ocr/run-anthropic-ocr'
 import { runGeminiOcr } from './ocr-services/gemini-ocr/run-gemini-ocr'
@@ -37,6 +38,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import type { ZipXmlFormat, ZipXmlPage } from '~/types'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
+import { ensureKimiOcrSetup, KIMI_OCR_LIMIT_SOURCE } from './ocr-services/kimi-ocr/kimi'
 import { ensureOpenAIOcrSetup } from './ocr-services/openai-ocr/openai-ocr'
 import {
   ANTHROPIC_OCR_LIMIT_SOURCE,
@@ -331,6 +333,9 @@ const hasMistralOcr = (opts: ExtractionOptions): boolean =>
 const hasGlmOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.glmOcrModel === 'string' && opts.glmOcrModel.length > 0
 
+const hasKimiOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.kimiOcrModel === 'string' && opts.kimiOcrModel.length > 0
+
 const hasOpenAIOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.openaiOcrModel === 'string' && opts.openaiOcrModel.length > 0
 
@@ -353,7 +358,7 @@ const hasDeapiOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.deapiOcrModel === 'string' && opts.deapiOcrModel.length > 0
 
 const hasHostedOcr = (opts: ExtractionOptions): boolean =>
-  hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts) || hasAnthropicOcr(opts) || hasGeminiOcr(opts) || hasDeepinfraOcr(opts) || hasAwsTextract(opts) || hasGcloudDocai(opts) || hasDeapiOcr(opts)
+  hasMistralOcr(opts) || hasGlmOcr(opts) || hasKimiOcr(opts) || hasOpenAIOcr(opts) || hasAnthropicOcr(opts) || hasGeminiOcr(opts) || hasDeepinfraOcr(opts) || hasAwsTextract(opts) || hasGcloudDocai(opts) || hasDeapiOcr(opts)
 
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
   opts.useTesseract === true || opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
@@ -374,6 +379,8 @@ const formatHostedOcrLabel = (service: HostedOcrService): string => {
   switch (service) {
     case 'glm':
       return 'GLM OCR'
+    case 'kimi':
+      return 'Kimi OCR'
     case 'mistral':
       return 'Mistral OCR'
     case 'openai':
@@ -405,6 +412,8 @@ const getHostedOcrLimitSource = (service: HostedOcrService): string => {
       return DEEPINFRA_OCR_LIMIT_SOURCE
     case 'glm':
       return 'project/links/glm-all-links.md'
+    case 'kimi':
+      return KIMI_OCR_LIMIT_SOURCE
     case 'aws-textract':
       return 'project/links/aws-ocr-links.md'
     case 'gcloud-docai':
@@ -690,6 +699,9 @@ const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine): strin
   if (engine === 'glm-ocr') {
     return 'The --glm-ocr engine supports PDF and standard image files (PNG/JPG) only.'
   }
+  if (engine === 'kimi-ocr') {
+    return 'The --kimi-ocr engine sends PNG/JPG/WEBP/GIF images to Kimi directly; PDF pages are rendered to PNG. Convert BMP/TIF images to PNG/JPG/WebP/GIF first, or install ImageMagick so AutoShow can normalize them automatically.'
+  }
   if (engine === 'mistral-ocr') {
     return 'The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.'
   }
@@ -720,6 +732,8 @@ const assertSupportedHostedDirectImageFormat = (
 ): void => {
   const supportedFormats = engine === 'glm-ocr'
     ? new Set(['png', 'jpg'])
+    : engine === 'kimi-ocr'
+      ? new Set(['png', 'jpg', 'webp', 'gif'])
     : engine === 'mistral-ocr'
       ? new Set(['png', 'jpg', 'tif'])
       : engine === 'anthropic-ocr'
@@ -819,6 +833,22 @@ const normalizeHostedDirectImageInput = async (
       }
     }
 
+    if (engine === 'kimi-ocr') {
+      if (normalizedFormat === 'bmp' || normalizedFormat === 'tif') {
+        if (!commandExists('convert')) {
+          throw CLIUsageError(getHostedDirectImageSupportError(engine))
+        }
+
+        const pngPath = join(tempDir, `${outputStem}.png`)
+        const result = await exec('convert', [imagePath, pngPath])
+        if (result.exitCode !== 0) {
+          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --kimi-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
+        }
+
+        return { filePath: pngPath, format: 'png' }
+      }
+    }
+
     if (engine === 'deapi-ocr') {
       if (normalizedFormat === 'tif') {
         if (!commandExists('convert')) {
@@ -870,6 +900,10 @@ const resolveHostedOcrSelection = (
     return { service: 'glm', model: opts.glmOcrModel as string }
   }
 
+  if (hasKimiOcr(opts)) {
+    return { service: 'kimi', model: opts.kimiOcrModel as string }
+  }
+
   if (hasOpenAIOcr(opts)) {
     return { service: 'openai', model: opts.openaiOcrModel as string }
   }
@@ -904,6 +938,7 @@ const resolveHostedOcrSelection = (
 const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEngine | undefined => {
   if (hasMistralOcr(opts)) return 'mistral-ocr'
   if (hasGlmOcr(opts)) return 'glm-ocr'
+  if (hasKimiOcr(opts)) return 'kimi-ocr'
   if (hasOpenAIOcr(opts)) return 'openai-ocr'
   if (hasAnthropicOcr(opts)) return 'anthropic-ocr'
   if (hasGeminiOcr(opts)) return 'gemini-ocr'
@@ -1024,6 +1059,26 @@ const runHostedOcr = async (
       ocrModel,
       canonicalText: run.markdown,
       ...(typeof run.totalPages === 'number' ? { totalPages: run.totalPages } : {}),
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+    }
+  }
+
+  if (hasKimiOcr(opts)) {
+    await ensureKimiOcrSetup()
+    warnHostedOnlyFlags('kimi-ocr', opts)
+    const ocrModel = opts.kimiOcrModel as string
+    const run = await runKimiOcr(filePath, step1Metadata, ocrModel, {
+      dpi: opts.dpi,
+      password: opts.password,
+      rotate: opts.rotate
+    })
+    return {
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'kimi',
+      ocrModel,
+      totalPages: run.totalPages,
       ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
       ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
     }
@@ -1185,16 +1240,18 @@ export const runOcr = async (
     opts.usePaddleOcr === true,
     hasMistralOcr(opts),
     hasGlmOcr(opts),
+    hasKimiOcr(opts),
     hasOpenAIOcr(opts),
     hasAnthropicOcr(opts),
     hasGeminiOcr(opts),
+    hasDeepinfraOcr(opts),
     hasAwsTextract(opts),
     hasGcloudDocai(opts),
     hasDeapiOcr(opts)
   ].filter(Boolean).length
 
   if ((typeof opts.preparedMarkdown !== 'string' || opts.preparedMarkdown.trim().length === 0) && ocrEngineCount > 1) {
-    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --aws-textract, --gcloud-docai, --deapi-ocr).')
+    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai, --deapi-ocr).')
   }
 
   if (useEpubBun && useEpubCalibre) {
@@ -1546,6 +1603,9 @@ export const runOcr = async (
   }
   if (typeof opts.glmOcrModel === 'string' && extractionMethod.includes('glm-ocr')) {
     step2MetadataPayload['ocrModel'] = opts.glmOcrModel
+  }
+  if (typeof opts.kimiOcrModel === 'string' && extractionMethod.includes('kimi-ocr')) {
+    step2MetadataPayload['ocrModel'] = opts.kimiOcrModel
   }
   if (typeof opts.openaiOcrModel === 'string' && extractionMethod.includes('openai-ocr')) {
     step2MetadataPayload['ocrModel'] = opts.openaiOcrModel

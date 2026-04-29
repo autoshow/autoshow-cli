@@ -20,6 +20,7 @@ export const writeRegistry: PriceSelectionEntry[] = [
     command('write-grok-grok-4.20-reasoning', 'write-grok-grok-4.20-reasoning', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--grok', 'grok-4.20-reasoning', '--price']),
     command('write-grok-grok-4.20-non-reasoning', 'write-grok-grok-4.20-non-reasoning', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--grok', 'grok-4.20-non-reasoning', '--price']),
     command('write-glm-glm-5.1', 'write-glm-glm-5.1', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--glm', 'glm-5.1', '--price']),
+    command('write-kimi-kimi-k2.6', 'write-kimi-kimi-k2.6', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--kimi', 'kimi-k2.6', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-models.test.ts', [
     command('write-llama-gemma-3-270m', 'write-llama-gemma-3-270m', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--llama', 'ggml-org/gemma-3-270m-it-GGUF', '--price']),

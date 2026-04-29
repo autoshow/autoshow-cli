@@ -95,6 +95,7 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
     ...(llmConfig.minimaxModels ?? (llmConfig.minimaxModel ? [llmConfig.minimaxModel] : [])),
     ...(llmConfig.grokModels ?? (llmConfig.grokModel ? [llmConfig.grokModel] : [])),
     ...(llmConfig.glmModels ?? (llmConfig.glmModel ? [llmConfig.glmModel] : [])),
+    ...(llmConfig.kimiModels ?? (llmConfig.kimiModel ? [llmConfig.kimiModel] : [])),
     ...(llmConfig.llamaModels ?? (llmConfig.llamaModel ? [llmConfig.llamaModel] : []))
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
@@ -247,7 +248,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   return files
 }
 
-const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'llama', 'mistral'] as const
+const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi', 'llama', 'mistral'] as const
 const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, doubleDashArgs: string[] = []): boolean => {
   const inParsedFlags = TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.some((key) => flags[key] !== undefined)
   if (inParsedFlags) {
@@ -279,7 +280,7 @@ const validateWriteStep2ProviderSelection = (command: ProcessCommand, opts: Runt
 
   const ocrTargets = collectExplicitOcrTargets(opts)
   if (ocrTargets.length > 1) {
-    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr).')
+    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai, --deapi-ocr).')
   }
 }
 
@@ -816,7 +817,7 @@ export const handleProcessTarget = async (
   const displayCommand = canonicalizeProcessCommand(command)
 
   if ((isSttCommand(command) || isExtractCommand(command)) && hasTranscribeUnsupportedLLMFlags(rawFlags, doubleDash)) {
-    throw CLIUsageError(`LLM provider flags are not supported with "${displayCommand}" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --glm, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.`)
+    throw CLIUsageError(`LLM provider flags are not supported with "${displayCommand}" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --glm, --kimi, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.`)
   }
 
   const configPathOverride = typeof rawFlags['config-path'] === 'string' ? rawFlags['config-path'] : undefined

@@ -30,6 +30,8 @@ export type RuntimeOptions = {
   grokModel: string | undefined
   glmModels: string[] | undefined
   glmModel: string | undefined
+  kimiModels: string[] | undefined
+  kimiModel: string | undefined
   whisperModels: string[] | undefined
   whisperModel: string
   gcloudSttModels: string[] | undefined
@@ -112,6 +114,8 @@ export type RuntimeOptions = {
   mistralOcrModel: string | undefined
   glmOcrModels: string[] | undefined
   glmOcrModel: string | undefined
+  kimiOcrModels: string[] | undefined
+  kimiOcrModel: string | undefined
   openaiOcrModels: string[] | undefined
   openaiOcrModel: string | undefined
   anthropicOcrModels: string[] | undefined

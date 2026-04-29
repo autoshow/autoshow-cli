@@ -105,6 +105,9 @@ bun as links --openai
 # Fetch DeepInfra OCR docs, including normal HTML doc pages
 bun as links --deepinfra ocr
 
+# Fetch Kimi text and OCR docs
+bun as links --kimi text ocr
+
 # Fetch only OpenAI general and text docs
 bun as links --openai general text
 

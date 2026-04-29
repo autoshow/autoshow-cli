@@ -43,6 +43,7 @@ GROQ_API_KEY=...
 MINIMAX_API_KEY=...
 XAI_API_KEY=...
 GLM_API_KEY=...
+KIMI_API_KEY=...
 ```
 
 ## Usage
@@ -76,10 +77,13 @@ If you pass `--llama` without a value, `write` uses the default local model `ggm
 | MiniMax | `--minimax <model>` | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
 | Grok | `--grok <model>` | `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |
 | Z.AI GLM | `--glm <model>` | `glm-5.1` |
+| Kimi | `--kimi <model>` | `kimi-k2.6` |
 
 Hosted provider flags also accept an omitted value and then resolve to the cheapest supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
 GLM 5.1 estimates are based on the Z.AI GLM text docs in `project/links/glm-general-text-links.md`: input `$1.40 / 1M tokens`, output `$4.40 / 1M tokens`, cached input `$0.26 / 1M tokens`, and 200K context with 128K maximum output. AutoShow uses uncached input/output pricing for `--price` because the write pipeline does not use Z.AI context caching. The speed estimate is `18000 ms / 1K tokens`, matching AutoShow's hosted LLM fallback until live benchmarks are available.
+
+Kimi K2.6 estimates are based on `project/links/kimi-general-ocr-text-links.md`: input `$0.95 / 1M tokens`, output `$4.00 / 1M tokens`, cached input `$0.16 / 1M tokens`, and 256K context. AutoShow uses cache-miss input/output pricing for `--price` and a speed estimate of `18000 ms / 1K tokens` until live benchmarks are available.
 
 ## Prompts
 
@@ -151,6 +155,7 @@ Prompt names are assembled at runtime from JSON files discovered recursively und
 - Project lyric draft mode defaults `--rendered-out-dir` to `./output/<name>/lyrics`.
 - Providers with native structured output use it directly; other providers use the internal schema-guided fallback path.
 - `--glm` uses Z.AI's OpenAI-compatible chat API with JSON mode, disables GLM thinking for predictable write latency, and still validates results against AutoShow's structured output schema.
+- `--kimi` uses Kimi's OpenAI-compatible chat API with JSON mode, disables K2.6 thinking for predictable write latency, and still validates results against AutoShow's structured output schema.
 - EPUB inspect mode keeps the extraction payload in `run.json` and still writes the normal step-3 JSON output.
 
 ## Examples
@@ -167,6 +172,7 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 bun as write input/examples/audio/1-audio.mp3 --anthropic claude-opus-4-7
 bun as write input/examples/audio/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview
 bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
 
 # Hosted STT plus hosted write
 bun as write input/examples/audio/1-audio.mp3 --gcloud-stt --openai gpt-5.4
@@ -184,7 +190,7 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --prompt shortSum
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --openai gpt-5.4-mini
 
 # Multi-provider run
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b --glm glm-5.1
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b --glm glm-5.1 --kimi kimi-k2.6
 
 # Generate all lyric drafts for a project under ./output/demo
 bun as write ./output/demo/text --prompt rockSong
@@ -208,6 +214,7 @@ bun as write ./output/demo/text --price
 | `--minimax <model>` | Select one or more MiniMax models; omit the value to use the cheapest supported model |
 | `--grok <model>` | Select one or more Grok models; omit the value to use the cheapest supported model |
 | `--glm <model>` | Select one or more GLM models; omit the value to use the cheapest supported model |
+| `--kimi <model>` | Select one or more Kimi models; omit the value to use the cheapest supported model |
 | `--llm-provider-concurrency <n>` | Hosted LLM providers/models to run concurrently per write item; default `2` |
 | `--llm-local-concurrency <n>` | Local llama.cpp models to run concurrently per write item; default `1` |
 | `--prompt <name...>` | Select prompt presets |

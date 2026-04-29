@@ -11,6 +11,7 @@ const SERVICE_ORDER: Array<{ service: string, modelKey: keyof ResolvedLLMConfig 
   { service: 'minimax', modelKey: 'minimaxModels' },
   { service: 'grok', modelKey: 'grokModels' },
   { service: 'glm', modelKey: 'glmModels' },
+  { service: 'kimi', modelKey: 'kimiModels' },
 ]
 
 export const estimateLlmRates = (llmConfig: ResolvedLLMConfig): LlmRateEstimate[] => {

@@ -222,6 +222,23 @@
       }
     }
   },
+  "kimi": {
+    "description": "Moonshot AI Kimi language models",
+    "type": "api",
+    "models": {
+      "kimi-k2.6": {
+        "description": "Kimi K2.6 - multimodal, 256K context",
+        "inputCostPer1MUSD": 0.95,
+        "inputCostPer1MCents": 95,
+        "outputCostPer1MUSD": 4,
+        "outputCostPer1MCents": 400,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KTokens": 18000
+        }
+      }
+    }
+  },
   "llama": {
     "description": "Local LLM inference via llama.cpp",
     "type": "local",

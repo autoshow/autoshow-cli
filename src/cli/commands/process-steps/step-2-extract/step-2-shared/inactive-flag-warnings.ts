@@ -22,6 +22,7 @@ export const hasConfiguredOcrProviderSelection = (
   || opts.usePaddleOcr === true
   || hasSelectedModel(opts.mistralOcrModels, opts.mistralOcrModel)
   || hasSelectedModel(opts.glmOcrModels, opts.glmOcrModel)
+  || hasSelectedModel(opts.kimiOcrModels, opts.kimiOcrModel)
   || hasSelectedModel(opts.openaiOcrModels, opts.openaiOcrModel)
   || hasSelectedModel(opts.anthropicOcrModels, opts.anthropicOcrModel)
   || hasSelectedModel(opts.geminiOcrModels, opts.geminiOcrModel)
