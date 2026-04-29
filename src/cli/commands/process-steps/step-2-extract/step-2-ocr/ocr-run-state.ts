@@ -144,8 +144,10 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
     && value['service'] !== 'openai'
     && value['service'] !== 'anthropic'
     && value['service'] !== 'gemini'
+    && value['service'] !== 'deepinfra'
     && value['service'] !== 'aws-textract'
     && value['service'] !== 'gcloud-docai'
+    && value['service'] !== 'deapi'
   ) {
     return undefined
   }
@@ -284,10 +286,21 @@ export const buildMissingTargetsFromEntry = (
 
 const isResumableProviderState = (
   state: OcrProviderState | undefined
-): boolean =>
-  state === undefined
-  || state.status === 'missing'
-  || state.status === 'failed'
+): boolean => {
+  if (state === undefined || state.status === 'missing') {
+    return true
+  }
+  if (state.status !== 'failed') {
+    return false
+  }
+  if (state.retryable === true || state.lastError?.retryable === true) {
+    return true
+  }
+  const message = state.lastError?.message ?? ''
+  return state.service === 'paddle-ocr'
+    && LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN.test(message)
+    && !LOCAL_ERROR_PATTERN.test(message)
+}
 
 export const readExistingOcrRun = async (
   outputDir: string,

@@ -67,7 +67,7 @@ Check prerequisites, API keys, and configuration without installing anything:
 bun as setup --doctor
 ```
 
-Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted write keys such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `MINIMAX_API_KEY`, `XAI_API_KEY`, and `GLM_API_KEY`, hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, and `FIRECRAWL_API_KEY`, hosted STT keys such as `DEEPINFRA_API_KEY`, `DEAPI_API_KEY`, and `XAI_API_KEY`, and generation keys such as `XAI_API_KEY`, `RUNWAYML_API_SECRET`, `BFL_API_KEY`, and `MINIMAX_API_KEY`), Google Cloud STT + Document AI OCR gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted write keys such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `MINIMAX_API_KEY`, `XAI_API_KEY`, and `GLM_API_KEY`, hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, `DEEPINFRA_API_KEY`, and `FIRECRAWL_API_KEY`, hosted STT keys such as `DEEPINFRA_API_KEY`, `DEAPI_API_KEY`, and `XAI_API_KEY`, hosted TTS keys such as `OPENAI_API_KEY`, `GEMINI_API_KEY`, `DEEPGRAM_API_KEY`, and `RUNWAYML_API_SECRET`, and generation keys such as `XAI_API_KEY`, `RUNWAYML_API_SECRET`, `BFL_API_KEY`, and `MINIMAX_API_KEY`), Google Cloud STT + Document AI OCR gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
 
 Doctor also reports YouTube cookie state separately:
 

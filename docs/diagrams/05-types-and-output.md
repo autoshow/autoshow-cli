@@ -118,6 +118,7 @@ src/types/
 │    batchLimit, batchAll, batchOrder, batchConcurrency,                       │
 │    ttsSpeaker, kittenTtsModel, groqTtsModel, groqVoiceId,                    │
 │    openaiTtsModel, openaiVoiceId, geminiTtsModel, geminiVoiceId,             │
+│    runwayTtsModel, runwayTtsVoice,                                           │
 │    elevenlabsTtsModel, elevenlabsVoiceId, minimaxTtsModel, minimaxTtsVoice,  │
 │    geminiImageModel, openaiImageModel, minimaxImageModel,                    │
 │    imageAspectRatio, imageSize, imageQuality, imageFormat, imageBackground,  │
@@ -133,8 +134,8 @@ src/types/
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  provider-types.ts                                                           │
 │                                                                              │
-│  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|                    │
-│                  'openai'|'gemini'                                           │
+│  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|'grok'|             │
+│                  'openai'|'gemini'|'deepgram'|'runway'|'deapi'              │
 │  ImageProvider = 'gemini'|'openai'|'minimax'|'glm'|'grok'|'runway'|'bfl'     │
 │                  |'deapi'                                                    │
 │  VideoProvider = 'gemini'|'minimax'                                          │

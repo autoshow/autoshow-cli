@@ -79,7 +79,7 @@ export const selectCheapestSttModel = (service: string): string => {
   return selectCheapestRegistryModel(serviceConfig.models, sttHourlyCost)
 }
 
-export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deapi'): string => {
+export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'deapi'): string => {
   const serviceConfig = getModelRegistry().extract[service]
   if (!serviceConfig) {
     throw new Error(`Missing extract service config: ${service}`)
@@ -315,6 +315,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestExtractModel('anthropic')
     case 'gemini-ocr':
       return selectCheapestExtractModel('gemini')
+    case 'deepinfra-ocr':
+      return selectCheapestExtractModel('deepinfra')
     case 'deapi-ocr':
       return selectCheapestExtractModel('deapi')
     case 'openai':
@@ -343,6 +345,10 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('openai')
     case 'gemini-tts':
       return selectCheapestTtsModel('gemini')
+    case 'deepgram-tts':
+      return selectCheapestTtsModel('deepgram')
+    case 'runway-tts':
+      return selectCheapestTtsModel('runway')
     case 'deapi-tts':
       return selectCheapestTtsModel('deapi')
     case 'gemini-image':

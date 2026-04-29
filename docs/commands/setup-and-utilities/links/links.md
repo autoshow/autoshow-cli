@@ -55,7 +55,7 @@ Accepted provider selectors are the lowercase names below.
 | `--claude` | `general`, `text`, `ocr` |
 | `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
 | `--deepgram` | `stt`, `tts` |
-| `--deepinfra` | `general`, `stt` |
+| `--deepinfra` | `general`, `stt`, `ocr` |
 | `--drive` | `general` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
@@ -65,11 +65,12 @@ Accepted provider selectors are the lowercase names below.
 | `--grok` | `general`, `text`, `image`, `video`, `tts` |
 | `--groq` | `general`, `text`, `stt`, `tts` |
 | `--happyscribe` | `stt` |
+| `--kimi` | `general`, `text`, `ocr` |
 | `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
 | `--openai` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--resend` | `general` |
 | `--rev` | `general`, `stt` |
-| `--runway` | `general` |
+| `--runway` | `general`, `image`, `tts`, `video` |
 | `--soniox` | `stt` |
 | `--speechmatics` | `general`, `stt` |
 | `--supadata` | `stt` |
@@ -101,8 +102,8 @@ bun as links tts
 # Fetch every curated OpenAI doc
 bun as links --openai
 
-# Fetch DeepInfra STT docs, including normal HTML doc pages
-bun as links --deepinfra stt
+# Fetch DeepInfra OCR docs, including normal HTML doc pages
+bun as links --deepinfra ocr
 
 # Fetch only OpenAI general and text docs
 bun as links --openai general text

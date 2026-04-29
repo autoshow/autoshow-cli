@@ -168,6 +168,9 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
   if (metadata.ocrService === 'gemini') {
     return { provider: 'gemini', model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview' }
   }
+  if (metadata.ocrService === 'deepinfra') {
+    return { provider: 'deepinfra', model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025' }
+  }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return { provider: 'mistral', model: metadata.ocrModel ?? 'mistral-ocr' }
   }
@@ -182,6 +185,9 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
   }
   if (metadata.extractionMethod.includes('gemini-ocr')) {
     return { provider: 'gemini', model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview' }
+  }
+  if (metadata.extractionMethod.includes('deepinfra-ocr')) {
+    return { provider: 'deepinfra', model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025' }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
     return { provider: 'paddle-ocr', model: 'paddle-ocr' }

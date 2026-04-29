@@ -21,6 +21,7 @@ import {
   OPENAI_DEFAULT_TTS_VOICE,
   DEEPGRAM_DEFAULT_VOICE,
   GROK_DEFAULT_TTS_VOICE,
+  RUNWAY_DEFAULT_TTS_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
 defineTTSServiceTest({
@@ -157,6 +158,18 @@ defineTTSServiceTest({
   },
 })
 
+defineTTSServiceTest({
+  models: ['eleven_multilingual_v2'],
+  cliFlag: '--runway-tts',
+  ttsService: 'runway',
+  envVarKey: 'RUNWAYML_API_SECRET',
+  envVarDescription: 'Runway TTS',
+  resolveExpectedSpeaker: async () => {
+    const voice = await readConfiguredEnvVar('RUNWAY_TTS_VOICE')
+    return voice ?? RUNWAY_DEFAULT_TTS_VOICE
+  },
+})
+
 test('rejects invalid deepgram voice override before API request', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -187,6 +200,22 @@ test('rejects invalid grok voice override before API request', async () => {
 
   expect(result.exitCode).not.toBe(0)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --grok-tts-voice "invalid-voice"')
+})
+
+test('rejects invalid runway voice override before API request', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--runway-tts',
+    'eleven_multilingual_v2',
+    '--runway-tts-voice',
+    'invalid-voice',
+    '--price'
+  ])
+
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --runway-tts-voice "invalid-voice"')
 })
 
 budgetedTest('tts-deepgram-aura-2-thalia-en', 'deepgram with --deepgram-voice aura-2-andromeda-en records speaker override', async () => {

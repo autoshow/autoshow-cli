@@ -10,7 +10,7 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
 
 ## Current Coverage
 
-- Provider suites in `test/test-cases/e2e/step-4-tts-e2e/tts-services/` cover OpenAI, Gemini, Groq, ElevenLabs, and MiniMax TTS.
+- Provider suites in `test/test-cases/e2e/step-4-tts-e2e/tts-services/` cover OpenAI, Gemini, Groq, Grok, Deepgram, Runway, ElevenLabs, and MiniMax TTS.
 - The shared `defineTTSServiceTest` helper covers invalid model rejection, `--price` output, and real synthesis when the required API key is configured.
 - `test/test-cases/e2e/step-4-tts-e2e/tts-services/kitten-tts-pipeline.test.ts` covers the root `write` pipeline with Groq plus Kitten TTS, `write --price` behavior when multiple LLM providers are selected, and multi-provider speech artifacts when OpenAI TTS is also enabled.
 

@@ -39,7 +39,7 @@ import {
 } from './ocr-run-state'
 import { runOcrProviderTargetPools } from './ocr-provider-pool'
 import { writeOcrRunManifest } from './manifest'
-import { FIRECRAWL_PRICE_NOTE } from './ocr-utils/extract-pricing'
+import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE } from './ocr-utils/extract-pricing'
 import { serializeOneOrMany } from '../../target-runner'
 import { writeProviderResult } from '../../manifest-utils'
 import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-step2'
@@ -49,9 +49,9 @@ const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deapiOcrModel'>
+  opts: Pick<ExtractionOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'deapiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
+  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -61,7 +61,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -143,6 +143,21 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'deepinfra' || entry.extractionMethod.includes('deepinfra-ocr')) && typeof entry.ocrModel === 'string') {
+      const pageCount = entry.totalPages ?? 1
+      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
+      targets.push({
+        provider: 'deepinfra' as const,
+        model: entry.ocrModel ?? opts.deepinfraOcrModel ?? 'allenai/olmOCR-2-7B-1025',
+        pageCount,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE }),
+        estimateType: hasUsage ? 'exact' : 'heuristic',
+        ...(hasUsage ? {} : { note: DEEPINFRA_OCR_PRICE_NOTE })
       })
       continue
     }
@@ -434,6 +449,8 @@ export const processOcr = async (
     ...(rawOpts.anthropicOcrModels ? { anthropicOcrModels: rawOpts.anthropicOcrModels } : {}),
     ...(rawOpts.geminiOcrModel ? { geminiOcrModel: rawOpts.geminiOcrModel } : {}),
     ...(rawOpts.geminiOcrModels ? { geminiOcrModels: rawOpts.geminiOcrModels } : {}),
+    ...(rawOpts.deepinfraOcrModel ? { deepinfraOcrModel: rawOpts.deepinfraOcrModel } : {}),
+    ...(rawOpts.deepinfraOcrModels ? { deepinfraOcrModels: rawOpts.deepinfraOcrModels } : {}),
     ...(rawOpts.awsTextractModel ? { awsTextractModel: rawOpts.awsTextractModel } : {}),
     ...(rawOpts.awsTextractModels ? { awsTextractModels: rawOpts.awsTextractModels } : {}),
     ...(rawOpts.gcloudDocaiModel ? { gcloudDocaiModel: rawOpts.gcloudDocaiModel } : {}),

@@ -43,3 +43,13 @@ defineOCRServiceTest({
   envVarKey: 'GEMINI_API_KEY',
   imageInput: 'input/examples/document/1-document.jpg',
 })
+
+defineOCRServiceTest({
+  models: ['allenai/olmOCR-2-7B-1025'],
+  cliFlag: '--deepinfra-ocr',
+  extractionMethod: 'deepinfra-ocr',
+  imageExtractionMethod: 'image+deepinfra-ocr',
+  envVarKey: 'DEEPINFRA_API_KEY',
+  imageInput: 'input/examples/document/1-document.jpg',
+  assertUsageMetadata: true,
+})

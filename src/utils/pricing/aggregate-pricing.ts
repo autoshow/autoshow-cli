@@ -1,4 +1,4 @@
-import type { AggregatedPriceEstimate, ExtractStepEstimate, ImageStepEstimate, LlmStepEstimate, MusicStepEstimate, ProcessCommand, ResolvedStep2Execution, RuntimeOptions, StepEstimate, SttStepEstimate, TtsStepEstimate, VideoStepEstimate } from '~/types'
+import type { AggregatedPriceEstimate, ComputeEstimatedProcessingTimesInput, ExtractStepEstimate, ImageStepEstimate, LlmStepEstimate, MusicStepEstimate, ProcessCommand, ResolvedStep2Execution, RuntimeOptions, StepEstimate, SttStepEstimate, TtsStepEstimate, VideoStepEstimate } from '~/types'
 import { isExtractCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
@@ -38,6 +38,7 @@ import {
   estimateFirecrawlScrapeCost,
   estimateAnthropicOcrCost,
   estimateAwsTextractCost,
+  estimateDeepinfraOcrCost,
   estimateGcloudDocaiCost,
   estimateGeminiOcrCost,
   estimateGlmOcrCost,
@@ -49,9 +50,26 @@ import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
 import { resolveInputRoutingForCommand } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { estimatePromptTokensFromText, readPromptFileText } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/inactive-flag-warnings'
+import { computeEstimatedProcessingTimes } from './compute-processing-time'
 
 const ESTIMATED_TTS_CHARACTERS_PER_TOKEN = 4
 const applyCostMultiplier = (cost: number, multiplier: number): number => cost * multiplier
+type TimedExtractProvider = NonNullable<ComputeEstimatedProcessingTimesInput['extractTargets']>[number]['provider']
+const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
+  'mistral',
+  'glm',
+  'openai',
+  'anthropic',
+  'gemini',
+  'deepinfra',
+  'firecrawl',
+  'gcloud-docai',
+  'aws-textract',
+  'deapi'
+])
+
+const isTimedExtractProvider = (provider: ExtractStepEstimate['provider']): provider is TimedExtractProvider =>
+  TIMED_EXTRACT_PROVIDERS.has(provider as TimedExtractProvider)
 
 const buildCloudSttEstimate = async (
   provider: string,
@@ -336,6 +354,26 @@ const buildExtractEstimates = async (
         costMultiplier: estimation.costMultiplier,
         estimateType: estimate.estimateType,
         note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+      })
+      continue
+    }
+
+    if (provider.service === 'deepinfra') {
+      const estimate = await estimateDeepinfraOcrCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
+        pageCount: estimate.pageCount,
+        promptTokens: estimate.promptTokens,
+        completionTokens: estimate.completionTokens,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: estimate.estimateType,
+        note: estimate.note
       })
       continue
     }
@@ -792,9 +830,23 @@ export const buildAggregatedPriceEstimate = async (
     notes.push(SUPADATA_STT_AGGREGATE_NOTE)
   }
 
+  const extractTimingTargets = steps
+    .filter((step): step is ExtractStepEstimate & { provider: TimedExtractProvider, pageCount: number } =>
+      step.step === 'extract' && isTimedExtractProvider(step.provider) && typeof step.pageCount === 'number'
+    )
+    .map((step) => ({
+      provider: step.provider,
+      model: step.model,
+      pageCount: step.pageCount
+    }))
+  const timing = extractTimingTargets.length > 0
+    ? computeEstimatedProcessingTimes({ extractTargets: extractTimingTargets })
+    : undefined
+
   return {
     steps,
     totalEstimatedCost,
+    ...(timing && timing.steps.length > 0 ? { timing } : {}),
     ...(notes.length > 0 ? { notes } : {})
   }
 }

@@ -28,6 +28,7 @@ import {
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
+  SUPPORTED_DEEPINFRA_OCR_MODELS,
   SUPPORTED_AWS_TEXTRACT_MODELS,
   SUPPORTED_DEAPI_OCR_MODELS,
   SUPPORTED_GCLOUD_DOCAI_MODELS,
@@ -59,6 +60,7 @@ import {
   validateOpenAIOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
+  validateDeepinfraOcrModel,
   validateAwsTextractModel,
   validateGcloudDocaiModel,
   validateDeapiOcrModel
@@ -651,6 +653,21 @@ const STEP2_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_GEMINI_OCR_MODELS,
     validateModel: validateGeminiOcrModel,
     description: buildModelDescription('Gemini OCR model', SUPPORTED_GEMINI_OCR_MODELS)
+  }),
+  modelProvider({
+    step: 'ocr',
+    modality: 'document',
+    flagName: 'deepinfra-ocr',
+    targetService: 'deepinfra',
+    providerSpecProvider: 'deepinfra-ocr',
+    bootstrapProviderId: 'deepinfra-ocr',
+    configKey: 'deepinfraOcr',
+    allShortcut: 'all-ocr',
+    runtimeModelsKey: 'deepinfraOcrModels',
+    runtimeModelKey: 'deepinfraOcrModel',
+    supportedModels: SUPPORTED_DEEPINFRA_OCR_MODELS,
+    validateModel: validateDeepinfraOcrModel,
+    description: buildModelDescription('DeepInfra OCR model', SUPPORTED_DEEPINFRA_OCR_MODELS)
   }),
   modelProvider({
     step: 'ocr',

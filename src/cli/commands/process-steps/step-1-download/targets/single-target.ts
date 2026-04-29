@@ -37,7 +37,7 @@ import {
 import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import { FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
+import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
@@ -79,9 +79,9 @@ const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
 
 const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deapiOcrModel'>
+  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'deapiOcrModel'>
 ): Array<{
-  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'deapi'
+  provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
   model: string
   pageCount?: number
   promptTokens?: number
@@ -91,7 +91,7 @@ const collectEstimatedExtractTargets = (
   note?: string
 }> => {
   const targets: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'deapi'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -173,6 +173,21 @@ const collectEstimatedExtractTargets = (
         ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
         estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
+      })
+      continue
+    }
+
+    if ((entry.ocrService === 'deepinfra' || entry.extractionMethod.includes('deepinfra-ocr')) && typeof entry.ocrModel === 'string') {
+      const pageCount = entry.totalPages ?? 1
+      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
+      targets.push({
+        provider: 'deepinfra' as const,
+        model: entry.ocrModel ?? opts.deepinfraOcrModel ?? 'allenai/olmOCR-2-7B-1025',
+        pageCount,
+        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
+        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE }),
+        estimateType: hasUsage ? 'exact' : 'heuristic',
+        ...(hasUsage ? {} : { note: DEEPINFRA_OCR_PRICE_NOTE })
       })
       continue
     }
@@ -314,6 +329,12 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
   if (opts.geminiOcrModels) {
     extractionOpts.geminiOcrModels = opts.geminiOcrModels
   }
+  if (opts.deepinfraOcrModel) {
+    extractionOpts.deepinfraOcrModel = opts.deepinfraOcrModel
+  }
+  if (opts.deepinfraOcrModels) {
+    extractionOpts.deepinfraOcrModels = opts.deepinfraOcrModels
+  }
   if (opts.awsTextractModel) {
     extractionOpts.awsTextractModel = opts.awsTextractModel
   }
@@ -363,6 +384,7 @@ const writeDocumentOutputMetadata = async (
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
+    deepinfraOcrModel,
     deapiOcrModel,
     artifactFiles,
     completionStatus,
@@ -378,6 +400,7 @@ const writeDocumentOutputMetadata = async (
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
+    deepinfraOcrModel,
     deapiOcrModel
   })
 
@@ -566,6 +589,7 @@ const runDocumentWrite = async (
     openaiOcrModel: opts.openaiOcrModel,
     anthropicOcrModel: opts.anthropicOcrModel,
     geminiOcrModel: opts.geminiOcrModel,
+    deepinfraOcrModel: opts.deepinfraOcrModel,
     deapiOcrModel: opts.deapiOcrModel,
     llmService,
     llmModel,
@@ -703,6 +727,12 @@ const processMediaSingle = async (
     minimaxTtsModels: llmDefaults.minimaxTtsModels,
     minimaxTtsModel: llmDefaults.minimaxTtsModel,
     minimaxTtsVoice: llmDefaults.minimaxTtsVoice,
+    deepgramTtsModels: llmDefaults.deepgramTtsModels,
+    deepgramTtsModel: llmDefaults.deepgramTtsModel,
+    deepgramVoiceId: llmDefaults.deepgramVoiceId,
+    runwayTtsModels: llmDefaults.runwayTtsModels,
+    runwayTtsModel: llmDefaults.runwayTtsModel,
+    runwayTtsVoice: llmDefaults.runwayTtsVoice,
     deapiTtsModels: llmDefaults.deapiTtsModels,
     deapiTtsModel: llmDefaults.deapiTtsModel,
     deapiTtsVoice: llmDefaults.deapiTtsVoice,
@@ -759,6 +789,8 @@ const processMediaSingle = async (
     anthropicOcrModel: llmDefaults.anthropicOcrModel,
     geminiOcrModels: llmDefaults.geminiOcrModels,
     geminiOcrModel: llmDefaults.geminiOcrModel,
+    deepinfraOcrModels: llmDefaults.deepinfraOcrModels,
+    deepinfraOcrModel: llmDefaults.deepinfraOcrModel,
     deapiOcrModels: llmDefaults.deapiOcrModels,
     deapiOcrModel: llmDefaults.deapiOcrModel
   }

@@ -35,6 +35,7 @@ export type {
   OpenAITtsModel,
   GeminiTtsModel,
   DeepgramTtsModel,
+  RunwayTtsModel,
   ElevenlabsMusicModel,
   MinimaxMusicModel,
   GeminiMusicModel,

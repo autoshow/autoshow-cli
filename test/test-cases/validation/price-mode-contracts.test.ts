@@ -5,6 +5,8 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
+import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
+import { computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
 
@@ -22,6 +24,11 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
   {
     label: 'tts',
     args: ['tts', STABLE_TTS_MD_PATH, '--openai-tts', 'gpt-4o-mini-tts', '--price'],
+    expected: 'speech'
+  },
+  {
+    label: 'Runway TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--runway-tts', 'eleven_multilingual_v2', '--price'],
     expected: 'speech'
   },
   {
@@ -109,9 +116,11 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')
     expect(resolveCheapestModelForFlag('grok-stt')).toBe('speech-to-text')
     expect(resolveCheapestModelForFlag('grok-tts')).toBe('grok-tts')
+    expect(resolveCheapestModelForFlag('runway-tts')).toBe('eleven_multilingual_v2')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
+    expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('allenai/olmOCR-2-7B-1025')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
       provider: 'gemini',
@@ -121,6 +130,17 @@ describe('price mode contracts', () => {
       provider: 'deapi',
       model: 'Ltxv_13B_0_9_8_Distilled_FP8'
     })
+  })
+
+  test('Runway TTS estimates use 50-character block billing', () => {
+    const opts = {
+      runwayTtsModels: ['eleven_multilingual_v2'],
+      runwayTtsModel: 'eleven_multilingual_v2'
+    } as Parameters<typeof estimateTtsCosts>[0]
+
+    expect(estimateTtsCosts(opts, 1)[0]?.totalCost).toBe(1)
+    expect(estimateTtsCosts(opts, 50)[0]?.totalCost).toBe(1)
+    expect(estimateTtsCosts(opts, 51)[0]?.totalCost).toBe(2)
   })
 
   test('gpt-image-2 image estimates use size and quality', () => {
@@ -178,5 +198,35 @@ describe('price mode contracts', () => {
       { model: 'lyria-3-clip-preview', processingTimeMs: 30_000, inputValue: 30 },
       { model: 'lyria-3-pro-preview', processingTimeMs: 180_000, inputValue: 120 }
     ])
+  })
+
+  test('DeepInfra OCR estimates include token cost and page timing', () => {
+    const extractTargets = [{
+      provider: 'deepinfra' as const,
+      model: 'allenai/olmOCR-2-7B-1025',
+      pageCount: 2,
+      promptTokens: 8000,
+      completionTokens: 2000,
+      estimateType: 'heuristic' as const
+    }]
+    const cost = computeEstimatedCosts({ extractTargets })
+    const timing = computeEstimatedProcessingTimes({
+      extractTargets: extractTargets.map(({ provider, model, pageCount }) => ({ provider, model, pageCount }))
+    })
+
+    expect(cost.steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'deepinfra',
+      model: 'allenai/olmOCR-2-7B-1025',
+      promptTokens: 8000,
+      completionTokens: 2000,
+      pageCount: 2
+    })
+    expect(cost.totalCost).toBeGreaterThan(0)
+    expect(timing.steps[0]).toMatchObject({
+      provider: 'deepinfra',
+      model: 'allenai/olmOCR-2-7B-1025',
+      processingTimeMs: 12_000
+    })
   })
 })

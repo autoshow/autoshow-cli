@@ -58,7 +58,7 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'> & {
+export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'> & {
   step: 'extract'
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
@@ -86,6 +86,7 @@ export type StepEstimate =
 export type AggregatedPriceEstimate = {
   steps: StepEstimate[]
   totalEstimatedCost: number
+  timing?: StepTimingBreakdown | undefined
   notes?: string[]
 }
 
@@ -132,9 +133,10 @@ export type ComputeEstimatedCostsInput = {
   openaiOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
+  deepinfraOcrModel?: string | undefined
   deapiOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
+    provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -204,8 +206,9 @@ export type ComputeEstimatedProcessingTimesInput = {
   openaiOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
+  deepinfraOcrModel?: string | undefined
   deapiOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi', model: string, pageCount?: number }> | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']

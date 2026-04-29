@@ -105,6 +105,8 @@ const TtsModelSchema = v.object({
   description: v.string(),
   costPer1kCharsUSD: v.optional(v.number(), undefined),
   costPer1kCharsCents: v.optional(v.number(), undefined),
+  characterBillingBlockSize: v.optional(v.number(), undefined),
+  characterBillingBlockCostCents: v.optional(v.number(), undefined),
   inputCostPer1MCharsUSD: v.optional(v.number(), undefined),
   inputCostPer1MCharsCents: v.optional(v.number(), undefined),
   outputCostPer1MCharsUSD: v.optional(v.number(), undefined),
@@ -423,7 +425,13 @@ export const getLlamaDownloadRepo = (model: string): string | undefined => {
 export const getTtsPricing = (
   service: string,
   model: string
-): { costPer1kCharsCents?: number, inputCostPer1MCharsCents?: number, outputCostPer1MCharsCents?: number } => {
+): {
+  costPer1kCharsCents?: number
+  characterBillingBlockSize?: number
+  characterBillingBlockCostCents?: number
+  inputCostPer1MCharsCents?: number
+  outputCostPer1MCharsCents?: number
+} => {
   const ttsModel = getModelRegistry().tts[service]?.models[model]
   if (!ttsModel) return {}
   return {
@@ -432,6 +440,12 @@ export const getTtsPricing = (
       : ttsModel.costPer1kCharsUSD !== undefined
         ? { costPer1kCharsCents: ttsModel.costPer1kCharsUSD * 100 }
         : {}),
+    ...(ttsModel.characterBillingBlockSize !== undefined
+      ? { characterBillingBlockSize: ttsModel.characterBillingBlockSize }
+      : {}),
+    ...(ttsModel.characterBillingBlockCostCents !== undefined
+      ? { characterBillingBlockCostCents: ttsModel.characterBillingBlockCostCents }
+      : {}),
     ...(ttsModel.inputCostPer1MCharsCents !== undefined
       ? { inputCostPer1MCharsCents: ttsModel.inputCostPer1MCharsCents }
       : ttsModel.inputCostPer1MCharsUSD !== undefined
@@ -475,6 +489,10 @@ export const getGroqTtsVoices = (): readonly string[] => {
 
 export const getGrokTtsVoices = (): readonly string[] => {
   return getModelRegistry().tts['grok']?.voices ?? []
+}
+
+export const getRunwayTtsVoices = (): readonly string[] => {
+  return getModelRegistry().tts['runway']?.voices ?? []
 }
 
 

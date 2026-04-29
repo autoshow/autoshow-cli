@@ -34,8 +34,12 @@ import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/vi
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import {
   computeActualAnthropicOcrCost,
+  computeActualDeepinfraOcrCost,
   computeActualGeminiOcrCost,
   computeDeapiOcrHeuristicCost,
+  DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
+  DEEPINFRA_OCR_PRICE_NOTE,
+  DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
   DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
   estimateDeapiOcrOutputCharsForPages,
   OPENAI_OCR_PRICE_NOTE
@@ -61,10 +65,25 @@ const computeTtsCost = (
 ): {
   cost: number
   costPer1kCharactersCents?: number
+  characterBillingBlockSize?: number
+  characterBillingBlockCostCents?: number
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number
 } => {
   const pricing = getTtsPricing(service, model)
+  if (
+    pricing.characterBillingBlockSize !== undefined
+    && pricing.characterBillingBlockCostCents !== undefined
+  ) {
+    const blockSize = Math.max(1, pricing.characterBillingBlockSize)
+    return {
+      cost: Math.ceil(Math.max(0, characterCount) / blockSize) * pricing.characterBillingBlockCostCents,
+      ...(pricing.costPer1kCharsCents !== undefined ? { costPer1kCharactersCents: pricing.costPer1kCharsCents } : {}),
+      characterBillingBlockSize: blockSize,
+      characterBillingBlockCostCents: pricing.characterBillingBlockCostCents
+    }
+  }
+
   if (
     pricing.inputCostPer1MCharsCents !== undefined
     && pricing.outputCostPer1MCharsCents !== undefined
@@ -182,6 +201,12 @@ const resolveExtractionProviderModel = (
       model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
     }
   }
+  if (metadata.ocrService === 'deepinfra') {
+    return {
+      provider: 'deepinfra',
+      model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025'
+    }
+  }
   if (metadata.ocrService === 'deapi') {
     return {
       provider: 'deapi',
@@ -216,6 +241,12 @@ const resolveExtractionProviderModel = (
     return {
       provider: 'gemini',
       model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
+    }
+  }
+  if (metadata.extractionMethod.includes('deepinfra-ocr')) {
+    return {
+      provider: 'deepinfra',
+      model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025'
     }
   }
   if (metadata.ocrService === 'gcloud-docai' || metadata.extractionMethod.includes('gcloud-docai')) {
@@ -390,6 +421,20 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
+    } else if (provider === 'deepinfra' && input.step2.ocrModel) {
+      const promptTokens = input.step2.promptTokens ?? 0
+      const completionTokens = input.step2.completionTokens ?? 0
+      const cost = computeActualDeepinfraOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      steps.push({
+        step: 'extract',
+        provider: 'deepinfra',
+        model: input.step2.ocrModel,
+        cost,
+        inputMetric: 'tokens',
+        inputValue: promptTokens + completionTokens,
+        promptTokens,
+        completionTokens
+      })
     } else if (provider === 'gcloud-docai') {
       const model = input.step2.ocrModel ?? 'ocr'
       const extractPricing = getExtractPricing('gcloud-docai', model)
@@ -478,15 +523,17 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
           ? computeActualAnthropicOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
         : provider === 'gemini' && step2Entry.ocrModel
           ? computeActualGeminiOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
+        : provider === 'deepinfra' && step2Entry.ocrModel
+          ? computeActualDeepinfraOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
           : 0
       steps.push({
         step: 'extract',
         provider,
         model,
         cost,
-        inputMetric: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' ? 'tokens' : 'pages',
-        inputValue: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' ? promptTokens + completionTokens : step2Entry.totalPages,
-        ...(provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' ? { promptTokens, completionTokens } : {})
+        inputMetric: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? 'tokens' : 'pages',
+        inputValue: provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(provider === 'glm' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? { promptTokens, completionTokens } : {})
       })
     }
   }
@@ -740,6 +787,17 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               model: input.geminiOcrModel,
               pageCount: input.extractPageCount,
               estimateType: 'heuristic' as const
+            }]
+          : []),
+        ...(input.deepinfraOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'deepinfra' as const,
+              model: input.deepinfraOcrModel,
+              pageCount: input.extractPageCount,
+              promptTokens: input.extractPageCount * DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
+              completionTokens: input.extractPageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
+              estimateType: 'heuristic' as const,
+              note: DEEPINFRA_OCR_PRICE_NOTE
             }]
           : []),
         ...(input.deapiOcrModel && typeof input.extractPageCount === 'number'

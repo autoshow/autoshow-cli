@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AnthropicOcrModel, AwsTextractModel, DeapiOcrModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
+import type { AnthropicOcrModel, AwsTextractModel, DeapiOcrModel, DeepinfraOcrModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
   'mistral-ocr-2512'
@@ -36,6 +36,15 @@ export const SUPPORTED_GEMINI_OCR_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateGeminiOcrModel = createModelValidator<GeminiOcrModel>(SUPPORTED_GEMINI_OCR_MODELS, 'gemini-ocr')
+
+export const SUPPORTED_DEEPINFRA_OCR_MODELS = [
+  'allenai/olmOCR-2-7B-1025',
+  'PaddlePaddle/PaddleOCR-VL-0.9B',
+  'Qwen/Qwen3-VL-235B-A22B-Instruct',
+  'Qwen/Qwen3-VL-30B-A3B-Instruct'
+] as const satisfies readonly string[]
+
+export const validateDeepinfraOcrModel = createModelValidator<DeepinfraOcrModel>(SUPPORTED_DEEPINFRA_OCR_MODELS, 'deepinfra-ocr')
 
 export const SUPPORTED_AWS_TEXTRACT_MODELS = [
   'detect-text',

@@ -17,6 +17,7 @@ import {
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
   DEEPGRAM_DEFAULT_VOICE,
+  SUPPORTED_RUNWAY_TTS_MODELS,
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_DEAPI_IMAGE_MODELS,
   SUPPORTED_GLM_IMAGE_MODELS,
@@ -69,6 +70,7 @@ import {
   validateGlmOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
+  validateDeepinfraOcrModel,
   validateAwsTextractModel,
   validateGcloudDocaiModel,
   validateDeapiOcrModel,
@@ -84,6 +86,8 @@ import {
   validateDeapiTtsModel,
   validateDeepgramTtsModel,
   validateDeepgramTtsVoice,
+  validateRunwayTtsModel,
+  validateRunwayTtsVoice,
   validateGroqTtsVoice,
   validateGrokTtsVoice,
   validateElevenlabsMusicModel,
@@ -154,6 +158,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'openai-ocr',
   'anthropic-ocr',
   'gemini-ocr',
+  'deepinfra-ocr',
   'aws-textract',
   'gcloud-docai',
   'deapi-ocr',
@@ -172,6 +177,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'grok-tts',
   'openai-tts',
   'gemini-tts',
+  'runway-tts',
   'deapi-tts',
   'deepgram-tts',
   'gemini-image',
@@ -218,6 +224,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'openai-tts': { shortcut: 'all-tts', supported: SUPPORTED_OPENAI_TTS_MODELS },
   'gemini-tts': { shortcut: 'all-tts', supported: SUPPORTED_GEMINI_TTS_MODELS },
   'deepgram-tts': { shortcut: 'all-tts', supported: [DEEPGRAM_DEFAULT_VOICE] },
+  'runway-tts': { shortcut: 'all-tts', supported: SUPPORTED_RUNWAY_TTS_MODELS },
   'deapi-tts': { shortcut: 'all-tts', supported: SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS },
   'gemini-image': { shortcut: 'all-image', supported: SUPPORTED_GEMINI_IMAGE_MODELS },
   'openai-image': { shortcut: 'all-image', supported: SUPPORTED_OPENAI_IMAGE_MODELS },
@@ -620,6 +627,7 @@ export const buildOptsFromFlags = (
   const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
   const anthropicOcrModels = readValidatedMany('anthropic-ocr', validateAnthropicOcrModel)
   const geminiOcrModels = readValidatedMany('gemini-ocr', validateGeminiOcrModel)
+  const deepinfraOcrModels = readValidatedMany('deepinfra-ocr', validateDeepinfraOcrModel)
   const awsTextractModels = readValidatedMany('aws-textract', validateAwsTextractModel)
   const gcloudDocaiModels = readValidatedMany('gcloud-docai', validateGcloudDocaiModel)
   const deapiOcrModels = readValidatedMany('deapi-ocr', validateDeapiOcrModel)
@@ -658,6 +666,7 @@ export const buildOptsFromFlags = (
   const openaiOcrModel = first(openaiOcrModels)
   const anthropicOcrModel = first(anthropicOcrModels)
   const geminiOcrModel = first(geminiOcrModels)
+  const deepinfraOcrModel = first(deepinfraOcrModels)
   const awsTextractModel = first(awsTextractModels)
   const gcloudDocaiModel = first(gcloudDocaiModels)
   const deapiOcrModel = first(deapiOcrModels)
@@ -677,6 +686,7 @@ export const buildOptsFromFlags = (
   const openaiTtsModels = readValidatedMany('openai-tts', validateOpenAITtsModel)
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
+  const runwayTtsModels = readValidatedMany('runway-tts', validateRunwayTtsModel)
   const deapiTtsModels = readValidatedMany('deapi-tts', validateDeapiTtsModel)
   const hasExplicitTtsEngine = [
     kittenTtsModels,
@@ -687,6 +697,7 @@ export const buildOptsFromFlags = (
     openaiTtsModels,
     geminiTtsModels,
     deepgramTtsModels,
+    runwayTtsModels,
     deapiTtsModels
   ].some((value) => value !== undefined && value.length > 0)
   const kittenTtsModelValues = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
@@ -830,6 +841,8 @@ export const buildOptsFromFlags = (
     anthropicOcrModel,
     geminiOcrModels,
     geminiOcrModel,
+    deepinfraOcrModels,
+    deepinfraOcrModel,
     awsTextractModels,
     awsTextractModel,
     gcloudDocaiModels,
@@ -886,6 +899,14 @@ export const buildOptsFromFlags = (
     geminiTtsModel: first(geminiTtsModels),
     deepgramTtsModels,
     deepgramTtsModel: first(deepgramTtsModels),
+    runwayTtsModels,
+    runwayTtsModel: first(runwayTtsModels),
+    runwayTtsVoice: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'runway-tts-voice')
+      if (v === undefined) return undefined
+      if (runwayTtsModels === undefined) return v
+      return validateCliValue(validateRunwayTtsVoice, v)
+    })(),
     deapiTtsModels,
     deapiTtsModel: first(deapiTtsModels),
     deapiTtsVoice: readOptionalStringFlag(mergedFlags, 'deapi-tts-voice'),

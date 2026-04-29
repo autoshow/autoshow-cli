@@ -20,6 +20,7 @@ export const resumeCommand = defineCommand({
       ['bun as resume ./output/2026-04-22_12-00-00-000_batch --deepinfra-stt', 'Resume only missing DeepInfra STT outputs'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_batch --glm-ocr glm-ocr', 'Resume only missing GLM OCR outputs'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3', 'Resume only missing ElevenLabs TTS outputs'],
+      ['bun as resume ./output/2026-04-22_12-00-00-000_run --runway-tts eleven_multilingual_v2', 'Resume only missing Runway TTS outputs'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001', 'Resume only missing Gemini image outputs'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_run --runway-video gen4.5', 'Resume only missing Runway video outputs'],
       ['bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5', 'Resume only missing MiniMax music outputs']

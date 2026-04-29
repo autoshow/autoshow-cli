@@ -18,6 +18,7 @@ export const defineOCRServiceTest = ({
   imageExtractionMethod,
   envVarKey,
   imageInput = 'input/examples/document/1-document.png',
+  assertUsageMetadata = false,
   timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: readonly string[]
@@ -26,6 +27,7 @@ export const defineOCRServiceTest = ({
   imageExtractionMethod?: string
   envVarKey: string
   imageInput?: string
+  assertUsageMetadata?: boolean
   timeoutMs?: number
 }): void => {
   const pdfInput = 'input/examples/document/1-document.pdf'
@@ -52,9 +54,21 @@ export const defineOCRServiceTest = ({
       if (!outputDir) return
 
       const metadata = await readRunMetadata(outputDir) as {
-        step2?: { extractionMethod?: string }
+        step2?: {
+          extractionMethod?: string
+          ocrService?: string
+          ocrModel?: string
+          promptTokens?: number
+          completionTokens?: number
+        }
       }
       expect(metadata.step2?.extractionMethod).toBe(extractionMethod)
+      if (assertUsageMetadata) {
+        expect(metadata.step2?.ocrService).toBe(service)
+        expect(metadata.step2?.ocrModel).toBe(model)
+        expect(metadata.step2?.promptTokens).toBeGreaterThan(0)
+        expect(metadata.step2?.completionTokens).toBeGreaterThan(0)
+      }
     }, timeoutMs)
 
     budgetedTest(budgetKey, `extract image with ${cliFlag} ${model}`, async () => {
@@ -71,10 +85,23 @@ export const defineOCRServiceTest = ({
       if (!outputDir) return
 
       const metadata = await readRunMetadata(outputDir) as {
-        step2?: { extractionMethod?: string; totalPages?: number }
+        step2?: {
+          extractionMethod?: string
+          totalPages?: number
+          ocrService?: string
+          ocrModel?: string
+          promptTokens?: number
+          completionTokens?: number
+        }
       }
       expect(metadata.step2?.extractionMethod).toBe(imageExtractionMethod ?? extractionMethod)
       expect(metadata.step2?.totalPages).toBe(1)
+      if (assertUsageMetadata) {
+        expect(metadata.step2?.ocrService).toBe(service)
+        expect(metadata.step2?.ocrModel).toBe(model)
+        expect(metadata.step2?.promptTokens).toBeGreaterThan(0)
+        expect(metadata.step2?.completionTokens).toBeGreaterThan(0)
+      }
     }, timeoutMs)
   }
 }

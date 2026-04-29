@@ -46,12 +46,14 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--ocr-local-concurrency')
 })
 
-test('tts help exposes Grok TTS flags', async () => {
+test('tts help exposes Grok and Runway TTS flags', async () => {
   const result = await runCommand(['src/cli/create-cli.ts', 'tts', '--help'], { env: helpEnv })
 
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--grok-tts')
   expect(result.stdout).toContain('--grok-tts-voice')
+  expect(result.stdout).toContain('--runway-tts')
+  expect(result.stdout).toContain('--runway-tts-voice')
 })
 
 test('write and config help expose LLM concurrency flags', async () => {

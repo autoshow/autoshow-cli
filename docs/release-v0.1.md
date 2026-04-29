@@ -247,7 +247,7 @@ Notable behavior:
 | STT | Whisper.cpp, Reverb | Deepgram, ElevenLabs, Soniox, Speechmatics, Rev, Groq, OpenAI, Mistral, AssemblyAI, Gladia |
 | Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing, Defuddle article extraction | Mistral OCR, GLM OCR, OpenAI OCR, Anthropic OCR, Gemini OCR, Firecrawl article extraction |
 | LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM |
-| TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini |
+| TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini, Runway |
 | Image | none | Gemini, OpenAI, MiniMax, GLM, Grok, Runway |
 | Video | none | Gemini Veo, MiniMax, GLM, Grok, Runway |
 | Music | none | ElevenLabs, MiniMax |
@@ -287,6 +287,7 @@ Notable behavior:
 | Groq TTS | `canopylabs/orpheus-v1-english` |
 | OpenAI TTS | `gpt-4o-mini-tts` |
 | Gemini TTS | `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` |
+| Runway TTS | `eleven_multilingual_v2` |
 | Gemini image | `imagen-4.0-fast-generate-001`, `gemini-3-pro-image-preview`, `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001` |
 | OpenAI image | `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, `gpt-image-2` |
 | MiniMax image | `image-01` |

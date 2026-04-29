@@ -174,9 +174,10 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 |---------|----------------------|
 | `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--grok-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
 | `extract --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr` API key) |
+| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr`/`--deepinfra-ocr` API key) |
 | `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
 | `extract --gemini-ocr` | `GEMINI_API_KEY` |
+| `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
 | `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
 | `write --glm` | `GLM_API_KEY` |
@@ -187,6 +188,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `tts --grok-tts` | `XAI_API_KEY` |
 | `tts --openai-tts` | `OPENAI_API_KEY` |
 | `tts --gemini-tts` | `GEMINI_API_KEY` |
+| `tts --runway-tts` | `RUNWAYML_API_SECRET` |
 | `image --gemini-image` | `GEMINI_API_KEY` |
 | `image --openai-image` | `OPENAI_API_KEY` |
 | `image --minimax-image` | `MINIMAX_API_KEY` |

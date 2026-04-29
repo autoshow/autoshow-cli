@@ -14,7 +14,8 @@ import type {
   ReporterMetricValue,
   StepEstimate,
   StepSummaryEntry,
-  StepTimingCost
+  StepTimingCost,
+  TimingStepEntry
 } from '~/types'
 
 const formatSttProvider = (provider: string): string => {
@@ -107,6 +108,16 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       assertNever(estimate)
   }
 }
+
+const mapTimingEstimate = (timing: TimingStepEntry): Record<string, string | number> => ({
+  step: timing.step,
+  provider: timing.provider,
+  model: timing.model,
+  ...(typeof timing.inputMetric === 'string' && typeof timing.inputValue === 'number'
+    ? { input: `${timing.inputValue} ${timing.inputMetric}` }
+    : {}),
+  estimatedTime: formatDuration(timing.processingTimeMs)
+})
 
 const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCost: number) => {
   const entries: StepSummaryEntry[] = steps.map(step => ({
@@ -243,6 +254,13 @@ export const createReporter = (logger: Logger): Reporter => {
         category: 'pricing',
         humanTable: createKeyValueTable(estimateEntries)
       })
+      if (estimate.timing && estimate.timing.steps.length > 0) {
+        logger.write('info', `Total estimated processing time: ${formatDuration(estimate.timing.totalProcessingTimeMs)}`, { category: 'pricing' })
+        logger.write('info', 'Processing Time Estimate', {
+          category: 'pricing',
+          humanTable: createHumanTable(estimate.timing.steps.map(mapTimingEstimate), ['step', 'provider', 'model', 'input', 'estimatedTime'])
+        })
+      }
       for (const note of estimate.notes ?? []) {
         logger.write('info', note, { category: 'pricing' })
       }
@@ -252,6 +270,7 @@ export const createReporter = (logger: Logger): Reporter => {
         estimate: {
           steps: estimate.steps.map(s => mapStepEstimate(s, 'raw')),
           totalEstimatedCostCents: estimate.totalEstimatedCost,
+          ...(estimate.timing ? { timing: estimate.timing } : {}),
           ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
         }
       })

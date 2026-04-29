@@ -81,6 +81,9 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --ha
 # Resume missing ElevenLabs TTS outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3
 
+# Resume missing Runway TTS outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --runway-tts eleven_multilingual_v2
+
 # Resume missing Gemini image outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001
 
@@ -161,6 +164,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
+| `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use `allenai/olmOCR-2-7B-1025` |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--psm <n>` | Tesseract page segmentation mode |
 | `--oem <n>` | Tesseract OCR engine mode |
@@ -182,12 +186,14 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--openai-tts <model>` | Select one or more OpenAI TTS models |
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
+| `--runway-tts <model>` | Select one or more Runway TTS models |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
 | `--elevenlabs-voice <id>` | ElevenLabs voice ID override |
 | `--minimax-tts-voice <id>` | MiniMax TTS voice ID override |
 | `--openai-voice <id>` | OpenAI TTS voice ID override |
 | `--gemini-voice <name>` | Gemini TTS voice name override |
 | `--deepgram-voice <id>` | Deepgram TTS voice override |
+| `--runway-tts-voice <preset>` | Runway TTS preset voice override |
 | `--groq-voice <id>` | Groq TTS voice ID override |
 | `--grok-tts-voice <id>` | Grok TTS voice ID override |
 

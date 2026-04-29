@@ -8,6 +8,7 @@ import {
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
+  SUPPORTED_RUNWAY_TTS_MODELS,
   SUPPORTED_DEAPI_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
@@ -57,6 +58,10 @@ export const ttsFlags = {
     description: buildModelDescription('Deepgram TTS model', SUPPORTED_DEEPGRAM_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
+  'runway-tts': {
+    description: buildModelDescription('Runway TTS model', SUPPORTED_RUNWAY_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
   'deapi-tts': {
     description: buildModelDescription('deAPI TTS model', SUPPORTED_DEAPI_TTS_MODELS),
     type: [String] as [StringConstructor]
@@ -79,6 +84,10 @@ export const ttsFlags = {
   },
   'deapi-tts-voice': {
     description: 'deAPI TTS voice override (default: af_heart for Kokoro)',
+    type: String
+  },
+  'runway-tts-voice': {
+    description: 'Runway TTS preset voice override (default: Leslie)',
     type: String
   },
   'gemini-speaker-1-name': {

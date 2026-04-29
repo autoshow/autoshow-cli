@@ -37,6 +37,7 @@ import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-
 import { setupGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/gemini'
 import { setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { setupAnthropicOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
+import { setupDeepinfraOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deepinfra-ocr/deepinfra-ocr'
 import { setupDeapiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deapi-ocr/deapi-ocr'
 import { setupKittenTts } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
@@ -45,6 +46,7 @@ import { setupGrokTts } from '~/cli/commands/process-steps/step-4-tts/tts-servic
 import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
+import { setupRunwayTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/runway/runway-tts'
 import { setupDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { setupDeapiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/deapi/deapi-image-gen'
@@ -290,6 +292,7 @@ const runFullSetup = async (): Promise<void> => {
     await setupOpenAIOcr()
     await setupAnthropicOcr()
     await setupGeminiOcr()
+    await setupDeepinfraOcr()
     await setupDeapiOcr()
   })
 
@@ -325,6 +328,8 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupGeminiTts)
 
   await withCompactSetup(setupDeepgramTts)
+
+  await withCompactSetup(setupRunwayTts)
 
   await withCompactSetup(setupDeapiTts)
 
@@ -393,6 +398,7 @@ const runSetupTts = async (): Promise<void> => {
   await setupOpenAITts()
   await setupGeminiTts()
   await setupDeepgramTts()
+  await setupRunwayTts()
   await setupDeapiTts()
   l.write('success', 'TTS setup complete')
 }

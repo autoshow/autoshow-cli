@@ -24,6 +24,12 @@ const RUNWAY_ALL_LINKS = [
   'https://help.runwayml.com/hc/en-us/articles/37053594806419-Creating-with-Gen-4-Image'
 ]
 
+const RUNWAY_TTS_LINKS = [
+  'https://docs.dev.runwayml.com/api/',
+  'https://docs.dev.runwayml.com/guides/models/',
+  'https://docs.dev.runwayml.com/guides/pricing/'
+]
+
 const AWS_STT_LINKS = [
   'https://docs.aws.amazon.com/transcribe/latest/dg/what-is.md',
   'https://docs.aws.amazon.com/transcribe/latest/dg/getting-started-cli.md',
@@ -80,6 +86,31 @@ const GROK_TTS_LINKS = [
 const GROK_STT_LINKS = [
   'https://docs.x.ai/developers/model-capabilities/audio/speech-to-text.md',
   'https://docs.x.ai/developers/rest-api-reference/inference/voice.md'
+]
+
+const KIMI_GENERAL_LINKS = [
+  'https://platform.kimi.ai/docs/overview.md',
+  'https://platform.kimi.ai/docs/api/models-overview.md',
+  'https://platform.kimi.ai/docs/models.md',
+  'https://platform.kimi.ai/docs/api/overview.md',
+  'https://platform.kimi.ai/docs/api/errors.md',
+  'https://platform.kimi.ai/docs/guide/faq.md',
+  'https://platform.kimi.ai/docs/api/estimate.md',
+  'https://platform.kimi.ai/docs/introduction.md',
+  'https://platform.kimi.ai/docs/guide/start-using-kimi-api.md'
+]
+
+const KIMI_TEXT_LINKS = [
+  'https://platform.kimi.ai/docs/guide/kimi-k2-6-quickstart.md',
+  'https://platform.kimi.ai/docs/pricing/chat-k26.md',
+  'https://platform.kimi.ai/docs/api/chat.md',
+  'https://platform.kimi.ai/docs/guide/use-json-mode-feature-of-kimi-api.md',
+  'https://platform.kimi.ai/docs/guide/prompt-best-practice.md'
+]
+
+const KIMI_OCR_LINKS = [
+  'https://platform.kimi.ai/docs/api/files-upload.md',
+  'https://platform.kimi.ai/docs/guide/use-kimi-vision-model.md'
 ]
 
 const BFL_IMAGE_LINKS = [
@@ -173,6 +204,19 @@ test('links selector accepts runway provider and general section', () => {
     runwayGeneralSelection.serviceSelections,
     runwayGeneralSelection.globalSections
   )).toEqual(RUNWAY_GENERAL_LINKS)
+
+  const runwayTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--runway',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    runwayTtsSelection.serviceSelections,
+    runwayTtsSelection.globalSections
+  )).toEqual(RUNWAY_TTS_LINKS)
 })
 
 test('links selector accepts aws provider with stt and ocr sections', () => {
@@ -347,6 +391,55 @@ test('links selector accepts grok provider with stt and tts sections', () => {
     grokTtsSelection.serviceSelections,
     grokTtsSelection.globalSections
   )).toEqual(GROK_TTS_LINKS)
+})
+
+test('links selector accepts kimi provider with general text and ocr sections', async () => {
+  const kimiSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--kimi'
+  ])
+
+  expect(kimiSelection.serviceSelections.get('kimi')).toEqual([])
+  expect(collectLinks(
+    kimiSelection.serviceSelections,
+    kimiSelection.globalSections
+  )).toEqual([...KIMI_GENERAL_LINKS, ...KIMI_TEXT_LINKS, ...KIMI_OCR_LINKS])
+
+  const kimiTextSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--kimi',
+    'text'
+  ])
+
+  expect(collectLinks(
+    kimiTextSelection.serviceSelections,
+    kimiTextSelection.globalSections
+  )).toEqual(KIMI_TEXT_LINKS)
+
+  const kimiOcrSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--kimi',
+    'ocr'
+  ])
+
+  expect(collectLinks(
+    kimiOcrSelection.serviceSelections,
+    kimiOcrSelection.globalSections
+  )).toEqual(KIMI_OCR_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--kimi',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --kimi: tts')
 })
 
 test('music lyric-video render mode rejects generation-only price mode', async () => {

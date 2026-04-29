@@ -69,7 +69,8 @@ export const buildApiCheapSelections = () => {
     { service: 'groq', flag: '--groq-tts', envVar: 'GROQ_API_KEY', model: selectCheapestTtsModel('groq') },
     { service: 'grok', flag: '--grok-tts', envVar: 'XAI_API_KEY', model: selectCheapestTtsModel('grok') },
     { service: 'openai', flag: '--openai-tts', envVar: 'OPENAI_API_KEY', model: selectCheapestTtsModel('openai') },
-    { service: 'gemini', flag: '--gemini-tts', envVar: 'GEMINI_API_KEY', model: selectCheapestTtsModel('gemini') }
+    { service: 'gemini', flag: '--gemini-tts', envVar: 'GEMINI_API_KEY', model: selectCheapestTtsModel('gemini') },
+    { service: 'runway', flag: '--runway-tts', envVar: 'RUNWAYML_API_SECRET', model: selectCheapestTtsModel('runway') }
   ]
 
   const imageSelections = [
@@ -88,7 +89,8 @@ export const buildApiCheapSelections = () => {
     { service: 'glm', flag: '--glm-ocr', envVar: 'GLM_API_KEY', model: selectCheapestExtractModel('glm') },
     { service: 'openai', flag: '--openai-ocr', envVar: 'OPENAI_API_KEY', model: selectCheapestExtractModel('openai') },
     { service: 'anthropic', flag: '--anthropic-ocr', envVar: 'ANTHROPIC_API_KEY', model: selectCheapestExtractModel('anthropic') },
-    { service: 'gemini', flag: '--gemini-ocr', envVar: 'GEMINI_API_KEY', model: selectCheapestExtractModel('gemini') }
+    { service: 'gemini', flag: '--gemini-ocr', envVar: 'GEMINI_API_KEY', model: selectCheapestExtractModel('gemini') },
+    { service: 'deepinfra', flag: '--deepinfra-ocr', envVar: 'DEEPINFRA_API_KEY', model: selectCheapestExtractModel('deepinfra') }
   ]
 
   return {

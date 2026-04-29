@@ -54,6 +54,9 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 # document OCR/extraction only
 bun as extract input/examples/document/1-document.pdf
 
+# document OCR with DeepInfra
+bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025
+
 # X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 
@@ -68,6 +71,9 @@ bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview
 
 # text-to-speech with xAI Grok
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
+
+# text-to-speech with Runway-hosted Eleven multilingual v2
+bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
@@ -139,6 +145,7 @@ bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto --price
 bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text --price
+bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price
 bun as write ./output/demo/text --price
@@ -146,6 +153,7 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
+bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --price
 bun as image "a sunset" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low --price
 bun as image "a sunset" --bfl-image flux-2-klein-4b --price
 bun as image "a sunset" --deapi-image Flux1schnell --price
@@ -160,4 +168,4 @@ bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --v
 bun as video "a sunset timelapse" --all-video --price
 ```
 
-For `extract --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.
+For `extract --deepinfra-ocr`, price preflight uses the registry rates with a 4,000 input-token plus 1,000 output-token per-page heuristic and adds page processing-time estimates. For `extract --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.

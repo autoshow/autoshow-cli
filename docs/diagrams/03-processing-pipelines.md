@@ -113,7 +113,8 @@ src/cli/commands/process-steps/process-video.ts
                                         │   --minimax-tts,             │
                                         │   --groq-tts,                │
                                         │   --openai-tts,              │
-                                        │   --gemini-tts)              │
+                                        │   --gemini-tts,              │
+                                        │   --runway-tts)              │
                                         │  Step 5: Image (--gemini-    │
                                         │   image, --openai-image, ...)│
                                         │  Step 6: Video (--gemini-    │
@@ -185,9 +186,9 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  │    OCRmyPDF (PDF)    │  │          │  │  docx → word/document   │        │
 │  │  --paddle-ocr →      │  │ --dpi    │  │  pptx → ppt/slides/*    │        │
 │  │    PaddleOCR         │  │ --lang   │  │  xlsx → sharedStrings   │        │
-│  │  default →           │  │ --psm   │  │                         │        │
-│  │    MuPDF + Tesseract │  │ --oem    │  └────────────┬────────────┘        │
-│  │                      │  │ --rotate │               |                     │
+│  │  hosted OCR flags →  │  │ --psm   │  │                         │        │
+│  │    API providers     │  │ --oem    │  └────────────┬────────────┘        │
+│  │  default → MuPDF+Tess│  │ --rotate │               |                     │
 │  │  Stage A: MuPDF      │  └────┬─────┘               |                     │
 │  │  mutool draw -F text │       |                     |                     │
 │  │  per-page text       │       |                     |                     │

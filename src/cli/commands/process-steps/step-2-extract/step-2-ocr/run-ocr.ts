@@ -27,6 +27,7 @@ import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
 import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
 import { runAnthropicOcr } from './ocr-services/anthropic-ocr/run-anthropic-ocr'
 import { runGeminiOcr } from './ocr-services/gemini-ocr/run-gemini-ocr'
+import { runDeepinfraOcr } from './ocr-services/deepinfra-ocr/run-deepinfra-ocr'
 import { runAwsTextract } from './ocr-services/aws-textract/run-aws-textract'
 import { runGcloudDocai } from './ocr-services/gcloud-docai/run-gcloud-docai'
 import { runDeapiOcr } from './ocr-services/deapi-ocr/run-deapi-ocr'
@@ -47,6 +48,10 @@ import {
   GEMINI_OCR_LIMIT_SOURCE,
   GEMINI_PDF_PAGE_COUNT_LIMIT
 } from './ocr-services/gemini-ocr/gemini'
+import {
+  DEEPINFRA_OCR_LIMIT_SOURCE,
+  ensureDeepinfraOcrSetup
+} from './ocr-services/deepinfra-ocr/deepinfra-ocr'
 import { ensureAwsTextractSetup } from './ocr-services/aws-textract/aws-textract'
 import { ensureGcloudDocaiSetup } from './ocr-services/gcloud-docai/gcloud-docai'
 import { ensureDeapiOcrSetup } from './ocr-services/deapi-ocr/deapi-ocr'
@@ -335,6 +340,9 @@ const hasAnthropicOcr = (opts: ExtractionOptions): boolean =>
 const hasGeminiOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.geminiOcrModel === 'string' && opts.geminiOcrModel.length > 0
 
+const hasDeepinfraOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.deepinfraOcrModel === 'string' && opts.deepinfraOcrModel.length > 0
+
 const hasAwsTextract = (opts: ExtractionOptions): boolean =>
   typeof opts.awsTextractModel === 'string' && opts.awsTextractModel.length > 0
 
@@ -345,7 +353,7 @@ const hasDeapiOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.deapiOcrModel === 'string' && opts.deapiOcrModel.length > 0
 
 const hasHostedOcr = (opts: ExtractionOptions): boolean =>
-  hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts) || hasAnthropicOcr(opts) || hasGeminiOcr(opts) || hasAwsTextract(opts) || hasGcloudDocai(opts) || hasDeapiOcr(opts)
+  hasMistralOcr(opts) || hasGlmOcr(opts) || hasOpenAIOcr(opts) || hasAnthropicOcr(opts) || hasGeminiOcr(opts) || hasDeepinfraOcr(opts) || hasAwsTextract(opts) || hasGcloudDocai(opts) || hasDeapiOcr(opts)
 
 const hasOcrFlag = (opts: ExtractionOptions): boolean =>
   opts.useTesseract === true || opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
@@ -374,6 +382,8 @@ const formatHostedOcrLabel = (service: HostedOcrService): string => {
       return 'Anthropic OCR'
     case 'gemini':
       return 'Gemini OCR'
+    case 'deepinfra':
+      return 'DeepInfra OCR'
     case 'aws-textract':
       return 'AWS Textract'
     case 'gcloud-docai':
@@ -391,6 +401,8 @@ const getHostedOcrLimitSource = (service: HostedOcrService): string => {
       return ANTHROPIC_OCR_LIMIT_SOURCE
     case 'gemini':
       return GEMINI_OCR_LIMIT_SOURCE
+    case 'deepinfra':
+      return DEEPINFRA_OCR_LIMIT_SOURCE
     case 'glm':
       return 'project/links/glm-all-links.md'
     case 'aws-textract':
@@ -687,6 +699,9 @@ const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine): strin
   if (engine === 'gemini-ocr') {
     return 'The --gemini-ocr engine supports PDF and PNG/JPG/WEBP/BMP images directly. Convert GIF/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
   }
+  if (engine === 'deepinfra-ocr') {
+    return 'The --deepinfra-ocr engine sends PNG/JPG/WEBP images to DeepInfra directly; PDF pages are rendered to PNG. Convert GIF/BMP/TIF images to PNG/JPG/WebP first, or install ImageMagick so AutoShow can normalize them automatically.'
+  }
   if (engine === 'aws-textract') {
     return 'The --aws-textract engine supports PDF and PNG/JPG/TIF images directly. Convert BMP/WEBP/GIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
   }
@@ -711,6 +726,8 @@ const assertSupportedHostedDirectImageFormat = (
         ? new Set(['png', 'jpg', 'webp', 'gif'])
       : engine === 'gemini-ocr'
         ? new Set(['png', 'jpg', 'webp', 'bmp'])
+      : engine === 'deepinfra-ocr'
+        ? new Set(['png', 'jpg', 'webp'])
       : engine === 'aws-textract'
         ? new Set(['png', 'jpg', 'tif'])
       : engine === 'gcloud-docai'
@@ -786,6 +803,22 @@ const normalizeHostedDirectImageInput = async (
       }
     }
 
+    if (engine === 'deepinfra-ocr') {
+      if (normalizedFormat === 'gif' || normalizedFormat === 'bmp' || normalizedFormat === 'tif') {
+        if (!commandExists('convert')) {
+          throw CLIUsageError(getHostedDirectImageSupportError(engine))
+        }
+
+        const pngPath = join(tempDir, `${outputStem}.png`)
+        const result = await exec('convert', [imagePath, pngPath])
+        if (result.exitCode !== 0) {
+          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --deepinfra-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
+        }
+
+        return { filePath: pngPath, format: 'png' }
+      }
+    }
+
     if (engine === 'deapi-ocr') {
       if (normalizedFormat === 'tif') {
         if (!commandExists('convert')) {
@@ -849,6 +882,10 @@ const resolveHostedOcrSelection = (
     return { service: 'gemini', model: opts.geminiOcrModel as string }
   }
 
+  if (hasDeepinfraOcr(opts)) {
+    return { service: 'deepinfra', model: opts.deepinfraOcrModel as string }
+  }
+
   if (hasAwsTextract(opts)) {
     return { service: 'aws-textract', model: opts.awsTextractModel as string }
   }
@@ -870,6 +907,7 @@ const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEngine | u
   if (hasOpenAIOcr(opts)) return 'openai-ocr'
   if (hasAnthropicOcr(opts)) return 'anthropic-ocr'
   if (hasGeminiOcr(opts)) return 'gemini-ocr'
+  if (hasDeepinfraOcr(opts)) return 'deepinfra-ocr'
   if (hasAwsTextract(opts)) return 'aws-textract'
   if (hasGcloudDocai(opts)) return 'gcloud-docai'
   if (hasDeapiOcr(opts)) return 'deapi-ocr'
@@ -1032,6 +1070,26 @@ const runHostedOcr = async (
       pages: run.pages,
       extractionMethod: run.extractionMethod,
       ocrService: 'gemini',
+      ocrModel,
+      totalPages: run.totalPages,
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+    }
+  }
+
+  if (hasDeepinfraOcr(opts)) {
+    await ensureDeepinfraOcrSetup()
+    warnHostedOnlyFlags('deepinfra-ocr', opts)
+    const ocrModel = opts.deepinfraOcrModel as string
+    const run = await runDeepinfraOcr(filePath, step1Metadata, ocrModel, {
+      dpi: opts.dpi,
+      password: opts.password,
+      rotate: opts.rotate
+    })
+    return {
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'deepinfra',
       ocrModel,
       totalPages: run.totalPages,
       ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
@@ -1497,6 +1555,9 @@ export const runOcr = async (
   }
   if (typeof opts.geminiOcrModel === 'string' && extractionMethod.includes('gemini-ocr')) {
     step2MetadataPayload['ocrModel'] = opts.geminiOcrModel
+  }
+  if (typeof opts.deepinfraOcrModel === 'string' && extractionMethod.includes('deepinfra-ocr')) {
+    step2MetadataPayload['ocrModel'] = opts.deepinfraOcrModel
   }
   if (typeof opts.awsTextractModel === 'string' && extractionMethod.includes('aws-textract')) {
     step2MetadataPayload['ocrModel'] = opts.awsTextractModel

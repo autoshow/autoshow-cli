@@ -233,6 +233,7 @@ export type RepeatableModelFlag =
   | 'openai-ocr'
   | 'anthropic-ocr'
   | 'gemini-ocr'
+  | 'deepinfra-ocr'
   | 'aws-textract'
   | 'gcloud-docai'
   | 'deapi-ocr'
@@ -252,6 +253,7 @@ export type RepeatableModelFlag =
   | 'grok-tts'
   | 'openai-tts'
   | 'gemini-tts'
+  | 'runway-tts'
   | 'deapi-tts'
   | 'gemini-image'
   | 'openai-image'
@@ -333,6 +335,7 @@ export type WriteDocumentOutputMetadataOptions = {
   openaiOcrModel: string | undefined
   anthropicOcrModel: string | undefined
   geminiOcrModel: string | undefined
+  deepinfraOcrModel: string | undefined
   deapiOcrModel: string | undefined
   llmService: string
   llmModel: string

@@ -81,6 +81,7 @@ bun as config --whisper large-v3-turbo
 bun as config --gcloud-stt chirp_3
 bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
+bun as config --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-cents 100
 ```
@@ -163,6 +164,8 @@ Representative JSON shape of `config/autoshow.json`:
     "post": {
       "tts": {
         "kittenTts": ["kitten-tts-mini"],
+        "runwayTts": ["eleven_multilingual_v2"],
+        "runwayTtsVoice": "Leslie",
         "ttsSpeaker": "Jasper"
       },
       "image": {
@@ -188,7 +191,8 @@ Representative JSON shape of `config/autoshow.json`:
       "psm": 3,
       "oem": 1,
       "rotate": 0,
-      "mistralOcr": ["mistral-ocr-2512"]
+      "mistralOcr": ["mistral-ocr-2512"],
+      "deepinfraOcr": ["allenai/olmOCR-2-7B-1025"]
     },
     "batch": {
       "limit": 5,
@@ -256,11 +260,18 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `groqTts` | `--groq-tts` | Groq TTS model |
 | `openaiTts` | `--openai-tts` | OpenAI TTS model |
 | `geminiTts` | `--gemini-tts` | Gemini TTS model |
+| `deepgramTts` | `--deepgram-tts` | Deepgram TTS model |
+| `runwayTts` | `--runway-tts` | Runway TTS model |
+| `deapiTts` | `--deapi-tts` | deAPI TTS model |
 | `ttsSpeaker` | `--kitten-voice` | Kitten speaker name |
 | `groqVoice` | `--groq-voice` | Groq voice ID |
+| `grokTtsVoice` | `--grok-tts-voice` | Grok voice ID |
 | `elevenlabsVoice` | `--elevenlabs-voice` | ElevenLabs voice ID |
 | `openaiVoice` | `--openai-voice` | OpenAI TTS voice ID |
 | `geminiVoice` | `--gemini-voice` | Gemini TTS voice name |
+| `deepgramVoice` | `--deepgram-voice` | Deepgram TTS voice/model |
+| `runwayTtsVoice` | `--runway-tts-voice` | Runway preset voice |
+| `deapiTtsVoice` | `--deapi-tts-voice` | deAPI TTS voice ID |
 | `minimaxTtsVoice` | `--minimax-tts-voice` | MiniMax TTS voice ID |
 
 ### defaults.post.image
@@ -321,6 +332,7 @@ Model-selecting OCR fields in this section are arrays of models, not single stri
 | `rotate` | `--rotate` | Page rotation in degrees |
 | `mistralOcr` | `--mistral-ocr` | Default Mistral OCR model list |
 | `glmOcr` | `--glm-ocr` | Default GLM OCR model list |
+| `deepinfraOcr` | `--deepinfra-ocr` | Default DeepInfra OCR model list |
 
 ### defaults.batch
 

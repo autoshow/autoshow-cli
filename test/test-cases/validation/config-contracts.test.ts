@@ -27,12 +27,13 @@ describe('config contracts', () => {
       'llm-provider-concurrency': '3',
       'llm-local-concurrency': '1',
       'tesseract-ocr': true,
+      'deepinfra-ocr': ['allenai/olmOCR-2-7B-1025'],
       dpi: '450',
       'ocr-provider-concurrency': '4',
       'ocr-local-concurrency': '2',
       'batch-limit': '7',
       'max-cents': '25'
-    }, new Set(['openai', 'glm', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
+    }, new Set(['openai', 'glm', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'deepinfra-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
       version: 2,
       defaults: {
         llm: {
@@ -44,6 +45,7 @@ describe('config contracts', () => {
         extract: {
           ocr: {
             tesseract: true,
+            deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
             dpi: 450,
             providerConcurrency: 4,
             localConcurrency: 2
@@ -96,6 +98,23 @@ describe('config contracts', () => {
     })
   })
 
+  test('buildConfigPatchFromFlags saves Runway TTS defaults', () => {
+    expect(buildConfigPatchFromFlags({
+      'runway-tts': ['eleven_multilingual_v2'],
+      'runway-tts-voice': 'Leslie'
+    }, new Set(['runway-tts', 'runway-tts-voice']))).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          tts: {
+            runwayTts: ['eleven_multilingual_v2'],
+            runwayTtsVoice: 'Leslie'
+          }
+        }
+      }
+    })
+  })
+
   test('loadConfig accepts current v2 array-shaped defaults', async () => {
     const configPath = await writeTempConfig({
       version: 2,
@@ -113,6 +132,7 @@ describe('config contracts', () => {
           ocr: {
             providerConcurrency: 3,
             localConcurrency: 1,
+            deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',
             gcloudDocaiOcrProcessorId: 'processor-123',
@@ -120,6 +140,10 @@ describe('config contracts', () => {
           }
         },
         post: {
+          tts: {
+            runwayTts: ['eleven_multilingual_v2'],
+            runwayTtsVoice: 'Leslie'
+          },
           image: {
             bflImage: ['flux-2-pro-preview'],
             imageFormat: 'jpeg'
@@ -144,6 +168,7 @@ describe('config contracts', () => {
           ocr: {
             providerConcurrency: 3,
             localConcurrency: 1,
+            deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',
             gcloudDocaiOcrProcessorId: 'processor-123',
@@ -151,6 +176,10 @@ describe('config contracts', () => {
           }
         },
         post: {
+          tts: {
+            runwayTts: ['eleven_multilingual_v2'],
+            runwayTtsVoice: 'Leslie'
+          },
           image: {
             bflImage: ['flux-2-pro-preview'],
             imageFormat: 'jpeg'

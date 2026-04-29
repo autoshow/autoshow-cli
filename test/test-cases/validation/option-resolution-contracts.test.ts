@@ -21,6 +21,9 @@ describe('option resolution contracts', () => {
       'deepgram-stt': 'nova-3',
       'grok-tts': 'grok-tts',
       'grok-tts-voice': 'EVE',
+      'runway-tts': 'eleven_multilingual_v2',
+      'runway-tts-voice': 'Leslie',
+      'deepinfra-ocr': 'allenai/olmOCR-2-7B-1025',
       'tesseract-ocr': true,
       'youtube-captions': true,
       'batch-limit': '9',
@@ -40,6 +43,9 @@ describe('option resolution contracts', () => {
     expect(opts.deepgramSttModel).toBe('nova-3')
     expect(opts.grokTtsModel).toBe('grok-tts')
     expect(opts.grokTtsVoice).toBe('eve')
+    expect(opts.runwayTtsModel).toBe('eleven_multilingual_v2')
+    expect(opts.runwayTtsVoice).toBe('Leslie')
+    expect(opts.deepinfraOcrModel).toBe('allenai/olmOCR-2-7B-1025')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
     expect(opts.batchLimit).toBe(9)
@@ -93,18 +99,22 @@ describe('option resolution contracts', () => {
     const openaiDefault = resolveCheapestModelForFlag('openai')
     const glmDefault = resolveCheapestModelForFlag('glm')
     const deepgramDefault = resolveCheapestModelForFlag('deepgram-stt')
+    const deepinfraOcrDefault = resolveCheapestModelForFlag('deepinfra-ocr')
     const opts = buildOptsFromFlags(false, {
       openai: true,
       glm: true,
-      'deepgram-stt': true
+      'deepgram-stt': true,
+      'deepinfra-ocr': true
     })
 
     expect(openaiDefault).toBeDefined()
     expect(glmDefault).toBeDefined()
     expect(deepgramDefault).toBeDefined()
+    expect(deepinfraOcrDefault).toBe('allenai/olmOCR-2-7B-1025')
     expect(opts.openaiModel).toBe(openaiDefault)
     expect(opts.glmModel).toBe(glmDefault)
     expect(opts.deepgramSttModel).toBe(deepgramDefault)
+    expect(opts.deepinfraOcrModel).toBe(deepinfraOcrDefault)
   })
 
   test('--all-llm expands GLM to its supported model', () => {
@@ -123,6 +133,7 @@ describe('option resolution contracts', () => {
     expect(expansions['openai-stt']?.shortcut).toBe('all-stt')
     expect(expansions['cloudflare-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
+    expect(expansions['deepinfra-ocr']?.shortcut).toBe('all-ocr')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('grok')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('openai-stt')
@@ -130,15 +141,19 @@ describe('option resolution contracts', () => {
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('tesseract')
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('openai')
+    expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('deepinfra')
   })
 
-  test('--all-tts expands deepgram and grok to default models', () => {
+  test('--all-tts expands deepgram, runway, and grok to default models', () => {
     const opts = buildOptsFromFlags(false, { 'all-tts': true })
     const deepgramTargets = collectTtsTargets(opts).filter((target) => target.service === 'deepgram')
+    const runwayTargets = collectTtsTargets(opts).filter((target) => target.service === 'runway')
     const grokTargets = collectTtsTargets(opts).filter((target) => target.service === 'grok')
 
     expect(opts.deepgramTtsModels).toEqual([DEEPGRAM_DEFAULT_VOICE])
     expect(deepgramTargets.map((target) => target.model)).toEqual([DEEPGRAM_DEFAULT_VOICE])
+    expect(opts.runwayTtsModels).toEqual(['eleven_multilingual_v2'])
+    expect(runwayTargets.map((target) => target.model)).toEqual(['eleven_multilingual_v2'])
     expect(opts.grokTtsModels).toEqual(['grok-tts'])
     expect(grokTargets.map((target) => target.model)).toEqual(['grok-tts'])
     expect(grokTargets.map((target) => target.voice)).toEqual([undefined])

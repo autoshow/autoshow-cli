@@ -7,6 +7,7 @@ Generate speech audio from a local `.md` or `.txt` file with local or hosted TTS
 - [Setup](#setup)
 - [Usage](#usage)
 - [Engines](#engines)
+- [Pricing Notes](#pricing-notes)
 - [Examples](#examples)
 - [Flags](#flags)
 - [Output](#output)
@@ -38,8 +39,11 @@ XAI_API_KEY=...
 ELEVENLABS_API_KEY=...
 MINIMAX_API_KEY=...
 DEEPGRAM_API_KEY=...
+RUNWAYML_API_SECRET=...
 DEAPI_API_KEY=...
 DEAPI_BASE_URL=https://api.deapi.ai
+# optional for Runway TTS
+RUNWAY_TTS_VOICE=Leslie
 # optional for Grok TTS
 XAI_BASE_URL=https://api.x.ai/v1
 XAI_TTS_VOICE=eve
@@ -65,14 +69,21 @@ bun as tts <input> [flags]
 | OpenAI | `--openai-tts <model>` | `gpt-4o-mini-tts` | `--openai-voice`, default `alloy` |
 | Gemini | `--gemini-tts <model>` | `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` | `--gemini-voice`, default `Kore` |
 | Deepgram | `--deepgram-tts <model>` | `aura-2-thalia-en`, `aura-2-andromeda-en`, `aura-2-apollo-en`, `aura-2-arcas-en`, `aura-2-asteria-en`, `aura-2-athena-en`, `aura-2-helena-en`, `aura-2-aries-en` | `--deepgram-voice`, default selected model |
+| Runway | `--runway-tts <model>` | `eleven_multilingual_v2` | `--runway-tts-voice`, default `Leslie` |
 | deAPI | `--deapi-tts <model>` | `Kokoro`, `Chatterbox`, `Qwen3_TTS_12Hz_1_7B_CustomVoice`, `Qwen3_TTS_12Hz_1_7B_Base`, `Qwen3_TTS_12Hz_1_7B_VoiceDesign` | `--deapi-tts-voice`, default `af_heart` for Kokoro |
 
 If no engine flag is provided, `tts` defaults to Kitten TTS with `kitten-tts-nano-0.8-int8`.
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file.
-Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Grok, Deepgram, and runnable deAPI models.
+Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Grok, Deepgram, Runway, and runnable deAPI models.
 
 deAPI `Qwen3_TTS_12Hz_1_7B_Base` and `Qwen3_TTS_12Hz_1_7B_VoiceDesign` are listed in the catalog, but execution rejects them until the CLI has first-class flags for their required reference audio or voice-design instructions. `--all-tts` selects only runnable deAPI models.
+
+## Pricing Notes
+
+- Runway `eleven_multilingual_v2` is priced at 1 credit per 50 input characters. AutoShow treats 1 credit as 1 cent, so the equivalent rate is 20 cents per 1K characters.
+- Runway TTS estimates use exact block rounding: `ceil(characterCount / 50) * 1¢`, so 1-50 characters cost 1¢ and 51-100 characters cost 2¢.
+- Runway does not publish a TTS processing-time SLA in the local reference, so AutoShow uses a 10000 ms / 1K characters timing heuristic.
 
 ## Examples
 
@@ -88,6 +99,7 @@ bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voi
 bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview --gemini-voice Kore
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 bun as tts input/examples/tts/1-tts.md --deepgram-tts aura-2-thalia-en --deepgram-voice aura-2-andromeda-en
+bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro
 bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro --deapi-tts-voice af_heart --price
 
@@ -122,6 +134,7 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--openai-tts <model>` | Select one or more OpenAI models; omit the value to use the cheapest supported model |
 | `--gemini-tts <model>` | Select one or more Gemini models; omit the value to use the cheapest supported model |
 | `--deepgram-tts <model>` | Select one or more Deepgram Aura models; omit the value to use the cheapest supported model |
+| `--runway-tts <model>` | Select one or more Runway TTS models; omit the value to use the cheapest supported model |
 | `--deapi-tts <model>` | Select one or more deAPI speech models; omit the value to use the cheapest supported model |
 | `--elevenlabs-voice <id>` | Override the ElevenLabs voice ID |
 | `--minimax-tts-voice <id>` | Override the MiniMax voice ID |
@@ -130,6 +143,7 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--openai-voice <id>` | Override the OpenAI voice ID |
 | `--gemini-voice <name>` | Override the Gemini voice name |
 | `--deepgram-voice <model>` | Override the Deepgram API voice/model |
+| `--runway-tts-voice <preset>` | Override the Runway preset voice |
 | `--deapi-tts-voice <id>` | Override the deAPI voice ID |
 | `--gemini-speaker-1-name <name>` | Gemini multispeaker speaker 1 label; requires all four Gemini speaker flags |
 | `--gemini-speaker-1-voice <name>` | Gemini multispeaker speaker 1 voice; requires all four Gemini speaker flags |

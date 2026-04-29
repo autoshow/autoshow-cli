@@ -63,6 +63,9 @@ bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
 # Hosted Grok text-to-speech
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
+# Runway-hosted text-to-speech
+bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
+
 # Prompt-driven generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 bun as image "a cinematic product photo of a red enamel camping mug" --bfl-image flux-2-pro-preview --image-size 1024x1024

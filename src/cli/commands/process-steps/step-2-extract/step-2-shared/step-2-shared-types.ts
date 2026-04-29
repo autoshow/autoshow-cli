@@ -15,6 +15,8 @@ export type OcrSelectionState = {
   anthropicOcrModel?: string | undefined
   geminiOcrModels?: string[] | undefined
   geminiOcrModel?: string | undefined
+  deepinfraOcrModels?: string[] | undefined
+  deepinfraOcrModel?: string | undefined
   awsTextractModels?: string[] | undefined
   awsTextractModel?: string | undefined
   gcloudDocaiModels?: string[] | undefined
@@ -158,6 +160,8 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'anthropicOcrModels'
   | 'geminiOcrModel'
   | 'geminiOcrModels'
+  | 'deepinfraOcrModel'
+  | 'deepinfraOcrModels'
   | 'awsTextractModel'
   | 'awsTextractModels'
   | 'gcloudDocaiModel'

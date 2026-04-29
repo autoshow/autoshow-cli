@@ -8,7 +8,8 @@ import type {
   OpenAITtsModel,
   DeepgramTtsModel,
   DeapiTtsModel,
-  GrokTtsModel
+  GrokTtsModel,
+  RunwayTtsModel
 } from '~/types'
 import {
   validateKittenTtsModel,
@@ -19,6 +20,8 @@ import {
   validateOpenAITtsModel,
   validateGeminiTtsModel,
   validateDeapiTtsModel,
+  validateRunwayTtsModel,
+  validateRunwayTtsVoice,
   validateDeepgramTtsModel,
   validateDeepgramTtsVoice,
   validateGroqTtsVoice,
@@ -33,6 +36,7 @@ import { ensureGrokTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-
 import { ensureOpenAITtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { ensureGeminiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
+import { ensureRunwayTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/runway/runway-tts'
 import { ensureDeapiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { runKittenTts } from './tts-local/kitten/run-kitten-tts'
 import { runElevenLabsTts } from './tts-services/elevenlabs/run-elevenlabs-tts'
@@ -42,6 +46,7 @@ import { runGrokTts } from './tts-services/grok/run-grok-tts'
 import { runOpenAITts } from './tts-services/openai/run-openai-tts'
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
 import { runDeepgramTts } from './tts-services/deepgram/run-deepgram-tts'
+import { runRunwayTts } from './tts-services/runway/run-runway-tts'
 import { runDeapiTts } from './tts-services/deapi/run-deapi-tts'
 import {
   formatGeminiSpeakerSummary,
@@ -137,6 +142,7 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const openaiModels = options.openaiTtsModels ?? (options.openaiTtsModel ? [options.openaiTtsModel] : [])
   const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
   const deepgramModels = options.deepgramTtsModels ?? (options.deepgramTtsModel ? [options.deepgramTtsModel] : [])
+  const runwayModels = options.runwayTtsModels ?? (options.runwayTtsModel ? [options.runwayTtsModel] : [])
   const deapiModels = options.deapiTtsModels ?? (options.deapiTtsModel ? [options.deapiTtsModel] : [])
   const geminiMultiSpeakerConfig = resolveGeminiMultiSpeakerConfig(options)
 
@@ -261,6 +267,22 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
       run: async (text, outputDir) => {
         await ensureDeepgramTtsSetup()
         return await runDeepgramTts(text, outputDir, { model, voiceId })
+      }
+    })
+  }
+
+  for (const rawModel of runwayModels) {
+    const model: RunwayTtsModel = validateRunwayTtsModel(rawModel)
+    const voiceRaw = options.runwayTtsVoice?.trim()
+    const voiceId = voiceRaw && voiceRaw.length > 0 ? validateRunwayTtsVoice(voiceRaw) : undefined
+
+    targets.push({
+      service: 'runway',
+      model,
+      ...(voiceId ? { voice: voiceId } : {}),
+      run: async (text, outputDir) => {
+        await ensureRunwayTtsSetup()
+        return await runRunwayTts(text, outputDir, { model, voiceId })
       }
     })
   }

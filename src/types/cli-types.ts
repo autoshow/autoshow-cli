@@ -118,6 +118,8 @@ export type RuntimeOptions = {
   anthropicOcrModel: string | undefined
   geminiOcrModels: string[] | undefined
   geminiOcrModel: string | undefined
+  deepinfraOcrModels: string[] | undefined
+  deepinfraOcrModel: string | undefined
   awsTextractModels: string[] | undefined
   awsTextractModel: string | undefined
   gcloudDocaiModels: string[] | undefined
@@ -174,6 +176,9 @@ export type RuntimeOptions = {
   deepgramTtsModels: string[] | undefined
   deepgramTtsModel: string | undefined
   deepgramVoiceId: string | undefined
+  runwayTtsModels: string[] | undefined
+  runwayTtsModel: string | undefined
+  runwayTtsVoice: string | undefined
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined

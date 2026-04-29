@@ -4,7 +4,8 @@ import {
   getKittenHfRepo,
   getKittenVoices,
   getGroqTtsVoices,
-  getGrokTtsVoices
+  getGrokTtsVoices,
+  getRunwayTtsVoices
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type {
   KittenTtsModel,
@@ -15,6 +16,7 @@ import type {
   OpenAITtsModel,
   GeminiTtsModel,
   DeepgramTtsModel,
+  RunwayTtsModel,
   DeapiTtsModel
 } from '~/types'
 
@@ -138,6 +140,24 @@ export const validateDeepgramTtsVoice = (voice: string): DeepgramTtsModel => {
     )
   }
   return voice as DeepgramTtsModel
+}
+
+export const SUPPORTED_RUNWAY_TTS_MODELS = [
+  'eleven_multilingual_v2'
+] as const satisfies readonly string[]
+
+export const SUPPORTED_RUNWAY_TTS_VOICES = getRunwayTtsVoices()
+export const RUNWAY_DEFAULT_TTS_VOICE = 'Leslie'
+
+export const validateRunwayTtsModel = createModelValidator<RunwayTtsModel>(SUPPORTED_RUNWAY_TTS_MODELS, 'runway-tts')
+
+export const validateRunwayTtsVoice = (voice: string): string => {
+  if (!SUPPORTED_RUNWAY_TTS_VOICES.includes(voice)) {
+    throw CLIUsageError(
+      `Invalid --runway-tts-voice "${voice}". Allowed values: ${formatAllowedValues(SUPPORTED_RUNWAY_TTS_VOICES)}`
+    )
+  }
+  return voice
 }
 
 export const SUPPORTED_DEAPI_TTS_MODELS = [

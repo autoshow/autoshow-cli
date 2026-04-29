@@ -25,6 +25,7 @@ export const hasConfiguredOcrProviderSelection = (
   || hasSelectedModel(opts.openaiOcrModels, opts.openaiOcrModel)
   || hasSelectedModel(opts.anthropicOcrModels, opts.anthropicOcrModel)
   || hasSelectedModel(opts.geminiOcrModels, opts.geminiOcrModel)
+  || hasSelectedModel(opts.deepinfraOcrModels, opts.deepinfraOcrModel)
   || hasSelectedModel(opts.awsTextractModels, opts.awsTextractModel)
   || hasSelectedModel(opts.gcloudDocaiModels, opts.gcloudDocaiModel)
   || hasSelectedModel(opts.deapiOcrModels, opts.deapiOcrModel)

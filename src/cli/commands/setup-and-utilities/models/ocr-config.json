@@ -161,6 +161,72 @@
       }
     }
   },
+  "deepinfra": {
+    "description": "DeepInfra OpenAI-compatible vision/OCR models",
+    "type": "api",
+    "models": {
+      "allenai/olmOCR-2-7B-1025": {
+        "description": "AllenAI olmOCR 2 7B OCR via DeepInfra",
+        "costPerMInputTokensUSD": 0.09,
+        "costPerMOutputTokensUSD": 0.19,
+        "costPerMInputTokensCents": 9,
+        "costPerMOutputTokensCents": 19,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 6000
+        }
+      },
+      "PaddlePaddle/PaddleOCR-VL-0.9B": {
+        "description": "PaddleOCR-VL 0.9B via DeepInfra",
+        "costPerMInputTokensUSD": 0.14,
+        "costPerMOutputTokensUSD": 0.8,
+        "costPerMInputTokensCents": 14,
+        "costPerMOutputTokensCents": 80,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 4000
+        }
+      },
+      "Qwen/Qwen3-VL-235B-A22B-Instruct": {
+        "description": "Qwen3 VL 235B A22B Instruct via DeepInfra",
+        "costPerMInputTokensUSD": 0.2,
+        "costPerMOutputTokensUSD": 0.88,
+        "costPerMInputTokensCents": 20,
+        "costPerMOutputTokensCents": 88,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 20000
+        }
+      },
+      "Qwen/Qwen3-VL-30B-A3B-Instruct": {
+        "description": "Qwen3 VL 30B A3B Instruct via DeepInfra",
+        "costPerMInputTokensUSD": 0.15,
+        "costPerMOutputTokensUSD": 0.6,
+        "costPerMInputTokensCents": 15,
+        "costPerMOutputTokensCents": 60,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 10000
+        }
+      }
+    }
+  },
   "firecrawl": {
     "description": "Firecrawl hosted article extraction",
     "type": "api",

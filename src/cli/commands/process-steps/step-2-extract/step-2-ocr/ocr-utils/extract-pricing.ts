@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { mkdtemp, rm, writeFile, unlink } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { extractPageText, getDocumentInfo, renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { validateAnthropicOcrModel, validateDeapiOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { validateAnthropicOcrModel, validateDeepinfraOcrModel, validateDeapiOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { deapiFetch, extractDeapiErrorMessage, extractPriceUsd, getDeapiApiKey, readJsonOrText } from '~/utils/deapi'
 
@@ -15,6 +15,9 @@ export const DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS = 0.928
 const FIRECRAWL_MODEL = 'firecrawl'
 const OPENAI_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
 export const ANTHROPIC_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+export const DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE = 4000
+export const DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE = 1000
+export const DEEPINFRA_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual DeepInfra OCR cost is computed from response usage after execution.'
 export const DEAPI_OCR_PRICE_NOTE = 'Heuristic estimate based on deAPI published OCR output-character pricing. Exact pricing uses the provider quote endpoint when DEAPI_API_KEY is available.'
 
 export const FIRECRAWL_PRICE_NOTE = 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
@@ -467,6 +470,45 @@ export const estimateGeminiOcrCost = async (
   }
 }
 
+export const estimateDeepinfraOcrCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{
+  provider: 'deepinfra'
+  model: string
+  pageCount: number
+  promptTokens: number
+  completionTokens: number
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+  estimateType: 'heuristic'
+  note: string
+}> => {
+  const model = validateDeepinfraOcrModel(modelRaw)
+  const pricing = getExtractPricing('deepinfra', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 9
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 19
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+  const promptTokens = pageCount * DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE
+  const completionTokens = pageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE
+
+  return {
+    provider: 'deepinfra',
+    model,
+    pageCount,
+    promptTokens,
+    completionTokens,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    estimateType: 'heuristic',
+    note: DEEPINFRA_OCR_PRICE_NOTE
+  }
+}
+
 export const estimateFirecrawlScrapeCost = (): {
   provider: 'firecrawl'
   model: string
@@ -535,6 +577,32 @@ export const computeActualGeminiOcrCost = (
 
   return {
     provider: 'gemini',
+    model,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents
+  }
+}
+
+export const computeActualDeepinfraOcrCost = (
+  modelRaw: string,
+  promptTokens: number,
+  completionTokens: number
+): {
+  provider: 'deepinfra'
+  model: string
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+} => {
+  const model = validateDeepinfraOcrModel(modelRaw)
+  const pricing = getExtractPricing('deepinfra', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 9
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 19
+
+  return {
+    provider: 'deepinfra',
     model,
     inputCostPer1MCents,
     outputCostPer1MCents,

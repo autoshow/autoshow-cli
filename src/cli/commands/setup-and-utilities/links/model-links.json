@@ -283,6 +283,30 @@
       "https://docs.x.ai/developers/rest-api-reference/inference/voice.md"
     ]
   },
+  "Kimi": {
+    "General": [
+      "https://platform.kimi.ai/docs/overview.md",
+      "https://platform.kimi.ai/docs/api/models-overview.md",
+      "https://platform.kimi.ai/docs/models.md",
+      "https://platform.kimi.ai/docs/api/overview.md",
+      "https://platform.kimi.ai/docs/api/errors.md",
+      "https://platform.kimi.ai/docs/guide/faq.md",
+      "https://platform.kimi.ai/docs/api/estimate.md",
+      "https://platform.kimi.ai/docs/introduction.md",
+      "https://platform.kimi.ai/docs/guide/start-using-kimi-api.md"
+    ],
+    "Text": [
+      "https://platform.kimi.ai/docs/guide/kimi-k2-6-quickstart.md",
+      "https://platform.kimi.ai/docs/pricing/chat-k26.md",
+      "https://platform.kimi.ai/docs/api/chat.md",
+      "https://platform.kimi.ai/docs/guide/use-json-mode-feature-of-kimi-api.md",
+      "https://platform.kimi.ai/docs/guide/prompt-best-practice.md"
+    ],
+    "OCR": [
+      "https://platform.kimi.ai/docs/api/files-upload.md",
+      "https://platform.kimi.ai/docs/guide/use-kimi-vision-model.md"
+    ]
+  },
   "MiniMax": {
     "General": [
       "https://platform.minimax.io/docs/guides/pricing-paygo.md",
@@ -524,17 +548,6 @@
       "https://docs.dev.runwayml.com/assets/inputs/",
       "https://docs.dev.runwayml.com/assets/outputs/",
       "https://docs.dev.runwayml.com/errors/errors/"
-    ],
-    "Image": [
-      "https://docs.dev.runwayml.com/api/",
-      "https://docs.dev.runwayml.com/guides/models/",
-      "https://docs.dev.runwayml.com/guides/pricing/",
-      "https://help.runwayml.com/hc/en-us/articles/37053594806419-Creating-with-Gen-4-Image"
-    ],
-    "Video": [
-      "https://docs.dev.runwayml.com/api/",
-      "https://docs.dev.runwayml.com/guides/models/",
-      "https://docs.dev.runwayml.com/guides/pricing/"
     ]
   },
   "Resend": {
