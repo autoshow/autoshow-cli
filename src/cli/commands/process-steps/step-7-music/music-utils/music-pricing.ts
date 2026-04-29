@@ -1,6 +1,7 @@
 import {
   validateDeapiMusicModel,
   validateElevenlabsMusicModel,
+  validateGeminiMusicModel,
   validateMinimaxMusicModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getMusicModelMeta } from '~/cli/commands/setup-and-utilities/models/model-loader'
@@ -8,12 +9,22 @@ import type { EstimateMusicCostOptions, MusicCostEstimate } from '~/types'
 
 const formatRate = (amount: number): string => `${amount.toFixed(2)}¢`
 const DEFAULT_ELEVENLABS_MUSIC_DURATION_SECONDS = 180
+const DEFAULT_GEMINI_PRO_MUSIC_DURATION_SECONDS = 120
+
+const assertValidMusicDuration = (durationSeconds: number | undefined): void => {
+  if (durationSeconds !== undefined && (!Number.isFinite(durationSeconds) || durationSeconds <= 0)) {
+    throw new Error(`Invalid music duration: ${durationSeconds}`)
+  }
+}
 
 export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCostEstimate[] => {
+  assertValidMusicDuration(options.musicDuration)
+
   const results: MusicCostEstimate[] = []
   const elevenlabsModels = options.elevenlabsMusicModels ?? (options.elevenlabsMusicModel ? [options.elevenlabsMusicModel] : [])
   const minimaxModels = options.minimaxMusicModels ?? (options.minimaxMusicModel ? [options.minimaxMusicModel] : [])
   const deapiModels = options.deapiMusicModels ?? (options.deapiMusicModel ? [options.deapiMusicModel] : [])
+  const geminiModels = options.geminiMusicModels ?? (options.geminiMusicModel ? [options.geminiMusicModel] : [])
 
   for (const rawModel of elevenlabsModels) {
     const model = validateElevenlabsMusicModel(rawModel)
@@ -73,6 +84,31 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
       totalCost: 0,
       lyricsSource,
       note: 'Exact deAPI music pricing is resolved through the provider quote endpoint when DEAPI_API_KEY is available.'
+    })
+  }
+
+  for (const rawModel of geminiModels) {
+    const model = validateGeminiMusicModel(rawModel)
+    const modelMeta = getMusicModelMeta('gemini', model)
+    const baseCost = modelMeta?.costPerTrackCents
+    const lyricsSource: MusicCostEstimate['lyricsSource'] = options.musicInstrumental
+      ? 'none'
+      : options.musicLyricsFile
+        ? 'provided'
+        : 'generated'
+
+    if (baseCost === undefined) {
+      throw new Error(`Rate unavailable in model registry for Gemini music model: ${model}`)
+    }
+
+    results.push({
+      provider: 'gemini',
+      model,
+      totalCost: baseCost,
+      lyricsSource,
+      note: model === 'lyria-3-clip-preview'
+        ? 'Gemini Lyria 3 Clip is billed per 30-second song request.'
+        : `Gemini Lyria 3 Pro is billed per song request; timing estimate uses ${options.musicDuration ?? DEFAULT_GEMINI_PRO_MUSIC_DURATION_SECONDS}s.`
     })
   }
 

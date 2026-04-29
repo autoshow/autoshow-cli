@@ -91,12 +91,13 @@ bun as write ./output/demo/text --prompt rockSong
 
 # music generation
 bun as music "an ambient piano instrumental with soft strings" --minimax-music music-2.5
+bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
 
 # video generation
-bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview
+bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate-preview
 
 # video generation with multiple providers
-bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --runway-video gen4.5 --deapi-video Ltxv_13B_0_9_8_Distilled_FP8
+bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate-preview --minimax-video MiniMax-Hailuo-2.3 --runway-video gen4.5 --deapi-video Ltxv_13B_0_9_8_Distilled_FP8
 ```
 
 ## Command Map
@@ -106,7 +107,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate
 - `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
 - `cache`: manage the persistent STT media cache (`bun as cache prune` / `bun as cache clear`)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
-- `extract`: [extract](./commands/process-steps/step-2-extract/extract.md) — routes media to STT, documents/articles/images to OCR, and X/Twitter Space or post links to the X API for metadata extraction.
+- `extract`: [extract](./commands/process-steps/step-2-extract/01-extract.md) — routes media to STT, documents/images to OCR, article HTML to article extraction, and X/Twitter Space or post links to the X API.
 - `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
 - `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
 - `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
@@ -149,7 +150,8 @@ bun as image "a sunset" --openai-image gpt-image-2 --image-size 1024x1024 --imag
 bun as image "a sunset" --bfl-image flux-2-klein-4b --price
 bun as image "a sunset" --deapi-image Flux1schnell --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price
-bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --price
+bun as music "an ambient piano instrumental" --gemini-music lyria-3-pro-preview --music-duration 120 --price
+bun as video "a sunset timelapse" --gemini-video veo-3.1-lite-generate-preview --price
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --price
 bun as video "a sunset timelapse" --glm-video cogvideox-3 --price
 bun as video "a sunset timelapse" --grok-video grok-imagine-video --price

@@ -33,7 +33,7 @@ export type TestContext = {
 
 export type BudgetPreflightSummary = {
   suiteName: string
-  budgetCents: number
+  budgetHundredthCents: number
   commandsChecked: number
   commandsRunnable: number
   commandsSkipped: number

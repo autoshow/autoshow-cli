@@ -11,4 +11,8 @@ export const musicRegistry: PriceSelectionEntry[] = [
     command('music-minimax-music-2.5', 'music-minimax-music-2.5', ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--minimax-music', 'music-2.5', '--price']),
     command('music-pipeline-minimax-music-2.5', 'music-pipeline-minimax-music-2.5', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price']),
   ]),
+  ...exact('test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts', [
+    command('music-gemini-lyria-3-clip-preview', 'music-gemini-lyria-3-clip-preview', ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--gemini-music', 'lyria-3-clip-preview', '--price']),
+    command('music-gemini-lyria-3-pro-preview', 'music-gemini-lyria-3-pro-preview', ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--gemini-music', 'lyria-3-pro-preview', '--music-duration', '90', '--price']),
+  ]),
 ]

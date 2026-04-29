@@ -37,6 +37,7 @@ export type {
   DeepgramTtsModel,
   ElevenlabsMusicModel,
   MinimaxMusicModel,
+  GeminiMusicModel,
   GeminiImageModel,
   OpenAIImageModel,
   MinimaxImageModel,

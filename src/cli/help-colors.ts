@@ -1,33 +1,13 @@
-const ansiReset = '\x1b[0m'
-const isForceColorEnabled = (): boolean => {
-  const value = process.env['FORCE_COLOR']
-  return typeof value === 'string' && value !== '' && value !== '0'
-}
+import { paint, shouldUseTerminalColors } from '~/utils/terminal-colors'
 
 const shouldUseHelpColors = (): boolean => {
-  if (isForceColorEnabled()) {
-    return true
-  }
-  if (process.env['NO_COLOR'] !== undefined) {
-    return false
-  }
-  return process.stdout.isTTY === true
+  return shouldUseTerminalColors(process.stdout)
 }
 
 export const helpColorsEnabled = shouldUseHelpColors()
 
 export const colorText = (text: string, color: string): string => {
-  if (!helpColorsEnabled) {
-    return text
-  }
-  if (text.length === 0) {
-    return text
-  }
-  const ansiCode = Bun.color(color, 'ansi-16m') ?? ''
-  if (ansiCode.length === 0) {
-    return text
-  }
-  return `${ansiCode}${text}${ansiReset}`
+  return paint(text, color, { enabled: shouldUseHelpColors() })
 }
 
 const HELP_GROUP_COLOR_BY_KEY: Readonly<Record<string, string>> = {
@@ -71,7 +51,7 @@ const colorizeModelValueList = (modelValues: string): string => {
 }
 
 export const colorizeHelpDescription = (description: string): string => {
-  if (!helpColorsEnabled || hasAnsiEscapes(description)) {
+  if (!shouldUseHelpColors() || hasAnsiEscapes(description)) {
     return description
   }
 
@@ -82,7 +62,7 @@ export const colorizeHelpDescription = (description: string): string => {
 
 const colorizeHelpFlagRows = (rendered: string): string => {
   const hasHelpSections = rendered.includes('\nFlags\n') || rendered.includes('\nGlobal Flags\n')
-  if (!helpColorsEnabled || (!hasHelpSections && hasAnsiEscapes(rendered))) {
+  if (!shouldUseHelpColors() || (!hasHelpSections && hasAnsiEscapes(rendered))) {
     return rendered
   }
 
@@ -121,7 +101,7 @@ export const shouldPatchHelpConsole = (argv: string[]): boolean => {
 }
 
 export const colorizeFlagDescriptions = (flags: Record<string, unknown> | undefined): void => {
-  if (!helpColorsEnabled || flags === undefined) {
+  if (!shouldUseHelpColors() || flags === undefined) {
     return
   }
 

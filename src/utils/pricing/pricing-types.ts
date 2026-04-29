@@ -187,6 +187,7 @@ export type ComputeEstimatedCostsInput = {
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined
   deapiMusicModel?: string | undefined
+  geminiMusicModel?: string | undefined
   musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicDuration?: number | undefined
   musicLyricsFile?: string | undefined

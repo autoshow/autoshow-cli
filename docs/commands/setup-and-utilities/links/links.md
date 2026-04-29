@@ -56,6 +56,7 @@ Accepted provider selectors are the lowercase names below.
 | `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
 | `--deepgram` | `stt`, `tts` |
 | `--deepinfra` | `general`, `stt` |
+| `--drive` | `general` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--gcloud` | `stt`, `ocr` |

@@ -51,13 +51,13 @@ describe('test-runner contracts', () => {
       'test/test-cases/validation-next/',
       '--test-price',
       '--budget',
-      '5',
+      '500',
       '--bail'
     ])
 
     expect(parsed.pathFilters).toEqual(['test/test-cases/validation-next/'])
     expect(parsed.priceMode).toBe(true)
-    expect(parsed.budgetCents).toBe(5)
+    expect(parsed.budgetHundredthCents).toBe(500)
     expect(parsed.passthroughArgs).toEqual(['--bail'])
   })
 
@@ -124,13 +124,43 @@ describe('test-runner contracts', () => {
         failureMessage: null,
         budgetSkippable: true
       }
-    ], 2)
+    ], 200)
 
     expect(evaluation.budgetSummary?.skipKeys).toEqual(['write-openai-gpt-5.4'])
+    expect(evaluation.budgetSummary?.budgetHundredthCents).toBe(200)
     expect(evaluation.budgetSummary?.skippedEntries).toEqual([
       { key: 'write-openai-gpt-5.4', selectedCostCents: 3 }
     ])
     expect(evaluation.commandResults.map((result) => result.status)).toEqual(['skipped', 'passed'])
+  })
+
+  test('sub-cent budget values compare against cent-denominated estimates', () => {
+    const evaluation = evaluatePriceObservations('Selected paths: sub-cent-budget.test.ts', [
+      {
+        name: 'sub-cent-pass',
+        key: 'sub-cent-pass',
+        args: ['cmd-a'],
+        exitCode: 0,
+        durationMs: 10,
+        costCents: 0.009,
+        failureMessage: null,
+        budgetSkippable: true
+      },
+      {
+        name: 'sub-cent-skip',
+        key: 'sub-cent-skip',
+        args: ['cmd-b'],
+        exitCode: 0,
+        durationMs: 10,
+        costCents: 0.031,
+        failureMessage: null,
+        budgetSkippable: true
+      }
+    ], 1)
+
+    expect(evaluation.budgetSummary?.budgetHundredthCents).toBe(1)
+    expect(evaluation.budgetSummary?.skipKeys).toEqual(['sub-cent-skip'])
+    expect(evaluation.commandResults.map((result) => result.status)).toEqual(['passed', 'skipped'])
   })
 
   test('multi-key budget predicate skips when any component key is skipped', () => {
@@ -189,6 +219,7 @@ describe('test-runner contracts', () => {
   test('music selected-file budget preflight includes keys for live ElevenLabs music skips', () => {
     const allFiles = [
       'test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts',
+      'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts',
       'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
     ]
 
@@ -203,5 +234,11 @@ describe('test-runner contracts', () => {
     ], true).commands.map((command) => command.key)
     expect(minimaxKeys).toContain('music-elevenlabs-music_v1')
     expect(minimaxKeys).toContain('music-minimax-music-2.5')
+
+    const geminiKeys = resolvePriceSelection(allFiles, [
+      'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts'
+    ], true).commands.map((command) => command.key)
+    expect(geminiKeys).toContain('music-gemini-lyria-3-clip-preview')
+    expect(geminiKeys).toContain('music-gemini-lyria-3-pro-preview')
   })
 })

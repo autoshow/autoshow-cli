@@ -30,7 +30,7 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
 - `bun t` always runs the sample/setup preflight before test discovery: `setup --step sample`, fallback `setup`, then `setup --sample --out input/samples --verify-only`, and finally fixture regeneration if verification fails.
 - Test discovery comes from `test/test-cases/**/*.test.ts`.
 - Selection is path-based only.
-- `--test-price` and `--budget <whole-number-cents>` operate on the same selected paths as normal test mode.
+- `--test-price` and `--budget <whole-number-hundredths-of-a-cent>` operate on the same selected paths as normal test mode. For example, `--budget 100` allows tests estimated at up to 1 cent.
 - Each run writes artifacts under `./test-output/YYYY-MM-DD_HH-MM-SS_test-run/`, including `runner.log`, `commands.log`, `metrics.ndjson`, `metadata/`, and `report.json`. Normal test mode also writes `junit.xml`, `e2e-report.json`, and `model-calibration.json`.
 - `--cleanup` removes the run directory after a successful run. In normal test mode it also sets `AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0`, which deletes per-test `./output/` directories as tests finish.
 
@@ -63,9 +63,9 @@ Local price and budget commands are now path-based:
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/ --test-price
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts --test-price
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts --test-price
-bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --budget 5
-bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --test-price --budget 5
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --budget 5
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --budget 500
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --test-price --budget 500
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --budget 500
 ```
 
 Notes:
@@ -78,6 +78,6 @@ Notes:
 - [Service Tests](service-tests.md)
 - [Sample Tests](../commands/setup-and-utilities/sample/sample-tests.md)
 - [Step 0 Setup Service Tests](step-0-service-tests-setup.md)
-- [extract](../commands/process-steps/step-2-extract/extract.md)
+- [extract](../commands/process-steps/step-2-extract/01-extract.md)
 - [Write Command](../commands/process-steps/step-3-write/write-text.md)
 - [TTS Command](../commands/process-steps/step-4-tts/text-to-speech.md)

@@ -159,9 +159,11 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
                                           |
   Step 19 ─── setupOpenAIImageGen() ───── Check OpenAI image gen (API key only)
                                           |
-  Step 20 ─── setupElevenLabsMusicGen() ─ Check ElevenLabs music gen (API key only)
+  Step 20 ─── setupGeminiMusicGen() ───── Check Gemini music gen (API key only)
                                           |
-  Step 21 ─── setupMinimaxMusicGen() ──── Check MiniMax music gen (API key only)
+  Step 21 ─── setupElevenLabsMusicGen() ─ Check ElevenLabs music gen (API key only)
+                                          |
+  Step 22 ─── setupMinimaxMusicGen() ──── Check MiniMax music gen (API key only)
                                           |
   Validate ── validateBinaries() ──────── Test whisper-cli + llama-server
 ```
@@ -196,4 +198,6 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `video --runway-video` | `RUNWAYML_API_SECRET` |
 | `music --elevenlabs-music` | `ELEVENLABS_API_KEY` |
 | `music --minimax-music` | `MINIMAX_API_KEY` |
+| `music --deapi-music` | `DEAPI_API_KEY` |
+| `music --gemini-music` | `GEMINI_API_KEY` |
 | `music --audio` / `music --batch` | `ffmpeg`, `ffprobe`, `whisper-cli`, and a local Whisper model (`large-v3-turbo` via `setup --step music`) |

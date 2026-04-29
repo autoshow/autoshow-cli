@@ -14,17 +14,33 @@
     "models": {
       "veo-3.1-generate-preview": {
         "description": "Veo 3.1 — standard quality video generation",
-        "baseCostPerSecondUSD": 0.25,
-        "baseCostPerSecondCents": 25,
-        "resolutionMultiplier1080p": 1.4
+        "baseCostPerSecondUSD": 0.4,
+        "baseCostPerSecondCents": 40,
+        "resolutionMultiplier1080p": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 12000
+        }
       },
       "veo-3.1-fast-generate-preview": {
         "description": "Veo 3.1 Fast — faster video generation",
-        "blockSizeSec": 5,
-        "blockCost720pUSD": 0.55,
-        "blockCost720pCents": 55,
-        "blockCost1080pUSD": 0.8,
-        "blockCost1080pCents": 80
+        "baseCostPerSecondUSD": 0.1,
+        "baseCostPerSecondCents": 10,
+        "resolutionMultiplier1080p": 1.2,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 10000
+        }
+      },
+      "veo-3.1-lite-generate-preview": {
+        "description": "Veo 3.1 Lite — lower-cost video generation",
+        "baseCostPerSecondUSD": 0.05,
+        "baseCostPerSecondCents": 5,
+        "resolutionMultiplier1080p": 1.6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 8000
+        }
       }
     }
   },

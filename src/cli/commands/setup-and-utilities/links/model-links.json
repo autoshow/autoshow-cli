@@ -103,6 +103,24 @@
       "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper-tiny-en/index.md"
     ]
   },
+  "Drive": {
+    "General": [
+      "https://developers.google.com/workspace/drive/api/guides/about-sdk.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/api-specific-auth.md.txt",
+      "https://developers.google.com/workspace/drive/api/quickstart/js.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/about-files.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/create-file.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/manage-uploads.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/manage-downloads.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/manage-revisions.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/long-running-operations.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/folder.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/delete.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/search-files.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/file-metadata.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/performance.md.txt"
+    ]
+  },
   "OpenAI": {
     "General": [
       "https://developers.openai.com/api/docs/pricing.md",
@@ -147,7 +165,9 @@
       "https://ai.google.dev/gemini-api/docs/pricing.md.txt",
       "https://ai.google.dev/gemini-api/docs/models.md.txt",
       "https://ai.google.dev/gemini-api/docs/file-input-methods.md.txt",
-      "https://ai.google.dev/gemini-api/docs/files.md.txt"
+      "https://ai.google.dev/gemini-api/docs/files.md.txt",
+      "https://ai.google.dev/gemini-api/docs/media-resolution.md.txt",
+      "https://ai.google.dev/api/generate-content#node.js"
     ],
     "Text": [
       "https://ai.google.dev/gemini-api/docs/gemini-3.md.txt",
@@ -155,7 +175,7 @@
       "https://ai.google.dev/gemini-api/docs/structured-output.md.txt"
     ],
     "OCR": [
-      "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt"
+      "https://ai.google.dev/gemini-api/docs/document-processing.md.txt"
     ],
     "STT": [
       "https://ai.google.dev/gemini-api/docs/audio.md.txt"
@@ -167,13 +187,21 @@
     ],
     "Image": [
       "https://ai.google.dev/gemini-api/docs/image-generation.md.txt",
+      "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt",
       "https://ai.google.dev/gemini-api/docs/imagen.md.txt",
-      "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt"
+      "https://ai.google.dev/gemini-api/docs/models/imagen.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image-preview.md.txt"
     ],
     "Video": [
       "https://ai.google.dev/gemini-api/docs/video.md.txt",
       "https://ai.google.dev/gemini-api/docs/video-understanding.md.txt",
-      "https://ai.google.dev/gemini-api/docs/document-processing.md.txt"
+      "https://ai.google.dev/gemini-api/docs/models/veo-3.1-generate-preview.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/veo-3.1-lite-generate-preview.md.txt"
+    ],
+    "Music": [
+      "https://ai.google.dev/gemini-api/docs/music-generation.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/lyria-3-clip-preview.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/lyria-3-pro-preview.md.txt"
     ]
   },
   "Gladia": {
@@ -426,6 +454,14 @@
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api",
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-http",
       "https://deepinfra.com/openai/whisper-large-v3-turbo/api?example=openai-speech-js"
+    ],
+    "OCR": [
+      "https://docs.deepinfra.com/api-reference/chat-completions/openai-chat-completions.md",
+      "https://docs.deepinfra.com/chat/vision.md",
+      "https://deepinfra.com/allenai/olmOCR-2-7B-1025/api?example=openai-js",
+      "https://deepinfra.com/PaddlePaddle/PaddleOCR-VL-0.9B/api?example=openai-js",
+      "https://deepinfra.com/Qwen/Qwen3-VL-235B-A22B-Instruct/api?example=openai-js",
+      "https://deepinfra.com/Qwen/Qwen3-VL-30B-A3B-Instruct/api?example=openai-js"
     ]
   },
   "Soniox": {

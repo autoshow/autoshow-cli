@@ -290,7 +290,7 @@ Notable behavior:
 | Gemini image | `imagen-4.0-fast-generate-001`, `gemini-3-pro-image-preview`, `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001` |
 | OpenAI image | `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, `gpt-image-2` |
 | MiniMax image | `image-01` |
-| Gemini video | `veo-3.1-fast-generate-preview`, `veo-3.1-generate-preview` |
+| Gemini video | `veo-3.1-fast-generate-preview`, `veo-3.1-generate-preview`, `veo-3.1-lite-generate-preview` |
 | MiniMax video | `T2V-01`, `T2V-01-Director`, `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-02` |
 | ElevenLabs music | `music_v1` |
 | MiniMax music | `music-2.5` |

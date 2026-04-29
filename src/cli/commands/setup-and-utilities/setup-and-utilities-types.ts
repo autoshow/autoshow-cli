@@ -65,7 +65,8 @@ import {
 import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
-  SUPPORTED_DEAPI_MUSIC_MODELS
+  SUPPORTED_DEAPI_MUSIC_MODELS,
+  SUPPORTED_GEMINI_MUSIC_MODELS
 } from './models/music-models'
 import {
   SUPPORTED_GLM_VIDEO_MODELS,
@@ -192,6 +193,7 @@ export type GeminiTtsModel = typeof SUPPORTED_GEMINI_TTS_MODELS[number]
 export type DeepgramTtsModel = typeof SUPPORTED_DEEPGRAM_TTS_MODELS[number]
 export type ElevenlabsMusicModel = typeof SUPPORTED_ELEVENLABS_MUSIC_MODELS[number]
 export type MinimaxMusicModel = typeof SUPPORTED_MINIMAX_MUSIC_MODELS[number]
+export type GeminiMusicModel = typeof SUPPORTED_GEMINI_MUSIC_MODELS[number]
 export type GeminiImageModel = typeof SUPPORTED_GEMINI_IMAGE_MODELS[number]
 export type OpenAIImageModel = typeof SUPPORTED_OPENAI_IMAGE_MODELS[number]
 export type MinimaxImageModel = typeof SUPPORTED_MINIMAX_IMAGE_MODELS[number]

@@ -60,5 +60,29 @@
         }
       }
     }
+  },
+  "gemini": {
+    "description": "Gemini Lyria music generation",
+    "type": "api",
+    "models": {
+      "lyria-3-clip-preview": {
+        "description": "Lyria 3 Clip Preview — 30-second text-to-music clips with MP3 output",
+        "costPerTrackUSD": 0.04,
+        "costPerTrackCents": 4,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 1000
+        }
+      },
+      "lyria-3-pro-preview": {
+        "description": "Lyria 3 Pro Preview — full song generation with MP3 output",
+        "costPerTrackUSD": 0.08,
+        "costPerTrackCents": 8,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 1500
+        }
+      }
+    }
   }
 }

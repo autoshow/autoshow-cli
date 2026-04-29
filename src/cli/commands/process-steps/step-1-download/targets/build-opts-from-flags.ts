@@ -28,6 +28,7 @@ import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
   SUPPORTED_DEAPI_MUSIC_MODELS,
+  SUPPORTED_GEMINI_MUSIC_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_DEAPI_VIDEO_MODELS,
   SUPPORTED_GLM_VIDEO_MODELS,
@@ -88,6 +89,7 @@ import {
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel,
   validateDeapiMusicModel,
+  validateGeminiMusicModel,
   validateKittenTtsSpeaker,
   validateGeminiImageModel,
   validateDeapiImageModel,
@@ -183,6 +185,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'elevenlabs-music',
   'minimax-music',
   'deapi-music',
+  'gemini-music',
   'gemini-video',
   'minimax-video',
   'glm-video',
@@ -227,6 +230,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'elevenlabs-music': { shortcut: 'all-music', supported: SUPPORTED_ELEVENLABS_MUSIC_MODELS },
   'minimax-music': { shortcut: 'all-music', supported: SUPPORTED_MINIMAX_MUSIC_MODELS },
   'deapi-music': { shortcut: 'all-music', supported: SUPPORTED_DEAPI_MUSIC_MODELS },
+  'gemini-music': { shortcut: 'all-music', supported: SUPPORTED_GEMINI_MUSIC_MODELS },
   'gemini-video': { shortcut: 'all-video', supported: SUPPORTED_GEMINI_VIDEO_MODELS },
   'minimax-video': { shortcut: 'all-video', supported: SUPPORTED_MINIMAX_VIDEO_MODELS },
   'glm-video': { shortcut: 'all-video', supported: SUPPORTED_GLM_VIDEO_MODELS },
@@ -700,6 +704,7 @@ export const buildOptsFromFlags = (
   const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
   const deapiMusicModels = readValidatedMany('deapi-music', validateDeapiMusicModel)
+  const geminiMusicModels = readValidatedMany('gemini-music', validateGeminiMusicModel)
   const geminiVideoModels = readValidatedMany('gemini-video', validateGeminiVideoModel)
   const minimaxVideoModels = readValidatedMany('minimax-video', validateMinimaxVideoModel)
   const glmVideoModels = readValidatedMany('glm-video', validateGlmVideoModel)
@@ -941,6 +946,8 @@ export const buildOptsFromFlags = (
     minimaxMusicModel: first(minimaxMusicModels),
     deapiMusicModels,
     deapiMusicModel: first(deapiMusicModels),
+    geminiMusicModels,
+    geminiMusicModel: first(geminiMusicModels),
     musicDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'music-duration')
       if (v === undefined) return undefined

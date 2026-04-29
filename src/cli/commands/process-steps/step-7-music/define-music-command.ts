@@ -19,6 +19,7 @@ const HOSTED_MUSIC_FLAGS = [
   'elevenlabs-music',
   'minimax-music',
   'deapi-music',
+  'gemini-music',
   'music-duration',
   'music-lyrics-file',
   'music-instrumental',
@@ -65,7 +66,7 @@ const runHostedMusicGeneration = async (
 
   const musicTargets = collectMusicTargets(musicOpts)
   if (musicTargets.length === 0) {
-    throw CLIUsageError('Specify a music generation provider: --elevenlabs-music <model>, --minimax-music <model>, or --deapi-music <model>')
+    throw CLIUsageError('Specify a music generation provider: --elevenlabs-music <model>, --minimax-music <model>, --deapi-music <model>, or --gemini-music <model>')
   }
 
   const { shouldExit: musicShouldExit } = await runPreflight('music', prompt, musicOpts, musicMaxCents)
@@ -141,6 +142,7 @@ export const musicCommand = defineCommand({
       ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
       ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax'],
       ['bun as music "upbeat electronic dance music" --deapi-music AceStep_1_5_Turbo --music-duration 30', 'Generate music with deAPI'],
+      ['bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview', 'Generate a 30s Lyria 3 clip with Gemini'],
       ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
@@ -171,7 +173,7 @@ export const musicCommand = defineCommand({
     throw CLIUsageError(
       hostedFlags.length > 0
         ? 'Missing hosted music prompt input'
-        : 'Missing music mode: provide a prompt with --elevenlabs-music/--minimax-music/--deapi-music, or use --audio/--batch for lyric-video rendering'
+        : 'Missing music mode: provide a prompt with --elevenlabs-music/--minimax-music/--deapi-music/--gemini-music, or use --audio/--batch for lyric-video rendering'
     )
   }
 

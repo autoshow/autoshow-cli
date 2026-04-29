@@ -4,6 +4,7 @@ import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-e
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import { collectImageTargets } from '~/cli/commands/process-steps/step-5-image/image-targets'
 import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
+import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
 import {
   collectStep2ProviderSpecs,
   getStep2ProviderSelectionFlagNames,
@@ -119,6 +120,11 @@ describe('provider selection contracts', () => {
       'all-video': true
     })
 
+    expect(allOpts.geminiVideoModels).toEqual([
+      'veo-3.1-fast-generate-preview',
+      'veo-3.1-generate-preview',
+      'veo-3.1-lite-generate-preview'
+    ])
     expect(allOpts.openaiImageModels).toEqual([
       'gpt-image-1-mini',
       'gpt-image-1',
@@ -143,6 +149,39 @@ describe('provider selection contracts', () => {
       'Ltxv_13B_0_9_8_Distilled_FP8',
       'Ltx2_19B_Dist_FP8',
       'Ltx2_3_22B_Dist_INT8'
+    ])
+  })
+
+  test('Gemini music flag selects targets and participates in all-music shortcut', () => {
+    const explicitOpts = buildOptsFromFlags(false, {
+      'gemini-music': ['lyria-3-clip-preview', 'lyria-3-pro-preview']
+    })
+
+    expect(explicitOpts.geminiMusicModels).toEqual([
+      'lyria-3-clip-preview',
+      'lyria-3-pro-preview'
+    ])
+    expect(collectMusicTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'gemini:lyria-3-clip-preview',
+      'gemini:lyria-3-pro-preview'
+    ])
+
+    const allOpts = buildOptsFromFlags(false, {
+      'all-music': true
+    })
+
+    expect(allOpts.geminiMusicModels).toEqual([
+      'lyria-3-clip-preview',
+      'lyria-3-pro-preview'
+    ])
+    expect(collectMusicTargets(allOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'elevenlabs:music_v1',
+      'minimax:music-2.5',
+      'deapi:AceStep_1_5_Turbo',
+      'deapi:AceStep_1_5_Base',
+      'deapi:AceStep_1_5_XL_Turbo_INT8',
+      'gemini:lyria-3-clip-preview',
+      'gemini:lyria-3-pro-preview'
     ])
   })
 

@@ -730,6 +730,8 @@ const processMediaSingle = async (
     minimaxMusicModel: llmDefaults.minimaxMusicModel,
     deapiMusicModels: llmDefaults.deapiMusicModels,
     deapiMusicModel: llmDefaults.deapiMusicModel,
+    geminiMusicModels: llmDefaults.geminiMusicModels,
+    geminiMusicModel: llmDefaults.geminiMusicModel,
     musicDuration: llmDefaults.musicDuration,
     musicLyricsFile: llmDefaults.musicLyricsFile,
     musicInstrumental: llmDefaults.musicInstrumental,

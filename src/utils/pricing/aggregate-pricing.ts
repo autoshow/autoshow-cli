@@ -588,6 +588,8 @@ const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicStepEstim
     || !!opts.minimaxMusicModel
     || (opts.deapiMusicModels?.length ?? 0) > 0
     || !!opts.deapiMusicModel
+    || (opts.geminiMusicModels?.length ?? 0) > 0
+    || !!opts.geminiMusicModel
   if (!hasMusic) return []
 
   const estimates = estimateMusicCosts({
@@ -597,6 +599,8 @@ const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicStepEstim
     minimaxMusicModel: opts.minimaxMusicModel,
     deapiMusicModels: opts.deapiMusicModels,
     deapiMusicModel: opts.deapiMusicModel,
+    geminiMusicModels: opts.geminiMusicModels,
+    geminiMusicModel: opts.geminiMusicModel,
     musicDuration: opts.musicDuration,
     musicLyricsFile: opts.musicLyricsFile,
     musicInstrumental: opts.musicInstrumental

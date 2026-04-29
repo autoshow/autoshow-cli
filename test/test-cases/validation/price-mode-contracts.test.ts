@@ -4,6 +4,8 @@ import {
   selectCheapestVideoSelection
 } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
+import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
+import { computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
 
 const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
@@ -51,6 +53,11 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
     label: 'music',
     args: ['music', 'an ambient piano song', '--minimax-music', 'music-2.5', '--price'],
     expected: 'music'
+  },
+  {
+    label: 'Gemini music',
+    args: ['music', 'an ambient piano song', '--gemini-music', 'lyria-3-clip-preview', '--price'],
+    expected: 'gemini'
   }
 ]
 
@@ -98,15 +105,17 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-klein-4b')
     expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
     expect(resolveCheapestModelForFlag('deapi-video')).toBe('Ltxv_13B_0_9_8_Distilled_FP8')
+    expect(resolveCheapestModelForFlag('gemini-music')).toBe('lyria-3-clip-preview')
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')
     expect(resolveCheapestModelForFlag('grok-stt')).toBe('speech-to-text')
     expect(resolveCheapestModelForFlag('grok-tts')).toBe('grok-tts')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
+    expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
       provider: 'gemini',
-      model: 'veo-3.1-fast-generate-preview'
+      model: 'veo-3.1-lite-generate-preview'
     })
     expect(selectCheapestVideoSelection('deapi')).toMatchObject({
       provider: 'deapi',
@@ -135,5 +144,39 @@ describe('price mode contracts', () => {
       imageSize: '2048x2048',
       imageQuality: 'high'
     })[0]?.note).toContain('OpenAI')
+  })
+
+  test('Gemini music estimates use per-song Lyria 3 pricing', () => {
+    const estimates = estimateMusicCosts({
+      geminiMusicModels: ['lyria-3-clip-preview', 'lyria-3-pro-preview'],
+      musicDuration: 90
+    })
+
+    expect(estimates.map((estimate) => ({
+      provider: estimate.provider,
+      model: estimate.model,
+      totalCost: estimate.totalCost
+    }))).toEqual([
+      { provider: 'gemini', model: 'lyria-3-clip-preview', totalCost: 4 },
+      { provider: 'gemini', model: 'lyria-3-pro-preview', totalCost: 8 }
+    ])
+  })
+
+  test('Gemini music timing estimates use Lyria defaults', () => {
+    const timing = computeEstimatedProcessingTimes({
+      musicTargets: [
+        { service: 'gemini', model: 'lyria-3-clip-preview' },
+        { service: 'gemini', model: 'lyria-3-pro-preview' }
+      ]
+    })
+
+    expect(timing.steps.map((step) => ({
+      model: step.model,
+      processingTimeMs: step.processingTimeMs,
+      inputValue: step.inputValue
+    }))).toEqual([
+      { model: 'lyria-3-clip-preview', processingTimeMs: 30_000, inputValue: 30 },
+      { model: 'lyria-3-pro-preview', processingTimeMs: 180_000, inputValue: 120 }
+    ])
   })
 })

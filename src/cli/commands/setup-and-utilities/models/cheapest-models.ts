@@ -367,6 +367,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestMusicModel('minimax')
     case 'deapi-music':
       return selectCheapestMusicModel('deapi')
+    case 'gemini-music':
+      return selectCheapestMusicModel('gemini')
     case 'gemini-video':
       return selectCheapestVideoModel('gemini')
     case 'minimax-video':

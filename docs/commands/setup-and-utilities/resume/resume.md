@@ -95,6 +95,9 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-video Ltxv_13B_0_9_8_
 
 # Resume missing MiniMax music outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
+
+# Resume missing Gemini Lyria music outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-preview
 ```
 
 ## Flags
@@ -228,9 +231,11 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 |------|-------------|
 | `--elevenlabs-music <model>` | Select one or more ElevenLabs music models |
 | `--minimax-music <model>` | Select one or more MiniMax music models |
+| `--deapi-music <model>` | Select one or more deAPI music models |
+| `--gemini-music <model>` | Select one or more Gemini Lyria music models |
 | `--music-duration <seconds>` | Music duration in seconds |
-| `--music-lyrics-file <path>` | Lyrics file path for MiniMax |
-| `--music-instrumental` | Force instrumental generation (ElevenLabs) |
+| `--music-lyrics-file <path>` | Lyrics file path for MiniMax, deAPI, and Gemini |
+| `--music-instrumental` | Force instrumental generation where supported |
 
 ## Notes
 

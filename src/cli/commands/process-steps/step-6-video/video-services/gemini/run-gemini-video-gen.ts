@@ -5,7 +5,7 @@ import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generatio
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
 import * as l from '~/utils/logger'
-import { normalizeGeminiDuration } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { normalizeGeminiDuration, normalizeGeminiResolution } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
 
 const POLL_INTERVAL_MS = 10_000
@@ -37,7 +37,8 @@ export const runGeminiVideoGen = async (
 
   const ai = new GoogleGenAI({ apiKey })
   await mkdir(outputDir, { recursive: true })
-  const normalizedDuration = normalizeGeminiDuration(options.durationSeconds)
+  const normalizedResolution = normalizeGeminiResolution(options.resolution)
+  const normalizedDuration = normalizeGeminiDuration(options.durationSeconds, normalizedResolution)
 
   const startTime = Date.now()
   let operation = await ai.models.generateVideos({
@@ -45,7 +46,7 @@ export const runGeminiVideoGen = async (
     prompt,
     config: {
       ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-      ...(options.resolution ? { resolution: options.resolution } : {}),
+      resolution: normalizedResolution,
       durationSeconds: normalizedDuration,
       numberOfVideos: 1
     }

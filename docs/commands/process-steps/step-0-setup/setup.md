@@ -13,7 +13,7 @@ Install local runtimes and prerequisite tools. Focused setup utilities also cove
 
 ## Step Setup Docs
 
-- Step 2 extract: [`extract.md`](../step-2-extract/extract.md) — [STT setup](../step-2-extract/extract.md#stt-setup) | [OCR setup](../step-2-extract/extract.md#ocr-setup) | [X Space setup](../step-2-extract/extract.md#x-space-setup)
+- Step 2 extract: [`01-extract.md`](../step-2-extract/01-extract.md) — [STT setup](../step-2-extract/02-extract-stt.md#stt-setup) | [OCR setup](../step-2-extract/03-extract-ocr.md#ocr-setup) | [X Space setup](../step-2-extract/04-extract-url.md#x-space-setup)
 - Step 3 Write: [`write-text.md#setup`](../step-3-write/write-text.md#setup)
 - Step 4 TTS: [`text-to-speech.md#setup`](../step-4-tts/text-to-speech.md#setup)
 - Step 5 Image: [`text-to-image.md#setup`](../step-5-image/text-to-image.md#setup)
@@ -135,7 +135,8 @@ bun as setup --step image
 # Video providers are API-based, so this checks hosted provider API-key readiness
 bun as setup --step video
 
-# Check hosted music API readiness, verify ffmpeg/ffprobe, ensure whisper-cli,
+# Check hosted music API-key readiness, including GEMINI_API_KEY for Lyria,
+# verify ffmpeg/ffprobe, ensure whisper-cli,
 # and download large-v3-turbo for lyric-video rendering.
 bun as setup --step music
 

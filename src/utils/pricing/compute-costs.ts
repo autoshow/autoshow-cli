@@ -959,6 +959,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     || input.elevenlabsMusicModel
     || input.minimaxMusicModel
     || input.deapiMusicModel
+    || input.geminiMusicModel
   if (hasMusic) {
     const estimates = estimateMusicCosts({
       elevenlabsMusicModels: input.musicTargets?.filter((target) => target.service === 'elevenlabs').map((target) => target.model),
@@ -967,6 +968,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       minimaxMusicModel: input.minimaxMusicModel,
       deapiMusicModels: input.musicTargets?.filter((target) => target.service === 'deapi').map((target) => target.model),
       deapiMusicModel: input.deapiMusicModel,
+      geminiMusicModels: input.musicTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
+      geminiMusicModel: input.geminiMusicModel,
       musicDuration: input.musicTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.musicDuration,
       musicLyricsFile: input.musicLyricsFile,
       musicInstrumental: input.musicInstrumental

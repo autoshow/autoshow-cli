@@ -3,7 +3,8 @@ import type { DeapiVideoModel, GeminiVideoModel, GlmVideoModel, GrokVideoModel, 
 
 export const SUPPORTED_GEMINI_VIDEO_MODELS = [
   'veo-3.1-fast-generate-preview',
-  'veo-3.1-generate-preview'
+  'veo-3.1-generate-preview',
+  'veo-3.1-lite-generate-preview'
 ] as const satisfies readonly string[]
 
 export const validateGeminiVideoModel = createModelValidator<GeminiVideoModel>(SUPPORTED_GEMINI_VIDEO_MODELS, 'gemini-video')

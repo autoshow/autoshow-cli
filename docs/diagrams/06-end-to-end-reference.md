@@ -77,7 +77,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --anthropic-ocr models                  │
 │  ├── GEMINI_API_KEY                  Required for --gemini, --gemini-ocr,    │
 │  │                                   --gemini-tts, --gemini-image,           │
-│  │                                   --gemini-video models                   │
+│  │                                   --gemini-video, --gemini-music models  │
 │  ├── MINIMAX_API_KEY                 Required for --minimax, --minimax-tts,  │
 │  │                                   --minimax-image, --minimax-video,       │
 │  │                                   --minimax-music models                  │

@@ -117,6 +117,8 @@ const resumeVideoFlags = pickFlags(videoGenFlags, [
 const resumeMusicFlags = pickFlags(musicGenFlags, [
   'elevenlabs-music',
   'minimax-music',
+  'deapi-music',
+  'gemini-music',
   'music-duration',
   'music-lyrics-file',
   'music-instrumental'

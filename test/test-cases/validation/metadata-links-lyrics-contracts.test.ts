@@ -101,6 +101,23 @@ const BFL_IMAGE_LINKS = [
   'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[flex]-recommended-for-editing.md'
 ]
 
+const DRIVE_GENERAL_LINKS = [
+  'https://developers.google.com/workspace/drive/api/guides/about-sdk.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/api-specific-auth.md.txt',
+  'https://developers.google.com/workspace/drive/api/quickstart/js.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/about-files.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/create-file.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/manage-uploads.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/manage-downloads.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/manage-revisions.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/long-running-operations.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/folder.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/delete.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/search-files.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/file-metadata.md.txt',
+  'https://developers.google.com/workspace/drive/api/guides/performance.md.txt'
+]
+
 test('metadata --markdown prints stable frontmatter instead of JSON', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -220,6 +237,34 @@ test('links selector accepts bfl provider with image section', async () => {
     '--bfl',
     'general'
   ])).rejects.toThrow('Unknown links section(s) for --bfl: general')
+})
+
+test('links selector accepts drive provider with general section', () => {
+  const driveSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--drive'
+  ])
+
+  expect(driveSelection.serviceSelections.get('drive')).toEqual([])
+  expect(collectLinks(
+    driveSelection.serviceSelections,
+    driveSelection.globalSections
+  )).toEqual(DRIVE_GENERAL_LINKS)
+
+  const driveGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--drive',
+    'general'
+  ])
+
+  expect(collectLinks(
+    driveGeneralSelection.serviceSelections,
+    driveGeneralSelection.globalSections
+  )).toEqual(DRIVE_GENERAL_LINKS)
 })
 
 test('links selector accepts gcloud provider with stt and ocr sections', () => {

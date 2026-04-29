@@ -13,7 +13,8 @@ import {
   SUPPORTED_MINIMAX_VIDEO_MODELS,
   SUPPORTED_RUNWAY_VIDEO_MODELS,
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
-  SUPPORTED_MINIMAX_MUSIC_MODELS
+  SUPPORTED_MINIMAX_MUSIC_MODELS,
+  SUPPORTED_GEMINI_MUSIC_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import {
@@ -132,12 +133,16 @@ const writeMusicModelFlags = {
     description: `Enable music generation on LLM output. ${buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS)}`,
     type: [String] as [StringConstructor]
   },
+  'gemini-music': {
+    description: `Enable music generation on LLM output. ${buildModelDescription('Gemini Lyria music model', SUPPORTED_GEMINI_MUSIC_MODELS)}`,
+    type: [String] as [StringConstructor]
+  },
   'music-duration': {
     description: 'Music duration in seconds',
     type: String
   },
   'music-lyrics-file': {
-    description: 'Lyrics file path (.md or .txt) for MiniMax music generation',
+    description: 'Lyrics file path (.md or .txt) for MiniMax, deAPI, and Gemini music generation',
     type: String
   },
   'music-instrumental': {

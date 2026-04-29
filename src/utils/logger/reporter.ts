@@ -1,7 +1,7 @@
 import { basename } from 'node:path'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration } from '~/utils/logger/formatters'
-import { createHumanTable, logLocationsTable, toHumanTableCell } from '~/utils/logger/human-table'
+import { createHumanTable, createKeyValueTable, logLocationsTable, toHumanTableCell } from '~/utils/logger/human-table'
 import { emitResult } from '~/utils/logger/result-emitter'
 import type {
   AggregatedPriceEstimate,
@@ -108,18 +108,6 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
   }
 }
 
-const collectColumns = (rows: ReadonlyArray<Record<string, unknown>>): string[] => {
-  const columns: string[] = []
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      if (!columns.includes(key)) {
-        columns.push(key)
-      }
-    }
-  }
-  return columns
-}
-
 const formatStepSummary = (steps: StepTimingCost[], totalTimeMs: number, totalCost: number) => {
   const entries: StepSummaryEntry[] = steps.map(step => ({
     step: step.label,
@@ -207,12 +195,8 @@ const buildHumanCompletionTables = (
   }
 }
 
-const buildEstimateRows = (estimate: AggregatedPriceEstimate): HumanLogTableRow[] =>
-  estimate.steps.map((step) =>
-    Object.fromEntries(
-      Object.entries(mapStepEstimate(step, 'human')).map(([key, value]) => [key, toHumanTableCell(value)])
-    ) as HumanLogTableRow
-  )
+const buildEstimateEntries = (estimate: AggregatedPriceEstimate): Array<readonly [string, string | number]> =>
+  estimate.steps.flatMap((step) => Object.entries(mapStepEstimate(step, 'human')))
 
 const buildCompleteResultData = (
   outputDir: string,
@@ -253,11 +237,11 @@ export const createReporter = (logger: Logger): Reporter => {
       })
     },
     estimate: (estimate) => {
-      const estimateRows = buildEstimateRows(estimate)
+      const estimateEntries = buildEstimateEntries(estimate)
       logger.write('info', `Total estimated cost: ${formatCost(estimate.totalEstimatedCost)}`, { category: 'pricing' })
       logger.write('info', 'Cost Estimate', {
         category: 'pricing',
-        humanTable: createHumanTable(estimateRows, collectColumns(estimateRows))
+        humanTable: createKeyValueTable(estimateEntries)
       })
       for (const note of estimate.notes ?? []) {
         logger.write('info', note, { category: 'pricing' })

@@ -17,46 +17,36 @@ import {
 import * as l from '~/utils/logger'
 import { createKeyValueTable } from '~/utils/logger/human-table'
 
+const GEMINI_MODEL_COST_FALLBACKS: Record<GeminiVideoModel, { cents720p: number, cents1080p: number }> = {
+  'veo-3.1-fast-generate-preview': { cents720p: 10, cents1080p: 12 },
+  'veo-3.1-generate-preview': { cents720p: 40, cents1080p: 40 },
+  'veo-3.1-lite-generate-preview': { cents720p: 5, cents1080p: 8 }
+}
 
-const estimateVeo31GeneratePreviewCost = (duration: number | undefined, resolution: string | undefined): VideoCostEstimate => {
-  const meta = getVideoModelMeta('gemini', 'veo-3.1-generate-preview')
+const estimateGeminiModelCost = (
+  model: GeminiVideoModel,
+  duration: number | undefined,
+  resolution: string | undefined
+): VideoCostEstimate => {
+  const meta = getVideoModelMeta('gemini', model)
   const normalizedResolution = normalizeGeminiResolution(resolution)
-  const durationSeconds = normalizeGeminiDuration(duration)
-  const billedDurationSeconds = Math.max(4, durationSeconds)
-  const resolutionMultiplier = normalizedResolution === '1080p'
-    ? (meta?.resolutionMultiplier1080p ?? 1.4) : 1
-  const costPerSecond = (meta?.baseCostPerSecondCents ?? 25) * resolutionMultiplier
+  const durationSeconds = normalizeGeminiDuration(duration, normalizedResolution)
+  const billedDurationSeconds = durationSeconds
+  const fallback = GEMINI_MODEL_COST_FALLBACKS[model]
+  const costPerSecond = normalizedResolution === '1080p'
+    ? (meta?.baseCostPerSecondCents !== undefined
+      ? meta.baseCostPerSecondCents * (meta.resolutionMultiplier1080p ?? 1)
+      : fallback.cents1080p)
+    : (meta?.baseCostPerSecondCents ?? fallback.cents720p)
 
   return {
     provider: 'gemini',
-    model: 'veo-3.1-generate-preview',
+    model,
     durationSeconds,
     billedDurationSeconds,
     costPerSecond,
     totalCost: billedDurationSeconds * costPerSecond,
-    note: `Approximate estimate using ${normalizedResolution} resolution pricing`
-  }
-}
-
-const estimateVeo31FastGeneratePreviewCost = (duration: number | undefined, resolution: string | undefined): VideoCostEstimate => {
-  const meta = getVideoModelMeta('gemini', 'veo-3.1-fast-generate-preview')
-  const normalizedResolution = normalizeGeminiResolution(resolution)
-  const durationSeconds = normalizeGeminiDuration(duration)
-  const blockSize = meta?.blockSizeSec ?? 5
-  const fiveSecondBlocks = Math.max(1, Math.ceil(durationSeconds / blockSize))
-  const blockCost = normalizedResolution === '1080p'
-    ? (meta?.blockCost1080pCents ?? 80) : (meta?.blockCost720pCents ?? 55)
-  const billedDurationSeconds = fiveSecondBlocks * blockSize
-  const totalCost = fiveSecondBlocks * blockCost
-
-  return {
-    provider: 'gemini',
-    model: 'veo-3.1-fast-generate-preview',
-    durationSeconds,
-    billedDurationSeconds,
-    costPerSecond: totalCost / billedDurationSeconds,
-    totalCost,
-    note: `Approximate estimate billed in ${blockSize}-second blocks at ${normalizedResolution}`
+    note: `Approximate estimate using ${normalizedResolution} per-second pricing${normalizedResolution === '1080p' ? '; 1080p is normalized to 8s' : ''}`
   }
 }
 
@@ -91,10 +81,7 @@ const estimateMinimaxCost = (model: MinimaxVideoModel, options: EstimateVideoCos
 }
 
 const estimateGeminiCost = (model: GeminiVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
-  if (model === 'veo-3.1-generate-preview') {
-    return estimateVeo31GeneratePreviewCost(options.videoDuration, options.videoResolution)
-  }
-  return estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution)
+  return estimateGeminiModelCost(model, options.videoDuration, options.videoResolution)
 }
 
 const estimateGlmCost = (model: GlmVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
@@ -202,7 +189,7 @@ export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCost
   }
 
   if (estimates.length === 0) {
-    estimates.push(estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution))
+    estimates.push(estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution))
   }
 
   return estimates
@@ -246,7 +233,7 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
     return estimateDeapiCost(model, options)
   }
 
-  return estimateVeo31FastGeneratePreviewCost(options.videoDuration, options.videoResolution)
+  return estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution)
 }
 
 export const logVideoEstimate = (estimate: VideoCostEstimate): void => {

@@ -18,7 +18,7 @@ export const videoCommand = defineCommand({
   flags: videoGenFlags,
   help: {
     examples: [
-      ['bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-fast-generate-preview', 'Generate video with Gemini Veo'],
+      ['bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate-preview', 'Generate video with Gemini Veo'],
       ['bun as video "a cinematic mountain sunrise" --minimax-video MiniMax-Hailuo-2.3', 'Generate video with MiniMax Hailuo'],
       ['bun as video "a cat playing with yarn" --glm-video cogvideox-3', 'Generate video with GLM CogVideoX'],
       ['bun as video "a cat playing piano" --grok-video grok-imagine-video', 'Generate video with Grok'],

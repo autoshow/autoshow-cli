@@ -155,6 +155,8 @@ export const ProcessingOptionsSchema = v.pipe(
     minimaxMusicModel: v.optional(v.string(), undefined),
     deapiMusicModels: v.optional(v.array(v.string()), undefined),
     deapiMusicModel: v.optional(v.string(), undefined),
+    geminiMusicModels: v.optional(v.array(v.string()), undefined),
+    geminiMusicModel: v.optional(v.string(), undefined),
     musicDuration: v.optional(v.number(), undefined),
     musicLyricsFile: v.optional(v.string(), undefined),
     musicInstrumental: v.optional(v.boolean(), undefined),

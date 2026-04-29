@@ -81,6 +81,7 @@ test('music help includes hosted generation and lyric-video flags', async () => 
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('--elevenlabs-music')
   expect(result.stdout).toContain('--minimax-music')
+  expect(result.stdout).toContain('--gemini-music')
   expect(result.stdout).toContain('--music-duration')
   expect(result.stdout).toContain('--music-lyrics-file')
   expect(result.stdout).toContain('--price')

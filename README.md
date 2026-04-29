@@ -66,8 +66,9 @@ bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 # Prompt-driven generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
 bun as image "a cinematic product photo of a red enamel camping mug" --bfl-image flux-2-pro-preview --image-size 1024x1024
-bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-fast-generate-preview --runway-video gen4.5
+bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-lite-generate-preview --runway-video gen4.5
 bun as music "an ambient piano instrumental" --minimax-music music-2.5
+bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
 bun as music --audio input/examples/lyrics/01-example-song.mp3
 
 # Fetch curated OpenAI docs into project/links/openai-all-links.md
@@ -158,9 +159,13 @@ bun as write input/examples/audio/1-audio.mp3 --json
 # Environment variables
 AUTOSHOW_LOG_FORMAT=auto   # auto | human | json | both
 AUTOSHOW_LOG_LEVEL=info    # debug | info | success | warn | error
+NO_COLOR=1                 # disable ANSI color in human logs and help
+FORCE_COLOR=1              # force ANSI color in redirected output
 ```
 
 - `AUTOSHOW_LOG_FORMAT=auto` uses JSON logs when `NODE_ENV=production`, otherwise human-readable logs.
+- Human-readable logs color table columns and log prefixes when output is a TTY; `NO_COLOR` disables this and `FORCE_COLOR` enables it for captured output.
+- JSON logs and `--json` output stay machine-readable and uncolored.
 - Secrets and credentials are redacted from logger output.
 
 ## Output Layout

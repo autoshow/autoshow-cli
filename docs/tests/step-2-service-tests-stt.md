@@ -21,7 +21,7 @@ bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/
 
 ```bash
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/ --test-price
-bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/ --budget 25
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/ --budget 2500
 ```
 
 All current step 2 STT service suites resolve mapped price commands, including deAPI exact-price coverage in the shared suite.
@@ -30,4 +30,4 @@ All current step 2 STT service suites resolve mapped price commands, including d
 
 - [Service Tests](service-tests.md)
 - [Local Tests](local-tests.md)
-- [extract](../commands/process-steps/step-2-extract/extract.md)
+- [extract STT](../commands/process-steps/step-2-extract/02-extract-stt.md)

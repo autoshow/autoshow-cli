@@ -22,7 +22,7 @@ bun t test/test-cases/e2e/step-5-image-gen-e2e/
 
 ```bash
 bun t test/test-cases/e2e/step-5-image-gen-e2e/ --test-price
-bun t test/test-cases/e2e/step-5-image-gen-e2e/openai-image-gen.test.ts --budget 25
+bun t test/test-cases/e2e/step-5-image-gen-e2e/openai-image-gen.test.ts --budget 2500
 ```
 
 All step 5 provider suites currently resolve mapped price commands.

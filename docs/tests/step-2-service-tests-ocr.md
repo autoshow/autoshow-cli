@@ -23,9 +23,9 @@ bun t \
 
 ```bash
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts --test-price
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts --budget 25
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts --budget 2500
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --test-price
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --budget 25
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --budget 2500
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --test-price
 ```
 
@@ -35,4 +35,5 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --t
 
 - [Service Tests](service-tests.md)
 - [Local Tests](local-tests.md)
-- [extract](../commands/process-steps/step-2-extract/extract.md)
+- [extract OCR](../commands/process-steps/step-2-extract/03-extract-ocr.md)
+- [extract URL and X](../commands/process-steps/step-2-extract/04-extract-url.md)

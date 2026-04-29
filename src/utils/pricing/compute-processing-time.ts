@@ -18,8 +18,25 @@ import type {
 } from '~/types'
 
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
+const GEMINI_CLIP_MUSIC_DURATION_SECONDS = 30
+const GEMINI_PRO_DEFAULT_MUSIC_DURATION_SECONDS = 120
 
 const roundMs = (value: number): number => Math.max(0, Math.round(value))
+
+const resolveMusicTimingDurationSeconds = (
+  target: { service: string, model: string, durationSeconds?: number | undefined }
+): number | undefined => {
+  if (target.service === 'gemini') {
+    if (target.model === 'lyria-3-clip-preview') {
+      return GEMINI_CLIP_MUSIC_DURATION_SECONDS
+    }
+    if (target.model === 'lyria-3-pro-preview') {
+      return target.durationSeconds ?? GEMINI_PRO_DEFAULT_MUSIC_DURATION_SECONDS
+    }
+  }
+
+  return target.durationSeconds
+}
 
 const isTranscriptionMetadata = (value: unknown): value is Step2Metadata => {
   return typeof value === 'object' && value !== null && 'transcriptionService' in value
@@ -318,15 +335,16 @@ export const computeEstimatedProcessingTimes = (
       : []
 
   for (const musicTarget of musicTargets) {
-    if (typeof musicTarget.durationSeconds === 'number') {
+    const durationSeconds = resolveMusicTimingDurationSeconds(musicTarget)
+    if (typeof durationSeconds === 'number') {
       const estimation = getMusicEstimation(musicTarget.service, musicTarget.model)
       steps.push({
         step: 'music',
         provider: musicTarget.service,
         model: musicTarget.model,
-        processingTimeMs: roundMs(musicTarget.durationSeconds * estimation.msPerSecond),
+        processingTimeMs: roundMs(durationSeconds * estimation.msPerSecond),
         inputMetric: 'durationSeconds',
-        inputValue: musicTarget.durationSeconds,
+        inputValue: durationSeconds,
       })
     }
   }

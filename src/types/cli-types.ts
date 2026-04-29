@@ -209,6 +209,8 @@ export type RuntimeOptions = {
   minimaxMusicModel: string | undefined
   deapiMusicModels: string[] | undefined
   deapiMusicModel: string | undefined
+  geminiMusicModels: string[] | undefined
+  geminiMusicModel: string | undefined
   musicDuration: number | undefined
   musicLyricsFile: string | undefined
   musicInstrumental: boolean | undefined

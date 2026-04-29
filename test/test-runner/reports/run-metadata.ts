@@ -6,7 +6,7 @@ export const buildBudgetRunFields = (budgetSummary?: BudgetPreflightSummary): Re
   }
 
   return {
-    budgetCents: budgetSummary.budgetCents,
+    budgetHundredthCents: budgetSummary.budgetHundredthCents,
     budgetPreflightSuite: budgetSummary.suiteName,
     budgetPreflightChecked: budgetSummary.commandsChecked,
     budgetPreflightRunnable: budgetSummary.commandsRunnable,

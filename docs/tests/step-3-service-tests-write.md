@@ -18,7 +18,7 @@ bun t test/test-cases/e2e/step-3-write-e2e/write-services/
 
 ```bash
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/ --test-price
-bun t test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts --budget 25
+bun t test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts --budget 2500
 ```
 
 The directory-wide `--test-price` selection resolves OpenAI, Anthropic, Gemini, Groq, MiniMax, GLM, and local llama price mappings. Live service tests skip providers whose API key is not configured.

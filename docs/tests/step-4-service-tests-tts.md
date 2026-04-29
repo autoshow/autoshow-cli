@@ -18,7 +18,7 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
 
 ```bash
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/ --test-price
-bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/minimax-tts.test.ts --budget 25
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/minimax-tts.test.ts --budget 2500
 ```
 
 `kitten-tts-pipeline.test.ts` does not currently have its own mapped `--test-price` or `--budget` selector.

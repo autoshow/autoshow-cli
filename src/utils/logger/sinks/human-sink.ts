@@ -1,4 +1,10 @@
 import { renderHumanTable } from '~/utils/logger/human-table'
+import {
+  colorizeLogBatchPrefix,
+  colorizeLogLevelSymbol,
+  colorizeLogMessage,
+  colorizeLogTimestamp
+} from '~/utils/logger/log-colors'
 import type { HumanSinkOptions, LogSink, LogSinkEvent } from '~/types'
 
 const logIndent = '  '
@@ -37,12 +43,12 @@ const getLevelSymbol = (level: LogSinkEvent['level']): string => {
 }
 
 const formatMessage = (event: LogSinkEvent): string => {
-  const timestamp = `[${event.timestamp}]`
+  const timestamp = colorizeLogTimestamp(`[${event.timestamp}]`)
   const symbol = getLevelSymbol(event.level)
-  const levelPrefix = symbol.length > 0 ? `${symbol} ` : ''
-  const batchPrefix = getBatchItemPrefix(event)
+  const levelPrefix = symbol.length > 0 ? `${colorizeLogLevelSymbol(symbol, event.level)} ` : ''
+  const batchPrefix = colorizeLogBatchPrefix(getBatchItemPrefix(event))
   const message = event.indent ? `${logIndent}${event.message}` : event.message
-  return `${timestamp} ${levelPrefix}${batchPrefix}${message}`
+  return `${timestamp} ${levelPrefix}${batchPrefix}${colorizeLogMessage(message, event.category)}`
 }
 
 export const createHumanSink = (options: HumanSinkOptions = {}): LogSink => {

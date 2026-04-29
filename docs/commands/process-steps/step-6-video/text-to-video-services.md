@@ -22,7 +22,7 @@ bun as video <prompt> [flags]
 
 | Provider | Flag | Models |
 |----------|------|--------|
-| Gemini Veo | `--gemini-video <model>` | `veo-3.1-generate-preview`, `veo-3.1-fast-generate-preview` |
+| Gemini Veo | `--gemini-video <model>` | `veo-3.1-generate-preview`, `veo-3.1-fast-generate-preview`, `veo-3.1-lite-generate-preview` |
 | MiniMax | `--minimax-video <model>` | `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-02`, `T2V-01-Director`, `T2V-01` |
 | Z.AI GLM | `--glm-video <model>` | `cogvideox-3`, `viduq1-text` |
 | Grok | `--grok-video <model>` | `grok-imagine-video` |
@@ -36,7 +36,8 @@ One or more provider flags can be specified. Repeating the same provider flag ru
 ```bash
 # Gemini Veo
 bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-generate-preview --video-duration 6 --video-aspect-ratio 16:9 --video-resolution 1080p
+bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-generate-preview --video-duration 8 --video-aspect-ratio 16:9 --video-resolution 1080p
+bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-lite-generate-preview --video-duration 4 --video-resolution 720p
 
 # MiniMax
 bun as video "a rainy neon city street, slow camera pan" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --video-resolution 720p
@@ -60,10 +61,11 @@ bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-
 bun as video "a rainy neon city street, slow camera pan" --all-video --price
 
 # Same provider, multiple models
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --gemini-video veo-3.1-generate-preview
+bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --gemini-video veo-3.1-generate-preview --gemini-video veo-3.1-lite-generate-preview
 
 # Price preflight
 bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --video-duration 8 --price
+bun as video "a sunset timelapse" --gemini-video veo-3.1-lite-generate-preview --video-duration 4 --price
 bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --price
 bun as video "a sunset timelapse" --glm-video cogvideox-3 --price
 bun as video "a sunset timelapse" --grok-video grok-imagine-video --price
@@ -74,6 +76,16 @@ bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --v
 bun as write "https://youtube.com/..." --gemini gemini-3.1-flash-lite-preview --gemini-video veo-3.1-fast-generate-preview
 bun as write "https://youtube.com/..." --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --glm-video cogvideox-3 --price
 ```
+
+Gemini Veo price estimates use normalized billed duration and current per-second Gemini API pricing:
+
+| Model | 720p | 1080p | CLI timing estimate |
+|-------|------|-------|---------------------|
+| `veo-3.1-generate-preview` | 40.0000¢/s | 40.0000¢/s | 12000 ms/s |
+| `veo-3.1-fast-generate-preview` | 10.0000¢/s | 12.0000¢/s | 10000 ms/s |
+| `veo-3.1-lite-generate-preview` | 5.0000¢/s | 8.0000¢/s | 8000 ms/s |
+
+The timing values are CLI planning heuristics, not provider SLAs. Google documents Veo request latency as roughly 11 seconds to 6 minutes, with higher resolutions generally taking longer.
 
 ## Flags
 
@@ -140,7 +152,8 @@ output/YYYY-MM-DD_HH-mm-ss_video-gen/
 
 ## Notes
 
-- Gemini durations are normalized to `4`, `6`, or `8` seconds.
+- Gemini durations are normalized to `4`, `6`, or `8` seconds. Gemini `1080p` requests are normalized to `8` seconds before price estimates and API requests.
+- Gemini accepts `720p` and `1080p` through this CLI; `4k` is not supported here. Veo 3.1 Lite does not support `4k` or video extension.
 - MiniMax durations are normalized to the provider-supported values for the selected model and resolution.
 - GLM `cogvideox-3` durations are normalized to `5` or `10` seconds. `viduq1-text` is fixed at `5` seconds.
 - GLM prompts are capped at 512 characters.

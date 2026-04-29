@@ -18,6 +18,8 @@ import { resolveSelectedFiles } from './path-selection'
 import { E2E_TEST_TIMEOUT_MS } from '../test-utils/timeouts'
 
 const formatCents = (cents: number): string => `${cents.toFixed(4)}¢`
+const budgetHundredthCentsToCents = (budgetHundredthCents: number): number => budgetHundredthCents / 100
+const formatBudgetHundredthCents = (budgetHundredthCents: number): string => formatCents(budgetHundredthCentsToCents(budgetHundredthCents))
 
 const PRICE_CONCURRENCY = 16
 
@@ -148,10 +150,10 @@ const executePriceCommand = async (
   }
 }
 
-const buildEmptyBudgetSummary = (suiteName: string, budgetCents: number): BudgetPreflightSummary => {
+const buildEmptyBudgetSummary = (suiteName: string, budgetHundredthCents: number): BudgetPreflightSummary => {
   return {
     suiteName,
-    budgetCents,
+    budgetHundredthCents,
     commandsChecked: 0,
     commandsRunnable: 0,
     commandsSkipped: 0,
@@ -292,20 +294,20 @@ const runPriceSuite = async (
   suiteName: string,
   commands: PriceCommandSpec[],
   artifacts: TestRunArtifacts,
-  budgetCents?: number
+  budgetHundredthCents?: number
 ): Promise<{ exitCode: number, results: PriceCommandResult[], budgetSummary: BudgetPreflightSummary | undefined }> => {
   if (commands.length === 0) {
     console.log(`No ${suiteName} pricing commands resolved; treating selection as a zero-cost price pass`)
     return {
       exitCode: 0,
       results: [],
-      budgetSummary: budgetCents !== undefined ? buildEmptyBudgetSummary(suiteName, budgetCents) : undefined,
+      budgetSummary: budgetHundredthCents !== undefined ? buildEmptyBudgetSummary(suiteName, budgetHundredthCents) : undefined,
     }
   }
 
   console.log(`Running ${suiteName} pricing preflight across ${commands.length} command(s)`)
-  if (budgetCents !== undefined) {
-    console.log(`Budget filter (per test key): ${formatCents(budgetCents)}`)
+  if (budgetHundredthCents !== undefined) {
+    console.log(`Budget filter (per test key): ${formatBudgetHundredthCents(budgetHundredthCents)}`)
   }
 
   const executedResults = await runWithConcurrency(commands, PRICE_CONCURRENCY, async (entry, _index) => {
@@ -325,7 +327,7 @@ const runPriceSuite = async (
     }
   }
 
-  const evaluation = evaluatePriceObservations(suiteName, observations, budgetCents)
+  const evaluation = evaluatePriceObservations(suiteName, observations, budgetHundredthCents)
   const skippedCommands = evaluation.commandResults.filter(result => result.status === 'skipped').length
 
   console.log('')
@@ -361,20 +363,20 @@ const runPriceSuite = async (
 const runBudgetPreflight = async (
   suiteName: string,
   commands: PriceCommandSpec[],
-  budgetCents: number,
+  budgetHundredthCents: number,
   artifacts: TestRunArtifacts
 ): Promise<BudgetPreflightResult> => {
   const groupedCommands = groupCommandsByKey(commands)
 
   if (groupedCommands.length === 0) {
     return {
-      summary: buildEmptyBudgetSummary(suiteName, budgetCents),
+      summary: buildEmptyBudgetSummary(suiteName, budgetHundredthCents),
       skipKeys: [],
     }
   }
 
   console.log(`Running ${suiteName} budget preflight across ${groupedCommands.length} test key(s) (${commands.length} command variant(s))`)
-  console.log(`Budget: ${formatCents(budgetCents)}`)
+  console.log(`Budget: ${formatBudgetHundredthCents(budgetHundredthCents)}`)
 
   // Execute all commands concurrently, preserving group/variant structure
   const allVariants = groupedCommands.flatMap((group, groupIndex) =>
@@ -425,7 +427,7 @@ const runBudgetPreflight = async (
       }
     }
 
-    const groupEvaluation = evaluatePriceObservationGroup(group.key, groupObservations, budgetCents)
+    const groupEvaluation = evaluatePriceObservationGroup(group.key, groupObservations, budgetHundredthCents)
     if (groupEvaluation.variantCostsCents.length === 0 || groupEvaluation.selectedCostCents === null) {
       continue
     }
@@ -436,8 +438,8 @@ const runBudgetPreflight = async (
     console.log(`  decision: ${groupEvaluation.overBudget ? 'SKIP (over budget)' : 'RUN'}`)
   }
 
-  const evaluation = evaluatePriceObservations(suiteName, observations, budgetCents)
-  const budgetSummary = evaluation.budgetSummary ?? buildEmptyBudgetSummary(suiteName, budgetCents)
+  const evaluation = evaluatePriceObservations(suiteName, observations, budgetHundredthCents)
+  const budgetSummary = evaluation.budgetSummary ?? buildEmptyBudgetSummary(suiteName, budgetHundredthCents)
 
   console.log('')
   console.log(`${suiteName} Budget Preflight Summary`)
@@ -483,21 +485,21 @@ const runStandardTestMode = async (
 
   let budgetSummary: BudgetPreflightSummary | undefined
   let budgetSkipKeys: string[] = []
-  if (args.budgetCents !== undefined) {
+  if (args.budgetHundredthCents !== undefined) {
     const resolved = resolvePriceSelection(allFiles, args.pathFilters, true)
     if (resolved.commands.length === 0) {
       console.log('No budget-skippable pricing commands resolved for --budget preflight; proceeding without budget-based skips')
-      budgetSummary = buildEmptyBudgetSummary(resolved.suiteName, args.budgetCents)
+      budgetSummary = buildEmptyBudgetSummary(resolved.suiteName, args.budgetHundredthCents)
     } else {
-      const preflight = await runBudgetPreflight(resolved.suiteName, resolved.commands, args.budgetCents, artifacts)
+      const preflight = await runBudgetPreflight(resolved.suiteName, resolved.commands, args.budgetHundredthCents, artifacts)
       budgetSummary = preflight.summary
       budgetSkipKeys = preflight.skipKeys
     }
   }
 
   const budgetEnvOverrides: Record<string, string> = {}
-  if (args.budgetCents !== undefined) {
-    budgetEnvOverrides['AUTOSHOW_TEST_BUDGET_CENTS'] = String(args.budgetCents)
+  if (args.budgetHundredthCents !== undefined) {
+    budgetEnvOverrides['AUTOSHOW_TEST_BUDGET_HUNDREDTH_CENTS'] = String(args.budgetHundredthCents)
     budgetEnvOverrides['AUTOSHOW_TEST_BUDGET_SKIP_KEYS'] = JSON.stringify(budgetSkipKeys)
   }
 
@@ -548,9 +550,9 @@ const runPriceMode = async (
     console.log('No pricing commands resolved for the selected paths; treating selection as a zero-cost price pass')
     exitCode = 0
     results = []
-    budgetSummary = args.budgetCents !== undefined ? buildEmptyBudgetSummary(suiteName, args.budgetCents) : undefined
+    budgetSummary = args.budgetHundredthCents !== undefined ? buildEmptyBudgetSummary(suiteName, args.budgetHundredthCents) : undefined
   } else {
-    const suiteResult = await runPriceSuite(suiteName, resolved.commands, artifacts, args.budgetCents)
+    const suiteResult = await runPriceSuite(suiteName, resolved.commands, artifacts, args.budgetHundredthCents)
     results = suiteResult.results
     budgetSummary = suiteResult.budgetSummary
     exitCode = suiteResult.exitCode
@@ -652,9 +654,9 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
         durationMs: Math.max(0, endedAtMs - artifacts.startedAtMs),
         argv: argv.slice(2),
         artifactDir: normalizeRepoPath(artifacts.runDir),
-        ...(args.budgetCents !== undefined
+        ...(args.budgetHundredthCents !== undefined
           ? {
-              budgetCents: args.budgetCents,
+              budgetHundredthCents: args.budgetHundredthCents,
               budgetPreflightSuite: 'unknown',
               budgetPreflightChecked: 0,
               budgetPreflightRunnable: 0,

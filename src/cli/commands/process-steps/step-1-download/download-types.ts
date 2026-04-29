@@ -264,6 +264,7 @@ export type RepeatableModelFlag =
   | 'elevenlabs-music'
   | 'minimax-music'
   | 'deapi-music'
+  | 'gemini-music'
   | 'gemini-video'
   | 'minimax-video'
   | 'glm-video'

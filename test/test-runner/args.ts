@@ -1,6 +1,6 @@
 export type RunnerArgs = {
   priceMode: boolean
-  budgetCents: number | undefined
+  budgetHundredthCents: number | undefined
   cleanupAfterRun: boolean
   passthroughArgs: string[]
   pathFilters: string[]
@@ -8,7 +8,7 @@ export type RunnerArgs = {
 
 export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
   let priceMode = false
-  let budgetCents: number | undefined
+  let budgetHundredthCents: number | undefined
   let cleanupAfterRun = false
   const passthroughArgs: string[] = []
   const pathFilters: string[] = []
@@ -25,16 +25,16 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
       case '--budget': {
         const value = argv[++i]
         if (!value) {
-          throw new Error('Error: --budget requires a whole-number value in cents (for example: --budget 5)')
+          throw new Error('Error: --budget requires a whole-number value in hundredths of a cent (for example: --budget 100 for 1 cent)')
         }
         if (!/^\d+$/.test(value)) {
-          throw new Error(`Error: invalid --budget value "${value}". Use whole-number cents (for example: --budget 5).`)
+          throw new Error(`Error: invalid --budget value "${value}". Use whole-number hundredths of a cent (for example: --budget 100 for 1 cent).`)
         }
         const parsed = Number.parseInt(value, 10)
         if (!Number.isFinite(parsed)) {
           throw new Error(`Error: invalid --budget value "${value}".`)
         }
-        budgetCents = parsed
+        budgetHundredthCents = parsed
         break
       }
       case '--price':
@@ -51,7 +51,7 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
 
   return {
     priceMode,
-    budgetCents,
+    budgetHundredthCents,
     cleanupAfterRun,
     passthroughArgs,
     pathFilters,

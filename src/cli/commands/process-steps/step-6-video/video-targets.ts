@@ -9,7 +9,7 @@ import { runMinimaxVideoGen } from './video-services/minimax/run-minimax-video-g
 import { runGlmVideoGen } from './video-services/glm/run-glm-video-gen'
 import { runGrokVideoGen } from './video-services/grok/run-grok-video-gen'
 import { runRunwayVideoGen } from './video-services/runway/run-runway-video-gen'
-import { normalizeDeapiVideoSize } from './video-utils/video-normalization'
+import { normalizeDeapiVideoSize, normalizeGeminiResolution } from './video-utils/video-normalization'
 
 export const getVideoArtifactFileName = (
   target: Pick<VideoTarget, 'service' | 'model'>,
@@ -41,6 +41,7 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
 
   for (const rawModel of geminiModels) {
     const model: GeminiVideoModel = validateGeminiVideoModel(rawModel)
+    normalizeGeminiResolution(options.videoResolution)
 
     targets.push({
       service: 'gemini',

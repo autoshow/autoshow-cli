@@ -16,6 +16,7 @@ defineVideoServiceTest({
   models: [
     { model: 'veo-3.1-fast-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
     { model: 'veo-3.1-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
+    { model: 'veo-3.1-lite-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
   ],
   cliFlag: '--gemini-video',
   videoService: 'gemini',
@@ -52,6 +53,14 @@ test('requires a provider flag', async () => {
   )
   expect(result.exitCode).not.toBe(0)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Specify a video generation provider')
+})
+
+test('Gemini video rejects unsupported 4k resolution', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini-video', 'veo-3.1-lite-generate-preview', '--video-resolution', '4k', '--price'],
+  )
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Expected 720p or 1080p')
 })
 
 test('allows multiple providers with --price', async () => {
@@ -92,6 +101,36 @@ test('new video providers print price estimates', async () => {
       model,
       '--video-duration',
       '5',
+      '--price'
+    ])
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain(model)
+    expect(output).toContain(expectedCost)
+  }
+})
+
+test('Gemini video price estimates use current per-second pricing', async () => {
+  const cases = [
+    ['veo-3.1-lite-generate-preview', '720p', '4', '20.00000¢'],
+    ['veo-3.1-lite-generate-preview', '1080p', '4', '64.00000¢'],
+    ['veo-3.1-fast-generate-preview', '720p', '4', '40.00000¢'],
+    ['veo-3.1-fast-generate-preview', '1080p', '4', '96.00000¢'],
+    ['veo-3.1-generate-preview', '720p', '4', '160.00000¢'],
+    ['veo-3.1-generate-preview', '1080p', '4', '320.00000¢']
+  ] as const
+
+  for (const [model, resolution, duration, expectedCost] of cases) {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'video',
+      'a cinematic mountain sunrise',
+      '--gemini-video',
+      model,
+      '--video-resolution',
+      resolution,
+      '--video-duration',
+      duration,
       '--price'
     ])
     const output = `${result.stdout}\n${result.stderr}`

@@ -56,6 +56,7 @@ import { setupDeapiVideoGen } from '~/cli/commands/process-steps/step-6-video/vi
 import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
 import { setupDeapiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
+import { setupGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/gemini-music-gen'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
@@ -343,6 +344,8 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupMinimaxVideoGen)
 
+  await withCompactSetup(setupGeminiMusicGen)
+
   await withCompactSetup(setupElevenLabsMusicGen)
 
   await withCompactSetup(setupMinimaxMusicGen)
@@ -416,6 +419,7 @@ const runSetupVideo = async (): Promise<void> => {
 }
 
 const runSetupMusic = async (): Promise<void> => {
+  await setupGeminiMusicGen()
   await setupElevenLabsMusicGen()
   await setupMinimaxMusicGen()
   await setupDeapiMusicGen()

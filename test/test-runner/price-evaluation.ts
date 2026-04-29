@@ -39,6 +39,8 @@ export type GroupedCommandEntries<T extends KeyedEntry> = {
   variants: T[]
 }
 
+const budgetHundredthCentsToCents = (budgetHundredthCents: number): number => budgetHundredthCents / 100
+
 const isSuccessfulObservation = (observation: PriceCommandObservation): boolean => {
   return observation.exitCode === 0 && observation.costCents !== null
 }
@@ -61,7 +63,7 @@ export const groupCommandsByKey = <T extends KeyedEntry>(commands: T[]): Grouped
 export const evaluatePriceObservationGroup = (
   key: string,
   observations: PriceCommandObservation[],
-  budgetCents?: number
+  budgetHundredthCents?: number
 ): PriceCommandKeySummary => {
   const variantCostsCents = observations
     .map(observation => isSuccessfulObservation(observation) ? observation.costCents : null)
@@ -70,10 +72,11 @@ export const evaluatePriceObservationGroup = (
   const failedVariantCount = observations.filter(observation => !isSuccessfulObservation(observation)).length
   const selectedCostCents = variantCostsCents.length > 0 ? Math.max(...variantCostsCents) : null
   const budgetSkippable = observations.some(observation => observation.budgetSkippable)
-  const overBudget = budgetCents !== undefined
+  const budgetLimitCents = budgetHundredthCents === undefined ? undefined : budgetHundredthCentsToCents(budgetHundredthCents)
+  const overBudget = budgetLimitCents !== undefined
     && budgetSkippable
     && selectedCostCents !== null
-    && selectedCostCents > budgetCents
+    && selectedCostCents > budgetLimitCents
 
   return {
     key,
@@ -89,7 +92,7 @@ export const evaluatePriceObservationGroup = (
 export const evaluatePriceObservations = (
   suiteName: string,
   observations: PriceCommandObservation[],
-  budgetCents?: number
+  budgetHundredthCents?: number
 ): {
   commandResults: PriceCommandResult[]
   keySummaries: PriceCommandKeySummary[]
@@ -98,7 +101,7 @@ export const evaluatePriceObservations = (
   totalEstimatedCostCents: number
 } => {
   const grouped = groupCommandsByKey(observations)
-  const keySummaries = grouped.map(group => evaluatePriceObservationGroup(group.key, group.variants, budgetCents))
+  const keySummaries = grouped.map(group => evaluatePriceObservationGroup(group.key, group.variants, budgetHundredthCents))
   const budgetEligibleSummaries = keySummaries.filter(summary => summary.budgetSkippable)
   const overBudgetKeys = new Set(
     budgetEligibleSummaries
@@ -123,11 +126,11 @@ export const evaluatePriceObservations = (
       return a.key.localeCompare(b.key)
     })
 
-  const budgetSummary = budgetCents === undefined
+  const budgetSummary = budgetHundredthCents === undefined
     ? undefined
     : {
         suiteName,
-        budgetCents,
+        budgetHundredthCents,
         commandsChecked: budgetEligibleSummaries.length,
         commandsRunnable: budgetEligibleSummaries.filter(summary => summary.selectedCostCents !== null && !summary.overBudget).length,
         commandsSkipped: skippedEntries.length,

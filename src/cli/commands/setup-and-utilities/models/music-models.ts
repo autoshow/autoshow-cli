@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { DeapiMusicModel, ElevenlabsMusicModel, MinimaxMusicModel } from '~/types'
+import type { DeapiMusicModel, ElevenlabsMusicModel, GeminiMusicModel, MinimaxMusicModel } from '~/types'
 
 export const SUPPORTED_ELEVENLABS_MUSIC_MODELS = [
   'music_v1'
@@ -20,3 +20,10 @@ export const SUPPORTED_DEAPI_MUSIC_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateDeapiMusicModel = createModelValidator<DeapiMusicModel>(SUPPORTED_DEAPI_MUSIC_MODELS, 'deapi-music')
+
+export const SUPPORTED_GEMINI_MUSIC_MODELS = [
+  'lyria-3-clip-preview',
+  'lyria-3-pro-preview'
+] as const satisfies readonly string[]
+
+export const validateGeminiMusicModel = createModelValidator<GeminiMusicModel>(SUPPORTED_GEMINI_MUSIC_MODELS, 'gemini-music')

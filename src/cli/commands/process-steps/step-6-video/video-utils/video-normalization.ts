@@ -18,7 +18,11 @@ import type {
 } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 
-export const normalizeGeminiDuration = (duration: number | undefined): GeminiDurationSeconds => {
+export const normalizeGeminiDuration = (
+  duration: number | undefined,
+  resolution?: GeminiResolution | string | undefined
+): GeminiDurationSeconds => {
+  if (resolution === '1080p') return 8
   if (typeof duration !== 'number' || !Number.isFinite(duration)) return 4
   const n = Math.floor(duration)
   if (n <= 4) return 4
@@ -27,6 +31,10 @@ export const normalizeGeminiDuration = (duration: number | undefined): GeminiDur
 }
 
 export const normalizeGeminiResolution = (resolution: string | undefined): GeminiResolution => {
+  if (resolution === undefined || resolution === '') return '720p'
+  if (resolution !== '720p' && resolution !== '1080p') {
+    throw CLIUsageError(`Invalid --video-resolution value "${resolution}" for Gemini. Expected 720p or 1080p.`)
+  }
   if (resolution === '1080p') return '1080p'
   return '720p'
 }
