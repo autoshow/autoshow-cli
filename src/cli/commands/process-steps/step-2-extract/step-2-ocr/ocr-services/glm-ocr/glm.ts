@@ -36,10 +36,10 @@ export const getGlmApiKey = (): string | undefined => {
 export const setupGlmOcr = async (): Promise<void> => {
   const apiKey = getGlmApiKey()
   if (apiKey) {
-    l.write('success', 'GLM_API_KEY found — GLM OCR/Reader ready')
+    l.write('success', 'GLM_API_KEY found - GLM OCR/Reader/Text ready')
   } else {
-    l.warn('GLM_API_KEY not set — GLM OCR/Reader will not work until set')
-    l.write('info', 'Set GLM_API_KEY environment variable to use GLM OCR and GLM Reader')
+    l.warn('GLM_API_KEY not set - GLM OCR/Reader/Text will not work until set')
+    l.write('info', 'Set GLM_API_KEY environment variable to use GLM OCR, GLM Reader, and GLM text models')
   }
 }
 

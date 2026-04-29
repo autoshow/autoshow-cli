@@ -169,6 +169,8 @@ export const runTextWrite = async (
       minimaxModel: llmConfig.minimaxModel,
       grokModels: llmConfig.grokModels,
       grokModel: llmConfig.grokModel,
+      glmModels: llmConfig.glmModels,
+      glmModel: llmConfig.glmModel,
       llamaModels: llmConfig.llamaModels,
       llamaModel: llmConfig.llamaModel,
       llmProviderConcurrency: opts.llmProviderConcurrency,
@@ -281,6 +283,8 @@ export const runTextWrite = async (
     ttsTargets: ttsEstimateTargets,
     ttsCharacterCount,
     imageTargets: imageEstimateTargets,
+    imageSize: opts.imageSize,
+    imageQuality: opts.imageQuality,
     videoTargets: attemptedVideoTargets.map((target) => ({
       service: target.service,
       model: target.model,

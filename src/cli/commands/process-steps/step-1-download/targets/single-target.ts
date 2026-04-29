@@ -73,7 +73,8 @@ const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
     ...(opts.geminiModels ?? (opts.geminiModel ? [opts.geminiModel] : [])),
     ...(opts.anthropicModels ?? (opts.anthropicModel ? [opts.anthropicModel] : [])),
     ...(opts.minimaxModels ?? (opts.minimaxModel ? [opts.minimaxModel] : [])),
-    ...(opts.grokModels ?? (opts.grokModel ? [opts.grokModel] : []))
+    ...(opts.grokModels ?? (opts.grokModel ? [opts.grokModel] : [])),
+    ...(opts.glmModels ?? (opts.glmModel ? [opts.glmModel] : []))
   ].some((value) => typeof value === 'string' && value.length > 0)
 
 const collectEstimatedExtractTargets = (
@@ -504,6 +505,8 @@ const runDocumentWrite = async (
     minimaxModel: llmConfig.minimaxModel,
     grokModels: llmConfig.grokModels,
     grokModel: llmConfig.grokModel,
+    glmModels: llmConfig.glmModels,
+    glmModel: llmConfig.glmModel,
     llamaModels: llmConfig.llamaModels,
     llamaModel: llmConfig.llamaModel,
     llmProviderConcurrency: opts.llmProviderConcurrency,
@@ -661,6 +664,8 @@ const processMediaSingle = async (
     minimaxModel: llmConfig.minimaxModel,
     grokModels: llmConfig.grokModels,
     grokModel: llmConfig.grokModel,
+    glmModels: llmConfig.glmModels,
+    glmModel: llmConfig.glmModel,
     llmProviderConcurrency: llmDefaults.llmProviderConcurrency,
     llmLocalConcurrency: llmDefaults.llmLocalConcurrency,
     outputDir: baseDir,

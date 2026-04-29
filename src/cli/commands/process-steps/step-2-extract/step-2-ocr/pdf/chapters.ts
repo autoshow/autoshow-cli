@@ -1418,6 +1418,7 @@ const buildLlmOptions = (
   ...(service === 'anthropic' ? { anthropicModel: model } : {}),
   ...(service === 'minimax' ? { minimaxModel: model } : {}),
   ...(service === 'grok' ? { grokModel: model } : {}),
+  ...(service === 'glm' ? { glmModel: model } : {}),
   ...(service === 'llama.cpp' ? { llamaModel: model } : {})
 })
 

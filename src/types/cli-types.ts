@@ -1,6 +1,6 @@
 import type { BatchOrder } from '../cli/commands/process-steps/step-1-download/download-types'
 
-export const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'music', 'video'] as const
+export const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'video', 'music'] as const
 
 export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
 export type ProcessCommand = CanonicalProcessCommand | 'stt' | 'ocr'
@@ -28,6 +28,8 @@ export type RuntimeOptions = {
   minimaxModel: string | undefined
   grokModels: string[] | undefined
   grokModel: string | undefined
+  glmModels: string[] | undefined
+  glmModel: string | undefined
   whisperModels: string[] | undefined
   whisperModel: string
   gcloudSttModels: string[] | undefined

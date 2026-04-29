@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { defineImageServiceTest } from '../../../test-utils/define-image-service-test'
-import { E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -17,6 +17,7 @@ defineImageServiceTest({
     { model: 'gpt-image-1', prompt: 'a simple red circle on white background' },
     { model: 'gpt-image-1-mini', prompt: 'a simple blue square on white background' },
     { model: 'gpt-image-1.5', prompt: 'a watercolor landscape with a lighthouse' },
+    { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1024', '--image-quality', 'low'] },
   ],
   cliFlag: '--openai-image',
   imageService: 'openai',
@@ -47,7 +48,7 @@ describe('openai image format options', () => {
     await cleanupTestOutput(IMAGE_GEN_TITLE)
   })
 
-  test('gpt-image-1-mini generates jpeg when --image-format jpeg', async () => {
+  budgetedTest('image-openai-gpt-image-1-mini', 'gpt-image-1-mini generates jpeg when --image-format jpeg', async () => {
     await cleanupTestOutput(IMAGE_GEN_TITLE)
 
     const hasKey = await hasConfiguredEnvVar('OPENAI_API_KEY')
@@ -85,7 +86,7 @@ describe('openai image format options', () => {
     }
   }, E2E_TEST_TIMEOUT_MS)
 
-  test('gpt-image-1 generates oil painting with high quality and custom size', async () => {
+  budgetedTest('image-openai-gpt-image-1', 'gpt-image-1 generates oil painting with high quality and custom size', async () => {
     await cleanupTestOutput(IMAGE_GEN_TITLE)
 
     const hasKey = await hasConfiguredEnvVar('OPENAI_API_KEY')
@@ -131,7 +132,7 @@ describe('write with image gen', () => {
     await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   })
 
-  test('gpt-image-1 runs in parallel with pipeline and produces generated-image.png', async () => {
+  budgetedTest(['write-llama-gemma-3-270m', 'image-openai-gpt-image-1'], 'gpt-image-1 runs in parallel with pipeline and produces generated-image.png', async () => {
     const hasKey = await hasConfiguredEnvVar('OPENAI_API_KEY')
     if (!hasKey) {
       console.log('Skipping: OPENAI_API_KEY not configured')

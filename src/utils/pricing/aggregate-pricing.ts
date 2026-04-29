@@ -523,6 +523,7 @@ const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
     deapiImageModels: opts.deapiImageModels,
     deapiImageModel: opts.deapiImageModel,
     imageSize: opts.imageSize,
+    imageQuality: opts.imageQuality,
     imagenCount: opts.imagenCount
   }).map((estimate) => {
     const estimation = getImageEstimation(estimate.provider, estimate.model)

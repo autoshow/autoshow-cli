@@ -30,6 +30,9 @@ const CREATIVE_WRITING_PROMPTS = [
   }
 ] as const
 
+const TEST_EPISODE_DESCRIPTION = 'James Perkins explains how his professional network helped him land a new DevRel role within 12 hours of being laid off.'
+const TEST_EPISODE_SUMMARY = 'James Perkins describes losing his role at Tina CMS during a sudden downsizing and immediately leaning on the professional network he had built through developer relations work. Instead of beginning a cold job search, he contacted a former collaborator named Clark, with whom he had already established trust through prior freelance projects. That relationship quickly turned into a concrete opportunity, and within 12 hours of the initial message, the new role was confirmed and paperwork was complete. Perkins frames the experience as both unfortunate and lucky, but the conversation makes clear that his luck was helped by a long history of visible work, reliable collaboration, and maintained industry connections.'
+
 const getRequiredStringKeys = (jsonSchema: Record<string, unknown>, promptName: string): string[] => {
   const required = jsonSchema['required']
   if (!Array.isArray(required)) {
@@ -78,12 +81,19 @@ describe('prompt loader contracts', () => {
     expect(names).not.toContain('social-media/youtubeDescription')
   })
 
+  test('does not expose removed combined summary prompt', async () => {
+    const names = await getAvailablePromptNames()
+
+    expect(names).not.toContain('summary')
+    await expect(resolvePromptNames(['summary'])).rejects.toThrow('Unknown prompt "summary"')
+  })
+
   test('resolves default composite prompt with existing include names', async () => {
     const prompt = await resolvePromptNames(['default'])
 
     expect(prompt).toContain('Write a one-sentence description of the transcript')
     expect(prompt).toContain('Write a one-paragraph summary')
-    expect(prompt).toContain('Create chapter titles and one-paragraph descriptions')
+    expect(prompt).toContain('Create chapter titles and descriptions based on the topics discussed throughout')
   })
 
   test('resolves song lyric prompts to standardSongLyrics or rapSongLyrics preset', async () => {
@@ -104,6 +114,47 @@ describe('prompt loader contracts', () => {
     const presetNames = await resolvePresetNames(promptNames)
 
     expect(presetNames).toEqual(CREATIVE_WRITING_PROMPTS.map(({ presetName }) => presetName))
+  })
+
+  test('summary schemas match split prompt examples', async () => {
+    const shortSchema = await resolveStructuredSchema(['shortSummary'])
+    const shortRequired = getRequiredStringKeys(shortSchema.jsonSchema, 'shortSummary')
+    expect(shortRequired).toEqual(['episodeDescription'])
+
+    const shortValidation = parseAndValidateStructured(
+      shortSchema.schema,
+      JSON.stringify({ episodeDescription: TEST_EPISODE_DESCRIPTION })
+    )
+    expect(shortValidation.success).toBe(true)
+    expect(shortValidation.value).toEqual({ episodeDescription: TEST_EPISODE_DESCRIPTION })
+
+    const longSchema = await resolveStructuredSchema(['longSummary'])
+    const longRequired = getRequiredStringKeys(longSchema.jsonSchema, 'longSummary')
+    expect(longRequired).toEqual(['episodeSummary'])
+
+    const longValidation = parseAndValidateStructured(
+      longSchema.schema,
+      JSON.stringify({ episodeSummary: TEST_EPISODE_SUMMARY })
+    )
+    expect(longValidation.success).toBe(true)
+    expect(longValidation.value).toEqual({ episodeSummary: TEST_EPISODE_SUMMARY })
+  })
+
+  test('combined short and long summary prompts validate as separate leaves', async () => {
+    const schema = await resolveStructuredSchema(['shortSummary', 'longSummary'])
+    const validation = parseAndValidateStructured(
+      schema.schema,
+      JSON.stringify({
+        shortSummary: { episodeDescription: TEST_EPISODE_DESCRIPTION },
+        longSummary: { episodeSummary: TEST_EPISODE_SUMMARY }
+      })
+    )
+
+    expect(validation.success).toBe(true)
+    expect(validation.value).toEqual({
+      shortSummary: { episodeDescription: TEST_EPISODE_DESCRIPTION },
+      longSummary: { episodeSummary: TEST_EPISODE_SUMMARY }
+    })
   })
 
   test('creative writing schemas require distinct top-level fields without content envelope', async () => {
@@ -200,7 +251,18 @@ describe('prompt loader contracts', () => {
     const schema = await resolveStructuredSchema(['rockSong', 'shortSummary'])
     const validation = parseAndValidateStructured(
       schema.schema,
-      '{ "rockSong": { "verse1": "Line one", "chorus": "Hook", "verse2": "Line two", "bridge": "Bridge", "finalChorus": "Final" }, "shortSummary": { "episodeDescription": "A short episode description for testing purposes that validates the schema constraints properly.", "episodeSummary": "This is a test summary that needs to be at least fifty characters long to pass validation." } }',
+      JSON.stringify({
+        rockSong: {
+          verse1: 'Line one',
+          chorus: 'Hook',
+          verse2: 'Line two',
+          bridge: 'Bridge',
+          finalChorus: 'Final'
+        },
+        shortSummary: {
+          episodeDescription: TEST_EPISODE_DESCRIPTION
+        }
+      }),
       {
         leafPromptNames: schema.leafPromptNames,
         presetNames: schema.presetNames,
@@ -219,8 +281,7 @@ describe('prompt loader contracts', () => {
         finalChorus: 'Final'
       },
       shortSummary: {
-        episodeDescription: 'A short episode description for testing purposes that validates the schema constraints properly.',
-        episodeSummary: 'This is a test summary that needs to be at least fifty characters long to pass validation.'
+        episodeDescription: TEST_EPISODE_DESCRIPTION
       }
     })
   })

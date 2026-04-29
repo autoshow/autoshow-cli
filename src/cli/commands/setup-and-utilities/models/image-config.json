@@ -75,6 +75,15 @@
           "costMultiplier": 1,
           "msPerImage": 10640
         }
+      },
+      "gpt-image-2": {
+        "description": "GPT Image 2 — state-of-the-art image generation",
+        "costPerImageUSD": 0.053,
+        "costPerImageCents": 5.3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
       }
     }
   },

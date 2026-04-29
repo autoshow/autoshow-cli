@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect } from 'bun:test'
+import { afterAll, beforeAll, expect, test } from 'bun:test'
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
@@ -76,7 +76,7 @@ afterAll(async () => {
   await rm(MATCHING_IMAGE_PATH, { force: true })
 })
 
-budgetedTest('music-lyrics-rerender', 'music lyric-video rerender uses edited captions, preserves tmp when requested, and writes fixed render outputs', async () => {
+test('music lyric-video rerender uses edited captions, preserves tmp when requested, and writes fixed render outputs', async () => {
   await cleanupTestOutput(RERENDER_SUFFIX)
 
   const result = await runCommand([
@@ -114,7 +114,7 @@ budgetedTest('music-lyrics-rerender', 'music lyric-video rerender uses edited ca
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-budgetedTest('music-lyrics-whisper-tiny', 'music lyric-video transcribes local audio with whisper and cleans tmp by default', async () => {
+budgetedTest('transcribe-whisper-tiny', 'music lyric-video transcribes local audio with whisper and cleans tmp by default', async () => {
   await cleanupTestOutput(SHORT_AUDIO_SUFFIX)
 
   const result = await runCommand([
@@ -153,7 +153,7 @@ budgetedTest('music-lyrics-whisper-tiny', 'music lyric-video transcribes local a
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-budgetedTest('music-lyrics-default-example-song', 'bun as music --audio input/examples/lyrics/01-example-song.mp3 renders the bundled example with the default whisper model', async () => {
+budgetedTest('transcribe-whisper-large-v3-turbo', 'bun as music --audio input/examples/lyrics/01-example-song.mp3 renders the bundled example with the default whisper model', async () => {
   await cleanupTestOutput(EXAMPLE_SONG_SUFFIX)
 
   const result = await runCommand([
@@ -196,7 +196,7 @@ budgetedTest('music-lyrics-default-example-song', 'bun as music --audio input/ex
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-budgetedTest('music-lyrics-batch-tiny', 'music lyric-video batch writes a batch manifest and child lyric runs for the configured input tree', async () => {
+budgetedTest('transcribe-whisper-tiny', 'music lyric-video batch writes a batch manifest and child lyric runs for the configured input tree', async () => {
   await cleanupTestOutput(BATCH_SUFFIX)
 
   const result = await runCommand([

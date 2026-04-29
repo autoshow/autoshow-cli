@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test'
+import { expect } from 'bun:test'
 import { defineImageServiceTest } from '../../../test-utils/define-image-service-test'
 import {
   runCommand,
@@ -8,6 +8,7 @@ import {
   hasConfiguredEnvVar
 } from '../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../test-utils/manifest-helpers'
+import { budgetedTest } from '../../../test-utils/budget'
 
 defineImageServiceTest({
   models: [
@@ -19,7 +20,7 @@ defineImageServiceTest({
   imageExtension: 'jpeg',
 })
 
-test('image-01 generates dramatic fox portrait with aspect ratio', async () => {
+budgetedTest('image-minimax-image-01', 'image-01 generates dramatic fox portrait with aspect ratio', async () => {
   const IMAGE_GEN_TITLE = 'image-gen'
 
   await cleanupTestOutput(IMAGE_GEN_TITLE)

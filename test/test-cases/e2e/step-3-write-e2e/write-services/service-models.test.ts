@@ -62,3 +62,12 @@ defineLLMWriteTest({
   llmService: 'grok',
   requiresEnvVar: { key: 'XAI_API_KEY', description: 'Grok models' },
 })
+
+defineLLMWriteTest({
+  models: [
+    'glm-5.1',
+  ],
+  cliFlag: '--glm',
+  llmService: 'glm',
+  requiresEnvVar: { key: 'GLM_API_KEY', description: 'Z.AI GLM models' },
+})

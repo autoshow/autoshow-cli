@@ -6,6 +6,7 @@ import {
   SUPPORTED_ANTHROPIC_MODELS,
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROK_MODELS,
+  SUPPORTED_GLM_MODELS,
   SUPPORTED_LLAMA_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
@@ -40,6 +41,7 @@ import {
   validateAnthropicModel,
   validateMinimaxModel,
   validateGrokModel,
+  validateGlmModel,
   validateWhisperModel,
   validateGcloudSttModel,
   validateAwsSttModel,
@@ -160,6 +162,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'anthropic',
   'minimax',
   'grok',
+  'glm',
   'kitten-tts',
   'elevenlabs-tts',
   'minimax-tts',
@@ -203,6 +206,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   anthropic: { shortcut: 'all-llm', supported: SUPPORTED_ANTHROPIC_MODELS },
   minimax: { shortcut: 'all-llm', supported: SUPPORTED_MINIMAX_MODELS },
   grok: { shortcut: 'all-llm', supported: SUPPORTED_GROK_MODELS },
+  glm: { shortcut: 'all-llm', supported: SUPPORTED_GLM_MODELS },
   'kitten-tts': { shortcut: 'all-tts', supported: SUPPORTED_KITTEN_TTS_MODELS },
   'elevenlabs-tts': { shortcut: 'all-tts', supported: SUPPORTED_ELEVENLABS_TTS_MODELS },
   'minimax-tts': { shortcut: 'all-tts', supported: SUPPORTED_MINIMAX_TTS_MODELS },
@@ -622,6 +626,7 @@ export const buildOptsFromFlags = (
   const anthropicModels = readValidatedMany('anthropic', validateAnthropicModel)
   const minimaxModels = readValidatedMany('minimax', validateMinimaxModel)
   const grokModels = readValidatedMany('grok', validateGrokModel)
+  const glmModels = readValidatedMany('glm', validateGlmModel)
   const gcloudSttModel = first(gcloudSttModels)
   const awsSttModel = first(awsSttModels)
   const deepinfraSttModel = first(deepinfraSttModels)
@@ -659,6 +664,7 @@ export const buildOptsFromFlags = (
   const anthropicModel = first(anthropicModels)
   const minimaxModel = first(minimaxModels)
   const grokModel = first(grokModels)
+  const glmModel = first(glmModels)
   const kittenTtsModels = readValidatedMany('kitten-tts', validateKittenTtsModel)
   const elevenlabsTtsModels = readValidatedMany('elevenlabs-tts', validateElevenlabsTtsModel)
   const minimaxTtsModels = readValidatedMany('minimax-tts', validateMinimaxTtsModel)
@@ -729,6 +735,8 @@ export const buildOptsFromFlags = (
     minimaxModel,
     grokModels,
     grokModel,
+    glmModels,
+    glmModel,
     whisperModels,
     whisperModel,
     gcloudSttModels,

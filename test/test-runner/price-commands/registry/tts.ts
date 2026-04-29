@@ -7,6 +7,7 @@ export const ttsRegistry: PriceSelectionEntry[] = [
     command('tts-gemini-gemini-3.1-flash-tts-preview', 'tts-gemini-gemini-3.1-flash-tts-preview', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gemini-tts', 'gemini-3.1-flash-tts-preview', '--price']),
     command('tts-gemini-gemini-2.5-flash-preview-tts', 'tts-gemini-gemini-2.5-flash-preview-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gemini-tts', 'gemini-2.5-flash-preview-tts', '--price']),
     command('tts-gemini-gemini-2.5-pro-preview-tts', 'tts-gemini-gemini-2.5-pro-preview-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gemini-tts', 'gemini-2.5-pro-preview-tts', '--price']),
+    command('tts-deepgram-aura-2-thalia-en', 'tts-deepgram-aura-2-thalia-en', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--deepgram-tts', 'aura-2-thalia-en', '--price']),
     command('tts-groq-canopylabs/orpheus-v1-english', 'tts-groq-canopylabs/orpheus-v1-english', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--groq-tts', 'canopylabs/orpheus-v1-english', '--price']),
     command('tts-grok-grok-tts', 'tts-grok-grok-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--grok-tts', 'grok-tts', '--price']),
     command('tts-minimax-speech-2.8-turbo', 'tts-minimax-speech-2.8-turbo', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-turbo', '--price']),
@@ -20,5 +21,10 @@ export const ttsRegistry: PriceSelectionEntry[] = [
     command('tts-kitten-mini', 'tts-kitten-mini', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--kitten-tts', 'kitten-tts-mini', '--price']),
     command('tts-kitten-nano', 'tts-kitten-nano', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--kitten-tts', 'kitten-tts-nano', '--price']),
     command('tts-kitten-nano-0.8-int8', 'tts-kitten-nano-0.8-int8', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--kitten-tts', 'kitten-tts-nano-0.8-int8', '--price']),
+    command('tts-openai-gpt-4o-mini-tts', 'tts-openai-gpt-4o-mini-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--openai-tts', 'gpt-4o-mini-tts', '--price']),
+  ]),
+  ...exact('test/test-cases/e2e/step-4-tts-e2e/tts-services/kitten-tts-pipeline.test.ts', [
+    command('tts-kitten-mini', 'tts-kitten-mini', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--kitten-tts', 'kitten-tts-mini', '--price']),
+    command('tts-openai-gpt-4o-mini-tts', 'tts-openai-gpt-4o-mini-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--openai-tts', 'gpt-4o-mini-tts', '--price']),
   ]),
 ]

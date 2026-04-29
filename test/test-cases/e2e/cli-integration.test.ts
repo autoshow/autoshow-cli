@@ -8,6 +8,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE
 } from "../../test-utils/test-helpers"
 import { readRunMetadata } from "../../test-utils/manifest-helpers"
+import { budgetedTest } from "../../test-utils/budget"
 
 const getSummaryFileName = async (outputDir: string): Promise<string> => {
   const metadata = await readRunMetadata(outputDir) as {
@@ -49,7 +50,7 @@ test("bun as without a subcommand fails", async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('Unknown command')
 })
 
-test("bun as write processes audio successfully", async () => {
+budgetedTest("write-groq-openai/gpt-oss-20b", "bun as write processes audio successfully", async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 
   const result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, "--groq", "openai/gpt-oss-20b"])
@@ -92,7 +93,7 @@ test("bun as write processes audio successfully", async () => {
   }
 })
 
-test("bun as extract skips LLM processing but creates prompt", async () => {
+budgetedTest("transcribe-whisper-tiny", "bun as extract skips LLM processing but creates prompt", async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   
   const result = await runCommand(["src/cli/create-cli.ts", 'extract', STABLE_LOCAL_AUDIO_PATH, "--prompt", "shortSummary"])

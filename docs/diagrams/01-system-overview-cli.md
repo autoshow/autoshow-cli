@@ -33,7 +33,7 @@ bun as <command> <input> [flags]
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
    - Step 2: Transcribe (Whisper/Groq/Grok/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/hosted article backends)
-   - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok)
+   - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, OpenAI, Gemini)
    - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway)
    - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway)
@@ -148,7 +148,8 @@ src/cli/flags/
 │  │                       claude-haiku-4-5|claude-opus-4-6    │
 │  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
 │  ├── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
-│  └── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│
+│  ├── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│
+│  └── --glm MODEL         glm-5.1                         │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐

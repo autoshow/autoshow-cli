@@ -119,6 +119,12 @@ describe('provider selection contracts', () => {
       'all-video': true
     })
 
+    expect(allOpts.openaiImageModels).toEqual([
+      'gpt-image-1-mini',
+      'gpt-image-1',
+      'gpt-image-1.5',
+      'gpt-image-2'
+    ])
     expect(allOpts.bflImageModels).toEqual([
       'flux-2-klein-4b',
       'flux-2-klein-9b-preview',
@@ -138,5 +144,41 @@ describe('provider selection contracts', () => {
       'Ltx2_19B_Dist_FP8',
       'Ltx2_3_22B_Dist_INT8'
     ])
+  })
+
+  test('gpt-image-2 accepts flexible valid OpenAI image sizes', () => {
+    const opts = buildOptsFromFlags(false, {
+      'openai-image': ['gpt-image-2'],
+      'image-size': '2048x1152'
+    })
+
+    expect(collectImageTargets(opts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'openai:gpt-image-2'
+    ])
+  })
+
+  test('OpenAI image size validation is model-specific', () => {
+    for (const invalidSize of ['1025x1024', '4096x1024', '3840x1024', '800x800', '3840x3840']) {
+      const opts = buildOptsFromFlags(false, {
+        'openai-image': ['gpt-image-2'],
+        'image-size': invalidSize
+      })
+      expect(() => collectImageTargets(opts)).toThrow(`Invalid --image-size value "${invalidSize}" for gpt-image-2`)
+    }
+
+    const legacyOpts = buildOptsFromFlags(false, {
+      'openai-image': ['gpt-image-1'],
+      'image-size': '2048x1152'
+    })
+    expect(() => collectImageTargets(legacyOpts)).toThrow('Expected auto, 1024x1024, 1536x1024, or 1024x1536')
+  })
+
+  test('gpt-image-2 rejects transparent background', () => {
+    const opts = buildOptsFromFlags(false, {
+      'openai-image': ['gpt-image-2'],
+      'image-background': 'transparent'
+    })
+
+    expect(() => collectImageTargets(opts)).toThrow('--image-background transparent is not supported by gpt-image-2')
   })
 })

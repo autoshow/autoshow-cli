@@ -1,6 +1,5 @@
-import { expect } from 'bun:test'
+import { expect, test } from 'bun:test'
 import { rm } from 'node:fs/promises'
-import { budgetedTest } from '../../../../test-utils/budget'
 import { runCommand, fileExists } from '../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 import { shouldSkipMissingEnv } from '../../../../test-utils/service-test-kit'
@@ -12,7 +11,7 @@ type ExtractMetadata = {
 
 const articleUrl = 'https://ajcwebdev.com'
 
-budgetedTest('extract-glm-reader-url', 'bun as extract https://ajcwebdev.com --url-backend glm-reader', async () => {
+test('bun as extract https://ajcwebdev.com --url-backend glm-reader', async () => {
   if (await shouldSkipMissingEnv('GLM_API_KEY', 'GLM_API_KEY not configured')) {
     return
   }

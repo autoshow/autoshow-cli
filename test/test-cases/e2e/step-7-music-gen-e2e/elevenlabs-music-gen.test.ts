@@ -1,6 +1,6 @@
 import { test, expect } from 'bun:test'
 import { defineMusicServiceTest } from '../../../test-utils/define-music-service-test'
-import { E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -42,7 +42,7 @@ test('--price with both providers shows two cost rows and per-provider filenames
   expect(output).toContain('generated-music-minimax-music-2.5.mp3')
 })
 
-test('music_v1 generates cinematic orchestral music', async () => {
+budgetedTest('music-elevenlabs-music_v1', 'music_v1 generates cinematic orchestral music', async () => {
   const hasApiKey = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
   if (!hasApiKey) {
     console.log('Skipping: ELEVENLABS_API_KEY not configured')
@@ -52,7 +52,7 @@ test('music_v1 generates cinematic orchestral music', async () => {
   await cleanupTestOutput(MUSIC_GEN_TITLE)
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'cinematic orchestral trailer, dramatic strings and percussion', '--elevenlabs-music', 'music_v1'],
+    ['src/cli/create-cli.ts', 'music', 'cinematic orchestral trailer, dramatic strings and percussion', '--elevenlabs-music', 'music_v1', '--music-duration', '10'],
   )
 
   expect(result.exitCode).toBe(0)
@@ -72,7 +72,7 @@ test('music_v1 generates cinematic orchestral music', async () => {
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-test('music_v1 generates lo-fi with duration and instrumental flag', async () => {
+budgetedTest('music-elevenlabs-music_v1', 'music_v1 generates lo-fi with duration and instrumental flag', async () => {
   const hasApiKey = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
   if (!hasApiKey) {
     console.log('Skipping: ELEVENLABS_API_KEY not configured')
@@ -102,7 +102,7 @@ test('music_v1 generates lo-fi with duration and instrumental flag', async () =>
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-test('write with elevenlabs music pipeline writes music artifacts and metadata', async () => {
+budgetedTest('music-pipeline-elevenlabs-music_v1', 'write with elevenlabs music pipeline writes music artifacts and metadata', async () => {
   const hasOpenai = await hasConfiguredEnvVar('OPENAI_API_KEY')
   const hasElevenlabs = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
   if (!hasOpenai || !hasElevenlabs) {

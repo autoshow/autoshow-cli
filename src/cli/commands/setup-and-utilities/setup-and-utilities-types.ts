@@ -3,6 +3,7 @@ import type { AutoshowConfigSchema } from '~/types'
 import { ExtractLimitsSchema, ModelRegistrySchema, SttLimitsSchema } from './models/model-loader'
 import {
   SUPPORTED_ANTHROPIC_MODELS,
+  SUPPORTED_GLM_MODELS,
   SUPPORTED_GROQ_MODELS,
   SUPPORTED_MINIMAX_MODELS
 } from './models/llm-models'
@@ -148,6 +149,7 @@ export type RunLinksOptions = {
 export type GroqModel = typeof SUPPORTED_GROQ_MODELS[number]
 export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
+export type GlmModel = typeof SUPPORTED_GLM_MODELS[number]
 export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
 export type DeapiSttModel = typeof SUPPORTED_DEAPI_STT_MODELS[number]
 export type DeapiTtsModel = typeof SUPPORTED_DEAPI_TTS_MODELS[number]

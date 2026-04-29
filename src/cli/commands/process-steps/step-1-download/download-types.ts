@@ -243,6 +243,7 @@ export type RepeatableModelFlag =
   | 'anthropic'
   | 'minimax'
   | 'grok'
+  | 'glm'
   | 'kitten-tts'
   | 'elevenlabs-tts'
   | 'deepgram-tts'

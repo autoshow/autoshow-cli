@@ -329,6 +329,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestLlmModel('minimax')
     case 'grok':
       return selectCheapestLlmModel('grok')
+    case 'glm':
+      return selectCheapestLlmModel('glm')
     case 'elevenlabs-tts':
       return selectCheapestTtsModel('elevenlabs')
     case 'minimax-tts':

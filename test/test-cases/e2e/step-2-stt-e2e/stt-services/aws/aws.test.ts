@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
 import {
   cleanupTestOutput,
   fileExists,
@@ -36,7 +36,7 @@ test('rejects invalid aws model', async () => {
   expect(result.exitCode).toBe(2)
 })
 
-test('aws standard --price prints estimate', async () => {
+budgetedTest('transcribe-aws-standard', 'aws standard --price prints estimate', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'extract',
@@ -51,7 +51,7 @@ test('aws standard --price prints estimate', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('standard')
 })
 
-test('aws standard transcribes local audio when AWS CLI Transcribe is configured', async () => {
+budgetedTest('transcribe-aws-standard', 'aws standard transcribes local audio when AWS CLI Transcribe is configured', async () => {
   const { state } = await readAwsTestReadiness()
   if (!state.hasCli || !state.authConfigured || !state.region || state.bucketAccessible !== true || state.transcribeAccessible !== true) {
     console.log('Skipping: AWS CLI auth, region, bucket, and Amazon Transcribe readiness are required for AWS transcription')

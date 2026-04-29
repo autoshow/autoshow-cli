@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from "bun:test"
+import { describe, expect, beforeAll, afterAll } from "bun:test"
 import {
   runCommand,
   fileExists,
@@ -28,7 +28,7 @@ describe("llama models", () => {
 
   for (const model of LLAMA_MODELS) {
     const llamaTestName = `${model} generates summary`
-    test(llamaTestName, async () => {
+    budgetedTest('write-llama-gemma-3-270m', llamaTestName, async () => {
       await stopLlamaServer()
       await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
 
@@ -80,7 +80,7 @@ describe("llama models", () => {
     expect(output).toContain(model)
   }, E2E_TEST_TIMEOUT_MS)
 
-  test('switches the running llama-server when a different model is requested', async () => {
+  budgetedTest(['write-llama-gemma-3-270m', 'write-llama-qwen3-0.6b'], 'switches the running llama-server when a different model is requested', async () => {
     const firstModel = 'ggml-org/gemma-3-270m-it-GGUF'
     const secondModel = 'ggml-org/Qwen3-0.6B-GGUF'
 

@@ -64,6 +64,8 @@ export type ResolvedLLMConfig = {
   minimaxModel: string | undefined
   grokModels: string[] | undefined
   grokModel: string | undefined
+  glmModels: string[] | undefined
+  glmModel: string | undefined
   llmService: string | undefined
   llmModel: string | undefined
 }

@@ -52,6 +52,7 @@ const LlmDefaultsSchema = v.strictObject({
   anthropic: ModelArraySchema,
   minimax: ModelArraySchema,
   grok: ModelArraySchema,
+  glm: ModelArraySchema,
   providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })

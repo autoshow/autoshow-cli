@@ -8,7 +8,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
   hasConfiguredEnvVar,
 } from "../../../../test-utils/test-helpers"
-import { E2E_TEST_TIMEOUT_MS } from "../../../../test-utils/budget"
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from "../../../../test-utils/budget"
 import { readRunMetadata } from "../../../../test-utils/manifest-helpers"
 
 const hasOpenAiEnv = async (): Promise<boolean> => {
@@ -36,7 +36,7 @@ describe("kitten-tts pipeline", () => {
       await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
     })
 
-    test("kitten-tts-mini runs full pipeline with --prompt shortSummary and generates speech.wav", async () => {
+    budgetedTest(['write-groq-openai/gpt-oss-20b', 'tts-kitten-mini'], "kitten-tts-mini runs full pipeline with --prompt shortSummary and generates speech.wav", async () => {
       const model = "kitten-tts-mini"
       const result = await runCommand(
         [
@@ -111,7 +111,7 @@ describe("kitten-tts pipeline", () => {
       expect(output).not.toContain('speech-openai-gpt-4o-mini-tts.wav')
     })
 
-    test('write can emit multiple speech artifacts from one summary', async () => {
+    budgetedTest(['write-openai-gpt-5.4', 'tts-kitten-mini', 'tts-openai-gpt-4o-mini-tts'], 'write can emit multiple speech artifacts from one summary', async () => {
       if (!await hasOpenAiEnv()) {
         console.log('Skipping: OPENAI_API_KEY is required for multi-provider write TTS coverage')
         return

@@ -38,6 +38,70 @@ const normalizeOpenAIImageExtension = (format: string | undefined): string => {
   return format ?? 'png'
 }
 
+const OPENAI_LEGACY_IMAGE_SIZES = new Set(['auto', '1024x1024', '1536x1024', '1024x1536'])
+
+const parseImageDimensions = (size: string): { width: number, height: number } | undefined => {
+  const match = size.match(/^(\d+)x(\d+)$/i)
+  if (!match) return undefined
+
+  const width = Number(match[1])
+  const height = Number(match[2])
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height)) return undefined
+  return { width, height }
+}
+
+const validateGptImage2Size = (size: string | undefined): void => {
+  if (size === undefined || size.toLowerCase() === 'auto') {
+    return
+  }
+
+  const dimensions = parseImageDimensions(size)
+  if (!dimensions) {
+    throw CLIUsageError(`Invalid --image-size value "${size}" for gpt-image-2. Expected auto or WIDTHxHEIGHT.`)
+  }
+
+  const { width, height } = dimensions
+  const longEdge = Math.max(width, height)
+  const shortEdge = Math.min(width, height)
+  const totalPixels = width * height
+
+  if (
+    longEdge > 3840
+    || width % 16 !== 0
+    || height % 16 !== 0
+    || longEdge / shortEdge > 3
+    || totalPixels < 655_360
+    || totalPixels > 8_294_400
+  ) {
+    throw CLIUsageError(
+      `Invalid --image-size value "${size}" for gpt-image-2. Width and height must be multiples of 16, max edge <= 3840, aspect ratio <= 3:1, and total pixels between 655,360 and 8,294,400.`
+    )
+  }
+}
+
+const validateLegacyOpenAIImageSize = (model: OpenAIImageModel, size: string | undefined): void => {
+  if (size === undefined || OPENAI_LEGACY_IMAGE_SIZES.has(size.toLowerCase())) {
+    return
+  }
+
+  throw CLIUsageError(`Invalid --image-size value "${size}" for ${model}. Expected auto, 1024x1024, 1536x1024, or 1024x1536.`)
+}
+
+export const validateOpenAIImageOptions = (
+  model: OpenAIImageModel,
+  options: Pick<ImageGenOptions, 'imageSize' | 'imageBackground'>
+): void => {
+  if (model === 'gpt-image-2') {
+    validateGptImage2Size(options.imageSize)
+    if (options.imageBackground?.toLowerCase() === 'transparent') {
+      throw CLIUsageError('--image-background transparent is not supported by gpt-image-2.')
+    }
+    return
+  }
+
+  validateLegacyOpenAIImageSize(model, options.imageSize)
+}
+
 export const getExpectedImageCount = (
   target: Pick<ImageTarget, 'service' | 'model'>,
   options: ImageGenOptions
@@ -169,6 +233,10 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
 
   for (const rawModel of openaiModels) {
     const model: OpenAIImageModel = validateOpenAIImageModel(rawModel)
+    validateOpenAIImageOptions(model, {
+      imageSize: options.imageSize,
+      imageBackground: options.imageBackground
+    })
 
     targets.push({
       service: 'openai',

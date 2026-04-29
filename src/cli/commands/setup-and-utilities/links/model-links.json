@@ -136,8 +136,7 @@
       "https://developers.openai.com/api/docs/guides/tools-image-generation.md",
       "https://developers.openai.com/api/reference/resources/images/index.md",
       "https://developers.openai.com/api/reference/resources/images/methods/generate/index.md",
-      "https://developers.openai.com/api/reference/resources/images/methods/edit/index.md",
-      "https://developers.openai.com/api/reference/resources/images/methods/create_variation/index.md"
+      "https://developers.openai.com/api/reference/resources/images/methods/edit/index.md"
     ]
   },
   "Gemini": {
@@ -206,9 +205,10 @@
       "https://docs.z.ai/api-reference/api-code.md"
     ],
     "Text": [
-      "https://docs.z.ai/guides/llm/glm-5.md",
-      "https://docs.z.ai/guides/llm/glm-5-turbo.md",
-      "https://docs.z.ai/guides/capabilities/struct-output.md"
+      "https://docs.z.ai/guides/overview/migrate-to-glm-new.md",
+      "https://docs.z.ai/guides/llm/glm-5.1.md",
+      "https://docs.z.ai/guides/capabilities/struct-output.md",
+      "https://docs.z.ai/api-reference/llm/chat-completion.md"
     ],
     "OCR": [
       "https://docs.z.ai/guides/vlm/glm-ocr.md",

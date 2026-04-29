@@ -6,6 +6,7 @@ export const imageRegistry: PriceSelectionEntry[] = [
     command('image-openai-gpt-image-1', 'image-openai-gpt-image-1', ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1', '--price']),
     command('image-openai-gpt-image-1-mini', 'image-openai-gpt-image-1-mini', ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1-mini', '--price']),
     command('image-openai-gpt-image-1.5', 'image-openai-gpt-image-1.5', ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1.5', '--price']),
+    command('image-openai-gpt-image-2', 'image-openai-gpt-image-2', ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-2', '--image-size', '1024x1024', '--image-quality', 'low', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-5-image-gen-e2e/gemini-image-gen.test.ts', [
     command('image-gemini-gemini-3-pro-image-preview', 'image-gemini-gemini-3-pro-image-preview', ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'gemini-3-pro-image-preview', '--price']),

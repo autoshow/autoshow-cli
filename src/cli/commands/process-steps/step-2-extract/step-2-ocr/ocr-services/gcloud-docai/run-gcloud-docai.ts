@@ -353,7 +353,7 @@ export const runGcloudDocai = async (
     if (!config.bucket) {
       throw new Error(
         'A GCS bucket is required for multi-page or large-file Google Cloud Document AI OCR. ' +
-        'Set AUTOSHOW_GCLOUD_BUCKET or run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create and save one.'
+        'Set AUTOSHOW_GCLOUD_BUCKET, save a bucket in AutoShow config explicitly, or run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create one and print the value.'
       )
     }
 

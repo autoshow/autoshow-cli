@@ -24,6 +24,8 @@ export type LLMOptions = Pick<ProcessingOptions,
   | 'minimaxModel'
   | 'grokModels'
   | 'grokModel'
+  | 'glmModels'
+  | 'glmModel'
   | 'llamaModels'
   | 'llamaModel'
   | 'llmProviderConcurrency'
@@ -136,7 +138,6 @@ export type StructuredPresetName =
   | 'mediumChapters'
   | 'longChapters'
   | 'keyMoments'
-  | 'summary'
   | 'blog'
   | 'youtubeDescription'
   | 'seoArticle'
@@ -177,10 +178,11 @@ export type RunAnthropicCompatibleModelOptions = CompatibleModelRunOptionsBase<A
   supportsStructuredOutput?: boolean
 }
 
-export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok'>
+export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok' | 'glm'>
 
 export type RunOpenAICompatibleChatModelOptions = CompatibleModelRunOptionsBase<OpenAI, OpenAICompatibleChatService> & {
   customizeRequestBody?: ((requestBody: Record<string, unknown>, model: string) => void) | undefined
+  buildStructuredResponseFormat?: ((structuredOpts: StructuredRequestOptions) => Record<string, unknown>) | undefined
 }
 
 export type RenderedTextArtifactResult = {

@@ -32,6 +32,10 @@ test('legacy argument order exits 2', async () => {
   await expectUsageExit(['--help', 'metadata'], 'Unsupported argument order')
 })
 
+test('extract rejects write LLM provider flags', async () => {
+  await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--glm'], 'LLM provider flags are not supported with "extract"')
+})
+
 test('music lyric-video mode rejects missing audio or batch', async () => {
   await expectUsageExit(['music', '--model', 'tiny'], 'Missing --audio (or use --batch)')
 })

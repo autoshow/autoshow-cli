@@ -9,6 +9,8 @@ const SERVICE_ORDER: Array<{ service: string, modelKey: keyof ResolvedLLMConfig 
   { service: 'gemini', modelKey: 'geminiModels' },
   { service: 'anthropic', modelKey: 'anthropicModels' },
   { service: 'minimax', modelKey: 'minimaxModels' },
+  { service: 'grok', modelKey: 'grokModels' },
+  { service: 'glm', modelKey: 'glmModels' },
 ]
 
 export const estimateLlmRates = (llmConfig: ResolvedLLMConfig): LlmRateEstimate[] => {
@@ -25,16 +27,6 @@ export const estimateLlmRates = (llmConfig: ResolvedLLMConfig): LlmRateEstimate[
         outputCostPer1MCents: cost?.outputCostPer1MCents ?? 0
       })
     }
-  }
-
-  for (const model of llmConfig.grokModels ?? []) {
-    const cost = getLlmCost('grok', model)
-    estimates.push({
-      provider: 'grok',
-      model,
-      inputCostPer1MCents: cost?.inputCostPer1MCents ?? 0,
-      outputCostPer1MCents: cost?.outputCostPer1MCents ?? 0
-    })
   }
 
   for (const model of llmConfig.llamaModels ?? []) {

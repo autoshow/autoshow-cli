@@ -97,7 +97,7 @@ export const ensureGcloudDocaiSetup = async (model: string): Promise<GcloudDocai
       : 'AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID'
     throw new Error(
       `${envVar} or saved AutoShow config is required for Google Cloud Document AI --gcloud-docai ${model}. ` +
-      'Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create/save the OCR processor, or create a processor manually and save the processor ID.'
+      'Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create or discover the processor, then set the printed environment values or save the processor ID explicitly.'
     )
   }
 

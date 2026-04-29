@@ -3,6 +3,7 @@ import {
   resolveCheapestModelForFlag,
   selectCheapestVideoSelection
 } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
+import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
 
 const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
@@ -92,6 +93,8 @@ describe('price mode contracts', () => {
 
   test('cheapest-model helpers return stable model selections', () => {
     expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
+    expect(resolveCheapestModelForFlag('glm')).toBe('glm-5.1')
+    expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1-mini')
     expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-klein-4b')
     expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
     expect(resolveCheapestModelForFlag('deapi-video')).toBe('Ltxv_13B_0_9_8_Distilled_FP8')
@@ -109,5 +112,28 @@ describe('price mode contracts', () => {
       provider: 'deapi',
       model: 'Ltxv_13B_0_9_8_Distilled_FP8'
     })
+  })
+
+  test('gpt-image-2 image estimates use size and quality', () => {
+    expect(estimateImageCosts({
+      openaiImageModel: 'gpt-image-2',
+      imageSize: '1024x1024',
+      imageQuality: 'low'
+    })[0]?.costPerImageCents).toBe(0.6)
+    expect(estimateImageCosts({
+      openaiImageModel: 'gpt-image-2',
+      imageSize: '1536x1024',
+      imageQuality: 'high'
+    })[0]?.costPerImageCents).toBe(16.5)
+    expect(estimateImageCosts({
+      openaiImageModel: 'gpt-image-2',
+      imageSize: 'auto',
+      imageQuality: 'auto'
+    })[0]?.costPerImageCents).toBe(5.3)
+    expect(estimateImageCosts({
+      openaiImageModel: 'gpt-image-2',
+      imageSize: '2048x2048',
+      imageQuality: 'high'
+    })[0]?.note).toContain('OpenAI')
   })
 })

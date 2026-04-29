@@ -1,7 +1,7 @@
 import { getLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { CLIUsageError } from '~/utils/error-handler'
-import type { GroqModel, AnthropicModel, MinimaxModel } from '~/types'
+import type { GroqModel, AnthropicModel, MinimaxModel, GlmModel } from '~/types'
 
 export const SUPPORTED_OPENAI_MODELS = [
   'gpt-5.4',
@@ -37,6 +37,10 @@ export const SUPPORTED_GROK_MODELS = [
   'grok-4.20-non-reasoning'
 ] as const satisfies readonly string[]
 
+export const SUPPORTED_GLM_MODELS = [
+  'glm-5.1'
+] as const satisfies readonly string[]
+
 export const SUPPORTED_LLAMA_MODELS = [
   'ggml-org/gemma-3-270m-it-GGUF',
   'ggml-org/Qwen3-0.6B-GGUF'
@@ -54,6 +58,7 @@ export const validateGeminiModel = createModelValidator(SUPPORTED_GEMINI_MODELS,
 export const validateAnthropicModel = createModelValidator<AnthropicModel>(SUPPORTED_ANTHROPIC_MODELS, 'anthropic')
 export const validateMinimaxModel = createModelValidator<MinimaxModel>(SUPPORTED_MINIMAX_MODELS, 'minimax')
 export const validateGrokModel = createModelValidator(SUPPORTED_GROK_MODELS, 'grok')
+export const validateGlmModel = createModelValidator<GlmModel>(SUPPORTED_GLM_MODELS, 'glm')
 export const validateLlamaModel = (model: string): string => {
   if (SUPPORTED_LLAMA_MODELS.includes(model as typeof SUPPORTED_LLAMA_MODELS[number])) {
     return model

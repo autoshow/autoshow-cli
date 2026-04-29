@@ -101,7 +101,7 @@ test('new video providers print price estimates', async () => {
   }
 })
 
-budgetedTest('video-multi-provider-gemini-minimax', 'live multi-provider run writes provider-specific video artifacts', async () => {
+budgetedTest(['video-gemini-veo-3.1-fast-generate-preview', 'video-minimax-T2V-01'], 'live multi-provider run writes provider-specific video artifacts', async () => {
   const hasGemini = await hasConfiguredEnvVar('GEMINI_API_KEY')
   const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
   if (!hasGemini || !hasMinimax) {

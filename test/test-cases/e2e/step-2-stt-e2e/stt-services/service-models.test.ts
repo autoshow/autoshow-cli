@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect } from 'bun:test'
 import { defineSTTServiceTest } from '../../../../test-utils/define-stt-service-test'
-import { E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -333,7 +333,7 @@ test('deapi run manifest records exact estimated and actual STT cost fields', as
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-test('elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
+budgetedTest('transcribe-elevenlabs-scribe_v2', 'elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
   if (!await hasConfiguredEnvVar('ELEVENLABS_API_KEY')) {
     console.log('Skipping: ELEVENLABS_API_KEY is required for ElevenLabs transcription')
     return

@@ -28,13 +28,24 @@ export const shouldSkipBudgetKey = (key: string): boolean => {
   return parseBudgetSkipKeys().has(key)
 }
 
+export type BudgetKeyInput = string | readonly string[]
+
+const normalizeBudgetKeys = (budgetKey: BudgetKeyInput): readonly string[] => {
+  return typeof budgetKey === 'string' ? [budgetKey] : budgetKey
+}
+
+export const shouldSkipBudgetKeys = (budgetKey: BudgetKeyInput): boolean => {
+  const skipKeys = parseBudgetSkipKeys()
+  return normalizeBudgetKeys(budgetKey).some((key) => skipKeys.has(key))
+}
+
 export const budgetedTest = (
-  budgetKey: string,
+  budgetKey: BudgetKeyInput,
   name: string,
   fn: () => void | Promise<void>,
   timeoutMs: number = E2E_TEST_TIMEOUT_MS
 ): void => {
-  if (shouldSkipBudgetKey(budgetKey)) {
+  if (shouldSkipBudgetKeys(budgetKey)) {
     test.skip(name, fn, timeoutMs)
     return
   }

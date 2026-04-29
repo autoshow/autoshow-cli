@@ -12,7 +12,7 @@ bun t test/test-cases/e2e/step-5-image-gen-e2e/
 
 - Provider suites cover OpenAI, Gemini, MiniMax, GLM, Grok, Runway, BFL, and deAPI image generation.
 - The shared `defineImageServiceTest` helper covers invalid model rejection, `--price` output, real generation, and metadata checks when the required API key is configured.
-- `openai-image-gen.test.ts` also covers JPEG output options, multi-provider `--price` output, and `write` pipeline integration with `--openai-image`.
+- `openai-image-gen.test.ts` also covers `gpt-image-2` low-quality `1024x1024`, JPEG output options, multi-provider `--price` output, and `write` pipeline integration with `--openai-image`.
 - `gemini-image-gen.test.ts` also covers multi-provider `--price` output and rejects `--image-size` for `imagen-4.0-fast-generate-001`.
 - `minimax-image-gen.test.ts` adds aspect-ratio generation coverage for `image-01`.
 - `bfl-image-gen.test.ts` covers BFL FLUX.2 generation, unsupported flag validation, mocked polling/download metadata, and output extension handling.

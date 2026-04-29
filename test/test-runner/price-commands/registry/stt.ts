@@ -51,4 +51,11 @@ export const sttRegistry: PriceSelectionEntry[] = [
     command('transcribe-grok-speech-to-text', 'transcribe-grok-speech-to-text', ['src/cli/create-cli.ts', 'extract', 'input/examples/audio/1-audio.mp3', '--grok-stt', 'speech-to-text', '--price']),
     command('transcribe-mistral-voxtral-mini-2602', 'transcribe-mistral-voxtral-mini-2602', ['src/cli/create-cli.ts', 'extract', 'input/examples/audio/1-audio.mp3', '--mistral-stt', 'voxtral-mini-2602', '--price']),
   ]),
+  ...exact('test/test-cases/e2e/cli-integration.test.ts', [
+    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'extract', 'input/examples/audio/1-audio.mp3', '--whisper', 'tiny', '--price']),
+  ]),
+  ...exact('test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts', [
+    command('transcribe-whisper-tiny', 'transcribe-whisper-tiny', ['src/cli/create-cli.ts', 'extract', 'input/examples/audio/0-audio-short.mp3', '--whisper', 'tiny', '--price']),
+    command('transcribe-whisper-large-v3-turbo', 'transcribe-whisper-large-v3-turbo', ['src/cli/create-cli.ts', 'extract', 'input/examples/lyrics/01-example-song.mp3', '--whisper', 'large-v3-turbo', '--price']),
+  ]),
 ]

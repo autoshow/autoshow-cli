@@ -14,6 +14,7 @@ describe('option resolution contracts', () => {
   test('buildOptsFromFlags maps representative CLI flags to runtime options', () => {
     const opts = buildOptsFromFlags(false, {
       openai: 'gpt-5.4-mini',
+      glm: 'glm-5.1',
       'openai-stt': 'gpt-4o-mini-transcribe',
       'grok-stt': 'speech-to-text',
       'together-stt': 'openai/whisper-large-v3',
@@ -32,6 +33,7 @@ describe('option resolution contracts', () => {
     })
 
     expect(opts.openaiModel).toBe('gpt-5.4-mini')
+    expect(opts.glmModel).toBe('glm-5.1')
     expect(opts.openaiSttModel).toBe('gpt-4o-mini-transcribe')
     expect(opts.grokSttModel).toBe('speech-to-text')
     expect(opts.togetherSttModel).toBe('openai/whisper-large-v3')
@@ -89,16 +91,26 @@ describe('option resolution contracts', () => {
 
   test('bare provider flags resolve to cheapest defaults', () => {
     const openaiDefault = resolveCheapestModelForFlag('openai')
+    const glmDefault = resolveCheapestModelForFlag('glm')
     const deepgramDefault = resolveCheapestModelForFlag('deepgram-stt')
     const opts = buildOptsFromFlags(false, {
       openai: true,
+      glm: true,
       'deepgram-stt': true
     })
 
     expect(openaiDefault).toBeDefined()
+    expect(glmDefault).toBeDefined()
     expect(deepgramDefault).toBeDefined()
     expect(opts.openaiModel).toBe(openaiDefault)
+    expect(opts.glmModel).toBe(glmDefault)
     expect(opts.deepgramSttModel).toBe(deepgramDefault)
+  })
+
+  test('--all-llm expands GLM to its supported model', () => {
+    const opts = buildOptsFromFlags(false, { 'all-llm': true })
+
+    expect(opts.glmModels).toEqual(['glm-5.1'])
   })
 
   test('--all-stt and --all-ocr expand to non-empty expected provider lists', () => {
@@ -207,6 +219,7 @@ describe('option resolution contracts', () => {
       target('llama.cpp', 'local-a'),
       target('openai', 'hosted-a'),
       target('groq', 'hosted-b'),
+      target('glm', 'hosted-glm'),
       target('llama.cpp', 'local-b'),
       target('gemini', 'hosted-c')
     ]

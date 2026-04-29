@@ -10,18 +10,18 @@ bun t test/test-cases/e2e/step-3-write-e2e/write-services/
 
 ## Current Coverage
 
-- Provider suites live under `test/test-cases/e2e/step-3-write-e2e/write-services/openai/`, `anthropic/`, `gemini/`, `grok/`, `groq/`, and `minimax/`.
-- These suites use `defineLLMWriteTest` to verify service-backed write runs, output artifacts, and `run.json` step 3 metadata when the required API key is configured.
-- `test/test-cases/e2e/step-3-write-e2e/write-services/write-subcommand-services.test.ts` adds explicit `write` command flows for OpenAI, Anthropic, Gemini, Groq, MiniMax, and Grok, plus a dedicated `--price` preflight case.
+- Provider-backed write coverage lives in `test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts`.
+- The suite uses `defineLLMWriteTest` to verify service-backed write runs, output artifacts, and `run.json` step 3 metadata when the required API key is configured.
+- Current providers are OpenAI, Anthropic, Gemini, Groq, MiniMax, Grok, and GLM. The GLM case covers `--glm glm-5.1` and requires `GLM_API_KEY`.
 
 ## Price Preflight
 
 ```bash
 bun t test/test-cases/e2e/step-3-write-e2e/write-services/ --test-price
-bun t test/test-cases/e2e/step-3-write-e2e/write-services/write-subcommand-services.test.ts --budget 25
+bun t test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts --budget 25
 ```
 
-The directory-wide `--test-price` selection currently resolves OpenAI, Anthropic, Gemini, Groq, MiniMax, and `write-subcommand-services.test.ts` mappings. The Grok directory does not currently have its own mapped price selector.
+The directory-wide `--test-price` selection resolves OpenAI, Anthropic, Gemini, Groq, MiniMax, GLM, and local llama price mappings. Live service tests skip providers whose API key is not configured.
 
 ## Related Docs
 

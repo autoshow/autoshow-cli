@@ -11,6 +11,7 @@ export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
   const anthropicModels = opts.anthropicModels
   const minimaxModels = opts.minimaxModels
   const grokModels = opts.grokModels
+  const glmModels = opts.glmModels
   const anySelected = [
     openaiModels?.length,
     groqModels?.length,
@@ -18,6 +19,7 @@ export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
     anthropicModels?.length,
     minimaxModels?.length,
     grokModels?.length,
+    glmModels?.length,
     llamaModels?.length
   ].some((value) => typeof value === 'number' && value > 0)
 
@@ -44,20 +46,24 @@ export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
     minimaxModel: first(minimaxModels),
     grokModels,
     grokModel: first(grokModels),
+    glmModels,
+    glmModel: first(glmModels),
     llmService: openaiModels?.length ? 'openai'
       : groqModels?.length ? 'groq'
         : geminiModels?.length ? 'gemini'
           : anthropicModels?.length ? 'anthropic'
             : minimaxModels?.length ? 'minimax'
               : grokModels?.length ? 'grok'
-                : resolvedLlamaModels?.length ? 'llama.cpp'
-                  : undefined,
+                : glmModels?.length ? 'glm'
+                  : resolvedLlamaModels?.length ? 'llama.cpp'
+                    : undefined,
     llmModel: first(openaiModels)
       ?? first(groqModels)
       ?? first(geminiModels)
       ?? first(anthropicModels)
       ?? first(minimaxModels)
       ?? first(grokModels)
+      ?? first(glmModels)
       ?? first(resolvedLlamaModels)
       ?? DEFAULT_LLAMA_MODEL,
   }

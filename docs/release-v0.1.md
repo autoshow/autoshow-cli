@@ -246,7 +246,7 @@ Notable behavior:
 |------|---------------|-----------------|
 | STT | Whisper.cpp, Reverb | Deepgram, ElevenLabs, Soniox, Speechmatics, Rev, Groq, OpenAI, Mistral, AssemblyAI, Gladia |
 | Extract / OCR | MuPDF + Tesseract, OCRmyPDF, PaddleOCR, EPUB parser, native ZIP/XML office parsing, Defuddle article extraction | Mistral OCR, GLM OCR, OpenAI OCR, Anthropic OCR, Gemini OCR, Firecrawl article extraction |
-| LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok |
+| LLM write | llama.cpp | OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM |
 | TTS | Kitten TTS | ElevenLabs, MiniMax, Groq, OpenAI, Gemini |
 | Image | none | Gemini, OpenAI, MiniMax, GLM, Grok, Runway |
 | Video | none | Gemini Veo, MiniMax, GLM, Grok, Runway |
@@ -280,6 +280,7 @@ Notable behavior:
 | Gemini LLM | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
 | MiniMax LLM | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
 | Grok LLM | `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |
+| GLM LLM | `glm-5.1` |
 | Kitten TTS | `kitten-tts-mini`, `kitten-tts-micro`, `kitten-tts-nano`, `kitten-tts-nano-0.8-int8` |
 | ElevenLabs TTS | `eleven_flash_v2_5`, `eleven_turbo_v2_5`, `eleven_v3` |
 | MiniMax TTS | `speech-2.8-turbo`, `speech-2.8-hd` |
@@ -287,7 +288,7 @@ Notable behavior:
 | OpenAI TTS | `gpt-4o-mini-tts` |
 | Gemini TTS | `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` |
 | Gemini image | `imagen-4.0-fast-generate-001`, `gemini-3-pro-image-preview`, `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001` |
-| OpenAI image | `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5` |
+| OpenAI image | `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, `gpt-image-2` |
 | MiniMax image | `image-01` |
 | Gemini video | `veo-3.1-fast-generate-preview`, `veo-3.1-generate-preview` |
 | MiniMax video | `T2V-01`, `T2V-01-Director`, `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-02` |
@@ -302,7 +303,7 @@ Notable behavior:
 ### Prompts
 
 The prompt library lives in JSON files discovered recursively under `src/prompts/entries/`.
-As of this release, it exposes 38 top-level prompt definitions and presets.
+As of this release, it exposes 37 top-level prompt definitions and presets.
 
 Common built-in prompt names include:
 
@@ -326,7 +327,7 @@ Common built-in prompt names include:
 `default` expands to:
 
 ```text
-shortSummary + longSummary + chapters
+shortSummary + longSummary + longChapters
 ```
 
 ### JSON write output

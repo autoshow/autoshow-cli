@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { setupGcloudStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
 import { ensureGcloudDocaiSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gcloud-docai/gcloud-docai'
+import type { AutoshowConfig } from '~/types'
 
 const tempDirs: string[] = []
 const previousEnv: Record<string, string | undefined> = {}
@@ -51,6 +52,7 @@ if [ "$1 $2" = "services list" ]; then
   filter=""
   for arg in "$@"; do
     case "$arg" in
+      --filter=config.name=*) filter="\${arg#--filter=config.name=}" ;;
       --filter=config.name:*) filter="\${arg#--filter=config.name:}" ;;
     esac
   done
@@ -95,7 +97,7 @@ afterEach(async () => {
 })
 
 describe('gcloud setup contracts', () => {
-  test('enables STT, Document AI, and Storage, then saves STT and OCR defaults', async () => {
+  test('enables STT, Document AI, and Storage without writing AutoShow config', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-gcloud-setup-'))
     tempDirs.push(dir)
     const configPath = join(dir, 'autoshow.json')
@@ -124,30 +126,17 @@ describe('gcloud setup contracts', () => {
     expect(commands).toContain('services enable storage.googleapis.com')
     expect(commands).toContain('storage buckets create gs://autoshow-docai-test-project-')
     expect(fetchCalls).toContainEqual(expect.objectContaining({ method: 'POST' }))
-
-    await expect(loadConfig(configPath)).resolves.toMatchObject({
-      defaults: {
-        extract: {
-          stt: {
-            gcloudStt: ['chirp_3']
-          },
-          ocr: {
-            gcloudDocai: ['ocr'],
-            gcloudDocaiLocation: 'us',
-            gcloudDocaiOcrProcessorId: 'processor-created'
-          }
-        }
-      }
-    })
+    expect(await Bun.file(configPath).exists()).toBe(false)
+    await expect(loadConfig(configPath)).resolves.toEqual({ version: 2 })
   })
 
-  test('reuses saved Document AI processor and bucket values', async () => {
+  test('reuses saved Document AI processor and bucket values without changing config', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-gcloud-setup-saved-'))
     tempDirs.push(dir)
     const configPath = join(dir, 'autoshow.json')
     const { bin, log } = await writeFakeGcloud(dir)
     process.env['AUTOSHOW_GCLOUD_BIN'] = bin
-    await writeFile(configPath, JSON.stringify({
+    const savedConfig: AutoshowConfig = {
       version: 2,
       defaults: {
         extract: {
@@ -156,11 +145,13 @@ describe('gcloud setup contracts', () => {
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',
             gcloudDocaiOcrProcessorId: 'saved-processor',
+            gcloudDocaiLayoutProcessorId: 'saved-layout-processor',
             gcloudDocaiBucket: 'saved-bucket'
           }
         }
       }
-    }, null, 2))
+    }
+    await writeFile(configPath, JSON.stringify(savedConfig, null, 2))
 
     const fetchCalls: string[] = []
     globalThis.fetch = (async (input: string | URL | Request) => {
@@ -183,11 +174,13 @@ describe('gcloud setup contracts', () => {
         extract: {
           ocr: {
             gcloudDocaiOcrProcessorId: 'saved-processor',
+            gcloudDocaiLayoutProcessorId: 'saved-layout-processor',
             gcloudDocaiBucket: 'saved-bucket'
           }
         }
       }
     })
+    await expect(loadConfig(configPath)).resolves.toEqual(savedConfig)
   })
 
   test('Document AI runtime keeps environment override compatibility', async () => {

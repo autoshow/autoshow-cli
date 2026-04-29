@@ -20,6 +20,7 @@ export const imageCommand = defineCommand({
     examples: [
       ['bun as image "a dramatic fox portrait in snow" --gemini-image imagen-4.0-fast-generate-001', 'Generate with Gemini'],
       ['bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --image-size 1024x1024', 'Generate with OpenAI'],
+      ['bun as image "a product sketch of a travel mug" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low', 'Generate low-cost OpenAI drafts'],
       ['bun as image "a clean product photo of a red enamel camping mug" --glm-image glm-image', 'Generate with Z.AI GLM'],
       ['bun as image "a futuristic observatory at sunset" --grok-image grok-imagine-image --image-size 1K', 'Generate with Grok'],
       ['bun as image "a cinematic product photo of a red enamel camping mug" --runway-image gen4_image --image-size 720p', 'Generate with Runway'],
@@ -62,7 +63,9 @@ export const imageCommand = defineCommand({
     count: getExpectedImageCount(target, imageOpts)
   }))
   const estimated = computeEstimatedCosts({
-    imageTargets: estimatedImageTargets
+    imageTargets: estimatedImageTargets,
+    imageSize: imageOpts.imageSize,
+    imageQuality: imageOpts.imageQuality
   })
   const actual = computeActualCosts({ step5: metadata })
   const cost = { estimated, actual }

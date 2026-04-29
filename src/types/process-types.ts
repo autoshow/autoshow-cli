@@ -75,6 +75,8 @@ export const ProcessingOptionsSchema = v.pipe(
     minimaxModel: v.optional(v.string(), undefined),
     grokModels: v.optional(v.array(v.string()), undefined),
     grokModel: v.optional(v.string(), undefined),
+    glmModels: v.optional(v.array(v.string()), undefined),
+    glmModel: v.optional(v.string(), undefined),
     llmProviderConcurrency: v.optional(v.number(), 2),
     llmLocalConcurrency: v.optional(v.number(), 1),
     outputDir: v.string(),
@@ -948,7 +950,7 @@ export const LlamaResponseSchema = v.object({
 })
 
 export type Step3Metadata = {
-  llmService: 'llama.cpp' | 'openai' | 'groq' | 'gemini' | 'anthropic' | 'minimax' | 'grok'
+  llmService: 'llama.cpp' | 'openai' | 'groq' | 'gemini' | 'anthropic' | 'minimax' | 'grok' | 'glm'
   llmModel: string
   processingTime: number
   inputTokenCount: number

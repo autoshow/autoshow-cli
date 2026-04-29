@@ -44,7 +44,8 @@ export const buildApiCheapSelections = () => {
     { service: 'groq', flag: '--groq', envVar: 'GROQ_API_KEY', model: selectCheapestLlmModel('groq') },
     { service: 'gemini', flag: '--gemini', envVar: 'GEMINI_API_KEY', model: selectCheapestLlmModel('gemini') },
     { service: 'anthropic', flag: '--anthropic', envVar: 'ANTHROPIC_API_KEY', model: selectCheapestLlmModel('anthropic') },
-    { service: 'minimax', flag: '--minimax', envVar: 'MINIMAX_API_KEY', model: selectCheapestLlmModel('minimax') }
+    { service: 'minimax', flag: '--minimax', envVar: 'MINIMAX_API_KEY', model: selectCheapestLlmModel('minimax') },
+    { service: 'glm', flag: '--glm', envVar: 'GLM_API_KEY', model: selectCheapestLlmModel('glm') }
   ]
 
   const sttSelections = [

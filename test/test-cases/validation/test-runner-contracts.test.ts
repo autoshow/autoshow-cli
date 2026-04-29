@@ -5,10 +5,39 @@ import { join } from 'node:path'
 import { parseRunnerArgs } from '../../test-runner/args'
 import { parseJunit } from '../../test-runner/parsers'
 import { resolvePriceSelection } from '../../test-runner/price-commands'
+import { PRICE_SELECTION_REGISTRY } from '../../test-runner/price-commands/registry'
 import { evaluatePriceObservations } from '../../test-runner/price-evaluation'
 import { formatSelectedPathsLabel } from '../../test-runner/path-selection'
+import { shouldSkipBudgetKeys } from '../../test-utils/budget'
 
 const tempDirs: string[] = []
+
+const extractExplicitBudgetedTestKeys = (source: string): string[] => {
+  const keys: string[] = []
+  const callPattern = /budgetedTest\s*\(\s*(?:(['"`])([^'"`$]*)\1|\[([\s\S]*?)\])/g
+  let callMatch: RegExpExecArray | null
+
+  while ((callMatch = callPattern.exec(source)) !== null) {
+    const singleKey = callMatch[2]
+    if (singleKey) {
+      keys.push(singleKey)
+      continue
+    }
+
+    const arraySource = callMatch[3]
+    if (!arraySource) {
+      continue
+    }
+
+    const arrayStringPattern = /(['"`])([^'"`$]*)\1/g
+    let arrayMatch: RegExpExecArray | null
+    while ((arrayMatch = arrayStringPattern.exec(arraySource)) !== null) {
+      keys.push(arrayMatch[2] as string)
+    }
+  }
+
+  return keys
+}
 
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
@@ -102,5 +131,77 @@ describe('test-runner contracts', () => {
       { key: 'write-openai-gpt-5.4', selectedCostCents: 3 }
     ])
     expect(evaluation.commandResults.map((result) => result.status)).toEqual(['skipped', 'passed'])
+  })
+
+  test('multi-key budget predicate skips when any component key is skipped', () => {
+    const previous = process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS']
+    try {
+      process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS'] = JSON.stringify(['component-b'])
+
+      expect(shouldSkipBudgetKeys(['component-a', 'component-b'])).toBe(true)
+      expect(shouldSkipBudgetKeys(['component-a', 'component-c'])).toBe(false)
+    } finally {
+      if (previous === undefined) {
+        delete process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS']
+      } else {
+        process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS'] = previous
+      }
+    }
+  })
+
+  test('explicit e2e budgetedTest keys resolve to budget-skippable price registry entries', async () => {
+    const glob = new Bun.Glob('test/test-cases/e2e/**/*.test.ts')
+    const allFiles = (await Array.fromAsync(glob.scan({ dot: false }))).sort()
+    const budgetSkippableKeys = new Set(
+      PRICE_SELECTION_REGISTRY
+        .filter((entry) => entry.budgetSkippable)
+        .map((entry) => entry.key)
+    )
+    const missing: string[] = []
+    const unselected: string[] = []
+
+    for (const file of allFiles) {
+      const source = await Bun.file(file).text()
+      const explicitKeys = [...new Set(extractExplicitBudgetedTestKeys(source))]
+      if (explicitKeys.length === 0) {
+        continue
+      }
+
+      const selectedKeys = new Set(
+        resolvePriceSelection(allFiles, [file], true).commands.map((command) => command.key)
+      )
+
+      for (const key of explicitKeys) {
+        if (!budgetSkippableKeys.has(key)) {
+          missing.push(`${file}: ${key}`)
+          continue
+        }
+        if (!selectedKeys.has(key)) {
+          unselected.push(`${file}: ${key}`)
+        }
+      }
+    }
+
+    expect(missing).toEqual([])
+    expect(unselected).toEqual([])
+  })
+
+  test('music selected-file budget preflight includes keys for live ElevenLabs music skips', () => {
+    const allFiles = [
+      'test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts',
+      'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
+    ]
+
+    const elevenlabsKeys = resolvePriceSelection(allFiles, [
+      'test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts'
+    ], true).commands.map((command) => command.key)
+    expect(elevenlabsKeys).toContain('music-elevenlabs-music_v1')
+    expect(elevenlabsKeys).toContain('music-pipeline-elevenlabs-music_v1')
+
+    const minimaxKeys = resolvePriceSelection(allFiles, [
+      'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
+    ], true).commands.map((command) => command.key)
+    expect(minimaxKeys).toContain('music-elevenlabs-music_v1')
+    expect(minimaxKeys).toContain('music-minimax-music-2.5')
   })
 })

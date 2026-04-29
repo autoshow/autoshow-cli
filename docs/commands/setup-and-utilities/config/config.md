@@ -76,6 +76,7 @@ Pass any provider, model, or generation flag to persist it as a default:
 
 ```bash
 bun as config --openai gpt-5.4
+bun as config --glm glm-5.1
 bun as config --whisper large-v3-turbo
 bun as config --gcloud-stt chirp_3
 bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
@@ -93,7 +94,7 @@ bun as config --openai gpt-5.4 --openai gpt-5.4-mini
 
 These model defaults are written as arrays in `config/autoshow.json`. Older config files that still store a single string are accepted and normalized to one-element arrays when loaded.
 
-When you run `bun as setup --gcloud --gcloud-project PROJECT_ID`, AutoShow also saves `gcloudStt: ["chirp_3"]` automatically if no Google STT default has been saved yet, whether the project already existed or AutoShow created it during setup.
+Setup commands do not write `config/autoshow.json`. Use `bun as config ...` when you want AWS, Google Cloud, or any other provider defaults to persist.
 
 Only flags that are explicitly typed on the command line are written. Flags with Clerc-supplied defaults that you did not type are not persisted.
 
@@ -156,7 +157,8 @@ Representative JSON shape of `config/autoshow.json`:
       "gemini": ["gemini-3.1-flash-lite-preview"],
       "anthropic": ["claude-sonnet-4-6"],
       "minimax": ["MiniMax-M2.5"],
-      "grok": ["grok-4.20-non-reasoning"]
+      "grok": ["grok-4.20-non-reasoning"],
+      "glm": ["glm-5.1"]
     },
     "post": {
       "tts": {
@@ -240,6 +242,7 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `anthropic` | `--anthropic` | Default Anthropic model list |
 | `minimax` | `--minimax` | Default MiniMax model list |
 | `grok` | `--grok` | Default Grok model list |
+| `glm` | `--glm` | Default GLM model list |
 
 ### defaults.post.tts
 

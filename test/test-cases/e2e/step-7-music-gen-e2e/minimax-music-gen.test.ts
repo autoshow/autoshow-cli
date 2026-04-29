@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test'
+import { expect } from 'bun:test'
 import { defineMusicServiceTest } from '../../../test-utils/define-music-service-test'
 import {
   runCommand,
@@ -104,7 +104,7 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and l
   }
 })
 
-test('multi-provider run produces per-provider filenames and array metadata', async () => {
+budgetedTest(['music-elevenlabs-music_v1', 'music-minimax-music-2.5'], 'multi-provider run produces per-provider filenames and array metadata', async () => {
   const hasElevenlabs = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
   const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
   if (!hasElevenlabs || !hasMinimax) {

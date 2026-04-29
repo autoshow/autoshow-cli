@@ -23,6 +23,7 @@ export const isHostedLlmTarget = (
   || target.service === 'anthropic'
   || target.service === 'minimax'
   || target.service === 'grok'
+  || target.service === 'glm'
 
 const runIndexedTargetPool = async (
   targets: IndexedLlmTarget[],

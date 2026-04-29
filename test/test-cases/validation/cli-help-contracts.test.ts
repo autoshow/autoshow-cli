@@ -24,10 +24,12 @@ test('root help groups setup utilities separately from processing commands', asy
 
   expect(setupSection).toContain('    links')
   expect(setupSection).toContain('    setup')
-  expect(processingSection).toContain('    resume')
+  expect(setupSection).toContain('    resume')
   expect(processingSection).toContain('    write')
+  expect(processingSection.indexOf('    video')).toBeLessThan(processingSection.indexOf('    music'))
   expect(processingSection).not.toContain('    lyrics')
   expect(processingSection).not.toContain('    links')
+  expect(processingSection).not.toContain('    resume')
 })
 
 test('extract help exposes shared batch and all-provider flags', async () => {
@@ -60,8 +62,10 @@ test('write and config help expose LLM concurrency flags', async () => {
   expect(configResult.exitCode).toBe(0)
   expect(writeResult.stdout).toContain('--llm-provider-concurrency')
   expect(writeResult.stdout).toContain('--llm-local-concurrency')
+  expect(writeResult.stdout).toContain('--glm')
   expect(configResult.stdout).toContain('--llm-provider-concurrency')
   expect(configResult.stdout).toContain('--llm-local-concurrency')
+  expect(configResult.stdout).toContain('--glm')
 })
 
 test('help for a removed command exits 2 with an unknown-command message', async () => {
@@ -98,6 +102,7 @@ test('image and video help expose BFL/deAPI provider flags', async () => {
 
   expect(imageResult.exitCode).toBe(0)
   expect(videoResult.exitCode).toBe(0)
+  expect(imageResult.stdout).toContain('gpt-image-2')
   expect(imageResult.stdout).toContain('--bfl-image')
   expect(imageResult.stdout).toContain('--deapi-image')
   expect(videoResult.stdout).toContain('--deapi-video')

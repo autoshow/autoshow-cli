@@ -42,6 +42,9 @@ bun as extract input/examples/audio/1-audio.mp3 --assemblyai-stt universal-3-pro
 # full pipeline (download/transcribe + LLM write)
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 
+# full pipeline with Z.AI GLM 5.1
+bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+
 # metadata with save
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --save
 
@@ -68,6 +71,9 @@ bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
+
+# image generation with OpenAI GPT Image 2 low quality
+bun as image "a product sketch of a travel mug" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low
 
 # image generation with deAPI
 bun as image "a sunset over mountains" --deapi-image Flux1schnell --image-size 768x768
@@ -133,12 +139,13 @@ bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
+bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price
 bun as write ./output/demo/text --price
 bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
-bun as image "a sunset" --openai-image gpt-image-1 --price
+bun as image "a sunset" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low --price
 bun as image "a sunset" --bfl-image flux-2-klein-4b --price
 bun as image "a sunset" --deapi-image Flux1schnell --price
 bun as music "an ambient piano instrumental" --minimax-music music-2.5 --price

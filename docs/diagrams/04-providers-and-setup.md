@@ -15,18 +15,18 @@ src/cli/commands/process-steps/step-3-write/run-llm.ts
 
 collectTargets() checks all flags - multiple providers can run sequentially:
 
-  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-  │ --gemini │  │--anthropic│  │ --openai │  │  --groq  │  │--minimax │  │  --grok  │  │  --llama │
-  │ flag set?│  │ flag set? │  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│
-  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
-      yes             yes           yes            yes            yes            yes            yes
-       |               |             |              |              |              |              |
-       v               v             v              v              v              v              v
-  ┌────────┐    ┌──────────┐   ┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐    ┌─────────────┐
-  │ Gemini │    │Anthropic │   │ OpenAI │    │  Groq  │    │MiniMax │    │  Grok  │    │  llama.cpp  │
-  │  (API) │    │  (API)   │   │  (API) │    │  (API) │    │  (API) │    │  (API) │    │  (local)    │
-  └───┬────┘    └────┬─────┘   └───┬────┘    └───┬────┘    └───┬────┘    └───┬────┘    └──────┬──────┘
-      └───────────────┴────────────┴─────────────┴─────────────┴─────────────┴─────────────────┘
+  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────┐
+  │ --gemini │  │--anthropic│  │ --openai │  │  --groq  │  │--minimax │  │  --grok  │  │ --glm  │  │  --llama │
+  │ flag set?│  │ flag set? │  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│  │flag set?│  │ flag set?│
+  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬────┘  └────┬─────┘
+      yes             yes           yes            yes            yes            yes          yes          yes
+       |               |             |              |              |              |            |            |
+       v               v             v              v              v              v            v            v
+  ┌────────┐    ┌──────────┐   ┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐   ┌──────┐   ┌─────────────┐
+  │ Gemini │    │Anthropic │   │ OpenAI │    │  Groq  │    │MiniMax │    │  Grok  │   │ GLM  │   │  llama.cpp  │
+  │  (API) │    │  (API)   │   │  (API) │    │  (API) │    │  (API) │    │  (API) │   │(API) │   │  (local)    │
+  └───┬────┘    └────┬─────┘   └───┬────┘    └───┬────┘    └───┬────┘    └───┬────┘   └──┬───┘   └──────┬──────┘
+      └───────────────┴────────────┴─────────────┴─────────────┴─────────────┴───────────┴────────────────┘
                                    |
                                    v
   ┌──────────────────────────────────────────────────────────────┐
@@ -66,6 +66,11 @@ collectTargets() checks all flags - multiple providers can run sequentially:
   │  ├── grok-4.20-reasoning                                     │
   │  └── grok-4.20-non-reasoning                                 │
   │  Requires: XAI_API_KEY                                       │
+  │                                                              │
+  │  GLM (--glm flag, Z.AI GLM LLM):                              │
+  │  └── glm-5.1                                                  │
+  │  Requires: GLM_API_KEY                                        │
+  │  Pricing: $1.40/M input, $4.40/M output; 18000 ms/1K tokens   │
   │                                                              │
   │  llama.cpp (local inference):                                │
   │  ├── ggml-org/gemma-3-270m-it-GGUF                           │
@@ -172,6 +177,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `extract --gemini-ocr` | `GEMINI_API_KEY` |
 | `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
+| `write --glm` | `GLM_API_KEY` |
 | `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |

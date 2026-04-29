@@ -440,6 +440,8 @@ export const processVideo = async (
 	        ttsTargets: ttsEstimateTargets,
 	        ttsCharacterCount,
 	        imageTargets: imageEstimateTargets,
+	        imageSize: processingOptions.imageSize,
+	        imageQuality: processingOptions.imageQuality,
 	        videoTargets: attemptedVideoTargets.map((target) => ({
 	          service: target.service,
 	          model: target.model,

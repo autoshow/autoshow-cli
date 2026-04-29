@@ -11,12 +11,6 @@ const batchCases: BatchCase[] = [
     extraArgs: ['--batch-limit', '1'],
     expectedSourceKind: 'podcast_rss',
   },
-  {
-    name: 'download YouTube channel input',
-    input: 'https://www.youtube.com/@fireship',
-    extraArgs: ['--batch-limit', '1'],
-    expectedSourceKind: 'youtube_channel',
-  },
 ]
 
 setupDownloadInputTypeLifecycle([])

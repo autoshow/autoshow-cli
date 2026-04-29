@@ -14,11 +14,7 @@ const MetaDescriptionSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(155
 const HookSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(125))
 
 const ShortDescriptionSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(180))
-const MediumDescriptionSchema = v.pipe(v.string(), v.minLength(50), v.maxLength(500))
-const LongDescriptionSchema = v.pipe(v.string(), v.minLength(100), v.maxLength(1000))
 
-const ShortSummarySchema = v.pipe(v.string(), v.minLength(50), v.maxLength(500))
-const MediumSummarySchema = v.pipe(v.string(), v.minLength(200), v.maxLength(2000))
 const LongSummarySchema = v.pipe(v.string(), v.minLength(500), v.maxLength(5000))
 
 const ShortChapterDescriptionSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(200))
@@ -106,11 +102,9 @@ const ShortStoryActSchema = v.object({
 
 const PRESET_REGISTRY = {
   shortSummary: v.object({
-    episodeDescription: ShortDescriptionSchema,
-    episodeSummary: ShortSummarySchema
+    episodeDescription: ShortDescriptionSchema
   }),
   longSummary: v.object({
-    episodeDescription: LongDescriptionSchema,
     episodeSummary: LongSummarySchema
   }),
   bulletPoints: v.object({
@@ -150,10 +144,6 @@ const PRESET_REGISTRY = {
   }),
   keyMoments: v.object({
     keyMoments: v.array(KeyMomentSchema)
-  }),
-  summary: v.object({
-    episodeDescription: MediumDescriptionSchema,
-    episodeSummary: MediumSummarySchema
   }),
   blog: v.object({
     title: TextSchema,

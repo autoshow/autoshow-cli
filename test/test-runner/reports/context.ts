@@ -17,6 +17,7 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--gemini': { service: 'gemini', kind: 'write' },
   '--groq': { service: 'groq', kind: 'write' },
   '--minimax': { service: 'minimax', kind: 'write' },
+  '--glm': { service: 'glm', kind: 'write' },
   '--llama': { service: 'llama.cpp', kind: 'write' },
   '--whisper-stt': { service: 'whisper', kind: 'transcribe' },
   '--whisper': { service: 'whisper', kind: 'transcribe' },

@@ -23,6 +23,7 @@ describe('config contracts', () => {
   test('buildConfigPatchFromFlags maps explicit provider, OCR, batch, and pricing defaults', () => {
     expect(buildConfigPatchFromFlags({
       openai: 'gpt-5.4-mini',
+      glm: 'glm-5.1',
       'llm-provider-concurrency': '3',
       'llm-local-concurrency': '1',
       'tesseract-ocr': true,
@@ -31,11 +32,12 @@ describe('config contracts', () => {
       'ocr-local-concurrency': '2',
       'batch-limit': '7',
       'max-cents': '25'
-    }, new Set(['openai', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
+    }, new Set(['openai', 'glm', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
       version: 2,
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
+          glm: ['glm-5.1'],
           providerConcurrency: 3,
           localConcurrency: 1
         },
@@ -100,6 +102,7 @@ describe('config contracts', () => {
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
+          glm: ['glm-5.1'],
           providerConcurrency: 3,
           localConcurrency: 1
         },
@@ -130,6 +133,7 @@ describe('config contracts', () => {
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
+          glm: ['glm-5.1'],
           providerConcurrency: 3,
           localConcurrency: 1
         },

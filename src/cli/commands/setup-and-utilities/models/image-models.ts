@@ -26,6 +26,7 @@ export const SUPPORTED_OPENAI_IMAGE_MODELS = [
   'gpt-image-1-mini',
   'gpt-image-1',
   'gpt-image-1.5',
+  'gpt-image-2',
 ] as const satisfies readonly string[]
 
 export const validateOpenAIImageModel = createModelValidator<OpenAIImageModel>(SUPPORTED_OPENAI_IMAGE_MODELS, 'openai-image')

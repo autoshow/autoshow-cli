@@ -49,7 +49,10 @@ bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 
 # Full write pipeline: download/extract/transcribe + summary output
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.2
+bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.4
+
+# Full write pipeline with Z.AI GLM 5.1
+bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
 
 # Document OCR / extraction
 bun as extract input/examples/document/1-document.pdf --out json

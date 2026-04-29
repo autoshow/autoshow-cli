@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
 import {
   cleanupTestOutput,
   fileExists,
@@ -23,7 +23,7 @@ test('rejects invalid gcloud model', async () => {
   expect(result.exitCode).toBe(2)
 })
 
-test('gcloud chirp_3 --price prints estimate', async () => {
+budgetedTest('transcribe-gcloud-chirp_3', 'gcloud chirp_3 --price prints estimate', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'extract',
@@ -38,7 +38,7 @@ test('gcloud chirp_3 --price prints estimate', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('chirp_3')
 })
 
-test('gcloud chirp_3 transcribes local audio when gcloud CLI is configured', async () => {
+budgetedTest('transcribe-gcloud-chirp_3', 'gcloud chirp_3 transcribes local audio when gcloud CLI is configured', async () => {
   const state = await readGcloudSttReadiness()
   if (!state.hasCli || !state.authConfigured || !state.projectId || state.speechApiEnabled !== true) {
     console.log('Skipping: gcloud CLI auth, project, and speech.googleapis.com readiness are required for Google transcription')

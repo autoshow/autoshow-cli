@@ -269,7 +269,7 @@ export const runAwsTextract = async (
     if (!config.bucket) {
       throw new Error(
         'AWS S3 bucket is required for multi-page or large-file AWS Textract OCR. ' +
-        'Run `bun as setup --aws` to create and save one, or set --aws-bucket / save `bun as config --aws-bucket <bucket-name>`.'
+        'Run `bun as setup --aws --aws-create-bucket` to create one, then pass --aws-bucket or save it with `bun as config --aws-bucket <bucket-name>`.'
       )
     }
 

@@ -20,7 +20,8 @@ export const runOpenAICompatibleChatModel = async ({
   service,
   providerLabel,
   operationName,
-  customizeRequestBody
+  customizeRequestBody,
+  buildStructuredResponseFormat
 }: RunOpenAICompatibleChatModelOptions): Promise<{ result: string, metadata: Step3Metadata }> => {
   try {
     const apiCall = (): Promise<string> => withRetry(
@@ -50,7 +51,7 @@ export const runOpenAICompatibleChatModel = async ({
 
         const structuredRequestBody: Record<string, unknown> = {
           ...requestBody,
-          response_format: {
+          response_format: buildStructuredResponseFormat?.(structuredOpts) ?? {
             type: 'json_schema',
             json_schema: {
               name: structuredOpts.schemaName,

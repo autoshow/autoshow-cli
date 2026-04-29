@@ -56,7 +56,7 @@ export const imageGenFlags = {
     type: String
   },
   'image-size': {
-    description: 'Image size/resolution: 1K|2K|4K (Gemini), 1024x1024|1536x1024|1024x1536 (OpenAI), 512x512 through 2048x2048 multiples of 32 (GLM), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL, or WIDTHxHEIGHT within deAPI model limits',
+    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, 512x512 through 2048x2048 multiples of 32 (GLM), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL, or WIDTHxHEIGHT within deAPI model limits',
     type: String
   },
   'image-quality': {

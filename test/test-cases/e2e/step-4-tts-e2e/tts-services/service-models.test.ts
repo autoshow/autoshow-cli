@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect } from 'bun:test'
 import { defineTTSServiceTest } from '../../../../test-utils/define-tts-service-test'
-import { E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -47,7 +47,7 @@ defineTTSServiceTest({
   },
 })
 
-test('gemini multispeaker with explicit speaker mappings generates speech.wav', async () => {
+budgetedTest('tts-gemini-gemini-3.1-flash-tts-preview', 'gemini multispeaker with explicit speaker mappings generates speech.wav', async () => {
   if (!await hasConfiguredEnvVar('GEMINI_API_KEY')) {
     console.log('Skipping: GEMINI_API_KEY is required for Gemini TTS test')
     return
@@ -189,7 +189,7 @@ test('rejects invalid grok voice override before API request', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --grok-tts-voice "invalid-voice"')
 })
 
-test('deepgram with --deepgram-voice aura-2-andromeda-en records speaker override', async () => {
+budgetedTest('tts-deepgram-aura-2-thalia-en', 'deepgram with --deepgram-voice aura-2-andromeda-en records speaker override', async () => {
   if (!await hasConfiguredEnvVar('DEEPGRAM_API_KEY')) {
     console.log('Skipping: DEEPGRAM_API_KEY is required for Deepgram TTS test')
     return
@@ -224,7 +224,7 @@ test('deepgram with --deepgram-voice aura-2-andromeda-en records speaker overrid
   }
 })
 
-test('orpheus english with --groq-voice hannah generates speech.wav', async () => {
+budgetedTest('tts-groq-canopylabs/orpheus-v1-english', 'orpheus english with --groq-voice hannah generates speech.wav', async () => {
   if (!await hasConfiguredEnvVar('GROQ_API_KEY')) {
     console.log('Skipping: GROQ_API_KEY is required for Groq TTS test')
     return

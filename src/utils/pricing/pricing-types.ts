@@ -161,7 +161,7 @@ export type ComputeEstimatedCostsInput = {
   ttsService?: string | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
-  imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number }> | undefined
+  imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number, imageSize?: string, imageQuality?: string }> | undefined
   geminiImageModel?: string | undefined
   openaiImageModel?: string | undefined
   minimaxImageModel?: string | undefined
@@ -171,6 +171,7 @@ export type ComputeEstimatedCostsInput = {
   bflImageModel?: string | undefined
   deapiImageModel?: string | undefined
   imageSize?: string | undefined
+  imageQuality?: string | undefined
   imagenCount?: number | undefined
   geminiVideoModel?: string | undefined
   minimaxVideoModel?: string | undefined
@@ -220,7 +221,7 @@ export type ComputeEstimatedProcessingTimesInput = {
   ttsService?: Step4Metadata['ttsService'] | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
-  imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number }> | undefined
+  imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number, imageSize?: string, imageQuality?: string }> | undefined
   imageService?: Step5Metadata['imageService'] | undefined
   imageModel?: string | undefined
   imageCount?: number | undefined

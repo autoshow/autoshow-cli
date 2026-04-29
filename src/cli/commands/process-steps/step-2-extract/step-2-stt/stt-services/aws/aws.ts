@@ -3,8 +3,6 @@ import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
 import { exec } from '~/utils/cli-utils'
 import { loadConfig, resolveConfigPath } from '~/cli/commands/setup-and-utilities/config/config-loader'
-import { deepMergeConfig } from '~/cli/commands/setup-and-utilities/config/config-merge'
-import { writeConfig } from '~/cli/commands/setup-and-utilities/config/config-writer'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import type {
@@ -90,31 +88,6 @@ const buildAwsSetupCreateBucketCommand = (
     args.push('--aws-bucket', options.bucket)
   }
   return args.join(' ')
-}
-
-const saveAwsSttDefaults = async (
-  options: {
-    region: string
-    bucket: string
-    configPathOverride?: string | undefined
-  }
-): Promise<string> => {
-  const configPath = await resolveConfigPath(options.configPathOverride)
-  const current = await loadConfig(configPath)
-  const updated = deepMergeConfig(current as Record<string, unknown>, {
-    version: 2,
-    defaults: {
-      extract: {
-        stt: {
-          awsRegion: options.region,
-          awsBucket: options.bucket,
-          awsStt: [AWS_STT_DEFAULT_MODEL]
-        }
-      }
-    }
-  })
-  await writeConfig(configPath, updated)
-  return configPath
 }
 
 const createAwsStagingBucket = async (
@@ -320,13 +293,18 @@ const buildAwsSetupCommands = (
   if (!state.region) {
     commands.push(`aws configure set region ${region}`)
   }
+  if (!state.bucket && state.authConfigured && state.region) {
+    commands.push(buildAwsSetupCreateBucketCommand({
+      region: state.region
+    }))
+  }
   if (state.bucket && state.region && state.bucketAccessible === false) {
     commands.push(`aws s3api head-bucket --bucket ${state.bucket} --region ${state.region}`)
   }
   if (state.bucket && state.bucketAccessible === false) {
     commands.push(buildAwsSetupCreateBucketCommand({
       ...(region ? { region } : {}),
-      ...(options.explicitBucket ? { bucket: options.explicitBucket } : {})
+      ...((options.explicitBucket ?? state.bucket) ? { bucket: options.explicitBucket ?? state.bucket } : {})
     }))
   }
   if (state.region && state.authConfigured && state.transcribeAccessible === false) {
@@ -342,30 +320,24 @@ const resolveAwsSttReadinessState = async (
     preferredBucket?: string | undefined
     verifyTranscribe?: boolean | undefined
     autoCreateBucket?: boolean | undefined
-    autoCreateMissingBucket?: boolean | undefined
-    configPathOverride?: string | undefined
   } = {}
-): Promise<{ state: AwsSttReadiness, configPath?: string | undefined }> => {
+): Promise<{ state: AwsSttReadiness, createdBucket?: string | undefined }> => {
   const explicitBucket = normalizeString(options.preferredBucket)
-  let configPath: string | undefined
   let state = await readAwsSttReadiness({
     preferredRegion: options.preferredRegion,
     preferredBucket: options.preferredBucket,
     verifyTranscribe: options.verifyTranscribe
   })
 
-  const shouldAutoCreateMissingBucket = options.autoCreateMissingBucket === true && !state.bucket
-  const shouldAutoCreateRequestedBucket = options.autoCreateBucket === true && !!state.bucket && state.bucketAccessible !== true
-  if ((shouldAutoCreateMissingBucket || shouldAutoCreateRequestedBucket) && state.hasCli && state.authConfigured && state.region) {
+  const shouldCreateBucket = options.autoCreateBucket === true
+    && (!state.bucket || state.bucketAccessible !== true)
+  let createdBucket: string | undefined
+  if (shouldCreateBucket && state.hasCli && state.authConfigured && state.region) {
     const bucketToCreate = explicitBucket
       ?? state.bucket
       ?? buildSuggestedAwsBucketName(state.callerIdentity?.Account, state.region)
     await createAwsStagingBucket(bucketToCreate, state.region)
-    configPath = await saveAwsSttDefaults({
-      region: state.region,
-      bucket: bucketToCreate,
-      configPathOverride: options.configPathOverride
-    })
+    createdBucket = bucketToCreate
     state = await readAwsSttReadiness({
       preferredRegion: state.region,
       preferredBucket: bucketToCreate,
@@ -373,7 +345,7 @@ const resolveAwsSttReadinessState = async (
     })
   }
 
-  return { state, ...(configPath ? { configPath } : {}) }
+  return { state, ...(createdBucket ? { createdBucket } : {}) }
 }
 
 export const setupAwsStt = async (
@@ -383,12 +355,10 @@ export const setupAwsStt = async (
     focused?: boolean | undefined
     verifyTranscribe?: boolean | undefined
     autoCreateBucket?: boolean | undefined
-    autoCreateMissingBucket?: boolean | undefined
-    configPathOverride?: string | undefined
   } = {}
 ): Promise<void> => {
   const explicitBucket = normalizeString(options.preferredBucket)
-  const { state, configPath } = await resolveAwsSttReadinessState(options)
+  const { state, createdBucket } = await resolveAwsSttReadinessState(options)
 
   if (options.focused) {
     l.write('info', 'AWS STT setup')
@@ -404,7 +374,7 @@ export const setupAwsStt = async (
     ...(state.region && state.authConfigured
       ? [{ status: state.transcribeAccessible === true ? 'OK' : 'MISSING', check: 'aws transcribe', detail: state.details.transcribe }]
       : []),
-    ...(configPath ? [{ status: 'OK', check: 'aws config', detail: `saved ${configPath}` }] : [])
+    ...(createdBucket ? [{ status: 'OK', check: 'aws bucket created', detail: createdBucket }] : [])
   ]
 
   l.write(checkRows.some((row) => row.status === 'MISSING') ? 'warn' : 'success', 'AWS STT checks', {
@@ -413,6 +383,22 @@ export const setupAwsStt = async (
   })
 
   if (options.focused) {
+    if (state.region || state.bucket) {
+      l.write('info', 'AWS STT Runtime Values', {
+        category: 'command',
+        humanTable: createHumanTable([
+          { setting: 'region', value: state.region ?? 'not configured' },
+          { setting: 'bucket', value: state.bucket ?? 'not configured' },
+          ...(state.region && state.bucket
+            ? [
+                { setting: 'use once', value: `--aws-region ${state.region} --aws-bucket ${state.bucket}` },
+                { setting: 'save default', value: `bun as config --aws-stt ${AWS_STT_DEFAULT_MODEL} --aws-region ${state.region} --aws-bucket ${state.bucket}` }
+              ]
+            : [])
+        ], ['setting', 'value'])
+      })
+    }
+
     const commands = buildAwsSetupCommands(state, {
       explicitBucket
     })
@@ -441,8 +427,7 @@ export const ensureAwsSttSetup = async (
   const { state } = await resolveAwsSttReadinessState({
     preferredRegion: runtimePreferences.preferredRegion,
     preferredBucket: runtimePreferences.preferredBucket,
-    verifyTranscribe: false,
-    autoCreateMissingBucket: true
+    verifyTranscribe: false
   })
 
   if (!state.hasCli) {
@@ -458,7 +443,7 @@ export const ensureAwsSttSetup = async (
   }
 
   if (!state.bucket) {
-    throw new Error('AWS S3 bucket is required for AWS transcription. Run `bun as setup --aws` to create and save one automatically when none is configured, or set --aws-bucket / save `bun as config --aws-region us-east-1 --aws-bucket <bucket-name> --aws-stt standard`.')
+    throw new Error('AWS S3 bucket is required for AWS transcription. Pass --aws-bucket, save `bun as config --aws-region us-east-1 --aws-bucket <bucket-name> --aws-stt standard`, or run `bun as setup --aws --aws-create-bucket` to provision a bucket and then pass or save the printed values.')
   }
 
   if (state.bucketAccessible !== true) {

@@ -205,6 +205,23 @@
       }
     }
   },
+  "glm": {
+    "description": "Z.AI GLM language models",
+    "type": "api",
+    "models": {
+      "glm-5.1": {
+        "description": "GLM-5.1 - 200K context, 128K maximum output",
+        "inputCostPer1MUSD": 1.4,
+        "inputCostPer1MCents": 140,
+        "outputCostPer1MUSD": 4.4,
+        "outputCostPer1MCents": 440,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KTokens": 18000
+        }
+      }
+    }
+  },
   "llama": {
     "description": "Local LLM inference via llama.cpp",
     "type": "local",

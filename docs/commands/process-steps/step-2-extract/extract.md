@@ -59,17 +59,16 @@ bun as setup --gcloud
 # set or create the active gcloud project, link billing when possible,
 # enable Speech-to-Text, Document AI, and Storage when billing is ready,
 # create/reuse the autoshow-ocr processor and GCS staging bucket,
-# and save chirp_3 plus ocr defaults when no Google defaults are saved yet
+# and print runtime values without changing config/autoshow.json
 bun as setup --gcloud --gcloud-project PROJECT_ID
 
 # pin a specific billing account when multiple open billing accounts exist
 bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
 
 # verify AWS CLI auth, region, and bucket config for Amazon Transcribe
-# creates and saves a staging bucket automatically when one is not configured
 bun as setup --aws
 
-# force creation of a staging bucket or create a specific bucket name
+# create a staging bucket or create a specific bucket name, then print the values
 bun as setup --aws --aws-create-bucket
 
 # build whisper.cpp binary only
@@ -105,8 +104,8 @@ bun as setup --step reverb
 | OpenAI STT | `OPENAI_API_KEY` | `OPENAI_BASE_URL` |
 | Gemini STT | `GEMINI_API_KEY` | `GEMINI_BASE_URL` |
 | GLM STT | `GLM_API_KEY` | `GLM_BASE_URL` |
-| Google Cloud STT + Document AI OCR | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | STT project is read from `gcloud config`, STT location is fixed to `us`, and requests go to `us-speech.googleapis.com`; Document AI OCR defaults are saved by `bun as setup --gcloud --gcloud-project ...` under `defaults.extract.ocr.gcloudDocaiLocation`, `gcloudDocaiOcrProcessorId`, and `gcloudDocaiBucket`; env vars such as `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, and `AUTOSHOW_GCLOUD_BUCKET` still override saved config |
-| AWS Transcribe | AWS CLI auth (`aws configure` or `AWS_PROFILE`) | `AWS_REGION` / `AWS_DEFAULT_REGION`; save `--aws-region` and `--aws-bucket` with `bun as config`, or run `bun as setup --aws` to provision/save a staging bucket automatically when none is configured |
+| Google Cloud STT + Document AI OCR | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | STT project is read from `gcloud config`, STT location is fixed to `us`, and requests go to `us-speech.googleapis.com`; `bun as setup --gcloud --gcloud-project ...` provisions/verifies Google resources and prints runtime values without saving AutoShow defaults; env vars such as `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, and `AUTOSHOW_GCLOUD_BUCKET` override saved config |
+| AWS Transcribe | AWS CLI auth (`aws configure` or `AWS_PROFILE`) | `AWS_REGION` / `AWS_DEFAULT_REGION`; save `--aws-region` and `--aws-bucket` with `bun as config`, pass them per run, or run `bun as setup --aws --aws-create-bucket` to provision a staging bucket and print the values |
 | Mistral | `MISTRAL_API_KEY` | - |
 | AssemblyAI | `ASSEMBLYAI_API_KEY` | `ASSEMBLYAI_BASE_URL` |
 | Gladia | `GLADIA_API_KEY` | `GLADIA_BASE_URL` |
@@ -568,9 +567,9 @@ deAPI OCR uses provider quotes when possible.
 - AWS Textract supports PDF, PNG, JPG, and TIFF natively. BMP, WebP, and GIF inputs are normalized to PNG via ImageMagick when available.
 - AWS Textract uses the AWS CLI for authentication (`aws configure` or `AWS_PROFILE`/`AWS_REGION`). No separate API key is needed — it reuses the same AWS credentials as AWS STT.
 - AWS Textract offers two models: `detect-text` for text-only extraction at $1.50 per 1,000 pages, and `analyze-document` for tables, forms, and layout extraction at $15 per 1,000 pages.
-- Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging, which requires an S3 bucket (reuses the bucket from AWS STT setup, or run `bun as setup --aws` to create one).
+- Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging, which requires an S3 bucket (pass `--aws-bucket`, save one with `bun as config`, or run `bun as setup --aws --aws-create-bucket` to create one and print the value).
 - AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
-- Google Cloud Document AI uses the OCR processor and GCS staging bucket saved by `bun as setup --gcloud --gcloud-project PROJECT_ID`; `layout-parser` remains an explicit processor setup step unless you save `gcloudDocaiLayoutProcessorId` or set `AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID`.
+- Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` can create or discover those resources and print the values, but it does not update `config/autoshow.json`; `layout-parser` remains an explicit processor setup step unless you save `gcloudDocaiLayoutProcessorId` or set `AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID`.
 - Tesseract tuning flags such as `--dpi`, `--psm`, `--oem`, `--rotate`, `--page-separator`, and `--preserve-spaces` work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md).
 - Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.
 

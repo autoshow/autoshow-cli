@@ -8,8 +8,8 @@ import { writeCommand } from '~/cli/commands/process-steps/step-3-write/define-w
 import { resumeCommand } from '~/cli/commands/process-steps/resume/define-resume-command'
 import { ttsCommand } from '~/cli/commands/process-steps/step-4-tts/define-tts-command'
 import { imageCommand } from '~/cli/commands/process-steps/step-5-image/define-image-command'
-import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-music-command'
 import { videoCommand } from '~/cli/commands/process-steps/step-6-video/define-video-command'
+import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-music-command'
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
@@ -54,13 +54,14 @@ const cliErrorHandler = (error: unknown): void => {
     'Google Cloud project is required for Google transcription': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
     'Google Cloud billing must be linked': "Run 'bun as setup --gcloud --gcloud-project PROJECT_ID' to create or select a project, link billing, and enable Speech-to-Text",
     'Google Cloud Speech-to-Text API must be enabled': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
-    'AWS CLI is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and auto-create/save S3 staging when missing",
-    'AWS CLI credentials are required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and auto-create/save S3 staging when missing",
-    'AWS region is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and auto-create/save S3 staging when missing",
-    'AWS S3 bucket is required for AWS transcription': "Run 'bun as setup --aws' to auto-create and save an S3 staging bucket when none is configured, or use 'bun as config --aws-region ... --aws-bucket ... --aws-stt standard'",
+    'AWS CLI is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
+    'AWS CLI credentials are required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
+    'AWS region is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
+    'AWS S3 bucket is required for AWS transcription': "Run 'bun as setup --aws --aws-create-bucket' to provision a staging bucket, then pass --aws-region/--aws-bucket or save them with 'bun as config --aws-region ... --aws-bucket ... --aws-stt standard'",
     'OPENAI_API_KEY': 'Set OPENAI_API_KEY environment variable to use OpenAI models',
     'GEMINI_API_KEY': 'Set GEMINI_API_KEY environment variable to use Gemini models',
     'GROQ_API_KEY': 'Set GROQ_API_KEY environment variable to use Groq models',
+    'GLM_API_KEY': 'Set GLM_API_KEY environment variable to use GLM models',
     'DEEPINFRA_API_KEY': 'Set DEEPINFRA_API_KEY environment variable to use DeepInfra transcription',
     'DEAPI_API_KEY': 'Set DEAPI_API_KEY environment variable to use deAPI transcription and exact STT pricing',
     'ANTHROPIC_API_KEY': 'Set ANTHROPIC_API_KEY environment variable to use Anthropic Claude models',
@@ -101,15 +102,15 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   cache: 'setup',
   setup: 'setup',
   links: 'setup',
+  resume: 'setup',
   metadata: 'processing',
   download: 'processing',
   extract: 'processing',
-  resume: 'processing',
   write: 'processing',
   tts: 'processing',
   image: 'processing',
-  music: 'processing',
   video: 'processing',
+  music: 'processing',
   benchmark: 'setup'
 }
 
@@ -125,8 +126,8 @@ const COMMAND_DEFINITIONS = [
   writeCommand,
   ttsCommand,
   imageCommand,
-  musicCommand,
   videoCommand,
+  musicCommand,
   benchmarkCommand
 ] as const
 

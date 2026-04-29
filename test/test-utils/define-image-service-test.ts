@@ -38,7 +38,7 @@ export const defineImageServiceTest = ({
     'invalid-model'
   ])
 
-  for (const { model } of models) {
+  for (const { model, extraArgs } of models) {
     const budgetKey = `image-${imageService}-${model}`
 
     definePriceEstimateTest(budgetKey, `--price prints estimate for ${model}`, [
@@ -47,6 +47,7 @@ export const defineImageServiceTest = ({
       'a sunset',
       cliFlag,
       model,
+      ...(extraArgs ?? []),
       '--price'
     ])
   }

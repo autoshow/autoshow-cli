@@ -64,5 +64,6 @@ export type EstimateImageCostOptions = {
   deapiImageModels?: string[] | undefined
   deapiImageModel?: string | undefined
   imageSize?: string | undefined
+  imageQuality?: string | undefined
   imagenCount?: number | undefined
 }

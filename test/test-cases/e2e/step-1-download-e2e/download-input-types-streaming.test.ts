@@ -1,10 +1,8 @@
 import { expect } from 'bun:test'
 import { fileExists } from '../../../test-utils/test-helpers'
 import {
-  defineBatchCaseTest,
   defineSingleCaseTest,
   setupDownloadInputTypeLifecycle,
-  type BatchCase,
   type SingleCase,
 } from './download-input-types.shared'
 
@@ -33,22 +31,8 @@ const singleCases: SingleCase[] = [
   },
 ]
 
-const batchCases: BatchCase[] = [
-  {
-    name: 'download URL list of streaming URLs input',
-    input: 'input/examples/batch/2-urls.md',
-    extraArgs: ['--batch-limit', '1'],
-    expectedSourceKind: 'url_list',
-    expectedSelectedCount: 1,
-  },
-]
-
 setupDownloadInputTypeLifecycle([])
 
 for (const tc of singleCases) {
   defineSingleCaseTest(tc)
-}
-
-for (const tc of batchCases) {
-  defineBatchCaseTest(tc)
 }

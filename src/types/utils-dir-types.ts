@@ -2,6 +2,7 @@ export type {
   GroqModel,
   AnthropicModel,
   MinimaxModel,
+  GlmModel,
   AwsSttModel,
   DeapiSttModel,
   DeapiTtsModel,

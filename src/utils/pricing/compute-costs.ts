@@ -3,6 +3,7 @@ import type {
   AggregatedPriceEstimate,
   Step2Metadata,
   Step3Metadata,
+  Step5Metadata,
   ExtractionMetadata,
   StepCostEntry,
   ActualCostBreakdown,
@@ -79,6 +80,43 @@ const computeTtsCost = (
   return {
     cost: (characterCount / 1000) * costPer1kCharactersCents,
     costPer1kCharactersCents
+  }
+}
+
+const estimateImageTargetCost = (
+  target: NonNullable<ComputeEstimatedCostsInput['imageTargets']>[number],
+  input: Pick<ComputeEstimatedCostsInput, 'imageSize' | 'imageQuality'>
+): { provider: Step5Metadata['imageService'], model: string, imageCount: number, totalCost: number } => {
+  const imageCount = Math.max(1, target.count)
+  const imageSize = target.imageSize ?? input.imageSize
+  const imageQuality = target.imageQuality ?? input.imageQuality
+  const sharedOptions = { imageSize, imageQuality, imagenCount: imageCount }
+  const estimate = (() => {
+    switch (target.service) {
+      case 'gemini':
+        return estimateImageCosts({ ...sharedOptions, geminiImageModel: target.model })[0]
+      case 'openai':
+        return estimateImageCosts({ ...sharedOptions, openaiImageModel: target.model })[0]
+      case 'minimax':
+        return estimateImageCosts({ ...sharedOptions, minimaxImageModel: target.model })[0]
+      case 'glm':
+        return estimateImageCosts({ ...sharedOptions, glmImageModel: target.model })[0]
+      case 'grok':
+        return estimateImageCosts({ ...sharedOptions, grokImageModel: target.model })[0]
+      case 'runway':
+        return estimateImageCosts({ ...sharedOptions, runwayImageModel: target.model })[0]
+      case 'bfl':
+        return estimateImageCosts({ ...sharedOptions, bflImageModel: target.model })[0]
+      case 'deapi':
+        return estimateImageCosts({ ...sharedOptions, deapiImageModel: target.model })[0]
+    }
+  })()
+  const costPerImageCents = estimate?.costPerImageCents ?? getImageCost(target.service, target.model)
+  return {
+    provider: target.service,
+    model: target.model,
+    imageCount,
+    totalCost: costPerImageCents * imageCount
   }
 }
 
@@ -855,15 +893,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   }
 
   const imageEstimates = input.imageTargets && input.imageTargets.length > 0
-    ? input.imageTargets.map((target) => {
-        const costPerImageCents = getImageCost(target.service, target.model)
-        return {
-          provider: target.service,
-          model: target.model,
-          imageCount: Math.max(1, target.count),
-          totalCost: costPerImageCents * Math.max(1, target.count)
-        }
-      })
+    ? input.imageTargets.map((target) => estimateImageTargetCost(target, input))
     : estimateImageCosts({
         geminiImageModel: input.geminiImageModel,
         openaiImageModel: input.openaiImageModel,
@@ -874,6 +904,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         bflImageModel: input.bflImageModel,
         deapiImageModel: input.deapiImageModel,
         imageSize: input.imageSize,
+        imageQuality: input.imageQuality,
         imagenCount: input.imagenCount
       })
 

@@ -49,13 +49,13 @@ export const setupFlags = {
     type: String
   },
   aws: {
-    description: 'Check AWS CLI authentication/configuration for Amazon Transcribe, auto-create/save a staging bucket when missing, and print next steps',
+    description: 'Check AWS CLI authentication/configuration for Amazon Transcribe and print next steps',
     type: Boolean,
     default: false,
     negatable: false
   },
   'aws-create-bucket': {
-    description: 'With --aws, create and save an S3 staging bucket for Amazon Transcribe automatically',
+    description: 'With --aws, create an S3 staging bucket for Amazon Transcribe and print the values to pass or save explicitly',
     type: Boolean,
     default: false,
     negatable: false

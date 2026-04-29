@@ -94,6 +94,7 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
     ...(llmConfig.anthropicModels ?? (llmConfig.anthropicModel ? [llmConfig.anthropicModel] : [])),
     ...(llmConfig.minimaxModels ?? (llmConfig.minimaxModel ? [llmConfig.minimaxModel] : [])),
     ...(llmConfig.grokModels ?? (llmConfig.grokModel ? [llmConfig.grokModel] : [])),
+    ...(llmConfig.glmModels ?? (llmConfig.glmModel ? [llmConfig.glmModel] : [])),
     ...(llmConfig.llamaModels ?? (llmConfig.llamaModel ? [llmConfig.llamaModel] : []))
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
@@ -246,7 +247,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   return files
 }
 
-const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'llama', 'mistral'] as const
+const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'llama', 'mistral'] as const
 const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, doubleDashArgs: string[] = []): boolean => {
   const inParsedFlags = TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.some((key) => flags[key] !== undefined)
   if (inParsedFlags) {
@@ -815,7 +816,7 @@ export const handleProcessTarget = async (
   const displayCommand = canonicalizeProcessCommand(command)
 
   if ((isSttCommand(command) || isExtractCommand(command)) && hasTranscribeUnsupportedLLMFlags(rawFlags, doubleDash)) {
-    throw CLIUsageError(`LLM provider flags are not supported with "${displayCommand}" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.`)
+    throw CLIUsageError(`LLM provider flags are not supported with "${displayCommand}" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --glm, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.`)
   }
 
   const configPathOverride = typeof rawFlags['config-path'] === 'string' ? rawFlags['config-path'] : undefined
