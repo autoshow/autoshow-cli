@@ -3,7 +3,7 @@ import {
   fileExists,
   cleanupTestOutput,
 } from './test-helpers'
-import { budgetedTest } from './budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
   definePriceEstimateTest,
@@ -14,7 +14,6 @@ import {
 import { readRunMetadata } from './manifest-helpers'
 
 const IMAGE_GEN_TITLE = 'image-gen'
-const LIVE_IMAGE_TIMEOUT_MS = 120_000
 
 export const defineImageServiceTest = ({
   models,
@@ -83,6 +82,6 @@ export const defineImageServiceTest = ({
         expect(metadata.image?.[0]?.imageModel).toBe(model)
         expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe(`generated-image.${ext}`)
       }
-    }, LIVE_IMAGE_TIMEOUT_MS)
+    }, E2E_TEST_TIMEOUT_MS)
   }
 }

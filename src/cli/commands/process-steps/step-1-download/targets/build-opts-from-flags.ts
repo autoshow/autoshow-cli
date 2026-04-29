@@ -11,6 +11,7 @@ import {
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
+  SUPPORTED_GROK_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
@@ -50,6 +51,7 @@ import {
   validateSpeechmaticsSttModel,
   validateRevSttModel,
   validateGroqSttModel,
+  validateGrokSttModel,
   validateMistralSttModel,
   validateAssemblyaiSttModel,
   validateGladiaSttModel,
@@ -73,12 +75,14 @@ import {
   validateElevenlabsTtsModel,
   validateMinimaxTtsModel,
   validateGroqTtsModel,
+  validateGrokTtsModel,
   validateOpenAITtsModel,
   validateGeminiTtsModel,
   validateDeapiTtsModel,
   validateDeepgramTtsModel,
   validateDeepgramTtsVoice,
   validateGroqTtsVoice,
+  validateGrokTtsVoice,
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel,
   validateDeapiMusicModel,
@@ -124,6 +128,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'deepinfra-stt',
   'deapi-stt',
   'groq-stt',
+  'grok-stt',
   'elevenlabs-stt',
   'deepgram-stt',
   'soniox-stt',
@@ -159,6 +164,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'elevenlabs-tts',
   'minimax-tts',
   'groq-tts',
+  'grok-tts',
   'openai-tts',
   'gemini-tts',
   'deapi-tts',
@@ -201,6 +207,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'elevenlabs-tts': { shortcut: 'all-tts', supported: SUPPORTED_ELEVENLABS_TTS_MODELS },
   'minimax-tts': { shortcut: 'all-tts', supported: SUPPORTED_MINIMAX_TTS_MODELS },
   'groq-tts': { shortcut: 'all-tts', supported: SUPPORTED_GROQ_TTS_MODELS },
+  'grok-tts': { shortcut: 'all-tts', supported: SUPPORTED_GROK_TTS_MODELS },
   'openai-tts': { shortcut: 'all-tts', supported: SUPPORTED_OPENAI_TTS_MODELS },
   'gemini-tts': { shortcut: 'all-tts', supported: SUPPORTED_GEMINI_TTS_MODELS },
   'deepgram-tts': { shortcut: 'all-tts', supported: [DEEPGRAM_DEFAULT_VOICE] },
@@ -583,6 +590,7 @@ export const buildOptsFromFlags = (
   const deepinfraSttModels = readValidatedMany('deepinfra-stt', validateDeepinfraSttModel)
   const deapiSttModels = readValidatedMany('deapi-stt', validateDeapiSttModel)
   const groqSttModels = readValidatedMany('groq-stt', validateGroqSttModel)
+  const grokSttModels = readValidatedMany('grok-stt', validateGrokSttModel)
   const elevenlabsSttModels = readValidatedMany('elevenlabs-stt', validateElevenlabsSttModel)
   const deepgramSttModels = readValidatedMany('deepgram-stt', validateDeepgramSttModel)
   const sonioxSttModels = readValidatedMany('soniox-stt', validateSonioxSttModel)
@@ -619,6 +627,7 @@ export const buildOptsFromFlags = (
   const deepinfraSttModel = first(deepinfraSttModels)
   const deapiSttModel = first(deapiSttModels)
   const groqSttModel = first(groqSttModels)
+  const grokSttModel = first(grokSttModels)
   const elevenlabsSttModel = first(elevenlabsSttModels)
   const deepgramSttModel = first(deepgramSttModels)
   const sonioxSttModel = first(sonioxSttModels)
@@ -654,6 +663,7 @@ export const buildOptsFromFlags = (
   const elevenlabsTtsModels = readValidatedMany('elevenlabs-tts', validateElevenlabsTtsModel)
   const minimaxTtsModels = readValidatedMany('minimax-tts', validateMinimaxTtsModel)
   const groqTtsModels = readValidatedMany('groq-tts', validateGroqTtsModel)
+  const grokTtsModels = readValidatedMany('grok-tts', validateGrokTtsModel)
   const openaiTtsModels = readValidatedMany('openai-tts', validateOpenAITtsModel)
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
@@ -663,6 +673,7 @@ export const buildOptsFromFlags = (
     elevenlabsTtsModels,
     minimaxTtsModels,
     groqTtsModels,
+    grokTtsModels,
     openaiTtsModels,
     geminiTtsModels,
     deepgramTtsModels,
@@ -732,6 +743,8 @@ export const buildOptsFromFlags = (
     deapiSttModel,
     groqSttModels,
     groqSttModel,
+    grokSttModels,
+    grokSttModel,
     elevenlabsSttModels,
     elevenlabsSttModel,
     deepgramSttModels,
@@ -846,6 +859,14 @@ export const buildOptsFromFlags = (
     kittenTtsModel: kittenTtsModelValue === undefined ? undefined : validateCliValue(validateKittenTtsModel, kittenTtsModelValue),
     groqTtsModels,
     groqTtsModel: first(groqTtsModels),
+    grokTtsModels,
+    grokTtsModel: first(grokTtsModels),
+    grokTtsVoice: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'grok-tts-voice')
+      if (v === undefined) return undefined
+      if (grokTtsModels === undefined) return v
+      return validateCliValue(validateGrokTtsVoice, v)
+    })(),
     openaiTtsModels,
     openaiTtsModel: first(openaiTtsModels),
     geminiTtsModels,

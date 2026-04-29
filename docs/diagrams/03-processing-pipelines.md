@@ -53,9 +53,9 @@ src/cli/commands/process-steps/process-video.ts
 │  resolveSttEngine() - picks exactly one engine:                              │
 │                                                                              │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐│
-│  │ --reverb   │ │--elevenlabs│ │--groq-stt  │ │--deepgram- │ │--mistral-  │ │--assemblyai- ││
+│  │ --reverb   │ │--elevenlabs│ │--groq/grok │ │--deepgram- │ │--mistral-  │ │--assemblyai- ││
 │  │ Reverb ASR │ │-stt        │ │ Groq       │ │stt         │ │stt         │ │stt           ││
-│  │ (local)    │ │ ElevenLabs │ │ Whisper    │ │ Deepgram   │ │ Mistral    │ │ AssemblyAI   ││
+│  │ (local)    │ │ ElevenLabs │ │ STT APIs   │ │ Deepgram   │ │ Mistral    │ │ AssemblyAI   ││
 │  │ diarization│ │ Scribe(API)│ │ (API)      │ │ STT (API)  │ │ STT (API)  │ │ STT (API)    ││
 │  │ --reverb-  │ │ w/speaker- │ │            │ │ diarization│ │ diarization│ │ diarization  ││
 │  │ verbatimic.│ │ count hint │ │            │ │ enabled    │ │            │ │ w/speaker-   ││

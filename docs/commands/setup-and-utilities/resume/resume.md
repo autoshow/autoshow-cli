@@ -123,6 +123,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 | `--speechmatics-stt <model>` | Select one or more Speechmatics STT models |
 | `--rev-stt <model>` | Select one or more Rev STT models |
 | `--groq-stt <model>` | Select one or more Groq STT models |
+| `--grok-stt <model>` | Select one or more xAI Grok STT models |
 | `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models |
 | `--openai-stt <model>` | Select one or more OpenAI STT models |
 | `--gemini-stt <model>` | Select one or more Gemini STT models |
@@ -174,6 +175,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 | `--elevenlabs-tts <model>` | Select one or more ElevenLabs TTS models |
 | `--minimax-tts <model>` | Select one or more MiniMax TTS models |
 | `--groq-tts <model>` | Select one or more Groq TTS models |
+| `--grok-tts <model>` | Select one or more xAI Grok TTS models |
 | `--openai-tts <model>` | Select one or more OpenAI TTS models |
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
@@ -184,6 +186,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 | `--gemini-voice <name>` | Gemini TTS voice name override |
 | `--deepgram-voice <id>` | Deepgram TTS voice override |
 | `--groq-voice <id>` | Groq TTS voice ID override |
+| `--grok-tts-voice <id>` | Grok TTS voice ID override |
 
 ### Image
 

@@ -96,6 +96,8 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
     expect(resolveCheapestModelForFlag('deapi-video')).toBe('Ltxv_13B_0_9_8_Distilled_FP8')
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')
+    expect(resolveCheapestModelForFlag('grok-stt')).toBe('speech-to-text')
+    expect(resolveCheapestModelForFlag('grok-tts')).toBe('grok-tts')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')

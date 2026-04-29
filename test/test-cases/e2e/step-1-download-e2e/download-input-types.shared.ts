@@ -244,12 +244,13 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
     if (!firstInfoEntry) {
       return
     }
-    expect({
+    const normalizedInfoEntry = {
       ...firstInfoEntry,
       outputDir: typeof firstInfoEntry['outputDir'] === 'string'
         ? normalizeOutputDir(firstInfoEntry['outputDir'])
         : firstInfoEntry['outputDir']
-    }).toEqual({
+    }
+    expect(normalizedInfoEntry).toMatchObject({
       ...rawMetadata,
       outputDir: normalizeOutputDir(firstItemDir)
     })

@@ -259,6 +259,9 @@ export const createReporter = (logger: Logger): Reporter => {
         category: 'pricing',
         humanTable: createHumanTable(estimateRows, collectColumns(estimateRows))
       })
+      for (const note of estimate.notes ?? []) {
+        logger.write('info', note, { category: 'pricing' })
+      }
 
       emitResult({
         dryRun: true,

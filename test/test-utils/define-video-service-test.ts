@@ -3,7 +3,7 @@ import {
   fileExists,
   cleanupTestOutput,
 } from './test-helpers'
-import { budgetedTest } from './budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
   definePriceEstimateTest,
@@ -16,7 +16,6 @@ import { readRunMetadata } from './manifest-helpers'
 const VIDEO_GEN_TITLE = 'video-gen'
 const PRICE_PROMPT = 'a cinematic mountain sunrise'
 const DEFAULT_LIVE_PROMPT = 'a static shot of a tiny red dot on white background'
-const DEFAULT_TIMEOUT_MS = 16 * 60_000
 
 export const defineVideoServiceTest = ({
   models,
@@ -24,7 +23,7 @@ export const defineVideoServiceTest = ({
   videoService,
   envVarKey,
   envVarDescription,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
+  timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: Array<{ model: string, extraArgs?: string[], expectedDuration?: number, prompt?: string }>
   cliFlag: string

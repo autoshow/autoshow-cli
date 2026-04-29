@@ -21,6 +21,9 @@ bun as extract input/examples/audio/1-audio.mp3
 # extract with Groq STT
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3
 
+# extract with xAI Grok STT
+bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
+
 # extract with DeepInfra Whisper STT
 bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo
 
@@ -59,6 +62,9 @@ bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini
 
 # text-to-speech with Gemini
 bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview
+
+# text-to-speech with xAI Grok
+bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
@@ -125,10 +131,12 @@ bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLa
 bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto --price
 bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
+bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as write ./output/demo/text --price
 bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
+bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as image "a sunset" --openai-image gpt-image-1 --price
 bun as image "a sunset" --bfl-image flux-2-klein-4b --price

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect } from 'bun:test'
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
-import { budgetedTest } from '../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
 import {
   cleanupTestOutput,
   ensurePageImageFixture,
@@ -112,7 +112,7 @@ budgetedTest('music-lyrics-rerender', 'music lyric-video rerender uses edited ca
     expect(videoStream.width).toBe(1920)
     expect(videoStream.height).toBe(1080)
   }
-}, 30000)
+}, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('music-lyrics-whisper-tiny', 'music lyric-video transcribes local audio with whisper and cleans tmp by default', async () => {
   await cleanupTestOutput(SHORT_AUDIO_SUFFIX)
@@ -151,7 +151,7 @@ budgetedTest('music-lyrics-whisper-tiny', 'music lyric-video transcribes local a
     const vtt = await Bun.file(`${outputDir}/0-audio-short.vtt`).text()
     expect(vtt).toContain('WEBVTT')
   }
-}, 30000)
+}, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('music-lyrics-default-example-song', 'bun as music --audio input/examples/lyrics/01-example-song.mp3 renders the bundled example with the default whisper model', async () => {
   await cleanupTestOutput(EXAMPLE_SONG_SUFFIX)
@@ -194,7 +194,7 @@ budgetedTest('music-lyrics-default-example-song', 'bun as music --audio input/ex
     expect(videoStream.width).toBe(1920)
     expect(videoStream.height).toBe(1080)
   }
-}, 120000)
+}, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('music-lyrics-batch-tiny', 'music lyric-video batch writes a batch manifest and child lyric runs for the configured input tree', async () => {
   await cleanupTestOutput(BATCH_SUFFIX)
@@ -236,4 +236,4 @@ budgetedTest('music-lyrics-batch-tiny', 'music lyric-video batch writes a batch 
       expect(childManifest.metadata['mode']).toBe('lyric-video')
     }
   }
-}, 30000)
+}, E2E_TEST_TIMEOUT_MS)

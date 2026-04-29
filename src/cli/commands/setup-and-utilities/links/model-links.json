@@ -138,12 +138,6 @@
       "https://developers.openai.com/api/reference/resources/images/methods/generate/index.md",
       "https://developers.openai.com/api/reference/resources/images/methods/edit/index.md",
       "https://developers.openai.com/api/reference/resources/images/methods/create_variation/index.md"
-    ],
-    "Video": [
-      "https://developers.openai.com/api/docs/guides/video-generation.md",
-      "https://developers.openai.com/api/reference/resources/videos/methods/create/index.md",
-      "https://developers.openai.com/api/reference/resources/videos/methods/download_content/index.md",
-      "https://developers.openai.com/api/reference/resources/videos/methods/remix/index.md"
     ]
   },
   "Gemini": {

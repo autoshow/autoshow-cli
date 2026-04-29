@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
 import {
   cleanupTestOutput,
   fileExists,
@@ -71,4 +72,4 @@ test('gcloud chirp_3 transcribes local audio when gcloud CLI is configured', asy
     expect(metadata.step2?.transcriptionService).toBe('gcloud')
     expect(metadata.step2?.transcriptionModel).toBe('chirp_3')
   }
-}, 120_000)
+}, E2E_TEST_TIMEOUT_MS)

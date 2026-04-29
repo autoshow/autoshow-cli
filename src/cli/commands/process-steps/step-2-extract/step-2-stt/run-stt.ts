@@ -13,6 +13,7 @@ import * as l from '~/utils/logger'
 import { runWhisperTranscribe } from './stt-local/whisper/run-whisper'
 import { runReverbTranscribe } from './stt-local/reverb/run-reverb'
 import { runGroqTranscribe } from './stt-services/groq/run-whisper-groq'
+import { runGrokStt } from './stt-services/grok/run-grok-stt'
 import { runDeepinfraTranscribe } from './stt-services/deepinfra/run-deepinfra-stt'
 import { runDeapiStt } from './stt-services/deapi/run-deapi-stt'
 import { runElevenLabsTranscribe } from './stt-services/elevenlabs/run-elevenlabs-stt'
@@ -73,6 +74,7 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'speechmatics',
   'rev',
   'groq',
+  'grok',
   'mistral',
   'assemblyai',
   'gladia',
@@ -344,6 +346,15 @@ const dispatchStt = async (
 
   if (target.service === 'groq') {
     return await runGroqTranscribe(audioPath, outputDir, {
+      model: target.model,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments
+    })
+  }
+
+  if (target.service === 'grok') {
+    return await runGrokStt(audioPath, outputDir, {
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,

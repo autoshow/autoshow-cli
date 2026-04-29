@@ -473,6 +473,10 @@ export const getGroqTtsVoices = (): readonly string[] => {
   return getModelRegistry().tts['groq']?.voices ?? []
 }
 
+export const getGrokTtsVoices = (): readonly string[] => {
+  return getModelRegistry().tts['grok']?.voices ?? []
+}
+
 
 export const getImageCost = (service: string, model: string): number => {
   const imageModel = getModelRegistry().image[service]?.models[model]

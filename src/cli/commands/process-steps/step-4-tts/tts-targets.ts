@@ -7,25 +7,29 @@ import type {
   MinimaxTtsModel,
   OpenAITtsModel,
   DeepgramTtsModel,
-  DeapiTtsModel
+  DeapiTtsModel,
+  GrokTtsModel
 } from '~/types'
 import {
   validateKittenTtsModel,
   validateElevenlabsTtsModel,
   validateMinimaxTtsModel,
   validateGroqTtsModel,
+  validateGrokTtsModel,
   validateOpenAITtsModel,
   validateGeminiTtsModel,
   validateDeapiTtsModel,
   validateDeepgramTtsModel,
   validateDeepgramTtsVoice,
   validateGroqTtsVoice,
+  validateGrokTtsVoice,
   validateKittenTtsSpeaker,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { pathExists, kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { ensureElevenLabsTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { ensureGroqTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
+import { ensureGrokTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
 import { ensureOpenAITtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { ensureGeminiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
@@ -34,6 +38,7 @@ import { runKittenTts } from './tts-local/kitten/run-kitten-tts'
 import { runElevenLabsTts } from './tts-services/elevenlabs/run-elevenlabs-tts'
 import { runMinimaxTts } from './tts-services/minimax/run-minimax-tts'
 import { runGroqTts } from './tts-services/groq/run-groq-tts'
+import { runGrokTts } from './tts-services/grok/run-grok-tts'
 import { runOpenAITts } from './tts-services/openai/run-openai-tts'
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
 import { runDeepgramTts } from './tts-services/deepgram/run-deepgram-tts'
@@ -128,6 +133,7 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const elevenlabsModels = options.elevenlabsTtsModels ?? (options.elevenlabsTtsModel ? [options.elevenlabsTtsModel] : [])
   const minimaxModels = options.minimaxTtsModels ?? (options.minimaxTtsModel ? [options.minimaxTtsModel] : [])
   const groqModels = options.groqTtsModels ?? (options.groqTtsModel ? [options.groqTtsModel] : [])
+  const grokModels = options.grokTtsModels ?? (options.grokTtsModel ? [options.grokTtsModel] : [])
   const openaiModels = options.openaiTtsModels ?? (options.openaiTtsModel ? [options.openaiTtsModel] : [])
   const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
   const deepgramModels = options.deepgramTtsModels ?? (options.deepgramTtsModel ? [options.deepgramTtsModel] : [])
@@ -191,6 +197,22 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
       run: async (text, outputDir) => {
         await ensureGroqTtsSetup()
         return await runGroqTts(text, outputDir, { model, voiceId })
+      }
+    })
+  }
+
+  for (const rawModel of grokModels) {
+    const model: GrokTtsModel = validateGrokTtsModel(rawModel)
+    const voiceRaw = options.grokTtsVoice?.trim()
+    const voiceId = voiceRaw && voiceRaw.length > 0 ? validateGrokTtsVoice(voiceRaw) : undefined
+
+    targets.push({
+      service: 'grok',
+      model,
+      ...(voiceId ? { voice: voiceId } : {}),
+      run: async (text, outputDir) => {
+        await ensureGrokTtsSetup()
+        return await runGrokTts(text, outputDir, { model, voiceId })
       }
     })
   }

@@ -7,7 +7,7 @@ import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/s
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import { getStep2AllShortcutModelExpansions } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
-import { DEEPGRAM_DEFAULT_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { DEEPGRAM_DEFAULT_VOICE, GROK_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
 
 describe('option resolution contracts', () => {
@@ -15,8 +15,11 @@ describe('option resolution contracts', () => {
     const opts = buildOptsFromFlags(false, {
       openai: 'gpt-5.4-mini',
       'openai-stt': 'gpt-4o-mini-transcribe',
+      'grok-stt': 'speech-to-text',
       'together-stt': 'openai/whisper-large-v3',
       'deepgram-stt': 'nova-3',
+      'grok-tts': 'grok-tts',
+      'grok-tts-voice': 'EVE',
       'tesseract-ocr': true,
       'youtube-captions': true,
       'batch-limit': '9',
@@ -30,8 +33,11 @@ describe('option resolution contracts', () => {
 
     expect(opts.openaiModel).toBe('gpt-5.4-mini')
     expect(opts.openaiSttModel).toBe('gpt-4o-mini-transcribe')
+    expect(opts.grokSttModel).toBe('speech-to-text')
     expect(opts.togetherSttModel).toBe('openai/whisper-large-v3')
     expect(opts.deepgramSttModel).toBe('nova-3')
+    expect(opts.grokTtsModel).toBe('grok-tts')
+    expect(opts.grokTtsVoice).toBe('eve')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
     expect(opts.batchLimit).toBe(9)
@@ -101,10 +107,12 @@ describe('option resolution contracts', () => {
     const ocrOpts = buildOptsFromFlags(false, { 'all-ocr': true })
 
     expect(expansions['deepgram-stt']?.shortcut).toBe('all-stt')
+    expect(expansions['grok-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-stt']?.shortcut).toBe('all-stt')
     expect(expansions['cloudflare-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
+    expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('grok')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('openai-stt')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('cloudflare')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
@@ -112,12 +120,27 @@ describe('option resolution contracts', () => {
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('openai')
   })
 
-  test('--all-tts expands deepgram to one default voice', () => {
+  test('--all-tts expands deepgram and grok to default models', () => {
     const opts = buildOptsFromFlags(false, { 'all-tts': true })
     const deepgramTargets = collectTtsTargets(opts).filter((target) => target.service === 'deepgram')
+    const grokTargets = collectTtsTargets(opts).filter((target) => target.service === 'grok')
 
     expect(opts.deepgramTtsModels).toEqual([DEEPGRAM_DEFAULT_VOICE])
     expect(deepgramTargets.map((target) => target.model)).toEqual([DEEPGRAM_DEFAULT_VOICE])
+    expect(opts.grokTtsModels).toEqual(['grok-tts'])
+    expect(grokTargets.map((target) => target.model)).toEqual(['grok-tts'])
+    expect(grokTargets.map((target) => target.voice)).toEqual([undefined])
+  })
+
+  test('grok tts voice validation normalizes case', () => {
+    const opts = buildOptsFromFlags(false, {
+      'grok-tts': ['grok-tts'],
+      'grok-tts-voice': 'EVE'
+    })
+    const targets = collectTtsTargets(opts).filter((target) => target.service === 'grok')
+
+    expect(opts.grokTtsVoice).toBe(GROK_DEFAULT_TTS_VOICE)
+    expect(targets.map((target) => target.voice)).toEqual([GROK_DEFAULT_TTS_VOICE])
   })
 
   test('explicit deepgram tts flags can still select multiple voices', () => {

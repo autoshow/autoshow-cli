@@ -34,11 +34,15 @@ Hosted providers need API keys:
 OPENAI_API_KEY=...
 GEMINI_API_KEY=...
 GROQ_API_KEY=...
+XAI_API_KEY=...
 ELEVENLABS_API_KEY=...
 MINIMAX_API_KEY=...
 DEEPGRAM_API_KEY=...
 DEAPI_API_KEY=...
 DEAPI_BASE_URL=https://api.deapi.ai
+# optional for Grok TTS
+XAI_BASE_URL=https://api.x.ai/v1
+XAI_TTS_VOICE=eve
 ```
 
 ## Usage
@@ -57,6 +61,7 @@ bun as tts <input> [flags]
 | ElevenLabs | `--elevenlabs-tts <model>` | `eleven_v3`, `eleven_flash_v2_5`, `eleven_turbo_v2_5` | `--elevenlabs-voice`, default `hpp4J3VqNfWAUOO0d1Us` |
 | MiniMax | `--minimax-tts <model>` | `speech-2.8-hd`, `speech-2.8-turbo` | `--minimax-tts-voice`, default `English_expressive_narrator` |
 | Groq | `--groq-tts <model>` | `canopylabs/orpheus-v1-english` | `--groq-voice`, default `troy` |
+| Grok | `--grok-tts <model>` | `grok-tts` | `--grok-tts-voice`, default `eve`; voices `eve`, `ara`, `rex`, `sal`, `leo` |
 | OpenAI | `--openai-tts <model>` | `gpt-4o-mini-tts` | `--openai-voice`, default `alloy` |
 | Gemini | `--gemini-tts <model>` | `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` | `--gemini-voice`, default `Kore` |
 | Deepgram | `--deepgram-tts <model>` | `aura-2-thalia-en`, `aura-2-andromeda-en`, `aura-2-apollo-en`, `aura-2-arcas-en`, `aura-2-asteria-en`, `aura-2-athena-en`, `aura-2-helena-en`, `aura-2-aries-en` | `--deepgram-voice`, default selected model |
@@ -65,7 +70,7 @@ bun as tts <input> [flags]
 If no engine flag is provided, `tts` defaults to Kitten TTS with `kitten-tts-nano-0.8-int8`.
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file.
-Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Deepgram and runnable deAPI models.
+Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Grok, Deepgram, and runnable deAPI models.
 
 deAPI `Qwen3_TTS_12Hz_1_7B_Base` and `Qwen3_TTS_12Hz_1_7B_VoiceDesign` are listed in the catalog, but execution rejects them until the CLI has first-class flags for their required reference audio or voice-design instructions. `--all-tts` selects only runnable deAPI models.
 
@@ -81,6 +86,7 @@ bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini --kitten-voi
 # Hosted providers
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
 bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview --gemini-voice Kore
+bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 bun as tts input/examples/tts/1-tts.md --deepgram-tts aura-2-thalia-en --deepgram-voice aura-2-andromeda-en
 bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro
 bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro --deapi-tts-voice af_heart --price
@@ -112,6 +118,7 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--elevenlabs-tts <model>` | Select one or more ElevenLabs models; omit the value to use the cheapest supported model |
 | `--minimax-tts <model>` | Select one or more MiniMax models; omit the value to use the cheapest supported model |
 | `--groq-tts <model>` | Select one or more Groq models; omit the value to use the cheapest supported model |
+| `--grok-tts <model>` | Select one or more xAI Grok TTS models; omit the value to use `grok-tts` |
 | `--openai-tts <model>` | Select one or more OpenAI models; omit the value to use the cheapest supported model |
 | `--gemini-tts <model>` | Select one or more Gemini models; omit the value to use the cheapest supported model |
 | `--deepgram-tts <model>` | Select one or more Deepgram Aura models; omit the value to use the cheapest supported model |
@@ -119,6 +126,7 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--elevenlabs-voice <id>` | Override the ElevenLabs voice ID |
 | `--minimax-tts-voice <id>` | Override the MiniMax voice ID |
 | `--groq-voice <id>` | Override the Groq voice ID |
+| `--grok-tts-voice <id>` | Override the Grok voice ID (`eve`, `ara`, `rex`, `sal`, or `leo`) |
 | `--openai-voice <id>` | Override the OpenAI voice ID |
 | `--gemini-voice <name>` | Override the Gemini voice name |
 | `--deepgram-voice <model>` | Override the Deepgram API voice/model |

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect } from 'bun:test'
 import { defineSTTServiceTest } from '../../../../test-utils/define-stt-service-test'
+import { E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -170,6 +171,14 @@ defineSTTServiceTest({
 })
 
 defineSTTServiceTest({
+  models: ['speech-to-text'],
+  cliFlag: '--grok-stt',
+  sttService: 'grok',
+  envVarKey: 'XAI_API_KEY',
+  envVarDescription: 'xAI Grok transcription',
+})
+
+defineSTTServiceTest({
   models: ['whisper-v3-turbo', 'whisper-v3'],
   cliFlag: '--fireworks-stt',
   sttService: 'fireworks',
@@ -200,7 +209,6 @@ defineSTTServiceTest({
   sttService: 'rev',
   envVarKey: 'REVAI_ACCESS_TOKEN',
   envVarDescription: 'Rev transcription',
-  timeoutMs: 90_000,
 })
 
 defineSTTServiceTest({
@@ -217,7 +225,6 @@ defineSTTServiceTest({
   sttService: 'speechmatics',
   envVarKey: 'SPEECHMATICS_API_KEY',
   envVarDescription: 'Speechmatics transcription',
-  timeoutMs: 30_000,
 })
 
 test('deapi --price uses the exact pricing endpoint for local audio', async () => {
@@ -249,7 +256,7 @@ test('deapi --price uses the exact pricing endpoint for local audio', async () =
   } finally {
     await stopServer(server)
   }
-}, 30_000)
+}, E2E_TEST_TIMEOUT_MS)
 
 test('deapi run manifest records exact estimated and actual STT cost fields', async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
@@ -324,7 +331,7 @@ test('deapi run manifest records exact estimated and actual STT cost fields', as
     await stopServer(server)
     await rm(configDir, { recursive: true, force: true })
   }
-}, 30_000)
+}, E2E_TEST_TIMEOUT_MS)
 
 test('elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
   if (!await hasConfiguredEnvVar('ELEVENLABS_API_KEY')) {
@@ -358,4 +365,4 @@ test('elevenlabs scribe_v2 transcribes with speaker-count 3', async () => {
     expect(metadata.step2?.transcriptionService).toBe('elevenlabs')
     expect(metadata.step2?.transcriptionModel).toBe('scribe_v2')
   }
-}, 30_000)
+}, E2E_TEST_TIMEOUT_MS)

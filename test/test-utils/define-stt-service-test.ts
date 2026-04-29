@@ -5,7 +5,7 @@ import {
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE,
 } from './test-helpers'
-import { budgetedTest } from './budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
   definePriceEstimateTest,
@@ -23,7 +23,7 @@ export const defineSTTServiceTest = ({
   envVarDescription,
   extraEnvVarKeys,
   extraArgs,
-  timeoutMs,
+  timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: readonly string[]
   cliFlag: string

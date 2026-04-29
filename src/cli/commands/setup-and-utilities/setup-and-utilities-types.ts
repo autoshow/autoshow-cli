@@ -14,6 +14,7 @@ import {
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_GCLOUD_STT_MODELS,
   SUPPORTED_GLADIA_STT_MODELS,
+  SUPPORTED_GROK_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_HAPPYSCRIBE_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
@@ -44,6 +45,7 @@ import {
   SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
+  SUPPORTED_GROK_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
@@ -159,6 +161,7 @@ export type SonioxSttModel = typeof SUPPORTED_SONIOX_STT_MODELS[number]
 export type SpeechmaticsSttModel = typeof SUPPORTED_SPEECHMATICS_STT_MODELS[number]
 export type RevSttModel = typeof SUPPORTED_REV_STT_MODELS[number]
 export type GroqSttModel = typeof SUPPORTED_GROQ_STT_MODELS[number]
+export type GrokSttModel = typeof SUPPORTED_GROK_STT_MODELS[number]
 export type MistralSttModel = typeof SUPPORTED_MISTRAL_STT_MODELS[number]
 export type AssemblyaiSttModel = typeof SUPPORTED_ASSEMBLYAI_STT_MODELS[number]
 export type GladiaSttModel = typeof SUPPORTED_GLADIA_STT_MODELS[number]
@@ -181,6 +184,7 @@ export type KittenTtsModel = typeof SUPPORTED_KITTEN_TTS_MODELS[number]
 export type ElevenlabsTtsModel = typeof SUPPORTED_ELEVENLABS_TTS_MODELS[number]
 export type MinimaxTtsModel = typeof SUPPORTED_MINIMAX_TTS_MODELS[number]
 export type GroqTtsModel = typeof SUPPORTED_GROQ_TTS_MODELS[number]
+export type GrokTtsModel = typeof SUPPORTED_GROK_TTS_MODELS[number]
 export type OpenAITtsModel = typeof SUPPORTED_OPENAI_TTS_MODELS[number]
 export type GeminiTtsModel = typeof SUPPORTED_GEMINI_TTS_MODELS[number]
 export type DeepgramTtsModel = typeof SUPPORTED_DEEPGRAM_TTS_MODELS[number]

@@ -22,6 +22,8 @@ export const ProcessingOptionsSchema = v.pipe(
     awsBucket: v.optional(v.string(), undefined),
     groqSttModels: v.optional(v.array(v.string()), undefined),
     groqSttModel: v.optional(v.string(), undefined),
+    grokSttModels: v.optional(v.array(v.string()), undefined),
+    grokSttModel: v.optional(v.string(), undefined),
     elevenlabsSttModels: v.optional(v.array(v.string()), undefined),
     elevenlabsSttModel: v.optional(v.string(), undefined),
     sonioxSttModels: v.optional(v.array(v.string()), undefined),
@@ -93,6 +95,9 @@ export const ProcessingOptionsSchema = v.pipe(
     groqTtsModels: v.optional(v.array(v.string()), undefined),
     groqTtsModel: v.optional(v.string(), undefined),
     groqVoiceId: v.optional(v.string(), undefined),
+    grokTtsModels: v.optional(v.array(v.string()), undefined),
+    grokTtsModel: v.optional(v.string(), undefined),
+    grokTtsVoice: v.optional(v.string(), undefined),
     openaiTtsModels: v.optional(v.array(v.string()), undefined),
     openaiTtsModel: v.optional(v.string(), undefined),
     openaiVoiceId: v.optional(v.string(), undefined),
@@ -526,7 +531,7 @@ export type Step2BillingMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'fireworks' | 'cloudflare' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'grok' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'fireworks' | 'cloudflare' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number

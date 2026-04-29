@@ -110,6 +110,7 @@ export type ComputeEstimatedCostsInput = {
   deepinfraSttModel?: string | undefined
   deapiSttModel?: string | undefined
   groqSttModel?: string | undefined
+  grokSttModel?: string | undefined
   elevenlabsSttModel?: string | undefined
   deepgramSttModel?: string | undefined
   sonioxSttModel?: string | undefined

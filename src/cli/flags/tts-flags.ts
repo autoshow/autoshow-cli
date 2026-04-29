@@ -4,6 +4,7 @@ import {
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
+  SUPPORTED_GROK_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
@@ -38,6 +39,10 @@ export const ttsFlags = {
   },
   'groq-tts': {
     description: buildModelDescription('Groq TTS model', SUPPORTED_GROQ_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'grok-tts': {
+    description: buildModelDescription('xAI Grok TTS model', SUPPORTED_GROK_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
   'openai-tts': {
@@ -94,6 +99,10 @@ export const ttsFlags = {
   },
   'groq-voice': {
     description: 'Groq TTS voice ID override (default: troy)',
+    type: String
+  },
+  'grok-tts-voice': {
+    description: 'xAI Grok TTS voice override (default: eve)',
     type: String
   },
   'elevenlabs-voice': {

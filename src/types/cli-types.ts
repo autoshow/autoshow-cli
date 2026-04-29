@@ -42,6 +42,8 @@ export type RuntimeOptions = {
   deapiSttModel: string | undefined
   groqSttModels: string[] | undefined
   groqSttModel: string | undefined
+  grokSttModels: string[] | undefined
+  grokSttModel: string | undefined
   elevenlabsSttModels: string[] | undefined
   elevenlabsSttModel: string | undefined
   sonioxSttModels: string[] | undefined
@@ -151,6 +153,9 @@ export type RuntimeOptions = {
   groqTtsModels: string[] | undefined
   groqTtsModel: string | undefined
   groqVoiceId: string | undefined
+  grokTtsModels: string[] | undefined
+  grokTtsModel: string | undefined
+  grokTtsVoice: string | undefined
   openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined

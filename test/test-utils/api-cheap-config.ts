@@ -56,6 +56,7 @@ export const buildApiCheapSelections = () => {
     { service: 'gladia', flag: '--gladia-stt', envVar: 'GLADIA_API_KEY', model: selectCheapestSttModel('gladia') },
     { service: 'happyscribe', flag: '--happyscribe-stt', envVar: 'HAPPYSCRIBE_API_KEY', model: selectCheapestSttModel('happyscribe') },
     { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') },
+    { service: 'grok', flag: '--grok-stt', envVar: 'XAI_API_KEY', model: selectCheapestSttModel('grok') },
     { service: 'together', flag: '--together-stt', envVar: 'TOGETHER_API_KEY', model: selectCheapestSttModel('together') },
     { service: 'fireworks', flag: '--fireworks-stt', envVar: 'FIREWORKS_API_KEY', model: selectCheapestSttModel('fireworks') },
     { service: 'cloudflare', flag: '--cloudflare-stt', envVar: 'CLOUDFLARE_API_TOKEN', model: selectCheapestSttModel('cloudflare') }
@@ -65,6 +66,7 @@ export const buildApiCheapSelections = () => {
     { service: 'elevenlabs', flag: '--elevenlabs-tts', envVar: 'ELEVENLABS_API_KEY', model: selectCheapestTtsModel('elevenlabs') },
     { service: 'minimax', flag: '--minimax-tts', envVar: 'MINIMAX_API_KEY', model: selectCheapestTtsModel('minimax') },
     { service: 'groq', flag: '--groq-tts', envVar: 'GROQ_API_KEY', model: selectCheapestTtsModel('groq') },
+    { service: 'grok', flag: '--grok-tts', envVar: 'XAI_API_KEY', model: selectCheapestTtsModel('grok') },
     { service: 'openai', flag: '--openai-tts', envVar: 'OPENAI_API_KEY', model: selectCheapestTtsModel('openai') },
     { service: 'gemini', flag: '--gemini-tts', envVar: 'GEMINI_API_KEY', model: selectCheapestTtsModel('gemini') }
   ]

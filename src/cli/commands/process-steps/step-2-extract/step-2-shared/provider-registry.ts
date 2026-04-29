@@ -11,6 +11,7 @@ import {
   SUPPORTED_SPEECHMATICS_STT_MODELS,
   SUPPORTED_REV_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
+  SUPPORTED_GROK_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
   SUPPORTED_ASSEMBLYAI_STT_MODELS,
   SUPPORTED_GLADIA_STT_MODELS,
@@ -41,6 +42,7 @@ import {
   validateSpeechmaticsSttModel,
   validateRevSttModel,
   validateGroqSttModel,
+  validateGrokSttModel,
   validateMistralSttModel,
   validateAssemblyaiSttModel,
   validateGladiaSttModel,
@@ -337,6 +339,21 @@ const STEP2_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_GROQ_STT_MODELS,
     validateModel: validateGroqSttModel,
     description: buildModelDescription('Groq Whisper STT model (API, billed)', SUPPORTED_GROQ_STT_MODELS)
+  }),
+  modelProvider({
+    step: 'stt',
+    modality: 'media',
+    flagName: 'grok-stt',
+    targetService: 'grok',
+    providerSpecProvider: 'grok',
+    bootstrapProviderId: 'grok-stt',
+    configKey: 'grokStt',
+    allShortcut: 'all-stt',
+    runtimeModelsKey: 'grokSttModels',
+    runtimeModelKey: 'grokSttModel',
+    supportedModels: SUPPORTED_GROK_STT_MODELS,
+    validateModel: validateGrokSttModel,
+    description: buildModelDescription('xAI Grok STT model', SUPPORTED_GROK_STT_MODELS)
   }),
   modelProvider({
     step: 'stt',

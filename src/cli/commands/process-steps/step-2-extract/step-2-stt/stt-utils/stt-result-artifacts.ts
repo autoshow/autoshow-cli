@@ -22,6 +22,7 @@ const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'speechmatics',
   'rev',
   'groq',
+  'grok',
   'mistral',
   'assemblyai',
   'gladia',

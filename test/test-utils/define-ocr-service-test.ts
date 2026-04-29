@@ -3,7 +3,7 @@ import {
   cleanupTestOutput,
   ensurePageImageFixture,
 } from './test-helpers'
-import { budgetedTest } from './budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import { readRunMetadata } from './manifest-helpers'
 import { runCommandAndExpectOutputDir, shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
 
@@ -18,7 +18,7 @@ export const defineOCRServiceTest = ({
   imageExtractionMethod,
   envVarKey,
   imageInput = 'input/examples/document/1-document.png',
-  timeoutMs,
+  timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: readonly string[]
   cliFlag: string

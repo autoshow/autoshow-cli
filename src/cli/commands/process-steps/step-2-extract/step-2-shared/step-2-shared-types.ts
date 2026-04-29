@@ -128,6 +128,8 @@ export type SttStep2ResolutionOptions = Pick<
   | 'revSttModels'
   | 'groqSttModel'
   | 'groqSttModels'
+  | 'grokSttModel'
+  | 'grokSttModels'
   | 'mistralSttModel'
   | 'mistralSttModels'
   | 'assemblyaiSttModel'

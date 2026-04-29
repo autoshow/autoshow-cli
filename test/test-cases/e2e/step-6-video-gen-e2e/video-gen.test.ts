@@ -1,6 +1,6 @@
 import { test, expect } from 'bun:test'
 import { defineVideoServiceTest } from '../../../test-utils/define-video-service-test'
-import { budgetedTest } from '../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
 import {
   cleanupTestOutput,
   fileExists,
@@ -11,7 +11,6 @@ import {
 import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const VIDEO_GEN_TITLE = 'video-gen'
-const LIVE_VIDEO_TIMEOUT_MS = 16 * 60_000
 
 defineVideoServiceTest({
   models: [
@@ -153,4 +152,4 @@ budgetedTest('video-multi-provider-gemini-minimax', 'live multi-provider run wri
       && entry.videoFileName === 'generated-video-minimax-T2V-01.mp4'
     )).toBe(true)
   }
-}, LIVE_VIDEO_TIMEOUT_MS)
+}, E2E_TEST_TIMEOUT_MS)

@@ -6,6 +6,7 @@ import { ensureDeapiSttSetup } from '~/cli/commands/process-steps/step-2-extract
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/elevenlabs/elevenlabs'
 import { ensureGcloudSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
+import { ensureGrokSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/grok/grok-stt'
 import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/groq/groq'
 import { ensureHappyScribeSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/happyscribe/happyscribe'
 import { ensureMistralSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/mistral/mistral'
@@ -32,6 +33,7 @@ import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extrac
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/tesseract-utils'
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { ensureDeapiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
+import { ensureGrokTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
 import { ensureDeapiMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
 import type { BootstrapHandler } from '~/types'
 
@@ -96,6 +98,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'groq-stt': {
     ensure: async () => await ensureGroqSttSetup()
+  },
+  'grok-stt': {
+    ensure: async () => await ensureGrokSttSetup()
   },
   'mistral-stt': {
     ensure: async () => await ensureMistralSttSetup()
@@ -162,6 +167,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'deapi-tts': {
     ensure: async () => await ensureDeapiTtsSetup()
+  },
+  'grok-tts': {
+    ensure: async () => await ensureGrokTtsSetup()
   },
   'deapi-music': {
     ensure: async () => await ensureDeapiMusicGenSetup()

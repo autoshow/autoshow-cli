@@ -13,6 +13,7 @@ export const STT_ENGINE_CAPABILITIES = {
   speechmatics: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   rev: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   groq: { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  grok: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   mistral: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   assemblyai: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true },
@@ -81,6 +82,8 @@ export const collectSttProviderSpecs = (
     | 'revSttModels'
     | 'groqSttModel'
     | 'groqSttModels'
+    | 'grokSttModel'
+    | 'grokSttModels'
     | 'mistralSttModel'
     | 'mistralSttModels'
     | 'assemblyaiSttModel'

@@ -90,6 +90,7 @@ bun as setup --step reverb
 | Provider | Required env | Optional override |
 |----------|--------------|-------------------|
 | Groq | `GROQ_API_KEY` | - |
+| Grok STT | `XAI_API_KEY` | `XAI_BASE_URL` |
 | DeepInfra | `DEEPINFRA_API_KEY` | `DEEPINFRA_BASE_URL` |
 | Together | `TOGETHER_API_KEY` | `TOGETHER_BASE_URL` |
 | Fireworks | `FIREWORKS_API_KEY` | `FIREWORKS_BASE_URL` |
@@ -126,6 +127,7 @@ If no engine flag is provided, `extract` defaults to Whisper with the `tiny` mod
 | Engine | Selection | Models / behavior |
 |--------|-----------|-------------------|
 | Groq Whisper | `--groq-stt <model>` | `whisper-large-v3-turbo`, `whisper-large-v3` |
+| Grok STT | `--grok-stt <model>` | `speech-to-text`; REST STT with formatted output, word timestamps, and diarization enabled |
 | DeepInfra Whisper | `--deepinfra-stt <model>` | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
 | Together Whisper | `--together-stt <model>` | `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
 | Fireworks Whisper | `--fireworks-stt <model>` | `whisper-v3-turbo`, `whisper-v3`; single-speaker OpenAI-compatible Whisper |
@@ -167,6 +169,7 @@ bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
 bun as extract input/examples/audio/1-audio.mp3 --aws-stt
 bun as extract input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt
+bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
 bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
 bun as extract input/examples/audio/1-audio.mp3 --together-stt
 bun as extract input/examples/audio/1-audio.mp3 --fireworks-stt whisper-v3-turbo
@@ -209,6 +212,7 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--speechmatics-stt <model>` | Select one or more Speechmatics STT models; omit the value to use `standard` |
 | `--rev-stt <model>` | Select one or more Rev STT models; omit the value to use `low_cost` |
 | `--groq-stt <model>` | Select one or more Groq STT models; omit the value to use the cheapest supported model |
+| `--grok-stt <model>` | Select one or more xAI Grok STT models; omit the value to use `speech-to-text` |
 | `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models; omit the value to use `openai/whisper-large-v3-turbo` |
 | `--together-stt <model>` | Select one or more Together Whisper models; omit the value to use `openai/whisper-large-v3` |
 | `--fireworks-stt <model>` | Select one or more Fireworks Whisper models; omit the value to use `whisper-v3-turbo` |
@@ -534,6 +538,7 @@ deAPI OCR uses provider quotes when possible.
 - Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request.
 - Mistral STT requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
 - Happy Scribe STT is fixed to `en-US` in v1. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
+- Grok STT sends `format=true`, `language=en`, and `diarize=true` to xAI's REST STT endpoint and records word timing, confidence, and speaker evidence when the response includes it.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.

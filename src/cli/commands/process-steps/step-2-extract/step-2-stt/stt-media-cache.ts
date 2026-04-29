@@ -11,7 +11,7 @@ import {
   stat,
   writeFile
 } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { hostname, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import * as l from '~/utils/logger'
 import type {
@@ -39,8 +39,12 @@ const SOURCE_MEDIA_ARTIFACT_VERSION = 7
 const DEFAULT_CACHE_MAX_GB = 20
 const DEFAULT_CACHE_MAX_AGE_DAYS = 30
 const DEFAULT_STT_ACQUIRE_CONCURRENCY = 2
+const DEFAULT_LOCK_STALE_MS = 30000
+const DEFAULT_LOCK_WAIT_TIMEOUT_MS = 30 * 60 * 1000
 const LOCK_WAIT_MS = 50
-const LOCK_TIMEOUT_MS = 30000
+const LOCK_HEARTBEAT_MS = 5000
+const LOCK_OWNER_FILE = 'owner.json'
+const CURRENT_HOSTNAME = hostname()
 
 // New hosted STT providers default to shared mp3 artifacts until .m4a support is explicitly confirmed.
 const HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES = new Set<SttTarget['service']>([
@@ -74,6 +78,12 @@ const parsePositiveIntegerEnv = (key: string, fallback: number): number => {
 
 const getSourceMediaAcquireConcurrency = (): number =>
   Math.max(1, parsePositiveIntegerEnv('AUTOSHOW_STT_ACQUIRE_CONCURRENCY', DEFAULT_STT_ACQUIRE_CONCURRENCY))
+
+const getCacheLockStaleMs = (): number =>
+  Math.max(LOCK_HEARTBEAT_MS * 2, parsePositiveIntegerEnv('AUTOSHOW_MEDIA_CACHE_LOCK_STALE_MS', DEFAULT_LOCK_STALE_MS))
+
+const getCacheLockWaitTimeoutMs = (): number =>
+  Math.max(getCacheLockStaleMs(), parsePositiveIntegerEnv('AUTOSHOW_MEDIA_CACHE_LOCK_WAIT_MS', DEFAULT_LOCK_WAIT_TIMEOUT_MS))
 
 const isHostedSttTarget = (target: SttTarget): boolean =>
   !target.local && target.service !== 'youtube-captions' && target.service !== 'supadata'
@@ -165,13 +175,90 @@ const getEntryDir = (cacheKey: string): string => join(getCacheRootDir(), cacheK
 const getEntryJsonPath = (cacheKey: string): string => join(getEntryDir(cacheKey), 'entry.json')
 const getEntryMetadataPath = (cacheKey: string): string => join(getEntryDir(cacheKey), 'metadata.json')
 const getLockDir = (cacheKey: string): string => join(getEntryDir(cacheKey), '.lock')
+const getLockOwnerPath = (lockDir: string): string => join(lockDir, LOCK_OWNER_FILE)
 
 const isCacheRecoverableError = (error: unknown): boolean => {
   const code = error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined
   return code === 'EACCES' || code === 'ENOSPC' || code === 'ENOTDIR' || code === 'ENOENT'
 }
 
-const withCacheLock = async <T,>(cacheKey: string, fn: () => Promise<T>): Promise<T> => {
+const getErrorCode = (error: unknown): string | undefined =>
+  error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined
+
+type CacheLockOwner = {
+  pid?: number | undefined
+  hostname?: string | undefined
+  createdAt?: string | undefined
+  updatedAt?: string | undefined
+}
+
+const readCacheLockOwner = async (lockDir: string): Promise<CacheLockOwner | null> => {
+  try {
+    const parsed = JSON.parse(await readFile(getLockOwnerPath(lockDir), 'utf-8')) as Record<string, unknown>
+    return {
+      ...(typeof parsed['pid'] === 'number' ? { pid: parsed['pid'] } : {}),
+      ...(typeof parsed['hostname'] === 'string' ? { hostname: parsed['hostname'] } : {}),
+      ...(typeof parsed['createdAt'] === 'string' ? { createdAt: parsed['createdAt'] } : {}),
+      ...(typeof parsed['updatedAt'] === 'string' ? { updatedAt: parsed['updatedAt'] } : {})
+    }
+  } catch {
+    return null
+  }
+}
+
+const isProcessRunning = (pid: number | undefined): boolean => {
+  if (!Number.isInteger(pid) || (pid ?? 0) < 1) {
+    return false
+  }
+
+  try {
+    process.kill(pid as number, 0)
+    return true
+  } catch (error) {
+    return getErrorCode(error) === 'EPERM'
+  }
+}
+
+const writeCacheLockOwner = async (
+  lockDir: string,
+  createdAt: string
+): Promise<void> => {
+  await writeFile(getLockOwnerPath(lockDir), JSON.stringify({
+    pid: process.pid,
+    hostname: CURRENT_HOSTNAME,
+    createdAt,
+    updatedAt: new Date().toISOString()
+  }, null, 2))
+}
+
+const getCacheLockAgeMs = async (
+  lockDir: string,
+  owner: CacheLockOwner | null
+): Promise<number | null> => {
+  try {
+    const lockStats = await stat(owner ? getLockOwnerPath(lockDir) : lockDir)
+    return Date.now() - lockStats.mtimeMs
+  } catch {
+    return null
+  }
+}
+
+const removeStaleCacheLock = async (lockDir: string): Promise<boolean> => {
+  const owner = await readCacheLockOwner(lockDir)
+  const sameHost = owner?.hostname === CURRENT_HOSTNAME
+  const ownerIsGone = sameHost && owner?.pid !== undefined && !isProcessRunning(owner.pid)
+  const ageMs = await getCacheLockAgeMs(lockDir, owner)
+  const heartbeatIsStale = ageMs !== null && ageMs > getCacheLockStaleMs()
+
+  if (!ownerIsGone && !heartbeatIsStale) {
+    return false
+  }
+
+  await rm(lockDir, { recursive: true, force: true })
+  return true
+}
+
+export const withCacheLock = async <T,>(cacheKey: string, fn: () => Promise<T>): Promise<T> => {
   const entryDir = getEntryDir(cacheKey)
   const lockDir = getLockDir(cacheKey)
   const startedAt = Date.now()
@@ -180,18 +267,37 @@ const withCacheLock = async <T,>(cacheKey: string, fn: () => Promise<T>): Promis
   while (true) {
     try {
       await mkdir(lockDir)
+      try {
+        await writeCacheLockOwner(lockDir, new Date().toISOString())
+      } catch (error) {
+        await rm(lockDir, { recursive: true, force: true })
+        throw error
+      }
       break
     } catch (error) {
-      if (Date.now() - startedAt > LOCK_TIMEOUT_MS) {
+      if (getErrorCode(error) !== 'EEXIST') {
         throw error
+      }
+      if (await removeStaleCacheLock(lockDir)) {
+        continue
+      }
+      if (Date.now() - startedAt > getCacheLockWaitTimeoutMs()) {
+        throw new Error(`Timed out waiting for media cache lock ${lockDir}`)
       }
       await sleep(LOCK_WAIT_MS)
     }
   }
 
+  const lockCreatedAt = new Date().toISOString()
+  const heartbeat = setInterval(() => {
+    void writeCacheLockOwner(lockDir, lockCreatedAt).catch(() => {})
+  }, LOCK_HEARTBEAT_MS)
+  heartbeat.unref?.()
+
   try {
     return await fn()
   } finally {
+    clearInterval(heartbeat)
     await rm(lockDir, { recursive: true, force: true })
   }
 }

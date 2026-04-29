@@ -18,6 +18,7 @@ import { setupDeepgramStt } from '~/cli/commands/process-steps/step-2-extract/st
 import { setupSonioxStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/soniox/soniox'
 import { setupSpeechmaticsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/speechmatics/speechmatics'
 import { setupRevStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/rev/rev'
+import { setupGrokStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/grok/grok-stt'
 import { setupMistralStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/mistral/mistral'
 import { setupOpenaiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/openai-stt/openai-stt'
 import { setupGeminiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/gemini-stt'
@@ -40,6 +41,7 @@ import { setupDeapiOcr } from '~/cli/commands/process-steps/step-2-extract/step-
 import { setupKittenTts } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { setupGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
+import { setupGrokTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
 import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
@@ -272,6 +274,8 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupRevStt)
 
+  await withCompactSetup(setupGrokStt)
+
   await withCompactSetup(async () => {
     await setupMistralStt()
     await setupOpenaiStt()
@@ -312,6 +316,8 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupElevenLabsTts)
 
   await withCompactSetup(setupGroqTts)
+
+  await withCompactSetup(setupGrokTts)
 
   await withCompactSetup(setupOpenAITts)
 
@@ -361,6 +367,7 @@ const runSetupTranscription = async (): Promise<void> => {
   await setupTogetherStt()
   await setupFireworksStt()
   await setupCloudflareStt()
+  await setupGrokStt()
   await setupAwsStt({
     ...awsDefaults,
     verifyTranscribe: true
@@ -379,6 +386,7 @@ const runSetupTts = async (): Promise<void> => {
   for (const model of SUPPORTED_KITTEN_TTS_MODELS) await downloadKittenTtsModel(model)
   await setupElevenLabsTts()
   await setupGroqTts()
+  await setupGrokTts()
   await setupOpenAITts()
   await setupGeminiTts()
   await setupDeepgramTts()

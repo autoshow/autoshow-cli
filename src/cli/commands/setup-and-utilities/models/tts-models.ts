@@ -3,13 +3,15 @@ import { CLIUsageError } from '~/utils/error-handler'
 import {
   getKittenHfRepo,
   getKittenVoices,
-  getGroqTtsVoices
+  getGroqTtsVoices,
+  getGrokTtsVoices
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type {
   KittenTtsModel,
   ElevenlabsTtsModel,
   MinimaxTtsModel,
   GroqTtsModel,
+  GrokTtsModel,
   OpenAITtsModel,
   GeminiTtsModel,
   DeepgramTtsModel,
@@ -75,6 +77,25 @@ export const validateGroqTtsVoice = (voice: string): string => {
     )
   }
   return voice
+}
+
+export const SUPPORTED_GROK_TTS_MODELS = [
+  'grok-tts'
+] as const satisfies readonly string[]
+
+export const SUPPORTED_GROK_TTS_VOICES = getGrokTtsVoices()
+export const GROK_DEFAULT_TTS_VOICE = 'eve'
+
+export const validateGrokTtsModel = createModelValidator<GrokTtsModel>(SUPPORTED_GROK_TTS_MODELS, 'grok-tts')
+
+export const validateGrokTtsVoice = (voice: string): string => {
+  const normalized = voice.trim().toLowerCase()
+  if (!SUPPORTED_GROK_TTS_VOICES.includes(normalized)) {
+    throw CLIUsageError(
+      `Invalid --grok-tts-voice "${voice}". Allowed values: ${formatAllowedValues(SUPPORTED_GROK_TTS_VOICES)}`
+    )
+  }
+  return normalized
 }
 
 export const SUPPORTED_OPENAI_TTS_MODELS = [

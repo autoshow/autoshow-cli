@@ -2,6 +2,7 @@ import { mkdir, readdir, rm, appendFile, copyFile, stat } from 'node:fs/promises
 import { basename, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 import { parseCommandEstimatedTotal } from '../test-runner/utils'
 import { readOutputMetadataSummary } from './output-metadata-summary'
+import { E2E_TEST_TIMEOUT_MS } from './timeouts'
 
 export const OUTPUT_DIR = './output'
 export const STABLE_AUDIO_URL = 'https://ajc.pics/autoshow/1-audio.mp3'
@@ -115,7 +116,7 @@ const copyRunManifestToArtifacts = async (outputDir: string | null): Promise<voi
   }
 }
 
-const SUBPROCESS_TIMEOUT = 900000
+const SUBPROCESS_TIMEOUT = E2E_TEST_TIMEOUT_MS
 const TEST_CONFIG_PATH = resolve(import.meta.dir, 'fixtures/empty-autoshow-config.json')
 const TEST_CACHE_DIR = resolve(process.cwd(), 'output/.test-cache')
 const PROCESSING_COMMANDS = new Set([

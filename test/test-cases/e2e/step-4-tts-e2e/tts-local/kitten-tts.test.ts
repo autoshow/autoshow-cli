@@ -9,7 +9,7 @@ import {
   STABLE_TTS_MD_TITLE,
   hasConfiguredEnvVar,
 } from '../../../../test-utils/test-helpers'
-import { budgetedTest } from '../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 const KITTEN_TTS_ENV_DIR = 'runtime/bin/kitten-tts'
@@ -112,7 +112,7 @@ describe('kitten-tts', () => {
           expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
           expect(metadata.tts?.[0]?.speaker).toBe(kittenModelCase.speaker)
         }
-      }, 30000)
+      }, E2E_TEST_TIMEOUT_MS)
     }
 
     test('multi-provider --price prints both TTS targets and renamed output files', async () => {
@@ -186,7 +186,7 @@ describe('kitten-tts', () => {
         expect(actualCostSteps.filter((step) => step['step'] === 'tts')).toHaveLength(2)
         expect(actualTimingSteps.filter((step) => step['step'] === 'tts')).toHaveLength(2)
       }
-    }, 30000)
+    }, E2E_TEST_TIMEOUT_MS)
 
     test('multi-provider run stays successful when one selected target fails', async () => {
       await cleanupTestOutput(STABLE_TTS_MD_TITLE)
@@ -223,7 +223,7 @@ describe('kitten-tts', () => {
         expect(ttsEntries[0]?.['ttsService']).toBe('kitten')
         expect(ttsEntries[0]?.['audioFileName']).toBe('speech-kitten-kitten-tts-mini.wav')
       }
-    }, 15000)
+    }, E2E_TEST_TIMEOUT_MS)
 
     test('multi-provider run fails when every selected target fails', async () => {
       const result = await runCommand(

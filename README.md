@@ -42,6 +42,9 @@ bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 # Extraction only (media routes to STT, documents/articles route to OCR)
 bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
+# Hosted Grok speech-to-text
+bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
+
 # X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 
@@ -53,6 +56,9 @@ bun as extract input/examples/document/1-document.pdf --out json
 
 # Standalone text-to-speech from local text
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
+
+# Hosted Grok text-to-speech
+bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
 # Prompt-driven generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01

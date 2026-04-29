@@ -8,6 +8,7 @@ export const ttsRegistry: PriceSelectionEntry[] = [
     command('tts-gemini-gemini-2.5-flash-preview-tts', 'tts-gemini-gemini-2.5-flash-preview-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gemini-tts', 'gemini-2.5-flash-preview-tts', '--price']),
     command('tts-gemini-gemini-2.5-pro-preview-tts', 'tts-gemini-gemini-2.5-pro-preview-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gemini-tts', 'gemini-2.5-pro-preview-tts', '--price']),
     command('tts-groq-canopylabs/orpheus-v1-english', 'tts-groq-canopylabs/orpheus-v1-english', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--groq-tts', 'canopylabs/orpheus-v1-english', '--price']),
+    command('tts-grok-grok-tts', 'tts-grok-grok-tts', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--grok-tts', 'grok-tts', '--price']),
     command('tts-minimax-speech-2.8-turbo', 'tts-minimax-speech-2.8-turbo', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-turbo', '--price']),
     command('tts-minimax-speech-2.8-hd', 'tts-minimax-speech-2.8-hd', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-hd', '--price']),
     command('tts-elevenlabs-eleven_v3', 'tts-elevenlabs-eleven_v3', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--elevenlabs-tts', 'eleven_v3', '--price']),

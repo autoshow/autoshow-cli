@@ -238,6 +238,7 @@ The benchmark automatically detects which STT services are available based on en
 | whisper       | `whisper-cpp` binary        |
 | deepgram      | `DEEPGRAM_API_KEY`          |
 | groq          | `GROQ_API_KEY`              |
+| grok          | `XAI_API_KEY`               |
 | deepinfra     | `DEEPINFRA_API_KEY`         |
 | openai-stt    | `OPENAI_API_KEY`            |
 | gemini-stt    | `GEMINI_API_KEY`            |

@@ -6,12 +6,11 @@ import {
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE,
 } from "./test-helpers"
-import { budgetedTest } from './budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import { readRunMetadata } from './manifest-helpers'
 import { shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
-const LIVE_LLM_TIMEOUT_MS = 120_000
 
 const isGeminiTransientUnavailable = (output: string): boolean => {
   const clean = stripAnsi(output)
@@ -114,6 +113,6 @@ export const defineLLMWriteTest = ({
         expect(metadata.step3?.llmModel).toBe(model)
         expect(metadata.step3?.llmService).toBe(llmService)
       }
-    }, LIVE_LLM_TIMEOUT_MS)
+    }, E2E_TEST_TIMEOUT_MS)
   }
 }

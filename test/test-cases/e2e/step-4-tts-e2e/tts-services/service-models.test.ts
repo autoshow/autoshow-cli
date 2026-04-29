@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect } from 'bun:test'
 import { defineTTSServiceTest } from '../../../../test-utils/define-tts-service-test'
+import { E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -19,6 +20,7 @@ import {
   GEMINI_DEFAULT_TTS_VOICE,
   OPENAI_DEFAULT_TTS_VOICE,
   DEEPGRAM_DEFAULT_VOICE,
+  GROK_DEFAULT_TTS_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
 defineTTSServiceTest({
@@ -39,7 +41,6 @@ defineTTSServiceTest({
   ttsService: 'gemini',
   envVarKey: 'GEMINI_API_KEY',
   envVarDescription: 'Gemini TTS',
-  generationTimeoutMs: 30_000,
   resolveExpectedSpeaker: async () => {
     const voice = await readConfiguredEnvVar('GEMINI_TTS_VOICE')
     return voice ?? GEMINI_DEFAULT_TTS_VOICE
@@ -100,7 +101,7 @@ test('gemini multispeaker with explicit speaker mappings generates speech.wav', 
     await cleanupTestOutput('gemini-multispeaker-dialogue')
     await rm(tempRoot, { recursive: true, force: true })
   }
-}, 30_000)
+}, E2E_TEST_TIMEOUT_MS)
 
 defineTTSServiceTest({
   models: ['speech-2.8-turbo', 'speech-2.8-hd'],
@@ -108,7 +109,6 @@ defineTTSServiceTest({
   ttsService: 'minimax',
   envVarKey: 'MINIMAX_API_KEY',
   envVarDescription: 'MiniMax TTS',
-  generationTimeoutMs: 120_000,
   extraArgs: ['--minimax-tts-voice', 'English_expressive_narrator'],
   resolveExpectedSpeaker: async () => 'English_expressive_narrator',
 })
@@ -133,6 +133,16 @@ defineTTSServiceTest({
   envVarDescription: 'Groq TTS',
   extraArgs: ['--groq-voice', 'troy'],
   resolveExpectedSpeaker: async () => 'troy',
+})
+
+defineTTSServiceTest({
+  models: ['grok-tts'],
+  cliFlag: '--grok-tts',
+  ttsService: 'grok',
+  envVarKey: 'XAI_API_KEY',
+  envVarDescription: 'xAI Grok TTS',
+  extraArgs: ['--grok-tts-voice', GROK_DEFAULT_TTS_VOICE],
+  resolveExpectedSpeaker: async () => GROK_DEFAULT_TTS_VOICE,
 })
 
 defineTTSServiceTest({
@@ -161,6 +171,22 @@ test('rejects invalid deepgram voice override before API request', async () => {
 
   expect(result.exitCode).not.toBe(0)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --deepgram-voice "invalid-model"')
+})
+
+test('rejects invalid grok voice override before API request', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--grok-tts',
+    'grok-tts',
+    '--grok-tts-voice',
+    'invalid-voice',
+    '--price'
+  ])
+
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --grok-tts-voice "invalid-voice"')
 })
 
 test('deepgram with --deepgram-voice aura-2-andromeda-en records speaker override', async () => {

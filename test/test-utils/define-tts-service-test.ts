@@ -7,7 +7,7 @@ import {
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
 } from './test-helpers'
-import { budgetedTest } from './budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
   definePriceEstimateTest,
@@ -15,8 +15,6 @@ import {
   withOutputLifecycle
 } from './service-test-kit'
 import { readRunMetadata } from './manifest-helpers'
-
-const LIVE_TTS_TIMEOUT_MS = 30_000
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
@@ -38,6 +36,7 @@ export const defineTTSServiceTest = ({
   extraArgs,
   resolveExpectedSpeaker,
   generationTimeoutMs,
+  generationTimeoutMsByModel,
 }: {
   models: readonly string[]
   cliFlag: string
@@ -47,6 +46,7 @@ export const defineTTSServiceTest = ({
   extraArgs?: string[]
   resolveExpectedSpeaker?: () => Promise<string>
   generationTimeoutMs?: number
+  generationTimeoutMsByModel?: Readonly<Record<string, number>>
 }): void => {
   withOutputLifecycle(STABLE_TTS_MD_TITLE)
 
@@ -73,6 +73,7 @@ export const defineTTSServiceTest = ({
 
   for (const model of models) {
     const budgetKey = `tts-${ttsService}-${model}`
+    const timeoutMs = generationTimeoutMsByModel?.[model] ?? generationTimeoutMs ?? E2E_TEST_TIMEOUT_MS
 
     budgetedTest(budgetKey, `${model} generates speech.wav`, async () => {
       if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} is required for ${envVarDescription}`)) {
@@ -131,6 +132,6 @@ export const defineTTSServiceTest = ({
         }
         expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
       }
-    }, generationTimeoutMs ?? LIVE_TTS_TIMEOUT_MS)
+    }, timeoutMs)
   }
 }

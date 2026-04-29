@@ -24,6 +24,7 @@ const toBootstrapProviderId = (
     case 'speechmatics':
     case 'rev':
     case 'groq':
+    case 'grok':
     case 'mistral':
     case 'assemblyai':
     case 'gladia':

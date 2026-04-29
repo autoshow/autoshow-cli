@@ -281,6 +281,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('rev')
     case 'groq-stt':
       return selectCheapestSttModel('groq')
+    case 'grok-stt':
+      return selectCheapestSttModel('grok')
     case 'mistral-stt':
       return selectCheapestSttModel('mistral')
     case 'assemblyai-stt':
@@ -333,6 +335,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('minimax')
     case 'groq-tts':
       return selectCheapestTtsModel('groq')
+    case 'grok-tts':
+      return selectCheapestTtsModel('grok')
     case 'openai-tts':
       return selectCheapestTtsModel('openai')
     case 'gemini-tts':

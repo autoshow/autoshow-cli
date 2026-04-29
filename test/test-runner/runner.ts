@@ -15,6 +15,7 @@ import { buildPriceReportData, buildTestReportData, type BudgetPreflightSummary 
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
 import { applyModelConfigCalibrations } from './model-calibration'
 import { resolveSelectedFiles } from './path-selection'
+import { E2E_TEST_TIMEOUT_MS } from '../test-utils/timeouts'
 
 const formatCents = (cents: number): string => `${cents.toFixed(4)}¢`
 
@@ -242,7 +243,7 @@ const runBunTest = async (
   const args = [
     'test',
     '--timeout',
-    '900000',
+    String(E2E_TEST_TIMEOUT_MS),
     ...passthroughArgs,
     '--reporter',
     'junit',

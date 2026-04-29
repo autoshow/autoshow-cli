@@ -160,7 +160,7 @@ src/types/
 │  ├── PageResult           pageNumber, method:'text'|'ocr'|'skipped', text    │
 │  ├── ExtractionMetadata   extractionMethod, pages, processingTime, ...       │
 │  ├── Step2Metadata        transcriptionService, model, time, tokenCount      │
-│  │    transcriptionService: 'whisper'|'reverb'|'elevenlabs'|'groq'|'openai'|'mistral'|'assemblyai' │
+│  │    transcriptionService: 'whisper'|'reverb'|'elevenlabs'|'groq'|'grok'|'openai'|'mistral'|... │
 │  ├── WhisperJsonOutput    whisper.cpp JSON output schema                     │
 │  ├── ReverbOutput         reverb segments + speakers                         │
 │  └── ElevenLabsSttResponse  ElevenLabs word/segment schema                   │

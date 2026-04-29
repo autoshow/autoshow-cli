@@ -24,6 +24,7 @@ describe('provider selection contracts', () => {
       'speechmatics-stt',
       'rev-stt',
       'groq-stt',
+      'grok-stt',
       'mistral-stt',
       'assemblyai-stt',
       'gladia-stt',

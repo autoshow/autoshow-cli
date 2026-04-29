@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { defineImageServiceTest } from '../../../test-utils/define-image-service-test'
+import { E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -10,8 +11,6 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
 } from '../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../test-utils/manifest-helpers'
-
-const OPENAI_IMAGE_TIMEOUT_MS = 120_000
 
 defineImageServiceTest({
   models: [
@@ -84,7 +83,7 @@ describe('openai image format options', () => {
       expect(metadata.image?.[0]?.imageModel).toBe('gpt-image-1-mini')
       expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe('generated-image.jpg')
     }
-  }, OPENAI_IMAGE_TIMEOUT_MS)
+  }, E2E_TEST_TIMEOUT_MS)
 
   test('gpt-image-1 generates oil painting with high quality and custom size', async () => {
     await cleanupTestOutput(IMAGE_GEN_TITLE)
@@ -120,7 +119,7 @@ describe('openai image format options', () => {
       expect(metadata.image?.[0]?.imageService).toBe('openai')
       expect(metadata.image?.[0]?.imageModel).toBe('gpt-image-1')
     }
-  }, OPENAI_IMAGE_TIMEOUT_MS)
+  }, E2E_TEST_TIMEOUT_MS)
 })
 
 describe('write with image gen', () => {
@@ -175,5 +174,5 @@ describe('write with image gen', () => {
       expect(metadata.step5?.imageModel).toBe('gpt-image-1')
       expect(metadata.step5?.imageFileNames?.[0]).toBe('generated-image.png')
     }
-  }, OPENAI_IMAGE_TIMEOUT_MS)
+  }, E2E_TEST_TIMEOUT_MS)
 })

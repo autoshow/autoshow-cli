@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
 import {
   cleanupTestOutput,
   fileExists,
@@ -84,4 +85,4 @@ test('aws standard transcribes local audio when AWS CLI Transcribe is configured
     expect(metadata.step2?.transcriptionService).toBe('aws')
     expect(metadata.step2?.transcriptionModel).toBe('standard')
   }
-}, 120_000)
+}, E2E_TEST_TIMEOUT_MS)

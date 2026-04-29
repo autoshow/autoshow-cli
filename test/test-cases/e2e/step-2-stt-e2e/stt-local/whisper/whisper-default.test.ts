@@ -1,6 +1,6 @@
 import { expect, beforeAll, afterAll } from 'bun:test'
 import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_LOCAL_AUDIO_PATH, STABLE_LOCAL_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
-import { budgetedTest } from '../../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
@@ -67,7 +67,7 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
     ])
     expect(metadata.missingProviders).toEqual([])
   }
-}, 60000)
+}, E2E_TEST_TIMEOUT_MS)
 
 for (const modelCase of [
   { model: 'base', metadataSuffix: 'ggml-base' },
@@ -112,7 +112,7 @@ for (const modelCase of [
       const summaryExists = await fileExists(`${outputDir}/text.json`)
       expect(summaryExists).toBe(false)
     }
-  }, 60000)
+  }, E2E_TEST_TIMEOUT_MS)
 }
 
 budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments', async () => {
@@ -152,4 +152,4 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
     const segmentsDirExists = await fileExists(`${outputDir}/segments`)
     expect(segmentsDirExists).toBe(true)
   }
-}, 90000)
+}, E2E_TEST_TIMEOUT_MS)

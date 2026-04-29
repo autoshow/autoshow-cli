@@ -13,6 +13,7 @@ const SERVICE_DEFINITIONS: {
   { service: 'whisper', models: ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'], envVar: undefined },
   { service: 'deepgram', models: ['nova-3'], envVar: 'DEEPGRAM_API_KEY' },
   { service: 'groq', models: ['whisper-large-v3-turbo', 'whisper-large-v3'], envVar: 'GROQ_API_KEY' },
+  { service: 'grok', models: ['speech-to-text'], envVar: 'XAI_API_KEY' },
   { service: 'deepinfra', models: ['openai/whisper-large-v3-turbo', 'openai/whisper-large-v3'], envVar: 'DEEPINFRA_API_KEY' },
   { service: 'openai-stt', models: ['gpt-4o-mini-transcribe', 'gpt-4o-transcribe'], envVar: 'OPENAI_API_KEY' },
   { service: 'gemini-stt', models: ['gemini-3-flash-preview'], envVar: 'GEMINI_API_KEY' },

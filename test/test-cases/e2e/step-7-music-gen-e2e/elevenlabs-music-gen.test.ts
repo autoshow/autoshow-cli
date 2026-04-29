@@ -1,5 +1,6 @@
 import { test, expect } from 'bun:test'
 import { defineMusicServiceTest } from '../../../test-utils/define-music-service-test'
+import { E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
 import {
   runCommand,
   fileExists,
@@ -10,7 +11,6 @@ import {
 import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
-const ELEVENLABS_MUSIC_TIMEOUT_MS = 120_000
 
 defineMusicServiceTest({
   models: [
@@ -70,7 +70,7 @@ test('music_v1 generates cinematic orchestral music', async () => {
     expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
     expect(metadata.music?.[0]?.musicModel).toBe('music_v1')
   }
-}, ELEVENLABS_MUSIC_TIMEOUT_MS)
+}, E2E_TEST_TIMEOUT_MS)
 
 test('music_v1 generates lo-fi with duration and instrumental flag', async () => {
   const hasApiKey = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
@@ -100,7 +100,7 @@ test('music_v1 generates lo-fi with duration and instrumental flag', async () =>
     expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
     expect(metadata.music?.[0]?.lyricsSource).toBe('none')
   }
-}, ELEVENLABS_MUSIC_TIMEOUT_MS)
+}, E2E_TEST_TIMEOUT_MS)
 
 test('write with elevenlabs music pipeline writes music artifacts and metadata', async () => {
   const hasOpenai = await hasConfiguredEnvVar('OPENAI_API_KEY')
@@ -131,4 +131,4 @@ test('write with elevenlabs music pipeline writes music artifacts and metadata',
     expect(metadata.step7?.musicModel).toBe('music_v1')
     expect(metadata.step7?.lyricsSource).toBe('generated')
   }
-}, ELEVENLABS_MUSIC_TIMEOUT_MS)
+}, E2E_TEST_TIMEOUT_MS)

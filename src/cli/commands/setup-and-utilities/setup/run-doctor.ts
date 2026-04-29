@@ -38,7 +38,7 @@ export const runDoctor = async (): Promise<void> => {
   checks.push(checkCommand('tesseract', 'tesseract'))
 
   checks.push(checkEnvVar('OPENAI_API_KEY', 'OPENAI_API_KEY'))
-  checks.push(checkEnvVar('XAI_API_KEY', 'XAI_API_KEY'))
+  checks.push(checkEnvVar('XAI_API_KEY (Grok STT/TTS/image/video)', 'XAI_API_KEY'))
   checks.push(checkEnvVar('GEMINI_API_KEY', 'GEMINI_API_KEY'))
   checks.push(checkEnvVar('GLM_API_KEY', 'GLM_API_KEY'))
   checks.push(checkEnvVar('RUNWAYML_API_SECRET', 'RUNWAYML_API_SECRET'))

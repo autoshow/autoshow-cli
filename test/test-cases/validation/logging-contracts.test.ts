@@ -2,11 +2,12 @@ import { describe, expect, test } from 'bun:test'
 import { buildAudioNormalizeTable } from '~/cli/commands/process-steps/step-1-download/audio/audio-logging'
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
+import { createReporter } from '~/utils/logger/reporter'
 import { createHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
-import type { LogSinkEvent } from '~/types'
+import type { Logger, LogSinkEvent, LogWriteOptions } from '~/types'
 
 const makeEvent = (level: LogSinkEvent['level']): LogSinkEvent => ({
   timestamp: '2026-01-01T00:00:00.000Z',
@@ -46,6 +47,24 @@ const captureConsole = (fn: () => void): { stdout: string[]; stderr: string[] } 
   }
 
   return { stdout, stderr }
+}
+
+const createCapturingLogger = (): {
+  logger: Logger
+  writes: Array<{ message: string; options?: LogWriteOptions }>
+} => {
+  const writes: Array<{ message: string; options?: LogWriteOptions }> = []
+  const logger: Logger = {
+    write: (_level, message, options) => {
+      writes.push(options === undefined ? { message } : { message, options })
+    },
+    debug: () => {},
+    warn: () => {},
+    error: () => {},
+    withContext: () => logger,
+    config: { sinks: [], minLevel: 'info' }
+  }
+  return { logger, writes }
 }
 
 describe('logging contracts', () => {
@@ -107,6 +126,35 @@ describe('logging contracts', () => {
       checked: '3 commands',
       totalEstimatedCost: '12.34568\u00a2'
     }])
+  })
+
+  test('reporter prints estimate notes after the human cost table', () => {
+    const { logger, writes } = createCapturingLogger()
+    const reporter = createReporter(logger)
+
+    reporter.estimate({
+      totalEstimatedCost: 0,
+      steps: [{
+        step: 'tts',
+        provider: 'kitten',
+        model: 'kitten-tts-mini',
+        totalCost: 0
+      }],
+      notes: [
+        'TTS estimate omitted: step 4 only runs when write produces exactly one summary.',
+        'Second aggregate estimate note.'
+      ]
+    })
+
+    expect(writes.map(write => write.message)).toEqual([
+      'Total estimated cost: 0.00000\u00a2',
+      'Cost Estimate',
+      'TTS estimate omitted: step 4 only runs when write produces exactly one summary.',
+      'Second aggregate estimate note.'
+    ])
+    expect(writes[1]?.options?.humanTable).toBeDefined()
+    expect(writes[2]?.options?.humanTable).toBeUndefined()
+    expect(writes[3]?.options?.humanTable).toBeUndefined()
   })
 
   test('audio normalize table uses vertical key/value display rows', () => {

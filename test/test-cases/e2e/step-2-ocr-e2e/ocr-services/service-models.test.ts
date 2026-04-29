@@ -7,7 +7,6 @@ defineOCRServiceTest({
   imageExtractionMethod: 'image+glm-ocr',
   envVarKey: 'GLM_API_KEY',
   imageInput: 'input/examples/document/1-document.jpg',
-  timeoutMs: 30000,
 })
 
 defineOCRServiceTest({
@@ -25,7 +24,6 @@ defineOCRServiceTest({
   imageExtractionMethod: 'image+openai-ocr',
   envVarKey: 'OPENAI_API_KEY',
   imageInput: 'input/examples/document/1-document.jpg',
-  timeoutMs: 30000,
 })
 
 defineOCRServiceTest({
@@ -35,7 +33,6 @@ defineOCRServiceTest({
   imageExtractionMethod: 'image+anthropic-ocr',
   envVarKey: 'ANTHROPIC_API_KEY',
   imageInput: 'input/examples/document/1-document.jpg',
-  timeoutMs: 30000,
 })
 
 defineOCRServiceTest({
@@ -45,5 +42,4 @@ defineOCRServiceTest({
   imageExtractionMethod: 'image+gemini-ocr',
   envVarKey: 'GEMINI_API_KEY',
   imageInput: 'input/examples/document/1-document.jpg',
-  timeoutMs: 30000,
 })

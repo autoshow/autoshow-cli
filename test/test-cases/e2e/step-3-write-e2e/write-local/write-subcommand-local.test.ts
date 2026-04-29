@@ -9,7 +9,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
 } from '../../../../test-utils/test-helpers'
 import { rm } from 'node:fs/promises'
-import { budgetedTest } from '../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 
@@ -79,7 +79,7 @@ describe('write subcommand with llama', () => {
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  }, 20_000)
+  }, E2E_TEST_TIMEOUT_MS)
 
   budgetedTest('write-llama-qwen3-0.6b', 'write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary', async () => {
     await stopLlamaServer()
@@ -106,7 +106,7 @@ describe('write subcommand with llama', () => {
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  }, 20_000)
+  }, E2E_TEST_TIMEOUT_MS)
 })
 
 describe('write subcommand with document input', () => {
@@ -154,7 +154,7 @@ describe('write subcommand with document input', () => {
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  }, 20_000)
+  }, E2E_TEST_TIMEOUT_MS)
 })
 
 describe('write subcommand with EPUB export flags', () => {
@@ -206,5 +206,5 @@ describe('write subcommand with EPUB export flags', () => {
       expect(metadata.step3?.llmModel).toBe('ggml-org/Qwen3-0.6B-GGUF')
       expect(metadata.step3?.llmService).toBe('llama.cpp')
     }
-  }, 20_000)
+  }, E2E_TEST_TIMEOUT_MS)
 })

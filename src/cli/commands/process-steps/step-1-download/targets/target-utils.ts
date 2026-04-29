@@ -879,6 +879,8 @@ export const resolveInputRoutingForCommand = async (
     | 'revSttModels'
     | 'groqSttModel'
     | 'groqSttModels'
+    | 'grokSttModel'
+    | 'grokSttModels'
     | 'mistralSttModel'
     | 'mistralSttModels'
     | 'assemblyaiSttModel'

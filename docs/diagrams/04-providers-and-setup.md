@@ -120,6 +120,8 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
                                           |
   Step 11 ─── setupRevStt() ───────────── Check Rev STT (API key only)
                                           |
+  Step 12 ─── setupGrokStt() ──────────── Check Grok STT (API key only)
+                                          |
   Step 12 ─── setupMistralStt() ───────── Check Mistral STT (API key only)
               setupMistralOcr() ───────── Check Mistral OCR (API key only)
               setupGlmOcr() ───────────── Check GLM OCR (API key only)
@@ -142,6 +144,8 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
                                           |
   Step 15 ─── setupGroqTts() ──────────── Check Groq TTS (API key only)
                                           |
+  Step 16 ─── setupGrokTts() ──────────── Check Grok TTS (API key only)
+                                          |
   Step 16 ─── setupOpenAITts() ────────── Check OpenAI TTS (API key only)
                                           |
   Step 17 ─── setupGeminiTts() ────────── Check Gemini TTS (API key only)
@@ -161,7 +165,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 
 | Command | Required Dependencies |
 |---------|----------------------|
-| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
+| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--grok-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
 | `extract --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
 | `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr` API key) |
 | `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
@@ -172,6 +176,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |
 | `tts --groq-tts` | `GROQ_API_KEY` |
+| `tts --grok-tts` | `XAI_API_KEY` |
 | `tts --openai-tts` | `OPENAI_API_KEY` |
 | `tts --gemini-tts` | `GEMINI_API_KEY` |
 | `image --gemini-image` | `GEMINI_API_KEY` |

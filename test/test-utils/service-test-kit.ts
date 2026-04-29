@@ -1,5 +1,5 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
-import { budgetedTest } from './budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import { runCommand, findLatestDirectory, cleanupTestOutput, hasConfiguredEnvVar } from './test-helpers'
 
 export const withOutputLifecycle = (
@@ -22,7 +22,7 @@ export const defineInvalidModelTest = (name: string, args: string[]): void => {
   test(name, async () => {
     const result = await runCommand(args)
     expect(result.exitCode).not.toBe(0)
-  })
+  }, E2E_TEST_TIMEOUT_MS)
 }
 
 export const definePriceEstimateTest = (

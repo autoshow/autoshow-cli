@@ -8,6 +8,7 @@ import {
   STABLE_LOCAL_AUDIO_TITLE,
   hasConfiguredEnvVar,
 } from "../../../../test-utils/test-helpers"
+import { E2E_TEST_TIMEOUT_MS } from "../../../../test-utils/budget"
 import { readRunMetadata } from "../../../../test-utils/manifest-helpers"
 
 const hasOpenAiEnv = async (): Promise<boolean> => {
@@ -150,6 +151,6 @@ describe("kitten-tts pipeline", () => {
         expect(step4Entries[0]?.['ttsService']).toBe('kitten')
         expect(step4Entries[1]?.['ttsService']).toBe('openai')
       }
-    }, 30000)
+    }, E2E_TEST_TIMEOUT_MS)
   })
 })

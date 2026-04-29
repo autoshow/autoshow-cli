@@ -67,6 +67,21 @@ const GCLOUD_OCR_LINKS = [
   'https://docs.cloud.google.com/document-ai/docs/reference/rest.md.txt'
 ]
 
+const GROK_GENERAL_LINKS = [
+  'https://docs.x.ai/developers/rate-limits.md',
+  'https://docs.x.ai/developers/models.md'
+]
+
+const GROK_TTS_LINKS = [
+  'https://docs.x.ai/developers/model-capabilities/audio/text-to-speech.md',
+  'https://docs.x.ai/developers/rest-api-reference/inference/voice.md'
+]
+
+const GROK_STT_LINKS = [
+  'https://docs.x.ai/developers/model-capabilities/audio/speech-to-text.md',
+  'https://docs.x.ai/developers/rest-api-reference/inference/voice.md'
+]
+
 const BFL_IMAGE_LINKS = [
   'https://docs.bfl.ml/quick_start/introduction.md',
   'https://docs.bfl.ml/quick_start/get_started.md',
@@ -99,7 +114,7 @@ test('metadata --markdown prints stable frontmatter instead of JSON', async () =
 title: 'audio'
 slug: 'audio'
 duration: 'Unknown'
-author: 'Unknown'
+channel: 'Unknown'
 url: 'https://example.com/audio.mp3'
 ---`)
   expect(result.stdout).not.toContain('{\n  "title"')
@@ -246,6 +261,47 @@ test('links selector accepts gcloud provider with stt and ocr sections', () => {
     gcloudOcrSelection.serviceSelections,
     gcloudOcrSelection.globalSections
   )).toEqual(GCLOUD_OCR_LINKS)
+})
+
+test('links selector accepts grok provider with stt and tts sections', () => {
+  const grokSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--grok'
+  ])
+
+  expect(grokSelection.serviceSelections.get('grok')).toEqual([])
+  expect(collectLinks(
+    grokSelection.serviceSelections,
+    grokSelection.globalSections
+  )).toEqual(expect.arrayContaining([...GROK_GENERAL_LINKS, ...GROK_TTS_LINKS, ...GROK_STT_LINKS]))
+
+  const grokSttSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--grok',
+    'stt'
+  ])
+
+  expect(collectLinks(
+    grokSttSelection.serviceSelections,
+    grokSttSelection.globalSections
+  )).toEqual(GROK_STT_LINKS)
+
+  const grokTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--grok',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    grokTtsSelection.serviceSelections,
+    grokTtsSelection.globalSections
+  )).toEqual(GROK_TTS_LINKS)
 })
 
 test('music lyric-video render mode rejects generation-only price mode', async () => {

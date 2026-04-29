@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect } from 'bun:test'
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
-import { budgetedTest } from '../../../../test-utils/budget'
+import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import {
   cleanupTestOutput,
   fileExists,
@@ -115,7 +115,7 @@ budgetedTest('write-project-lyrics-single-default-llama', 'write project single-
     const step3 = manifest.metadata['step3'] as Record<string, unknown>
     expect(step3['llmService']).toBe('llama.cpp')
   }
-}, 30000)
+}, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('write-project-lyrics-directory-default-llama', 'write project directory mode creates a write batch and rendered markdown for each source file', async () => {
   await stopLlamaServer()
@@ -156,7 +156,7 @@ budgetedTest('write-project-lyrics-directory-default-llama', 'write project dire
       expect(childManifest.kind).toBe('write')
     }
   }
-}, 45000)
+}, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('write-project-lyrics-price', 'write project directory --price reports rendered lyric outputs without creating a run directory', async () => {
   const project = await createWriteLyricsProject()
@@ -180,4 +180,4 @@ budgetedTest('write-project-lyrics-price', 'write project directory --price repo
   const dirsAfter = await listOutputDirs()
   const newRunDirs = dirsAfter.filter((dir) => !dirsBefore.has(dir) && basename(dir).endsWith('_text'))
   expect(newRunDirs).toEqual([])
-}, 30000)
+}, E2E_TEST_TIMEOUT_MS)

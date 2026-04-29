@@ -1,4 +1,7 @@
 import { test } from 'bun:test'
+import { E2E_TEST_TIMEOUT_MS } from './timeouts'
+
+export { E2E_TEST_TIMEOUT_MS } from './timeouts'
 
 const parseBudgetSkipKeys = (): Set<string> => {
   const raw = process.env['AUTOSHOW_TEST_BUDGET_SKIP_KEYS']
@@ -29,7 +32,7 @@ export const budgetedTest = (
   budgetKey: string,
   name: string,
   fn: () => void | Promise<void>,
-  timeoutMs?: number
+  timeoutMs: number = E2E_TEST_TIMEOUT_MS
 ): void => {
   if (shouldSkipBudgetKey(budgetKey)) {
     test.skip(name, fn, timeoutMs)
