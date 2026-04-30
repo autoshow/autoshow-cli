@@ -43,6 +43,18 @@ import { ensureRunwayTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tt
 import { runKittenTts } from './tts-local/kitten/run-kitten-tts'
 import { runElevenLabsTts } from './tts-services/elevenlabs/run-elevenlabs-tts'
 import {
+  createElevenLabsTtsIvcContext,
+  ELEVENLABS_TTS_IVC_COST_CENTS,
+  ELEVENLABS_TTS_IVC_SETUP_MS,
+  ELEVENLABS_TTS_IVC_SETUP_NOTE
+} from './tts-services/elevenlabs/elevenlabs-ivc'
+import {
+  ELEVENLABS_TTS_PVC_COST_CENTS,
+  ELEVENLABS_TTS_PVC_SETUP_NOTE,
+  getElevenLabsTtsPvcSetupMs,
+  isElevenLabsTtsPvcSetupRequested
+} from './tts-services/elevenlabs/elevenlabs-pvc'
+import {
   createMinimaxTtsCloneContext,
   MINIMAX_TTS_CLONE_COST_CENTS,
   MINIMAX_TTS_CLONE_SETUP_MS,
@@ -180,6 +192,21 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const openaiCloneConsentLanguage = options.openaiTtsConsentLanguage?.trim() || undefined
   const openaiCloneConsentName = options.openaiTtsConsentName?.trim() || undefined
   const openaiCloneVoiceName = options.openaiTtsVoiceName?.trim() || undefined
+  const elevenLabsCloneRefAudioPath = options.elevenlabsTtsRefAudio?.trim() || undefined
+  const elevenLabsCloneVoiceName = options.elevenlabsTtsVoiceName?.trim() || undefined
+  const elevenLabsPvcVoiceId = options.elevenlabsTtsPvcVoice?.trim() || undefined
+  const elevenLabsPvcSamplePaths = options.elevenlabsTtsPvcSamples?.map((item) => item.trim()).filter(Boolean)
+  const elevenLabsPvcSampleDir = options.elevenlabsTtsPvcSampleDir?.trim() || undefined
+  const elevenLabsPvcLanguage = options.elevenlabsTtsPvcLanguage?.trim() || undefined
+  const elevenLabsPvcDescription = options.elevenlabsTtsPvcDescription?.trim() || undefined
+  const elevenLabsPvcCaptchaOut = options.elevenlabsTtsPvcCaptchaOut?.trim() || undefined
+  const elevenLabsPvcVerifyAudio = options.elevenlabsTtsPvcVerifyAudio?.trim() || undefined
+  const hasElevenLabsPvcActionFlags = isElevenLabsTtsPvcSetupRequested(options)
+  const hasElevenLabsPvcSetupFlags = Boolean(
+    hasElevenLabsPvcActionFlags
+    || elevenLabsPvcLanguage
+    || elevenLabsPvcDescription
+  )
   const hasMinimaxCloneFlags = Boolean(
     minimaxCloneRefAudioPath
     || minimaxClonePromptAudioPath
@@ -194,6 +221,15 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     || openaiCloneConsentLanguage
     || openaiCloneConsentName
     || openaiCloneVoiceName
+  )
+  const hasElevenLabsCloneFlags = Boolean(
+    elevenLabsCloneRefAudioPath
+    || options.elevenlabsTtsCloneRemoveBackgroundNoise === true
+  )
+  const hasElevenLabsVoiceNameOnly = Boolean(
+    elevenLabsCloneVoiceName
+    && !hasElevenLabsCloneFlags
+    && !hasElevenLabsPvcActionFlags
   )
 
   if (hasMinimaxCloneFlags && minimaxModels.length === 0) {
@@ -231,10 +267,57 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     }
   }
 
+  if (hasElevenLabsCloneFlags && elevenlabsModels.length === 0) {
+    throw new Error('ElevenLabs TTS IVC flags require --elevenlabs-tts <model> or --all-tts.')
+  }
+  if (hasElevenLabsCloneFlags && !elevenLabsCloneRefAudioPath) {
+    throw new Error('ElevenLabs TTS IVC creation requires --elevenlabs-tts-ref-audio.')
+  }
+  if (hasElevenLabsCloneFlags && options.elevenlabsVoiceId?.trim()) {
+    throw new Error('ElevenLabs TTS IVC creation cannot be combined with --elevenlabs-voice. Use --elevenlabs-tts-voice-name for the created voice label.')
+  }
+  if (hasElevenLabsVoiceNameOnly) {
+    throw new Error('ElevenLabs TTS --elevenlabs-tts-voice-name requires --elevenlabs-tts-ref-audio for IVC or an ElevenLabs PVC setup flag.')
+  }
+
+  if (hasElevenLabsPvcSetupFlags && elevenlabsModels.length === 0) {
+    throw new Error('ElevenLabs TTS PVC setup flags require --elevenlabs-tts <model> or --all-tts.')
+  }
+  if (elevenLabsPvcVoiceId && options.elevenlabsVoiceId?.trim()) {
+    throw new Error('ElevenLabs TTS PVC voice cannot be combined with --elevenlabs-voice.')
+  }
+  if (elevenLabsPvcVoiceId && hasElevenLabsCloneFlags) {
+    throw new Error('ElevenLabs TTS PVC voice cannot be combined with ElevenLabs IVC flags.')
+  }
+  if (hasElevenLabsPvcSetupFlags && hasElevenLabsCloneFlags) {
+    throw new Error('ElevenLabs TTS PVC setup flags cannot be combined with ElevenLabs IVC flags.')
+  }
+  if (hasElevenLabsPvcSetupFlags && options.elevenlabsVoiceId?.trim()) {
+    throw new Error('ElevenLabs TTS PVC setup cannot be combined with --elevenlabs-voice.')
+  }
+  if ((elevenLabsPvcLanguage || elevenLabsPvcDescription || (elevenLabsCloneVoiceName && hasElevenLabsPvcActionFlags)) && !elevenLabsPvcSampleDir && (!elevenLabsPvcSamplePaths || elevenLabsPvcSamplePaths.length === 0)) {
+    throw new Error('ElevenLabs TTS PVC voice metadata requires --elevenlabs-tts-pvc-sample or --elevenlabs-tts-pvc-sample-dir.')
+  }
+  if (elevenLabsPvcCaptchaOut && !elevenLabsPvcVoiceId && !elevenLabsPvcSampleDir && (!elevenLabsPvcSamplePaths || elevenLabsPvcSamplePaths.length === 0)) {
+    throw new Error('ElevenLabs TTS PVC captcha output requires --elevenlabs-tts-pvc-voice or PVC samples that create a voice.')
+  }
+  if (elevenLabsPvcVerifyAudio && !elevenLabsPvcVoiceId && (!elevenLabsPvcSamplePaths || elevenLabsPvcSamplePaths.length === 0) && !elevenLabsPvcSampleDir) {
+    throw new Error('ElevenLabs TTS PVC verification requires --elevenlabs-tts-pvc-voice or PVC samples that create a voice.')
+  }
+  if (options.elevenlabsTtsPvcWait === true && !elevenLabsPvcVoiceId && !hasElevenLabsPvcActionFlags) {
+    throw new Error('ElevenLabs TTS PVC wait requires --elevenlabs-tts-pvc-voice or PVC setup flags.')
+  }
+  if (options.elevenlabsTtsPvcWait === true && hasElevenLabsPvcActionFlags && elevenlabsModels.length > 1) {
+    throw new Error('ElevenLabs TTS PVC setup with --elevenlabs-tts-pvc-wait supports one ElevenLabs model per run.')
+  }
+
   const minimaxCloneContext = minimaxCloneRefAudioPath ? createMinimaxTtsCloneContext() : undefined
   const openaiCloneContext = openaiCloneRefAudioPath ? createOpenAITtsCustomVoiceContext() : undefined
+  const elevenLabsCloneContext = elevenLabsCloneRefAudioPath ? createElevenLabsTtsIvcContext() : undefined
   let minimaxCloneEstimateAttached = false
   let openaiCloneEstimateAttached = false
+  let elevenLabsCloneEstimateAttached = false
+  let elevenLabsPvcEstimateAttached = false
 
   for (const rawModel of kittenModels) {
     const model: KittenTtsModel = validateKittenTtsModel(rawModel)
@@ -255,14 +338,60 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   for (const rawModel of elevenlabsModels) {
     const model: ElevenlabsTtsModel = validateElevenlabsTtsModel(rawModel)
     const voiceId = options.elevenlabsVoiceId?.trim() || undefined
+    const pvcVoiceId = elevenLabsPvcVoiceId
+    const clone = elevenLabsCloneRefAudioPath
+      ? {
+          refAudioPath: elevenLabsCloneRefAudioPath,
+          ...(elevenLabsCloneVoiceName ? { voiceName: elevenLabsCloneVoiceName } : {}),
+          removeBackgroundNoise: options.elevenlabsTtsCloneRemoveBackgroundNoise === true,
+          context: elevenLabsCloneContext
+        }
+      : undefined
+    const attachCloneEstimate = clone !== undefined && !elevenLabsCloneEstimateAttached
+    if (attachCloneEstimate) {
+      elevenLabsCloneEstimateAttached = true
+    }
+    const attachPvcEstimate = !clone && (hasElevenLabsPvcSetupFlags || options.elevenlabsTtsPvcWait === true) && !elevenLabsPvcEstimateAttached
+    if (attachPvcEstimate) {
+      elevenLabsPvcEstimateAttached = true
+    }
+    const pvcSetupTimeMs = options.elevenlabsTtsPvcWait === true
+      ? getElevenLabsTtsPvcSetupMs(elevenLabsPvcLanguage)
+      : undefined
 
     targets.push({
       service: 'elevenlabs',
       model,
-      ...(voiceId ? { voice: voiceId } : {}),
+      ...(clone
+        ? { voice: `ref_audio:${basename(clone.refAudioPath)}` }
+        : pvcVoiceId
+          ? { voice: `pvc:${pvcVoiceId}` }
+          : hasElevenLabsPvcSetupFlags
+            ? { voice: `pvc_setup:${elevenLabsCloneVoiceName ?? 'new'}` }
+            : voiceId ? { voice: voiceId } : {}),
+      ...(attachCloneEstimate
+        ? {
+            setupCostCents: ELEVENLABS_TTS_IVC_COST_CENTS,
+            setupTimeMs: ELEVENLABS_TTS_IVC_SETUP_MS,
+            setupNote: ELEVENLABS_TTS_IVC_SETUP_NOTE
+          }
+        : {}),
+      ...(attachPvcEstimate
+        ? {
+            setupCostCents: ELEVENLABS_TTS_PVC_COST_CENTS,
+            ...(typeof pvcSetupTimeMs === 'number' ? { setupTimeMs: pvcSetupTimeMs } : {}),
+            setupNote: ELEVENLABS_TTS_PVC_SETUP_NOTE
+          }
+        : {}),
       run: async (text, outputDir) => {
         await ensureElevenLabsTtsSetup()
-        return await runElevenLabsTts(text, outputDir, { model, voiceId })
+        return await runElevenLabsTts(text, outputDir, {
+          model,
+          voiceId,
+          pvcVoiceId,
+          pvcWait: options.elevenlabsTtsPvcWait === true,
+          clone
+        })
       }
     })
   }

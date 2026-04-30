@@ -90,6 +90,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --ha
 
 # Resume missing ElevenLabs TTS outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3
+bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
 
 # Resume missing Runway TTS outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --runway-tts eleven_multilingual_v2
@@ -204,6 +205,10 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--deapi-tts <model>` | Select one or more deAPI TTS models |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
 | `--elevenlabs-voice <id>` | ElevenLabs voice ID override |
+| `--elevenlabs-tts-pvc-voice <id>` | Trained ElevenLabs PVC voice ID for resumed synthesis |
+| `--elevenlabs-tts-ref-audio <path>` | ElevenLabs IVC reference audio path |
+| `--elevenlabs-tts-voice-name <name>` | Created ElevenLabs clone label |
+| `--elevenlabs-tts-clone-remove-background-noise` | Enable ElevenLabs IVC background noise removal |
 | `--minimax-tts-voice <id>` | MiniMax TTS voice ID override |
 | `--minimax-tts-ref-audio <path>` | MiniMax rapid voice clone source audio path |
 | `--minimax-tts-prompt-audio <path>` | Optional MiniMax clone prompt audio path |

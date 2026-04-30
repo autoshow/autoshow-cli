@@ -82,6 +82,8 @@ bun as config --whisper large-v3-turbo
 bun as config --gcloud-stt chirp_3
 bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
+bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
 bun as config --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as config --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 bun as config --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
@@ -180,6 +182,10 @@ Representative JSON shape of `config/autoshow.json`:
         "openaiTtsRefAudio": "input/examples/audio/anthony-voice.mp3",
         "openaiTtsConsentId": "cons_123",
         "openaiTtsVoiceName": "AutoShowAnthony",
+        "elevenlabsTts": ["eleven_flash_v2_5"],
+        "elevenlabsTtsRefAudio": "input/examples/audio/anthony-voice.mp3",
+        "elevenlabsTtsVoiceName": "AutoShowAnthony",
+        "elevenlabsTtsCloneRemoveBackgroundNoise": false,
         "runwayTts": ["eleven_multilingual_v2"],
         "runwayTtsVoice": "Leslie",
         "deapiTts": ["Qwen3_TTS_12Hz_1_7B_Base"],
@@ -288,6 +294,10 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `groqVoice` | `--groq-voice` | Groq voice ID |
 | `grokTtsVoice` | `--grok-tts-voice` | Grok voice ID |
 | `elevenlabsVoice` | `--elevenlabs-voice` | ElevenLabs voice ID |
+| `elevenlabsTtsPvcVoice` | `--elevenlabs-tts-pvc-voice` | Trained ElevenLabs PVC voice ID |
+| `elevenlabsTtsRefAudio` | `--elevenlabs-tts-ref-audio` | ElevenLabs IVC reference audio path |
+| `elevenlabsTtsVoiceName` | `--elevenlabs-tts-voice-name` | Created ElevenLabs clone label |
+| `elevenlabsTtsCloneRemoveBackgroundNoise` | `--elevenlabs-tts-clone-remove-background-noise` | Enable ElevenLabs clone background noise removal |
 | `openaiVoice` | `--openai-voice` | OpenAI TTS voice ID, including existing custom `voice_...` IDs |
 | `openaiTtsRefAudio` | `--openai-tts-ref-audio` | OpenAI custom voice sample audio path |
 | `openaiTtsConsentId` | `--openai-tts-consent-id` | Existing OpenAI consent recording ID |
@@ -307,6 +317,8 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `minimaxTtsPromptText` | `--minimax-tts-prompt-text` | Transcript for the MiniMax clone prompt audio |
 | `minimaxTtsCloneNoiseReduction` | `--minimax-tts-clone-noise-reduction` | Enable MiniMax clone noise reduction |
 | `minimaxTtsCloneVolumeNormalization` | `--minimax-tts-clone-volume-normalization` | Enable MiniMax clone volume normalization |
+
+ElevenLabs IVC defaults are opt-in through `elevenlabsTtsRefAudio`. To reuse an existing standard ElevenLabs voice, save only `elevenlabsVoice` without `elevenlabsTtsRefAudio`. To reuse a trained Professional Voice Clone, save `elevenlabsTtsPvcVoice`. PVC setup-only flags such as samples, CAPTCHA output, verification audio, language, description, and wait are runtime-only and are not saved as config defaults.
 
 MiniMax clone defaults are opt-in through `minimaxTtsRefAudio`. To reuse a MiniMax voice that already exists, save only `minimaxTtsVoice` without `minimaxTtsRefAudio`.
 

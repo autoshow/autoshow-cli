@@ -187,5 +187,53 @@ export const ttsFlags = {
     description: 'ElevenLabs voice ID override (default: hpp4J3VqNfWAUOO0d1Us)',
     type: String
   },
+  'elevenlabs-tts-pvc-voice': {
+    description: 'ElevenLabs trained Professional Voice Clone voice ID for synthesis',
+    type: String
+  },
+  'elevenlabs-tts-ref-audio': {
+    description: 'ElevenLabs TTS source audio path for Instant Voice Cloning',
+    type: String
+  },
+  'elevenlabs-tts-voice-name': {
+    description: 'ElevenLabs TTS cloned voice label; defaults to AutoShow_<timestamp>',
+    type: String
+  },
+  'elevenlabs-tts-clone-remove-background-noise': {
+    description: 'Enable ElevenLabs IVC background noise removal for the reference audio',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'elevenlabs-tts-pvc-sample': {
+    description: 'ElevenLabs PVC training sample audio path; repeatable',
+    type: [String] as [StringConstructor]
+  },
+  'elevenlabs-tts-pvc-sample-dir': {
+    description: 'Directory of ElevenLabs PVC training sample audio files',
+    type: String
+  },
+  'elevenlabs-tts-pvc-language': {
+    description: 'ElevenLabs PVC sample language code (default: en)',
+    type: String
+  },
+  'elevenlabs-tts-pvc-description': {
+    description: 'ElevenLabs PVC voice description',
+    type: String
+  },
+  'elevenlabs-tts-pvc-captcha-out': {
+    description: 'Write the ElevenLabs PVC verification CAPTCHA image to this path',
+    type: String
+  },
+  'elevenlabs-tts-pvc-verify-audio': {
+    description: 'Audio recording of the ElevenLabs PVC CAPTCHA reading for verification',
+    type: String
+  },
+  'elevenlabs-tts-pvc-wait': {
+    description: 'Wait for ElevenLabs PVC fine tuning before synthesis',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   ...priceFlag
 } as const satisfies ClercFlagsDefinition

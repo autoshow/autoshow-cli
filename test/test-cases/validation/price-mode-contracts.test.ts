@@ -6,6 +6,10 @@ import {
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
+import {
+  ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
+  ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS
+} from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
 import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
@@ -58,6 +62,18 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
     args: ['tts', STABLE_TTS_MD_PATH, '--openai-tts', 'gpt-4o-mini-tts', '--openai-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--openai-tts-consent-id', 'cons_123', '--price'],
     expected: 'speech',
     env: { OPENAI_API_KEY: '', OPENAI_BASE_URL: '' }
+  },
+  {
+    label: 'ElevenLabs IVC TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_flash_v2_5', '--elevenlabs-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    expected: 'speech',
+    env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
+  },
+  {
+    label: 'ElevenLabs PVC setup TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_flash_v2_5', '--elevenlabs-tts-pvc-sample', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    expected: 'elevenlabs-pvc-status.json',
+    env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
   },
   {
     label: 'deAPI voice clone TTS',
@@ -198,6 +214,99 @@ describe('price mode contracts', () => {
       ttsCharacterCount: 1000
     })
     expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(6000)
+  })
+
+  test('ElevenLabs TTS estimates use current API rates and IVC setup timing', () => {
+    const baseCosts = estimateTtsCosts({
+      elevenlabsTtsModels: ['eleven_flash_v2_5', 'eleven_turbo_v2_5', 'eleven_v3']
+    } as Parameters<typeof estimateTtsCosts>[0], 1000)
+
+    expect(baseCosts.map((cost) => ({
+      model: cost.model,
+      costPer1kCharactersCents: cost.costPer1kCharactersCents,
+      totalCost: cost.totalCost
+    }))).toEqual([
+      { model: 'eleven_flash_v2_5', costPer1kCharactersCents: 5, totalCost: 5 },
+      { model: 'eleven_turbo_v2_5', costPer1kCharactersCents: 5, totalCost: 5 },
+      { model: 'eleven_v3', costPer1kCharactersCents: 10, totalCost: 10 }
+    ])
+
+    const cloneCosts = estimateTtsCosts({
+      elevenlabsTtsModels: ['eleven_flash_v2_5', 'eleven_v3'],
+      elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
+    } as Parameters<typeof estimateTtsCosts>[0], 1000)
+    expect(cloneCosts.map((cost) => ({
+      model: cost.model,
+      setupCostCents: cost.setupCostCents,
+      setupTimeMs: cost.setupTimeMs,
+      setupNote: cost.setupNote,
+      totalCost: cost.totalCost
+    }))).toEqual([
+      {
+        model: 'eleven_flash_v2_5',
+        setupCostCents: 0,
+        setupTimeMs: 10_000,
+        setupNote: 'ElevenLabs instant voice clone setup',
+        totalCost: 5
+      },
+      {
+        model: 'eleven_v3',
+        setupCostCents: undefined,
+        setupTimeMs: undefined,
+        setupNote: undefined,
+        totalCost: 10
+      }
+    ])
+
+    const timing = computeEstimatedProcessingTimes({
+      ttsTargets: [
+        { service: 'elevenlabs', model: 'eleven_flash_v2_5', setupTimeMs: 10_000 },
+        { service: 'elevenlabs', model: 'eleven_v3' }
+      ],
+      ttsCharacterCount: 1000
+    })
+    expect(timing.steps.map((step) => ({
+      provider: step.provider,
+      model: step.model,
+      processingTimeMs: step.processingTimeMs
+    }))).toEqual([
+      { provider: 'elevenlabs', model: 'eleven_flash_v2_5', processingTimeMs: 23_400 },
+      { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 27_283 }
+    ])
+
+    const pvcReadyCosts = estimateTtsCosts({
+      elevenlabsTtsModels: ['eleven_flash_v2_5'],
+      elevenlabsTtsPvcVoice: 'pvc_voice_123'
+    } as Parameters<typeof estimateTtsCosts>[0], 1000)
+    expect(pvcReadyCosts[0]).toMatchObject({
+      provider: 'elevenlabs',
+      model: 'eleven_flash_v2_5',
+      totalCost: 5
+    })
+    expect(pvcReadyCosts[0]?.setupCostCents).toBeUndefined()
+
+    const pvcEnglishSetupCosts = estimateTtsCosts({
+      elevenlabsTtsModels: ['eleven_flash_v2_5'],
+      elevenlabsTtsPvcSamples: ['input/examples/audio/anthony-voice.mp3'],
+      elevenlabsTtsPvcLanguage: 'en',
+      elevenlabsTtsPvcWait: true
+    } as Parameters<typeof estimateTtsCosts>[0], 1000)
+    expect(pvcEnglishSetupCosts[0]).toMatchObject({
+      provider: 'elevenlabs',
+      model: 'eleven_flash_v2_5',
+      setupCostCents: 0,
+      setupTimeMs: ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
+      setupNote: 'ElevenLabs professional voice clone training',
+      totalCost: 5
+    })
+
+    const pvcMultilingualSetupCosts = estimateTtsCosts({
+      elevenlabsTtsModels: ['eleven_flash_v2_5'],
+      elevenlabsTtsPvcSamples: ['input/examples/audio/anthony-voice.mp3'],
+      elevenlabsTtsPvcLanguage: 'es',
+      elevenlabsTtsPvcWait: true
+    } as Parameters<typeof estimateTtsCosts>[0], 1000)
+    expect(pvcMultilingualSetupCosts[0]?.setupTimeMs).toBe(ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS)
   })
 
   test('MiniMax voice clone TTS estimates include one-time clone fee and setup timing', () => {

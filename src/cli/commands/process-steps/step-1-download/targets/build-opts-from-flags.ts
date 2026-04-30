@@ -334,6 +334,18 @@ const readOptionalStringFlag = (flags: Record<string, unknown>, key: string): st
   return undefined
 }
 
+const readOptionalStringListFlag = (flags: Record<string, unknown>, key: string): string[] | undefined => {
+  const value = readFlagValue(flags, key)
+  if (Array.isArray(value)) {
+    const items = value.filter((item): item is string => typeof item === 'string' && item.length > 0)
+    return items.length > 0 ? items : undefined
+  }
+  if (typeof value === 'string' && value.length > 0) {
+    return [value]
+  }
+  return undefined
+}
+
 export const parseRepeatableModelFlagOccurrences = (
   args: string[]
 ): Partial<Record<RepeatableModelFlag, FlagOccurrenceValue[]>> => {
@@ -964,6 +976,17 @@ export const buildOptsFromFlags = (
     geminiSpeaker2Voice: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-2-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-voice'),
     elevenlabsTtsModels,
     elevenlabsTtsModel: first(elevenlabsTtsModels),
+    elevenlabsTtsPvcVoice: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-voice'),
+    elevenlabsTtsRefAudio: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-ref-audio'),
+    elevenlabsTtsVoiceName: readOptionalRawStringFlag(rawArgs, 'elevenlabs-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-voice-name'),
+    elevenlabsTtsCloneRemoveBackgroundNoise: readBooleanFlag(mergedFlags, 'elevenlabs-tts-clone-remove-background-noise'),
+    elevenlabsTtsPvcSamples: readOptionalStringListFlag(mergedFlags, 'elevenlabs-tts-pvc-sample'),
+    elevenlabsTtsPvcSampleDir: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-sample-dir'),
+    elevenlabsTtsPvcLanguage: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-language'),
+    elevenlabsTtsPvcDescription: readOptionalRawStringFlag(rawArgs, 'elevenlabs-tts-pvc-description') ?? readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-description'),
+    elevenlabsTtsPvcCaptchaOut: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-captcha-out'),
+    elevenlabsTtsPvcVerifyAudio: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-verify-audio'),
+    elevenlabsTtsPvcWait: readBooleanFlag(mergedFlags, 'elevenlabs-tts-pvc-wait'),
     minimaxTtsModels,
     minimaxTtsModel: first(minimaxTtsModels),
     minimaxTtsVoice: readOptionalStringFlag(mergedFlags, 'minimax-tts-voice'),

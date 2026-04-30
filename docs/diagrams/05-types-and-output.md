@@ -29,6 +29,7 @@ output/
     ├── prompt.md
     ├── text.json                   # structured write output
     ├── speech.wav                  # (if --kitten-tts/--elevenlabs-tts/... set)
+    ├── elevenlabs-pvc-status.json  # (if ElevenLabs PVC setup ran)
     ├── generated-image.*           # (if --gemini-image/--openai-image/... set)
     ├── generated-video.mp4         # (if --gemini-video/--minimax-video/... set)
     ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music set)
@@ -121,7 +122,9 @@ src/types/
 │    openaiTtsConsentAudio, openaiTtsVoiceName, geminiTtsModel, geminiVoiceId, │
 │    runwayTtsModel, runwayTtsVoice, deapiTtsModel, deapiTtsVoice,             │
 │    deapiTtsRefAudio, deapiTtsRefText,                                        │
-│    elevenlabsTtsModel, elevenlabsVoiceId, minimaxTtsModel, minimaxTtsVoice,  │
+│    elevenlabsTtsModel, elevenlabsVoiceId, elevenlabsTtsRefAudio,             │
+│    elevenlabsTtsVoiceName, elevenlabsTtsCloneRemoveBackgroundNoise,          │
+│    minimaxTtsModel, minimaxTtsVoice,                                         │
 │    minimaxTtsRefAudio, minimaxTtsPromptAudio, minimaxTtsPromptText,          │
 │    minimaxTtsCloneNoiseReduction, minimaxTtsCloneVolumeNormalization,        │
 │    geminiImageModel, openaiImageModel, minimaxImageModel,                    │

@@ -10,6 +10,30 @@ import { runPreflight } from '~/utils/pricing/preflight'
 import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
+import { readEnv } from '~/utils/validate/env-utils'
+import { ensureElevenLabsTtsSetup } from './tts-services/elevenlabs/elevenlabs-tts'
+import {
+  isElevenLabsTtsPvcSetupRequested,
+  runElevenLabsTtsPvcSetup,
+  writeElevenLabsTtsPvcStatusArtifact
+} from './tts-services/elevenlabs/elevenlabs-pvc'
+import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
+import type { TtsOptions } from '~/types'
+
+const clearElevenLabsPvcSetupOptions = <T extends TtsOptions>(
+  options: T,
+  pvcVoiceId: string
+): T => ({
+  ...options,
+  elevenlabsTtsPvcVoice: pvcVoiceId,
+  elevenlabsTtsPvcSamples: undefined,
+  elevenlabsTtsPvcSampleDir: undefined,
+  elevenlabsTtsPvcLanguage: undefined,
+  elevenlabsTtsPvcDescription: undefined,
+  elevenlabsTtsPvcCaptchaOut: undefined,
+  elevenlabsTtsPvcVerifyAudio: undefined,
+  elevenlabsTtsPvcWait: false
+} as T)
 
 export const ttsCommand = defineCommand({
   name: 'tts',
@@ -20,6 +44,8 @@ export const ttsCommand = defineCommand({
     examples: [
       ['bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8', 'Generate speech with local Kitten TTS'],
       ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3', 'Generate speech with ElevenLabs'],
+      ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Clone a voice with ElevenLabs IVC'],
+      ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123', 'Generate speech with an ElevenLabs PVC voice'],
       ['bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Clone a voice with MiniMax'],
       ['bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Generate speech with Mistral Voxtral'],
       ['bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3', 'Clone a voice with deAPI'],
@@ -47,12 +73,15 @@ export const ttsCommand = defineCommand({
   const maxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' }, new Set(), Bun.argv.slice(2))
   const targets = collectTtsTargets(ttsOptions)
+  const pvcSetupRequested = isElevenLabsTtsPvcSetupRequested(ttsOptions)
 
   const { shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, text.length)
   if (shouldExit) {
     l.report.expectedOutput(
       './output/<timestamp>_<label>/',
-      [...targets.map((target) => getTtsArtifactFileName(target, targets.length === 1)), 'run.json']
+      pvcSetupRequested && ttsOptions.elevenlabsTtsPvcWait !== true
+        ? ['elevenlabs-pvc-status.json', 'run.json']
+        : [...targets.map((target) => getTtsArtifactFileName(target, targets.length === 1)), 'run.json']
     )
     return
   }
@@ -60,11 +89,68 @@ export const ttsCommand = defineCommand({
   const baseName = inputPath.replace(/\.[^/.]+$/, '').split('/').pop() || 'tts'
   const outputDir = await createGenerationOutputDir(baseName)
 
+  let effectiveTtsOptions = ttsOptions
+  let effectiveTargets = targets
+  let pvcStatusFileName: string | undefined
+  if (pvcSetupRequested) {
+    const apiKey = readEnv('ELEVENLABS_API_KEY')
+    if (!apiKey) {
+      throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs PVC setup')
+    }
+    const elevenLabsTarget = targets.find((target) => target.service === 'elevenlabs')
+    if (!elevenLabsTarget) {
+      throw CLIUsageError('ElevenLabs PVC setup requires --elevenlabs-tts <model>.')
+    }
+    await ensureElevenLabsTtsSetup()
+    const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
+    const setupResult = await runWithLogContext({ step: 'step-4-tts' }, async () =>
+      await runElevenLabsTtsPvcSetup(baseURL, apiKey, {
+        model: elevenLabsTarget.model,
+        pvcVoiceId: ttsOptions.elevenlabsTtsPvcVoice,
+        samplePaths: ttsOptions.elevenlabsTtsPvcSamples,
+        sampleDir: ttsOptions.elevenlabsTtsPvcSampleDir,
+        voiceName: ttsOptions.elevenlabsTtsVoiceName,
+        language: ttsOptions.elevenlabsTtsPvcLanguage,
+        description: ttsOptions.elevenlabsTtsPvcDescription,
+        captchaOut: ttsOptions.elevenlabsTtsPvcCaptchaOut,
+        verifyAudioPath: ttsOptions.elevenlabsTtsPvcVerifyAudio,
+        wait: ttsOptions.elevenlabsTtsPvcWait
+      })
+    )
+    const statusArtifact = await writeElevenLabsTtsPvcStatusArtifact(outputDir, setupResult)
+    pvcStatusFileName = statusArtifact.statusFileName
+
+    if (ttsOptions.elevenlabsTtsPvcWait !== true || !setupResult.readyForSynthesis) {
+      await writeRunManifest(outputDir, 'tts', {
+        elevenlabsPvc: statusArtifact,
+        input: text,
+        requestedProviders: targets.map((t) => ({ service: t.service, model: t.model }))
+      })
+      l.report.complete(
+        outputDir,
+        {
+          elevenlabsPvc: statusArtifact.statusFileName,
+          ...(statusArtifact.captchaPath ? { captcha: statusArtifact.captchaPath } : {}),
+          run: 'run.json'
+        },
+        {
+          steps: [],
+          totalTimeMs: 0,
+          totalCost: 0
+        }
+      )
+      return
+    }
+
+    effectiveTtsOptions = clearElevenLabsPvcSetupOptions(ttsOptions, setupResult.voiceId)
+    effectiveTargets = collectTtsTargets(effectiveTtsOptions)
+  }
+
   const { metadata } = await runWithLogContext({ step: 'step-4-tts' }, async () =>
-    await runTts(text, outputDir, ttsOptions)
+    await runTts(text, outputDir, effectiveTtsOptions)
   )
 
-  const estimatedTtsTargets = buildEstimatedTtsTargets(targets)
+  const estimatedTtsTargets = buildEstimatedTtsTargets(effectiveTargets)
   const estimated = computeEstimatedCosts({
     ttsTargets: estimatedTtsTargets,
     ttsCharacterCount: text.length
@@ -87,13 +173,14 @@ export const ttsCommand = defineCommand({
 
   await writeGenerationMetadata(outputDir, 'tts', metadata, cost, timing, {
     input: text,
-    requestedProviders: targets.map((t) => ({ service: t.service, model: t.model }))
+    requestedProviders: effectiveTargets.map((t) => ({ service: t.service, model: t.model }))
   })
 
   l.report.complete(
     outputDir,
     {
       ...buildTtsArtifactMap(metadata, 'audio'),
+      ...(pvcStatusFileName ? { elevenlabsPvc: pvcStatusFileName } : {}),
       run: 'run.json'
     },
     {

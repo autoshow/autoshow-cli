@@ -19,6 +19,8 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
 
 - Provider suites in `test/test-cases/e2e/step-4-tts-e2e/tts-services/` cover OpenAI, Gemini, Groq, Grok, Mistral, Deepgram, Runway, ElevenLabs, MiniMax, and deAPI TTS.
 - The shared `defineTTSServiceTest` helper covers invalid model rejection, `--price` output, and real synthesis when the required API key is configured.
+- ElevenLabs Instant Voice Cloning has mocked validation coverage for IVC creation, shared clone reuse across selected ElevenLabs models, verification-required failures, metadata, API error handling, and setup estimates.
+- ElevenLabs PVC has mocked validation coverage for ready-PVC synthesis, create/upload/CAPTCHA setup, verification/train/poll, failed training, setup artifacts, metadata, and price/timing estimates.
 - OpenAI custom voice creation has mocked validation coverage for consent upload, voice creation, speech synthesis with `{ id: "voice_..." }`, metadata, and setup estimates. Live coverage is opt-in only: set `OPENAI_API_KEY`, `OPENAI_TTS_CUSTOM_VOICE_TEST=1`, `OPENAI_TTS_CONSENT_ID`, and `OPENAI_TTS_REF_AUDIO`.
 - Mistral live coverage is gated by `MISTRAL_API_KEY`; the saved-voice test also requires `MISTRAL_TTS_VOICE`, and the reference-audio test uses `input/examples/audio/anthony-voice.mp3`.
 - MiniMax rapid voice-clone live coverage is gated by `MINIMAX_API_KEY`, uses `input/examples/audio/anthony-voice.mp3`, and carries a 150 cent provider clone fee.
@@ -32,7 +34,7 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/ --test-price
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts --budget 2500
 ```
 
-OpenAI custom voice price preflight is side-effect free and covered without `OPENAI_API_KEY`; it adds a 0 cent setup cost and 15000 ms setup time to the first OpenAI clone target.
+ElevenLabs IVC, ElevenLabs PVC, and OpenAI custom voice price preflight are side-effect free and covered without API keys. ElevenLabs IVC adds a 0 cent setup cost and 10000 ms setup time to the first ElevenLabs clone target. ElevenLabs PVC setup adds a 0 cent setup cost and, when `--elevenlabs-tts-pvc-wait` is set, 3 hours for English or 6 hours for non-English/multilingual training. OpenAI adds a 0 cent setup cost and 15000 ms setup time to the first OpenAI clone target.
 
 `kitten-tts-pipeline.test.ts` does not currently have its own mapped `--test-price` or `--budget` selector.
 

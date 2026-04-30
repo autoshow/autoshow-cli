@@ -151,7 +151,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
   Step 17 ─── setupKittenTts() ────────── Kitten TTS Python venv + models
               downloadKittenTtsModel() ── Download default Kitten model
                                           |
-  Step 14 ─── setupElevenLabsTts() ────── Check ElevenLabs TTS (API key only)
+  Step 14 ─── setupElevenLabsTts() ────── Check ElevenLabs TTS/IVC/PVC (API key only)
                                           |
   Step 15 ─── setupGroqTts() ──────────── Check Groq TTS (API key only)
                                           |
@@ -193,7 +193,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `write --kimi` | `KIMI_API_KEY` |
 | `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
-| `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |
+| `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY`; IVC/PVC setup flags also need local sample or verification audio |
 | `tts --minimax-tts` | `MINIMAX_API_KEY`; `--minimax-tts-ref-audio` also needs local `mp3`, `m4a`, or `wav` clone source audio |
 | `tts --groq-tts` | `GROQ_API_KEY` |
 | `tts --grok-tts` | `XAI_API_KEY` |

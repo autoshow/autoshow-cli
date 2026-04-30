@@ -142,6 +142,10 @@ export const mergeConfigIntoRawFlags = (
     inject('gemini-speaker-2-name', d.post.tts.geminiSpeaker2Name)
     inject('gemini-speaker-2-voice', d.post.tts.geminiSpeaker2Voice)
     inject('elevenlabs-voice', d.post.tts.elevenlabsVoice)
+    inject('elevenlabs-tts-pvc-voice', d.post.tts.elevenlabsTtsPvcVoice)
+    inject('elevenlabs-tts-ref-audio', d.post.tts.elevenlabsTtsRefAudio)
+    inject('elevenlabs-tts-voice-name', d.post.tts.elevenlabsTtsVoiceName)
+    inject('elevenlabs-tts-clone-remove-background-noise', d.post.tts.elevenlabsTtsCloneRemoveBackgroundNoise)
     inject('minimax-tts-voice', d.post.tts.minimaxTtsVoice)
     inject('minimax-tts-ref-audio', d.post.tts.minimaxTtsRefAudio)
     inject('minimax-tts-prompt-audio', d.post.tts.minimaxTtsPromptAudio)
@@ -273,6 +277,10 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini-speaker-2-name': ['defaults', 'post', 'tts', 'geminiSpeaker2Name'],
   'gemini-speaker-2-voice': ['defaults', 'post', 'tts', 'geminiSpeaker2Voice'],
   'elevenlabs-voice':  ['defaults', 'post', 'tts', 'elevenlabsVoice'],
+  'elevenlabs-tts-pvc-voice': ['defaults', 'post', 'tts', 'elevenlabsTtsPvcVoice'],
+  'elevenlabs-tts-ref-audio': ['defaults', 'post', 'tts', 'elevenlabsTtsRefAudio'],
+  'elevenlabs-tts-voice-name': ['defaults', 'post', 'tts', 'elevenlabsTtsVoiceName'],
+  'elevenlabs-tts-clone-remove-background-noise': ['defaults', 'post', 'tts', 'elevenlabsTtsCloneRemoveBackgroundNoise'],
   'minimax-tts-voice': ['defaults', 'post', 'tts', 'minimaxTtsVoice'],
   'minimax-tts-ref-audio': ['defaults', 'post', 'tts', 'minimaxTtsRefAudio'],
   'minimax-tts-prompt-audio': ['defaults', 'post', 'tts', 'minimaxTtsPromptAudio'],
@@ -326,7 +334,21 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'max-cents':         ['pricing', 'maxCents'],
 }
 
-const RUNTIME_ONLY_FLAGS = new Set(['price', 'allow-over-budget', 'show', 'reset', 'config-path', 'password'])
+const RUNTIME_ONLY_FLAGS = new Set([
+  'price',
+  'allow-over-budget',
+  'show',
+  'reset',
+  'config-path',
+  'password',
+  'elevenlabs-tts-pvc-sample',
+  'elevenlabs-tts-pvc-sample-dir',
+  'elevenlabs-tts-pvc-language',
+  'elevenlabs-tts-pvc-description',
+  'elevenlabs-tts-pvc-captcha-out',
+  'elevenlabs-tts-pvc-verify-audio',
+  'elevenlabs-tts-pvc-wait'
+])
 
 const setNestedValue = (obj: Record<string, unknown>, path: string[], value: unknown): void => {
   let current = obj

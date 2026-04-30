@@ -168,6 +168,24 @@ const writeTtsFlags = {
   'elevenlabs-voice': {
     description: 'ElevenLabs voice ID override (default: hpp4J3VqNfWAUOO0d1Us)',
     type: String
+  },
+  'elevenlabs-tts-pvc-voice': {
+    description: 'ElevenLabs trained Professional Voice Clone voice ID for synthesis',
+    type: String
+  },
+  'elevenlabs-tts-ref-audio': {
+    description: 'ElevenLabs TTS source audio path for Instant Voice Cloning',
+    type: String
+  },
+  'elevenlabs-tts-voice-name': {
+    description: 'ElevenLabs TTS cloned voice label; defaults to AutoShow_<timestamp>',
+    type: String
+  },
+  'elevenlabs-tts-clone-remove-background-noise': {
+    description: 'Enable ElevenLabs IVC background noise removal for the reference audio',
+    type: Boolean,
+    default: false,
+    negatable: false
   }
 } as const satisfies ClercFlagsDefinition
 

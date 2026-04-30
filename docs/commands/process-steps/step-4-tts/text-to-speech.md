@@ -68,7 +68,7 @@ bun as tts <input> [flags]
 | Provider | Selection | Models | Voice flag / default |
 |----------|-----------|--------|----------------------|
 | Kitten TTS | `--kitten-tts <model>` | `kitten-tts-mini`, `kitten-tts-micro`, `kitten-tts-nano`, `kitten-tts-nano-0.8-int8` | `--kitten-voice`, default `Jasper` |
-| ElevenLabs | `--elevenlabs-tts <model>` | `eleven_v3`, `eleven_flash_v2_5`, `eleven_turbo_v2_5` | `--elevenlabs-voice`, default `hpp4J3VqNfWAUOO0d1Us` |
+| ElevenLabs | `--elevenlabs-tts <model>` | `eleven_v3`, `eleven_flash_v2_5`, `eleven_turbo_v2_5` | `--elevenlabs-voice`, default `hpp4J3VqNfWAUOO0d1Us`, `--elevenlabs-tts-pvc-voice` for a trained PVC voice, or `--elevenlabs-tts-ref-audio` for Instant Voice Cloning |
 | MiniMax | `--minimax-tts <model>` | `speech-2.8-hd`, `speech-2.8-turbo` | `--minimax-tts-voice`, default `English_expressive_narrator`, or `--minimax-tts-ref-audio` for rapid voice cloning |
 | Groq | `--groq-tts <model>` | `canopylabs/orpheus-v1-english` | `--groq-voice`, default `troy` |
 | Grok | `--grok-tts <model>` | `grok-tts` | `--grok-tts-voice`, default `eve`; voices `eve`, `ara`, `rex`, `sal`, `leo` |
@@ -86,6 +86,14 @@ Model-selecting flags are repeatable, including repeated flags from the same pro
 
 Mistral Voxtral TTS requires one voice source when generating audio: a saved/custom voice ID or a one-off local reference audio file. `--price` can estimate Mistral TTS with only `--mistral-tts` because no synthesis request is made. Reference audio is base64-encoded for the request and is not written into run metadata; metadata records the speaker as `ref_audio:<basename>`.
 
+ElevenLabs TTS uses existing voices by default. Add `--elevenlabs-tts-ref-audio` to create one persistent ElevenLabs Instant Voice Clone before synthesis and reuse the returned `voice_id` for every selected ElevenLabs model in that run. `--elevenlabs-tts-voice-name` labels the created voice and defaults to `AutoShow_<timestamp>`; `--elevenlabs-tts-clone-remove-background-noise` maps to ElevenLabs `remove_background_noise` and defaults to false. Do not combine clone mode with `--elevenlabs-voice`; if ElevenLabs returns `requires_verification`, AutoShow stops with the created `voice_id` so you can verify it in ElevenLabs and rerun with `--elevenlabs-voice <id>`. Reference audio must be a local, non-empty audio file with a supported extension; duration guidance is logged as a warning rather than a hard failure. Clone metadata records `speaker` as `ref_audio:<basename>`, `clonedVoiceId`, and `cloneCostCents: 0`.
+
+ElevenLabs Professional Voice Cloning is handled as a hybrid workflow. Use `--elevenlabs-tts-pvc-voice <voice_id>` when the PVC voice is already trained; synthesis still uses `POST /v1/text-to-speech/{voice_id}` and normal ElevenLabs TTS character pricing, while metadata records `speaker: "pvc:<voice_id>"`. Do not combine PVC voice mode with `--elevenlabs-voice` or ElevenLabs IVC flags.
+
+To start PVC setup from `tts`, provide one or more `--elevenlabs-tts-pvc-sample <path>` values or `--elevenlabs-tts-pvc-sample-dir <dir>`. AutoShow creates or updates a PVC voice, uploads samples, optionally writes the verification CAPTCHA with `--elevenlabs-tts-pvc-captcha-out <path>`, and writes `elevenlabs-pvc-status.json` in the output directory. Without `--elevenlabs-tts-pvc-wait`, setup/status runs exit after writing artifacts and do not synthesize speech. To verify an existing PVC voice, pass `--elevenlabs-tts-pvc-voice <voice_id> --elevenlabs-tts-pvc-verify-audio <path>`; AutoShow submits the CAPTCHA reading, starts training for the selected ElevenLabs model, and exits unless `--elevenlabs-tts-pvc-wait` is set. With `--elevenlabs-tts-pvc-wait`, AutoShow polls `GET /v1/voices/{voice_id}` until the selected model is `fine_tuned` or `failed`, then synthesizes with the PVC voice.
+
+PVC samples must be local, non-empty audio files with supported extensions. AutoShow warns when the known total duration is under 30 minutes or over 180 minutes. It does not automate ElevenLabs speaker separation; use clean single-speaker samples or process/select speakers in ElevenLabs before training.
+
 MiniMax TTS uses existing/preset voices by default. Add `--minimax-tts-ref-audio` to create one MiniMax rapid clone before synthesis and reuse the cloned `voice_id` for every selected MiniMax model in that run. `--minimax-tts-voice` becomes the custom clone `voice_id` in clone mode; omit it to let AutoShow generate one. Source audio must be local `mp3`, `m4a`, or `wav`, 10 seconds to 5 minutes, and at most 20 MB. Optional `--minimax-tts-prompt-audio` must be paired with `--minimax-tts-prompt-text`; prompt audio must be less than 8 seconds and at most 20 MB. Clone metadata records `speaker` as `ref_audio:<basename>` plus `clonedVoiceId`, without storing the full local path. `--all-tts` does not clone unless `--minimax-tts-ref-audio` is also set.
 
 OpenAI custom voices are available only to eligible OpenAI customers. Use an existing custom voice with `--openai-voice voice_...`, which sends the speech request voice as `{ id: "voice_..." }`. To create a custom voice, select OpenAI TTS and provide `--openai-tts-ref-audio` plus exactly one of `--openai-tts-consent-id` or `--openai-tts-consent-audio`. `--openai-tts-consent-language` defaults to `en-US`; `--openai-tts-consent-name` defaults to the consent file name; `--openai-tts-voice-name` defaults to `AutoShow_<timestamp>`. Do not combine `--openai-voice` with `--openai-tts-ref-audio`. Sample and consent audio must be local, non-empty, at most 10 MiB, and have one of these extensions/MIME families: `mp3`/`mpeg`, `wav`, `ogg`, `aac`, `flac`, `webm`, `mp4`, or `m4a`. Clone metadata records `speaker` as `ref_audio:<basename>`, `clonedVoiceId`, and `cloneCostCents: 0`; it does not store local paths or consent IDs.
@@ -97,6 +105,9 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 - Runway `eleven_multilingual_v2` is priced at 1 credit per 50 input characters. AutoShow treats 1 credit as 1 cent, so the equivalent rate is 20 cents per 1K characters.
 - Runway TTS estimates use exact block rounding: `ceil(characterCount / 50) * 1¢`, so 1-50 characters cost 1¢ and 51-100 characters cost 2¢.
 - Runway does not publish a TTS processing-time SLA in the local reference, so AutoShow uses a 10000 ms / 1K characters timing heuristic.
+- ElevenLabs API pricing is 5 cents / 1K characters for `eleven_flash_v2_5` and `eleven_turbo_v2_5`, and 10 cents / 1K characters for `eleven_v3`. ElevenLabs publishes about 75 ms latency for Flash/Turbo and about 250-300 ms for Multilingual v2/v3 as first-audio/model latency; AutoShow keeps its benchmarked full CLI runtime estimates of 13400 ms / 1K chars for Flash, 3700 ms / 1K chars for Turbo, and 27283 ms / 1K chars for v3.
+- ElevenLabs IVC setup adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate to the first ElevenLabs clone target in a run. ElevenLabs publishes TTS character pricing but no separate IVC creation fee.
+- ElevenLabs PVC setup adds a 0 cent setup estimate because ElevenLabs publishes plan/slot requirements, not a separate PVC creation fee. Training time estimates are 3 hours for English and 6 hours for non-English/multilingual setup when `--elevenlabs-tts-pvc-wait` is used; ElevenLabs says training queues are roughly 2-6 hours and can run longer. PVC synthesis uses the same Flash/Turbo and Multilingual v2/v3 character rates as normal ElevenLabs TTS, with possible provider-side latency variance.
 - MiniMax synthesis estimates stay at 6 cents / 1K characters for `speech-2.8-turbo` and 10 cents / 1K characters for `speech-2.8-hd`. Clone mode adds a one-time 150 cents rapid clone setup cost per `tts` run, counted once across selected MiniMax models. AutoShow does not send clone preview text, so no preview-character charge is added.
 - MiniMax clone mode adds a fixed 15000 ms setup timing estimate because MiniMax does not publish a clone latency SLA. The existing MiniMax synthesis timing estimates still apply per character; actual runtime is recorded in `run.json`.
 - Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a provisional 6000 ms / 1K characters timing heuristic until benchmarked.
@@ -117,6 +128,11 @@ bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini --kitten-voi
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice voice_existing123
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --openai-tts-voice-name AutoShowAnthony
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --elevenlabs-tts-voice-name AutoShowAnthony
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-sample-dir input/pvc-samples --elevenlabs-tts-voice-name AutoShowPVC --elevenlabs-tts-pvc-captcha-out output/pvc-captcha.png
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123 --elevenlabs-tts-pvc-verify-audio input/pvc-captcha-reading.mp3 --elevenlabs-tts-pvc-wait
 bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview --gemini-voice Kore
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
@@ -166,6 +182,17 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--runway-tts <model>` | Select one or more Runway TTS models; omit the value to use the cheapest supported model |
 | `--deapi-tts <model>` | Select one or more deAPI speech models; omit the value to use the cheapest supported model |
 | `--elevenlabs-voice <id>` | Override the ElevenLabs voice ID |
+| `--elevenlabs-tts-pvc-voice <id>` | Use a trained ElevenLabs Professional Voice Clone voice, or target an existing PVC voice for verification/training |
+| `--elevenlabs-tts-ref-audio <path>` | Use local source audio to create an ElevenLabs Instant Voice Clone |
+| `--elevenlabs-tts-voice-name <name>` | Created ElevenLabs clone label; defaults to `AutoShow_<timestamp>` |
+| `--elevenlabs-tts-clone-remove-background-noise` | Enable ElevenLabs `remove_background_noise` for clone source audio |
+| `--elevenlabs-tts-pvc-sample <path>` | Add a PVC training sample; repeatable |
+| `--elevenlabs-tts-pvc-sample-dir <dir>` | Add all supported audio files from a non-recursive PVC sample directory |
+| `--elevenlabs-tts-pvc-language <code>` | PVC sample language code; defaults to `en` |
+| `--elevenlabs-tts-pvc-description <text>` | PVC voice description used when creating a voice |
+| `--elevenlabs-tts-pvc-captcha-out <path>` | Write the PVC verification CAPTCHA image |
+| `--elevenlabs-tts-pvc-verify-audio <path>` | Submit the recorded PVC CAPTCHA reading, then start training |
+| `--elevenlabs-tts-pvc-wait` | Poll PVC training before synthesis |
 | `--minimax-tts-voice <id>` | Override the MiniMax voice ID, or provide the custom clone `voice_id` when `--minimax-tts-ref-audio` is set |
 | `--minimax-tts-ref-audio <path>` | Use local source audio for MiniMax rapid voice cloning |
 | `--minimax-tts-prompt-audio <path>` | Optional MiniMax clone prompt audio; requires `--minimax-tts-prompt-text` |
@@ -207,6 +234,8 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 
 - If exactly one TTS target succeeds, the run writes `speech.wav` plus `run.json`.
 - If multiple TTS targets succeed, the run writes `speech-<service>-<sanitized-model>.wav` for each successful target plus `run.json`.
+- ElevenLabs IVC runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
+- Ready ElevenLabs PVC synthesis records `speaker: "pvc:<voice_id>"` in Step 4 metadata. PVC setup-only runs write `elevenlabs-pvc-status.json`; when no wait is requested, no `speech.wav` is produced.
 - MiniMax clone runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and one `cloneCostCents: 150` entry in the Step 4 metadata.
 - OpenAI custom voice creation runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
 - `run.json` includes `tts`, `cost`, and `timing` sections. `tts` is always an array, even when only one target succeeds.

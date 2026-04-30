@@ -9,6 +9,19 @@ import { runLlmProviderTargetPools, isLocalLlmTarget } from '~/cli/commands/proc
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import { validateDeapiTtsReferenceAudio } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
+import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
+import {
+  createElevenLabsTtsIvcContext,
+  ELEVENLABS_TTS_IVC_SETUP_MS,
+  validateElevenLabsTtsIvcAudio
+} from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-ivc'
+import {
+  ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
+  runElevenLabsTtsPvcSetup,
+  validateElevenLabsTtsPvcAudio,
+  validateElevenLabsTtsPvcSamples,
+  writeElevenLabsTtsPvcStatusArtifact
+} from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
 import {
   createMinimaxTtsCloneContext,
   MINIMAX_TTS_CLONE_COST_CENTS,
@@ -215,6 +228,645 @@ describe('option resolution contracts', () => {
     expect(opts.mistralTtsModels).toEqual(['voxtral-mini-tts-2603'])
     expect(mistralTargets.map((target) => target.model)).toEqual(['voxtral-mini-tts-2603'])
     expect(mistralTargets.map((target) => target.voice)).toEqual([undefined])
+  })
+
+  test('elevenlabs voice clone target records reference audio speaker and setup estimate', () => {
+    const opts = buildOptsFromFlags(false, {
+      'elevenlabs-tts': ['eleven_flash_v2_5', 'eleven_v3'],
+      'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'elevenlabs-tts-voice-name': 'AutoShow Anthony',
+      'elevenlabs-tts-clone-remove-background-noise': true
+    }, [], {}, new Set(), [
+      '--elevenlabs-tts',
+      'eleven_flash_v2_5',
+      '--elevenlabs-tts',
+      'eleven_v3',
+      '--elevenlabs-tts-ref-audio',
+      'input/examples/audio/anthony-voice.mp3',
+      '--elevenlabs-tts-voice-name',
+      'AutoShow Anthony',
+      '--elevenlabs-tts-clone-remove-background-noise'
+    ])
+    const targets = collectTtsTargets(opts).filter((target) => target.service === 'elevenlabs')
+
+    expect(opts.elevenlabsTtsRefAudio).toBe('input/examples/audio/anthony-voice.mp3')
+    expect(opts.elevenlabsTtsVoiceName).toBe('AutoShow Anthony')
+    expect(opts.elevenlabsTtsCloneRemoveBackgroundNoise).toBe(true)
+    expect(targets.map((target) => ({
+      model: target.model,
+      voice: target.voice,
+      setupCostCents: target.setupCostCents,
+      setupTimeMs: target.setupTimeMs,
+      setupNote: target.setupNote
+    }))).toEqual([
+      {
+        model: 'eleven_flash_v2_5',
+        voice: 'ref_audio:anthony-voice.mp3',
+        setupCostCents: 0,
+        setupTimeMs: ELEVENLABS_TTS_IVC_SETUP_MS,
+        setupNote: 'ElevenLabs instant voice clone setup'
+      },
+      {
+        model: 'eleven_v3',
+        voice: 'ref_audio:anthony-voice.mp3',
+        setupCostCents: undefined,
+        setupTimeMs: undefined,
+        setupNote: undefined
+      }
+    ])
+  })
+
+  test('elevenlabs clone options validate provider selection and voice reuse', () => {
+    const missingElevenLabsModel = buildOptsFromFlags(false, {
+      'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3'
+    })
+    const voiceNameWithoutReference = buildOptsFromFlags(false, {
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-tts-voice-name': 'AutoShow Anthony'
+    })
+    const voiceWithClone = buildOptsFromFlags(false, {
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-voice': 'voice_existing123',
+      'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3'
+    })
+    const existingVoice = buildOptsFromFlags(false, {
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-voice': 'voice_existing123'
+    })
+
+    expect(() => collectTtsTargets(missingElevenLabsModel)).toThrow('require --elevenlabs-tts <model> or --all-tts')
+    expect(() => collectTtsTargets(voiceNameWithoutReference)).toThrow('requires --elevenlabs-tts-ref-audio')
+    expect(() => collectTtsTargets(voiceWithClone)).toThrow('cannot be combined with --elevenlabs-voice')
+    expect(collectTtsTargets(existingVoice).map((target) => target.voice)).toEqual(['voice_existing123'])
+  })
+
+  test('elevenlabs clone audio validation enforces file and extension while warning on duration guidance', async () => {
+    const sample = await validateElevenLabsTtsIvcAudio('input/examples/audio/anthony-voice.mp3')
+    expect(sample.basename).toBe('anthony-voice.mp3')
+    expect(sample.mimeType).toBe('audio/mpeg')
+
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-ref-audio-'))
+    const emptyPath = join(tempDir, 'empty.mp3')
+    const textPath = join(tempDir, 'not-audio.txt')
+    await writeFile(emptyPath, '')
+    await writeFile(textPath, 'hello')
+
+    try {
+      await expect(validateElevenLabsTtsIvcAudio('input/examples/audio/missing.mp3')).rejects.toThrow('not found')
+      await expect(validateElevenLabsTtsIvcAudio(textPath)).rejects.toThrow('mp3/mpeg, wav, m4a/mp4, ogg, flac, aac, or webm')
+      await expect(validateElevenLabsTtsIvcAudio(emptyPath)).rejects.toThrow('is empty')
+      await expect(validateElevenLabsTtsIvcAudio('input/examples/audio/0-audio-short.mp3')).resolves.toMatchObject({
+        basename: '0-audio-short.mp3'
+      })
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('elevenlabs clone flow creates once and reuses cloned voice across models', async () => {
+    const previousKey = process.env['ELEVENLABS_API_KEY']
+    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
+    const previousFetch = globalThis.fetch
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-clone-flow-'))
+    const calls: Array<{ url: string, method: string, body?: unknown }> = []
+
+    try {
+      process.env['ELEVENLABS_API_KEY'] = 'test-key'
+      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
+      const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+        const body = init?.body
+
+        if (url.endsWith('/v1/voices/add') && body instanceof FormData) {
+          calls.push({
+            url,
+            method,
+            body: {
+              name: body.get('name'),
+              hasFile: body.get('files') instanceof Blob,
+              removeBackgroundNoise: body.get('remove_background_noise')
+            }
+          })
+          return new Response(JSON.stringify({
+            voice_id: 'voice_elevenlabs_mock',
+            requires_verification: false
+          }), { status: 200, headers: { 'content-type': 'application/json' } })
+        }
+        if (url.includes('/v1/text-to-speech/')) {
+          const parsed = JSON.parse(String(body ?? '{}')) as unknown
+          calls.push({ url, method, body: parsed })
+          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+        }
+        throw new Error(`Unexpected ElevenLabs mock fetch: ${method} ${url}`)
+      }) as typeof fetch
+
+      const context = createElevenLabsTtsIvcContext()
+      const firstDir = join(tempDir, 'first')
+      const secondDir = join(tempDir, 'second')
+      await mkdir(firstDir, { recursive: true })
+      await mkdir(secondDir, { recursive: true })
+      const clone = {
+        refAudioPath: 'input/examples/audio/anthony-voice.mp3',
+        voiceName: 'AutoShowTestVoice',
+        removeBackgroundNoise: true,
+        context
+      }
+      const first = await runElevenLabsTts('Hello from the first model.', firstDir, {
+        model: 'eleven_flash_v2_5',
+        clone
+      })
+      const second = await runElevenLabsTts('Hello from the second model.', secondDir, {
+        model: 'eleven_v3',
+        clone
+      })
+
+      expect(await Bun.file(first.audioPath).exists()).toBe(true)
+      expect(await Bun.file(second.audioPath).exists()).toBe(true)
+      expect(calls.filter((call) => call.url.endsWith('/v1/voices/add'))).toHaveLength(1)
+      expect(calls.filter((call) => call.url.includes('/v1/text-to-speech/'))).toHaveLength(2)
+      expect(calls.find((call) => call.url.endsWith('/v1/voices/add'))?.body).toEqual({
+        name: 'AutoShowTestVoice',
+        hasFile: true,
+        removeBackgroundNoise: 'true'
+      })
+      expect(calls.filter((call) => call.url.includes('/v1/text-to-speech/')).map((call) => ({
+        url: call.url,
+        body: call.body
+      }))).toEqual([
+        {
+          url: 'https://mock.elevenlabs.local/v1/text-to-speech/voice_elevenlabs_mock?output_format=mp3_44100_128',
+          body: { text: 'Hello from the first model.', model_id: 'eleven_flash_v2_5' }
+        },
+        {
+          url: 'https://mock.elevenlabs.local/v1/text-to-speech/voice_elevenlabs_mock?output_format=mp3_44100_128',
+          body: { text: 'Hello from the second model.', model_id: 'eleven_v3' }
+        }
+      ])
+      expect(first.metadata).toMatchObject({
+        speaker: 'ref_audio:anthony-voice.mp3',
+        clonedVoiceId: 'voice_elevenlabs_mock',
+        cloneCostCents: 0
+      })
+      expect(second.metadata).toMatchObject({
+        speaker: 'ref_audio:anthony-voice.mp3',
+        clonedVoiceId: 'voice_elevenlabs_mock',
+        cloneCostCents: 0
+      })
+    } finally {
+      globalThis.fetch = previousFetch
+      if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
+      else process.env['ELEVENLABS_API_KEY'] = previousKey
+      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
+      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('elevenlabs clone flow fails clearly when verification is required', async () => {
+    const previousKey = process.env['ELEVENLABS_API_KEY']
+    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
+    const previousFetch = globalThis.fetch
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-verify-'))
+
+    try {
+      process.env['ELEVENLABS_API_KEY'] = 'test-key'
+      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        if (url.endsWith('/v1/voices/add')) {
+          return new Response(JSON.stringify({
+            voice_id: 'voice_requires_verify',
+            requires_verification: true
+          }), { status: 200, headers: { 'content-type': 'application/json' } })
+        }
+        throw new Error(`Unexpected ElevenLabs verification mock fetch: ${init?.method ?? 'GET'} ${url}`)
+      }) as typeof fetch
+
+      await expect(runElevenLabsTts('Hello.', tempDir, {
+        model: 'eleven_flash_v2_5',
+        clone: {
+          refAudioPath: 'input/examples/audio/anthony-voice.mp3',
+          context: createElevenLabsTtsIvcContext()
+        }
+      })).rejects.toThrow('Verify it in ElevenLabs, then rerun with --elevenlabs-voice voice_requires_verify')
+    } finally {
+      globalThis.fetch = previousFetch
+      if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
+      else process.env['ELEVENLABS_API_KEY'] = previousKey
+      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
+      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('elevenlabs clone flow surfaces API errors without synthesis', async () => {
+    const previousKey = process.env['ELEVENLABS_API_KEY']
+    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
+    const previousFetch = globalThis.fetch
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-error-'))
+    let synthesisCalls = 0
+
+    try {
+      process.env['ELEVENLABS_API_KEY'] = 'test-key'
+      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0]): Promise<Response> => {
+        const url = String(input)
+        if (url.endsWith('/v1/voices/add')) {
+          return new Response(JSON.stringify({ detail: { message: 'bad reference audio' } }), {
+            status: 400,
+            headers: { 'content-type': 'application/json' }
+          })
+        }
+        if (url.includes('/v1/text-to-speech/')) {
+          synthesisCalls += 1
+        }
+        throw new Error(`Unexpected ElevenLabs error mock fetch: ${url}`)
+      }) as typeof fetch
+
+      await expect(runElevenLabsTts('Hello.', tempDir, {
+        model: 'eleven_flash_v2_5',
+        clone: {
+          refAudioPath: 'input/examples/audio/anthony-voice.mp3',
+          context: createElevenLabsTtsIvcContext()
+        }
+      })).rejects.toThrow('ElevenLabs IVC voice creation failed (400): bad reference audio')
+      expect(synthesisCalls).toBe(0)
+    } finally {
+      globalThis.fetch = previousFetch
+      if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
+      else process.env['ELEVENLABS_API_KEY'] = previousKey
+      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
+      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('elevenlabs PVC ready voice maps to synthesis speaker and rejects conflicting voice modes', () => {
+    const readyPvc = buildOptsFromFlags(false, {
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
+    })
+    const targets = collectTtsTargets(readyPvc).filter((target) => target.service === 'elevenlabs')
+
+    expect(readyPvc.elevenlabsTtsPvcVoice).toBe('pvc_voice_123')
+    expect(targets.map((target) => ({
+      model: target.model,
+      voice: target.voice,
+      setupCostCents: target.setupCostCents
+    }))).toEqual([{
+      model: 'eleven_flash_v2_5',
+      voice: 'pvc:pvc_voice_123',
+      setupCostCents: undefined
+    }])
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-voice': 'voice_existing123',
+      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
+    }))).toThrow('PVC voice cannot be combined with --elevenlabs-voice')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
+    }))).toThrow('PVC voice cannot be combined with ElevenLabs IVC flags')
+  })
+
+  test('elevenlabs PVC setup target records setup estimate and runtime-only setup flags', () => {
+    const opts = buildOptsFromFlags(false, {
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-tts-pvc-sample': ['input/examples/audio/anthony-voice.mp3'],
+      'elevenlabs-tts-voice-name': 'AutoShow PVC',
+      'elevenlabs-tts-pvc-language': 'en',
+      'elevenlabs-tts-pvc-description': 'Narration PVC',
+      'elevenlabs-tts-pvc-captcha-out': '/tmp/autoshow-pvc-captcha.png',
+      'elevenlabs-tts-pvc-wait': true
+    }, [], {}, new Set(), [
+      '--elevenlabs-tts',
+      'eleven_flash_v2_5',
+      '--elevenlabs-tts-pvc-sample',
+      'input/examples/audio/anthony-voice.mp3',
+      '--elevenlabs-tts-voice-name',
+      'AutoShow PVC',
+      '--elevenlabs-tts-pvc-language',
+      'en',
+      '--elevenlabs-tts-pvc-description',
+      'Narration PVC',
+      '--elevenlabs-tts-pvc-captcha-out',
+      '/tmp/autoshow-pvc-captcha.png',
+      '--elevenlabs-tts-pvc-wait'
+    ])
+    const targets = collectTtsTargets(opts).filter((target) => target.service === 'elevenlabs')
+
+    expect(opts.elevenlabsTtsPvcSamples).toEqual(['input/examples/audio/anthony-voice.mp3'])
+    expect(opts.elevenlabsTtsVoiceName).toBe('AutoShow PVC')
+    expect(opts.elevenlabsTtsPvcLanguage).toBe('en')
+    expect(opts.elevenlabsTtsPvcDescription).toBe('Narration PVC')
+    expect(opts.elevenlabsTtsPvcCaptchaOut).toBe('/tmp/autoshow-pvc-captcha.png')
+    expect(opts.elevenlabsTtsPvcWait).toBe(true)
+    expect(targets.map((target) => ({
+      model: target.model,
+      voice: target.voice,
+      setupCostCents: target.setupCostCents,
+      setupTimeMs: target.setupTimeMs,
+      setupNote: target.setupNote
+    }))).toEqual([{
+      model: 'eleven_flash_v2_5',
+      voice: 'pvc_setup:AutoShow PVC',
+      setupCostCents: 0,
+      setupTimeMs: ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
+      setupNote: 'ElevenLabs professional voice clone training'
+    }])
+  })
+
+  test('elevenlabs PVC sample validation accepts directories and enforces file checks', async () => {
+    const sample = await validateElevenLabsTtsPvcAudio('input/examples/audio/anthony-voice.mp3')
+    expect(sample.basename).toBe('anthony-voice.mp3')
+    expect(sample.mimeType).toBe('audio/mpeg')
+
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-pvc-samples-'))
+    const emptyPath = join(tempDir, 'empty.mp3')
+    const textPath = join(tempDir, 'not-audio.txt')
+    const sampleCopyPath = join(tempDir, 'sample.mp3')
+    await writeFile(emptyPath, '')
+    await writeFile(textPath, 'hello')
+    await writeFile(sampleCopyPath, new Uint8Array(await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()))
+
+    try {
+      await expect(validateElevenLabsTtsPvcAudio('input/examples/audio/missing.mp3')).rejects.toThrow('not found')
+      await expect(validateElevenLabsTtsPvcAudio(textPath)).rejects.toThrow('mp3/mpeg, wav, m4a/mp4, ogg, flac, aac, or webm')
+      await expect(validateElevenLabsTtsPvcAudio(emptyPath)).rejects.toThrow('is empty')
+      await rm(emptyPath, { force: true })
+      const samples = await validateElevenLabsTtsPvcSamples(undefined, tempDir)
+      expect(samples.map((entry) => entry.basename)).toEqual(['sample.mp3'])
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('elevenlabs PVC setup creates a voice, uploads samples, writes captcha and status artifact', async () => {
+    const previousFetch = globalThis.fetch
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-pvc-create-'))
+    const calls: Array<{ url: string, method: string, body?: unknown }> = []
+
+    try {
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+        const body = init?.body
+        if (url.endsWith('/v1/voices/pvc')) {
+          calls.push({ url, method, body: JSON.parse(String(body ?? '{}')) as unknown })
+          return new Response(JSON.stringify({ voice_id: 'pvc_new_voice' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+          })
+        }
+        if (url.endsWith('/v1/voices/pvc/pvc_new_voice/samples') && body instanceof FormData) {
+          calls.push({
+            url,
+            method,
+            body: {
+              hasFile: body.get('files') instanceof Blob,
+              removeBackgroundNoise: body.get('remove_background_noise')
+            }
+          })
+          return new Response(JSON.stringify([{
+            sample_id: 'sample_1',
+            file_name: '0-audio-short.mp3',
+            mime_type: 'audio/mpeg',
+            size_bytes: 10,
+            duration_secs: 5
+          }]), { status: 200, headers: { 'content-type': 'application/json' } })
+        }
+        if (url.endsWith('/v1/voices/pvc/pvc_new_voice/captcha')) {
+          calls.push({ url, method })
+          return new Response(Buffer.from('captcha-bytes').toString('base64'), {
+            status: 200,
+            headers: { 'content-type': 'text/plain' }
+          })
+        }
+        throw new Error(`Unexpected ElevenLabs PVC create mock fetch: ${method} ${url}`)
+      }) as typeof fetch
+
+      const captchaPath = join(tempDir, 'captcha.png')
+      const result = await runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
+        model: 'eleven_flash_v2_5',
+        samplePaths: ['input/examples/audio/0-audio-short.mp3'],
+        voiceName: 'AutoShow PVC',
+        language: 'en',
+        description: 'Narration PVC',
+        captchaOut: captchaPath
+      })
+      const artifact = await writeElevenLabsTtsPvcStatusArtifact(tempDir, result)
+
+      expect(result).toMatchObject({
+        voiceId: 'pvc_new_voice',
+        voiceName: 'AutoShow PVC',
+        language: 'en',
+        description: 'Narration PVC',
+        createdVoice: true,
+        readyForSynthesis: false,
+        actions: ['create_voice', 'upload_samples', 'write_captcha']
+      })
+      expect(result.uploadedSamples).toEqual([{
+        sampleId: 'sample_1',
+        fileName: '0-audio-short.mp3',
+        mimeType: 'audio/mpeg',
+        sizeBytes: 10,
+        durationSeconds: 5
+      }])
+      expect(await Bun.file(captchaPath).text()).toBe('captcha-bytes')
+      expect(await Bun.file(join(tempDir, artifact.statusFileName)).exists()).toBe(true)
+      expect(calls.map((call) => ({ url: call.url, method: call.method, body: call.body }))).toEqual([
+        {
+          url: 'https://mock.elevenlabs.local/v1/voices/pvc',
+          method: 'POST',
+          body: { name: 'AutoShow PVC', language: 'en', description: 'Narration PVC' }
+        },
+        {
+          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_new_voice/samples',
+          method: 'POST',
+          body: { hasFile: true, removeBackgroundNoise: 'false' }
+        },
+        {
+          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_new_voice/captcha',
+          method: 'GET',
+          body: undefined
+        }
+      ])
+    } finally {
+      globalThis.fetch = previousFetch
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('elevenlabs PVC setup verifies, trains, and waits for fine tuning', async () => {
+    const previousFetch = globalThis.fetch
+    const calls: Array<{ url: string, method: string, body?: unknown }> = []
+    let statusPolls = 0
+
+    try {
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+        const body = init?.body
+        if (url.endsWith('/v1/voices/pvc/pvc_existing/captcha') && method === 'POST' && body instanceof FormData) {
+          calls.push({ url, method, body: { hasRecording: body.get('recording') instanceof Blob } })
+          return new Response(JSON.stringify({ status: 'ok' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+          })
+        }
+        if (url.endsWith('/v1/voices/pvc/pvc_existing/train')) {
+          calls.push({ url, method, body: JSON.parse(String(body ?? '{}')) as unknown })
+          return new Response(JSON.stringify({ status: 'ok' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+          })
+        }
+        if (url.endsWith('/v1/voices/pvc_existing')) {
+          statusPolls += 1
+          calls.push({ url, method })
+          return new Response(JSON.stringify({
+            voice_id: 'pvc_existing',
+            fine_tuning: {
+              state: {
+                eleven_flash_v2_5: statusPolls === 1 ? 'fine_tuning' : 'fine_tuned'
+              },
+              progress: {
+                eleven_flash_v2_5: statusPolls === 1 ? 0.5 : 1
+              }
+            }
+          }), { status: 200, headers: { 'content-type': 'application/json' } })
+        }
+        throw new Error(`Unexpected ElevenLabs PVC verify mock fetch: ${method} ${url}`)
+      }) as typeof fetch
+
+      const result = await runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
+        model: 'eleven_flash_v2_5',
+        pvcVoiceId: 'pvc_existing',
+        verifyAudioPath: 'input/examples/audio/0-audio-short.mp3',
+        wait: true,
+        pollIntervalMs: 1,
+        timeoutMs: 1000
+      })
+
+      expect(result).toMatchObject({
+        voiceId: 'pvc_existing',
+        verificationStatus: 'ok',
+        trainingStatus: 'ok',
+        fineTuningState: 'fine_tuned',
+        fineTuningProgress: 1,
+        readyForSynthesis: true,
+        actions: ['verify_captcha', 'start_training', 'wait_for_training']
+      })
+      expect(calls.map((call) => ({ url: call.url, method: call.method, body: call.body }))).toEqual([
+        {
+          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_existing/captcha',
+          method: 'POST',
+          body: { hasRecording: true }
+        },
+        {
+          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_existing/train',
+          method: 'POST',
+          body: { model_id: 'eleven_flash_v2_5' }
+        },
+        {
+          url: 'https://mock.elevenlabs.local/v1/voices/pvc_existing',
+          method: 'GET',
+          body: undefined
+        },
+        {
+          url: 'https://mock.elevenlabs.local/v1/voices/pvc_existing',
+          method: 'GET',
+          body: undefined
+        }
+      ])
+    } finally {
+      globalThis.fetch = previousFetch
+    }
+  })
+
+  test('elevenlabs PVC setup surfaces failed training state', async () => {
+    const previousFetch = globalThis.fetch
+
+    try {
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+        if (url.endsWith('/v1/voices/pvc_failed')) {
+          return new Response(JSON.stringify({
+            voice_id: 'pvc_failed',
+            fine_tuning: {
+              state: {
+                eleven_flash_v2_5: 'failed'
+              }
+            }
+          }), { status: 200, headers: { 'content-type': 'application/json' } })
+        }
+        throw new Error(`Unexpected ElevenLabs PVC failed mock fetch: ${method} ${url}`)
+      }) as typeof fetch
+
+      await expect(runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
+        model: 'eleven_flash_v2_5',
+        pvcVoiceId: 'pvc_failed',
+        wait: true,
+        pollIntervalMs: 1,
+        timeoutMs: 100
+      })).rejects.toThrow('ElevenLabs PVC training failed')
+    } finally {
+      globalThis.fetch = previousFetch
+    }
+  })
+
+  test('elevenlabs ready PVC synthesis uses pvc speaker metadata', async () => {
+    const previousKey = process.env['ELEVENLABS_API_KEY']
+    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
+    const previousFetch = globalThis.fetch
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-pvc-synthesis-'))
+    const calls: Array<{ url: string, method: string, body?: unknown }> = []
+
+    try {
+      process.env['ELEVENLABS_API_KEY'] = 'test-key'
+      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
+      const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+        const body = init?.body
+        if (url.includes('/v1/text-to-speech/')) {
+          calls.push({ url, method, body: JSON.parse(String(body ?? '{}')) as unknown })
+          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+        }
+        throw new Error(`Unexpected ElevenLabs PVC synthesis mock fetch: ${method} ${url}`)
+      }) as typeof fetch
+
+      const result = await runElevenLabsTts('Hello from a PVC voice.', tempDir, {
+        model: 'eleven_flash_v2_5',
+        pvcVoiceId: 'pvc_voice_123'
+      })
+
+      expect(await Bun.file(result.audioPath).exists()).toBe(true)
+      expect(result.metadata).toMatchObject({
+        speaker: 'pvc:pvc_voice_123'
+      })
+      expect(calls).toEqual([{
+        url: 'https://mock.elevenlabs.local/v1/text-to-speech/pvc_voice_123?output_format=mp3_44100_128',
+        method: 'POST',
+        body: { text: 'Hello from a PVC voice.', model_id: 'eleven_flash_v2_5' }
+      }])
+    } finally {
+      globalThis.fetch = previousFetch
+      if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
+      else process.env['ELEVENLABS_API_KEY'] = previousKey
+      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
+      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 
   test('mistral tts voice and reference audio are mutually exclusive at target collection', () => {

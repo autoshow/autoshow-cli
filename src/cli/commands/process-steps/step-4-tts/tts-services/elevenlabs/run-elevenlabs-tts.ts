@@ -6,11 +6,22 @@ import { readEnv } from '~/utils/validate/env-utils'
 import { ELEVENLABS_DEFAULT_VOICE_ID } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readElevenLabsError } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-utils'
+import {
+  ensureElevenLabsTtsIvcVoice,
+  type ElevenLabsTtsIvcOptions
+} from './elevenlabs-ivc'
+import { pollElevenLabsTtsPvcTraining } from './elevenlabs-pvc'
 
 export const runElevenLabsTts = async (
   text: string,
   outputDir: string,
-  options: { model: ElevenlabsTtsModel, voiceId?: string | undefined }
+  options: {
+    model: ElevenlabsTtsModel
+    voiceId?: string | undefined
+    pvcVoiceId?: string | undefined
+    pvcWait?: boolean | undefined
+    clone?: ElevenLabsTtsIvcOptions | undefined
+  }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('ELEVENLABS_API_KEY')
   if (!apiKey) {
@@ -18,16 +29,31 @@ export const runElevenLabsTts = async (
   }
 
   const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
-  const voiceId = options.voiceId?.trim() || readEnv('ELEVENLABS_VOICE_ID') || ELEVENLABS_DEFAULT_VOICE_ID
   const audioPath = `${outputDir}/speech.wav`
   const tempAudioPath = `${outputDir}/speech-elevenlabs.mp3`
+  const startTime = Date.now()
+  const cloneResult = options.clone
+    ? await ensureElevenLabsTtsIvcVoice(baseURL, apiKey, options.clone)
+    : undefined
+  const pvcVoiceId = options.pvcVoiceId?.trim() || undefined
+  if (pvcVoiceId && options.pvcWait === true) {
+    await pollElevenLabsTtsPvcTraining(baseURL, apiKey, pvcVoiceId, options.model)
+  }
+  const voiceId = cloneResult?.voiceId ?? pvcVoiceId ?? options.voiceId?.trim() ?? readEnv('ELEVENLABS_VOICE_ID') ?? ELEVENLABS_DEFAULT_VOICE_ID
+  const speaker = cloneResult
+    ? `ref_audio:${cloneResult.sourceAudio.basename}`
+    : pvcVoiceId
+      ? `pvc:${pvcVoiceId}`
+      : voiceId
 
   logTtsConfig('ElevenLabs', [
     { label: 'model', value: options.model },
-    { label: 'voice', value: voiceId }
+    {
+      label: cloneResult ? 'reference audio' : pvcVoiceId ? 'PVC voice' : 'voice',
+      value: cloneResult ? cloneResult.sourceAudio.basename : voiceId
+    },
+    ...(cloneResult ? [{ label: 'cloned voice_id', value: cloneResult.voiceId }] : [])
   ])
-
-  const startTime = Date.now()
 
   const audioBytes = await withRetry(
     { retryClass: 'runtime_http_create_conservative', operationName: 'elevenlabs-tts' },
@@ -77,12 +103,20 @@ export const runElevenLabsTts = async (
 
   await Bun.$`rm -f ${tempAudioPath}`.quiet().nothrow()
 
-  return finalizeTtsRun({
+  const result = finalizeTtsRun({
     service: 'elevenlabs',
     model: options.model,
-    speaker: voiceId,
+    speaker,
     audioPath,
     chunkCount: 1,
     startTime
   })
+
+  return {
+    audioPath: result.audioPath,
+    metadata: {
+      ...result.metadata,
+      ...(cloneResult ? { clonedVoiceId: cloneResult.voiceId, cloneCostCents: 0 } : {})
+    }
+  }
 }

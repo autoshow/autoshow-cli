@@ -70,8 +70,21 @@ describe('config contracts', () => {
       'reverb-stt': true,
       price: true,
       password: 'secret-pdf-password',
-      'config-path': '/tmp/autoshow.json'
-    }, new Set(['reverb-stt', 'price', 'password', 'config-path']))).toEqual({
+      'config-path': '/tmp/autoshow.json',
+      'elevenlabs-tts-pvc-sample': ['input/examples/audio/anthony-voice.mp3'],
+      'elevenlabs-tts-pvc-captcha-out': '/tmp/captcha.png',
+      'elevenlabs-tts-pvc-verify-audio': 'input/examples/audio/0-audio-short.mp3',
+      'elevenlabs-tts-pvc-wait': true
+    }, new Set([
+      'reverb-stt',
+      'price',
+      'password',
+      'config-path',
+      'elevenlabs-tts-pvc-sample',
+      'elevenlabs-tts-pvc-captcha-out',
+      'elevenlabs-tts-pvc-verify-audio',
+      'elevenlabs-tts-pvc-wait'
+    ]))).toEqual({
       version: 2,
       defaults: {
         extract: {
@@ -240,6 +253,68 @@ describe('config contracts', () => {
     })
   })
 
+  test('buildConfigPatchFromFlags saves and merges ElevenLabs TTS clone defaults', () => {
+    const patch = buildConfigPatchFromFlags({
+      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'elevenlabs-tts-voice-name': 'AutoShow Anthony',
+      'elevenlabs-tts-clone-remove-background-noise': true
+    }, new Set([
+      'elevenlabs-tts',
+      'elevenlabs-tts-ref-audio',
+      'elevenlabs-tts-voice-name',
+      'elevenlabs-tts-clone-remove-background-noise'
+    ]))
+
+    expect(patch).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          tts: {
+            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            elevenlabsTtsVoiceName: 'AutoShow Anthony',
+            elevenlabsTtsCloneRemoveBackgroundNoise: true
+          }
+        }
+      }
+    })
+
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'elevenlabs-tts-voice-name': 'AutoShow Anthony',
+      'elevenlabs-tts-clone-remove-background-noise': true
+    })
+  })
+
+  test('buildConfigPatchFromFlags saves and merges ElevenLabs ready PVC voice defaults', () => {
+    const patch = buildConfigPatchFromFlags({
+      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
+    }, new Set([
+      'elevenlabs-tts',
+      'elevenlabs-tts-pvc-voice'
+    ]))
+
+    expect(patch).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          tts: {
+            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTtsPvcVoice: 'pvc_voice_123'
+          }
+        }
+      }
+    })
+
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
+    })
+  })
+
   test('buildConfigPatchFromFlags saves and merges deAPI TTS clone defaults', () => {
     const patch = buildConfigPatchFromFlags({
       'deapi-tts': ['Qwen3_TTS_12Hz_1_7B_Base'],
@@ -308,6 +383,11 @@ describe('config contracts', () => {
             openaiTtsConsentLanguage: 'en-US',
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
+            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTtsPvcVoice: 'pvc_voice_123',
+            elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            elevenlabsTtsVoiceName: 'AutoShow Anthony',
+            elevenlabsTtsCloneRemoveBackgroundNoise: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
             minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
@@ -367,6 +447,11 @@ describe('config contracts', () => {
             openaiTtsConsentLanguage: 'en-US',
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
+            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTtsPvcVoice: 'pvc_voice_123',
+            elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            elevenlabsTtsVoiceName: 'AutoShow Anthony',
+            elevenlabsTtsCloneRemoveBackgroundNoise: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
             minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',

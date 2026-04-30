@@ -188,6 +188,17 @@ export type RuntimeOptions = {
   elevenlabsTtsModels: string[] | undefined
   elevenlabsTtsModel: string | undefined
   elevenlabsVoiceId: string | undefined
+  elevenlabsTtsPvcVoice: string | undefined
+  elevenlabsTtsRefAudio: string | undefined
+  elevenlabsTtsVoiceName: string | undefined
+  elevenlabsTtsCloneRemoveBackgroundNoise: boolean
+  elevenlabsTtsPvcSamples: string[] | undefined
+  elevenlabsTtsPvcSampleDir: string | undefined
+  elevenlabsTtsPvcLanguage: string | undefined
+  elevenlabsTtsPvcDescription: string | undefined
+  elevenlabsTtsPvcCaptchaOut: string | undefined
+  elevenlabsTtsPvcVerifyAudio: string | undefined
+  elevenlabsTtsPvcWait: boolean
   deepgramTtsModels: string[] | undefined
   deepgramTtsModel: string | undefined
   deepgramVoiceId: string | undefined
