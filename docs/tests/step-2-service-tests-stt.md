@@ -2,6 +2,13 @@
 
 Provider-backed speech-to-text coverage for the `stt` command, including deAPI exact-pricing and manifest assertions.
 
+## Outline
+
+- [Quick Start](#quick-start)
+- [Current Coverage](#current-coverage)
+- [Price Preflight](#price-preflight)
+- [Related Docs](#related-docs)
+
 ## Quick Start
 
 ```bash

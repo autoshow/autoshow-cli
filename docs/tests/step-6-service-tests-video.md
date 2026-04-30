@@ -2,6 +2,13 @@
 
 Provider-backed validation, price coverage, and optional live generation coverage for the `video` command.
 
+## Outline
+
+- [Quick Start](#quick-start)
+- [Current Coverage](#current-coverage)
+- [Price Preflight](#price-preflight)
+- [Related Docs](#related-docs)
+
 ## Quick Start
 
 ```bash

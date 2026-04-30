@@ -2,6 +2,14 @@
 
 Use this when `yt-dlp` hits a YouTube sign-in prompt or `Sign in to confirm you're not a bot`.
 
+## Outline
+
+- [TL;DR](#tldr)
+- [Fastest Fix: Browser Import](#fastest-fix-browser-import)
+- [Fallback: Export `cookies.txt`](#fallback-export-cookiestxt)
+- [If It Still Fails](#if-it-still-fails)
+- [References](#references)
+
 ## TL;DR
 
 Preferred:

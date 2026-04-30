@@ -7,7 +7,7 @@
   "scripts": {
     "repo": "bash repomix.sh",
     "check": "bunx tsc --noEmit",
-    "t": "bun test/test-runner.ts",
+    "t": "AGENT=1 bun test/test-runner.ts",
     "as": "bun src/cli/create-cli.ts",
     "setup": "bun as setup"
   },

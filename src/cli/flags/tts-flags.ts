@@ -5,6 +5,7 @@ import {
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_GROK_TTS_MODELS,
+  SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
@@ -44,6 +45,10 @@ export const ttsFlags = {
   },
   'grok-tts': {
     description: buildModelDescription('xAI Grok TTS model', SUPPORTED_GROK_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'mistral-tts': {
+    description: buildModelDescription('Mistral Voxtral TTS model', SUPPORTED_MISTRAL_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
   'openai-tts': {
@@ -112,6 +117,14 @@ export const ttsFlags = {
   },
   'grok-tts-voice': {
     description: 'xAI Grok TTS voice override (default: eve)',
+    type: String
+  },
+  'mistral-tts-voice': {
+    description: 'Mistral TTS saved/custom voice ID',
+    type: String
+  },
+  'mistral-tts-ref-audio': {
+    description: 'Mistral TTS reference audio path for one-off voice cloning',
     type: String
   },
   'elevenlabs-voice': {

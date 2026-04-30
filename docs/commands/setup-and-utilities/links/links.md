@@ -66,6 +66,7 @@ Accepted provider selectors are the lowercase names below.
 | `--groq` | `general`, `text`, `stt`, `tts` |
 | `--happyscribe` | `stt` |
 | `--kimi` | `general`, `text`, `ocr` |
+| `--mistral` | `general`, `stt`, `ocr`, `tts` |
 | `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
 | `--openai` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--resend` | `general` |
@@ -88,7 +89,7 @@ Accepted section tokens outside provider selectors:
 - `tts`
 - `video`
 
-Section availability depends on the provider. For example, `music` currently matches DeAPI, ElevenLabs, and MiniMax.
+Section availability depends on the provider.
 
 ## Examples
 
@@ -107,6 +108,9 @@ bun as links --deepinfra ocr
 
 # Fetch Kimi text and OCR docs
 bun as links --kimi text ocr
+
+# Fetch Mistral STT, OCR, and TTS docs
+bun as links --mistral stt ocr tts
 
 # Fetch only OpenAI general and text docs
 bun as links --openai general text

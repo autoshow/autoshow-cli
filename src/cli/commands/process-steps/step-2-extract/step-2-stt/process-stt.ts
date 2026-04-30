@@ -659,7 +659,7 @@ export const processStt = async (
       : undefined)
   const targetsToRun = runOptions.targetsToRun ?? requestedTargets
   const targetsToRunKeys = new Set(targetsToRun.map((target) => getSttTargetKey(target)))
-  const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : options.outputRootDir
   const metadata = await resolveSttSourceMetadata(source)
   const batchChildOutputDir = runOptions.outputDir === undefined
     ? await reserveBatchChildOutputDir(runOptions.batchChildContext, {

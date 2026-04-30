@@ -3,8 +3,27 @@ import { basename, isAbsolute, join, normalize, relative, resolve } from 'node:p
 import { parseCommandEstimatedTotal } from '../test-runner/utils'
 import { readOutputMetadataSummary } from './output-metadata-summary'
 import { E2E_TEST_TIMEOUT_MS } from './timeouts'
+import { LLAMA_PROCESS_LOCK_NAME, stopDefaultLlamaServer } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
+import { withProcessLock } from '~/utils/process-lock'
 
-export const OUTPUT_DIR = './output'
+const sanitizeOutputRootSegment = (value: string): string =>
+  value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'run'
+
+const resolveTestOutputDir = (): string => {
+  const explicit = process.env['AUTOSHOW_OUTPUT_DIR']?.trim()
+  if (explicit) {
+    return explicit
+  }
+
+  const artifactRunId = process.env['AUTOSHOW_TEST_ARTIFACTS_DIR']
+    ? basename(process.env['AUTOSHOW_TEST_ARTIFACTS_DIR'])
+    : undefined
+  const runId = sanitizeOutputRootSegment(process.env['AUTOSHOW_TEST_RUN_ID'] ?? artifactRunId ?? 'local')
+  return `./output/test-runs/${runId}/p${process.pid}`
+}
+
+export const OUTPUT_DIR = resolveTestOutputDir()
+process.env['AUTOSHOW_OUTPUT_DIR'] = OUTPUT_DIR
 export const STABLE_AUDIO_URL = 'https://ajc.pics/autoshow/1-audio.mp3'
 export const STABLE_AUDIO_TITLE = new URL(STABLE_AUDIO_URL).pathname.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
 export const STABLE_LOCAL_AUDIO_PATH = 'input/examples/audio/1-audio.mp3'
@@ -137,6 +156,9 @@ const BASE_CHILD_ENV = Object.entries(process.env).reduce<Record<string, string>
   }
   return env
 }, {})
+
+const getTestProcessLockRoot = (): string =>
+  process.env['AUTOSHOW_PROCESS_LOCK_DIR'] ?? join(TEST_CACHE_DIR, 'process-locks')
 
 const shouldUseEmptyTestConfig = (args: string[]): boolean => {
   if (args[0] !== 'src/cli/create-cli.ts') {
@@ -419,6 +441,13 @@ export const readConfiguredEnvVar = async (key: string): Promise<string | undefi
 }
 
 export const stopLlamaServer = async (): Promise<void> => {
-  await Bun.$`pkill -f llama-server`.quiet().nothrow()
-  await Bun.sleep(300)
+  const lockRoot = getTestProcessLockRoot()
+  await withProcessLock(
+    LLAMA_PROCESS_LOCK_NAME,
+    async () => {
+      await stopDefaultLlamaServer({ lockRoot })
+      await Bun.sleep(300)
+    },
+    { lockRoot }
+  )
 }

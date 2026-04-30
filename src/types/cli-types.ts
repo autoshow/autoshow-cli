@@ -10,6 +10,7 @@ export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
 export type Step2ProviderSelectionOrigin = 'default' | 'explicit' | 'all-shortcut'
 
 export type RuntimeOptions = {
+  outputRootDir: string
   useReverb: boolean
   youtubeCaptions: boolean
   whisperExplicit: boolean
@@ -164,6 +165,10 @@ export type RuntimeOptions = {
   grokTtsModels: string[] | undefined
   grokTtsModel: string | undefined
   grokTtsVoice: string | undefined
+  mistralTtsModels: string[] | undefined
+  mistralTtsModel: string | undefined
+  mistralTtsVoice: string | undefined
+  mistralTtsRefAudio: string | undefined
   openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined

@@ -59,12 +59,12 @@ budgetedTest('transcribe-whisper-large-v3-turbo', 'whisper large-v3-turbo model 
   }
 })
 
-budgetedTest('transcribe-whisper-large-v3-turbo-split', 'whisper large-v3-turbo with split processes video input', async () => {
+budgetedTest('transcribe-whisper-tiny-split', 'whisper tiny with split processes video input', async () => {
   await cleanupVideoOutput()
 
-  const testName = 'whisper large-v3-turbo with split processes video input'
+  const testName = 'whisper tiny with split processes video input'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', videoInputPath, '--whisper', 'large-v3-turbo', '--split'],
+    ['src/cli/create-cli.ts', 'extract', videoInputPath, '--whisper', 'tiny', '--split'],
     { testName }
   )
 
@@ -86,7 +86,7 @@ budgetedTest('transcribe-whisper-large-v3-turbo-split', 'whisper large-v3-turbo 
     }
     const step2 = metadata.step2
     expect(step2).toBeDefined()
-    expect(step2?.transcriptionModel).toContain('ggml-large-v3-turbo')
+    expect(step2?.transcriptionModel).toContain('ggml-tiny')
 
     const segmentsDirExists = await fileExists(`${outputDir}/segments`)
     expect(segmentsDirExists).toBe(true)

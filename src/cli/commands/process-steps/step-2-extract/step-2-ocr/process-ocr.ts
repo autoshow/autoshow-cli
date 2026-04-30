@@ -43,6 +43,7 @@ import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIR
 import { serializeOneOrMany } from '../../target-runner'
 import { writeProviderResult } from '../../manifest-utils'
 import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-step2'
+import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
@@ -433,7 +434,7 @@ export const processOcr = async (
 ): Promise<ProcessDocumentOutput> => {
   const resolvedOutputDir = resumeRun?.outputDir !== undefined
     ? resumeRun.outputDir
-    : rawOpts.outputDir || './output'
+    : rawOpts.outputDir || getOutputRoot()
 
   const opts = validateData(ExtractionOptionsSchema, {
     filePath,

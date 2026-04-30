@@ -24,12 +24,9 @@ export const writeRegistry: PriceSelectionEntry[] = [
   ]),
   ...exact('test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-models.test.ts', [
     command('write-llama-gemma-3-270m', 'write-llama-gemma-3-270m', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--llama', 'ggml-org/gemma-3-270m-it-GGUF', '--price']),
-    command('write-llama-qwen3-0.6b', 'write-llama-qwen3-0.6b', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--llama', 'ggml-org/Qwen3-0.6B-GGUF', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts', [
     command('write-llama-qwen3-0.6b', 'write-llama-qwen3-0.6b', ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--llama', 'ggml-org/Qwen3-0.6B-GGUF', '--price']),
-    command('write-llama-qwen3-0.6b-document', 'write-llama-qwen3-0.6b-document', ['src/cli/create-cli.ts', 'write', 'input/examples/document/1-document.pdf', '--llama', 'ggml-org/Qwen3-0.6B-GGUF', '--price']),
-    command('write-llama-qwen3-0.6b-epub', 'write-llama-qwen3-0.6b-epub', ['src/cli/create-cli.ts', 'write', 'input/examples/document/1-epub.epub', '--llama', 'ggml-org/Qwen3-0.6B-GGUF', '--chapters', '--length', '5', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-3-write-e2e/write-local/write-project-lyrics.test.ts', [
     command('write-project-lyrics-single-default-llama', 'write-project-lyrics-single-default-llama', ['src/cli/create-cli.ts', 'write', 'input/examples/document/1-document.pdf', '--prompt', 'folkSong', '--price']),

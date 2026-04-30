@@ -1,10 +1,9 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
 import { readdir, rm } from 'node:fs/promises'
-import { basename, join } from 'node:path'
-import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput } from '../../../test-utils/test-helpers'
+import { basename, dirname, join } from 'node:path'
+import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, OUTPUT_DIR } from '../../../test-utils/test-helpers'
 import { readBatchItems, readBatchSource, readRunMetadata } from '../../../test-utils/manifest-helpers'
 
-const OUTPUT_DIR = './output'
 const createdDirs: string[] = []
 const TIMESTAMPED_CHILD_DIR_PATTERN = /^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-\d{3}_/
 
@@ -130,6 +129,20 @@ const getNewOutputDir = async (dirsBefore: Set<string>): Promise<string | null> 
   return latest
 }
 
+const resolveBatchOutputDir = async (outputDir: string | null, dirsBefore: Set<string>): Promise<string | null> => {
+  if (outputDir) {
+    const candidates = [outputDir, dirname(outputDir)]
+    for (const candidate of candidates) {
+      if (await fileExists(`${candidate}/source.json`) && await fileExists(`${candidate}/batch.json`)) {
+        rememberDir(candidate)
+        return candidate
+      }
+    }
+  }
+
+  return await getNewOutputDir(dirsBefore)
+}
+
 export const setupDownloadInputTypeLifecycle = (suffixes: string[]): void => {
   const uniqueSuffixes = Array.from(new Set(suffixes))
 
@@ -200,7 +213,7 @@ export const defineBatchCaseTest = (tc: BatchCase): void => {
     })
     expect(result.exitCode).toBe(0)
 
-    const batchDir = await getNewOutputDir(dirsBefore)
+    const batchDir = await resolveBatchOutputDir(result.outputDir, dirsBefore)
     expect(batchDir).not.toBeNull()
     if (!batchDir) {
       return

@@ -253,6 +253,7 @@ export type RepeatableModelFlag =
   | 'minimax-tts'
   | 'groq-tts'
   | 'grok-tts'
+  | 'mistral-tts'
   | 'openai-tts'
   | 'gemini-tts'
   | 'runway-tts'

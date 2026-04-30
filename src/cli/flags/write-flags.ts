@@ -5,6 +5,7 @@ import {
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
+  SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_RUNWAY_TTS_MODELS,
@@ -56,6 +57,10 @@ const writeTtsFlags = {
     description: `Enable Groq TTS on LLM output. ${buildModelDescription('Groq TTS model', SUPPORTED_GROQ_TTS_MODELS)}`,
     type: [String] as [StringConstructor]
   },
+  'mistral-tts': {
+    description: `Enable Mistral Voxtral TTS on LLM output. ${buildModelDescription('Mistral Voxtral TTS model', SUPPORTED_MISTRAL_TTS_MODELS)}`,
+    type: [String] as [StringConstructor]
+  },
   'openai-tts': {
     description: `Enable OpenAI TTS on LLM output. ${buildModelDescription('OpenAI TTS model', SUPPORTED_OPENAI_TTS_MODELS)}`,
     type: [String] as [StringConstructor]
@@ -102,6 +107,14 @@ const writeTtsFlags = {
   },
   'groq-voice': {
     description: 'Groq TTS voice ID override (default: troy)',
+    type: String
+  },
+  'mistral-tts-voice': {
+    description: 'Mistral TTS saved/custom voice ID',
+    type: String
+  },
+  'mistral-tts-ref-audio': {
+    description: 'Mistral TTS reference audio path for one-off voice cloning',
     type: String
   },
   'elevenlabs-voice': {

@@ -6,6 +6,7 @@ import * as l from '~/utils/logger'
 import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { ensureDirectory } from '~/utils/cli-utils'
+import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import {
@@ -510,7 +511,7 @@ export async function prepareHtmlArticle(
     fileSize
   }, 'html article metadata')
 
-  const effectiveBaseDir = outputDir.trim().length > 0 ? outputDir : './output'
+  const effectiveBaseDir = outputDir.trim().length > 0 ? outputDir : getOutputRoot()
   const preparedOutputDir = await reserveBatchChildOutputDir(batchChildContext, {
     slug: step1Slug,
     publishedAt: batchChildContext?.batchItem?.publishedAt ?? normalizeBatchChildPublishedAt(web.published),

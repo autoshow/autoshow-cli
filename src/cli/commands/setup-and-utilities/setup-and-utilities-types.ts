@@ -52,6 +52,7 @@ import {
   SUPPORTED_GROK_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
+  SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_RUNWAY_TTS_MODELS
@@ -195,6 +196,7 @@ export type ElevenlabsTtsModel = typeof SUPPORTED_ELEVENLABS_TTS_MODELS[number]
 export type MinimaxTtsModel = typeof SUPPORTED_MINIMAX_TTS_MODELS[number]
 export type GroqTtsModel = typeof SUPPORTED_GROQ_TTS_MODELS[number]
 export type GrokTtsModel = typeof SUPPORTED_GROK_TTS_MODELS[number]
+export type MistralTtsModel = typeof SUPPORTED_MISTRAL_TTS_MODELS[number]
 export type OpenAITtsModel = typeof SUPPORTED_OPENAI_TTS_MODELS[number]
 export type GeminiTtsModel = typeof SUPPORTED_GEMINI_TTS_MODELS[number]
 export type DeepgramTtsModel = typeof SUPPORTED_DEEPGRAM_TTS_MODELS[number]

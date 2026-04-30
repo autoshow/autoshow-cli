@@ -69,6 +69,9 @@ bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
 # Hosted Grok text-to-speech
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
+# Hosted Mistral Voxtral text-to-speech
+bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
 # Runway-hosted text-to-speech
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 

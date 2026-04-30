@@ -9,6 +9,13 @@ Backfill missing provider outputs in an existing run, child batch, or parent `ex
 - [Provider Selection](#provider-selection)
 - [Examples](#examples)
 - [Flags](#flags)
+  - [Shared](#shared)
+  - [STT](#stt)
+  - [OCR](#ocr)
+  - [TTS](#tts)
+  - [Image](#image)
+  - [Video](#video)
+  - [Music](#music)
 - [Notes](#notes)
 
 ## Usage

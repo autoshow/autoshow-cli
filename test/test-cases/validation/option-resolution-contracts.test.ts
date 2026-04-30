@@ -22,6 +22,8 @@ describe('option resolution contracts', () => {
       'deepgram-stt': 'nova-3',
       'grok-tts': 'grok-tts',
       'grok-tts-voice': 'EVE',
+      'mistral-tts': 'voxtral-mini-tts-2603',
+      'mistral-tts-voice': 'voice_abc123',
       'runway-tts': 'eleven_multilingual_v2',
       'runway-tts-voice': 'Leslie',
       'deepinfra-ocr': 'allenai/olmOCR-2-7B-1025',
@@ -46,6 +48,8 @@ describe('option resolution contracts', () => {
     expect(opts.deepgramSttModel).toBe('nova-3')
     expect(opts.grokTtsModel).toBe('grok-tts')
     expect(opts.grokTtsVoice).toBe('eve')
+    expect(opts.mistralTtsModel).toBe('voxtral-mini-tts-2603')
+    expect(opts.mistralTtsVoice).toBe('voice_abc123')
     expect(opts.runwayTtsModel).toBe('eleven_multilingual_v2')
     expect(opts.runwayTtsVoice).toBe('Leslie')
     expect(opts.deepinfraOcrModel).toBe('allenai/olmOCR-2-7B-1025')
@@ -159,11 +163,12 @@ describe('option resolution contracts', () => {
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('deepinfra')
   })
 
-  test('--all-tts expands deepgram, runway, and grok to default models', () => {
+  test('--all-tts expands deepgram, runway, grok, and mistral to default models', () => {
     const opts = buildOptsFromFlags(false, { 'all-tts': true })
     const deepgramTargets = collectTtsTargets(opts).filter((target) => target.service === 'deepgram')
     const runwayTargets = collectTtsTargets(opts).filter((target) => target.service === 'runway')
     const grokTargets = collectTtsTargets(opts).filter((target) => target.service === 'grok')
+    const mistralTargets = collectTtsTargets(opts).filter((target) => target.service === 'mistral')
 
     expect(opts.deepgramTtsModels).toEqual([DEEPGRAM_DEFAULT_VOICE])
     expect(deepgramTargets.map((target) => target.model)).toEqual([DEEPGRAM_DEFAULT_VOICE])
@@ -172,6 +177,19 @@ describe('option resolution contracts', () => {
     expect(opts.grokTtsModels).toEqual(['grok-tts'])
     expect(grokTargets.map((target) => target.model)).toEqual(['grok-tts'])
     expect(grokTargets.map((target) => target.voice)).toEqual([undefined])
+    expect(opts.mistralTtsModels).toEqual(['voxtral-mini-tts-2603'])
+    expect(mistralTargets.map((target) => target.model)).toEqual(['voxtral-mini-tts-2603'])
+    expect(mistralTargets.map((target) => target.voice)).toEqual([undefined])
+  })
+
+  test('mistral tts voice and reference audio are mutually exclusive at target collection', () => {
+    const opts = buildOptsFromFlags(false, {
+      'mistral-tts': 'voxtral-mini-tts-2603',
+      'mistral-tts-voice': 'voice_abc123',
+      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3'
+    })
+
+    expect(() => collectTtsTargets(opts)).toThrow('Use either --mistral-tts-voice or --mistral-tts-ref-audio, not both')
   })
 
   test('grok tts voice validation normalizes case', () => {

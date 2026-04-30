@@ -139,7 +139,7 @@ export type SuitePriceSummary = {
   totalEstimatedCost: number
 }
 
-export type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
+export type ProcessVideoRuntimeOptions = Pick<RuntimeOptions, 'outputRootDir' | 'sttProviderConcurrency' | 'sttLocalConcurrency' | 'sttSegmentConcurrency'>
   & { outputDir?: string | undefined }
 
 export type ProcessCommandCapabilities = {

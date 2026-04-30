@@ -2,6 +2,13 @@
 
 Provider-backed LLM coverage for the `write` command.
 
+## Outline
+
+- [Quick Start](#quick-start)
+- [Current Coverage](#current-coverage)
+- [Price Preflight](#price-preflight)
+- [Related Docs](#related-docs)
+
 ## Quick Start
 
 ```bash

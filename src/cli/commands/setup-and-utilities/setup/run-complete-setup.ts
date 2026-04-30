@@ -44,6 +44,7 @@ import { setupKittenTts } from '~/cli/commands/process-steps/step-4-tts/tts-loca
 import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { setupGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
 import { setupGrokTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
+import { setupMistralTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/mistral-tts'
 import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
@@ -398,6 +399,7 @@ const runSetupTts = async (): Promise<void> => {
   await setupElevenLabsTts()
   await setupGroqTts()
   await setupGrokTts()
+  await setupMistralTts()
   await setupOpenAITts()
   await setupGeminiTts()
   await setupDeepgramTts()

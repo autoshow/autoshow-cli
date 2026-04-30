@@ -57,6 +57,7 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--minimax-tts': { service: 'minimax', kind: 'tts' },
   '--groq-tts': { service: 'groq', kind: 'tts' },
   '--grok-tts': { service: 'grok', kind: 'tts' },
+  '--mistral-tts': { service: 'mistral', kind: 'tts' },
   '--openai-tts': { service: 'openai', kind: 'tts' },
   '--gemini-tts': { service: 'gemini', kind: 'tts' },
   '--deepgram-tts': { service: 'deepgram', kind: 'tts' },

@@ -34,6 +34,7 @@ export type {
   MinimaxTtsModel,
   GroqTtsModel,
   GrokTtsModel,
+  MistralTtsModel,
   OpenAITtsModel,
   GeminiTtsModel,
   DeepgramTtsModel,

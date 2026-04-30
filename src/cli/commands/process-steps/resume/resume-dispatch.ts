@@ -15,6 +15,7 @@ import {
 import type { RuntimeOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeHandler } from './resume-registry'
+import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import type { ResumeTarget, ResumeTargetKind } from '~/types'
 
 const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['stt', 'ocr', 'extract', 'tts', 'image', 'video', 'music'])
@@ -151,7 +152,7 @@ export const dispatchResume = async (
 
   const target = typeof outputDirInput === 'string' && outputDirInput.trim().length > 0
     ? await resolveExplicitResumeTarget(outputDirInput)
-    : await discoverLatestResumeTarget('./output', opts, explicitFlags)
+    : await discoverLatestResumeTarget(getOutputRoot(), opts, explicitFlags)
 
   if (typeof outputDirInput !== 'string' || outputDirInput.trim().length === 0) {
     l.write('info', `Auto-discovered resumable ${target.kind.toUpperCase()} ${target.scope === 'batch' ? 'batch' : 'output'}`)

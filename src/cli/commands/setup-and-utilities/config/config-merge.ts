@@ -16,7 +16,7 @@ import {
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
-const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'runway-tts', 'deapi-tts'] as const
+const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'runway-tts', 'deapi-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'glm-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
@@ -119,7 +119,7 @@ export const mergeConfigIntoRawFlags = (
     injectProviderGroup(TTS_PROVIDER_FLAGS, [
       ['kitten-tts', d.post.tts.kittenTts], ['elevenlabs-tts', d.post.tts.elevenlabsTts],
       ['minimax-tts', d.post.tts.minimaxTts], ['groq-tts', d.post.tts.groqTts],
-      ['grok-tts', d.post.tts.grokTts],
+      ['grok-tts', d.post.tts.grokTts], ['mistral-tts', d.post.tts.mistralTts],
       ['openai-tts', d.post.tts.openaiTts], ['gemini-tts', d.post.tts.geminiTts],
       ['deepgram-tts', d.post.tts.deepgramTts], ['runway-tts', d.post.tts.runwayTts],
       ['deapi-tts', d.post.tts.deapiTts],
@@ -127,6 +127,8 @@ export const mergeConfigIntoRawFlags = (
     inject('kitten-voice', d.post.tts.ttsSpeaker)
     inject('groq-voice', d.post.tts.groqVoice)
     inject('grok-tts-voice', d.post.tts.grokTtsVoice)
+    inject('mistral-tts-voice', d.post.tts.mistralTtsVoice)
+    inject('mistral-tts-ref-audio', d.post.tts.mistralTtsRefAudio)
     inject('openai-voice', d.post.tts.openaiVoice)
     inject('gemini-voice', d.post.tts.geminiVoice)
     inject('gemini-speaker-1-name', d.post.tts.geminiSpeaker1Name)
@@ -234,6 +236,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'minimax-tts':       ['defaults', 'post', 'tts', 'minimaxTts'],
   'groq-tts':          ['defaults', 'post', 'tts', 'groqTts'],
   'grok-tts':          ['defaults', 'post', 'tts', 'grokTts'],
+  'mistral-tts':       ['defaults', 'post', 'tts', 'mistralTts'],
   'openai-tts':        ['defaults', 'post', 'tts', 'openaiTts'],
   'gemini-tts':        ['defaults', 'post', 'tts', 'geminiTts'],
   'deepgram-tts':      ['defaults', 'post', 'tts', 'deepgramTts'],
@@ -242,6 +245,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'kitten-voice':      ['defaults', 'post', 'tts', 'ttsSpeaker'],
   'groq-voice':        ['defaults', 'post', 'tts', 'groqVoice'],
   'grok-tts-voice':    ['defaults', 'post', 'tts', 'grokTtsVoice'],
+  'mistral-tts-voice': ['defaults', 'post', 'tts', 'mistralTtsVoice'],
+  'mistral-tts-ref-audio': ['defaults', 'post', 'tts', 'mistralTtsRefAudio'],
   'openai-voice':      ['defaults', 'post', 'tts', 'openaiVoice'],
   'gemini-voice':      ['defaults', 'post', 'tts', 'geminiVoice'],
   'gemini-speaker-1-name': ['defaults', 'post', 'tts', 'geminiSpeaker1Name'],

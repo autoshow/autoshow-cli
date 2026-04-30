@@ -14,6 +14,7 @@ import {
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
   SUPPORTED_GROK_TTS_MODELS,
+  SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
@@ -84,6 +85,7 @@ import {
   validateMinimaxTtsModel,
   validateGroqTtsModel,
   validateGrokTtsModel,
+  validateMistralTtsModel,
   validateOpenAITtsModel,
   validateGeminiTtsModel,
   validateDeapiTtsModel,
@@ -120,6 +122,7 @@ import {
   isStep2BooleanProviderSelected,
   normalizeStep2ProviderFlagName
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
+import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { readEnv } from '~/utils/validate/env-utils'
 import type {
   AllShortcutFlag,
@@ -180,6 +183,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'minimax-tts',
   'groq-tts',
   'grok-tts',
+  'mistral-tts',
   'openai-tts',
   'gemini-tts',
   'runway-tts',
@@ -227,6 +231,7 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'minimax-tts': { shortcut: 'all-tts', supported: SUPPORTED_MINIMAX_TTS_MODELS },
   'groq-tts': { shortcut: 'all-tts', supported: SUPPORTED_GROQ_TTS_MODELS },
   'grok-tts': { shortcut: 'all-tts', supported: SUPPORTED_GROK_TTS_MODELS },
+  'mistral-tts': { shortcut: 'all-tts', supported: SUPPORTED_MISTRAL_TTS_MODELS },
   'openai-tts': { shortcut: 'all-tts', supported: SUPPORTED_OPENAI_TTS_MODELS },
   'gemini-tts': { shortcut: 'all-tts', supported: SUPPORTED_GEMINI_TTS_MODELS },
   'deepgram-tts': { shortcut: 'all-tts', supported: [DEEPGRAM_DEFAULT_VOICE] },
@@ -693,6 +698,7 @@ export const buildOptsFromFlags = (
   const minimaxTtsModels = readValidatedMany('minimax-tts', validateMinimaxTtsModel)
   const groqTtsModels = readValidatedMany('groq-tts', validateGroqTtsModel)
   const grokTtsModels = readValidatedMany('grok-tts', validateGrokTtsModel)
+  const mistralTtsModels = readValidatedMany('mistral-tts', validateMistralTtsModel)
   const openaiTtsModels = readValidatedMany('openai-tts', validateOpenAITtsModel)
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
@@ -704,6 +710,7 @@ export const buildOptsFromFlags = (
     minimaxTtsModels,
     groqTtsModels,
     grokTtsModels,
+    mistralTtsModels,
     openaiTtsModels,
     geminiTtsModels,
     deepgramTtsModels,
@@ -743,6 +750,7 @@ export const buildOptsFromFlags = (
   const usePaddleOcr = isStep2BooleanProviderSelected('paddle-ocr', mergedFlags, allShortcutFlags)
 
   return {
+    outputRootDir: getOutputRoot(),
     useReverb,
     youtubeCaptions: readBooleanFlag(mergedFlags, 'youtube-captions'),
     whisperExplicit,
@@ -907,6 +915,10 @@ export const buildOptsFromFlags = (
       if (grokTtsModels === undefined) return v
       return validateCliValue(validateGrokTtsVoice, v)
     })(),
+    mistralTtsModels,
+    mistralTtsModel: first(mistralTtsModels),
+    mistralTtsVoice: readOptionalStringFlag(mergedFlags, 'mistral-tts-voice'),
+    mistralTtsRefAudio: readOptionalStringFlag(mergedFlags, 'mistral-tts-ref-audio'),
     openaiTtsModels,
     openaiTtsModel: first(openaiTtsModels),
     geminiTtsModels,

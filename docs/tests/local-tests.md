@@ -4,6 +4,14 @@ Shared `bun t` runner behavior plus the local/runtime-heavy test paths for Whisp
 
 For API-backed and networked coverage, see [Service Tests](service-tests.md).
 
+## Outline
+
+- [Quick Start](#quick-start)
+- [Shared Runner Behavior](#shared-runner-behavior)
+- [Current Coverage](#current-coverage)
+- [Price Preflight](#price-preflight)
+- [Related Docs](#related-docs)
+
 ## Quick Start
 
 ```bash

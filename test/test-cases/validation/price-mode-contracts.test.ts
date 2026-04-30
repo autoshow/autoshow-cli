@@ -42,6 +42,11 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
     expected: 'speech'
   },
   {
+    label: 'Mistral TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--mistral-tts', 'voxtral-mini-tts-2603', '--price'],
+    expected: 'speech'
+  },
+  {
     label: 'image',
     args: ['image', 'a sunset over a lake', '--openai-image', 'gpt-image-1-mini', '--price'],
     expected: 'generated-image'
@@ -127,6 +132,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')
     expect(resolveCheapestModelForFlag('grok-stt')).toBe('speech-to-text')
     expect(resolveCheapestModelForFlag('grok-tts')).toBe('grok-tts')
+    expect(resolveCheapestModelForFlag('mistral-tts')).toBe('voxtral-mini-tts-2603')
     expect(resolveCheapestModelForFlag('runway-tts')).toBe('eleven_multilingual_v2')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
@@ -153,6 +159,24 @@ describe('price mode contracts', () => {
     expect(estimateTtsCosts(opts, 1)[0]?.totalCost).toBe(1)
     expect(estimateTtsCosts(opts, 50)[0]?.totalCost).toBe(1)
     expect(estimateTtsCosts(opts, 51)[0]?.totalCost).toBe(2)
+  })
+
+  test('Mistral TTS estimates use published output-character pricing and provisional speed', () => {
+    const opts = {
+      mistralTtsModels: ['voxtral-mini-tts-2603'],
+      mistralTtsModel: 'voxtral-mini-tts-2603'
+    } as Parameters<typeof estimateTtsCosts>[0]
+
+    const cost = estimateTtsCosts(opts, 1000)[0]
+    expect(cost?.inputCostPer1MCharactersCents).toBe(0)
+    expect(cost?.outputCostPer1MCharactersCents).toBe(1600)
+    expect(cost?.totalCost).toBe(1.6)
+
+    const timing = computeEstimatedProcessingTimes({
+      ttsTargets: [{ service: 'mistral', model: 'voxtral-mini-tts-2603' }],
+      ttsCharacterCount: 1000
+    })
+    expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(6000)
   })
 
   test('gpt-image-2 image estimates use size and quality', () => {

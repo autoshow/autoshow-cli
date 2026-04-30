@@ -3,6 +3,7 @@ import { createKeyValueTable, logLocationsTable } from '~/utils/logger/human-tab
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
+import { joinOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { writeRunManifest } from './manifest-utils'
 import type {
   CostStep,
@@ -49,7 +50,7 @@ export const resolveMaxCentsFromFlags = async (flags: Record<string, unknown>): 
 
 export const createGenerationOutputDir = async (label: string): Promise<string> => {
   const uniqueDirName = createUniqueDirectoryName(label)
-  const outputDir = `./output/${uniqueDirName}`
+  const outputDir = joinOutputRoot(uniqueDirName)
   await ensureDirectory(outputDir)
   logLocationsTable(l, [{ artifact: 'outputDir', path: outputDir }])
   return outputDir

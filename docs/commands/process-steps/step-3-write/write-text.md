@@ -5,9 +5,18 @@ Run the full download plus transcription or extraction pipeline, then generate s
 ## Outline
 
 - [Setup](#setup)
+  - [Environment](#environment)
 - [Usage](#usage)
 - [Models](#models)
+  - [Local](#local)
+  - [Hosted](#hosted)
 - [Prompts](#prompts)
+  - [Summary and Overview](#summary-and-overview)
+  - [Chapters](#chapters)
+  - [Marketing Content](#marketing-content)
+  - [Social Media](#social-media)
+  - [Song Lyrics](#song-lyrics)
+  - [Creative Writing](#creative-writing)
 - [Output](#output)
 - [Examples](#examples)
 - [Flags](#flags)

@@ -6,11 +6,12 @@ import type { RenderedTextArtifactResult } from '~/types'
 import { getModelRegistry } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { LeafPromptSchema } from '~/prompts/prompt-loader'
 import { validateData } from '~/utils/validate/validation'
+import { getOutputRootAbsolute } from '~/cli/commands/process-steps/output-root'
 
 const TEXT_INPUT_EXTENSIONS = new Set(['.md', '.txt'])
 const TRACK_LINE_PATTERN = /^\s*(\d+)\.\s+(.+?)\s*$/
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
-const OUTPUT_ROOT = join(PROJECT_ROOT, 'output')
+const OUTPUT_ROOT = getOutputRootAbsolute(PROJECT_ROOT)
 
 const promptFileCache = new Map<string, string>()
 const promptFileResultCache = new Map<string, PromptFileResult>()

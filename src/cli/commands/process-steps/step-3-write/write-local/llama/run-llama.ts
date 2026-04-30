@@ -14,10 +14,12 @@ import {
 } from '~/types'
 import { llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { existsSync } from 'node:fs'
-import { stat } from 'node:fs/promises'
-import { resolve as resolvePath } from 'node:path'
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { join, resolve as resolvePath } from 'node:path'
 import { readEnv } from '~/utils/validate/env-utils'
+import { resolveProcessLockRoot, withProcessLock } from '~/utils/process-lock'
 const LLAMA_BASE_URL = 'http://localhost:8080'
+export const LLAMA_PROCESS_LOCK_NAME = 'llama-server-127.0.0.1-8080'
 const DEFAULT_LLAMA_SERVER_START_TIMEOUT_MS = 1800000
 const LLAMA_SERVER_START_TIMEOUT_ENV = 'LLAMA_SERVER_START_TIMEOUT_MS'
 const LLAMA_SERVER_HEALTH_POLL_INTERVAL_MS = 1000
@@ -30,12 +32,30 @@ const LLAMA_CHAT_TEMPLATE_KWARGS = { enable_thinking: false } as const
 const LLAMA_EMPTY_RESPONSE_MAX_ATTEMPTS = 3
 const LLAMA_EMPTY_RESPONSE_RETRY_DELAY_MS = 500
 
+const withLlamaServerLock = async <T,>(fn: () => Promise<T>): Promise<T> =>
+  await withProcessLock(LLAMA_PROCESS_LOCK_NAME, fn)
+
+type LlamaServerState = {
+  pid: number
+  host: string
+  port: number
+  target: string | null
+  modelId: string | null
+  modelPath: string | null
+  aliases: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+type LlamaServerResourceOptions = {
+  lockRoot?: string
+}
+
 const resolveLlamaServerBinary = (): string => {
 
   if (existsSync(llamaBinaryPath)) {
     return llamaBinaryPath
   }
-  
 
   const systemPath = Bun.which('llama-server')
   if (systemPath) {
@@ -210,6 +230,72 @@ const describeLlamaServerIdentity = (identity: LlamaServerIdentity): string => {
   return parts.join(', ')
 }
 
+const getLlamaServerStatePath = (options: LlamaServerResourceOptions = {}): string =>
+  join(resolveProcessLockRoot(options), `${LLAMA_PROCESS_LOCK_NAME}.state.json`)
+
+const readLlamaServerState = async (options: LlamaServerResourceOptions = {}): Promise<LlamaServerState | null> => {
+  try {
+    const parsed = JSON.parse(await readFile(getLlamaServerStatePath(options), 'utf-8')) as Record<string, unknown>
+    const pid = typeof parsed['pid'] === 'number' ? parsed['pid'] : null
+    if (!Number.isInteger(pid) || (pid ?? 0) < 1) {
+      return null
+    }
+
+    const aliases = Array.isArray(parsed['aliases'])
+      ? parsed['aliases'].filter((alias): alias is string => typeof alias === 'string')
+      : []
+
+    return {
+      pid: pid as number,
+      host: typeof parsed['host'] === 'string' ? parsed['host'] : '127.0.0.1',
+      port: typeof parsed['port'] === 'number' ? parsed['port'] : 8080,
+      target: typeof parsed['target'] === 'string' ? parsed['target'] : null,
+      modelId: typeof parsed['modelId'] === 'string' ? parsed['modelId'] : null,
+      modelPath: typeof parsed['modelPath'] === 'string' ? parsed['modelPath'] : null,
+      aliases,
+      createdAt: typeof parsed['createdAt'] === 'string' ? parsed['createdAt'] : '',
+      updatedAt: typeof parsed['updatedAt'] === 'string' ? parsed['updatedAt'] : ''
+    }
+  } catch {
+    return null
+  }
+}
+
+const writeLlamaServerState = async (
+  pid: number,
+  target: LlamaServerTarget,
+  identity: LlamaServerIdentity,
+  options: LlamaServerResourceOptions = {}
+): Promise<void> => {
+  const now = new Date().toISOString()
+  await mkdir(resolveProcessLockRoot(options), { recursive: true })
+  await writeFile(getLlamaServerStatePath(options), JSON.stringify({
+    pid,
+    host: '127.0.0.1',
+    port: 8080,
+    target: describeLlamaServerTarget(target),
+    modelId: identity.modelId,
+    modelPath: identity.modelPath,
+    aliases: identity.aliases,
+    createdAt: now,
+    updatedAt: now
+  } satisfies LlamaServerState, null, 2))
+}
+
+const clearLlamaServerState = async (
+  pid?: number,
+  options: LlamaServerResourceOptions = {}
+): Promise<void> => {
+  if (pid !== undefined) {
+    const state = await readLlamaServerState(options)
+    if (state?.pid !== pid) {
+      return
+    }
+  }
+
+  await rm(getLlamaServerStatePath(options), { force: true })
+}
+
 const resolveLlamaRequestModel = (identity: LlamaServerIdentity): string => {
   const requestModel = identity.modelId ?? identity.aliases[0] ?? null
   if (!requestModel) {
@@ -271,6 +357,9 @@ const readPsOutput = (): string => {
   return proc.stdout.toString()
 }
 
+const getErrorCode = (error: unknown): string | undefined =>
+  error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined
+
 const LLAMA_SERVER_PORT_PATTERN = /(?:^|\s)--port(?:=|\s+)8080(?:\s|$)/
 const LLAMA_SERVER_COMMAND_PATTERN = /(?:^|\s)(?:\S+\/)?llama-server(?:\s|$)/
 
@@ -296,6 +385,15 @@ export const findLlamaServerPidsFromPsOutput = (psOutput: string): number[] => {
   return pids
 }
 
+const tryFindLlamaServerPids = (): number[] => {
+  try {
+    return findLlamaServerPidsFromPsOutput(readPsOutput())
+  } catch (error) {
+    l.debug(`Unable to inspect llama-server processes: ${error instanceof Error ? error.message : String(error)}`)
+    return []
+  }
+}
+
 const waitForLlamaHealthState = async (healthy: boolean, timeoutMs: number): Promise<boolean> => {
   try {
     await pollUntil({
@@ -311,37 +409,149 @@ const waitForLlamaHealthState = async (healthy: boolean, timeoutMs: number): Pro
   }
 }
 
+const isPidRunning = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    return getErrorCode(error) === 'EPERM'
+  }
+}
+
+const waitForPidsExit = async (pids: number[], timeoutMs: number): Promise<boolean> => {
+  try {
+    await pollUntil({
+      operationName: 'llama-server-wait-process-exit',
+      intervalMs: 100,
+      deadlineMs: timeoutMs,
+      pollFn: async () => pids.every((pid) => !isPidRunning(pid)),
+      isDone: (allExited) => allExited
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 const stopLlamaServerProcesses = (pids: number[], signal: NodeJS.Signals): void => {
   for (const pid of pids) {
     try {
       process.kill(pid, signal)
     } catch (error) {
-      const errno = error as NodeJS.ErrnoException
-      if (errno?.code !== 'ESRCH') {
+      if (getErrorCode(error) !== 'ESRCH') {
         throw error
       }
     }
   }
 }
 
+const stopLlamaServerPids = async (
+  pids: number[],
+  options: LlamaServerResourceOptions = {}
+): Promise<void> => {
+  stopLlamaServerProcesses(pids, 'SIGTERM')
+  const stoppedAfterTerm = await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)
+    && await waitForPidsExit(pids, LLAMA_SERVER_STOP_TIMEOUT_MS)
+  if (stoppedAfterTerm) {
+    await clearLlamaServerState(undefined, options)
+    return
+  }
+
+  stopLlamaServerProcesses(pids, 'SIGKILL')
+  const stoppedAfterKill = await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)
+    && await waitForPidsExit(pids, LLAMA_SERVER_STOP_TIMEOUT_MS)
+  if (stoppedAfterKill) {
+    await clearLlamaServerState(undefined, options)
+    return
+  }
+
+  throw new Error(`Failed to stop existing llama-server on localhost:8080 (pids: ${pids.join(', ')})`)
+}
+
+const stopRecordedDefaultLlamaServer = async (
+  options: LlamaServerResourceOptions = {}
+): Promise<boolean> => {
+  const state = await readLlamaServerState(options)
+  if (!state) {
+    return false
+  }
+
+  if (!isPidRunning(state.pid)) {
+    await clearLlamaServerState(state.pid, options)
+    return false
+  }
+
+  try {
+    process.kill(state.pid, 'SIGTERM')
+  } catch (error) {
+    if (getErrorCode(error) === 'ESRCH') {
+      await clearLlamaServerState(state.pid, options)
+      return false
+    }
+    throw error
+  }
+
+  const stoppedAfterTerm = await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)
+    && await waitForPidsExit([state.pid], LLAMA_SERVER_STOP_TIMEOUT_MS)
+  if (stoppedAfterTerm) {
+    await clearLlamaServerState(state.pid, options)
+    return true
+  }
+
+  try {
+    process.kill(state.pid, 'SIGKILL')
+  } catch (error) {
+    if (getErrorCode(error) !== 'ESRCH') {
+      throw error
+    }
+  }
+
+  const stoppedAfterKill = await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)
+    && await waitForPidsExit([state.pid], LLAMA_SERVER_STOP_TIMEOUT_MS)
+  if (stoppedAfterKill) {
+    await clearLlamaServerState(state.pid, options)
+    return true
+  }
+
+  throw new Error(`Failed to stop recorded llama-server on localhost:8080 (pid: ${state.pid})`)
+}
+
+export const stopDefaultLlamaServer = async (
+  options: LlamaServerResourceOptions = {}
+): Promise<void> => {
+  if (await stopRecordedDefaultLlamaServer(options)) {
+    return
+  }
+
+  const pids = tryFindLlamaServerPids()
+  if (!await checkLlamaHealthQuiet()) {
+    if (pids.length > 0) {
+      await stopLlamaServerPids(pids, options)
+      return
+    }
+    await clearLlamaServerState(undefined, options)
+    return
+  }
+
+  if (pids.length === 0) {
+    return
+  }
+
+  await stopLlamaServerPids(pids, options)
+}
+
 const stopRunningLlamaServerForRestart = async (): Promise<void> => {
+  if (await stopRecordedDefaultLlamaServer()) {
+    return
+  }
+
   const pids = findLlamaServerPidsFromPsOutput(readPsOutput())
 
   if (pids.length === 0) {
     throw new Error('A healthy service is already running on localhost:8080, but no restartable llama-server process targeting --port 8080 was found.')
   }
 
-  stopLlamaServerProcesses(pids, 'SIGTERM')
-  if (await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)) {
-    return
-  }
-
-  stopLlamaServerProcesses(pids, 'SIGKILL')
-  if (await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)) {
-    return
-  }
-
-  throw new Error(`Failed to stop existing llama-server on localhost:8080 (pids: ${pids.join(', ')})`)
+  await stopLlamaServerPids(pids)
 }
 
 const checkLlamaHealthQuiet = async (): Promise<boolean> => {
@@ -592,6 +802,35 @@ const waitForLlamaHealth = async (
   }
 }
 
+const waitForSpawnedProcessExit = async (
+  proc: ReturnType<typeof Bun.spawn>,
+  timeoutMs: number
+): Promise<boolean> => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      proc.exited.then(() => true).catch(() => true),
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), timeoutMs)
+      })
+    ])
+  } finally {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+}
+
+const stopSpawnedLlamaServer = async (proc: ReturnType<typeof Bun.spawn>): Promise<void> => {
+  proc.kill('SIGTERM')
+  if (await waitForSpawnedProcessExit(proc, LLAMA_SERVER_STOP_TIMEOUT_MS)) {
+    return
+  }
+
+  proc.kill('SIGKILL')
+  await waitForSpawnedProcessExit(proc, LLAMA_SERVER_STOP_TIMEOUT_MS)
+}
+
 const startLlamaServer = async (target: LlamaServerTarget): Promise<LlamaServerIdentity> => {
   const llamaServerPath = resolveLlamaServerBinary()
 
@@ -671,6 +910,7 @@ const startLlamaServer = async (target: LlamaServerTarget): Promise<LlamaServerI
     )
   }
 
+  await writeLlamaServerState(proc.pid, target, identity)
   return identity
 }
 
@@ -691,6 +931,12 @@ const ensureLlamaServerRunning = async (model: string): Promise<LlamaServerIdent
 
     l.write('info', `Restarting llama-server on localhost:8080 (${describeLlamaServerIdentity(identity)}; expected ${describeLlamaServerTarget(target)})`)
     await stopRunningLlamaServerForRestart()
+  }
+
+  const stalePids = tryFindLlamaServerPids()
+  if (stalePids.length > 0) {
+    l.write('info', `Stopping stale llama-server process before startup (pids: ${stalePids.join(', ')})`)
+    await stopLlamaServerPids(stalePids)
   }
 
   return await startLlamaServer(target)
@@ -745,11 +991,21 @@ const requestLlamaCompletion = async (prompt: string, model: string, signal?: Ab
   throw new Error('No response from llama.cpp model')
 }
 
-export const ensureLlamaModelDownloaded = async (model: string): Promise<void> => {
+const ensureLlamaModelDownloadedUnlocked = async (model: string): Promise<void> => {
   const llamaServerPath = resolveLlamaServerBinary()
 
   const modelRepo = readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model)
   l.write('info', `Downloading llama model: ${modelRepo}`)
+
+  if (await checkLlamaHealthQuiet()) {
+    const identity = await inspectRunningLlamaServer()
+    if (!identity) {
+      throw new Error('A healthy service is already running on localhost:8080, but it could not be verified as llama.cpp.')
+    }
+
+    l.write('info', `Stopping llama-server before model download (${describeLlamaServerIdentity(identity)})`)
+    await stopRunningLlamaServerForRestart()
+  }
 
   const proc = Bun.spawn([llamaServerPath, '-hf', modelRepo, '--host', '127.0.0.1', '--port', '8080', '--jinja'], {
     stdin: 'ignore',
@@ -788,7 +1044,7 @@ export const ensureLlamaModelDownloaded = async (model: string): Promise<void> =
   stopActiveDownloadWatch()
   cancelStderrReader()
 
-  proc.kill()
+  await stopSpawnedLlamaServer(proc)
 
   if (!healthResult.healthy) {
     const details = stderrTail.trim()
@@ -811,42 +1067,47 @@ export const ensureLlamaModelDownloaded = async (model: string): Promise<void> =
   l.write('success', `Model downloaded and ready: ${modelRepo}`)
 }
 
+export const ensureLlamaModelDownloaded = async (model: string): Promise<void> =>
+  await withLlamaServerLock(async () => await ensureLlamaModelDownloadedUnlocked(model))
+
 export const runLlamaModel = async (
   prompt: string,
   model: string,
   structuredOpts?: StructuredRequestOptions
 ): Promise<{ result: string, metadata: Step3Metadata }> => {
   try {
-    const identity = await ensureLlamaServerRunning(model)
-    const requestModel = resolveLlamaRequestModel(identity)
-    
-    const inputTokenCount = countTokens(prompt)
-    const startTime = Date.now()
-    
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 1800000)
-    try {
-      const completion = await requestLlamaCompletion(prompt, requestModel, controller.signal)
-      const processingTime = Date.now() - startTime
-      const responseText = completion.responseText
-      const outputTokenCount = completion.outputTokenCount
-      
-      const metadata: Step3Metadata = {
-        llmService: 'llama.cpp',
-        llmModel: model,
-        processingTime,
-        inputTokenCount,
-        outputTokenCount,
-        outputFileName: '',
-        outputFormat: 'json',
-        structuredMode: structuredOpts?.strategy ?? 'schema-guided',
-        structuredPresetNames: []
+    return await withLlamaServerLock(async () => {
+      const identity = await ensureLlamaServerRunning(model)
+      const requestModel = resolveLlamaRequestModel(identity)
+
+      const inputTokenCount = countTokens(prompt)
+      const startTime = Date.now()
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 1800000)
+      try {
+        const completion = await requestLlamaCompletion(prompt, requestModel, controller.signal)
+        const processingTime = Date.now() - startTime
+        const responseText = completion.responseText
+        const outputTokenCount = completion.outputTokenCount
+
+        const metadata: Step3Metadata = {
+          llmService: 'llama.cpp',
+          llmModel: model,
+          processingTime,
+          inputTokenCount,
+          outputTokenCount,
+          outputFileName: '',
+          outputFormat: 'json',
+          structuredMode: structuredOpts?.strategy ?? 'schema-guided',
+          structuredPresetNames: []
+        }
+
+        return { result: responseText, metadata }
+      } finally {
+        clearTimeout(timeoutId)
       }
-      
-      return { result: responseText, metadata }
-    } finally {
-      clearTimeout(timeoutId)
-    }
+    })
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       l.error(`llama.cpp request timed out after 30 minutes`)

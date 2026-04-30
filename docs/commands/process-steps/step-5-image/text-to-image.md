@@ -5,6 +5,7 @@ Generate images from a text prompt with the hosted image providers.
 ## Outline
 
 - [Setup](#setup)
+  - [Environment](#environment)
 - [Usage](#usage)
 - [Providers](#providers)
 - [Examples](#examples)

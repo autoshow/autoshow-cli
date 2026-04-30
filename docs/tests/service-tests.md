@@ -4,6 +4,12 @@ Service-backed, networked, and setup-adjacent test coverage for provider integra
 
 Shared `bun t` runner behavior, artifacts, cleanup, and path-based selection are documented in [Local Tests](local-tests.md).
 
+## Outline
+
+- [Service Quick Start](#service-quick-start)
+- [Step Pages](#step-pages)
+- [Cross-Cutting Coverage](#cross-cutting-coverage)
+
 ## Service Quick Start
 
 ```bash

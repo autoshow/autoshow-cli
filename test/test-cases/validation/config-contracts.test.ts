@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { buildConfigPatchFromFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { buildConfigPatchFromFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
 
 const tempDirs: string[] = []
@@ -119,6 +119,33 @@ describe('config contracts', () => {
     })
   })
 
+  test('buildConfigPatchFromFlags saves and merges Mistral TTS defaults', () => {
+    const patch = buildConfigPatchFromFlags({
+      'mistral-tts': ['voxtral-mini-tts-2603'],
+      'mistral-tts-voice': 'voice_abc123',
+      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3'
+    }, new Set(['mistral-tts', 'mistral-tts-voice', 'mistral-tts-ref-audio']))
+
+    expect(patch).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          tts: {
+            mistralTts: ['voxtral-mini-tts-2603'],
+            mistralTtsVoice: 'voice_abc123',
+            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
+          }
+        }
+      }
+    })
+
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'mistral-tts': ['voxtral-mini-tts-2603'],
+      'mistral-tts-voice': 'voice_abc123',
+      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3'
+    })
+  })
+
   test('loadConfig accepts current v2 array-shaped defaults', async () => {
     const configPath = await writeTempConfig({
       version: 2,
@@ -148,7 +175,10 @@ describe('config contracts', () => {
         post: {
           tts: {
             runwayTts: ['eleven_multilingual_v2'],
-            runwayTtsVoice: 'Leslie'
+            runwayTtsVoice: 'Leslie',
+            mistralTts: ['voxtral-mini-tts-2603'],
+            mistralTtsVoice: 'voice_abc123',
+            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
           },
           image: {
             bflImage: ['flux-2-pro-preview'],
@@ -186,7 +216,10 @@ describe('config contracts', () => {
         post: {
           tts: {
             runwayTts: ['eleven_multilingual_v2'],
-            runwayTtsVoice: 'Leslie'
+            runwayTtsVoice: 'Leslie',
+            mistralTts: ['voxtral-mini-tts-2603'],
+            mistralTtsVoice: 'voice_abc123',
+            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
           },
           image: {
             bflImage: ['flux-2-pro-preview'],

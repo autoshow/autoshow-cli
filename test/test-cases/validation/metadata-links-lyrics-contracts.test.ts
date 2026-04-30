@@ -113,6 +113,36 @@ const KIMI_OCR_LINKS = [
   'https://platform.kimi.ai/docs/guide/use-kimi-vision-model.md'
 ]
 
+const MISTRAL_GENERAL_LINKS = [
+  'https://docs.mistral.ai/resources/sdks',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/README.md',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/lib/utils/retryconfig.md',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/files/README.md'
+]
+
+const MISTRAL_STT_LINKS = [
+  'https://docs.mistral.ai/studio-api/audio/speech_to_text',
+  'https://docs.mistral.ai/studio-api/audio/speech_to_text/offline_transcription',
+  'https://docs.mistral.ai/api/endpoint/audio/transcriptions',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/transcriptions/README.md'
+]
+
+const MISTRAL_OCR_LINKS = [
+  'https://docs.mistral.ai/studio-api/document-processing/basic_ocr',
+  'https://docs.mistral.ai/api/endpoint/ocr',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/ocr/README.md',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/documents/README.md'
+]
+
+const MISTRAL_TTS_LINKS = [
+  'https://docs.mistral.ai/api/endpoint/audio/speech',
+  'https://docs.mistral.ai/api/endpoint/audio/voices',
+  'https://docs.mistral.ai/studio-api/audio/text_to_speech/voices',
+  'https://docs.mistral.ai/studio-api/audio/text_to_speech/speech',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/speech/README.md',
+  'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/voices/README.md'
+]
+
 const BFL_IMAGE_LINKS = [
   'https://docs.bfl.ml/quick_start/introduction.md',
   'https://docs.bfl.ml/quick_start/get_started.md',
@@ -440,6 +470,36 @@ test('links selector accepts kimi provider with general text and ocr sections', 
     '--kimi',
     'tts'
   ])).rejects.toThrow('Unknown links section(s) for --kimi: tts')
+})
+
+test('links selector accepts mistral provider with general stt ocr and tts sections', () => {
+  const mistralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--mistral'
+  ])
+
+  expect(mistralSelection.serviceSelections.get('mistral')).toEqual([])
+  expect(collectLinks(
+    mistralSelection.serviceSelections,
+    mistralSelection.globalSections
+  )).toEqual([...MISTRAL_GENERAL_LINKS, ...MISTRAL_STT_LINKS, ...MISTRAL_OCR_LINKS, ...MISTRAL_TTS_LINKS])
+
+  const mistralSttOcrTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--mistral',
+    'stt',
+    'ocr',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    mistralSttOcrTtsSelection.serviceSelections,
+    mistralSttOcrTtsSelection.globalSections
+  )).toEqual([...MISTRAL_STT_LINKS, ...MISTRAL_OCR_LINKS, ...MISTRAL_TTS_LINKS])
 })
 
 test('music lyric-video render mode rejects generation-only price mode', async () => {

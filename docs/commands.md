@@ -78,6 +78,9 @@ bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview
 # text-to-speech with xAI Grok
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
+# text-to-speech with Mistral Voxtral reference audio
+bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
 # text-to-speech with Runway-hosted Eleven multilingual v2
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 
@@ -160,6 +163,7 @@ bun as write ./output/demo/text --price
 bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
+bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --price
 bun as image "a sunset" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low --price

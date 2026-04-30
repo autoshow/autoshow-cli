@@ -1,9 +1,11 @@
+import { basename } from 'node:path'
 import type { Step4Metadata, TtsOptions, TtsTarget } from '~/types'
 import type {
   ElevenlabsTtsModel,
   GeminiTtsModel,
   GroqTtsModel,
   KittenTtsModel,
+  MistralTtsModel,
   MinimaxTtsModel,
   OpenAITtsModel,
   DeepgramTtsModel,
@@ -17,6 +19,7 @@ import {
   validateMinimaxTtsModel,
   validateGroqTtsModel,
   validateGrokTtsModel,
+  validateMistralTtsModel,
   validateOpenAITtsModel,
   validateGeminiTtsModel,
   validateDeapiTtsModel,
@@ -43,6 +46,7 @@ import { runElevenLabsTts } from './tts-services/elevenlabs/run-elevenlabs-tts'
 import { runMinimaxTts } from './tts-services/minimax/run-minimax-tts'
 import { runGroqTts } from './tts-services/groq/run-groq-tts'
 import { runGrokTts } from './tts-services/grok/run-grok-tts'
+import { runMistralTts } from './tts-services/mistral/run-mistral-tts'
 import { runOpenAITts } from './tts-services/openai/run-openai-tts'
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
 import { runDeepgramTts } from './tts-services/deepgram/run-deepgram-tts'
@@ -139,6 +143,7 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const minimaxModels = options.minimaxTtsModels ?? (options.minimaxTtsModel ? [options.minimaxTtsModel] : [])
   const groqModels = options.groqTtsModels ?? (options.groqTtsModel ? [options.groqTtsModel] : [])
   const grokModels = options.grokTtsModels ?? (options.grokTtsModel ? [options.grokTtsModel] : [])
+  const mistralModels = options.mistralTtsModels ?? (options.mistralTtsModel ? [options.mistralTtsModel] : [])
   const openaiModels = options.openaiTtsModels ?? (options.openaiTtsModel ? [options.openaiTtsModel] : [])
   const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
   const deepgramModels = options.deepgramTtsModels ?? (options.deepgramTtsModel ? [options.deepgramTtsModel] : [])
@@ -219,6 +224,24 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
       run: async (text, outputDir) => {
         await ensureGrokTtsSetup()
         return await runGrokTts(text, outputDir, { model, voiceId })
+      }
+    })
+  }
+
+  for (const rawModel of mistralModels) {
+    const model: MistralTtsModel = validateMistralTtsModel(rawModel)
+    const voiceId = options.mistralTtsVoice?.trim() || undefined
+    const refAudioPath = options.mistralTtsRefAudio?.trim() || undefined
+    if (voiceId && refAudioPath) {
+      throw new Error('Mistral TTS requires exactly one voice source. Use either --mistral-tts-voice or --mistral-tts-ref-audio, not both.')
+    }
+
+    targets.push({
+      service: 'mistral',
+      model,
+      ...(voiceId ? { voice: voiceId } : refAudioPath ? { voice: `ref_audio:${basename(refAudioPath)}` } : {}),
+      run: async (text, outputDir) => {
+        return await runMistralTts(text, outputDir, { model, voiceId, refAudioPath })
       }
     })
   }

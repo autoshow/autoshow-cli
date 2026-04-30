@@ -42,3 +42,8 @@ project/plans
 project/reports
 config
 **/*.wav
+
+.projects/cache
+.projects/vault
+.env
+.env.local

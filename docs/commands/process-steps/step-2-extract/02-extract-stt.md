@@ -7,6 +7,8 @@ Media inputs are downloaded and transcribed with local or hosted speech-to-text 
 - [STT Setup](#stt-setup)
 - [STT Environment](#stt-environment)
 - [STT Engines](#stt-engines)
+  - [Local](#local)
+  - [Hosted](#hosted)
 - [STT Examples](#stt-examples)
 - [STT Flags](#stt-flags)
 - [STT Pricing And Manifests](#stt-pricing-and-manifests)

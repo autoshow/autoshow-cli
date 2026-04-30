@@ -9,10 +9,10 @@ Generate and validate deterministic fixture files for all supported formats.
 - [Flags](#flags)
 - [Examples](#examples)
 - [Fixture matrix](#fixture-matrix)
-  - [Valid fixtures](#valid-fixtures-inputsamplesvalid)
-  - [Invalid fixtures](#invalid-fixtures-inputsamplesinvalid)
+  - [Valid fixtures (`input/samples/valid/`)](#valid-fixtures-inputsamplesvalid)
+  - [Invalid fixtures (`input/samples/invalid/`)](#invalid-fixtures-inputsamplesinvalid)
 - [Partial toolchain environments](#partial-toolchain-environments)
-- [Manifest format](#manifest-format-inputsamplesmanifestjson)
+- [Manifest format (`input/samples/manifest.json`)](#manifest-format-inputsamplesmanifestjson)
 - [Notes](#notes)
 
 ## Usage

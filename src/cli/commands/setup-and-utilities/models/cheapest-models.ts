@@ -345,6 +345,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('groq')
     case 'grok-tts':
       return selectCheapestTtsModel('grok')
+    case 'mistral-tts':
+      return selectCheapestTtsModel('mistral')
     case 'openai-tts':
       return selectCheapestTtsModel('openai')
     case 'gemini-tts':

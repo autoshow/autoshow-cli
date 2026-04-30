@@ -13,6 +13,7 @@ import type {
   MinimaxTtsModel,
   GroqTtsModel,
   GrokTtsModel,
+  MistralTtsModel,
   OpenAITtsModel,
   GeminiTtsModel,
   DeepgramTtsModel,
@@ -99,6 +100,12 @@ export const validateGrokTtsVoice = (voice: string): string => {
   }
   return normalized
 }
+
+export const SUPPORTED_MISTRAL_TTS_MODELS = [
+  'voxtral-mini-tts-2603'
+] as const satisfies readonly string[]
+
+export const validateMistralTtsModel = createModelValidator<MistralTtsModel>(SUPPORTED_MISTRAL_TTS_MODELS, 'mistral-tts')
 
 export const SUPPORTED_OPENAI_TTS_MODELS = [
   'gpt-4o-mini-tts'

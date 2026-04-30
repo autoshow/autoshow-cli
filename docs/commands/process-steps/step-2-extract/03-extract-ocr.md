@@ -8,6 +8,8 @@ Documents and images route through local OCR, hosted OCR, or native text extract
 - [OCR Environment](#ocr-environment)
 - [OCR Routing](#ocr-routing)
 - [EPUB Options](#epub-options)
+  - [Inspect Modes](#inspect-modes)
+  - [Native EPUB Export](#native-epub-export)
 - [PDF Chapter Detection](#pdf-chapter-detection)
 - [OCR Examples](#ocr-examples)
 - [OCR Flags](#ocr-flags)

@@ -57,6 +57,7 @@ import { writeRunManifest } from './manifest-utils'
 import { logWriteManifestConsoleSummary } from './write-manifest-log'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-extract/step-2-stt/youtube-captions'
 import { createMistralSttPassController } from './step-2-extract/step-2-stt/stt-services/mistral/mistral-stt-pass-controller'
+import { getOutputRoot } from './output-root'
 
 const toRequestedProvider = (
   target: Pick<SttTarget, 'service' | 'model'>
@@ -113,7 +114,9 @@ export const processVideo = async (
     ...(options.url !== undefined ? { url: options.url } : {}),
     ...(options.filePath !== undefined ? { filePath: options.filePath } : {})
   })
-  const baseDir = options.outputDir && options.outputDir.trim().length > 0 ? options.outputDir : './output'
+  const baseDir = options.outputDir && options.outputDir.trim().length > 0
+    ? options.outputDir
+    : runtimeOptions?.outputRootDir ?? getOutputRoot()
   const outputDir = runtimeOptions?.outputDir ?? `${baseDir}/${createUniqueDirectoryName(metadata.title)}`
   await ensureDirectory(outputDir)
   const processingOptions: ProcessingOptions = {

@@ -58,6 +58,7 @@ import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNI
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { readBatchManifest, writeExtractBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { joinOutputRoot } from '~/cli/commands/process-steps/output-root'
 
 const runWithConcurrency = async <T,>(
   items: T[],
@@ -597,7 +598,7 @@ const executeExtractBatchPlan = async (
   batchPlan: BatchExecutionPlan
 ): Promise<void> => {
   const batchDirName = createUniqueDirectoryName(batchPlan.label)
-  const batchDir = `./output/${batchDirName}`
+  const batchDir = joinOutputRoot(batchDirName)
   await ensureDirectory(batchDir)
   logLocationsTable(l, [{ artifact: 'outputDir', path: batchDir }])
 

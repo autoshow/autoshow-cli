@@ -24,6 +24,9 @@ import {
   RUNWAY_DEFAULT_TTS_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
+const MISTRAL_TTS_MODEL = 'voxtral-mini-tts-2603'
+const MISTRAL_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
+
 defineTTSServiceTest({
   models: ['gpt-4o-mini-tts'],
   cliFlag: '--openai-tts',
@@ -169,6 +172,155 @@ defineTTSServiceTest({
     return voice ?? RUNWAY_DEFAULT_TTS_VOICE
   },
 })
+
+test('rejects invalid mistral model', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--mistral-tts',
+    'invalid-model'
+  ])
+
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --mistral-tts model')
+})
+
+test('mistral --price works without a voice source', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--mistral-tts',
+    MISTRAL_TTS_MODEL,
+    '--price'
+  ], {
+    env: {
+      MISTRAL_TTS_VOICE: '',
+      MISTRAL_TTS_REF_AUDIO: ''
+    }
+  })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.outputDir).toBeNull()
+  expect(`${result.stdout}\n${result.stderr}`).toContain('speech')
+})
+
+test('mistral rejects voice and reference audio together before API request', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--mistral-tts',
+    MISTRAL_TTS_MODEL,
+    '--mistral-tts-voice',
+    'voice_abc123',
+    '--mistral-tts-ref-audio',
+    MISTRAL_REF_AUDIO_PATH,
+    '--price'
+  ])
+
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Use either --mistral-tts-voice or --mistral-tts-ref-audio, not both')
+})
+
+test('mistral execution requires a voice source before API key validation', async () => {
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--mistral-tts',
+    MISTRAL_TTS_MODEL
+  ], {
+    env: {
+      MISTRAL_API_KEY: '',
+      MISTRAL_TTS_VOICE: '',
+      MISTRAL_TTS_REF_AUDIO: ''
+    }
+  })
+
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Mistral TTS requires a saved voice ID or reference audio')
+
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+})
+
+budgetedTest('tts-mistral-voxtral-mini-tts-2603-voice', 'mistral saved voice generates speech.wav when MISTRAL_TTS_VOICE is configured', async () => {
+  if (!await hasConfiguredEnvVar('MISTRAL_API_KEY')) {
+    console.log('Skipping: MISTRAL_API_KEY is required for Mistral TTS test')
+    return
+  }
+  const voice = await readConfiguredEnvVar('MISTRAL_TTS_VOICE')
+  if (!voice) {
+    console.log('Skipping: MISTRAL_TTS_VOICE is required for Mistral saved-voice TTS test')
+    return
+  }
+
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--mistral-tts',
+    MISTRAL_TTS_MODEL,
+    '--mistral-tts-voice',
+    voice
+  ])
+
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
+    }
+    expect(metadata.tts?.[0]?.ttsService).toBe('mistral')
+    expect(metadata.tts?.[0]?.ttsModel).toBe(MISTRAL_TTS_MODEL)
+    expect(metadata.tts?.[0]?.speaker).toBe(voice)
+  }
+}, E2E_TEST_TIMEOUT_MS)
+
+budgetedTest('tts-mistral-voxtral-mini-tts-2603-ref-audio', 'mistral reference audio generates speech.wav', async () => {
+  if (!await hasConfiguredEnvVar('MISTRAL_API_KEY')) {
+    console.log('Skipping: MISTRAL_API_KEY is required for Mistral TTS test')
+    return
+  }
+
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--mistral-tts',
+    MISTRAL_TTS_MODEL,
+    '--mistral-tts-ref-audio',
+    MISTRAL_REF_AUDIO_PATH
+  ])
+
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
+    }
+    expect(metadata.tts?.[0]?.ttsService).toBe('mistral')
+    expect(metadata.tts?.[0]?.ttsModel).toBe(MISTRAL_TTS_MODEL)
+    expect(metadata.tts?.[0]?.speaker).toBe('ref_audio:anthony-voice.mp3')
+  }
+}, E2E_TEST_TIMEOUT_MS)
 
 test('rejects invalid deepgram voice override before API request', async () => {
   const result = await runCommand([

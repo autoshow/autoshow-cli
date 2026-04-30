@@ -34,6 +34,7 @@ import { formatSttTargetLabel } from '~/cli/commands/process-steps/step-2-extrac
 import { isSttPartialCompletionError } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/batch'
 import { writeSttBatchManifest } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/manifest'
 import { readBatchManifest, readRunManifest, writeBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
+import { joinOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { resolveOcrStep2ExecutionFromFormat, resolveSttStep2Execution } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/resolved-step2'
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
@@ -1246,7 +1247,7 @@ export const processBatch = async (
   const batchDirName = createUniqueDirectoryName(batchLabel)
   const batchDir = runOpts.parentBatchDir
     ? join(runOpts.parentBatchDir, toManifestKind(command))
-    : `./output/${batchDirName}`
+    : joinOutputRoot(batchDirName)
   await ensureDirectory(batchDir)
   logLocationsTable(l, [{ artifact: 'outputDir', path: batchDir }])
 

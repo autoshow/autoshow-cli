@@ -141,7 +141,7 @@ export const runTextWrite = async (
 
   const title = getTextInputTitle(inputPath)
   const songLyricsTitle = await resolveTextInputSongTitle(inputPath, opts.trackList)
-  const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const outputBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : opts.outputRootDir
   const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
     title,
     fallbackLabel: title

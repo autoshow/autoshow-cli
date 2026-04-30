@@ -36,6 +36,7 @@ import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-extrac
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { ensureDeapiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { ensureGrokTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
+import { ensureMistralTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/mistral-tts'
 import { ensureDeapiMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
 import type { BootstrapHandler } from '~/types'
 
@@ -178,6 +179,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'grok-tts': {
     ensure: async () => await ensureGrokTtsSetup()
+  },
+  'mistral-tts': {
+    ensure: async () => await ensureMistralTtsSetup()
   },
   'deapi-music': {
     ensure: async () => await ensureDeapiMusicGenSetup()

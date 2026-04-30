@@ -242,7 +242,7 @@ const prepareArticleDocument = async (
   opts: RuntimeOptions,
   batchChildContext?: BatchChildRunContext
 ): Promise<PreparedDocument> => {
-  const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : opts.outputRootDir
   const prepared = await prepareHtmlArticle(source, effectiveBaseDir, opts.urlBackend, batchChildContext)
   warnHtmlArticleFlagBehavior(source, opts, prepared.htmlArticleBackend)
   return prepared
@@ -278,7 +278,7 @@ const buildExtractionCallOpts = (target: string, baseDir: string, opts: RuntimeO
     : undefined
   const extractionOpts: Partial<ExtractionOptions> = {
     filePath: target,
-    outputDir: baseDir || './output',
+    outputDir: baseDir || opts.outputRootDir,
     dpi: opts.dpi,
     languages: opts.lang,
     oem: opts.oem,
@@ -511,7 +511,7 @@ const runDocumentWrite = async (
 ): Promise<{ outputDir: string }> => {
   const llmConfig = resolveLLMDefaults(opts)
   const resolvedPreparedDocument = preparedDocument ?? (batchChildContext
-    ? await downloadDocument(target, baseDir || './output', opts.password, sourceRef, batchChildContext)
+    ? await downloadDocument(target, baseDir || opts.outputRootDir, opts.password, sourceRef, batchChildContext)
     : undefined)
   const extraction = await processOcr(
     target,
@@ -740,6 +740,10 @@ const processMediaSingle = async (
     grokTtsModels: llmDefaults.grokTtsModels,
     grokTtsModel: llmDefaults.grokTtsModel,
     grokTtsVoice: llmDefaults.grokTtsVoice,
+    mistralTtsModels: llmDefaults.mistralTtsModels,
+    mistralTtsModel: llmDefaults.mistralTtsModel,
+    mistralTtsVoice: llmDefaults.mistralTtsVoice,
+    mistralTtsRefAudio: llmDefaults.mistralTtsRefAudio,
     openaiTtsModels: llmDefaults.openaiTtsModels,
     openaiTtsModel: llmDefaults.openaiTtsModel,
     openaiVoiceId: llmDefaults.openaiVoiceId,
@@ -830,6 +834,7 @@ const processMediaSingle = async (
 
   const outDir = await processVideo(options, meta, preflightEstimate, {
     ...(batchOutputDir ? { outputDir: batchOutputDir } : {}),
+    outputRootDir: llmDefaults.outputRootDir,
     sttProviderConcurrency: llmDefaults.sttProviderConcurrency,
     sttLocalConcurrency: llmDefaults.sttLocalConcurrency,
     sttSegmentConcurrency: llmDefaults.sttSegmentConcurrency,
@@ -860,7 +865,7 @@ const processOcrSingle = async (
   batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
   const resolvedPreparedDocument = preparedDocument ?? (batchChildContext
-    ? await downloadDocument(target, baseDir || './output', opts.password, sourceRef, batchChildContext)
+    ? await downloadDocument(target, baseDir || opts.outputRootDir, opts.password, sourceRef, batchChildContext)
     : undefined)
   const extraction = await processOcr(
     target,
@@ -1076,7 +1081,7 @@ const processMetadataMedia = async (
 
   writeMetadataTerminalOutput(metadata, opts.markdown)
 
-  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : opts.outputRootDir
   const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
     title: meta.title,
     publishedAt: meta.publishDate,
@@ -1114,7 +1119,7 @@ const processMetadataDocument = async (
 
     writeMetadataTerminalOutput(metadata, opts.markdown)
 
-    const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+    const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : opts.outputRootDir
     const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
       slug: step1.slug,
       fallbackLabel: title
@@ -1164,7 +1169,7 @@ const processDownloadMedia = async (
   }
 
   const meta = mergeBatchItemMetadata(await extractSourceMetadata(src), batchItem)
-  const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : opts.outputRootDir
   const useFlatBatchOutput = opts.flatBatch && batchChildContext !== undefined
   const outputDir = useFlatBatchOutput
     ? effectiveBaseDir
@@ -1204,7 +1209,7 @@ const processDownloadDocument = async (
   sourceRef?: Step1SourceRef,
   batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
-  const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : './output'
+  const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : opts.outputRootDir
   const prepared = await downloadDocument(target, effectiveBaseDir, opts.password, sourceRef, batchChildContext)
   try {
     const cost = {
@@ -1275,7 +1280,7 @@ const processXSpace = async (
   const firstSpace = artifact.spaces[0]
   const label = firstSpace?.title?.trim() || `x-space-${parsedInput.ids[0] ?? 'unknown'}`
 
-  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : './output'
+  const effectiveBaseDir = baseDir?.trim().length > 0 ? baseDir : _opts.outputRootDir
   const outputDir = await reserveBatchChildOutputDir(batchChildContext, {
     title: label,
     fallbackLabel: label
@@ -1321,6 +1326,7 @@ export const processSingleTarget = async (
 ): Promise<BatchItemProcessResult | void> => {
   const displayCommand = canonicalizeProcessCommand(command)
   const batchChildContext = runOptions?.batchChildContext
+  baseDir = baseDir && baseDir.trim().length > 0 ? baseDir : opts.outputRootDir
 
   if (command === 'metadata') {
     if (isLikelyUrl(item)) {

@@ -2,6 +2,13 @@
 
 Network-backed download coverage for hosted media URLs, feeds, channels, and streaming sources. Local file input coverage for step 1 remains in [Local Tests](local-tests.md).
 
+## Outline
+
+- [Quick Start](#quick-start)
+- [Current Coverage](#current-coverage)
+- [Price Preflight](#price-preflight)
+- [Related Docs](#related-docs)
+
 ## Quick Start
 
 ```bash

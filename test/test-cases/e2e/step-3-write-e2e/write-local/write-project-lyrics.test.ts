@@ -5,6 +5,7 @@ import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget
 import {
   cleanupTestOutput,
   fileExists,
+  OUTPUT_DIR,
   runCommand,
   stopLlamaServer
 } from '../../../../test-utils/test-helpers'
@@ -28,7 +29,7 @@ const createdRunDirs: string[] = []
 const createWriteLyricsProject = async (): Promise<WriteLyricsProjectFixture> => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const projectName = `${PROJECT_PREFIX}-${suffix}`
-  const projectDir = join('output', projectName)
+  const projectDir = join(OUTPUT_DIR, projectName)
   const textDir = join(projectDir, 'text')
   const lyricsDir = join(projectDir, 'lyrics')
   const trackOneStem = `01-track-one-${suffix}`
@@ -61,10 +62,10 @@ const rememberRunDir = (outputDir: string | null): void => {
 
 const listOutputDirs = async (): Promise<string[]> => {
   try {
-    const entries = await readdir('output', { withFileTypes: true })
+    const entries = await readdir(OUTPUT_DIR, { withFileTypes: true })
     return entries
       .filter((entry) => entry.isDirectory())
-      .map((entry) => join('output', entry.name))
+      .map((entry) => join(OUTPUT_DIR, entry.name))
       .sort()
   } catch {
     return []
@@ -174,7 +175,7 @@ budgetedTest('write-project-lyrics-price', 'write project directory --price repo
 
   const output = `${result.stdout}\n${result.stderr}`
   expect(output).toContain('Expected files')
-  expect(output).toContain(`./output/${project.projectName}/lyrics/*.md`)
+  expect(output).toContain(`${project.lyricsDir}/*.md`)
   expect(await fileExists(project.lyricsDir)).toBe(false)
 
   const dirsAfter = await listOutputDirs()

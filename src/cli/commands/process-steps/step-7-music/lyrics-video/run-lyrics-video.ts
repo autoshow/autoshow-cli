@@ -12,6 +12,7 @@ import * as l from '~/utils/logger'
 import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
 import { buildLyricsCues } from './cue-builder'
 import { formatSrt, formatVtt, loadCaptionFile } from './captions'
+import { getOutputRootAbsolute, joinOutputRoot } from '~/cli/commands/process-steps/output-root'
 import {
   FIXED_RENDER_FPS,
   FIXED_RENDER_HEIGHT,
@@ -25,7 +26,7 @@ import type { CaptionCue, LyricsCueSource } from '~/types'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../../')
 const DEFAULT_INPUT_ROOT = join(PROJECT_ROOT, 'input')
-const OUTPUT_ROOT = join(PROJECT_ROOT, 'output')
+const OUTPUT_ROOT = getOutputRootAbsolute(PROJECT_ROOT)
 
 const logLyricsBatchSummary = (total: number, succeeded: number, failed: number): void => {
   l.write(failed > 0 ? 'warn' : 'success', 'Batch Summary', {
@@ -329,7 +330,7 @@ export const runMusicLyricVideo = async (flags: Record<string, unknown>): Promis
 
     await ensureDirectory(outputRoot)
     await ensureProviderReady(`whisper:${model}`)
-    const batchDirRelative = `./output/${createUniqueDirectoryName('music-lyrics-batch')}`
+    const batchDirRelative = joinOutputRoot(createUniqueDirectoryName('music-lyrics-batch'))
     const batchDirAbsolute = resolve(PROJECT_ROOT, batchDirRelative)
     await ensureDirectory(batchDirAbsolute)
 
@@ -409,7 +410,7 @@ export const runMusicLyricVideo = async (flags: Record<string, unknown>): Promis
   }
 
   const outputLabel = captionsPath ? baseStem(captionsPath) : baseStem(audioPath)
-  const outputDirRelative = `./output/${createUniqueDirectoryName(`music-lyrics-${outputLabel}`)}`
+  const outputDirRelative = joinOutputRoot(createUniqueDirectoryName(`music-lyrics-${outputLabel}`))
   const outputDirAbsolute = resolve(PROJECT_ROOT, outputDirRelative)
   await ensureDirectory(outputDirAbsolute)
 
