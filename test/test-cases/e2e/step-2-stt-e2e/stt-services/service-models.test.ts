@@ -13,6 +13,7 @@ import {
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE,
   hasConfiguredEnvVar,
+  readConfiguredEnvVar,
 } from '../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
@@ -21,6 +22,74 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const toRecordArray = (value: unknown): Record<string, unknown>[] =>
   Array.isArray(value) ? value.filter(isRecord) : []
+
+const readCloudflareJson = async (
+  url: string,
+  apiToken: string
+): Promise<{ ok: boolean, status: number, success: boolean | null }> => {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      'content-type': 'application/json'
+    }
+  })
+
+  let success: boolean | null = null
+  try {
+    const payload = await response.json() as unknown
+    if (isRecord(payload) && typeof payload['success'] === 'boolean') {
+      success = payload['success']
+    }
+  } catch {
+  }
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    success
+  }
+}
+
+let cloudflareReadiness: Promise<boolean> | null = null
+
+const isCloudflareSttReady = async (): Promise<boolean> => {
+  cloudflareReadiness ??= (async () => {
+    const apiToken = await readConfiguredEnvVar('CLOUDFLARE_API_TOKEN')
+    const accountId = await readConfiguredEnvVar('CLOUDFLARE_ACCOUNT_ID')
+    if (!apiToken || !accountId) {
+      return false
+    }
+
+    try {
+      const tokenState = await readCloudflareJson(
+        'https://api.cloudflare.com/client/v4/user/tokens/verify',
+        apiToken
+      )
+      if (!tokenState.ok || tokenState.success === false) {
+        return false
+      }
+
+      const modelsState = await readCloudflareJson(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/models/search?search=whisper`,
+        apiToken
+      )
+      return modelsState.ok && modelsState.success !== false
+    } catch {
+      return false
+    }
+  })()
+
+  return cloudflareReadiness
+}
+
+const shouldSkipCloudflareSttReadiness = async (): Promise<boolean> => {
+  if (await isCloudflareSttReady()) {
+    return false
+  }
+
+  console.log('Skipping: valid CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID with Workers AI access are required for Cloudflare transcription')
+  return true
+}
 
 const readBodyText = async (request: IncomingMessage): Promise<string> => {
   let body = ''
@@ -193,6 +262,7 @@ defineSTTServiceTest({
   envVarKey: 'CLOUDFLARE_API_TOKEN',
   extraEnvVarKeys: ['CLOUDFLARE_ACCOUNT_ID'],
   envVarDescription: 'Cloudflare transcription',
+  shouldSkipReadiness: shouldSkipCloudflareSttReadiness,
 })
 
 defineSTTServiceTest({

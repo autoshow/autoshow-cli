@@ -4,7 +4,7 @@ defineImageServiceTest({
   imageService: 'grok',
   cliFlag: '--grok-image',
   envVarKey: 'XAI_API_KEY',
-  imageExtension: 'png',
+  imageExtension: 'jpg',
   models: [
     {
       model: 'grok-imagine-image',

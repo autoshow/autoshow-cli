@@ -23,6 +23,7 @@ export const defineSTTServiceTest = ({
   envVarDescription,
   extraEnvVarKeys,
   extraArgs,
+  shouldSkipReadiness,
   timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: readonly string[]
@@ -32,6 +33,7 @@ export const defineSTTServiceTest = ({
   envVarDescription: string
   extraEnvVarKeys?: string[]
   extraArgs?: string[]
+  shouldSkipReadiness?: () => Promise<boolean>
   timeoutMs?: number
 }): void => {
   withOutputLifecycle(STABLE_LOCAL_AUDIO_TITLE)
@@ -55,6 +57,10 @@ export const defineSTTServiceTest = ({
         if (await shouldSkipMissingEnv(extraEnvVarKey, `${extraEnvVarKey} is required for ${envVarDescription}`)) {
           return
         }
+      }
+
+      if (shouldSkipReadiness && await shouldSkipReadiness()) {
+        return
       }
 
       await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)

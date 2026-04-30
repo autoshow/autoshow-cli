@@ -130,6 +130,10 @@ const getExpectedImageExtension = (
     return 'jpeg'
   }
 
+  if (target.service === 'grok') {
+    return 'jpg'
+  }
+
   if (target.service === 'bfl') {
     return getBflImageExtension(options.imageFormat)
   }
