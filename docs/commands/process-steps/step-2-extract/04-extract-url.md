@@ -6,14 +6,16 @@ Remote article URLs and local HTML files use article extraction, while X/Twitter
 
 - [Article And HTML Path](#article-and-html-path)
 - [URL Environment](#url-environment)
-- [Article Backends](#article-backends)
-- [URL Examples](#url-examples)
-- [URL Flags](#url-flags)
+- [Shared URL Options](#shared-url-options)
+- [Article Services](#article-services)
+  - [Defuddle](#defuddle)
+  - [Firecrawl](#firecrawl)
+  - [GLM Reader](#glm-reader)
 - [URL Notes](#url-notes)
 - [X Space Path](#x-space-path)
+  - [X API](#x-api)
 - [X Space Setup](#x-space-setup)
 - [Supported URL Patterns](#supported-url-patterns)
-- [X Space Examples](#x-space-examples)
 - [X Space Output](#x-space-output)
 - [X Space Batch Support](#x-space-batch-support)
 - [X Space Notes](#x-space-notes)
@@ -47,29 +49,7 @@ AUTOSHOW_URL_BACKEND=glm-reader
 
 `FIRECRAWL_API_KEY` is optional when `FIRECRAWL_API_URL` points at a self-hosted Firecrawl instance.
 
-## Article Backends
-
-- `defuddle` is the default backend for article-like HTML inputs.
-- Remote article URLs use `defuddle` unless you pass `--url-backend firecrawl`, `--url-backend glm-reader`, or set `AUTOSHOW_URL_BACKEND`.
-- Local `.html` and `.htm` files always use `defuddle`, even if a hosted backend is requested.
-- OCR engine flags do not apply to article extraction.
-- If `defuddle` cannot extract meaningful content, the command suggests retrying with `--url-backend firecrawl`.
-
-## URL Examples
-
-```bash
-# Remote article extraction
-bun as extract https://ajcwebdev.com
-bun as extract https://ajcwebdev.com --url-backend firecrawl
-
-# Batch URL list extraction
-bun as extract ./input/examples/batch/2-urls.md --batch-all
-
-# Local HTML always uses defuddle
-bun as extract ./input/article.html --out json
-```
-
-## URL Flags
+## Shared URL Options
 
 | Flag | Description |
 |------|-------------|
@@ -80,13 +60,78 @@ bun as extract ./input/article.html --out json
 | `--batch-order <newest\|oldest>` | Choose batch ordering |
 | `--batch-concurrency <n>` | Process batch items concurrently |
 
+```bash
+bun as extract ./input/examples/batch/2-urls.md --batch-all
+bun as extract ./input/article.html --out json
+```
+
+## Article Services
+
+### Defuddle
+
+| Option | Value |
+|--------|-------|
+| Selector | default, or `--url-backend defuddle` |
+| Inputs | Remote article URLs and local `.html` / `.htm` files |
+| Runtime | Local HTML/article extraction |
+
+```bash
+bun as extract https://ajcwebdev.com
+bun as extract ./input/article.html --out json
+```
+
+Local `.html` and `.htm` files always use `defuddle`, even if a hosted backend is requested.
+
+### Firecrawl
+
+| Option | Value |
+|--------|-------|
+| Selector | `--url-backend firecrawl` |
+| Inputs | Remote article URLs |
+| Required env | `FIRECRAWL_API_KEY` unless `FIRECRAWL_API_URL` points at a self-hosted instance |
+| Optional env | `FIRECRAWL_API_URL` |
+
+```bash
+bun as extract https://ajcwebdev.com --url-backend firecrawl
+```
+
+### GLM Reader
+
+| Option | Value |
+|--------|-------|
+| Selector | `--url-backend glm-reader` |
+| Inputs | Remote article URLs |
+| Required env | `GLM_API_KEY` |
+| Optional env | `ZAI_BASE_URL` |
+
+```bash
+bun as extract https://ajcwebdev.com --url-backend glm-reader
+```
+
 ## URL Notes
 
+- Remote article URLs use `defuddle` unless you pass `--url-backend firecrawl`, `--url-backend glm-reader`, or set `AUTOSHOW_URL_BACKEND`.
+- OCR engine flags do not apply to article extraction.
 - No numeric Firecrawl file-size/page-count caps were found in `project/links/all-all-links.md`, so this CLI does not enforce any new numeric limits for that backend from that source.
 
 ## X Space Path
 
 X/Twitter Space URLs, post URLs, and raw Space IDs are auto-detected and processed via the X v2 API. No special flags are needed.
+
+### X API
+
+| Option | Value |
+|--------|-------|
+| Selector | Automatic for supported X/Twitter Space inputs |
+| Required env | `X_BEARER_TOKEN` |
+| Output | Space metadata, user profiles, post references, sources, and error details |
+
+```bash
+bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
+bun as extract "https://twitter.com/i/spaces/1DXxyRYNejbKM"
+bun as extract "https://x.com/user/status/1234567890"
+bun as extract 1DXxyRYNejbKM
+```
 
 ## X Space Setup
 
@@ -103,22 +148,6 @@ Set the `X_BEARER_TOKEN` environment variable. Create a Bearer Token at [develop
 | Raw Space ID | `1DXxyRYNejbKM` (1-13 alphanumeric characters) |
 
 Mobile (`mobile.x.com`, `mobile.twitter.com`) and www variants are also supported.
-
-## X Space Examples
-
-```bash
-# Space URL
-bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
-
-# Twitter-era Space URL
-bun as extract "https://twitter.com/i/spaces/1DXxyRYNejbKM"
-
-# Post URL referencing a Space
-bun as extract "https://x.com/user/status/1234567890"
-
-# Raw Space ID (when no local file with that name exists)
-bun as extract 1DXxyRYNejbKM
-```
 
 ## X Space Output
 

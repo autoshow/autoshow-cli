@@ -6,15 +6,40 @@ Media inputs are downloaded and transcribed with local or hosted speech-to-text 
 
 - [STT Setup](#stt-setup)
 - [STT Environment](#stt-environment)
-- [STT Engines](#stt-engines)
-  - [Local](#local)
-  - [Hosted](#hosted)
-- [STT Examples](#stt-examples)
-- [STT Flags](#stt-flags)
+- [Shared STT Options](#shared-stt-options)
+- [URL/streaming/source-URL STT](#urlstreamingsource-url-stt)
+  - [deAPI](#deapi)
+  - [Happy Scribe](#happy-scribe)
+  - [Supadata](#supadata)
+  - [Gladia](#gladia)
+- [Non-diarized STT](#non-diarized-stt)
+  - [Whisper.cpp](#whispercpp)
+  - [Groq](#groq)
+  - [DeepInfra](#deepinfra)
+  - [Together](#together)
+  - [Fireworks](#fireworks)
+  - [Cloudflare](#cloudflare)
+  - [OpenAI STT](#openai-stt)
+  - [Gemini STT](#gemini-stt)
+  - [GLM STT](#glm-stt)
+  - [Mistral](#mistral)
+- [Diarized STT](#diarized-stt)
+  - [Reverb](#reverb)
+  - [Grok STT](#grok-stt)
+  - [ElevenLabs](#elevenlabs)
+  - [Deepgram](#deepgram)
+  - [Soniox](#soniox)
+  - [Speechmatics](#speechmatics)
+  - [Rev](#rev)
+  - [Google Cloud STT](#google-cloud-stt)
+  - [AWS Transcribe](#aws-transcribe)
+  - [AssemblyAI](#assemblyai)
 - [STT Pricing And Manifests](#stt-pricing-and-manifests)
 - [STT Notes](#stt-notes)
 
 See the [`extract` overview](./01-extract.md) for input routing across STT, OCR, article HTML, and X/Twitter inputs.
+
+If no engine flag is provided, `extract` defaults to local Whisper.cpp with the `tiny` model for media inputs. Provider flags accept an omitted model value and then resolve to the cheapest or default supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
 ## STT Setup
 
@@ -65,6 +90,7 @@ bun as setup --step reverb
 | Cloudflare | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | - |
 | deAPI | `DEAPI_API_KEY` | `DEAPI_BASE_URL` |
 | Happy Scribe | `HAPPYSCRIBE_API_KEY` | `HAPPYSCRIBE_BASE_URL`, `HAPPYSCRIBE_ORGANIZATION_ID` |
+| Supadata | `SUPADATA_API_KEY` | `SUPADATA_BASE_URL` |
 | ElevenLabs | `ELEVENLABS_API_KEY` | - |
 | Deepgram | `DEEPGRAM_API_KEY` | `DEEPGRAM_BASE_URL` |
 | Soniox | `SONIOX_API_KEY` | `SONIOX_BASE_URL` |
@@ -79,123 +105,13 @@ bun as setup --step reverb
 | AssemblyAI | `ASSEMBLYAI_API_KEY` | `ASSEMBLYAI_BASE_URL` |
 | Gladia | `GLADIA_API_KEY` | `GLADIA_BASE_URL` |
 
-## STT Engines
-
-### Local
-
-| Engine | Selection | Models / behavior |
-|--------|-----------|-------------------|
-| Whisper.cpp | default, or `--whisper <model>` | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
-| Reverb | `--reverb` | diarized local transcription |
-
-If no engine flag is provided, `extract` defaults to Whisper with the `tiny` model for media inputs.
-
-### Hosted
-
-| Engine | Selection | Models / behavior |
-|--------|-----------|-------------------|
-| Groq Whisper | `--groq-stt <model>` | `whisper-large-v3-turbo`, `whisper-large-v3` |
-| Grok STT | `--grok-stt <model>` | `speech-to-text`; REST STT with formatted output, word timestamps, and diarization enabled |
-| DeepInfra Whisper | `--deepinfra-stt <model>` | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
-| Together Whisper | `--together-stt <model>` | `openai/whisper-large-v3`; single-speaker OpenAI-compatible Whisper |
-| Fireworks Whisper | `--fireworks-stt <model>` | `whisper-v3-turbo`, `whisper-v3`; single-speaker OpenAI-compatible Whisper |
-| Cloudflare Workers AI | `--cloudflare-stt <model>` | `whisper-large-v3-turbo`, `whisper`; Cloudflare REST API |
-| OpenAI STT | `--openai-stt <model>` | `gpt-4o-mini-transcribe`, `gpt-4o-transcribe`; single-speaker transcription |
-| Gemini STT | `--gemini-stt <model>` | `gemini-3-flash-preview`; prompted JSON transcription via Gemini multimodal input |
-| GLM STT | `--glm-stt <model>` | `glm-asr-2512`; single-speaker transcription with 30-second auto-split policy |
-| deAPI | `--deapi-stt <model>` | `WhisperLargeV3`; hosted async STT with exact provider quote support, no diarization by default, and no speaker-count hint support |
-| Happy Scribe | `--happyscribe-stt <model>` | `auto`; hosted async STT with fixed `en-US`, diarization enabled by default, ignored speaker-count hints, and exact billing capture only for USD organizations |
-| ElevenLabs | `--elevenlabs-stt <model>` | `scribe_v2` |
-| Google Cloud STT | `--gcloud-stt <model>` | `chirp_3`; sync REST via gcloud CLI auth with diarization always enabled |
-| AWS Transcribe | `--aws-stt <model>` | `standard`; async batch via AWS CLI with diarization always enabled |
-| Deepgram | `--deepgram-stt <model>` | `nova-3` |
-| Soniox | `--soniox-stt <model>` | `stt-async-v4` |
-| Speechmatics | `--speechmatics-stt <model>` | `standard`, `enhanced` |
-| Rev | `--rev-stt <model>` | `machine`, `low_cost` |
-| Mistral | `--mistral-stt <model>` | `voxtral-mini-2602` |
-| AssemblyAI | `--assemblyai-stt <model>` | `universal-3-pro` |
-| Gladia | `--gladia-stt <model>` | `default` |
-| YouTube captions | `--youtube-captions` | prefer manual English captions, then auto English captions, before STT |
-
-Hosted provider flags accept an omitted model value and then resolve to the cheapest or default supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
-
-## STT Examples
-
-```bash
-# Default local Whisper
-bun as extract input/examples/audio/1-audio.mp3
-
-# Local Reverb
-bun as extract input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
-
-# Split a long file before transcription
-bun as extract input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
-
-# Hosted providers
-bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt
-bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
-bun as extract input/examples/audio/1-audio.mp3 --aws-stt
-bun as extract input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
-bun as extract input/examples/audio/1-audio.mp3 --groq-stt
-bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
-bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
-bun as extract input/examples/audio/1-audio.mp3 --together-stt
-bun as extract input/examples/audio/1-audio.mp3 --fireworks-stt whisper-v3-turbo
-bun as extract input/examples/audio/1-audio.mp3 --cloudflare-stt whisper-large-v3-turbo
-bun as extract input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-mini-transcribe
-bun as extract input/examples/audio/1-audio.mp3 --gemini-stt
-bun as extract input/examples/audio/1-audio.mp3 --glm-stt
-bun as extract input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt --happyscribe-organization-id org_123
-bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
-
-# Same provider, multiple models
-bun as extract input/examples/audio/1-audio.mp3 --speechmatics-stt standard --speechmatics-stt enhanced
-
-# deAPI exact preflight on a supported passthrough URL
-bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
-
-# Prefer YouTube captions, then fall back to STT
-bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
-
-# Process a whole YouTube channel batch with caption-first routing
-bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
-```
-
-## STT Flags
+## Shared STT Options
 
 | Flag | Description |
 |------|-------------|
-| `--whisper <model>` | Select one or more local Whisper models |
-| `--reverb` | Use Reverb instead of Whisper |
-| `--reverb-verbatimicity <0-1>` | Reverb output style |
-| `--gcloud-stt <model>` | Select one or more Google Cloud STT models; omit the value to use `chirp_3` |
-| `--aws-stt <model>` | Select one or more AWS Transcribe models; omit the value to use `standard` |
-| `--aws-region <region>` | Override the AWS CLI region used for AWS Transcribe jobs |
-| `--aws-bucket <bucket>` | S3 bucket used for temporary AWS Transcribe input/output objects |
-| `--elevenlabs-stt <model>` | Select one or more ElevenLabs STT models; omit the value to keep `scribe_v2` |
-| `--deepgram-stt <model>` | Select one or more Deepgram STT models; omit the value to keep `nova-3` |
-| `--soniox-stt <model>` | Select one or more Soniox STT models; omit the value to keep `stt-async-v4` |
-| `--speechmatics-stt <model>` | Select one or more Speechmatics STT models; omit the value to use `standard` |
-| `--rev-stt <model>` | Select one or more Rev STT models; omit the value to use `low_cost` |
-| `--groq-stt <model>` | Select one or more Groq STT models; omit the value to use the cheapest supported model |
-| `--grok-stt <model>` | Select one or more xAI Grok STT models; omit the value to use `speech-to-text` |
-| `--deepinfra-stt <model>` | Select one or more DeepInfra Whisper models; omit the value to use `openai/whisper-large-v3-turbo` |
-| `--together-stt <model>` | Select one or more Together Whisper models; omit the value to use `openai/whisper-large-v3` |
-| `--fireworks-stt <model>` | Select one or more Fireworks Whisper models; omit the value to use `whisper-v3-turbo` |
-| `--cloudflare-stt <model>` | Select one or more Cloudflare Workers AI Whisper models; omit the value to use `whisper` |
-| `--openai-stt <model>` | Select one or more OpenAI STT models; omit the value to use `gpt-4o-mini-transcribe` |
-| `--gemini-stt <model>` | Select one or more Gemini STT models; omit the value to use `gemini-3-flash-preview` |
-| `--glm-stt <model>` | Select one or more GLM STT models; omit the value to use `glm-asr-2512` |
-| `--deapi-stt <model>` | Select one or more deAPI STT models; omit the value to keep `WhisperLargeV3` |
-| `--happyscribe-stt <model>` | Select one or more Happy Scribe STT models; omit the value to keep `auto` |
-| `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID; required when the API key can access multiple organizations |
-| `--mistral-stt <model>` | Select one or more Mistral STT models; omit the value to use `voxtral-mini-2602` |
-| `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models; omit the value to use `universal-3-pro` |
-| `--gladia-stt <model>` | Select one or more Gladia STT models; omit the value to keep `default` |
+| `--all-stt` | Enable every supported STT provider/model for this command |
+| `--youtube-captions` | Prefer English YouTube captions before STT when available; falls back to the selected STT provider path |
 | `--speaker-count <n>` | Diarization speaker-count hint for supported services |
-| `--youtube-captions` | Prefer English YouTube captions before STT when available |
 | `--split` | Split audio into 30-minute segments before transcription |
 | `--prompt <name...>` | Named prompt presets discovered recursively under `src/prompts/entries/` |
 | `--prompt-md` | Save a second prompt file (`prompt-md.md`) with markdown examples alongside the JSON prompt |
@@ -211,6 +127,333 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 | `--no-cache` | Bypass the media cache for this run |
 | `--price` | Show the aggregated estimate and exit |
 
+```bash
+# Prefer YouTube captions, then fall back to STT
+bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
+
+# Split a long file before transcription
+bun as extract input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
+
+# Process a whole YouTube channel batch with caption-first routing
+bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
+```
+
+`--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI, Happy Scribe, Supadata, Soniox, Speechmatics, Rev, and Mistral. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
+
+## URL/streaming/source-URL STT
+
+These services either work best with provider-side URLs or have source-URL-specific behavior.
+
+### deAPI
+
+| Option | Value |
+|--------|-------|
+| Selector | `--deapi-stt <model>` |
+| Models | `WhisperLargeV3` |
+| Diarization | Not enabled by default; `--speaker-count` is ignored |
+| Pricing | Exact provider quote support when the quote endpoint succeeds |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
+bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
+```
+
+Supported passthrough URLs use remote URL mode, while local files and unsupported URLs use prepared-media multipart upload mode. If deAPI rejects an upload as too large, AutoShow falls back to the normal split-and-merge path, re-quotes each segment, and records the summed billed amount with `step2.billing.mode: 'segment_sum'`.
+
+### Happy Scribe
+
+| Option | Value |
+|--------|-------|
+| Selector | `--happyscribe-stt <model>` |
+| Models | `auto` |
+| Organization | `--happyscribe-organization-id <id>` |
+| Language | Fixed to `en-US` in v1 |
+| Diarization | Enabled by default; `--speaker-count` is ignored |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt --happyscribe-organization-id org_123
+```
+
+Organization resolution order is CLI `--happyscribe-organization-id`, config default, `HAPPYSCRIBE_ORGANIZATION_ID`, then auto-select only when the API key can access exactly one organization. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
+
+### Supadata
+
+| Option | Value |
+|--------|-------|
+| Selector | `--supadata-stt <auto\|native\|generate>` |
+| Language | `--supadata-lang <code>` for `auto` and `native` modes |
+| Required env | `SUPADATA_API_KEY` |
+| Optional env | `SUPADATA_BASE_URL` |
+| Input support | Public YouTube, TikTok, Instagram, X/Twitter, Facebook, or direct media/file URLs |
+
+```bash
+bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --supadata-stt auto --supadata-lang en
+bun as extract https://www.tiktok.com/@example/video/1234567890 --supadata-stt generate
+bun as extract https://example.com/audio/interview.mp3 --supadata-stt native --price
+```
+
+Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI. `auto` tries provider-native transcripts first and generates a transcript when needed, `native` only fetches existing transcripts, and `generate` requests AI transcript generation. `--supadata-lang` is only sent for `auto` and `native`; generated transcripts ignore that flag.
+
+### Gladia
+
+| Option | Value |
+|--------|-------|
+| Selector | `--gladia-stt <model>` |
+| Models | `default` |
+| Diarization | Supports exact `--speaker-count` hints |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --gladia-stt default
+bun as extract input/examples/audio/1-audio.mp3 --gladia-stt --speaker-count 2
+```
+
+## Non-diarized STT
+
+These providers are documented as single-speaker or non-diarized in the CLI.
+
+### Whisper.cpp
+
+| Option | Value |
+|--------|-------|
+| Selector | default, or `--whisper <model>` |
+| Models | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
+| Runtime | Local `whisper.cpp` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3
+bun as extract input/examples/audio/1-audio.mp3 --whisper large-v3-turbo
+```
+
+### Groq
+
+| Option | Value |
+|--------|-------|
+| Selector | `--groq-stt <model>` |
+| Models | `whisper-large-v3-turbo`, `whisper-large-v3` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --groq-stt
+```
+
+### DeepInfra
+
+| Option | Value |
+|--------|-------|
+| Selector | `--deepinfra-stt <model>` |
+| Models | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
+```
+
+### Together
+
+| Option | Value |
+|--------|-------|
+| Selector | `--together-stt <model>` |
+| Models | `openai/whisper-large-v3` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --together-stt
+```
+
+### Fireworks
+
+| Option | Value |
+|--------|-------|
+| Selector | `--fireworks-stt <model>` |
+| Models | `whisper-v3-turbo`, `whisper-v3` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --fireworks-stt whisper-v3-turbo
+```
+
+### Cloudflare
+
+| Option | Value |
+|--------|-------|
+| Selector | `--cloudflare-stt <model>` |
+| Models | `whisper-large-v3-turbo`, `whisper` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --cloudflare-stt whisper-large-v3-turbo
+```
+
+### OpenAI STT
+
+| Option | Value |
+|--------|-------|
+| Selector | `--openai-stt <model>` |
+| Models | `gpt-4o-mini-transcribe`, `gpt-4o-transcribe` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-mini-transcribe
+```
+
+### Gemini STT
+
+| Option | Value |
+|--------|-------|
+| Selector | `--gemini-stt <model>` |
+| Models | `gemini-3-flash-preview` |
+| Behavior | Prompted JSON transcription via Gemini multimodal input |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --gemini-stt
+```
+
+### GLM STT
+
+| Option | Value |
+|--------|-------|
+| Selector | `--glm-stt <model>` |
+| Models | `glm-asr-2512` |
+| Behavior | Single-speaker transcription with a 30-second auto-split policy |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --glm-stt
+```
+
+### Mistral
+
+| Option | Value |
+|--------|-------|
+| Selector | `--mistral-stt <model>` |
+| Models | `voxtral-mini-2602` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --mistral-stt
+```
+
+Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request. Requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
+
+## Diarized STT
+
+These engines either support diarization directly or AutoShow enables diarization for them.
+
+### Reverb
+
+| Option | Value |
+|--------|-------|
+| Selector | `--reverb` |
+| Style | `--reverb-verbatimicity <0-1>` |
+| Runtime | Local diarized transcription |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
+```
+
+### Grok STT
+
+| Option | Value |
+|--------|-------|
+| Selector | `--grok-stt <model>` |
+| Models | `speech-to-text` |
+| Behavior | REST STT with formatted output, word timestamps, and diarization enabled |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
+```
+
+Grok STT sends `format=true`, `language=en`, and `diarize=true` to xAI's REST STT endpoint and records word timing, confidence, and speaker evidence when the response includes it.
+
+### ElevenLabs
+
+| Option | Value |
+|--------|-------|
+| Selector | `--elevenlabs-stt <model>` |
+| Models | `scribe_v2` |
+| Diarization | Supports `--speaker-count` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 2
+```
+
+### Deepgram
+
+| Option | Value |
+|--------|-------|
+| Selector | `--deepgram-stt <model>` |
+| Models | `nova-3` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
+```
+
+### Soniox
+
+| Option | Value |
+|--------|-------|
+| Selector | `--soniox-stt <model>` |
+| Models | `stt-async-v4` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --soniox-stt
+```
+
+### Speechmatics
+
+| Option | Value |
+|--------|-------|
+| Selector | `--speechmatics-stt <model>` |
+| Models | `standard`, `enhanced` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --speechmatics-stt standard --speechmatics-stt enhanced
+```
+
+### Rev
+
+| Option | Value |
+|--------|-------|
+| Selector | `--rev-stt <model>` |
+| Models | `machine`, `low_cost` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --rev-stt low_cost
+```
+
+### Google Cloud STT
+
+| Option | Value |
+|--------|-------|
+| Selector | `--gcloud-stt <model>` |
+| Models | `chirp_3` |
+| Diarization | Always enabled; supports exact `--speaker-count` hints |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt
+bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
+```
+
+### AWS Transcribe
+
+| Option | Value |
+|--------|-------|
+| Selector | `--aws-stt <model>` |
+| Models | `standard` |
+| Region | `--aws-region <region>` |
+| Staging bucket | `--aws-bucket <bucket>` |
+| Diarization | Always enabled; `--speaker-count` maps to `MaxSpeakerLabels` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --aws-stt
+bun as extract input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
+```
+
+### AssemblyAI
+
+| Option | Value |
+|--------|-------|
+| Selector | `--assemblyai-stt <model>` |
+| Models | `universal-3-pro` |
+| Diarization | Supports `--speaker-count` |
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --assemblyai-stt
+```
+
 ## STT Pricing And Manifests
 
 deAPI uses live provider pricing when its quote endpoint succeeds.
@@ -218,27 +461,26 @@ deAPI uses live provider pricing when its quote endpoint succeeds.
 - `--price` and budget preflight call deAPI pricing before execution. When the original source URL is a recognized deAPI passthrough host such as YouTube, X/Twitter, Twitch, Kick, or TikTok, AutoShow quotes with `source_url`. Otherwise it quotes by prepared-media `duration_seconds`. Both quote modes request timestamps.
 - Successful deAPI preflight quotes are recorded as `estimateType: exact`. If the pricing endpoint fails or returns `429`, AutoShow retries normally, warns on fallback, and uses local registry pricing instead.
 - During execution, AutoShow captures the deAPI quote before each remote job submission and writes it into `run.json` under `step2.billing` with `totalCost`, `source`, and `mode`. Actual STT cost prefers this stored provider quote over duration-based registry math.
-- deAPI runs stay on the existing async checkpoint flow. Supported passthrough URLs use remote URL mode, while local files and unsupported URLs use prepared-media multipart upload mode. `providers/<service>-<model>/checkpoint.json` keeps the remote request id so `resume` can continue polling without recreating the job.
-- If deAPI rejects an upload as too large, AutoShow falls back to the normal split-and-merge path, re-quotes each segment, and records the summed billed amount with `step2.billing.mode: 'segment_sum'`.
+- deAPI runs stay on the existing async checkpoint flow. `providers/<service>-<model>/checkpoint.json` keeps the remote request id so `resume` can continue polling without recreating the job.
 
 Happy Scribe price preflight is intentionally side-effect free.
 
 - `--price` never creates Happy Scribe uploads or draft orders. Preflight uses the published AI rate of `$0.20/min` and the local timing registry.
-- Organization resolution order is CLI `--happyscribe-organization-id`, config default, `HAPPYSCRIBE_ORGANIZATION_ID`, then auto-select only when the API key can access exactly one organization.
 - If preflight cannot resolve a unique organization, AutoShow still prints the generic estimate and adds a note that execution needs an explicit organization override.
 - During execution, AutoShow records Happy Scribe billing in `step2.billing` using `totalCost`, `creditsUsed`, `creditRateCents`, `source: "provider_quote"`, and `mode: "order"` when the selected organization reports `currency: "usd"`. Non-USD execution is rejected in v1. If exact provider billing is unavailable, AutoShow falls back to registry math with `source: "registry_fallback"`.
 - Happy Scribe split runs submit one order per segment and merge segment billing into `step2.billing.mode: "segment_sum"`.
 
+Supadata price estimates use provider credits.
+
+- `--price` uses the published Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, or `1.00 cents/credit`.
+- `native` estimates as one transcript request credit. `generate` estimates generated transcript credits from media duration. `auto` is priced conservatively as the higher of one native transcript request credit or generated transcript credits from media duration.
+- During execution, Supadata billing metadata records credit counts from provider response headers when available.
+
 ## STT Notes
 
-- Before any hosted STT provider upload, AutoShow stages one shared stripped audio-only artifact. The default hosted artifact is mono AAC-LC in `.m4a` capped at 96 kbps, preserves the original sample rate, and drops cover art/chapters/metadata/extra streams. Low-bitrate mono `.m4a`/AAC and `.mp3` inputs stay on a stream-copy cleanup path instead of taking a second lossy encode.
+- Before any hosted STT provider upload, AutoShow stages one shared stripped audio-only artifact. The default hosted artifact is mono AAC-LC in `.m4a` capped at 96 kbps, preserves the original sample rate, and drops cover art/chapters/metadata/extra streams. Low-bitrate mono `.m4a`/AAC and `.mp3` inputs stay on a stream-copy cleanup path instead of taking a second lossy encode. Supadata uses public source URLs instead of local uploads.
 - Single-provider STT runs write root `transcription.txt` plus root `result.json`.
 - Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
-- `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI, Happy Scribe, Soniox, Speechmatics, Rev, and Mistral. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
-- Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request.
-- Mistral STT requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
-- Happy Scribe STT is fixed to `en-US` in v1. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
-- Grok STT sends `format=true`, `language=en`, and `diarize=true` to xAI's REST STT endpoint and records word timing, confidence, and speaker evidence when the response includes it.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.

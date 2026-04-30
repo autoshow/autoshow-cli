@@ -6,11 +6,15 @@ Generate music from a text prompt with hosted providers, or render local lyric v
 
 - [Usage](#usage)
 - [Modes](#modes)
-- [Hosted Music Providers](#hosted-music-providers)
-- [Flags](#flags)
-- [Examples](#examples)
 - [Environment](#environment)
 - [Setup](#setup)
+- [Shared Music Options](#shared-music-options)
+- [Music Services And Modes](#music-services-and-modes)
+  - [ElevenLabs](#elevenlabs)
+  - [MiniMax](#minimax)
+  - [deAPI](#deapi)
+  - [Gemini](#gemini)
+  - [Lyric-Video Rendering](#lyric-video-rendering)
 - [Output](#output)
 - [Notes](#notes)
 
@@ -36,88 +40,6 @@ bun as music --batch
 | Lyric-video rendering | `--audio <file>` or `--batch` | Uses local Whisper captions and ffmpeg rendering to write MP4/VTT/SRT outputs |
 
 Do not mix hosted generation flags with lyric-video flags. `--price` is hosted-generation only.
-
-## Hosted Music Providers
-
-| Provider | Flag | Models | Notes |
-|----------|------|--------|-------|
-| ElevenLabs | `--elevenlabs-music <model>` | `music_v1` | returns audio directly |
-| MiniMax | `--minimax-music <model>` | `music-2.5` | auto-generates lyrics when `--music-lyrics-file` is omitted |
-| deAPI | `--deapi-music <model>` | `AceStep_1_5_Turbo`, `AceStep_1_5_Base`, `AceStep_1_5_XL_Turbo_INT8` | async ACE-Step jobs with provider quote pricing |
-| Gemini | `--gemini-music <model>` | `lyria-3-clip-preview`, `lyria-3-pro-preview` | Lyria 3 MP3 output through `GEMINI_API_KEY` |
-
-One or more provider flags can be specified. Repeating the same provider flag runs each selected model independently and produces its own output file.
-
-## Flags
-
-Hosted generation flags:
-
-| Flag | Description |
-|------|-------------|
-| `--all-music` | Enable every supported hosted music provider/model |
-| `--elevenlabs-music <model>` | Generate music with ElevenLabs |
-| `--minimax-music <model>` | Generate music with MiniMax |
-| `--deapi-music <model>` | Generate music with deAPI ACE-Step |
-| `--gemini-music <model>` | Generate music with Gemini Lyria 3 |
-| `--music-duration <seconds>` | Requested duration in seconds; effective for ElevenLabs, deAPI, and Gemini Pro; Gemini Clip is fixed at 30 seconds; currently ignored by MiniMax |
-| `--music-lyrics-file <path>` | Lyrics file for MiniMax, deAPI, and Gemini |
-| `--music-instrumental` | Force instrumental generation for ElevenLabs, deAPI, and Gemini; currently ignored by MiniMax |
-| `--price` | Show the estimate and exit |
-
-Lyric-video flags:
-
-| Flag | Description |
-|------|-------------|
-| `--batch` | Process every supported audio file under `./input` recursively |
-| `--audio <file>` | Single-run audio file inside `./input` |
-| `--captions <file>` | Edited `.vtt` or `.srt` file inside `./output`; skips Whisper and rerenders only |
-| `--model <name>` | Local Whisper model: `tiny`, `base`, `small`, `medium`, `large-v3-turbo`; default `large-v3-turbo` |
-| `--font <name>` | Font family for lyric overlays; default `DejaVu Sans` |
-| `--keep-tmp` | Keep the per-run `.lyrics-tmp` workspace inside the output directory |
-
-## Examples
-
-```bash
-# ElevenLabs
-bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1
-bun as music "lo-fi chillhop with soft piano and vinyl texture" --elevenlabs-music music_v1 --music-duration 20 --music-instrumental
-bun as music "lo-fi chillhop with soft piano and vinyl texture" --elevenlabs-music music_v1 --price
-
-# MiniMax
-bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5
-bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5 --music-lyrics-file input/examples/tts/1-tts.md
-bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5 --price
-
-# deAPI
-bun as music "uplifting synth pop, bright drums, summer chorus" --deapi-music AceStep_1_5_Turbo
-bun as music "uplifting synth pop, bright drums, summer chorus" --deapi-music AceStep_1_5_Turbo --music-duration 20 --music-instrumental
-bun as music "uplifting synth pop, bright drums, summer chorus" --deapi-music AceStep_1_5_Turbo --price
-
-# Gemini Lyria 3
-bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
-bun as music "cinematic synth pop with verses, chorus, and bridge" --gemini-music lyria-3-pro-preview --music-duration 120
-bun as music input/examples/tts/1-tts.md --gemini-music lyria-3-pro-preview --music-lyrics-file input/examples/tts/1-tts.md
-bun as music "ambient piano and strings" --gemini-music lyria-3-clip-preview --price
-
-# Multiple providers at once
-bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5
-bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5 --price
-bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5 --deapi-music AceStep_1_5_Turbo --gemini-music lyria-3-clip-preview
-
-# Lyric-video rendering
-bun as music --audio input/examples/lyrics/01-example-song.mp3
-bun as music --audio input/examples/lyrics/01-example-song.mp3 --model small
-bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt
-bun as music --audio input/examples/lyrics/01-example-song.mp3 --keep-tmp
-bun as music --batch --model tiny
-
-# Write pipeline
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
-bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.5 --music-lyrics-file input/examples/tts/1-tts.md
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --gemini-music lyria-3-pro-preview --music-duration 120
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.5 --deapi-music AceStep_1_5_Turbo --gemini-music lyria-3-clip-preview
-bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.5 --price
-```
 
 ## Environment
 
@@ -146,6 +68,137 @@ The music setup step checks hosted music API readiness and local lyric-video pre
 - ffmpeg `ass` subtitle filter, or `pango-view` plus ImageMagick (`magick` or `convert`) for fallback overlays
 - `whisper-cli`
 - the local Whisper `large-v3-turbo` model
+
+## Shared Music Options
+
+Hosted generation flags:
+
+| Flag | Description |
+|------|-------------|
+| `--all-music` | Enable every supported hosted music provider/model |
+| `--music-duration <seconds>` | Requested duration in seconds; effective for ElevenLabs, deAPI, and Gemini Pro; Gemini Clip is fixed at 30 seconds; currently ignored by MiniMax |
+| `--music-lyrics-file <path>` | Lyrics file for MiniMax, deAPI, and Gemini |
+| `--music-instrumental` | Force instrumental generation for ElevenLabs, deAPI, and Gemini; currently ignored by MiniMax |
+| `--price` | Show the estimate and exit |
+
+Lyric-video flags:
+
+| Flag | Description |
+|------|-------------|
+| `--batch` | Process every supported audio file under `./input` recursively |
+| `--audio <file>` | Single-run audio file inside `./input` |
+| `--captions <file>` | Edited `.vtt` or `.srt` file inside `./output`; skips Whisper and rerenders only |
+| `--model <name>` | Local Whisper model: `tiny`, `base`, `small`, `medium`, `large-v3-turbo`; default `large-v3-turbo` |
+| `--font <name>` | Font family for lyric overlays; default `DejaVu Sans` |
+| `--keep-tmp` | Keep the per-run `.lyrics-tmp` workspace inside the output directory |
+
+One or more hosted provider flags can be specified. Repeating the same provider flag runs each selected model independently and produces its own output file.
+
+```bash
+bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5
+bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5 --price
+bun as music "chill lo-fi beat" --elevenlabs-music music_v1 --minimax-music music-2.5 --deapi-music AceStep_1_5_Turbo --gemini-music lyria-3-clip-preview
+```
+
+## Music Services And Modes
+
+### ElevenLabs
+
+| Option | Value |
+|--------|-------|
+| Selector | `--elevenlabs-music <model>` |
+| Models | `music_v1` |
+| Duration | `--music-duration <seconds>`; defaults to 180 seconds for estimates when omitted |
+| Instrumental | `--music-instrumental` |
+
+```bash
+bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1
+bun as music "lo-fi chillhop with soft piano and vinyl texture" --elevenlabs-music music_v1 --music-duration 20 --music-instrumental
+bun as music "lo-fi chillhop with soft piano and vinyl texture" --elevenlabs-music music_v1 --price
+```
+
+ElevenLabs returns audio directly. Price estimation uses the explicit `--music-duration` when provided; otherwise it falls back to `180` seconds.
+
+### MiniMax
+
+| Option | Value |
+|--------|-------|
+| Selector | `--minimax-music <model>` |
+| Models | `music-2.5` |
+| Lyrics | `--music-lyrics-file <path>`; lyrics are auto-generated when omitted |
+
+```bash
+bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5
+bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5 --music-lyrics-file input/examples/tts/1-tts.md
+bun as music "indie pop, nostalgic summer road trip vibe" --minimax-music music-2.5 --price
+```
+
+MiniMax auto-generates lyrics when `--music-lyrics-file` is omitted. Price estimation includes the extra lyrics-generation cost when lyrics are auto-generated. `--music-duration` and `--music-instrumental` are currently ignored by MiniMax.
+
+### deAPI
+
+| Option | Value |
+|--------|-------|
+| Selector | `--deapi-music <model>` |
+| Models | `AceStep_1_5_Turbo`, `AceStep_1_5_Base`, `AceStep_1_5_XL_Turbo_INT8` |
+| Duration | `--music-duration <seconds>` |
+| Lyrics/instrumental | `--music-lyrics-file <path>` or `--music-instrumental` |
+
+```bash
+bun as music "uplifting synth pop, bright drums, summer chorus" --deapi-music AceStep_1_5_Turbo
+bun as music "uplifting synth pop, bright drums, summer chorus" --deapi-music AceStep_1_5_Turbo --music-duration 20 --music-instrumental
+bun as music "uplifting synth pop, bright drums, summer chorus" --deapi-music AceStep_1_5_Turbo --price
+```
+
+deAPI uses async ACE-Step jobs with provider quote pricing. It sends `[Instrumental]` when `--music-instrumental` is set or no lyrics file is provided. Turbo models accept 10-300 seconds, and `AceStep_1_5_Base` accepts 30-300 seconds. deAPI music price estimates use the provider quote endpoint when `DEAPI_API_KEY` is available; otherwise the local registry reports a zero-cost fallback note.
+
+### Gemini
+
+| Option | Value |
+|--------|-------|
+| Selector | `--gemini-music <model>` |
+| Models | `lyria-3-clip-preview`, `lyria-3-pro-preview` |
+| Duration | Gemini Clip is fixed at 30 seconds; Gemini Pro uses `--music-duration` when provided |
+| Lyrics/instrumental | `--music-lyrics-file <path>` or `--music-instrumental` |
+
+```bash
+bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
+bun as music "cinematic synth pop with verses, chorus, and bridge" --gemini-music lyria-3-pro-preview --music-duration 120
+bun as music input/examples/tts/1-tts.md --gemini-music lyria-3-pro-preview --music-lyrics-file input/examples/tts/1-tts.md
+bun as music "ambient piano and strings" --gemini-music lyria-3-clip-preview --price
+```
+
+Gemini Lyria 3 Clip always generates a 30-second MP3 clip. Lyria 3 Pro uses duration instructions from `--music-duration`, or a 120-second timing estimate when omitted. `--music-lyrics-file` appends lyrics to the prompt. If `--music-instrumental` is also set, instrumental wins and the lyrics file is ignored with a warning.
+
+### Lyric-Video Rendering
+
+| Option | Value |
+|--------|-------|
+| Single audio | `--audio <file>` inside `./input` |
+| Rerender | `--captions <file>` inside `./output` |
+| Batch | `--batch` |
+| Whisper model | `--model tiny\|base\|small\|medium\|large-v3-turbo`, default `large-v3-turbo` |
+| Overlay | `--font <name>` |
+| Debug artifacts | `--keep-tmp` |
+
+```bash
+bun as music --audio input/examples/lyrics/01-example-song.mp3
+bun as music --audio input/examples/lyrics/01-example-song.mp3 --model small
+bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt
+bun as music --audio input/examples/lyrics/01-example-song.mp3 --keep-tmp
+bun as music --batch --model tiny
+```
+
+Lyric-video rendering uses local Whisper captions and ffmpeg rendering. In rerender mode, the output stem comes from the caption filename, not the audio filename. If an image beside the lyric-video audio file matches by exact basename or track number, it is used as the background; otherwise a spectrogram background is rendered.
+
+```bash
+# Write pipeline
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
+bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.5 --music-lyrics-file input/examples/tts/1-tts.md
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --gemini-music lyria-3-pro-preview --music-duration 120
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.5 --deapi-music AceStep_1_5_Turbo --gemini-music lyria-3-clip-preview
+bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.5 --price
+```
 
 ## Output
 
@@ -197,12 +250,5 @@ Lyric-video `run.json` uses `kind: "music"` and metadata `mode: "lyric-video"`. 
 
 ## Notes
 
-- MiniMax auto-generates lyrics when `--music-lyrics-file` is omitted.
-- ElevenLabs price estimation uses the explicit `--music-duration` when provided; otherwise it falls back to `180` seconds.
-- MiniMax price estimation includes the extra lyrics-generation cost when lyrics are auto-generated.
-- deAPI sends `[Instrumental]` when `--music-instrumental` is set or no lyrics file is provided. Turbo models accept 10-300 seconds, and `AceStep_1_5_Base` accepts 30-300 seconds.
-- deAPI music price estimates use the provider quote endpoint when `DEAPI_API_KEY` is available; otherwise the local registry reports a zero-cost fallback note.
-- Gemini Lyria 3 Clip always generates a 30-second MP3 clip; Lyria 3 Pro uses duration instructions from `--music-duration`, or a 120-second timing estimate when omitted.
-- For Gemini, `--music-lyrics-file` appends lyrics to the prompt. If `--music-instrumental` is also set, instrumental wins and the lyrics file is ignored with a warning.
-- In lyric-video rerender mode, the output stem comes from the caption filename, not the audio filename.
-- If an image beside the lyric-video audio file matches by exact basename or track number, it is used as the background; otherwise a spectrogram background is rendered.
+- Do not mix hosted generation flags with lyric-video flags.
+- `--price` is hosted-generation only.
