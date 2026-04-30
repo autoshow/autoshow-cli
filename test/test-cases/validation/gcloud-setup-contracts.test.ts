@@ -97,7 +97,7 @@ afterEach(async () => {
 })
 
 describe('gcloud setup contracts', () => {
-  test('enables STT, Document AI, and Storage without writing AutoShow config', async () => {
+  test('enables STT, TTS, Document AI, and Storage without writing AutoShow config', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-gcloud-setup-'))
     tempDirs.push(dir)
     const configPath = join(dir, 'autoshow.json')
@@ -122,6 +122,7 @@ describe('gcloud setup contracts', () => {
 
     const commands = await readFile(log, 'utf8')
     expect(commands).toContain('services enable speech.googleapis.com')
+    expect(commands).toContain('services enable texttospeech.googleapis.com')
     expect(commands).toContain('services enable documentai.googleapis.com')
     expect(commands).toContain('services enable storage.googleapis.com')
     expect(commands).toContain('storage buckets create gs://autoshow-docai-test-project-')

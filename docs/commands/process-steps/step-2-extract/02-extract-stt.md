@@ -22,11 +22,11 @@ See the [`extract` overview](./01-extract.md) for input routing across STT, OCR,
 # full setup
 bun as setup
 
-# verify gcloud CLI auth, active project, Speech-to-Text, Document AI, and Storage access
+# verify gcloud CLI auth, active project, Speech-to-Text, Text-to-Speech, Document AI, and Storage access
 bun as setup --gcloud
 
 # set or create the active gcloud project, link billing when possible,
-# enable Speech-to-Text, Document AI, and Storage when billing is ready,
+# enable Speech-to-Text, Text-to-Speech, Document AI, and Storage when billing is ready,
 # create/reuse the autoshow-ocr processor and GCS staging bucket,
 # and print runtime values without changing config/autoshow.json
 bun as setup --gcloud --gcloud-project PROJECT_ID
@@ -73,7 +73,7 @@ bun as setup --step reverb
 | OpenAI STT | `OPENAI_API_KEY` | `OPENAI_BASE_URL` |
 | Gemini STT | `GEMINI_API_KEY` | `GEMINI_BASE_URL` |
 | GLM STT | `GLM_API_KEY` | `GLM_BASE_URL` |
-| Google Cloud STT + Document AI OCR | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | STT project is read from `gcloud config`, STT location is fixed to `us`, and requests go to `us-speech.googleapis.com`; `bun as setup --gcloud --gcloud-project ...` provisions/verifies Google resources and prints runtime values without saving AutoShow defaults; env vars such as `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, and `AUTOSHOW_GCLOUD_BUCKET` override saved config |
+| Google Cloud STT + Document AI OCR + TTS | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | STT project is read from `gcloud config`, STT location is fixed to `us`, and requests go to `us-speech.googleapis.com`; `bun as setup --gcloud --gcloud-project ...` provisions/verifies Google resources, including `texttospeech.googleapis.com`, and prints runtime values without saving AutoShow defaults; env vars such as `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, and `AUTOSHOW_GCLOUD_BUCKET` override saved config |
 | AWS Transcribe | AWS CLI auth (`aws configure` or `AWS_PROFILE`) | `AWS_REGION` / `AWS_DEFAULT_REGION`; save `--aws-region` and `--aws-bucket` with `bun as config`, pass them per run, or run `bun as setup --aws --aws-create-bucket` to provision a staging bucket and print the values |
 | Mistral | `MISTRAL_API_KEY` | - |
 | AssemblyAI | `ASSEMBLYAI_API_KEY` | `ASSEMBLYAI_BASE_URL` |

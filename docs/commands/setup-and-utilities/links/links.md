@@ -59,7 +59,7 @@ Accepted provider selectors are the lowercase names below.
 | `--drive` | `general` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
-| `--gcloud` | `stt`, `ocr` |
+| `--gcloud` | `stt`, `tts`, `ocr` |
 | `--gladia` | `general`, `stt` |
 | `--glm` | `general`, `text`, `ocr`, `image`, `video`, `stt` |
 | `--grok` | `general`, `text`, `image`, `video`, `tts` |
@@ -71,9 +71,10 @@ Accepted provider selectors are the lowercase names below.
 | `--openai` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
 | `--resend` | `general` |
 | `--rev` | `general`, `stt` |
-| `--runway` | `general`, `image`, `tts`, `video` |
+| `--runway` | `general` |
 | `--soniox` | `stt` |
 | `--speechmatics` | `general`, `stt` |
+| `--speechify` | `tts` |
 | `--supadata` | `stt` |
 
 ## Global sections

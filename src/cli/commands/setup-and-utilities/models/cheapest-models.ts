@@ -355,6 +355,10 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('deepgram')
     case 'runway-tts':
       return selectCheapestTtsModel('runway')
+    case 'speechify-tts':
+      return selectCheapestTtsModel('speechify')
+    case 'gcloud-tts':
+      return selectCheapestTtsModel('gcloud')
     case 'deapi-tts':
       return selectCheapestTtsModel('deapi')
     case 'gemini-image':

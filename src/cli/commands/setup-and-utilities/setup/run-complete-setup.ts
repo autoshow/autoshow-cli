@@ -49,6 +49,8 @@ import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-serv
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { setupRunwayTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/runway/runway-tts'
+import { setupSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-tts'
+import { setupGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/gcloud-tts'
 import { setupDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { setupDeapiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/deapi/deapi-image-gen'
@@ -334,6 +336,10 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupRunwayTts)
 
+  await withCompactSetup(setupSpeechifyTts)
+
+  await withCompactSetup(setupGcloudTts)
+
   await withCompactSetup(setupDeapiTts)
 
   await withCompactSetup(setupGeminiImageGen)
@@ -404,6 +410,8 @@ const runSetupTts = async (): Promise<void> => {
   await setupGeminiTts()
   await setupDeepgramTts()
   await setupRunwayTts()
+  await setupSpeechifyTts()
+  await setupGcloudTts()
   await setupDeapiTts()
   l.write('success', 'TTS setup complete')
 }

@@ -18,6 +18,8 @@ import type {
   GeminiTtsModel,
   DeepgramTtsModel,
   RunwayTtsModel,
+  SpeechifyTtsModel,
+  GcloudTtsModel,
   DeapiTtsModel
 } from '~/types'
 
@@ -165,6 +167,61 @@ export const validateRunwayTtsVoice = (voice: string): string => {
     )
   }
   return voice
+}
+
+export const SUPPORTED_SPEECHIFY_TTS_MODELS = [
+  'simba-english',
+  'simba-multilingual'
+] as const satisfies readonly string[]
+
+export const SPEECHIFY_DEFAULT_TTS_VOICE = 'george'
+
+export const validateSpeechifyTtsModel = createModelValidator<SpeechifyTtsModel>(SUPPORTED_SPEECHIFY_TTS_MODELS, 'speechify-tts')
+
+export const validateSpeechifyTtsVoice = (voice: string): string => {
+  const normalized = voice.trim()
+  if (!normalized) {
+    throw CLIUsageError('Invalid --speechify-voice value. Expected a non-empty Speechify voice ID.')
+  }
+  return normalized
+}
+
+export const SUPPORTED_GCLOUD_TTS_MODELS = [
+  'standard',
+  'wavenet',
+  'neural2',
+  'studio',
+  'chirp3-hd',
+  'instant-custom-voice'
+] as const satisfies readonly string[]
+
+export const SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS = [
+  'standard',
+  'wavenet',
+  'neural2',
+  'studio',
+  'chirp3-hd'
+] as const satisfies readonly string[]
+
+export const GCLOUD_DEFAULT_TTS_VOICES = {
+  standard: 'en-US-Standard-J',
+  wavenet: 'en-US-Wavenet-D',
+  neural2: 'en-US-Neural2-J',
+  studio: 'en-US-Studio-O',
+  'chirp3-hd': 'en-US-Chirp3-HD-Charon'
+} as const satisfies Record<typeof SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS[number], string>
+
+export const GCLOUD_DEFAULT_TTS_LANGUAGE = 'en-US'
+export const GCLOUD_DEFAULT_ICV_CONSENT_LANGUAGE = 'en-US'
+
+export const validateGcloudTtsModel = createModelValidator<GcloudTtsModel>(SUPPORTED_GCLOUD_TTS_MODELS, 'gcloud-tts')
+
+export const validateGcloudTtsVoice = (voice: string): string => {
+  const normalized = voice.trim()
+  if (!normalized) {
+    throw CLIUsageError('Invalid --gcloud-tts-voice value. Expected a non-empty Google Cloud voice name.')
+  }
+  return normalized
 }
 
 export const SUPPORTED_DEAPI_TTS_MODELS = [

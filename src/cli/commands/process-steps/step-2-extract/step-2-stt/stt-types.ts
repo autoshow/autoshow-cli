@@ -685,6 +685,7 @@ export type GcloudSttReadiness = {
   billingAccountId?: string | undefined
   billingEnabled?: boolean | undefined
   speechApiEnabled?: boolean | undefined
+  textToSpeechApiEnabled?: boolean | undefined
   documentAiApiEnabled?: boolean | undefined
   storageApiEnabled?: boolean | undefined
   details: {
@@ -693,6 +694,7 @@ export type GcloudSttReadiness = {
     project: string
     billing: string
     speechApi: string
+    textToSpeechApi: string
     documentAiApi: string
     storageApi: string
   }

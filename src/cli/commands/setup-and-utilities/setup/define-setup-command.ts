@@ -56,8 +56,8 @@ export const setupCommand = defineCommand({
   help: {
     examples: [
       ['bun as setup', 'Install all dependencies'],
-      ['bun as setup --gcloud', 'Check gcloud CLI auth/config for Google Cloud Speech-to-Text and Document AI OCR'],
-      ['bun as setup --gcloud --gcloud-project my-project', 'Set or create the Google Cloud project, link billing when possible, enable Speech-to-Text, Document AI, and Storage, then print runtime values'],
+      ['bun as setup --gcloud', 'Check gcloud CLI auth/config for Google Cloud Speech-to-Text, Text-to-Speech, and Document AI OCR'],
+      ['bun as setup --gcloud --gcloud-project my-project', 'Set or create the Google Cloud project, link billing when possible, enable Speech-to-Text, Text-to-Speech, Document AI, and Storage, then print runtime values'],
       ['bun as setup --gcloud --gcloud-project my-project --gcloud-billing-account 000000-000000-000000', 'Bootstrap a Google Cloud project with an explicit billing account'],
       ['bun as setup --aws', 'Check AWS CLI auth/config for Amazon Transcribe'],
       ['bun as setup --aws --aws-create-bucket', 'Create an S3 staging bucket for Amazon Transcribe and print the values to use'],

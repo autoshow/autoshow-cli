@@ -36,9 +36,18 @@ import {
   OPENAI_TTS_CLONE_SETUP_MS,
   validateOpenAITtsCustomVoiceAudio
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-custom-voices'
+import {
+  SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS
+} from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { getStep2AllShortcutModelExpansions } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
-import { DEEPGRAM_DEFAULT_VOICE, GROK_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
+import {
+  DEEPGRAM_DEFAULT_VOICE,
+  GCLOUD_DEFAULT_TTS_VOICES,
+  GROK_DEFAULT_TTS_VOICE,
+  SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS,
+  SUPPORTED_SPEECHIFY_TTS_MODELS
+} from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
 
 describe('option resolution contracts', () => {
@@ -60,6 +69,11 @@ describe('option resolution contracts', () => {
       'deapi-tts-ref-text': 'Reference transcript.',
       'runway-tts': 'eleven_multilingual_v2',
       'runway-tts-voice': 'Leslie',
+      'speechify-tts': 'simba-english',
+      'speechify-voice': 'narrator_voice',
+      'gcloud-tts': 'neural2',
+      'gcloud-tts-voice': 'en-US-Neural2-C',
+      'gcloud-tts-language': 'en-US',
       'deepinfra-ocr': 'allenai/olmOCR-2-7B-1025',
       'kimi-ocr': 'kimi-k2.6',
       'tesseract-ocr': true,
@@ -95,6 +109,11 @@ describe('option resolution contracts', () => {
     expect(opts.deapiTtsRefText).toBe('Reference transcript.')
     expect(opts.runwayTtsModel).toBe('eleven_multilingual_v2')
     expect(opts.runwayTtsVoice).toBe('Leslie')
+    expect(opts.speechifyTtsModel).toBe('simba-english')
+    expect(opts.speechifyVoice).toBe('narrator_voice')
+    expect(opts.gcloudTtsModel).toBe('neural2')
+    expect(opts.gcloudTtsVoice).toBe('en-US-Neural2-C')
+    expect(opts.gcloudTtsLanguage).toBe('en-US')
     expect(opts.deepinfraOcrModel).toBe('allenai/olmOCR-2-7B-1025')
     expect(opts.kimiOcrModel).toBe('kimi-k2.6')
     expect(opts.useTesseract).toBe(true)
@@ -158,13 +177,17 @@ describe('option resolution contracts', () => {
     const deepgramDefault = resolveCheapestModelForFlag('deepgram-stt')
     const deepinfraOcrDefault = resolveCheapestModelForFlag('deepinfra-ocr')
     const kimiOcrDefault = resolveCheapestModelForFlag('kimi-ocr')
+    const speechifyTtsDefault = resolveCheapestModelForFlag('speechify-tts')
+    const gcloudTtsDefault = resolveCheapestModelForFlag('gcloud-tts')
     const opts = buildOptsFromFlags(false, {
       openai: true,
       glm: true,
       kimi: true,
       'deepgram-stt': true,
       'deepinfra-ocr': true,
-      'kimi-ocr': true
+      'kimi-ocr': true,
+      'speechify-tts': true,
+      'gcloud-tts': true
     })
 
     expect(openaiDefault).toBeDefined()
@@ -173,12 +196,16 @@ describe('option resolution contracts', () => {
     expect(deepgramDefault).toBeDefined()
     expect(deepinfraOcrDefault).toBe('allenai/olmOCR-2-7B-1025')
     expect(kimiOcrDefault).toBe('kimi-k2.6')
+    expect(speechifyTtsDefault).toBe('simba-english')
+    expect(gcloudTtsDefault).toBe('standard')
     expect(opts.openaiModel).toBe(openaiDefault)
     expect(opts.glmModel).toBe(glmDefault)
     expect(opts.kimiModel).toBe(kimiDefault)
     expect(opts.deepgramSttModel).toBe(deepgramDefault)
     expect(opts.deepinfraOcrModel).toBe(deepinfraOcrDefault)
     expect(opts.kimiOcrModel).toBe(kimiOcrDefault)
+    expect(opts.speechifyTtsModel).toBe(speechifyTtsDefault)
+    expect(opts.gcloudTtsModel).toBe(gcloudTtsDefault)
   })
 
   test('--all-llm expands GLM and Kimi to their supported models', () => {
@@ -211,12 +238,14 @@ describe('option resolution contracts', () => {
     expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('deepinfra')
   })
 
-  test('--all-tts expands deepgram, runway, grok, and mistral to default models', () => {
+  test('--all-tts expands hosted TTS defaults and excludes Google instant custom voice', () => {
     const opts = buildOptsFromFlags(false, { 'all-tts': true })
     const deepgramTargets = collectTtsTargets(opts).filter((target) => target.service === 'deepgram')
     const runwayTargets = collectTtsTargets(opts).filter((target) => target.service === 'runway')
     const grokTargets = collectTtsTargets(opts).filter((target) => target.service === 'grok')
     const mistralTargets = collectTtsTargets(opts).filter((target) => target.service === 'mistral')
+    const speechifyTargets = collectTtsTargets(opts).filter((target) => target.service === 'speechify')
+    const gcloudTargets = collectTtsTargets(opts).filter((target) => target.service === 'gcloud')
 
     expect(opts.deepgramTtsModels).toEqual([DEEPGRAM_DEFAULT_VOICE])
     expect(deepgramTargets.map((target) => target.model)).toEqual([DEEPGRAM_DEFAULT_VOICE])
@@ -228,6 +257,153 @@ describe('option resolution contracts', () => {
     expect(opts.mistralTtsModels).toEqual(['voxtral-mini-tts-2603'])
     expect(mistralTargets.map((target) => target.model)).toEqual(['voxtral-mini-tts-2603'])
     expect(mistralTargets.map((target) => target.voice)).toEqual([undefined])
+    expect(opts.speechifyTtsModels).toEqual([...SUPPORTED_SPEECHIFY_TTS_MODELS])
+    expect(speechifyTargets.map((target) => target.model)).toEqual([...SUPPORTED_SPEECHIFY_TTS_MODELS])
+    expect(opts.gcloudTtsModels).toEqual([...SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS])
+    expect(gcloudTargets.map((target) => target.model)).toEqual([...SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS])
+    expect(gcloudTargets.map((target) => target.voice)).toEqual(
+      SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS.map((model) => GCLOUD_DEFAULT_TTS_VOICES[model])
+    )
+    expect(gcloudTargets.map((target) => target.model)).not.toContain('instant-custom-voice')
+  })
+
+  test('Google Cloud instant custom voice flags validate model and key generation mode', () => {
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+    }))).toThrow('require --gcloud-tts instant-custom-voice')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'gcloud-tts': 'neural2',
+      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+    }))).toThrow('require --gcloud-tts instant-custom-voice')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'gcloud-tts': 'instant-custom-voice'
+    }))).toThrow('requires --gcloud-tts-voice-cloning-key or both --gcloud-tts-ref-audio and --gcloud-tts-consent-audio')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'gcloud-tts': 'instant-custom-voice',
+      'gcloud-tts-voice-cloning-key': 'existing-key',
+      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+    }))).toThrow('cannot be combined with key generation flags')
+
+    expect(collectTtsTargets(buildOptsFromFlags(false, {
+      'gcloud-tts': 'instant-custom-voice',
+      'gcloud-tts-voice-cloning-key': 'existing-key'
+    })).map((target) => ({
+      service: target.service,
+      model: target.model,
+      voice: target.voice
+    }))).toEqual([{
+      service: 'gcloud',
+      model: 'instant-custom-voice',
+      voice: 'instant-custom-voice'
+    }])
+
+    expect(collectTtsTargets(buildOptsFromFlags(false, {
+      'gcloud-tts': ['standard', 'instant-custom-voice'],
+      'gcloud-tts-voice-cloning-key': 'existing-key'
+    })).map((target) => ({
+      service: target.service,
+      model: target.model,
+      voice: target.voice
+    }))).toEqual([
+      {
+        service: 'gcloud',
+        model: 'standard',
+        voice: GCLOUD_DEFAULT_TTS_VOICES.standard
+      },
+      {
+        service: 'gcloud',
+        model: 'instant-custom-voice',
+        voice: 'instant-custom-voice'
+      }
+    ])
+  })
+
+  test('Speechify custom voice flags build reference-audio targets and validate required consent', () => {
+    const opts = buildOptsFromFlags(false, {
+      'speechify-tts': ['simba-english', 'simba-multilingual'],
+      'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
+      'speechify-tts-voice-name': 'FallbackName',
+      'speechify-tts-consent-name': 'Fallback Consent',
+      'speechify-tts-consent-email': 'anthony@example.com',
+      'speechify-tts-voice-locale': 'en-US',
+      'speechify-tts-voice-gender': 'notSpecified'
+    }, [], {}, new Set(), [
+      '--speechify-tts-voice-name',
+      'AutoShow Anthony',
+      '--speechify-tts-consent-name',
+      'Anthony Example'
+    ])
+    const speechifyTargets = collectTtsTargets(opts).filter((target) => target.service === 'speechify')
+
+    expect(opts.speechifyTtsRefAudio).toBe('input/voices/my-voice-sample.mp3')
+    expect(opts.speechifyTtsVoiceName).toBe('AutoShow Anthony')
+    expect(opts.speechifyTtsConsentName).toBe('Anthony Example')
+    expect(opts.speechifyTtsConsentEmail).toBe('anthony@example.com')
+    expect(opts.speechifyTtsVoiceLocale).toBe('en-US')
+    expect(opts.speechifyTtsVoiceGender).toBe('notSpecified')
+    expect(speechifyTargets.map((target) => ({
+      model: target.model,
+      voice: target.voice,
+      setupCostCents: target.setupCostCents,
+      setupTimeMs: target.setupTimeMs,
+      setupNote: target.setupNote
+    }))).toEqual([
+      {
+        model: 'simba-english',
+        voice: 'ref_audio:my-voice-sample.mp3',
+        setupCostCents: 0,
+        setupTimeMs: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS,
+        setupNote: 'Speechify custom voice creation setup'
+      },
+      {
+        model: 'simba-multilingual',
+        voice: 'ref_audio:my-voice-sample.mp3',
+        setupCostCents: undefined,
+        setupTimeMs: undefined,
+        setupNote: undefined
+      }
+    ])
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
+      'speechify-tts-consent-name': 'Anthony Example',
+      'speechify-tts-consent-email': 'anthony@example.com'
+    }))).toThrow('require --speechify-tts <model>')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'speechify-tts': 'simba-english',
+      'speechify-tts-voice-name': 'AutoShow Anthony',
+      'speechify-tts-consent-name': 'Anthony Example',
+      'speechify-tts-consent-email': 'anthony@example.com'
+    }))).toThrow('requires --speechify-tts-ref-audio')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'speechify-tts': 'simba-english',
+      'speechify-voice': 'george',
+      'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
+      'speechify-tts-consent-name': 'Anthony Example',
+      'speechify-tts-consent-email': 'anthony@example.com'
+    }))).toThrow('cannot be combined with --speechify-voice')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'speechify-tts': 'simba-english',
+      'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
+      'speechify-tts-consent-email': 'anthony@example.com'
+    }))).toThrow('requires --speechify-tts-consent-name')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'speechify-tts': 'simba-english',
+      'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
+      'speechify-tts-consent-name': 'Anthony Example',
+      'speechify-tts-consent-email': 'anthony@example.com',
+      'speechify-tts-voice-gender': 'unknown'
+    }))).toThrow('Invalid --speechify-tts-voice-gender')
   })
 
   test('elevenlabs voice clone target records reference audio speaker and setup estimate', () => {

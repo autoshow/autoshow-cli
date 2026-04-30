@@ -557,6 +557,17 @@
       "https://docs.speechmatics.com/api-ref/batch/get-usage-statistics.md"
     ]
   },
+  "Speechify": {
+    "TTS": [
+      "https://docs.sws.speechify.com/text-to-speech/get-started/overview.md",
+      "https://docs.sws.speechify.com/text-to-speech/get-started/quickstart.md",
+      "https://docs.sws.speechify.com/text-to-speech/get-started/authentication.md",
+      "https://docs.sws.speechify.com/text-to-speech/get-started/models.md",
+      "https://docs.sws.speechify.com/text-to-speech/get-started/api-limits.md",
+      "https://docs.sws.speechify.com/text-to-speech/get-started/official-sdks.md",
+      "https://docs.sws.speechify.com/text-to-speech/features/voice-cloning.md"
+    ]
+  },
   "Rev": {
     "General": [
       "https://docs.rev.ai/get-started.md"

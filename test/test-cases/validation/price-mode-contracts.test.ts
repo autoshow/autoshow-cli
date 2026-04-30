@@ -10,6 +10,7 @@ import {
   ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
   ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
+import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
@@ -44,6 +45,21 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
   {
     label: 'Runway TTS',
     args: ['tts', STABLE_TTS_MD_PATH, '--runway-tts', 'eleven_multilingual_v2', '--price'],
+    expected: 'speech'
+  },
+  {
+    label: 'Speechify TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--speechify-tts', 'simba-english', '--price'],
+    expected: 'speech'
+  },
+  {
+    label: 'Speechify custom voice TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--speechify-tts', 'simba-english', '--speechify-tts-ref-audio', 'input/voices/my-voice-sample.mp3', '--speechify-tts-consent-name', 'Anthony Example', '--speechify-tts-consent-email', 'anthony@example.com', '--price'],
+    expected: 'speech'
+  },
+  {
+    label: 'Google Cloud TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--gcloud-tts', 'standard', '--price'],
     expected: 'speech'
   },
   {
@@ -171,6 +187,8 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('grok-tts')).toBe('grok-tts')
     expect(resolveCheapestModelForFlag('mistral-tts')).toBe('voxtral-mini-tts-2603')
     expect(resolveCheapestModelForFlag('runway-tts')).toBe('eleven_multilingual_v2')
+    expect(resolveCheapestModelForFlag('speechify-tts')).toBe('simba-english')
+    expect(resolveCheapestModelForFlag('gcloud-tts')).toBe('standard')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
@@ -214,6 +232,57 @@ describe('price mode contracts', () => {
       ttsCharacterCount: 1000
     })
     expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(6000)
+  })
+
+  test('Speechify and Google Cloud TTS estimates use registry pricing and timing defaults', () => {
+    const costs = [
+      ...estimateTtsCosts({
+        speechifyTtsModels: ['simba-english'],
+        gcloudTtsModels: ['standard', 'chirp3-hd']
+      } as Parameters<typeof estimateTtsCosts>[0], 1000),
+      ...estimateTtsCosts({
+        speechifyTtsModels: ['simba-multilingual'],
+        speechifyTtsRefAudio: 'input/voices/my-voice-sample.mp3',
+        speechifyTtsConsentName: 'Anthony Example',
+        speechifyTtsConsentEmail: 'anthony@example.com'
+      } as Parameters<typeof estimateTtsCosts>[0], 1000),
+      ...estimateTtsCosts({
+        gcloudTtsModels: ['instant-custom-voice'],
+        gcloudTtsVoiceCloningKey: 'existing-key'
+      } as Parameters<typeof estimateTtsCosts>[0], 1000)
+    ]
+
+    expect(costs.map((cost) => ({
+      provider: cost.provider,
+      model: cost.model,
+      costPer1kCharactersCents: cost.costPer1kCharactersCents,
+      setupCostCents: cost.setupCostCents,
+      setupTimeMs: cost.setupTimeMs,
+      totalCost: cost.totalCost
+    }))).toEqual([
+      { provider: 'speechify', model: 'simba-english', costPer1kCharactersCents: 1, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 1 },
+      { provider: 'gcloud', model: 'standard', costPer1kCharactersCents: 0.4, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 0.4 },
+      { provider: 'gcloud', model: 'chirp3-hd', costPer1kCharactersCents: 3, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 3 },
+      { provider: 'speechify', model: 'simba-multilingual', costPer1kCharactersCents: 1, setupCostCents: 0, setupTimeMs: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS, totalCost: 1 },
+      { provider: 'gcloud', model: 'instant-custom-voice', costPer1kCharactersCents: 6, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 6 }
+    ])
+
+    const timing = computeEstimatedProcessingTimes({
+      ttsTargets: [
+        { service: 'speechify', model: 'simba-english' },
+        { service: 'gcloud', model: 'standard' }
+      ],
+      ttsCharacterCount: 1000
+    })
+
+    expect(timing.steps.map((step) => ({
+      provider: step.provider,
+      model: step.model,
+      processingTimeMs: step.processingTimeMs
+    }))).toEqual([
+      { provider: 'speechify', model: 'simba-english', processingTimeMs: 3_000 },
+      { provider: 'gcloud', model: 'standard', processingTimeMs: 6_000 }
+    ])
   })
 
   test('ElevenLabs TTS estimates use current API rates and IVC setup timing', () => {

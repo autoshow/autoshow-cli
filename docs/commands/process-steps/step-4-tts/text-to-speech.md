@@ -43,11 +43,16 @@ MINIMAX_API_KEY=...
 DEEPGRAM_API_KEY=...
 RUNWAYML_API_SECRET=...
 MISTRAL_API_KEY=...
+SPEECHIFY_API_KEY=...
 DEAPI_API_KEY=...
 DEAPI_BASE_URL=https://api.deapi.ai
+# Google Cloud TTS uses gcloud CLI auth and an active billed project
+bun as setup --gcloud
 # optional for Mistral TTS; set exactly one
 MISTRAL_TTS_VOICE=...
 MISTRAL_TTS_REF_AUDIO=input/examples/audio/anthony-voice.mp3
+# optional for Speechify TTS
+SPEECHIFY_TTS_VOICE=george
 # optional for Runway TTS
 RUNWAY_TTS_VOICE=Leslie
 # optional for Grok TTS
@@ -77,12 +82,14 @@ bun as tts <input> [flags]
 | Gemini | `--gemini-tts <model>` | `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` | `--gemini-voice`, default `Kore` |
 | Deepgram | `--deepgram-tts <model>` | `aura-2-thalia-en`, `aura-2-andromeda-en`, `aura-2-apollo-en`, `aura-2-arcas-en`, `aura-2-asteria-en`, `aura-2-athena-en`, `aura-2-helena-en`, `aura-2-aries-en` | `--deepgram-voice`, default selected model |
 | Runway | `--runway-tts <model>` | `eleven_multilingual_v2` | `--runway-tts-voice`, default `Leslie` |
+| Speechify | `--speechify-tts <model>` | `simba-english`, `simba-multilingual` | `--speechify-voice`, `SPEECHIFY_TTS_VOICE`, default `george`, or `--speechify-tts-ref-audio` to create a custom voice |
+| Google Cloud | `--gcloud-tts <model>` | `standard`, `wavenet`, `neural2`, `studio`, `chirp3-hd`, `instant-custom-voice` | `--gcloud-tts-voice` for prebuilt voices, default per model; `instant-custom-voice` requires a voice cloning key or reference plus consent audio |
 | deAPI | `--deapi-tts <model>` | `Kokoro`, `Chatterbox`, `Qwen3_TTS_12Hz_1_7B_CustomVoice`, `Qwen3_TTS_12Hz_1_7B_Base`, `Qwen3_TTS_12Hz_1_7B_VoiceDesign` | `--deapi-tts-voice` for preset voices, or `--deapi-tts-ref-audio` for Qwen3 voice cloning |
 
 If no engine flag is provided, `tts` defaults to Kitten TTS with `kitten-tts-nano-0.8-int8`.
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file.
-Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Grok, Mistral, Deepgram, Runway, and runnable deAPI models.
+Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider. `--all-tts` expands to every supported TTS provider/model, including Grok, Mistral, Deepgram, Runway, Speechify, Google Cloud prebuilt models, and runnable deAPI models. It does not include Google Cloud `instant-custom-voice` or other clone-only modes unless their explicit clone flags are provided.
 
 Mistral Voxtral TTS requires one voice source when generating audio: a saved/custom voice ID or a one-off local reference audio file. `--price` can estimate Mistral TTS with only `--mistral-tts` because no synthesis request is made. Reference audio is base64-encoded for the request and is not written into run metadata; metadata records the speaker as `ref_audio:<basename>`.
 
@@ -98,6 +105,29 @@ MiniMax TTS uses existing/preset voices by default. Add `--minimax-tts-ref-audio
 
 OpenAI custom voices are available only to eligible OpenAI customers. Use an existing custom voice with `--openai-voice voice_...`, which sends the speech request voice as `{ id: "voice_..." }`. To create a custom voice, select OpenAI TTS and provide `--openai-tts-ref-audio` plus exactly one of `--openai-tts-consent-id` or `--openai-tts-consent-audio`. `--openai-tts-consent-language` defaults to `en-US`; `--openai-tts-consent-name` defaults to the consent file name; `--openai-tts-voice-name` defaults to `AutoShow_<timestamp>`. Do not combine `--openai-voice` with `--openai-tts-ref-audio`. Sample and consent audio must be local, non-empty, at most 10 MiB, and have one of these extensions/MIME families: `mp3`/`mpeg`, `wav`, `ogg`, `aac`, `flac`, `webm`, `mp4`, or `m4a`. Clone metadata records `speaker` as `ref_audio:<basename>`, `clonedVoiceId`, and `cloneCostCents: 0`; it does not store local paths or consent IDs.
 
+Speechify TTS sends text chunks to `POST /v1/audio/speech` and requests MP3 output before AutoShow converts the final result to `speech.wav`. `--speechify-voice` accepts any non-empty Speechify voice ID, including custom voice IDs created by Speechify or by a previous AutoShow run. If omitted, AutoShow uses `SPEECHIFY_TTS_VOICE`, then `george`.
+
+To create a Speechify custom voice as part of `tts`, add `--speechify-tts-ref-audio` plus consent flags. AutoShow calls Speechify `POST /v1/voices` once, reuses the returned `id` for every selected Speechify model in that run, and records `speaker: ref_audio:<basename>`, `clonedVoiceId`, and `cloneCostCents: 0` in metadata. Do not combine custom voice creation with `--speechify-voice`; use `--speechify-tts-voice-name` to label the created voice.
+
+The reference sample must be local, non-empty audio with a supported extension (`mp3`/`mpeg`, `wav`, `m4a`/`mp4`, `ogg`, `flac`, `aac`, or `webm`) and at most 5 MiB. When `ffprobe` can detect duration, AutoShow requires 10-30 seconds to match Speechify's cloning guidance. `--speechify-tts-voice-locale` defaults to `en-US`; `--speechify-tts-voice-gender` defaults to `notSpecified` and accepts `male`, `female`, or `notSpecified`.
+
+```bash
+bun as tts input/examples/tts/1-tts.md \
+  --speechify-tts simba-english \
+  --speechify-tts-ref-audio input/voices/my-10-to-30-second-sample.mp3 \
+  --speechify-tts-consent-name "Anthony Example" \
+  --speechify-tts-consent-email anthony@example.com \
+  --speechify-tts-voice-name AutoShowAnthony
+
+bun as tts input/examples/tts/1-tts.md \
+  --speechify-tts simba-english \
+  --speechify-voice <clonedVoiceId-from-run-json>
+```
+
+Google Cloud prebuilt TTS uses `gcloud` CLI auth to call `v1/text:synthesize` with `LINEAR16` output. `--gcloud-tts-language` overrides language code; otherwise AutoShow infers it from the voice name and falls back to `en-US`. Default voices are `en-US-Standard-J`, `en-US-Wavenet-D`, `en-US-Neural2-J`, `en-US-Studio-O`, and `en-US-Chirp3-HD-Charon` for the matching model families.
+
+Google Cloud `instant-custom-voice` uses `v1beta1/text:synthesize` with a voice cloning key. Provide an existing key with `--gcloud-tts-voice-cloning-key`, or generate one in the run with both `--gcloud-tts-ref-audio` and `--gcloud-tts-consent-audio`. Optional `--gcloud-tts-voice-cloning-key-out <path>` writes the generated key; AutoShow does not save raw cloning keys to config. Reference and consent audio must be local, non-empty `wav`, `mp3`, `m4a`, or `pcm`; when `ffprobe` can detect duration and channels, files must be at most 10 seconds and single-channel. `--gcloud-tts-consent-language` currently supports `en-US`.
+
 deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts-voice`. deAPI voice cloning uses `Qwen3_TTS_12Hz_1_7B_Base` plus `--deapi-tts-ref-audio`; optional `--deapi-tts-ref-text` is sent as `ref_text`. Reference audio must be a local `mp3`, `wav`, `flac`, `ogg`, or `m4a` file, at most 10 MB, and 3-10 seconds long. `--deapi-tts-voice` and `--deapi-tts-ref-audio` are mutually exclusive. `Qwen3_TTS_12Hz_1_7B_VoiceDesign` remains listed but unsupported until an instruction flag is added. `--all-tts` selects only preset/runnable deAPI models and does not include clone mode.
 
 ## Pricing Notes
@@ -112,6 +142,8 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 - MiniMax clone mode adds a fixed 15000 ms setup timing estimate because MiniMax does not publish a clone latency SLA. The existing MiniMax synthesis timing estimates still apply per character; actual runtime is recorded in `run.json`.
 - Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a provisional 6000 ms / 1K characters timing heuristic until benchmarked.
 - OpenAI `gpt-4o-mini-tts` estimates use 60 cents / 1M input characters plus 1200 cents / 1M output characters, equivalent to 1.26 cents per 1K characters in AutoShow's character estimator. OpenAI custom voice creation adds a one-time 0 cent setup estimate and a 15000 ms setup timing estimate because OpenAI does not publish a separate custom voice creation fee or latency SLA. Example clone-mode estimates: 1,000 chars costs 1.26 cents and about 34.7 seconds; 5,000 chars costs 6.30 cents and about 113.3 seconds; 10,000 chars costs 12.60 cents and about 211.6 seconds.
+- Speechify Simba estimates use 1 cent / 1K characters for both `simba-english` and `simba-multilingual`, with a 3000 ms / 1K characters timing heuristic. Custom voice creation adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate because Speechify does not publish a separate custom voice creation fee or latency SLA.
+- Google Cloud TTS estimates use paid list prices without subtracting free-tier usage: Standard and WaveNet 0.4 cents / 1K characters, Neural2 1.6 cents / 1K, Chirp 3 HD 3 cents / 1K, Instant Custom Voice 6 cents / 1K, and Studio 16 cents / 1K. Timing heuristics range from 6000 ms / 1K characters for Standard to 12000 ms / 1K for Instant Custom Voice.
 - deAPI TTS price preflight calls `/api/v2/audio/speech/price` when `DEAPI_API_KEY` is available. Voice clone quotes send `mode: "voice_clone"` with `count_text`, `model`, `lang`, `speed`, `format`, and `sample_rate`; `voice` is not sent. Without a key, AutoShow falls back to the local registry rate of `$0.00077 / 1K characters` (`0.077¢ / 1K`, `$0.77 / 1M`). At `speed=1`, fallback examples are 1,000 chars: `$0.00077`, 5,000 chars: `$0.00385`, and 10,000 chars: `$0.00770`.
 - deAPI `Qwen3_TTS_12Hz_1_7B_Base` uses a 10000 ms / 1K characters processing-time estimate, so 1,000 chars is about 10 seconds, 5,000 chars about 50 seconds, and 10,000 chars about 100 seconds. Actual runtime is recorded in `run.json`; provider price quotes are authoritative when available.
 
@@ -142,6 +174,15 @@ bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mis
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as tts input/examples/tts/1-tts.md --deepgram-tts aura-2-thalia-en --deepgram-voice aura-2-andromeda-en
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
+bun as tts input/examples/tts/1-tts.md --speechify-tts simba-english --speechify-voice george
+bun as tts input/examples/tts/1-tts.md --speechify-tts simba-english --speechify-tts-ref-audio input/voices/my-10-to-30-second-sample.mp3 --speechify-tts-consent-name "Anthony Example" --speechify-tts-consent-email anthony@example.com --speechify-tts-voice-name AutoShowAnthony
+bun as tts input/examples/tts/1-tts.md --speechify-tts simba-multilingual --speechify-tts-ref-audio input/voices/my-10-to-30-second-sample.mp3 --speechify-tts-consent-name "Anthony Example" --speechify-tts-consent-email anthony@example.com --speechify-tts-voice-locale en-US --speechify-tts-voice-gender notSpecified --price
+bun as tts input/examples/tts/1-tts.md --speechify-tts simba-english --speechify-voice speechify_custom_voice_123
+SPEECHIFY_TTS_VOICE=speechify_custom_voice_123 bun as tts input/examples/tts/1-tts.md --speechify-tts simba-multilingual
+bun as config --speechify-tts simba-english --speechify-voice speechify_custom_voice_123
+bun as tts input/examples/tts/1-tts.md --gcloud-tts neural2 --gcloud-tts-voice en-US-Neural2-C
+bun as tts input/examples/tts/1-tts.md --gcloud-tts instant-custom-voice --gcloud-tts-voice-cloning-key "$GCLOUD_TTS_VOICE_CLONING_KEY"
+bun as tts input/examples/tts/1-tts.md --gcloud-tts instant-custom-voice --gcloud-tts-ref-audio input/examples/audio/anthony-voice.mp3 --gcloud-tts-consent-audio input/examples/audio/0-audio-short.mp3 --gcloud-tts-voice-cloning-key-out output/gcloud-voice-key.txt
 bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro
 bun as tts input/examples/tts/1-tts.md --deapi-tts Kokoro --deapi-tts-voice af_heart --price
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/anthony-voice-8-seconds.mp3
@@ -180,6 +221,8 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--gemini-tts <model>` | Select one or more Gemini models; omit the value to use the cheapest supported model |
 | `--deepgram-tts <model>` | Select one or more Deepgram Aura models; omit the value to use the cheapest supported model |
 | `--runway-tts <model>` | Select one or more Runway TTS models; omit the value to use the cheapest supported model |
+| `--speechify-tts <model>` | Select one or more Speechify Simba models; omit the value to use the cheapest supported model |
+| `--gcloud-tts <model>` | Select one or more Google Cloud TTS models; omit the value to use the cheapest supported model |
 | `--deapi-tts <model>` | Select one or more deAPI speech models; omit the value to use the cheapest supported model |
 | `--elevenlabs-voice <id>` | Override the ElevenLabs voice ID |
 | `--elevenlabs-tts-pvc-voice <id>` | Use a trained ElevenLabs Professional Voice Clone voice, or target an existing PVC voice for verification/training |
@@ -213,6 +256,20 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 | `--gemini-voice <name>` | Override the Gemini voice name |
 | `--deepgram-voice <model>` | Override the Deepgram API voice/model |
 | `--runway-tts-voice <preset>` | Override the Runway preset voice |
+| `--speechify-voice <id>` | Override the Speechify voice ID; defaults to `SPEECHIFY_TTS_VOICE` then `george` |
+| `--speechify-tts-ref-audio <path>` | Local 10-30 second sample used to create a Speechify custom voice |
+| `--speechify-tts-voice-name <name>` | Created Speechify custom voice label; defaults to `AutoShow_<timestamp>` |
+| `--speechify-tts-consent-name <name>` | Full name for Speechify custom voice consent |
+| `--speechify-tts-consent-email <email>` | Email address for Speechify custom voice consent; runtime-only and redacted in errors |
+| `--speechify-tts-voice-locale <tag>` | Locale for Speechify custom voice creation; default `en-US` |
+| `--speechify-tts-voice-gender <gender>` | Gender marker for Speechify custom voice creation: `male`, `female`, or `notSpecified` |
+| `--gcloud-tts-voice <name>` | Override the Google Cloud prebuilt voice name |
+| `--gcloud-tts-language <tag>` | Override the Google Cloud TTS BCP 47 language tag |
+| `--gcloud-tts-ref-audio <path>` | Reference audio for Google Cloud `instant-custom-voice` key generation |
+| `--gcloud-tts-consent-audio <path>` | Consent audio for Google Cloud `instant-custom-voice` key generation |
+| `--gcloud-tts-consent-language <tag>` | Consent language for Google Cloud `instant-custom-voice`; currently `en-US` |
+| `--gcloud-tts-voice-cloning-key <key>` | Existing Google Cloud Instant Custom Voice cloning key; runtime-only and redacted |
+| `--gcloud-tts-voice-cloning-key-out <path>` | Write a generated Google Cloud Instant Custom Voice key to a local file |
 | `--deapi-tts-voice <id>` | Override the deAPI voice ID |
 | `--deapi-tts-ref-audio <path>` | Use local reference audio for deAPI `Qwen3_TTS_12Hz_1_7B_Base` voice cloning |
 | `--deapi-tts-ref-text <text>` | Optional transcript for the deAPI reference audio |
@@ -238,5 +295,6 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-t
 - Ready ElevenLabs PVC synthesis records `speaker: "pvc:<voice_id>"` in Step 4 metadata. PVC setup-only runs write `elevenlabs-pvc-status.json`; when no wait is requested, no `speech.wav` is produced.
 - MiniMax clone runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and one `cloneCostCents: 150` entry in the Step 4 metadata.
 - OpenAI custom voice creation runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
+- Google Cloud Instant Custom Voice runs record `speaker: "instant-custom-voice"` and do not store the raw voice cloning key in `run.json`.
 - `run.json` includes `tts`, `cost`, and `timing` sections. `tts` is always an array, even when only one target succeeds.
 - Reference-audio runs store only `speaker: "ref_audio:<basename>"`; the full path and reference transcript are not written to `run.json`.

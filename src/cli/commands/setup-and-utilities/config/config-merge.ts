@@ -16,7 +16,7 @@ import {
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
-const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'runway-tts', 'deapi-tts'] as const
+const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'runway-tts', 'speechify-tts', 'gcloud-tts', 'deapi-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'glm-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
@@ -122,6 +122,7 @@ export const mergeConfigIntoRawFlags = (
       ['grok-tts', d.post.tts.grokTts], ['mistral-tts', d.post.tts.mistralTts],
       ['openai-tts', d.post.tts.openaiTts], ['gemini-tts', d.post.tts.geminiTts],
       ['deepgram-tts', d.post.tts.deepgramTts], ['runway-tts', d.post.tts.runwayTts],
+      ['speechify-tts', d.post.tts.speechifyTts], ['gcloud-tts', d.post.tts.gcloudTts],
       ['deapi-tts', d.post.tts.deapiTts],
     ])
     inject('kitten-voice', d.post.tts.ttsSpeaker)
@@ -154,6 +155,12 @@ export const mergeConfigIntoRawFlags = (
     inject('minimax-tts-clone-volume-normalization', d.post.tts.minimaxTtsCloneVolumeNormalization)
     inject('deepgram-voice', d.post.tts.deepgramVoice)
     inject('runway-tts-voice', d.post.tts.runwayTtsVoice)
+    inject('speechify-voice', d.post.tts.speechifyVoice)
+    inject('gcloud-tts-voice', d.post.tts.gcloudTtsVoice)
+    inject('gcloud-tts-language', d.post.tts.gcloudTtsLanguage)
+    inject('gcloud-tts-ref-audio', d.post.tts.gcloudTtsRefAudio)
+    inject('gcloud-tts-consent-audio', d.post.tts.gcloudTtsConsentAudio)
+    inject('gcloud-tts-consent-language', d.post.tts.gcloudTtsConsentLanguage)
     inject('deapi-tts-voice', d.post.tts.deapiTtsVoice)
     inject('deapi-tts-ref-audio', d.post.tts.deapiTtsRefAudio)
     inject('deapi-tts-ref-text', d.post.tts.deapiTtsRefText)
@@ -258,6 +265,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini-tts':        ['defaults', 'post', 'tts', 'geminiTts'],
   'deepgram-tts':      ['defaults', 'post', 'tts', 'deepgramTts'],
   'runway-tts':        ['defaults', 'post', 'tts', 'runwayTts'],
+  'speechify-tts':     ['defaults', 'post', 'tts', 'speechifyTts'],
+  'gcloud-tts':        ['defaults', 'post', 'tts', 'gcloudTts'],
   'deapi-tts':         ['defaults', 'post', 'tts', 'deapiTts'],
   'kitten-voice':      ['defaults', 'post', 'tts', 'ttsSpeaker'],
   'groq-voice':        ['defaults', 'post', 'tts', 'groqVoice'],
@@ -289,6 +298,12 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'minimax-tts-clone-volume-normalization': ['defaults', 'post', 'tts', 'minimaxTtsCloneVolumeNormalization'],
   'deepgram-voice':    ['defaults', 'post', 'tts', 'deepgramVoice'],
   'runway-tts-voice':  ['defaults', 'post', 'tts', 'runwayTtsVoice'],
+  'speechify-voice':   ['defaults', 'post', 'tts', 'speechifyVoice'],
+  'gcloud-tts-voice':  ['defaults', 'post', 'tts', 'gcloudTtsVoice'],
+  'gcloud-tts-language': ['defaults', 'post', 'tts', 'gcloudTtsLanguage'],
+  'gcloud-tts-ref-audio': ['defaults', 'post', 'tts', 'gcloudTtsRefAudio'],
+  'gcloud-tts-consent-audio': ['defaults', 'post', 'tts', 'gcloudTtsConsentAudio'],
+  'gcloud-tts-consent-language': ['defaults', 'post', 'tts', 'gcloudTtsConsentLanguage'],
   'deapi-tts-voice':   ['defaults', 'post', 'tts', 'deapiTtsVoice'],
   'deapi-tts-ref-audio': ['defaults', 'post', 'tts', 'deapiTtsRefAudio'],
   'deapi-tts-ref-text': ['defaults', 'post', 'tts', 'deapiTtsRefText'],
@@ -347,7 +362,15 @@ const RUNTIME_ONLY_FLAGS = new Set([
   'elevenlabs-tts-pvc-description',
   'elevenlabs-tts-pvc-captcha-out',
   'elevenlabs-tts-pvc-verify-audio',
-  'elevenlabs-tts-pvc-wait'
+  'elevenlabs-tts-pvc-wait',
+  'speechify-tts-ref-audio',
+  'speechify-tts-voice-name',
+  'speechify-tts-consent-name',
+  'speechify-tts-consent-email',
+  'speechify-tts-voice-locale',
+  'speechify-tts-voice-gender',
+  'gcloud-tts-voice-cloning-key',
+  'gcloud-tts-voice-cloning-key-out'
 ])
 
 const setNestedValue = (obj: Record<string, unknown>, path: string[], value: unknown): void => {

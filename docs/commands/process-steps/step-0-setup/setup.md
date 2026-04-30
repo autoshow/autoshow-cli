@@ -28,7 +28,7 @@ bun as setup
 
 Use full setup on a clean machine when you want local download, OCR, STT, write, or TTS workflows to work without manually installing their prerequisites first.
 
-Check gcloud CLI readiness for Google Cloud Speech-to-Text and Document AI OCR separately:
+Check gcloud CLI readiness for Google Cloud Speech-to-Text, Text-to-Speech, and Document AI OCR separately:
 
 ```bash
 bun as setup --gcloud
@@ -36,7 +36,7 @@ bun as setup --gcloud --gcloud-project PROJECT_ID
 bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
 ```
 
-`bun as setup --gcloud` verifies the `gcloud` binary, Google Cloud CLI auth, the active project, project billing state, and whether `speech.googleapis.com`, `documentai.googleapis.com`, and `storage.googleapis.com` are enabled. `bun as setup --gcloud --gcloud-project PROJECT_ID` sets the active project or creates it when missing, auto-links billing when exactly one open billing account is visible, enables the required APIs when billing is ready, creates or reuses an `autoshow-ocr` Document AI OCR processor in `us`, creates or verifies a GCS staging bucket for batch OCR, and prints the runtime values to use. It does not save Google defaults to `config/autoshow.json`; use `bun as config --gcloud-stt chirp_3 --gcloud-docai ocr` for model defaults and set the printed environment values when you want reusable Document AI runtime settings. Use `--gcloud-billing-account ACCOUNT_ID` when multiple open billing accounts are available or when you want to force a specific billing account. When anything is still missing, setup prints the exact next-step commands to run.
+`bun as setup --gcloud` verifies the `gcloud` binary, Google Cloud CLI auth, the active project, project billing state, and whether `speech.googleapis.com`, `texttospeech.googleapis.com`, `documentai.googleapis.com`, and `storage.googleapis.com` are enabled. `bun as setup --gcloud --gcloud-project PROJECT_ID` sets the active project or creates it when missing, auto-links billing when exactly one open billing account is visible, enables the required APIs when billing is ready, creates or reuses an `autoshow-ocr` Document AI OCR processor in `us`, creates or verifies a GCS staging bucket for batch OCR, and prints the runtime values to use. It does not save Google defaults to `config/autoshow.json`; use `bun as config --gcloud-stt chirp_3 --gcloud-docai ocr --gcloud-tts standard` for model defaults and set the printed environment values when you want reusable Document AI runtime settings. Use `--gcloud-billing-account ACCOUNT_ID` when multiple open billing accounts are available or when you want to force a specific billing account. When anything is still missing, setup prints the exact next-step commands to run.
 
 Check AWS CLI readiness for Amazon Transcribe separately:
 
@@ -67,7 +67,7 @@ Check prerequisites, API keys, and configuration without installing anything:
 bun as setup --doctor
 ```
 
-Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted write keys such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `MINIMAX_API_KEY`, `XAI_API_KEY`, `GLM_API_KEY`, and `KIMI_API_KEY`, hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, `KIMI_API_KEY`, `DEEPINFRA_API_KEY`, and `FIRECRAWL_API_KEY`, hosted STT keys such as `DEEPINFRA_API_KEY`, `DEAPI_API_KEY`, and `XAI_API_KEY`, hosted TTS keys such as `OPENAI_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `DEAPI_API_KEY`, `DEEPGRAM_API_KEY`, and `RUNWAYML_API_SECRET`, and generation keys such as `XAI_API_KEY`, `RUNWAYML_API_SECRET`, `DEAPI_API_KEY`, `BFL_API_KEY`, and `MINIMAX_API_KEY`), Google Cloud STT + Document AI OCR gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), API keys (including hosted write keys such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `MINIMAX_API_KEY`, `XAI_API_KEY`, `GLM_API_KEY`, and `KIMI_API_KEY`, hosted extract keys such as `MISTRAL_API_KEY`, `GLM_API_KEY`, `KIMI_API_KEY`, `DEEPINFRA_API_KEY`, and `FIRECRAWL_API_KEY`, hosted STT keys such as `DEEPINFRA_API_KEY`, `DEAPI_API_KEY`, and `XAI_API_KEY`, hosted TTS keys such as `OPENAI_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `DEAPI_API_KEY`, `DEEPGRAM_API_KEY`, `RUNWAYML_API_SECRET`, and `SPEECHIFY_API_KEY`, and generation keys such as `XAI_API_KEY`, `RUNWAYML_API_SECRET`, `DEAPI_API_KEY`, `BFL_API_KEY`, and `MINIMAX_API_KEY`), Google Cloud STT + Document AI OCR + TTS gcloud readiness, AWS CLI Transcribe readiness, config file validity, and Bun version.
 
 Doctor also reports YouTube cookie state separately:
 
@@ -98,11 +98,12 @@ Isolated steps assume their prerequisites are already present. On a clean machin
 # Document foundations: mutool + Calibre CLI tools
 bun as setup --step calibre
 
-# Focus only on Google Cloud STT + Document AI OCR readiness
+# Focus only on Google Cloud STT + Document AI OCR + TTS readiness
 bun as setup --gcloud
 
 # Set or create the Google Cloud project, link billing when possible,
-# enable Speech-to-Text, Document AI, and Storage, then print runtime values
+# enable Speech-to-Text, Text-to-Speech, Document AI, and Storage,
+# then print runtime values
 bun as setup --gcloud --gcloud-project PROJECT_ID
 
 # Force a specific Google Cloud billing account during bootstrap

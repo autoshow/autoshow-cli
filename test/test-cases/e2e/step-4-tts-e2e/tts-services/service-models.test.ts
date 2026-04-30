@@ -20,8 +20,10 @@ import {
   GEMINI_DEFAULT_TTS_VOICE,
   OPENAI_DEFAULT_TTS_VOICE,
   DEEPGRAM_DEFAULT_VOICE,
+  GCLOUD_DEFAULT_TTS_VOICES,
   GROK_DEFAULT_TTS_VOICE,
   RUNWAY_DEFAULT_TTS_VOICE,
+  SPEECHIFY_DEFAULT_TTS_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
 const MISTRAL_TTS_MODEL = 'voxtral-mini-tts-2603'
@@ -266,6 +268,27 @@ defineTTSServiceTest({
     const voice = await readConfiguredEnvVar('RUNWAY_TTS_VOICE')
     return voice ?? RUNWAY_DEFAULT_TTS_VOICE
   },
+})
+
+defineTTSServiceTest({
+  models: ['simba-english', 'simba-multilingual'],
+  cliFlag: '--speechify-tts',
+  ttsService: 'speechify',
+  envVarKey: 'SPEECHIFY_API_KEY',
+  envVarDescription: 'Speechify TTS',
+  resolveExpectedSpeaker: async () => {
+    const voice = await readConfiguredEnvVar('SPEECHIFY_TTS_VOICE')
+    return voice ?? SPEECHIFY_DEFAULT_TTS_VOICE
+  },
+})
+
+defineTTSServiceTest({
+  models: ['standard'],
+  cliFlag: '--gcloud-tts',
+  ttsService: 'gcloud',
+  envVarKey: 'AUTOSHOW_GCLOUD_TTS_E2E',
+  envVarDescription: 'Google Cloud TTS readiness with AUTOSHOW_GCLOUD_TTS_E2E=1',
+  resolveExpectedSpeaker: async () => GCLOUD_DEFAULT_TTS_VOICES.standard,
 })
 
 test('rejects invalid mistral model', async () => {

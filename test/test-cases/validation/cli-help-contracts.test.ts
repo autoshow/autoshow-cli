@@ -46,7 +46,7 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--ocr-local-concurrency')
 })
 
-test('tts help exposes Grok, Mistral, and Runway TTS flags', async () => {
+test('tts help exposes hosted TTS provider flags', async () => {
   const result = await runCommand(['src/cli/create-cli.ts', 'tts', '--help'], { env: helpEnv })
 
   expect(result.exitCode).toBe(0)
@@ -71,6 +71,22 @@ test('tts help exposes Grok, Mistral, and Runway TTS flags', async () => {
   expect(result.stdout).toContain('--deapi-tts-ref-text')
   expect(result.stdout).toContain('--runway-tts')
   expect(result.stdout).toContain('--runway-tts-voice')
+  expect(result.stdout).toContain('--speechify-tts')
+  expect(result.stdout).toContain('--speechify-voice')
+  expect(result.stdout).toContain('--speechify-tts-ref-audio')
+  expect(result.stdout).toContain('--speechify-tts-voice-name')
+  expect(result.stdout).toContain('--speechify-tts-consent-name')
+  expect(result.stdout).toContain('--speechify-tts-consent-email')
+  expect(result.stdout).toContain('--speechify-tts-voice-locale')
+  expect(result.stdout).toContain('--speechify-tts-voice-gender')
+  expect(result.stdout).toContain('--gcloud-tts')
+  expect(result.stdout).toContain('--gcloud-tts-voice')
+  expect(result.stdout).toContain('--gcloud-tts-language')
+  expect(result.stdout).toContain('--gcloud-tts-ref-audio')
+  expect(result.stdout).toContain('--gcloud-tts-consent-audio')
+  expect(result.stdout).toContain('--gcloud-tts-consent-language')
+  expect(result.stdout).toContain('--gcloud-tts-voice-cloning-key')
+  expect(result.stdout).toContain('--gcloud-tts-voice-cloning-key-out')
 })
 
 test('write and config help expose LLM concurrency flags', async () => {

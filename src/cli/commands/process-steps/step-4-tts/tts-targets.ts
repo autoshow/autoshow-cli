@@ -11,7 +11,9 @@ import type {
   DeepgramTtsModel,
   DeapiTtsModel,
   GrokTtsModel,
-  RunwayTtsModel
+  RunwayTtsModel,
+  SpeechifyTtsModel,
+  GcloudTtsModel
 } from '~/types'
 import {
   validateKittenTtsModel,
@@ -30,6 +32,11 @@ import {
   validateGroqTtsVoice,
   validateGrokTtsVoice,
   validateKittenTtsSpeaker,
+  validateSpeechifyTtsModel,
+  validateSpeechifyTtsVoice,
+  validateGcloudTtsModel,
+  validateGcloudTtsVoice,
+  GCLOUD_DEFAULT_TTS_VOICES,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { pathExists, kittenTtsUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
@@ -40,6 +47,7 @@ import { ensureOpenAITtsSetup } from '~/cli/commands/process-steps/step-4-tts/tt
 import { ensureGeminiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { ensureRunwayTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/runway/runway-tts'
+import { ensureSpeechifyTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-tts'
 import { runKittenTts } from './tts-local/kitten/run-kitten-tts'
 import { runElevenLabsTts } from './tts-services/elevenlabs/run-elevenlabs-tts'
 import {
@@ -74,6 +82,15 @@ import {
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
 import { runDeepgramTts } from './tts-services/deepgram/run-deepgram-tts'
 import { runRunwayTts } from './tts-services/runway/run-runway-tts'
+import { runSpeechifyTts } from './tts-services/speechify/run-speechify-tts'
+import {
+  createSpeechifyTtsCustomVoiceContext,
+  SPEECHIFY_TTS_CUSTOM_VOICE_COST_CENTS,
+  SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS,
+  SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_NOTE,
+  validateSpeechifyTtsCustomVoiceGender
+} from './tts-services/speechify/speechify-custom-voices'
+import { runGcloudTts } from './tts-services/gcloud/run-gcloud-tts'
 import { DEAPI_TTS_VOICE_CLONE_MODEL, runDeapiTts } from './tts-services/deapi/run-deapi-tts'
 import {
   formatGeminiSpeakerSummary,
@@ -181,6 +198,8 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
   const deepgramModels = options.deepgramTtsModels ?? (options.deepgramTtsModel ? [options.deepgramTtsModel] : [])
   const runwayModels = options.runwayTtsModels ?? (options.runwayTtsModel ? [options.runwayTtsModel] : [])
+  const speechifyModels = options.speechifyTtsModels ?? (options.speechifyTtsModel ? [options.speechifyTtsModel] : [])
+  const gcloudModels = options.gcloudTtsModels ?? (options.gcloudTtsModel ? [options.gcloudTtsModel] : [])
   const deapiModels = options.deapiTtsModels ?? (options.deapiTtsModel ? [options.deapiTtsModel] : [])
   const geminiMultiSpeakerConfig = resolveGeminiMultiSpeakerConfig(options)
   const minimaxCloneRefAudioPath = options.minimaxTtsRefAudio?.trim() || undefined
@@ -201,6 +220,17 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const elevenLabsPvcDescription = options.elevenlabsTtsPvcDescription?.trim() || undefined
   const elevenLabsPvcCaptchaOut = options.elevenlabsTtsPvcCaptchaOut?.trim() || undefined
   const elevenLabsPvcVerifyAudio = options.elevenlabsTtsPvcVerifyAudio?.trim() || undefined
+  const speechifyCustomVoiceRefAudioPath = options.speechifyTtsRefAudio?.trim() || undefined
+  const speechifyCustomVoiceName = options.speechifyTtsVoiceName?.trim() || undefined
+  const speechifyCustomVoiceConsentName = options.speechifyTtsConsentName?.trim() || undefined
+  const speechifyCustomVoiceConsentEmail = options.speechifyTtsConsentEmail?.trim() || undefined
+  const speechifyCustomVoiceLocale = options.speechifyTtsVoiceLocale?.trim() || undefined
+  const speechifyCustomVoiceGender = options.speechifyTtsVoiceGender?.trim() || undefined
+  const gcloudVoiceCloningKey = options.gcloudTtsVoiceCloningKey?.trim() || undefined
+  const gcloudRefAudioPath = options.gcloudTtsRefAudio?.trim() || undefined
+  const gcloudConsentAudioPath = options.gcloudTtsConsentAudio?.trim() || undefined
+  const gcloudConsentLanguage = options.gcloudTtsConsentLanguage?.trim() || undefined
+  const gcloudVoiceCloningKeyOut = options.gcloudTtsVoiceCloningKeyOut?.trim() || undefined
   const hasElevenLabsPvcActionFlags = isElevenLabsTtsPvcSetupRequested(options)
   const hasElevenLabsPvcSetupFlags = Boolean(
     hasElevenLabsPvcActionFlags
@@ -225,6 +255,21 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const hasElevenLabsCloneFlags = Boolean(
     elevenLabsCloneRefAudioPath
     || options.elevenlabsTtsCloneRemoveBackgroundNoise === true
+  )
+  const hasSpeechifyCustomVoiceFlags = Boolean(
+    speechifyCustomVoiceRefAudioPath
+    || speechifyCustomVoiceName
+    || speechifyCustomVoiceConsentName
+    || speechifyCustomVoiceConsentEmail
+    || speechifyCustomVoiceLocale
+    || speechifyCustomVoiceGender
+  )
+  const hasGcloudIcvFlags = Boolean(
+    gcloudVoiceCloningKey
+    || gcloudRefAudioPath
+    || gcloudConsentAudioPath
+    || gcloudConsentLanguage
+    || gcloudVoiceCloningKeyOut
   )
   const hasElevenLabsVoiceNameOnly = Boolean(
     elevenLabsCloneVoiceName
@@ -280,6 +325,38 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     throw new Error('ElevenLabs TTS --elevenlabs-tts-voice-name requires --elevenlabs-tts-ref-audio for IVC or an ElevenLabs PVC setup flag.')
   }
 
+  if (hasSpeechifyCustomVoiceFlags && speechifyModels.length === 0) {
+    throw new Error('Speechify TTS custom voice flags require --speechify-tts <model> or --all-tts.')
+  }
+  if (hasSpeechifyCustomVoiceFlags && !speechifyCustomVoiceRefAudioPath) {
+    throw new Error('Speechify TTS custom voice creation requires --speechify-tts-ref-audio.')
+  }
+  if (hasSpeechifyCustomVoiceFlags && options.speechifyVoice?.trim()) {
+    throw new Error('Speechify TTS custom voice creation cannot be combined with --speechify-voice. Use --speechify-tts-voice-name for the created voice label.')
+  }
+  if (speechifyCustomVoiceRefAudioPath && !speechifyCustomVoiceConsentName) {
+    throw new Error('Speechify TTS custom voice creation requires --speechify-tts-consent-name.')
+  }
+  if (speechifyCustomVoiceRefAudioPath && !speechifyCustomVoiceConsentEmail) {
+    throw new Error('Speechify TTS custom voice creation requires --speechify-tts-consent-email.')
+  }
+  if (speechifyCustomVoiceGender) {
+    validateSpeechifyTtsCustomVoiceGender(speechifyCustomVoiceGender)
+  }
+
+  if (hasGcloudIcvFlags && gcloudModels.length === 0) {
+    throw new Error('Google Cloud TTS instant custom voice flags require --gcloud-tts instant-custom-voice.')
+  }
+  if (hasGcloudIcvFlags && !gcloudModels.includes('instant-custom-voice')) {
+    throw new Error('Google Cloud TTS instant custom voice flags require --gcloud-tts instant-custom-voice.')
+  }
+  if ((gcloudRefAudioPath || gcloudConsentAudioPath || gcloudConsentLanguage || gcloudVoiceCloningKeyOut) && gcloudVoiceCloningKey) {
+    throw new Error('Google Cloud TTS --gcloud-tts-voice-cloning-key cannot be combined with key generation flags.')
+  }
+  if ((gcloudRefAudioPath || gcloudConsentAudioPath || gcloudConsentLanguage || gcloudVoiceCloningKeyOut) && (!gcloudRefAudioPath || !gcloudConsentAudioPath)) {
+    throw new Error('Google Cloud TTS instant custom voice key generation requires both --gcloud-tts-ref-audio and --gcloud-tts-consent-audio.')
+  }
+
   if (hasElevenLabsPvcSetupFlags && elevenlabsModels.length === 0) {
     throw new Error('ElevenLabs TTS PVC setup flags require --elevenlabs-tts <model> or --all-tts.')
   }
@@ -314,10 +391,12 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const minimaxCloneContext = minimaxCloneRefAudioPath ? createMinimaxTtsCloneContext() : undefined
   const openaiCloneContext = openaiCloneRefAudioPath ? createOpenAITtsCustomVoiceContext() : undefined
   const elevenLabsCloneContext = elevenLabsCloneRefAudioPath ? createElevenLabsTtsIvcContext() : undefined
+  const speechifyCustomVoiceContext = speechifyCustomVoiceRefAudioPath ? createSpeechifyTtsCustomVoiceContext() : undefined
   let minimaxCloneEstimateAttached = false
   let openaiCloneEstimateAttached = false
   let elevenLabsCloneEstimateAttached = false
   let elevenLabsPvcEstimateAttached = false
+  let speechifyCustomVoiceEstimateAttached = false
 
   for (const rawModel of kittenModels) {
     const model: KittenTtsModel = validateKittenTtsModel(rawModel)
@@ -567,6 +646,80 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
       run: async (text, outputDir) => {
         await ensureRunwayTtsSetup()
         return await runRunwayTts(text, outputDir, { model, voiceId })
+      }
+    })
+  }
+
+  for (const rawModel of speechifyModels) {
+    const model: SpeechifyTtsModel = validateSpeechifyTtsModel(rawModel)
+    const voiceRaw = options.speechifyVoice?.trim()
+    const voiceId = voiceRaw && voiceRaw.length > 0 ? validateSpeechifyTtsVoice(voiceRaw) : undefined
+    const customVoice = speechifyCustomVoiceRefAudioPath
+      ? {
+          refAudioPath: speechifyCustomVoiceRefAudioPath,
+          ...(speechifyCustomVoiceName ? { voiceName: speechifyCustomVoiceName } : {}),
+          ...(speechifyCustomVoiceConsentName ? { consentName: speechifyCustomVoiceConsentName } : {}),
+          ...(speechifyCustomVoiceConsentEmail ? { consentEmail: speechifyCustomVoiceConsentEmail } : {}),
+          ...(speechifyCustomVoiceLocale ? { locale: speechifyCustomVoiceLocale } : {}),
+          ...(speechifyCustomVoiceGender ? { gender: speechifyCustomVoiceGender } : {}),
+          context: speechifyCustomVoiceContext
+        }
+      : undefined
+    const attachCustomVoiceEstimate = customVoice !== undefined && !speechifyCustomVoiceEstimateAttached
+    if (attachCustomVoiceEstimate) {
+      speechifyCustomVoiceEstimateAttached = true
+    }
+
+    targets.push({
+      service: 'speechify',
+      model,
+      ...(customVoice ? { voice: `ref_audio:${basename(customVoice.refAudioPath)}` } : voiceId ? { voice: voiceId } : {}),
+      ...(attachCustomVoiceEstimate
+        ? {
+            setupCostCents: SPEECHIFY_TTS_CUSTOM_VOICE_COST_CENTS,
+            setupTimeMs: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS,
+            setupNote: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_NOTE
+          }
+        : {}),
+      run: async (text, outputDir) => {
+        await ensureSpeechifyTtsSetup()
+        return await runSpeechifyTts(text, outputDir, { model, voiceId, customVoice })
+      }
+    })
+  }
+
+  for (const rawModel of gcloudModels) {
+    const model: GcloudTtsModel = validateGcloudTtsModel(rawModel)
+    const voiceRaw = options.gcloudTtsVoice?.trim()
+    const voiceId = voiceRaw && voiceRaw.length > 0 ? validateGcloudTtsVoice(voiceRaw) : undefined
+    const language = options.gcloudTtsLanguage?.trim() || undefined
+
+    if (model === 'instant-custom-voice' && !gcloudVoiceCloningKey && (!gcloudRefAudioPath || !gcloudConsentAudioPath)) {
+      throw new Error('Google Cloud TTS instant-custom-voice requires --gcloud-tts-voice-cloning-key or both --gcloud-tts-ref-audio and --gcloud-tts-consent-audio.')
+    }
+
+    const defaultVoice = model === 'instant-custom-voice'
+      ? 'instant-custom-voice'
+      : GCLOUD_DEFAULT_TTS_VOICES[model]
+    const speaker = model === 'instant-custom-voice'
+      ? 'instant-custom-voice'
+      : voiceId ?? defaultVoice
+
+    targets.push({
+      service: 'gcloud',
+      model,
+      voice: speaker,
+      run: async (text, outputDir) => {
+        return await runGcloudTts(text, outputDir, {
+          model,
+          voice: voiceId,
+          language,
+          refAudioPath: gcloudRefAudioPath,
+          consentAudioPath: gcloudConsentAudioPath,
+          consentLanguage: gcloudConsentLanguage,
+          voiceCloningKey: gcloudVoiceCloningKey,
+          voiceCloningKeyOut: gcloudVoiceCloningKeyOut
+        })
       }
     })
   }

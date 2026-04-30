@@ -54,6 +54,33 @@ defineTTSServicePriceTests({
   ttsService: 'runway',
 })
 
+defineTTSServicePriceTests({
+  models: ['simba-english', 'simba-multilingual'],
+  cliFlag: '--speechify-tts',
+  ttsService: 'speechify',
+})
+
+defineTTSServicePriceTests({
+  models: ['standard', 'wavenet', 'neural2', 'studio', 'chirp3-hd'],
+  cliFlag: '--gcloud-tts',
+  ttsService: 'gcloud',
+})
+
+test('gcloud instant custom voice --price works with an existing voice cloning key', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--gcloud-tts',
+    'instant-custom-voice',
+    '--gcloud-tts-voice-cloning-key',
+    'test-key',
+    '--price'
+  ])
+
+  expect(result.exitCode).toBe(0)
+})
+
 test('mistral --price works without a voice source', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',

@@ -205,6 +205,24 @@ export type RuntimeOptions = {
   runwayTtsModels: string[] | undefined
   runwayTtsModel: string | undefined
   runwayTtsVoice: string | undefined
+  speechifyTtsModels: string[] | undefined
+  speechifyTtsModel: string | undefined
+  speechifyVoice: string | undefined
+  speechifyTtsRefAudio: string | undefined
+  speechifyTtsVoiceName: string | undefined
+  speechifyTtsConsentName: string | undefined
+  speechifyTtsConsentEmail: string | undefined
+  speechifyTtsVoiceLocale: string | undefined
+  speechifyTtsVoiceGender: string | undefined
+  gcloudTtsModels: string[] | undefined
+  gcloudTtsModel: string | undefined
+  gcloudTtsVoice: string | undefined
+  gcloudTtsLanguage: string | undefined
+  gcloudTtsRefAudio: string | undefined
+  gcloudTtsConsentAudio: string | undefined
+  gcloudTtsConsentLanguage: string | undefined
+  gcloudTtsVoiceCloningKey: string | undefined
+  gcloudTtsVoiceCloningKeyOut: string | undefined
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined

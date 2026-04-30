@@ -257,6 +257,8 @@ export type RepeatableModelFlag =
   | 'openai-tts'
   | 'gemini-tts'
   | 'runway-tts'
+  | 'speechify-tts'
+  | 'gcloud-tts'
   | 'deapi-tts'
   | 'gemini-image'
   | 'openai-image'

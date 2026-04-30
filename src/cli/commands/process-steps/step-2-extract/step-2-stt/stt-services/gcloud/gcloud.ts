@@ -24,6 +24,7 @@ const GCLOUD_DOCAI_OCR_PROCESSOR_TYPE = 'OCR_PROCESSOR'
 const GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE = 'LAYOUT_PARSER_PROCESSOR'
 const GCLOUD_REQUIRED_APIS = [
   'speech.googleapis.com',
+  'texttospeech.googleapis.com',
   'documentai.googleapis.com',
   'storage.googleapis.com'
 ] as const
@@ -562,6 +563,7 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
         project: 'skipped',
         billing: 'skipped',
         speechApi: 'skipped',
+        textToSpeechApi: 'skipped',
         documentAiApi: 'skipped',
         storageApi: 'skipped'
       }
@@ -580,6 +582,9 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
   const documentAiApiState = authState.ok && projectState.ok && projectState.projectId
     ? await verifyServiceApiEnabled(projectState.projectId, 'documentai.googleapis.com')
     : { ok: false, detail: 'skipped' }
+  const textToSpeechApiState = authState.ok && projectState.ok && projectState.projectId
+    ? await verifyServiceApiEnabled(projectState.projectId, 'texttospeech.googleapis.com')
+    : { ok: false, detail: 'skipped' }
   const storageApiState = authState.ok && projectState.ok && projectState.projectId
     ? await verifyServiceApiEnabled(projectState.projectId, 'storage.googleapis.com')
     : { ok: false, detail: 'skipped' }
@@ -591,6 +596,7 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
     ...(billingState.billingAccountId ? { billingAccountId: billingState.billingAccountId } : {}),
     ...(authState.ok && projectState.ok ? { billingEnabled: billingState.billingEnabled === true } : {}),
     ...(authState.ok && projectState.ok ? { speechApiEnabled: apiState.ok } : {}),
+    ...(authState.ok && projectState.ok ? { textToSpeechApiEnabled: textToSpeechApiState.ok } : {}),
     ...(authState.ok && projectState.ok ? { documentAiApiEnabled: documentAiApiState.ok } : {}),
     ...(authState.ok && projectState.ok ? { storageApiEnabled: storageApiState.ok } : {}),
     details: {
@@ -599,6 +605,7 @@ export const readGcloudSttReadiness = async (): Promise<GcloudSttReadiness> => {
       project: projectState.projectId ?? projectState.detail,
       billing: authState.ok && projectState.ok ? billingState.detail : 'skipped',
       speechApi: authState.ok && projectState.ok ? apiState.detail : 'skipped',
+      textToSpeechApi: authState.ok && projectState.ok ? textToSpeechApiState.detail : 'skipped',
       documentAiApi: authState.ok && projectState.ok ? documentAiApiState.detail : 'skipped',
       storageApi: authState.ok && projectState.ok ? storageApiState.detail : 'skipped'
     }
@@ -651,6 +658,9 @@ const buildSetupCommands = (
   }
   if (state.authConfigured && state.projectId && state.billingEnabled === true && state.speechApiEnabled !== true) {
     commands.push(`gcloud services enable speech.googleapis.com --project ${state.projectId}`)
+  }
+  if (state.authConfigured && state.projectId && state.billingEnabled === true && state.textToSpeechApiEnabled !== true) {
+    commands.push(`gcloud services enable texttospeech.googleapis.com --project ${state.projectId}`)
   }
   if (state.authConfigured && state.projectId && state.billingEnabled === true && state.documentAiApiEnabled !== true) {
     commands.push(`gcloud services enable documentai.googleapis.com --project ${state.projectId}`)
@@ -741,6 +751,8 @@ export const setupGcloudStt = async (
         for (const serviceName of GCLOUD_REQUIRED_APIS) {
           const enabled = serviceName === 'speech.googleapis.com'
             ? state.speechApiEnabled
+            : serviceName === 'texttospeech.googleapis.com'
+              ? state.textToSpeechApiEnabled
             : serviceName === 'documentai.googleapis.com'
               ? state.documentAiApiEnabled
               : state.storageApiEnabled
@@ -802,7 +814,7 @@ export const setupGcloudStt = async (
   }
 
   if (options.focused) {
-    l.write('info', 'Google Cloud STT + Document AI OCR setup')
+    l.write('info', 'Google Cloud STT + Document AI OCR + TTS setup')
   }
 
   const checkRows = [
@@ -813,6 +825,7 @@ export const setupGcloudStt = async (
       ? [
           { status: state.billingEnabled === true ? 'OK' : 'MISSING', check: 'gcloud billing', detail: state.details.billing },
           { status: state.speechApiEnabled === true ? 'OK' : 'MISSING', check: 'speech.googleapis.com', detail: state.details.speechApi },
+          { status: state.textToSpeechApiEnabled === true ? 'OK' : 'MISSING', check: 'texttospeech.googleapis.com', detail: state.details.textToSpeechApi },
           { status: state.documentAiApiEnabled === true ? 'OK' : 'MISSING', check: 'documentai.googleapis.com', detail: state.details.documentAiApi },
           { status: state.storageApiEnabled === true ? 'OK' : 'MISSING', check: 'storage.googleapis.com', detail: state.details.storageApi },
           ...(docaiProcessorDetail ? [{ status: 'OK', check: 'Document AI OCR processor', detail: docaiProcessorDetail }] : []),
@@ -822,7 +835,7 @@ export const setupGcloudStt = async (
       : [])
   ]
 
-  l.write(checkRows.some((row) => row.status === 'MISSING') ? 'warn' : 'success', 'Google Cloud STT + Document AI OCR checks', {
+  l.write(checkRows.some((row) => row.status === 'MISSING') ? 'warn' : 'success', 'Google Cloud STT + Document AI OCR + TTS checks', {
     category: 'command',
     humanTable: createHumanTable(checkRows, ['status', 'check', 'detail'])
   })
@@ -834,6 +847,7 @@ export const setupGcloudStt = async (
         { setting: 'project', value: state.projectId ?? 'not configured' },
         { setting: 'stt model', value: GCLOUD_STT_DEFAULT_MODEL },
         { setting: 'stt location', value: 'us' },
+        { setting: 'tts transport', value: 'direct REST SynthesizeSpeech requests via texttospeech.googleapis.com' },
         { setting: 'ocr model', value: GCLOUD_DOCAI_DEFAULT_MODEL },
         { setting: 'ocr location', value: docaiLocation },
         { setting: 'ocr processor', value: docaiOcrProcessorId ?? 'not configured' },
@@ -915,3 +929,37 @@ export const ensureGcloudSttSetup = async (): Promise<GcloudSttRuntimeConfig> =>
 
 export const resolveGcloudSpeechContext = async (): Promise<GcloudSttRuntimeConfig> =>
   await ensureGcloudSttSetup()
+
+export const ensureGcloudTtsSetup = async (): Promise<{ accessToken: string, projectId: string }> => {
+  const state = await readGcloudSttReadiness()
+  if (!state.hasCli) {
+    throw new Error('Google Cloud CLI is required for Google Cloud TTS. Install gcloud and rerun `bun as setup --gcloud`.')
+  }
+
+  if (!state.authConfigured) {
+    throw new Error('Google Cloud CLI auth is required for Google Cloud TTS. Run `gcloud auth login` or rerun `bun as setup --gcloud`.')
+  }
+
+  if (!state.projectId) {
+    throw new Error('Google Cloud project is required for Google Cloud TTS. Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create or select the project, or run `gcloud config set project PROJECT_ID` if it already exists.')
+  }
+
+  if (state.billingEnabled !== true) {
+    throw new Error(`Google Cloud billing must be linked for project ${state.projectId}. Run \`gcloud billing projects link ${state.projectId} --billing-account ACCOUNT_ID\` or rerun \`bun as setup --gcloud --gcloud-project ${state.projectId}\`.`)
+  }
+
+  if (state.textToSpeechApiEnabled !== true) {
+    throw new Error(`Google Cloud Text-to-Speech API must be enabled for project ${state.projectId}. Run \`gcloud services enable texttospeech.googleapis.com --project ${state.projectId}\` or rerun \`bun as setup --gcloud\`.`)
+  }
+
+  const tokenState = await readAccessToken()
+  const accessToken = tokenState.accessToken
+  if (!tokenState.ok || !accessToken) {
+    throw new Error('Google Cloud CLI auth is required for Google Cloud TTS. Run `gcloud auth login` or rerun `bun as setup --gcloud`.')
+  }
+
+  return {
+    accessToken,
+    projectId: state.projectId
+  }
+}

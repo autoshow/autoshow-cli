@@ -20,14 +20,7 @@ const RUNWAY_GENERAL_LINKS = [
 ]
 
 const RUNWAY_ALL_LINKS = [
-  ...RUNWAY_GENERAL_LINKS,
-  'https://help.runwayml.com/hc/en-us/articles/37053594806419-Creating-with-Gen-4-Image'
-]
-
-const RUNWAY_TTS_LINKS = [
-  'https://docs.dev.runwayml.com/api/',
-  'https://docs.dev.runwayml.com/guides/models/',
-  'https://docs.dev.runwayml.com/guides/pricing/'
+  ...RUNWAY_GENERAL_LINKS
 ]
 
 const AWS_STT_LINKS = [
@@ -60,6 +53,14 @@ const GCLOUD_STT_LINKS = [
   'https://docs.cloud.google.com/speech-to-text/docs/sync-recognize.md.txt',
   'https://docs.cloud.google.com/speech-to-text/docs/batch-recognize.md.txt',
   'https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3.md.txt'
+]
+
+const GCLOUD_TTS_LINKS = [
+  'https://docs.cloud.google.com/text-to-speech/docs/chirp3-instant-custom-voice.md.txt',
+  'https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd.md.txt',
+  'https://docs.cloud.google.com/text-to-speech/docs/create-audio.md.txt',
+  'https://docs.cloud.google.com/text-to-speech/docs/basics.md.txt',
+  'https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types.md.txt'
 ]
 
 const GCLOUD_OCR_LINKS = [
@@ -135,6 +136,9 @@ const MISTRAL_OCR_LINKS = [
 ]
 
 const MISTRAL_TTS_LINKS = [
+  'https://docs.mistral.ai/models/model-cards/voxtral-tts-26-03',
+  'https://mistral.ai/news/voxtral-tts',
+  'https://docs.mistral.ai/studio-api/audio/text_to_speech',
   'https://docs.mistral.ai/api/endpoint/audio/speech',
   'https://docs.mistral.ai/api/endpoint/audio/voices',
   'https://docs.mistral.ai/studio-api/audio/text_to_speech/voices',
@@ -179,6 +183,16 @@ const DRIVE_GENERAL_LINKS = [
   'https://developers.google.com/workspace/drive/api/guides/performance.md.txt'
 ]
 
+const SPEECHIFY_TTS_LINKS = [
+  'https://docs.sws.speechify.com/text-to-speech/get-started/overview.md',
+  'https://docs.sws.speechify.com/text-to-speech/get-started/quickstart.md',
+  'https://docs.sws.speechify.com/text-to-speech/get-started/authentication.md',
+  'https://docs.sws.speechify.com/text-to-speech/get-started/models.md',
+  'https://docs.sws.speechify.com/text-to-speech/get-started/api-limits.md',
+  'https://docs.sws.speechify.com/text-to-speech/get-started/official-sdks.md',
+  'https://docs.sws.speechify.com/text-to-speech/features/voice-cloning.md'
+]
+
 test('metadata --markdown prints stable frontmatter instead of JSON', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -208,7 +222,7 @@ test('links selector errors distinguish dashed global sections from valid provid
   ])).toThrow('Unknown links selector "--stt". Known providers:')
 })
 
-test('links selector accepts runway provider and general section', () => {
+test('links selector accepts runway provider and general section', async () => {
   const runwaySelection = parseLinksArgv([
     'bun',
     'src/cli/create-cli.ts',
@@ -235,18 +249,13 @@ test('links selector accepts runway provider and general section', () => {
     runwayGeneralSelection.globalSections
   )).toEqual(RUNWAY_GENERAL_LINKS)
 
-  const runwayTtsSelection = parseLinksArgv([
+  await expect(runLinksWithArgv([
     'bun',
     'src/cli/create-cli.ts',
     'links',
     '--runway',
     'tts'
-  ])
-
-  expect(collectLinks(
-    runwayTtsSelection.serviceSelections,
-    runwayTtsSelection.globalSections
-  )).toEqual(RUNWAY_TTS_LINKS)
+  ])).rejects.toThrow('Unknown links section(s) for --runway: tts')
 })
 
 test('links selector accepts aws provider with stt and ocr sections', () => {
@@ -341,6 +350,42 @@ test('links selector accepts drive provider with general section', () => {
   )).toEqual(DRIVE_GENERAL_LINKS)
 })
 
+test('links selector accepts speechify provider with only tts section', async () => {
+  const speechifySelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--speechify'
+  ])
+
+  expect(speechifySelection.serviceSelections.get('speechify')).toEqual([])
+  expect(collectLinks(
+    speechifySelection.serviceSelections,
+    speechifySelection.globalSections
+  )).toEqual(SPEECHIFY_TTS_LINKS)
+
+  const speechifyTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--speechify',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    speechifyTtsSelection.serviceSelections,
+    speechifyTtsSelection.globalSections
+  )).toEqual(SPEECHIFY_TTS_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--speechify',
+    'general'
+  ])).rejects.toThrow('Unknown links section(s) for --speechify: general')
+})
+
 test('links selector accepts gcloud provider with stt and ocr sections', () => {
   const gcloudSelection = parseLinksArgv([
     'bun',
@@ -353,7 +398,7 @@ test('links selector accepts gcloud provider with stt and ocr sections', () => {
   expect(collectLinks(
     gcloudSelection.serviceSelections,
     gcloudSelection.globalSections
-  )).toEqual([...GCLOUD_STT_LINKS, ...GCLOUD_OCR_LINKS])
+  )).toEqual([...GCLOUD_STT_LINKS, ...GCLOUD_TTS_LINKS, ...GCLOUD_OCR_LINKS])
 
   const gcloudSttSelection = parseLinksArgv([
     'bun',
@@ -380,6 +425,19 @@ test('links selector accepts gcloud provider with stt and ocr sections', () => {
     gcloudOcrSelection.serviceSelections,
     gcloudOcrSelection.globalSections
   )).toEqual(GCLOUD_OCR_LINKS)
+
+  const gcloudTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--gcloud',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    gcloudTtsSelection.serviceSelections,
+    gcloudTtsSelection.globalSections
+  )).toEqual(GCLOUD_TTS_LINKS)
 })
 
 test('links selector accepts grok provider with stt and tts sections', () => {

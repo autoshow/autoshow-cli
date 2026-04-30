@@ -18,6 +18,8 @@ import {
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
+  SUPPORTED_SPEECHIFY_TTS_MODELS,
+  SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS,
   DEEPGRAM_DEFAULT_VOICE,
   SUPPORTED_RUNWAY_TTS_MODELS,
   SUPPORTED_GEMINI_IMAGE_MODELS,
@@ -93,6 +95,10 @@ import {
   validateDeepgramTtsVoice,
   validateRunwayTtsModel,
   validateRunwayTtsVoice,
+  validateSpeechifyTtsModel,
+  validateSpeechifyTtsVoice,
+  validateGcloudTtsModel,
+  validateGcloudTtsVoice,
   validateGroqTtsVoice,
   validateGrokTtsVoice,
   validateElevenlabsMusicModel,
@@ -187,6 +193,8 @@ export const REPEATABLE_MODEL_FLAGS = [
   'openai-tts',
   'gemini-tts',
   'runway-tts',
+  'speechify-tts',
+  'gcloud-tts',
   'deapi-tts',
   'deepgram-tts',
   'gemini-image',
@@ -236,6 +244,8 @@ const ALL_SHORTCUT_MODEL_EXPANSIONS: Partial<Record<RepeatableModelFlag, { short
   'gemini-tts': { shortcut: 'all-tts', supported: SUPPORTED_GEMINI_TTS_MODELS },
   'deepgram-tts': { shortcut: 'all-tts', supported: [DEEPGRAM_DEFAULT_VOICE] },
   'runway-tts': { shortcut: 'all-tts', supported: SUPPORTED_RUNWAY_TTS_MODELS },
+  'speechify-tts': { shortcut: 'all-tts', supported: SUPPORTED_SPEECHIFY_TTS_MODELS },
+  'gcloud-tts': { shortcut: 'all-tts', supported: SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS },
   'deapi-tts': { shortcut: 'all-tts', supported: SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS },
   'gemini-image': { shortcut: 'all-image', supported: SUPPORTED_GEMINI_IMAGE_MODELS },
   'openai-image': { shortcut: 'all-image', supported: SUPPORTED_OPENAI_IMAGE_MODELS },
@@ -715,6 +725,8 @@ export const buildOptsFromFlags = (
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
   const runwayTtsModels = readValidatedMany('runway-tts', validateRunwayTtsModel)
+  const speechifyTtsModels = readValidatedMany('speechify-tts', validateSpeechifyTtsModel)
+  const gcloudTtsModels = readValidatedMany('gcloud-tts', validateGcloudTtsModel)
   const deapiTtsModels = readValidatedMany('deapi-tts', validateDeapiTtsModel)
   const hasExplicitTtsEngine = [
     kittenTtsModels,
@@ -727,6 +739,8 @@ export const buildOptsFromFlags = (
     geminiTtsModels,
     deepgramTtsModels,
     runwayTtsModels,
+    speechifyTtsModels,
+    gcloudTtsModels,
     deapiTtsModels
   ].some((value) => value !== undefined && value.length > 0)
   const kittenTtsModelValues = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
@@ -945,6 +959,34 @@ export const buildOptsFromFlags = (
       if (runwayTtsModels === undefined) return v
       return validateCliValue(validateRunwayTtsVoice, v)
     })(),
+    speechifyTtsModels,
+    speechifyTtsModel: first(speechifyTtsModels),
+    speechifyVoice: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'speechify-voice')
+      if (v === undefined) return undefined
+      if (speechifyTtsModels === undefined) return v
+      return validateCliValue(validateSpeechifyTtsVoice, v)
+    })(),
+    speechifyTtsRefAudio: readOptionalStringFlag(mergedFlags, 'speechify-tts-ref-audio'),
+    speechifyTtsVoiceName: readOptionalRawStringFlag(rawArgs, 'speechify-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-name'),
+    speechifyTtsConsentName: readOptionalRawStringFlag(rawArgs, 'speechify-tts-consent-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-consent-name'),
+    speechifyTtsConsentEmail: readOptionalStringFlag(mergedFlags, 'speechify-tts-consent-email'),
+    speechifyTtsVoiceLocale: readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-locale'),
+    speechifyTtsVoiceGender: readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-gender'),
+    gcloudTtsModels,
+    gcloudTtsModel: first(gcloudTtsModels),
+    gcloudTtsVoice: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'gcloud-tts-voice')
+      if (v === undefined) return undefined
+      if (gcloudTtsModels === undefined) return v
+      return validateCliValue(validateGcloudTtsVoice, v)
+    })(),
+    gcloudTtsLanguage: readOptionalStringFlag(mergedFlags, 'gcloud-tts-language'),
+    gcloudTtsRefAudio: readOptionalStringFlag(mergedFlags, 'gcloud-tts-ref-audio'),
+    gcloudTtsConsentAudio: readOptionalStringFlag(mergedFlags, 'gcloud-tts-consent-audio'),
+    gcloudTtsConsentLanguage: readOptionalStringFlag(mergedFlags, 'gcloud-tts-consent-language'),
+    gcloudTtsVoiceCloningKey: readOptionalStringFlag(mergedFlags, 'gcloud-tts-voice-cloning-key'),
+    gcloudTtsVoiceCloningKeyOut: readOptionalStringFlag(mergedFlags, 'gcloud-tts-voice-cloning-key-out'),
     deapiTtsModels,
     deapiTtsModel: first(deapiTtsModels),
     deapiTtsVoice: readOptionalStringFlag(mergedFlags, 'deapi-tts-voice'),

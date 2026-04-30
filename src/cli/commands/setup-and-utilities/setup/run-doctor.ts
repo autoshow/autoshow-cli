@@ -54,6 +54,7 @@ export const runDoctor = async (): Promise<void> => {
   checks.push(checkEnvVar('ASSEMBLYAI_API_KEY', 'ASSEMBLYAI_API_KEY'))
   checks.push(checkEnvVar('GLADIA_API_KEY', 'GLADIA_API_KEY'))
   checks.push(checkEnvVar('DEEPGRAM_API_KEY', 'DEEPGRAM_API_KEY'))
+  checks.push(checkEnvVar('SPEECHIFY_API_KEY', 'SPEECHIFY_API_KEY'))
   checks.push(checkEnvVar('SONIOX_API_KEY', 'SONIOX_API_KEY'))
   checks.push(checkEnvVar('SPEECHMATICS_API_KEY', 'SPEECHMATICS_API_KEY'))
   checks.push(checkEnvVar('REVAI_ACCESS_TOKEN', 'REVAI_ACCESS_TOKEN'))
@@ -101,6 +102,7 @@ export const runDoctor = async (): Promise<void> => {
   checks.push({ label: 'gcloud project', ok: gcloudState.projectId !== undefined, detail: gcloudState.projectId ?? gcloudState.details.project })
   checks.push({ label: 'gcloud billing', ok: gcloudState.billingEnabled === true, detail: gcloudState.details.billing })
   checks.push({ label: 'speech.googleapis.com', ok: gcloudState.speechApiEnabled === true, detail: gcloudState.details.speechApi })
+  checks.push({ label: 'texttospeech.googleapis.com', ok: gcloudState.textToSpeechApiEnabled === true, detail: gcloudState.details.textToSpeechApi })
   checks.push({ label: 'documentai.googleapis.com', ok: gcloudState.documentAiApiEnabled === true, detail: gcloudState.details.documentAiApi })
   checks.push({ label: 'storage.googleapis.com', ok: gcloudState.storageApiEnabled === true, detail: gcloudState.details.storageApi })
 

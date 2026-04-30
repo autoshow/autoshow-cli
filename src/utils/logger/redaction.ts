@@ -23,7 +23,9 @@ const SENSITIVE_FLAG_NAMES = new Set<string>([
   'happyscribe-api-key',
   'supadata-api-key',
   'elevenlabs-api-key',
-  'minimax-api-key'
+  'minimax-api-key',
+  'gcloud-tts-voice-cloning-key',
+  'speechify-tts-consent-email'
 ])
 
 const SHORT_SENSITIVE_FLAGS = new Set<string>(['-p'])

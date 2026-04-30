@@ -370,6 +370,100 @@
       }
     }
   },
+  "speechify": {
+    "description": "Speechify Simba cloud text-to-speech",
+    "type": "api",
+    "voices": [
+      "george"
+    ],
+    "models": {
+      "simba-english": {
+        "description": "Speechify Simba English — highest-quality English TTS",
+        "costPer1kCharsUSD": 0.01,
+        "costPer1kCharsCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3000
+        }
+      },
+      "simba-multilingual": {
+        "description": "Speechify Simba Multilingual — multilingual and mixed-language TTS",
+        "costPer1kCharsUSD": 0.01,
+        "costPer1kCharsCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3000
+        }
+      }
+    }
+  },
+  "gcloud": {
+    "description": "Google Cloud Text-to-Speech",
+    "type": "api",
+    "voices": [
+      "en-US-Standard-J",
+      "en-US-Wavenet-D",
+      "en-US-Neural2-J",
+      "en-US-Studio-O",
+      "en-US-Chirp3-HD-Charon"
+    ],
+    "models": {
+      "standard": {
+        "description": "Google Cloud Standard voices — cost-efficient legacy synthesis",
+        "costPer1kCharsUSD": 0.004,
+        "costPer1kCharsCents": 0.4,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 6000
+        }
+      },
+      "wavenet": {
+        "description": "Google Cloud WaveNet voices — general-purpose legacy synthesis",
+        "costPer1kCharsUSD": 0.004,
+        "costPer1kCharsCents": 0.4,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 7000
+        }
+      },
+      "neural2": {
+        "description": "Google Cloud Neural2 voices — higher quality neural synthesis",
+        "costPer1kCharsUSD": 0.016,
+        "costPer1kCharsCents": 1.6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 8000
+        }
+      },
+      "studio": {
+        "description": "Google Cloud Studio voices — media narration and dialogue voices",
+        "costPer1kCharsUSD": 0.16,
+        "costPer1kCharsCents": 16,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 10000
+        }
+      },
+      "chirp3-hd": {
+        "description": "Google Cloud Chirp 3 HD voices — latest high-definition voice family",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 9000
+        }
+      },
+      "instant-custom-voice": {
+        "description": "Google Cloud Chirp 3 Instant Custom Voice — synthesize with a voice cloning key",
+        "costPer1kCharsUSD": 0.06,
+        "costPer1kCharsCents": 6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      }
+    }
+  },
   "deapi": {
     "description": "deAPI text-to-speech",
     "type": "api",

@@ -28,6 +28,52 @@ export const splitTextIntoChunks = (text: string, maxChars: number): string[] =>
   return chunks
 }
 
+const utf8ByteLength = (value: string): number =>
+  Buffer.byteLength(value, 'utf8')
+
+export const splitTextIntoUtf8ByteChunks = (text: string, maxBytes: number): string[] => {
+  const chunks: string[] = []
+  let remaining = text.trim()
+
+  while (utf8ByteLength(remaining) > maxBytes) {
+    let best = ''
+    let bestIndex = 0
+    let current = ''
+    let currentBytes = 0
+
+    for (const char of remaining) {
+      const nextBytes = currentBytes + utf8ByteLength(char)
+      if (nextBytes > maxBytes) {
+        break
+      }
+
+      current += char
+      currentBytes = nextBytes
+      if (/\s/.test(char)) {
+        best = current.trim()
+        bestIndex = current.length
+      }
+    }
+
+    if (!best) {
+      best = current.trim()
+      bestIndex = current.length
+    }
+    if (!best) {
+      throw new Error(`Unable to split TTS input into ${maxBytes}-byte chunks.`)
+    }
+
+    chunks.push(best)
+    remaining = remaining.slice(bestIndex).trim()
+  }
+
+  if (remaining.length > 0) {
+    chunks.push(remaining)
+  }
+
+  return chunks
+}
+
 export const concatAndConvertToWav = async (
   chunkPaths: string[],
   outputDir: string,

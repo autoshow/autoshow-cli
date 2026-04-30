@@ -10,6 +10,8 @@ import {
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_RUNWAY_TTS_MODELS,
+  SUPPORTED_SPEECHIFY_TTS_MODELS,
+  SUPPORTED_GCLOUD_TTS_MODELS,
   SUPPORTED_DEAPI_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
@@ -69,6 +71,14 @@ export const ttsFlags = {
   },
   'deapi-tts': {
     description: buildModelDescription('deAPI TTS model', SUPPORTED_DEAPI_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'speechify-tts': {
+    description: buildModelDescription('Speechify TTS model', SUPPORTED_SPEECHIFY_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'gcloud-tts': {
+    description: buildModelDescription('Google Cloud TTS model', SUPPORTED_GCLOUD_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
   'minimax-tts-voice': {
@@ -145,6 +155,62 @@ export const ttsFlags = {
   },
   'deapi-tts-ref-text': {
     description: 'Optional transcript for the deAPI TTS reference audio',
+    type: String
+  },
+  'speechify-voice': {
+    description: 'Speechify TTS voice ID override (default: george)',
+    type: String
+  },
+  'speechify-tts-ref-audio': {
+    description: 'Speechify TTS source audio path used to create a custom voice',
+    type: String
+  },
+  'speechify-tts-voice-name': {
+    description: 'Created Speechify custom voice label; defaults to AutoShow_<timestamp>',
+    type: String
+  },
+  'speechify-tts-consent-name': {
+    description: 'Full name for Speechify custom voice consent',
+    type: String
+  },
+  'speechify-tts-consent-email': {
+    description: 'Email address for Speechify custom voice consent',
+    type: String
+  },
+  'speechify-tts-voice-locale': {
+    description: 'Speechify custom voice locale (default: en-US)',
+    type: String
+  },
+  'speechify-tts-voice-gender': {
+    description: 'Speechify custom voice gender: male|female|notSpecified (default: notSpecified)',
+    type: String
+  },
+  'gcloud-tts-voice': {
+    description: 'Google Cloud TTS voice name override (default depends on --gcloud-tts model)',
+    type: String
+  },
+  'gcloud-tts-language': {
+    description: 'Google Cloud TTS BCP 47 language tag; inferred from voice or defaults to en-US',
+    type: String
+  },
+  'gcloud-tts-ref-audio': {
+    description: 'Google Cloud TTS reference audio path for instant custom voice key generation',
+    type: String
+  },
+  'gcloud-tts-consent-audio': {
+    description: 'Google Cloud TTS consent recording audio path for instant custom voice key generation',
+    type: String
+  },
+  'gcloud-tts-consent-language': {
+    description: 'Google Cloud TTS consent recording BCP 47 language tag (default: en-US)',
+    type: String
+  },
+  'gcloud-tts-voice-cloning-key': {
+    description: 'Existing Google Cloud TTS instant custom voice cloning key',
+    type: String
+  },
+  'gcloud-tts-voice-cloning-key-out': {
+    description: 'Write a generated Google Cloud TTS instant custom voice cloning key to this path',
     type: String
   },
   'runway-tts-voice': {
