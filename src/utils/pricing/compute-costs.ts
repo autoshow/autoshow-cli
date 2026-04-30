@@ -607,11 +607,12 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   if (step4Array.length > 0 && typeof input.ttsCharacterCount === 'number') {
     for (const step4 of step4Array) {
       const ttsCost = computeTtsCost(step4.ttsService, step4.ttsModel, input.ttsCharacterCount)
+      const cloneCost = typeof step4.cloneCostCents === 'number' ? step4.cloneCostCents : 0
       steps.push({
         step: 'tts',
         provider: step4.ttsService,
         model: step4.ttsModel,
-        cost: ttsCost.cost,
+        cost: ttsCost.cost + cloneCost,
         inputMetric: 'characters',
         inputValue: input.ttsCharacterCount
       })
@@ -979,7 +980,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     const hasDualRates = pricing.inputCostPer1MCharsCents !== undefined && pricing.outputCostPer1MCharsCents !== undefined
     const costPer1kCharsCents = hasDualRates ? undefined : (pricing.costPer1kCharsCents ?? getTtsCost(ttsTarget.service, ttsTarget.model))
 
-    const cost = applyCostMultiplier(ttsCost.cost, estimation.costMultiplier)
+    const setupCost = ttsTarget.setupCostCents ?? 0
+    const cost = applyCostMultiplier(ttsCost.cost, estimation.costMultiplier) + setupCost
     totalCost += cost
     steps.push({
       step: 'tts',
@@ -987,6 +989,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       model: ttsTarget.model,
       cost,
       costMultiplier: estimation.costMultiplier,
+      ...(typeof ttsTarget.setupCostCents === 'number' ? { setupCostCents: setupCost } : {}),
+      ...(typeof ttsTarget.setupNote === 'string' ? { note: ttsTarget.setupNote } : {}),
       ...(costPer1kCharsCents !== undefined ? { costPer1kCharactersCents: costPer1kCharsCents } : {}),
       ...(pricing.inputCostPer1MCharsCents !== undefined ? { inputCostPer1MCharactersCents: pricing.inputCostPer1MCharsCents } : {}),
       ...(pricing.outputCostPer1MCharsCents !== undefined ? { outputCostPer1MCharactersCents: pricing.outputCostPer1MCharsCents } : {})

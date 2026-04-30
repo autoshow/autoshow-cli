@@ -23,21 +23,6 @@ test('rejects invalid gcloud model', async () => {
   expect(result.exitCode).toBe(2)
 })
 
-budgetedTest('transcribe-gcloud-chirp_3', 'gcloud chirp_3 --price prints estimate', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'extract',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--gcloud-stt',
-    'chirp_3',
-    '--price'
-  ])
-
-  expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('gcloud')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('chirp_3')
-})
-
 budgetedTest('transcribe-gcloud-chirp_3', 'gcloud chirp_3 transcribes local audio when gcloud CLI is configured', async () => {
   const state = await readGcloudSttReadiness()
   if (!state.hasCli || !state.authConfigured || !state.projectId || state.speechApiEnabled !== true) {

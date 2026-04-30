@@ -71,6 +71,8 @@ const TtsDefaultsSchema = v.strictObject({
   runwayTts: ModelArraySchema,
   deapiTts: ModelArraySchema,
   deapiTtsVoice: v.optional(v.string(), undefined),
+  deapiTtsRefAudio: v.optional(v.string(), undefined),
+  deapiTtsRefText: v.optional(v.string(), undefined),
   runwayTtsVoice: v.optional(v.string(), undefined),
   ttsSpeaker: v.optional(v.string(), undefined),
   groqVoice: v.optional(v.string(), undefined),
@@ -78,6 +80,12 @@ const TtsDefaultsSchema = v.strictObject({
   mistralTtsVoice: v.optional(v.string(), undefined),
   mistralTtsRefAudio: v.optional(v.string(), undefined),
   openaiVoice: v.optional(v.string(), undefined),
+  openaiTtsRefAudio: v.optional(v.string(), undefined),
+  openaiTtsConsentId: v.optional(v.string(), undefined),
+  openaiTtsConsentAudio: v.optional(v.string(), undefined),
+  openaiTtsConsentLanguage: v.optional(v.string(), undefined),
+  openaiTtsConsentName: v.optional(v.string(), undefined),
+  openaiTtsVoiceName: v.optional(v.string(), undefined),
   geminiVoice: v.optional(v.string(), undefined),
   deepgramVoice: v.optional(v.string(), undefined),
   geminiSpeaker1Name: v.optional(v.string(), undefined),
@@ -85,7 +93,12 @@ const TtsDefaultsSchema = v.strictObject({
   geminiSpeaker2Name: v.optional(v.string(), undefined),
   geminiSpeaker2Voice: v.optional(v.string(), undefined),
   elevenlabsVoice: v.optional(v.string(), undefined),
-  minimaxTtsVoice: v.optional(v.string(), undefined)
+  minimaxTtsVoice: v.optional(v.string(), undefined),
+  minimaxTtsRefAudio: v.optional(v.string(), undefined),
+  minimaxTtsPromptAudio: v.optional(v.string(), undefined),
+  minimaxTtsPromptText: v.optional(v.string(), undefined),
+  minimaxTtsCloneNoiseReduction: v.optional(v.boolean(), undefined),
+  minimaxTtsCloneVolumeNormalization: v.optional(v.boolean(), undefined)
 })
 
 const ImageDefaultsSchema = v.strictObject({

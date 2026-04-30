@@ -66,14 +66,23 @@ bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6
 # Standalone text-to-speech from local text
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
 
+# OpenAI custom voice from reference audio and an existing consent recording
+bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+
 # Hosted Grok text-to-speech
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
 # Hosted Mistral Voxtral text-to-speech
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
+# MiniMax rapid voice cloning
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
 # Runway-hosted text-to-speech
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
+
+# deAPI Qwen3 voice cloning
+bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
 # Prompt-driven generation
 bun as image "a dramatic fox portrait in snow" --minimax-image image-01
@@ -153,6 +162,8 @@ Persistent defaults live in `config/autoshow.json`. You can save provider choice
 ```bash
 bun as config --show
 bun as config --openai gpt-5.2 --batch-limit 20 --max-cents 50
+bun as config --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 bun as config --reset
 ```
 

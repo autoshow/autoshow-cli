@@ -1,4 +1,4 @@
-import type { AggregatedPriceEstimate, ComputeEstimatedProcessingTimesInput, ExtractStepEstimate, ImageStepEstimate, LlmStepEstimate, MusicStepEstimate, ProcessCommand, ResolvedStep2Execution, RuntimeOptions, StepEstimate, SttStepEstimate, TtsStepEstimate, VideoStepEstimate } from '~/types'
+import type { AggregatedPriceEstimate, ComputeEstimatedProcessingTimesInput, ExtractStepEstimate, ImageStepEstimate, LlmStepEstimate, MusicStepEstimate, ProcessCommand, ResolvedStep2Execution, RuntimeOptions, Step4Metadata, StepEstimate, SttStepEstimate, TtsStepEstimate, VideoStepEstimate } from '~/types'
 import { isExtractCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
@@ -515,7 +515,8 @@ const buildTtsEstimates = async (opts: RuntimeOptions, characterCount: number): 
       const price = await resolveDeapiTtsPrice({
         model: cost.model as Parameters<typeof resolveDeapiTtsPrice>[0]['model'],
         characterCount: normalizedCharacterCount,
-        voice: opts.deapiTtsVoice
+        voice: opts.deapiTtsVoice,
+        mode: opts.deapiTtsRefAudio ? 'voice_clone' : 'custom_voice'
       })
       estimates.push({
         step: 'tts',
@@ -526,6 +527,7 @@ const buildTtsEstimates = async (opts: RuntimeOptions, characterCount: number): 
           ? price.totalCost
           : applyCostMultiplier(price.totalCost, estimation.costMultiplier),
         costMultiplier: price.source === 'provider_quote' ? 1 : estimation.costMultiplier,
+        estimateType: price.estimateType,
         ...(price.warning ? { note: price.warning } : {})
       })
       continue
@@ -539,8 +541,11 @@ const buildTtsEstimates = async (opts: RuntimeOptions, characterCount: number): 
       ...(cost.inputCostPer1MCharactersCents !== undefined ? { inputCostPer1MCharactersCents: cost.inputCostPer1MCharactersCents } : {}),
       ...(cost.outputCostPer1MCharactersCents !== undefined ? { outputCostPer1MCharactersCents: cost.outputCostPer1MCharactersCents } : {}),
       characterCount: cost.characterCount,
-      totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
+      ...(cost.setupCostCents !== undefined ? { setupCostCents: cost.setupCostCents } : {}),
+      ...(cost.setupTimeMs !== undefined ? { setupTimeMs: cost.setupTimeMs } : {}),
+      totalCost: applyCostMultiplier(cost.totalCost - (cost.setupCostCents ?? 0), estimation.costMultiplier) + (cost.setupCostCents ?? 0),
       costMultiplier: estimation.costMultiplier,
+      ...(cost.setupNote ? { note: cost.setupNote } : {}),
     })
   }
   return estimates
@@ -713,6 +718,7 @@ export const buildAggregatedPriceEstimate = async (
 ): Promise<AggregatedPriceEstimate> => {
   const steps: StepEstimate[] = []
   let totalEstimatedCost = 0
+  let ttsTimingCharacterCount: number | undefined
   const notes: string[] = []
 
   const routing = await resolveInputRoutingForCommand(command === 'download' || command === 'metadata' ? 'write' : command, resolvedTarget, opts)
@@ -787,6 +793,7 @@ export const buildAggregatedPriceEstimate = async (
     if (selectedTtsTargets.length > 0) {
       if (llmEstimates.length === 1) {
         const estimatedTtsCharacterCount = await estimateTtsCharacterCountFromPrompts(opts)
+        ttsTimingCharacterCount = estimatedTtsCharacterCount
         const ttsEstimates = await buildTtsEstimates(opts, estimatedTtsCharacterCount)
         for (const tts of ttsEstimates) {
           steps.push(tts)
@@ -819,7 +826,8 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'tts') {
-    const ttsEstimates = await buildTtsEstimates(opts, typeof characterCount === 'number' ? characterCount : 0)
+    ttsTimingCharacterCount = typeof characterCount === 'number' ? characterCount : 0
+    const ttsEstimates = await buildTtsEstimates(opts, ttsTimingCharacterCount)
     for (const tts of ttsEstimates) {
       steps.push(tts)
       totalEstimatedCost += tts.totalCost
@@ -861,8 +869,22 @@ export const buildAggregatedPriceEstimate = async (
       model: step.model,
       pageCount: step.pageCount
     }))
-  const timing = extractTimingTargets.length > 0
-    ? computeEstimatedProcessingTimes({ extractTargets: extractTimingTargets })
+  const ttsTimingTargets = steps
+    .filter((step): step is TtsStepEstimate & { characterCount: number } =>
+      step.step === 'tts' && typeof step.characterCount === 'number'
+    )
+    .map((step) => ({
+      service: step.provider as Step4Metadata['ttsService'],
+      model: step.model,
+      ...(typeof step.setupTimeMs === 'number' ? { setupTimeMs: step.setupTimeMs } : {})
+    }))
+  const timing = extractTimingTargets.length > 0 || (ttsTimingTargets.length > 0 && typeof ttsTimingCharacterCount === 'number')
+    ? computeEstimatedProcessingTimes({
+        ...(extractTimingTargets.length > 0 ? { extractTargets: extractTimingTargets } : {}),
+        ...(ttsTimingTargets.length > 0 && typeof ttsTimingCharacterCount === 'number'
+          ? { ttsTargets: ttsTimingTargets, ttsCharacterCount: ttsTimingCharacterCount }
+          : {})
+      })
     : undefined
 
   return {

@@ -936,6 +936,8 @@ export const buildOptsFromFlags = (
     deapiTtsModels,
     deapiTtsModel: first(deapiTtsModels),
     deapiTtsVoice: readOptionalStringFlag(mergedFlags, 'deapi-tts-voice'),
+    deapiTtsRefAudio: readOptionalStringFlag(mergedFlags, 'deapi-tts-ref-audio'),
+    deapiTtsRefText: readOptionalRawStringFlag(rawArgs, 'deapi-tts-ref-text') ?? readOptionalStringFlag(mergedFlags, 'deapi-tts-ref-text'),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
@@ -943,6 +945,12 @@ export const buildOptsFromFlags = (
       return validateCliValue(validateGroqTtsVoice, v)
     })(),
     openaiVoiceId: readOptionalStringFlag(mergedFlags, 'openai-voice'),
+    openaiTtsRefAudio: readOptionalStringFlag(mergedFlags, 'openai-tts-ref-audio'),
+    openaiTtsConsentId: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-id'),
+    openaiTtsConsentAudio: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-audio'),
+    openaiTtsConsentLanguage: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-language'),
+    openaiTtsConsentName: readOptionalRawStringFlag(rawArgs, 'openai-tts-consent-name') ?? readOptionalStringFlag(mergedFlags, 'openai-tts-consent-name'),
+    openaiTtsVoiceName: readOptionalRawStringFlag(rawArgs, 'openai-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'openai-tts-voice-name'),
     geminiVoiceId: readOptionalStringFlag(mergedFlags, 'gemini-voice'),
     deepgramVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'deepgram-voice')
@@ -959,6 +967,11 @@ export const buildOptsFromFlags = (
     minimaxTtsModels,
     minimaxTtsModel: first(minimaxTtsModels),
     minimaxTtsVoice: readOptionalStringFlag(mergedFlags, 'minimax-tts-voice'),
+    minimaxTtsRefAudio: readOptionalStringFlag(mergedFlags, 'minimax-tts-ref-audio'),
+    minimaxTtsPromptAudio: readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-audio'),
+    minimaxTtsPromptText: readOptionalRawStringFlag(rawArgs, 'minimax-tts-prompt-text') ?? readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-text'),
+    minimaxTtsCloneNoiseReduction: readBooleanFlag(mergedFlags, 'minimax-tts-clone-noise-reduction'),
+    minimaxTtsCloneVolumeNormalization: readBooleanFlag(mergedFlags, 'minimax-tts-clone-volume-normalization'),
     elevenlabsVoiceId: readOptionalStringFlag(mergedFlags, 'elevenlabs-voice'),
     geminiImageModels,
     geminiImageModel: first(geminiImageModels),

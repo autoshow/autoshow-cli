@@ -36,21 +36,6 @@ test('rejects invalid aws model', async () => {
   expect(result.exitCode).toBe(2)
 })
 
-budgetedTest('transcribe-aws-standard', 'aws standard --price prints estimate', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'extract',
-    STABLE_LOCAL_AUDIO_PATH,
-    '--aws-stt',
-    'standard',
-    '--price'
-  ])
-
-  expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('aws')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('standard')
-})
-
 budgetedTest('transcribe-aws-standard', 'aws standard transcribes local audio when AWS CLI Transcribe is configured', async () => {
   const { state } = await readAwsTestReadiness()
   if (!state.hasCli || !state.authConfigured || !state.region || state.bucketAccessible !== true || state.transcribeAccessible !== true) {

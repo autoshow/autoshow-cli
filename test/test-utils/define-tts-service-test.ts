@@ -1,4 +1,4 @@
-import { expect } from 'bun:test'
+import { expect, test } from 'bun:test'
 import {
   runCommand,
   fileExists,
@@ -10,7 +10,6 @@ import {
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
-  definePriceEstimateTest,
   shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
@@ -57,19 +56,6 @@ export const defineTTSServiceTest = ({
     cliFlag,
     'invalid-model'
   ])
-
-  for (const model of models) {
-    const budgetKey = `tts-${ttsService}-${model}`
-
-    definePriceEstimateTest(budgetKey, `--price prints estimate for ${model}`, [
-      'src/cli/create-cli.ts',
-      'tts',
-      STABLE_TTS_MD_PATH,
-      cliFlag,
-      model,
-      '--price'
-    ])
-  }
 
   for (const model of models) {
     const budgetKey = `tts-${ttsService}-${model}`
@@ -133,5 +119,30 @@ export const defineTTSServiceTest = ({
         expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
       }
     }, timeoutMs)
+  }
+}
+
+export const defineTTSServicePriceTests = ({
+  models,
+  cliFlag,
+  ttsService,
+}: {
+  models: readonly string[]
+  cliFlag: string
+  ttsService: string
+}): void => {
+  for (const model of models) {
+    test(`${ttsService} ${model} --price prints estimate`, async () => {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'tts',
+        STABLE_TTS_MD_PATH,
+        cliFlag,
+        model,
+        '--price'
+      ])
+
+      expect(result.exitCode).toBe(0)
+    }, E2E_TEST_TIMEOUT_MS)
   }
 }

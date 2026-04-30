@@ -1,7 +1,7 @@
 import type { DeapiTtsModel } from '~/types'
 import { getTtsCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { getDeapiApiKey, requestDeapiJsonPrice } from '~/utils/deapi'
-import { getDeapiTtsModelConfig } from './run-deapi-tts'
+import { type DeapiTtsMode, getDeapiTtsModelConfig } from './run-deapi-tts'
 
 export type DeapiTtsResolvedPrice = {
   totalCost: number
@@ -26,9 +26,11 @@ export const resolveDeapiTtsPrice = async (
     model: DeapiTtsModel
     characterCount: number
     voice?: string | undefined
+    mode?: DeapiTtsMode | undefined
   }
 ): Promise<DeapiTtsResolvedPrice> => {
   const config = getDeapiTtsModelConfig(options.model, options.voice)
+  const mode = options.mode ?? 'custom_voice'
   const apiKey = getDeapiApiKey()
   if (!apiKey) {
     return fallbackDeapiTtsCost(
@@ -45,13 +47,13 @@ export const resolveDeapiTtsPrice = async (
       operationName: 'deapi-tts-price',
       body: {
         model: options.model,
-        mode: 'custom_voice',
+        mode,
         count_text: Math.max(0, Math.floor(options.characterCount)),
         lang: config.lang,
         speed: config.speed,
         format: config.format,
         sample_rate: config.sampleRate,
-        voice: config.voice
+        ...(mode === 'custom_voice' ? { voice: config.voice } : {})
       }
     })
 

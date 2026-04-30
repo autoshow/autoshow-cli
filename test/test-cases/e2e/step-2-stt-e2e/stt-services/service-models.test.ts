@@ -227,37 +227,6 @@ defineSTTServiceTest({
   envVarDescription: 'Speechmatics transcription',
 })
 
-test('deapi --price uses the exact pricing endpoint for local audio', async () => {
-  const { server, baseUrl, state } = await startDeapiStubServer()
-
-  try {
-    const result = await runCommand([
-      'src/cli/create-cli.ts',
-      'extract',
-      STABLE_LOCAL_AUDIO_PATH,
-      '--deapi-stt',
-      'WhisperLargeV3',
-      '--price'
-    ], {
-      env: {
-        DEAPI_API_KEY: 'test-key',
-        DEAPI_BASE_URL: baseUrl
-      }
-    })
-
-    expect(result.exitCode).toBe(0)
-    expect(`${result.stdout}\n${result.stderr}`).toContain('deapi')
-    expect(`${result.stdout}\n${result.stderr}`).toContain('WhisperLargeV3')
-    expect(state.priceBodies).toHaveLength(1)
-    expect(state.priceBodies[0]).toContain('name="duration_seconds"')
-    expect(state.priceBodies[0]).toContain('name="model"')
-    expect(state.priceBodies[0]).toContain('WhisperLargeV3')
-    expect(state.priceBodies[0]).not.toContain('name="source_url"')
-  } finally {
-    await stopServer(server)
-  }
-}, E2E_TEST_TIMEOUT_MS)
-
 test('deapi run manifest records exact estimated and actual STT cost fields', async () => {
   await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   const { server, baseUrl, state } = await startDeapiStubServer()

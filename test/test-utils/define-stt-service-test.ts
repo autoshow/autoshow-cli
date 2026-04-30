@@ -1,14 +1,14 @@
-import { expect } from 'bun:test'
+import { expect, test } from 'bun:test'
 import {
   fileExists,
   cleanupTestOutput,
+  runCommand,
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
-  definePriceEstimateTest,
   runCommandAndExpectOutputDir,
   shouldSkipMissingEnv,
   withOutputLifecycle
@@ -46,15 +46,6 @@ export const defineSTTServiceTest = ({
 
   for (const model of models) {
     const budgetKey = `transcribe-${sttService}-${model}`
-
-    definePriceEstimateTest(budgetKey, `${sttService} ${model} --price prints estimate`, [
-      'src/cli/create-cli.ts',
-      'extract',
-      STABLE_LOCAL_AUDIO_PATH,
-      cliFlag,
-      model,
-      '--price'
-    ])
 
     budgetedTest(budgetKey, `${sttService} ${model} transcribes local audio`, async () => {
       if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} is required for ${envVarDescription}`)) {
@@ -102,5 +93,30 @@ export const defineSTTServiceTest = ({
         expect(summaryExists).toBe(false)
       }
     }, timeoutMs)
+  }
+}
+
+export const defineSTTServicePriceTests = ({
+  models,
+  cliFlag,
+  sttService,
+}: {
+  models: readonly string[]
+  cliFlag: string
+  sttService: string
+}): void => {
+  for (const model of models) {
+    test(`${sttService} ${model} --price prints estimate`, async () => {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'extract',
+        STABLE_LOCAL_AUDIO_PATH,
+        cliFlag,
+        model,
+        '--price'
+      ])
+
+      expect(result.exitCode).toBe(0)
+    }, E2E_TEST_TIMEOUT_MS)
   }
 }

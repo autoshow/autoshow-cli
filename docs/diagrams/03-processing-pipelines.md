@@ -111,10 +111,13 @@ src/cli/commands/process-steps/process-video.ts
                                         │  Step 4: TTS (--kitten-tts,  │
                                         │   --elevenlabs-tts,          │
                                         │   --minimax-tts,             │
+                                        │   --minimax-tts-ref-audio,   │
                                         │   --groq-tts,                │
                                         │   --openai-tts,              │
+                                        │   --openai-tts-ref-audio,    │
                                         │   --gemini-tts,              │
-                                        │   --runway-tts)              │
+                                        │   --runway-tts,              │
+                                        │   --deapi-tts)               │
                                         │  Step 5: Image (--gemini-    │
                                         │   image, --openai-image, ...)│
                                         │  Step 6: Video (--gemini-    │

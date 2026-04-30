@@ -158,27 +158,3 @@ budgetedTest('write-project-lyrics-directory-default-llama', 'write project dire
     }
   }
 }, E2E_TEST_TIMEOUT_MS)
-
-budgetedTest('write-project-lyrics-price', 'write project directory --price reports rendered lyric outputs without creating a run directory', async () => {
-  const project = await createWriteLyricsProject()
-  const dirsBefore = new Set(await listOutputDirs())
-
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'write',
-    `./${project.textDir}`,
-    '--price'
-  ])
-
-  expect(result.exitCode).toBe(0)
-  expect(result.outputDir).toBeNull()
-
-  const output = `${result.stdout}\n${result.stderr}`
-  expect(output).toContain('Expected files')
-  expect(output).toContain(`${project.lyricsDir}/*.md`)
-  expect(await fileExists(project.lyricsDir)).toBe(false)
-
-  const dirsAfter = await listOutputDirs()
-  const newRunDirs = dirsAfter.filter((dir) => !dirsBefore.has(dir) && basename(dir).endsWith('_text'))
-  expect(newRunDirs).toEqual([])
-}, E2E_TEST_TIMEOUT_MS)

@@ -24,6 +24,11 @@ export type TtsOptions = Pick<
   | 'minimaxTtsModels'
   | 'minimaxTtsModel'
   | 'minimaxTtsVoice'
+  | 'minimaxTtsRefAudio'
+  | 'minimaxTtsPromptAudio'
+  | 'minimaxTtsPromptText'
+  | 'minimaxTtsCloneNoiseReduction'
+  | 'minimaxTtsCloneVolumeNormalization'
   | 'groqTtsModels'
   | 'groqTtsModel'
   | 'groqVoiceId'
@@ -37,6 +42,12 @@ export type TtsOptions = Pick<
   | 'openaiTtsModels'
   | 'openaiTtsModel'
   | 'openaiVoiceId'
+  | 'openaiTtsRefAudio'
+  | 'openaiTtsConsentId'
+  | 'openaiTtsConsentAudio'
+  | 'openaiTtsConsentLanguage'
+  | 'openaiTtsConsentName'
+  | 'openaiTtsVoiceName'
   | 'geminiTtsModels'
   | 'geminiTtsModel'
   | 'geminiVoiceId'
@@ -47,10 +58,15 @@ export type TtsOptions = Pick<
   | 'deapiTtsModels'
   | 'deapiTtsModel'
   | 'deapiTtsVoice'
+  | 'deapiTtsRefAudio'
+  | 'deapiTtsRefText'
 >
 
 export type TtsTarget = ProviderTargetBase<TtsProvider> & {
   voice?: string
+  setupCostCents?: number | undefined
+  setupTimeMs?: number | undefined
+  setupNote?: string | undefined
   run: (text: string, outputDir: string, opts: TtsOptions) => Promise<{ audioPath: string, metadata: Step4Metadata }>
 }
 
@@ -102,4 +118,7 @@ export type TtsCostEstimate = CostEstimateBase<TtsProvider> & {
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number
   characterCount: number
+  setupCostCents?: number | undefined
+  setupTimeMs?: number | undefined
+  setupNote?: string | undefined
 }

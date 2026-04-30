@@ -1,12 +1,12 @@
-import { expect } from 'bun:test'
+import { expect, test } from 'bun:test'
 import {
   fileExists,
   cleanupTestOutput,
+  runCommand,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
-  definePriceEstimateTest,
   runCommandAndExpectOutputDir,
   shouldSkipMissingEnv,
   withOutputLifecycle
@@ -39,18 +39,6 @@ export const defineVideoServiceTest = ({
     cliFlag,
     'invalid-model'
   ])
-
-  for (const { model } of models) {
-    const budgetKey = `video-${videoService}-${model}`
-    definePriceEstimateTest(budgetKey, `${model} --price prints estimate`, [
-      'src/cli/create-cli.ts',
-      'video',
-      PRICE_PROMPT,
-      cliFlag,
-      model,
-      '--price'
-    ])
-  }
 
   withOutputLifecycle(VIDEO_GEN_TITLE)
 
@@ -97,5 +85,30 @@ export const defineVideoServiceTest = ({
         }
       }
     }, timeoutMs)
+  }
+}
+
+export const defineVideoServicePriceTests = ({
+  models,
+  cliFlag,
+  videoService,
+}: {
+  models: Array<{ model: string, extraArgs?: string[], expectedDuration?: number, prompt?: string }>
+  cliFlag: string
+  videoService: 'gemini' | 'minimax' | 'deapi'
+}): void => {
+  for (const { model } of models) {
+    test(`${videoService} ${model} --price prints estimate`, async () => {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'video',
+        PRICE_PROMPT,
+        cliFlag,
+        model,
+        '--price'
+      ])
+
+      expect(result.exitCode).toBe(0)
+    }, E2E_TEST_TIMEOUT_MS)
   }
 }

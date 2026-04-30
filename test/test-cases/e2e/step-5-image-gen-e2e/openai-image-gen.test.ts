@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { describe, expect, beforeAll, afterAll } from 'bun:test'
 import { defineImageServiceTest } from '../../../test-utils/define-image-service-test'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../test-utils/budget'
 import {
@@ -22,19 +22,6 @@ defineImageServiceTest({
   cliFlag: '--openai-image',
   imageService: 'openai',
   envVarKey: 'OPENAI_API_KEY',
-})
-
-test('--price allows multiple image providers and reports each image step', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1-mini', '--minimax-image', 'image-01', '--price'],
-  )
-  const output = `${result.stdout}\n${result.stderr}`
-  expect(result.exitCode).toBe(0)
-  expect(output).toContain('Cost Estimate')
-  expect(output).toContain('openai')
-  expect(output).toContain('minimax')
-  expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')
-  expect(output).toContain('generated-image-minimax-image-01.jpeg')
 })
 
 describe('openai image format options', () => {

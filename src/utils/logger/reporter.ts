@@ -91,6 +91,10 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
         }
       }
       if (typeof estimate.characterCount === 'number') entry['characters'] = estimate.characterCount
+      if (typeof estimate.setupCostCents === 'number') {
+        if (mode === 'human') entry['setup'] = `${estimate.setupCostCents.toFixed(2)}¢`
+        else entry['setupCostCents'] = estimate.setupCostCents
+      }
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
       return entry
     }

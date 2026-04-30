@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from "bun:test"
+import { describe, expect, beforeAll, afterAll } from "bun:test"
 import {
   runCommand,
   fileExists,
@@ -86,29 +86,6 @@ describe("kitten-tts pipeline", () => {
         expect(step4Entries[0]?.['chunkCount']).toBeGreaterThan(0)
         expect(step4Entries[0]?.['audioFileName']).toBe("speech.wav")
       }
-    })
-
-    test('write --price omits TTS estimates when multiple LLM providers are selected', async () => {
-      const result = await runCommand([
-        'src/cli/create-cli.ts',
-        'write',
-        STABLE_LOCAL_AUDIO_PATH,
-        '--openai',
-        'gpt-5.4',
-        '--groq',
-        'openai/gpt-oss-20b',
-        '--kitten-tts',
-        'kitten-tts-mini',
-        '--openai-tts',
-        'gpt-4o-mini-tts',
-        '--price'
-      ])
-      const output = `${result.stdout}\n${result.stderr}`
-
-      expect(result.exitCode).toBe(0)
-      expect(output).toContain('TTS estimate omitted')
-      expect(output).not.toContain('speech-kitten-kitten-tts-mini.wav')
-      expect(output).not.toContain('speech-openai-gpt-4o-mini-tts.wav')
     })
 
     budgetedTest(['write-openai-gpt-5.4', 'tts-kitten-mini', 'tts-openai-gpt-4o-mini-tts'], 'write can emit multiple speech artifacts from one summary', async () => {

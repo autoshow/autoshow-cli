@@ -80,9 +80,13 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --gemini-video, --gemini-music models  │
 │  ├── DEEPINFRA_API_KEY               Required for --deepinfra-stt and        │
 │  │                                   --deepinfra-ocr models                  │
+│  ├── DEAPI_API_KEY                   Required for --deapi-stt, --deapi-ocr,  │
+│  │                                   --deapi-tts, --deapi-image,             │
+│  │                                   --deapi-video, --deapi-music models     │
 │  ├── MINIMAX_API_KEY                 Required for --minimax, --minimax-tts,  │
 │  │                                   --minimax-image, --minimax-video,       │
-│  │                                   --minimax-music models                  │
+│  │                                   --minimax-music models; clone mode also │
+│  │                                   needs local reference audio             │
 │  ├── ELEVENLABS_API_KEY              Required for --elevenlabs-stt,          │
 │  │                                   --elevenlabs-tts, --elevenlabs-music    │
 │  ├── GLM_API_KEY                     Required for --glm, --glm-ocr,          │

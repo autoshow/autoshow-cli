@@ -146,6 +146,127 @@ describe('config contracts', () => {
     })
   })
 
+  test('buildConfigPatchFromFlags saves and merges MiniMax TTS clone defaults', () => {
+    const patch = buildConfigPatchFromFlags({
+      'minimax-tts': ['speech-2.8-turbo'],
+      'minimax-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'minimax-tts-voice': 'AutoShowTestVoice',
+      'minimax-tts-prompt-audio': 'input/examples/audio/0-audio-short.mp3',
+      'minimax-tts-prompt-text': 'Reference transcript.',
+      'minimax-tts-clone-noise-reduction': true,
+      'minimax-tts-clone-volume-normalization': true
+    }, new Set([
+      'minimax-tts',
+      'minimax-tts-ref-audio',
+      'minimax-tts-voice',
+      'minimax-tts-prompt-audio',
+      'minimax-tts-prompt-text',
+      'minimax-tts-clone-noise-reduction',
+      'minimax-tts-clone-volume-normalization'
+    ]))
+
+    expect(patch).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          tts: {
+            minimaxTts: ['speech-2.8-turbo'],
+            minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            minimaxTtsVoice: 'AutoShowTestVoice',
+            minimaxTtsPromptAudio: 'input/examples/audio/0-audio-short.mp3',
+            minimaxTtsPromptText: 'Reference transcript.',
+            minimaxTtsCloneNoiseReduction: true,
+            minimaxTtsCloneVolumeNormalization: true
+          }
+        }
+      }
+    })
+
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'minimax-tts': ['speech-2.8-turbo'],
+      'minimax-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'minimax-tts-voice': 'AutoShowTestVoice',
+      'minimax-tts-prompt-audio': 'input/examples/audio/0-audio-short.mp3',
+      'minimax-tts-prompt-text': 'Reference transcript.',
+      'minimax-tts-clone-noise-reduction': true,
+      'minimax-tts-clone-volume-normalization': true
+    })
+  })
+
+  test('buildConfigPatchFromFlags saves and merges OpenAI TTS custom voice defaults', () => {
+    const patch = buildConfigPatchFromFlags({
+      'openai-tts': ['gpt-4o-mini-tts'],
+      'openai-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'openai-tts-consent-id': 'cons_123',
+      'openai-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
+      'openai-tts-consent-language': 'en-US',
+      'openai-tts-consent-name': 'Anthony Consent',
+      'openai-tts-voice-name': 'AutoShow Anthony'
+    }, new Set([
+      'openai-tts',
+      'openai-tts-ref-audio',
+      'openai-tts-consent-id',
+      'openai-tts-consent-audio',
+      'openai-tts-consent-language',
+      'openai-tts-consent-name',
+      'openai-tts-voice-name'
+    ]))
+
+    expect(patch).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          tts: {
+            openaiTts: ['gpt-4o-mini-tts'],
+            openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            openaiTtsConsentId: 'cons_123',
+            openaiTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            openaiTtsConsentLanguage: 'en-US',
+            openaiTtsConsentName: 'Anthony Consent',
+            openaiTtsVoiceName: 'AutoShow Anthony'
+          }
+        }
+      }
+    })
+
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'openai-tts': ['gpt-4o-mini-tts'],
+      'openai-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'openai-tts-consent-id': 'cons_123',
+      'openai-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
+      'openai-tts-consent-language': 'en-US',
+      'openai-tts-consent-name': 'Anthony Consent',
+      'openai-tts-voice-name': 'AutoShow Anthony'
+    })
+  })
+
+  test('buildConfigPatchFromFlags saves and merges deAPI TTS clone defaults', () => {
+    const patch = buildConfigPatchFromFlags({
+      'deapi-tts': ['Qwen3_TTS_12Hz_1_7B_Base'],
+      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'deapi-tts-ref-text': 'Reference transcript.'
+    }, new Set(['deapi-tts', 'deapi-tts-ref-audio', 'deapi-tts-ref-text']))
+
+    expect(patch).toEqual({
+      version: 2,
+      defaults: {
+        post: {
+          tts: {
+            deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
+            deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
+            deapiTtsRefText: 'Reference transcript.'
+          }
+        }
+      }
+    })
+
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'deapi-tts': ['Qwen3_TTS_12Hz_1_7B_Base'],
+      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'deapi-tts-ref-text': 'Reference transcript.'
+    })
+  })
+
   test('loadConfig accepts current v2 array-shaped defaults', async () => {
     const configPath = await writeTempConfig({
       version: 2,
@@ -178,7 +299,25 @@ describe('config contracts', () => {
             runwayTtsVoice: 'Leslie',
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
-            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
+            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            openaiTts: ['gpt-4o-mini-tts'],
+            openaiVoice: 'voice_existing123',
+            openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            openaiTtsConsentId: 'cons_123',
+            openaiTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            openaiTtsConsentLanguage: 'en-US',
+            openaiTtsConsentName: 'Anthony Consent',
+            openaiTtsVoiceName: 'AutoShow Anthony',
+            minimaxTts: ['speech-2.8-turbo'],
+            minimaxTtsVoice: 'AutoShowTestVoice',
+            minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            minimaxTtsPromptAudio: 'input/examples/audio/0-audio-short.mp3',
+            minimaxTtsPromptText: 'Reference transcript.',
+            minimaxTtsCloneNoiseReduction: true,
+            minimaxTtsCloneVolumeNormalization: true,
+            deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
+            deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
+            deapiTtsRefText: 'Reference transcript.'
           },
           image: {
             bflImage: ['flux-2-pro-preview'],
@@ -219,7 +358,25 @@ describe('config contracts', () => {
             runwayTtsVoice: 'Leslie',
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
-            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
+            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            openaiTts: ['gpt-4o-mini-tts'],
+            openaiVoice: 'voice_existing123',
+            openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            openaiTtsConsentId: 'cons_123',
+            openaiTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            openaiTtsConsentLanguage: 'en-US',
+            openaiTtsConsentName: 'Anthony Consent',
+            openaiTtsVoiceName: 'AutoShow Anthony',
+            minimaxTts: ['speech-2.8-turbo'],
+            minimaxTtsVoice: 'AutoShowTestVoice',
+            minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            minimaxTtsPromptAudio: 'input/examples/audio/0-audio-short.mp3',
+            minimaxTtsPromptText: 'Reference transcript.',
+            minimaxTtsCloneNoiseReduction: true,
+            minimaxTtsCloneVolumeNormalization: true,
+            deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
+            deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
+            deapiTtsRefText: 'Reference transcript.'
           },
           image: {
             bflImage: ['flux-2-pro-preview'],

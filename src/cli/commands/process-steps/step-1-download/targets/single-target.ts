@@ -769,6 +769,8 @@ const processMediaSingle = async (
     deapiTtsModels: llmDefaults.deapiTtsModels,
     deapiTtsModel: llmDefaults.deapiTtsModel,
     deapiTtsVoice: llmDefaults.deapiTtsVoice,
+    deapiTtsRefAudio: llmDefaults.deapiTtsRefAudio,
+    deapiTtsRefText: llmDefaults.deapiTtsRefText,
     geminiImageModels: llmDefaults.geminiImageModels,
     geminiImageModel: llmDefaults.geminiImageModel,
     openaiImageModels: llmDefaults.openaiImageModels,

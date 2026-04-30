@@ -29,19 +29,6 @@ test('requires a music provider flag', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('Specify a music generation provider')
 })
 
-test('--price with both providers shows two cost rows and per-provider filenames', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--elevenlabs-music', 'music_v1', '--minimax-music', 'music-2.5', '--price'],
-  )
-  const output = `${result.stdout}\n${result.stderr}`
-  expect(result.exitCode).toBe(0)
-  expect(output).toContain('Cost Estimate')
-  expect(output).toContain('elevenlabs')
-  expect(output).toContain('minimax')
-  expect(output).toContain('generated-music-elevenlabs-music_v1.mp3')
-  expect(output).toContain('generated-music-minimax-music-2.5.mp3')
-})
-
 budgetedTest('music-elevenlabs-music_v1', 'music_v1 generates cinematic orchestral music', async () => {
   const hasApiKey = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
   if (!hasApiKey) {

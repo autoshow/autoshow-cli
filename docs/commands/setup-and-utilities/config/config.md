@@ -82,7 +82,10 @@ bun as config --whisper large-v3-turbo
 bun as config --gcloud-stt chirp_3
 bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
+bun as config --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 bun as config --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
+bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-cents 100
 ```
@@ -166,8 +169,22 @@ Representative JSON shape of `config/autoshow.json`:
     "post": {
       "tts": {
         "kittenTts": ["kitten-tts-mini"],
+        "minimaxTts": ["speech-2.8-turbo"],
+        "minimaxTtsVoice": "AutoShowAnthony01",
+        "minimaxTtsRefAudio": "input/examples/audio/anthony-voice.mp3",
+        "minimaxTtsPromptAudio": "input/examples/audio/0-audio-short.mp3",
+        "minimaxTtsPromptText": "Reference transcript.",
+        "minimaxTtsCloneNoiseReduction": true,
+        "minimaxTtsCloneVolumeNormalization": true,
+        "openaiTts": ["gpt-4o-mini-tts"],
+        "openaiTtsRefAudio": "input/examples/audio/anthony-voice.mp3",
+        "openaiTtsConsentId": "cons_123",
+        "openaiTtsVoiceName": "AutoShowAnthony",
         "runwayTts": ["eleven_multilingual_v2"],
         "runwayTtsVoice": "Leslie",
+        "deapiTts": ["Qwen3_TTS_12Hz_1_7B_Base"],
+        "deapiTtsRefAudio": "input/examples/audio/0-audio-short.mp3",
+        "deapiTtsRefText": "Reference transcript",
         "ttsSpeaker": "Jasper"
       },
       "image": {
@@ -271,12 +288,29 @@ Model-selecting fields in this section are arrays of models, not single strings.
 | `groqVoice` | `--groq-voice` | Groq voice ID |
 | `grokTtsVoice` | `--grok-tts-voice` | Grok voice ID |
 | `elevenlabsVoice` | `--elevenlabs-voice` | ElevenLabs voice ID |
-| `openaiVoice` | `--openai-voice` | OpenAI TTS voice ID |
+| `openaiVoice` | `--openai-voice` | OpenAI TTS voice ID, including existing custom `voice_...` IDs |
+| `openaiTtsRefAudio` | `--openai-tts-ref-audio` | OpenAI custom voice sample audio path |
+| `openaiTtsConsentId` | `--openai-tts-consent-id` | Existing OpenAI consent recording ID |
+| `openaiTtsConsentAudio` | `--openai-tts-consent-audio` | OpenAI consent recording audio path to upload |
+| `openaiTtsConsentLanguage` | `--openai-tts-consent-language` | Consent recording language tag; default `en-US` |
+| `openaiTtsConsentName` | `--openai-tts-consent-name` | Consent recording label |
+| `openaiTtsVoiceName` | `--openai-tts-voice-name` | Created OpenAI custom voice label |
 | `geminiVoice` | `--gemini-voice` | Gemini TTS voice name |
 | `deepgramVoice` | `--deepgram-voice` | Deepgram TTS voice/model |
 | `runwayTtsVoice` | `--runway-tts-voice` | Runway preset voice |
 | `deapiTtsVoice` | `--deapi-tts-voice` | deAPI TTS voice ID |
-| `minimaxTtsVoice` | `--minimax-tts-voice` | MiniMax TTS voice ID |
+| `deapiTtsRefAudio` | `--deapi-tts-ref-audio` | deAPI Qwen3 voice clone reference audio path |
+| `deapiTtsRefText` | `--deapi-tts-ref-text` | Optional transcript for the deAPI reference audio |
+| `minimaxTtsVoice` | `--minimax-tts-voice` | MiniMax TTS voice ID, or custom clone `voice_id` when clone defaults are set |
+| `minimaxTtsRefAudio` | `--minimax-tts-ref-audio` | MiniMax rapid voice clone source audio path |
+| `minimaxTtsPromptAudio` | `--minimax-tts-prompt-audio` | Optional MiniMax clone prompt audio path |
+| `minimaxTtsPromptText` | `--minimax-tts-prompt-text` | Transcript for the MiniMax clone prompt audio |
+| `minimaxTtsCloneNoiseReduction` | `--minimax-tts-clone-noise-reduction` | Enable MiniMax clone noise reduction |
+| `minimaxTtsCloneVolumeNormalization` | `--minimax-tts-clone-volume-normalization` | Enable MiniMax clone volume normalization |
+
+MiniMax clone defaults are opt-in through `minimaxTtsRefAudio`. To reuse a MiniMax voice that already exists, save only `minimaxTtsVoice` without `minimaxTtsRefAudio`.
+
+OpenAI custom voice creation defaults are opt-in through `openaiTtsRefAudio` and require exactly one of `openaiTtsConsentId` or `openaiTtsConsentAudio` at runtime. To reuse an existing OpenAI custom voice, save only `openaiVoice: "voice_..."` without `openaiTtsRefAudio`.
 
 ### defaults.post.image
 

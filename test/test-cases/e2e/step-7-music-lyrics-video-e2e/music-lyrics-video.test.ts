@@ -7,6 +7,7 @@ import {
   ensurePageImageFixture,
   fileExists,
   findLatestDirectory,
+  OUTPUT_DIR,
   runCommand
 } from '../../../test-utils/test-helpers'
 import { readBatchManifest, readRunManifest } from '../../../test-utils/manifest-helpers'
@@ -18,7 +19,7 @@ const RERENDER_SUFFIX = 'music-lyrics-0-audio-short-fixed'
 const EXAMPLE_SONG_AUDIO_PATH = 'input/examples/lyrics/01-example-song.mp3'
 const EXAMPLE_SONG_SUFFIX = 'music-lyrics-01-example-song'
 const BATCH_SUFFIX = 'music-lyrics-batch'
-const CAPTION_FIXTURE_DIR = 'output/music-lyrics-fixtures'
+const CAPTION_FIXTURE_DIR = `${OUTPUT_DIR}/music-lyrics-fixtures`
 const CAPTION_FIXTURE_PATH = `${CAPTION_FIXTURE_DIR}/0-audio-short-fixed.vtt`
 const MATCHING_IMAGE_PATH = 'input/examples/audio/0-audio-short.png'
 const BATCH_INPUT_DIR = 'input/test-fixtures/music-lyrics-batch'

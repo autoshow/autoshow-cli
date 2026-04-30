@@ -1,12 +1,12 @@
-import { expect } from 'bun:test'
+import { expect, test } from 'bun:test'
 import {
   fileExists,
   cleanupTestOutput,
+  runCommand,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
-  definePriceEstimateTest,
   runCommandAndExpectOutputDir,
   shouldSkipMissingEnv,
   withOutputLifecycle
@@ -33,19 +33,6 @@ export const defineMusicServiceTest = ({
     cliFlag,
     'invalid-model'
   ])
-
-  for (const { model } of models) {
-    const budgetKey = `music-${musicService}-${model}`
-
-    definePriceEstimateTest(budgetKey, `--price prints estimate for ${musicService} ${model}`, [
-      'src/cli/create-cli.ts',
-      'music',
-      'an ambient piano song',
-      cliFlag,
-      model,
-      '--price'
-    ])
-  }
 
   withOutputLifecycle(MUSIC_GEN_TITLE)
 
@@ -78,6 +65,31 @@ export const defineMusicServiceTest = ({
         expect(metadata.music?.[0]?.musicModel).toBe(model)
         expect(metadata.music?.[0]?.musicFileName).toBe('generated-music.mp3')
       }
+    }, E2E_TEST_TIMEOUT_MS)
+  }
+}
+
+export const defineMusicServicePriceTests = ({
+  models,
+  cliFlag,
+  musicService,
+}: {
+  models: Array<{ model: string, prompt: string, extraArgs?: string[] }>
+  cliFlag: string
+  musicService: string
+}): void => {
+  for (const { model } of models) {
+    test(`${musicService} ${model} --price prints estimate`, async () => {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'music',
+        'an ambient piano song',
+        cliFlag,
+        model,
+        '--price'
+      ])
+
+      expect(result.exitCode).toBe(0)
     }, E2E_TEST_TIMEOUT_MS)
   }
 }

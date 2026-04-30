@@ -94,6 +94,9 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3
 # Resume missing Runway TTS outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --runway-tts eleven_multilingual_v2
 
+# Resume missing OpenAI custom voice TTS outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+
 # Resume missing Gemini image outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001
 
@@ -198,13 +201,28 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
 | `--runway-tts <model>` | Select one or more Runway TTS models |
+| `--deapi-tts <model>` | Select one or more deAPI TTS models |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
 | `--elevenlabs-voice <id>` | ElevenLabs voice ID override |
 | `--minimax-tts-voice <id>` | MiniMax TTS voice ID override |
+| `--minimax-tts-ref-audio <path>` | MiniMax rapid voice clone source audio path |
+| `--minimax-tts-prompt-audio <path>` | Optional MiniMax clone prompt audio path |
+| `--minimax-tts-prompt-text <text>` | Transcript for the MiniMax clone prompt audio |
+| `--minimax-tts-clone-noise-reduction` | Enable MiniMax clone noise reduction |
+| `--minimax-tts-clone-volume-normalization` | Enable MiniMax clone volume normalization |
 | `--openai-voice <id>` | OpenAI TTS voice ID override |
+| `--openai-tts-ref-audio <path>` | OpenAI custom voice sample audio path |
+| `--openai-tts-consent-id <id>` | Existing OpenAI consent recording ID |
+| `--openai-tts-consent-audio <path>` | OpenAI consent recording audio path to upload |
+| `--openai-tts-consent-language <tag>` | Consent recording language tag; default `en-US` |
+| `--openai-tts-consent-name <name>` | Consent recording label |
+| `--openai-tts-voice-name <name>` | Created OpenAI custom voice label |
 | `--gemini-voice <name>` | Gemini TTS voice name override |
 | `--deepgram-voice <id>` | Deepgram TTS voice override |
 | `--runway-tts-voice <preset>` | Runway TTS preset voice override |
+| `--deapi-tts-voice <id>` | deAPI TTS voice override |
+| `--deapi-tts-ref-audio <path>` | deAPI Qwen3 voice clone reference audio path |
+| `--deapi-tts-ref-text <text>` | Optional transcript for the deAPI reference audio |
 | `--groq-voice <id>` | Groq TTS voice ID override |
 | `--grok-tts-voice <id>` | Grok TTS voice ID override |
 

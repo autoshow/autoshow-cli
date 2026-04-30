@@ -1,8 +1,11 @@
+import { stat } from 'node:fs/promises'
+import { basename, extname } from 'node:path'
 import type { DeapiTtsModel, Step4Metadata } from '~/types'
 import { DEAPI_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
+import { getAudioDuration } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/audio-splitter'
 import {
   deapiFetch,
   ensureDeapiApiKey,
@@ -13,14 +16,29 @@ import {
   readJsonOrText
 } from '~/utils/deapi'
 
+export const DEAPI_TTS_VOICE_CLONE_MODEL = 'Qwen3_TTS_12Hz_1_7B_Base'
+const MAX_DEAPI_TTS_REFERENCE_AUDIO_BYTES = 10 * 1024 * 1024
+const MIN_DEAPI_TTS_REFERENCE_AUDIO_SECONDS = 3
+const MAX_DEAPI_TTS_REFERENCE_AUDIO_SECONDS = 10
+const DEAPI_TTS_REFERENCE_AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.flac', '.ogg', '.m4a'])
+
+export type DeapiTtsMode = 'custom_voice' | 'voice_clone'
+
 export type DeapiTtsModelConfig = {
   maxTextChars: number
   minTextChars: number
   lang: string
   speed: number
-  voice: string
+  voice?: string | undefined
   format: 'mp3'
   sampleRate: number
+}
+
+export type DeapiTtsReferenceAudio = {
+  path: string
+  basename: string
+  durationSeconds: number
+  sizeBytes: number
 }
 
 export const getDeapiTtsModelConfig = (
@@ -58,10 +76,73 @@ export const getDeapiTtsModelConfig = (
         format: 'mp3',
         sampleRate: 24000
       }
-    case 'Qwen3_TTS_12Hz_1_7B_Base':
-      throw new Error('deAPI TTS model Qwen3_TTS_12Hz_1_7B_Base is not yet supported by this CLI because it requires reference audio and reference text inputs.')
+    case DEAPI_TTS_VOICE_CLONE_MODEL:
+      return {
+        maxTextChars: 5000,
+        minTextChars: 10,
+        lang: 'English',
+        speed: 1,
+        format: 'mp3',
+        sampleRate: 24000
+      }
     case 'Qwen3_TTS_12Hz_1_7B_VoiceDesign':
       throw new Error('deAPI TTS model Qwen3_TTS_12Hz_1_7B_VoiceDesign is not yet supported by this CLI because it requires voice design instruction inputs.')
+  }
+}
+
+export const validateDeapiTtsReferenceAudio = async (
+  refAudioPath: string
+): Promise<DeapiTtsReferenceAudio> => {
+  const normalizedPath = refAudioPath.trim()
+  if (normalizedPath.length === 0) {
+    throw new Error('deAPI TTS reference audio path is empty.')
+  }
+
+  const ext = extname(normalizedPath).toLowerCase()
+  if (!DEAPI_TTS_REFERENCE_AUDIO_EXTENSIONS.has(ext)) {
+    throw new Error('deAPI TTS reference audio must be an mp3, wav, flac, ogg, or m4a file.')
+  }
+
+  let fileStats: Awaited<ReturnType<typeof stat>>
+  try {
+    fileStats = await stat(normalizedPath)
+  } catch {
+    throw new Error(`deAPI TTS reference audio not found: ${normalizedPath}`)
+  }
+
+  if (!fileStats.isFile()) {
+    throw new Error(`deAPI TTS reference audio is not a file: ${normalizedPath}`)
+  }
+  if (fileStats.size <= 0) {
+    throw new Error(`deAPI TTS reference audio is empty: ${normalizedPath}`)
+  }
+  if (fileStats.size > MAX_DEAPI_TTS_REFERENCE_AUDIO_BYTES) {
+    throw new Error(`deAPI TTS reference audio exceeds 10 MB: ${normalizedPath}`)
+  }
+
+  let durationSeconds: number
+  try {
+    durationSeconds = await getAudioDuration(normalizedPath)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Could not determine deAPI TTS reference audio duration: ${message}`)
+  }
+
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    throw new Error(`Could not determine deAPI TTS reference audio duration: ${normalizedPath}`)
+  }
+  if (
+    durationSeconds < MIN_DEAPI_TTS_REFERENCE_AUDIO_SECONDS
+    || durationSeconds > MAX_DEAPI_TTS_REFERENCE_AUDIO_SECONDS
+  ) {
+    throw new Error(`deAPI TTS reference audio must be 3-10 seconds long. Received ${durationSeconds.toFixed(2)} seconds.`)
+  }
+
+  return {
+    path: normalizedPath,
+    basename: basename(normalizedPath),
+    durationSeconds,
+    sizeBytes: fileStats.size
   }
 }
 
@@ -95,15 +176,42 @@ const downloadResultAudio = async (resultUrl: string, outputPath: string): Promi
 export const runDeapiTts = async (
   text: string,
   outputDir: string,
-  options: { model: DeapiTtsModel, voiceId?: string | undefined }
+  options: {
+    model: DeapiTtsModel
+    voiceId?: string | undefined
+    refAudioPath?: string | undefined
+    refText?: string | undefined
+  }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
-  const apiKey = ensureDeapiApiKey('deAPI TTS')
+  const refAudioPath = options.refAudioPath?.trim() || undefined
+  const voiceId = options.voiceId?.trim() || undefined
+  if (voiceId && refAudioPath) {
+    throw new Error('deAPI TTS requires exactly one voice source. Use either --deapi-tts-voice or --deapi-tts-ref-audio, not both.')
+  }
+  if (options.refText?.trim() && !refAudioPath) {
+    throw new Error('deAPI TTS --deapi-tts-ref-text requires --deapi-tts-ref-audio.')
+  }
+  if (refAudioPath && options.model !== DEAPI_TTS_VOICE_CLONE_MODEL) {
+    throw new Error(`deAPI TTS voice cloning is only supported for ${DEAPI_TTS_VOICE_CLONE_MODEL}.`)
+  }
+  if (options.model === DEAPI_TTS_VOICE_CLONE_MODEL && !refAudioPath) {
+    throw new Error(`deAPI TTS model ${DEAPI_TTS_VOICE_CLONE_MODEL} requires --deapi-tts-ref-audio.`)
+  }
+
   const config = getDeapiTtsModelConfig(options.model, options.voiceId)
   const input = validateTextLength(text, options.model, config)
+  const mode: DeapiTtsMode = refAudioPath ? 'voice_clone' : 'custom_voice'
+  const refAudio = refAudioPath ? await validateDeapiTtsReferenceAudio(refAudioPath) : undefined
+  if (mode === 'custom_voice' && !config.voice) {
+    throw new Error(`deAPI TTS model ${options.model} requires --deapi-tts-ref-audio.`)
+  }
+  const apiKey = ensureDeapiApiKey('deAPI TTS')
+  const speaker = refAudio ? `ref_audio:${refAudio.basename}` : config.voice
 
   logTtsConfig('deAPI', [
     { label: 'model', value: options.model },
-    { label: 'voice', value: config.voice },
+    { label: 'mode', value: mode },
+    { label: refAudio ? 'reference audio' : 'voice', value: refAudio ? refAudio.basename : config.voice },
     { label: 'language', value: config.lang },
     { label: 'format', value: config.format },
     { label: 'sample rate', value: config.sampleRate }
@@ -113,8 +221,16 @@ export const runDeapiTts = async (
   const body = new FormData()
   body.append('text', input)
   body.append('model', options.model)
-  body.append('mode', 'custom_voice')
-  body.append('voice', config.voice)
+  body.append('mode', mode)
+  if (mode === 'custom_voice') {
+    body.append('voice', config.voice as string)
+  } else if (refAudio) {
+    body.append('ref_audio', Bun.file(refAudio.path), refAudio.basename)
+    const refText = options.refText?.trim()
+    if (refText) {
+      body.append('ref_text', refText)
+    }
+  }
   body.append('lang', config.lang)
   body.append('speed', String(config.speed))
   body.append('format', config.format)
@@ -153,7 +269,7 @@ export const runDeapiTts = async (
   return finalizeTtsRun({
     service: 'deapi',
     model: options.model,
-    speaker: config.voice,
+    speaker,
     audioPath,
     chunkCount: 1,
     startTime

@@ -14,20 +14,6 @@ defineImageServiceTest({
   envVarKey: 'GEMINI_API_KEY',
 })
 
-test('--price allows Gemini with another image provider', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1-mini', '--imagen-count', '2', '--price'],
-  )
-  const output = `${result.stdout}\n${result.stderr}`
-  expect(result.exitCode).toBe(0)
-  expect(output).toContain('Cost Estimate')
-  expect(output).toContain('gemini')
-  expect(output).toContain('openai')
-  expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001.png')
-  expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001-2.png')
-  expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')
-})
-
 test('rejects --image-size for imagen-4.0-fast-generate-001', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-fast-generate-001', '--image-size', '2K'],

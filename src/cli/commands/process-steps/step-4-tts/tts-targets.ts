@@ -40,18 +40,29 @@ import { ensureOpenAITtsSetup } from '~/cli/commands/process-steps/step-4-tts/tt
 import { ensureGeminiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { ensureRunwayTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/runway/runway-tts'
-import { ensureDeapiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { runKittenTts } from './tts-local/kitten/run-kitten-tts'
 import { runElevenLabsTts } from './tts-services/elevenlabs/run-elevenlabs-tts'
-import { runMinimaxTts } from './tts-services/minimax/run-minimax-tts'
+import {
+  createMinimaxTtsCloneContext,
+  MINIMAX_TTS_CLONE_COST_CENTS,
+  MINIMAX_TTS_CLONE_SETUP_MS,
+  runMinimaxTts,
+  validateMinimaxTtsCloneVoiceId
+} from './tts-services/minimax/run-minimax-tts'
 import { runGroqTts } from './tts-services/groq/run-groq-tts'
 import { runGrokTts } from './tts-services/grok/run-grok-tts'
 import { runMistralTts } from './tts-services/mistral/run-mistral-tts'
 import { runOpenAITts } from './tts-services/openai/run-openai-tts'
+import {
+  createOpenAITtsCustomVoiceContext,
+  OPENAI_TTS_CLONE_COST_CENTS,
+  OPENAI_TTS_CLONE_SETUP_MS,
+  OPENAI_TTS_CLONE_SETUP_NOTE
+} from './tts-services/openai/openai-custom-voices'
 import { runGeminiTts } from './tts-services/gemini/run-gemini-tts'
 import { runDeepgramTts } from './tts-services/deepgram/run-deepgram-tts'
 import { runRunwayTts } from './tts-services/runway/run-runway-tts'
-import { runDeapiTts } from './tts-services/deapi/run-deapi-tts'
+import { DEAPI_TTS_VOICE_CLONE_MODEL, runDeapiTts } from './tts-services/deapi/run-deapi-tts'
 import {
   formatGeminiSpeakerSummary,
   resolveGeminiMultiSpeakerConfig,
@@ -63,7 +74,6 @@ import * as l from '~/utils/logger'
 const KITTEN_PYTHON_VERSION = '3.12'
 
 export const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
-
 const checkKittenTtsSetup = async (): Promise<boolean> => {
   if (!await pathExists(kittenTtsUvEnvDir)) {
     return false
@@ -124,6 +134,17 @@ export const buildTtsArtifactMap = (
     getFileName: (entry) => entry.audioFileName
   })
 
+export const buildEstimatedTtsTargets = (
+  targets: TtsTarget[]
+): Array<{ service: Step4Metadata['ttsService'], model: string, setupCostCents?: number, setupTimeMs?: number, setupNote?: string }> =>
+  targets.map((target) => ({
+    service: target.service,
+    model: target.model,
+    ...(typeof target.setupCostCents === 'number' ? { setupCostCents: target.setupCostCents } : {}),
+    ...(typeof target.setupTimeMs === 'number' ? { setupTimeMs: target.setupTimeMs } : {}),
+    ...(typeof target.setupNote === 'string' ? { setupNote: target.setupNote } : {})
+  }))
+
 export const validateTtsInput = (text: string, options: TtsOptions): void => {
   const geminiModels = options.geminiTtsModels ?? (options.geminiTtsModel ? [options.geminiTtsModel] : [])
   if (geminiModels.length === 0) {
@@ -150,6 +171,70 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const runwayModels = options.runwayTtsModels ?? (options.runwayTtsModel ? [options.runwayTtsModel] : [])
   const deapiModels = options.deapiTtsModels ?? (options.deapiTtsModel ? [options.deapiTtsModel] : [])
   const geminiMultiSpeakerConfig = resolveGeminiMultiSpeakerConfig(options)
+  const minimaxCloneRefAudioPath = options.minimaxTtsRefAudio?.trim() || undefined
+  const minimaxClonePromptAudioPath = options.minimaxTtsPromptAudio?.trim() || undefined
+  const minimaxClonePromptText = options.minimaxTtsPromptText?.trim() || undefined
+  const openaiCloneRefAudioPath = options.openaiTtsRefAudio?.trim() || undefined
+  const openaiCloneConsentId = options.openaiTtsConsentId?.trim() || undefined
+  const openaiCloneConsentAudioPath = options.openaiTtsConsentAudio?.trim() || undefined
+  const openaiCloneConsentLanguage = options.openaiTtsConsentLanguage?.trim() || undefined
+  const openaiCloneConsentName = options.openaiTtsConsentName?.trim() || undefined
+  const openaiCloneVoiceName = options.openaiTtsVoiceName?.trim() || undefined
+  const hasMinimaxCloneFlags = Boolean(
+    minimaxCloneRefAudioPath
+    || minimaxClonePromptAudioPath
+    || minimaxClonePromptText
+    || options.minimaxTtsCloneNoiseReduction
+    || options.minimaxTtsCloneVolumeNormalization
+  )
+  const hasOpenAICloneFlags = Boolean(
+    openaiCloneRefAudioPath
+    || openaiCloneConsentId
+    || openaiCloneConsentAudioPath
+    || openaiCloneConsentLanguage
+    || openaiCloneConsentName
+    || openaiCloneVoiceName
+  )
+
+  if (hasMinimaxCloneFlags && minimaxModels.length === 0) {
+    throw new Error('MiniMax TTS clone flags require --minimax-tts <model> or --all-tts.')
+  }
+  if (
+    (minimaxClonePromptAudioPath
+      || minimaxClonePromptText
+      || options.minimaxTtsCloneNoiseReduction
+      || options.minimaxTtsCloneVolumeNormalization)
+    && !minimaxCloneRefAudioPath
+  ) {
+    throw new Error('MiniMax TTS clone option requires --minimax-tts-ref-audio.')
+  }
+  if (minimaxClonePromptAudioPath && !minimaxClonePromptText) {
+    throw new Error('MiniMax TTS --minimax-tts-prompt-audio requires --minimax-tts-prompt-text.')
+  }
+  if (minimaxClonePromptText && !minimaxClonePromptAudioPath) {
+    throw new Error('MiniMax TTS --minimax-tts-prompt-text requires --minimax-tts-prompt-audio.')
+  }
+
+  if (hasOpenAICloneFlags && openaiModels.length === 0) {
+    throw new Error('OpenAI TTS custom voice flags require --openai-tts <model> or --all-tts.')
+  }
+  if (hasOpenAICloneFlags && !openaiCloneRefAudioPath) {
+    throw new Error('OpenAI TTS custom voice creation requires --openai-tts-ref-audio.')
+  }
+  if (hasOpenAICloneFlags) {
+    const consentSourceCount = (openaiCloneConsentId ? 1 : 0) + (openaiCloneConsentAudioPath ? 1 : 0)
+    if (consentSourceCount !== 1) {
+      throw new Error('OpenAI TTS custom voice creation requires exactly one of --openai-tts-consent-id or --openai-tts-consent-audio.')
+    }
+    if (options.openaiVoiceId?.trim()) {
+      throw new Error('OpenAI TTS custom voice creation cannot be combined with --openai-voice. Use --openai-tts-voice-name for the created voice label.')
+    }
+  }
+
+  const minimaxCloneContext = minimaxCloneRefAudioPath ? createMinimaxTtsCloneContext() : undefined
+  const openaiCloneContext = openaiCloneRefAudioPath ? createOpenAITtsCustomVoiceContext() : undefined
+  let minimaxCloneEstimateAttached = false
+  let openaiCloneEstimateAttached = false
 
   for (const rawModel of kittenModels) {
     const model: KittenTtsModel = validateKittenTtsModel(rawModel)
@@ -184,14 +269,39 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
 
   for (const rawModel of minimaxModels) {
     const model: MinimaxTtsModel = validateMinimaxTtsModel(rawModel)
-    const voiceId = options.minimaxTtsVoice?.trim() || undefined
+    const rawVoiceId = options.minimaxTtsVoice?.trim() || undefined
+    const voiceId = minimaxCloneRefAudioPath && rawVoiceId
+      ? validateMinimaxTtsCloneVoiceId(rawVoiceId)
+      : rawVoiceId
+    const clone = minimaxCloneRefAudioPath
+      ? {
+          refAudioPath: minimaxCloneRefAudioPath,
+          ...(voiceId ? { voiceId } : {}),
+          ...(minimaxClonePromptAudioPath ? { promptAudioPath: minimaxClonePromptAudioPath } : {}),
+          ...(minimaxClonePromptText ? { promptText: minimaxClonePromptText } : {}),
+          needNoiseReduction: options.minimaxTtsCloneNoiseReduction === true,
+          needVolumeNormalization: options.minimaxTtsCloneVolumeNormalization === true,
+          context: minimaxCloneContext
+        }
+      : undefined
+    const attachCloneEstimate = clone !== undefined && !minimaxCloneEstimateAttached
+    if (attachCloneEstimate) {
+      minimaxCloneEstimateAttached = true
+    }
 
     targets.push({
       service: 'minimax',
       model,
-      ...(voiceId ? { voice: voiceId } : {}),
+      ...(clone ? { voice: `ref_audio:${basename(clone.refAudioPath)}` } : voiceId ? { voice: voiceId } : {}),
+      ...(attachCloneEstimate
+        ? {
+            setupCostCents: MINIMAX_TTS_CLONE_COST_CENTS,
+            setupTimeMs: MINIMAX_TTS_CLONE_SETUP_MS,
+            setupNote: 'MiniMax rapid voice clone setup'
+          }
+        : {}),
       run: async (text, outputDir) => {
-        return await runMinimaxTts(text, outputDir, { model, voiceId })
+        return await runMinimaxTts(text, outputDir, { model, voiceId, clone })
       }
     })
   }
@@ -249,14 +359,36 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   for (const rawModel of openaiModels) {
     const model: OpenAITtsModel = validateOpenAITtsModel(rawModel)
     const voiceId = options.openaiVoiceId?.trim() || undefined
+    const clone = openaiCloneRefAudioPath
+      ? {
+          refAudioPath: openaiCloneRefAudioPath,
+          ...(openaiCloneConsentId ? { consentId: openaiCloneConsentId } : {}),
+          ...(openaiCloneConsentAudioPath ? { consentAudioPath: openaiCloneConsentAudioPath } : {}),
+          ...(openaiCloneConsentLanguage ? { consentLanguage: openaiCloneConsentLanguage } : {}),
+          ...(openaiCloneConsentName ? { consentName: openaiCloneConsentName } : {}),
+          ...(openaiCloneVoiceName ? { voiceName: openaiCloneVoiceName } : {}),
+          context: openaiCloneContext
+        }
+      : undefined
+    const attachCloneEstimate = clone !== undefined && !openaiCloneEstimateAttached
+    if (attachCloneEstimate) {
+      openaiCloneEstimateAttached = true
+    }
 
     targets.push({
       service: 'openai',
       model,
-      ...(voiceId ? { voice: voiceId } : {}),
+      ...(clone ? { voice: `ref_audio:${basename(clone.refAudioPath)}` } : voiceId ? { voice: voiceId } : {}),
+      ...(attachCloneEstimate
+        ? {
+            setupCostCents: OPENAI_TTS_CLONE_COST_CENTS,
+            setupTimeMs: OPENAI_TTS_CLONE_SETUP_MS,
+            setupNote: OPENAI_TTS_CLONE_SETUP_NOTE
+          }
+        : {}),
       run: async (text, outputDir) => {
         await ensureOpenAITtsSetup()
-        return await runOpenAITts(text, outputDir, { model, voiceId })
+        return await runOpenAITts(text, outputDir, { model, voiceId, clone })
       }
     })
   }
@@ -313,14 +445,31 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   for (const rawModel of deapiModels) {
     const model: DeapiTtsModel = validateDeapiTtsModel(rawModel)
     const voiceId = options.deapiTtsVoice?.trim() || undefined
+    const refAudioPath = options.deapiTtsRefAudio?.trim() || undefined
+    const refText = options.deapiTtsRefText?.trim() || undefined
+
+    if (voiceId && refAudioPath) {
+      throw new Error('deAPI TTS requires exactly one voice source. Use either --deapi-tts-voice or --deapi-tts-ref-audio, not both.')
+    }
+    if (refText && !refAudioPath) {
+      throw new Error('deAPI TTS --deapi-tts-ref-text requires --deapi-tts-ref-audio.')
+    }
+    if (refAudioPath && model !== DEAPI_TTS_VOICE_CLONE_MODEL) {
+      throw new Error(`deAPI TTS voice cloning is only supported for ${DEAPI_TTS_VOICE_CLONE_MODEL}.`)
+    }
+    if (model === DEAPI_TTS_VOICE_CLONE_MODEL && !refAudioPath) {
+      throw new Error(`deAPI TTS model ${DEAPI_TTS_VOICE_CLONE_MODEL} requires --deapi-tts-ref-audio.`)
+    }
+    if (model === 'Qwen3_TTS_12Hz_1_7B_VoiceDesign') {
+      throw new Error('deAPI TTS model Qwen3_TTS_12Hz_1_7B_VoiceDesign is not yet supported because it requires voice design instruction inputs.')
+    }
 
     targets.push({
       service: 'deapi',
       model,
-      ...(voiceId ? { voice: voiceId } : {}),
+      ...(voiceId ? { voice: voiceId } : refAudioPath ? { voice: `ref_audio:${basename(refAudioPath)}` } : {}),
       run: async (text, outputDir) => {
-        await ensureDeapiTtsSetup()
-        return await runDeapiTts(text, outputDir, { model, voiceId })
+        return await runDeapiTts(text, outputDir, { model, voiceId, refAudioPath, refText })
       }
     })
   }

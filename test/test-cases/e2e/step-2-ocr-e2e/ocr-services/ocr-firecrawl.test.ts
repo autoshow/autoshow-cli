@@ -12,19 +12,6 @@ type ExtractMetadata = {
 
 const articleUrl = 'https://ajcwebdev.com'
 
-budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --url-backend firecrawl --price', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'firecrawl', '--price'],
-    { testName: 'bun as extract https://ajcwebdev.com --url-backend firecrawl --price' }
-  )
-
-  expect(result.exitCode).toBe(0)
-  const output = `${result.stdout}\n${result.stderr}`
-  expect(output).toContain('Cost Estimate')
-  expect(output).toContain('firecrawl')
-  expect(output).not.toContain('Firecrawl credits apply; exact cost is not estimated locally.')
-})
-
 budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --url-backend firecrawl', async () => {
   if (await shouldSkipMissingEnv('FIRECRAWL_API_KEY', 'FIRECRAWL_API_KEY not configured')) {
     return

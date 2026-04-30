@@ -1,6 +1,6 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { test, expect } from 'bun:test'
 import { defineTTSServiceTest } from '../../../../test-utils/define-tts-service-test'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
@@ -26,6 +26,9 @@ import {
 
 const MISTRAL_TTS_MODEL = 'voxtral-mini-tts-2603'
 const MISTRAL_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
+const MINIMAX_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
+const DEAPI_TTS_CLONE_MODEL = 'Qwen3_TTS_12Hz_1_7B_Base'
+const DEAPI_REF_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
 
 defineTTSServiceTest({
   models: ['gpt-4o-mini-tts'],
@@ -38,6 +41,58 @@ defineTTSServiceTest({
     return voice ?? OPENAI_DEFAULT_TTS_VOICE
   },
 })
+
+budgetedTest('tts-openai-gpt-4o-mini-tts-clone', 'OpenAI custom voice clone generates speech.wav when explicitly enabled', async () => {
+  const enabled = await readConfiguredEnvVar('OPENAI_TTS_CUSTOM_VOICE_TEST')
+  if (enabled !== '1') {
+    console.log('Skipping: OPENAI_TTS_CUSTOM_VOICE_TEST=1 is required for OpenAI custom voice TTS test')
+    return
+  }
+  if (!await hasConfiguredEnvVar('OPENAI_API_KEY')) {
+    console.log('Skipping: OPENAI_API_KEY is required for OpenAI custom voice TTS test')
+    return
+  }
+  const consentId = await readConfiguredEnvVar('OPENAI_TTS_CONSENT_ID')
+  const refAudio = await readConfiguredEnvVar('OPENAI_TTS_REF_AUDIO')
+  if (!consentId || !refAudio) {
+    console.log('Skipping: OPENAI_TTS_CONSENT_ID and OPENAI_TTS_REF_AUDIO are required for OpenAI custom voice TTS test')
+    return
+  }
+
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--openai-tts',
+    'gpt-4o-mini-tts',
+    '--openai-tts-ref-audio',
+    refAudio,
+    '--openai-tts-consent-id',
+    consentId,
+    '--openai-tts-voice-name',
+    `AutoShowLive${Date.now().toString(36)}`
+  ])
+
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string, clonedVoiceId?: string, cloneCostCents?: number }>
+    }
+    expect(metadata.tts?.[0]?.ttsService).toBe('openai')
+    expect(metadata.tts?.[0]?.ttsModel).toBe('gpt-4o-mini-tts')
+    expect(metadata.tts?.[0]?.speaker).toBe(`ref_audio:${basename(refAudio)}`)
+    expect(metadata.tts?.[0]?.clonedVoiceId?.startsWith('voice_')).toBe(true)
+    expect(metadata.tts?.[0]?.cloneCostCents).toBe(0)
+  }
+}, E2E_TEST_TIMEOUT_MS)
 
 defineTTSServiceTest({
   models: ['gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'],
@@ -117,6 +172,46 @@ defineTTSServiceTest({
   resolveExpectedSpeaker: async () => 'English_expressive_narrator',
 })
 
+budgetedTest('tts-minimax-speech-2.8-turbo-clone', 'MiniMax voice clone generates speech.wav', async () => {
+  if (!await hasConfiguredEnvVar('MINIMAX_API_KEY')) {
+    console.log('Skipping: MINIMAX_API_KEY is required for MiniMax voice clone TTS test')
+    return
+  }
+
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
+  const voiceId = `AutoShow${Date.now().toString(36)}`
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'tts',
+    STABLE_TTS_MD_PATH,
+    '--minimax-tts',
+    'speech-2.8-turbo',
+    '--minimax-tts-ref-audio',
+    MINIMAX_REF_AUDIO_PATH,
+    '--minimax-tts-voice',
+    voiceId
+  ])
+
+  expect(result.exitCode).toBe(0)
+
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+  expect(outputDir).not.toBeNull()
+
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
+
+    const metadata = await readRunMetadata(outputDir) as {
+      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string, clonedVoiceId?: string, cloneCostCents?: number }>
+    }
+    expect(metadata.tts?.[0]?.ttsService).toBe('minimax')
+    expect(metadata.tts?.[0]?.ttsModel).toBe('speech-2.8-turbo')
+    expect(metadata.tts?.[0]?.speaker).toBe('ref_audio:anthony-voice.mp3')
+    expect(metadata.tts?.[0]?.clonedVoiceId).toBe(voiceId)
+    expect(metadata.tts?.[0]?.cloneCostCents).toBe(150)
+  }
+}, E2E_TEST_TIMEOUT_MS)
+
 defineTTSServiceTest({
   models: ['eleven_v3', 'eleven_flash_v2_5', 'eleven_turbo_v2_5'],
   cliFlag: '--elevenlabs-tts',
@@ -184,44 +279,6 @@ test('rejects invalid mistral model', async () => {
 
   expect(result.exitCode).not.toBe(0)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --mistral-tts model')
-})
-
-test('mistral --price works without a voice source', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--mistral-tts',
-    MISTRAL_TTS_MODEL,
-    '--price'
-  ], {
-    env: {
-      MISTRAL_TTS_VOICE: '',
-      MISTRAL_TTS_REF_AUDIO: ''
-    }
-  })
-
-  expect(result.exitCode).toBe(0)
-  expect(result.outputDir).toBeNull()
-  expect(`${result.stdout}\n${result.stderr}`).toContain('speech')
-})
-
-test('mistral rejects voice and reference audio together before API request', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--mistral-tts',
-    MISTRAL_TTS_MODEL,
-    '--mistral-tts-voice',
-    'voice_abc123',
-    '--mistral-tts-ref-audio',
-    MISTRAL_REF_AUDIO_PATH,
-    '--price'
-  ])
-
-  expect(result.exitCode).not.toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Use either --mistral-tts-voice or --mistral-tts-ref-audio, not both')
 })
 
 test('mistral execution requires a voice source before API key validation', async () => {
@@ -322,53 +379,40 @@ budgetedTest('tts-mistral-voxtral-mini-tts-2603-ref-audio', 'mistral reference a
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-test('rejects invalid deepgram voice override before API request', async () => {
+budgetedTest('tts-deapi-qwen3-voice-clone', 'deAPI Qwen3 voice clone generates speech.wav', async () => {
+  if (!await hasConfiguredEnvVar('DEAPI_API_KEY')) {
+    console.log('Skipping: DEAPI_API_KEY is required for deAPI TTS test')
+    return
+  }
+
+  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--deepgram-tts',
-    'aura-2-thalia-en',
-    '--deepgram-voice',
-    'invalid-model',
-    '--price'
+    '--deapi-tts',
+    DEAPI_TTS_CLONE_MODEL,
+    '--deapi-tts-ref-audio',
+    DEAPI_REF_AUDIO_PATH
   ])
 
-  expect(result.exitCode).not.toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --deepgram-voice "invalid-model"')
-})
+  expect(result.exitCode).toBe(0)
 
-test('rejects invalid grok voice override before API request', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--grok-tts',
-    'grok-tts',
-    '--grok-tts-voice',
-    'invalid-voice',
-    '--price'
-  ])
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+  expect(outputDir).not.toBeNull()
 
-  expect(result.exitCode).not.toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --grok-tts-voice "invalid-voice"')
-})
+  if (outputDir) {
+    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
 
-test('rejects invalid runway voice override before API request', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--runway-tts',
-    'eleven_multilingual_v2',
-    '--runway-tts-voice',
-    'invalid-voice',
-    '--price'
-  ])
-
-  expect(result.exitCode).not.toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --runway-tts-voice "invalid-voice"')
-})
+    const metadata = await readRunMetadata(outputDir) as {
+      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
+    }
+    expect(metadata.tts?.[0]?.ttsService).toBe('deapi')
+    expect(metadata.tts?.[0]?.ttsModel).toBe(DEAPI_TTS_CLONE_MODEL)
+    expect(metadata.tts?.[0]?.speaker).toBe('ref_audio:0-audio-short.mp3')
+  }
+}, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('tts-deepgram-aura-2-thalia-en', 'deepgram with --deepgram-voice aura-2-andromeda-en records speaker override', async () => {
   if (!await hasConfiguredEnvVar('DEEPGRAM_API_KEY')) {

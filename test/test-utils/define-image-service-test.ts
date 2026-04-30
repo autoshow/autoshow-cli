@@ -1,12 +1,12 @@
-import { expect } from 'bun:test'
+import { expect, test } from 'bun:test'
 import {
   fileExists,
   cleanupTestOutput,
+  runCommand,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
-  definePriceEstimateTest,
   runCommandAndExpectOutputDir,
   shouldSkipMissingEnv,
   withOutputLifecycle
@@ -37,20 +37,6 @@ export const defineImageServiceTest = ({
     cliFlag,
     'invalid-model'
   ])
-
-  for (const { model, extraArgs } of models) {
-    const budgetKey = `image-${imageService}-${model}`
-
-    definePriceEstimateTest(budgetKey, `--price prints estimate for ${model}`, [
-      'src/cli/create-cli.ts',
-      'image',
-      'a sunset',
-      cliFlag,
-      model,
-      ...(extraArgs ?? []),
-      '--price'
-    ])
-  }
 
   withOutputLifecycle(IMAGE_GEN_TITLE)
 
@@ -83,6 +69,32 @@ export const defineImageServiceTest = ({
         expect(metadata.image?.[0]?.imageModel).toBe(model)
         expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe(`generated-image.${ext}`)
       }
+    }, E2E_TEST_TIMEOUT_MS)
+  }
+}
+
+export const defineImageServicePriceTests = ({
+  models,
+  cliFlag,
+  imageService,
+}: {
+  models: Array<{ model: string, prompt: string, extraArgs?: string[] }>
+  cliFlag: string
+  imageService: string
+}): void => {
+  for (const { model, extraArgs } of models) {
+    test(`${imageService} ${model} --price prints estimate`, async () => {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'image',
+        'a sunset',
+        cliFlag,
+        model,
+        ...(extraArgs ?? []),
+        '--price'
+      ])
+
+      expect(result.exitCode).toBe(0)
     }, E2E_TEST_TIMEOUT_MS)
   }
 }

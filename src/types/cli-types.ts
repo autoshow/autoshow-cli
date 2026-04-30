@@ -172,6 +172,12 @@ export type RuntimeOptions = {
   openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined
+  openaiTtsRefAudio: string | undefined
+  openaiTtsConsentId: string | undefined
+  openaiTtsConsentAudio: string | undefined
+  openaiTtsConsentLanguage: string | undefined
+  openaiTtsConsentName: string | undefined
+  openaiTtsVoiceName: string | undefined
   geminiTtsModels: string[] | undefined
   geminiTtsModel: string | undefined
   geminiVoiceId: string | undefined
@@ -191,9 +197,16 @@ export type RuntimeOptions = {
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined
+  minimaxTtsRefAudio: string | undefined
+  minimaxTtsPromptAudio: string | undefined
+  minimaxTtsPromptText: string | undefined
+  minimaxTtsCloneNoiseReduction: boolean
+  minimaxTtsCloneVolumeNormalization: boolean
   deapiTtsModels: string[] | undefined
   deapiTtsModel: string | undefined
   deapiTtsVoice: string | undefined
+  deapiTtsRefAudio: string | undefined
+  deapiTtsRefText: string | undefined
   geminiImageModels: string[] | undefined
   geminiImageModel: string | undefined
   openaiImageModels: string[] | undefined

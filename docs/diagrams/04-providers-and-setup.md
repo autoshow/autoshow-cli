@@ -161,6 +161,8 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
                                           |
   Step 17 ─── setupGeminiTts() ────────── Check Gemini TTS (API key only)
                                           |
+  Step 17 ─── setupDeapiTts() ─────────── Check deAPI TTS (API key only)
+                                          |
   Step 18 ─── setupGeminiImageGen() ───── Check Gemini image gen (API key only)
                                           |
   Step 19 ─── setupOpenAIImageGen() ───── Check OpenAI image gen (API key only)
@@ -192,11 +194,13 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY` |
+| `tts --minimax-tts` | `MINIMAX_API_KEY`; `--minimax-tts-ref-audio` also needs local `mp3`, `m4a`, or `wav` clone source audio |
 | `tts --groq-tts` | `GROQ_API_KEY` |
 | `tts --grok-tts` | `XAI_API_KEY` |
-| `tts --openai-tts` | `OPENAI_API_KEY` |
+| `tts --openai-tts` | `OPENAI_API_KEY`; custom voice creation also needs `--openai-tts-ref-audio` plus `--openai-tts-consent-id` or `--openai-tts-consent-audio` |
 | `tts --gemini-tts` | `GEMINI_API_KEY` |
 | `tts --runway-tts` | `RUNWAYML_API_SECRET` |
+| `tts --deapi-tts` | `DEAPI_API_KEY` |
 | `image --gemini-image` | `GEMINI_API_KEY` |
 | `image --openai-image` | `OPENAI_API_KEY` |
 | `image --minimax-image` | `MINIMAX_API_KEY` |

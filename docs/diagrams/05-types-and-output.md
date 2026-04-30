@@ -117,9 +117,13 @@ src/types/
 │    preserveSpaces, rotate, useOcrmypdf, usePaddleOcr,                        │
 │    batchLimit, batchAll, batchOrder, batchConcurrency,                       │
 │    ttsSpeaker, kittenTtsModel, groqTtsModel, groqVoiceId,                    │
-│    openaiTtsModel, openaiVoiceId, geminiTtsModel, geminiVoiceId,             │
-│    runwayTtsModel, runwayTtsVoice,                                           │
+│    openaiTtsModel, openaiVoiceId, openaiTtsRefAudio, openaiTtsConsentId,     │
+│    openaiTtsConsentAudio, openaiTtsVoiceName, geminiTtsModel, geminiVoiceId, │
+│    runwayTtsModel, runwayTtsVoice, deapiTtsModel, deapiTtsVoice,             │
+│    deapiTtsRefAudio, deapiTtsRefText,                                        │
 │    elevenlabsTtsModel, elevenlabsVoiceId, minimaxTtsModel, minimaxTtsVoice,  │
+│    minimaxTtsRefAudio, minimaxTtsPromptAudio, minimaxTtsPromptText,          │
+│    minimaxTtsCloneNoiseReduction, minimaxTtsCloneVolumeNormalization,        │
 │    geminiImageModel, openaiImageModel, minimaxImageModel,                    │
 │    imageAspectRatio, imageSize, imageQuality, imageFormat, imageBackground,  │
 │    imagenCount,                                                              │
@@ -173,7 +177,8 @@ src/types/
 │                                                                              │
 │  Step 4 (TTS):                                                               │
 │  └── Step4Metadata        ttsService (TtsProvider), ttsModel, speaker?,      │
-│       language?, processingTime, audioFileName, audioFileSize, chunkCount    │
+│       language?, processingTime, audioFileName, audioFileSize, chunkCount,   │
+│       clonedVoiceId?, cloneCostCents?                                        │
 │                                                                              │
 │  Step 5 (Image Gen):                                                         │
 │  └── Step5Metadata        imageService (ImageProvider), imageModel,          │

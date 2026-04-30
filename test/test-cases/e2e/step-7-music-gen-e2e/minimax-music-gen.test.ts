@@ -60,20 +60,6 @@ budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop music', a
   }
 })
 
-budgetedTest('music-pipeline-minimax-music-2.5', 'write --price includes MiniMax music estimate for a real input', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
-  )
-  const output = `${result.stdout}\n${result.stderr}`
-
-  expect(result.exitCode).toBe(0)
-  expect(output).toContain('Cost Estimate')
-  expect(output).toContain('music')
-  expect(output).toContain('minimax')
-  expect(output).toContain('music-2.5')
-  expect(output).toContain('Music file')
-})
-
 budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and lyrics file', async () => {
   const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
   if (!hasMinimax) {

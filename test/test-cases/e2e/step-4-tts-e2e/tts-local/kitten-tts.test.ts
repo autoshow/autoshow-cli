@@ -115,29 +115,6 @@ describe('kitten-tts', () => {
       }, E2E_TEST_TIMEOUT_MS)
     }
 
-    test('multi-provider --price prints both TTS targets and renamed output files', async () => {
-      const result = await runCommand([
-        'src/cli/create-cli.ts',
-        'tts',
-        STABLE_TTS_MD_PATH,
-        '--kitten-tts',
-        'kitten-tts-mini',
-        '--openai-tts',
-        'gpt-4o-mini-tts',
-        '--price'
-      ])
-
-      expect(result.exitCode).toBe(0)
-      const output = `${result.stdout}\n${result.stderr}`
-      expect(output).toContain('Cost Estimate')
-      expect(output).toContain('kitten')
-      expect(output).toContain('kitten-tts-mini')
-      expect(output).toContain('openai')
-      expect(output).toContain('gpt-4o-mini-tts')
-      expect(output).toContain('speech-kitten-kitten-tts-mini.wav')
-      expect(output).toContain('speech-openai-gpt-4o-mini-tts.wav')
-    })
-
     budgetedTest(['tts-kitten-mini', 'tts-openai-gpt-4o-mini-tts'], 'multi-provider run succeeds when one local and one API target are both available', async () => {
       if (!await hasOpenAiTtsEnv()) {
         console.log('Skipping: OPENAI_API_KEY is required for multi-provider TTS success coverage')

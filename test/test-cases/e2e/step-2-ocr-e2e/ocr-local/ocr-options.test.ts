@@ -353,18 +353,6 @@ test('bun as extract https://ajcwebdev.com --url-backend defuddle', async () => 
   }
 })
 
-test('bun as extract https://ajcwebdev.com --url-backend glm-reader --price', async () => {
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'glm-reader', '--price'],
-    { testName: 'bun as extract https://ajcwebdev.com --url-backend glm-reader --price' }
-  )
-
-  expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Total estimated cost: 0.00000¢')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('extraction.txt')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('run.json')
-})
-
 test('extract EPUB with --epub-bun writes structured data into run.json only', async () => {
   await cleanupTestOutput('1-epub')
 

@@ -6,11 +6,12 @@ import {
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
+import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
 
-const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
+const priceCases: Array<{ label: string; args: string[]; expected: string; env?: Record<string, string | undefined> }> = [
   {
     label: 'write',
     args: ['write', STABLE_LOCAL_AUDIO_PATH, '--openai', 'gpt-5.4-nano', '--price'],
@@ -45,6 +46,24 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
     label: 'Mistral TTS',
     args: ['tts', STABLE_TTS_MD_PATH, '--mistral-tts', 'voxtral-mini-tts-2603', '--price'],
     expected: 'speech'
+  },
+  {
+    label: 'MiniMax voice clone TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--minimax-tts', 'speech-2.8-turbo', '--minimax-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    expected: 'speech',
+    env: { MINIMAX_API_KEY: '', MINIMAX_BASE_URL: '' }
+  },
+  {
+    label: 'OpenAI custom voice TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--openai-tts', 'gpt-4o-mini-tts', '--openai-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--openai-tts-consent-id', 'cons_123', '--price'],
+    expected: 'speech',
+    env: { OPENAI_API_KEY: '', OPENAI_BASE_URL: '' }
+  },
+  {
+    label: 'deAPI voice clone TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--deapi-tts', 'Qwen3_TTS_12Hz_1_7B_Base', '--deapi-tts-ref-audio', 'input/examples/audio/0-audio-short.mp3', '--price'],
+    expected: 'speech',
+    env: { DEAPI_API_KEY: '', DEAPI_BASE_URL: '' }
   },
   {
     label: 'image',
@@ -86,7 +105,9 @@ const priceCases: Array<{ label: string; args: string[]; expected: string }> = [
 describe('price mode contracts', () => {
   for (const priceCase of priceCases) {
     test(`${priceCase.label} accepts --price without producing an output directory`, async () => {
-      const result = await runCommand(['src/cli/create-cli.ts', ...priceCase.args])
+      const result = await runCommand(['src/cli/create-cli.ts', ...priceCase.args], {
+        ...(priceCase.env ? { env: priceCase.env } : {})
+      })
 
       expect(result.exitCode).toBe(0)
       expect(result.outputDir).toBeNull()
@@ -177,6 +198,147 @@ describe('price mode contracts', () => {
       ttsCharacterCount: 1000
     })
     expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(6000)
+  })
+
+  test('MiniMax voice clone TTS estimates include one-time clone fee and setup timing', () => {
+    const opts = {
+      minimaxTtsModels: ['speech-2.8-turbo', 'speech-2.8-hd'],
+      minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
+    } as Parameters<typeof estimateTtsCosts>[0]
+
+    const costs = estimateTtsCosts(opts, 1000)
+    expect(costs.map((cost) => ({
+      model: cost.model,
+      setupCostCents: cost.setupCostCents,
+      totalCost: cost.totalCost
+    }))).toEqual([
+      { model: 'speech-2.8-turbo', setupCostCents: 150, totalCost: 156 },
+      { model: 'speech-2.8-hd', setupCostCents: undefined, totalCost: 10 }
+    ])
+    expect(estimateTtsCosts({
+      minimaxTtsModels: ['speech-2.8-turbo'],
+      minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
+    } as Parameters<typeof estimateTtsCosts>[0], 10_000)[0]?.totalCost).toBe(210)
+
+    const timing = computeEstimatedProcessingTimes({
+      ttsTargets: [
+        { service: 'minimax', model: 'speech-2.8-turbo', setupTimeMs: 15_000 },
+        { service: 'minimax', model: 'speech-2.8-hd' }
+      ],
+      ttsCharacterCount: 1000
+    })
+    expect(timing.steps.map((step) => ({
+      model: step.model,
+      processingTimeMs: step.processingTimeMs
+    }))).toEqual([
+      { model: 'speech-2.8-turbo', processingTimeMs: 93_672 },
+      { model: 'speech-2.8-hd', processingTimeMs: 63_061 }
+    ])
+  })
+
+  test('OpenAI custom voice TTS estimates include zero-cost setup and setup timing', () => {
+    const opts = {
+      openaiTtsModels: ['gpt-4o-mini-tts'],
+      openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+      openaiTtsConsentId: 'cons_123'
+    } as Parameters<typeof estimateTtsCosts>[0]
+
+    const cost = estimateTtsCosts(opts, 1000)[0]
+    expect(cost).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-4o-mini-tts',
+      setupCostCents: 0,
+      setupTimeMs: 15_000,
+      setupNote: 'OpenAI custom voice creation setup',
+      totalCost: 1.26
+    })
+
+    const timing = computeEstimatedProcessingTimes({
+      ttsTargets: [{ service: 'openai', model: 'gpt-4o-mini-tts', setupTimeMs: 15_000 }],
+      ttsCharacterCount: 1000
+    })
+    expect(timing.steps.map((step) => ({
+      provider: step.provider,
+      model: step.model,
+      processingTimeMs: step.processingTimeMs
+    }))).toEqual([
+      { provider: 'openai', model: 'gpt-4o-mini-tts', processingTimeMs: 34_655 }
+    ])
+  })
+
+  test('deAPI voice clone TTS falls back to registry pricing without an API key', async () => {
+    const previousKey = process.env['DEAPI_API_KEY']
+    const previousBaseUrl = process.env['DEAPI_BASE_URL']
+    delete process.env['DEAPI_API_KEY']
+    delete process.env['DEAPI_BASE_URL']
+
+    try {
+      const price = await resolveDeapiTtsPrice({
+        model: 'Qwen3_TTS_12Hz_1_7B_Base',
+        characterCount: 1000,
+        mode: 'voice_clone'
+      })
+
+      expect(price).toMatchObject({
+        source: 'registry_fallback',
+        estimateType: 'heuristic',
+        totalCost: 0.077
+      })
+    } finally {
+      if (previousKey === undefined) delete process.env['DEAPI_API_KEY']
+      else process.env['DEAPI_API_KEY'] = previousKey
+      if (previousBaseUrl === undefined) delete process.env['DEAPI_BASE_URL']
+      else process.env['DEAPI_BASE_URL'] = previousBaseUrl
+    }
+  })
+
+  test('deAPI voice clone TTS price request sends voice_clone without voice', async () => {
+    const previousKey = process.env['DEAPI_API_KEY']
+    const previousBaseUrl = process.env['DEAPI_BASE_URL']
+    const previousFetch = globalThis.fetch
+    const bodies: unknown[] = []
+    const urls: string[] = []
+
+    try {
+      process.env['DEAPI_API_KEY'] = 'test-key'
+      process.env['DEAPI_BASE_URL'] = 'https://mock.deapi.local'
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        urls.push(String(input))
+        bodies.push(JSON.parse(String(init?.body ?? '{}')) as unknown)
+        return new Response(JSON.stringify({ data: { price: 0.00123 } }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }) as typeof fetch
+
+      const price = await resolveDeapiTtsPrice({
+        model: 'Qwen3_TTS_12Hz_1_7B_Base',
+        characterCount: 5000,
+        mode: 'voice_clone'
+      })
+
+      expect(price).toMatchObject({
+        source: 'provider_quote',
+        estimateType: 'exact',
+        totalCost: 0.123
+      })
+      expect(urls).toEqual(['https://mock.deapi.local/api/v2/audio/speech/price'])
+      expect(bodies).toEqual([{
+        model: 'Qwen3_TTS_12Hz_1_7B_Base',
+        mode: 'voice_clone',
+        count_text: 5000,
+        lang: 'English',
+        speed: 1,
+        format: 'mp3',
+        sample_rate: 24000
+      }])
+    } finally {
+      globalThis.fetch = previousFetch
+      if (previousKey === undefined) delete process.env['DEAPI_API_KEY']
+      else process.env['DEAPI_API_KEY'] = previousKey
+      if (previousBaseUrl === undefined) delete process.env['DEAPI_BASE_URL']
+      else process.env['DEAPI_BASE_URL'] = previousBaseUrl
+    }
   })
 
   test('gpt-image-2 image estimates use size and quality', () => {

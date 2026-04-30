@@ -109,6 +109,12 @@ export const ProcessingOptionsSchema = v.pipe(
     openaiTtsModels: v.optional(v.array(v.string()), undefined),
     openaiTtsModel: v.optional(v.string(), undefined),
     openaiVoiceId: v.optional(v.string(), undefined),
+    openaiTtsRefAudio: v.optional(v.string(), undefined),
+    openaiTtsConsentId: v.optional(v.string(), undefined),
+    openaiTtsConsentAudio: v.optional(v.string(), undefined),
+    openaiTtsConsentLanguage: v.optional(v.string(), undefined),
+    openaiTtsConsentName: v.optional(v.string(), undefined),
+    openaiTtsVoiceName: v.optional(v.string(), undefined),
     geminiTtsModels: v.optional(v.array(v.string()), undefined),
     geminiTtsModel: v.optional(v.string(), undefined),
     geminiVoiceId: v.optional(v.string(), undefined),
@@ -125,12 +131,19 @@ export const ProcessingOptionsSchema = v.pipe(
     minimaxTtsModels: v.optional(v.array(v.string()), undefined),
     minimaxTtsModel: v.optional(v.string(), undefined),
     minimaxTtsVoice: v.optional(v.string(), undefined),
+    minimaxTtsRefAudio: v.optional(v.string(), undefined),
+    minimaxTtsPromptAudio: v.optional(v.string(), undefined),
+    minimaxTtsPromptText: v.optional(v.string(), undefined),
+    minimaxTtsCloneNoiseReduction: v.optional(v.boolean(), undefined),
+    minimaxTtsCloneVolumeNormalization: v.optional(v.boolean(), undefined),
     runwayTtsModels: v.optional(v.array(v.string()), undefined),
     runwayTtsModel: v.optional(v.string(), undefined),
     runwayTtsVoice: v.optional(v.string(), undefined),
     deapiTtsModels: v.optional(v.array(v.string()), undefined),
     deapiTtsModel: v.optional(v.string(), undefined),
     deapiTtsVoice: v.optional(v.string(), undefined),
+    deapiTtsRefAudio: v.optional(v.string(), undefined),
+    deapiTtsRefText: v.optional(v.string(), undefined),
 
     kittenTtsModels: v.optional(v.array(v.string()), undefined),
     kittenTtsModel: v.optional(v.string(), undefined),
@@ -987,6 +1000,8 @@ export type Step4Metadata = {
   audioFileName: string
   audioFileSize: number
   chunkCount: number
+  clonedVoiceId?: string | undefined
+  cloneCostCents?: number | undefined
 }
 
 export const TtsScriptOutputSchema = v.object({

@@ -3,7 +3,7 @@ import { ttsFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { runTts } from './run-tts'
-import { buildTtsArtifactMap, collectTtsTargets, getTtsArtifactFileName } from './tts-targets'
+import { buildEstimatedTtsTargets, buildTtsArtifactMap, collectTtsTargets, getTtsArtifactFileName } from './tts-targets'
 import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
@@ -20,7 +20,9 @@ export const ttsCommand = defineCommand({
     examples: [
       ['bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8', 'Generate speech with local Kitten TTS'],
       ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3', 'Generate speech with ElevenLabs'],
+      ['bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Clone a voice with MiniMax'],
       ['bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Generate speech with Mistral Voxtral'],
+      ['bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3', 'Clone a voice with deAPI'],
       ['bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2', 'Generate speech with Runway']
     ]
   }
@@ -62,7 +64,7 @@ export const ttsCommand = defineCommand({
     await runTts(text, outputDir, ttsOptions)
   )
 
-  const estimatedTtsTargets = targets.map((target) => ({ service: target.service, model: target.model }))
+  const estimatedTtsTargets = buildEstimatedTtsTargets(targets)
   const estimated = computeEstimatedCosts({
     ttsTargets: estimatedTtsTargets,
     ttsCharacterCount: text.length

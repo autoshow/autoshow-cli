@@ -40,6 +40,10 @@ export type TtsStepEstimate = ProviderModelBase & {
   characterCount?: number
   totalCost: number
   costMultiplier?: number
+  estimateType?: 'heuristic' | 'exact'
+  note?: string
+  setupCostCents?: number
+  setupTimeMs?: number
 }
 
 export type ImageStepEstimate = CostEstimateBase<ImageProvider> & {
@@ -160,7 +164,7 @@ export type ComputeEstimatedCostsInput = {
   llmInputTokenCount?: number | undefined
   llmOutputTokenCount?: number | undefined
   skipLLM?: boolean | undefined
-  ttsTargets?: Array<{ service: string, model: string }> | undefined
+  ttsTargets?: Array<{ service: string, model: string, setupCostCents?: number, setupTimeMs?: number, setupNote?: string }> | undefined
   ttsService?: string | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
@@ -223,7 +227,7 @@ export type ComputeEstimatedProcessingTimesInput = {
   llmInputTokenCount?: number | undefined
   llmOutputTokenCount?: number | undefined
   skipLLM?: boolean | undefined
-  ttsTargets?: Array<{ service: Step4Metadata['ttsService'], model: string }> | undefined
+  ttsTargets?: Array<{ service: Step4Metadata['ttsService'], model: string, setupTimeMs?: number, setupCostCents?: number, setupNote?: string }> | undefined
   ttsService?: Step4Metadata['ttsService'] | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
@@ -294,6 +298,8 @@ export type EstimatedStepEntry = {
   costPer1kCharactersCents?: number
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number
+  setupCostCents?: number
+  setupTimeMs?: number
 }
 
 export type EstimatedCostBreakdown = {

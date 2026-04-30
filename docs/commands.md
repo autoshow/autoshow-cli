@@ -75,14 +75,23 @@ bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini
 # text-to-speech with Gemini
 bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview
 
+# text-to-speech with OpenAI custom voice creation
+bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+
 # text-to-speech with xAI Grok
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 
 # text-to-speech with Mistral Voxtral reference audio
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
+# text-to-speech with MiniMax rapid voice cloning
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
 # text-to-speech with Runway-hosted Eleven multilingual v2
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
+
+# text-to-speech with deAPI Qwen3 voice cloning
+bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
 # image generation
 bun as image "a sunset over mountains" --gemini-image imagen-4.0-fast-generate-001
@@ -164,7 +173,10 @@ bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --price
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3 --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
+bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --price
 bun as image "a sunset" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low --price
 bun as image "a sunset" --bfl-image flux-2-klein-4b --price
@@ -180,4 +192,4 @@ bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --v
 bun as video "a sunset timelapse" --all-video --price
 ```
 
-For `extract --deepinfra-ocr` and `extract --kimi-ocr`, price preflight uses registry token rates with a 4,000 input-token plus 1,000 output-token per-page heuristic and adds page processing-time estimates. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0078/page` and `6000 ms/page`. For `extract --deapi-stt`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing with a warning only if the provider quote fails. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.
+For `extract --deepinfra-ocr` and `extract --kimi-ocr`, price preflight uses registry token rates with a 4,000 input-token plus 1,000 output-token per-page heuristic and adds page processing-time estimates. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0078/page` and `6000 ms/page`. For `extract --deapi-stt` and `tts --deapi-tts`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing when an exact quote is unavailable. For `extract --happyscribe-stt`, price preflight is side-effect free, uses the published `$0.20/min` AI rate, and adds a note when execution still needs an explicit organization override.

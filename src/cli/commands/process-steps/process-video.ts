@@ -35,7 +35,7 @@ import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { writeRenderedTextArtifacts } from './step-3-write/text-input-utils'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { runTts } from './step-4-tts/run-tts'
-import { buildTtsArtifactMap, collectTtsTargets } from './step-4-tts/tts-targets'
+import { buildEstimatedTtsTargets, buildTtsArtifactMap, collectTtsTargets } from './step-4-tts/tts-targets'
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageCount } from './step-5-image/image-targets'
 import { runImageGen } from './step-5-image/run-image-gen'
 import { runVideoGen } from './step-6-video/run-video-gen'
@@ -413,7 +413,7 @@ export const processVideo = async (
 	    const attemptedImageTargets = step3Results.length === 1 ? imageTargets : []
 	    const attemptedVideoTargets = step3Results.length === 1 ? videoTargets : []
 	    const attemptedMusicTargets = step3Results.length === 1 ? musicTargets : []
-	    const ttsEstimateTargets = attemptedTtsTargets.map((target) => ({ service: target.service, model: target.model }))
+	    const ttsEstimateTargets = buildEstimatedTtsTargets(attemptedTtsTargets)
 	    const imageEstimateTargets = attemptedImageTargets.map((target) => ({
 	      service: target.service,
 	      model: target.model,

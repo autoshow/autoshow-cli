@@ -130,6 +130,12 @@ export const mergeConfigIntoRawFlags = (
     inject('mistral-tts-voice', d.post.tts.mistralTtsVoice)
     inject('mistral-tts-ref-audio', d.post.tts.mistralTtsRefAudio)
     inject('openai-voice', d.post.tts.openaiVoice)
+    inject('openai-tts-ref-audio', d.post.tts.openaiTtsRefAudio)
+    inject('openai-tts-consent-id', d.post.tts.openaiTtsConsentId)
+    inject('openai-tts-consent-audio', d.post.tts.openaiTtsConsentAudio)
+    inject('openai-tts-consent-language', d.post.tts.openaiTtsConsentLanguage)
+    inject('openai-tts-consent-name', d.post.tts.openaiTtsConsentName)
+    inject('openai-tts-voice-name', d.post.tts.openaiTtsVoiceName)
     inject('gemini-voice', d.post.tts.geminiVoice)
     inject('gemini-speaker-1-name', d.post.tts.geminiSpeaker1Name)
     inject('gemini-speaker-1-voice', d.post.tts.geminiSpeaker1Voice)
@@ -137,9 +143,16 @@ export const mergeConfigIntoRawFlags = (
     inject('gemini-speaker-2-voice', d.post.tts.geminiSpeaker2Voice)
     inject('elevenlabs-voice', d.post.tts.elevenlabsVoice)
     inject('minimax-tts-voice', d.post.tts.minimaxTtsVoice)
+    inject('minimax-tts-ref-audio', d.post.tts.minimaxTtsRefAudio)
+    inject('minimax-tts-prompt-audio', d.post.tts.minimaxTtsPromptAudio)
+    inject('minimax-tts-prompt-text', d.post.tts.minimaxTtsPromptText)
+    inject('minimax-tts-clone-noise-reduction', d.post.tts.minimaxTtsCloneNoiseReduction)
+    inject('minimax-tts-clone-volume-normalization', d.post.tts.minimaxTtsCloneVolumeNormalization)
     inject('deepgram-voice', d.post.tts.deepgramVoice)
     inject('runway-tts-voice', d.post.tts.runwayTtsVoice)
     inject('deapi-tts-voice', d.post.tts.deapiTtsVoice)
+    inject('deapi-tts-ref-audio', d.post.tts.deapiTtsRefAudio)
+    inject('deapi-tts-ref-text', d.post.tts.deapiTtsRefText)
   }
 
   if (d.post?.image) {
@@ -248,6 +261,12 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'mistral-tts-voice': ['defaults', 'post', 'tts', 'mistralTtsVoice'],
   'mistral-tts-ref-audio': ['defaults', 'post', 'tts', 'mistralTtsRefAudio'],
   'openai-voice':      ['defaults', 'post', 'tts', 'openaiVoice'],
+  'openai-tts-ref-audio': ['defaults', 'post', 'tts', 'openaiTtsRefAudio'],
+  'openai-tts-consent-id': ['defaults', 'post', 'tts', 'openaiTtsConsentId'],
+  'openai-tts-consent-audio': ['defaults', 'post', 'tts', 'openaiTtsConsentAudio'],
+  'openai-tts-consent-language': ['defaults', 'post', 'tts', 'openaiTtsConsentLanguage'],
+  'openai-tts-consent-name': ['defaults', 'post', 'tts', 'openaiTtsConsentName'],
+  'openai-tts-voice-name': ['defaults', 'post', 'tts', 'openaiTtsVoiceName'],
   'gemini-voice':      ['defaults', 'post', 'tts', 'geminiVoice'],
   'gemini-speaker-1-name': ['defaults', 'post', 'tts', 'geminiSpeaker1Name'],
   'gemini-speaker-1-voice': ['defaults', 'post', 'tts', 'geminiSpeaker1Voice'],
@@ -255,9 +274,16 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini-speaker-2-voice': ['defaults', 'post', 'tts', 'geminiSpeaker2Voice'],
   'elevenlabs-voice':  ['defaults', 'post', 'tts', 'elevenlabsVoice'],
   'minimax-tts-voice': ['defaults', 'post', 'tts', 'minimaxTtsVoice'],
+  'minimax-tts-ref-audio': ['defaults', 'post', 'tts', 'minimaxTtsRefAudio'],
+  'minimax-tts-prompt-audio': ['defaults', 'post', 'tts', 'minimaxTtsPromptAudio'],
+  'minimax-tts-prompt-text': ['defaults', 'post', 'tts', 'minimaxTtsPromptText'],
+  'minimax-tts-clone-noise-reduction': ['defaults', 'post', 'tts', 'minimaxTtsCloneNoiseReduction'],
+  'minimax-tts-clone-volume-normalization': ['defaults', 'post', 'tts', 'minimaxTtsCloneVolumeNormalization'],
   'deepgram-voice':    ['defaults', 'post', 'tts', 'deepgramVoice'],
   'runway-tts-voice':  ['defaults', 'post', 'tts', 'runwayTtsVoice'],
   'deapi-tts-voice':   ['defaults', 'post', 'tts', 'deapiTtsVoice'],
+  'deapi-tts-ref-audio': ['defaults', 'post', 'tts', 'deapiTtsRefAudio'],
+  'deapi-tts-ref-text': ['defaults', 'post', 'tts', 'deapiTtsRefText'],
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],
   'openai-image':      ['defaults', 'post', 'image', 'openaiImage'],
   'minimax-image':     ['defaults', 'post', 'image', 'minimaxImage'],

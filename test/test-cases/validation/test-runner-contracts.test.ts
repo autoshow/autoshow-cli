@@ -39,6 +39,188 @@ const extractExplicitBudgetedTestKeys = (source: string): string[] => {
   return keys
 }
 
+const isBudgetKeyLiteral = (value: string): boolean => {
+  return /^(?:extract|image|music|transcribe|tts|video|write)-/.test(value)
+}
+
+const extractBudgetKeyVariableLiterals = (source: string): string[] => {
+  const keys: string[] = []
+
+  for (const match of source.matchAll(/\bbudgetKey\s*:\s*(['"`])([^'"`$]+)\1/g)) {
+    keys.push(match[2] as string)
+  }
+
+  for (const assignmentMatch of source.matchAll(/\b(?:const|let)\s+budgetKey\s*=\s*([^\n]+)/g)) {
+    const assignmentSource = assignmentMatch[1] ?? ''
+    for (const stringMatch of assignmentSource.matchAll(/(['"`])([^'"`$]+)\1/g)) {
+      const value = stringMatch[2] as string
+      if (isBudgetKeyLiteral(value)) {
+        keys.push(value)
+      }
+    }
+  }
+
+  return keys
+}
+
+const readStringProperty = (source: string, propertyName: string): string | undefined => {
+  const match = source.match(new RegExp(`${propertyName}\\s*:\\s*(['"])([^'"]+)\\1`))
+  return match?.[2]
+}
+
+const readModelsProperty = (source: string, mode: 'strings' | 'objects'): string[] => {
+  const startMatch = /models\s*:\s*\[/.exec(source)
+  if (!startMatch) {
+    return []
+  }
+
+  const start = startMatch.index + startMatch[0].length - 1
+  let depth = 0
+  let quote: string | undefined
+  for (let index = start; index < source.length; index++) {
+    const char = source[index]
+    const previousChar = source[index - 1]
+    if (quote) {
+      if (char === quote && previousChar !== '\\') {
+        quote = undefined
+      }
+      continue
+    }
+
+    if (char === '\'' || char === '"' || char === '`') {
+      quote = char
+      continue
+    }
+
+    if (char === '[') {
+      depth++
+    } else if (char === ']') {
+      depth--
+      if (depth === 0) {
+        const body = source.slice(start + 1, index)
+        if (mode === 'objects') {
+          return [...body.matchAll(/\bmodel\s*:\s*(['"`])([^'"`]+)\1/g)].map(match => match[2] as string)
+        }
+        return [...body.matchAll(/(['"`])([^'"`]+)\1/g)].map(match => match[2] as string)
+      }
+    }
+  }
+
+  return []
+}
+
+const extractCallBodies = (source: string, callName: string): string[] => {
+  const bodies: string[] = []
+  let from = 0
+
+  while (true) {
+    const callIndex = source.indexOf(`${callName}(`, from)
+    if (callIndex === -1) {
+      break
+    }
+
+    const openParen = source.indexOf('(', callIndex)
+    let depth = 0
+    let quote: string | undefined
+    for (let index = openParen; index < source.length; index++) {
+      const char = source[index]
+      const previousChar = source[index - 1]
+      if (quote) {
+        if (char === quote && previousChar !== '\\') {
+          quote = undefined
+        }
+        continue
+      }
+
+      if (char === '\'' || char === '"' || char === '`') {
+        quote = char
+        continue
+      }
+
+      if (char === '(') {
+        depth++
+      } else if (char === ')') {
+        depth--
+        if (depth === 0) {
+          bodies.push(source.slice(openParen + 1, index))
+          from = index + 1
+          break
+        }
+      }
+    }
+
+    if (from <= callIndex) {
+      break
+    }
+  }
+
+  return bodies
+}
+
+type HelperBudgetKeySpecBase = {
+  callName: string
+  prefix: string
+  modelMode: 'strings' | 'objects'
+}
+
+type HelperBudgetKeySpec =
+  | (HelperBudgetKeySpecBase & { serviceProperty: string; serviceFromCliFlag?: false })
+  | (HelperBudgetKeySpecBase & { serviceFromCliFlag: true; serviceProperty?: never })
+
+const helperBudgetKeySpecs: HelperBudgetKeySpec[] = [
+  { callName: 'defineLLMWriteTest', prefix: 'write', serviceProperty: 'llmService', modelMode: 'strings' },
+  { callName: 'defineSTTServiceTest', prefix: 'transcribe', serviceProperty: 'sttService', modelMode: 'strings' },
+  { callName: 'defineOCRServiceTest', prefix: 'extract', serviceFromCliFlag: true, modelMode: 'strings' },
+  { callName: 'defineImageServiceTest', prefix: 'image', serviceProperty: 'imageService', modelMode: 'objects' },
+  { callName: 'defineVideoServiceTest', prefix: 'video', serviceProperty: 'videoService', modelMode: 'objects' },
+  { callName: 'defineMusicServiceTest', prefix: 'music', serviceProperty: 'musicService', modelMode: 'objects' },
+  { callName: 'defineTTSServiceTest', prefix: 'tts', serviceProperty: 'ttsService', modelMode: 'strings' },
+] as const
+
+const extractHelperGeneratedBudgetKeys = (source: string): string[] => {
+  const keys: string[] = []
+
+  for (const spec of helperBudgetKeySpecs) {
+    for (const callBody of extractCallBodies(source, spec.callName)) {
+      const service = spec.serviceFromCliFlag
+        ? readStringProperty(callBody, 'cliFlag')?.replace(/^--/, '').replace(/-ocr$/, '')
+        : readStringProperty(callBody, spec.serviceProperty)
+      if (!service) {
+        continue
+      }
+
+      for (const model of readModelsProperty(callBody, spec.modelMode)) {
+        keys.push(`${spec.prefix}-${service}-${model}`)
+      }
+    }
+  }
+
+  return keys
+}
+
+const extractTemplateLoopBudgetKeys = (file: string, source: string): string[] => {
+  if (!file.endsWith('whisper-models-price.test.ts') || !source.includes('`transcribe-whisper-${model}`')) {
+    return []
+  }
+
+  const modelsMatch = /const\s+models\s*=\s*\[([\s\S]*?)\]\s*as const/.exec(source)
+  const modelsSource = modelsMatch?.[1]
+  if (!modelsSource) {
+    return []
+  }
+
+  return [...modelsSource.matchAll(/(['"`])([^'"`]+)\1/g)].map(match => `transcribe-whisper-${match[2]}`)
+}
+
+const extractE2EBudgetKeys = (file: string, source: string): string[] => {
+  return [
+    ...extractExplicitBudgetedTestKeys(source),
+    ...extractBudgetKeyVariableLiterals(source),
+    ...extractHelperGeneratedBudgetKeys(source),
+    ...extractTemplateLoopBudgetKeys(file, source)
+  ]
+}
+
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
@@ -179,7 +361,7 @@ describe('test-runner contracts', () => {
     }
   })
 
-  test('explicit e2e budgetedTest keys resolve to budget-skippable price registry entries', async () => {
+  test('e2e budget keys resolve to budget-skippable price registry entries', async () => {
     const glob = new Bun.Glob('test/test-cases/e2e/**/*.test.ts')
     const allFiles = (await Array.fromAsync(glob.scan({ dot: false }))).sort()
     const budgetSkippableKeys = new Set(
@@ -192,8 +374,8 @@ describe('test-runner contracts', () => {
 
     for (const file of allFiles) {
       const source = await Bun.file(file).text()
-      const explicitKeys = [...new Set(extractExplicitBudgetedTestKeys(source))]
-      if (explicitKeys.length === 0) {
+      const budgetKeys = [...new Set(extractE2EBudgetKeys(file, source))]
+      if (budgetKeys.length === 0) {
         continue
       }
 
@@ -201,7 +383,7 @@ describe('test-runner contracts', () => {
         resolvePriceSelection(allFiles, [file], true).commands.map((command) => command.key)
       )
 
-      for (const key of explicitKeys) {
+      for (const key of budgetKeys) {
         if (!budgetSkippableKeys.has(key)) {
           missing.push(`${file}: ${key}`)
           continue
@@ -214,6 +396,34 @@ describe('test-runner contracts', () => {
 
     expect(missing).toEqual([])
     expect(unselected).toEqual([])
+  })
+
+  test('e2e test files do not contain direct --price command coverage', async () => {
+    const glob = new Bun.Glob('test/test-cases/e2e/**/*.test.ts')
+    const allFiles = (await Array.fromAsync(glob.scan({ dot: false }))).sort()
+    const filesWithPriceFlag: string[] = []
+
+    for (const file of allFiles) {
+      const source = await Bun.file(file).text()
+      if (source.includes('--price')) {
+        filesWithPriceFlag.push(file)
+      }
+    }
+
+    expect(filesWithPriceFlag).toEqual([])
+  })
+
+  test('TTS service budget preflight includes voice clone entries', () => {
+    const allFiles = [
+      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
+    ]
+
+    const keys = resolvePriceSelection(allFiles, [
+      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
+    ], true).commands.map((command) => command.key)
+
+    expect(keys).toContain('tts-deapi-qwen3-voice-clone')
+    expect(keys).toContain('tts-minimax-speech-2.8-turbo-clone')
   })
 
   test('music selected-file budget preflight includes keys for live ElevenLabs music skips', () => {

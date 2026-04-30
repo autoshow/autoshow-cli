@@ -9,24 +9,25 @@
       "https://elevenlabs.io/docs/api-reference/speech-to-text/get.md"
     ],
     "TTS": [
+      "https://elevenlabs.io/docs/eleven-api/guides/how-to/voices/instant-voice-cloning.md",
+      "https://elevenlabs.io/docs/eleven-api/concepts/voice-cloning.md",
+      "https://elevenlabs.io/docs/eleven-api/guides/how-to/voices/professional-voice-cloning.md",
+      "https://elevenlabs.io/docs/eleven-api/guides/how-to/voices/voice-design.md",
+      "https://elevenlabs.io/docs/api-reference/introduction.md",
+      "https://elevenlabs.io/docs/api-reference/voices/pvc/create.md",
+      "https://elevenlabs.io/docs/api-reference/voices/pvc/train.md",
+      "https://elevenlabs.io/docs/api-reference/voices/ivc/create.md",
       "https://elevenlabs.io/docs/overview/capabilities/text-to-dialogue.md",
       "https://elevenlabs.io/docs/overview/capabilities/text-to-speech.md",
       "https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices.md",
-      "https://elevenlabs.io/docs/overview/capabilities/voice-changer.md",
-      "https://elevenlabs.io/docs/overview/capabilities/voice-isolator.md",
-      "https://elevenlabs.io/docs/overview/capabilities/dubbing.md",
-      "https://elevenlabs.io/docs/overview/capabilities/sound-effects.md",
       "https://elevenlabs.io/docs/overview/capabilities/voices.md",
-      "https://elevenlabs.io/docs/overview/capabilities/voice-remixing.md",
       "https://elevenlabs.io/docs/api-reference/text-to-speech/convert.md",
       "https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps.md",
       "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert.md",
       "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert-with-timestamps.md",
       "https://elevenlabs.io/docs/api-reference/speech-to-speech/convert.md",
       "https://elevenlabs.io/docs/api-reference/text-to-voice/design.md",
-      "https://elevenlabs.io/docs/api-reference/text-to-voice/create.md",
-      "https://elevenlabs.io/docs/api-reference/text-to-voice/remix.md",
-      "https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert.md"
+      "https://elevenlabs.io/docs/api-reference/text-to-voice/create.md"
     ],
     "Music": [
       "https://elevenlabs.io/docs/overview/capabilities/music.md",
@@ -354,6 +355,7 @@
       "https://platform.minimax.io/docs/guides/speech-voice-clone.md",
       "https://platform.minimax.io/docs/guides/speech-t2a-async.md",
       "https://platform.minimax.io/docs/faq/system-voice-id.md",
+      "https://platform.minimax.io/docs/api-reference/speech-t2a-http.md",
       "https://platform.minimax.io/docs/api-reference/speech-t2a-async-create.md",
       "https://platform.minimax.io/docs/api-reference/speech-t2a-async-query.md",
       "https://platform.minimax.io/docs/api-reference/voice-cloning-uploadcloneaudio.md",
@@ -465,6 +467,13 @@
       "https://docs.cloud.google.com/speech-to-text/docs/sync-recognize.md.txt",
       "https://docs.cloud.google.com/speech-to-text/docs/batch-recognize.md.txt",
       "https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3.md.txt"
+    ],
+    "TTS": [
+      "https://docs.cloud.google.com/text-to-speech/docs/chirp3-instant-custom-voice.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/create-audio.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/basics.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types.md.txt"
     ],
     "OCR": [
       "https://docs.cloud.google.com/document-ai/docs/overview.md.txt",

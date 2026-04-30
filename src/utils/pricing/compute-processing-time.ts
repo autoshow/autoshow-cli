@@ -313,7 +313,7 @@ export const computeEstimatedProcessingTimes = (
       step: 'tts',
       provider: ttsTarget.service,
       model: ttsTarget.model,
-      processingTimeMs: roundMs((characterCount / 1000) * estimation.msPer1KChars),
+      processingTimeMs: roundMs((characterCount / 1000) * estimation.msPer1KChars + (ttsTarget.setupTimeMs ?? 0)),
       inputMetric: 'characters',
       inputValue: characterCount,
     })
