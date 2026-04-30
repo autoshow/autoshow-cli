@@ -35,7 +35,8 @@ import {
   isLikelyUrl
 } from './target-utils'
 import { resolveLLMDefaults } from './llm-defaults'
-import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
+import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE, KIMI_OCR_COMPLETION_TOKENS_PER_PAGE, KIMI_OCR_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import type { BatchItem, BatchItemProcessResult } from '~/types'

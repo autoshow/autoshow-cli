@@ -17,7 +17,8 @@ import {
   type TextArtifactFile,
   type OcrResumeRun
 } from '~/types'
-import { computeActualCosts, computeEstimatedCosts } from '~/utils/pricing/compute-costs'
+import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
+import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from '../../step-1-download/document/dl-document'
 import { runOcr } from './orchestrator'

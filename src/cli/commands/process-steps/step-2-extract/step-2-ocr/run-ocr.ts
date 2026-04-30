@@ -19,9 +19,8 @@ import {
   type PageResult
 } from '~/types'
 import { ensureTesseractSetup, ocrImage } from './ocr-utils/tesseract-utils'
-import { processPages } from './ocr-utils/page-processor'
 import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
-import { buildPaddleOcrPageFn, runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
+import { runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
 import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
 import { runKimiOcr } from './ocr-services/kimi-ocr/run-kimi-ocr'
@@ -32,7 +31,6 @@ import { runDeepinfraOcr } from './ocr-services/deepinfra-ocr/run-deepinfra-ocr'
 import { runAwsTextract } from './ocr-services/aws-textract/run-aws-textract'
 import { runGcloudDocai } from './ocr-services/gcloud-docai/run-gcloud-docai'
 import { runDeapiOcr } from './ocr-services/deapi-ocr/run-deapi-ocr'
-import { convertDocumentToPdf, getDocumentInfo, showPdfObject } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { extractDocx, extractPptx, extractXlsx, extractOdf } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ZipXmlFormat, ZipXmlPage } from '~/types'
@@ -60,7 +58,15 @@ import { ensureDeapiOcrSetup } from './ocr-services/deapi-ocr/deapi-ocr'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
 import { buildEpubTextOutput } from './epub/export'
 import type { EpubArtifactFile } from '~/types'
-import { buildPdfChapterArtifacts } from './pdf/chapters'
+import { buildPdfChapterArtifacts } from './chapters'
+import {
+  buildHostedUploadMetadata,
+  convertEpubToPdfForOcr,
+  isPdfEncrypted,
+  resolvePdfPageCount,
+  runLocalPdfOcr,
+  runPdfOcr
+} from './pdf-utils'
 import { estimateTokens } from '~/utils/text-utils'
 import { getExtractLimits } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
@@ -425,74 +431,6 @@ const getHostedOcrLimitSource = (service: HostedOcrService): string => {
   }
 }
 
-const resolvePdfPageCount = async (
-  filePath: string,
-  password?: string,
-  fallbackPageCount?: number
-): Promise<number | undefined> => {
-  try {
-    const info = await getDocumentInfo(filePath, password)
-    return Math.max(1, info.pageCount)
-  } catch {
-    return typeof fallbackPageCount === 'number' ? Math.max(1, fallbackPageCount) : undefined
-  }
-}
-
-const isPdfEncrypted = async (
-  filePath: string,
-  password?: string
-): Promise<boolean> => {
-  try {
-    const result = await showPdfObject(filePath, 'trailer/Encrypt', password)
-    if (result.exitCode !== 0) {
-      return false
-    }
-
-    const combined = `${result.stdout}\n${result.stderr}`.trim()
-    return combined.length > 0 && combined !== 'null'
-  } catch {
-    return false
-  }
-}
-
-const buildHostedUploadMetadata = async (
-  filePath: string,
-  baseMetadata: DocumentMetadata,
-  format: DocumentMetadata['format'],
-  password?: string
-): Promise<DocumentMetadata> => {
-  const sourceStats = await stat(filePath)
-  const pageCount = format === 'pdf'
-    ? await resolvePdfPageCount(filePath, password, baseMetadata.pageCount)
-    : 1
-
-  return {
-    ...baseMetadata,
-    format,
-    fileSize: sourceStats.size,
-    pageCount: pageCount ?? (format === 'pdf' ? baseMetadata.pageCount : 1)
-  }
-}
-
-const convertEpubToPdfForOcr = async (
-  filePath: string,
-  tempDir: string,
-  password?: string
-): Promise<{ pdfPath: string, conversionChain: string[] }> => {
-  const fallbackPdfPath = join(tempDir, 'epub-ocr.pdf')
-  const converted = await convertDocumentToPdf(filePath, fallbackPdfPath, password)
-  if (converted.exitCode !== 0) {
-    throw new Error(converted.stderr || converted.stdout || 'mutool convert failed')
-  }
-
-  const outFile = Bun.file(fallbackPdfPath)
-  if (!(await outFile.exists())) {
-    throw new Error(`mutool did not produce PDF output for ${filePath}`)
-  }
-
-  return { pdfPath: fallbackPdfPath, conversionChain: ['mutool'] }
-}
-
 // Natural numeric sort comparator for CBZ image filenames
 const naturalCompare = (a: string, b: string): number => {
   const re = /(\d+)|(\D+)/g
@@ -572,33 +510,6 @@ const normalizeImageForOcr = async (
     return pngPath
   }
   return imagePath
-}
-
-const runOcrmypdfWithAutoPdf = async (
-  filePath: string,
-  step1Metadata: DocumentMetadata,
-  opts: ExtractionOptions
-): Promise<{ pages: PageResult[], extractionMethod: string }> => {
-  const imageFormats = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
-  if (step1Metadata.format === 'pdf' || imageFormats.has(step1Metadata.format)) {
-    return await runOcrmypdf(filePath, opts)
-  }
-
-  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocrmypdf-convert-'))
-  const convertedPdfPath = join(tempDir, 'input.pdf')
-
-  try {
-    l.write('info', `Converting ${step1Metadata.format.toUpperCase()} to PDF for OCRmyPDF`)
-    const convertResult = await convertDocumentToPdf(filePath, convertedPdfPath, opts.password)
-    if (convertResult.exitCode !== 0) {
-      throw new Error(convertResult.stderr || convertResult.stdout || 'mutool convert failed')
-    }
-    return await runOcrmypdf(convertedPdfPath, opts)
-  } catch (error) {
-    throw CLIUsageError(`Failed to convert ${step1Metadata.format.toUpperCase()} to PDF for OCRmyPDF. ${error instanceof Error ? error.message : String(error)}`)
-  } finally {
-    await rm(tempDir, { recursive: true, force: true })
-  }
 }
 
 const warnTesseractOnlyFlags = (engine: Exclude<LocalExtractOcrEngine, 'tesseract'>, opts: ExtractionOptions): void => {
@@ -1350,7 +1261,7 @@ export const runOcr = async (
         completionTokens = r.completionTokens
         mergeHostedProviderCost(r)
       } else {
-        const r = await runPdfOcr(pdfPath, tempMeta, opts)
+        const r = await runPdfOcr(pdfPath, tempMeta, opts, resolveExtractEngine(opts))
         pages = r.pages
         extractionMethod = r.extractionMethod
       }
@@ -1519,28 +1430,9 @@ export const runOcr = async (
       const engine = resolveExtractEngine(opts)
       if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
 
-      switch (engine) {
-        case 'tesseract': {
-          await ensureTesseractSetup()
-          pages = await processPages(filePath, step1Metadata.pageCount, opts)
-          extractionMethod = 'mutool+tesseract'
-          break
-        }
-        case 'ocrmypdf': {
-          const r = await runOcrmypdfWithAutoPdf(filePath, step1Metadata, opts)
-          pages = r.pages
-          extractionMethod = r.extractionMethod
-          break
-        }
-        case 'paddle-ocr': {
-          const paddleOcrFn = await buildPaddleOcrPageFn(opts)
-          pages = await processPages(filePath, step1Metadata.pageCount, opts, paddleOcrFn)
-          extractionMethod = 'mutool+paddle-ocr'
-          break
-        }
-        default:
-          assertNever(engine)
-      }
+      const r = await runLocalPdfOcr(filePath, step1Metadata, opts, engine)
+      pages = r.pages
+      extractionMethod = r.extractionMethod
     }
   }
 
@@ -1656,33 +1548,5 @@ export const runOcr = async (
     result,
     step2Metadata,
     ...(artifactFiles ? { artifactFiles } : {})
-  }
-}
-
-// Helper: run PDF OCR pipeline based on opts
-const runPdfOcr = async (
-  pdfPath: string,
-  tempMeta: DocumentMetadata,
-  opts: ExtractionOptions
-): Promise<{ pages: PageResult[], extractionMethod: string }> => {
-  const engine = resolveExtractEngine(opts)
-
-  switch (engine) {
-    case 'tesseract': {
-      await ensureTesseractSetup()
-      const pages = await processPages(pdfPath, tempMeta.pageCount, opts)
-      return { pages, extractionMethod: `pdf+tesseract` }
-    }
-    case 'ocrmypdf': {
-      const r = await runOcrmypdf(pdfPath, opts)
-      return { pages: r.pages, extractionMethod: `pdf+ocrmypdf` }
-    }
-    case 'paddle-ocr': {
-      const paddleOcrFn = await buildPaddleOcrPageFn(opts)
-      const pages = await processPages(pdfPath, tempMeta.pageCount, opts, paddleOcrFn)
-      return { pages, extractionMethod: `pdf+paddle-ocr` }
-    }
-    default:
-      assertNever(engine)
   }
 }

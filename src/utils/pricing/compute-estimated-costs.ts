@@ -1,0 +1,481 @@
+import {
+  getExtractEstimation,
+  getExtractPricing,
+  getImageCost,
+  getImageEstimation,
+  getLlmCost,
+  getLlmEstimation,
+  getMusicEstimation,
+  getSttEstimation,
+  getTtsCost,
+  getTtsEstimation,
+  getTtsPricing,
+  getVideoEstimation
+} from '~/cli/commands/setup-and-utilities/models/model-loader'
+import {
+  computeDeapiOcrHeuristicCost,
+  DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
+  DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
+  DEEPINFRA_OCR_PRICE_NOTE,
+  DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
+  estimateDeapiOcrOutputCharsForPages,
+  KIMI_OCR_COMPLETION_TOKENS_PER_PAGE,
+  KIMI_OCR_PRICE_NOTE,
+  KIMI_OCR_PROMPT_TOKENS_PER_PAGE,
+  OPENAI_OCR_PRICE_NOTE
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
+import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
+import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
+import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
+import type {
+  ComputeEstimatedCostsInput,
+  EstimatedCostBreakdown,
+  EstimatedStepEntry,
+  Step3Metadata,
+  Step5Metadata
+} from '~/types'
+import {
+  applyCostMultiplier,
+  computeSttCost,
+  computeTtsCost
+} from './cost-helpers'
+import { estimateSupadataCost } from './supadata-pricing'
+
+const estimateImageTargetCost = (
+  target: NonNullable<ComputeEstimatedCostsInput['imageTargets']>[number],
+  input: Pick<ComputeEstimatedCostsInput, 'imageSize' | 'imageQuality'>
+): { provider: Step5Metadata['imageService'], model: string, imageCount: number, totalCost: number } => {
+  const imageCount = Math.max(1, target.count)
+  const imageSize = target.imageSize ?? input.imageSize
+  const imageQuality = target.imageQuality ?? input.imageQuality
+  const sharedOptions = { imageSize, imageQuality, imagenCount: imageCount }
+  const estimate = (() => {
+    switch (target.service) {
+      case 'gemini':
+        return estimateImageCosts({ ...sharedOptions, geminiImageModel: target.model })[0]
+      case 'openai':
+        return estimateImageCosts({ ...sharedOptions, openaiImageModel: target.model })[0]
+      case 'minimax':
+        return estimateImageCosts({ ...sharedOptions, minimaxImageModel: target.model })[0]
+      case 'glm':
+        return estimateImageCosts({ ...sharedOptions, glmImageModel: target.model })[0]
+      case 'grok':
+        return estimateImageCosts({ ...sharedOptions, grokImageModel: target.model })[0]
+      case 'runway':
+        return estimateImageCosts({ ...sharedOptions, runwayImageModel: target.model })[0]
+      case 'bfl':
+        return estimateImageCosts({ ...sharedOptions, bflImageModel: target.model })[0]
+      case 'deapi':
+        return estimateImageCosts({ ...sharedOptions, deapiImageModel: target.model })[0]
+    }
+  })()
+  const costPerImageCents = estimate?.costPerImageCents ?? getImageCost(target.service, target.model)
+  return {
+    provider: target.service,
+    model: target.model,
+    imageCount,
+    totalCost: costPerImageCents * imageCount
+  }
+}
+
+export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): EstimatedCostBreakdown => {
+  const steps: EstimatedStepEntry[] = []
+  let totalCost = 0
+  const durationSeconds = input.audioDurationSeconds ?? 0
+
+  const explicitSttTargets = input.sttTargets ?? []
+
+  if (explicitSttTargets.length > 0) {
+    for (const target of explicitSttTargets) {
+      if (target.service === 'reverb') {
+        steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
+        continue
+      }
+
+      if (target.service === 'supadata') {
+        const estimation = getSttEstimation(target.service, target.model)
+        const supadataEstimate = estimateSupadataCost(target.model, durationSeconds)
+        const cost = applyCostMultiplier(supadataEstimate.totalCost, estimation.costMultiplier)
+        totalCost += cost
+        steps.push({
+          step: 'stt',
+          provider: target.service,
+          model: target.model,
+          cost,
+          costMultiplier: estimation.costMultiplier,
+          durationSeconds,
+          note: supadataEstimate.note
+        })
+        continue
+      }
+
+      const estimation = getSttEstimation(target.service, target.model)
+      const cost = applyCostMultiplier(computeSttCost(target.service, target.model, durationSeconds), estimation.costMultiplier)
+      totalCost += cost
+      steps.push({ step: 'stt', provider: target.service, model: target.model, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
+    }
+  } else if (input.useReverb) {
+    steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
+  } else {
+    const STT_FIELD_MAP = [
+      { field: 'gcloudSttModel' as const, provider: 'gcloud' },
+      { field: 'awsSttModel' as const, provider: 'aws' },
+      { field: 'deepinfraSttModel' as const, provider: 'deepinfra' },
+      { field: 'deapiSttModel' as const, provider: 'deapi' },
+      { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
+      { field: 'deepgramSttModel' as const, provider: 'deepgram' },
+      { field: 'sonioxSttModel' as const, provider: 'soniox' },
+      { field: 'speechmaticsSttModel' as const, provider: 'speechmatics' },
+      { field: 'revSttModel' as const, provider: 'rev' },
+      { field: 'groqSttModel' as const, provider: 'groq' },
+      { field: 'grokSttModel' as const, provider: 'grok' },
+      { field: 'mistralSttModel' as const, provider: 'mistral' },
+      { field: 'assemblyaiSttModel' as const, provider: 'assemblyai' },
+      { field: 'gladiaSttModel' as const, provider: 'gladia' },
+      { field: 'happyscribeSttModel' as const, provider: 'happyscribe' },
+      { field: 'supadataSttModel' as const, provider: 'supadata' },
+      { field: 'openaiSttModel' as const, provider: 'openai-stt' },
+      { field: 'geminiSttModel' as const, provider: 'gemini-stt' },
+      { field: 'glmSttModel' as const, provider: 'glm-stt' },
+      { field: 'togetherSttModel' as const, provider: 'together' },
+      { field: 'fireworksSttModel' as const, provider: 'fireworks' },
+      { field: 'cloudflareSttModel' as const, provider: 'cloudflare' },
+      { field: 'whisperModel' as const, provider: 'whisper' },
+    ]
+    for (const { field, provider } of STT_FIELD_MAP) {
+      const model = input[field]
+      if (typeof model === 'string' && model.length > 0) {
+        const estimation = getSttEstimation(provider, model)
+        if (provider === 'supadata') {
+          const supadataEstimate = estimateSupadataCost(model, durationSeconds)
+          const cost = applyCostMultiplier(supadataEstimate.totalCost, estimation.costMultiplier)
+          totalCost += cost
+          steps.push({
+            step: 'stt',
+            provider,
+            model,
+            cost,
+            costMultiplier: estimation.costMultiplier,
+            durationSeconds,
+            note: supadataEstimate.note
+          })
+          break
+        }
+
+        const cost = applyCostMultiplier(computeSttCost(provider, model, durationSeconds), estimation.costMultiplier)
+        totalCost += cost
+        steps.push({
+          step: 'stt',
+          provider,
+          model,
+          cost,
+          costMultiplier: estimation.costMultiplier,
+          durationSeconds,
+        })
+        break
+      }
+    }
+  }
+
+  const extractTargets = input.extractTargets && input.extractTargets.length > 0
+    ? input.extractTargets
+    : [
+        ...(input.mistralOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'mistral' as const, model: input.mistralOcrModel, pageCount: input.extractPageCount, estimateType: 'exact' as const }]
+          : []),
+        ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount, estimateType: 'heuristic' as const }]
+          : []),
+        ...(input.kimiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'kimi' as const,
+              model: input.kimiOcrModel,
+              pageCount: input.extractPageCount,
+              promptTokens: input.extractPageCount * KIMI_OCR_PROMPT_TOKENS_PER_PAGE,
+              completionTokens: input.extractPageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE,
+              estimateType: 'heuristic' as const,
+              note: KIMI_OCR_PRICE_NOTE
+            }]
+          : []),
+        ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'openai' as const,
+              model: input.openaiOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const,
+              note: OPENAI_OCR_PRICE_NOTE
+            }]
+          : []),
+        ...(input.anthropicOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'anthropic' as const,
+              model: input.anthropicOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const,
+              note: 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+            }]
+          : []),
+        ...(input.geminiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'gemini' as const,
+              model: input.geminiOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const
+            }]
+          : []),
+        ...(input.deepinfraOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'deepinfra' as const,
+              model: input.deepinfraOcrModel,
+              pageCount: input.extractPageCount,
+              promptTokens: input.extractPageCount * DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
+              completionTokens: input.extractPageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
+              estimateType: 'heuristic' as const,
+              note: DEEPINFRA_OCR_PRICE_NOTE
+            }]
+          : []),
+        ...(input.deapiOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'deapi' as const,
+              model: input.deapiOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const,
+              note: 'deAPI OCR pricing is resolved from provider quotes during execution when available.'
+            }]
+          : [])
+      ]
+
+  for (const target of extractTargets) {
+    const estimation = getExtractEstimation(target.provider, target.model)
+    if (target.provider === 'deapi') {
+      const estimatedOutputChars = estimateDeapiOcrOutputCharsForPages(target.pageCount ?? input.extractPageCount ?? 1)
+      const cost = typeof target.quotedCostCents === 'number'
+        ? target.quotedCostCents
+        : applyCostMultiplier(computeDeapiOcrHeuristicCost(estimatedOutputChars), estimation.costMultiplier)
+      totalCost += cost
+      steps.push({
+        step: 'extract',
+        provider: target.provider,
+        model: target.model,
+        cost,
+        costMultiplier: typeof target.quotedCostCents === 'number' ? 1 : estimation.costMultiplier,
+        costPer1kOutputCharsCents: DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
+        ...(typeof target.quotedCostCents === 'number' ? {} : { estimatedOutputChars }),
+        ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
+        ...(typeof target.note === 'string' ? { note: target.note } : {}),
+        estimateType: target.estimateType ?? (typeof target.quotedCostCents === 'number' ? 'exact' : 'heuristic')
+      })
+      continue
+    }
+    if (target.provider === 'mistral' || target.provider === 'firecrawl' || target.provider === 'gcloud-docai' || target.provider === 'aws-textract') {
+      const extractPricing = getExtractPricing(target.provider, target.model)
+      const cost = applyCostMultiplier(
+        ((target.pageCount ?? input.extractPageCount ?? 0) / 1000) * (extractPricing.costPer1kPagesCents ?? 0),
+        estimation.costMultiplier
+      )
+      totalCost += cost
+      steps.push({
+        step: 'extract',
+        provider: target.provider,
+        model: target.model,
+        cost,
+        costMultiplier: estimation.costMultiplier,
+        ...(typeof extractPricing.costPer1kPagesCents === 'number' ? { costPer1kPagesCents: extractPricing.costPer1kPagesCents } : {}),
+        ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
+        ...(typeof target.note === 'string' ? { note: target.note } : {}),
+        estimateType: target.estimateType ?? 'exact'
+      })
+      continue
+    }
+
+    const extractPricing = getExtractPricing(target.provider, target.model)
+    const promptTokens = target.promptTokens ?? 0
+    const completionTokens = target.completionTokens ?? 0
+    const effectivePromptTokens = promptTokens > 0 ? promptTokens : ((target.pageCount ?? input.extractPageCount ?? 0) * 4000)
+    const cost = applyCostMultiplier(
+      (effectivePromptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
+      + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0),
+      estimation.costMultiplier
+      )
+    totalCost += cost
+    steps.push({
+      step: 'extract',
+      provider: target.provider,
+      model: target.model,
+      cost,
+      costMultiplier: estimation.costMultiplier,
+      ...(typeof extractPricing.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: extractPricing.inputCostPer1MCents } : {}),
+      ...(typeof extractPricing.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: extractPricing.outputCostPer1MCents } : {}),
+      ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
+      promptTokens: effectivePromptTokens,
+      completionTokens,
+      ...(typeof target.note === 'string' ? { note: target.note } : {}),
+      estimateType: target.estimateType ?? (promptTokens > 0 || completionTokens > 0 ? 'exact' : 'heuristic')
+    })
+  }
+
+  const llmTargets = input.llmTargets && input.llmTargets.length > 0
+    ? input.llmTargets
+    : input.llmService && input.llmModel
+      ? [{
+          service: input.llmService as Step3Metadata['llmService'],
+          model: input.llmModel,
+          ...(typeof input.llmInputTokenCount === 'number' ? { inputTokens: input.llmInputTokenCount } : {}),
+          ...(typeof input.llmOutputTokenCount === 'number' ? { outputTokens: input.llmOutputTokenCount } : {})
+        }]
+      : []
+
+  if (!input.skipLLM) {
+    for (const llmTarget of llmTargets) {
+      const registryService = llmTarget.service === 'llama.cpp' ? 'llama' : llmTarget.service
+      const rates = getLlmCost(registryService, llmTarget.model)
+      if (!rates) {
+        continue
+      }
+
+      const estimation = getLlmEstimation(registryService, llmTarget.model)
+      const estimatedInputTokens = typeof llmTarget.inputTokens === 'number' ? llmTarget.inputTokens : 0
+      const estimatedOutputTokens = typeof llmTarget.outputTokens === 'number' ? llmTarget.outputTokens : 0
+      const cost = applyCostMultiplier(
+        (estimatedInputTokens / 1_000_000) * rates.inputCostPer1MCents
+        + (estimatedOutputTokens / 1_000_000) * rates.outputCostPer1MCents,
+        estimation.costMultiplier
+      )
+      totalCost += cost
+      steps.push({
+        step: 'llm',
+        provider: llmTarget.service,
+        model: llmTarget.model,
+        cost,
+        costMultiplier: estimation.costMultiplier,
+        inputCostPer1MCents: rates.inputCostPer1MCents,
+        outputCostPer1MCents: rates.outputCostPer1MCents,
+        estimatedInputTokens,
+        estimatedOutputTokens
+      })
+    }
+  }
+
+  const ttsTargets = input.ttsTargets && input.ttsTargets.length > 0
+    ? input.ttsTargets
+    : input.ttsService && input.ttsModel
+      ? [{ service: input.ttsService, model: input.ttsModel }]
+      : []
+
+  for (const ttsTarget of ttsTargets) {
+    const resolvedTtsCharacterCount = typeof input.ttsCharacterCount === 'number' ? input.ttsCharacterCount : 0
+    const ttsCost = computeTtsCost(ttsTarget.service, ttsTarget.model, resolvedTtsCharacterCount)
+    const estimation = getTtsEstimation(ttsTarget.service, ttsTarget.model)
+    const pricing = getTtsPricing(ttsTarget.service, ttsTarget.model)
+    const hasDualRates = pricing.inputCostPer1MCharsCents !== undefined && pricing.outputCostPer1MCharsCents !== undefined
+    const costPer1kCharsCents = hasDualRates ? undefined : (pricing.costPer1kCharsCents ?? getTtsCost(ttsTarget.service, ttsTarget.model))
+
+    const setupCost = ttsTarget.setupCostCents ?? 0
+    const cost = applyCostMultiplier(ttsCost.cost, estimation.costMultiplier) + setupCost
+    totalCost += cost
+    steps.push({
+      step: 'tts',
+      provider: ttsTarget.service,
+      model: ttsTarget.model,
+      cost,
+      costMultiplier: estimation.costMultiplier,
+      ...(typeof ttsTarget.setupCostCents === 'number' ? { setupCostCents: setupCost } : {}),
+      ...(typeof ttsTarget.setupNote === 'string' ? { note: ttsTarget.setupNote } : {}),
+      ...(costPer1kCharsCents !== undefined ? { costPer1kCharactersCents: costPer1kCharsCents } : {}),
+      ...(pricing.inputCostPer1MCharsCents !== undefined ? { inputCostPer1MCharactersCents: pricing.inputCostPer1MCharsCents } : {}),
+      ...(pricing.outputCostPer1MCharsCents !== undefined ? { outputCostPer1MCharactersCents: pricing.outputCostPer1MCharsCents } : {})
+    })
+  }
+
+  const imageEstimates = input.imageTargets && input.imageTargets.length > 0
+    ? input.imageTargets.map((target) => estimateImageTargetCost(target, input))
+    : estimateImageCosts({
+        geminiImageModel: input.geminiImageModel,
+        openaiImageModel: input.openaiImageModel,
+        minimaxImageModel: input.minimaxImageModel,
+        glmImageModel: input.glmImageModel,
+        grokImageModel: input.grokImageModel,
+        runwayImageModel: input.runwayImageModel,
+        bflImageModel: input.bflImageModel,
+        deapiImageModel: input.deapiImageModel,
+        imageSize: input.imageSize,
+        imageQuality: input.imageQuality,
+        imagenCount: input.imagenCount
+      })
+
+  for (const imageEstimate of imageEstimates) {
+    const estimation = getImageEstimation(imageEstimate.provider, imageEstimate.model)
+    const cost = applyCostMultiplier(imageEstimate.totalCost, estimation.costMultiplier)
+    totalCost += cost
+    steps.push({
+      step: 'image',
+      provider: imageEstimate.provider,
+      model: imageEstimate.model,
+      cost,
+      costMultiplier: estimation.costMultiplier
+    })
+  }
+
+  const hasVideo = input.videoTargets?.length
+    || input.geminiVideoModel
+    || input.minimaxVideoModel
+    || input.glmVideoModel
+    || input.grokVideoModel
+    || input.runwayVideoModel
+    || input.deapiVideoModel
+  if (hasVideo) {
+    const videoEstimates = estimateVideoCosts({
+      geminiVideoModels: input.videoTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
+      geminiVideoModel: input.geminiVideoModel,
+      minimaxVideoModels: input.videoTargets?.filter((target) => target.service === 'minimax').map((target) => target.model),
+      minimaxVideoModel: input.minimaxVideoModel,
+      glmVideoModels: input.videoTargets?.filter((target) => target.service === 'glm').map((target) => target.model),
+      glmVideoModel: input.glmVideoModel,
+      grokVideoModels: input.videoTargets?.filter((target) => target.service === 'grok').map((target) => target.model),
+      grokVideoModel: input.grokVideoModel,
+      runwayVideoModels: input.videoTargets?.filter((target) => target.service === 'runway').map((target) => target.model),
+      runwayVideoModel: input.runwayVideoModel,
+      deapiVideoModels: input.videoTargets?.filter((target) => target.service === 'deapi').map((target) => target.model),
+      deapiVideoModel: input.deapiVideoModel,
+      videoDuration: input.videoTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.videoDuration,
+      videoSize: input.videoSize,
+      videoAspectRatio: input.videoAspectRatio,
+      videoResolution: input.videoResolution
+    })
+    for (const estimate of videoEstimates) {
+      const estimation = getVideoEstimation(estimate.provider, estimate.model)
+      const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+      totalCost += cost
+      steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
+    }
+  }
+
+  const hasMusic = input.musicTargets?.length
+    || input.elevenlabsMusicModel
+    || input.minimaxMusicModel
+    || input.deapiMusicModel
+    || input.geminiMusicModel
+  if (hasMusic) {
+    const estimates = estimateMusicCosts({
+      elevenlabsMusicModels: input.musicTargets?.filter((target) => target.service === 'elevenlabs').map((target) => target.model),
+      elevenlabsMusicModel: input.elevenlabsMusicModel,
+      minimaxMusicModels: input.musicTargets?.filter((target) => target.service === 'minimax').map((target) => target.model),
+      minimaxMusicModel: input.minimaxMusicModel,
+      deapiMusicModels: input.musicTargets?.filter((target) => target.service === 'deapi').map((target) => target.model),
+      deapiMusicModel: input.deapiMusicModel,
+      geminiMusicModels: input.musicTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
+      geminiMusicModel: input.geminiMusicModel,
+      musicDuration: input.musicTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.musicDuration,
+      musicLyricsFile: input.musicLyricsFile,
+      musicInstrumental: input.musicInstrumental
+    })
+    for (const estimate of estimates) {
+      const estimation = getMusicEstimation(estimate.provider, estimate.model)
+      const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+      totalCost += cost
+      steps.push({ step: 'music', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
+    }
+  }
+
+  return { totalCost, steps }
+}

@@ -43,7 +43,9 @@ import { buildVideoArtifactMap, collectVideoTargets } from './step-6-video/video
 import { runMusicGen } from './step-7-music/run-music-gen'
 import { buildMusicArtifactMap, collectMusicTargets } from './step-7-music/music-targets'
 import { buildProviderStepSummaries } from './generation-command-utils'
-import { computeActualCosts, computeEstimatedCosts, parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
+import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
+import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
+import { parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
 import {
