@@ -97,6 +97,11 @@ import {
   resolveGeminiMultiSpeakerConfig,
   validateGeminiMultiSpeakerTranscript
 } from './tts-services/gemini/gemini-tts-config'
+import {
+  isDialogueTtsRequested,
+  parseSpeakerRefAudioMappings,
+  resolveDialogueFormat
+} from './dialogue-normalizer'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import * as l from '~/utils/logger'
 
@@ -276,6 +281,38 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     && !hasElevenLabsCloneFlags
     && !hasElevenLabsPvcActionFlags
   )
+  const dialogueRequested = isDialogueTtsRequested(options)
+
+  if (dialogueRequested) {
+    resolveDialogueFormat(options)
+    const speakerRegistry = parseSpeakerRefAudioMappings(options.ttsSpeakerRefAudios)
+    if (speakerRegistry.entries.length === 0) {
+      throw new Error('Dialogue TTS requires at least one --tts-speaker-ref-audio SPEAKER=path mapping.')
+    }
+    if (mistralModels.length !== 1) {
+      throw new Error('Dialogue TTS requires exactly one --mistral-tts <model> selection.')
+    }
+    const nonMistralModelCount = [
+      kittenModels,
+      elevenlabsModels,
+      minimaxModels,
+      groqModels,
+      grokModels,
+      openaiModels,
+      geminiModels,
+      deepgramModels,
+      runwayModels,
+      speechifyModels,
+      gcloudModels,
+      deapiModels
+    ].reduce((sum, models) => sum + (models?.length ?? 0), 0)
+    if (nonMistralModelCount > 0) {
+      throw new Error('Dialogue TTS v1 supports exactly one Mistral TTS model and cannot be combined with other TTS providers.')
+    }
+    if (options.mistralTtsVoice?.trim() || options.mistralTtsRefAudio?.trim()) {
+      throw new Error('Dialogue TTS uses --tts-speaker-ref-audio mappings; do not combine it with --mistral-tts-voice or --mistral-tts-ref-audio.')
+    }
+  }
 
   if (hasMinimaxCloneFlags && minimaxModels.length === 0) {
     throw new Error('MiniMax TTS clone flags require --minimax-tts <model> or --all-tts.')

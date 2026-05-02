@@ -189,13 +189,21 @@ bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 | Selector | `--mistral-tts <model>` |
 | Models | `voxtral-mini-tts-2603` |
 | Voice source | exactly one of `--mistral-tts-voice <id>` or `--mistral-tts-ref-audio <path>` |
+| Dialogue mode | `--tts-dialogue-format screenplay|labeled` plus repeatable `--tts-speaker-ref-audio SPEAKER=path` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-voice voice_abc123
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as tts input/chat-and-duco.txt \
+  --mistral-tts voxtral-mini-tts-2603 \
+  --tts-dialogue-format screenplay \
+  --tts-speaker-ref-audio DUCO=input/examples/audio/anthony-voice.mp3 \
+  --tts-speaker-ref-audio CHAT=input/examples/audio/1-audio.mp3
 ```
 
 Mistral Voxtral TTS requires one voice source when generating audio: a saved/custom voice ID or a one-off local reference audio file. `--price` can estimate Mistral TTS with only `--mistral-tts` because no synthesis request is made. Reference audio is base64-encoded for the request and is not written into run metadata; metadata records the speaker as `ref_audio:<basename>`.
+
+Dialogue mode is Mistral-only in v1 and uses per-speaker reference audio mappings instead of `--mistral-tts-voice` or `--mistral-tts-ref-audio`. `screenplay` mode extracts configured speaker dialogue, strips leading parentheticals, and omits scene/action directions. `labeled` mode expects `SPEAKER: text` lines. Runs write `dialogue-normalized.txt`, one WAV per turn under `segments/`, the final `speech.wav`, and `run.json`; price estimates use the spoken dialogue character count.
 
 ### OpenAI
 
@@ -338,6 +346,7 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 
 - If exactly one TTS target succeeds, the run writes `speech.wav` plus `run.json`.
 - If multiple TTS targets succeed, the run writes `speech-<service>-<sanitized-model>.wav` for each successful target plus `run.json`.
+- Dialogue runs also write `dialogue-normalized.txt` and per-turn WAVs under `segments/`.
 - ElevenLabs IVC runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
 - Ready ElevenLabs PVC synthesis records `speaker: "pvc:<voice_id>"` in Step 4 metadata. PVC setup-only runs write `elevenlabs-pvc-status.json`; when no wait is requested, no `speech.wav` is produced.
 - MiniMax clone runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and one `cloneCostCents: 150` entry in the Step 4 metadata.

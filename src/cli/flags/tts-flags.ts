@@ -249,6 +249,14 @@ export const ttsFlags = {
     description: 'Mistral TTS reference audio path for one-off voice cloning',
     type: String
   },
+  'tts-dialogue-format': {
+    description: 'Dialogue input format for multi-speaker TTS: screenplay|labeled',
+    type: String
+  },
+  'tts-speaker-ref-audio': {
+    description: 'Speaker reference audio mapping for dialogue TTS, SPEAKER=path; repeatable',
+    type: [String] as [StringConstructor]
+  },
   'elevenlabs-voice': {
     description: 'ElevenLabs voice ID override (default: hpp4J3VqNfWAUOO0d1Us)',
     type: String

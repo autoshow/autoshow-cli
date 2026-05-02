@@ -20,6 +20,10 @@ import {
 } from './tts-services/elevenlabs/elevenlabs-pvc'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import type { TtsOptions } from '~/types'
+import {
+  isDialogueTtsRequested,
+  normalizeDialogueFromOptions
+} from './dialogue-normalizer'
 
 const clearElevenLabsPvcSetupOptions = <T extends TtsOptions>(
   options: T,
@@ -75,14 +79,19 @@ export const ttsCommand = defineCommand({
   const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' }, new Set(), Bun.argv.slice(2))
   const targets = collectTtsTargets(ttsOptions)
   const pvcSetupRequested = isElevenLabsTtsPvcSetupRequested(ttsOptions)
+  const dialogueRequested = isDialogueTtsRequested(ttsOptions)
+  const dialoguePreview = dialogueRequested ? normalizeDialogueFromOptions(text, ttsOptions) : undefined
+  const ttsCharacterCount = dialoguePreview?.spokenCharacterCount ?? text.length
 
-  const { shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, text.length)
+  const { shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, ttsCharacterCount)
   if (shouldExit) {
     l.report.expectedOutput(
       './output/<timestamp>_<label>/',
-      pvcSetupRequested && ttsOptions.elevenlabsTtsPvcWait !== true
-        ? ['elevenlabs-pvc-status.json', 'run.json']
-        : [...targets.map((target) => getTtsArtifactFileName(target, targets.length === 1)), 'run.json']
+      dialogueRequested
+        ? ['dialogue-normalized.txt', 'segments/', 'speech.wav', 'run.json']
+        : pvcSetupRequested && ttsOptions.elevenlabsTtsPvcWait !== true
+          ? ['elevenlabs-pvc-status.json', 'run.json']
+          : [...targets.map((target) => getTtsArtifactFileName(target, targets.length === 1)), 'run.json']
     )
     return
   }
@@ -155,21 +164,21 @@ export const ttsCommand = defineCommand({
   const estimated = computeEstimatedCosts({
     applyCostMultipliers: false,
     ttsTargets: estimatedTtsTargets,
-    ttsCharacterCount: text.length
+    ttsCharacterCount
   })
   const actual = computeActualCosts({
     step4: metadata,
-    ttsCharacterCount: text.length
+    ttsCharacterCount
   })
   const cost = { estimated, actual }
   const timing = {
     estimated: computeEstimatedProcessingTimes({
       ttsTargets: estimatedTtsTargets,
-      ttsCharacterCount: text.length,
+      ttsCharacterCount,
     }),
     actual: computeActualProcessingTimes({
       step4: metadata,
-      ttsCharacterCount: text.length,
+      ttsCharacterCount,
     }),
   }
 
@@ -182,6 +191,7 @@ export const ttsCommand = defineCommand({
     outputDir,
     {
       ...buildTtsArtifactMap(metadata, 'audio'),
+      ...(dialogueRequested ? { dialogue: 'dialogue-normalized.txt', segments: 'segments/' } : {}),
       ...(pvcStatusFileName ? { elevenlabsPvc: pvcStatusFileName } : {}),
       run: 'run.json'
     },

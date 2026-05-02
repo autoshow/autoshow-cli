@@ -3,6 +3,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/run-gcloud-tts'
+import { runMistralTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/run-mistral-tts'
 import { runSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/run-speechify-tts'
 import { splitTextIntoUtf8ByteChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 
@@ -13,6 +14,8 @@ const envKeys = [
   'SPEECHIFY_API_KEY',
   'SPEECHIFY_BASE_URL',
   'SPEECHIFY_TTS_VOICE',
+  'MISTRAL_API_KEY',
+  'MISTRAL_BASE_URL',
   'AUTOSHOW_GCLOUD_BIN',
   'GCLOUD_TTS_BASE_URL',
   'GCLOUD_TTS_LANGUAGE',
@@ -181,6 +184,62 @@ describe('TTS provider service contracts', () => {
         inputLength: 100
       }
     ])
+  }, 10_000)
+
+  test('Mistral converts non-mp3-wav reference audio to WAV before sending ref_audio', async () => {
+    const dir = await makeTempDir('autoshow-mistral-tts-ref-audio-')
+    const sourcePath = 'input/samples/valid/1-audio.m4a'
+    const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
+
+    process.env['MISTRAL_API_KEY'] = 'mistral-key'
+    process.env['MISTRAL_BASE_URL'] = 'https://mock.mistral.local/v1'
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      const request = input instanceof Request ? input : undefined
+      const bodyText = typeof init?.body === 'string'
+        ? init.body
+        : request
+          ? await request.clone().text()
+          : ''
+      const headers = new Headers(init?.headers ?? request?.headers)
+      calls.push({
+        url: request?.url ?? String(input),
+        method: init?.method ?? request?.method ?? 'GET',
+        authorization: headers.get('authorization'),
+        body: JSON.parse(bodyText) as Record<string, unknown>
+      })
+      return Response.json({ audio_data: createMockWavBase64() })
+    }) as typeof fetch
+
+    const result = await runMistralTts('Mistral reference synthesis.', dir, {
+      model: 'voxtral-mini-tts-2603',
+      refAudioPath: sourcePath
+    })
+
+    expect(await Bun.file(result.audioPath).exists()).toBe(true)
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({
+      url: 'https://mock.mistral.local/v1/audio/speech',
+      method: 'POST',
+      authorization: 'Bearer mistral-key'
+    })
+    expect(calls[0]?.body).toMatchObject({
+      model: 'voxtral-mini-tts-2603',
+      input: 'Mistral reference synthesis.',
+      response_format: 'wav'
+    })
+
+    const refAudio = String(calls[0]?.body['ref_audio'])
+    const refBytes = Buffer.from(refAudio, 'base64')
+    expect(refBytes.subarray(0, 4).toString('ascii')).toBe('RIFF')
+    expect(refBytes.subarray(8, 12).toString('ascii')).toBe('WAVE')
+    expect(await Bun.file(join(dir, 'mistral-reference-audio.wav')).exists()).toBe(false)
+    expect(result.metadata).toMatchObject({
+      ttsService: 'mistral',
+      ttsModel: 'voxtral-mini-tts-2603',
+      speaker: 'ref_audio:1-audio.m4a',
+      chunkCount: 1
+    })
   }, 10_000)
 
   test('Speechify custom voice creation posts multipart consent and uses the returned voice ID for synthesis', async () => {

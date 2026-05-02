@@ -120,3 +120,27 @@ export const concatAndConvertToWav = async (
   await Bun.$`rm -f ${concatListPath}`.quiet().nothrow()
   return wavPath
 }
+
+export const convertAudioToWav = async (
+  inputPath: string,
+  outputPath: string,
+  providerLabel: string,
+  purposeLabel = 'audio'
+): Promise<string> => {
+  const ffmpeg = await exec('ffmpeg', [
+    '-i', inputPath,
+    '-vn',
+    '-map', '0:a:0',
+    '-ar', '16000',
+    '-ac', '1',
+    '-c:a', 'pcm_s16le',
+    '-y',
+    outputPath
+  ])
+
+  if (ffmpeg.exitCode !== 0) {
+    throw new Error(`Failed to convert ${providerLabel} ${purposeLabel} to WAV: ${ffmpeg.stderr.trim()}`)
+  }
+
+  return outputPath
+}

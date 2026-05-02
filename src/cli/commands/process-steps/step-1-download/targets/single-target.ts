@@ -746,6 +746,8 @@ const processMediaSingle = async (
     mistralTtsModel: llmDefaults.mistralTtsModel,
     mistralTtsVoice: llmDefaults.mistralTtsVoice,
     mistralTtsRefAudio: llmDefaults.mistralTtsRefAudio,
+    ttsDialogueFormat: llmDefaults.ttsDialogueFormat,
+    ttsSpeakerRefAudios: llmDefaults.ttsSpeakerRefAudios,
     openaiTtsModels: llmDefaults.openaiTtsModels,
     openaiTtsModel: llmDefaults.openaiTtsModel,
     openaiVoiceId: llmDefaults.openaiVoiceId,

@@ -68,6 +68,8 @@ export type TtsOptions = Pick<
   | 'mistralTtsModel'
   | 'mistralTtsVoice'
   | 'mistralTtsRefAudio'
+  | 'ttsDialogueFormat'
+  | 'ttsSpeakerRefAudios'
   | 'openaiTtsModels'
   | 'openaiTtsModel'
   | 'openaiVoiceId'

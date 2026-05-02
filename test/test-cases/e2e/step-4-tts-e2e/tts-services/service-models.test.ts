@@ -32,6 +32,9 @@ const MINIMAX_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
 const DEAPI_TTS_CLONE_MODEL = 'Qwen3_TTS_12Hz_1_7B_Base'
 const DEAPI_REF_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
 
+const isTransientMistralTtsFailure = (output: string): boolean =>
+  /Unable to connect|Unexpected HTTP client error|fetch failed|network error|econnreset|econnrefused|etimedout|socket hang up|dns/i.test(output)
+
 defineTTSServiceTest({
   models: ['gpt-4o-mini-tts'],
   cliFlag: '--openai-tts',
@@ -399,6 +402,67 @@ budgetedTest('tts-mistral-voxtral-mini-tts-2603-ref-audio', 'mistral reference a
     expect(metadata.tts?.[0]?.ttsService).toBe('mistral')
     expect(metadata.tts?.[0]?.ttsModel).toBe(MISTRAL_TTS_MODEL)
     expect(metadata.tts?.[0]?.speaker).toBe('ref_audio:anthony-voice.mp3')
+  }
+}, E2E_TEST_TIMEOUT_MS)
+
+budgetedTest('tts-mistral-dialogue-ref-audio', 'mistral dialogue mode generates normalized dialogue, segments, and speech.wav', async () => {
+  if (!await hasConfiguredEnvVar('MISTRAL_API_KEY')) {
+    console.log('Skipping: MISTRAL_API_KEY is required for Mistral dialogue TTS test')
+    return
+  }
+
+  await cleanupTestOutput('mistral-dialogue')
+
+  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-cli-mistral-dialogue-'))
+  const inputPath = join(tempRoot, 'mistral-dialogue.txt')
+
+  try {
+    await writeFile(inputPath, [
+      'Host: Hello from the dialogue test.',
+      'Guest: Hi. This keeps the live test short.'
+    ].join('\n'))
+
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'tts',
+      inputPath,
+      '--mistral-tts',
+      MISTRAL_TTS_MODEL,
+      '--tts-dialogue-format',
+      'labeled',
+      '--tts-speaker-ref-audio',
+      `Host=${MISTRAL_REF_AUDIO_PATH}`,
+      '--tts-speaker-ref-audio',
+      'Guest=input/examples/audio/1-audio.mp3'
+    ])
+
+    if (result.exitCode !== 0 && isTransientMistralTtsFailure(`${result.stdout}\n${result.stderr}`)) {
+      console.log('Skipping: Mistral TTS endpoint was not reachable for dialogue TTS test')
+      return
+    }
+
+    expect(result.exitCode).toBe(0)
+
+    const outputDir = result.outputDir ?? await findLatestDirectory('mistral-dialogue')
+    expect(outputDir).not.toBeNull()
+
+    if (outputDir) {
+      expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
+      expect(await fileExists(`${outputDir}/dialogue-normalized.txt`)).toBe(true)
+      expect(await fileExists(`${outputDir}/segments/segment-001-Host.wav`)).toBe(true)
+      expect(await fileExists(`${outputDir}/segments/segment-002-Guest.wav`)).toBe(true)
+
+      const metadata = await readRunMetadata(outputDir) as {
+        tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string, chunkCount?: number }>
+      }
+      expect(metadata.tts?.[0]?.ttsService).toBe('mistral')
+      expect(metadata.tts?.[0]?.ttsModel).toBe(MISTRAL_TTS_MODEL)
+      expect(metadata.tts?.[0]?.speaker).toBe('Host=ref_audio:anthony-voice.mp3, Guest=ref_audio:1-audio.mp3')
+      expect(metadata.tts?.[0]?.chunkCount).toBe(2)
+    }
+  } finally {
+    await cleanupTestOutput('mistral-dialogue')
+    await rm(tempRoot, { recursive: true, force: true })
   }
 }, E2E_TEST_TIMEOUT_MS)
 

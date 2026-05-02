@@ -169,6 +169,8 @@ export type RuntimeOptions = {
   mistralTtsModel: string | undefined
   mistralTtsVoice: string | undefined
   mistralTtsRefAudio: string | undefined
+  ttsDialogueFormat: 'screenplay' | 'labeled' | undefined
+  ttsSpeakerRefAudios: string[] | undefined
   openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined

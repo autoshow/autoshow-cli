@@ -130,6 +130,8 @@ export const mergeConfigIntoRawFlags = (
     inject('grok-tts-voice', d.post.tts.grokTtsVoice)
     inject('mistral-tts-voice', d.post.tts.mistralTtsVoice)
     inject('mistral-tts-ref-audio', d.post.tts.mistralTtsRefAudio)
+    inject('tts-dialogue-format', d.post.tts.ttsDialogueFormat)
+    inject('tts-speaker-ref-audio', d.post.tts.ttsSpeakerRefAudio)
     inject('openai-voice', d.post.tts.openaiVoice)
     inject('openai-tts-ref-audio', d.post.tts.openaiTtsRefAudio)
     inject('openai-tts-consent-id', d.post.tts.openaiTtsConsentId)
@@ -273,6 +275,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'grok-tts-voice':    ['defaults', 'post', 'tts', 'grokTtsVoice'],
   'mistral-tts-voice': ['defaults', 'post', 'tts', 'mistralTtsVoice'],
   'mistral-tts-ref-audio': ['defaults', 'post', 'tts', 'mistralTtsRefAudio'],
+  'tts-dialogue-format': ['defaults', 'post', 'tts', 'ttsDialogueFormat'],
+  'tts-speaker-ref-audio': ['defaults', 'post', 'tts', 'ttsSpeakerRefAudio'],
   'openai-voice':      ['defaults', 'post', 'tts', 'openaiVoice'],
   'openai-tts-ref-audio': ['defaults', 'post', 'tts', 'openaiTtsRefAudio'],
   'openai-tts-consent-id': ['defaults', 'post', 'tts', 'openaiTtsConsentId'],
@@ -409,6 +413,9 @@ const readConfigFlagValue = (
 }
 
 const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
+  if (flagName === 'tts-speaker-ref-audio' && typeof rawValue === 'string') {
+    return [rawValue]
+  }
   if (typeof rawValue !== 'string') return rawValue
   const numericFlags = new Set([
     'speaker-count', 'reverb-verbatimicity', 'imagen-count', 'video-duration',

@@ -69,6 +69,11 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
     expected: 'speech'
   },
   {
+    label: 'Mistral dialogue TTS',
+    args: ['tts', 'input/examples/tts/tts-dialogue.txt', '--mistral-tts', 'voxtral-mini-tts-2603', '--tts-dialogue-format', 'labeled', '--tts-speaker-ref-audio', 'Host=input/examples/audio/anthony-voice.mp3', '--tts-speaker-ref-audio', 'Guest=input/examples/audio/1-audio.mp3', '--price'],
+    expected: 'dialogue-normalized.txt'
+  },
+  {
     label: 'MiniMax voice clone TTS',
     args: ['tts', STABLE_TTS_MD_PATH, '--minimax-tts', 'speech-2.8-turbo', '--minimax-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
     expected: 'speech',

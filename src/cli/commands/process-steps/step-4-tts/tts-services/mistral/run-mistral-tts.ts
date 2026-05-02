@@ -1,21 +1,28 @@
-import { basename } from 'node:path'
+import { basename, extname } from 'node:path'
 import { Mistral } from '@mistralai/mistralai'
 import { ConnectionError, MistralError, RequestAbortedError, RequestTimeoutError } from '@mistralai/mistralai/models/errors'
 import type { MistralTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { splitTextIntoChunks, concatAndConvertToWav, convertAudioToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { readEnv } from '~/utils/validate/env-utils'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const MAX_CHARS_PER_CHUNK = 4000
 const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
+const MISTRAL_REF_AUDIO_DIRECT_EXTENSIONS = new Set(['.mp3', '.mpeg', '.mpga', '.wav', '.wave'])
 
 const normalizeMistralServerURL = (serverURL: string): string => serverURL.replace(/\/v1\/?$/, '')
 
 type MistralVoiceSource =
   | { kind: 'voice', value: string, speaker: string }
   | { kind: 'refAudio', path: string, speaker: string }
+
+type MistralReferenceAudio = {
+  base64: string
+  uploadPath: string
+  convertedPath?: string | undefined
+}
 
 const resolveVoiceSource = (
   options: { voiceId?: string | undefined, refAudioPath?: string | undefined }
@@ -47,7 +54,7 @@ const resolveVoiceSource = (
   throw new Error('Mistral TTS requires a saved voice ID or reference audio. Set --mistral-tts-voice, --mistral-tts-ref-audio, MISTRAL_TTS_VOICE, or MISTRAL_TTS_REF_AUDIO.')
 }
 
-const readRefAudioBase64 = async (path: string): Promise<string> => {
+const readAudioBase64 = async (path: string): Promise<string> => {
   const file = Bun.file(path)
   if (!await file.exists()) {
     throw new Error(`Mistral TTS reference audio not found: ${path}`)
@@ -59,6 +66,29 @@ const readRefAudioBase64 = async (path: string): Promise<string> => {
   }
 
   return Buffer.from(bytes).toString('base64')
+}
+
+const prepareReferenceAudio = async (
+  path: string,
+  outputDir: string
+): Promise<MistralReferenceAudio> => {
+  const ext = extname(path).toLowerCase()
+  if (MISTRAL_REF_AUDIO_DIRECT_EXTENSIONS.has(ext)) {
+    return {
+      base64: await readAudioBase64(path),
+      uploadPath: path
+    }
+  }
+
+  const convertedPath = `${outputDir}/mistral-reference-audio.wav`
+  await readAudioBase64(path)
+  await convertAudioToWav(path, convertedPath, 'Mistral', 'reference audio')
+
+  return {
+    base64: await readAudioBase64(convertedPath),
+    uploadPath: convertedPath,
+    convertedPath
+  }
 }
 
 const normalizeMistralError = (error: unknown): Error => {
@@ -93,9 +123,18 @@ export const runMistralTts = async (
     throw new Error('Mistral TTS input text is empty')
   }
 
-  const refAudioBase64 = voiceSource.kind === 'refAudio'
-    ? await readRefAudioBase64(voiceSource.path)
+  const referenceAudio = voiceSource.kind === 'refAudio'
+    ? await prepareReferenceAudio(voiceSource.path, outputDir)
     : undefined
+  let speechVoiceInput: { voiceId: string } | { refAudio: string }
+  if (voiceSource.kind === 'voice') {
+    speechVoiceInput = { voiceId: voiceSource.value }
+  } else {
+    if (!referenceAudio) {
+      throw new Error('Mistral TTS reference audio preparation failed')
+    }
+    speechVoiceInput = { refAudio: referenceAudio.base64 }
+  }
   const serverURL = normalizeMistralServerURL(readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1')
   const client = new Mistral({
     apiKey,
@@ -107,6 +146,7 @@ export const runMistralTts = async (
   logTtsConfig('Mistral', [
     { label: 'model', value: options.model },
     { label: voiceSource.kind === 'voice' ? 'voice' : 'reference audio', value: voiceSource.kind === 'voice' ? voiceSource.value : voiceSource.path },
+    { label: 'reference upload', value: referenceAudio?.convertedPath ? referenceAudio.uploadPath : undefined },
     { label: 'chunk count', value: chunks.length }
   ])
 
@@ -124,9 +164,7 @@ export const runMistralTts = async (
           input: chunks[i] as string,
           stream: false,
           responseFormat: 'wav',
-          ...(voiceSource.kind === 'voice'
-            ? { voiceId: voiceSource.value }
-            : { refAudio: refAudioBase64 })
+          ...speechVoiceInput
         })
         audioData = response.audioData
       } catch (error) {
@@ -153,6 +191,9 @@ export const runMistralTts = async (
   } finally {
     for (const chunkPath of chunkPaths) {
       await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
+    }
+    if (referenceAudio?.convertedPath) {
+      await Bun.$`rm -f ${referenceAudio.convertedPath}`.quiet().nothrow()
     }
   }
 }

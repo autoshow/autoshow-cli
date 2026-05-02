@@ -151,6 +151,23 @@ describe('option resolution contracts', () => {
     expect(clamped.ocrLocalConcurrency).toBe(1)
   })
 
+  test('buildOptsFromFlags maps repeatable dialogue speaker reference audio flags', () => {
+    const opts = buildOptsFromFlags(false, {
+      'mistral-tts': 'voxtral-mini-tts-2603',
+      'tts-dialogue-format': 'screenplay',
+      'tts-speaker-ref-audio': [
+        'DUCO=input/examples/audio/anthony-voice.mp3',
+        'CHAT=input/examples/audio/0-audio-short.mp3'
+      ]
+    })
+
+    expect(opts.ttsDialogueFormat).toBe('screenplay')
+    expect(opts.ttsSpeakerRefAudios).toEqual([
+      'DUCO=input/examples/audio/anthony-voice.mp3',
+      'CHAT=input/examples/audio/0-audio-short.mp3'
+    ])
+  })
+
   test('LLM provider concurrency defaults, falls back, and clamps like STT/OCR concurrency flags', () => {
     const defaults = buildOptsFromFlags(false, {})
     const fallback = buildOptsFromFlags(false, {

@@ -6,6 +6,8 @@ import {
   getTtsArtifactFileName,
   validateTtsInput,
 } from './tts-targets'
+import { isDialogueTtsRequested } from './dialogue-normalizer'
+import { runDialogueTts } from './run-dialogue-tts'
 
 const getMetadataAudioPath = (outputDir: string, metadata: Step4Metadata): string =>
   `${outputDir}/${metadata.audioFileName}`
@@ -50,6 +52,14 @@ export const runTts = async (
 ): Promise<{ audioPaths: string[], metadata: Step4Metadata[] }> => {
   validateTtsInput(text, options)
   const targets = collectTtsTargets(options)
+  if (isDialogueTtsRequested(options)) {
+    const { audioPath, metadata } = await runDialogueTts(text, outputDir, options)
+    return {
+      audioPaths: [audioPath],
+      metadata: [metadata]
+    }
+  }
+
   if (targets.length === 0) {
     throw new Error('No TTS provider configured')
   }

@@ -87,6 +87,8 @@ const TtsDefaultsSchema = v.strictObject({
   grokTtsVoice: v.optional(v.string(), undefined),
   mistralTtsVoice: v.optional(v.string(), undefined),
   mistralTtsRefAudio: v.optional(v.string(), undefined),
+  ttsDialogueFormat: v.optional(v.picklist(['screenplay', 'labeled']), undefined),
+  ttsSpeakerRefAudio: v.optional(v.array(v.string()), undefined),
   openaiVoice: v.optional(v.string(), undefined),
   openaiTtsRefAudio: v.optional(v.string(), undefined),
   openaiTtsConsentId: v.optional(v.string(), undefined),

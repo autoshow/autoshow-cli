@@ -550,6 +550,17 @@ const parsePdfChapterMode = (value: string | undefined): 'local' | 'auto' | 'llm
   throw CLIUsageError(`Invalid --pdf-chapter-mode value "${value}". Expected "local", "auto", or "llm".`)
 }
 
+const parseTtsDialogueFormat = (value: string | undefined): 'screenplay' | 'labeled' | undefined => {
+  const normalized = value?.trim().toLowerCase()
+  if (!normalized) {
+    return undefined
+  }
+  if (normalized === 'screenplay' || normalized === 'labeled') {
+    return normalized
+  }
+  throw CLIUsageError(`Invalid --tts-dialogue-format value "${value}". Expected "screenplay" or "labeled".`)
+}
+
 const parseDoubleDashArgs = (args: string[]): Record<string, string | boolean> => {
   const result: Record<string, string | boolean> = {}
   for (let i = 0; i < args.length; i++) {
@@ -945,6 +956,8 @@ export const buildOptsFromFlags = (
     mistralTtsModel: first(mistralTtsModels),
     mistralTtsVoice: readOptionalStringFlag(mergedFlags, 'mistral-tts-voice'),
     mistralTtsRefAudio: readOptionalStringFlag(mergedFlags, 'mistral-tts-ref-audio'),
+    ttsDialogueFormat: parseTtsDialogueFormat(readOptionalStringFlag(mergedFlags, 'tts-dialogue-format')),
+    ttsSpeakerRefAudios: readOptionalStringListFlag(mergedFlags, 'tts-speaker-ref-audio'),
     openaiTtsModels,
     openaiTtsModel: first(openaiTtsModels),
     geminiTtsModels,

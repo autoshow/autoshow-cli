@@ -106,6 +106,8 @@ export const ProcessingOptionsSchema = v.pipe(
     mistralTtsModel: v.optional(v.string(), undefined),
     mistralTtsVoice: v.optional(v.string(), undefined),
     mistralTtsRefAudio: v.optional(v.string(), undefined),
+    ttsDialogueFormat: v.optional(v.picklist(['screenplay', 'labeled']), undefined),
+    ttsSpeakerRefAudios: v.optional(v.array(v.string()), undefined),
     openaiTtsModels: v.optional(v.array(v.string()), undefined),
     openaiTtsModel: v.optional(v.string(), undefined),
     openaiVoiceId: v.optional(v.string(), undefined),
