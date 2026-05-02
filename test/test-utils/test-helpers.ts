@@ -136,6 +136,12 @@ const copyRunManifestToArtifacts = async (outputDir: string | null): Promise<voi
 }
 
 const SUBPROCESS_TIMEOUT = E2E_TEST_TIMEOUT_MS
+const E2E_CHILD_TIMEOUT_MS = String(E2E_TEST_TIMEOUT_MS)
+const E2E_CHILD_TIMEOUT_DEFAULTS: Record<string, string> = {
+  AUTOSHOW_MEDIA_GENERATION_TIMEOUT_MS: E2E_CHILD_TIMEOUT_MS,
+  AUTOSHOW_LLM_REQUEST_TIMEOUT_MS: E2E_CHILD_TIMEOUT_MS,
+  AUTOSHOW_OCR_REQUEST_TIMEOUT_MS: E2E_CHILD_TIMEOUT_MS
+}
 const TEST_CONFIG_PATH = resolve(import.meta.dir, 'fixtures/empty-autoshow-config.json')
 const TEST_CACHE_DIR = resolve(process.cwd(), 'output/.test-cache')
 const PROCESSING_COMMANDS = new Set([
@@ -156,6 +162,16 @@ const BASE_CHILD_ENV = Object.entries(process.env).reduce<Record<string, string>
   }
   return env
 }, {})
+
+const resolveE2EChildTimeoutDefaults = (): Record<string, string> => {
+  const defaults: Record<string, string> = {}
+  for (const [key, value] of Object.entries(E2E_CHILD_TIMEOUT_DEFAULTS)) {
+    if (!BASE_CHILD_ENV[key]?.trim()) {
+      defaults[key] = value
+    }
+  }
+  return defaults
+}
 
 const getTestProcessLockRoot = (): string =>
   process.env['AUTOSHOW_PROCESS_LOCK_DIR'] ?? join(TEST_CACHE_DIR, 'process-locks')
@@ -225,6 +241,7 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
 
   const env = {
     ...BASE_CHILD_ENV,
+    ...resolveE2EChildTimeoutDefaults(),
     AUTOSHOW_CACHE_DIR: TEST_CACHE_DIR,
     ...(opts?.env ?? {})
   }

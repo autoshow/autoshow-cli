@@ -281,6 +281,7 @@ export const runTextWrite = async (
   }))
 
   const estimated = computeEstimatedCosts({
+    applyCostMultipliers: false,
     llmTargets,
     skipLLM: false,
     ttsTargets: ttsEstimateTargets,

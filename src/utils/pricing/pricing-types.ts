@@ -108,6 +108,7 @@ export type ActualPipelineInputsBase<TStep1> = {
 export type ComputeActualCostsInput = ActualPipelineInputsBase<Step1Metadata>
 
 export type ComputeEstimatedCostsInput = {
+  applyCostMultipliers?: boolean | undefined
   sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
   whisperModel?: string | undefined
   gcloudSttModel?: string | undefined

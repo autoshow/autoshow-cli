@@ -318,6 +318,33 @@ const setEstimationValue = (modelEntry: MutableJson, fieldName: string, value: n
   modelEntry['estimation'] = estimation
 }
 
+const unwrapCalibrationMetadata = (parsed: Record<string, unknown>): Record<string, unknown> => {
+  const metadata = parsed['metadata']
+  return isRecord(metadata) ? metadata : parsed
+}
+
+const collectJsonFiles = async (dir: string): Promise<string[]> => {
+  let entries
+  try {
+    entries = await readdir(dir, { withFileTypes: true })
+  } catch {
+    return []
+  }
+
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+    .map((entry) => resolve(dir, entry.name))
+}
+
+const collectCalibrationManifestPaths = async (runDir: string): Promise<string[]> => {
+  const [runManifests, metadataManifests] = await Promise.all([
+    collectJsonFiles(resolve(runDir, 'run')),
+    collectJsonFiles(resolve(runDir, 'metadata')),
+  ])
+
+  return [...runManifests, ...metadataManifests]
+}
+
 export const applyModelConfigCalibrations = async (
   rootDir: string,
   configPaths: ConfigPaths = MODEL_CONFIG_PATHS
@@ -343,17 +370,9 @@ export const applyModelConfigCalibrations = async (
   for (const entry of runEntries) {
     if (!entry.isDirectory()) continue
     runsScanned += 1
-    const metadataDir = resolve(rootDir, entry.name, 'metadata')
-    let metadataEntries
-    try {
-      metadataEntries = await readdir(metadataDir, { withFileTypes: true })
-    } catch {
-      continue
-    }
+    const manifestPaths = await collectCalibrationManifestPaths(resolve(rootDir, entry.name))
 
-    for (const metadataEntry of metadataEntries) {
-      if (!metadataEntry.isFile() || !metadataEntry.name.endsWith('.json')) continue
-      const metadataPath = resolve(metadataDir, metadataEntry.name)
+    for (const metadataPath of manifestPaths) {
       let parsed: unknown
       try {
         parsed = JSON.parse(await readFile(metadataPath, 'utf8')) as unknown
@@ -363,7 +382,7 @@ export const applyModelConfigCalibrations = async (
       if (!isRecord(parsed)) continue
 
       metadataFilesScanned += 1
-      observations.push(...collectObservationsFromMetadata(parsed))
+      observations.push(...collectObservationsFromMetadata(unwrapCalibrationMetadata(parsed)))
     }
   }
 

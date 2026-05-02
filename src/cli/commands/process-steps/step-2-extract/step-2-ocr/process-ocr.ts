@@ -375,6 +375,7 @@ const buildDocumentMetadataPayload = (
   const failures = options.failures ?? []
   const extractTargets = collectEstimatedExtractTargets(normalizedStep2, opts)
   const estimated = computeEstimatedCosts({
+    applyCostMultipliers: false,
     extractTargets
   })
   const actual = computeActualCosts({ step2: normalizedStep2 })

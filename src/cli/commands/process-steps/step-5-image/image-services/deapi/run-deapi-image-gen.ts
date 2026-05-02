@@ -14,9 +14,10 @@ import {
   readJsonOrText
 } from '~/utils/deapi'
 import { validateData } from '~/utils/validate/validation'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const POLL_INITIAL_INTERVAL_MS = 5_000
-const POLL_TIMEOUT_MS = 5 * 60_000
+const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const MAX_31_BIT_SEED = 0x7fffffff
 
 type DeapiImageModelSpec = {

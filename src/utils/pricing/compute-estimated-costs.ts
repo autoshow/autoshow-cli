@@ -78,6 +78,11 @@ const estimateImageTargetCost = (
   }
 }
 
+const resolveCostMultiplier = (
+  input: ComputeEstimatedCostsInput,
+  multiplier: number
+): number => input.applyCostMultipliers === false ? 1 : multiplier
+
 export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): EstimatedCostBreakdown => {
   const steps: EstimatedStepEntry[] = []
   let totalCost = 0
@@ -94,15 +99,16 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
 
       if (target.service === 'supadata') {
         const estimation = getSttEstimation(target.service, target.model)
+        const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
         const supadataEstimate = estimateSupadataCost(target.model, durationSeconds)
-        const cost = applyCostMultiplier(supadataEstimate.totalCost, estimation.costMultiplier)
+        const cost = applyCostMultiplier(supadataEstimate.totalCost, costMultiplier)
         totalCost += cost
         steps.push({
           step: 'stt',
           provider: target.service,
           model: target.model,
           cost,
-          costMultiplier: estimation.costMultiplier,
+          costMultiplier,
           durationSeconds,
           note: supadataEstimate.note
         })
@@ -110,9 +116,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       }
 
       const estimation = getSttEstimation(target.service, target.model)
-      const cost = applyCostMultiplier(computeSttCost(target.service, target.model, durationSeconds), estimation.costMultiplier)
+      const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
+      const cost = applyCostMultiplier(computeSttCost(target.service, target.model, durationSeconds), costMultiplier)
       totalCost += cost
-      steps.push({ step: 'stt', provider: target.service, model: target.model, cost, costMultiplier: estimation.costMultiplier, durationSeconds })
+      steps.push({ step: 'stt', provider: target.service, model: target.model, cost, costMultiplier, durationSeconds })
     }
   } else if (input.useReverb) {
     steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
@@ -146,30 +153,31 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       const model = input[field]
       if (typeof model === 'string' && model.length > 0) {
         const estimation = getSttEstimation(provider, model)
+        const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
         if (provider === 'supadata') {
           const supadataEstimate = estimateSupadataCost(model, durationSeconds)
-          const cost = applyCostMultiplier(supadataEstimate.totalCost, estimation.costMultiplier)
+          const cost = applyCostMultiplier(supadataEstimate.totalCost, costMultiplier)
           totalCost += cost
           steps.push({
             step: 'stt',
             provider,
             model,
             cost,
-            costMultiplier: estimation.costMultiplier,
+            costMultiplier,
             durationSeconds,
             note: supadataEstimate.note
           })
           break
         }
 
-        const cost = applyCostMultiplier(computeSttCost(provider, model, durationSeconds), estimation.costMultiplier)
+        const cost = applyCostMultiplier(computeSttCost(provider, model, durationSeconds), costMultiplier)
         totalCost += cost
         steps.push({
           step: 'stt',
           provider,
           model,
           cost,
-          costMultiplier: estimation.costMultiplier,
+          costMultiplier,
           durationSeconds,
         })
         break
@@ -247,18 +255,19 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
 
   for (const target of extractTargets) {
     const estimation = getExtractEstimation(target.provider, target.model)
+    const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
     if (target.provider === 'deapi') {
       const estimatedOutputChars = estimateDeapiOcrOutputCharsForPages(target.pageCount ?? input.extractPageCount ?? 1)
       const cost = typeof target.quotedCostCents === 'number'
         ? target.quotedCostCents
-        : applyCostMultiplier(computeDeapiOcrHeuristicCost(estimatedOutputChars), estimation.costMultiplier)
+        : applyCostMultiplier(computeDeapiOcrHeuristicCost(estimatedOutputChars), costMultiplier)
       totalCost += cost
       steps.push({
         step: 'extract',
         provider: target.provider,
         model: target.model,
         cost,
-        costMultiplier: typeof target.quotedCostCents === 'number' ? 1 : estimation.costMultiplier,
+        costMultiplier: typeof target.quotedCostCents === 'number' ? 1 : costMultiplier,
         costPer1kOutputCharsCents: DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
         ...(typeof target.quotedCostCents === 'number' ? {} : { estimatedOutputChars }),
         ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
@@ -271,7 +280,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       const extractPricing = getExtractPricing(target.provider, target.model)
       const cost = applyCostMultiplier(
         ((target.pageCount ?? input.extractPageCount ?? 0) / 1000) * (extractPricing.costPer1kPagesCents ?? 0),
-        estimation.costMultiplier
+        costMultiplier
       )
       totalCost += cost
       steps.push({
@@ -279,7 +288,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         provider: target.provider,
         model: target.model,
         cost,
-        costMultiplier: estimation.costMultiplier,
+        costMultiplier,
         ...(typeof extractPricing.costPer1kPagesCents === 'number' ? { costPer1kPagesCents: extractPricing.costPer1kPagesCents } : {}),
         ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
         ...(typeof target.note === 'string' ? { note: target.note } : {}),
@@ -295,15 +304,15 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     const cost = applyCostMultiplier(
       (effectivePromptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
       + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0),
-      estimation.costMultiplier
-      )
+      costMultiplier
+    )
     totalCost += cost
     steps.push({
       step: 'extract',
       provider: target.provider,
       model: target.model,
       cost,
-      costMultiplier: estimation.costMultiplier,
+      costMultiplier,
       ...(typeof extractPricing.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: extractPricing.inputCostPer1MCents } : {}),
       ...(typeof extractPricing.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: extractPricing.outputCostPer1MCents } : {}),
       ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
@@ -334,12 +343,13 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       }
 
       const estimation = getLlmEstimation(registryService, llmTarget.model)
+      const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
       const estimatedInputTokens = typeof llmTarget.inputTokens === 'number' ? llmTarget.inputTokens : 0
       const estimatedOutputTokens = typeof llmTarget.outputTokens === 'number' ? llmTarget.outputTokens : 0
       const cost = applyCostMultiplier(
         (estimatedInputTokens / 1_000_000) * rates.inputCostPer1MCents
         + (estimatedOutputTokens / 1_000_000) * rates.outputCostPer1MCents,
-        estimation.costMultiplier
+        costMultiplier
       )
       totalCost += cost
       steps.push({
@@ -347,7 +357,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         provider: llmTarget.service,
         model: llmTarget.model,
         cost,
-        costMultiplier: estimation.costMultiplier,
+        costMultiplier,
         inputCostPer1MCents: rates.inputCostPer1MCents,
         outputCostPer1MCents: rates.outputCostPer1MCents,
         estimatedInputTokens,
@@ -366,19 +376,20 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     const resolvedTtsCharacterCount = typeof input.ttsCharacterCount === 'number' ? input.ttsCharacterCount : 0
     const ttsCost = computeTtsCost(ttsTarget.service, ttsTarget.model, resolvedTtsCharacterCount)
     const estimation = getTtsEstimation(ttsTarget.service, ttsTarget.model)
+    const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
     const pricing = getTtsPricing(ttsTarget.service, ttsTarget.model)
     const hasDualRates = pricing.inputCostPer1MCharsCents !== undefined && pricing.outputCostPer1MCharsCents !== undefined
     const costPer1kCharsCents = hasDualRates ? undefined : (pricing.costPer1kCharsCents ?? getTtsCost(ttsTarget.service, ttsTarget.model))
 
     const setupCost = ttsTarget.setupCostCents ?? 0
-    const cost = applyCostMultiplier(ttsCost.cost, estimation.costMultiplier) + setupCost
+    const cost = applyCostMultiplier(ttsCost.cost, costMultiplier) + setupCost
     totalCost += cost
     steps.push({
       step: 'tts',
       provider: ttsTarget.service,
       model: ttsTarget.model,
       cost,
-      costMultiplier: estimation.costMultiplier,
+      costMultiplier,
       ...(typeof ttsTarget.setupCostCents === 'number' ? { setupCostCents: setupCost } : {}),
       ...(typeof ttsTarget.setupNote === 'string' ? { note: ttsTarget.setupNote } : {}),
       ...(costPer1kCharsCents !== undefined ? { costPer1kCharactersCents: costPer1kCharsCents } : {}),
@@ -405,14 +416,15 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
 
   for (const imageEstimate of imageEstimates) {
     const estimation = getImageEstimation(imageEstimate.provider, imageEstimate.model)
-    const cost = applyCostMultiplier(imageEstimate.totalCost, estimation.costMultiplier)
+    const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
+    const cost = applyCostMultiplier(imageEstimate.totalCost, costMultiplier)
     totalCost += cost
     steps.push({
       step: 'image',
       provider: imageEstimate.provider,
       model: imageEstimate.model,
       cost,
-      costMultiplier: estimation.costMultiplier
+      costMultiplier
     })
   }
 
@@ -444,9 +456,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     })
     for (const estimate of videoEstimates) {
       const estimation = getVideoEstimation(estimate.provider, estimate.model)
-      const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+      const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
+      const cost = applyCostMultiplier(estimate.totalCost, costMultiplier)
       totalCost += cost
-      steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
+      steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost, costMultiplier })
     }
   }
 
@@ -471,9 +484,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     })
     for (const estimate of estimates) {
       const estimation = getMusicEstimation(estimate.provider, estimate.model)
-      const cost = applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
+      const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
+      const cost = applyCostMultiplier(estimate.totalCost, costMultiplier)
       totalCost += cost
-      steps.push({ step: 'music', provider: estimate.provider, model: estimate.model, cost, costMultiplier: estimation.costMultiplier })
+      steps.push({ step: 'music', provider: estimate.provider, model: estimate.model, cost, costMultiplier })
     }
   }
 

@@ -6,11 +6,12 @@ import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generatio
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const RUNWAY_BASE_URL = 'https://api.dev.runwayml.com/v1'
 const RUNWAY_API_VERSION = '2024-11-06'
 const POLL_INTERVAL_MS = 10_000
-const POLL_TIMEOUT_MS = 10 * 60_000
+const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
 const RunwayCreateTaskSchema = v.object({
   id: v.string()

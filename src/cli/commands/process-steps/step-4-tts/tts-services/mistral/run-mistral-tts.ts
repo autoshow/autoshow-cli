@@ -6,9 +6,10 @@ import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { readEnv } from '~/utils/validate/env-utils'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const MAX_CHARS_PER_CHUNK = 4000
-const REQUEST_TIMEOUT_MS = 10 * 60 * 1000
+const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
 const normalizeMistralServerURL = (serverURL: string): string => serverURL.replace(/\/v1\/?$/, '')
 

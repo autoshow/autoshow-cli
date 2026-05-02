@@ -5,10 +5,11 @@ import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generatio
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readElevenLabsError } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-utils'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const ELEVENLABS_MIN_DURATION_MS = 3000
 const ELEVENLABS_MAX_DURATION_MS = 600000
-const REQUEST_TIMEOUT_MS = 10 * 60_000
+const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
 const normalizeMusicDurationMs = (durationSeconds: number | undefined): number | undefined => {
   if (durationSeconds === undefined) {

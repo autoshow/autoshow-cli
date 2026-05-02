@@ -5,9 +5,10 @@ import type {
 } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
+import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 
 const createCombinedSignal = (signal?: AbortSignal): AbortSignal => {
-  const timeoutSignal = AbortSignal.timeout(1800000)
+  const timeoutSignal = AbortSignal.timeout(LLM_REQUEST_TIMEOUT_MS)
   return AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
 }
 

@@ -1048,6 +1048,9 @@ export type Step5Metadata = {
   imageFileSize: number
   imageWidth: number | undefined
   imageHeight: number | undefined
+  imageSize?: string | undefined
+  imageQuality?: string | undefined
+  imageFormat?: string | undefined
   providerCostCents?: number | undefined
   providerCostSource?: 'provider_quote' | 'registry_fallback' | undefined
 }

@@ -76,13 +76,21 @@
         "description": "T2V-01-Director — camera-control focused video model",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
-        "blockCost720pCents": 19
+        "blockCost720pCents": 19,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 38000
+        }
       },
       "T2V-01": {
         "description": "T2V-01 — text-to-video model",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
-        "blockCost720pCents": 19
+        "blockCost720pCents": 19,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 35000
+        }
       }
     }
   },

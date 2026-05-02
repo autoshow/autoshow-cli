@@ -14,9 +14,10 @@ import {
 } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const POLL_INTERVAL_MS = 10_000
-const POLL_TIMEOUT_MS = 10 * 60_000
+const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const GLM_PROMPT_MAX_CHARS = 512
 
 const GlmCreateVideoResponseSchema = v.object({

@@ -64,6 +64,7 @@ export const imageCommand = defineCommand({
     count: getExpectedImageCount(target, imageOpts)
   }))
   const estimated = computeEstimatedCosts({
+    applyCostMultipliers: false,
     imageTargets: estimatedImageTargets,
     imageSize: imageOpts.imageSize,
     imageQuality: imageOpts.imageQuality

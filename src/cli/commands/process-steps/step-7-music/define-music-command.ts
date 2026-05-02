@@ -93,6 +93,7 @@ const runHostedMusicGeneration = async (
     ...(musicDuration !== undefined ? { durationSeconds: musicDuration } : {})
   }))
   const estimated = computeEstimatedCosts({
+    applyCostMultipliers: false,
     musicTargets: estimatedMusicTargets,
     musicDuration,
     musicLyricsFile,

@@ -55,7 +55,7 @@
         "costPerImageCents": 8,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 24452
+          "msPerImage": 52000
         }
       },
       "gpt-image-1": {
@@ -97,7 +97,7 @@
         "costPerImageCents": 0.35,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 15710
+          "msPerImage": 26000
         }
       }
     }
@@ -112,7 +112,7 @@
         "costPerImageCents": 1.5,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 15000
+          "msPerImage": 33000
         }
       },
       "cogView-4-250304": {

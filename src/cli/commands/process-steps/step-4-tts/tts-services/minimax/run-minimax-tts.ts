@@ -18,12 +18,13 @@ import {
   isMinimaxTaskSuccess,
   isMinimaxTaskFailure
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const MINIMAX_DEFAULT_VOICE_ID = 'English_expressive_narrator'
 const MAX_CHARS_PER_CHUNK = 50_000
 const POLL_INTERVAL_MS = 3_000
-const POLL_TIMEOUT_MS = 10 * 60_000
+const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 export const MINIMAX_TTS_CLONE_COST_CENTS = 150
 export const MINIMAX_TTS_CLONE_SETUP_MS = 15_000
 

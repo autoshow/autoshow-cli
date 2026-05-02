@@ -20,12 +20,17 @@ import type {
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
 const GEMINI_CLIP_MUSIC_DURATION_SECONDS = 30
 const GEMINI_PRO_DEFAULT_MUSIC_DURATION_SECONDS = 120
+const MINIMAX_DEFAULT_MUSIC_DURATION_SECONDS = 120
 
 const roundMs = (value: number): number => Math.max(0, Math.round(value))
 
 const resolveMusicTimingDurationSeconds = (
   target: { service: string, model: string, durationSeconds?: number | undefined }
 ): number | undefined => {
+  if (target.service === 'minimax') {
+    return MINIMAX_DEFAULT_MUSIC_DURATION_SECONDS
+  }
+
   if (target.service === 'gemini') {
     if (target.model === 'lyria-3-clip-preview') {
       return GEMINI_CLIP_MUSIC_DURATION_SECONDS

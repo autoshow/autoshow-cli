@@ -4,6 +4,7 @@ import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
+import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 
 export const runOpenAIModel = async (
   prompt: string,
@@ -17,7 +18,7 @@ export const runOpenAIModel = async (
     const apiCall = (): Promise<string> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName: 'openai-llm' },
       async (signal) => {
-        const timeoutSignal = AbortSignal.timeout(1800000)
+        const timeoutSignal = AbortSignal.timeout(LLM_REQUEST_TIMEOUT_MS)
         const combined = AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
 
         const requestBody: Record<string, unknown> = {

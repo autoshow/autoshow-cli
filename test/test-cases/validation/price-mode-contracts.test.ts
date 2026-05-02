@@ -12,6 +12,7 @@ import {
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
 import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
+import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
@@ -542,6 +543,31 @@ describe('price mode contracts', () => {
     })[0]?.note).toContain('OpenAI')
   })
 
+  test('gpt-image-2 actual fallback cost preserves OpenAI image options', () => {
+    const cost = computeActualCosts({
+      step5: {
+        imageService: 'openai',
+        imageModel: 'gpt-image-2',
+        processingTime: 10_000,
+        imageFileNames: ['generated-image.png'],
+        imageCount: 1,
+        imageFileSize: 1234,
+        imageWidth: 1024,
+        imageHeight: 1024,
+        imageSize: '1024x1024',
+        imageQuality: 'low',
+        imageFormat: 'png'
+      }
+    })
+
+    expect(cost.steps[0]).toMatchObject({
+      step: 'image',
+      provider: 'openai',
+      model: 'gpt-image-2',
+      cost: 0.6
+    })
+  })
+
   test('Gemini music estimates use per-song Lyria 3 pricing', () => {
     const estimates = estimateMusicCosts({
       geminiMusicModels: ['lyria-3-clip-preview', 'lyria-3-pro-preview'],
@@ -576,6 +602,46 @@ describe('price mode contracts', () => {
     ])
   })
 
+  test('MiniMax music timing estimates use the provider default duration', () => {
+    const timing = computeEstimatedProcessingTimes({
+      musicTargets: [
+        { service: 'minimax', model: 'music-2.5' },
+        { service: 'minimax', model: 'music-2.5', durationSeconds: 15 }
+      ]
+    })
+
+    expect(timing.steps.map((step) => ({
+      provider: step.provider,
+      model: step.model,
+      processingTimeMs: step.processingTimeMs,
+      inputValue: step.inputValue
+    }))).toEqual([
+      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 291_360, inputValue: 120 },
+      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 291_360, inputValue: 120 }
+    ])
+  })
+
+  test('post-run exact LLM estimates can bypass calibration multipliers', () => {
+    const cost = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      llmTargets: [{
+        service: 'openai',
+        model: 'gpt-5.4',
+        inputTokens: 1_000_000,
+        outputTokens: 1_000_000
+      }]
+    })
+
+    expect(cost.steps[0]).toMatchObject({
+      step: 'llm',
+      provider: 'openai',
+      model: 'gpt-5.4',
+      costMultiplier: 1,
+      cost: 1750
+    })
+    expect(cost.totalCost).toBe(1750)
+  })
+
   test('DeepInfra OCR estimates include token cost and page timing', () => {
     const extractTargets = [{
       provider: 'deepinfra' as const,
@@ -602,7 +668,7 @@ describe('price mode contracts', () => {
     expect(timing.steps[0]).toMatchObject({
       provider: 'deepinfra',
       model: 'allenai/olmOCR-2-7B-1025',
-      processingTimeMs: 12_000
+      processingTimeMs: 6_000
     })
   })
 
@@ -632,7 +698,7 @@ describe('price mode contracts', () => {
     expect(timing.steps[0]).toMatchObject({
       provider: 'kimi',
       model: 'kimi-k2.6',
-      processingTimeMs: 12_000
+      processingTimeMs: 28_600
     })
   })
 })

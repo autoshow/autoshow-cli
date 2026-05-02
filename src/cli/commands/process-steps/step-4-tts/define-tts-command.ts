@@ -153,6 +153,7 @@ export const ttsCommand = defineCommand({
 
   const estimatedTtsTargets = buildEstimatedTtsTargets(effectiveTargets)
   const estimated = computeEstimatedCosts({
+    applyCostMultipliers: false,
     ttsTargets: estimatedTtsTargets,
     ttsCharacterCount: text.length
   })

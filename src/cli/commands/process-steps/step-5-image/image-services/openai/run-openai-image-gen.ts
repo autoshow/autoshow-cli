@@ -74,7 +74,10 @@ export const runOpenAIImageGen = async (
     imageFileNames: [`generated-image.${ext}`],
     imageFileSize,
     imageWidth: undefined,
-    imageHeight: undefined
+    imageHeight: undefined,
+    imageSize: options.size ?? 'auto',
+    imageQuality: options.quality ?? 'auto',
+    imageFormat: options.outputFormat ?? 'png'
   }
 
   return { imagePaths: [outputPath], metadata }

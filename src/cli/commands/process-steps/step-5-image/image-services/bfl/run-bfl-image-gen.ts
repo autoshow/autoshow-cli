@@ -6,10 +6,11 @@ import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generatio
 import { estimateImageCosts, logImageEstimate } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { pollUntil } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import { ensureBflImageGenSetup, getBflBaseUrl } from './bfl-image-gen'
 
 const POLL_INTERVAL_MS = 5_000
-const POLL_TIMEOUT_MS = 10 * 60_000
+const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
 const BFL_OUTPUT_FORMATS = ['jpeg', 'png', 'webp'] as const
 type BflOutputFormat = typeof BFL_OUTPUT_FORMATS[number]

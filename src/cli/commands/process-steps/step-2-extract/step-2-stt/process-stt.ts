@@ -467,6 +467,7 @@ const resolveSttEstimatedCosts = (
 ) => preflightEstimate
   ? preflightToEstimated(filterSttPreflightEstimateByTargets(preflightEstimate, targets))
   : computeEstimatedCosts({
+      applyCostMultipliers: false,
       sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
       audioDurationSeconds: durationSeconds
     })

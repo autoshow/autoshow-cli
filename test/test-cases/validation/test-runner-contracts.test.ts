@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseRunnerArgs } from '../../test-runner/args'
+import { applyModelConfigCalibrations } from '../../test-runner/model-calibration'
 import { parseJunit } from '../../test-runner/parsers'
 import { resolvePriceSelection } from '../../test-runner/price-commands'
 import { PRICE_SELECTION_REGISTRY } from '../../test-runner/price-commands/registry'
@@ -266,6 +267,83 @@ describe('test-runner contracts', () => {
     expect(cases.filter((entry) => entry.status === 'passed')).toHaveLength(1)
     expect(cases.filter((entry) => entry.status === 'failed')).toHaveLength(1)
     expect(cases.filter((entry) => entry.status === 'skipped')).toHaveLength(1)
+  })
+
+  test('model calibration scans copied run manifests', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-calibration-run-manifest-'))
+    tempDirs.push(dir)
+
+    const configPath = join(dir, 'image-config.json')
+    await writeFile(configPath, `${JSON.stringify({
+      openai: {
+        description: 'OpenAI image generation',
+        type: 'api',
+        models: {
+          'gpt-image-1-mini': {
+            description: 'GPT Image 1 Mini',
+            costPerImageUSD: 0.02,
+            costPerImageCents: 2,
+            estimation: {
+              costMultiplier: 1,
+              msPerImage: 1000
+            }
+          }
+        }
+      }
+    }, null, 2)}\n`)
+
+    const runDir = join(dir, '2026-05-01_00-00-00_test-run')
+    const copiedRunDir = join(runDir, 'run')
+    await mkdir(copiedRunDir, { recursive: true })
+    await writeFile(join(copiedRunDir, '2026-05-01_00-00-01_image-gen.json'), `${JSON.stringify({
+      schemaVersion: 2,
+      kind: 'image',
+      metadata: {
+        cost: {
+          estimated: {
+            steps: [{
+              step: 'image',
+              provider: 'openai',
+              model: 'gpt-image-1-mini',
+              cost: 2,
+              costMultiplier: 1
+            }]
+          },
+          actual: {
+            steps: [{
+              step: 'image',
+              provider: 'openai',
+              model: 'gpt-image-1-mini',
+              cost: 2,
+              inputMetric: 'images',
+              inputValue: 1
+            }]
+          }
+        },
+        timing: {
+          actual: {
+            steps: [{
+              step: 'image',
+              provider: 'openai',
+              model: 'gpt-image-1-mini',
+              processingTimeMs: 3000,
+              inputMetric: 'images',
+              inputValue: 1
+            }]
+          }
+        }
+      }
+    }, null, 2)}\n`)
+
+    const report = await applyModelConfigCalibrations(dir, { image: configPath })
+    const updatedConfig = await Bun.file(configPath).json() as {
+      openai: { models: { 'gpt-image-1-mini': { estimation: { msPerImage: number } } } }
+    }
+
+    expect(report.runsScanned).toBe(1)
+    expect(report.metadataFilesScanned).toBe(1)
+    expect(report.updatedModels).toBe(1)
+    expect(updatedConfig.openai.models['gpt-image-1-mini'].estimation.msPerImage).toBe(1500)
   })
 
   test('validation paths stay mappedless in price selection', () => {

@@ -7,6 +7,7 @@ import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
+import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import {
   KIMI_OCR_IMAGE_BYTES,
   ensureKimiApiKey,
@@ -118,7 +119,7 @@ const runKimiOcrImage = async (
       const response = await withRetry(
         { retryClass: 'runtime_http_create_conservative', operationName: 'kimi-ocr' },
         async (signal) => {
-          const timeoutSignal = AbortSignal.timeout(1800000)
+          const timeoutSignal = AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS)
           const combined = AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
           return await client.chat.completions.create({
             model,

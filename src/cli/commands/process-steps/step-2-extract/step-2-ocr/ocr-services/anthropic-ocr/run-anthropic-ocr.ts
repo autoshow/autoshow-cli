@@ -9,6 +9,7 @@ import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-
 import { ensureMutoolSetup } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { createAnthropicClient } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
+import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import {
   ANTHROPIC_OCR_FILES_BETA,
   ANTHROPIC_OCR_FILES_UPLOAD_BYTES,
@@ -17,7 +18,7 @@ import {
   ANTHROPIC_OCR_PDF_CHUNK_PAGE_COUNT
 } from './anthropic-ocr'
 
-const ANTHROPIC_OCR_TIMEOUT_MS = 30 * 60 * 1000
+const ANTHROPIC_OCR_TIMEOUT_MS = OCR_REQUEST_TIMEOUT_MS
 
 const AnthropicOcrEnvelopeSchema = v.object({
   pages: v.array(v.object({
@@ -130,7 +131,7 @@ const parseOcrResponse = (
 }
 
 const createCombinedSignal = (signal?: AbortSignal): AbortSignal => {
-  const timeoutSignal = AbortSignal.timeout(1800000)
+  const timeoutSignal = AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS)
   return AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
 }
 

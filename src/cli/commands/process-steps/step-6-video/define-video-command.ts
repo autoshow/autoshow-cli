@@ -60,6 +60,7 @@ export const videoCommand = defineCommand({
     ...(videoOpts.videoDuration !== undefined ? { durationSeconds: videoOpts.videoDuration } : {})
   }))
   const estimated = computeEstimatedCosts({
+    applyCostMultipliers: false,
     videoTargets: estimatedVideoTargets,
     videoDuration: videoOpts.videoDuration,
     videoSize: videoOpts.videoSize,

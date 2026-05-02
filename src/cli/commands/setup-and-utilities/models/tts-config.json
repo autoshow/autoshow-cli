@@ -234,7 +234,7 @@
         "costPer1kCharsCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 12000
+          "msPer1KChars": 36000
         }
       },
       "aura-2-andromeda-en": {

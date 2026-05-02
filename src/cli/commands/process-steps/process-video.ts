@@ -438,6 +438,7 @@ export const processVideo = async (
 	    const estimated = preflightEstimate
 	      ? preflightToEstimated(preflightEstimate)
 	      : computeEstimatedCosts({
+	        applyCostMultipliers: false,
 	        sttTargets: selectedSttTargets,
 	        audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
 	        llmTargets,

@@ -10,9 +10,10 @@ import {
   ensureMinimaxBaseRespSuccess,
   parseMinimaxJsonResponse,
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
-const REQUEST_TIMEOUT_MS = 10 * 60_000
+const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const INCOMPLETE_RESPONSE_RETRY_DELAY_MS = 3_000
 const MINIMAX_MUSIC_PROMPT_MAX_CHARS = 2000
 

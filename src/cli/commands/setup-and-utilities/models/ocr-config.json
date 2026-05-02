@@ -35,7 +35,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 1906
+          "msPerPage": 3930
         }
       }
     }
@@ -56,7 +56,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 6000
+          "msPerPage": 14300
         }
       }
     }
@@ -124,6 +124,10 @@
         "limits": {
           "imageBytes": 5242880,
           "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 7000
         }
       },
       "claude-sonnet-4-6": {
@@ -198,7 +202,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 6000
+          "msPerPage": 3000
         }
       },
       "PaddlePaddle/PaddleOCR-VL-0.9B": {

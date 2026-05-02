@@ -430,6 +430,7 @@ const writeDocumentOutputMetadata = async (
   })
 
   const estimated = computeEstimatedCosts({
+    applyCostMultipliers: false,
     extractTargets,
     llmTargets: (Array.isArray(step3) ? step3 : [step3]).map((entry) => ({
       service: entry.llmService,

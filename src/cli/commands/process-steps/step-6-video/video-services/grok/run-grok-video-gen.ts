@@ -11,10 +11,11 @@ import {
 import { pollUntil } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const DEFAULT_XAI_BASE_URL = 'https://api.x.ai/v1'
 const POLL_INTERVAL_MS = 10_000
-const POLL_TIMEOUT_MS = 10 * 60_000
+const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
 const GrokCreateVideoResponseSchema = v.object({
   request_id: v.string()

@@ -4,6 +4,7 @@ import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import type { OpenAIOcrInputContent } from '~/types'
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
@@ -215,7 +216,7 @@ export const runOpenAIOcr = async (
       const response = await withRetry(
         { retryClass: 'runtime_http_create_conservative', operationName: 'openai-ocr' },
         async (signal) => {
-          const timeoutSignal = AbortSignal.timeout(1800000)
+          const timeoutSignal = AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS)
           const combined = AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
           return await client.responses.create(requestBody as OpenAI.Responses.ResponseCreateParamsNonStreaming, {
             signal: combined

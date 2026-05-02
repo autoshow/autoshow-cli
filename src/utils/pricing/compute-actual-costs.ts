@@ -11,11 +11,13 @@ import {
   computeActualGeminiOcrCost,
   computeActualKimiOcrCost
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
+import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import type {
   ActualCostBreakdown,
   ComputeActualCostsInput,
   ExtractionMetadata,
   Step2Metadata,
+  Step5Metadata,
   StepCostEntry
 } from '~/types'
 import { toArray } from '~/utils/text-utils'
@@ -227,6 +229,23 @@ const computeActualSttCharge = (
     inputMetric: 'durationSeconds',
     inputValue: durationSeconds
   }
+}
+
+const computeImageFallbackCost = (
+  metadata: Step5Metadata,
+  imageCount: number
+): number => {
+  if (metadata.imageService === 'openai' && metadata.imageModel === 'gpt-image-2') {
+    const estimate = estimateImageCosts({
+      openaiImageModel: metadata.imageModel,
+      imageSize: metadata.imageSize,
+      imageQuality: metadata.imageQuality
+    })[0]
+    const costPerImageCents = estimate?.costPerImageCents ?? getImageCost(metadata.imageService, metadata.imageModel)
+    return costPerImageCents * imageCount
+  }
+
+  return getImageCost(metadata.imageService, metadata.imageModel) * imageCount
 }
 
 export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBreakdown => {
@@ -504,7 +523,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     const imageCount = Math.max(1, step5.imageCount)
     const cost = typeof step5.providerCostCents === 'number'
       ? step5.providerCostCents
-      : getImageCost(step5.imageService, step5.imageModel) * imageCount
+      : computeImageFallbackCost(step5, imageCount)
     steps.push({
       step: 'image',
       provider: step5.imageService,

@@ -7,6 +7,7 @@ import { validateData } from '~/utils/validate/validation'
 import * as l from '~/utils/logger'
 import { normalizeMinimaxDurationForApi, normalizeMinimaxResolutionForApi } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
+import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import {
   MinimaxBaseRespSchema,
   ensureMinimaxBaseRespSuccess,
@@ -16,7 +17,7 @@ import {
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const POLL_INTERVAL_MS = 10_000
-const POLL_TIMEOUT_MS = 10 * 60_000
+const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
 const MinimaxCreateVideoResponseSchema = v.object({
   task_id: v.union([v.string(), v.number()]),
