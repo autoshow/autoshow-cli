@@ -42,7 +42,6 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--supadata-stt': { service: 'supadata', kind: 'transcribe' },
   '--openai-stt': { service: 'openai-stt', kind: 'transcribe' },
   '--together-stt': { service: 'together', kind: 'transcribe' },
-  '--fireworks-stt': { service: 'fireworks', kind: 'transcribe' },
   '--cloudflare-stt': { service: 'cloudflare', kind: 'transcribe' },
   '--gemini-stt': { service: 'gemini-stt', kind: 'transcribe' },
   '--glm-stt': { service: 'glm-stt', kind: 'transcribe' },

@@ -38,6 +38,7 @@ import { resolveLLMDefaults } from './llm-defaults'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { DEFAULT_DEEPINFRA_OCR_MODEL } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE, KIMI_OCR_COMPLETION_TOKENS_PER_PAGE, KIMI_OCR_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import type { BatchItem, BatchItemProcessResult } from '~/types'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
@@ -194,12 +195,12 @@ const collectEstimatedExtractTargets = (
       continue
     }
 
-    if ((entry.ocrService === 'deepinfra' || entry.extractionMethod.includes('deepinfra-ocr')) && typeof entry.ocrModel === 'string') {
+    if (entry.ocrService === 'deepinfra' || entry.extractionMethod.includes('deepinfra-ocr')) {
       const pageCount = entry.totalPages ?? 1
       const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
       targets.push({
         provider: 'deepinfra' as const,
-        model: entry.ocrModel ?? opts.deepinfraOcrModel ?? 'allenai/olmOCR-2-7B-1025',
+        model: entry.ocrModel ?? opts.deepinfraOcrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL,
         pageCount,
         ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
         ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE }),

@@ -301,8 +301,6 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('glm-stt')
     case 'together-stt':
       return selectCheapestSttModel('together')
-    case 'fireworks-stt':
-      return selectCheapestSttModel('fireworks')
     case 'cloudflare-stt':
       return selectCheapestSttModel('cloudflare')
     case 'mistral-ocr':

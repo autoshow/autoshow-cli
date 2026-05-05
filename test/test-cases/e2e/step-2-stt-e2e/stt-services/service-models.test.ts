@@ -248,14 +248,6 @@ defineSTTServiceTest({
 })
 
 defineSTTServiceTest({
-  models: ['whisper-v3-turbo', 'whisper-v3'],
-  cliFlag: '--fireworks-stt',
-  sttService: 'fireworks',
-  envVarKey: 'FIREWORKS_API_KEY',
-  envVarDescription: 'Fireworks transcription',
-})
-
-defineSTTServiceTest({
   models: ['whisper-large-v3-turbo', 'whisper'],
   cliFlag: '--cloudflare-stt',
   sttService: 'cloudflare',

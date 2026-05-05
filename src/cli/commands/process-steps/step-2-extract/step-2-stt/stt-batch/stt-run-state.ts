@@ -41,7 +41,6 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'gemini-stt',
   'glm-stt',
   'together',
-  'fireworks',
   'cloudflare',
   'youtube-captions'
 ])

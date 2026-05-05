@@ -300,13 +300,13 @@ Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when Im
 | Option | Value |
 |--------|-------|
 | Selector | `--deepinfra-ocr <model>` |
-| Models | `allenai/olmOCR-2-7B-1025`, `PaddlePaddle/PaddleOCR-VL-0.9B`, `Qwen/Qwen3-VL-235B-A22B-Instruct`, `Qwen/Qwen3-VL-30B-A3B-Instruct` |
+| Models | `PaddlePaddle/PaddleOCR-VL-0.9B`, `Qwen/Qwen3-VL-235B-A22B-Instruct`, `Qwen/Qwen3-VL-30B-A3B-Instruct` |
 | Direct input support | `PNG`, `JPG/JPEG`, and `WEBP`; rendered PDF/EPUB pages as `PNG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025
+bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct
 bun as extract input/examples/document/1-document.jpg --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct
-bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025 --price
+bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct --price
 ```
 
 DeepInfra OCR normalizes `GIF`, `BMP`, and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. Uploads are capped at 20 MB per direct or rendered image and omit OpenAI's `detail` parameter.
@@ -315,7 +315,6 @@ DeepInfra OCR uses token pricing estimates and recorded usage when available.
 
 | DeepInfra OCR model | Input | Output | Initial speed estimate |
 |---------------------|-------|--------|------------------------|
-| `allenai/olmOCR-2-7B-1025` | $0.09 / 1M tokens | $0.19 / 1M tokens | 6,000 ms/page |
 | `PaddlePaddle/PaddleOCR-VL-0.9B` | $0.14 / 1M tokens | $0.80 / 1M tokens | 4,000 ms/page |
 | `Qwen/Qwen3-VL-235B-A22B-Instruct` | $0.20 / 1M tokens | $0.88 / 1M tokens | 20,000 ms/page |
 | `Qwen/Qwen3-VL-30B-A3B-Instruct` | $0.15 / 1M tokens | $0.60 / 1M tokens | 10,000 ms/page |

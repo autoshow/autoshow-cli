@@ -155,12 +155,6 @@ defineSTTServicePriceTests({
 })
 
 defineSTTServicePriceTests({
-  models: ['whisper-v3-turbo', 'whisper-v3'],
-  cliFlag: '--fireworks-stt',
-  sttService: 'fireworks',
-})
-
-defineSTTServicePriceTests({
   models: ['whisper-large-v3-turbo', 'whisper'],
   cliFlag: '--cloudflare-stt',
   sttService: 'cloudflare',

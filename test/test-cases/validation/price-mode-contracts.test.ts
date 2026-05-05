@@ -14,8 +14,9 @@ import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-step
 import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
-import { computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
+import type { ExtractionMetadata } from '~/types'
 
 const priceCases: Array<{ label: string; args: string[]; expected: string; env?: Record<string, string | undefined> }> = [
   {
@@ -198,7 +199,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
-    expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('allenai/olmOCR-2-7B-1025')
+    expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
@@ -650,7 +651,7 @@ describe('price mode contracts', () => {
   test('DeepInfra OCR estimates include token cost and page timing', () => {
     const extractTargets = [{
       provider: 'deepinfra' as const,
-      model: 'allenai/olmOCR-2-7B-1025',
+      model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
       pageCount: 2,
       promptTokens: 8000,
       completionTokens: 2000,
@@ -664,7 +665,7 @@ describe('price mode contracts', () => {
     expect(cost.steps[0]).toMatchObject({
       step: 'extract',
       provider: 'deepinfra',
-      model: 'allenai/olmOCR-2-7B-1025',
+      model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
       promptTokens: 8000,
       completionTokens: 2000,
       pageCount: 2
@@ -672,8 +673,38 @@ describe('price mode contracts', () => {
     expect(cost.totalCost).toBeGreaterThan(0)
     expect(timing.steps[0]).toMatchObject({
       provider: 'deepinfra',
-      model: 'allenai/olmOCR-2-7B-1025',
-      processingTimeMs: 6_000
+      model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
+      processingTimeMs: 20_000
+    })
+
+    const legacyMetadata: ExtractionMetadata = {
+      extractionMethod: 'pdf+deepinfra-ocr',
+      totalPages: 2,
+      ocrPages: 2,
+      textPages: 0,
+      processingTime: 1234,
+      dpi: 300,
+      languages: 'eng',
+      tokenEstimate: 10_000,
+      ocrService: 'deepinfra',
+      promptTokens: 8000,
+      completionTokens: 2000
+    }
+    const actual = computeActualCosts({ step2: legacyMetadata })
+    const actualTiming = computeActualProcessingTimes({ step2: legacyMetadata })
+
+    expect(actual.steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'deepinfra',
+      model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
+      promptTokens: 8000,
+      completionTokens: 2000
+    })
+    expect(actual.totalCost).toBeGreaterThan(0)
+    expect(actualTiming.steps[0]).toMatchObject({
+      provider: 'deepinfra',
+      model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
+      processingTimeMs: 1234
     })
   })
 

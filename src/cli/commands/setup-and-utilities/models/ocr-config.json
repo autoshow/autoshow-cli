@@ -190,21 +190,6 @@
     "description": "DeepInfra OpenAI-compatible vision/OCR models",
     "type": "api",
     "models": {
-      "allenai/olmOCR-2-7B-1025": {
-        "description": "AllenAI olmOCR 2 7B OCR via DeepInfra",
-        "costPerMInputTokensUSD": 0.09,
-        "costPerMOutputTokensUSD": 0.19,
-        "costPerMInputTokensCents": 9,
-        "costPerMOutputTokensCents": 19,
-        "limits": {
-          "imageBytes": 20971520,
-          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 3000
-        }
-      },
       "PaddlePaddle/PaddleOCR-VL-0.9B": {
         "description": "PaddleOCR-VL 0.9B via DeepInfra",
         "costPerMInputTokensUSD": 0.14,

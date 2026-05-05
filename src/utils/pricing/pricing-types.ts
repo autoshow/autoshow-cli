@@ -131,7 +131,6 @@ export type ComputeEstimatedCostsInput = {
   geminiSttModel?: string | undefined
   glmSttModel?: string | undefined
   togetherSttModel?: string | undefined
-  fireworksSttModel?: string | undefined
   cloudflareSttModel?: string | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined

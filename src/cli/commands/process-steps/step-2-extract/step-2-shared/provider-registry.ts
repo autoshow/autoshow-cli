@@ -21,7 +21,6 @@ import {
   SUPPORTED_GEMINI_STT_MODELS,
   SUPPORTED_GLM_STT_MODELS,
   SUPPORTED_TOGETHER_STT_MODELS,
-  SUPPORTED_FIREWORKS_STT_MODELS,
   SUPPORTED_CLOUDFLARE_STT_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
@@ -54,7 +53,6 @@ import {
   validateGeminiSttModel,
   validateGlmSttModel,
   validateTogetherSttModel,
-  validateFireworksSttModel,
   validateCloudflareSttModel,
   validateMistralOcrModel,
   validateGlmOcrModel,
@@ -493,21 +491,6 @@ const STEP2_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_TOGETHER_STT_MODELS,
     validateModel: validateTogetherSttModel,
     description: buildModelDescription('Together Whisper STT model (API, billed)', SUPPORTED_TOGETHER_STT_MODELS)
-  }),
-  modelProvider({
-    step: 'stt',
-    modality: 'media',
-    flagName: 'fireworks-stt',
-    targetService: 'fireworks',
-    providerSpecProvider: 'fireworks',
-    bootstrapProviderId: 'fireworks-stt',
-    configKey: 'fireworksStt',
-    allShortcut: 'all-stt',
-    runtimeModelsKey: 'fireworksSttModels',
-    runtimeModelKey: 'fireworksSttModel',
-    supportedModels: SUPPORTED_FIREWORKS_STT_MODELS,
-    validateModel: validateFireworksSttModel,
-    description: buildModelDescription('Fireworks Whisper STT model (API, billed)', SUPPORTED_FIREWORKS_STT_MODELS)
   }),
   modelProvider({
     step: 'stt',

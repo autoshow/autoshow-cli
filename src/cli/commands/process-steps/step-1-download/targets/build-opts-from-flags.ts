@@ -70,7 +70,6 @@ import {
   validateGeminiSttModel,
   validateGlmSttModel,
   validateTogetherSttModel,
-  validateFireworksSttModel,
   validateCloudflareSttModel,
   validateGlmOcrModel,
   validateKimiOcrModel,
@@ -163,7 +162,6 @@ export const REPEATABLE_MODEL_FLAGS = [
   'gemini-stt',
   'glm-stt',
   'together-stt',
-  'fireworks-stt',
   'cloudflare-stt',
   'mistral-ocr',
   'glm-ocr',
@@ -664,7 +662,6 @@ export const buildOptsFromFlags = (
   const geminiSttModels = readValidatedMany('gemini-stt', validateGeminiSttModel)
   const glmSttModels = readValidatedMany('glm-stt', validateGlmSttModel)
   const togetherSttModels = readValidatedMany('together-stt', validateTogetherSttModel)
-  const fireworksSttModels = readValidatedMany('fireworks-stt', validateFireworksSttModel)
   const cloudflareSttModels = readValidatedMany('cloudflare-stt', validateCloudflareSttModel)
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
@@ -705,7 +702,6 @@ export const buildOptsFromFlags = (
   const geminiSttModel = first(geminiSttModels)
   const glmSttModel = first(glmSttModels)
   const togetherSttModel = first(togetherSttModels)
-  const fireworksSttModel = first(fireworksSttModels)
   const cloudflareSttModel = first(cloudflareSttModels)
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
@@ -855,8 +851,6 @@ export const buildOptsFromFlags = (
     glmSttModel,
     togetherSttModels,
     togetherSttModel,
-    fireworksSttModels,
-    fireworksSttModel,
     cloudflareSttModels,
     cloudflareSttModel,
     supadataLang: readOptionalStringFlag(mergedFlags, 'supadata-lang'),

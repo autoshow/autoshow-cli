@@ -23,7 +23,6 @@ export const STT_ENGINE_CAPABILITIES = {
   'gemini-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'glm-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
   together: { diarizationByDefault: false, supportsSpeakerCountHint: false },
-  fireworks: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   cloudflare: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   whisper: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'youtube-captions': { diarizationByDefault: false, supportsSpeakerCountHint: false }
@@ -102,8 +101,6 @@ export const collectSttProviderSpecs = (
     | 'glmSttModels'
     | 'togetherSttModel'
     | 'togetherSttModels'
-    | 'fireworksSttModel'
-    | 'fireworksSttModels'
     | 'cloudflareSttModel'
     | 'cloudflareSttModels'
   >,

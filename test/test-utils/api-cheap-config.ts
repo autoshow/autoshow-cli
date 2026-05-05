@@ -60,7 +60,6 @@ export const buildApiCheapSelections = () => {
     { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') },
     { service: 'grok', flag: '--grok-stt', envVar: 'XAI_API_KEY', model: selectCheapestSttModel('grok') },
     { service: 'together', flag: '--together-stt', envVar: 'TOGETHER_API_KEY', model: selectCheapestSttModel('together') },
-    { service: 'fireworks', flag: '--fireworks-stt', envVar: 'FIREWORKS_API_KEY', model: selectCheapestSttModel('fireworks') },
     { service: 'cloudflare', flag: '--cloudflare-stt', envVar: 'CLOUDFLARE_API_TOKEN', model: selectCheapestSttModel('cloudflare') }
   ]
 

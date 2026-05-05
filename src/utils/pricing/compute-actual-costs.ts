@@ -5,6 +5,7 @@ import {
   getMusicModelMeta,
   getVideoModelMeta
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { DEFAULT_DEEPINFRA_OCR_MODEL } from '~/cli/commands/setup-and-utilities/models/model-options'
 import {
   computeActualAnthropicOcrCost,
   computeActualDeepinfraOcrCost,
@@ -102,7 +103,7 @@ const resolveExtractionProviderModel = (
   if (metadata.ocrService === 'deepinfra') {
     return {
       provider: 'deepinfra',
-      model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025'
+      model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL
     }
   }
   if (metadata.ocrService === 'deapi') {
@@ -150,7 +151,7 @@ const resolveExtractionProviderModel = (
   if (metadata.extractionMethod.includes('deepinfra-ocr')) {
     return {
       provider: 'deepinfra',
-      model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025'
+      model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL
     }
   }
   if (metadata.ocrService === 'gcloud-docai' || metadata.extractionMethod.includes('gcloud-docai')) {
@@ -351,14 +352,14 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
-    } else if (provider === 'deepinfra' && input.step2.ocrModel) {
+    } else if (provider === 'deepinfra') {
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = computeActualDeepinfraOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      const cost = computeActualDeepinfraOcrCost(model, promptTokens, completionTokens).totalCost
       steps.push({
         step: 'extract',
         provider: 'deepinfra',
-        model: input.step2.ocrModel,
+        model,
         cost,
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
@@ -455,8 +456,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
           ? computeActualAnthropicOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
         : provider === 'gemini' && step2Entry.ocrModel
           ? computeActualGeminiOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
-        : provider === 'deepinfra' && step2Entry.ocrModel
-          ? computeActualDeepinfraOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
+        : provider === 'deepinfra'
+          ? computeActualDeepinfraOcrCost(model, promptTokens, completionTokens).totalCost
           : 0
       steps.push({
         step: 'extract',

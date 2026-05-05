@@ -1,6 +1,7 @@
 import { l } from '~/utils/logger'
 import { formatCost, formatDuration } from '~/utils/logger/formatters'
 import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
+import { DEFAULT_DEEPINFRA_OCR_MODEL } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type {
   ActualCostBreakdown,
   EstimatedCostBreakdown,
@@ -172,7 +173,7 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
     return { provider: 'gemini', model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview' }
   }
   if (metadata.ocrService === 'deepinfra') {
-    return { provider: 'deepinfra', model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025' }
+    return { provider: 'deepinfra', model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL }
   }
   if (metadata.extractionMethod.includes('mistral-ocr')) {
     return { provider: 'mistral', model: metadata.ocrModel ?? 'mistral-ocr' }
@@ -193,7 +194,7 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
     return { provider: 'gemini', model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview' }
   }
   if (metadata.extractionMethod.includes('deepinfra-ocr')) {
-    return { provider: 'deepinfra', model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025' }
+    return { provider: 'deepinfra', model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL }
   }
   if (metadata.extractionMethod.includes('paddle-ocr')) {
     return { provider: 'paddle-ocr', model: 'paddle-ocr' }

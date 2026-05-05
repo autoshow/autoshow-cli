@@ -78,17 +78,6 @@
       "https://docs.together.ai/reference/audio-transcriptions.md"
     ]
   },
-  "Fireworks": {
-    "General": [
-      "https://docs.fireworks.ai/getting-started/introduction"
-    ],
-    "STT": [
-      "https://docs.fireworks.ai/api-reference/audio-transcriptions",
-      "https://fireworks.ai/pricing",
-      "https://docs.fireworks.ai/api-reference/audio-transcriptions.md",
-      "https://docs.fireworks.ai/guides/querying-asr-models.md"
-    ]
-  },
   "Cloudflare": {
     "General": [
       "https://developers.cloudflare.com/workers-ai/"
@@ -522,7 +511,6 @@
     "OCR": [
       "https://docs.deepinfra.com/api-reference/chat-completions/openai-chat-completions.md",
       "https://docs.deepinfra.com/chat/vision.md",
-      "https://deepinfra.com/allenai/olmOCR-2-7B-1025/api?example=openai-js",
       "https://deepinfra.com/PaddlePaddle/PaddleOCR-VL-0.9B/api?example=openai-js",
       "https://deepinfra.com/Qwen/Qwen3-VL-235B-A22B-Instruct/api?example=openai-js",
       "https://deepinfra.com/Qwen/Qwen3-VL-30B-A3B-Instruct/api?example=openai-js"

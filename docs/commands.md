@@ -58,7 +58,7 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 bun as extract input/examples/document/1-document.pdf
 
 # document OCR with DeepInfra
-bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025
+bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct
 
 # document OCR with Kimi
 bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6
@@ -169,7 +169,7 @@ bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto --price
 bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price
 bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text --price
-bun as extract input/examples/document/1-document.pdf --deepinfra-ocr allenai/olmOCR-2-7B-1025 --price
+bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct --price
 bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6 --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price

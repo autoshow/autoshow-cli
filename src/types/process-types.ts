@@ -49,8 +49,6 @@ export const ProcessingOptionsSchema = v.pipe(
     glmSttModel: v.optional(v.string(), undefined),
     togetherSttModels: v.optional(v.array(v.string()), undefined),
     togetherSttModel: v.optional(v.string(), undefined),
-    fireworksSttModels: v.optional(v.array(v.string()), undefined),
-    fireworksSttModel: v.optional(v.string(), undefined),
     cloudflareSttModels: v.optional(v.array(v.string()), undefined),
     cloudflareSttModel: v.optional(v.string(), undefined),
     supadataLang: v.optional(v.string(), undefined),
@@ -594,7 +592,7 @@ export type Step2BillingMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'grok' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'fireworks' | 'cloudflare' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'grok' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'cloudflare' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number

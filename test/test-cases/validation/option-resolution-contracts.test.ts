@@ -74,7 +74,7 @@ describe('option resolution contracts', () => {
       'gcloud-tts': 'neural2',
       'gcloud-tts-voice': 'en-US-Neural2-C',
       'gcloud-tts-language': 'en-US',
-      'deepinfra-ocr': 'allenai/olmOCR-2-7B-1025',
+      'deepinfra-ocr': 'Qwen/Qwen3-VL-30B-A3B-Instruct',
       'kimi-ocr': 'kimi-k2.6',
       'tesseract-ocr': true,
       'youtube-captions': true,
@@ -114,7 +114,7 @@ describe('option resolution contracts', () => {
     expect(opts.gcloudTtsModel).toBe('neural2')
     expect(opts.gcloudTtsVoice).toBe('en-US-Neural2-C')
     expect(opts.gcloudTtsLanguage).toBe('en-US')
-    expect(opts.deepinfraOcrModel).toBe('allenai/olmOCR-2-7B-1025')
+    expect(opts.deepinfraOcrModel).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(opts.kimiOcrModel).toBe('kimi-k2.6')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
@@ -211,7 +211,7 @@ describe('option resolution contracts', () => {
     expect(glmDefault).toBeDefined()
     expect(kimiDefault).toBe('kimi-k2.6')
     expect(deepgramDefault).toBeDefined()
-    expect(deepinfraOcrDefault).toBe('allenai/olmOCR-2-7B-1025')
+    expect(deepinfraOcrDefault).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(kimiOcrDefault).toBe('kimi-k2.6')
     expect(speechifyTtsDefault).toBe('simba-english')
     expect(gcloudTtsDefault).toBe('standard')

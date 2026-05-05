@@ -28,7 +28,7 @@ describe('config contracts', () => {
       'llm-provider-concurrency': '3',
       'llm-local-concurrency': '1',
       'tesseract-ocr': true,
-      'deepinfra-ocr': ['allenai/olmOCR-2-7B-1025'],
+      'deepinfra-ocr': ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
       'kimi-ocr': ['kimi-k2.6'],
       dpi: '450',
       'ocr-provider-concurrency': '4',
@@ -48,7 +48,7 @@ describe('config contracts', () => {
         extract: {
           ocr: {
             tesseract: true,
-            deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
+            deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
             kimiOcr: ['kimi-k2.6'],
             dpi: 450,
             providerConcurrency: 4,
@@ -440,7 +440,7 @@ describe('config contracts', () => {
           ocr: {
             providerConcurrency: 3,
             localConcurrency: 1,
-            deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
+            deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
             kimiOcr: ['kimi-k2.6'],
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',
@@ -512,7 +512,7 @@ describe('config contracts', () => {
           ocr: {
             providerConcurrency: 3,
             localConcurrency: 1,
-            deepinfraOcr: ['allenai/olmOCR-2-7B-1025'],
+            deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
             kimiOcr: ['kimi-k2.6'],
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',

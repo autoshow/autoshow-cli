@@ -8,6 +8,7 @@ import {
   getTtsEstimation,
   getVideoEstimation,
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { DEFAULT_DEEPINFRA_OCR_MODEL } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type {
   ComputeActualProcessingTimesInput,
   ComputeEstimatedProcessingTimesInput,
@@ -105,7 +106,7 @@ const resolveExtractionProviderModel = (
   if (metadata.ocrService === 'deepinfra') {
     return {
       provider: 'deepinfra',
-      model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025'
+      model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL
     }
   }
   if (metadata.ocrService === 'deapi') {
@@ -153,7 +154,7 @@ const resolveExtractionProviderModel = (
   if (metadata.extractionMethod.includes('deepinfra-ocr')) {
     return {
       provider: 'deepinfra',
-      model: metadata.ocrModel ?? 'allenai/olmOCR-2-7B-1025'
+      model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL
     }
   }
   if (metadata.extractionMethod.includes('deapi-ocr')) {

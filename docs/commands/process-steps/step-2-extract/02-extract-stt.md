@@ -17,7 +17,6 @@ Media inputs are downloaded and transcribed with local or hosted speech-to-text 
   - [Groq](#groq)
   - [DeepInfra](#deepinfra)
   - [Together](#together)
-  - [Fireworks](#fireworks)
   - [Cloudflare](#cloudflare)
   - [OpenAI STT](#openai-stt)
   - [Gemini STT](#gemini-stt)
@@ -86,7 +85,6 @@ bun as setup --step reverb
 | Grok STT | `XAI_API_KEY` | `XAI_BASE_URL` |
 | DeepInfra | `DEEPINFRA_API_KEY` | `DEEPINFRA_BASE_URL` |
 | Together | `TOGETHER_API_KEY` | `TOGETHER_BASE_URL` |
-| Fireworks | `FIREWORKS_API_KEY` | `FIREWORKS_BASE_URL` |
 | Cloudflare | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | - |
 | deAPI | `DEAPI_API_KEY` | `DEAPI_BASE_URL` |
 | Happy Scribe | `HAPPYSCRIBE_API_KEY` | `HAPPYSCRIBE_BASE_URL`, `HAPPYSCRIBE_ORGANIZATION_ID` |
@@ -256,17 +254,6 @@ bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
 
 ```bash
 bun as extract input/examples/audio/1-audio.mp3 --together-stt
-```
-
-### Fireworks
-
-| Option | Value |
-|--------|-------|
-| Selector | `--fireworks-stt <model>` |
-| Models | `whisper-v3-turbo`, `whisper-v3` |
-
-```bash
-bun as extract input/examples/audio/1-audio.mp3 --fireworks-stt whisper-v3-turbo
 ```
 
 ### Cloudflare

@@ -55,7 +55,7 @@ defineOCRServiceTest({
 })
 
 defineOCRServiceTest({
-  models: ['allenai/olmOCR-2-7B-1025'],
+  models: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
   cliFlag: '--deepinfra-ocr',
   extractionMethod: 'deepinfra-ocr',
   imageExtractionMethod: 'image+deepinfra-ocr',

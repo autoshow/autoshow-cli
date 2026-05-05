@@ -179,7 +179,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
-| `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use `allenai/olmOCR-2-7B-1025` |
+| `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use `Qwen/Qwen3-VL-30B-A3B-Instruct` |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--psm <n>` | Tesseract page segmentation mode |
 | `--oem <n>` | Tesseract OCR engine mode |

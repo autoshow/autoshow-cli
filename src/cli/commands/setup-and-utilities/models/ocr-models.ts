@@ -43,11 +43,12 @@ export const SUPPORTED_GEMINI_OCR_MODELS = [
 
 export const validateGeminiOcrModel = createModelValidator<GeminiOcrModel>(SUPPORTED_GEMINI_OCR_MODELS, 'gemini-ocr')
 
+export const DEFAULT_DEEPINFRA_OCR_MODEL = 'Qwen/Qwen3-VL-30B-A3B-Instruct'
+
 export const SUPPORTED_DEEPINFRA_OCR_MODELS = [
-  'allenai/olmOCR-2-7B-1025',
   'PaddlePaddle/PaddleOCR-VL-0.9B',
   'Qwen/Qwen3-VL-235B-A22B-Instruct',
-  'Qwen/Qwen3-VL-30B-A3B-Instruct'
+  DEFAULT_DEEPINFRA_OCR_MODEL
 ] as const satisfies readonly string[]
 
 export const validateDeepinfraOcrModel = createModelValidator<DeepinfraOcrModel>(SUPPORTED_DEEPINFRA_OCR_MODELS, 'deepinfra-ocr')
