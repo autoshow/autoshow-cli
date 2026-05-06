@@ -11,7 +11,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 18
+          "msPerSecond": 35
         }
       },
       "base": {
@@ -22,7 +22,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 23
+          "msPerSecond": 38
         }
       },
       "small": {
@@ -49,7 +49,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 72
+          "msPerSecond": 131
         }
       }
     }
@@ -145,7 +145,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 32
+          "msPerSecond": 61
         }
       }
     }
@@ -211,7 +211,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 220
+          "msPerSecond": 103
         }
       }
     }
@@ -232,7 +232,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 32
+          "msPerSecond": 25
         }
       },
       "whisper-large-v3-turbo": {
@@ -247,7 +247,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9951,
-          "msPerSecond": 40
+          "msPerSecond": 26
         }
       }
     }
@@ -267,7 +267,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 60
+          "msPerSecond": 39
         }
       }
     }
@@ -288,7 +288,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 240
+          "msPerSecond": 180
         }
       }
     }
@@ -353,6 +353,10 @@
         "billing": {
           "roundingIncrementSeconds": 1,
           "minimumSeconds": 15
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 441
         }
       }
     }

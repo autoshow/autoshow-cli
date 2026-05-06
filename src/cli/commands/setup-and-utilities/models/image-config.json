@@ -237,7 +237,7 @@
         "costPerImageCents": 0.136,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 10000
+          "msPerImage": 17519
         }
       },
       "ZImageTurbo_INT8": {
@@ -255,7 +255,7 @@
         "costPerImageCents": 0.186,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 10000
+          "msPerImage": 8824
         }
       }
     }

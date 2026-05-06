@@ -43,8 +43,8 @@
         "outputCostPer1MUSD": 1.25,
         "outputCostPer1MCents": 125,
         "estimation": {
-          "costMultiplier": 0.5094,
-          "msPer1KTokens": 3000
+          "costMultiplier": 0.7927,
+          "msPer1KTokens": 3482
         }
       }
     }
@@ -60,7 +60,7 @@
         "outputCostPer1MUSD": 0.3,
         "outputCostPer1MCents": 30,
         "estimation": {
-          "costMultiplier": 0.6638,
+          "costMultiplier": 0.7815,
           "msPer1KTokens": 824
         }
       },
@@ -71,7 +71,7 @@
         "outputCostPer1MUSD": 0.6,
         "outputCostPer1MCents": 60,
         "estimation": {
-          "costMultiplier": 0.6401,
+          "costMultiplier": 0.848,
           "msPer1KTokens": 1544
         }
       }
@@ -251,7 +251,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 2639
+          "msPer1KTokens": 1979
         }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {
@@ -261,7 +261,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 3516
+          "msPer1KTokens": 2564
         }
       }
     }

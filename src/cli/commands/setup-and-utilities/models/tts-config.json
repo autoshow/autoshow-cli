@@ -28,7 +28,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 77426
+          "msPer1KChars": 57208
         }
       },
       "kitten-tts-nano": {
@@ -46,7 +46,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 26006
+          "msPer1KChars": 28821
         }
       }
     }
@@ -150,7 +150,7 @@
         "costPer1kCharsCents": 0.42,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 15000
+          "msPer1KChars": 17490
         }
       }
     }
@@ -210,7 +210,7 @@
         "costPer1kCharsCents": 0.05,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 69461
+          "msPer1KChars": 54045
         }
       },
       "gemini-2.5-pro-preview-tts": {
@@ -219,7 +219,7 @@
         "costPer1kCharsCents": 0.1,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 111372
+          "msPer1KChars": 98500
         }
       }
     }

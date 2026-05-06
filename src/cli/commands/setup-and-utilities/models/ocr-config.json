@@ -35,7 +35,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3930
+          "msPerPage": 3462
         }
       }
     }
@@ -96,6 +96,10 @@
         "limits": {
           "pdfBytes": 52428800,
           "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 5793
         }
       },
       "gpt-5.4-pro": {
@@ -182,6 +186,10 @@
           "imageBytes": 2147483648,
           "pageCount": 1000,
           "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3280
         }
       }
     }
@@ -247,6 +255,10 @@
         "costPer1kPagesCents": 83,
         "limits": {
           "notes": "No Firecrawl article-extraction file-size or page-count limits were found in project/links/all-all-links.md."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 2
         }
       }
     }
