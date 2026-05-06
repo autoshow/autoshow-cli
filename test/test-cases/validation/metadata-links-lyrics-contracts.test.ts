@@ -193,6 +193,10 @@ const SPEECHIFY_TTS_LINKS = [
   'https://docs.sws.speechify.com/text-to-speech/features/voice-cloning.md'
 ]
 
+const LINKS_RETRY_TEST_URL = 'https://elevenlabs.io/docs/overview/capabilities/image-video.md'
+const linksTestOutputPath = (name: string): string =>
+  `/tmp/autoshow-links-${name}-${Date.now()}-${Math.random().toString(16).slice(2)}.md`
+
 test('metadata --markdown prints stable frontmatter instead of JSON', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -210,6 +214,101 @@ channel: 'Unknown'
 url: 'https://example.com/audio.mp3'
 ---`)
   expect(result.stdout).not.toContain('{\n  "title"')
+})
+
+test('links retries transient network failures before writing output', async () => {
+  const outputPath = linksTestOutputPath('socket-retry')
+  const attempts = new Map<string, number>()
+
+  const fetchImpl = async (input: string | URL | Request): Promise<Response> => {
+    const url = String(input)
+    const attempt = (attempts.get(url) ?? 0) + 1
+    attempts.set(url, attempt)
+
+    if (url === LINKS_RETRY_TEST_URL && attempt === 1) {
+      throw new Error('The socket connection was closed unexpectedly')
+    }
+
+    return new Response(`# docs for ${url}\n`, {
+      headers: { 'content-type': 'text/markdown' }
+    })
+  }
+
+  await runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--elevenlabs',
+    'image'
+  ], { outputPath, fetchImpl })
+
+  const output = await Bun.file(outputPath).text()
+  expect(attempts.get(LINKS_RETRY_TEST_URL)).toBe(2)
+  expect(output).toContain(`<!-- Source: ${LINKS_RETRY_TEST_URL} -->`)
+  expect(output).not.toContain(`<!-- Failed to fetch ${LINKS_RETRY_TEST_URL} -->`)
+})
+
+test('links retries retryable HTTP status failures before writing output', async () => {
+  const outputPath = linksTestOutputPath('status-retry')
+  const attempts = new Map<string, number>()
+
+  const fetchImpl = async (input: string | URL | Request): Promise<Response> => {
+    const url = String(input)
+    const attempt = (attempts.get(url) ?? 0) + 1
+    attempts.set(url, attempt)
+
+    if (url === LINKS_RETRY_TEST_URL && attempt === 1) {
+      return new Response('temporary outage', { status: 503, statusText: 'Service Unavailable' })
+    }
+
+    return new Response(`# docs for ${url}\n`, {
+      headers: { 'content-type': 'text/markdown' }
+    })
+  }
+
+  await runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--elevenlabs',
+    'image'
+  ], { outputPath, fetchImpl })
+
+  const output = await Bun.file(outputPath).text()
+  expect(attempts.get(LINKS_RETRY_TEST_URL)).toBe(2)
+  expect(output).toContain(`<!-- Source: ${LINKS_RETRY_TEST_URL} -->`)
+  expect(output).not.toContain(`<!-- Failed to fetch ${LINKS_RETRY_TEST_URL} -->`)
+})
+
+test('links does not retry non-retryable HTTP status failures', async () => {
+  const outputPath = linksTestOutputPath('non-retryable-status')
+  const attempts = new Map<string, number>()
+
+  const fetchImpl = async (input: string | URL | Request): Promise<Response> => {
+    const url = String(input)
+    attempts.set(url, (attempts.get(url) ?? 0) + 1)
+
+    if (url === LINKS_RETRY_TEST_URL) {
+      return new Response('missing', { status: 404, statusText: 'Not Found' })
+    }
+
+    return new Response(`# docs for ${url}\n`, {
+      headers: { 'content-type': 'text/markdown' }
+    })
+  }
+
+  await runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--elevenlabs',
+    'image'
+  ], { outputPath, fetchImpl })
+
+  const output = await Bun.file(outputPath).text()
+  expect(attempts.get(LINKS_RETRY_TEST_URL)).toBe(1)
+  expect(output).toContain(`<!-- Failed to fetch ${LINKS_RETRY_TEST_URL} -->`)
+  expect(output).not.toContain(`<!-- Source: ${LINKS_RETRY_TEST_URL} -->`)
 })
 
 test('links selector errors distinguish dashed global sections from valid providers', () => {

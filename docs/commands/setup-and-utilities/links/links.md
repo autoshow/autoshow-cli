@@ -134,6 +134,8 @@ If a fetch fails, the command keeps going and writes:
 <!-- Failed to fetch https://example.com/page.md -->
 ```
 
+Fetches are retried for transient network failures, timeouts, `408`, `425`, `429`, and `5xx` responses before this placeholder is written. Each attempt has a 60 second timeout by default; override it with `AUTOSHOW_LINKS_FETCH_TIMEOUT_MS`.
+
 If a response is empty, it writes:
 
 ```md

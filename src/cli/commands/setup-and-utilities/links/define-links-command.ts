@@ -6,6 +6,8 @@ import {
   extractRemoteArticleWithFirecrawl
 } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { CLIUsageError } from '~/utils/error-handler'
+import { classifyFetchRetry, withRetry } from '~/utils/retries'
+import { LINKS_FETCH_TIMEOUT_MS } from '~/utils/timeouts'
 import type {
   FetchFn,
   LinksSelection,
@@ -16,6 +18,10 @@ import type {
 const data = modelLinks as ModelLinksData
 export const LINKS_OUTPUT_DIR = new URL('../../../../../project/links/', import.meta.url)
 const HTML_MIME_HINTS = ['text/html', 'application/xhtml+xml'] as const
+type FetchUrlResult = {
+  content: string
+  failedUrl?: string
+}
 
 const normalizeTokens = (tokens: string[]): string[] => [...new Set(tokens.map(token => token.toLowerCase()))].sort()
 const isHtmlContentType = (contentType: string): boolean =>
@@ -24,6 +30,12 @@ const looksLikeHtmlDocument = (content: string): boolean =>
   /^(?:<!doctype html\b|<html\b|<head\b|<body\b)/i.test(content.trimStart())
 const formatErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
+const createHttpFetchError = (response: Response): Error & { status: number, headers: Headers } => {
+  const error = new Error(`HTTP ${response.status} ${response.statusText}`) as Error & { status: number, headers: Headers }
+  error.status = response.status
+  error.headers = response.headers
+  return error
+}
 
 export const getDefaultLinksOutputFileName = (
   serviceSelections: Map<string, string[]>,
@@ -155,18 +167,39 @@ export const collectLinks = (
   return [...new Set(links)]
 }
 
-const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<string> => {
-  try {
-    const response = await fetchImpl(url)
+const downloadUrl = async (
+  url: string,
+  fetchImpl: FetchFn
+): Promise<{ contentType: string, finalUrl: string, fetchedText: string }> => withRetry(
+  {
+    retryClass: 'runtime_http_read',
+    operationName: `links fetch ${url}`,
+    timeoutMs: LINKS_FETCH_TIMEOUT_MS
+  },
+  async (signal) => {
+    const response = await fetchImpl(url, signal ? { signal } : undefined)
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText}`)
+      throw createHttpFetchError(response)
     }
 
     const contentType = (response.headers.get('content-type') ?? '').toLowerCase()
     const fetchedText = (await response.text()).trim()
+
+    return {
+      contentType,
+      finalUrl: response.url || url,
+      fetchedText
+    }
+  },
+  (error) => classifyFetchRetry(error, 'runtime_http_read')
+)
+
+const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<FetchUrlResult> => {
+  try {
+    const { contentType, finalUrl, fetchedText } = await downloadUrl(url, fetchImpl)
     if (fetchedText.length === 0) {
       l.warn(`Fetched empty response from ${url}`)
-      return `<!-- Empty response from ${url} -->`
+      return { content: `<!-- Empty response from ${url} -->` }
     }
 
     let content: string
@@ -174,9 +207,9 @@ const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<string> => {
       try {
         content = (await extractHtmlToMarkdown({
           html: fetchedText,
-          documentUrl: response.url || url,
+          documentUrl: finalUrl,
           sourceUrl: url,
-          finalUrl: response.url || url
+          finalUrl
         })).markdown
       } catch (defuddleError) {
         l.warn(`Defuddle failed for ${url}; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
@@ -193,10 +226,13 @@ const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<string> => {
       content = fetchedText
     }
 
-    return `<!-- Source: ${url} -->\n\n${content}`
+    return { content: `<!-- Source: ${url} -->\n\n${content}` }
   } catch (error) {
     l.warn(`Failed to fetch ${url}`, error)
-    return `<!-- Failed to fetch ${url} -->`
+    return {
+      content: `<!-- Failed to fetch ${url} -->`,
+      failedUrl: url
+    }
   }
 }
 
@@ -217,7 +253,18 @@ export const runLinksWithArgv = async (
 
   l.write('info', `Fetching ${links.length} documentation URLs`)
 
-  const fetchedContents = await Promise.all(links.map(url => fetchUrl(url, fetchImpl)))
+  const fetchResults = await Promise.all(links.map(url => fetchUrl(url, fetchImpl)))
+  const failedUrls = fetchResults
+    .map(result => result.failedUrl)
+    .filter((url): url is string => typeof url === 'string')
+  if (failedUrls.length > 0) {
+    l.warn(
+      `Failed to fetch ${failedUrls.length}/${links.length} documentation URL${failedUrls.length === 1 ? '' : 's'} after retries:\n` +
+      failedUrls.map(url => `- ${url}`).join('\n')
+    )
+  }
+
+  const fetchedContents = fetchResults.map(result => result.content)
   const combinedContent = `${fetchedContents.join('\n\n')}\n`
   await Bun.write(outputPath, combinedContent)
 
