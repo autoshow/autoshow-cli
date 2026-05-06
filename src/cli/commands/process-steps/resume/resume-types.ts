@@ -1,4 +1,5 @@
 import type { RuntimeOptions } from '~/types'
+import type { ExtractRoute } from '~/types'
 
 export type ResumeItemSummary = {
   item: string
@@ -14,11 +15,12 @@ export type ResumeTotals = {
   failed: number
 }
 
-export type ResumeTargetKind = 'stt' | 'ocr' | 'extract' | 'tts' | 'image' | 'video' | 'music'
+export type ResumeTargetKind = 'extract' | 'tts' | 'image' | 'video' | 'music'
 export type ResumeTargetScope = 'single' | 'batch'
 
 export type ResumeTarget = {
   kind: ResumeTargetKind
+  extractRoute?: ExtractRoute | undefined
   scope: ResumeTargetScope
   dir: string
   manifestPath: string

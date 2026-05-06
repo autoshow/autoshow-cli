@@ -105,7 +105,7 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
 ┌──────────┐ ┌──────────────────────┐  ┌──────────────────────────────┐
 │ X SPACE  │ │  DOCUMENT PIPELINE   │  │     MEDIA PIPELINE           │
 │ PIPELINE │ │  metadata/download/  │  │     metadata/download/       │
-│ extract  │ │  ocr / write         │  │     stt / write              │
+│ extract  │ │  extract / write     │  │     extract / write          │
 └──────────┘ └──────────────────────┘  └──────────────────────────────┘
 ```
 
@@ -121,21 +121,14 @@ src/cli/commands/process-steps/step-1-download/targets/single-target.ts
   extract         │ XSPACE (9)│  MEDIA (1)  │     MEDIA (1)    │    DOCUMENT (6)      │  MEDIA (1)  │ DOCUMENT (6)
                   │            │             │                  │                     │             │
   write           │ ERROR (8) │  MEDIA (3)  │     MEDIA (3)    │   DOCUMENT (4)      │  MEDIA (3)  │ DOCUMENT (4)
-                  │            │             │                  │                     │             │
-  stt             │ ERROR (8) │  MEDIA (1)  │     MEDIA (1)    │      ERROR (2)      │  MEDIA (1)  │   ERROR (2)
-                  │            │             │                  │                     │             │
-  ocr             │ ERROR (8) │  ERROR (5)  │     ERROR (5)    │   DOCUMENT (6)      │  ERROR (7)  │ DOCUMENT (6)
                   ───────────   ─────────────   ────────────────   ───────────────────   ───────────   ──────────────
 
   (0a) processMetadataMedia() — metadata only, no download
   (0b) processMetadataDocument() — metadata only, no download (temp file for remote docs)
   (1) processVideo() with skipLLM=true
-  (2) CLIUsageError: "Use: bun as extract or bun as write"
   (3) processVideo() with full LLM pipeline
   (4) processOcr() + buildDocumentPrompt() + LLM summary
-  (5) CLIUsageError: "Use a direct document URL or local file"
   (6) processOcr() extraction only
-  (7) Skipped with warning: "non-document file in ocr mode"
   (8) CLIUsageError: "X Space links are only supported by extract"
   (9) processXSpace() — X API metadata extraction via X_BEARER_TOKEN
 ```
@@ -156,8 +149,8 @@ src/cli/commands/process-steps/step-1-download/targets/target-utils.ts
                                              v
   ┌──────────────────────────────────────────────────────────────────────┐
   │  Create batch output directory: output/YYYY-MM-DD_HH-MM-SS_<label>/│
-  │  `extract` writes extract-batch.json plus nested stt/ and ocr/     │
-  │  child batches; other commands write batch.json directly            │
+  │  `extract` writes extract-batch.json plus nested media/, document/, │
+  │  and x-space/ child batches; other commands write batch.json        │
   └──────────────────────────────────────────┬───────────────────────────┘
                                              |
                                              v

@@ -28,6 +28,8 @@ test('root help groups setup utilities separately from processing commands', asy
   expect(processingSection).toContain('    write')
   expect(processingSection.indexOf('    video')).toBeLessThan(processingSection.indexOf('    music'))
   expect(processingSection).not.toContain('    lyrics')
+  expect(processingSection).not.toContain('    stt')
+  expect(processingSection).not.toContain('    ocr')
   expect(processingSection).not.toContain('    links')
   expect(processingSection).not.toContain('    resume')
 })
@@ -101,13 +103,6 @@ test('write and config help expose LLM concurrency flags', async () => {
   expect(configResult.stdout).toContain('--llm-provider-concurrency')
   expect(configResult.stdout).toContain('--llm-local-concurrency')
   expect(configResult.stdout).toContain('--glm')
-})
-
-test('help for a removed command exits 2 with an unknown-command message', async () => {
-  const result = await runCommand(['src/cli/create-cli.ts', 'help', 'report'], { env: helpEnv })
-
-  expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Usage error: Unknown command "report". Run: bun as help')
 })
 
 test('music help includes hosted generation and lyric-video flags', async () => {

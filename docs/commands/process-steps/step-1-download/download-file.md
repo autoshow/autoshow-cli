@@ -127,7 +127,7 @@ bun as download input/examples/batch/2-urls.md --batch-all
 
 Setup details are centralized in [`setup.md`](../step-0-setup/setup.md).
 
-For YouTube inputs, anonymous `yt-dlp` requests may be rate-limited or challenged. When that happens, configure `YTDLP_COOKIES_FROM_BROWSER`, `YTDLP_COOKIES`, or `YTDLP_EXTRACTOR_ARGS` in your environment before running `download` / `stt`.
+For YouTube inputs, anonymous `yt-dlp` requests may be rate-limited or challenged. When that happens, configure `YTDLP_COOKIES_FROM_BROWSER`, `YTDLP_COOKIES`, or `YTDLP_EXTRACTOR_ARGS` in your environment before running `download` / `extract`.
 
 ## Processing Step Layout
 
@@ -137,8 +137,7 @@ CLI commands are split between runtime processing steps and setup/utilities:
 src/cli/commands/
   process-steps/
     step-1-download/
-    step-2-stt/
-    step-2-ocr/
+    step-2-extract/
     step-3-write/
     step-4-tts/
     step-5-image/

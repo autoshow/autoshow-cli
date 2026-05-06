@@ -144,13 +144,17 @@ export const writeSttRunManifest = async (
   outputDir: string,
   metadata: Record<string, unknown>
 ): Promise<void> => {
-  await writeRunManifest(outputDir, 'stt', metadata)
+  await writeRunManifest(outputDir, 'extract', {
+    ...metadata,
+    extractRoute: 'media'
+  })
 }
 
 export const readSttRunManifestEntry = async (
   outputDir: string
 ): Promise<Record<string, unknown> | undefined> => {
-  return await readRunManifestEntry(outputDir, 'stt')
+  const metadata = await readRunManifestEntry(outputDir, 'extract')
+  return metadata?.['extractRoute'] === 'media' ? metadata : undefined
 }
 
 export const writeSttBatchManifest = async (
@@ -158,8 +162,12 @@ export const writeSttBatchManifest = async (
   items: BatchManifestEntry[],
   source?: Record<string, unknown>
 ): Promise<void> => {
-  await writeBatchManifest(batchDir, 'stt', items, source)
-  await writeSttBatchSummary(batchDir, items, source)
+  const routedItems = items.map((item) => ({
+    ...item,
+    extractRoute: 'media'
+  }))
+  await writeBatchManifest(batchDir, 'extract', routedItems, source)
+  await writeSttBatchSummary(batchDir, routedItems, source)
 }
 
 export const writeSttProviderCheckpoint = async (

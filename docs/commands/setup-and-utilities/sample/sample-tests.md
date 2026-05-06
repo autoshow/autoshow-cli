@@ -19,7 +19,6 @@ bun t test/test-cases/smoke/sample/sample-command.test.ts
 
 Coverage (no tools required):
 - `setup --help` exposes `--sample` plus the expected fixture flags (`--out`, `--refresh`, `--verify-only`, `--valid-only`)
-- removed `sample` command returns an unknown-command usage error
 - `setup --sample --verify-only` with a nonexistent output directory fails with non-zero exit
 - `setup --sample --verify-only` against the preflight-generated `input/samples` passes (skipped if preflight did not run)
 - `manifest.json` schema validation: `schemaVersion`, `generatedAt`, `fixtures[]`, `skipped[]`, `summary` fields

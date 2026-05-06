@@ -2,7 +2,6 @@ import * as v from 'valibot'
 import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import type { ProcessCommand } from '~/types'
-import { isOcrCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { isLikelyUrl } from './target-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
 import { buildYtDlpListArgs, buildYtDlpFailureMessage } from '../audio/yt-dlp-options'
@@ -65,7 +64,8 @@ export const resolveYoutubeCollectionItems = async (
   resolvedTarget: string,
   command: ProcessCommand
 ): Promise<string[] | null> => {
-  if (!isLikelyUrl(resolvedTarget) || !isYoutubeUrl(resolvedTarget) || isOcrCommand(command)) {
+  void command
+  if (!isLikelyUrl(resolvedTarget) || !isYoutubeUrl(resolvedTarget)) {
     return null
   }
 

@@ -80,7 +80,7 @@ export const readExtractBatchManifest = async (pathOrDir: string): Promise<Extra
   const raw = await Bun.file(resolveArtifactPath(pathOrDir, 'extract-batch.json')).json() as unknown
   if (
     !isRecord(raw)
-    || raw['schemaVersion'] !== 1
+    || raw['schemaVersion'] !== 2
     || typeof raw['createdAt'] !== 'string'
     || !Array.isArray(raw['items'])
     || !isRecord(raw['childBatches'])

@@ -65,8 +65,9 @@ output/
     │  ── Batch Processing ──
     └── output/YYYY-MM-DD_HH-MM-SS_<batch-label>/
         ├── extract-batch.json      # Parent routed batch manifest for `extract`
-        ├── stt/batch.json          # Child STT batch when media items are present
-        ├── ocr/batch.json          # Child OCR batch when document/article items are present
+        ├── media/batch.json        # Child extract batch when media items are present
+        ├── document/batch.json     # Child extract batch when document/article items are present
+        ├── x-space/batch.json      # Child extract batch when X Space items are present
         └── YYYY-MM-DD_HH-MM-SS_<item-title>/
             └── (individual item output files)
 ```

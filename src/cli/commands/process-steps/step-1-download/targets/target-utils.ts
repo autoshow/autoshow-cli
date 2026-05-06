@@ -10,9 +10,7 @@ import { detectDocumentFormat } from '../document/detect-format'
 import type { ProcessCommand, RuntimeOptions } from '~/types'
 import {
   commandSupportsInputFamily,
-  isExtractCommand,
-  isOcrCommand,
-  isSttCommand
+  isExtractCommand
 } from '~/cli/commands/process-steps/process-command-kinds'
 import type {
   BatchItem,
@@ -39,8 +37,8 @@ import { resolveOcrStep2ExecutionFromFormat, resolveSttStep2Execution } from '~/
 
 export { buildOptsFromFlags } from './build-opts-from-flags'
 
-const toManifestKind = (command: ProcessCommand): 'metadata' | 'download' | 'extract' | 'ocr' | 'stt' | 'write' => {
-  if (command === 'metadata' || command === 'download' || command === 'extract' || command === 'ocr' || command === 'stt' || command === 'write') {
+const toManifestKind = (command: ProcessCommand): 'metadata' | 'download' | 'extract' | 'write' => {
+  if (command === 'metadata' || command === 'download' || command === 'extract' || command === 'write') {
     return command
   }
 
@@ -253,7 +251,7 @@ export const buildSttBatchFinalSummaryTable = (
 }
 
 export const logSttBatchFinalSummary = async (batchDir: string): Promise<void> => {
-  const manifest = await readBatchManifest(batchDir, 'stt').catch(() => undefined)
+  const manifest = await readBatchManifest(batchDir, 'extract').catch(() => undefined)
   if (!manifest) {
     return
   }
@@ -378,28 +376,32 @@ export const buildBatchCompletionTable = (
   ok: number,
   partial: number,
   incomplete: number,
-  fail: number
-)=>
-  isSttCommand(command)
+  fail: number,
+  sttLike = false
+)=> {
+  void command
+  return sttLike
     ? buildSttBatchSummaryTable(ok, incomplete, fail)
     : buildNonSttBatchSummaryTable(ok, partial, fail)
+}
 
 const logBatchCompletionTable = (
   command: ProcessCommand,
   ok: number,
   partial: number,
   incomplete: number,
-  fail: number
+  fail: number,
+  sttLike = false
 ): void => {
   l.write(
-    isSttCommand(command)
+    sttLike
       ? (incomplete > 0 || fail > 0 ? 'warn' : 'success')
       : (partial > 0 || fail > 0 ? 'warn' : 'success'),
     'Batch Summary',
     {
       category: 'pipeline',
-      humanTable: buildBatchCompletionTable(command, ok, partial, incomplete, fail),
-      metadata: isSttCommand(command)
+      humanTable: buildBatchCompletionTable(command, ok, partial, incomplete, fail, sttLike),
+      metadata: sttLike
         ? { full: ok, incomplete, failed: fail }
         : { completed: ok, full: ok - partial, partial, failed: fail }
     }
@@ -826,26 +828,6 @@ export const describeUnsupportedInputForCommand = (
     return 'extract only processes media, documents, images, HTML articles, and X Space links'
   }
 
-  if (isSttCommand(command)) {
-    if (family === 'x_space') {
-      return 'stt does not support X Space links; use extract instead'
-    }
-    if (family === 'document' || family === 'html_article') {
-      return 'stt only processes media inputs; use ocr or write for documents and articles'
-    }
-    return 'stt only processes media inputs'
-  }
-
-  if (isOcrCommand(command)) {
-    if (family === 'x_space') {
-      return 'ocr does not support X Space links; use extract instead'
-    }
-    if (family === 'media') {
-      return 'ocr only processes documents, images, and HTML articles; use stt or write for media'
-    }
-    return 'ocr only processes documents, images, and HTML articles'
-  }
-
   return 'unsupported input'
 }
 
@@ -935,21 +917,21 @@ export const resolveInputRoutingForCommand = async (
         }
   const supported = family !== 'unsupported' && commandSupportsInputFamily(command, family)
   const step2Route = resolvedStep2.route
-  const routedChildKind = family === 'x_space' && supported
-    ? 'x_space'
+  const extractRoute = family === 'x_space' && supported
+    ? 'x-space'
     : step2Route === 'stt'
-    ? 'stt'
+    ? 'media'
     : step2Route === 'ocr' || step2Route === 'article' || step2Route === 'native-document'
-      ? 'ocr'
+      ? 'document'
       : undefined
 
   return {
     family,
     step2Route,
     resolvedStep2,
-    ...(routedChildKind ? { routedChildKind } : {}),
+    ...(extractRoute ? { extractRoute } : {}),
     supported,
-    ...(!supported && (isSttCommand(command) || isOcrCommand(command) || isExtractCommand(command))
+    ...(!supported && isExtractCommand(command)
       ? { skipReason: describeUnsupportedInputForCommand(command, family) }
       : {})
   }
@@ -989,7 +971,7 @@ export const planBatchInputsForCommand = async (
     }
   }
 
-  const shouldResolveRouting = isSttCommand(command) || isOcrCommand(command) || isExtractCommand(command) || command === 'write'
+  const shouldResolveRouting = isExtractCommand(command) || command === 'write'
   if (!shouldResolveRouting) {
     return {
       items,
@@ -1022,19 +1004,19 @@ export const planBatchInputsForCommand = async (
       ...(routing.family !== 'unsupported' ? { inputFamily: routing.family } : {}),
       step2Route: routing.step2Route,
       resolvedStep2: routing.resolvedStep2,
-      ...(routing.routedChildKind ? { routedChildKind: routing.routedChildKind } : {})
+      ...(routing.extractRoute ? { extractRoute: routing.extractRoute } : {})
     }
     plannedInputs.push({
       input: item,
       inputFamily: routing.family,
       resolvedStep2: routing.resolvedStep2,
-      ...(routing.routedChildKind ? { routedChildKind: routing.routedChildKind } : {}),
+      ...(routing.extractRoute ? { extractRoute: routing.extractRoute } : {}),
       ...(batchItem ? { batchItem } : {})
     })
 
     if (!routing.supported) {
       const reason = routing.skipReason ?? describeUnsupportedInputForCommand(command, routing.family)
-      if (logSkips && (isSttCommand(command) || isOcrCommand(command) || isExtractCommand(command))) {
+      if (logSkips && isExtractCommand(command)) {
         l.warn(`Skipping ${routing.family} input in ${command} batch: ${item} (${reason})`)
       }
       initialEntries.push({
@@ -1224,6 +1206,7 @@ export const processBatch = async (
   processSingleTarget: BatchItemProcessor,
   runOpts: BatchRunOptions = {}
 ): Promise<BatchProcessResult> => {
+  const sttLike = command === 'extract' && runOpts.extractRoute === 'media'
   const prefilledEntries = runOpts.initialEntries ? [...runOpts.initialEntries] : undefined
 
   if (items.length === 0 && (!prefilledEntries || prefilledEntries.length === 0)) {
@@ -1246,7 +1229,7 @@ export const processBatch = async (
 
   const batchDirName = createUniqueDirectoryName(batchLabel)
   const batchDir = runOpts.parentBatchDir
-    ? join(runOpts.parentBatchDir, toManifestKind(command))
+    ? join(runOpts.parentBatchDir, runOpts.extractRoute ?? toManifestKind(command))
     : joinOutputRoot(batchDirName)
   await ensureDirectory(batchDir)
   logLocationsTable(l, [{ artifact: 'outputDir', path: batchDir }])
@@ -1343,7 +1326,7 @@ export const processBatch = async (
             : null
         const errorCount = getBatchManifestErrorCount(manifestEntry)
 
-        if (isSttCommand(command)) {
+        if (sttLike) {
           const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : 'full')
           if (completionStatus === 'full') {
             logBatchItemStatus('success', item, 'done')
@@ -1367,7 +1350,7 @@ export const processBatch = async (
         logBatchItemStatus('success', item, 'done')
         return { manifestEntry, errorCount, status: 'ok' }
       } catch (error) {
-        if (isSttCommand(command) && isSttPartialCompletionError(error)) {
+        if (sttLike && isSttPartialCompletionError(error)) {
           const manifestEntry = attachOutputDir(await readBatchManifestEntry(error.outputDir, command), error.outputDir)
           const errorCount = getBatchManifestErrorCount(manifestEntry)
           if (error.completionStatus === 'failed') {
@@ -1380,7 +1363,7 @@ export const processBatch = async (
         }
 
         const errorOutputDir = getErrorOutputDir(error)
-        if (errorOutputDir && !isSttCommand(command)) {
+        if (errorOutputDir && !sttLike) {
           const manifestEntry = attachOutputDir(await readBatchManifestEntry(errorOutputDir, command), errorOutputDir)
           const errorCount = getBatchManifestErrorCount(manifestEntry)
           const completionStatus = getBatchManifestCompletionStatus(manifestEntry) ?? (errorCount > 0 ? 'incomplete' : undefined)
@@ -1481,8 +1464,8 @@ export const processBatch = async (
     }
   }
 
-  logBatchCompletionTable(command, ok, partial, incomplete, fail)
-  if (isSttCommand(command)) {
+  logBatchCompletionTable(command, ok, partial, incomplete, fail, sttLike)
+  if (sttLike) {
     await writeSttBatchManifest(batchDir, finalInfoEntries, batchSource)
   } else {
     await writeBatchManifest(batchDir, toManifestKind(command), finalInfoEntries, batchSource)

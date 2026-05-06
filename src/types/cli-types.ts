@@ -3,7 +3,7 @@ import type { BatchOrder } from '../cli/commands/process-steps/step-1-download/d
 export const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'video', 'music'] as const
 
 export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
-export type ProcessCommand = CanonicalProcessCommand | 'stt' | 'ocr'
+export type ProcessCommand = CanonicalProcessCommand
 
 export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
 

@@ -177,8 +177,7 @@ src/cli/commands/
   process-steps/
     step-0-metadata/
     step-1-download/
-    step-2-stt/
-    step-2-ocr/
+    step-2-extract/
     step-3-write/
     step-4-tts/
     step-5-image/

@@ -1,10 +1,8 @@
 import * as l from '~/utils/logger'
 import type { ProcessCommand, ResolvedBatch, RuntimeOptions } from '~/types'
-import { isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import { planBatchInputsForCommand, processBatch, readInputList } from './target-utils'
 import { processSingleTarget } from './single-target'
-import { runSttBatch, throwIfSttBatchIncomplete } from '../../step-2-extract/step-2-stt/batch'
 import { resolveListBatchItems } from './list-batch-resolver'
 
 export const resolveInputListBatch = async (
@@ -33,20 +31,7 @@ export const processResolvedInputListBatch = async (
     resolvedBatch.selectedItems
   )
 
-  if (isSttCommand(command)) {
-    const result = await runSttBatch(batchPlan.items, 'inputs', opts, {
-      source: resolvedBatch.source,
-      ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
-      initialEntries: batchPlan.initialEntries,
-      resultEntryIndexes: batchPlan.resultEntryIndexes,
-      concurrency: opts.batchConcurrency,
-      totalCount: resolvedBatch.totalCount
-    })
-    throwIfSttBatchIncomplete(result)
-    return
-  }
-
-  const { ok, incomplete, fail, failureExitCode } = await processBatch(
+  const { ok, fail, failureExitCode } = await processBatch(
     batchPlan.items,
     'inputs',
     command,
@@ -67,9 +52,8 @@ export const processResolvedInputListBatch = async (
       totalCount: resolvedBatch.totalCount
     }
   )
-  if ((isSttCommand(command) && (incomplete > 0 || fail > 0)) || (!isSttCommand(command) && ok === 0 && fail > 0)) {
-    const problemCount = isSttCommand(command) ? incomplete + fail : fail
-    const error = new Error(`Batch processing failed for ${problemCount} item(s)`)
+  if (ok === 0 && fail > 0) {
+    const error = new Error(`Batch processing failed for ${fail} item(s)`)
     if (failureExitCode !== undefined) {
       ;(error as Error & { exitCode?: number }).exitCode = failureExitCode
     }

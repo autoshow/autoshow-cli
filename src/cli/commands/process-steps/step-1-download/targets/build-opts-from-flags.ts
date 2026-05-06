@@ -298,21 +298,8 @@ const parseOptionalPositiveIntFlag = (
   return parsed
 }
 
-const toCamelFlagKey = (key: string): string => {
-  return key.replace(/-([a-z0-9])/g, (_match, char: string) => char.toUpperCase())
-}
-
-const getStep2FlagLookupKeys = (key: string): string[] => {
-  return [key, toCamelFlagKey(key)]
-}
-
 const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
-  for (const candidateKey of getStep2FlagLookupKeys(key)) {
-    if (candidateKey in flags) {
-      return flags[candidateKey]
-    }
-  }
-  return undefined
+  return flags[key]
 }
 
 const readStringFlag = (flags: Record<string, unknown>, key: string, fallback: string): string => {
@@ -350,6 +337,9 @@ export const parseRepeatableModelFlagOccurrences = (
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i] as string
+    if (arg === '--') {
+      break
+    }
     if (!arg.startsWith('--')) {
       continue
     }
@@ -546,23 +536,6 @@ const parseTtsDialogueFormat = (value: string | undefined): 'screenplay' | 'labe
   throw CLIUsageError(`Invalid --tts-dialogue-format value "${value}". Expected "screenplay" or "labeled".`)
 }
 
-const parseDoubleDashArgs = (args: string[]): Record<string, string | boolean> => {
-  const result: Record<string, string | boolean> = {}
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i] as string
-    if (!arg.startsWith('--')) continue
-    const key = arg.slice(2)
-    const next = args[i + 1]
-    if (typeof next === 'string' && !next.startsWith('--')) {
-      result[key] = next
-      i++
-    } else {
-      result[key] = true
-    }
-  }
-  return result
-}
-
 const readOptionalRawStringFlag = (args: string[], flagName: string): string | undefined => {
   for (let i = args.length - 1; i >= 0; i--) {
     const arg = args[i] as string
@@ -588,15 +561,16 @@ const readOptionalRawStringFlag = (args: string[], flagName: string): string | u
 export const buildOptsFromFlags = (
   skipLLM: boolean,
   flags: Record<string, unknown>,
-  doubleDashArgs: string[] = [],
+  _doubleDashArgs: string[] = [],
   defaults: BuildOptsDefaults = {},
   explicitFlags: Set<string> = new Set(),
   rawArgs: string[] = []
 ): RuntimeOptions => {
-  const ddArgs = parseDoubleDashArgs(doubleDashArgs)
-  const rawModelOccurrences = parseRepeatableModelFlagOccurrences(rawArgs)
+  void _doubleDashArgs
+  const rawFlagArgs = rawArgs.includes('--') ? rawArgs.slice(0, rawArgs.indexOf('--')) : rawArgs
+  const rawModelOccurrences = parseRepeatableModelFlagOccurrences(rawFlagArgs)
 
-  const mergedFlags: Record<string, unknown> = { ...ddArgs, ...flags }
+  const mergedFlags: Record<string, unknown> = { ...flags }
   const allShortcutFlags = readAllShortcutFlags(mergedFlags)
   const validateCliValue = <T>(validator: (value: string) => T, value: string): T => {
     try {
@@ -962,8 +936,8 @@ export const buildOptsFromFlags = (
       return validateCliValue(validateSpeechifyTtsVoice, v)
     })(),
     speechifyTtsRefAudio: readOptionalStringFlag(mergedFlags, 'speechify-tts-ref-audio'),
-    speechifyTtsVoiceName: readOptionalRawStringFlag(rawArgs, 'speechify-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-name'),
-    speechifyTtsConsentName: readOptionalRawStringFlag(rawArgs, 'speechify-tts-consent-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-consent-name'),
+    speechifyTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'speechify-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-name'),
+    speechifyTtsConsentName: readOptionalRawStringFlag(rawFlagArgs, 'speechify-tts-consent-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-consent-name'),
     speechifyTtsConsentEmail: readOptionalStringFlag(mergedFlags, 'speechify-tts-consent-email'),
     speechifyTtsVoiceLocale: readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-locale'),
     speechifyTtsVoiceGender: readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-gender'),
@@ -985,7 +959,7 @@ export const buildOptsFromFlags = (
     deapiTtsModel: first(deapiTtsModels),
     deapiTtsVoice: readOptionalStringFlag(mergedFlags, 'deapi-tts-voice'),
     deapiTtsRefAudio: readOptionalStringFlag(mergedFlags, 'deapi-tts-ref-audio'),
-    deapiTtsRefText: readOptionalRawStringFlag(rawArgs, 'deapi-tts-ref-text') ?? readOptionalStringFlag(mergedFlags, 'deapi-tts-ref-text'),
+    deapiTtsRefText: readOptionalRawStringFlag(rawFlagArgs, 'deapi-tts-ref-text') ?? readOptionalStringFlag(mergedFlags, 'deapi-tts-ref-text'),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
@@ -997,8 +971,8 @@ export const buildOptsFromFlags = (
     openaiTtsConsentId: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-id'),
     openaiTtsConsentAudio: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-audio'),
     openaiTtsConsentLanguage: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-language'),
-    openaiTtsConsentName: readOptionalRawStringFlag(rawArgs, 'openai-tts-consent-name') ?? readOptionalStringFlag(mergedFlags, 'openai-tts-consent-name'),
-    openaiTtsVoiceName: readOptionalRawStringFlag(rawArgs, 'openai-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'openai-tts-voice-name'),
+    openaiTtsConsentName: readOptionalRawStringFlag(rawFlagArgs, 'openai-tts-consent-name') ?? readOptionalStringFlag(mergedFlags, 'openai-tts-consent-name'),
+    openaiTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'openai-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'openai-tts-voice-name'),
     geminiVoiceId: readOptionalStringFlag(mergedFlags, 'gemini-voice'),
     deepgramVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'deepgram-voice')
@@ -1006,20 +980,20 @@ export const buildOptsFromFlags = (
       if (deepgramTtsModels === undefined) return v
       return validateCliValue(validateDeepgramTtsVoice, v)
     })(),
-    geminiSpeaker1Name: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-1-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-name'),
-    geminiSpeaker1Voice: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-1-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-voice'),
-    geminiSpeaker2Name: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-2-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-name'),
-    geminiSpeaker2Voice: readOptionalRawStringFlag(rawArgs, 'gemini-speaker-2-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-voice'),
+    geminiSpeaker1Name: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-1-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-name'),
+    geminiSpeaker1Voice: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-1-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-voice'),
+    geminiSpeaker2Name: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-2-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-name'),
+    geminiSpeaker2Voice: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-2-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-voice'),
     elevenlabsTtsModels,
     elevenlabsTtsModel: first(elevenlabsTtsModels),
     elevenlabsTtsPvcVoice: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-voice'),
     elevenlabsTtsRefAudio: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-ref-audio'),
-    elevenlabsTtsVoiceName: readOptionalRawStringFlag(rawArgs, 'elevenlabs-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-voice-name'),
+    elevenlabsTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'elevenlabs-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-voice-name'),
     elevenlabsTtsCloneRemoveBackgroundNoise: readBooleanFlag(mergedFlags, 'elevenlabs-tts-clone-remove-background-noise'),
     elevenlabsTtsPvcSamples: readOptionalStringListFlag(mergedFlags, 'elevenlabs-tts-pvc-sample'),
     elevenlabsTtsPvcSampleDir: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-sample-dir'),
     elevenlabsTtsPvcLanguage: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-language'),
-    elevenlabsTtsPvcDescription: readOptionalRawStringFlag(rawArgs, 'elevenlabs-tts-pvc-description') ?? readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-description'),
+    elevenlabsTtsPvcDescription: readOptionalRawStringFlag(rawFlagArgs, 'elevenlabs-tts-pvc-description') ?? readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-description'),
     elevenlabsTtsPvcCaptchaOut: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-captcha-out'),
     elevenlabsTtsPvcVerifyAudio: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-verify-audio'),
     elevenlabsTtsPvcWait: readBooleanFlag(mergedFlags, 'elevenlabs-tts-pvc-wait'),
@@ -1028,7 +1002,7 @@ export const buildOptsFromFlags = (
     minimaxTtsVoice: readOptionalStringFlag(mergedFlags, 'minimax-tts-voice'),
     minimaxTtsRefAudio: readOptionalStringFlag(mergedFlags, 'minimax-tts-ref-audio'),
     minimaxTtsPromptAudio: readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-audio'),
-    minimaxTtsPromptText: readOptionalRawStringFlag(rawArgs, 'minimax-tts-prompt-text') ?? readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-text'),
+    minimaxTtsPromptText: readOptionalRawStringFlag(rawFlagArgs, 'minimax-tts-prompt-text') ?? readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-text'),
     minimaxTtsCloneNoiseReduction: readBooleanFlag(mergedFlags, 'minimax-tts-clone-noise-reduction'),
     minimaxTtsCloneVolumeNormalization: readBooleanFlag(mergedFlags, 'minimax-tts-clone-volume-normalization'),
     elevenlabsVoiceId: readOptionalStringFlag(mergedFlags, 'elevenlabs-voice'),

@@ -1,4 +1,4 @@
-import type { InputFamily, RoutedChildKind } from './cli-dir-types'
+import type { ExtractRoute, InputFamily } from './cli-dir-types'
 import type { SttBatchSummaryItem } from '../cli/commands/process-steps/step-2-extract/step-2-stt/stt-types'
 
 export type ProviderSpec = {
@@ -38,7 +38,7 @@ export type ProviderResult = {
 
 export type RunManifest = {
   schemaVersion: 2
-  kind: 'metadata' | 'download' | 'extract' | 'ocr' | 'stt' | 'write' | 'tts' | 'image' | 'video' | 'music'
+  kind: 'metadata' | 'download' | 'extract' | 'write' | 'tts' | 'image' | 'video' | 'music'
   metadata: Record<string, unknown>
 }
 
@@ -73,9 +73,9 @@ export type SttBatchSummary = {
 export type ExtractBatchManifestItem = {
   input: string
   inputFamily: InputFamily
-  routedChildKind?: RoutedChildKind | undefined
+  extractRoute?: ExtractRoute | undefined
   childBatchEntry?: {
-    kind: RoutedChildKind
+    route: ExtractRoute
     index: number
   } | undefined
   completionStatus: 'full' | 'incomplete' | 'failed' | 'skipped'
@@ -84,12 +84,12 @@ export type ExtractBatchManifestItem = {
 }
 
 export type ExtractBatchManifest = {
-  schemaVersion: 1
+  schemaVersion: 2
   createdAt: string
   items: ExtractBatchManifestItem[]
   childBatches: {
-    stt?: string | undefined
-    ocr?: string | undefined
-    x_space?: string | undefined
+    media?: string | undefined
+    document?: string | undefined
+    'x-space'?: string | undefined
   }
 }

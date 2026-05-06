@@ -751,7 +751,7 @@ export const processStt = async (
           ...(timing ? { timing } : {})
         }, null, 2)
         await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
-        logRunManifestLocation(outputDir, l, 'stt')
+        logRunManifestLocation(outputDir, l, 'extract')
         l.debug(`Run manifest:\n${metadataJson}`)
 
         const artifactFiles: Record<string, string> = {
@@ -835,7 +835,7 @@ export const processStt = async (
         ...(timing ? { timing } : {})
       }, null, 2)
       await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
-      logRunManifestLocation(outputDir, l, 'stt')
+      logRunManifestLocation(outputDir, l, 'extract')
       l.debug(`Run manifest:\n${metadataJson}`)
 
       const artifactFiles: Record<string, string> = {
@@ -1224,7 +1224,7 @@ export const processStt = async (
       ...(metadataErrors.length > 0 ? { errors: metadataErrors } : {})
     }, null, 2)
     await writeSttRunManifest(outputDir, JSON.parse(metadataJson) as Record<string, unknown>)
-    logRunManifestLocation(outputDir, l, 'stt')
+    logRunManifestLocation(outputDir, l, 'extract')
     l.debug(`Run manifest:\n${metadataJson}`)
 
     const stepSummaries: StepTimingCost[] = [

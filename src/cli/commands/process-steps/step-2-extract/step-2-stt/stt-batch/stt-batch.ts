@@ -51,7 +51,7 @@ export const runSttBatch = async (
   let result = await processBatch(
     items,
     batchLabel,
-    'stt',
+    'extract',
     opts,
     async (command, item, batchDir, batchOpts, batchItem) =>
       await processSingleTarget(command, item, batchDir, batchOpts, undefined, {
@@ -62,7 +62,10 @@ export const runSttBatch = async (
           ...(batchItem ? { batchItem } : {})
         }
       }),
-    runOpts
+    {
+      ...runOpts,
+      extractRoute: 'media'
+    }
   )
 
   if (coordinator && result.batchDir && (result.incomplete > 0 || result.fail > 0)) {

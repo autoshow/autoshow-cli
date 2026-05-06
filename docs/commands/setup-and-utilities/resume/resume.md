@@ -36,7 +36,7 @@ If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the
 
 ## Target Discovery
 
-- `resume` supports STT, OCR, TTS, image, video, and music `run.json` / `batch.json` targets plus parent `extract-batch.json` targets.
+- `resume` supports `extract`, TTS, image, video, and music `run.json` / `batch.json` targets plus parent `extract-batch.json` targets.
 - A single-run target must contain `run.json`.
 - A batch target must contain `batch.json`.
 - An extract parent batch must contain `extract-batch.json`.
@@ -47,13 +47,13 @@ If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the
 
 - With no provider flags, `resume` uses the original requested providers stored in the manifest and reruns only the missing ones.
 - Explicit provider flags narrow the rerun set, but they must be a subset of the original requested providers for that run or batch.
-- STT runs accept STT provider/runtime flags.
-- OCR runs accept OCR provider/runtime flags.
+- `extract` media-route runs accept STT provider/runtime flags.
+- `extract` document-route runs accept OCR provider/runtime flags.
 - TTS runs accept TTS provider/voice flags.
 - Image runs accept image provider/option flags.
 - Video runs accept video provider/option flags.
 - Music runs accept music provider/option flags.
-- `extract` parent batches forward explicit STT flags only to routed STT child batches and explicit OCR flags only to routed OCR child batches.
+- `extract` parent batches forward explicit STT flags only to routed `media/` child batches and explicit OCR flags only to routed `document/` child batches.
 
 ## Examples
 
@@ -76,16 +76,16 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --glm-ocr glm-ocr
 # Resume only missing Kimi OCR outputs in that target
 bun as resume ./output/2026-04-22_12-00-00-000_batch --kimi-ocr kimi-k2.6
 
-# Resume only Deepgram outputs from an STT batch
+# Resume only Deepgram outputs from an extract media batch
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deepgram-stt nova-3
 
-# Resume only DeepInfra Whisper outputs from an STT batch
+# Resume only DeepInfra Whisper outputs from an extract media batch
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deepinfra-stt
 
-# Resume only deAPI outputs from an STT batch
+# Resume only deAPI outputs from an extract media batch
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deapi-stt WhisperLargeV3
 
-# Resume only Happy Scribe outputs from an STT batch
+# Resume only Happy Scribe outputs from an extract media batch
 bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --happyscribe-organization-id org_123
 
 # Resume missing ElevenLabs TTS outputs
@@ -280,8 +280,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 ## Notes
 
 - `resume` updates the existing output directory in place.
-- STT and OCR batch resumes rewrite the existing `batch.json` with updated per-item status.
-- Extract batch resumes update `extract-batch.json` at the parent and the routed child `stt/batch.json` and `ocr/batch.json` manifests underneath it.
+- Extract media and document child batch resumes rewrite the existing `batch.json` with updated per-item status.
+- Extract parent batch resumes update `extract-batch.json` at the parent and the routed child `media/batch.json` and `document/batch.json` manifests underneath it.
 - Generation step resumes (TTS, image, video, music) rewrite `run.json` with merged metadata from existing and newly produced provider outputs.
 - Generation step resumes require `run.json` to contain `requestedProviders` and `input` fields. Manifests created before resume support was added cannot be resumed.
 - Async STT providers with checkpointed remote jobs, including deAPI and Happy Scribe, reuse saved provider state when possible instead of recreating the remote request.

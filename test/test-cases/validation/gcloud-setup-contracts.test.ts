@@ -184,7 +184,7 @@ describe('gcloud setup contracts', () => {
     await expect(loadConfig(configPath)).resolves.toEqual(savedConfig)
   })
 
-  test('Document AI runtime keeps environment override compatibility', async () => {
+  test('Document AI runtime keeps environment overrides', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-gcloud-runtime-env-'))
     tempDirs.push(dir)
     const { bin } = await writeFakeGcloud(dir)

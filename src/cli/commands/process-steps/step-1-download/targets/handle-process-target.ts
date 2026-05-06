@@ -12,13 +12,13 @@ import type {
   BatchSource,
   ExtractChildBatchPlan,
   ExtractBatchManifest,
+  ExtractRoute,
   ProcessCommand,
   ResolvedBatch,
   ResolvedProcessTargetPlan,
-  RoutedChildKind,
   RuntimeOptions
 } from '~/types'
-import { canonicalizeProcessCommand, isExtractCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
+import { canonicalizeProcessCommand, isExtractCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import {
   buildOptsFromFlags,
   classifyTopLevelTarget,
@@ -133,7 +133,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   const routing = typeof resolvedTarget === 'string'
     ? await resolveInputRoutingForCommand(command === 'download' || command === 'metadata' ? 'write' : command, resolvedTarget, opts)
     : undefined
-  const routedChildKind = routing?.routedChildKind
+  const extractRoute = routing?.extractRoute
 
   if (command === 'metadata') {
     if (!opts.save) {
@@ -145,7 +145,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     const documentDownload = typeof resolvedTarget === 'string' && await isDocumentLikeTarget(resolvedTarget, opts)
     return documentDownload ? ['run.json'] : ['Audio file', 'run.json']
   }
-  if (isOcrCommand(command) || (isExtractCommand(command) && routedChildKind === 'ocr')) {
+  if (isExtractCommand(command) && extractRoute === 'document') {
     const ocrArtifact = getExpectedOcrArtifact(opts)
     const ocrExportArtifacts = getExpectedOcrExportArtifacts(opts)
     const htmlArticleInput = routing?.family === 'html_article'
@@ -157,7 +157,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
     }
     return [ocrArtifact, ...ocrExportArtifacts, 'run.json']
   }
-  if (isSttCommand(command) || (isExtractCommand(command) && routedChildKind === 'stt')) {
+  if (isExtractCommand(command) && extractRoute === 'media') {
     const files = collectSttTargets(opts).length > 1
       ? ['Shared audio artifact(s)', 'providers/<service>-<model>/transcription.txt', 'providers/<service>-<model>/result.json', 'prompt.md', 'run.json']
       : ['Audio file', 'transcription.txt', 'result.json', 'prompt.md', 'run.json']
@@ -440,9 +440,9 @@ const planProcessTargetBatchExecution = async (
 }
 
 const createExtractChildBatchPlan = (
-  kind: RoutedChildKind
+  route: ExtractRoute
 ): ExtractChildBatchPlan => ({
-  kind,
+  route,
   items: [],
   initialEntries: [],
   resultEntryIndexes: [],
@@ -469,22 +469,22 @@ const toRelativeOutputDir = (
 const partitionExtractBatchPlan = (
   batchPlan: BatchExecutionPlan
 ): {
-  childPlans: Record<RoutedChildKind, ExtractChildBatchPlan>
+  childPlans: Record<ExtractRoute, ExtractChildBatchPlan>
   manifestItems: ExtractBatchManifest['items']
 } => {
-  const childPlans: Record<RoutedChildKind, ExtractChildBatchPlan> = {
-    stt: createExtractChildBatchPlan('stt'),
-    ocr: createExtractChildBatchPlan('ocr'),
-    x_space: createExtractChildBatchPlan('x_space')
+  const childPlans: Record<ExtractRoute, ExtractChildBatchPlan> = {
+    media: createExtractChildBatchPlan('media'),
+    document: createExtractChildBatchPlan('document'),
+    'x-space': createExtractChildBatchPlan('x-space')
   }
   const manifestItems: ExtractBatchManifest['items'] = []
   let runnableIndex = 0
 
   for (const [index, plannedInput] of batchPlan.plannedInputs.entries()) {
     const initialEntry = batchPlan.initialEntries[index] as BatchManifestEntry | undefined
-    const routedChildKind = plannedInput.routedChildKind
+    const extractRoute = plannedInput.extractRoute
 
-    if (!routedChildKind || batchPlan.items[runnableIndex] === undefined) {
+    if (!extractRoute || batchPlan.items[runnableIndex] === undefined) {
       manifestItems.push({
         input: plannedInput.input,
         inputFamily: plannedInput.inputFamily,
@@ -494,7 +494,7 @@ const partitionExtractBatchPlan = (
       continue
     }
 
-    const childPlan = childPlans[routedChildKind]
+    const childPlan = childPlans[extractRoute]
     const selectedItem = batchPlan.selectedItems?.[runnableIndex]
     childPlan.items.push(batchPlan.items[runnableIndex] as string)
     childPlan.initialEntries.push((initialEntry ?? {}) as Record<string, unknown>)
@@ -508,7 +508,7 @@ const partitionExtractBatchPlan = (
     manifestItems.push({
       input: plannedInput.input,
       inputFamily: plannedInput.inputFamily,
-      routedChildKind,
+      extractRoute,
       completionStatus: 'incomplete'
     })
     runnableIndex += 1
@@ -517,7 +517,7 @@ const partitionExtractBatchPlan = (
   return { childPlans, manifestItems }
 }
 
-const runExtractOcrChildBatch = async (
+const runExtractDocumentChildBatch = async (
   batchDir: string,
   opts: RuntimeOptions,
   batchPlan: ExtractChildBatchPlan,
@@ -525,8 +525,8 @@ const runExtractOcrChildBatch = async (
 ): Promise<BatchProcessResult> =>
   await processBatch(
     batchPlan.items,
-    batchPlan.kind,
-    'ocr',
+    batchPlan.route,
+    'extract',
     opts,
     async (commandName, item, childBatchDir, batchOpts, batchItem) =>
       await processSingleTarget(commandName, item, childBatchDir, batchOpts, undefined, {
@@ -541,7 +541,8 @@ const runExtractOcrChildBatch = async (
       initialEntries: batchPlan.initialEntries,
       resultEntryIndexes: batchPlan.resultEntryIndexes,
       concurrency: opts.batchConcurrency,
-      parentBatchDir: batchDir
+      parentBatchDir: batchDir,
+      extractRoute: batchPlan.route
     }
   )
 
@@ -553,7 +554,7 @@ const runExtractXSpaceChildBatch = async (
 ): Promise<BatchProcessResult> =>
   await processBatch(
     batchPlan.items,
-    batchPlan.kind,
+    batchPlan.route,
     'extract',
     opts,
     async (_commandName, item, childBatchDir, batchOpts, batchItem) =>
@@ -569,7 +570,8 @@ const runExtractXSpaceChildBatch = async (
       initialEntries: batchPlan.initialEntries,
       resultEntryIndexes: batchPlan.resultEntryIndexes,
       concurrency: opts.batchConcurrency,
-      parentBatchDir: batchDir
+      parentBatchDir: batchDir,
+      extractRoute: batchPlan.route
     }
   )
 
@@ -584,13 +586,13 @@ const executeExtractBatchPlan = async (
 
   const { childPlans, manifestItems } = partitionExtractBatchPlan(batchPlan)
   const childBatches = {
-    ...(childPlans.stt.items.length > 0 ? { stt: 'stt' } : {}),
-    ...(childPlans.ocr.items.length > 0 ? { ocr: 'ocr' } : {}),
-    ...(childPlans.x_space.items.length > 0 ? { x_space: 'x_space' } : {})
+    ...(childPlans.media.items.length > 0 ? { media: 'media' } : {}),
+    ...(childPlans.document.items.length > 0 ? { document: 'document' } : {}),
+    ...(childPlans['x-space'].items.length > 0 ? { 'x-space': 'x-space' } : {})
   }
 
   const initialManifest: ExtractBatchManifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     createdAt: new Date().toISOString(),
     items: manifestItems,
     childBatches
@@ -599,40 +601,39 @@ const executeExtractBatchPlan = async (
   await writeExtractBatchManifest(batchDir, initialManifest)
   logLocationsTable(l, [{ artifact: 'extractBatchManifest', path: `${batchDir}/extract-batch.json` }])
 
-  if (childPlans.stt.items.length === 0 && childPlans.ocr.items.length === 0 && childPlans.x_space.items.length === 0) {
+  if (childPlans.media.items.length === 0 && childPlans.document.items.length === 0 && childPlans['x-space'].items.length === 0) {
     l.warn('No supported inputs to process')
     return
   }
 
   const [sttResult, ocrResult, xSpaceResult] = await Promise.all([
-    childPlans.stt.items.length > 0
-      ? runSttBatch(childPlans.stt.items, childPlans.stt.kind, opts, {
+    childPlans.media.items.length > 0
+      ? runSttBatch(childPlans.media.items, childPlans.media.route, opts, {
           ...(batchPlan.source ? { source: batchPlan.source } : {}),
-          ...(childPlans.stt.selectedItems ? { selectedItems: childPlans.stt.selectedItems } : {}),
-          initialEntries: childPlans.stt.initialEntries,
-          resultEntryIndexes: childPlans.stt.resultEntryIndexes,
+          ...(childPlans.media.selectedItems ? { selectedItems: childPlans.media.selectedItems } : {}),
+          initialEntries: childPlans.media.initialEntries,
+          resultEntryIndexes: childPlans.media.resultEntryIndexes,
           concurrency: opts.batchConcurrency,
-          parentBatchDir: batchDir
+          parentBatchDir: batchDir,
+          extractRoute: 'media'
         })
       : Promise.resolve(undefined),
-    childPlans.ocr.items.length > 0
-      ? runExtractOcrChildBatch(batchDir, opts, childPlans.ocr, batchPlan.source)
+    childPlans.document.items.length > 0
+      ? runExtractDocumentChildBatch(batchDir, opts, childPlans.document, batchPlan.source)
       : Promise.resolve(undefined),
-    childPlans.x_space.items.length > 0
-      ? runExtractXSpaceChildBatch(batchDir, opts, childPlans.x_space, batchPlan.source)
+    childPlans['x-space'].items.length > 0
+      ? runExtractXSpaceChildBatch(batchDir, opts, childPlans['x-space'], batchPlan.source)
       : Promise.resolve(undefined)
   ])
 
   const finalItems = initialManifest.items.map((item) => ({ ...item }))
-  for (const childKind of ['stt', 'ocr', 'x_space'] as const) {
-    const childPlan = childPlans[childKind]
+  for (const route of ['media', 'document', 'x-space'] as const) {
+    const childPlan = childPlans[route]
     if (childPlan.items.length === 0) {
       continue
     }
 
-    const childBatchDirName = childKind === 'x_space' ? 'extract' : childKind
-    const manifestKind: 'stt' | 'ocr' | 'extract' = childKind === 'x_space' ? 'extract' : childKind
-    const childManifest = await readBatchManifest(join(batchDir, childBatchDirName), manifestKind)
+    const childManifest = await readBatchManifest(join(batchDir, route), 'extract')
     const childEntries = childManifest?.manifest.items ?? []
 
     childPlan.parentIndexes.forEach((parentIndex, childIndex) => {
@@ -645,8 +646,8 @@ const executeExtractBatchPlan = async (
       const outputDir = toRelativeOutputDir(batchDir, childEntry?.['outputDir'])
       finalItems[parentIndex] = {
         ...existingItem,
-        routedChildKind: childKind,
-        childBatchEntry: { kind: childKind, index: childIndex },
+        extractRoute: route,
+        childBatchEntry: { route, index: childIndex },
         completionStatus: isBatchEntryCompletionStatus(childEntry?.['completionStatus'])
           ? childEntry['completionStatus']
           : 'failed',
@@ -692,24 +693,6 @@ const executeBatchPlan = async (
     return
   }
 
-  if (isSttCommand(command)) {
-    const result = await runSttBatch(
-      batchPlan.items,
-      batchPlan.label,
-      opts,
-      {
-        ...(batchPlan.source ? { source: batchPlan.source } : {}),
-        ...(batchPlan.selectedItems ? { selectedItems: batchPlan.selectedItems } : {}),
-        ...(typeof batchPlan.totalCount === 'number' ? { totalCount: batchPlan.totalCount } : {}),
-        initialEntries: batchPlan.initialEntries,
-        resultEntryIndexes: batchPlan.resultEntryIndexes,
-        concurrency: opts.batchConcurrency
-      }
-    )
-    throwIfSttBatchIncomplete(result)
-    return
-  }
-
   const { ok, fail, failureExitCode } = await processBatch(
     batchPlan.items,
     batchPlan.label,
@@ -752,7 +735,7 @@ const reportSuitePriceEstimate = async (
   }, { category: 'pricing', columns: ['itemType', 'itemCount'] })
 
   let suiteTotalEstimatedCost = 0
-  const concurrency = isSttCommand(command) || isExtractCommand(command) ? opts.sttPreflightConcurrency : 1
+  const concurrency = isExtractCommand(command) ? opts.sttPreflightConcurrency : 1
 
   await runWithConcurrency(targets, concurrency, async (item) => {
     const estimate = await buildAggregatedPriceEstimate(command, item, opts, undefined)
@@ -804,7 +787,7 @@ export const handleProcessTarget = async (
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
 
   const opts = buildOptsFromFlags(
-    isSttCommand(command) || isExtractCommand(command) || command === 'download' || command === 'metadata',
+    isExtractCommand(command) || command === 'download' || command === 'metadata',
     mergedFlags,
     doubleDash,
     {},

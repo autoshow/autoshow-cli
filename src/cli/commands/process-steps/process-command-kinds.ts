@@ -11,17 +11,9 @@ const PROCESS_COMMAND_CAPABILITIES: Record<ProcessCommand, ProcessCommandCapabil
     supportsBatchSourceExpansion: true,
     supportedInputFamilies: ['media', 'document', 'html_article', 'x_space']
   },
-  stt: {
-    supportsBatchSourceExpansion: true,
-    supportedInputFamilies: ['media']
-  },
   write: {
     supportsBatchSourceExpansion: true,
     supportedInputFamilies: ['media', 'document', 'html_article']
-  },
-  ocr: {
-    supportsBatchSourceExpansion: false,
-    supportedInputFamilies: ['document', 'html_article']
   },
   tts: {
     supportsBatchSourceExpansion: false
@@ -36,12 +28,6 @@ const PROCESS_COMMAND_CAPABILITIES: Record<ProcessCommand, ProcessCommandCapabil
     supportsBatchSourceExpansion: false
   }
 }
-
-export const isSttCommand = (command: ProcessCommand): command is 'stt' =>
-  command === 'stt'
-
-export const isOcrCommand = (command: ProcessCommand): command is 'ocr' =>
-  command === 'ocr'
 
 export const isExtractCommand = (command: ProcessCommand): command is 'extract' =>
   command === 'extract'

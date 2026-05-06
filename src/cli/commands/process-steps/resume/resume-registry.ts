@@ -1,5 +1,5 @@
 import { join, relative, resolve as resolvePath } from 'node:path'
-import type { BatchManifestEntry, ExtractBatchManifest, RuntimeOptions, OcrTarget, SttTarget } from '~/types'
+import type { BatchManifestEntry, ExtractBatchManifest, ExtractRoute, RuntimeOptions, OcrTarget, SttTarget } from '~/types'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import {
@@ -16,6 +16,8 @@ import { hasResumableVideoWork, resumeVideoTarget } from '~/cli/commands/process
 import { hasResumableMusicWork, resumeMusicTarget } from '~/cli/commands/process-steps/step-7-music/resume'
 import { readBatchManifest, readExtractBatchManifest, writeExtractBatchManifest } from '~/cli/commands/process-steps/manifest-utils'
 import type { ResumeHandler, ResumeTarget, ResumeTargetKind } from '~/types'
+
+type ExtractRouteResumeHandler = Pick<ResumeHandler, 'hasResumableWork' | 'resume'>
 
 const EXPLICIT_STEP2_SELECTION_FILTER = {
   includeOrigins: ['explicit', 'all-shortcut']
@@ -58,12 +60,13 @@ const resolveExtractChildTargets = (
 
 const buildChildResumeTarget = (
   parentDir: string,
-  kind: 'stt' | 'ocr',
+  route: ExtractRoute,
   relativeDir?: string | undefined
 ): ResumeTarget | undefined => {
-  const childDir = resolvePath(parentDir, relativeDir ?? kind)
+  const childDir = resolvePath(parentDir, relativeDir ?? route)
   return {
-    kind,
+    kind: 'extract',
+    extractRoute: route,
     scope: 'batch',
     dir: childDir,
     manifestPath: join(childDir, 'batch.json')
@@ -93,18 +96,18 @@ const syncExtractBatchManifest = async (
 ): Promise<void> => {
   const nextItems = manifest.items.map((item) => ({ ...item }))
 
-  for (const childKind of ['stt', 'ocr'] as const) {
-    const childRelativeDir = manifest.childBatches[childKind]
+  for (const route of ['media', 'document'] as const) {
+    const childRelativeDir = manifest.childBatches[route]
     if (typeof childRelativeDir !== 'string' || childRelativeDir.length === 0) {
       continue
     }
 
     const childDir = resolvePath(parentDir, childRelativeDir)
-    const childManifest = await readBatchManifest(childDir, childKind)
+    const childManifest = await readBatchManifest(childDir, 'extract')
     const childEntries = childManifest?.manifest.items ?? []
 
     nextItems.forEach((item, index) => {
-      if (item.childBatchEntry?.kind !== childKind) {
+      if (item.childBatchEntry?.route !== route) {
         return
       }
 
@@ -131,8 +134,7 @@ const syncExtractBatchManifest = async (
   })
 }
 
-const sttResumeHandler: ResumeHandler = {
-  kind: 'stt',
+const sttResumeHandler: ExtractRouteResumeHandler = {
   hasResumableWork: async (target, opts, _explicitFlags) =>
     await hasResumableSttTargetWork(
       target,
@@ -150,8 +152,7 @@ const sttResumeHandler: ResumeHandler = {
     )
 }
 
-const ocrResumeHandler: ResumeHandler = {
-  kind: 'ocr',
+const ocrResumeHandler: ExtractRouteResumeHandler = {
   hasResumableWork: async (target, opts, _explicitFlags) =>
     await hasResumableOcrTargetWork(
       target,
@@ -165,9 +166,26 @@ const ocrResumeHandler: ResumeHandler = {
     )
 }
 
+const getExtractRouteResumeHandler = (
+  route: ExtractRoute | undefined
+): ExtractRouteResumeHandler | undefined => {
+  if (route === 'media') {
+    return sttResumeHandler
+  }
+  if (route === 'document') {
+    return ocrResumeHandler
+  }
+  return undefined
+}
+
 const extractResumeHandler: ResumeHandler = {
   kind: 'extract',
   hasResumableWork: async (target, opts, explicitFlags) => {
+    const routeHandler = getExtractRouteResumeHandler(target.extractRoute)
+    if (routeHandler) {
+      return await routeHandler.hasResumableWork(target, opts, explicitFlags)
+    }
+
     const manifest = await readExtractBatchManifest(target.dir)
     if (!manifest) {
       return false
@@ -175,16 +193,16 @@ const extractResumeHandler: ResumeHandler = {
 
     const childTargets = resolveExtractChildTargets(opts)
     if (childTargets.shouldCheckStt) {
-      const sttTarget = buildChildResumeTarget(target.dir, 'stt', manifest.manifest.childBatches.stt)
-      const sttHandler = sttTarget ? getResumeHandler('stt') : undefined
+      const sttTarget = buildChildResumeTarget(target.dir, 'media', manifest.manifest.childBatches.media)
+      const sttHandler = getExtractRouteResumeHandler('media')
       if (sttTarget && sttHandler && await sttHandler.hasResumableWork(sttTarget, opts, explicitFlags)) {
         return true
       }
     }
 
     if (childTargets.shouldCheckOcr) {
-      const ocrTarget = buildChildResumeTarget(target.dir, 'ocr', manifest.manifest.childBatches.ocr)
-      const ocrHandler = ocrTarget ? getResumeHandler('ocr') : undefined
+      const ocrTarget = buildChildResumeTarget(target.dir, 'document', manifest.manifest.childBatches.document)
+      const ocrHandler = getExtractRouteResumeHandler('document')
       if (ocrTarget && ocrHandler && await ocrHandler.hasResumableWork(ocrTarget, opts, explicitFlags)) {
         return true
       }
@@ -193,6 +211,12 @@ const extractResumeHandler: ResumeHandler = {
     return false
   },
   resume: async (target, opts, explicitFlags) => {
+    const routeHandler = getExtractRouteResumeHandler(target.extractRoute)
+    if (routeHandler) {
+      await routeHandler.resume(target, opts, explicitFlags)
+      return
+    }
+
     const manifest = await readExtractBatchManifest(target.dir)
     if (!manifest) {
       return
@@ -200,16 +224,16 @@ const extractResumeHandler: ResumeHandler = {
 
     const childTargets = resolveExtractChildTargets(opts)
     if (childTargets.shouldCheckStt) {
-      const sttTarget = buildChildResumeTarget(target.dir, 'stt', manifest.manifest.childBatches.stt)
-      const sttHandler = sttTarget ? getResumeHandler('stt') : undefined
+      const sttTarget = buildChildResumeTarget(target.dir, 'media', manifest.manifest.childBatches.media)
+      const sttHandler = getExtractRouteResumeHandler('media')
       if (sttTarget && sttHandler) {
         await sttHandler.resume(sttTarget, opts, explicitFlags)
       }
     }
 
     if (childTargets.shouldCheckOcr) {
-      const ocrTarget = buildChildResumeTarget(target.dir, 'ocr', manifest.manifest.childBatches.ocr)
-      const ocrHandler = ocrTarget ? getResumeHandler('ocr') : undefined
+      const ocrTarget = buildChildResumeTarget(target.dir, 'document', manifest.manifest.childBatches.document)
+      const ocrHandler = getExtractRouteResumeHandler('document')
       if (ocrTarget && ocrHandler) {
         await ocrHandler.resume(ocrTarget, opts, explicitFlags)
       }
@@ -252,8 +276,6 @@ const musicResumeHandler: ResumeHandler = {
 }
 
 const RESUME_HANDLERS: Readonly<Record<ResumeTargetKind, ResumeHandler>> = {
-  stt: sttResumeHandler,
-  ocr: ocrResumeHandler,
   extract: extractResumeHandler,
   tts: ttsResumeHandler,
   image: imageResumeHandler,

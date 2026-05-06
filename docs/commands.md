@@ -152,7 +152,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 - Use `metadata` for quick metadata inspection without downloading.
 - Use `download` for downloading media/documents and collecting metadata.
 - Use `extract` when you only need step-2 extraction or transcription without LLM writing, or to collect X Space metadata.
-- Use `resume` to backfill missing STT or OCR providers in an existing output directory, including `extract` parent batches.
+- Use `resume` to backfill missing media transcription or document OCR providers in an existing output directory, including `extract` parent batches.
 - Use `write` for full summary pipeline with optional TTS/image/video generation, and for lyric draft generation from `./output/<name>/text`.
 - Use `music --audio` or `music --batch` for lyric-video rendering from repo audio under `input/`.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.

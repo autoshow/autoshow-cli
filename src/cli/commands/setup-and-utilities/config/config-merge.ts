@@ -51,6 +51,7 @@ const resolveStep2ProviderDefaults = (
 export const extractExplicitFlags = (argv: string[]): Set<string> => {
   const explicit = new Set<string>()
   for (const token of argv) {
+    if (token === '--') break
     if (!token.startsWith('--')) continue
     const withoutDashes = token.slice(2)
     const eqIdx = withoutDashes.indexOf('=')

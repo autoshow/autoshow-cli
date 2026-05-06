@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { buildConfigPatchFromFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { buildConfigPatchFromFlags, extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
 
 const tempDirs: string[] = []
@@ -20,6 +20,18 @@ afterEach(async () => {
 })
 
 describe('config contracts', () => {
+  test('extractExplicitFlags ignores tokens after the positional separator', () => {
+    expect(extractExplicitFlags([
+      'extract',
+      'input/examples/audio/1-audio.mp3',
+      '--openai-stt',
+      'gpt-4o-mini-transcribe',
+      '--',
+      '--deepinfra-ocr',
+      'Qwen/Qwen3-VL-30B-A3B-Instruct'
+    ])).toEqual(new Set(['openai-stt']))
+  })
+
   test('buildConfigPatchFromFlags maps explicit provider, OCR, batch, and pricing defaults', () => {
     expect(buildConfigPatchFromFlags({
       openai: 'gpt-5.4-mini',

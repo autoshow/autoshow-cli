@@ -132,6 +132,36 @@ describe('option resolution contracts', () => {
     expect(opts.openaiTtsVoiceName).toBe('AutoShow Anthony')
   })
 
+  test('buildOptsFromFlags only accepts canonical flags before the positional separator', () => {
+    const camelCaseFlags = buildOptsFromFlags(false, {
+      openaiStt: 'gpt-4o-mini-transcribe',
+      deepinfraOcr: 'Qwen/Qwen3-VL-30B-A3B-Instruct'
+    })
+    const separatedFlags = buildOptsFromFlags(false, {}, [
+      '--openai-stt',
+      'gpt-4o-mini-transcribe'
+    ], {}, new Set(), [
+      'extract',
+      'input/examples/audio/1-audio.mp3',
+      '--',
+      '--openai-stt',
+      'gpt-4o-mini-transcribe',
+      '--speechify-tts-voice-name',
+      'AfterSeparator'
+    ])
+    const canonicalFlags = buildOptsFromFlags(false, {
+      'openai-stt': 'gpt-4o-mini-transcribe',
+      'deepinfra-ocr': 'Qwen/Qwen3-VL-30B-A3B-Instruct'
+    })
+
+    expect(camelCaseFlags.openaiSttModel).toBeUndefined()
+    expect(camelCaseFlags.deepinfraOcrModel).toBeUndefined()
+    expect(separatedFlags.openaiSttModel).toBeUndefined()
+    expect(separatedFlags.speechifyTtsVoiceName).toBeUndefined()
+    expect(canonicalFlags.openaiSttModel).toBe('gpt-4o-mini-transcribe')
+    expect(canonicalFlags.deepinfraOcrModel).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
+  })
+
   test('OCR provider concurrency defaults, falls back, and clamps like STT concurrency flags', () => {
     const defaults = buildOptsFromFlags(false, {})
     const fallback = buildOptsFromFlags(false, {

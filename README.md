@@ -217,7 +217,7 @@ Typical artifacts include:
 - `run.json`
 - `metadata.md` for `metadata --markdown --save`
 
-`extract` batches write a parent `extract-batch.json` plus nested `stt/` and `ocr/` child batches when those routed items are present. Other batch runs write `batch.json`, and some structured remote sources add `source.json`.
+`extract` batches write a parent `extract-batch.json` plus nested `media/`, `document/`, and `x-space/` child batches when those routed items are present. Other batch runs write `batch.json`, and some structured remote sources add `source.json`.
 
 Notable exceptions:
 

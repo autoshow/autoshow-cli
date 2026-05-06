@@ -14,15 +14,11 @@ test('unknown command exits 2', async () => {
   await expectUsageExit(['definitely-not-a-command'], 'Unknown command "definitely-not-a-command"')
 })
 
-test('removed lyrics command uses generic unknown-command handling', async () => {
-  await expectUsageExit(['lyrics'], 'Unknown command "lyrics"')
-})
-
 test('unknown flag exits 2', async () => {
   await expectUsageExit(['write', STABLE_LOCAL_AUDIO_PATH, '--structured'], 'Unexpected flag: structured')
 })
 
-test('removed step-2 command names use generic unknown-command handling', async () => {
+test('legacy step-2 command names are not public commands', async () => {
   for (const command of ['stt', 'ocr'] as const) {
     await expectUsageExit([command, STABLE_LOCAL_AUDIO_PATH], `Unknown command "${command}`)
   }

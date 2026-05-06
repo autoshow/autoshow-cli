@@ -155,7 +155,7 @@ const readResumeTargetManifest = async (
   target: ResumeTarget
 ): Promise<(ResumeBatchManifest & { source?: Record<string, unknown> }) | undefined> => {
   if (target.scope === 'batch') {
-    const manifest = await readBatchManifest(target.dir, 'stt')
+    const manifest = await readBatchManifest(target.dir, 'extract')
     if (!manifest) {
       return undefined
     }
@@ -452,7 +452,8 @@ export const runResumeSttMissingFromBatchDir = async (
   runOptions: ResumeSttBatchRunOptions = {}
 ): Promise<ResumeSttBatchPassResult> =>
   await runResumeSttTarget({
-    kind: 'stt',
+    kind: 'extract',
+    extractRoute: 'media',
     scope: 'batch',
     dir: resolvePath(batchDirInput),
     manifestPath: join(resolvePath(batchDirInput), 'batch.json')

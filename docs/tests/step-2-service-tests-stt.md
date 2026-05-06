@@ -1,6 +1,6 @@
 # Step 2 Service Tests: STT
 
-Provider-backed speech-to-text coverage for the `stt` command, including deAPI exact-pricing and manifest assertions.
+Provider-backed speech-to-text coverage for the `extract` media route, including deAPI exact-pricing and manifest assertions.
 
 ## Outline
 

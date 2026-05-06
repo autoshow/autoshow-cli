@@ -152,7 +152,7 @@ const readResumeTargetManifest = async (
   target: ResumeTarget
 ): Promise<{ infoPath: string, entries: BatchManifestEntry[], source?: Record<string, unknown> } | undefined> => {
   if (target.scope === 'batch') {
-    const manifest = await readBatchManifest(target.dir, 'ocr')
+    const manifest = await readBatchManifest(target.dir, 'extract')
     if (!manifest) {
       return undefined
     }

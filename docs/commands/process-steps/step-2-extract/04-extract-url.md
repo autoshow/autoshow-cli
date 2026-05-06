@@ -167,6 +167,6 @@ bun as extract input/spaces.txt --batch-all
 
 ## X Space Notes
 
-- X Space extraction is only supported by the `extract` command. Other commands (`metadata`, `download`, `stt`, `ocr`, `write`) reject X links with a clear error.
+- X Space extraction is only supported by the `extract` command. Other processing commands (`metadata`, `download`, `write`, and generation commands) reject X links with a clear error.
 - Post URLs that don't reference a Space still produce a report with the post metadata and an empty Spaces section.
 - The X API has rate limits. Batch processing of many X URLs may encounter 429 responses.

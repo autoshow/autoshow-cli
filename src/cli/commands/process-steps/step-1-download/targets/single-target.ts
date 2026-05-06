@@ -24,7 +24,7 @@ import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-extract
 import { formatMetadataAsFrontmatter } from '~/cli/commands/process-steps/step-0-metadata/format-metadata-frontmatter'
 import type { ExtractionOptions } from '~/types'
 import type { InputFamily, ProcessCommand, RuntimeOptions, AggregatedPriceEstimate } from '~/types'
-import { canonicalizeProcessCommand, isExtractCommand, isOcrCommand, isSttCommand } from '~/cli/commands/process-steps/process-command-kinds'
+import { canonicalizeProcessCommand, isExtractCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   classifyInputFamily,
@@ -1341,6 +1341,7 @@ const processXSpace = async (
   await Bun.write(`${outputDir}/extraction.md`, mdReport)
 
   await writeRunManifest(outputDir, 'extract', {
+    extractRoute: 'x-space',
     step1: {
       title: label,
       source: 'x-space',
@@ -1478,39 +1479,26 @@ export const processSingleTarget = async (
     }
 
     if (kind === 'url_direct_document') {
-      if (isSttCommand(command)) {
-        throwUnsupportedProcessInput(command, item, 'document')
-      }
-
-        const downloaded = await downloadDocumentUrlToTempFile(item)
-        try {
-          if (isOcrCommand(command) || isExtractCommand(command)) {
-            return await processOcrSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
-          } else {
-            return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
-          }
-        } finally {
-          await downloaded.cleanup()
+      const downloaded = await downloadDocumentUrlToTempFile(item)
+      try {
+        if (isExtractCommand(command)) {
+          return await processOcrSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
         }
+        return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
+      } finally {
+        await downloaded.cleanup()
+      }
     }
 
     if (kind === 'url_html_article') {
-      if (isSttCommand(command)) {
-        throwUnsupportedProcessInput(command, item, 'html_article')
-      }
-
       const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
-      if (isOcrCommand(command) || isExtractCommand(command)) {
+      if (isExtractCommand(command)) {
         return await processOcrSingle(item, baseDir, opts, { url: item }, prepared, batchChildContext)
       }
       return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared, batchChildContext)
     }
 
-    if (isOcrCommand(command)) {
-      throwUnsupportedProcessInput(command, item, 'media')
-    }
-
-    if (isSttCommand(command) || isExtractCommand(command)) {
+    if (isExtractCommand(command)) {
       return {
         outputDir: await processStt({ url: item }, baseDir, opts, preflightEstimate, {
           ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
@@ -1537,22 +1525,18 @@ export const processSingleTarget = async (
   if (isHtmlDocumentPath(item)) {
     const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
 
-    if (isOcrCommand(command) || isExtractCommand(command)) {
+    if (isExtractCommand(command)) {
       return await processOcrSingle(item, baseDir, opts, undefined, prepared, batchChildContext)
     }
 
     if (command === 'write') {
       return await runDocumentWrite(item, baseDir, opts, undefined, prepared, batchChildContext)
     }
-
-    if (isSttCommand(command)) {
-      throwUnsupportedProcessInput(command, item, 'html_article')
-    }
   }
 
   const family = await classifyInputFamily(item, opts)
 
-  if (isOcrCommand(command) || (isExtractCommand(command) && family === 'document')) {
+  if (isExtractCommand(command) && family === 'document') {
     if (family !== 'document') {
       throwUnsupportedProcessInput(command, item, family)
     }
@@ -1561,10 +1545,6 @@ export const processSingleTarget = async (
 
   if (command === 'write' && family === 'document') {
     return await runDocumentWrite(item, baseDir, opts, undefined, undefined, batchChildContext)
-  }
-
-  if (isSttCommand(command) && family !== 'media') {
-    throwUnsupportedProcessInput(command, item, family)
   }
 
   if (isExtractCommand(command)) {
@@ -1579,16 +1559,6 @@ export const processSingleTarget = async (
     }
 
     throwUnrecognizedExtractInput(item)
-  }
-
-  if (isSttCommand(command)) {
-      return {
-        outputDir: await processStt({ filePath: item }, baseDir, opts, preflightEstimate, {
-          ...(runOptions?.sttBatchCoordinator ? { batchCoordinator: runOptions.sttBatchCoordinator } : {}),
-          ...(runOptions?.mistralSttPassController ? { mistralPassController: runOptions.mistralSttPassController } : {}),
-          ...(batchChildContext ? { batchChildContext } : {})
-        })
-      }
   }
 
   const result = await processMediaSingle(item, baseDir, opts, preflightEstimate, batchChildContext)

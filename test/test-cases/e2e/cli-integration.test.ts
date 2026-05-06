@@ -7,7 +7,7 @@ import {
   STABLE_LOCAL_AUDIO_PATH,
   STABLE_LOCAL_AUDIO_TITLE
 } from "../../test-utils/test-helpers"
-import { readRunMetadata } from "../../test-utils/manifest-helpers"
+import { readRunManifest, readRunMetadata } from "../../test-utils/manifest-helpers"
 import { budgetedTest } from "../../test-utils/budget"
 
 const getSummaryFileName = async (outputDir: string): Promise<string> => {
@@ -123,8 +123,11 @@ budgetedTest("transcribe-whisper-tiny", "bun as extract skips LLM processing but
     const summaryExists = await fileExists(`${outputDir}/text.json`)
     expect(summaryExists).toBe(false)
     
-    const metadata = await readRunMetadata(outputDir)
+    const manifest = await readRunManifest(outputDir)
+    const metadata = manifest.metadata
     
+    expect(manifest.kind).toBe('extract')
+    expect(metadata['extractRoute']).toBe('media')
     expect(metadata['step1']).toBeDefined()
     expect(metadata['step2']).toBeDefined()
     expect(metadata['step3']).toBeUndefined()

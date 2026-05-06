@@ -3,13 +3,13 @@ import type {
   BatchSource,
   DocumentMetadata,
   ExtractionMetadata,
+  ExtractRoute,
   InputFamily,
   ProcessCommand,
   PlannedBatchInput,
   PreparedDocument,
   ResolvedBatch,
   ResolvedStep2Execution,
-  RoutedChildKind,
   RuntimeOptions,
   Step3Metadata,
   WebArticleMetadata
@@ -184,7 +184,7 @@ export type ResolvedInputRouting = {
   family: InputFamily
   step2Route: Step2Route
   resolvedStep2: ResolvedStep2Execution
-  routedChildKind?: RoutedChildKind | undefined
+  extractRoute?: ExtractRoute | undefined
   supported: boolean
   skipReason?: string | undefined
 }
@@ -308,7 +308,7 @@ export type BatchExecutionPlan = {
 }
 
 export type ExtractChildBatchPlan = {
-  kind: RoutedChildKind
+  route: ExtractRoute
   items: string[]
   selectedItems?: Array<BatchItem | undefined>
   initialEntries: Record<string, unknown>[]

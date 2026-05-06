@@ -3,16 +3,53 @@ import type {
   BatchManifestKind,
   BatchManifest,
   BatchManifestEntry,
+  ExtractRoute,
   ExtractBatchManifest,
   ExtractBatchManifestItem,
   ProviderResult,
   RunManifestKind,
-  RunManifest,
-  RoutedChildKind
+  RunManifest
 } from '~/types'
+
+export class UnsupportedArtifactSchemaError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'CLIUsageError'
+  }
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const assertSupportedRunOrBatchSchema = (
+  value: unknown,
+  artifactPath: string
+): void => {
+  if (!isRecord(value) || value['schemaVersion'] !== 2) {
+    return
+  }
+
+  if (value['kind'] === 'stt' || value['kind'] === 'ocr') {
+    throw new UnsupportedArtifactSchemaError(
+      `Unsupported artifact schema at ${artifactPath}: legacy "${value['kind']}" manifests are no longer supported. Re-run extract to create an "extract" manifest with metadata.extractRoute.`
+    )
+  }
+}
+
+const assertSupportedExtractBatchSchema = (
+  value: unknown,
+  artifactPath: string
+): void => {
+  if (!isRecord(value)) {
+    return
+  }
+
+  if (value['schemaVersion'] === 1) {
+    throw new UnsupportedArtifactSchemaError(
+      `Unsupported artifact schema at ${artifactPath}: extract batch schema v1 is no longer supported. Re-run extract to create schema v2 with route-based child batches.`
+    )
+  }
+}
 
 const parseRunManifest = (
   value: unknown,
@@ -31,8 +68,7 @@ const parseRunManifest = (
   if (
     kind !== 'metadata'
     && kind !== 'download'
-    && kind !== 'ocr'
-    && kind !== 'stt'
+    && kind !== 'extract'
     && kind !== 'write'
     && kind !== 'tts'
     && kind !== 'image'
@@ -70,8 +106,7 @@ const parseBatchManifest = (
   if (
     kind !== 'metadata'
     && kind !== 'download'
-    && kind !== 'ocr'
-    && kind !== 'stt'
+    && kind !== 'extract'
     && kind !== 'write'
     && kind !== 'tts'
     && kind !== 'image'
@@ -120,8 +155,8 @@ const parseProviderResult = (
 const isInputFamily = (value: unknown): value is ExtractBatchManifestItem['inputFamily'] =>
   value === 'media' || value === 'document' || value === 'html_article' || value === 'x_space' || value === 'unsupported'
 
-const isRoutedChildKind = (value: unknown): value is RoutedChildKind =>
-  value === 'stt' || value === 'ocr' || value === 'x_space'
+const isExtractRoute = (value: unknown): value is ExtractRoute =>
+  value === 'media' || value === 'document' || value === 'x-space'
 
 const isExtractBatchCompletionStatus = (
   value: unknown
@@ -141,11 +176,11 @@ const parseExtractBatchManifestItem = (
   }
 
   const childBatchEntry: ExtractBatchManifestItem['childBatchEntry'] = isRecord(value['childBatchEntry'])
-    && isRoutedChildKind(value['childBatchEntry']['kind'])
+    && isExtractRoute(value['childBatchEntry']['route'])
     && typeof value['childBatchEntry']['index'] === 'number'
     && Number.isFinite(value['childBatchEntry']['index'])
     ? {
-        kind: value['childBatchEntry']['kind'],
+        route: value['childBatchEntry']['route'],
         index: value['childBatchEntry']['index']
       }
     : undefined
@@ -153,7 +188,7 @@ const parseExtractBatchManifestItem = (
   return {
     input: value['input'],
     inputFamily: value['inputFamily'],
-    ...(isRoutedChildKind(value['routedChildKind']) ? { routedChildKind: value['routedChildKind'] } : {}),
+    ...(isExtractRoute(value['extractRoute']) ? { extractRoute: value['extractRoute'] } : {}),
     ...(childBatchEntry ? { childBatchEntry } : {}),
     completionStatus: value['completionStatus'],
     ...(typeof value['skipReason'] === 'string' ? { skipReason: value['skipReason'] } : {}),
@@ -166,7 +201,7 @@ const parseExtractBatchManifest = (
 ): ExtractBatchManifest | undefined => {
   if (
     !isRecord(value)
-    || value['schemaVersion'] !== 1
+    || value['schemaVersion'] !== 2
     || typeof value['createdAt'] !== 'string'
     || !Array.isArray(value['items'])
     || !isRecord(value['childBatches'])
@@ -179,12 +214,13 @@ const parseExtractBatchManifest = (
     .filter((entry): entry is ExtractBatchManifestItem => entry !== undefined)
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     createdAt: value['createdAt'],
     items,
     childBatches: {
-      ...(typeof value['childBatches']['stt'] === 'string' ? { stt: value['childBatches']['stt'] } : {}),
-      ...(typeof value['childBatches']['ocr'] === 'string' ? { ocr: value['childBatches']['ocr'] } : {})
+      ...(typeof value['childBatches']['media'] === 'string' ? { media: value['childBatches']['media'] } : {}),
+      ...(typeof value['childBatches']['document'] === 'string' ? { document: value['childBatches']['document'] } : {}),
+      ...(typeof value['childBatches']['x-space'] === 'string' ? { 'x-space': value['childBatches']['x-space'] } : {})
     }
   }
 }
@@ -219,6 +255,7 @@ export const readRunManifest = async (
   }
 
   const raw = await Bun.file(runPath).json() as unknown
+  assertSupportedRunOrBatchSchema(raw, runPath)
   return parseRunManifest(raw, expectedKind)
 }
 
@@ -262,6 +299,7 @@ export const readBatchManifest = async (
   }
 
   const raw = await Bun.file(batchPath).json() as unknown
+  assertSupportedRunOrBatchSchema(raw, batchPath)
   const manifest = parseBatchManifest(raw, expectedKind)
   if (!manifest) {
     return undefined
@@ -289,6 +327,7 @@ export const readExtractBatchManifest = async (
   }
 
   const raw = await Bun.file(manifestPath).json() as unknown
+  assertSupportedExtractBatchSchema(raw, manifestPath)
   const manifest = parseExtractBatchManifest(raw)
   if (!manifest) {
     return undefined

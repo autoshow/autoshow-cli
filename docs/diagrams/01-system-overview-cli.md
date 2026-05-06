@@ -83,14 +83,6 @@ src/cli/create-cli.ts
 │  │                  │  │ LLM Summary      │  │ route            │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
-│  ┌──────────────────┐                                                        │
-│  │    ocr           │                                                        │
-│  │                  │                                                        │
-│  │ Detect +         │                                                        │
-│  │ Extract only     │                                                        │
-│  │ (documents)      │                                                        │
-│  └──────────────────┘                                                        │
-│                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
 │  │     download     │  │      tts         │  │     image        │            │
 │  │                  │  │                  │  │                  │            │
@@ -178,10 +170,10 @@ src/cli/flags/
 
 Command-to-flag mapping:
   metadata    → --save + --password + batchFlags
-  stt         → transcriptionFlags + promptFlag + batchFlags + priceFlag
+  download    → downloadFlags
+  extract     → mediaFlags + extractFlags + advancedExtractFlags + batchFlags + priceFlag
   write       → mediaFlags + extractFlags + advancedExtractFlags + batchFlags
                   + ttsFlags + imageGenFlags + musicGenFlags + videoGenFlags + promptFlag
-  ocr         → extractFlags
   tts         → ttsFlags
   image       → imageGenFlags
   music       → musicGenFlags

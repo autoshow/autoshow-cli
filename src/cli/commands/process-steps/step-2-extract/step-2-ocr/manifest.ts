@@ -5,13 +5,17 @@ export const writeOcrRunManifest = async (
   outputDir: string,
   metadata: Record<string, unknown>
 ): Promise<void> => {
-  await writeRunManifest(outputDir, 'ocr', metadata)
+  await writeRunManifest(outputDir, 'extract', {
+    ...metadata,
+    extractRoute: 'document'
+  })
 }
 
 export const readOcrRunManifestEntry = async (
   outputDir: string
 ): Promise<Record<string, unknown> | undefined> => {
-  return await readRunManifestEntry(outputDir, 'ocr')
+  const metadata = await readRunManifestEntry(outputDir, 'extract')
+  return metadata?.['extractRoute'] === 'document' ? metadata : undefined
 }
 
 export const writeOcrBatchManifest = async (
@@ -19,5 +23,8 @@ export const writeOcrBatchManifest = async (
   items: BatchManifestEntry[],
   source?: Record<string, unknown>
 ): Promise<void> => {
-  await writeBatchManifest(batchDir, 'ocr', items, source)
+  await writeBatchManifest(batchDir, 'extract', items.map((item) => ({
+    ...item,
+    extractRoute: 'document'
+  })), source)
 }

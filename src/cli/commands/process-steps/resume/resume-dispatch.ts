@@ -12,23 +12,52 @@ import {
   loadConfig,
   resolveConfigPath
 } from '~/cli/commands/setup-and-utilities/config/config-loader'
-import type { RuntimeOptions } from '~/types'
+import type { BatchManifest, ExtractRoute, RunManifest, RuntimeOptions } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeHandler } from './resume-registry'
 import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import type { ResumeTarget, ResumeTargetKind } from '~/types'
 
-const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['stt', 'ocr', 'extract', 'tts', 'image', 'video', 'music'])
+const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['extract', 'tts', 'image', 'video', 'music'])
+
+const isExtractRoute = (value: unknown): value is ExtractRoute =>
+  value === 'media' || value === 'document' || value === 'x-space'
+
+const inferExtractRouteFromBatchManifest = (
+  manifest: BatchManifest
+): ExtractRoute | undefined => {
+  if (manifest.kind !== 'extract') {
+    return undefined
+  }
+
+  const routes = new Set<ExtractRoute>()
+  for (const item of manifest.items) {
+    if (isExtractRoute(item['extractRoute'])) {
+      routes.add(item['extractRoute'])
+    }
+  }
+
+  return routes.size === 1 ? [...routes][0] : undefined
+}
+
+const inferExtractRouteFromRunManifest = (
+  manifest: RunManifest
+): ExtractRoute | undefined =>
+  manifest.kind === 'extract' && isExtractRoute(manifest.metadata['extractRoute'])
+    ? manifest.metadata['extractRoute']
+    : undefined
 
 const toResumeTarget = (
   kind: string,
   scope: ResumeTarget['scope'],
   dir: string,
-  manifestPath: string
+  manifestPath: string,
+  extractRoute?: ExtractRoute | undefined
 ): ResumeTarget | undefined =>
   SUPPORTED_RESUME_KINDS.has(kind as ResumeTargetKind)
     ? {
         kind: kind as ResumeTargetKind,
+        ...(extractRoute ? { extractRoute } : {}),
         scope,
         dir,
         manifestPath
@@ -51,20 +80,32 @@ const resolveExplicitResumeTarget = async (
 
   const batchManifest = await readBatchManifest(dir)
   if (batchManifest) {
-    const target = toResumeTarget(batchManifest.manifest.kind, 'batch', dir, batchManifest.manifestPath)
+    const target = toResumeTarget(
+      batchManifest.manifest.kind,
+      'batch',
+      dir,
+      batchManifest.manifestPath,
+      inferExtractRouteFromBatchManifest(batchManifest.manifest)
+    )
     if (target) {
       return target
     }
-    throw CLIUsageError(`Resume supports only STT, OCR, TTS, image, video, and music manifests. Found "${batchManifest.manifest.kind}" at ${batchManifest.manifestPath}.`)
+    throw CLIUsageError(`Resume supports only extract, TTS, image, video, and music manifests. Found "${batchManifest.manifest.kind}" at ${batchManifest.manifestPath}.`)
   }
 
   const runManifest = await readRunManifest(dir)
   if (runManifest) {
-    const target = toResumeTarget(runManifest.kind, 'single', dir, join(dir, 'run.json'))
+    const target = toResumeTarget(
+      runManifest.kind,
+      'single',
+      dir,
+      join(dir, 'run.json'),
+      inferExtractRouteFromRunManifest(runManifest)
+    )
     if (target) {
       return target
     }
-    throw CLIUsageError(`Resume supports only STT, OCR, TTS, image, video, and music manifests. Found "${runManifest.kind}" at ${join(dir, 'run.json')}.`)
+    throw CLIUsageError(`Resume supports only extract, TTS, image, video, and music manifests. Found "${runManifest.kind}" at ${join(dir, 'run.json')}.`)
   }
 
   throw CLIUsageError(`Could not find extract-batch.json, batch.json, or run.json under ${dir}.`)
@@ -107,7 +148,13 @@ const discoverLatestResumeTarget = async (
 
     const batchManifest = await readBatchManifest(candidateDir)
     if (batchManifest) {
-      const target = toResumeTarget(batchManifest.manifest.kind, 'batch', candidateDir, batchManifest.manifestPath)
+      const target = toResumeTarget(
+        batchManifest.manifest.kind,
+        'batch',
+        candidateDir,
+        batchManifest.manifestPath,
+        inferExtractRouteFromBatchManifest(batchManifest.manifest)
+      )
       if (!target) {
         continue
       }
@@ -124,7 +171,13 @@ const discoverLatestResumeTarget = async (
       continue
     }
 
-    const target = toResumeTarget(runManifest.kind, 'single', candidateDir, join(candidateDir, 'run.json'))
+    const target = toResumeTarget(
+      runManifest.kind,
+      'single',
+      candidateDir,
+      join(candidateDir, 'run.json'),
+      inferExtractRouteFromRunManifest(runManifest)
+    )
     if (!target) {
       continue
     }
@@ -149,12 +202,20 @@ export const dispatchResume = async (
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
   const opts = buildOptsFromFlags(false, mergedFlags, doubleDash, {}, explicitFlags, Bun.argv.slice(2))
+  const resolvedOutputDirInput = typeof outputDirInput === 'string' && outputDirInput.trim().length > 0
+    ? outputDirInput
+    : doubleDash.length === 1
+      ? doubleDash[0]
+      : undefined
+  if ((!outputDirInput || outputDirInput.trim().length === 0) && doubleDash.length > 1) {
+    throw CLIUsageError(`Too many positional outputs for "resume": ${doubleDash.join(' ')}. Run: bun as help resume`)
+  }
 
-  const target = typeof outputDirInput === 'string' && outputDirInput.trim().length > 0
-    ? await resolveExplicitResumeTarget(outputDirInput)
+  const target = typeof resolvedOutputDirInput === 'string' && resolvedOutputDirInput.trim().length > 0
+    ? await resolveExplicitResumeTarget(resolvedOutputDirInput)
     : await discoverLatestResumeTarget(getOutputRoot(), opts, explicitFlags)
 
-  if (typeof outputDirInput !== 'string' || outputDirInput.trim().length === 0) {
+  if (typeof resolvedOutputDirInput !== 'string' || resolvedOutputDirInput.trim().length === 0) {
     l.write('info', `Auto-discovered resumable ${target.kind.toUpperCase()} ${target.scope === 'batch' ? 'batch' : 'output'}`)
     logLocationsTable(l, [{
       artifact: target.scope === 'batch' ? 'resumeBatch' : 'resumeOutput',

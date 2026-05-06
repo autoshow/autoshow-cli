@@ -1,7 +1,7 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
 import { readdir, rm } from 'node:fs/promises'
 import { cleanupTestOutput, runCommand, fileExists, findLatestDirectory, ensurePageImageFixture } from '../../../../test-utils/test-helpers'
-import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
+import { readRunManifest, readRunMetadata } from '../../../../test-utils/manifest-helpers'
 
 type EpubExportMetadata = {
   sourceFormat?: 'epub' | 'pdf'
@@ -80,7 +80,10 @@ test('extract PDF with default options', async () => {
   expect(await fileExists(`${outputDir}/result.json`)).toBe(false)
   expect(await fileExists(`${outputDir}/run.json`)).toBe(true)
 
-  const metadata = await readRunMetadata(outputDir) as ExtractMetadata
+  const manifest = await readRunManifest(outputDir)
+  const metadata = manifest.metadata as ExtractMetadata
+  expect(manifest.kind).toBe('extract')
+  expect(manifest.metadata['extractRoute']).toBe('document')
   expect(metadata.resolvedStep2).toMatchObject({
     route: 'ocr',
     sourceKind: 'pdf',
