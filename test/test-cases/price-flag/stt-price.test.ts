@@ -91,7 +91,7 @@ for (const model of ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'] as con
       'src/cli/create-cli.ts',
       'extract',
       STABLE_LOCAL_AUDIO_PATH,
-      '--whisper',
+      '--whisper-stt',
       model,
       '--price'
     ])

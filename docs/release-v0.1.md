@@ -385,7 +385,7 @@ Example capabilities:
 ```bash
 bun as config --show
 bun as config --openai gpt-5.4
-bun as config --whisper large-v3-turbo
+bun as config --whisper-stt large-v3-turbo
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-cents 50
 bun as config --reset

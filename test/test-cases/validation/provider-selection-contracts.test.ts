@@ -7,8 +7,7 @@ import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/v
 import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
 import {
   collectStep2ProviderSpecs,
-  getStep2ProviderSelectionFlagNames,
-  normalizeStep2ArgvAliases
+  getStep2ProviderSelectionFlagNames
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 describe('provider selection contracts', () => {
@@ -55,16 +54,6 @@ describe('provider selection contracts', () => {
       'aws-textract',
       'gcloud-docai',
       'deapi-ocr'
-    ])
-  })
-
-  test('legacy aliases normalize to canonical provider flags', () => {
-    expect(normalizeStep2ArgvAliases(['extract', 'file.mp3', '--whisper', 'base', '--tesseract'])).toEqual([
-      'extract',
-      'file.mp3',
-      '--whisper-stt',
-      'base',
-      '--tesseract-ocr'
     ])
   })
 
@@ -206,11 +195,11 @@ describe('provider selection contracts', () => {
       expect(() => collectImageTargets(opts)).toThrow(`Invalid --image-size value "${invalidSize}" for gpt-image-2`)
     }
 
-    const legacyOpts = buildOptsFromFlags(false, {
+    const fixedSizeOpts = buildOptsFromFlags(false, {
       'openai-image': ['gpt-image-1'],
       'image-size': '2048x1152'
     })
-    expect(() => collectImageTargets(legacyOpts)).toThrow('Expected auto, 1024x1024, 1536x1024, or 1024x1536')
+    expect(() => collectImageTargets(fixedSizeOpts)).toThrow('Expected auto, 1024x1024, 1536x1024, or 1024x1536')
   })
 
   test('gpt-image-2 rejects transparent background', () => {

@@ -134,7 +134,7 @@ bun as <command> --help
 bun as --version
 ```
 
-- Use `bun as extract <input> --whisper tiny`, not `bun as --whisper tiny extract <input>`.
+- Use `bun as extract <input> --whisper-stt tiny`, not `bun as --whisper-stt tiny extract <input>`.
 - Inputs can be URLs, local files, directories, `.md`/`.txt` URL lists, or prompt strings for `image`, `video`, and `music`.
 - If an input begins with `-`, end flag parsing first: `bun as write -- -myfile`.
 - If the literal input collides with a command name, use the explicit command form: `bun as metadata setup`.

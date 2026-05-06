@@ -124,8 +124,7 @@ import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/
 import {
   getStep2ProviderEntries,
   getStep2AllShortcutModelExpansions,
-  isStep2BooleanProviderSelected,
-  normalizeStep2ProviderFlagName
+  isStep2BooleanProviderSelected
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -304,17 +303,7 @@ const toCamelFlagKey = (key: string): string => {
 }
 
 const getStep2FlagLookupKeys = (key: string): string[] => {
-  const normalizedKey = normalizeStep2ProviderFlagName(key)
-  if (normalizedKey === key) {
-    return [key, toCamelFlagKey(key)]
-  }
-
-  return [
-    normalizedKey,
-    toCamelFlagKey(normalizedKey),
-    key,
-    toCamelFlagKey(key)
-  ]
+  return [key, toCamelFlagKey(key)]
 }
 
 const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
@@ -367,9 +356,7 @@ export const parseRepeatableModelFlagOccurrences = (
 
     const withoutDashes = arg.slice(2)
     const eqIdx = withoutDashes.indexOf('=')
-    const key = normalizeStep2ProviderFlagName(
-      eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx)
-    ) as RepeatableModelFlag
+    const key = (eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx)) as RepeatableModelFlag
     if (!REPEATABLE_MODEL_FLAG_SET.has(key)) {
       continue
     }
@@ -564,7 +551,7 @@ const parseDoubleDashArgs = (args: string[]): Record<string, string | boolean> =
   for (let i = 0; i < args.length; i++) {
     const arg = args[i] as string
     if (!arg.startsWith('--')) continue
-    const key = normalizeStep2ProviderFlagName(arg.slice(2))
+    const key = arg.slice(2)
     const next = args[i + 1]
     if (typeof next === 'string' && !next.startsWith('--')) {
       result[key] = next

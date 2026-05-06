@@ -28,7 +28,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 105714
+          "msPer1KChars": 77426
         }
       },
       "kitten-tts-nano": {
@@ -37,7 +37,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 24555
+          "msPer1KChars": 21251
         }
       },
       "kitten-tts-nano-0.8-int8": {
@@ -46,7 +46,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 29533
+          "msPer1KChars": 26006
         }
       }
     }
@@ -409,7 +409,7 @@
     ],
     "models": {
       "standard": {
-        "description": "Google Cloud Standard voices — cost-efficient legacy synthesis",
+        "description": "Google Cloud Standard voices — cost-efficient synthesis",
         "costPer1kCharsUSD": 0.004,
         "costPer1kCharsCents": 0.4,
         "estimation": {
@@ -418,7 +418,7 @@
         }
       },
       "wavenet": {
-        "description": "Google Cloud WaveNet voices — general-purpose legacy synthesis",
+        "description": "Google Cloud WaveNet voices — general-purpose synthesis",
         "costPer1kCharsUSD": 0.004,
         "costPer1kCharsCents": 0.4,
         "estimation": {

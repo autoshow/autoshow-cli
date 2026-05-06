@@ -110,7 +110,6 @@ const booleanProvider = (
     step: Step2Command
     modality: Step2Modality
     flagName: string
-    aliases?: readonly string[] | undefined
     targetService: string
     providerSpecProvider: string
     bootstrapProviderId: string
@@ -124,7 +123,6 @@ const booleanProvider = (
   step: entry.step,
   modality: entry.modality,
   flagName: entry.flagName,
-  aliases: entry.aliases ?? [],
   targetService: entry.targetService,
   providerSpecProvider: entry.providerSpecProvider,
   bootstrapProviderId: entry.bootstrapProviderId,
@@ -144,7 +142,6 @@ const modelProvider = (
     step: Step2Command
     modality: Step2Modality
     flagName: string
-    aliases?: readonly string[] | undefined
     targetService: string
     providerSpecProvider: string
     bootstrapProviderId: string
@@ -160,7 +157,6 @@ const modelProvider = (
   step: entry.step,
   modality: entry.modality,
   flagName: entry.flagName,
-  aliases: entry.aliases ?? [],
   targetService: entry.targetService,
   providerSpecProvider: entry.providerSpecProvider,
   bootstrapProviderId: entry.bootstrapProviderId,
@@ -182,7 +178,6 @@ const STEP2_PROVIDER_REGISTRY = [
     step: 'stt',
     modality: 'media',
     flagName: 'reverb-stt',
-    aliases: ['reverb'],
     targetService: 'reverb',
     providerSpecProvider: 'reverb',
     bootstrapProviderId: 'reverb',
@@ -190,7 +185,7 @@ const STEP2_PROVIDER_REGISTRY = [
     allShortcut: 'all-stt',
     runtimeKey: 'useReverb',
     model: 'reverb',
-    description: 'Use Reverb ASR for transcription (alias: --reverb)'
+    description: 'Use Reverb ASR for transcription'
   }),
   modelProvider({
     step: 'stt',
@@ -511,7 +506,6 @@ const STEP2_PROVIDER_REGISTRY = [
     step: 'stt',
     modality: 'media',
     flagName: 'whisper-stt',
-    aliases: ['whisper'],
     targetService: 'whisper',
     providerSpecProvider: 'whisper',
     bootstrapProviderId: 'whisper',
@@ -521,14 +515,13 @@ const STEP2_PROVIDER_REGISTRY = [
     runtimeModelKey: 'whisperModel',
     supportedModels: SUPPORTED_WHISPER_MODELS,
     validateModel: validateWhisperModel,
-    description: 'Local whisper.cpp model (free): tiny|base|small|medium|large-v3-turbo (alias: --whisper)'
+    description: 'Local whisper.cpp model (free): tiny|base|small|medium|large-v3-turbo'
   }),
 
   booleanProvider({
     step: 'ocr',
     modality: 'document',
     flagName: 'tesseract-ocr',
-    aliases: ['tesseract'],
     targetService: 'tesseract',
     providerSpecProvider: 'tesseract',
     bootstrapProviderId: 'tesseract',
@@ -536,7 +529,7 @@ const STEP2_PROVIDER_REGISTRY = [
     allShortcut: 'all-ocr',
     runtimeKey: 'useTesseract',
     model: 'tesseract',
-    description: 'Use Tesseract OCR (default local OCR engine for PDF/image; forces OCR mode for EPUB and office documents; alias: --tesseract)'
+    description: 'Use Tesseract OCR (default local OCR engine for PDF/image; forces OCR mode for EPUB and office documents)'
   }),
   booleanProvider({
     step: 'ocr',
@@ -720,9 +713,6 @@ const STEP2_PROVIDER_ENTRY_BY_FLAG = new Map<string, Step2ProviderRegistryEntry>
 
 for (const entry of STEP2_PROVIDER_REGISTRY) {
   STEP2_PROVIDER_ENTRY_BY_FLAG.set(entry.flagName, entry)
-  for (const alias of entry.aliases) {
-    STEP2_PROVIDER_ENTRY_BY_FLAG.set(alias, entry)
-  }
 }
 
 const appendProviderSpec = (
@@ -752,9 +742,6 @@ const readRuntimeValue = (
   key: keyof RuntimeOptions
 ): unknown => options[key]
 
-const canonicalizeOriginKey = (flagName: string): string =>
-  STEP2_PROVIDER_ENTRY_BY_FLAG.get(flagName)?.flagName ?? flagName
-
 const readSelectionOrigins = (
   options: Record<string, unknown>
 ): Partial<Record<string, Step2ProviderSelectionOrigin>> => {
@@ -766,7 +753,7 @@ const readSelectionOrigins = (
   const origins: Partial<Record<string, Step2ProviderSelectionOrigin>> = {}
   for (const [key, origin] of Object.entries(value)) {
     if (origin === 'default' || origin === 'explicit' || origin === 'all-shortcut') {
-      origins[canonicalizeOriginKey(key)] = origin
+      origins[key] = origin
     }
   }
   return origins
@@ -789,33 +776,6 @@ export const getStep2ProviderEntry = (
   flagName: string
 ): Step2ProviderRegistryEntry | undefined => STEP2_PROVIDER_ENTRY_BY_FLAG.get(flagName)
 
-export const normalizeStep2ProviderFlagName = (
-  flagName: string
-): string => STEP2_PROVIDER_ENTRY_BY_FLAG.get(flagName)?.flagName ?? flagName
-
-export const normalizeStep2ArgvToken = (
-  token: string
-): string => {
-  if (!token.startsWith('--') || token === '--') {
-    return token
-  }
-
-  const prefix = token.startsWith('--no-') ? '--no-' : '--'
-  const withoutPrefix = token.slice(prefix.length)
-  const eqIdx = withoutPrefix.indexOf('=')
-  const flagName = eqIdx === -1 ? withoutPrefix : withoutPrefix.slice(0, eqIdx)
-  const suffix = eqIdx === -1 ? '' : withoutPrefix.slice(eqIdx)
-  const normalizedFlagName = normalizeStep2ProviderFlagName(flagName)
-
-  return normalizedFlagName === flagName
-    ? token
-    : `${prefix}${normalizedFlagName}${suffix}`
-}
-
-export const normalizeStep2ArgvAliases = (
-  argv: string[]
-): string[] => argv.map(normalizeStep2ArgvToken)
-
 export const getStep2ProviderFlags = (
   step: Step2Command
 ): ClercFlagsDefinition =>
@@ -824,43 +784,32 @@ export const getStep2ProviderFlags = (
   )
 
 export const getStep2ProviderSelectionFlagNames = (
-  step: Step2Command,
-  options: { includeAliases?: boolean } = {}
+  step: Step2Command
 ): string[] => {
   const flags = getStep2ProviderEntries(step)
     .filter((entry) => entry.resumeSelectable)
-    .flatMap((entry) => options.includeAliases ? [entry.flagName, ...entry.aliases] : [entry.flagName])
+    .map((entry) => entry.flagName)
 
   return [...new Set(flags)]
 }
 
-export const getStep2ProviderConfigPathEntries = (
-  options: { includeAliases?: boolean } = {}
-): Step2ProviderConfigPathEntry[] =>
-  STEP2_PROVIDER_REGISTRY.flatMap((entry) => {
-    const names = options.includeAliases ? [entry.flagName, ...entry.aliases] : [entry.flagName]
-    return names.map((flagName) => ({
-      flagName,
-      configPath: entry.configPath
-    }))
-  })
+export const getStep2ProviderConfigPathEntries = (): Step2ProviderConfigPathEntry[] =>
+  STEP2_PROVIDER_REGISTRY.map((entry) => ({
+    flagName: entry.flagName,
+    configPath: entry.configPath
+  }))
 
-export const getStep2AllShortcutModelExpansions = (
-  options: { includeAliases?: boolean } = {}
-): Record<string, { shortcut: Step2ShortcutFlag, supported: readonly string[] }> =>
+export const getStep2AllShortcutModelExpansions = (): Record<string, { shortcut: Step2ShortcutFlag, supported: readonly string[] }> =>
   Object.fromEntries(
     STEP2_PROVIDER_REGISTRY
       .filter((entry) => entry.selection.type === 'models' && entry.allShortcut !== undefined)
-      .flatMap((entry) => {
-        const names = options.includeAliases ? [entry.flagName, ...entry.aliases] : [entry.flagName]
-        return names.map((flagName) => [
-          flagName,
-          {
-            shortcut: entry.allShortcut as Step2ShortcutFlag,
-            supported: (entry.selection as Step2ModelProviderRegistryEntry['selection']).supportedModels
-          }
-        ] as const)
-      })
+      .map((entry) => [
+        entry.flagName,
+        {
+          shortcut: entry.allShortcut as Step2ShortcutFlag,
+          supported: (entry.selection as Step2ModelProviderRegistryEntry['selection']).supportedModels
+        }
+      ] as const)
   )
 
 export const isStep2BooleanProviderSelected = (
@@ -873,10 +822,7 @@ export const isStep2BooleanProviderSelected = (
     return false
   }
 
-  if (
-    flags[entry.flagName] === true
-    || entry.aliases.some((alias) => flags[alias] === true)
-  ) {
+  if (flags[entry.flagName] === true) {
     return true
   }
 

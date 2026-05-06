@@ -268,7 +268,7 @@ test('extract image with --ocrmypdf', async () => {
   expect(metadata.step2?.totalPages).toBe(1)
 })
 
-test('extract image with explicit --tesseract matches the default local OCR path', async () => {
+test('extract image with explicit --tesseract-ocr matches the default local OCR path', async () => {
   await ensurePageImageFixture(imageInput)
   await cleanupTestOutput('1-document')
 

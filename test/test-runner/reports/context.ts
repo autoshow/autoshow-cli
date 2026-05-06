@@ -3,13 +3,7 @@ import { basename, resolve } from 'node:path'
 import type { ParsedCommandMetric, ParsedJunitCase, TestRunArtifacts } from '~/types'
 import type { MetricContext, ServiceModelPair, TestContext } from './types'
 
-const COMMAND_KIND_NAMES = new Set(['setup', 'sample', 'download', 'stt', 'transcribe', 'ocr', 'extract', 'write', 'tts', 'image', 'video', 'music'])
-
-const normalizeMetricCommandKind = (kind: string): string => {
-  if (kind === 'stt') return 'transcribe'
-  if (kind === 'ocr') return 'extract'
-  return kind
-}
+const COMMAND_KIND_NAMES = new Set(['setup', 'download', 'transcribe', 'extract', 'write', 'tts', 'image', 'video', 'music'])
 
 const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--openai': { service: 'openai', kind: 'write' },
@@ -21,7 +15,6 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--kimi': { service: 'kimi', kind: 'write' },
   '--llama': { service: 'llama.cpp', kind: 'write' },
   '--whisper-stt': { service: 'whisper', kind: 'transcribe' },
-  '--whisper': { service: 'whisper', kind: 'transcribe' },
   '--reverb-stt': { service: 'reverb', kind: 'transcribe' },
   '--tesseract-ocr': { service: 'tesseract', kind: 'extract' },
   '--gcloud-stt': { service: 'gcloud', kind: 'transcribe' },
@@ -173,7 +166,7 @@ export const isControlE2ETest = (name: string): boolean => {
 const parseMetricCommandKind = (metric: ParsedCommandMetric): string | null => {
   const subcommand = metric.args[1]
   if (subcommand && COMMAND_KIND_NAMES.has(subcommand)) {
-    return normalizeMetricCommandKind(subcommand)
+    return subcommand
   }
 
   if (metric.args.length > 1) {

@@ -249,26 +249,6 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   return files
 }
 
-const TRANSCRIBE_UNSUPPORTED_LLM_FLAGS = ['openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi', 'llama', 'mistral'] as const
-const hasTranscribeUnsupportedLLMFlags = (flags: Record<string, unknown>, doubleDashArgs: string[] = []): boolean => {
-  const inParsedFlags = TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.some((key) => flags[key] !== undefined)
-  if (inParsedFlags) {
-    return true
-  }
-
-  for (const token of doubleDashArgs) {
-    if (!token.startsWith('--')) {
-      continue
-    }
-    const key = token.slice(2)
-    if (TRANSCRIBE_UNSUPPORTED_LLM_FLAGS.includes(key as typeof TRANSCRIBE_UNSUPPORTED_LLM_FLAGS[number])) {
-      return true
-    }
-  }
-
-  return false
-}
-
 const validateWriteStep2ProviderSelection = (command: ProcessCommand, opts: RuntimeOptions): void => {
   if (command !== 'write') {
     return
@@ -816,10 +796,6 @@ export const handleProcessTarget = async (
   doubleDash: string[] = []
 ): Promise<void> => {
   const displayCommand = canonicalizeProcessCommand(command)
-
-  if ((isSttCommand(command) || isExtractCommand(command)) && hasTranscribeUnsupportedLLMFlags(rawFlags, doubleDash)) {
-    throw CLIUsageError(`LLM provider flags are not supported with "${displayCommand}" (--openai, --groq, --gemini, --anthropic, --minimax, --grok, --glm, --kimi, --llama, --mistral). For Mistral STT, use --mistral-stt <model>.`)
-  }
 
   const configPathOverride = typeof rawFlags['config-path'] === 'string' ? rawFlags['config-path'] : undefined
   const resolvedConfigPath = await resolveConfigPath(configPathOverride)

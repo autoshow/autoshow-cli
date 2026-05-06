@@ -7,10 +7,8 @@ import {
   parseRepeatableModelFlagOccurrences
 } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import {
-  getStep2ProviderEntry,
   getStep2ProviderConfigPathEntries,
-  getStep2ProviderSelectionFlagNames,
-  normalizeStep2ProviderFlagName
+  getStep2ProviderSelectionFlagNames
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
@@ -22,7 +20,7 @@ const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
 const REPEATABLE_CONFIG_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
 const STEP2_PROVIDER_CONFIG_PATHS = Object.fromEntries(
-  getStep2ProviderConfigPathEntries({ includeAliases: true }).map(({ flagName, configPath }) => [flagName, [...configPath]])
+  getStep2ProviderConfigPathEntries().map(({ flagName, configPath }) => [flagName, [...configPath]])
 ) as Record<string, string[]>
 
 const readNestedValue = (
@@ -56,11 +54,11 @@ export const extractExplicitFlags = (argv: string[]): Set<string> => {
     if (!token.startsWith('--')) continue
     const withoutDashes = token.slice(2)
     const eqIdx = withoutDashes.indexOf('=')
-    const key = normalizeStep2ProviderFlagName(eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx))
+    const key = eqIdx === -1 ? withoutDashes : withoutDashes.slice(0, eqIdx)
     if (!key) continue
     explicit.add(key)
     if (key.startsWith('no-') && key.length > 3) {
-      explicit.add(normalizeStep2ProviderFlagName(key.slice(3)))
+      explicit.add(key.slice(3))
     }
   }
   return explicit
@@ -394,22 +392,7 @@ const readConfigFlagValue = (
   flags: Record<string, unknown>,
   flagName: string
 ): unknown => {
-  if (flagName in flags) {
-    return flags[flagName]
-  }
-
-  const entry = getStep2ProviderEntry(flagName)
-  if (!entry) {
-    return undefined
-  }
-
-  for (const alias of entry.aliases) {
-    if (alias in flags) {
-      return flags[alias]
-    }
-  }
-
-  return undefined
+  return flags[flagName]
 }
 
 const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {

@@ -161,8 +161,8 @@ export const setupReverb = async (): Promise<void> => {
     l.write('success', 'Reverb ASR Setup', {
       category: 'command',
       humanTable: createHumanTable([
-        { status: 'complete', command: 'bun as "URL" --reverb' },
-        { status: 'complete', command: 'bun as "URL" --reverb --reverb-verbatimicity 0.5' }
+        { status: 'complete', command: 'bun as extract "URL" --reverb-stt' },
+        { status: 'complete', command: 'bun as extract "URL" --reverb-stt --reverb-verbatimicity 0.5' }
       ], ['status', 'command'])
     })
   }

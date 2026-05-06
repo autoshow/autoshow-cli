@@ -13,18 +13,11 @@ import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-m
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
-import { normalizeStep2ArgvAliases } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { linksCommand } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import { benchmarkCommand } from '~/cli/commands/setup-and-utilities/benchmark/define-benchmark-command'
 import * as l from '~/utils/logger'
 import { runWithLogContext, reconfigureLogger } from '~/utils/logger'
-import {
-  knownCommands,
-  formatInput,
-  validateSttFlagCompatibility
-} from '~/cli/argv-normalize'
-import { maybeThrowDeprecatedProcessCommand } from '~/cli/commands/process-steps/step-2-extract/extract-migration'
 import type { HelpCommandGroupKey } from '~/types'
 import {
   colorText,
@@ -291,9 +284,7 @@ const createCli = () => {
 }
 
 const main = async (): Promise<void> => {
-  const argv = normalizeStep2ArgvAliases(Bun.argv.slice(2))
-  maybeThrowDeprecatedProcessCommand(argv)
-  validateSttFlagCompatibility(argv)
+  const argv = Bun.argv.slice(2)
   const parseCli = async (parseArgv: string[]): Promise<void> => {
     if (shouldPatchHelpConsole(parseArgv)) {
       await withPatchedHelpConsole(async () => {
@@ -319,20 +310,6 @@ const main = async (): Promise<void> => {
         await parseCli(['--version'])
         return
       }
-    }
-
-    if (first === 'lyrics') {
-      throw CLIUsageError('Unknown command "lyrics"')
-    }
-
-    if (first !== '--' && first!.startsWith('-')) {
-      const maybeCommand = rest.find(token => knownCommands.has(token))
-      const canonicalCommand = maybeCommand && knownCommands.has(maybeCommand) ? maybeCommand : null
-      if (canonicalCommand) {
-        throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as ${canonicalCommand} <input> [flags]`)
-      }
-
-      throw CLIUsageError(`Unsupported argument order: "${formatInput(argv)}". Use: bun as <command> [parameters] [flags]`)
     }
   }
 

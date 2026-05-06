@@ -677,7 +677,7 @@ describe('price mode contracts', () => {
       processingTimeMs: 20_000
     })
 
-    const legacyMetadata: ExtractionMetadata = {
+    const actualMetadata: ExtractionMetadata = {
       extractionMethod: 'pdf+deepinfra-ocr',
       totalPages: 2,
       ocrPages: 2,
@@ -687,11 +687,12 @@ describe('price mode contracts', () => {
       languages: 'eng',
       tokenEstimate: 10_000,
       ocrService: 'deepinfra',
+      ocrModel: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
       promptTokens: 8000,
       completionTokens: 2000
     }
-    const actual = computeActualCosts({ step2: legacyMetadata })
-    const actualTiming = computeActualProcessingTimes({ step2: legacyMetadata })
+    const actual = computeActualCosts({ step2: actualMetadata })
+    const actualTiming = computeActualProcessingTimes({ step2: actualMetadata })
 
     expect(actual.steps[0]).toMatchObject({
       step: 'extract',

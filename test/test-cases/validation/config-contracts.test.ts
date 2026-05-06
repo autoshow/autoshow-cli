@@ -568,8 +568,8 @@ describe('config contracts', () => {
     })
   })
 
-  test('legacy schema shapes are rejected', async () => {
-    const legacyScalarConfig = await writeTempConfig({
+  test('removed schema shapes are rejected', async () => {
+    const scalarConfig = await writeTempConfig({
       version: 2,
       defaults: {
         llm: {
@@ -577,14 +577,14 @@ describe('config contracts', () => {
         }
       }
     })
-    const legacyPricingConfig = await writeTempConfig({
+    const pricingConfig = await writeTempConfig({
       version: 2,
       pricing: {
         maxUsd: 1
       }
     })
 
-    await expect(loadConfig(legacyScalarConfig)).rejects.toThrow('autoshow config')
-    await expect(loadConfig(legacyPricingConfig)).rejects.toThrow('autoshow config')
+    await expect(loadConfig(scalarConfig)).rejects.toThrow('autoshow config')
+    await expect(loadConfig(pricingConfig)).rejects.toThrow('autoshow config')
   })
 })

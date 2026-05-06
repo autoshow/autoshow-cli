@@ -41,7 +41,7 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
 
-test('media cache lock reaps stale legacy directory locks', async () => {
+test('media cache lock reaps stale ownerless directory locks', async () => {
   const cacheDir = await mkdtemp(join(tmpdir(), 'autoshow-cache-lock-'))
   tempDirs.push(cacheDir)
 
@@ -50,7 +50,7 @@ test('media cache lock reaps stale legacy directory locks', async () => {
     AUTOSHOW_MEDIA_CACHE_LOCK_STALE_MS: '10000',
     AUTOSHOW_MEDIA_CACHE_LOCK_WAIT_MS: '10000'
   }, async () => {
-    const cacheKey = 'stale-legacy-lock'
+    const cacheKey = 'stale-ownerless-lock'
     const lockDir = join(cacheDir, 'media', cacheKey, '.lock')
     await mkdir(lockDir, { recursive: true })
 

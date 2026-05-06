@@ -14,26 +14,22 @@ test('unknown command exits 2', async () => {
   await expectUsageExit(['definitely-not-a-command'], 'Unknown command "definitely-not-a-command"')
 })
 
-test('removed lyrics command exits 2', async () => {
-  await expectUsageExit(['lyrics', '--audio', STABLE_LOCAL_AUDIO_PATH], 'Unknown command "lyrics"')
+test('removed lyrics command uses generic unknown-command handling', async () => {
+  await expectUsageExit(['lyrics'], 'Unknown command "lyrics"')
 })
 
 test('unknown flag exits 2', async () => {
   await expectUsageExit(['write', STABLE_LOCAL_AUDIO_PATH, '--structured'], 'Unexpected flag: structured')
 })
 
-test('deprecated step-2 command names exit 2 with migration guidance', async () => {
+test('removed step-2 command names use generic unknown-command handling', async () => {
   for (const command of ['stt', 'ocr'] as const) {
-    await expectUsageExit([command, STABLE_LOCAL_AUDIO_PATH], `The "${command}" command has been replaced by "extract"`)
+    await expectUsageExit([command, STABLE_LOCAL_AUDIO_PATH], `Unknown command "${command}`)
   }
 })
 
-test('legacy argument order exits 2', async () => {
-  await expectUsageExit(['--help', 'metadata'], 'Unsupported argument order')
-})
-
-test('extract rejects write LLM provider flags', async () => {
-  await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--glm'], 'LLM provider flags are not supported with "extract"')
+test('extract rejects write LLM provider flags as unknown flags', async () => {
+  await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--glm'], 'Unexpected flag: glm')
 })
 
 test('music lyric-video mode rejects missing audio or batch', async () => {

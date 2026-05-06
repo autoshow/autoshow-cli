@@ -5,7 +5,6 @@ import {
   getMusicModelMeta,
   getVideoModelMeta
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import { DEFAULT_DEEPINFRA_OCR_MODEL } from '~/cli/commands/setup-and-utilities/models/model-options'
 import {
   computeActualAnthropicOcrCost,
   computeActualDeepinfraOcrCost,
@@ -64,114 +63,14 @@ const resolveExtractionProviderModel = (
       model: 'glm-reader'
     }
   }
-  if (metadata.ocrService === 'glm') {
+
+  if (typeof metadata.ocrService === 'string' && typeof metadata.ocrModel === 'string') {
     return {
-      provider: 'glm',
-      model: metadata.ocrModel ?? 'glm-ocr'
+      provider: metadata.ocrService,
+      model: metadata.ocrModel
     }
   }
-  if (metadata.ocrService === 'kimi') {
-    return {
-      provider: 'kimi',
-      model: metadata.ocrModel ?? 'kimi-k2.6'
-    }
-  }
-  if (metadata.ocrService === 'mistral') {
-    return {
-      provider: 'mistral',
-      model: metadata.ocrModel ?? 'mistral-ocr'
-    }
-  }
-  if (metadata.ocrService === 'openai') {
-    return {
-      provider: 'openai',
-      model: metadata.ocrModel ?? 'gpt-5.4-nano'
-    }
-  }
-  if (metadata.ocrService === 'anthropic') {
-    return {
-      provider: 'anthropic',
-      model: metadata.ocrModel ?? 'claude-haiku-4-5'
-    }
-  }
-  if (metadata.ocrService === 'gemini') {
-    return {
-      provider: 'gemini',
-      model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
-    }
-  }
-  if (metadata.ocrService === 'deepinfra') {
-    return {
-      provider: 'deepinfra',
-      model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL
-    }
-  }
-  if (metadata.ocrService === 'deapi') {
-    return {
-      provider: 'deapi',
-      model: metadata.ocrModel ?? 'Nanonets_Ocr_S_F16'
-    }
-  }
-  if (metadata.extractionMethod.includes('mistral-ocr')) {
-    return {
-      provider: 'mistral',
-      model: metadata.ocrModel ?? 'mistral-ocr'
-    }
-  }
-  if (metadata.extractionMethod.includes('glm-ocr')) {
-    return {
-      provider: 'glm',
-      model: metadata.ocrModel ?? 'glm-ocr'
-    }
-  }
-  if (metadata.extractionMethod.includes('kimi-ocr')) {
-    return {
-      provider: 'kimi',
-      model: metadata.ocrModel ?? 'kimi-k2.6'
-    }
-  }
-  if (metadata.extractionMethod.includes('openai-ocr')) {
-    return {
-      provider: 'openai',
-      model: metadata.ocrModel ?? 'gpt-5.4-nano'
-    }
-  }
-  if (metadata.extractionMethod.includes('anthropic-ocr')) {
-    return {
-      provider: 'anthropic',
-      model: metadata.ocrModel ?? 'claude-haiku-4-5'
-    }
-  }
-  if (metadata.extractionMethod.includes('gemini-ocr')) {
-    return {
-      provider: 'gemini',
-      model: metadata.ocrModel ?? 'gemini-3.1-flash-lite-preview'
-    }
-  }
-  if (metadata.extractionMethod.includes('deepinfra-ocr')) {
-    return {
-      provider: 'deepinfra',
-      model: metadata.ocrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL
-    }
-  }
-  if (metadata.ocrService === 'gcloud-docai' || metadata.extractionMethod.includes('gcloud-docai')) {
-    return {
-      provider: 'gcloud-docai',
-      model: metadata.ocrModel ?? 'ocr'
-    }
-  }
-  if (metadata.ocrService === 'aws-textract' || metadata.extractionMethod.includes('aws-textract')) {
-    return {
-      provider: 'aws-textract',
-      model: metadata.ocrModel ?? 'detect-text'
-    }
-  }
-  if (metadata.extractionMethod.includes('deapi-ocr')) {
-    return {
-      provider: 'deapi',
-      model: metadata.ocrModel ?? 'Nanonets_Ocr_S_F16'
-    }
-  }
+
   if (metadata.extractionMethod.includes('paddle-ocr')) {
     return {
       provider: 'paddle-ocr',
@@ -367,7 +266,6 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         completionTokens
       })
     } else if (provider === 'gcloud-docai') {
-      const model = input.step2.ocrModel ?? 'ocr'
       const extractPricing = getExtractPricing('gcloud-docai', model)
       const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
       const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
@@ -380,7 +278,6 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         inputValue: input.step2.totalPages,
       })
     } else if (provider === 'aws-textract') {
-      const model = input.step2.ocrModel ?? 'detect-text'
       const extractPricing = getExtractPricing('aws-textract', model)
       const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
       const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents

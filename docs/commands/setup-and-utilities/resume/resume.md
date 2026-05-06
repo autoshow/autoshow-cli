@@ -130,8 +130,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 
 | Flag | Description |
 |------|-------------|
-| `--whisper <model>` | Select one or more local Whisper models |
-| `--reverb` | Use Reverb instead of Whisper |
+| `--whisper-stt <model>` | Select one or more local Whisper models |
+| `--reverb-stt` | Use Reverb instead of Whisper |
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
 | `--gcloud-stt <model>` | Select one or more Google Cloud STT models |
 | `--aws-stt <model>` | Select one or more AWS Transcribe models |
@@ -170,7 +170,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--lang <codes>` | Tesseract language codes such as `eng` or `eng+fra` |
 | `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--password <value>` | Password for encrypted PDFs |
-| `--tesseract` | Use Tesseract explicitly |
+| `--tesseract-ocr` | Use Tesseract explicitly |
 | `--ocrmypdf` | Use OCRmyPDF |
 | `--paddle-ocr` | Use PaddleOCR |
 | `--mistral-ocr <model>` | Use Mistral OCR; omit the value to use the cheapest supported model |

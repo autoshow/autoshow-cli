@@ -4,15 +4,15 @@ Complete trace of a real CLI command from input to output, plus environment vari
 
 ## Outline
 
-- [Example: `bun as write "https://youtube.com/watch?v=abc123" --whisper small --llama`](#example-bun-as-write-httpsyoutubecomwatchvabc123---whisper-small---llama)
+- [Example: `bun as write "https://youtube.com/watch?v=abc123" --whisper-stt small --llama`](#example-bun-as-write-httpsyoutubecomwatchvabc123---whisper-stt-small---llama)
 - [Environment Variables](#environment-variables)
 
-## Example: `bun as write "https://youtube.com/watch?v=abc123" --whisper small --llama`
+## Example: `bun as write "https://youtube.com/watch?v=abc123" --whisper-stt small --llama`
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │                                                                                     │
-│   USER: bun as write "https://youtube.com/watch?v=abc123" --whisper small --llama   │
+│   USER: bun as write "https://youtube.com/watch?v=abc123" --whisper-stt small --llama   │
 │                                                                                     │
 └───────────────────────────────────────────┬─────────────────────────────────────────┘
                                             |
@@ -20,7 +20,6 @@ Complete trace of a real CLI command from input to output, plus environment vari
     |
     v
   create-cli.ts
-    |  normalizeAndGuardArgv()
     |  parse → writeCommand
     v
   commands.ts

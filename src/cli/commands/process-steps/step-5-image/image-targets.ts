@@ -38,7 +38,7 @@ const normalizeOpenAIImageExtension = (format: string | undefined): string => {
   return format ?? 'png'
 }
 
-const OPENAI_LEGACY_IMAGE_SIZES = new Set(['auto', '1024x1024', '1536x1024', '1024x1536'])
+const OPENAI_FIXED_IMAGE_SIZES = new Set(['auto', '1024x1024', '1536x1024', '1024x1536'])
 
 const parseImageDimensions = (size: string): { width: number, height: number } | undefined => {
   const match = size.match(/^(\d+)x(\d+)$/i)
@@ -79,8 +79,8 @@ const validateGptImage2Size = (size: string | undefined): void => {
   }
 }
 
-const validateLegacyOpenAIImageSize = (model: OpenAIImageModel, size: string | undefined): void => {
-  if (size === undefined || OPENAI_LEGACY_IMAGE_SIZES.has(size.toLowerCase())) {
+const validateFixedOpenAIImageSize = (model: OpenAIImageModel, size: string | undefined): void => {
+  if (size === undefined || OPENAI_FIXED_IMAGE_SIZES.has(size.toLowerCase())) {
     return
   }
 
@@ -99,7 +99,7 @@ export const validateOpenAIImageOptions = (
     return
   }
 
-  validateLegacyOpenAIImageSize(model, options.imageSize)
+  validateFixedOpenAIImageSize(model, options.imageSize)
 }
 
 export const getExpectedImageCount = (

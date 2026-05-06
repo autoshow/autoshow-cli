@@ -50,12 +50,10 @@ src/cli/create-cli.ts
          |  Bun.argv
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  validateSttFlagCompatibility()                                              │
-│  - Blocks LLM provider flags on `stt`                                        │
 │  rejectUnexpectedFlags()                                                     │
 │  - Fails unknown flags before command execution                              │
-│  validateArgumentOrder()                                                     │
-│  - Rejects flag-first invocation order such as "bun as --openai ... write"   │
+│  routeCommand()                                                              │
+│  - Dispatches command-first invocations to the matching handler              │
 └──────────────────────────────────────────────────────────────────────────────┘
          |
          v
@@ -126,8 +124,8 @@ src/cli/flags/
 
 ┌─────────────────────────────────────────────────────────────┐
 │  transcriptionFlags (part of mediaFlags)                   │
-│  ├── --whisper MODEL     tiny|base|small|medium|large-v3|...│
-│  ├── --reverb            Use Reverb ASR                    │
+│  ├── --whisper-stt MODEL     tiny|base|small|medium|large-v3|...│
+│  ├── --reverb-stt            Use Reverb ASR                    │
 │  ├── --reverb-verbatimicity  0.0-1.0                       │
 │  ├── --elevenlabs-stt MODEL  ElevenLabs Scribe STT         │
 │  ├── --groq-stt MODEL    Groq Whisper STT (API)            │

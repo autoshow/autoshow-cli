@@ -176,7 +176,7 @@ describe('prompt loader contracts', () => {
 
       const oldEnvelopeValidation = parseAndValidateStructured(
         schema.schema,
-        '{ "content": "Legacy freeform text." }'
+        '{ "content": "Removed envelope text." }'
       )
       expect(oldEnvelopeValidation.success).toBe(false)
 

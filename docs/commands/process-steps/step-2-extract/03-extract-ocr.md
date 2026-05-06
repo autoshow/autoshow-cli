@@ -80,8 +80,8 @@ bun as setup --gcloud
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--kimi-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deepinfra-ocr`, `--aws-textract`, `--gcloud-docai`, `--deapi-ocr` |
-| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle-ocr`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
+| PDF | `mutool+tesseract` | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--kimi-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deepinfra-ocr`, `--aws-textract`, `--gcloud-docai`, `--deapi-ocr` |
+| EPUB | cleaned native extraction (`epub-text`) | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML text extraction | OCR flags are ignored with a warning |
 | RTF | native RTF text extraction | OCR flags are ignored with a warning |
@@ -168,13 +168,13 @@ bun as extract input/examples/document/3-document.pdf --chapters --pdf-chapter-m
 
 | Option | Value |
 |--------|-------|
-| Selector | default PDF/image path, or `--tesseract` |
+| Selector | default PDF/image path, or `--tesseract-ocr` |
 | Language | `--lang <codes>` such as `eng` or `eng+fra` |
 | Tuning | `--psm <n>`, `--oem <n>`, `--page-separator <text>`, `--preserve-spaces`, `--rotate <degrees>` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --tesseract
-bun as extract input/examples/document/1-document.pdf --tesseract --lang eng+fra --dpi 300
+bun as extract input/examples/document/1-document.pdf --tesseract-ocr
+bun as extract input/examples/document/1-document.pdf --tesseract-ocr --lang eng+fra --dpi 300
 ```
 
 Tesseract tuning flags work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md). Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.

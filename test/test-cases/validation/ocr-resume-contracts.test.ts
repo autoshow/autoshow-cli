@@ -78,28 +78,6 @@ describe('OCR resume contracts', () => {
     ])
   })
 
-  test('legacy Paddle log-only failures remain resumable', () => {
-    const entry = {
-      requestedProviders: requestedTargets,
-      missingProviders: [paddleTarget, anthropicTarget],
-      providerStates: [
-        providerState(tesseractTarget, 'succeeded'),
-        {
-          ...providerState(paddleTarget, 'failed', false),
-          lastError: {
-            message: 'Checking connectivity to the model hosters\nCreating model: PP-OCRv5\nResized image size exceeds max_side_limit',
-            retryable: false
-          }
-        },
-        providerState(anthropicTarget, 'failed', false)
-      ]
-    }
-
-    expect(buildMissingTargetsFromEntry(entry, requestedTargets)).toEqual([
-      paddleTarget
-    ])
-  })
-
   test('content filter failures are classified as non-retryable', () => {
     const failure = classifyOcrProviderFailure(new Error(
       '400 {"type":"error","error":{"type":"invalid_request_error","message":"Output blocked by content filtering policy"}}'
@@ -159,13 +137,13 @@ describe('OCR resume contracts', () => {
     ].join('\n'))).toBe('{"text":"hello","confidence":0.9}')
   })
 
-  test('Paddle log-only failures are ANSI-stripped and retryable', () => {
+  test('Paddle log-only failures are ANSI-stripped without retry override', () => {
     const failure = classifyOcrProviderFailure(new Error(
       'PaddleOCR exited with code 1 for page.png.\n\u001B[31mChecking connectivity to the model hosters\u001B[0m\nCreating model: PP-OCRv5\nResized image size exceeds max_side_limit'
     ))
 
     expect(failure.message).not.toContain('\u001B[')
-    expect(failure.retryable).toBe(true)
+    expect(failure.retryable).toBe(false)
   })
 
   test('Paddle signal failures include signal context and stripped details', () => {

@@ -33,9 +33,7 @@ type ProviderErrorLike = Error & {
 
 const CONTENT_POLICY_PATTERN = /content (?:filter|filtering|policy)|blocked by content|safety|policy violation|invalid_request_error/i
 const TRANSIENT_MESSAGE_PATTERN = /timed out|timeout|temporar(?:y|ily)|network|connection|socket|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|rate limit|too many requests/i
-const LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN = /Checking connectivity to the model hosters|Creating model:|Model files already exist|Resized image size/i
 const PADDLE_NATIVE_CRASH_PATTERN = /PaddleOCR .*exited with code \d+ \((?:SIGBUS|SIGKILL|SIGSEGV)\)|PaddleOCR failed .*after attempts: .*?(?:SIGBUS|SIGKILL|SIGSEGV)/i
-const LOCAL_ERROR_PATTERN = /Traceback|Exception|Error:|No such file|not found|failed/i
 const ANSI_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g
 const RETRY_CLASSES = new Set<RetryClass>([
   'setup_download',
@@ -96,8 +94,6 @@ export const classifyOcrProviderFailure = (
   } else if (CONTENT_POLICY_PATTERN.test(message)) {
     retryable = false
   } else if (PADDLE_NATIVE_CRASH_PATTERN.test(message)) {
-    retryable = true
-  } else if (LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN.test(message) && !LOCAL_ERROR_PATTERN.test(message)) {
     retryable = true
   } else if (typeof status === 'number' || retryClass) {
     const normalizedRetryClass = typeof retryClass === 'string' && RETRY_CLASSES.has(retryClass as RetryClass)
@@ -297,10 +293,7 @@ const isResumableProviderState = (
   if (state.retryable === true || state.lastError?.retryable === true) {
     return true
   }
-  const message = state.lastError?.message ?? ''
-  return state.service === 'paddle-ocr'
-    && LEGACY_PADDLE_LOG_ONLY_FAILURE_PATTERN.test(message)
-    && !LOCAL_ERROR_PATTERN.test(message)
+  return false
 }
 
 export const readExistingOcrRun = async (

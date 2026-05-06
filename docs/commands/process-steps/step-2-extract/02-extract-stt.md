@@ -130,7 +130,7 @@ bun as setup --step reverb
 bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
 
 # Split a long file before transcription
-bun as extract input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
+bun as extract input/examples/video/2-video.mp4 --whisper-stt large-v3-turbo --split
 
 # Process a whole YouTube channel batch with caption-first routing
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
@@ -214,13 +214,13 @@ These providers are documented as single-speaker or non-diarized in the CLI.
 
 | Option | Value |
 |--------|-------|
-| Selector | default, or `--whisper <model>` |
+| Selector | default, or `--whisper-stt <model>` |
 | Models | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
 | Runtime | Local `whisper.cpp` |
 
 ```bash
 bun as extract input/examples/audio/1-audio.mp3
-bun as extract input/examples/audio/1-audio.mp3 --whisper large-v3-turbo
+bun as extract input/examples/audio/1-audio.mp3 --whisper-stt large-v3-turbo
 ```
 
 ### Groq
@@ -323,12 +323,12 @@ These engines either support diarization directly or AutoShow enables diarizatio
 
 | Option | Value |
 |--------|-------|
-| Selector | `--reverb` |
+| Selector | `--reverb-stt` |
 | Style | `--reverb-verbatimicity <0-1>` |
 | Runtime | Local diarized transcription |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
+bun as extract input/examples/audio/1-audio.mp3 --reverb-stt --reverb-verbatimicity 0.5
 ```
 
 ### Grok STT

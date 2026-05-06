@@ -25,7 +25,7 @@ budgetedTest('transcribe-whisper-large-v3-turbo', 'whisper large-v3-turbo model 
 
   const testName = 'whisper large-v3-turbo model transcribes local audio'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'large-v3-turbo'],
+    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--whisper-stt', 'large-v3-turbo'],
     { testName }
   )
 
@@ -64,7 +64,7 @@ budgetedTest('transcribe-whisper-tiny-split', 'whisper tiny with split processes
 
   const testName = 'whisper tiny with split processes video input'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', videoInputPath, '--whisper', 'tiny', '--split'],
+    ['src/cli/create-cli.ts', 'extract', videoInputPath, '--whisper-stt', 'tiny', '--split'],
     { testName }
   )
 

@@ -53,7 +53,7 @@ src/cli/commands/process-steps/process-video.ts
 │  resolveSttEngine() - picks exactly one engine:                              │
 │                                                                              │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐│
-│  │ --reverb   │ │--elevenlabs│ │--groq/grok │ │--deepgram- │ │--mistral-  │ │--assemblyai- ││
+│  │ --reverb-stt   │ │--elevenlabs│ │--groq/grok │ │--deepgram- │ │--mistral-  │ │--assemblyai- ││
 │  │ Reverb ASR │ │-stt        │ │ Groq       │ │stt         │ │stt         │ │stt           ││
 │  │ (local)    │ │ ElevenLabs │ │ STT APIs   │ │ Deepgram   │ │ Mistral    │ │ AssemblyAI   ││
 │  │ diarization│ │ Scribe(API)│ │ (API)      │ │ STT (API)  │ │ STT (API)  │ │ STT (API)    ││
@@ -64,7 +64,7 @@ src/cli/commands/process-steps/process-video.ts
 │        └───────────────┴──────────────┴──────────────┴──────────────┴────────────────┘       │
 │                                    │                                         │
 │           (no engine flag) → Whisper.cpp (local binary)                      │
-│           --whisper MODEL: tiny|base|small|medium|large-v3-turbo|            │
+│           --whisper-stt MODEL: tiny|base|small|medium|large-v3-turbo|            │
 │                                                                              │
 │           --split: split audio into 10-min chunks, transcribe each           │
 │                                    │                                         │

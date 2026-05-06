@@ -58,7 +58,6 @@ export type Step2ProviderRegistryEntryBase = {
   step: Step2Command
   modality: Step2Modality
   flagName: string
-  aliases: readonly string[]
   targetService: string
   providerSpecProvider: string
   bootstrapProviderId: string
