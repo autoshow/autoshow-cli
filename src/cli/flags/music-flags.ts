@@ -51,13 +51,13 @@ export const musicGenFlags = {
 
 const musicLyricVideoFlags = {
   batch: {
-    description: 'Render lyric videos for all supported audio files under ./input recursively',
+    description: 'Render lyric videos for all supported audio files under input recursively',
     type: Boolean,
     default: false,
     negatable: false
   },
   audio: {
-    description: 'Single lyric-video audio file inside ./input',
+    description: 'Single lyric-video audio file inside input',
     type: String
   },
   captions: {

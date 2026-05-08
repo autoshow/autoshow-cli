@@ -44,7 +44,7 @@ bun as cache prune
 bun as cache clear
 
 # Prune a custom cache root
-AUTOSHOW_CACHE_DIR=/tmp/autoshow-cache bun as cache prune
+AUTOSHOW_CACHE_DIR=input/autoshow-cache bun as cache prune
 ```
 
 ## Related Flags
@@ -55,4 +55,3 @@ STT runs can control cache use per run:
 |------|-------------|
 | `--refresh-cache` | Rebuild cache entries touched by this run |
 | `--no-cache` | Bypass the media cache for this run |
-

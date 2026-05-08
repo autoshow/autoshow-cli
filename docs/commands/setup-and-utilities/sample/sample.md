@@ -40,8 +40,8 @@ bun as setup --sample [flags]
 # Generate all fixtures (default output: input/samples/)
 bun as setup --sample
 
-# Generate to a custom directory
-bun as setup --sample --out /tmp/fixtures
+# Generate to a custom input directory
+bun as setup --sample --out input/fixtures
 
 # Verify existing fixtures only
 bun as setup --sample --verify-only

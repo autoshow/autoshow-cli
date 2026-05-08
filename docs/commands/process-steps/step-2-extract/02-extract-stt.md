@@ -471,5 +471,6 @@ Supadata price estimates use provider credits.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.
 - If captions are found, the selected STT providers are skipped for that item and the caption result becomes the transcript source.
+- Caption-backed transcripts are recorded as service `youtube-captions` with model `subtitle-track` in pricing and manifest metadata.
 - STT batch roots now include `stt-summary.json`, which records per-item caption-vs-STT routing alongside completion status.
 - Backfill existing STT outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).

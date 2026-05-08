@@ -148,7 +148,7 @@ export const musicCommand = defineCommand({
       ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
-      ['bun as music --batch --model small', 'Render lyric videos for every supported audio file under ./input']
+      ['bun as music --batch --model small', 'Render lyric videos for every supported audio file under input']
     ]
   }
 }, async (ctx) => {

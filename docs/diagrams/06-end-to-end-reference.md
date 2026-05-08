@@ -22,18 +22,20 @@ Complete trace of a real CLI command from input to output, plus environment vari
   create-cli.ts
     |  parse → writeCommand
     v
-  commands.ts
+  define-write-command.ts
     |  handleProcessTarget('write', target, flags)
+    v
+  targets/handle-process-target.ts
     |  buildOptsFromFlags(skipLLM=false, flags)
     |  classifyTopLevelTarget(target) → { kind: 'single' }
-    |  tryHandleYoutubeCollectionTarget() → false (single video)
+    |  resolveYoutubeCollectionItems(target, 'write') → null (single video)
     v
-  single-target.ts
+  targets/single-target.ts
     |  isLikelyUrl() → true
     |  classifyUrlInput() → 'url_streaming'
     |  command='write' → processMediaSingle()
     v
-  single-target.ts → processMediaSingle()
+  targets/single-target.ts → processMediaSingle()
     |  extractSourceMetadata({ url }) → VideoMetadata
     |  validateData(ProcessingOptionsSchema, ...)
     v

@@ -52,7 +52,7 @@ Directory batches and URL-list batches classify each item independently. A singl
 
 ```bash
 # Process every item in a URL list
-bun as extract ./input/examples/batch/2-urls.md --batch-all
+bun as extract input/examples/batch/2-urls.md --batch-all
 
 # Process a whole YouTube channel batch with caption-first STT routing
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all

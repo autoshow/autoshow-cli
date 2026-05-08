@@ -34,7 +34,7 @@ bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.tes
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts --test-price
 ```
 
-These download selectors are report-only in `test/test-runner/price-commands.ts`. `--budget` does not currently skip step 1 download tests.
+These download selectors are report-only entries in `test/test-runner/price-commands/registry/download.ts`. `--budget` does not currently skip step 1 download tests.
 
 ## Related Docs
 

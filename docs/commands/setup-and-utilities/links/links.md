@@ -49,32 +49,34 @@ Accepted provider selectors are the lowercase names below.
 
 | Provider selector | Sections |
 |-------------------|----------|
-| `--assembly` | `stt` |
-| `--aws` | `stt`, `ocr` |
-| `--bfl` | `image` |
-| `--claude` | `general`, `text`, `ocr` |
-| `--deapi` | `general`, `stt`, `image`, `video`, `tts`, `music` |
-| `--deepgram` | `stt`, `tts` |
-| `--deepinfra` | `general`, `stt`, `ocr` |
-| `--drive` | `general` |
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
-| `--gemini` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
-| `--gcloud` | `stt`, `tts`, `ocr` |
+| `--groq` | `general`, `text`, `stt`, `tts` |
+| `--together` | `general`, `stt` |
+| `--cloudflare` | `general`, `stt` |
+| `--drive` | `general` |
+| `--openai` | `general`, `text`, `ocr`, `stt`, `tts`, `image` |
+| `--gemini` | `general`, `text`, `ocr`, `stt`, `tts`, `image`, `video`, `music` |
 | `--gladia` | `general`, `stt` |
 | `--glm` | `general`, `text`, `ocr`, `image`, `video`, `stt` |
-| `--grok` | `general`, `text`, `image`, `video`, `tts` |
-| `--groq` | `general`, `text`, `stt`, `tts` |
-| `--happyscribe` | `stt` |
+| `--grok` | `general`, `text`, `image`, `video`, `tts`, `stt` |
 | `--kimi` | `general`, `text`, `ocr` |
 | `--mistral` | `general`, `stt`, `ocr`, `tts` |
 | `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
-| `--openai` | `general`, `text`, `ocr`, `tts`, `image`, `video` |
-| `--resend` | `general` |
-| `--rev` | `general`, `stt` |
-| `--runway` | `general` |
+| `--claude` | `general`, `text`, `ocr` |
+| `--assembly` | `stt` |
+| `--aws` | `stt`, `ocr` |
+| `--bfl` | `image` |
+| `--gcloud` | `stt`, `tts`, `ocr` |
+| `--deepgram` | `stt`, `tts` |
+| `--deepinfra` | `general`, `stt`, `ocr` |
 | `--soniox` | `stt` |
 | `--speechmatics` | `general`, `stt` |
 | `--speechify` | `tts` |
+| `--rev` | `general`, `stt` |
+| `--runway` | `general` |
+| `--resend` | `general` |
+| `--happyscribe` | `stt` |
+| `--deapi` | `general`, `image`, `ocr`, `video`, `tts`, `music`, `stt` |
 | `--supadata` | `stt` |
 
 ## Global sections

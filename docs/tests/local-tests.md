@@ -28,8 +28,8 @@ bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts
 
 # local write and TTS coverage
-bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-project-lyrics.test.ts
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
 
 # local lyric-video coverage
@@ -63,7 +63,7 @@ AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0 bun t test/test-cases/e2e/step-4-tts-e2e/tts-
 | PaddleOCR image extraction | `test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts` | Heavier local OCR coverage |
 | Whisper | `test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/` | Includes default, split, model-price, and `large-v3-turbo` coverage |
 | Reverb | `test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts` | Heavier local STT coverage |
-| Llama write | `test/test-cases/e2e/step-3-write-e2e/write-local/llama/`, `test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts` | Local llama.cpp audio and document flows |
+| Llama write | `test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts`, `test/test-cases/e2e/step-3-write-e2e/write-local/write-project-lyrics.test.ts` | Local llama.cpp audio and project-text flows |
 | Local TTS | `test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts` | Standalone Kitten TTS coverage |
 | Music lyric-video | `test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts` | Local FFmpeg/Whisper lyric-video rendering |
 
@@ -74,7 +74,8 @@ Local price and budget commands are now path-based:
 ```bash
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/ --test-price
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts --test-price
-bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/llama-smoke.test.ts --test-price
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --test-price
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-project-lyrics.test.ts --test-price
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --budget 500
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --test-price --budget 500
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --budget 500

@@ -61,8 +61,8 @@ AUTOSHOW_URL_BACKEND=glm-reader
 | `--batch-concurrency <n>` | Process batch items concurrently |
 
 ```bash
-bun as extract ./input/examples/batch/2-urls.md --batch-all
-bun as extract ./input/article.html --out json
+bun as extract input/examples/batch/2-urls.md --batch-all
+bun as extract input/article.html --out json
 ```
 
 ## Article Services
@@ -77,7 +77,7 @@ bun as extract ./input/article.html --out json
 
 ```bash
 bun as extract https://ajcwebdev.com
-bun as extract ./input/article.html --out json
+bun as extract input/article.html --out json
 ```
 
 Local `.html` and `.htm` files always use `defuddle`, even if a hosted backend is requested.

@@ -31,8 +31,8 @@ Default path: `config/autoshow.json` in the project root, located by walking up 
 Override with `--config-path <path>`:
 
 ```bash
-bun as config --show --config-path /tmp/my-autoshow.json
-bun as write input/audio.mp3 --config-path /tmp/my-autoshow.json
+bun as config --show --config-path ./input/my-autoshow.json
+bun as write input/examples/audio/1-audio.mp3 --config-path ./input/my-autoshow.json
 ```
 
 ## Setting Defaults
@@ -251,7 +251,7 @@ Hosted or mixed-provider process and generation commands run cost preflight befo
 To show the estimate and exit:
 
 ```bash
-bun as write input/audio.mp3 --price
+bun as write input/examples/audio/1-audio.mp3 --price
 ```
 
 Set a hard budget:

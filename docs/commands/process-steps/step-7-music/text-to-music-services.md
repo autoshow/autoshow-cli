@@ -85,8 +85,8 @@ Lyric-video flags:
 
 | Flag | Description |
 |------|-------------|
-| `--batch` | Process every supported audio file under `./input` recursively |
-| `--audio <file>` | Single-run audio file inside `./input` |
+| `--batch` | Process every supported audio file under `input` recursively |
+| `--audio <file>` | Single-run audio file inside `input` |
 | `--captions <file>` | Edited `.vtt` or `.srt` file inside `./output`; skips Whisper and rerenders only |
 | `--model <name>` | Local Whisper model: `tiny`, `base`, `small`, `medium`, `large-v3-turbo`; default `large-v3-turbo` |
 | `--font <name>` | Font family for lyric overlays; default `DejaVu Sans` |
@@ -174,7 +174,7 @@ Gemini Lyria 3 Clip always generates a 30-second MP3 clip. Lyria 3 Pro uses dura
 
 | Option | Value |
 |--------|-------|
-| Single audio | `--audio <file>` inside `./input` |
+| Single audio | `--audio <file>` inside `input` |
 | Rerender | `--captions <file>` inside `./output` |
 | Batch | `--batch` |
 | Whisper model | `--model tiny\|base\|small\|medium\|large-v3-turbo`, default `large-v3-turbo` |

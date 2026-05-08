@@ -150,8 +150,8 @@ bun as write input/examples/batch/2-urls.md
 # Process files plus 2-urls.md inside the directory
 bun as extract input
 
-# Process only local files in a non-input directory
-bun as extract /tmp/job/files
+# Process local files in an input subdirectory
+bun as extract input/examples/document
 ```
 
 Common batch controls:

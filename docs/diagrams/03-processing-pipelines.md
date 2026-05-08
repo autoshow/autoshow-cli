@@ -229,7 +229,7 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
                                     |
                         ┌───────────┴───────────┐
                         |                       |
-                    ocr cmd                write cmd
+                 extract cmd              write cmd
                         |                       |
                         v                       v
                 ┌───────────────┐  ┌────────────────────────────────────┐
@@ -256,9 +256,9 @@ src/cli/commands/process-steps/step-7-music/lyrics-video/
 │                      MUSIC LYRIC-VIDEO MODE                                  │
 │                                                                              │
 │  Input validation                                                            │
-│  ├── single run: --audio must be inside ./input                              │
+│  ├── single run: --audio must be inside input                              │
 │  ├── rerender: --captions must be inside ./output                            │
-│  └── batch: recursively scan ./input for .wav/.mp3/.m4a/.flac/.ogg/.aac     │
+│  └── batch: recursively scan input for .wav/.mp3/.m4a/.flac/.ogg/.aac     │
 │                                                                              │
 │  Caption source                                                              │
 │  ├── --captions → parse VTT/SRT directly                                     │

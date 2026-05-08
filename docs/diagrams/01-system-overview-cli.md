@@ -50,20 +50,23 @@ src/cli/create-cli.ts
          |  Bun.argv
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  rejectUnexpectedFlags()                                                     │
-│  - Fails unknown flags before command execution                              │
-│  routeCommand()                                                              │
-│  - Dispatches command-first invocations to the matching handler              │
+│  createCli()  (Clerc)                                                        │
+│  - Registers global flags, help/version plugins, and command definitions     │
+│  - PRE interceptor rejects unknown flags, except manual `links` selectors    │
+│  - PRE interceptor configures logging and records startedAtMs                │
 └──────────────────────────────────────────────────────────────────────────────┘
          |
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  createCli()  (Clerc)                                                        │
+│  command handlers                                                            │
 │                                                                              │
 │  Global Flags: --help/-h, --version/-v, --config-path, --allow-over-budget  │
+│                --verbose, --quiet/-q, --json                                │
+│                                                                              │
+│  Dispatch: command-first invocations call each define-*-command handler      │
+│            and process commands enter handleProcessTarget()                  │
 │                                                                              │
 │  Interceptors:                                                               │
-│    PRE  → store startedAtMs = Date.now()                                     │
 │    POST → log elapsed time                                                   │
 │                                                                              │
 │  Error Handler: cliErrorHandler()                                            │
@@ -134,13 +137,13 @@ src/cli/flags/
 │  ├── --llama MODEL       llama.cpp model ID                │
 │  ├── --openai MODEL      gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano│
 │  ├── --groq MODEL        openai/gpt-oss-20b|openai/gpt-oss-120b│
-│  ├── --anthropic MODEL   claude-opus-4-7|claude-sonnet-4-6| │
+│  ├── --anthropic MODEL   claude-opus-4-7|claude-sonnet-4-6|  │
 │  │                       claude-haiku-4-5|claude-opus-4-6    │
 │  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
 │  ├── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
 │  ├── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│
-│  ├── --glm MODEL         glm-5.1                         │
-│  └── --kimi MODEL        kimi-k2.6                       │
+│  ├── --glm MODEL         glm-5.1                          │
+│  └── --kimi MODEL        kimi-k2.6                         │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -169,7 +172,12 @@ src/cli/flags/
 │  ├── --oem NUMBER        OCR engine mode (default: 1)      │
 │  ├── --page-separator    Custom page separator             │
 │  ├── --preserve-spaces   Preserve interword spacing        │
-│  └── --rotate DEGREES    Rotate before OCR                 │
+│  ├── --rotate DEGREES    Rotate before OCR                 │
+│  ├── --chapters          Export EPUB/PDF chapter files     │
+│  ├── --length N          Split long EPUB/PDF exports       │
+│  ├── --pdf-chapter-mode  local|auto|llm                    │
+│  ├── --epub-bun          EPUB ZIP/XML inspect mode         │
+│  └── --epub-calibre      EPUB Calibre inspect mode         │
 └─────────────────────────────────────────────────────────────┘
 
 Command-to-flag mapping:
