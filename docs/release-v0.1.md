@@ -1,18 +1,14 @@
 # AutoShow Bun CLI v0.1 Release
 
-This is the release narrative for the Bun CLI. It explains what AutoShow is,
-what ships in v0.1, and how to start using the tool.
+This is the release narrative for the Bun CLI.
+It explains what AutoShow is, what ships in v0.1, and how to start using the tool.
 
-Current CLI help in this repo reports `bun as v0.1.0`; this document uses
-`v0.1` as the release label. The package version, persisted config version,
-and run-manifest schema version are separate scopes: the package is `0.1.0`,
-persisted config requires `"version": 2`, and run manifests use schema
-version `2`.
+Current CLI help in this repo reports `bun as v0.1.0`; this document uses `v0.1` as the release label.
+The package version, persisted config version, and run-manifest schema version are separate scopes: the package is `0.1.0`, persisted config requires `"version": 2`, and run manifests use schema version `2`.
 
 ## Release Summary
 
-AutoShow is a Bun-native, pipeline-oriented CLI for turning media, documents,
-HTML/articles, X/Twitter Space metadata, raw text, and text prompts into:
+AutoShow is a Bun-native, pipeline-oriented CLI for turning media, documents, HTML/articles, X/Twitter Space metadata, raw text, and text prompts into:
 
 - downloaded files and source metadata
 - transcripts, OCR output, article extracts, and prompt-ready text
@@ -31,30 +27,41 @@ The v0.1 release brings those workflows behind one command-first entrypoint:
 - persistent STT media cache management
 - resume, benchmark, setup, config, and provider-link utility commands
 
-AutoShow classifies each target as media, document, article/HTML, image, X
-Space input, batch source, raw text, or direct prompt input. Artifact-producing
-runs write a timestamped output directory with the files produced by each step,
-plus manifest metadata for provider/model choices, timing, estimated cost, and
-actual cost when available.
+AutoShow classifies each target as media, document, article/HTML, image, X Space input, batch source, raw text, or direct prompt input.
+Artifact-producing runs write a timestamped output directory with the files produced by each step, plus manifest metadata for provider/model choices, timing, estimated cost, and actual cost when available.
 
 ## Workflow Coverage
 
-| Area | What it does |
-|------|--------------|
-| Metadata | Collect and display metadata without downloading, as terminal JSON by default or frontmatter YAML with `--markdown` |
-| Download | Fetch or normalize media, documents, and articles, then stop after download plus metadata |
-| Extract | Route media through STT, documents/images through OCR or native extraction, articles through article extraction, and X Space inputs through the X API |
-| Write | Run the full media/document/article/raw-text pipeline with prompt rendering, JSON LLM output, and optional downstream TTS/image/video/music generation |
-| TTS | Generate speech from local markdown or text |
-| Image | Generate images from text prompts |
-| Video | Generate videos from text prompts |
-| Music | Generate hosted music from prompts or render local lyric videos from repo audio |
-| Config | Inspect, reset, or persist selected defaults for batch, STT, OCR, write, and post-generation |
-| Cache | Prune or clear the persistent STT media cache |
-| Setup | Install local runtimes, verify prerequisites, check cloud auth, generate fixtures, and download local models |
-| Links | Fetch curated provider documentation markdown into one combined local file |
-| Resume | Fill missing STT, OCR, TTS, image, video, or music provider outputs in existing runs or batches |
-| Benchmark | Benchmark STT transcription quality across compression levels and playback speeds |
+### Core Commands
+
+| Command | What it does |
+|---------|--------------|
+| `version` | Prints the current CLI version |
+| `help` | Shows top-level help or command-specific help |
+
+### Setup & Utilities
+
+| Command | What it does |
+|---------|--------------|
+| `config` | Inspect, reset, or persist selected defaults saved to `config/autoshow.json` |
+| `cache` | Prune or clear the persistent STT media cache |
+| `setup` | Install local runtimes, verify prerequisites, check cloud auth, generate fixtures, and download local models |
+| `links` | Fetch provider documentation markdown and write one combined local file |
+| `resume` | Fill missing provider outputs in an existing run or batch directory |
+| `benchmark` | Benchmark STT transcription quality across compression levels and playback speeds |
+
+### Processing & Generation
+
+| Command | What it does |
+|---------|--------------|
+| `metadata` | Collect and display metadata for media or documents without downloading, as terminal JSON by default or frontmatter YAML with `--markdown` |
+| `download` | Fetch or normalize media, documents, and articles, then stop after download plus metadata |
+| `extract` | Route media through STT, documents/images through OCR or native extraction, articles through article extraction, and X Space inputs through the X API |
+| `write` | Run the full media/document/article/raw-text pipeline with prompt rendering, JSON LLM output, and optional downstream TTS/image/video/music generation |
+| `tts` | Generate speech audio from local markdown or text |
+| `image` | Generate images from text prompts |
+| `video` | Generate videos from text prompts |
+| `music` | Generate hosted music from prompts or render local lyric videos from repo audio |
 
 High-value behaviors:
 
@@ -126,19 +133,15 @@ bun as benchmark input/examples/audio/1-audio.mp3 --stt-services whisper --skip-
 bun as links stt
 ```
 
-`write` is the central orchestration command. It can summarize media
-transcripts, extracted documents, and article content; process raw `.md` or
-`.txt` files with `--text-input`; process project text directories under
-`output/<project>/text` into `output/<project>/lyrics`; fan out across multiple
-LLM providers; and pass final text into TTS, image, video, or music generation.
+`write` is the central orchestration command.
+It can summarize media transcripts, extracted documents, and article content; process raw `.md` or `.txt` files with `--text-input`; process project text directories under `output/<project>/text` into `output/<project>/lyrics`; fan out across multiple LLM providers; and pass final text into TTS, image, video, or music generation.
 
-STT is not a standalone top-level command in v0.1. It is the media route inside
-`extract` and `write`.
+STT is not a standalone top-level command in v0.1.
+It is the media route inside `extract` and `write`.
 
 ## Command Surface
 
-AutoShow exposes 14 workflow/support commands, plus the root `help` and
-`version` commands.
+AutoShow exposes 14 workflow/support commands, plus the root `help` and `version` commands.
 
 | Command | Primary purpose | Typical input |
 |---------|-----------------|---------------|
@@ -157,8 +160,7 @@ AutoShow exposes 14 workflow/support commands, plus the root `help` and
 | `resume` | resume missing provider outputs in a run or batch directory | output directory |
 | `benchmark` | benchmark STT quality across compression and speed variants | audio file |
 
-`setup --sample` replaces the old standalone sample workflow, and
-`setup --models` replaces the old standalone model-download workflow.
+`setup --sample` replaces the old standalone sample workflow, and `setup --models` replaces the old standalone model-download workflow.
 
 ## Inputs, Formats, And Providers
 
@@ -175,13 +177,17 @@ Supported input sources:
 | Project text directories under `output/<project>/text` | `write` project lyric draft mode |
 | Prompt strings | `image`, `video`, hosted `music` |
 
-For `.md` and `.txt` inputs, `write` normally treats files as URL lists. Use
-`write --text-input` for raw source text outside the project-text convention.
+For `.md` and `.txt` inputs, `write` normally treats files as URL lists.
+Use `write --text-input` for raw source text outside the project-text convention.
 
-Document and image extraction/download coverage includes PDF, EPUB, MOBI/AZW
-variants, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, CBZ,
-HTML/article content, and common raster image formats such as PNG, JPG, TIFF,
-WebP, BMP, and GIF.
+Document and image extraction/download coverage spans:
+
+- PDFs
+- ebook and comic formats: EPUB, MOBI/AZW variants, FB2, LIT, and CBZ
+- office and OpenDocument formats: DOCX, PPTX, XLSX, ODT, ODS, and ODP
+- text and data files: RTF and CSV
+- HTML/article content
+- common raster image formats: PNG, JPG, TIFF, WebP, BMP, and GIF
 
 Notable extraction behavior:
 
@@ -205,15 +211,14 @@ Provider coverage:
 | Video | none | Gemini Veo, MiniMax, GLM, Grok, Runway, deAPI |
 | Music | lyric-video rendering uses local FFmpeg/Whisper tooling | ElevenLabs, MiniMax, deAPI, Gemini Lyria |
 
-The live flag registry is the source of truth for supported model IDs. Use
-`bun as help <command>` or the command-specific docs under `docs/commands/` for
-current model lists, option details, and provider setup notes.
+The live flag registry is the source of truth for supported model IDs.
+Use `bun as help <command>` or the command-specific docs under `docs/commands/` for current model lists, option details, and provider setup notes.
 
 ## Prompts, JSON Output, Config, And Pricing
 
 Prompts live in JSON files discovered recursively under `src/prompts/entries/`.
-The library includes summary, chapter, marketing, social, creative-writing, and
-song-lyric prompts. The `default` prompt expands to:
+The library includes summary, chapter, marketing, social, creative-writing, and song-lyric prompts.
+The `default` prompt expands to:
 
 ```text
 shortSummary + longSummary + longChapters
@@ -236,9 +241,7 @@ Persistent config lives in `config/autoshow.json` and requires:
 }
 ```
 
-Config can persist selected defaults for provider/model choices, prompts, batch
-controls, STT/OCR/TTS/image/video/music options, cache behavior, cloud staging,
-and pricing thresholds.
+Config can persist selected defaults for provider/model choices, prompts, batch controls, STT/OCR/TTS/image/video/music options, cache behavior, cloud staging, and pricing thresholds.
 
 ```bash
 bun as config --show
@@ -250,12 +253,10 @@ bun as config --reset
 bun as config --show --config-path /tmp/as-config.json
 ```
 
-The same global `--config-path` override works on every command, not just
-`config`.
+The same global `--config-path` override works on every command, not just `config`.
 
 Hosted or mixed-provider runnable commands perform preflight cost estimation.
-`music --audio` and `music --batch` are local lyric-video modes: they do not run
-cost preflight and reject hosted music-generation flags, including `--price`.
+`music --audio` and `music --batch` are local lyric-video modes: they do not run cost preflight and reject hosted music-generation flags, including `--price`.
 
 Supported pricing behaviors:
 
@@ -267,9 +268,8 @@ Supported pricing behaviors:
 
 ## Setup, Runtime, And Output Layout
 
-`bun as setup` orchestrates the project's runtime prerequisites. It covers core
-tools such as `uv`, `yt-dlp`, FFmpeg/ffprobe, Whisper.cpp, llama.cpp, Reverb,
-Calibre, local OCR dependencies, Kitten TTS, and provider-specific setup hooks.
+`bun as setup` orchestrates the project's runtime prerequisites.
+It covers core tools such as `uv`, `yt-dlp`, FFmpeg/ffprobe, Whisper.cpp, llama.cpp, Reverb, Calibre, local OCR dependencies, Kitten TTS, and provider-specific setup hooks.
 
 Common setup modes:
 
@@ -283,12 +283,9 @@ bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF
 bun as setup --step whisper-model
 ```
 
-`setup --doctor` checks for core tools, API keys, config presence, config
-validity, and the active Bun version. `setup --gcloud` and `setup --aws` check
-cloud CLI auth/config for the relevant speech, OCR, TTS, and staging services.
-`setup --sample` generates or verifies deterministic fixture files, while
-`setup --models` downloads one or more local Whisper or llama.cpp models without
-running inference.
+`setup --doctor` checks for core tools, API keys, config presence, config validity, and the active Bun version.
+`setup --gcloud` and `setup --aws` check cloud CLI auth/config for the relevant speech, OCR, TTS, and staging services.
+`setup --sample` generates or verifies deterministic fixture files, while `setup --models` downloads one or more local Whisper or llama.cpp models without running inference.
 
 Runtime layout:
 
@@ -309,16 +306,10 @@ Common output artifacts:
 - `run.json`
 - `metadata.md` for `metadata --markdown --save`
 
-Provider subruns can also write artifacts under
-`providers/<service>-<model>/`, including `result.json`, `transcription.txt`,
-and resumable `checkpoint.json` files.
+Provider subruns can also write artifacts under `providers/<service>-<model>/`, including `result.json`, `transcription.txt`, and resumable `checkpoint.json` files.
 
-Most batch runs write `batch.json` plus one content-derived child output
-directory per processed item. `extract` batches write a parent
-`extract-batch.json` and routed child batches under `media/`, `document/`, and
-`x-space/` when those input classes are present.
+Most batch runs write `batch.json` plus one content-derived child output directory per processed item.
+`extract` batches write a parent `extract-batch.json` and routed child batches under `media/`, `document/`, and `x-space/` when those input classes are present.
 
-A checked-in TTS provider comparison lives under
-`docs/benchmarks/2026-04-25_02-36-42-642_tts-long/`. It compares 15 providers
-and models using speaking-rate naturalness, cost, and processing speed; it does
-not include roundtrip STT transcription scoring or human listening judgments.
+A checked-in TTS provider comparison lives under `docs/benchmarks/2026-04-25_02-36-42-642_tts-long/`.
+It compares 15 providers and models using speaking-rate naturalness, cost, and processing speed; it does not include roundtrip STT transcription scoring or human listening judgments.
