@@ -1,7 +1,6 @@
 # AutoShow Bun CLI v0.1 Release
 
-This is the release narrative for the Bun CLI.
-It explains what AutoShow is, what ships in v0.1, and how to start using the tool.
+This release narrative explains what AutoShow is, what ships in v0.1, and how to start using the Bun CLI.
 
 Current CLI help in this repo reports `bun as v0.1.0`; this document uses `v0.1` as the release label.
 The package version, persisted config version, and run-manifest schema version are separate scopes: the package is `0.1.0`, persisted config requires `"version": 2`, and run manifests use schema version `2`.
@@ -16,7 +15,6 @@ AutoShow is a Bun-native, pipeline-oriented CLI for turning media, documents, HT
 - JSON write outputs from one or more LLM providers
 - generated speech, images, video, and music
 - local lyric videos from repo audio
-- checked-in benchmark/provider comparison artifacts
 
 The v0.1 release brings those workflows behind one command-first entrypoint:
 
@@ -85,13 +83,6 @@ bun as setup --doctor
 # install local runtimes and verify core tools
 bun as setup
 
-# check Google Cloud or AWS readiness
-bun as setup --gcloud
-bun as setup --aws
-
-# download local Whisper and llama.cpp models without inference
-bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF
-
 # metadata as Markdown frontmatter YAML
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 
@@ -120,9 +111,6 @@ bun as image "a clean product photo of a red enamel camping mug" --openai-image 
 bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate-preview
 bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
 
-# local lyric-video render from repo audio
-bun as music --audio input/examples/lyrics/01-example-song.mp3
-
 # fill missing provider outputs from an existing run or batch
 bun as resume ./output/<run-or-batch-dir> --deepinfra-stt
 
@@ -138,29 +126,6 @@ It can summarize media transcripts, extracted documents, and article content; pr
 
 STT is not a standalone top-level command in v0.1.
 It is the media route inside `extract` and `write`.
-
-## Command Surface
-
-AutoShow exposes 14 workflow/support commands, plus the root `help` and `version` commands.
-
-| Command | Primary purpose | Typical input |
-|---------|-----------------|---------------|
-| `metadata` | metadata-only inspection | URL, file, directory, list |
-| `download` | download/normalization without OCR, STT, or write | URL, file, directory, list |
-| `extract` | media STT, document/image/article extraction, and X Space metadata | URL, file, directory, list, X Space link/post/ID |
-| `write` | full pipeline orchestration | URL, file, directory, list, raw text file |
-| `tts` | text-to-speech | local `.md` or `.txt` |
-| `image` | text-to-image | prompt |
-| `video` | text-to-video | prompt |
-| `music` | text-to-music or lyric-video rendering | prompt, prompt file, repo-local audio, edited captions |
-| `config` | inspect, reset, or persist defaults | none |
-| `cache` | prune or clear STT media cache | `prune` or `clear` |
-| `setup` | install runtimes, verify tools, check cloud auth, generate samples, download local models | none |
-| `links` | fetch provider documentation | provider/section filters |
-| `resume` | resume missing provider outputs in a run or batch directory | output directory |
-| `benchmark` | benchmark STT quality across compression and speed variants | audio file |
-
-`setup --sample` replaces the old standalone sample workflow, and `setup --models` replaces the old standalone model-download workflow.
 
 ## Inputs, Formats, And Providers
 
@@ -180,7 +145,7 @@ Supported input sources:
 For `.md` and `.txt` inputs, `write` normally treats files as URL lists.
 Use `write --text-input` for raw source text outside the project-text convention.
 
-Document and image extraction/download coverage spans:
+Document and image coverage includes:
 
 - PDFs
 - ebook and comic formats: EPUB, MOBI/AZW variants, FB2, LIT, and CBZ
@@ -211,8 +176,7 @@ Provider coverage:
 | Video | none | Gemini Veo, MiniMax, GLM, Grok, Runway, deAPI |
 | Music | lyric-video rendering uses local FFmpeg/Whisper tooling | ElevenLabs, MiniMax, deAPI, Gemini Lyria |
 
-The live flag registry is the source of truth for supported model IDs.
-Use `bun as help <command>` or the command-specific docs under `docs/commands/` for current model lists, option details, and provider setup notes.
+The live flag registry is the source of truth for supported model IDs; use `bun as help <command>` or `docs/commands/` for current model lists, option details, and provider setup notes.
 
 ## Prompts, JSON Output, Config, And Pricing
 
@@ -245,10 +209,8 @@ Config can persist selected defaults for provider/model choices, prompts, batch 
 
 ```bash
 bun as config --show
-bun as config --openai gpt-5.4
-bun as config --whisper-stt large-v3-turbo
-bun as config --batch-limit 20 --batch-order oldest
-bun as config --max-cents 50
+bun as config --openai gpt-5.4 --whisper-stt large-v3-turbo
+bun as config --batch-limit 20 --batch-order oldest --max-cents 50
 bun as config --reset
 bun as config --show --config-path /tmp/as-config.json
 ```
@@ -278,9 +240,8 @@ bun as setup --doctor
 bun as setup
 bun as setup --gcloud
 bun as setup --aws
-bun as setup --sample --verify-only
 bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF
-bun as setup --step whisper-model
+bun as setup --sample --verify-only
 ```
 
 `setup --doctor` checks for core tools, API keys, config presence, config validity, and the active Bun version.
@@ -310,6 +271,3 @@ Provider subruns can also write artifacts under `providers/<service>-<model>/`, 
 
 Most batch runs write `batch.json` plus one content-derived child output directory per processed item.
 `extract` batches write a parent `extract-batch.json` and routed child batches under `media/`, `document/`, and `x-space/` when those input classes are present.
-
-A checked-in TTS provider comparison lives under `docs/benchmarks/2026-04-25_02-36-42-642_tts-long/`.
-It compares 15 providers and models using speaking-rate naturalness, cost, and processing speed; it does not include roundtrip STT transcription scoring or human listening judgments.
