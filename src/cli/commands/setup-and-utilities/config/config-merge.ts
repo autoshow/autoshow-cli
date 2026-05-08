@@ -432,7 +432,7 @@ export const buildConfigPatchFromFlags = (
   explicitFlags: Set<string>,
   rawArgs: string[] = []
 ): Record<string, unknown> => {
-  const patch: Record<string, unknown> = { version: 2 }
+  const patch: Record<string, unknown> = {}
   const rawOccurrences = parseRepeatableModelFlagOccurrences(rawArgs)
 
   for (const flagName of explicitFlags) {

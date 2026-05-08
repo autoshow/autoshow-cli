@@ -48,7 +48,6 @@ describe('config contracts', () => {
       'batch-limit': '7',
       'max-cents': '25'
     }, new Set(['openai', 'glm', 'kimi', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'deepinfra-ocr', 'kimi-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
-      version: 2,
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
@@ -119,7 +118,6 @@ describe('config contracts', () => {
       'gcloud-tts-voice-cloning-key',
       'gcloud-tts-voice-cloning-key-out'
     ]))).toEqual({
-      version: 2,
       defaults: {
         extract: {
           stt: {
@@ -143,7 +141,6 @@ describe('config contracts', () => {
       'image-size': '1024x1024',
       'image-format': 'webp'
     }, new Set(['bfl-image', 'image-size', 'image-format']))).toEqual({
-      version: 2,
       defaults: {
         post: {
           image: {
@@ -161,7 +158,6 @@ describe('config contracts', () => {
       'runway-tts': ['eleven_multilingual_v2'],
       'runway-tts-voice': 'Leslie'
     }, new Set(['runway-tts', 'runway-tts-voice']))).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -195,7 +191,6 @@ describe('config contracts', () => {
     ]))
 
     expect(patch).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -232,7 +227,6 @@ describe('config contracts', () => {
     }, new Set(['mistral-tts', 'mistral-tts-voice', 'mistral-tts-ref-audio']))
 
     expect(patch).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -271,7 +265,6 @@ describe('config contracts', () => {
     ]))
 
     expect(patch).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -318,7 +311,6 @@ describe('config contracts', () => {
     ]))
 
     expect(patch).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -359,7 +351,6 @@ describe('config contracts', () => {
     ]))
 
     expect(patch).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -390,7 +381,6 @@ describe('config contracts', () => {
     ]))
 
     expect(patch).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -415,7 +405,6 @@ describe('config contracts', () => {
     }, new Set(['deapi-tts', 'deapi-tts-ref-audio', 'deapi-tts-ref-text']))
 
     expect(patch).toEqual({
-      version: 2,
       defaults: {
         post: {
           tts: {
@@ -434,9 +423,8 @@ describe('config contracts', () => {
     })
   })
 
-  test('loadConfig accepts current v2 array-shaped defaults', async () => {
+  test('loadConfig accepts current array-shaped defaults', async () => {
     const configPath = await writeTempConfig({
-      version: 2,
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
@@ -508,7 +496,6 @@ describe('config contracts', () => {
     })
 
     await expect(loadConfig(configPath)).resolves.toMatchObject({
-      version: 2,
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
@@ -581,8 +568,10 @@ describe('config contracts', () => {
   })
 
   test('removed schema shapes are rejected', async () => {
+    const versionConfig = await writeTempConfig({
+      version: 2
+    })
     const scalarConfig = await writeTempConfig({
-      version: 2,
       defaults: {
         llm: {
           openai: 'gpt-5.4-mini'
@@ -590,12 +579,12 @@ describe('config contracts', () => {
       }
     })
     const pricingConfig = await writeTempConfig({
-      version: 2,
       pricing: {
         maxUsd: 1
       }
     })
 
+    await expect(loadConfig(versionConfig)).rejects.toThrow('autoshow config')
     await expect(loadConfig(scalarConfig)).rejects.toThrow('autoshow config')
     await expect(loadConfig(pricingConfig)).rejects.toThrow('autoshow config')
   })

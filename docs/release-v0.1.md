@@ -3,7 +3,7 @@
 This release note explains what AutoShow is, what ships in v0.1, and how to start using the Bun CLI.
 
 Current CLI help in this repo reports `bun as v0.1.0`; this document uses `v0.1` as the release label.
-The package version, persisted config version, and run-manifest schema version are separate scopes: the package is `0.1.0`, persisted config requires `"version": 2`, and run manifests use schema version `2`.
+The package version and run-manifest schema version are separate scopes: the package is `0.1.0`, persisted config is unversioned, and run manifests use schema version `2`.
 
 ## Release Summary
 
@@ -146,12 +146,10 @@ shortSummary + longSummary + longChapters
 - `--rendered-text` can save rendered markdown alongside JSON output
 - run-level metadata is always recorded in `run.json`
 
-Persistent config lives in `config/autoshow.json` and requires:
+Persistent config lives in `config/autoshow.json`. An empty config is:
 
 ```json
-{
-  "version": 2
-}
+{}
 ```
 
 Config can persist selected defaults for provider/model choices, prompts, batch controls, STT/OCR/TTS/image/video/music options, cache behavior, cloud staging, and pricing thresholds.

@@ -99,7 +99,7 @@ bun as config --speechmatics-stt standard --speechmatics-stt enhanced
 bun as config --openai gpt-5.4 --openai gpt-5.4-mini
 ```
 
-These model defaults are written as arrays in `config/autoshow.json`. Older config files that still store a single string are accepted and normalized to one-element arrays when loaded.
+These model defaults are written as arrays in `config/autoshow.json`.
 
 Setup commands do not write `config/autoshow.json`. Use `bun as config ...` when you want AWS, Google Cloud, or any other provider defaults to persist.
 
@@ -134,7 +134,6 @@ Representative JSON shape of `config/autoshow.json`:
 
 ```json
 {
-  "version": 2,
   "defaults": {
     "stt": {
       "whisper": ["tiny"],

@@ -211,7 +211,6 @@ const ConfigDefaultsSchema = v.strictObject({
 })
 
 export const AutoshowConfigSchema = v.strictObject({
-  version: v.literal(2),
   defaults: v.optional(ConfigDefaultsSchema, undefined),
   pricing: v.optional(PricingConfigSchema, undefined)
 })

@@ -60,12 +60,14 @@ const resolveProcessorId = (model: string): string | undefined => {
   return normalizeString(readEnv('AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID'))
 }
 
-const readSavedDocaiDefaults = async (): Promise<{
+type SavedDocaiDefaults = {
   location?: string | undefined
   ocrProcessorId?: string | undefined
   layoutProcessorId?: string | undefined
   bucket?: string | undefined
-}> => {
+}
+
+const readSavedDocaiDefaults = async (): Promise<SavedDocaiDefaults> => {
   const config = await loadConfig(await resolveConfigPath())
   const ocr = config.defaults?.extract?.ocr
   return {
@@ -81,15 +83,20 @@ export const ensureGcloudDocaiSetup = async (model: string): Promise<GcloudDocai
     throw new Error('gcloud CLI is required for Google Cloud Document AI OCR. Install the gcloud CLI and rerun `bun as setup --gcloud`.')
   }
 
-  const savedDefaults = await readSavedDocaiDefaults()
-  const projectId = normalizeString(readEnv('AUTOSHOW_GCLOUD_PROJECT')) ?? await readActiveProjectId()
+  const envProjectId = normalizeString(readEnv('AUTOSHOW_GCLOUD_PROJECT'))
+  const envLocation = normalizeString(readEnv('AUTOSHOW_GCLOUD_DOCAI_LOCATION'))
+  const envProcessorId = resolveProcessorId(model)
+  const envBucket = normalizeString(readEnv('AUTOSHOW_GCLOUD_BUCKET'))
+  const shouldReadSavedDefaults = !envLocation || !envProcessorId || !envBucket
+  const savedDefaults = shouldReadSavedDefaults ? await readSavedDocaiDefaults() : {}
+  const projectId = envProjectId ?? await readActiveProjectId()
   if (!projectId) {
     throw new Error('Google Cloud project is required for Google Cloud Document AI OCR. Set AUTOSHOW_GCLOUD_PROJECT, run `gcloud config set project PROJECT_ID`, or rerun `bun as setup --gcloud --gcloud-project PROJECT_ID`.')
   }
 
-  const location = normalizeString(readEnv('AUTOSHOW_GCLOUD_DOCAI_LOCATION')) ?? savedDefaults.location ?? 'us'
+  const location = envLocation ?? savedDefaults.location ?? 'us'
 
-  const processorId = resolveProcessorId(model)
+  const processorId = envProcessorId
     ?? (model === 'layout-parser' ? savedDefaults.layoutProcessorId : savedDefaults.ocrProcessorId)
   if (!processorId) {
     const envVar = model === 'layout-parser'
@@ -108,6 +115,6 @@ export const ensureGcloudDocaiSetup = async (model: string): Promise<GcloudDocai
     location,
     processorId,
     accessToken,
-    bucket: normalizeString(readEnv('AUTOSHOW_GCLOUD_BUCKET')) ?? savedDefaults.bucket
+    bucket: envBucket ?? savedDefaults.bucket
   }
 }

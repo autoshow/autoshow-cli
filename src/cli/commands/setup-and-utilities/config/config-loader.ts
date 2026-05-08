@@ -29,7 +29,7 @@ export const resolveConfigPath = async (configPathOverride?: string): Promise<st
 export const loadConfig = async (configPath: string): Promise<AutoshowConfig> => {
   const file = Bun.file(configPath)
   if (!await file.exists()) {
-    return { version: 2 }
+    return {}
   }
 
   let text: string

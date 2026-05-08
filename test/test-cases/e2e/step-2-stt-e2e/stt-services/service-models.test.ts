@@ -295,7 +295,6 @@ test('deapi run manifest records exact estimated and actual STT cost fields', as
   const configDir = await mkdtemp(join(tmpdir(), 'autoshow-deapi-config-'))
   const configPath = join(configDir, 'autoshow.json')
   await Bun.write(configPath, `${JSON.stringify({
-    version: 2,
     pricing: { maxCents: 100 }
   }, null, 2)}\n`)
 

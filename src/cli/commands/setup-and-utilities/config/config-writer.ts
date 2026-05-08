@@ -7,5 +7,5 @@ export const writeConfig = async (configPath: string, config: Record<string, unk
   if (dir) {
     await ensureDirectory(dir)
   }
-  await Bun.write(configPath, JSON.stringify({ version: 2, ...config }, null, 2) + '\n')
+  await Bun.write(configPath, JSON.stringify(config, null, 2) + '\n')
 }

@@ -128,7 +128,7 @@ describe('gcloud setup contracts', () => {
     expect(commands).toContain('storage buckets create gs://autoshow-docai-test-project-')
     expect(fetchCalls).toContainEqual(expect.objectContaining({ method: 'POST' }))
     expect(await Bun.file(configPath).exists()).toBe(false)
-    await expect(loadConfig(configPath)).resolves.toEqual({ version: 2 })
+    await expect(loadConfig(configPath)).resolves.toEqual({})
   })
 
   test('reuses saved Document AI processor and bucket values without changing config', async () => {
@@ -138,7 +138,6 @@ describe('gcloud setup contracts', () => {
     const { bin, log } = await writeFakeGcloud(dir)
     process.env['AUTOSHOW_GCLOUD_BIN'] = bin
     const savedConfig: AutoshowConfig = {
-      version: 2,
       defaults: {
         extract: {
           stt: { gcloudStt: ['chirp_3'] },
