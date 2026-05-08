@@ -32,12 +32,12 @@ bun as <command> <input> [flags]
 
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
-   - Step 2: Transcribe (Whisper/Groq/Grok/Reverb/ElevenLabs/OpenAI/Mistral/AssemblyAI STT) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/hosted article backends)
+   - Step 2: Transcribe (Whisper/Reverb, Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together, Cloudflare) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/AWS Textract/Google Cloud Document AI/deAPI OCR/hosted article backends)
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM, Kimi)
-   - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, OpenAI, Gemini, Runway, deAPI)
-   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway)
-   - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway)
-   - Step 7: Music generation - optional (ElevenLabs, MiniMax)
+   - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Runway, Speechify, Google Cloud, deAPI)
+   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway, BFL, deAPI)
+   - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway, deAPI)
+   - Step 7: Music generation - optional (ElevenLabs, MiniMax, deAPI, Gemini)
 
 4. **Output** (`output/`)
    - Timestamped directories with audio, transcripts, extractions, prompts, summaries, metadata, and generated media files
@@ -86,15 +86,15 @@ src/cli/create-cli.ts
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
 │  │     download     │  │      tts         │  │     image        │            │
 │  │                  │  │                  │  │                  │            │
-│  │ Download audio   │  │ Generate speech  │  │ Generate image   │            │
-│  │ only (no LLM)    │  │ from .md/.txt    │  │ from .md/.txt    │            │
+│  │ Download inputs  │  │ Generate speech  │  │ Generate image   │            │
+│  │ only (no LLM)    │  │ from .md/.txt    │  │ from prompt text │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
 │  │     music        │  │     video        │  │     setup        │            │
 │  │                  │  │                  │  │                  │            │
 │  │ Generate music   │  │ Generate video   │  │ Install all      │            │
-│  │ or lyric videos  │  │ from .md/.txt    │  │ dependencies     │            │
+│  │ or lyric videos  │  │ from prompt text │  │ dependencies     │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
@@ -116,17 +116,17 @@ src/cli/flags/
 
 ┌─────────────────────────────────────────────────────────────┐
 │  transcriptionFlags (part of mediaFlags)                   │
-│  ├── --whisper-stt MODEL     tiny|base|small|medium|large-v3|...│
-│  ├── --reverb-stt            Use Reverb ASR                    │
-│  ├── --reverb-verbatimicity  0.0-1.0                       │
-│  ├── --elevenlabs-stt MODEL  ElevenLabs Scribe STT         │
-│  ├── --groq-stt MODEL    Groq Whisper STT (API)            │
-│  ├── --grok-stt MODEL    xAI Grok STT (API)                │
-│  ├── --deepgram-stt MODEL Deepgram STT (diarized)          │
-│  ├── --mistral-stt MODEL Mistral STT (supports diarization)│
-│  ├── --assemblyai-stt MODEL AssemblyAI STT (diarization)   │
+│  ├── --whisper-stt MODEL     tiny|base|small|medium|large-v3-turbo│
+│  ├── --reverb-stt            Use Reverb ASR                │
+│  ├── --gcloud-stt / --aws-stt / --deepinfra-stt / --deapi-stt│
+│  ├── --elevenlabs-stt / --deepgram-stt / --soniox-stt      │
+│  ├── --speechmatics-stt / --rev-stt / --happyscribe-stt    │
+│  ├── --groq-stt / --grok-stt / --mistral-stt               │
+│  ├── --assemblyai-stt / --gladia-stt / --supadata-stt      │
+│  ├── --openai-stt / --gemini-stt / --glm-stt               │
+│  ├── --together-stt / --cloudflare-stt                     │
 │  ├── --speaker-count N   Diarization speaker hint          │
-│  └── --split             Split audio into 10-min segments  │
+│  └── --split             Split audio into 30-min segments  │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -157,6 +157,10 @@ src/cli/flags/
 │  ├── --anthropic-ocr MODEL Anthropic OCR (API)             │
 │  ├── --gemini-ocr MODEL  Gemini OCR (API)                  │
 │  ├── --deepinfra-ocr MODEL DeepInfra OCR (API)             │
+│  ├── --aws-textract MODEL AWS Textract                     │
+│  ├── --gcloud-docai MODEL Google Cloud Document AI         │
+│  ├── --deapi-ocr MODEL   deAPI OCR                         │
+│  ├── --primary-ocr NAME  top-level artifact provider       │
 │  └── --url-backend NAME  defuddle|firecrawl|glm-reader     │
 │                                                            │
 │  advancedExtractFlags                                      │
@@ -169,8 +173,8 @@ src/cli/flags/
 └─────────────────────────────────────────────────────────────┘
 
 Command-to-flag mapping:
-  metadata    → --save + --password + batchFlags
-  download    → downloadFlags
+  metadata    → --save + --password + --url-backend + batchFlags
+  download    → downloadFlags + --url-backend
   extract     → mediaFlags + extractFlags + advancedExtractFlags + batchFlags + priceFlag
   write       → mediaFlags + extractFlags + advancedExtractFlags + batchFlags
                   + ttsFlags + imageGenFlags + musicGenFlags + videoGenFlags + promptFlag
@@ -178,5 +182,5 @@ Command-to-flag mapping:
   image       → imageGenFlags
   music       → musicGenFlags
   video       → videoGenFlags
-  config      → all flags (for persisting defaults)
+  config      → configCommandFlags (persist mapped defaults; ignore runtime-only flags)
 ```

@@ -23,6 +23,8 @@ bun as download <input>
 | Direct media URL (`.mp3`, `.mp4`, etc.) | HTTP fetch, normalize to compressed audio-only media, collect media metadata |
 | Direct document URL (`.pdf`, `.epub`, `.docx`, etc.) | HTTP fetch to a temp file, detect format, collect document metadata |
 | Direct document URL without an extension | HEAD probe plus download + magic-byte detection |
+| Remote article / HTML URL | Article extraction through `defuddle`, `firecrawl`, or `glm-reader` via `--url-backend` |
+| Local `.html` / `.htm` file | Article extraction with local `defuddle` |
 | Local media file | normalize to compressed audio-only media, collect media metadata |
 | Local document file | detect format by magic bytes first, then extension |
 | YouTube channel URL | batch the latest videos |
@@ -44,6 +46,7 @@ Step-1 metadata in `run.json` also includes `slug`, which is derived from the or
 --password           Password for encrypted PDFs
 --keep-original-media  Keep downloaded media in its original/downloaded format instead of creating the normalized compressed audio artifact
 --flat-batch         Batch download: place primary media files directly in the batch output directory
+--url-backend        Article/HTML extraction backend: defuddle|firecrawl|glm-reader (default defuddle; local .html/.htm always use defuddle)
 --batch-limit        Batch: number of items to process (default 5)
 --batch-all          Batch: process all items
 --batch-order        Batch: item order newest|oldest (default newest)

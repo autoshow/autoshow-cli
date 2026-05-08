@@ -68,14 +68,16 @@ Complete trace of a real CLI command from input to output, plus environment vari
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  API Keys                                                                    │
-│  ├── OPENAI_API_KEY                  Required for --openai, --openai-tts,    │
+│  ├── OPENAI_API_KEY                  Required for --openai, --openai-stt,    │
+│  │                                   --openai-ocr, --openai-tts,             │
 │  │                                   --openai-image models                   │
 │  ├── GROQ_API_KEY                    Required for --groq, --groq-stt,        │
 │  │                                   --groq-tts models                       │
 │  ├── ANTHROPIC_API_KEY               Required for --anthropic,               │
 │  │                                   --anthropic-ocr models                  │
-│  ├── GEMINI_API_KEY                  Required for --gemini, --gemini-ocr,    │
-│  │                                   --gemini-tts, --gemini-image,           │
+│  ├── GEMINI_API_KEY                  Required for --gemini, --gemini-stt,    │
+│  │                                   --gemini-ocr, --gemini-tts,             │
+│  │                                   --gemini-image,                         │
 │  │                                   --gemini-video, --gemini-music models  │
 │  ├── DEEPINFRA_API_KEY               Required for --deepinfra-stt and        │
 │  │                                   --deepinfra-ocr models                  │
@@ -93,10 +95,15 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   models                                  │
 │  ├── KIMI_API_KEY                    Required for --kimi and --kimi-ocr      │
 │  │                                   models                                  │
-│  ├── XAI_API_KEY                     Required for --grok, --grok-image,      │
+│  ├── XAI_API_KEY                     Required for --grok, --grok-stt,        │
+│  │                                   --grok-tts, --grok-image,               │
 │  │                                   --grok-video models                     │
 │  ├── RUNWAYML_API_SECRET             Required for --runway-tts,              │
 │  │                                   --runway-image, --runway-video models   │
+│  ├── SPEECHIFY_API_KEY               Required for --speechify-tts models     │
+│  ├── TOGETHER_API_KEY                Required for --together-stt models      │
+│  ├── CLOUDFLARE_API_TOKEN            Required with CLOUDFLARE_ACCOUNT_ID     │
+│  ├── CLOUDFLARE_ACCOUNT_ID           Required with CLOUDFLARE_API_TOKEN      │
 │  ├── BFL_API_KEY                     Required for --bfl-image models         │
 │  └── HF_TOKEN                        HuggingFace private model access         │
 │                                                                              │

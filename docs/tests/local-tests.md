@@ -16,7 +16,7 @@ For API-backed and networked coverage, see [Service Tests](service-tests.md).
 
 ```bash
 # run all local tests
-bun t test/test-cases/local/ test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ test/test-cases/e2e/step-2-stt-e2e/stt-local/ test/test-cases/e2e/step-3-write-e2e/write-local/ test/test-cases/e2e/step-4-tts-e2e/tts-local/
+bun t test/test-cases/local/ test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ test/test-cases/e2e/step-2-stt-e2e/stt-local/ test/test-cases/e2e/step-3-write-e2e/write-local/ test/test-cases/e2e/step-4-tts-e2e/tts-local/ test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
 ```
 
 ```bash
@@ -31,6 +31,9 @@ bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/llama/
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
+
+# local lyric-video coverage
+bun t test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
 ```
 
 ## Shared Runner Behavior
@@ -62,6 +65,7 @@ AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0 bun t test/test-cases/e2e/step-4-tts-e2e/tts-
 | Reverb | `test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/reverb.test.ts` | Heavier local STT coverage |
 | Llama write | `test/test-cases/e2e/step-3-write-e2e/write-local/llama/`, `test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts` | Local llama.cpp audio and document flows |
 | Local TTS | `test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts` | Standalone Kitten TTS coverage |
+| Music lyric-video | `test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts` | Local FFmpeg/Whisper lyric-video rendering |
 
 ## Price Preflight
 
@@ -79,7 +83,7 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts 
 Notes:
 - `--test-price` with no path filters resolves all mapped priceable tests.
 - `--budget` in normal mode only skips tests that use a matching `budgetedTest()` key.
-- Some local paths still have no mapped price commands, including `test/test-cases/local/sample/`, `test/test-cases/validation/`, and `test/test-cases/e2e/step-0-setup-e2e/`.
+- Some local paths still have no mapped price commands, including `test/test-cases/local/sample/`, `test/test-cases/validation/`, `test/test-cases/e2e/step-0-setup-e2e/`, and local lyric-video rendering.
 
 ## Related Docs
 

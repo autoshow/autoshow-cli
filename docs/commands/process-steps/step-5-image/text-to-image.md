@@ -25,7 +25,7 @@ Generate images from a text prompt with the hosted image providers.
 There are no local image-generation models in this project.
 
 ```bash
-# optional confirmation step; image providers are API-based
+# hosted provider readiness check; image providers are API-based
 bun as setup --step image
 ```
 

@@ -32,7 +32,7 @@ output/
     ├── elevenlabs-pvc-status.json  # (if ElevenLabs PVC setup ran)
     ├── generated-image.*           # (if --gemini-image/--openai-image/... set)
     ├── generated-video.mp4         # (if --gemini-video/--minimax-video/... set)
-    ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music set)
+    ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music/... set)
     ├── run.json                    # { step1, step2, step3[, step4, step5, step6, step7] }
     │
     │  ── Document (extract command routed to OCR) ──
@@ -106,48 +106,22 @@ src/types/
 │  OutputFormat   = 'text' | 'json' | 'tsv' | 'hocr'                          │
 │  BatchOrder     = 'newest' | 'oldest'                                        │
 │                                                                              │
-│  RuntimeOptions {                                                            │
-│    useReverb, useOpenAI, useGemini, useAnthropic,                            │
-│    llamaModel, openaiModel, groqModel, geminiModel,                          │
-│    anthropicModel, minimaxModel, grokModel, glmModel,                        │
-│    whisperModel, groqSttModel, elevenlabsSttModel, deepgramSttModel,         │
-│    mistralSttModel, assemblyaiSttModel,                                      │
-│    diarizationSpeakerCount,                                                  │
-│    price, allowOverBudget,                                                   │
-│    reverbVerbatimicity, split, skipLLM,                                      │
-│    dpi, lang, psm, oem, out, password, pageSeparator,                        │
-│    preserveSpaces, rotate, useOcrmypdf, usePaddleOcr,                        │
-│    batchLimit, batchAll, batchOrder, batchConcurrency,                       │
-│    ttsSpeaker, kittenTtsModel, groqTtsModel, groqVoiceId,                    │
-│    openaiTtsModel, openaiVoiceId, openaiTtsRefAudio, openaiTtsConsentId,     │
-│    openaiTtsConsentAudio, openaiTtsVoiceName, geminiTtsModel, geminiVoiceId, │
-│    runwayTtsModel, runwayTtsVoice, deapiTtsModel, deapiTtsVoice,             │
-│    deapiTtsRefAudio, deapiTtsRefText,                                        │
-│    elevenlabsTtsModel, elevenlabsVoiceId, elevenlabsTtsRefAudio,             │
-│    elevenlabsTtsVoiceName, elevenlabsTtsCloneRemoveBackgroundNoise,          │
-│    minimaxTtsModel, minimaxTtsVoice,                                         │
-│    minimaxTtsRefAudio, minimaxTtsPromptAudio, minimaxTtsPromptText,          │
-│    minimaxTtsCloneNoiseReduction, minimaxTtsCloneVolumeNormalization,        │
-│    geminiImageModel, openaiImageModel, minimaxImageModel,                    │
-│    imageAspectRatio, imageSize, imageQuality, imageFormat, imageBackground,  │
-│    imagenCount,                                                              │
-│    elevenlabsMusicModel, minimaxMusicModel, musicDuration,                   │
-│    musicLyricsFile, musicInstrumental,                                       │
-│    geminiVideoModel, minimaxVideoModel,                                      │
-│    videoDuration, videoSize, videoAspectRatio, videoResolution,              │
-│    prompts                                                                   │
-│  }                                                                           │
+│  RuntimeOptions includes normalized provider selections for:                 │
+│    STT/OCR provider models and local booleans, LLM provider models,          │
+│    TTS/image/video/music provider models, provider-specific voice and        │
+│    generation options, batch controls, cost controls, and prompt controls.   │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  provider-types.ts                                                           │
 │                                                                              │
 │  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|'grok'|             │
-│                  'openai'|'gemini'|'deepgram'|'runway'|'deapi'              │
+│                  'mistral'|'openai'|'gemini'|'deepgram'|'runway'|           │
+│                  'speechify'|'gcloud'|'deapi'                               │
 │  ImageProvider = 'gemini'|'openai'|'minimax'|'glm'|'grok'|'runway'|'bfl'     │
 │                  |'deapi'                                                    │
-│  VideoProvider = 'gemini'|'minimax'                                          │
-│  MusicProvider = 'elevenlabs'|'minimax'                                      │
+│  VideoProvider = 'gemini'|'minimax'|'glm'|'grok'|'runway'|'deapi'            │
+│  MusicProvider = 'elevenlabs'|'minimax'|'deapi'|'gemini'                     │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -176,7 +150,7 @@ src/types/
 │                                                                              │
 │  Step 3 (LLM):                                                               │
 │  ├── Step3Metadata        llmService, llmModel, time, in/out tokens          │
-│  │    llmService: 'llama.cpp'|'openai'|'groq'|'gemini'|'anthropic'|'minimax'|'grok'|'glm'│
+│  │    llmService: 'llama.cpp'|'openai'|'groq'|'gemini'|'anthropic'|'minimax'|'grok'|'glm'|'kimi'│
 │  └── LlamaResponseSchema  llama.cpp HTTP response format                     │
 │                                                                              │
 │  Step 4 (TTS):                                                               │

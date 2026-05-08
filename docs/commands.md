@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 13 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 14 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -135,7 +135,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 - `metadata`: [metadata](./commands/setup-and-utilities/metadata/metadata.md)
 - `setup` / model pre-downloads / sample fixtures: [setup](./commands/process-steps/step-0-setup/setup.md)
 - `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
-- `cache`: manage the persistent STT media cache (`bun as cache prune` / `bun as cache clear`)
+- `cache`: [cache](./commands/setup-and-utilities/cache/cache.md)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
 - `extract`: [extract](./commands/process-steps/step-2-extract/01-extract.md) — routes media to STT, documents/images to OCR, article HTML to article extraction, and X/Twitter Space or post links to the X API.
 - `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
@@ -146,6 +146,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 - `music`: [music](./commands/process-steps/step-7-music/text-to-music-services.md)
 - `config`: [config](./commands/setup-and-utilities/config/config.md)
 - `links`: [links](./commands/setup-and-utilities/links/links.md)
+- `benchmark`: [benchmark](./commands/setup-and-utilities/benchmark/benchmark.md)
 
 ## Selection Guide
 

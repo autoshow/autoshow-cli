@@ -45,7 +45,7 @@ src/cli/commands/process-steps/step-1-download/targets/handle-process-target.ts
 │  │  handleInputListTargetBatch()                                    │         │
 │  │  1. readInputList() → parse .md/.txt line-by-line                │         │
 │  │     - Strip bullets (- / *)                                      │         │
-│  │     - Parse markdown links [text](url)                           │         │
+│  │     - Parse markdown link syntax                                 │         │
 │  │     - Resolve relative file paths                                │         │
 │  │  2. processBatch(items) → concurrency-limited batch run          │         │
 │  └──────────────────────────────────────────────────────────────────┘         │

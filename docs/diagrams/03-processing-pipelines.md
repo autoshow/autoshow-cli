@@ -50,23 +50,17 @@ src/cli/commands/process-steps/process-video.ts
 │  ├── strip cover art, chapters, metadata, and extra streams                │
 │  └── default to mono AAC-LC .m4a at a 96 kbps ceiling                      │
 │                                                                              │
-│  resolveSttEngine() - picks exactly one engine:                              │
+│  resolveSttEngine() - picks requested STT providers/models:                 │
 │                                                                              │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐│
-│  │ --reverb-stt   │ │--elevenlabs│ │--groq/grok │ │--deepgram- │ │--mistral-  │ │--assemblyai- ││
-│  │ Reverb ASR │ │-stt        │ │ Groq       │ │stt         │ │stt         │ │stt           ││
-│  │ (local)    │ │ ElevenLabs │ │ STT APIs   │ │ Deepgram   │ │ Mistral    │ │ AssemblyAI   ││
-│  │ diarization│ │ Scribe(API)│ │ (API)      │ │ STT (API)  │ │ STT (API)  │ │ STT (API)    ││
-│  │ --reverb-  │ │ w/speaker- │ │            │ │ diarization│ │ diarization│ │ diarization  ││
-│  │ verbatimic.│ │ count hint │ │            │ │ enabled    │ │            │ │ w/speaker-   ││
-│  │            │ │            │ │            │ │            │ │            │ │ count hint   ││
-│  └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └──────┬───────┘│
-│        └───────────────┴──────────────┴──────────────┴──────────────┴────────────────┘       │
+│  Local: Whisper.cpp, Reverb ASR                                             │
+│  Cloud: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox,  │
+│         Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia,         │
+│         Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together, Cloudflare   │
 │                                    │                                         │
 │           (no engine flag) → Whisper.cpp (local binary)                      │
-│           --whisper-stt MODEL: tiny|base|small|medium|large-v3-turbo|            │
+│           --whisper-stt MODEL: tiny|base|small|medium|large-v3-turbo        │
 │                                                                              │
-│           --split: split audio into 10-min chunks, transcribe each           │
+│           --split: split audio into 30-min chunks, transcribe each           │
 │                                    │                                         │
 │                                    v                                         │
 │  ┌──────────────────────────────────────────────┐                            │
@@ -81,7 +75,7 @@ src/cli/commands/process-steps/process-video.ts
                         ┌───────────┴───────────┐
                         |                       |
                   skipLLM=true            skipLLM=false
-                  (transcribe cmd)         (write cmd)
+                  (extract cmd)            (write cmd)
                         |                       |
                         v                       v
                 ┌───────────────┐  ┌────────────────────────────────────┐
@@ -114,20 +108,22 @@ src/cli/commands/process-steps/process-video.ts
                                         │   --elevenlabs-tts-pvc-voice,│
                                         │   --minimax-tts,             │
                                         │   --minimax-tts-ref-audio,   │
-                                        │   --groq-tts,                │
+                                        │   --groq-tts, --mistral-tts, │
                                         │   --openai-tts,              │
                                         │   --openai-tts-ref-audio,    │
-                                        │   --gemini-tts,              │
-                                        │   --runway-tts,              │
-                                        │   --deapi-tts)               │
+                                        │   --gemini-tts, --runway-tts)│
                                         │  Step 5: Image (--gemini-    │
-                                        │   image, --openai-image, ...)│
+                                        │   image, --openai-image,     │
+                                        │   --bfl-image, --deapi-image)│
                                         │  Step 6: Video (--gemini-    │
                                         │   video, --minimax-video,    │
                                         │   --glm-video, --grok-video, │
-                                        │   --runway-video...)         │
+                                        │   --runway-video, --deapi-   │
+                                        │   video)                     │
                                         │  Step 7: Music (--elevenlabs-│
-                                        │   music, --minimax-music)    │
+                                        │   music, --minimax-music,    │
+                                        │   --deapi-music, --gemini-   │
+                                        │   music)                     │
                                         └──────────────────────────────┘
                                                     |
                                                     v

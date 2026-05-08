@@ -107,9 +107,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-image Flux1schnell
 # Resume missing Runway video outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --runway-video gen4.5
 
-# Resume missing deAPI video outputs
-bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-video Ltxv_13B_0_9_8_Distilled_FP8
-
 # Resume missing MiniMax music outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
 
@@ -124,6 +121,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | Flag | Description |
 |------|-------------|
 | `--prompt <name...>` | Named prompt presets discovered recursively under `src/prompts/entries/` |
+| `--prompt-md` | Save a second prompt file with markdown examples alongside the JSON prompt when a resumed path rebuilds prompt output |
 | `--batch-concurrency <n>` | Number of batch items to process concurrently |
 
 ### STT
@@ -148,9 +146,13 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--openai-stt <model>` | Select one or more OpenAI STT models |
 | `--gemini-stt <model>` | Select one or more Gemini STT models |
 | `--glm-stt <model>` | Select one or more GLM STT models |
+| `--together-stt <model>` | Select one or more Together Whisper STT models |
+| `--cloudflare-stt <model>` | Select one or more Cloudflare Workers AI STT models |
 | `--deapi-stt <model>` | Select one or more deAPI STT models |
 | `--happyscribe-stt <model>` | Select one or more Happy Scribe STT models |
 | `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID override |
+| `--supadata-stt <model>` | Select one or more Supadata STT modes |
+| `--supadata-lang <code>` | Supadata preferred transcript language |
 | `--mistral-stt <model>` | Select one or more Mistral STT models |
 | `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models |
 | `--gladia-stt <model>` | Select one or more Gladia STT models |
@@ -180,6 +182,9 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
 | `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use `Qwen/Qwen3-VL-30B-A3B-Instruct` |
+| `--aws-textract <model>` | Use AWS Textract; omit the value to use the cheapest supported model |
+| `--gcloud-docai <model>` | Use Google Cloud Document AI; omit the value to use the cheapest supported model |
+| `--deapi-ocr <model>` | Use deAPI OCR; omit the value to use `Nanonets_Ocr_S_F16` |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--psm <n>` | Tesseract page segmentation mode |
 | `--oem <n>` | Tesseract OCR engine mode |
@@ -188,6 +193,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--rotate <degrees>` | Rotate pages before OCR |
 | `--epub-bun` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | Inspect EPUB structure with Calibre |
+| `--ocr-provider-concurrency <n>` | Max hosted OCR providers/models running in parallel for one item |
+| `--ocr-local-concurrency <n>` | Max local OCR providers running in parallel for one item |
 
 ### TTS
 
@@ -197,12 +204,11 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--elevenlabs-tts <model>` | Select one or more ElevenLabs TTS models |
 | `--minimax-tts <model>` | Select one or more MiniMax TTS models |
 | `--groq-tts <model>` | Select one or more Groq TTS models |
-| `--grok-tts <model>` | Select one or more xAI Grok TTS models |
+| `--mistral-tts <model>` | Select one or more Mistral Voxtral TTS models |
 | `--openai-tts <model>` | Select one or more OpenAI TTS models |
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
 | `--runway-tts <model>` | Select one or more Runway TTS models |
-| `--deapi-tts <model>` | Select one or more deAPI TTS models |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
 | `--elevenlabs-voice <id>` | ElevenLabs voice ID override |
 | `--elevenlabs-tts-pvc-voice <id>` | Trained ElevenLabs PVC voice ID for resumed synthesis |
@@ -225,11 +231,13 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--gemini-voice <name>` | Gemini TTS voice name override |
 | `--deepgram-voice <id>` | Deepgram TTS voice override |
 | `--runway-tts-voice <preset>` | Runway TTS preset voice override |
-| `--deapi-tts-voice <id>` | deAPI TTS voice override |
-| `--deapi-tts-ref-audio <path>` | deAPI Qwen3 voice clone reference audio path |
-| `--deapi-tts-ref-text <text>` | Optional transcript for the deAPI reference audio |
 | `--groq-voice <id>` | Groq TTS voice ID override |
-| `--grok-tts-voice <id>` | Grok TTS voice ID override |
+| `--mistral-tts-voice <id>` | Mistral saved/custom voice ID |
+| `--mistral-tts-ref-audio <path>` | Mistral one-off voice clone reference audio path |
+| `--gemini-speaker-1-name <name>` | Gemini multispeaker speaker 1 name |
+| `--gemini-speaker-1-voice <voice>` | Gemini multispeaker speaker 1 voice |
+| `--gemini-speaker-2-name <name>` | Gemini multispeaker speaker 2 name |
+| `--gemini-speaker-2-voice <voice>` | Gemini multispeaker speaker 2 voice |
 
 ### Image
 
@@ -259,7 +267,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--glm-video <model>` | Select one or more GLM video models |
 | `--grok-video <model>` | Select one or more Grok video models |
 | `--runway-video <model>` | Select one or more Runway video models |
-| `--deapi-video <model>` | Select one or more deAPI video models |
 | `--video-duration <seconds>` | Video duration in seconds |
 | `--video-size <size>` | Video size |
 | `--video-aspect-ratio <ratio>` | Video aspect ratio |

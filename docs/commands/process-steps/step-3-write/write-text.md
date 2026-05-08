@@ -75,6 +75,7 @@ Project lyric draft mode is enabled only when the input is `./output/<name>/text
 
 | Flag | Description |
 |------|-------------|
+| `--all-llm` | Enable every supported LLM provider/model for this command |
 | `--llm-provider-concurrency <n>` | Hosted LLM providers/models to run concurrently per write item; default `2` |
 | `--llm-local-concurrency <n>` | Local llama.cpp models to run concurrently per write item; default `1` |
 | `--prompt <name...>` | Select prompt presets |

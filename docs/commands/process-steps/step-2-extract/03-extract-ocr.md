@@ -98,6 +98,9 @@ bun as setup --gcloud
 | `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--password <value>` | Password for encrypted PDFs |
 | `--all-ocr` | Enable every supported OCR provider/model for this command |
+| `--primary-ocr <service[/model]>` | In multi-provider OCR, choose which requested provider writes top-level extraction artifacts |
+| `--ocr-provider-concurrency <n>` | Hosted OCR providers/models to run concurrently per item; default `2` |
+| `--ocr-local-concurrency <n>` | Local OCR providers to run concurrently per item; default `1` |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--chapters` | EPUB native text runs or PDF autodetection: write chapter files under `chapters/` |
 | `--length <n>` | Hard export limit in thousands of characters; for EPUB alone writes `chunks/`, and with `--chapters` splits oversized EPUB or PDF chapter files |

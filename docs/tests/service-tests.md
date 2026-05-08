@@ -14,9 +14,7 @@ Shared `bun t` runner behavior, artifacts, cleanup, and path-based selection are
 
 ```bash
 # setup bootstrap coverage
-bun t \
-  test/test-cases/e2e/step-0-setup-e2e/llama-models/llama-downloads.test.ts \
-  test/test-cases/e2e/step-0-setup-e2e/tts-models/tts-setup.test.ts
+bun t test/test-cases/e2e/step-0-setup-e2e/tts-models/tts-setup.test.ts
 
 # network-backed download coverage
 bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts
@@ -47,7 +45,7 @@ bun t test/test-cases/e2e/step-7-music-gen-e2e/
 
 ## Cross-Cutting Coverage
 
-- `test/test-cases/validation/model-options.test.ts` remains the main service-facing validation suite for model-option handling, but it does not currently have mapped `--test-price` coverage.
-- `test/test-cases/e2e/api-cheap.test.ts` is still useful for `--test-price` reporting, but its mappings are report-only. `--budget` does not skip tests in that file.
+- `test/test-cases/validation/option-resolution-contracts.test.ts`, `provider-selection-contracts.test.ts`, and `price-mode-contracts.test.ts` cover model-option, provider-selection, and price-mode behavior without live service calls.
+- `test/test-cases/price-flag/` contains focused `--price` coverage for STT, OCR, write, TTS, image, video, and music command families.
 - `test/test-cases/e2e/cli-integration.test.ts` covers cross-provider CLI flows, but it does not currently have mapped price commands.
 - `--test-price` with no path filters still resolves all mapped priceable tests across both local and service coverage.

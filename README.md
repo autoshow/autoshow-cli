@@ -114,7 +114,7 @@ bun as links stt
 |------|----------|
 | Inspect and process | `metadata`, `download`, `extract`, `write` |
 | Generate | `tts`, `image`, `video`, `music` |
-| Setup & Utilities | `config`, `cache`, `setup`, `links` |
+| Setup & Utilities | `config`, `cache`, `setup`, `links`, `resume`, `benchmark` |
 
 High-value notes:
 
@@ -167,7 +167,7 @@ Persistent defaults live in `config/autoshow.json`. You can save provider choice
 
 ```bash
 bun as config --show
-bun as config --openai gpt-5.2 --batch-limit 20 --max-cents 50
+bun as config --openai gpt-5.4 --batch-limit 20 --max-cents 50
 bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
 bun as config --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3

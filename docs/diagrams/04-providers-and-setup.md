@@ -100,93 +100,61 @@ collectTargets() checks all flags - multiple providers can run sequentially. Hos
 bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.ts
 → runCompleteSetup()
 
-  ┌───────────────────────────────────────────────────────────────────┐
-  │  Ensure runtime directories:                                      │
-  │  runtime/bin/    runtime/build/whisper.cpp/    runtime/models/     │
-  │  runtime/bin/reverb/    runtime/models/reverb/                     │
-  └───────────────────────────────────────┬───────────────────────────┘
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ Ensure runtime directories                                           │
+  │ runtime/bin, runtime/build/whisper.cpp, runtime/models, Reverb envs  │
+  └───────────────────────────────────────┬─────────────────────────────┘
                                           |
                                           v
-  Step 1  ─── setupYtDependencies() ───── FFmpeg + yt-dlp
-                                          |
-  Step 2  ─── setupWhisper() ──────────── Build whisper.cpp binary
-                                          |
-  Step 3  ─── runLlamaSetup() ─────────── Build llama.cpp binary
-                                          |
-  Step 4  ─── downloadWhisperModel() ──── Download tiny.bin model
-                                          |
-  Step 5  ─── checkLlamaInstalled() ───── Verify llama.cpp ready
-                                          │  (model auto-downloads on first use)
-                                          |
-  Step 6  ─── setupReverb() ───────────── Python venv + Reverb ASR models
-                                          |
-  Step 7  ─── setupElevenLabsStt() ────── Check ElevenLabs STT (API key only)
-                                          |
-  Step 8  ─── setupDeepgramStt() ──────── Check Deepgram STT (API key only)
-                                          |
-  Step 9  ─── setupSonioxStt() ────────── Check Soniox STT (API key only)
-                                          |
-  Step 10 ─── setupSpeechmaticsStt() ──── Check Speechmatics STT (API key only)
-                                          |
-  Step 11 ─── setupRevStt() ───────────── Check Rev STT (API key only)
-                                          |
-  Step 12 ─── setupGrokStt() ──────────── Check Grok STT (API key only)
-                                          |
-  Step 12 ─── setupMistralStt() ───────── Check Mistral STT (API key only)
-              setupMistralOcr() ───────── Check Mistral OCR (API key only)
-              setupGlmOcr() ───────────── Check GLM OCR (API key only)
-              setupKimiOcr() ───────────── Check Kimi write/OCR (API key only)
-              setupOpenAIOcr() ────────── Check OpenAI OCR (API key only)
-              setupAnthropicOcr() ─────── Check Anthropic OCR (API key only)
-              setupGeminiOcr() ────────── Check Gemini OCR (API key only)
-                                          |
-  Step 13 ─── setupAssemblyAiStt() ────── Check AssemblyAI STT (API key only)
-                                          |
-  Step 14 ─── setupGladiaStt() ────────── Check Gladia STT (API key only)
-                                          |
-  Step 15 ─── setupDocumentTools() ────── MuPDF (mutool) for PDFs
-                                          |
-  Step 16 ─── setupExtractionOcr() ────── Tesseract OCR
-                                          |
-  Step 17 ─── setupKittenTts() ────────── Kitten TTS Python venv + models
-              downloadKittenTtsModel() ── Download default Kitten model
-                                          |
-  Step 14 ─── setupElevenLabsTts() ────── Check ElevenLabs TTS/IVC/PVC (API key only)
-                                          |
-  Step 15 ─── setupGroqTts() ──────────── Check Groq TTS (API key only)
-                                          |
-  Step 16 ─── setupGrokTts() ──────────── Check Grok TTS (API key only)
-                                          |
-  Step 16 ─── setupOpenAITts() ────────── Check OpenAI TTS (API key only)
-                                          |
-  Step 17 ─── setupGeminiTts() ────────── Check Gemini TTS (API key only)
-                                          |
-  Step 17 ─── setupDeapiTts() ─────────── Check deAPI TTS (API key only)
-                                          |
-  Step 18 ─── setupGeminiImageGen() ───── Check Gemini image gen (API key only)
-                                          |
-  Step 19 ─── setupOpenAIImageGen() ───── Check OpenAI image gen (API key only)
-                                          |
-  Step 20 ─── setupGeminiMusicGen() ───── Check Gemini music gen (API key only)
-                                          |
-  Step 21 ─── setupElevenLabsMusicGen() ─ Check ElevenLabs music gen (API key only)
-                                          |
-  Step 22 ─── setupMinimaxMusicGen() ──── Check MiniMax music gen (API key only)
-                                          |
-  Validate ── validateBinaries() ──────── Test whisper-cli + llama-server
+  Local foundations
+    setupYtDependencies()      → FFmpeg/ffprobe + yt-dlp
+    setupWhisper()             → whisper.cpp binary
+    runLlamaSetup()            → llama.cpp binary
+    downloadWhisperModel()     → default tiny model
+    ensureLlamaModelDownloaded(default)
+    setupReverb()              → Reverb ASR Python env + models
+    setupCalibreDocumentTools()
+    setupTesseractOcr()
+    setupKittenTts() + default Kitten model
+
+  Hosted STT readiness
+    ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Grok, Mistral,
+    OpenAI, Gemini, GLM, Together, Cloudflare, AssemblyAI, Gladia,
+    Supadata, AWS
+
+  Hosted OCR/readiness
+    Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra, deAPI
+
+  Hosted TTS readiness
+    ElevenLabs, Groq, Grok, OpenAI, Gemini, Deepgram, Runway, Speechify,
+    Google Cloud, deAPI
+
+  Hosted image/video/music readiness
+    Image: Gemini, OpenAI, GLM key, Grok, Runway, BFL, deAPI
+    MiniMax image uses MINIMAX_API_KEY but has no dedicated setup hook
+    Video in full setup: deAPI, MiniMax
+    Video in `setup --step video`: Gemini, MiniMax, GLM, Grok, Runway, deAPI
+    Music: Gemini, ElevenLabs, MiniMax, deAPI
+
+  Validate
+    whisper-cli --help
+    llama-server --version
 ```
 
 ## Setup Dependencies by Command
 
 | Command | Required Dependencies |
 |---------|----------------------|
-| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or `--groq-stt`/`--grok-stt`/`--elevenlabs-stt`/`--deepgram-stt`/`--soniox-stt`/`--speechmatics-stt`/`--rev-stt`/`--mistral-stt`/`--assemblyai-stt`/`--gladia-stt` API key) |
+| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or selected STT provider readiness: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together, or Cloudflare) |
 | `extract --reverb-stt` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/`--mistral-ocr`/`--glm-ocr`/`--kimi-ocr`/`--openai-ocr`/`--anthropic-ocr`/`--gemini-ocr`/`--deepinfra-ocr` API key) |
+| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/hosted OCR provider readiness) |
 | `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
 | `extract --gemini-ocr` | `GEMINI_API_KEY` |
 | `extract --kimi-ocr` | `KIMI_API_KEY` |
 | `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
+| `extract --deapi-ocr` | `DEAPI_API_KEY` |
+| `extract --aws-textract` | AWS CLI auth, region, and S3 staging bucket for async jobs |
+| `extract --gcloud-docai` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
 | `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
 | `write --glm` | `GLM_API_KEY` |
@@ -197,19 +165,28 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `tts --minimax-tts` | `MINIMAX_API_KEY`; `--minimax-tts-ref-audio` also needs local `mp3`, `m4a`, or `wav` clone source audio |
 | `tts --groq-tts` | `GROQ_API_KEY` |
 | `tts --grok-tts` | `XAI_API_KEY` |
+| `tts --mistral-tts` | `MISTRAL_API_KEY`; reference audio is optional per run |
 | `tts --openai-tts` | `OPENAI_API_KEY`; custom voice creation also needs `--openai-tts-ref-audio` plus `--openai-tts-consent-id` or `--openai-tts-consent-audio` |
 | `tts --gemini-tts` | `GEMINI_API_KEY` |
+| `tts --deepgram-tts` | `DEEPGRAM_API_KEY` |
 | `tts --runway-tts` | `RUNWAYML_API_SECRET` |
+| `tts --speechify-tts` | `SPEECHIFY_API_KEY` |
+| `tts --gcloud-tts` | Google Cloud CLI auth or credentials plus Text-to-Speech API readiness |
 | `tts --deapi-tts` | `DEAPI_API_KEY` |
 | `image --gemini-image` | `GEMINI_API_KEY` |
 | `image --openai-image` | `OPENAI_API_KEY` |
 | `image --minimax-image` | `MINIMAX_API_KEY` |
+| `image --glm-image` | `GLM_API_KEY` |
+| `image --grok-image` | `XAI_API_KEY` |
+| `image --runway-image` | `RUNWAYML_API_SECRET` |
 | `image --bfl-image` | `BFL_API_KEY` |
+| `image --deapi-image` | `DEAPI_API_KEY` |
 | `video --gemini-video` | `GEMINI_API_KEY` |
 | `video --minimax-video` | `MINIMAX_API_KEY` |
 | `video --glm-video` | `GLM_API_KEY` |
 | `video --grok-video` | `XAI_API_KEY` |
 | `video --runway-video` | `RUNWAYML_API_SECRET` |
+| `video --deapi-video` | `DEAPI_API_KEY` |
 | `music --elevenlabs-music` | `ELEVENLABS_API_KEY` |
 | `music --minimax-music` | `MINIMAX_API_KEY` |
 | `music --deapi-music` | `DEAPI_API_KEY` |
