@@ -876,6 +876,7 @@ export const buildOptsFromFlags = (
     batchOrder: readBatchOrder(mergedFlags),
     batchConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'batch-concurrency'), 1)),
     keepOriginalMedia: readBooleanFlag(mergedFlags, 'keep-original-media'),
+    bestQuality: readBooleanFlag(mergedFlags, 'best-quality'),
     flatBatch: readBooleanFlag(mergedFlags, 'flat-batch'),
     prompts: (() => {
       const v = mergedFlags['prompt']

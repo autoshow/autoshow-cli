@@ -78,6 +78,7 @@ describe('option resolution contracts', () => {
       'kimi-ocr': 'kimi-k2.6',
       'tesseract-ocr': true,
       'youtube-captions': true,
+      'best-quality': true,
       'batch-limit': '9',
       'stt-provider-concurrency': '3',
       'ocr-provider-concurrency': '4',
@@ -118,6 +119,7 @@ describe('option resolution contracts', () => {
     expect(opts.kimiOcrModel).toBe('kimi-k2.6')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
+    expect(opts.bestQuality).toBe(true)
     expect(opts.batchLimit).toBe(9)
     expect(opts.sttProviderConcurrency).toBe(3)
     expect(opts.ocrProviderConcurrency).toBe(4)

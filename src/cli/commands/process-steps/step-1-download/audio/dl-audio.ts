@@ -40,6 +40,19 @@ const inferExtensionFromContentType = (contentType: string): string => (
             : '.mp3'
 )
 
+const VIDEO_MEDIA_EXTENSIONS = new Set(['.mp4', '.webm', '.mkv', '.mov'])
+
+const inferMediaKind = (filePath: string): 'audio' | 'video' | 'media' => {
+  const extension = extname(filePath).toLowerCase()
+  if (VIDEO_MEDIA_EXTENSIONS.has(extension)) {
+    return 'video'
+  }
+  if (MEDIA_EXTENSIONS.some(ext => ext === extension)) {
+    return 'audio'
+  }
+  return 'media'
+}
+
 const buildPreferredMediaBaseName = (videoMetadata: VideoMetadata): string => {
   const slugTitle = sanitizeTitleSlug(videoMetadata.title, 180) || 'audio'
   const datePrefix = videoMetadata.publishDate ? `${videoMetadata.publishDate}-` : ''
@@ -193,9 +206,10 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     await setupYtDependencies()
   }
   
+  const preserveOriginalMedia = options.keepOriginalMedia === true || options.bestQuality === true
   let audioPath = ''
   if (options.filePath) {
-    if (options.keepOriginalMedia) {
+    if (preserveOriginalMedia) {
       audioPath = await finalizeDownloadedMedia(options.filePath, options.outputDir, videoMetadata, { copy: true })
     } else {
       audioPath = await normalizeDownloadedAudio(options.filePath, options.outputDir, videoMetadata)
@@ -212,7 +226,7 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
       status: 'downloaded',
       target: rawPath
     })
-    audioPath = options.keepOriginalMedia
+    audioPath = preserveOriginalMedia
       ? await finalizeDownloadedMedia(rawPath, options.outputDir, videoMetadata)
       : await normalizeDownloadedAudio(rawPath, options.outputDir, videoMetadata, { removeOriginal: true })
   } else if (isDirectMediaUrl(options.url as string)) {
@@ -231,7 +245,7 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     if (downloadedFile.size < 1000) {
       throw new Error('Downloaded file is empty or corrupted')
     }
-    audioPath = options.keepOriginalMedia
+    audioPath = preserveOriginalMedia
       ? await finalizeDownloadedMedia(mediaPath, options.outputDir, videoMetadata)
       : await normalizeDownloadedAudio(mediaPath, options.outputDir, videoMetadata, { removeOriginal: true })
   } else {
@@ -239,13 +253,17 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
       await setupYtDependencies()
     }
     await verifyYtDlpVersion()
-    const videoPath = await downloadVideo(options.url as string, options.outputDir)
+    const videoPath = await downloadVideo(
+      options.url as string,
+      options.outputDir,
+      options.bestQuality === true ? { bestQuality: true } : {}
+    )
     const downloadedFile = Bun.file(videoPath)
     const fileSize = downloadedFile.size
     if (fileSize < 1000) {
       throw new Error('Downloaded file is empty or corrupted')
     }
-    audioPath = options.keepOriginalMedia
+    audioPath = preserveOriginalMedia
       ? await finalizeDownloadedMedia(videoPath, options.outputDir, videoMetadata)
       : await normalizeDownloadedAudio(videoPath, options.outputDir, videoMetadata, { removeOriginal: true })
   }
@@ -264,7 +282,12 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     ...videoMetadata,
     slug,
     audioFileName,
-    audioFileSize
+    audioFileSize,
+    ...(options.bestQuality === true ? {
+      mediaFileName: audioFileName,
+      mediaFileSize: audioFileSize,
+      mediaKind: inferMediaKind(audioPath)
+    } : {})
   }
   
   return { audioPath, metadata }

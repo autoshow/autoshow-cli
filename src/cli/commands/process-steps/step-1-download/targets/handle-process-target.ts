@@ -143,7 +143,7 @@ export const buildExpectedFilesList = async (command: ProcessCommand, opts: Runt
   }
   if (command === 'download') {
     const documentDownload = typeof resolvedTarget === 'string' && await isDocumentLikeTarget(resolvedTarget, opts)
-    return documentDownload ? ['run.json'] : ['Audio file', 'run.json']
+    return documentDownload ? ['run.json'] : [opts.bestQuality ? 'Media file' : 'Audio file', 'run.json']
   }
   if (isExtractCommand(command) && extractRoute === 'document') {
     const ocrArtifact = getExpectedOcrArtifact(opts)

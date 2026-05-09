@@ -1231,7 +1231,8 @@ const processDownloadMedia = async (
     ...(isUrl ? { url: target } : exists ? { filePath: target } : { url: target }),
     outputDir,
     ...(batchItem?.directDownload ? { directDownload: true } : {}),
-    keepOriginalMedia: opts.keepOriginalMedia
+    keepOriginalMedia: opts.keepOriginalMedia,
+    bestQuality: opts.bestQuality
   }
 
   const { metadata: step1Metadata } = await downloadAudio(dlOpts, meta)

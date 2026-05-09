@@ -22,9 +22,13 @@ const findDownloadedAudio = async (outputDir: string): Promise<string> => {
   return first
 }
 
-export const downloadVideo = async (url: string, outputDir: string): Promise<string> => {
+export const downloadVideo = async (
+  url: string,
+  outputDir: string,
+  options: { bestQuality?: boolean } = {}
+): Promise<string> => {
   try {
-    const args = await buildYtDlpDownloadArgs(url, outputDir)
+    const args = await buildYtDlpDownloadArgs(url, outputDir, options)
     logAudioDownload(l, {
       source: 'yt-dlp',
       status: 'started',

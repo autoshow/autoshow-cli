@@ -107,12 +107,18 @@ export const buildSharedYtDlpArgs = async (): Promise<string[]> => {
   return args
 }
 
-export const buildYtDlpDownloadArgs = async (url: string, outputDir: string): Promise<string[]> => {
+export const buildYtDlpDownloadArgs = async (
+  url: string,
+  outputDir: string,
+  options: { bestQuality?: boolean } = {}
+): Promise<string[]> => {
   const sharedArgs = await buildSharedYtDlpArgs()
+  const bestQuality = options.bestQuality === true
 
   return [
     '--format',
-    'bestaudio/best',
+    bestQuality ? 'bestvideo+bestaudio/best' : 'bestaudio/best',
+    ...(bestQuality ? ['--merge-output-format', 'mkv/mp4/webm'] : []),
     '--output',
     `${outputDir}/%(title)s.%(ext)s`,
     '--restrict-filenames',

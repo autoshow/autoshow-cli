@@ -9,6 +9,12 @@ export const downloadFlags = {
     default: false,
     negatable: false
   },
+  'best-quality': {
+    description: 'Download the best available video+audio media and skip audio-only normalization',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
   'flat-batch': {
     description: 'Batch download: place primary media files directly in the batch output directory',
     type: Boolean,

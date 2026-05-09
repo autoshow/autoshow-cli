@@ -48,6 +48,15 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--ocr-local-concurrency')
 })
 
+test('download help exposes media preservation flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'download', '--help'], { env: helpEnv })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--keep-original-media')
+  expect(result.stdout).toContain('--best-quality')
+  expect(result.stdout).toContain('--flat-batch')
+})
+
 test('tts help exposes hosted TTS provider flags', async () => {
   const result = await runCommand(['src/cli/create-cli.ts', 'tts', '--help'], { env: helpEnv })
 

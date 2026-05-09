@@ -32,6 +32,8 @@ bun as download <input>
 | URL list file (`.md` / `.txt`) | batch each listed input |
 | Directory | batch each supported local input |
 
+Use `--best-quality` for streaming sources when you want the best available video stream plus the best available audio stream instead of the default audio-only artifact. For direct media URLs and local media files, `--best-quality` keeps the source file as-is because there is no alternate quality ladder to select.
+
 **Supported document formats:** PDF, EPUB, MOBI, AZW3, AZW, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, CBZ
 
 **Supported image formats:** PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, GIF
@@ -45,6 +47,7 @@ Step-1 metadata in `run.json` also includes `slug`, which is derived from the or
 ```text
 --password           Password for encrypted PDFs
 --keep-original-media  Keep downloaded media in its original/downloaded format instead of creating the normalized compressed audio artifact
+--best-quality       Download the best available video+audio media and skip audio-only normalization
 --flat-batch         Batch download: place primary media files directly in the batch output directory
 --url-backend        Article/HTML extraction backend: defuddle|firecrawl|glm-reader (default defuddle; local .html/.htm always use defuddle)
 --batch-limit        Batch: number of items to process (default 5)
@@ -62,6 +65,8 @@ output/YYYY-MM-DD_HH-MM-SS_title/
   <audio>.mp3|.m4a|.ogg|.flac
   run.json
 ```
+
+With `--best-quality`, streaming outputs may be merged as `.mkv`, `.mp4`, or `.webm`, depending on the source streams selected by `yt-dlp`. Direct media URLs and local media files keep their source extension. The `run.json` `step1` payload keeps `audioFileName` and `audioFileSize` for compatibility and also includes `mediaFileName`, `mediaFileSize`, and `mediaKind`.
 
 **Document inputs**
 
@@ -106,6 +111,9 @@ output/YYYY-MM-DD_HH-MM-SS_batch-label/
 ```bash
 # Download a YouTube video
 bun as download https://www.youtube.com/watch?v=u1-WHqATSQU
+
+# Download the best available video+audio media from a YouTube video
+bun as download https://www.youtube.com/watch?v=u1-WHqATSQU --best-quality
 
 # Download a local audio file
 bun as download input/examples/audio/1-audio.mp3

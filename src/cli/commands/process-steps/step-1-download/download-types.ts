@@ -21,6 +21,7 @@ export type DownloadAudioOptions = {
   outputDir: string
   directDownload?: boolean | undefined
   keepOriginalMedia?: boolean | undefined
+  bestQuality?: boolean | undefined
 }
 
 export type Step1SourceRef = {
