@@ -6,20 +6,24 @@ import { E2E_TEST_TIMEOUT_MS } from './timeouts'
 import { LLAMA_PROCESS_LOCK_NAME, stopDefaultLlamaServer } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { withProcessLock } from '~/utils/process-lock'
 
+const TEST_OUTPUT_ROOT = 'project/test-output'
+
 const sanitizeOutputRootSegment = (value: string): string =>
   value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'run'
 
 const resolveTestOutputDir = (): string => {
+  const artifactsDir = process.env['AUTOSHOW_TEST_ARTIFACTS_DIR']?.trim()
+  if (artifactsDir) {
+    return join(artifactsDir, 'outputs', `p${process.pid}`)
+  }
+
   const explicit = process.env['AUTOSHOW_OUTPUT_DIR']?.trim()
   if (explicit) {
     return explicit
   }
 
-  const artifactRunId = process.env['AUTOSHOW_TEST_ARTIFACTS_DIR']
-    ? basename(process.env['AUTOSHOW_TEST_ARTIFACTS_DIR'])
-    : undefined
-  const runId = sanitizeOutputRootSegment(process.env['AUTOSHOW_TEST_RUN_ID'] ?? artifactRunId ?? 'local')
-  return `./output/test-runs/${runId}/p${process.pid}`
+  const runId = sanitizeOutputRootSegment(process.env['AUTOSHOW_TEST_RUN_ID'] ?? 'local')
+  return join(TEST_OUTPUT_ROOT, runId, `p${process.pid}`)
 }
 
 export const OUTPUT_DIR = resolveTestOutputDir()
@@ -128,7 +132,7 @@ const copyRunManifestToArtifacts = async (outputDir: string | null): Promise<voi
       return
     }
 
-      const destDir = `${artifactsDir}/run`
+    const destDir = `${artifactsDir}/run`
     await mkdir(destDir, { recursive: true })
     await copyFile(srcPath, `${destDir}/${basename(absoluteOutputDir)}.json`)
   } catch {
@@ -143,7 +147,7 @@ const E2E_CHILD_TIMEOUT_DEFAULTS: Record<string, string> = {
   AUTOSHOW_OCR_REQUEST_TIMEOUT_MS: E2E_CHILD_TIMEOUT_MS
 }
 const TEST_CONFIG_PATH = resolve(import.meta.dir, 'fixtures/empty-autoshow-config.json')
-const TEST_CACHE_DIR = resolve(process.cwd(), 'output/.test-cache')
+const TEST_CACHE_DIR = resolve(process.cwd(), TEST_OUTPUT_ROOT, '.test-cache')
 const PROCESSING_COMMANDS = new Set([
   'metadata',
   'download',

@@ -42,15 +42,17 @@ bun t test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.
 - Test discovery comes from `test/test-cases/**/*.test.ts`.
 - Selection is path-based only.
 - `--test-price` and `--budget <whole-number-hundredths-of-a-cent>` operate on the same selected paths as normal test mode. For example, `--budget 100` allows tests estimated at up to 1 cent.
-- Each run writes artifacts under `./test-output/YYYY-MM-DD_HH-MM-SS_test-run/`, including `runner.log`, `commands.log`, `metrics.ndjson`, `metadata/`, and `report.json`. Normal test mode also writes `junit.xml`, `e2e-report.json`, and `model-calibration.json`.
-- `--cleanup` removes the run directory after a successful run. In normal test mode it also sets `AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0`, which deletes per-test `./output/` directories as tests finish.
+- Each run writes artifacts under `./project/test-output/YYYY-MM-DD_HH-MM-SS_test-run/`, including `runner.log`, `commands.log`, `metrics.ndjson`, `metadata/`, and `report.json`. Normal test mode also writes `junit.xml`, `e2e-report.json`, and `model-calibration.json`.
+- By default, `bun t` cleans test outputs after every run and leaves `./project/test-output/latest.log` with the run summary, failures, runner log, and command log. Normal test mode also sets `AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0`, which deletes per-test output directories as tests finish.
+- Use `--no-cleanup` to keep the full run directory, per-test CLI outputs, and test cache under `./project/test-output/`. The older `--cleanup` flag is still accepted but no longer changes behavior.
 
 ```bash
-# remove the run directory after a successful run
-bun t --cleanup
+# keep the full run directory after completion
+bun t --no-cleanup
 
-# drop per-test output directories during a normal run
-AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0 bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
+# default cleanup still leaves a failure/debug summary
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts
+cat project/test-output/latest.log
 ```
 
 ## Current Coverage

@@ -1,7 +1,15 @@
-import { appendFile, rm } from 'node:fs/promises'
+import { appendFile } from 'node:fs/promises'
 import type { PriceCommandResult, PriceCommandSpec, TestRunArtifacts } from '~/types'
 import { parseRunnerArgs, type RunnerArgs } from './args'
-import { createRunArtifacts, appendRunnerLog, appendCommandLog, writeJsonFile, writeReportJson } from './artifacts'
+import {
+  appendRunnerLog,
+  appendCommandLog,
+  cleanupTestOutputRoot,
+  createRunArtifacts,
+  writeJsonFile,
+  writeLatestRunLog,
+  writeReportJson
+} from './artifacts'
 import { readMetrics, parseJunit } from './parsers'
 import {
   evaluatePriceObservationGroup,
@@ -107,7 +115,12 @@ const executePriceCommand = async (
   const start = Date.now()
   const commandText = `bun --env-file=.env ${entry.args.join(' ')}`
   const proc = Bun.spawn(['bun', '--env-file=.env', ...entry.args], {
-    env: { ...process.env, FORCE_COLOR: '1' },
+    env: {
+      ...process.env,
+      FORCE_COLOR: '1',
+      AUTOSHOW_OUTPUT_DIR: `${artifacts.runDir}/outputs/price`,
+      AUTOSHOW_CACHE_DIR: `${artifacts.rootDir}/.test-cache`,
+    },
     stdout: 'pipe',
     stderr: 'pipe',
   })
@@ -238,7 +251,7 @@ const runBunTest = async (
   files: string[],
   artifacts: TestRunArtifacts,
   passthroughArgs: string[],
-  cleanupAfterRun: boolean,
+  preserveTestOutput: boolean,
   extraArgs: string[] = [],
   envOverrides: Record<string, string> = {}
 ): Promise<number> => {
@@ -267,11 +280,9 @@ const runBunTest = async (
   childEnv['AUTOSHOW_TEST_ARTIFACTS_DIR'] = artifacts.runDir
   childEnv['AUTOSHOW_TEST_COMMAND_LOG'] = artifacts.commandLogPath
   childEnv['AUTOSHOW_TEST_METRICS_LOG'] = artifacts.metricsLogPath
+  childEnv['AUTOSHOW_TEST_PRESERVE_ARTIFACTS'] = preserveTestOutput ? '1' : '0'
   for (const [key, value] of Object.entries(envOverrides)) {
     childEnv[key] = value
-  }
-  if (cleanupAfterRun) {
-    childEnv['AUTOSHOW_TEST_PRESERVE_ARTIFACTS'] = '0'
   }
 
   const proc = Bun.spawn(['bun', ...args], {
@@ -507,7 +518,7 @@ const runStandardTestMode = async (
     filesToRun,
     artifacts,
     args.passthroughArgs,
-    args.cleanupAfterRun,
+    args.preserveTestOutput,
     [],
     budgetEnvOverrides
   )
@@ -621,6 +632,10 @@ const runPreflight = async (): Promise<void> => {
 
 export const runTestRunner = async (argv: string[]): Promise<number> => {
   const args = parseRunnerArgs(argv)
+  if (!args.preserveTestOutput) {
+    await cleanupTestOutputRoot()
+  }
+
   const glob = new Bun.Glob('test/test-cases/**/*.test.ts')
   const allFiles = (await Array.fromAsync(glob.scan({ dot: false }))).sort()
 
@@ -633,11 +648,11 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
     `Run ID: ${artifacts.runId}\nStarted: ${artifacts.startedAtIso}\nArgs: ${argv.slice(2).join(' ')}\n`
   )
 
-  // Preflight: generate sample fixtures before running tests
-  await runPreflight()
-
   let exitCode = 0
   try {
+    // Preflight: generate sample fixtures before running tests
+    await runPreflight()
+
     exitCode = args.priceMode
       ? await runPriceMode(args, allFiles, artifacts, argv)
       : await runStandardTestMode(args, allFiles, artifacts, argv)
@@ -681,15 +696,18 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
     console.error(error)
   }
 
-  if (args.cleanupAfterRun && exitCode === 0) {
-    await rm(artifacts.runDir, { recursive: true, force: true })
-    console.log('Run artifacts cleaned up because --cleanup was provided')
-  } else {
+  const latestLogPath = await writeLatestRunLog(artifacts, exitCode)
+
+  if (args.preserveTestOutput) {
     console.log(`Report JSON: ${normalizeRepoPath(artifacts.reportJsonPath)}`)
     if (!args.priceMode) {
       console.log(`E2E Report JSON: ${normalizeRepoPath(artifacts.e2eReportJsonPath)}`)
       console.log(`Model Calibration JSON: ${normalizeRepoPath(artifacts.calibrationReportJsonPath)}`)
     }
+    console.log(`Latest log: ${normalizeRepoPath(latestLogPath)}`)
+  } else {
+    await cleanupTestOutputRoot(artifacts.rootDir)
+    console.log(`Test output cleaned up; latest log: ${normalizeRepoPath(latestLogPath)}`)
   }
 
   return exitCode

@@ -34,6 +34,7 @@ Library/
 runtime/
 runtime/auth/
 test-output
+project/test-output
 new-llm-*.md
 TODO.md
 project/benchmark

@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseRunnerArgs } from '../../test-runner/args'
+import { cleanupTestOutputRoot, createRunArtifacts, writeLatestRunLog } from '../../test-runner/artifacts'
 import { applyModelConfigCalibrations } from '../../test-runner/model-calibration'
 import { parseJunit } from '../../test-runner/parsers'
 import { resolvePriceSelection } from '../../test-runner/price-commands'
@@ -241,7 +242,79 @@ describe('test-runner contracts', () => {
     expect(parsed.pathFilters).toEqual(['test/test-cases/validation-next/'])
     expect(parsed.priceMode).toBe(true)
     expect(parsed.budgetHundredthCents).toBe(500)
+    expect(parsed.preserveTestOutput).toBe(false)
     expect(parsed.passthroughArgs).toEqual(['--bail'])
+  })
+
+  test('arg parsing uses --no-cleanup as the explicit keep flag', () => {
+    const parsed = parseRunnerArgs([
+      'bun',
+      'test/test-runner.ts',
+      '--cleanup',
+      '--no-cleanup',
+      'test/test-cases/validation/'
+    ])
+
+    expect(parsed.pathFilters).toEqual(['test/test-cases/validation/'])
+    expect(parsed.preserveTestOutput).toBe(true)
+  })
+
+  test('test-output cleanup preserves latest.log only', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-test-output-cleanup-'))
+    tempDirs.push(dir)
+
+    await writeFile(join(dir, 'latest.log'), 'previous run\n')
+    await mkdir(join(dir, 'stale-run'), { recursive: true })
+    await writeFile(join(dir, 'stale-run', 'report.json'), '{}\n')
+    await mkdir(join(dir, '.test-cache'), { recursive: true })
+    await writeFile(join(dir, '.test-cache', 'cache.txt'), 'cache\n')
+
+    await cleanupTestOutputRoot(dir)
+
+    expect((await readdir(dir)).sort()).toEqual(['latest.log'])
+    expect(await readFile(join(dir, 'latest.log'), 'utf8')).toBe('previous run\n')
+  })
+
+  test('latest log captures failure diagnostics before cleanup', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-test-output-latest-log-'))
+    tempDirs.push(dir)
+
+    const artifacts = await createRunArtifacts(dir)
+    await writeFile(artifacts.runnerLogPath, 'runner transcript\n')
+    await writeFile(artifacts.commandLogPath, 'command transcript\n')
+    await writeFile(artifacts.reportJsonPath, `${JSON.stringify({
+      run: {
+        id: artifacts.runId,
+        mode: 'test',
+        startedAt: artifacts.startedAtIso,
+        endedAt: '2026-05-09T00:00:01.000Z',
+        durationMs: 1000,
+        argv: ['test/test-cases/example.test.ts']
+      },
+      summary: {
+        total: 1,
+        passed: 0,
+        failed: 1,
+        skipped: 0
+      },
+      tests: [{
+        file: 'test/test-cases/example.test.ts',
+        name: 'fails usefully',
+        status: 'failed',
+        failureMessage: 'expected true'
+      }]
+    }, null, 2)}\n`)
+
+    const latestLogPath = await writeLatestRunLog(artifacts, 1)
+    await cleanupTestOutputRoot(dir)
+    const latestLog = await readFile(latestLogPath, 'utf8')
+
+    expect((await readdir(dir)).sort()).toEqual(['latest.log'])
+    expect(latestLog).toContain(`Run ID: ${artifacts.runId}`)
+    expect(latestLog).toContain('Exit code: 1')
+    expect(latestLog).toContain('test/test-cases/example.test.ts :: fails usefully: expected true')
+    expect(latestLog).toContain('runner transcript')
+    expect(latestLog).toContain('command transcript')
   })
 
   test('path-selection labels strip the test/test-cases prefix for validation paths', () => {

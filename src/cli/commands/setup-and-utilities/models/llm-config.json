@@ -251,7 +251,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 1979
+          "msPer1KTokens": 1675
         }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {
@@ -261,7 +261,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 2564
+          "msPer1KTokens": 2285
         }
       }
     }

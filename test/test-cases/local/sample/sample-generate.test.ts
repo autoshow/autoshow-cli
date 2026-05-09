@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { rm } from 'node:fs/promises'
-import { runCommand, fileExists } from '../../../test-utils/test-helpers'
+import { runCommand, fileExists, OUTPUT_DIR } from '../../../test-utils/test-helpers'
 
-const TEST_OUT = 'output/test-sample-fixture-gen'
+const TEST_OUT = `${OUTPUT_DIR}/test-sample-fixture-gen`
 
 type ManifestFixture = {
   path: string

@@ -1,7 +1,7 @@
 export type RunnerArgs = {
   priceMode: boolean
   budgetHundredthCents: number | undefined
-  cleanupAfterRun: boolean
+  preserveTestOutput: boolean
   passthroughArgs: string[]
   pathFilters: string[]
 }
@@ -9,7 +9,7 @@ export type RunnerArgs = {
 export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
   let priceMode = false
   let budgetHundredthCents: number | undefined
-  let cleanupAfterRun = false
+  let preserveTestOutput = false
   const passthroughArgs: string[] = []
   const pathFilters: string[] = []
 
@@ -20,7 +20,8 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
     }
 
     switch (arg) {
-      case '--cleanup':            cleanupAfterRun = true; break
+      case '--cleanup':            break
+      case '--no-cleanup':         preserveTestOutput = true; break
       case '--test-price':         priceMode = true; break
       case '--budget': {
         const value = argv[++i]
@@ -52,7 +53,7 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
   return {
     priceMode,
     budgetHundredthCents,
-    cleanupAfterRun,
+    preserveTestOutput,
     passthroughArgs,
     pathFilters,
   }

@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test'
-import { runCommand, fileExists } from '../../../test-utils/test-helpers'
+import { runCommand, fileExists, OUTPUT_DIR } from '../../../test-utils/test-helpers'
 
 // ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ test('sample --verify-only fails when manifest does not exist', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts', 'setup',
     '--sample',
-    '--out', 'output/sample-verify-only-nonexistent-test',
+    '--out', `${OUTPUT_DIR}/sample-verify-only-nonexistent-test`,
     '--verify-only'
   ])
 

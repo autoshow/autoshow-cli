@@ -28,7 +28,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 57208
+          "msPer1KChars": 64981
         }
       },
       "kitten-tts-nano": {
@@ -37,7 +37,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 21251
+          "msPer1KChars": 24903
         }
       },
       "kitten-tts-nano-0.8-int8": {
@@ -210,7 +210,7 @@
         "costPer1kCharsCents": 0.05,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 54045
+          "msPer1KChars": 47341
         }
       },
       "gemini-2.5-pro-preview-tts": {
